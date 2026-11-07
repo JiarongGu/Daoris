@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The Process half's two runs (PROC1b, MOD8): a class marked <c>Parallel=Git</c> runs four at once beside the others so
+/// The Process half's two runs: a class marked <c>Parallel=Git</c> runs four at once beside the others so
 /// marked (<c>git.process.runsettings</c>), so it is still a Process class, which the fast half leaves out, and neither it
 /// nor a base class it inherits here sets or reads a variable of the process's environment, which every class beside it
 /// shares. The rules are held on sources made in memory, one case each, and then over this project's own tree.
@@ -70,7 +70,7 @@ public sealed partial class CategoryTests
     }
 
     /// <summary>
-    /// PROCPAR1: the Process half runs its classes several at once too (<c>process.runsettings</c>), so a Process class there sets no
+    /// The Process half runs its classes several at once too (<c>process.runsettings</c>), so a Process class there sets no
     /// variable of the process's environment and measures nothing of the process as a whole, unless it runs alone, after the rest.
     /// Reading the environment is its own to do there: no class beside it moves it.
     /// </summary>
@@ -132,7 +132,7 @@ public sealed partial class CategoryTests
     }
 
     /// <summary>
-    /// The settings both suites' Process halves run with leave parallelization to each suite's assembly (PROCPAR1): a value there
+    /// The settings both suites' Process halves run with leave parallelization to each suite's assembly: a value there
     /// overrides an assembly's own, and the modules' suite runs one class at a time by its <c>Parallelism.cs</c>, its modules reading
     /// the process's environment. The driver's suite runs its collections at once by xUnit's default, as many as the file says.
     /// </summary>
@@ -177,7 +177,7 @@ public sealed partial class CategoryTests
         ];
 
         /// <summary>
-        /// What a Process class beside the others may not touch (PROCPAR1): the environment it sets, which every class beside it reads
+        /// What a Process class beside the others may not touch: the environment it sets, which every class beside it reads
         /// and every child they start inherits, and the whole process it measures, whose handles every class beside it moves.
         /// </summary>
         private static readonly (string Name, string What, Regex Pattern)[] Shared =
@@ -216,7 +216,7 @@ public sealed partial class CategoryTests
         }
 
         /// <summary>
-        /// The Process half's own run (PROCPAR1): a Process class neither marked <c>Parallel=Git</c> nor in a collection that runs alone
+        /// The Process half's own run: a Process class neither marked <c>Parallel=Git</c> nor in a collection that runs alone
         /// runs beside the other Process classes, so neither it nor a base it inherits here touches what they share.
         /// </summary>
         internal static IReadOnlyList<string> Beside(IReadOnlyList<(string Path, string Text)> sources)

@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TURNFAIL1 and USERSHOWN1 (D137 §2.2): the person's words a driven session held when its door failed never reached the
+/// The person's words a driven session held when its door failed never reached the
 /// agent, and its run ends with them. They are kept on its ended record through the say door, to go again with the next run
 /// that goes on, and its conversation says why where they were shown, then shows them waiting at its foot.
 /// </summary>
@@ -38,7 +38,7 @@ public sealed class WordsLeftTests : IDisposable
         using (var sent = JsonDocument.Parse(body)) Assert.Equal("stuck?", sent.RootElement.GetProperty("text").GetString());
 
         var record = events.After("s1", 1).Events;
-        // Why they wait, naming the word as it was shown, so the page settles it there; then the word waiting at the foot.
+        // Why they wait, naming the word as it is shown, so the page settles it there; then the word waiting at the foot.
         Assert.Equal(2, record.Count);
         Assert.Equal(SessionEventKind.Note, record[0].Kind);
         Assert.Equal(["said-1"], record[0].Words);
@@ -47,7 +47,7 @@ public sealed class WordsLeftTests : IDisposable
     }
 
     /// <summary>
-    /// COWORK1b: Daoris's own word a failed door left is kept on the record as Daoris's, under its fact's key, and shown waiting
+    /// Daoris's own word a failed door left is kept on the record as Daoris's, under its fact's key, and shown waiting
     /// as Daoris's, never as the person's.
     /// </summary>
     [Fact]
@@ -73,7 +73,7 @@ public sealed class WordsLeftTests : IDisposable
     }
 
     /// <summary>
-    /// ACCESSSWAP1b (D183's note): words a run handed back at its turn's end because its setup changed never went at all, so they are
+    /// Words a run handed back at its turn's end because its setup changed never went at all, so they are
     /// kept saying they go on under the new setup, by their own line, never the failed turn's "to go again".
     /// </summary>
     [Fact]
@@ -112,7 +112,7 @@ public sealed class WordsLeftTests : IDisposable
         Assert.Null(note.Words);
     }
 
-    /// <summary>A service standing in: each request recorded, then answered with the one status and body it was given.</summary>
+    /// <summary>A service standing in: each request recorded, then answered with the one status and body it is given.</summary>
     private sealed class StandIn(HttpStatusCode status, string body) : HttpMessageHandler
     {
         public List<(string Method, string Path, string Body)> Heard { get; } = [];

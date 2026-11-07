@@ -6,8 +6,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-iii part a (D212; the foundation design §3.3, §3.4 rule 5, §13.4, §10's row): the curve's move keeps its move record in the
-/// store, as the live limit move does since f-ii, and writes no hand-over box beside it. Decided as the move begins, under this run's claim;
+/// The curve's move keeps its move record in the
+/// store, as the live limit move does, and writes no hand-over box beside it. Decided as the move begins, under this run's claim;
 /// <c>old-ended</c> once the old part ends; <c>opening</c> under the key its keyed open is sent with; <c>opened</c>; <c>delivering</c> and the
 /// prompt's mark before the hand; the prompt's outcome as the turn's write returns (the curve's message carries no word id, so no word's
 /// <c>sent</c>), then the take, then <c>delivered</c>. A move whose hand cannot be made is ended by its phase; a record a standing move holds
@@ -165,7 +165,7 @@ public sealed class CurveMoveStoreTests : IDisposable
 
     private sealed record World(ChatContext Context, Opening Runner, CurveMove Curve, ChatLedger Ledger, ServiceClient Client, Turned Old)
     {
-        /// <summary>The old part's end as its watch writes it, which no process here makes: its record ends once the new part's open is asked (D51).</summary>
+        /// <summary>The old part's end as its watch writes it, which no process here makes: its record ends once the new part's open is asked.</summary>
         public void Ends(HttpRequestMessage request)
         {
             if (request.Method == HttpMethod.Post && request.RequestUri!.AbsolutePath == "/api/sessions/chat") Ledger.Edit("c1", record => record["state"] = "stopped");
@@ -272,7 +272,7 @@ public sealed class CurveMoveStoreTests : IDisposable
         Assert.Empty(Store("run-probe").WordsOf(delivered.Id));
         Assert.Equal(1, world.Runner.Opened!.Prompts.Count);
 
-        // No box was ever kept beside the record.
+        // No box is kept beside the record.
         Assert.Empty(boxesAtOpen);
         Assert.Empty(boxesAtWire);
         Assert.Empty(Boxes());
@@ -401,7 +401,7 @@ public sealed class CurveMoveStoreTests : IDisposable
 
     /// <summary>
     /// <summary>
-    /// 🔴 A box an older build left is no longer taken as a file (FOUNDATION1f-v part a): the hand-over's take reads the store, so with the box
+    /// 🔴 A box an older build left is not taken as a file: the hand-over's take reads the store, so with the box
     /// not yet imported nothing waits to be taken and the box stays for the come-up's import.
     /// </summary>
     [Fact]

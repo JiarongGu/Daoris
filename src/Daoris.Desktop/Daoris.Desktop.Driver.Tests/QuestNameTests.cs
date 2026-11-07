@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSUX1j (D126 §9): the service answers each quest's short title, its publisher's or the name it reads from the quest's
-/// words, and the driver names a quest by it where a name is shown: the session listing, and a landing's <c>{slug}</c>
-/// (LANDNAME1's naming half), so a branch is named for the work rather than cut from a note on the quest's first line.
+/// The service answers each quest's short title, its publisher's or the name it reads from the quest's
+/// words, and the driver names a quest by it where a name is shown: the session listing, and a landing's <c>{slug}</c>,
+/// so a branch is named for the work rather than cut from a note on the quest's first line.
 /// A host from before the field answers none, and the title names the quest as before.
 /// </summary>
 public sealed class QuestNameTests
@@ -43,7 +43,7 @@ public sealed class QuestNameTests
     }
 
     /// <summary>
-    /// LANDNAME1: the install's two landings came out <c>feature/re-filed-from-ask-39c495-whose-quest-was-…</c>. The slug is
+    /// A landing's branch is not cut from a note on the quest (<c>feature/re-filed-from-ask-39c495-…</c>). The slug is
     /// the quest's name in git's words, while the landing keeps the quest's whole title for its record and its plugin.
     /// </summary>
     [Fact]
@@ -60,7 +60,7 @@ public sealed class QuestNameTests
             BranchPatterns.Expand("feature/{slug}-{quest}", new LandingNames(subject.Quest!, subject.Slug, "portal-ui", "s1")));
     }
 
-    /// <summary>A start's landing is told the same name, and a quest whose name is its title is named as it always was.</summary>
+    /// <summary>A start's landing is told the same name, and a quest whose name is its title is named by its title.</summary>
     [Fact]
     public async Task A_starts_landing_is_named_for_the_quests_name_too()
     {
@@ -71,18 +71,18 @@ public sealed class QuestNameTests
         var same = await StartLanding.SubjectAsync("s2", plain, _ => throw new InvalidOperationException("never asked"), default);
 
         Assert.Equal("frame-cap", told.Slug);
-        // The request's words ride the subject, a ticket's key searched in them (PROCESS1b-i).
+        // The request's words ride the subject, a ticket's key searched in them.
         Assert.Equal(new LandingSubject("s2", "q2", "Fix the gap") { Body = "b" }, same);
         Assert.Equal("fix-the-gap", same.Slug);
     }
 
-    // ——— PROCESS1b-i (D164's amendment point 2): the branch named as the repository names its own
+    // ——— The branch named as the repository names its own
 
     /// <summary>
     /// <c>{ticket}</c> is the first match of the rule's key (else <see cref="BranchPatterns.DefaultKey"/>) in the title, then the
     /// request's body, then its links, as written; none found, the session's id stands in. The slug leaves out the ticket the
-    /// pattern already says, and every web address (LANDNAME2: <c>feature/https-…-browse-a267d192</c>), and an empty one takes its
-    /// separator with it. A pattern without <c>{ticket}</c> names the branch as it always did.
+    /// pattern already says, and every web address (never <c>feature/https-…-browse-a267d192</c>), and an empty one takes its
+    /// separator with it. A pattern without <c>{ticket}</c> names the branch without a ticket.
     /// </summary>
     [Theory]
     [InlineData("feature/{ticket}-{slug}", null, "TK-2202: fix the gap", "", null, "feature/TK-2202-fix-the-gap")]
@@ -106,12 +106,12 @@ public sealed class QuestNameTests
         Assert.Equal(branch, BranchPatterns.Branch(subject, new Landing(LandingForm.Branch, pattern, Key: key), "portal-ui"));
     }
 
-    // ——— ACCEPTFOOT2 (D164's 2026-10-16 note): a conversation's branch is named for its work, never for its opening
+    // ——— A conversation's branch is named for its work, never for its opening
 
     /// <summary>
-    /// A conversation has no title of its own: its opening is the person's first words, which the page wears as its name (RAIL1), and
-    /// its branch was a slug of them (seen on the install, 2026-10-16). It is named for its work's oldest commit subject beyond the
-    /// line, as PROCESS1b-ii names a squash with no title; the opening stays its title and is searched for a ticket's key after that
+    /// A conversation has no title of its own: its opening is the person's first words, which the page wears as its name, so
+    /// its branch is not a slug of them. It is named for its work's oldest commit subject beyond the
+    /// line, as a squash with no title is named; the opening stays its title and is searched for a ticket's key after that
     /// subject. No subject read names it `work`, never the opening.
     /// </summary>
     [Theory]
@@ -166,7 +166,7 @@ public sealed class QuestNameTests
         Assert.False(quest.NamedByOpening || named.NamedByOpening || bare.NamedByOpening);
     }
 
-    /// <summary>A chain is named for its first quest (WSR5), so its key is searched in that quest's words, not the last step's.</summary>
+    /// <summary>A chain is named for its first quest, so its key is searched in that quest's words, not the last step's.</summary>
     [Fact]
     public async Task A_chains_ticket_is_its_first_quests()
     {
@@ -196,7 +196,7 @@ public sealed class QuestNameTests
     public void A_pattern_is_expanded_with_its_ticket_and_an_empty_slug_takes_its_separator(string pattern, string slug, string? ticket, string branch) =>
         Assert.Equal(branch, BranchPatterns.Expand(pattern, new LandingNames("0fda18", slug, "engine", "s1a2b3c4", ticket)));
 
-    /// <summary>The slug is the title's words with every web address left out: a title that was only one leaves nothing.</summary>
+    /// <summary>The slug is the title's words with every web address left out: a title that is only one leaves nothing.</summary>
     [Theory]
     [InlineData("https://acme.atlassian.net/browse/ABC-123", "")]
     [InlineData("Saving fails, see HTTP://acme.test/x and www.acme.test", "saving-fails-see-and")]
@@ -207,7 +207,7 @@ public sealed class QuestNameTests
         Assert.Equal(slug, BranchPatterns.Slug(title));
 
     /// <summary>
-    /// The key's shape (PROCESS1b-i): a regular expression both readers of a rule take the same way, at most 64 characters, no
+    /// The key's shape: a regular expression both readers of a rule take the same way, at most 64 characters, no
     /// <c>(?</c> group, no back-reference, a letter escaped only as one of the classes and controls both engines share, and no
     /// empty class; only on a branch rule whose pattern says <c>{ticket}</c>.
     /// </summary>
@@ -242,7 +242,7 @@ public sealed class QuestNameTests
     }
 
     /// <summary>
-    /// The one commit's message where the rule squashes (PROCESS1b-ii, D164's PROCESS1b-ii note point 2): the quest's title as its
+    /// The one commit's message where the rule squashes: the quest's title as its
     /// subject, the session's commits' subjects oldest first as its body, one line each, and the line naming the session last.
     /// </summary>
     [Fact]

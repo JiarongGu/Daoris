@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1g (the co-agent design §2.6, §9 row 7): a hand-over waits for what the outgoing part left running before the next part starts
+/// A hand-over waits for what the outgoing part left running before the next part starts
 /// in the same tree. The old conversation's turn starts a command in the background through a step that exits at once, so the command is
-/// nobody's child, out of reach of a walk of the agent's tree, as FG5's dev servers were; the turn ends with it still running. Handed over,
+/// nobody's child, out of reach of a walk of the agent's tree, as a dev server is; the turn ends with it still running. Handed over,
 /// the new part's agent finds it gone as it starts, and the old record says what Daoris ended and waited for.
 /// </summary>
 /// <remarks>

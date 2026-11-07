@@ -6,9 +6,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BGWAIT1: a driven turn that ends while the session's own background work still runs is not a question. Against a fake
-/// agent over in-memory streams, shaped on the frames <c>claude-agent-acp</c> 0.79.0 sent in CONSOLE2a's first run
-/// (docs/2026-09-28-console2-streams-evidence.md): <c>async_task_spawned</c> for a command its Bash call backgrounded, the
+/// A driven turn that ends while the session's own background work still runs is not a question. Against a fake
+/// agent over in-memory streams, shaped on the frames <c>claude-agent-acp</c> 0.79.0 sent in a real run:
+/// <c>async_task_spawned</c> for a command its Bash call backgrounded, the
 /// call itself completed at once with <c>backgrounded: true</c>, the prompt answered <c>end_turn</c> while the task ran, and
 /// the task ended later by <c>async_task_state_update</c>, <c>stopped</c> then <c>completed</c> in one breath. The agent's last
 /// words are the owner's real case (2026-10-08). No process and no model, so the fast half.
@@ -63,7 +63,7 @@ public sealed class AcpBackgroundTests
             }
         }
 
-        /// <summary>Each prompt's request id, in the order sent (RUNENDS1: the case answers one of them later).</summary>
+        /// <summary>Each prompt's request id, in the order sent (a case answers one of them later).</summary>
         public IReadOnlyList<int> PromptIds
         {
             get
@@ -112,7 +112,7 @@ public sealed class AcpBackgroundTests
         + update + "}}";
 
     /// <summary>
-    /// BGWAIT2: how <c>claude-agent-acp</c> 0.79.0 says a turn its harness started itself has ended (<c>acp-agent.js</c>
+    /// How <c>claude-agent-acp</c> 0.79.0 says a turn its harness started itself has ended (<c>acp-agent.js</c>
     /// l.3505-3521): the result's <c>usage_update</c>, carrying the result's origin, an autonomous kind (l.233-239). No turn is
     /// answered for it (l.3546-3573), and the idle after it is absorbed (l.2864-2875).
     /// </summary>
@@ -120,7 +120,7 @@ public sealed class AcpBackgroundTests
         """{"sessionUpdate":"usage_update","used":61234,"size":200000,"cost":{"amount":1.25,"currency":"USD"},"_meta":{"_claude/origin":{"kind":"""
         + JsonSerializer.Serialize(kind) + "}}}";
 
-    /// <summary>The woken turn's end as the install's record said it on 2026-10-19: the same <c>usage</c> twice, and no turn.</summary>
+    /// <summary>The woken turn's end as an install's record says it: the same <c>usage</c> twice, and no turn.</summary>
     private static void WokenEnds(Agent agent)
     {
         agent.Push(Update(WokenEnd()));
@@ -140,7 +140,7 @@ public sealed class AcpBackgroundTests
     internal static string Said(string text) =>
         Update("""{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":""" + JsonSerializer.Serialize(text) + "}}");
 
-    /// <summary>What <c>claude-agent-acp</c> answers at <c>initialize</c> (CONSOLE2a; docs/2026-10-03-steer-evidence.md §1).</summary>
+    /// <summary>What <c>claude-agent-acp</c> answers at <c>initialize</c>.</summary>
     private const string Queues = """{"protocolVersion":1,"agentCapabilities":{"_meta":{"claudeCode":{"promptQueueing":true}}}}""";
 
     /// <summary>The last words of the driven session in the owner's real case, which parked on them.</summary>
@@ -149,7 +149,7 @@ public sealed class AcpBackgroundTests
         + "I'll pick up when they finish.";
 
     /// <summary>
-    /// The turn the wire recorded, in its order: the Bash call that backgrounds the gates, the task announced and its
+    /// The turn as the wire carries it, in its order: the Bash call that backgrounds the gates, the task announced and its
     /// output named, the call's result naming the task, the call completed at once, and the agent's words. The task is
     /// still running when the prompt is answered.
     /// </summary>
@@ -163,22 +163,22 @@ public sealed class AcpBackgroundTests
         agent.Push(Said(Waiting));
     }
 
-    /// <summary>The task's ending as the wire said it: <c>stopped</c>, then <c>completed</c> in the same millisecond.</summary>
+    /// <summary>The task's ending as the wire says it: <c>stopped</c>, then <c>completed</c> in the same millisecond.</summary>
     private static void GatesEnd(Agent agent, string task = "bdd847eoq", string state = "completed")
     {
         agent.Push(Update($$"""{"sessionUpdate":"async_task_state_update","asyncTaskId":"{{task}}","state":"stopped"}"""));
         agent.Push(Update($$"""{"sessionUpdate":"async_task_state_update","asyncTaskId":"{{task}}","state":"{{state}}"}"""));
     }
 
-    /// <summary>The background command of the BGWAIT3 cases, as the spawn names it.</summary>
+    /// <summary>The background command of the unseen-ending cases, as the spawn names it.</summary>
     private const string Census = "dotnet test --filter Census";
 
-    /// <summary>The last words of the install's session in BGWAIT3's case, said after its command had ended unseen.</summary>
+    /// <summary>The last words of the install's session in the unseen-ending case, said after its command ended unseen.</summary>
     private const string ClosesWhenItEnds =
         "Everything else is committed. The census is still building and running in the background. I'll close the quest when it finishes.";
 
     /// <summary>
-    /// BGWAIT3: a background Bash as <c>claude-agent-acp</c> 0.84.0 says it (<c>async-tasks.js</c>, read): the spawn goes at the
+    /// A background Bash as <c>claude-agent-acp</c> 0.84.0 says it (<c>async-tasks.js</c>, read): the spawn goes at the
     /// call's result, which the adapter reads for the task's id and its output file, and names the command, the file and the
     /// call; then the call's result, the task named in its text; then the agent's other calls, the last one completed.
     /// </summary>
@@ -214,7 +214,7 @@ public sealed class AcpBackgroundTests
             get { lock (_lines) return [.. _lines]; }
         }
 
-        /// <summary>How many events of <paramref name="kind"/> the record kept, a meter or a call among them (RUNENDS1).</summary>
+        /// <summary>How many events of <paramref name="kind"/> the record kept, a meter or a call among them.</summary>
         public int Count(string kind)
         {
             lock (_lines) return _kinds.Count(each => each == kind);
@@ -235,7 +235,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// A prompt after the first, which the install's adapter never answered (BGWAIT2): its echo took the woken turn, whose
+    /// A prompt after the first, which the install's adapter never answers: its echo took the woken turn, whose
     /// result is autonomous and settles nothing. Told to <paramref name="goOn"/>, and never answered here either.
     /// </summary>
     internal static string? Unanswered(JsonElement frame, TaskCompletionSource<int> goOn)
@@ -253,12 +253,12 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// 🔴 The owner's real case (2026-10-08): the agent backgrounded its gates, said it would pick up when they finish, and
-    /// ended its turn holding its quest. The session is not closed at the turn's end, so the record stays working and
-    /// nothing parks it on the person. 🔴 BGWAIT2 (2026-10-19, "one session just failed"): when the work ends the harness
+    /// 🔴 The agent backgrounds its gates, says it will pick up when they finish, and
+    /// ends its turn holding its quest. The session is not closed at the turn's end, so the record stays working and
+    /// nothing parks it on the person. When the work ends the harness
     /// wakes its agent itself, and that turn's end, the result's autonomous <c>usage_update</c>, is the turn's end the run
-    /// waits for. Daoris's go-on, sent into that turn, was never answered on the install, and the session waited 48 minutes
-    /// for the timeout, which recorded it failed: here no second prompt goes, and one sent would never be answered.
+    /// waits for. Daoris's go-on, sent into that turn, is never answered on the install, and the session would wait for
+    /// the timeout, which records it failed: here no second prompt goes, and one sent would never be answered.
     /// </summary>
     [Fact]
     public async Task A_turn_that_ends_on_its_own_background_work_keeps_working_and_ends_with_the_turn_its_harness_woke()
@@ -302,7 +302,7 @@ public sealed class AcpBackgroundTests
         Assert.DoesNotContain("session/close", agent.Methods);
         Assert.Equal(1, Volatile.Read(ref asked));
 
-        // The work ends; the harness wakes its agent itself, with no prompt open (CONSOLE2a), and says when its turn ended.
+        // The work ends; the harness wakes its agent itself, with no prompt open, and says when its turn ended.
         GatesEnd(agent);
         agent.Push(Said("The gates passed."));
         WokenEnds(agent);
@@ -325,7 +325,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// 🔴 BGWAIT2d: the work the note names is what the wire announced, read before the quest's read, never after it. Work that ends
+    /// 🔴 The work the note names is what the wire announced, read before the quest's read, never after it. Work that ends
     /// while the quest is read is still the work the turn ended on, so its note names it, never "ended: " and an empty list.
     /// </summary>
     [Fact]
@@ -371,9 +371,9 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// 🔴 BGWAIT1b: the answered park's resumed run waits on its own background work as a start does. The agent offers
+    /// 🔴 The answered park's resumed run waits on its own background work as a start does. The agent offers
     /// <c>session/resume</c>, the resumed conversation's turn backgrounds the gates and ends, and the run waits for them and
-    /// ends with the turn its harness woke (BGWAIT2), as a start's does.
+    /// ends with the turn its harness woke, as a start's does.
     /// </summary>
     [Fact]
     public async Task A_resumed_run_waits_on_its_own_background_work_as_a_start_does()
@@ -426,7 +426,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// The go-on is the fallback (BGWAIT2): where the harness wakes nothing, no update of any kind for the bound after the work
+    /// The go-on is the fallback: where the harness wakes nothing, no update of any kind for the bound after the work
     /// ended, Daoris's own prompt says the work ended, as a fresh turn the adapter answers, and its answer is the turn's end.
     /// </summary>
     [Fact]
@@ -476,7 +476,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// 🔴 A woken turn whose end the wire never says keeps the session waiting, bounded by the session's timeout as before, and
+    /// 🔴 A woken turn whose end the wire never says keeps the session waiting, bounded by the session's timeout, and
     /// nothing is sent into it: silence is never read as its end. Not an end: no <c>usage_update</c> at all (the adapter sends
     /// none where it measured no usage, <c>acp-agent.js</c> l.3505), one under a subagent's session, an origin that is no
     /// object, or that names no kind, a prompted turn's origin, and a <c>usage_update</c> with no origin.
@@ -671,7 +671,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// The person's words said around the woken turn's end go as they always did, once, and are answered: before it (the turn
+    /// The person's words said around the woken turn's end go as they always do, once, and are answered: before it (the turn
     /// still runs), at it (answered in the breath the turn ends), and after it (while the session waits again, on work the woken
     /// turn started). Nothing of Daoris's own goes beside them, and nothing is cancelled.
     /// </summary>
@@ -760,8 +760,8 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// A woken turn that ends in the breath the agent's stream does ends the run as that turn: the wire said it ended before
-    /// it said nothing more, so the run is not the door's failure.
+    /// A woken turn that ends in the breath the agent's stream does ends the run as that turn: the wire says it ended before
+    /// it says nothing more, so the run is not the door's failure.
     /// </summary>
     [Fact]
     public async Task A_woken_turn_that_ends_as_the_stream_does_ends_the_run_as_that_turn()
@@ -800,9 +800,9 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// 🔴 BGWAIT2c: work whose ending the wire said before its stream ended has ended, however the wait is woken. The reader
-    /// hands the ending to the wait and reads on, so the stream can be over before the wait looks; the wait that then read the
-    /// stream's end first failed a session whose work had ended, as the case above did now and then alone. Here the test's own
+    /// 🔴 Work whose ending the wire says before its stream ends has ended, however the wait is woken. The reader
+    /// hands the ending to the wait and reads on, so the stream can be over before the wait looks; a wait that read the
+    /// stream's end first would fail a session whose work had ended, as the case above could now and then alone. Here the test's own
     /// thread is the reader, the ending and the stream's end one after the other, the wait parked before either: run many
     /// times, since which of the two the wait sees first is the thread pool's to say.
     /// </summary>
@@ -872,9 +872,9 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// 🔴 BGWAIT2: the timeout kills the agent's process, and its stream ends. Told to the door before the kill, that end is
-    /// said as the timeout, by its own coded line, never as the agent having exited: the install's record said "the ACP
-    /// agent's stream ended before it answered — the agent exited" of a session the timeout had killed.
+    /// 🔴 The timeout kills the agent's process, and its stream ends. Told to the door before the kill, that end is
+    /// said as the timeout, by its own coded line, never as the agent having exited, as in "the ACP
+    /// agent's stream ended before it answered — the agent exited" of a session the timeout killed.
     /// </summary>
     [Fact]
     public async Task A_stream_the_timeout_ends_while_the_session_waits_is_said_as_the_timeout()
@@ -953,7 +953,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// A stream that ended before the timeout came keeps its own diagnosis: the agent exited, and a timeout said once the
+    /// A stream that ends before the timeout comes keeps its own diagnosis: the agent exited, and a timeout said once the
     /// stream is over changes nothing it said. The other order of the same two events as the case above.
     /// </summary>
     [Fact]
@@ -988,10 +988,10 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// 🔴 A real question still parks: a turn that ends with no background work running, and none whose ending its agent was
-    /// never told, ends the run as before, one prompt and the close, and nothing asks whether to wait. A task that ended inside
+    /// 🔴 A real question still parks: a turn that ends with no background work running, and none whose ending its agent is
+    /// never told, ends the run, one prompt and the close, and nothing asks whether to wait. A task that ended inside
     /// the turn, before a step its agent took after it, is neither running nor owed a wake: the harness handed the ending to
-    /// that step (BGWAIT3).
+    /// that step.
     /// </summary>
     [Fact]
     public async Task A_turn_that_asks_with_no_background_work_running_ends_as_before()
@@ -1033,7 +1033,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// D105 stands where the quest does not wait on it: a turn whose session no longer holds its quest as a park would (it
+    /// Where the quest does not wait on the work, it ends with the turn: a turn whose session no longer holds its quest as a park would (it
     /// closed it, or asked another repository) ends with its background work still running, and that work ends with the
     /// session. The driver is asked once, and its no is the run's end.
     /// </summary>
@@ -1072,7 +1072,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// The agent of BGWAIT3's case: its first prompt backgrounds the census, takes another step, and the census ends after that
+    /// The agent of the unseen-ending case: its first prompt backgrounds the census, takes another step, and the census ends after that
     /// step, while the agent writes its last words, which say it still runs; any later prompt is never answered.
     /// </summary>
     private static Agent EndsUnseen(TaskCompletionSource<int> goOn) => new((frame, self) =>
@@ -1096,10 +1096,10 @@ public sealed class AcpBackgroundTests
     });
 
     /// <summary>
-    /// 🔴 BGWAIT3, the owner's report (2026-10-21): a driven session on the install backgrounded a test class, and the command
-    /// ended about three seconds before its turn did, after the agent's last step, while it wrote that the command still ran and
-    /// that it would close its quest when it finished. Nothing was running at the turn's end, so the session closed and parked
-    /// on the person (等你处理), five seconds before the harness would have woken its agent with the ending it was never handed.
+    /// 🔴 A driven session on the install backgrounds a test class, and the command
+    /// ends about three seconds before its turn does, after the agent's last step, while it writes that the command still runs and
+    /// that it will close its quest when it finishes. Nothing is running at the turn's end, so the session would close and park
+    /// on the person (等你处理), five seconds before the harness would wake its agent with the ending it is never handed.
     /// An ending said after the turn's last step is owed a wake: the session waits, working, for the turn its harness wakes, and
     /// that turn's end ends the run, with no go-on and no second ask of the quest.
     /// </summary>
@@ -1128,7 +1128,7 @@ public sealed class AcpBackgroundTests
         Assert.DoesNotContain("session/close", agent.Methods);
         Assert.Equal(1, Volatile.Read(ref asked));
 
-        // The harness wakes its agent with the ending, as it does for work that ends after the turn (CONSOLE2a), and its turn ends.
+        // The harness wakes its agent with the ending, as it does for work that ends after the turn, and its turn ends.
         agent.Push(Said("The census passed. Closing the quest."));
         WokenEnds(agent);
         var outcome = await EndsWithoutGoOn(run, goOn.Task);
@@ -1148,7 +1148,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// BGWAIT3's fallback is BGWAIT2's: where no turn wakes within the bound after an ending the agent was never handed, Daoris's
+    /// The fallback is the go-on's: where no turn wakes within the bound after an ending the agent is never handed, Daoris's
     /// go-on tells it, as a fresh turn the adapter answers. That tells it the ending: the go-on's answer ends the run, and no
     /// second go-on follows it.
     /// </summary>
@@ -1178,12 +1178,12 @@ public sealed class AcpBackgroundTests
 
         Assert.Equal("end_turn", outcome.StopReason);
         Assert.Equal(["initialize", "session/new", "session/prompt", "session/prompt", "session/close"], agent.Methods);
-        // Asked at the turn's end, and again as the go-on goes, which goes only to a quest that still waits (RUNENDS1).
+        // Asked at the turn's end, and again as the go-on goes, which goes only to a quest that still waits.
         Assert.Equal(2, Volatile.Read(ref asked));
     }
 
     /// <summary>
-    /// D105 stands for an ending the agent was never handed as it does for work still running: where the quest does not wait on
+    /// An ending the agent is never handed is treated as work still running: where the quest does not wait on
     /// it, the session ends at its turn's end, the driver asked once.
     /// </summary>
     [Fact]
@@ -1209,10 +1209,10 @@ public sealed class AcpBackgroundTests
         Assert.DoesNotContain(record.Lines, line => line.StartsWith("note:", StringComparison.Ordinal));
     }
 
-    /// <summary>How often the DONEEND1 tests' sessions read their quest again while they wait: many times in a breath.</summary>
+    /// <summary>How often the closed-quest tests' sessions read their quest again while they wait: many times in a breath.</summary>
     private static readonly TimeSpan Look = TimeSpan.FromMilliseconds(30);
 
-    /// <summary>A session that reads its quest again every <see cref="Look"/> while it waits on its background work (DONEEND1).</summary>
+    /// <summary>A session that reads its quest again every <see cref="Look"/> while it waits on its background work.</summary>
     private static AcpSession Looking(Agent agent, Record record, TimeSpan wake) =>
         new(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event, wakeQuiet: wake) { BackgroundLook = Look };
 
@@ -1237,9 +1237,9 @@ public sealed class AcpBackgroundTests
     });
 
     /// <summary>
-    /// 🔴 DONEEND1 (2026-10-20): a session that waits on its own long test run while its quest closes done went on waiting until the
-    /// timeout killed it, holding a slot and every count, because the quest was read once, at the turn's end. It is read again while
-    /// the session waits, and once it no longer waits on the work (BGWAIT1's own condition, <c>Observation.Parks</c>), the run ends:
+    /// 🔴 A session that waits on its own long test run while its quest closes done would go on waiting until the
+    /// timeout killed it, holding a slot and every count, if the quest were read once, at the turn's end. It is read again while
+    /// the session waits, and once it no longer waits on the work (<c>Observation.Parks</c>), the run ends:
     /// the session closes, the work still running ends with it and is named, and nothing of Daoris's goes on.
     /// </summary>
     [Fact]
@@ -1285,7 +1285,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// DONEEND1: a turn its harness woke for one piece of work, which closes the quest while another piece still runs, is the
+    /// A turn its harness woke for one piece of work, which closes the quest while another piece still runs, is the
     /// agent's own turn, never cut: the run ends at that turn's said end, the work still running ending with it. The looks end
     /// with the wait.
     /// </summary>
@@ -1314,8 +1314,8 @@ public sealed class AcpBackgroundTests
         // The gates end while the build runs; the harness wakes its agent, which closes its quest in that turn.
         GatesEnd(agent);
         agent.Push(Said("The gates passed; the quest is done."));
-        // The woken turn read before the quest reads closed: a look between the push and the read saw no turn running and ended the
-        // run (the full set on 5e8caed81).
+        // The woken turn is read before the quest reads closed: a look between the push and the read would see no turn running and
+        // end the run.
         await Poll.Until(
             () => record.Lines.Any(line => line.Contains("The gates passed", StringComparison.Ordinal)),
             () => string.Join(" | ", record.Lines), Poll.Patience);
@@ -1343,7 +1343,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// DONEEND1: a look that cannot be read says nothing, so the session goes on waiting and looks again; silence is never read
+    /// A look that cannot be read says nothing, so the session goes on waiting and looks again; silence is never read
     /// as the quest's close. The look that reads it closed ends the run.
     /// </summary>
     [Fact]
@@ -1411,8 +1411,8 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// The person's words still reach a session that waits on its background work: on the next-step door they go at once
-    /// (STEER1), are answered in a turn of their own, and the session goes on waiting for the work, then is told it ended.
+    /// The person's words still reach a session that waits on its background work: on the next-step door they go at once,
+    /// are answered in a turn of their own, and the session goes on waiting for the work, then is told it ended.
     /// </summary>
     [Fact]
     public async Task Words_said_while_the_session_waits_go_at_once_and_the_wait_goes_on()
@@ -1443,7 +1443,7 @@ public sealed class AcpBackgroundTests
         var record = new Record();
         var inbox = new DrivenInbox(_ => { });
 
-        // Nothing wakes the agent here, so the go-on goes once the bound has passed (BGWAIT2).
+        // Nothing wakes the agent here, so the go-on goes once the bound has passed.
         var run = Session(agent, record, Soon)
             .RunAsync(
                 "D:/fam/Game", "close quest #12", CancellationToken.None, inbox: inbox, waitsOnBackground: _ => Task.FromResult(true));
@@ -1563,7 +1563,7 @@ public sealed class AcpBackgroundTests
         Assert.Contains("`Build` (completed)", resumed);
     }
 
-    // ——— RUNENDS1 (D83's note): a run whose quest is done ends, whatever its agent scheduled for itself. Every case runs on a clock the
+    // ——— A run whose quest is done ends, whatever its agent scheduled for itself. Every case runs on a clock the
     // test moves (MovedClock, .claude/knowledge/held-clocks.md), the look, the wake's quiet and QuestDoneQuiet at the session's own
     // defaults, so no bound is the machine's and no case sleeps on one.
 
@@ -1572,7 +1572,7 @@ public sealed class AcpBackgroundTests
     /// <summary>The bound a silent turn of a closed quest is left after: <see cref="AcpSession.QuestDoneQuiet"/>'s default.</summary>
     private static readonly TimeSpan DoneQuiet = TimeSpan.FromMinutes(5);
 
-    /// <summary>The wakeup an agent schedules for itself, as its harness's call for it shows on the wire (2026-10-28's session).</summary>
+    /// <summary>The wakeup an agent schedules for itself, as its harness's call for it shows on the wire.</summary>
     private static void SchedulesAWakeup(Agent agent)
     {
         agent.Push(Update("""{"sessionUpdate":"tool_call","toolCallId":"toolu_wake","title":"ScheduleWakeup","kind":"other","status":"pending","rawInput":{"delaySeconds":1200,"reason":"re-check Docker","prompt":"<<autonomous-loop-dynamic>>"}}"""));
@@ -1589,7 +1589,7 @@ public sealed class AcpBackgroundTests
         };
 
     /// <summary>
-    /// The agent of RUNENDS1's cases: its first prompt backgrounds the gates and schedules a wakeup, and ends; each later prompt goes to
+    /// The agent of the closed-quest cases: its first prompt backgrounds the gates and schedules a wakeup, and ends; each later prompt goes to
     /// <paramref name="later"/>, never answered where it answers null; the client's own answers and notices are read and answered by nothing.
     /// </summary>
     private static Agent Wakeup(Func<JsonElement, Agent, string?>? later = null, Action<Agent>? more = null) => new((frame, self) =>
@@ -1615,7 +1615,7 @@ public sealed class AcpBackgroundTests
     });
 
     /// <summary>
-    /// The quest as RUNENDS1's cases read it: waiting while the session's clock is before <paramref name="from"/>; from then each read is
+    /// The quest as the closed-quest cases read it: waiting while the session's clock is before <paramref name="from"/>; from then each read is
     /// held until the test closes it (<see cref="Close"/>), and answered no. The answer runs the session's look on before Close returns, so
     /// the bound counts from the test's own step, never from a thread's.
     /// </summary>
@@ -1676,7 +1676,7 @@ public sealed class AcpBackgroundTests
             () => string.Join(" | ", record.Lines), Poll.Patience);
     }
 
-    /// <summary>The provider's 529 as <c>claude-agent-acp</c> 0.84.0 answers a prompt with it (AGENTERRORS1a): a transient failure.</summary>
+    /// <summary>The provider's 529 as <c>claude-agent-acp</c> 0.84.0 answers a prompt with it: a transient failure.</summary>
     private static string Failed(JsonElement request) =>
         JsonSerializer.Serialize(new
         {
@@ -1692,7 +1692,7 @@ public sealed class AcpBackgroundTests
 
     private static readonly ProviderRegistry Built = ProviderRegistry.Built();
 
-    /// <summary>A transient retry on <paramref name="clock"/>, its owner's check <paramref name="wanted"/> (AGENTERRORS1a).</summary>
+    /// <summary>A transient retry on <paramref name="clock"/>, its owner's check <paramref name="wanted"/>.</summary>
     private static TransientRetry Retry(MovedClock clock, Func<CancellationToken, Task<bool>>? wanted = null) => new()
     {
         Read = refused => AgentErrors.Read(
@@ -1706,7 +1706,7 @@ public sealed class AcpBackgroundTests
         $$$"""{"jsonrpc":"2.0","id":{{{id}}},"method":"session/request_permission","params":{"sessionId":"s-1","toolCall":{"toolCallId":"c9","title":"docker restart","kind":"execute"},"options":[{"optionId":"yes","name":"Allow","kind":"allow_once"},{"optionId":"no","name":"Reject","kind":"reject_once"}]}}""";
 
     /// <summary>
-    /// A record that marks a kept word attempted only when the test answers (COWORK1c, <see cref="ISaidDoor"/>): the mark a delivery waits
+    /// A record that marks a kept word attempted only when the test answers (<see cref="ISaidDoor"/>): the mark a delivery waits
     /// on before the wire, held. Its answer runs the delivery on before it returns.
     /// </summary>
     private sealed class HeldMarks : ISaidDoor
@@ -1741,8 +1741,8 @@ public sealed class AcpBackgroundTests
         "note:— its quest no longer waits while the session waited for its agent's next turn: the session ends, and no go-on is sent.";
 
     /// <summary>
-    /// 🔴 RUNENDS1: the turn an agent's own scheduled wakeup starts carries no origin <c>claude-agent-acp</c> calls autonomous, so
-    /// its end is never said, and DONEEND1's wait for the turn to be idle held a session whose quest had closed until the timeout or
+    /// 🔴 The turn an agent's own scheduled wakeup starts carries no origin <c>claude-agent-acp</c> calls autonomous, so
+    /// its end is never said, and a wait for the turn to be idle would hold a session whose quest had closed until the timeout or
     /// the parent's stop, a seat of the one ready account held all the while. A turn that speaks is never cut; one that has said
     /// nothing for <see cref="AcpSession.QuestDoneQuiet"/> with the quest closed is left, said, and the work it left ends with the
     /// session.
@@ -1773,7 +1773,7 @@ public sealed class AcpBackgroundTests
         await Poll.Until(
             () => record.Lines.Contains($"message:{WokenSilent}"), () => string.Join(" | ", record.Lines), Poll.Patience);
         await ClosesAtTheLookAsync(clock, quest, t0 + Minute);
-        // The turn said its last word at t0: it is left once the bound has passed from the close's read.
+        // The turn says its last word at t0: it is left once the bound has passed from the close's read.
         await PassAsync(clock, t0 + Minute + DoneQuiet);
         await EndsWithoutGoOn(run, goOn.Task);
 
@@ -1789,8 +1789,8 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// 🔴 RUNENDS1 after review: the quest read closed while work still ran, and the last of that work ended while the silent turn ran
-    /// on. The first build dropped the close it had read there, and the wait for the wake began a new minute's look and a new quiet. The
+    /// 🔴 The quest reads closed while work still runs, and the last of that work ends while the silent turn runs
+    /// on. The close is not dropped there, or the wait for the wake would begin a new minute's look and a new quiet. The
     /// close is carried into that wait, and the turn is left at the bound counted from the close's read.
     /// </summary>
     [Fact]
@@ -1833,7 +1833,7 @@ public sealed class AcpBackgroundTests
         Assert.Equal(TurnLeft, record.Lines[^1]);
     }
 
-    /// <summary>RUNENDS1: the same turn, once all the session's work has ended, which went through BGWAIT2's wait for the harness's wake.</summary>
+    /// <summary>The same turn, once all the session's work has ended, which goes through the wait for the harness's wake.</summary>
     [Fact]
     public async Task A_wakeup_turn_that_never_says_its_end_does_not_hold_a_session_whose_quest_closed_after_its_work_ended()
     {
@@ -1863,9 +1863,9 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// 🔴 RUNENDS1, the install's session (2026-10-28): the work ended, its harness woke the agent, whose turn closed the quest; a
-    /// second piece of work ended after that turn, owing another wake that never came, and the quiet then sent Daoris's go-on to a
-    /// quest that had closed, a turn the agent answered by scheduling again. The quest is read again while the session waits for
+    /// 🔴 The work ends, its harness wakes the agent, whose turn closes the quest; a
+    /// second piece of work ends after that turn, owing another wake that never comes, and the quiet must not then send Daoris's go-on to a
+    /// quest that has closed, a turn the agent would answer by scheduling again. The quest is read again while the session waits for
     /// the wake, and a closed one ends it: no go-on.
     /// </summary>
     [Fact]
@@ -1896,9 +1896,9 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// 🔴 RUNENDS1 after review (finding 3): both production bounds are a minute, so the wake's quiet ran out while the look a minute
-    /// later was still reading the quest, closed meanwhile, and the go-on went to the closed quest before the look could say so. The go-on
-    /// now goes only where a look taken at its own moment says the quest still waits.
+    /// 🔴 Both production bounds are a minute, so the wake's quiet can run out while the look a minute
+    /// later is still reading the quest, closed meanwhile, and the go-on must not go to the closed quest before the look can say so. The go-on
+    /// goes only where a look taken at its own moment says the quest still waits.
     /// </summary>
     [Fact]
     public async Task The_go_on_reads_the_quest_at_its_own_moment_so_a_quest_closed_while_a_look_is_still_reading_gets_none()
@@ -1931,7 +1931,7 @@ public sealed class AcpBackgroundTests
         reading.SetResult(true);
     }
 
-    /// <summary>RUNENDS1: a session whose quest still waits is untouched: a silent turn its harness started is waited for as before.</summary>
+    /// <summary>A session whose quest still waits is untouched: a silent turn its harness started is waited for.</summary>
     [Fact]
     public async Task A_wakeup_turn_that_says_nothing_is_still_waited_for_while_the_quest_waits()
     {
@@ -1964,7 +1964,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// RUNENDS1, a word the person sent: said into the turn the agent's own wakeup started, it is on the wire, and that turn never
+    /// A word the person sent: said into the turn the agent's own wakeup started, it is on the wire, and that turn never
     /// answers it. A session whose quest closed leaves the turn at the bound and says the word never reached its agent, as any session's
     /// end does: not lost, not sent again, and not handed back, since it went.
     /// </summary>
@@ -2007,9 +2007,9 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// 🔴 RUNENDS1 after review (finding 1): the go-on went, the person's urgent word followed it onto the wire, and the go-on then failed
+    /// 🔴 The go-on goes, the person's urgent word follows it onto the wire, and the go-on then fails
     /// transiently. Its episode settles the wire first, waiting on the word's answer, which the silent turn never gives. The quest then
-    /// closed and the turn was left at the bound, but that wait could not be cut, and the session held its seat for ever. Every wait of
+    /// closes and the turn is left at the bound, but a wait that could not be cut would hold the session's seat for ever. Every wait of
     /// Daoris's own ends with the cut: the session ends, the word said uncertain under its id, never sent again, and no try follows it.
     /// </summary>
     [Fact]
@@ -2054,9 +2054,9 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// 🔴 RUNENDS1 after review (finding 2): the person's urgent word was on its way to the wire, its mark on the record still awaited,
-    /// when the session left its silent turn. Its delivery was then in no list the run's end reads, neither handed back nor said unreached,
-    /// and once the mark landed it was written to the closed session. The run's door shuts at that decision: the word went back to the
+    /// 🔴 The person's urgent word is on its way to the wire, its mark on the record still awaited,
+    /// when the session leaves its silent turn. Its delivery would then be in no list the run's end reads, neither handed back nor said unreached,
+    /// and once the mark landed it would be written to the closed session. The run's door shuts at that decision: the word goes back to the
     /// driver, and the mark that lands after writes nothing. A word held for the turn's end goes back with it.
     /// </summary>
     [Fact]
@@ -2101,9 +2101,9 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// 🔴 RUNENDS1, second read (finding 1): the go-on failed on the provider's side, and its episode's owner's check never answered.
-    /// The quest then closed with nothing running, but the end waited on that check, which did not observe the session's cut, and the
-    /// session held its seat for ever. Every wait on the end's path observes the cut: the session ends, and no try is written.
+    /// 🔴 The go-on fails on the provider's side, and its episode's owner's check never answers.
+    /// The quest then closes with nothing running, but an end that waited on that check without observing the session's cut would
+    /// hold the session's seat for ever. Every wait on the end's path observes the cut: the session ends, and no try is written.
     /// </summary>
     [Fact]
     public async Task An_owner_check_that_never_answers_does_not_hold_a_session_whose_quest_closed()
@@ -2168,8 +2168,8 @@ public sealed class AcpBackgroundTests
     });
 
     /// <summary>
-    /// 🔴 RUNENDS1, second read (finding 3): the session's own cut, where it leaves a closed quest's silent turn, cancelled the go-on's
-    /// prompt, and the cancel went on the wire to whatever turn ran then, a turn that spoke after the quiet was read among them. Only the
+    /// 🔴 The session's own cut, where it leaves a closed quest's silent turn, must not cancel the go-on's
+    /// prompt, or the cancel would go on the wire to whatever turn ran then, a turn that speaks after the quiet is read among them. Only the
     /// person's stop puts a cancel on the wire; the session's cut stops its own waits and nothing more.
     /// </summary>
     [Fact]
@@ -2202,7 +2202,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// RUNENDS1: a failure that is not the session's cut stays the run's: the agent's stream ending while a closed quest's go-on is
+    /// A failure that is not the session's cut stays the run's: the agent's stream ending while a closed quest's go-on is
     /// awaited ends the run as the door's failure, never as the quest's close.
     /// </summary>
     [Fact]
@@ -2232,8 +2232,8 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// 🔴 RUNENDS1, second read (finding 2): the go-on's own look takes a service read's time, and the harness started a turn meanwhile;
-    /// the read said the quest still waits, and the go-on went into that turn, which never answers it, holding the session for good. The
+    /// 🔴 The go-on's own look takes a service read's time, and the harness may start a turn meanwhile;
+    /// if the read then says the quest still waits, the go-on must not go into that turn, which never answers it. The
     /// go-on is decided as it is written, under the write lock: no update read since the wake's quiet, no turn running, no prompt open and
     /// no close read. Here it is not written, and the turn its harness started ends the wait.
     /// </summary>
@@ -2269,8 +2269,8 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// 🔴 RUNENDS1, second read (finding 2): the go-on's own look was slow; the next look read the quest closed; then the slow read said it
-    /// still waited, and the go-on went, since the close was not read again after the slow read. The go-on's write reads the close again.
+    /// 🔴 The go-on's own look is slow; the next look reads the quest closed; then the slow read says it
+    /// still waits, and the go-on must not go. The go-on's write reads the close again.
     /// Here a word of the person's is on the wire meanwhile, so the session waits on, and leaves that turn at the bound.
     /// </summary>
     [Fact]
@@ -2321,7 +2321,7 @@ public sealed class AcpBackgroundTests
         await PassAsync(clock, t0 + 2 * Minute);
         await Poll.Until(() => Volatile.Read(ref reads) >= 3, () => "the look did not read the quest");
 
-        // Then the slow read answers that the quest still waited when it was taken.
+        // Then the slow read answers that the quest still waited when it is taken.
         slow.SetResult(true);
         Assert.Equal(["close quest #12", "skip the census"], agent.Prompts);
 
@@ -2332,8 +2332,8 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// 🔴 RUNENDS1, second read (finding 5): the first thing the harness's wake did was ask a permission the person answers, with no word
-    /// or call before it, so the turn read as not begun, and a closed quest's session judged it idle and ended, releasing the person's
+    /// 🔴 The first thing the harness's wake does can be to ask a permission the person answers, with no word
+    /// or call before it, so the turn would read as not begun, and a closed quest's session would judge it idle and end, releasing the person's
     /// request unanswered. A request with no prompt open begins the harness's turn, as its first word would, and a held one is never idle.
     /// </summary>
     [Fact]
@@ -2372,8 +2372,8 @@ public sealed class AcpBackgroundTests
         Element("""{"sessionUpdate":"async_task_state_update","asyncTaskId":"b1","state":"completed"}""");
 
     /// <summary>
-    /// 🔴 RUNENDS1, second read (finding 4): a closed quest's turn with a call open is waited for with no bound, and once the agent's
-    /// stream is over nothing can close that call: the wait observed only its own signal and timer, and held the session. The stream's
+    /// 🔴 A closed quest's turn with a call open is waited for with no bound, and once the agent's
+    /// stream is over nothing can close that call: a wait observing only its own signal and timer would hold the session. The stream's
     /// end ends every wait of the session's, this one among them.
     /// </summary>
     [Fact]
@@ -2394,7 +2394,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// 🔴 RUNENDS1, second read (finding 5): a request the harness's wake begins with is that turn beginning, as its first word would be,
+    /// 🔴 A request the harness's wake begins with is that turn beginning, as its first word would be,
     /// and a request held for the person is never idle; the quiet counts from its answer.
     /// </summary>
     [Fact]
@@ -2416,7 +2416,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// RUNENDS1 after review (finding 6): a turn of a closed quest that keeps speaking is never cut, however long it runs: each word it
+    /// A turn of a closed quest that keeps speaking is never cut, however long it runs: each word it
     /// says counts the bound again, and one said a second before the bound holds the session past it. Silent at last, it is left.
     /// </summary>
     [Fact]
@@ -2458,7 +2458,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// RUNENDS1 after review (finding 6): what counts as the turn speaking is its own words, thinking, calls and plan, and its requests;
+    /// What counts as the turn speaking is its own words, thinking, calls and plan, and its requests;
     /// its background work's progress and its meters are not. A turn silent but for those is left at the bound counted from its last word.
     /// </summary>
     [Fact]
@@ -2498,7 +2498,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// RUNENDS1 after review (finding 6): a call the turn has open is not silence: a long command says nothing until it ends. The bound
+    /// A call the turn has open is not silence: a long command says nothing until it ends. The bound
     /// counts from the call's end, never across it.
     /// </summary>
     [Fact]
@@ -2534,7 +2534,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// RUNENDS1 after review (finding 6): a permission request held for the person is not silence: the turn waits on the person, and the
+    /// A permission request held for the person is not silence: the turn waits on the person, and the
     /// bound counts from the answer, never across the hold.
     /// </summary>
     [Fact]
@@ -2570,7 +2570,7 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// RUNENDS1 after review (finding 6): a permission request the session refuses at once is still the turn doing something: asked a
+    /// A permission request the session refuses at once is still the turn doing something: asked a
     /// second before the bound, it holds the session past it.
     /// </summary>
     [Fact]
@@ -2609,7 +2609,7 @@ public sealed class AcpBackgroundTests
         Assert.Equal(TurnLeft, record.Lines[^1]);
     }
 
-    // ——— LANDBACK1 part 2 (D87's note): a turn that ends with its quest done and its tree uncommitted is not the session's end. The tree
+    // ——— A turn that ends with its quest done and its tree uncommitted is not the session's end. The tree
     // and the quest are the driver's to read (TurnCarries); here each case hands the session what that look says, on the same moved clock.
 
     private const string CarriedWords = "Your quest is done, but your tree has 2 uncommitted path(s).";
@@ -2658,7 +2658,7 @@ public sealed class AcpBackgroundTests
     }, flushing);
 
     /// <summary>
-    /// 🔴 TURNWAIT1's case: the session closed its quest done with its fix uncommitted and ended its turn, and the run ended with it, the fix
+    /// 🔴 The session closes its quest done with its fix uncommitted and ends its turn: the run must not end with it, the fix
     /// left in its tree. The run carries it on in Daoris's own words, once, and ends once the tree is clean.
     /// </summary>
     [Fact]
@@ -2677,7 +2677,7 @@ public sealed class AcpBackgroundTests
         Assert.Equal(["turn:end_turn", $"note:{CarriedNote}", "turn:end_turn"], record.Lines);
     }
 
-    /// <summary>A session that never commits is carried on twice (<see cref="LandCarry.Bound"/>), the bound said, and then ends as today.</summary>
+    /// <summary>A session that never commits is carried on twice (<see cref="LandCarry.Bound"/>), the bound said, and then ends.</summary>
     [Fact]
     public async Task A_session_that_never_commits_is_carried_on_twice_then_the_bound_is_said_and_it_ends()
     {
@@ -2697,8 +2697,8 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
-    /// 🔴 The merge queue's load (2026-10-31): each carry-on's answer was read before its write returned, and its turn's end was kept before
-    /// the note that said it went. Here every carry-on's write returns only once its answer's turn is in the record: the notes still lead.
+    /// 🔴 Under load, each carry-on's answer can be read before its write returns, and its turn's end must not be kept before
+    /// the note that says it went. Here every carry-on's write returns only once its answer's turn is in the record: the notes still lead.
     /// </summary>
     [Fact]
     public async Task A_carry_on_answered_before_its_write_returns_is_said_before_its_turn_ends()

@@ -6,15 +6,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT2a-ii (D163 point 2; the mixed agents design §3, §5): a helper's whole pass on the real path, with no model. A working
+/// A helper's whole pass on the real path, with no model. A working
 /// session's ask on file is taken at a look, judged by the person's rule, started in a clone of its own made by real git, run as
 /// a real process (node, the stand-in harness every gate needs) that answers through the answer file its connector's
 /// <c>helper_answer</c> writes, or says words and ends; the helper's state names it BEFORE its turn; and the answer reaches the
 /// asker as a word marked as the helper's, through a stand-in for the local host's two doors.
 /// </summary>
 /// <remarks>
-/// Real git and a real process against a stand-in service on a loopback port, so the class is in the real-process half (MOD8): a
-/// branch's worktree cannot run it, the parent runs it on the merge. It mirrors <see cref="ReviewTreeTests"/>' pass, the
+/// Real git and a real process against a stand-in service on a loopback port, so the class is in the real-process half. It mirrors <see cref="ReviewTreeTests"/>' pass, the
 /// reviewer's, which this reuses machine for machine.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
@@ -133,7 +132,7 @@ public sealed class HelperProcessTests : IDisposable
     }
 
     /// <summary>
-    /// HELPPLUG1c (D170 point 4): a helper is handed the skills plugins hand sessions, by the harness's own door on either wire,
+    /// A helper is handed the skills plugins hand sessions, by the harness's own door on either wire,
     /// and the folder goes with its session.
     /// </summary>
     [Theory]
@@ -188,7 +187,7 @@ public sealed class HelperProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 MODELROLE1e (D205 §3.5(f), the row's test): a helper whose agent refuses the Helper actor's model on its first account, at the open
+    /// A helper whose agent refuses the Helper actor's model on its first account, at the open
     /// and before any prompt, handles the refusal inside its own call. The refused record ends `choice-not-offered`, the agent's other
     /// account is walked with the first passed, the ask is started again naming the replacement (so `helper_answer` finds its ask by the
     /// session that runs), and the ask is answered once, by the replacement.
@@ -233,7 +232,7 @@ public sealed class HelperProcessTests : IDisposable
     }
 
     /// <summary>
-    /// STOPRACE1: a stop made while the helper's protocol handshake is still open is the person's end, not a failed wire. An agent
+    /// A stop made while the helper's protocol handshake is still open is the person's end, not a failed wire. An agent
     /// that never answers makes that moment certain.
     /// </summary>
     [Fact]
@@ -277,8 +276,8 @@ public sealed class HelperProcessTests : IDisposable
     }
 
     /// <summary>
-    /// The protocol door's helper on the stub's accounts (MODELROLE1e): it lists Claude's three model values, refuses at the set the models
-    /// its argument names for its account, as Claude's door was measured to (MODELROLE1a), and answers through the file its tool writes.
+    /// The protocol door's helper on the stub's accounts: it lists Claude's three model values, refuses at the set the models
+    /// its argument names for its account, as Claude's door does, and answers through the file its tool writes.
     /// </summary>
     private string RefusingHelper()
     {
@@ -328,12 +327,11 @@ public sealed class HelperProcessTests : IDisposable
     }
 
     /// <summary>
-    /// The stub helper: a harness with real mechanics and no model. It says what it saw (including the state file it was started
+    /// The stub helper: a harness with real mechanics and no model. It says what it saw (including the state file it is started
     /// under), then either answers through the file <c>helper_answer</c> writes or ends having said words only.
     /// </summary>
     /// <remarks>
-    /// Its files are where the home's table puts the helpers entry, as the service's <c>HelperBox</c> finds them for the real tool
-    /// (HOMEFIX1): a stub that joined the old place wrote its answer beside the ask, in both places, and the driver refused it.
+    /// Its files are where the home's table puts the helpers entry, as the service's <c>HelperBox</c> finds them for the real tool.
     /// </remarks>
     private string Agent(bool answers)
     {

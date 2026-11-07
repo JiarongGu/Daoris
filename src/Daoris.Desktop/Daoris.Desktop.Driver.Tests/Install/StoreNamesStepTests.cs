@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1t (D232): the desktop store's names are today's after the home's migration, a copy of the store kept first. A binding's
+/// The desktop store's names are today's after the home's migration, a copy of the store kept first. A binding's
 /// door is <c>bindings.door</c>, and the staffing's projection of <c>driver.json</c>'s old keys, which no code reads, is gone.
 /// </summary>
 public sealed class StoreNamesStepTests : IDisposable

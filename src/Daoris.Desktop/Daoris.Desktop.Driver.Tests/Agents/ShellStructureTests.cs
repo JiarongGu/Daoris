@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row h's edges (the agent-provider design §2.7, §4.6): the transports' one shell sits in Agents and reaches the session's
+/// The transports' one shell sits in Agents and reaches the session's
 /// git through the port Workplace installs, so it names no type of Workplace, Work orders or Context; and Platform names nothing of a spawn.
 /// Each held twice: on the driver's tree, and by a planted breach the structure check refuses.
 /// </summary>

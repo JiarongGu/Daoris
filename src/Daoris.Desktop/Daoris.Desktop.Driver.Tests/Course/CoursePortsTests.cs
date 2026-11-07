@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-xiv, the Course cuts: the seams they add. The lower homes and each higher spelling held to them, the types Course now
+/// The seams the Course cuts add. The lower homes and each higher spelling held to them, the types Course
 /// declares or holds answering as the runner's, the turns' and Ask Daoris's own did, the installed help judges being Help's and a supplied
 /// stand-in used where the loop's watch is built, and a missing operation required only where it is reached. What the cuts keep is
 /// <c>CourseBoundaryTests</c>'.

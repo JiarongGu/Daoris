@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The ports the events declare and the subdomains above them answer (FOUNDATION1 mod-vii): where the files of a home topic are, for a topic
+/// The ports the events declare and the subdomains above them answer: where the files of a home topic are, for a topic
 /// whose files belong to another subdomain. Each owner installs its answer when the driver's assembly loads, so every watch the look, the
 /// shell's loop or a test builds hears exactly the files it always did; a topic nobody answers throws where a watch asks for it.
 /// </summary>

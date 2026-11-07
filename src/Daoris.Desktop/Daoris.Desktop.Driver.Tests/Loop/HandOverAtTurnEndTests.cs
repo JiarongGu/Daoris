@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT1c (D191: "a quest session's ask under `on` is taken at its turn's end, never mid-turn, its note written before the session
-/// stops"): what a quest session's run asks at its turn's end, before its record is concluded. Where the rule or the person's yes lets
+/// A quest session's ask under `on` is taken at its turn's end, never mid-turn, its note written before the session
+/// stops: what a quest session's run asks at its turn's end, before its record is concluded. Where the rule or the person's yes lets
 /// the ask go, the quest is held on the next agent with the agent's note and the run is told which agent, to conclude the record as
 /// handed over; where it waits on the person, or is refused, nothing is taken and the run concludes as it would.
 /// </summary>
@@ -102,7 +102,7 @@ public sealed class HandOverAtTurnEndTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 MODELROLE1e (D205 §3.5(e), round 4's Opus N1): under <c>on</c> an agent's ask takes the next entry of Build's effective order on
+    /// 🔴 Under <c>on</c> an agent's ask takes the next entry of Build's effective order on
     /// another agent, not the roster's next tool, and the quest's next start asks that entry's model (<c>handed</c>).
     /// </summary>
     [Fact]
@@ -120,7 +120,7 @@ public sealed class HandOverAtTurnEndTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 MODELROLE1e (D205 §4.2, Opus B8, the row's proof): a Build whose agent's accounts are all cooling hands nothing over by itself,
+    /// 🔴 A Build whose agent's accounts are all cooling hands nothing over by itself,
     /// under <c>ask</c> and under <c>on</c> alike, since the rule governs an agent's ask and Daoris's offer is taken only on the person's press;
     /// the press names the actor's next choice and is kept whatever the rule says.
     /// </summary>
@@ -148,7 +148,7 @@ public sealed class HandOverAtTurnEndTests : IDisposable
         var pressed = await QuestHandOver.AskAsync(
             client, moves, _ => new HandOverAgent([], Unadopted: true), "s1", next.Harness, null, HandOverWhy.Limit, HandOverBy.Person);
         Assert.True(pressed.Kept, pressed.Message);
-        // FOUNDATION1f-v part c: the press is kept as a driven move in the store, never a box.
+        // The press is kept as a driven move in the store, never a box.
         Assert.Equal("dsh", new MoveStore(_home).Standing("s1")!.Agent);
         Assert.Null(new HandOverBox(_home).Read("s1"));
     }

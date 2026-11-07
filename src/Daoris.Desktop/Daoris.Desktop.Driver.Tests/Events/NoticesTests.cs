@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// NOTIFY2f's record (D196 point 6, the notification design §2.5): <c>data/notices.json</c>, a map by id written under the keep lock from
+/// The notices record, <c>data/notices.json</c>, a map by id written under the keep lock from
 /// its read to its rename by any writer, each notice keeping its workspace and what a later build wrote inside it, a week and at most
 /// 200 kept, a record it cannot take set aside by the writer alone, a newer one left as it is, a refused write said and dropped. Files
 /// only, in a home under <c>_fixtures/</c>; another process is its lock file, the contract between processes.
@@ -52,7 +52,7 @@ public sealed class NoticesTests : IDisposable
     }
 
     /// <summary>
-    /// NOTIFY2g (§2.4): a conversation's answer is one notice per conversation, its workspace with it; a later answer renews it unread at
+    /// A conversation's answer is one notice per conversation, its workspace with it; a later answer renews it unread at
     /// its moment, and an older or the same one changes nothing.
     /// </summary>
     [Fact]

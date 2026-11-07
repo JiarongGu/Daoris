@@ -66,7 +66,7 @@ internal sealed class ScenarioDialect : INativeDialect
 
         object frameOf = t switch
         {
-            // The agent's own initialization, or a later status frame that only carries an id (AG35).
+            // The agent's own initialization, or a later status frame that only carries an id.
             "start" when frame.Root.TryGetProperty("announced", out var announced) && announced.ValueKind == JsonValueKind.False =>
                 new { type = "system", subtype = "status", session_id = Text("id") },
             "start" => new { type = "system", subtype = "init", session_id = Text("id"), cwd = ".", tools = Array.Empty<string>(), model = "m" },
@@ -85,7 +85,7 @@ internal sealed class ScenarioDialect : INativeDialect
                     },
                 },
             },
-            // The tool's own message, which no model wrote, saying the model it was handed is unknown (D205's pipe exception).
+            // The tool's own message, which no model wrote, saying the model it is handed is unknown.
             "refused" => new { type = "assistant", error = "model_not_found", message = new { role = "assistant", model = "<synthetic>", content = Array.Empty<object>() } },
             "end" when Text("kind") is not null => Result(failed: true),
             "end" => Result(failed: false),

@@ -7,8 +7,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// `daoris-driver` itself (DRV8a, D104): run with no verb to read its usage, it started a headless loop on
-/// the install's home, and that loop took a quest two seconds before the desktop's own.
+/// `daoris-driver` itself: run with no verb it prints its usage and starts no headless loop on
+/// the install's home.
 /// </summary>
 /// <remarks>
 /// <para>The host as built, started as a person starts it, against a stand-in service on a loopback port
@@ -21,11 +21,11 @@ public sealed class DriverHostTests : IDisposable
 {
     private readonly string _scratch = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "driver-host", Guid.NewGuid().ToString("N")[..8]);
 
-    // `DAORIS_HOME`, and a folder beside it that the retired driver-file variable names (ONEWAY1c-i).
+    // `DAORIS_HOME`, and a folder beside it that a retired driver-file variable names.
     private readonly string _home;
     private readonly string _elsewhere;
 
-    // The home's lease (HOMELEASE1), DRV8a's lock grown to cover every writer.
+    // The home's lease, which covers every writer.
     private string LockFile => LeaseIn(_home);
 
     private static string LeaseIn(string home) => DaorisHome.Entry(home, HomeEntry.HomeLease);
@@ -39,7 +39,7 @@ public sealed class DriverHostTests : IDisposable
 
     public void Dispose() => GitSeed.Discard(_scratch);
 
-    /// <summary>🔴 No verb: the usage, exit 2 — and nothing reached the service, and no lock was taken.</summary>
+    /// <summary>🔴 No verb: the usage, exit 2 — and nothing reaches the service, and no lock is taken.</summary>
     [Fact]
     public async Task A_bare_invocation_prints_the_usage_and_starts_nothing()
     {
@@ -118,8 +118,8 @@ public sealed class DriverHostTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HOMELEASE1: a verb that changes the home holds its lease while it acts alone, and lets it go as it ends, whatever its
-    /// answer; beside a running desktop it acts as it always did, holding nothing and leaving the desktop's lease as it was.
+    /// 🔴 A verb that changes the home holds its lease while it acts alone, and lets it go as it ends, whatever its
+    /// answer; beside a running desktop it acts holding nothing and leaving the desktop's lease as it is.
     /// </summary>
     [Fact]
     public async Task A_verb_holds_the_home_for_its_act_alone_and_acts_beside_a_running_desktop()
@@ -138,7 +138,7 @@ public sealed class DriverHostTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 ONEWAY1c-i (the oneway design §2 S2): the variable that once named another driver file is read nowhere. A verb run with it
+    /// 🔴 The variable that named another driver file is read nowhere. A verb run with it
     /// set still writes the home's own <c>driver.json</c> and takes the lease in <c>DAORIS_HOME</c>; the file it names is never made,
     /// and the folder it is in is never held.
     /// </summary>

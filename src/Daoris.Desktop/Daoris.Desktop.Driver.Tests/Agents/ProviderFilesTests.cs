@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row b, part 3 (the agent-provider design §11 row b; D213's row b part 3 note): each provider's <c>provider.json</c> is the
+/// Each provider's <c>provider.json</c> is the
 /// one place a tool reads its stand-in facts, so it is held to <c>Providers.Built()</c> field by field and the C# list and the files cannot
 /// drift. A stand-in's program sits in its folder by one layout, <c>Agents/Providers/&lt;Folder&gt;/Program/**</c>, and the driver project's
 /// one glob carries every file of it beside the driver, so this test's own build output holds it.

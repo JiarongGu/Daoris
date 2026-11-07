@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// What every kind's proposal tests stand on (MOD6): a home of the test's own with the proposals folder, the
+/// What every kind's proposal tests stand on: a home of the test's own with the proposals folder, the
 /// file as the service's box writes it, the machine a proposal is judged against, and an Apply through
 /// <see cref="HelpStandInDoors"/>, whose doors each kind's test file adds.
 /// </summary>
@@ -38,9 +38,9 @@ public abstract class HelpProposalsFixture : IDisposable
     protected static readonly HelpMachineFacts Facts = new(
         Repositories: ["engine", "game"], Workspaces: ["default", "work"], Agents: ["claude-code", "claude-code-acp"])
     {
-        // HELP10: what the loop's last tick parked by its strikes, the verdict the quest drawer shows Retry by.
+        // What the loop's last tick parked by its strikes, the verdict the quest drawer shows Retry by.
         Parked = [new ParkedQuest("q1a2b3c4", "engine")],
-        // SESSUX1b: what its last look held by the person's stop, and the session each was stopped in.
+        // What its last look held by the person's stop, and the session each is stopped in.
         Held = [new HeldQuest("q2taken0", "engine", "s7a8b9c0")],
     };
 
@@ -99,7 +99,7 @@ public abstract class HelpProposalsFixture : IDisposable
     };
 
     /// <summary>
-    /// This machine's sessions as Sessions' list reads them (SESSUX1h2b): each record, where the list places it with its
+    /// This machine's sessions as Sessions' list reads them: each record, where the list places it with its
     /// archive mark, the one a tree or a landing keeps, and the ledger's judgement of a delete one names.
     /// </summary>
     protected static readonly HelpMachineFacts SessionsHere = Machine with
@@ -145,7 +145,7 @@ public abstract class HelpProposalsFixture : IDisposable
     protected static HelpProposal Of(string kind, string door, string? target = null, string? value = null) =>
         new("p6", kind, door, target, null, value, null, "the person asked", "h1", "proposed");
 
-    /// <summary>A plugin installed under the test's home, as `daoris plugin add` leaves one (D64).</summary>
+    /// <summary>A plugin installed under the test's home, as `daoris plugin add` leaves one.</summary>
     protected HelpMachineFacts WithPlugin(string id, string points = "\"work/land\"", bool enabled = true)
     {
         var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,id);
@@ -170,8 +170,8 @@ public abstract class HelpProposalsFixture : IDisposable
 }
 
 /// <summary>
-/// The doors a proposal is applied through, each a stand-in that records the call (HELP6). Like
-/// <see cref="IHelpDoors"/>, its doors are grouped by kind, in the order of the per-kind interfaces (MOD6, PART5): one
+/// The doors a proposal is applied through, each a stand-in that records the call. Like
+/// <see cref="IHelpDoors"/>, its doors are grouped by kind, in the order of the per-kind interfaces: one
 /// class, because a test sets a kind's answer in an object initializer (<c>new HelpStandInDoors { Deleted = … }</c>).
 /// </summary>
 public sealed class HelpStandInDoors : IHelpDoors
@@ -200,13 +200,13 @@ public sealed class HelpStandInDoors : IHelpDoors
         return Task.CompletedTask;
     }
 
-    /// <summary>What the use's door refuses with, as `ACCOUNT_USE` would; null to make it (TOOL4g).</summary>
+    /// <summary>What the use's door refuses with, as `ACCOUNT_USE` would; null to make it.</summary>
     public string? UseRefusal { get; init; }
 
     public Task SetAccountUseAsync(string harness, UseChange change, CancellationToken ct)
     {
         if (UseRefusal is { } refused) throw new DriverException(refused);
-        // SWITCH1d: the switch and each window of the curve, as `session=0:90;weekly=0:30,100:100`.
+        // The switch and each window of the curve, as `session=0:90;weekly=0:30,100:100`.
         var curve = change.Curve is { } set
             ? string.Join(";", UseCurve.Windows.Where(window => set[window] is not null)
                 .Select(window => $"{window}={string.Join(",", set[window]!.Select(point => $"{point.Elapsed}:{point.Used}"))}"))
@@ -216,10 +216,10 @@ public sealed class HelpStandInDoors : IHelpDoors
         return Task.CompletedTask;
     }
 
-    /// <summary>What the order's door refuses with, as `ACCOUNT_USE` would; null to make it (TOOL4l-b).</summary>
+    /// <summary>What the order's door refuses with, as `ACCOUNT_USE` would; null to make it.</summary>
     public string? OrderRefusal { get; init; }
 
-    /// <summary>Whether the account was still cooling when the ready's door ended it (TOOL4l-b).</summary>
+    /// <summary>Whether the account is still cooling when the ready's door ends it.</summary>
     public bool ReadyEnded { get; init; } = true;
 
     public Task<bool> ReadyAccountAsync(string harness, string? account, CancellationToken ct)
@@ -236,7 +236,7 @@ public sealed class HelpStandInDoors : IHelpDoors
     }
 
     // IHelpAskDoors
-    /// <summary>What the ask door answers (ASKQUESTS1: the ids it names are what the conversation's list keeps); by default an ask and no quest.</summary>
+    /// <summary>What the ask door answers (the ids it names are what the conversation's list keeps); by default an ask and no quest.</summary>
     public AskAnswer Asked { get; set; } = new(true, "Asked.", "a1", null);
 
     public Task<AskAnswer> AskAsync(string workspace, string sentence, string? review, string? reviewWords, CancellationToken ct, string? shortTitle = null)
@@ -257,7 +257,7 @@ public sealed class HelpStandInDoors : IHelpDoors
     }
 
     // IHelpClearDoors
-    /// <summary>What the screen's clear answers; by default every unit sent was listed and none went.</summary>
+    /// <summary>What the screen's clear answers; by default every unit sent is listed and none goes.</summary>
     public HistoryOutcome? HistoryCleared { get; set; }
 
     public Task<HistoryOutcome> ClearHistoryAsync(HistoryScope scope, string id, IReadOnlyList<HistoryUnitName> units, CancellationToken ct)
@@ -305,7 +305,7 @@ public sealed class HelpStandInDoors : IHelpDoors
     }
 
     // IHelpPluginDoors
-    /// <summary>What the plugin door refuses in its own words, for a plugin that moved since the card was drawn.</summary>
+    /// <summary>What the plugin door refuses in its own words, for a plugin that moved since the card is drawn.</summary>
     public string? PluginRefusal { get; init; }
 
     public void AddPlugin(string folder)
@@ -329,8 +329,8 @@ public sealed class HelpStandInDoors : IHelpDoors
     }
 
     /// <summary>
-    /// The home whose approvals a plugin's approve and withdraw write, through <see cref="HelpGrants"/> as the page's press does
-    /// (HELPPLUG1c); null records the call only.
+    /// The home whose approvals a plugin's approve and withdraw write, through <see cref="HelpGrants"/> as the page's press does;
+    /// null records the call only.
     /// </summary>
     public string? GrantsHome { get; init; }
 
@@ -415,7 +415,7 @@ public sealed class HelpStandInDoors : IHelpDoors
     public Task<SyncPlan> SyncPlanAsync(string? repository, string? workspace, CancellationToken ct)
     {
         if (SyncRefusal is { } refused) throw new DriverException(refused);
-        // BRSCOPE1b: the workspace is recorded only where one is named, so a call without one reads as it always did.
+        // The workspace is recorded only where one is named, so a call without one records none.
         Calls.Add($"TREES_SYNC_PLAN {repository}".TrimEnd() + (workspace is null ? "" : $" in:{workspace}"));
         return Task.FromResult(Listed);
     }

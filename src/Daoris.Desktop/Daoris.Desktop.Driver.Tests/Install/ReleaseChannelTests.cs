@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 <b>A managed Claude Code comes from Anthropic's own release bucket, verified</b> (AGT2b) — the
+/// 🔴 <b>A managed Claude Code comes from Anthropic's own release bucket, verified</b> — the
 /// desktop's half of <c>daoris agent pin claude-code</c>, and the twin of the CLI's
 /// <c>channels.test.ts</c> and <c>openpgp.test.ts</c>. The manifest is verified against its detached
 /// OpenPGP signature under the PINNED release key, and only then is its SHA-256 trusted for the
@@ -17,7 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>test/fixtures/vendor/</c> — one copy of the evidence for both artefacts, kept byte for byte by
 /// <c>.gitattributes</c> — and every request goes to a transport the test holds.</para>
 ///
-/// <para>Codex's channel is the driver's too since PUSH1f2e (<see cref="CodexReleases"/>): its door is <c>codex-acp</c>, an npm
+/// <para>Codex's channel is the driver's too (<see cref="CodexReleases"/>): its door is <c>codex-acp</c>, an npm
 /// package, and its accounts' holder, <c>codex</c>, pins from the release's own package. Each run stages under its own process's
 /// name and publishes by one move (<see cref="ReleaseChannels"/>).</para>
 /// </remarks>
@@ -169,7 +169,7 @@ public sealed class ReleaseChannelTests : IDisposable
         Assert.Contains(said, line => line.Contains("signature"));
         Assert.Contains(said, line => line.Contains("SHA-256"));
 
-        // STEWARDROLE1a-i (D209 §6.1): the hash that verified lands beside the binary, and names it; a changed binary is told apart.
+        // The hash that verified lands beside the binary, and names it; a changed binary is told apart.
         var verified = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(binary));
         Assert.Equal(verified, VerifiedBinary.Recorded(where, executable));
         Assert.Equal(verified, VerifiedBinary.HashOf(executable));
@@ -286,7 +286,7 @@ public sealed class ReleaseChannelTests : IDisposable
 
     /// <summary>
     /// The vendor's layout is asked first — <c>bin/&lt;binary&gt;</c> — and npm's still resolves,
-    /// because a pin npm made before AGT2b is an install somebody made. The CLI's
+    /// because a pin npm made earlier is an install somebody made. The CLI's
     /// <c>managedBinary</c> is the twin.
     /// </summary>
     [Fact]
@@ -303,7 +303,7 @@ public sealed class ReleaseChannelTests : IDisposable
         Assert.Equal(vendor, HarnessSettings.ManagedBinary(_home, "claude-code", "2.1.281", ["claude"]));
     }
 
-    // ——— Codex: the package, by both of its published hashes, unpacked whole (PUSH1f2e, the CLI's `channels.ts` ported).
+    // ——— Codex: the package, by both of its published hashes, unpacked whole.
 
     private static string Codex(string version, string file) => $"{CodexReleases.Base}/{version}/{file}";
 
@@ -497,7 +497,7 @@ public sealed class ReleaseChannelTests : IDisposable
         Assert.NotNull(HarnessSettings.ManagedBinary(_home, "codex", "0.156.1", toolchain.Program.Binary));
     }
 
-    // ——— Each run stages under its own name (the alone-path design §1.4).
+    // ——— Each run stages under its own name.
 
     [Fact]
     public async Task Two_runs_of_one_version_each_stage_their_own_and_the_second_keeps_the_first_s()
@@ -626,7 +626,7 @@ public sealed class ReleaseChannelTests : IDisposable
         throw new InvalidOperationException("the vendor fixtures were not found above the test binaries");
     }
 
-    /// <summary>A transport over a table of URLs, and the URLs it was asked for, in order.</summary>
+    /// <summary>A transport over a table of URLs, and the URLs it is asked for, in order.</summary>
     private sealed class Served(Dictionary<string, byte[]> files) : HttpMessageHandler
     {
         public List<string> Asked { get; } = [];

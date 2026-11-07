@@ -3,16 +3,16 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// One answer for Daoris and every child (TOOLS5, D121 §2.4): every process the driver starts is handed the tools'
+/// One answer for Daoris and every child: every process the driver starts is handed the tools'
 /// environment, or names why not, and none is started by a bare name in its initializer. A source scan rather than
 /// a unit test, as <see cref="NoConsoleWindowTests"/> holds <c>CreateNoWindow</c>: the property is one every spawn
 /// site must carry, and the next one written will not know to.
 /// </summary>
 /// <remarks>
 /// <para><b>Handed</b> is a call to <c>Tools.Hand(</c> after the initializer, before the start's first
-/// <c>return</c>, <c>Process.Start(</c> or start through the gate (<c>ProcessStarts.Shared.StartAsync(</c>, PROCSTART2, or the agents' route
-/// <c>AgentStarts.StartAsync(</c>, TERMTRUST1a). <b>Why not</b> is a comment directly above the statement that says
-/// <c>Not the tools' environment (TOOLS5):</c> and gives the reason — a Daoris program, the system's own.</para>
+/// <c>return</c>, <c>Process.Start(</c> or start through the gate (<c>ProcessStarts.Shared.StartAsync(</c>, or the agents' route
+/// <c>AgentStarts.StartAsync(</c>). <b>Why not</b> is a comment directly above the statement that says
+/// <c>Not the tools' environment:</c> and gives the reason — a Daoris program, the system's own.</para>
 /// <para>The terminal builds its environment block for <c>CreateProcessW</c> itself, so it is held by name: its
 /// block is built through <c>Tools.ChildEnvironment(</c>. The modules hold their own starts in
 /// <c>EveryModuleChildIsHandedTheToolsTests</c>.</para>
@@ -30,7 +30,7 @@ public sealed class EveryChildIsHandedTheToolsTests
         var root = SourceRoot();
         var (spawns, missing) = Scan(root, Projects);
 
-        // Spawning's shell, the probe, an agent action, a hook, and git's one start (TOOLS5 made git's two one).
+        // Spawning's shell, the probe, an agent action, a hook, and git's one start.
         Assert.True(spawns >= 5, $"expected to find the driver's spawn sites, found {spawns}");
         Assert.True(missing.Count == 0, "a start that is not handed the tools' environment runs whatever PATH it inherited:\n"
             + string.Join('\n', missing));

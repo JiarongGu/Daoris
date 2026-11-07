@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The marker a shell Daoris started carries (PUSH1f2a, D194 point 5, the alone-path design §2): its session's record id,
+/// The marker a shell Daoris started carries: its session's record id,
 /// <c>DAORIS_SESSION_ID</c>, by which <c>daoris</c> refuses a person's press acting in its own process. Every start that
 /// hands it is listed here, so a new one is seen; the window's terminal panel removes it from the shells it starts, which are the person's.
 /// </summary>

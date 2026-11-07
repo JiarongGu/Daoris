@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STAFFPOLICY1e2 (D226; the staff policy design §4): what the course decides at the look for a quest whose last part ended failed or quiet,
+/// What the course decides at the look for a quest whose last part ended failed or quiet,
 /// and how many tries a driven run's episode makes against a conversation's five. The quiet case is the decision over an ended record: a
-/// quiet run is never ended by a policy (D200), so a record still running has nothing to decide, and only an ended one carries on.
+/// quiet run is never ended by a policy, so a record still running has nothing to decide, and only an ended one carries on.
 /// </summary>
 public sealed class StaffCourseLookTests : IDisposable
 {

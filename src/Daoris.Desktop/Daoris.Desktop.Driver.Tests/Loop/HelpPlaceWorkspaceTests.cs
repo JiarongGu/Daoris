@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ASKSCOPE1a (D158's ASKSCOPE1 note, points 1-3): Ask Daoris's conversation is placed in the workspace its window was on at the
+/// Ask Daoris's conversation is placed in the workspace its window is on at the
 /// press. The name reaches the ledger's open in its body and chooses the account as that workspace's starts do; none sent is
 /// today's start, the default circle's. The real client over the stand-in ledger, and nothing spawned, so the fast half.
 /// </summary>
@@ -43,7 +43,7 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
             new(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: variable, ProbeByPresence: true);
         var adapters = _adapters = TestDoors.Registry(
             Door(Toolchain("DOOR_HOME"), full),
-            // MODELROLE1d: a second agent with a mode that asks nothing, and one that holds no conversation, for the actors' walks.
+            // A second agent with a mode that asks nothing, and one that holds no conversation, for the actors' walks.
             Door(Toolchain("FULL_DOOR_HOME"), "bypassPermissions", "full-door"),
             Door(Toolchain("MUTE_HOME"), name: "mute", interactive: false));
         var settings = DaorisHome.Entry(_home, HomeEntry.Harnesses);
@@ -64,8 +64,8 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     private static DriverConfig Config => ActorChoices.With(DriverConfig.Empty, "ask-daoris", [new ActorChoice("door")]);
 
     /// <summary>
-    /// 🔴 The workspace named reaches the ledger's open; none named sends none. A second in the same workspace is the ledger's
-    /// refusal, naming the first. The accounts are one set (D197 point 1): a workspace chooses none of its own.
+    /// The workspace named reaches the ledger's open; none named sends none. A second in the same workspace is the ledger's
+    /// refusal, naming the first. The accounts are one set: a workspace chooses none of its own.
     /// </summary>
     [Fact]
     public async Task The_workspace_reaches_the_ledger_s_open_and_its_account_is_the_set_s()
@@ -88,8 +88,8 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     }
 
     /// <summary>
-    /// ASKSCOPE1b (D158's ASKSCOPE1 note point 4): each conversation is opened in its workspace's own room folder, which its record
-    /// keeps as its tree, so the harness keeps it there; none named opens in <c>help</c>, as every conversation before did.
+    /// Each conversation is opened in its workspace's own room folder, which its record
+    /// keeps as its tree, so the harness keeps it there; none named opens in <c>help</c>.
     /// </summary>
     [Fact]
     public async Task Each_workspace_s_conversation_is_opened_in_its_own_room_folder()
@@ -106,8 +106,8 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     }
 
     /// <summary>
-    /// HELPMODE1a1 (D183 point 3): in full access, a start on an agent with no mode that asks nothing is refused before anything is
-    /// opened, naming the agent; restricted places it as before.
+    /// In full access, a start on an agent with no mode that asks nothing is refused before anything is
+    /// opened, naming the agent; restricted places it.
     /// </summary>
     [Fact]
     public async Task Full_access_on_an_agent_with_no_such_mode_is_refused_before_anything_is_opened()
@@ -126,9 +126,9 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     }
 
     /// <summary>
-    /// HELPMODE1a1 (D183 point 3): a start is placed under the mode read when it runs, so one whose mode changed to full since it was
+    /// A start is placed under the mode read when it runs, so one whose mode changed to full after it is
     /// placed, as one going on would, on an agent with no such mode ends saying why before anything is spawned; restricted reaches
-    /// the spawn as before.
+    /// the spawn.
     /// </summary>
     [Fact]
     public async Task A_start_its_agent_cannot_run_in_full_access_ends_saying_why_before_any_spawn()
@@ -150,7 +150,7 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     }
 
     /// <summary>
-    /// HELPMODE1a2 (D183 point 3): the ledger's open is told the mode the start got, the effective one, which its record keeps; a start
+    /// The ledger's open is told the mode the start got, the effective one, which its record keeps; a start
     /// in the default mode tells it restricted.
     /// </summary>
     [Fact]
@@ -168,7 +168,7 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HELPMODE1a2 (D183 point 3): a conversation going on after the person's mode changed runs under the new one, and its record is
+    /// A conversation going on after the person's mode changed runs under the new one, and its record is
     /// told so before anything is spawned; one going on under the mode it last ran under tells the record nothing.
     /// </summary>
     [Fact]
@@ -198,8 +198,8 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     }
 
     /// <summary>
-    /// The active sessions the loop and the page read carry their workspace (ASKSCOPE1a): what the start hands the running one
-    /// of its own workspace by. A record from before, which names none, is <c>default</c>, never guessed.
+    /// The active sessions the loop and the page read carry their workspace: what the start hands the running one
+    /// of its own workspace by. A record that names none is <c>default</c>, never guessed.
     /// </summary>
     [Fact]
     public void An_active_session_reads_its_workspace_and_one_naming_none_reads_default()
@@ -213,7 +213,7 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     }
 
     /// <summary>
-    /// What a new conversation, or one going on, sets aside (ASKHIST1, now per workspace): the running ones of its own workspace
+    /// What a new conversation, or one going on, sets aside: the running ones of its own workspace
     /// alone, never its own; another workspace's runs on beside it. A workspace unnamed is <c>default</c>'s.
     /// </summary>
     [Fact]
@@ -227,7 +227,7 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     }
 
     /// <summary>
-    /// MODELROLE1d (D205 §4.1, §3.5(e)'s access bullet): Ask Daoris's order is walked choice by choice, each entry judged first by
+    /// Ask Daoris's order is walked choice by choice, each entry judged first by
     /// <c>HelpAccess.For</c> under the mode standing now, so full access passes an agent with no mode that asks nothing
     /// (<c>no-posture</c>) and opens on the next, carrying its model; its record names that agent.
     /// </summary>
@@ -247,8 +247,8 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     }
 
     /// <summary>
-    /// MODELROLE1d (D205 §4.1, §13: no-posture and restricted Ask Daoris as before): an order as before is today's start on its agent,
-    /// restricted on an agent with no mode that asks nothing included; full access on it alone is refused in today's words.
+    /// An order of the plain kind is a start on its agent,
+    /// restricted on an agent with no mode that asks nothing included; full access on it alone is refused.
     /// </summary>
     [Fact]
     public async Task Ask_Daoris_as_before_starts_as_today_restricted_and_full()
@@ -267,7 +267,7 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     }
 
     /// <summary>
-    /// MODELROLE1d (D205 §4.5): with no choice of Ask Daoris's that can run, the press is refused in the wait's sentence, each choice
+    /// With no choice of Ask Daoris's that can run, the press is refused in the wait's sentence, each choice
     /// named with its reason, and nothing is opened.
     /// </summary>
     [Fact]
@@ -286,8 +286,8 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     }
 
     /// <summary>
-    /// MODELROLE1d (D205 §4.1): Chat's walk takes the first entry that can hold a conversation, each passed one said with its code, its
-    /// accounts judged for its model; a pick is one entry, its agent's and its model Chat's first entry for that agent (§3.5(d)).
+    /// Chat's walk takes the first entry that can hold a conversation, each passed one said with its code, its
+    /// accounts judged for its model; a pick is one entry, its agent's and its model Chat's first entry for that agent.
     /// </summary>
     [Fact]
     public async Task Chat_s_walk_passes_what_cannot_hold_a_conversation_and_a_pick_takes_its_agent_s_model()
@@ -305,7 +305,7 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     }
 
     /// <summary>
-    /// FOUNDATION1j part v: a conversation's start holds one reservation, the taken entry's, however many it passed; a probe (the limit
+    /// A conversation's start holds one reservation, the taken entry's, however many it passed; a probe (the limit
     /// move's judging, the re-ask) takes none, and the next start's count follows the last one's.
     /// </summary>
     [Fact]
@@ -325,7 +325,7 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     }
 
     /// <summary>
-    /// LOGCOLLECTION1: Chat's walk says a pass the first time and not at the looks that pass the same choice for the same reason, and
+    /// Chat's walk says a pass the first time and not at the looks that pass the same choice for the same reason, and
     /// its `actor.chose` carries the passes as names in an array, never the walk's sentence.
     /// </summary>
     [Fact]

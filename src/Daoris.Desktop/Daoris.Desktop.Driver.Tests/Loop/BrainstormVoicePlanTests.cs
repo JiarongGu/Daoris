@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 FOUNDATION1j part ii (the foundation design §2.4's table; D205's round-2 note and §4.4): a brainstorm voice starts on a plan of its own
+/// A brainstorm voice starts on a plan of its own
 /// entry alone, asked for its request's workspace, so it runs the version that workspace pins; and a voice that cannot run is answered so,
 /// its plan holding no other entry or agent to put in its place, and the brainstorm drops it.
 /// </summary>
@@ -64,7 +64,7 @@ public sealed class BrainstormVoicePlanTests : IDisposable
 
     /// <summary>
     /// The voice's plan is its own entry alone, Brainstorm's, for its request's workspace; that workspace's pin is the version it runs, where a
-    /// voice asked for no workspace, as every voice was before, runs the machine's.
+    /// voice asked for no workspace runs the machine's.
     /// </summary>
     [Fact]
     public async Task A_voice_runs_its_workspace_s_pinned_version_on_a_plan_of_its_own_entry_alone()
@@ -80,12 +80,12 @@ public sealed class BrainstormVoicePlanTests : IDisposable
         Assert.Equal(("brainstorm", "work"), (plan.Role, plan.Workspace));
         Assert.Equal([Entry], plan.Order);
         // The binary it runs is its pin's managed install: a file look reads no version, so the install is the proof of it. No
-        // machine-wide install or pin exists, so the workspace's pin alone makes it present (WSPINONLY1).
+        // machine-wide install or pin exists, so the workspace's pin alone makes it present.
         Assert.True(placed.Allowed, placed.Refusal);
         Assert.Equal((work, "account-1"), (placed.Binary, placed.Profile));
     }
 
-    /// <summary>A pin counts for its own workspace's starts alone (WSPINONLY1): another workspace, and a start asking none, find nothing installed.</summary>
+    /// <summary>A pin counts for its own workspace's starts alone: another workspace, and a start asking none, find nothing installed.</summary>
     [Fact]
     public async Task A_workspace_s_pin_makes_the_agent_present_for_that_workspace_alone()
     {
@@ -101,7 +101,7 @@ public sealed class BrainstormVoicePlanTests : IDisposable
         Assert.Contains("not installed", none.Refusal);
     }
 
-    /// <summary>A machine-wide install and pin count in every workspace and for a start asking none (WSPINONLY1).</summary>
+    /// <summary>A machine-wide install and pin count in every workspace and for a start asking none.</summary>
     [Fact]
     public async Task A_machine_wide_install_counts_everywhere()
     {

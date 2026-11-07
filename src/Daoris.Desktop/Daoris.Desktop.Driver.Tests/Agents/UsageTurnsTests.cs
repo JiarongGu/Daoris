@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// USAGECAP1a2 (D179 point 2): every turn's tokens kept in the usage history beside the readings, with the model. What a turn
+/// Every turn's tokens kept in the usage history beside the readings, with the model. What a turn
 /// carries, a turn replayed twice written once, the bound the readings' log shares, the account its start chose and its epoch,
 /// a session no start bound, the model a door's split agrees on (a helper's tokens outside the total, a split read as a running
 /// total, a model switched mid-session), a cancelled turn, Codex's report unknown, and nothing of anyone's words.
@@ -57,7 +57,7 @@ public sealed class UsageTurnsTests : IDisposable
     }
 
     /// <summary>
-    /// BRAINSTORM1c (D176 point 7): a brainstorm pass's turns name the brainstorm they were spent for, bound by the session's id, beside the
+    /// A brainstorm pass's turns name the brainstorm they were spent for, bound by the session's id, beside the
     /// account the walk chose; a turn of any other session has none, and its line gains no field.
     /// </summary>
     [Fact]
@@ -125,7 +125,7 @@ public sealed class UsageTurnsTests : IDisposable
             ["model", "input", "output", "cacheRead", "cacheWrite"],
             first["split"]!.AsArray()[0]!.AsObject().Select(pair => pair.Key));
 
-        // Absent is never zero (D57): no account, no tokens and no model say null, never 0 or "".
+        // Absent is never zero: no account, no tokens and no model say null, never 0 or "".
         var second = JsonNode.Parse(lines[1])!.AsObject();
         foreach (var name in new[] { "agent", "account", "epoch", "door", "started", "input", "output", "cacheRead", "cacheWrite", "split", "attribution", "whole" })
         {
@@ -236,7 +236,7 @@ public sealed class UsageTurnsTests : IDisposable
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, _home, events: events);
         _ = driver.Said(adapters.Door("claude-code-acp"), new HarnessSelection(null, Profile: "account-1"), "s1");
 
-        // The words shown the moment they are said are no ask (MSG1d): the turn begins where the session took them.
+        // The words shown the moment they are said are no ask: the turn begins where the session took them.
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "go on", Reaches = "turn-end", At = Now.AddMinutes(-3) });
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "go on", At = Now.AddMinutes(-2) });
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.Message, Text = "done", At = Now.AddMinutes(-1) });
@@ -375,7 +375,7 @@ public sealed class UsageTurnsTests : IDisposable
     [Fact]
     public void A_cancelled_turn_that_reported_nothing_keeps_the_model_its_answers_named_and_no_counts()
     {
-        // The protocol door's stopped turn answers every count zero (CONV5), which is no report: the total is null.
+        // The protocol door's stopped turn answers every count zero, which is no report: the total is null.
         var models = TurnModels.Of(null, [Opus], TurnModels.FromUpdates, new Dictionary<string, TurnTokens>(), null, TurnModels.FromQuota);
 
         Assert.Equal((Opus, (IReadOnlyList<ModelTokens>?)null, (bool?)null), (models.Model, models.Split, models.Whole));
@@ -385,7 +385,7 @@ public sealed class UsageTurnsTests : IDisposable
         Assert.Equal((true, Opus, new TurnTokens(null, null, null, null)), (kept.Cancelled, kept.Model, kept.Tokens));
     }
 
-    // ——— What is never written (D179 point 2): a prompt, a word, a raw frame, a key, an email, an organisation, who signed in.
+    // ——— What is never written: a prompt, a word, a raw frame, a key, an email, an organisation, who signed in.
 
     [Fact]
     public void No_prompt_words_email_organisation_or_key_reach_the_turns_from_a_door_s_frames()

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTERRORS1d (the agent-errors design §5.5): each kind of pass hands its retry its own authority as the check, so no try reopens what is
+/// Each kind of pass hands its retry its own authority as the check, so no try reopens what is
 /// already done: a helper's answer stored, an intake's ask settled, an opinion recorded, a partner's piece ending.
 /// </summary>
 public sealed class TransientOwnersTests : IDisposable

@@ -6,9 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 <b>Update does what it says</b> (USE1a). Update on a pinned <c>claude-code-acp</c> answered
-/// "that agent declares no updater": the door is an npm package Daoris PINS, and the action only knew
-/// a tool's own updater. Now a pinned door with a package or a channel MOVES ITS PIN to the newest
+/// 🔴 <b>Update does what it says.</b> A pinned door with a package or a channel MOVES ITS PIN to the newest
 /// release, an unpinned door with its own updater runs it, and a door with neither offers no Update
 /// at all. The CLI's <c>agent update</c> is the twin, held by the same cases in
 /// <c>toolchain.test.ts</c>.
@@ -315,7 +313,7 @@ public sealed class DoorUpdateTests : IDisposable
 
     private static string VendorFixtures() => Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "vendor");
 
-    /// <summary>A transport over a table of URLs, and the URLs it was asked for, in order.</summary>
+    /// <summary>A transport over a table of URLs, and the URLs it is asked for, in order.</summary>
     private sealed class Served(Dictionary<string, byte[]> files) : HttpMessageHandler
     {
         public List<string> Asked { get; } = [];

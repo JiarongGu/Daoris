@@ -6,14 +6,14 @@ using Xunit.Abstractions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The change watch over the machine's own watchers (FABRIC-EVENT2, the design §A5's open questions): what a watcher holds, a
+/// The change watch over the machine's own watchers: what a watcher holds, a
 /// request heard and answered within the debounce, what the loop writes never heard, and a folder replaced at its path found
 /// and heard again. A handful of real file operations on a scratch folder, never a load: overflow and loss are the fast tests'
 /// (<see cref="ChangeWatchTests"/>), on the fake source.
 /// </summary>
 /// <remarks>
 /// Real watchers, whose events arrive on the machine's own time, a request answered within the debounce, and the handles of the
-/// whole process measured, which every class beside it moves: so it runs alone, after the rest (<see cref="Alone"/>, PROCPAR1).
+/// whole process measured, which every class beside it moves: so it runs alone, after the rest (<see cref="Alone"/>).
 /// </remarks>
 [Collection(Alone.Name)]
 [Trait(Category.Name, Category.Process)]

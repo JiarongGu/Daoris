@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LOOKWAIT1 (D181 point 6) on the watch: each look's <c>watch.looked</c> carries its stages, each start's preparation among them
+/// On the watch: each look's <c>watch.looked</c> carries its stages, each start's preparation among them
 /// with its quest, and a stage that hangs is named in the machine log while it hangs, so the next slow look on an installed machine
 /// names its part.
 /// </summary>
@@ -65,7 +65,7 @@ public sealed class LookWaitTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LOOKWAIT1b (D181 point 6): a start whose git waited for its place says that wait as its stage's queue, apart from its
+    /// A start whose git waited for its place says that wait as its stage's queue, apart from its
     /// preparation, so a look slow for want of a place is told apart from slow work. The places are a gate of the test's own, held
     /// full as a fan-out holds git's: the shared gate cannot be held full here, and any gate's wait is said the same way.
     /// </summary>
@@ -149,7 +149,7 @@ public sealed class LookWaitTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 STARTFAST1b (the start-path design §5c): the first look's line-following and tidy wait for the first screen's data, so the
+    /// The first look's line-following and tidy wait for the first screen's data, so the
     /// page's own pulls are not queued behind them for the background's git places. Held, the looks go on and neither begins; let
     /// go, both run beside the next looks. Every span reads 100 ms on the stages' clock, so each that ended is on its look's line
     /// whatever the machine's speed.

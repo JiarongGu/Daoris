@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-iv part b, sitting 2 (D212; the foundation design §13.5's downgrade table, §19.4, row f-iv's proof): the driven carry-on's move
+/// The driven carry-on's move
 /// across a downgrade, as <c>CurveMoveDowngradeProcessTests</c> proves the curve's. A loop is killed at each boundary the move passes
 /// (<see cref="DrivenMoveCrashProcessTests"/>), then an older build comes up on the home and takes nothing up, then this build returns and acts
 /// once, then comes up again and finds nothing to do.
@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para>An older build's come-up is the real watch's first look while the killed run still reads as alive, so its take-up takes no run's move
 /// up, as a build before the store takes none. The standing move then also holds its line and its destination, as this build holds them while
 /// a live run's move stands, so the older come-up here carries nothing on except where the destination is not yet named (<c>answered</c>),
-/// which its own go-on carries on to a part of its own and moves the word once. What an older build's go-on does to a destination it was not
+/// which its own go-on carries on to a part of its own and moves the word once. What an older build's go-on does to a destination it is not
 /// held from is <c>DrivenMoveOlderBuildProcessTests</c>'.</para>
 /// <para>Each row after this build's return is the crash row of the same boundary, since the older come-up changed nothing the return reads
 /// differently; the return's take-up of a move the older come-up left standing under its dead run is a claim of its own.</para>
@@ -51,7 +51,7 @@ public sealed class DrivenMoveDowngradeProcessTests : IAsyncLifetime
 
     /// <summary>
     /// 🔴 A loop killed at each boundary, an older build's come-up, then this build's return, which acts once: the older come-up leaves the move
-    /// standing under its dead run and sends nothing it was not held from, the return ends it by its phase as a crash does, the word reaches an
+    /// standing under its dead run and sends nothing it is not held from, the return ends it by its phase as a crash does, the word reaches an
     /// agent once, and a second come-up of this build changes nothing.
     /// </summary>
     [Theory]
@@ -77,8 +77,8 @@ public sealed class DrivenMoveDowngradeProcessTests : IAsyncLifetime
         _h.Trail.Add($"after the older come-up: {seen}");
         Assert.True(standing.Stands, $"an older build's come-up leaves the move standing under its dead run: {seen}");
         Assert.Equal((left.PhaseWord, left.ClaimRun, left.ClaimGeneration), (standing.PhaseWord, standing.ClaimRun, standing.ClaimGeneration));
-        // DRIVENATTEMPT1: a word written to the part's agent was marked attempted at the hand, so the older come-up's uncertain settlement
-        // (§13.5's `delivering` row) takes it back, with no `lost` note for a moved word, where it waited unmarked before.
+        // A word written to the part's agent is marked attempted at the hand, so the older come-up's uncertain settlement
+        // takes it back, with no `lost` note for a moved word.
         var settledByOlder = word && cut is Cuts.Written or Cuts.Sent;
         if (cut != Cuts.Answered) Assert.Equal(settledByOlder ? before.Replace("waiting [s2:w1]", "waiting []", StringComparison.Ordinal) : before, _h.SnapshotOf());
         else Assert.Equal(word ? 1 : 0, _h.Prompts().Count(prompt => prompt.Text.Contains(DrivenMoveHarness.Word, StringComparison.Ordinal)));

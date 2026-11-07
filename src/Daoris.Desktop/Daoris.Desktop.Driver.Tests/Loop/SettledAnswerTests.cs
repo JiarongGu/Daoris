@@ -7,7 +7,7 @@ using Daoris.Driver.Tests;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 row p (D212; the foundation design §3.4 rule 5, §19.2): a keyed say or hand the service answers <b>settled</b> is its own terminal kind,
+/// A keyed say or hand the service answers <b>settled</b> is its own terminal kind,
 /// <see cref="SayAnswer.Settled"/>, read as kept and carrying no word, and every reader of a keyed answer handles it before it reads a word. The two
 /// dispatchers answer it as a retry of a word they hold already, holding, queueing, steering, attempting and taking nothing, Codex's reused id
 /// among the cases: a successor holding a word whose id is the settled word's. The service's own answer is its tests'; here the door is a
@@ -60,7 +60,7 @@ public sealed class SettledAnswerTests
         Assert.True(released.Kept);
     }
 
-    /// <summary>A kept word's answer, as every host before the row gave it, is read as it always was: its word, and no settlement.</summary>
+    /// <summary>A kept word's answer, as a host without settlement gives it, is read as its word and no settlement.</summary>
     [Fact]
     public async Task A_kept_words_answer_carries_its_word_and_no_settlement()
     {
@@ -75,7 +75,7 @@ public sealed class SettledAnswerTests
     }
 
     /// <summary>
-    /// The helper's, the partner's and (COMMS1b) the opinion's doors ask settled too, and read a success naming the record as
+    /// The helper's, the partner's and the opinion's doors ask settled too, and read a success naming the record as
     /// <see cref="SolicitedFate.Settled"/>, with no word.
     /// </summary>
     [Fact]
@@ -96,8 +96,8 @@ public sealed class SettledAnswerTests
     }
 
     /// <summary>
-    /// COMMS1b (the comms design §13 point 4): a word already waiting is answered with its holder and the word, flagged <c>waiting</c>, which each door
-    /// reads as <see cref="SolicitedFate.Waiting"/> so its look finishes the dispatch there; the same answer from a host before the flag is kept.
+    /// A word already waiting is answered with its holder and the word, flagged <c>waiting</c>, which each door
+    /// reads as <see cref="SolicitedFate.Waiting"/> so its look finishes the dispatch there; the same answer from a host without the flag is kept.
     /// </summary>
     [Fact]
     public async Task A_word_already_waiting_is_read_with_its_holder_and_its_word_by_every_door()

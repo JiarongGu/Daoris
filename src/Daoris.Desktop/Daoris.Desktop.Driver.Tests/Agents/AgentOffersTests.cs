@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MODELROLE1c2's readings (D205 §3.3, §9.2): <c>data/agent-offers.json</c>, per agent, version and account, judged per account for one
+/// The offers readings: <c>data/agent-offers.json</c>, per agent, version and account, judged per account for one
 /// model: a reading passes an account only while its version is the start's and it is under a day old, so two accounts offering
 /// differently are judged apart, an entitlement change with no version change is read again within a day, and a stale reading is tried.
 /// Files only, in a home under <c>_fixtures/</c>.
@@ -19,7 +19,7 @@ public sealed class AgentOffersTests : IDisposable
     public void Dispose() => GitSeed.Discard(_home);
 
     /// <summary>
-    /// Row n: a door's offers part reads the provider's settings file, extended on the native door by the efforts only a session carries, and
+    /// A door's offers part reads the provider's settings file, extended on the native door by the efforts only a session carries, and
     /// where the door states nothing what its open last listed on an account of its own id.
     /// </summary>
     [Fact]
@@ -47,7 +47,7 @@ public sealed class AgentOffersTests : IDisposable
         AgentOffers.Offers(_home, "claude-code-acp", version, account, at ?? Now).Session.Judge(model);
 
     /// <summary>
-    /// Row n: a door's offers are read in two scopes, a session's from the account's own reading at this version and the account defaults'
+    /// A door's offers are read in two scopes, a session's from the account's own reading at this version and the account defaults'
     /// from what the provider states; one account's refusal passes that account while another of the same door and version is tried, and a
     /// reading of another version offers nothing.
     /// </summary>
@@ -77,8 +77,8 @@ public sealed class AgentOffersTests : IDisposable
     }
 
     /// <summary>
-    /// §3.3: two accounts offering differently are judged apart, each for the model asked, by the account's own refusal; a list that
-    /// lacks a model is no pass by itself (MODELROLE1a: Claude's door lists aliases and takes a full id), and account default is never
+    /// Two accounts offering differently are judged apart, each for the model asked, by the account's own refusal; a list that
+    /// lacks a model is no pass by itself (Claude's door lists aliases and takes a full id), and account default is never
     /// judged.
     /// </summary>
     [Fact]
@@ -97,7 +97,7 @@ public sealed class AgentOffersTests : IDisposable
     }
 
     /// <summary>
-    /// §3.3: a refusal at an open is kept by the model refused, <c>refused</c> where the list offered it, and passes the account for that
+    /// A refusal at an open is kept by the model refused, <c>refused</c> where the list offered it, and passes the account for that
     /// model alone; an open that lists it again since keeps the refusal, since it has not tried it.
     /// </summary>
     [Fact]
@@ -115,7 +115,7 @@ public sealed class AgentOffersTests : IDisposable
     }
 
     /// <summary>
-    /// §3.3: a reading of another version, or a refusal a day old, is a hint, and the account is tried; an entitlement that changes with no
+    /// A reading of another version, or a refusal a day old, is a hint, and the account is tried; an entitlement that changes with no
     /// new version is read again within the day, however many opens list the model meanwhile.
     /// </summary>
     [Fact]
@@ -129,7 +129,7 @@ public sealed class AgentOffersTests : IDisposable
         Assert.Equal(AgentOffers.NotOffered, Judge("acct-1", "opus", at: Now + AgentOffers.Fresh - TimeSpan.FromMinutes(1)));
     }
 
-    /// <summary>§9.2: a reading from an older version never replaces a newer one; the tool's own home is a key of its own.</summary>
+    /// <summary>A reading from an older version never replaces a newer one; the tool's own home is a key of its own.</summary>
     [Fact]
     public void An_older_version_never_replaces_a_newer_reading()
     {

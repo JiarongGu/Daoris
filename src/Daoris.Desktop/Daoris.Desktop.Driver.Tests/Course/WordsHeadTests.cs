@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1d-ii part 1 (the foundation design §3.4 rules 1 and 2): the walk a say caller makes where a host with the <c>head</c> mark refuses its
+/// The walk a say caller makes where a host with the <c>head</c> mark refuses its
 /// word <c>continued</c>, naming the line's head. The same say goes again at the head, whole, and a second <c>continued</c> follows the next head; a
 /// walk that comes back to a record it asked ends, as does one past its bound, never looping; a word's files go to each head's folder before it is
 /// said there.
@@ -85,7 +85,7 @@ public sealed class WordsHeadTests : IDisposable
         Assert.Equal((false, SayAnswer.Continued, (string?)null), (said.Kept, said.Refusal, said.Head));
     }
 
-    /// <summary>A word's files, kept for the record it was said to, kept again in the head's folder under the same names, so its go-on finds them.</summary>
+    /// <summary>A word's files, kept for the record it is said to, kept again in the head's folder under the same names, so its go-on finds them.</summary>
     [Fact]
     public void A_words_files_are_carried_to_the_heads_folder_under_their_names()
     {

@@ -6,7 +6,7 @@ namespace Daoris.Driver.Tests;
 public sealed class HelpRoomDoorsTests
 {
     /// <summary>
-    /// The doors (D50): every change the room speaks of is a screen and the terminal command that does the
+    /// The doors: every change the room speaks of is a screen and the terminal command that does the
     /// same, spelled as the CLI spells it — a helper that invented a verb would send the person to nothing.
     /// </summary>
     [Fact]
@@ -19,37 +19,36 @@ public sealed class HelpRoomDoorsTests
             "daoris place drive|undrive <repository>", "daoris place hold|resume <repository>",
             "daoris place trees <repository> on|off", "daoris place line <repository> <branch>|--clear",
             "daoris place landing <repository> merge|branch <pattern>|--clear",
-            // ONEWAY1a: a role's agents through the role door alone, Build's, Intake's and Ask Daoris's among them.
+            // A role's agents through the role door alone, Build's, Intake's and Ask Daoris's among them.
             "daoris role set <role> \"<agent> [<model>|-] [<effort>|-]\" …|off",
             "daoris settings notify on|off", "daoris agent rules", "daoris ask --workspace <name>",
-            // BRSCOPE1a: the clean-up and bringing up to date take one workspace's checkouts with `--workspace`.
+            // The clean-up and bringing up to date take one workspace's checkouts with `--workspace`.
             "daoris tree clean [--workspace <name>]",
-            // WSR6: bringing a repository up to date after its pull request merged; WSR7 (D112): every repository with `--all`.
+            // Bringing a repository up to date after its pull request merged; every repository with `--all`.
             "daoris tree sync [--repository <name>] [--workspace <name>] [--all] [--yes]",
-            // D107: reading and writing across, the CLI's `driver across` verbs.
+            // Reading and writing across, the CLI's `driver across` verbs.
             "daoris place across <repository> read on|off|--clear", "daoris place across <repository> write-to <other> [--clear]",
-            // HELP9: every setting verb that changes something, and the doors Ask Daoris owes, named where they are.
-            // SESSUX1b: and a stop's release, which names the session stopped.
+            // Every setting verb that changes something, and the doors Ask Daoris owes, named where they are,
+            // and a stop's release, which names the session stopped.
             "daoris quest retry <quest>", "daoris quest retry <quest> --session <id>", "daoris settings cap <n>",
-            // LEFT3's default and its clear left with POOL1b (D197 point 6).
             "daoris browser use daoris|edge", "daoris browser links system|daoris",
-            // WORKFLOWCLEAN1 1f: the one adoption door, Ask Daoris's `setup` kind through its `place` door, its screen the place's Set up….
+            // The one adoption door, Ask Daoris's `setup` kind through its `place` door, its screen the place's Set up….
             "daoris place <repository>… --preset keep --adoption [--what-it-builds <kind>] --plan",
-            // TOOL4e (D125 §6): the order, *Try now* and the default cool-off, the terminal's doors (on the screen since TOOL4g).
+            // The order, *Try now* and the default cool-off, the terminal's doors (on the screen too).
             "daoris agent account order <agent> <profile>…|--clear",
             "daoris agent account ready <agent> <profile>|--own", "daoris settings cooloff <minutes>", "daoris settings quiet <minutes>",
-            // TOOL6a (D130 §16.6): how a list is used, the terminal's door (on the screen since TOOL4g); its switch and the
-            // person's curve since SWITCH1d.
+            // How a list is used, the terminal's door (on the screen too); its switch and the
+            // person's curve.
             "daoris agent account use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] "
                 + "[--curve <window>=<elapsed>:<used>,…] [--no-curve]",
-            // REVIEWENV1j (D154 point 3, D50): the person's review choice, the composer's, the ask page's and the gate's.
+            // The person's review choice, the composer's, the ask page's and the gate's.
             "daoris ask … --short \"…\"", "daoris ask … --review rule|on|<environment>|off","daoris ask review <id> on|<environment>|off",
             "daoris quest review <quest> off [\"…\"]", "daoris quest review <quest> on|<environment>",
-            // WORKFLOW1e (D157 point 10): which workflow work follows and a workspace's kinds, and an ask's kind and workflow.
+            // Which workflow work follows and a workspace's kinds, and an ask's kind and workflow.
             "daoris workflow use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]",
             "daoris workflow kind <workspace> <kind>", "daoris ask … --kind <kind> [--workflow <id>|current]",
             "daoris ask workflow <id>",
-            // XAGENT1f4 (D155 point 10, design §9): the person's presses at the second opinion's gate, which Ask Daoris names and
+            // The person's presses at the second opinion's gate, which Ask Daoris names and
             // proposes none of.
             "daoris session opinion ask <session> [--agent <adapter>] [--same-agent] [\"…\"]",
             "daoris session opinion show <session|opinion>", "daoris session opinion stop <opinion>",
@@ -60,37 +59,37 @@ public sealed class HelpRoomDoorsTests
         }
 
         Assert.Contains("Repositories → the workspace's page → Setup → Defaults → Line", agents);
-        // HELP9: a parked quest's Retry is on its quest's page, which the room names beside the command (HELP10: and
-        // proposes). SESSUX1b: FRAME1d made the drawer a page; the row said a drawer until then.
+        // A parked quest's Retry is on its quest's page, which the room names beside the command and
+        // proposes; the room never calls it a drawer.
         Assert.Contains("Quests → the quest's page → Try again", agents);
         Assert.DoesNotContain("the quest's drawer → Try again", agents);
         // What a landing pattern may say, as `LandingRules` reads it — the first real conversation had to guess.
         foreach (var token in new[] { "{quest}", "{session}", "{slug}", "{repository}" }) Assert.Contains(token, agents);
-        // COMPANYVIEW1b: the working roles' settings are in the Agents place's Roles mode, not on AI features.
+        // The working roles' settings are in the Agents place's Roles mode, not on AI features.
         Assert.Contains("Agents → Roles → Working roles", agents);
         Assert.DoesNotContain("Settings → AI features → Actors", agents);
         Assert.DoesNotContain("Role catalogue", agents);
-        // SETUP1b: the setup guide the person may be walked through, by the names the window gives it; Help's since UX7a
-        // (D152), where the Daoris menu held it. UX6i2a: named Get started since UX6j (D150 §2).
+        // The setup guide the person may be walked through, by the names the window gives it: Settings and Help,
+        // both *Get started*; no Daoris menu holds it.
         Assert.Contains("Settings → Get started (Help → *Get started*)", agents);
         Assert.DoesNotContain("Settings → Setup", agents);
         Assert.DoesNotContain("Daoris menu", agents);
-        // UX6i2a: a plugin is switched, installed and updated in the Plugins place since UX6j retired Settings → Plugins.
+        // A plugin is switched, installed and updated in the Plugins place, not in Settings → Plugins.
         Assert.Contains("Plugins → the plugin's page → Turn on or Turn off", agents);
         Assert.Contains("Plugins → Daoris's own plugins → Install", agents);
         Assert.DoesNotContain("Settings → Plugins", agents);
         // It reads and advises; the moves that stay the person's are named as never its own.
         Assert.Contains("You change nothing yourself", agents);
-        // It proposes (HELP1c): a card the person applies, through the connector's two tools.
+        // It proposes: a card the person applies, through the connector's two tools.
         Assert.Contains("`setting_propose`", agents);
         Assert.Contains("`ask_propose`", agents);
         Assert.Contains("push, merge, discard, sign in", agents);
     }
 
     /// <summary>
-    /// UX6e2 and HELPSETUP1 (D150 §3.1): a change is named where it is made now. An agent's accounts, ways in and model are
+    /// A change is named where it is made. An agent's accounts, ways in and model are
     /// on its page in the Agents place, and a repository's own driving, line, landing, session language, standing answer,
-    /// reach and rules on its Setup; a workspace's default keeps its Settings home until its own page takes it (UX6g).
+    /// reach and rules on its Setup; a workspace's defaults on its page's Setup.
     /// </summary>
     [Fact]
     public void Each_change_is_named_on_its_home_an_agents_on_its_page_and_a_repositorys_on_its_setup()
@@ -131,8 +130,8 @@ public sealed class HelpRoomDoorsTests
     }
 
     /// <summary>
-    /// WORKFLOW1h-b (D157 point 13, design §8.4): a named workflow's whole version and its choice are Ask Daoris's `workflow` kind's
-    /// `new`, `edit` and `use` doors, which the person applies; an import and a kind are WORKFLOW1h2's, which the rows say too.
+    /// A named workflow's whole version and its choice are Ask Daoris's `workflow` kind's
+    /// `new`, `edit` and `use` doors, which the person applies; an import and a kind are doors of their own, which the rows say too.
     /// </summary>
     [Fact]
     public void The_room_says_ask_daoris_proposes_a_workflow_s_version_and_its_choice()
@@ -148,7 +147,7 @@ public sealed class HelpRoomDoorsTests
     }
 
     /// <summary>
-    /// WORKFLOWCLEAN1 1i (D227): the room teaches one way. The conversion has its door, which opens the page and never proposes the
+    /// The room teaches one way. The conversion has its door, which opens the page and never proposes the
     /// apply; the old landing rule is a place still on Current's, which converting retires; a workflow is made from a default or
     /// another saved one, never edited, and `current` is chosen for no development route.
     /// </summary>
@@ -179,12 +178,12 @@ public sealed class HelpRoomDoorsTests
     }
 
     /// <summary>
-    /// WORKFLOW1c4 (D157 point 12; the workflow design §6.1, §7): the room named none of the places how work moves is drawn, so
-    /// asked how a repository's work lands, or where a quest's work stands, the helper could not send the person there. Current
-    /// is a repository's and a workspace's *Workflow* tab, with `daoris workflow show` its twin (WORKFLOW1a, WORKFLOW1b);
+    /// The room names the places how work moves is drawn, so asked how a repository's work lands, or where a quest's
+    /// work stands, the helper can send the person there. Current
+    /// is a repository's and a workspace's *Workflow* tab, with `daoris workflow show` its twin;
     /// a run is the session's *Workflow* view, the *Workflow:* line in a quest's and an ask's head, and What needs you's
-    /// *Workflow* door, with `daoris workflow run` its twin (WORKFLOW1c, WORKFLOW1c2). Both only read, so Ask Daoris
-    /// proposes neither; changing a workflow is WORKFLOW1h's proposal, and today a step opens the Setup row that sets it.
+    /// *Workflow* door, with `daoris workflow run` its twin. Both only read, so Ask Daoris
+    /// proposes neither; changing a workflow is a proposal of its own, and a step opens the Setup row that sets it.
     /// </summary>
     [Fact]
     public void The_room_names_where_how_work_moves_is_drawn_and_where_a_run_stands_with_their_terminal_twins()
@@ -221,14 +220,14 @@ public sealed class HelpRoomDoorsTests
         }
 
         // In the order a person meets them: how work moves beside the rules it is drawn from, before a named workflow; where a
-        // piece of work stands after starting one, before saying something to a session, a park's answer among them (ONEWAY1k).
+        // piece of work stands after starting one, before saying something to a session, a park's answer among them.
         var order = HelpRoomDoors.Doors.Select(door => door.To).ToList();
         int At(string to) => order.FindIndex(each => each.StartsWith(to, StringComparison.Ordinal));
         Assert.Equal(At("declare which other agent reads") + 1, order.IndexOf(current.To));
         Assert.Equal(order.IndexOf(current.To) + 1, At("name a workflow"));
         Assert.True(order.IndexOf(run.To) > At("start a task") && order.IndexOf(run.To) < At("say something to a session"));
 
-        // WORKFLOW1d's row keeps the named workflows' verbs, its `show` the one that names a saved workflow, so the two shows
+        // The named workflows' row keeps their verbs, its `show` the one that names a saved workflow, so the two shows
         // are not read as one.
         var named = HelpRoomDoors.Doors.Single(door => door.To.StartsWith("name a workflow", StringComparison.Ordinal));
         Assert.Contains("`daoris workflow list`, `daoris workflow show <id>[@<version>]`", named.Terminal);
@@ -236,7 +235,7 @@ public sealed class HelpRoomDoorsTests
     }
 
     /// <summary>
-    /// WORKFLOW1f (D157 points 10 and 11, the workflow design §4.4–§4.5): the choice's row says the gate follows the version each
+    /// The choice's row says the gate follows the version each
     /// run bound, never that no gate reads it; and the person's <i>Keep</i> is named, yours alone, Ask Daoris never proposing it.
     /// </summary>
     [Fact]
@@ -257,9 +256,9 @@ public sealed class HelpRoomDoorsTests
     }
 
     /// <summary>
-    /// XAGENT1f4 (D155 points 9 and 10, design §8.5, §9): the room's second-opinion row says what the gate does, in the sentences
+    /// The room's second-opinion row says what the gate does, in the sentences
     /// every other door says (<see cref="OpinionRules.Gate"/>, held to the twins' table), never that nothing reads the rule; and the
-    /// person's presses at the gate are named with what each does, each said to be one Ask Daoris never proposes (D110, D156).
+    /// person's presses at the gate are named with what each does, each said to be one Ask Daoris never proposes.
     /// </summary>
     [Fact]
     public void The_second_opinion_s_rows_say_what_the_gate_does_and_name_the_person_s_presses()
@@ -287,7 +286,7 @@ public sealed class HelpRoomDoorsTests
     }
 
     /// <summary>
-    /// DOORS1a (D163 point 3; D164's amendment points 1-3): the room names the helpers rule and the commit rule, each with its
+    /// The room names the helpers rule and the commit rule, each with its
     /// Setup row and the terminal's twin as <c>daoris place helpers|commits</c> spells it, said to be Ask Daoris's to propose;
     /// and the landing's row names the ticket's key and the squash beside its other switches.
     /// </summary>
@@ -319,7 +318,7 @@ public sealed class HelpRoomDoorsTests
     }
 
     /// <summary>
-    /// SESSUX1h2b (D126 §7.3): the room names Sessions' archive, archive what ended and unarchive, and a conversation's delete,
+    /// The room names Sessions' archive, archive what ended and unarchive, and a conversation's delete,
     /// each with its press and the terminal's twin as <c>daoris session list</c> spells it, beside a quest's or an ask's delete.
     /// </summary>
     [Fact]
@@ -340,7 +339,7 @@ public sealed class HelpRoomDoorsTests
     }
 
     /// <summary>
-    /// PAUSE1f-b (D132 §7.1, §7.4): pause and resume are pressed on the ask's and the quest's pages and on a session, which the
+    /// Pause and resume are pressed on the ask's and the quest's pages and on a session, which the
     /// `pause` kind proposes; abandon is on the pages alone, and marked as the person's own.
     /// </summary>
     [Fact]
@@ -358,7 +357,7 @@ public sealed class HelpRoomDoorsTests
     }
 
     /// <summary>
-    /// HIST1f-b (design §6.1, §6.2, §6.4): the room names where finished history is cleared, the workspace's reading first, and
+    /// The room names where finished history is cleared, the workspace's reading first, and
     /// the terminal's history verbs as <c>daoris</c>'s usage spells them, after a conversation's delete.
     /// </summary>
     [Fact]
@@ -381,7 +380,7 @@ public sealed class HelpRoomDoorsTests
     }
 
     /// <summary>
-    /// ASKSCOPE1e (D158's ASKSCOPE1d note point 1): the history's terminal door names its workspace flags as
+    /// The history's terminal door names its workspace flags as
     /// <c>daoris ask-daoris list</c>'s usage spells them, so a helper asked for another workspace's conversation sends the
     /// person to a list that holds it.
     /// </summary>

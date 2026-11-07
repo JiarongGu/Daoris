@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1t-ii (D232): a brainstorm's pass records and a meeting's packet name the door a pass ran on <c>door</c> after the home's
+/// A brainstorm's pass records and a meeting's packet name the door a pass ran on <c>door</c> after the home's
 /// migration; an older file's <c>adapter</c> is that door, a meeting's packet is written again under the digest of what it now holds, and a
 /// tool's answer is left as it is.
 /// </summary>

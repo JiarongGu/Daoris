@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-RUN1 through the loop (the fabric events design §D6, §E7, §A3): the watch loop holding the home's lease and a hook set, a stand-in
+/// Through the loop: the watch loop holding the home's lease and a hook set, a stand-in
 /// performer installed. Where a quest's run is bound to a graph naming the stand-in's step, the loop's runtime awaits it on the branch the
 /// run's session worked, the look's supervision starts the process, the step is sent once and its completion heard and kept. Where nothing names a
 /// performed step (the owner's install today), the same loop starts no plugin process and writes no unit record.
@@ -88,7 +88,7 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
         _closing.Dispose();
         _ledger.Dispose();
 
-        // FLAKE1: a process lets go of its folder a moment after it is told to stop, as WorkProcessTests waits for.
+        // A process lets go of its folder a moment after it is told to stop, as WorkProcessTests waits for.
         for (var attempt = 0; Directory.Exists(_home); attempt++)
         {
             try
@@ -159,7 +159,7 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-RUN1d: with the look's deadline ten minutes off, the loop's start is its only look. The awaited set's own wake starts the
+    /// With the look's deadline ten minutes off, the loop's start is its only look. The awaited set's own wake starts the
     /// stand-in's process and sends the step with no plan, and the completion the stand-in sends at once is heard by link 8 alone and kept
     /// within seconds of the attempt's record, sometimes before the start's look has reported. A run's answer is judged at its branch's
     /// tip, read from the checkout's ref files, so the bound of three seconds is the process's start and its answer.
@@ -185,7 +185,7 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1c (the cutover design §3): a run bound to a graph version arms the loop's runtime though its choices name no cycle, and the
+    /// A run bound to a graph version arms the loop's runtime though its choices name no cycle, and the
     /// loop governs it on its own record, its quest's claim observed there under that quest; no plugin process starts for it, and the quest's own
     /// record is never written.
     /// </summary>

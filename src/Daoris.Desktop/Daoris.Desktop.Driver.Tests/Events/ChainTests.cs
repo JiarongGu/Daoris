@@ -4,15 +4,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The chains (FABRIC-CHAIN2, the design §C5 and §C6) on the change watch's fake source, stepped by hand on a clock that stands
+/// The chains on the change watch's fake source, stepped by hand on a clock that stands
 /// still. The link table is ranked, and a link pointing to a lower rank is refused; a fact link emits only on a change; an effect
 /// link stays pending until done, is tried on its unblocking wakes with its retries bounded, and is recovered at start from the
-/// persisted facts; each topic's deadline is a <c>timer</c> event. The design's canaries 4, 11, 12, 16, 17 and 18.
+/// persisted facts; each topic's deadline is a <c>timer</c> event.
 /// </summary>
 /// <remarks>
-/// Links 1, 2, 4 and 5 are fakes here, over a world of persisted facts that a restart keeps: their facts are FABRIC-END2's,
-/// their ref source FABRIC-END3's, the tidy FABRIC-END4a's and the look's split FABRIC-EVENT3a's. Link 7 is wired on the requests
-/// folder today (<see cref="SessionRequestChangeTests"/>).
+/// Links 1, 2, 4 and 5 are fakes here, over a world of persisted facts that a restart keeps. Link 7 is wired on the requests
+/// folder (<see cref="SessionRequestChangeTests"/>).
 /// </remarks>
 public sealed class ChainTests : IDisposable
 {
@@ -86,8 +85,8 @@ public sealed class ChainTests : IDisposable
     // The fixed table and its ranks.
 
     /// <summary>
-    /// §C6's links and FABRIC-RUN1's eighth, ranked: each event a link may emit is heard only by links ranked above it, so none wakes
-    /// itself. Ranks 3 and 4, declared and bound nowhere, are gone (FOUNDATION1s, the foundation design §7 row 14); the rest keep their numbers.
+    /// The links, ranked: each event a link may emit is heard only by links ranked above it, so none wakes
+    /// itself. Ranks 3 and 4 are declared nowhere; the rest keep their numbers.
     /// </summary>
     [Fact]
     public void The_fixed_table_is_ranked_so_that_no_link_hears_what_it_or_a_link_above_it_emits()
@@ -106,7 +105,7 @@ public sealed class ChainTests : IDisposable
         Assert.Equal([ChainEvents.PluginStep, ChainEvents.Nodes, ChainEvents.TimerOf(ChangeTopics.Look)], nodes.On);
         Assert.Empty(nodes.Emits);
 
-        // FABRIC-RUN1d: a plugin's step and the runtime's own wakes run link 8 alone, never the local plan.
+        // A plugin's step and the runtime's own wakes run link 8 alone, never the local plan.
         var plan = Assert.Single(table.Links, link => link.Rank == ChainRanks.Plan);
         Assert.False(plan.Hears(ChainEvents.PluginStep) || plan.Hears(ChainEvents.Nodes));
         Assert.Equal([ChainRanks.Nodes], table.Links.Where(link => link.Hears(ChainEvents.Nodes)).Select(link => link.Rank));
@@ -330,7 +329,7 @@ public sealed class ChainTests : IDisposable
         await rig.Chain.FireAsync([RefsMoved()], CancellationToken.None);
         Assert.Equal(1, rig.Tidy.Tries);
 
-        // A deadline within the one it was tried in does not try it; the next tries it once, and a second of the same topic
+        // A deadline within the one it is tried in does not try it; the next tries it once, and a second of the same topic
         // (another subject's) before the one after does not.
         await rig.Chain.FireAsync([ChainEvent.Timer(ChangeTopics.Refs)], CancellationToken.None);
         Assert.Equal(1, rig.Tidy.Tries);
@@ -470,7 +469,7 @@ public sealed class ChainTests : IDisposable
 
         public bool Branch { get; set; } = true;
 
-        /// <summary>The kept fact: <c>Held</c>, as END2 keeps it (<see cref="HeldFact"/>).</summary>
+        /// <summary>The kept fact: <c>Held</c> (<see cref="HeldFact"/>).</summary>
         public bool Held { get; set; }
 
         /// <summary>The kept fact: the end judged reached.</summary>

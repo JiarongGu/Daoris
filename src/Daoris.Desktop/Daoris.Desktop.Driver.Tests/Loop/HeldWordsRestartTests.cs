@@ -4,7 +4,7 @@ using Daoris.Driver.Tests;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORK1c (D188 point 6; the message-urgency design §6, §14's trap 7) for a driven session: the words the person says while it works
+/// For a driven session: the words the person says while it works
 /// are kept on its record by its inbox before they are held, so a shell cut off under them leaves them there; the next shell's sweep ends
 /// the record nothing runs, and its look goes on with them in their order in the same session, taking them off the record. The real
 /// driver over the stand-in ledger, its run standing in for the session's go-on.
@@ -70,7 +70,7 @@ public sealed class HeldWordsRestartTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Trap 8, a driven session: words its shell attempted before it was cut off may have reached the agent, so the next shell's
+    /// A driven session: words its shell attempted before it is cut off may have reached the agent, so the next shell's
     /// come-up takes them off the record and never sends them again. One its conversation never showed taken is said uncertain there by
     /// the <c>lost</c> code, under its id; one it showed taken leaves without the line. The look goes on with the word never attempted.
     /// </summary>
@@ -92,7 +92,7 @@ public sealed class HeldWordsRestartTests : IDisposable
             await inbox.KeepAsync(door, new ChatMessage(text, []) { Key = key }, _closing.Token);
         }
 
-        // The run hands the first two to its door, which marks each attempted; the first was shown taken, and the shell is cut off.
+        // The run hands the first two to its door, which marks each attempted; the first is shown taken, and the shell is cut off.
         await inbox.NextOrClose()!.Held!.Attempting!();
         await inbox.NextOrClose()!.Held!.Attempting!();
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Id = "w1", Text = "Also log the port." });

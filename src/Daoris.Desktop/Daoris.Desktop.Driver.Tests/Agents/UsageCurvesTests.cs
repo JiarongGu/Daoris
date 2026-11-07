@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The usage curve, measured (SWITCH1b-i; the switch design §2; D165 point 2): how much of each window an account may have
+/// The usage curve, measured: how much of each window an account may have
 /// used by now, and how much room it has. Pure: the moment is a value handed in.
 /// </summary>
 public sealed class UsageCurvesTests
@@ -48,7 +48,7 @@ public sealed class UsageCurvesTests
     public void A_three_point_curve_joins_its_points_with_straight_lines(double elapsed, double expected) =>
         Assert.Equal(expected, UsageCurves.Value([new CurvePoint(20, 10), new CurvePoint(60, 50), new CurvePoint(90, 90)], elapsed), 6);
 
-    // USAGERESET1: from three-quarters gone the week's tail rises evenly to the whole week at its reset, never in a jump, so
+    // From three-quarters gone the week's tail rises evenly to the whole week at its reset, never in a jump, so
     // the last 5% is spent rather than left to lapse, and headroom shrinks only as the reset nears.
     [Theory]
     [InlineData(0, 20)]
@@ -138,7 +138,7 @@ public sealed class UsageCurvesTests
     [Fact]
     public void The_switch_margin_is_ten_points() => Assert.Equal(10, UsageCurves.SwitchMargin);
 
-    // ——— What an account's agent said, measured (SWITCH1b-ii): the walk ranks by its tightest window, and its reasons say
+    // ——— What an account's agent said, measured: the walk ranks by its tightest window, and its reasons say
     // that window, its use and the curve's value there now.
 
     private static WindowSaid Said(string window, double? used, int minutesToReset) =>
@@ -172,7 +172,7 @@ public sealed class UsageCurvesTests
         Assert.Null(UsageCurves.TightestSaid(Use("smart"), new AccountSaid([Said("monthly", 0.99, 60)]), Now));
     }
 
-    // ——— What would lapse at a week's reset (USAGERESET1, D165's note): within its last day, the week's room under its curve
+    // ——— What would lapse at a week's reset: within its last day, the week's room under its curve
     // over the hours left to its reset, an hour at the least; nothing that is not known earns any.
 
     private static WindowSaid Seen(string window, double? used, TimeSpan toReset, TimeSpan ago) =>
@@ -228,7 +228,7 @@ public sealed class UsageCurvesTests
     public void A_week_not_yet_opened_earns_nothing_its_reset_made_up_a_week_after_the_read()
     {
         // Claude Code answers no reset for a week not yet opened, and its read places one a week after the read
-        // (`ClaudeUsage`): the soonest it could turn over, a few seconds before the reading's own moment was stamped.
+        // (`ClaudeUsage`): the soonest it could turn over, a few seconds before the reading's own moment is stamped.
         var read = TimeSpan.FromDays(6.5);
         Assert.Null(Lapsing(Use("smart"), Seen("weekly", 0, TimeSpan.FromDays(7) - read - TimeSpan.FromSeconds(3), read)));
         // The same reading with any use is an opened week, its reset said.
@@ -244,7 +244,7 @@ public sealed class UsageCurvesTests
     [Fact]
     public void A_weekly_reading_older_than_the_newest_window_earns_nothing()
     {
-        // A five-hour window said since: the account ran after the week was read, so its room is not known.
+        // A five-hour window said later: the account ran after the week is read, so its room is not known.
         Assert.Null(Lapsing(
             Use("smart"),
             Seen("session", 0.30, TimeSpan.FromHours(4), TimeSpan.FromMinutes(5)),

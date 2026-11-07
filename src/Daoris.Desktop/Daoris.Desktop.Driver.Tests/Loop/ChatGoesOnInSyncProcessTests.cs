@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDSYNC2b (D87's 2026-10-15 amendment point 7) with a real conversation: a chat in a tree of its own commits, ends, and the
+/// With a real conversation: a chat in a tree of its own commits, ends, and the
 /// platform squash-merges its commit onto the line while it is away. Written to again, it goes on in its own conversation from the
 /// line, and is told so after the person's words, as a driven session's words going on are (<see cref="StartInSyncTickTests"/>).
 /// </summary>
@@ -49,7 +49,7 @@ public sealed class ChatGoesOnInSyncProcessTests : IDisposable
     private string Seen(ChatLedger ledger, string id) => $"heard [{string.Join(" | ", HeardLines())}], state {ledger.State(id)}";
 
     /// <summary>
-    /// 🔴 The owner's case for a conversation: its first commit reached the line by a squash while it was away; written to, it
+    /// 🔴 The owner's case for a conversation: its first commit reaches the line by a squash while it is away; written to, it
     /// resumes its own conversation on the line's tip, its words first and what its start did after them, and its tree holds nothing
     /// the line already has.
     /// </summary>
@@ -90,7 +90,7 @@ public sealed class ChatGoesOnInSyncProcessTests : IDisposable
 
         Assert.Contains("session/resume: conv-1", HeardLines());
         Assert.Contains($"prompt: Also log the port. | {BroughtUp} Read the log before you go on: the commits you made have new ids.", HeardLines());
-        // CONTEXTONE1c: the routing standing rides the standing block after the first message's words, and the go-on, the same
+        // The routing standing rides the standing block after the first message's words, and the go-on, the same
         // conversation, is never handed it again.
         Assert.Equal(["not driven"], StubFile.Routings(Heard));
         var head = Rev("main");

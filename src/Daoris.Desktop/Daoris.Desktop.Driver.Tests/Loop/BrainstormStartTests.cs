@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BRAINSTORMSTART1: a pass that cannot start says why. A request naming <c>claude,codex</c> (the agents' common names, which are no
-/// adapter's id on this machine) used to end <c>no-agent</c> with each pass <c>unavailable (not-started)</c> and the sentence lost;
-/// the pass record now keeps the walk's code and its sentence, the machine log writes it once, and <c>brainstorm show</c> reads it.
+/// A pass that cannot start says why. A request naming <c>claude,codex</c> (the agents' common names, which are no
+/// adapter's id on this machine) ends <c>no-agent</c> with each pass <c>unavailable (not-started)</c>; the pass record keeps
+/// the walk's code and its sentence, the machine log writes it once, and <c>brainstorm show</c> reads it.
 /// </summary>
 /// <remarks>Nothing here starts a process: the real turn runs as far as its walk, which finds no adapter of the name.</remarks>
 public sealed class BrainstormStartTests : IDisposable
@@ -78,7 +78,7 @@ public sealed class BrainstormStartTests : IDisposable
         Assert.Contains("unknown adapter 'codex'", text);
     }
 
-    /// <summary>A record written before the reason existed reads as it was: no reason, and show says the code alone.</summary>
+    /// <summary>A record without a reason reads as having none, and show says the code alone.</summary>
     [Fact]
     public async Task A_pass_record_without_a_reason_reads_as_before()
     {

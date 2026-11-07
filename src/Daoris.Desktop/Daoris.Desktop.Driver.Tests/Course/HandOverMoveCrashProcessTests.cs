@@ -3,14 +3,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-v part b (D212; the foundation design §3.3, §13.4 steps 1 to 5, §13.5, §19.4, row f-v's proof): a conversation's hand-over keeps its
+/// A conversation's hand-over keeps its
 /// move record through a crash at every boundary, as <c>CurveMoveCrashProcessTests</c> proves the curve's. A shell is killed at each place the hand-over
 /// passes (<see cref="Cuts"/>, and <c>quiescing</c> where the old part's turn runs), and a shell that comes up takes its move up and ends it by its
 /// phase; the person's word is then carried once, by the go-on of the part it waits on, and the brief written once, never twice.
 /// </summary>
 /// <remarks>
 /// <para><b>What differs from the curve's rows.</b> The hand-over passes the curve's nine boundaries, its one message the brief, but a hand-over that
-/// stands at <c>decided</c> or <c>quiescing</c> under a dead run is <i>taken</i> at the come-up, not fallen back (§13.5's first row, part a): the
+/// stands at <c>decided</c> or <c>quiescing</c> under a dead run is <i>taken</i> at the come-up, not fallen back: the
 /// coming-up shell's real runner opens the new part itself, briefs it once, and the move closes by its own take. At <c>old-ended</c> it falls back
 /// as the limit move's does, its word carried by the old part's go-on.</para>
 /// <para>Each boundary is run with the person's word kept on the old part and with none, since a move that moved nothing is read by its prompt's
@@ -32,7 +32,7 @@ public sealed class HandOverMoveCrashProcessTests : IAsyncLifetime
 
     /// <summary>What a killed shell's hand-over comes to once a shell comes up.</summary>
     /// <param name="Phase">The move's phase after the come-up.</param>
-    /// <param name="Held">The reason it was held, where it was.</param>
+    /// <param name="Held">The reason it is held, where it is.</param>
     /// <param name="Closed">The reason it closed, where it did.</param>
     /// <param name="Account">The account of the part whose go-on carries the word: the old part's, or the new part's.</param>
     /// <param name="Briefed">How many times the dead shell's door wrote the brief to the new part.</param>
@@ -44,10 +44,10 @@ public sealed class HandOverMoveCrashProcessTests : IAsyncLifetime
     /// <summary>Whether the coming-up shell's own take opens the new part and briefs it: a hand-over stood at <c>decided</c> or <c>quiescing</c>.</summary>
     private static bool Retaken(string cut) => cut is Cuts.Decided or Quiescing;
 
-    /// <summary>Whether the killed shell's open was made, the new part standing in the ledger when it was killed.</summary>
+    /// <summary>Whether the killed shell's open is made: the new part stands in the ledger at the kill.</summary>
     private static bool Opened(string cut) => cut is Cuts.Answered or Cuts.Opened or Cuts.Marked or Cuts.Written or Cuts.Sent or Cuts.Taken;
 
-    /// <summary>The row of a boundary, where the person's word was kept on the old part (<paramref name="word"/>) or none was.</summary>
+    /// <summary>The row of a boundary, where the person's word is kept on the old part (<paramref name="word"/>) or none is.</summary>
     private static Ends Row(string cut, bool word) => cut switch
     {
         // A hand-over decided, or waiting for a turn, under a dead run is taken at the come-up: the new shell opens and briefs the new part once.

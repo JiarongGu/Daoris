@@ -3,11 +3,11 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// Ask Daoris's <c>clear</c> proposal (HIST1f-b, D153, the history-clearing design §6.4): a closed quest's work, an ask's or a
+/// Ask Daoris's <c>clear</c> proposal: a closed quest's work, an ask's or a
 /// workspace's finished history cleared from this machine. Its card is the first press, judged by what
 /// <see cref="HistoryClearing.PlanAsync"/> answers; drawing it holds the units it listed in the proposal's file, and Apply, the
-/// second press, sends exactly those through the screen's own clear, which judges each again (§5). Nothing is cleared until the
-/// person's press (D89), and Ask Daoris never clears (D95, D37).
+/// second press, sends exactly those through the screen's own clear, which judges each again. Nothing is cleared until the
+/// person's press, and Ask Daoris never clears.
 /// </summary>
 public sealed class HelpClearProposalsTests : HelpProposalsFixture
 {
@@ -18,7 +18,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
         Quests = ["q1done00"], Sessions = ["s1ended0", "s2ended0"], Bytes = new HistoryBytes(1024, 2048, 0, 0, 0),
     };
 
-    /// <summary>A quest a remote numbered: forgotten here, and kept by the team (§3.2).</summary>
+    /// <summary>A quest a remote numbered: forgotten here, and kept by the team.</summary>
     private static readonly HistoryUnitPlan QuestForgotten = new(HistoryKinds.Quest, "q4done00", "work")
     {
         Quests = ["q4done00"], Forgotten = ["q4done00"], Sessions = ["s4ended0"], Bytes = new HistoryBytes(512, 0, 0, 0, 0),
@@ -55,7 +55,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
         Quests = ["q7done00"], Sessions = ["s7ended0"], Bytes = new HistoryBytes(1024, 0, 0, 0, 0),
     };
 
-    /// <summary>HIST1f-d: a closed quest's failed sessions of this machine's, and a teammate's kept (§4).</summary>
+    /// <summary>A closed quest's failed sessions of this machine's, and a teammate's kept.</summary>
     private static readonly HistoryUnitPlan FailedDone = new(HistoryKinds.Failed, "q1done00", "work")
     {
         Sessions = ["f1fail00", "f2fail00"], Bytes = new HistoryBytes(512, 512, 0, 0, 0),
@@ -108,7 +108,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
     private static HelpPlan Planned(HelpProposal proposal, HelpMachineFacts? facts = null) =>
         HelpProposals.Plan(proposal, DriverConfig.Empty, facts ?? Kept);
 
-    /// <summary>§6.1's ask, in the terminal's words: what goes, what the home kept of it, and that nothing brings it back.</summary>
+    /// <summary>The ask, in the terminal's words: what goes, what the home kept of it, and that nothing brings it back.</summary>
     [Fact]
     public void A_closed_quests_work_is_listed_with_what_it_takes_and_the_terminals_line()
     {
@@ -139,7 +139,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
         Assert.Equal([new HistoryUnitName(HistoryKinds.Ask, "a1done00")], plan.Clear!.Units);
     }
 
-    /// <summary>§6.1: on a wired workspace the ask's last sentence says the remote keeps the team's copy (§3.2).</summary>
+    /// <summary>On a wired workspace the ask's last sentence says the remote keeps the team's copy.</summary>
     [Fact]
     public void A_quest_a_remote_numbered_says_the_remote_keeps_the_teams_copy()
     {
@@ -150,7 +150,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// §1.2: a quest or an ask the clear would keep is refused in the keep's own sentence, as the page offers no press for it;
+    /// A quest or an ask the clear would keep is refused in the keep's own sentence, as the page offers no press for it;
     /// a quest an ask asked names the ask to clear instead. An id this machine has no record of is refused too.
     /// </summary>
     [Theory]
@@ -174,7 +174,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// HIST1f-d, §1.1, §4: a closed quest's failed sessions are the quest page's *Clear failed sessions…*, and the card names them,
+    /// A closed quest's failed sessions are the quest page's *Clear failed sessions…*, and the card names them,
     /// not the quest, says the quest and its other sessions stay, and keeps a teammate's failed session in its keep's sentence.
     /// </summary>
     [Fact]
@@ -192,7 +192,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
         Assert.Equal(HistoryScope.Failed, plan.Clear.Scope);
     }
 
-    /// <summary>D48 §6: a closed quest with none of this machine's failed sessions is said, never refused, and its Apply calls no door.</summary>
+    /// <summary>A closed quest with none of this machine's failed sessions is said, never refused, and its Apply calls no door.</summary>
     [Fact]
     public async Task A_quest_with_no_failed_session_of_this_machines_says_so_and_changes_nothing()
     {
@@ -206,7 +206,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
         Assert.Empty(doors.Calls);
     }
 
-    /// <summary>§5, §6.4: Apply sends exactly the failed unit the card listed, through the screen's own clear.</summary>
+    /// <summary>Apply sends exactly the failed unit the card listed, through the screen's own clear.</summary>
     [Fact]
     public async Task A_failed_sessions_clear_goes_through_the_screens_door_and_says_what_went()
     {
@@ -229,7 +229,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// §5 step 1, §6.1: a workspace's first press counts what goes by kind, names each unit it takes, and lists every kept unit
+    /// A workspace's first press counts what goes by kind, names each unit it takes, and lists every kept unit
     /// with its reason; the left-over files go with it. The terminal's twin is the list's own <c>--yes</c>.
     /// </summary>
     [Fact]
@@ -251,7 +251,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
             plan.Clear!.Units);
     }
 
-    /// <summary>D48 §6: nothing to clear is information, never a refusal, and its card's Apply calls no door.</summary>
+    /// <summary>Nothing to clear is information, never a refusal, and its card's Apply calls no door.</summary>
     [Fact]
     public async Task A_workspace_with_nothing_that_may_go_says_so_and_changes_nothing()
     {
@@ -275,7 +275,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// §5: the card is the first press, so drawing it holds what it listed in the proposal's file, once; a later draw, a refused
+    /// The card is the first press, so drawing it holds what it listed in the proposal's file, once; a later draw, a refused
     /// card and one that changes nothing hold nothing.
     /// </summary>
     [Fact]
@@ -301,7 +301,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// §5 step 2, §6.4: Apply sends exactly the units the card listed, never a fresh plan's. One kept since, or gone, is still
+    /// Apply sends exactly the units the card listed, never a fresh plan's. One kept since, or gone, is still
     /// sent, for the press to judge and count; one that may go now and the card did not list is said, and left to a new card.
     /// </summary>
     [Fact]
@@ -356,7 +356,7 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
             applied.Told);
     }
 
-    /// <summary>§5: a unit that changed since the list is kept by the press and counted; the card is settled refused, in its words.</summary>
+    /// <summary>A unit that changed since the list is kept by the press and counted; the card is settled refused, in its words.</summary>
     [Fact]
     public async Task A_quest_the_press_keeps_is_not_applied_and_says_why()
     {

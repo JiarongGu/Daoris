@@ -5,9 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MCPMEM1, through real processes: a server that keeps what every call hands it (a stand-in for a browser server that keeps
+/// Through real processes: a server that keeps what every call hands it (a stand-in for a browser server that keeps
 /// each page's requests) is started afresh by the keeper once it passes the ceiling, between calls, and the chat sees one server:
-/// no call is lost, the new server was initialized as the first was, and its working set never passes the ceiling by more than
+/// no call is lost, the new server is initialized as the first is, and its working set never passes the ceiling by more than
 /// the call that crossed it.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -106,9 +106,9 @@ public sealed class ServerKeeperProcessTests : IDisposable
         """;
 
     /// <summary>
-    /// MCPMEM1: a call that names an element reference from before a restart is answered with a fresh snapshot and a sentence that says the
+    /// A call that names an element reference from before a restart is answered with a fresh snapshot and a sentence that says the
     /// reference is out of date, never forwarded to a server that does not know it; once answered, a reference from the new snapshot is
-    /// forwarded as it was.
+    /// forwarded unchanged.
     /// </summary>
     [Fact]
     public async Task A_call_naming_a_reference_from_before_a_restart_is_answered_with_a_fresh_snapshot()

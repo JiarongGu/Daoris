@@ -5,9 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORKVIEW1a rule 4 over real stand-in processes: no <c>end</c> is written before its process's exit is read. A refused run's is
+/// Over real stand-in processes: no <c>end</c> is written before its process's exit is read. A refused run's is
 /// written once its kill's exit is read and before its capture's wait returns, a conversation's among them since its run is every
-/// start's (ONEWAY1h-iii).
+/// start's.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class LineageExitProcessTests : IDisposable

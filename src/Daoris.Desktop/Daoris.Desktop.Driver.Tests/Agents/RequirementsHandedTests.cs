@@ -5,11 +5,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// DRIFT1d (D133 §4): the session working a quest is handed its requirements, each the person's own words quoted
-/// verbatim with the check that proves it (DRIFT1c), beneath the quest and beside the ask's words (DRIFT1b), on a first
+/// The session working a quest is handed its requirements, each the person's own words quoted
+/// verbatim with the check that proves it, beneath the quest and beside the ask's words, on a first
 /// start, a resume and a carry-on alike — and told that its done answers each, met or departed, and that a departure
-/// holds what follows for the person's yes. The drift's build closed "per your answer" on its own reading; the
-/// requirement it departed from was never in front of it as the person's words.
+/// holds what follows for the person's yes.
 /// </summary>
 public sealed class RequirementsHandedTests
 {
@@ -76,9 +75,9 @@ public sealed class RequirementsHandedTests
     }
 
     /// <summary>
-    /// EVID1b (D144 §2): beneath a requirement naming evidence the session is told what Daoris reads in its branch's last commit
+    /// Beneath a requirement naming evidence the session is told what Daoris reads in its branch's last commit
     /// when it ends, and that a met answer without it holds the quest, so it can commit a missing file itself, which costs
-    /// nothing. A gate is said to be read from the landing queue (EVID1d). A requirement naming none reads as it did.
+    /// nothing. A gate is said to be read from the landing queue. A requirement naming none says nothing of evidence.
     /// </summary>
     [Fact]
     public void A_requirement_naming_evidence_tells_the_session_what_Daoris_reads_in_its_last_commit()
@@ -102,7 +101,7 @@ public sealed class RequirementsHandedTests
         Assert.DoesNotContain("Evidence:", third[..third.IndexOf("When you close it", StringComparison.Ordinal)]);
     }
 
-    /// <summary>The instruction's bound counts a requirement's evidence beside its words and check (CONTEXT1's one rule).</summary>
+    /// <summary>The instruction's bound counts a requirement's evidence beside its words and check.</summary>
     [Fact]
     public void The_bound_counts_each_requirements_evidence()
     {

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-v part b (D212; the foundation design §13.5's downgrade table, §19.4, row f-v's proof): a conversation's hand-over across a
+/// A conversation's hand-over across a
 /// downgrade, as <c>EndedLimitMoveDowngradeProcessTests</c> proves the ended limit move's. A shell is killed at each boundary of the hand-over
 /// (<see cref="Cuts"/>, and <c>quiescing</c> while the old part's turn runs), then an older build comes up on the home and leaves its own
 /// <c>&lt;s&gt;.hand-over.json</c> (the person's press, in the build that keeps a box), then this build returns. Its first come-up ends the
@@ -27,7 +27,7 @@ public sealed class HandOverMoveDowngradeProcessTests : IAsyncLifetime
     public async Task DisposeAsync() => await _h.DisposeAsync();
 
     /// <param name="Phase">The killed move's phase after this build's first come-up.</param>
-    /// <param name="Held">The reason it was held, where it was.</param>
+    /// <param name="Held">The reason it is held, where it is.</param>
     /// <param name="Closed">The reason it closed, where it did.</param>
     /// <param name="Older">Whether the older build's go-on carried the person's word on the old part, before the return.</param>
     /// <param name="Boxed">The box's own record after the next come-up: phase, held and closed.</param>
@@ -38,7 +38,7 @@ public sealed class HandOverMoveDowngradeProcessTests : IAsyncLifetime
     /// <summary>The box's hand-over where the line went on past the old part: judged again as it is taken and refused, the move closed by its phase.</summary>
     private static readonly string[] Superseded = ["closed", "", MoveCloseWhy.Superseded];
 
-    /// <summary>The row of a boundary, where the person's word was kept on the old part (<paramref name="word"/>) or none was.</summary>
+    /// <summary>The row of a boundary, where the person's word is kept on the old part (<paramref name="word"/>) or none is.</summary>
     private static After Row(string cut, bool word) => (cut, word) switch
     {
         // Decided and waiting for a turn: the hand-over holds its record from the go-on, so the older build carries nothing and the return takes it.
@@ -159,7 +159,7 @@ public sealed class HandOverMoveDowngradeProcessTests : IAsyncLifetime
         Assert.Equal(0, LiveLimitHarness.Wrote(shell, LiveLimitHarness.Word));
         Assert.Equal(0, _h.Events.After("c2", 0).Events.Count(e => e.Code == SessionEventCodes.Lost));
 
-        // A third come-up finds nothing to do: the box was imported once, and the return acted once.
+        // A third come-up finds nothing to do: the box is imported once, and the return acts once.
         var shape = string.Join(" | ", Store().Of("c1").Select(Shape));
         var heard = (_h.Heard(LiveLimitHarness.Word), _h.Ledger.Opened.Count);
         await _h.Runner().TakeUpAsync();

@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// DEV3 (D115 §3.1) over a REAL stub harness: node, holding its turn, spawned by the executor into real git
+/// Over a REAL stub harness: node, holding its turn, spawned by the executor into real git
 /// checkouts, against the in-process ledger. <see cref="SessionsOutliveTheirLookTests"/> holds the scheduling
 /// in the fast half; this holds it where the spawn, the process registry and the shutdown's kill are real.
 /// </summary>
@@ -75,8 +75,8 @@ public sealed class SessionsOutliveTheirLookProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 D104 with DEV3: closing the watch under two sessions started at two looks ends both, and it lets go
-    /// only once each record says it was stopped by the driver's shutdown, interrupted, to be carried on.
+    /// Closing the watch under two sessions started at two looks ends both, and it lets go
+    /// only once each record says it is stopped by the driver's shutdown, interrupted, to be carried on.
     /// </summary>
     [Fact]
     public async Task A_shutdown_still_marks_every_running_session_interrupted()
@@ -126,7 +126,7 @@ public sealed class SessionsOutliveTheirLookProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FLAKE3 over a real process: a stop made of a working session, then the driver's close at once, while the killed
+    /// Over a real process: a stop made of a working session, then the driver's close at once, while the killed
     /// process is still exiting or its conclusion still asking the service. The stop decided the end, so the record says it and
     /// is never interrupted: the driver's own, stood down for its lost take; the person's, stopped as theirs.
     /// </summary>

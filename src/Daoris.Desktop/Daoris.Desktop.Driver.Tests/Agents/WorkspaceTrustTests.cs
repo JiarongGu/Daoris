@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// **Can this harness actually use what the repository allows it?** (DEPLOY1.)
+/// **Can this harness actually use what the repository allows it?**
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>Written from a measured failure, not from documentation.</b> Three real driven runs
@@ -14,7 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// quest.</para>
 ///
 /// <para><b>Read, never written.</b> The flag is the person's grant — a tool that wrote it would have
-/// removed the one step in the chain that was theirs (SES3). So this answers a question and the
+/// removed the one step in the chain that is theirs. So this answers a question and the
 /// driver refuses on it, which turns a nine-minute silent failure into an instant sentence naming the
 /// one command that fixes it.</para>
 ///
@@ -119,14 +119,14 @@ public sealed class WorkspaceTrustTests : IDisposable
         Assert.Contains("claude", said, StringComparison.OrdinalIgnoreCase);
         // What it costs if nobody does it — the reason this is a refusal and not a warning.
         Assert.Contains("quest", said, StringComparison.OrdinalIgnoreCase);
-        // And Daoris's own door onto the same grant (D73), which is still the person's to give.
+        // And Daoris's own door onto the same grant, which is still the person's to give.
         Assert.Contains("daoris agent trust claude-code", said);
     }
 
     /// <summary>
-    /// 🔴 POOL1a3 (D197 point 3; the account-pool design §3 point 4, §4.4): a hold with no account is a conversation going on in
+    /// A hold with no account is a conversation going on in
     /// the person's own sign-in, whose trust file Daoris never writes, by a door or a press. Its sentence names the tool itself
-    /// at their terminal, and never Daoris's door, which no longer writes the own home.
+    /// at their terminal, and never Daoris's door, which does not write the own home.
     /// </summary>
     [Fact]
     public void A_hold_on_the_own_sign_in_names_the_tool_itself_and_never_daoris_s_door()
@@ -152,7 +152,7 @@ public sealed class WorkspaceTrustTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 OWNSPACE1a (D175): every new start runs in a Daoris account, whose home a `claude` run at the person's terminal never
+    /// Every new start runs in a Daoris account, whose home a `claude` run at the person's terminal never
     /// reads. Told to run `claude` in the folder, the person would trust it in their own home and the hold would come straight back,
     /// so a hold on a Daoris account names Daoris's door alone.
     /// </summary>
@@ -167,7 +167,7 @@ public sealed class WorkspaceTrustTests : IDisposable
     }
 
     /// <summary>
-    /// The file a hold reads is the one the session's harness reads (OWNSPACE1a): its account's home, else the tool's own home as
+    /// The file a hold reads is the one the session's harness reads: its account's home, else the tool's own home as
     /// the session inherits it, the person's configuration-home variable where they set one, else their profile folder.
     /// </summary>
     [Fact]
@@ -186,7 +186,7 @@ public sealed class WorkspaceTrustTests : IDisposable
     }
 
     /// <summary>
-    /// The twin of the CLI's `trustFile` rows (D73): the same two entries on both sides, because both
+    /// The twin of the CLI's `trustFile` rows: the same two entries on both sides, because both
     /// doors onto Claude Code ignore an untrusted folder's allow-list — measured, not assumed.
     /// </summary>
     [Fact]
@@ -203,7 +203,7 @@ public sealed class WorkspaceTrustTests : IDisposable
         Assert.Equal(".claude.json", adapters.AgentNamed("claude-code")!.Home.TrustFile);
     }
 
-    // ——— The grant (D73): asked, then written — never silently.
+    // ——— The grant: asked, then written — never silently.
 
     /// <summary>
     /// A folder the harness never recorded gets its own entry, in the form Claude Code writes today —

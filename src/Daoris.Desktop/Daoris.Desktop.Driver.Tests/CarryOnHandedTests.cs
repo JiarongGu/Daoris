@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL4f (D125 §3.5, amending D80): a carry-on is handed, from Daoris's own record of the cut-off session, what it left, and after
+/// A carry-on is handed, from Daoris's own record of the cut-off session, what it left, and after
 /// a limit that the last session ran on another account, now cooling. What does not travel is the harness's own conversation,
-/// which stays in the first account's home and is never read. SESSCTX1b (D189 point 4): what it left is Daoris's brief of its whole
+/// which stays in the first account's home and is never read. What it left is Daoris's brief of its whole
 /// line (<see cref="ContextBrief"/>), in place of the last plan and the last words alone.
 /// </summary>
 public sealed class CarryOnHandedTests : IDisposable
@@ -53,8 +53,8 @@ public sealed class CarryOnHandedTests : IDisposable
         ]));
 
     /// <summary>
-    /// 🔴 SESSCTX1b: a carry-on is handed Daoris's brief of its line in its carry-on section: the session it continues and why, its
-    /// plan as last kept with the turn it was written in, and its last words, quoted; never the instruction it was handed again.
+    /// A carry-on is handed Daoris's brief of its line in its carry-on section: the session it continues and why, its
+    /// plan as last kept with the turn it is written in, and its last words, quoted; never the instruction it is handed again.
     /// </summary>
     [Fact]
     public void A_carry_on_is_handed_the_brief_of_its_line_with_the_cut_off_session_s_plan_and_last_words()
@@ -86,7 +86,7 @@ public sealed class CarryOnHandedTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 MIXAGENT1a-ii (D163 point 1): a carry-on of a handed quest is told it was handed over from another agent's session and
+    /// A carry-on of a handed quest is told it is handed over from another agent's session and
     /// carries on from that session's plan and words, never that the person released it; and the accounting says the fact.
     /// </summary>
     [Fact]
@@ -108,7 +108,7 @@ public sealed class CarryOnHandedTests : IDisposable
         Assert.DoesNotContain("released", counted.Said);
     }
 
-    /// <summary>SYNCMERGE1b2: a brought-forward carry-on is told the press, never that the session before was cut off.</summary>
+    /// <summary>A brought-forward carry-on is told the press, never that the session before is cut off.</summary>
     [Fact]
     public void A_brought_forward_carry_on_says_the_person_brought_the_work_forward_and_never_that_it_was_cut_off()
     {

@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A conversation's turns (CONV4a) on a door that takes words at its next step (MSG1c, D137 §2.1): a word said while a turn
+/// A conversation's turns on a door that takes words at its next step: a word said while a turn
 /// is on the wire is handed to that turn at once and never queued, the turn lasting until every word handed to it is
-/// answered; anywhere else it waits for the turn's end, as it always did. And the words a conversation goes on with are
+/// answered; anywhere else it waits for the turn's end. And the words a conversation goes on with are
 /// never listed as queued, since its record already shows them waiting. A door scripted in memory, so the fast half.
 /// </summary>
 public sealed class ChatTurnsTests
@@ -48,7 +48,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// CHATFLOW1d (the chat-flow design §5.2 point 1, the Opus check's finding 5): the person's press reserves the conversation as its own state,
+    /// The person's press reserves the conversation as its own state,
     /// <c>_pressing</c>, never <c>Hold()</c>, under which a word is dropped. A press while a turn runs, or while a word waits, is refused; a word
     /// whose keeping is in flight when the press arrives is kept first, and the press then finds it waiting. A word sent under the press is
     /// kept, shown queued and waiting for the press, and starts no turn until the press answers, then at once.
@@ -96,8 +96,8 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// CHATFLOW1d (§5.2 point 1): the press holds the conversation through the landing hold, and a hold that outlasts its bound refuses the press
-    /// and lets the conversation go, so a word that waited for it starts at once. Whatever the press came to, nothing stays reserved.
+    /// The press holds the conversation through the landing hold, and a hold that outlasts its bound refuses the press
+    /// and lets the conversation go, so a word that waits for it starts at once. Whatever the press comes to, nothing stays reserved.
     /// </summary>
     [Fact]
     public async Task A_press_whose_landing_hold_outlasts_its_bound_is_refused_and_lets_the_conversation_go()
@@ -128,7 +128,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// CHATFLOW1d (the chat-flow design §6.1 (b), the Opus check's finding 4): the person's turn count is their own words in the line's
+    /// The person's turn count is their own words in the line's
     /// conversation history, each kept word once, plus those waiting. A turn they sent and finished after the press leaves nothing waiting,
     /// and the count still rose; Daoris's words, another agent's, and a word shown twice by its id count nothing more.
     /// </summary>
@@ -157,7 +157,7 @@ public sealed class ChatTurnsTests
         }
     }
 
-    /// <summary>A second opinion's findings as the runner makes them a conversation's turn (CHATFLOW1e), with its completion.</summary>
+    /// <summary>A second opinion's findings as the runner makes them a conversation's turn, with its completion.</summary>
     private static ChatMessage Findings(Func<bool, Task>? answering = null) =>
         ChatSendBack.Findings(
             new SaidWordView("f1", "Another agent, Codex by OpenAI, read your work and claims what follows.", DateTimeOffset.UnixEpoch, [], Reopens: true)
@@ -167,7 +167,7 @@ public sealed class ChatTurnsTests
             answering ?? (_ => Task.CompletedTask));
 
     /// <summary>
-    /// 🔴 CHATFLOW1e (the chat-flow design §6.1 (b)): the send-back is reserved only between turns. A turn that is not the person's, or a word
+    /// 🔴 The send-back is reserved only between turns. A turn that is not the person's, or a word
     /// that is not theirs waiting, leaves it waiting and hands nothing; between turns it is reserved, the service's hand asked inside the same
     /// operation, and its word taken as a turn of its own at once. A word sent while the hand answers waits behind that turn, and the findings
     /// never reach a turn at its next step.
@@ -211,7 +211,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// 🔴 CHATFLOW1e (§6.1 (b), Codex's finding 2): the person's service write held between the reservation's first check and its take. The
+    /// 🔴 The person's service write is held between the reservation's first check and its take. The
     /// send-back waits for the keep, finds their word queued and their turn count risen, and goes to them: the findings never overtake it.
     /// </summary>
     [Fact]
@@ -248,7 +248,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// 🔴 CHATFLOW1e (§6.1 (c), Codex's finding 3): the answering turn has a completion of its own. A person's word queued behind it, whose turn
+    /// 🔴 The answering turn has a completion of its own. A person's word queued behind it, whose turn
     /// moves <c>HEAD</c> as it starts, waits until the answering turn's reading is frozen, so that reading holds the answering turn's tip.
     /// </summary>
     [Fact]
@@ -286,7 +286,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// 🔴 CHATFLOW1e (§6.1 (c), the Opus check's finding 6): an urgent word of the person's steered into the answering turn marks its reading,
+    /// 🔴 An urgent word of the person's steered into the answering turn marks its reading,
     /// told the completion as theirs; a word of theirs that reaches only the turn's end runs after the capture, the reading unmarked.
     /// </summary>
     [Fact]
@@ -323,9 +323,9 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// 🔴 AGENTERRORS1b (D210, the agent-errors design §5.1, §7): while a transient episode waits on the turn in flight, a word of the person's
+    /// 🔴 While a transient episode waits on the turn in flight, a word of the person's
     /// is kept and shown queued, never handed to the turn at its next step as it would be, and ends the wait at once; the try takes it, first
-    /// and once, off the queue the page shows. When the try is on the wire a word said goes as it did.
+    /// and once, off the queue the page shows. When the try is on the wire a word said goes at its next step.
     /// </summary>
     [Fact]
     public async Task A_word_said_while_a_transient_episode_waits_is_queued_ends_the_wait_and_is_handed_to_the_try_once()
@@ -392,7 +392,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// What the words handed to a turn came to is settled before the turn is found to have ended (AGENTERRORS1b): the turn lasts, and the next
+    /// What the words handed to a turn came to is settled before the turn is found to have ended: the turn lasts, and the next
     /// word waits, until that is done, so a taken word whose own turn failed transient is tried again inside the turn.
     /// </summary>
     [Fact]
@@ -450,24 +450,24 @@ public sealed class ChatTurnsTests
 
         public List<string> Steered { get; } = [];
 
-        /// <summary>The ids of the words handed to the running turn at its next step, as the door was handed them (COWORK1c).</summary>
+        /// <summary>The ids of the words handed to the running turn at its next step, as the door is handed them.</summary>
         public List<string?> SteeredIds { get; } = [];
 
-        /// <summary>The ids of the turns that reached the door, as the door was handed them (COWORK1c).</summary>
+        /// <summary>The ids of the turns that reached the door, as the door is handed them.</summary>
         public List<string?> TookIds { get; } = [];
 
-        /// <summary>The words *Send now* steered into the running turn (STEER2a).</summary>
+        /// <summary>The words *Send now* steered into the running turn.</summary>
         public List<string> SteeredNow { get; } = [];
 
         public List<ChatQueue> Told { get; } = [];
 
-        /// <summary>How many times the door was asked to stop the turn in flight.</summary>
+        /// <summary>How many times the door is asked to stop the turn in flight.</summary>
         public int Interrupts;
 
-        /// <summary>Holds each stop on its way to the door until set: a slow wire (STEER2a).</summary>
+        /// <summary>Holds each stop on its way to the door until set: a slow wire.</summary>
         public TaskCompletionSource? InterruptGate { get; set; }
 
-        /// <summary>How many turns had reached the door when each stop landed: the turn it cut.</summary>
+        /// <summary>How many turns have reached the door when each stop lands: the turn it cuts.</summary>
         public List<int> InterruptedAt { get; } = [];
 
         /// <summary>Whether a word said during a turn is handed to it: the door's own word, as the agent's promptQueueing is.</summary>
@@ -481,7 +481,7 @@ public sealed class ChatTurnsTests
         /// <summary>The steer's answer, which the turn waits for as it waits for a word at its next step.</summary>
         public TaskCompletionSource Now { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        /// <summary>Told each turn as it reaches the door, before it is on the wire (COWORK1c).</summary>
+        /// <summary>Told each turn as it reaches the door, before it is on the wire.</summary>
         public Action<ChatMessage>? OnTake { get; set; }
 
         public ChatTurns Turns(bool steers = true) => new(
@@ -534,7 +534,7 @@ public sealed class ChatTurnsTests
             nextStep: steers ? () => TakesWordsMidTurn : null);
 
         /// <summary>
-        /// A word handed to the turn on the wire, as the protocol door handles one (COWORK1c): its attempt marked before the write, and
+        /// A word handed to the turn on the wire, as the protocol door handles one: its attempt marked before the write, and
         /// off the record once written; then the agent's answer.
         /// </summary>
         private static async Task Written(ChatMessage message, Task answered)
@@ -594,7 +594,7 @@ public sealed class ChatTurnsTests
         Assert.Equal(["read the five files", "the budget is in level.json"], door.Took);
     }
 
-    /// <summary>A door that hands no word to a running turn (the native door, a silent agent) keeps CONV4a's queue.</summary>
+    /// <summary>A door that hands no word to a running turn (the native door, a silent agent) keeps the ordinary queue.</summary>
     [Fact]
     public async Task A_door_with_no_next_step_queues_as_it_always_did()
     {
@@ -609,8 +609,8 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// After the person stopped the turn, a word waits for it to end instead of joining a turn that is winding up: handed
-    /// to it, the agent would answer it <c>cancelled</c> and its answer would reach nobody (STEER1 §3).
+    /// After the person stops the turn, a word waits for it to end instead of joining a turn that is winding up: handed
+    /// to it, the agent would answer it <c>cancelled</c> and its answer would reach nobody.
     /// </summary>
     [Fact]
     public async Task A_word_said_after_a_stop_waits_for_the_stopped_turn_to_end()
@@ -627,7 +627,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// 🔴 STEER2a (D136's 2026-10-16 note): *Send now* into a turn on the wire, where the agent steers, hands the words to it at
+    /// 🔴 *Send now* into a turn on the wire, where the agent steers, hands the words to it at
     /// once by the steer and never by a prompt at its next step; nothing is stopped or queued, and the turn lasts until the steer
     /// is answered.
     /// </summary>
@@ -656,7 +656,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// STEER2d: the steer found no turn running (<c>promptRequired</c>), so the door hands the words back: they are the next turn,
+    /// The steer finds no turn running (<c>promptRequired</c>), so the door hands the words back: they are the next turn,
     /// ahead of what waits, and the first turn lasts until the steer is answered so nothing closes before they go.
     /// </summary>
     [Fact]
@@ -679,7 +679,7 @@ public sealed class ChatTurnsTests
         await Poll.Until(() => !turns.Running, () => "the turns never ended");
     }
 
-    /// <summary>STEER2d: handed-back words are recorded only as taken under their own id, never said or told again.</summary>
+    /// <summary>Handed-back words are recorded only as taken under their own id, never said or told again.</summary>
     [Fact]
     public void Handed_back_words_are_recorded_only_as_taken_under_their_id()
     {
@@ -693,7 +693,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// 🔴 COWORK1a (D188 point 3, the message-urgency design trap 1): where the door steers nothing and takes no word mid-turn,
+    /// 🔴 Where the door steers nothing and takes no word mid-turn,
     /// *now* queues the words for the turn's end and stops nothing, said <c>no-interrupt</c>; the turn runs on, and the words are
     /// the next turn once it ends. With no turn running they are that turn at once.
     /// </summary>
@@ -720,9 +720,9 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// 🔴 STEER2a (a second maker's review): a stop decided for turn A is on the wire, or dropped, before the kept words' own
-    /// turn B goes. A slow stop that landed after B had gone would cut B, whose words have left the queue and would be lost.
-    /// The keeping stop is the person's own press (COWORK1a), so it is pressed here beside the words, never by them.
+    /// 🔴 A stop decided for turn A is on the wire, or dropped, before the kept words' own
+    /// turn B goes. A slow stop that lands after B has gone would cut B, whose words have left the queue and would be lost.
+    /// The keeping stop is the person's own press, so it is pressed here beside the words, never by them.
     /// </summary>
     [Fact]
     public async Task The_kept_words_turn_waits_for_the_stop_decided_for_the_turn_before_and_is_never_cut_by_it()
@@ -745,7 +745,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// 🔴 COWORK1a (the design §2.1, trap 13): on a door that takes words at its next step an ordinary word is never handed to the
+    /// 🔴 On a door that takes words at its next step an ordinary word is never handed to the
     /// turn in flight; it waits as a turn of its own. An urgent word said after it goes at the next step past it, since its sender
     /// chose sooner; when the turn ends the ordinary one goes, in the order said.
     /// </summary>
@@ -771,8 +771,8 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// COWORK1a (the design §8.2): a waiting word's level is changed while it waits, under its id. Made urgent, it goes at the turn's
-    /// next step where the door takes words then; made <i>now</i> where the agent steers, it is steered. A word a turn took already is
+    /// A waiting word's level is changed while it waits, under its id. Made urgent, it goes at the turn's
+    /// next step where the door takes words then; made <i>now</i> where the agent steers, it is steered. A word a turn has taken already is
     /// answered taken.
     /// </summary>
     [Fact]
@@ -806,10 +806,10 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// 🔴 STEER2a (the owner's case): where the agent steers, *Send now* steers the words into the running turn even past a word
+    /// 🔴 Where the agent steers, *Send now* steers the words into the running turn even past a word
     /// on its way and a helper's answer waiting as its own turn. The steer cuts the step in flight, not the prompt the word is
     /// queued as: the word is still taken at its next step, the helper's answer is still its own turn after, and nothing is
-    /// stopped (D136 point 4 forbids the stop, not the steer).
+    /// stopped (the stop is forbidden there, not the steer).
     /// </summary>
     [Fact]
     public async Task Sending_now_where_the_agent_steers_goes_past_words_on_their_way_and_waiting_and_stops_nothing()
@@ -840,10 +840,10 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// 🔴 COWORK1e (D188 point 4; the message-urgency design §2.3, trap 11), a conversation's turn pump: the turns judge each helper's
-    /// answer as its turn comes, once every turn before it was recorded, so two answers queued at once under separate asks never both
+    /// 🔴 A conversation's turn pump: the turns judge each helper's
+    /// answer as its turn comes, once every turn before it is recorded, so two answers queued at once under separate asks never both
     /// pass as the second. The one the bound holds never reaches the door and leaves the queue; the person's word after it still goes.
-    /// Each is judged inside the line's admission (COMMS1g), as the conversation's helper words judge it.
+    /// Each is judged inside the line's admission, as the conversation's helper words judge it.
     /// </summary>
     [Fact]
     public async Task Two_answers_queued_at_once_never_both_pass_as_the_second()
@@ -913,9 +913,9 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// 🔴 STEER2a (D136 point 4, evidence §3): on a next-step door whose agent cannot steer, the driver never stops a turn while a
+    /// 🔴 On a next-step door whose agent cannot steer, the driver never stops a turn while a
     /// word is on its way. The press goes at the next step, behind the word on its way, and past a helper's answer waiting as its
-    /// own turn, which is ordinary (COWORK1a, the design §2.1: urgency is when, not order). Either way <c>now: false</c>,
+    /// own turn, which is ordinary (urgency is when, not order). Either way <c>now: false</c>,
     /// <c>behind</c>.
     /// </summary>
     [Fact]
@@ -950,8 +950,8 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// STEER2a: a door that hands words to the turn at its next step but never said it steers sends them there, as a word said
-    /// then goes, and says why it was not now; nothing is stopped, since a stop would answer the word on its way cancelled.
+    /// A door that hands words to the turn at its next step but never said it steers sends them there, as a word said
+    /// then goes, and says why it is not now; nothing is stopped, since a stop would answer the word on its way cancelled.
     /// </summary>
     [Fact]
     public async Task Sending_now_where_the_door_takes_words_only_at_its_next_step_sends_them_there_and_says_why()
@@ -969,7 +969,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// STEER2a (CANCEL_TURN with <c>keep</c>): a stop that keeps the waiting words stops the turn in flight and withdraws
+    /// A stop that keeps the waiting words stops the turn in flight and withdraws
     /// nothing, and the words are the next turn; with nothing running it stops nothing.
     /// </summary>
     [Fact]
@@ -995,7 +995,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// The words a conversation goes on with (MSG1c, D137 §3.1) are its first turn, and the record already shows them
+    /// The words a conversation goes on with are its first turn, and the record already shows them
     /// waiting: the queue the page is told never lists them, while it still says a turn is opening.
     /// </summary>
     [Fact]
@@ -1026,7 +1026,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// MIXAGENT2a-iii: a helper's answer said to a conversation that is talking waits for the turn's end, as a turn of its own:
+    /// A helper's answer said to a conversation that is talking waits for the turn's end, as a turn of its own:
     /// never handed to the turn on the wire as the person's word is, never listed as queued (its record shows it waiting), and
     /// told delivered once its turn is on the wire, which is when it comes off the record.
     /// </summary>
@@ -1056,9 +1056,9 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// 🔴 COWORK1d (the message-urgency design §5; D163 point 2 as D188 amends it): a helper's answer to an urgent ask goes at the
+    /// 🔴 A helper's answer to an urgent ask goes at the
     /// conversation's next step, where its door takes words then, recorded as Daoris's words around the helper's claim; one with no level
-    /// waits for the turn's end as before (above).
+    /// waits for the turn's end (above).
     /// </summary>
     [Fact]
     public async Task A_helpers_answer_to_an_urgent_ask_goes_at_the_next_step_as_the_helpers_claim()
@@ -1077,7 +1077,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// MIXAGENT2a-iii: a helper's answer is recorded as Daoris's words around another agent's claim, under its record id so it
+    /// A helper's answer is recorded as Daoris's words around another agent's claim, under its record id so it
     /// pairs with the event that showed it waiting, and never as the person's: no preface and no browser line, origin `target`.
     /// </summary>
     [Fact]
@@ -1092,7 +1092,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// ASKQUESTS1 (Codex's read of the design, D191): Daoris's word to a conversation (what Ask Daoris's Apply did) is no word of the
+    /// Daoris's word to a conversation (what Ask Daoris's Apply sends) is no word of the
     /// person's. Waiting for the turn's end it is never listed in their queue, which the composer draws with its edits, and never
     /// edited by its id; a stop never hands it back to their box; and the record keeps it as Daoris's.
     /// </summary>
@@ -1116,7 +1116,7 @@ public sealed class ChatTurnsTests
         Assert.Equal(("target", DaorisWords.From), (recorded.Origin, recorded.From));
     }
 
-    /// <summary>ASKQUESTS1: Daoris's word waiting alone goes as the next turn, unlisted.</summary>
+    /// <summary>Daoris's word waiting alone goes as the next turn, unlisted.</summary>
     [Fact]
     public async Task Daoris_s_word_waiting_alone_goes_as_the_next_turn_unlisted()
     {
@@ -1134,9 +1134,9 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// MSG1c3 (D137's MSG1c2 note, D142 point 1): a word handed to the turn at its next step, whose turn the person stopped
-    /// while it was on its way and the agent then answered <c>cancelled</c>, may have been read with its answer dropped
-    /// (STEER1 §3). The line the conversation keeps of it carries a code the page words in the reader's language, the word's
+    /// A word handed to the turn at its next step, whose turn the person stopped
+    /// while it is on its way and the agent then answers <c>cancelled</c>, may have been read with its answer dropped.
+    /// The line the conversation keeps of it carries a code the page words in the reader's language, the word's
     /// id so the page settles the word it shows waiting, and the driver's English beside them, unchanged. Any other answer
     /// keeps no line: the agent's answer is in the turn.
     /// </summary>
@@ -1155,7 +1155,7 @@ public sealed class ChatTurnsTests
         Assert.Null(ChatTurns.Lost("said-1", stoppedUnder: false, stopReason: "cancelled"));
     }
 
-    /// <summary>QUEUEEDIT1a: a word the person took back is settled on the record by its id and its code, the page's words.</summary>
+    /// <summary>A word the person took back is settled on the record by its id and its code, the page's words.</summary>
     [Fact]
     public void A_word_taken_back_is_said_withdrawn_by_its_code()
     {
@@ -1166,7 +1166,7 @@ public sealed class ChatTurnsTests
         Assert.Equal("withdrawn", SessionEventCodes.Withdrawn);
     }
 
-    /// <summary>QUEUEEDIT1a: each word that waits has an id, and taking one back leaves the rest in the order said (D76 CONV4a).</summary>
+    /// <summary>Each word that waits has an id, and taking one back leaves the rest in the order said.</summary>
     [Fact]
     public async Task A_queued_word_has_an_id_and_is_removed_by_it_leaving_the_rest_in_order()
     {
@@ -1190,7 +1190,7 @@ public sealed class ChatTurnsTests
         Assert.Equal("and the seventh", door.Took[1]);
     }
 
-    /// <summary>QUEUEEDIT1a: an edit replaces the words where they wait, keeping the order and the files.</summary>
+    /// <summary>An edit replaces the words where they wait, keeping the order and the files.</summary>
     [Fact]
     public async Task A_queued_word_is_replaced_in_place_keeping_its_place_and_its_files()
     {
@@ -1213,7 +1213,7 @@ public sealed class ChatTurnsTests
         Assert.Equal("and the eighth instead", door.Took[1]);
     }
 
-    /// <summary>QUEUEEDIT1a: a word a turn already took is no longer the queue's: a normal answer, never an error.</summary>
+    /// <summary>A word a turn has already taken is no longer the queue's: a normal answer, never an error.</summary>
     [Fact]
     public async Task A_word_a_turn_already_took_is_answered_taken()
     {
@@ -1232,7 +1232,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// QUEUEEDIT1a: the word taken while the door opens is still the queue's (a stop withdraws it the same way): removed, it is
+    /// The word taken while the door opens is still the queue's (a stop withdraws it the same way): removed, it is
     /// never sent; edited, the edited words are.
     /// </summary>
     [Fact]
@@ -1269,8 +1269,8 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// QUEUEEDIT1a: the id is the queue's view alone: the word a turn takes carries none, so a conversation's record is
-    /// shaped as it was (D76: its queued words are not in the record until taken).
+    /// The id is the queue's view alone: the word a turn takes carries none, so a conversation's record is
+    /// shaped by the words taken (its queued words are not in the record until taken).
     /// </summary>
     [Fact]
     public async Task The_id_is_not_carried_into_the_turn_the_word_becomes()
@@ -1296,7 +1296,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// 🔴 A move at a turn's end is never mid-turn (SWITCH1c-ii, the switch design §4): the turns are held only where nothing runs
+    /// 🔴 A move at a turn's end is never mid-turn: the turns are held only where nothing runs
     /// or waits, and while held a word takes nothing, so no turn starts that the move's end would cut. Released, they take words
     /// again.
     /// </summary>
@@ -1317,7 +1317,7 @@ public sealed class ChatTurnsTests
         await Poll.Until(() => door.Took.Count == 1, () => "the word said once released never reached the door");
     }
 
-    /// <summary>A turn that runs, or a word that waits, is never held: the move waits for that turn's end (SWITCH1c-ii).</summary>
+    /// <summary>A turn that runs, or a word that waits, is never held: the move waits for that turn's end.</summary>
     [Fact]
     public async Task Turns_that_run_or_hold_a_waiting_word_are_not_held()
     {
@@ -1340,7 +1340,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c part B (the session-context design §2.2): turns held for a hand-over's take still take the one closing turn the take
+    /// 🔴 Turns held for a hand-over's take still take the one closing turn the take
     /// asks of the outgoing agent, and nothing else: a word said meanwhile takes nothing, and the closing turn's end is what the take
     /// waits for. Not held, no closing turn is taken.
     /// </summary>
@@ -1365,7 +1365,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1o (the foundation design §3.4 rule 4): turns held for a move whose open moves the old part's words keep a word said
+    /// 🔴 Turns held for a move whose open moves the old part's words keep a word said
     /// meanwhile on the record and queue it, starting no turn and never following the take's closing turn; released by a take that did not end
     /// them, they take it as their next turn under the record's id. Held for a move that moves no words, a word is neither kept nor taken.
     /// </summary>
@@ -1402,7 +1402,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1o: a word kept while the turns were held for such a move stays on the record once the move ended the conversation, for the
+    /// 🔴 A word kept while the turns are held for such a move stays on the record once the move ends the conversation, for the
     /// open to move: never attempted, sent or taken off here, whatever releases the turns after.
     /// </summary>
     [Fact]
@@ -1424,11 +1424,11 @@ public sealed class ChatTurnsTests
         Assert.Empty(record.TakenOff);
     }
 
-    // ——— COWORK1c: the conversation's queue is a view of its record's `said`.
+    // ——— The conversation's queue is a view of its record's `said`.
 
     /// <summary>
-    /// COWORK1c (the message-urgency design §6, trap 20): words said to a running conversation are kept on its record first and wait
-    /// under the record's ids, in its order, through its one dispatcher, though the first word's write answered last. Each leaves the
+    /// Words said to a running conversation are kept on its record first and wait
+    /// under the record's ids, in its order, through its one dispatcher, though the first word's write answers last. Each leaves the
     /// record by its id once its turn is on the wire, and the turns finish only once those take-offs have landed.
     /// </summary>
     [Fact]
@@ -1466,7 +1466,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// COWORK1c: a kept word handed to the turn on the wire at its next step goes under the record's id, never one of the door's own,
+    /// A kept word handed to the turn on the wire at its next step goes under the record's id, never one of the door's own,
     /// and leaves the record once handed.
     /// </summary>
     [Fact]
@@ -1488,7 +1488,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// COWORK1c (the design §6): a kept word waiting as a turn of its own is marked attempted on the record before its turn reaches the
+    /// A kept word waiting as a turn of its own is marked attempted on the record before its turn reaches the
     /// door, and leaves the record once its turn is on the wire; a word that never reached the door is never marked.
     /// </summary>
     [Fact]
@@ -1517,7 +1517,7 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1d-ii part 5 (the foundation design §3.4 rule 3): a word a keyed open moved onto this conversation's record, the replacement
+    /// 🔴 A word a keyed open moved onto this conversation's record, the replacement
     /// of a start its agent refused at the open, is taken as the record's own word under its id there: attempted on that record before its turn
     /// reaches the door and taken off it once on the wire. A producer's retry under its key, which the record answers with that same word, is
     /// acknowledged with no second turn.
@@ -1551,8 +1551,8 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
-    /// COWORK1c (the design §6): kept words a stop withdraws leave the record with them, handed back to the person; kept words waiting
-    /// when the harness went stay on the record, for the conversation to go on with as the shell comes up again, unless the person
+    /// Kept words a stop withdraws leave the record with them, handed back to the person; kept words waiting
+    /// when the harness goes stay on the record, for the conversation to go on with as the shell comes up again, unless the person
     /// stopped it, which ends them with it. Turns that take no more words keep nothing.
     /// </summary>
     [Fact]

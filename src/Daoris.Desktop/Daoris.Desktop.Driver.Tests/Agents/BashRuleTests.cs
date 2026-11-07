@@ -4,12 +4,12 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// Whether a Bash permission rule matches a command, as the harness's maker documents it (Claude Code,
-/// permissions, "Wildcard patterns", read 2026-10-01): a <c>*</c> stands for any text, spaces included; a
+/// permissions, "Wildcard patterns"): a <c>*</c> stands for any text, spaces included; a
 /// trailing <c>:*</c> is a trailing <c> *</c>; a trailing <c> *</c> that is the rule's only wildcard also
 /// matches the bare command; everything else is compared as written.
 /// </summary>
 /// <remarks>
-/// 🔴 A MODEL, for the tables that ask which form of a push meets a deny rule (UNBLOCK4). It is not the
+/// 🔴 A MODEL, for the tables that ask which form of a push meets a deny rule. It is not the
 /// harness: it splits no compound command and strips no wrapper, and every row it is asked about is one
 /// command. <see cref="BashRuleTests"/> holds it to the maker's own table. That the harness agrees on a
 /// real turn is the owner's canary to show.
@@ -66,7 +66,7 @@ public sealed class BashRuleTests
     [InlineData("Bash(ls *)", "lsof")]
     [InlineData("Bash(* --help *)", "npm --help")]
     [InlineData("Bash(ls:*)", "lsof")]
-    // What a `git push` rule does not stop, in the maker's own words (UNBLOCK4's finding).
+    // What a `git push` rule does not stop, in the maker's own words.
     [InlineData("Bash(git push *)", "git -C . push origin main")]
     [InlineData("Bash(git push *)", "git -c push.default=current push origin main")]
     [InlineData("Bash(git push *)", "git 'push' origin main")]

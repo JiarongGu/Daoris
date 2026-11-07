@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SYNCMERGE1b (D178 points 3 and 8; the sync design's amendment): a session whose take lost is stood down with its tree kept (D68 §5), and
+/// A session whose take lost is stood down with its tree kept, and
 /// once the person brings its work forward, a look carries it on in that tree. Once, across a restart, from the records alone: the session
 /// carried on is opened after the press, so neither its own end nor a new driver reading the same records carries the stand-down on again.
 /// A bring-forward that lost again carries nothing.
@@ -82,7 +82,7 @@ public sealed class BroughtForwardLookTests : IDisposable
         Assert.Equal(["s1", "s2"], _ledger.SessionsFor("q1").Select(s => s["id"]!.GetValue<string>()));
     }
 
-    /// <summary>A bring-forward that lost again (D178 point 3): nothing goes on, whatever looks; the conflict page says the second loss.</summary>
+    /// <summary>A bring-forward that lost again: nothing goes on, whatever looks; the conflict page says the second loss.</summary>
     [Fact]
     public async Task A_bring_forward_that_lost_again_carries_nothing()
     {
@@ -107,9 +107,9 @@ public sealed class BroughtForwardLookTests : IDisposable
     }
 
     /// <summary>
-    /// What the carried-on session is told of the one before it (D80's carry-on): its take lost and the person brought its work forward, so
+    /// What the carried-on session is told of the one before it: its take lost and the person brought its work forward, so
     /// the quest is this machine's again, never the stop's words that its work would double someone else's; offline, that the fresh take may
-    /// still lose (D178 point 8).
+    /// still lose.
     /// </summary>
     [Fact]
     public void The_carried_on_session_is_told_the_press_and_offline_that_the_take_may_still_lose()
@@ -152,9 +152,9 @@ public sealed class BroughtForwardLookTests : IDisposable
     }
 
     /// <summary>
-    /// SYNCMERGE1b2: a brought-forward step's tree that cannot be told to hold a moved source (no commit named, or one not held here) is
-    /// never said to be brought up to date with its "new submission": the source may never have moved, so only the line is said (D178's
-    /// rejected wording: a branch said brought up to date where only the line was, kept: the words say which).
+    /// A brought-forward step's tree that cannot be told to hold a moved source (no commit named, or one not held here) is
+    /// never said to be brought up to date with its "new submission": the source may never have moved, so only the line is said
+    /// (the words say which of the two is brought up to date).
     /// </summary>
     [Fact]
     public void A_brought_forward_trees_words_claim_no_new_submission_where_the_source_may_never_have_moved()

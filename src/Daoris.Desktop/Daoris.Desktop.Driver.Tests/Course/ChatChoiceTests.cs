@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 FOUNDATION1j part iii (the foundation design §2.4's first and fourth rows, §7 row 5; D212): a conversation's go-on and a briefed move go
+/// 🔴 A conversation's go-on and a briefed move go
 /// on on the agent whose conversation it is, the record's, and on its role's choice, Chat's order, only where the record names none; never on
 /// the machine's <c>adapter</c> key, so a person who set Chat's order sees their conversations go on where they chose. Chat off, or its entry
 /// unread, holds the words with its sentence rather than faulting.

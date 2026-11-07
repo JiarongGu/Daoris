@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 /// <summary>
-/// The person's word is <i>role</i> (D228): *actor* survives only in code names and stored shapes. The room as the helper reads it,
+/// The person's word is <i>role</i>: *actor* survives only in code names and stored shapes. The room as the helper reads it,
 /// whole under each machine, and the sentences the staffing and brainstorm refusals say never use it.
 /// </summary>
 [Trait(Category.Name, Category.Census)]

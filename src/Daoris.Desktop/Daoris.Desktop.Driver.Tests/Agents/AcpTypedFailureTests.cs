@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CODEXSTATUS1 (D210, the agent-errors design §4.3): <c>codex-acp</c> marks a terminal failure only for a client that asked for AIR's
+/// <c>codex-acp</c> marks a terminal failure only for a client that asked for AIR's
 /// typed session failures, and then answers the prompt <c>end_turn</c> with <c>_meta.jetbrains.air.sessionFailure</c>. Against a fake
 /// agent over in-memory streams, shaped as <c>codex-acp</c> 2.1.1 sends it (<c>index.js</c>, <c>createSessionFailureMeta</c>), on a clock
 /// the test moves: no process and no model, so the fast half. What the agent writes as its own message is never a failure.
@@ -55,7 +55,7 @@ public sealed class AcpTypedFailureTests
             .EnumerateArray().Select(each => each.GetString()!)];
     }
 
-    /// <summary>The typed marker is asked for by a door whose toolchain declares it, and by no other (the design §10).</summary>
+    /// <summary>The typed marker is asked for by a door whose toolchain declares it, and by no other.</summary>
     [Fact]
     public async Task The_typed_marker_is_asked_for_only_where_the_door_is_declared_to_need_it()
     {
@@ -72,9 +72,9 @@ public sealed class AcpTypedFailureTests
     }
 
     /// <summary>
-    /// 🔴 The install's capacity failure, typed: the turn fails transient, so the run waits and tries again in the SAME session on D210's
+    /// 🔴 The install's capacity failure, typed: the turn fails transient, so the run waits and tries again in the SAME session on the retry
     /// schedule, and the person's word said meanwhile is held and goes with the try, beside a go-on that carries the provider's words as
-    /// they were written.
+    /// they are written.
     /// </summary>
     [Fact]
     public async Task A_typed_capacity_failure_is_tried_again_in_the_same_session_with_the_person_s_word_and_the_provider_s_words()
@@ -97,7 +97,7 @@ public sealed class AcpTypedFailureTests
         Assert.Equal(["began:1", "wait", "waited", "try:1:2"], told.Lines);
     }
 
-    /// <summary>Typed failures every try: the bound holds (five tries, 31 minutes of waits) and the run ends exhausted, as D210 says.</summary>
+    /// <summary>Typed failures every try: the bound holds (five tries, 31 minutes of waits) and the run ends exhausted.</summary>
     [Fact]
     public async Task A_typed_failure_on_every_try_ends_past_the_bound()
     {
@@ -140,7 +140,7 @@ public sealed class AcpTypedFailureTests
         Assert.Empty(told.Lines);
     }
 
-    /// <summary>The same typed answer to a client that did not ask is read as it always was: a clean turn (the marker is the asking's).</summary>
+    /// <summary>The same typed answer to a client that does not ask is read as a clean turn (the marker is the asking's).</summary>
     [Fact]
     public async Task A_marker_is_read_only_by_a_client_that_asked_for_it()
     {

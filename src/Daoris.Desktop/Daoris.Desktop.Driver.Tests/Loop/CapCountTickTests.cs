@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CAPCOUNT1 (D130's note): the cap counts what the driver starts, never a conversation the person holds. Driven over the real client
+/// The cap counts what the driver starts, never a conversation the person holds. Driven over the real client
 /// and the real planner, with the service's doors standing in, in-process (<see cref="StandInLedger"/>): the records the service lists
 /// are read, counted once by <see cref="ActiveSessions.HoldsSlot"/>, and a look's quests and intakes take the slots they leave.
 /// </summary>
@@ -98,7 +98,7 @@ public sealed class CapCountTickTests : IDisposable
     }
 
     /// <summary>
-    /// What the driver started still counts: a running intake, a helper, a partner (COAGENT1b: its record serves its lead and carries
+    /// What the driver started still counts: a running intake, a helper, a partner (its record serves its lead and carries
     /// its piece) and a reviewer each hold the place of a quest.
     /// </summary>
     [Theory]
@@ -152,7 +152,7 @@ public sealed class CapCountTickTests : IDisposable
     [Fact]
     public async Task A_named_ask_standing_with_no_quest_waits_for_no_slot_and_takes_no_intake()
     {
-        // QUESTDELETE1: the person named its receiver and its quest was deleted, so no intake routes it by its proposal.
+        // The person named its receiver and its quest is deleted, so no intake routes it by its proposal.
         _ledger.Working("i1", "ask #a0", Tree("intake-room"), ask: "a0");
         _ledger.Ask("a1", tier: "named");
         var (driver, _) = Driver(Intake(cap: 1));

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// ACCTQUOTE1b (D125's ACCTQUOTE1 note): the terminal twin a card shows, and every command a refusal names, spells an account
+/// The terminal twin a card shows, and every command a refusal names, spells an account
 /// and a workspace for any shell, as the CLI's hints and the page's twins do (<see cref="ShellWord"/>): in double quotes where
 /// a space needs them, and a placeholder where no spelling holds. The words around a command name them as they are.
 /// </summary>
@@ -13,8 +13,7 @@ public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
         new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase) { [agent] = accounts };
 
     /// <summary>
-    /// A machine whose accounts need spelling: the set's order <c>work, my acct, R&amp;D</c> (POOL1b, D197). Before POOL1b it held
-    /// the workspaces' own lists, whose names a <c>default</c>'s and a <c>use</c>'s <c>--workspace</c> spelled; neither names one now.
+    /// A machine whose accounts need spelling: the set's order <c>work, my acct, R&amp;D</c>.
     /// </summary>
     private static readonly HelpMachineFacts Spelled = Machine with
     {
@@ -78,13 +77,13 @@ public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
         Assert.Equal(terminal, plan.Terminal);
     }
 
-    /// <summary>WORKFLOW1h-b: a workflow card's choice for a workspace spells the workspace for any shell; the workflow's id is an id.</summary>
+    /// <summary>A workflow card's choice for a workspace spells the workspace for any shell; the workflow's id is an id.</summary>
     [Theory]
     [InlineData("my team", "daoris workflow import <file> && daoris workflow use docs-to-pr --workspace \"my team\"")]
     [InlineData("R&D", "daoris workflow import <file> && daoris workflow use docs-to-pr --workspace <workspace>")]
     public void A_workflow_s_choice_spells_its_workspace(string workspace, string terminal)
     {
-        // A list of steps is refused at the save now (WORKFLOWCLEAN1 1b), so the card carries a shipped graph.
+        // A list of steps is refused at the save, so the card carries a shipped graph.
         var graph = System.Text.Json.JsonDocument.Parse(WorkflowDefaults.Of("merge-after-accept")!.GraphJson);
         var plan = Plan(new HelpProposal("p8", "workflow", "new", null, null, null, null, "why", "h1", "proposed")
         {

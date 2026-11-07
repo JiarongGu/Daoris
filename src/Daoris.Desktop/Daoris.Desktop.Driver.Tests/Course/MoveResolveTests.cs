@@ -4,11 +4,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-i part 3 (D212; the foundation design §3.3's one rule, §13.5's <c>held</c> row, §19.3): a held move closes <c>resolved</c> once
+/// A held move closes <c>resolved</c> once
 /// nothing it names still waits on its destination's <c>said</c>, read at the person's press through one of its doors, by its executor at
 /// each come-up and look, and wherever the course reads the destination's standing move as a precondition; until then it stands and its
-/// destination takes no move of its own. A begun effect alone keeps no hold. Read by nothing: the course is called directly here, as the
-/// row's proof says (round 8, <i>O8-F6</i>), and the come-up's and the look's reads are <see cref="MoveTakeUpTests"/>'.
+/// destination takes no move of its own. A begun effect alone keeps no hold. The course is called directly here,
+/// and the come-up's and the look's reads are <see cref="MoveTakeUpTests"/>'.
 /// </summary>
 /// <remarks>
 /// Every case has its own scratch home under <c>_fixtures/</c>; the destination's <c>said</c> is <see cref="MoveSaidStandIn"/>. One process is one
@@ -132,7 +132,7 @@ public sealed class MoveResolveTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1i path 1 (the foundation design §10 row 1i; round 8, <i>O7-F11</i>'s driven half, <i>O8-F6</i>): a driven line's limit
+    /// 🔴 A driven line's limit
     /// resume reads its destination's standing move through the course's one read, which closes a hold whose words the person took back, and
     /// the destination's limit move is then made; while the hold stands, the course holds it, and the limit's own account resumes as ever.
     /// </summary>

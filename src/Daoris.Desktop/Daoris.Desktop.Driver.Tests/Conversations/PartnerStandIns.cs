@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The measurements table's stand-in rows (COAGENT1b; the co-agent design §8.1), for the tests' stand-in agents alone: a row marked
+/// The measurements table's stand-in rows, for the tests' stand-in agents alone: a row marked
 /// <see cref="PartnerMeasurement.StandIn"/> that holds exactly the effective configuration a start on <paramref name="agent"/> would hand,
 /// as the driver makes it. Handed in through <c>LoopContext.PartnerMeasured</c>, it admits a test's start and never a production one.
 /// </summary>

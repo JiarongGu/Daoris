@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests.Conversations;
 
 /// <summary>
-/// SESSCTX1b (D189 points 4-5, the session-context design §3): the brief a new part is handed is a pure function of its line's
+/// The brief a new part is handed is a pure function of its line's
 /// records, composed with no model. Every case here is recorded events, as a part's record keeps them: a word counts once by its id,
 /// a word taken back is left out, an answered word is a past exchange, a channel's message is told by its mark, the bound keeps what
 /// its caps choose and says every cut, a Han character weighs three, a check is a call matching a declared gate, the last failed
@@ -239,7 +239,7 @@ public sealed class ContextBriefTests
         Assert.DoesNotContain("Run the tests", text);
         Assert.Contains("The last check session `c0nv0001` ran: `driver` (dotnet test), failed.", text);
         Assert.Contains("The last check session `c0nv0002` ran: `web` (web tests), completed.", text);
-        // The driver gate was not run again green, so its failure is the work's state, with what it printed.
+        // The driver gate has not run green again, so its failure is the work's state, with what it printed.
         Assert.Contains("The last check that failed, `driver`, printed: > Failed ThemeTests.Dark_mode_reads_the_system [12 ms]", text);
     }
 
@@ -304,7 +304,7 @@ public sealed class ContextBriefTests
 
         var brief = ContextBrief.Compose(line);
 
-        // In MIXAGENT1c's one wording for an outgoing agent's note.
+        // One wording for an outgoing agent's note.
         Assert.Contains("its agent left you this note. It is that agent's own claim, not Daoris's record: check it before you rely on it. "
             + "> I was about to wire the toggle.", Folded(brief));
         Assert.Contains("- session `q2s00001` for #q2, opened, completed", brief.Text);
@@ -313,8 +313,8 @@ public sealed class ContextBriefTests
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c part B (the session-context design §2.2): where the outgoing agent was asked for its closing note and wrote none in
-    /// its one turn, the brief says the note is absent, in the note's own section; where none was asked it says nothing of one.
+    /// Where the outgoing agent is asked for its closing note and writes none in
+    /// its one turn, the brief says the note is absent, in the note's own section; where none is asked it says nothing of one.
     /// </summary>
     [Fact]
     public void A_closing_note_asked_and_not_written_is_said_absent()
@@ -364,7 +364,7 @@ public sealed class ContextBriefTests
         // And the brief says what it left out, by count, and that the record holds it.
         Assert.Contains($"{leftWords.Count} of the words the session took", Folded(brief));
         Assert.Contains("Daoris's record of this line holds", Folded(brief));
-        // SESSCTX1f: and the tool that reads it, one call away.
+        // And the tool that reads it, one call away.
         Assert.Contains("`line_read`", Folded(brief));
         Assert.Equal(brief.Text.Length, brief.Sections.Sum(section => section.Chars ?? 0));
     }
@@ -440,7 +440,7 @@ public sealed class ContextBriefTests
         Assert.Equal(brief.Text.Length, brief.Account.Chars);
         Assert.Equal(brief.Text.Length, brief.Account.Sections.Sum(section => section.Chars ?? 0));
         Assert.All(brief.Account.Sections, section => Assert.False(string.IsNullOrEmpty(section.Source)));
-        // The request is the conversation's first word, so no other word was taken: the words' section is not handed.
+        // The request is the conversation's first word, so no other word is taken: the words' section is not handed.
         Assert.Equal(
             [HandedSections.BriefOpening, HandedSections.BriefTurns, HandedSections.BriefState],
             brief.Account.Sections.Select(section => section.Name));

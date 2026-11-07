@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The oracle over Claude Code's recorded driven streams (AGENTLYNTAI1d, the agent-lyntai design §6.3): each recorded stream under the
+/// The oracle over Claude Code's recorded driven streams: each recorded stream under the
 /// suite's <c>fixtures/</c> said by one program, read on the Daoris path (Claude Code's shipped door, its dialect and tables, on
 /// <see cref="TransportRun"/>) and on the layer path (<see cref="LayerRun"/> over the driven binding's registration, Lyntai's Claude door,
 /// held as a driven start holds it), each handed the same session, and compared completely: every difference is a named gap below or none.

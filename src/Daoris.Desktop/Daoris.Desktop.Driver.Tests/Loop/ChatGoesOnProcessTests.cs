@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MSG1c (D137 §2.1, §2.2, §4.2) with real conversations: a chat keeps its conversation's id on both doors, and an ended
+/// With real conversations: a chat keeps its conversation's id on both doors, and an ended
 /// chat the person writes to goes on in its own record and its own conversation, its words its first turn and taken off
 /// the record by their ids; an agent that no longer has the conversation sends the record back to how it ended, its words
 /// waiting and marked; a chat whose agent takes words at its next step takes one said during a turn at once, and says the
@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// A real process (node) speaking each door, with no model and no account, and the in-process ledger of
-/// <see cref="ChatGoOnTests"/>. The words reach the record as MSG1d's say door leaves them: kept on its <c>said</c> and
+/// <see cref="ChatGoOnTests"/>. The words reach the record as the say door leaves them: kept on its <c>said</c> and
 /// shown in its conversation, which is what the chat runner hears.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
@@ -27,7 +27,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
         _root = Path.Combine(_home, "engine");
         Directory.CreateDirectory(_root);
         SeededRules.In(_home);
-        // Claude Code's doors run on a Daoris account (OWNSPACE1a), never the person's.
+        // Claude Code's doors run on a Daoris account, never the person's.
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "daoris"));
     }
 
@@ -59,7 +59,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     }
 
     /// <summary>
-    /// The person's words as MSG1d's say door leaves them: kept on the record, and shown in its conversation. All kept
+    /// The person's words as the say door leaves them: kept on the record, and shown in its conversation. All kept
     /// before any is shown, as words said one after another before the runner looks, so what it goes on with is known.
     /// </summary>
     private static void Say(ChatLedger ledger, SessionEvents events, string session, params (string Id, string Text)[] words)
@@ -79,8 +79,8 @@ public sealed class ChatGoesOnProcessTests : IDisposable
         + $"record [{string.Join(" | ", events.After(id, 0).Events.Select(e => $"{e.Kind}:{e.Id}:{e.Text}"))}]";
 
     /// <summary>
-    /// 🔴 The owner's case for a chat (D137 §2.2): a conversation that ended is written to, and the same record goes on in
-    /// the same conversation. Its id was kept from <c>session/new</c>; its record leaves <c>completed</c> for working; the
+    /// 🔴 The owner's case for a chat: a conversation that ended is written to, and the same record goes on in
+    /// the same conversation. Its id is kept from <c>session/new</c>; its record leaves <c>completed</c> for working; the
     /// agent is sent <c>session/resume</c> on that id with both words as their own blocks; the words leave the record by
     /// their ids and are said again under them; and finishing ends the same record again. One record from start to end.
     /// </summary>
@@ -126,7 +126,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     }
 
     /// <summary>
-    /// MSG1c2: words kept on an ended chat while no runner heard them (the shell was not running) are taken up by the next
+    /// Words kept on an ended chat while no runner hears them (the shell is not running) are taken up by the next
     /// runner as it comes up. The same record goes on in its own conversation with them as its first turn, and its end is
     /// announced, since no route that started it is there to hear it.
     /// </summary>
@@ -165,7 +165,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c part B (D189 point 3, the session-context design §2): an agent that no longer has the conversation refuses to resume
+    /// 🔴 An agent that no longer has the conversation refuses to resume
     /// it (<c>resource_not_found</c>), which proves it lost, so it goes on by itself in a new part. The record goes back to how it ended,
     /// its note saying why; a new conversation opens in its tree on the same agent, its record naming the one it continues, why
     /// <c>resume</c>, by Daoris; it is handed Daoris's brief, then the words, in one prompt; the words leave the old record naming the new
@@ -233,7 +233,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c part B (the session-context design §2): a refusal on the wire proves nothing of the conversation's loss, so the
+    /// 🔴 A refusal on the wire proves nothing of the conversation's loss, so the
     /// conversation waits for the person: its record goes back, its words wait marked by <c>refused</c>, and nothing opens by itself. The
     /// person's *Go on with Daoris's brief* then opens the new part, why <c>resume</c> by the person, handed the brief and the words, which
     /// leave the old record naming it, its went line giving the person's press as the reason.
@@ -279,7 +279,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The native door (D137 §4.2): a chat keeps the id its harness's <c>init</c> line names, and an ended one goes on
+    /// 🔴 The native door: a chat keeps the id its harness's <c>init</c> line names, and an ended one goes on
     /// with <c>--resume &lt;id&gt;</c> and the words as its first message, joined by a blank line, taken off the record once its
     /// harness opened the conversation.
     /// </summary>
@@ -317,10 +317,10 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c (D189's amendment, the session-context design §2): a native chat whose harness ends on a failed exit before it
+    /// 🔴 A native chat whose harness ends on a failed exit before it
     /// names its conversation proves nothing of its loss, so the same resume is tried once more. Where that one opens it, the words go
     /// on in it under the same record, said once. Where it ends the same way again, the reason is <c>exited</c>, never <c>gone</c>,
-    /// and the words wait as said; what the conversation then does is its own (SESSCTX1c's part B).
+    /// and the words wait as said; what the conversation then does is its own.
     /// </summary>
     [Theory]
     [InlineData(1)]
@@ -367,7 +367,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A chat on the next-step door (D137 §2.1): its agent says it takes a prompt during a turn, so a word said while a
+    /// 🔴 A chat on the next-step door: its agent says it takes a prompt during a turn, so a word said while a
     /// turn runs goes at once as a second prompt — never queued — shown waiting with its reach, and taken where the agent
     /// hands the turn off to it. The turn lasts until the word is answered.
     /// </summary>
@@ -411,8 +411,8 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     }
 
     /// <summary>
-    /// A person's stop is never refused, even with a word on its way (D137 §2.1): the turn stops, and the conversation says
-    /// of the word that the agent may have read it and its answer was not kept (STEER1 §3), naming it by its id.
+    /// A person's stop is never refused, even with a word on its way: the turn stops, and the conversation says
+    /// of the word that the agent may have read it and its answer is not kept, naming it by its id.
     /// </summary>
     [Fact]
     public async Task A_stop_with_a_word_on_its_way_says_the_agent_may_have_read_it()
@@ -447,13 +447,13 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     private const string HelpersWords = "Another agent says five.";
 
     /// <summary>
-    /// CONTEXTDRIVE1b (§3 point 2): a go-on by an answer alone ends with Daoris's count for its line and the default rule that holds the
+    /// A go-on by an answer alone ends with Daoris's count for its line and the default rule that holds the
     /// line for the person, handed after the answer.
     /// </summary>
     private const string Counted = "Daoris's count for this line: 1 go-on by answers alone in a row; Daoris waits for the person after 2.";
 
     /// <summary>
-    /// A helper's answer as the driver leaves it (MIXAGENT2a-iii): kept on the asker's record marked as the helper's, and shown in
+    /// A helper's answer as the driver leaves it: kept on the asker's record marked as the helper's, and shown in
     /// its conversation as Daoris's words (`target`), reaching it on `resume`, which is what the chat runner hears.
     /// </summary>
     private static void Helped(ChatLedger ledger, SessionEvents events, string session, string id)
@@ -466,7 +466,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 MIXAGENT2a-iii: a conversation open between turns, which asked a helper, is said the helper's answer as its next turn:
+    /// 🔴 A conversation open between turns, which asked a helper, is said the helper's answer as its next turn:
     /// the agent hears it as a prompt, the record keeps it as Daoris's words around the claim (never the person's), and it comes
     /// off the record by its id, so a later going-on never says it again.
     /// </summary>
@@ -498,7 +498,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     }
 
     /// <summary>
-    /// MIXAGENT2a-iii: a conversation that is talking takes the helper's answer at its turn's end, as a turn of its own: never
+    /// A conversation that is talking takes the helper's answer at its turn's end, as a turn of its own: never
     /// handed into the turn in flight, and recorded after that turn's end.
     /// </summary>
     [Fact]
@@ -530,9 +530,9 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     }
 
     /// <summary>
-    /// MIXAGENT2a-iii: an ended conversation that asked goes on with the helper's answer through its own going-on: its own
+    /// An ended conversation that asked goes on with the helper's answer through its own going-on: its own
     /// conversation resumed with the answer as the turn, its note naming a helper's answer and never "your words", and the answer
-    /// off the record once it went.
+    /// off the record once it goes.
     /// </summary>
     [Fact]
     public async Task An_ended_conversation_goes_on_with_a_helpers_answer_and_names_it_as_the_helpers()
@@ -561,7 +561,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     }
 
     /// <summary>
-    /// A conversation whose agent named no conversation (a text door) says so as it ends (MSG1c): words written to it once
+    /// A conversation whose agent named no conversation (a text door) says so as it ends: words written to it once
     /// it ended cannot go on in it, which its record says before anyone writes.
     /// </summary>
     [Fact]
@@ -748,7 +748,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     /// A stand-in ACP agent: it names its conversation <c>conv-1</c> and advertises <c>session/resume</c>; it writes down
     /// each method, a resume's id, and each prompt's text blocks joined by <c> | </c>, and answers each prompt after a
     /// moment. <c>gone</c> refuses a resume as one it no longer has; <c>queues</c> says it takes prompts during a turn and
-    /// hands a held turn off to the next prompt, as <c>claude-agent-acp</c> was measured doing (STEER1); <c>queues-hold</c>
+    /// hands a held turn off to the next prompt, as <c>claude-agent-acp</c> does; <c>queues-hold</c>
     /// holds both until a cancel answers them <c>cancelled</c>; <c>slow</c> takes a second and a half to answer a prompt, long
     /// enough to say a word to a conversation that is talking. A prompt <c>hold</c> runs until something hands it off.
     /// </summary>
@@ -835,8 +835,8 @@ public sealed class ChatGoesOnProcessTests : IDisposable
 
     /// <summary>
     /// A stand-in for Claude Code's native door in a conversation: it answers its version and its login question; run on
-    /// <c>stream-json</c> input, it writes down what it was resumed with and each message, and names its conversation on
-    /// an <c>init</c> line as it takes its first message — <c>native-1</c>, or the one it was resumed on.
+    /// <c>stream-json</c> input, it writes down what it is resumed with and each message, and names its conversation on
+    /// an <c>init</c> line as it takes its first message — <c>native-1</c>, or the one it is resumed on.
     /// </summary>
     private string NativeHarness()
     {

@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row f: the release channels are Install's own <see cref="IReleaseSource"/>s, found by channel, so no switch on ids
-/// decides which maker's fetch runs, and each refuses what it refused before.
+/// The release channels are Install's own <see cref="IReleaseSource"/>s, found by channel, so no switch on ids
+/// decides which maker's fetch runs, and each keeps its own refusals.
 /// </summary>
 public sealed class ReleaseSourcesTests
 {

@@ -5,10 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL6g: the install found every account signed out about ten seconds after the application started, one after another,
-/// two seconds apart, each credential file left with empty tokens. The reading under test: several callers missed the probe
-/// cache together, so two probes asked one account's status at the same moment, and with its access token expired both
-/// refreshed with the same single-use refresh token. One won; the other was refused and signed the account out, wiping
+/// One account's status is asked once at a time. The reading under test: several callers that miss the probe
+/// cache together would ask one account's status at the same moment, and with its access token expired both
+/// would refresh with the same single-use refresh token. One wins; the other is refused and signs the account out, wiping
 /// the winner's new tokens too.
 /// </summary>
 /// <remarks>
@@ -16,11 +15,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// client does: it reads the account's credential file, waits as a token request would, then spends the refresh token it
 /// read, which succeeds once. The one that spends it first writes the rotated tokens; one that finds it already spent is
 /// refused once those tokens land, and signs the account out by writing empty tokens. What the real agent does when asked its
-/// status with an expired token was not measured here: the script is the reading, made runnable.</para>
+/// status with an expired token is not measured here: the script is the reading, made runnable.</para>
 /// <para>The first case is the control: two status questions at once, with nothing of Daoris between them, sign the
 /// account out, so the script does reproduce the mechanism. Its two questions meet (a <c>meet</c> file beside the script)
-/// so each has read before either spends: on a loaded machine the second's start came after the first's wait, and the
-/// control saw no race (FLAKE1). The rest hold Daoris's probe to asking one account at a time,
+/// so each has read before either spends: on a loaded machine the second's start can come after the first's wait, and the
+/// control would see no race. The rest hold Daoris's probe to asking one account at a time,
 /// across its callers, across two adapters onto one account, across another process holding the account's lock, and
 /// never while a session of Daoris's runs on it.</para>
 /// </remarks>
@@ -196,15 +195,15 @@ public sealed class ProbeRaceTests : IDisposable
     }
 
     /// <summary>
-    /// A start held on a signed-out account is tried at every look, and each try asked every account's status again, and
-    /// the person's own sign-in's. Now the person's press reads each account once (ROSTER1: a look reads none), a start
+    /// A start held on a signed-out account does not ask every account's status again at every look, nor the
+    /// person's own sign-in's. The person's press reads each account once (a look reads none), a start
     /// held on one asks nothing until a sign-in marks the account, then that account alone, and the hour's backstop asks it
     /// once more; the own sign-in is never the loop's to ask.
     /// </summary>
     [Fact]
     public async Task A_signed_out_account_is_asked_again_on_its_own_once_per_sign_out()
     {
-        // Both signed out: under D197 a start passes a signed-out account for the set's next, so it is held only where none may run.
+        // Both signed out: a start passes a signed-out account for the set's next, so it is held only where none may run.
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "agent", "account-1"));
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "agent", "account-2"));
         new HarnessSettings().WithDefault("agent", "account-1").Save(Settings);
@@ -228,13 +227,13 @@ public sealed class ProbeRaceTests : IDisposable
         for (var look = 0; look < 3; look++) Assert.False((await roster.SelectAsync("agent", Config, null, null)).Allowed);
         Assert.Equal((3, 2, 0), (TimesAsked("account-1"), TimesAsked("account-2"), TimesAsked("(own)")));
 
-        // The person's press asks the roster again, and never the own sign-in (POOL1a3, D197 point 3; Fable's F2).
+        // The person's press asks the roster again, and never the own sign-in.
         await roster.RosterAsync(Config, refresh: true);
         Assert.Equal((4, 3, 0), (TimesAsked("account-1"), TimesAsked("account-2"), TimesAsked("(own)")));
     }
 
     /// <summary>
-    /// ROSTER1 (D150 §5.3): a look, the page's roster and a cold cache ask no account; an account's own *Read again* asks that
+    /// A look, the page's roster and a cold cache ask no account; an account's own *Read again* asks that
     /// account alone, under its lock; and a restart starts from what it read, asking nothing.
     /// </summary>
     [Fact]

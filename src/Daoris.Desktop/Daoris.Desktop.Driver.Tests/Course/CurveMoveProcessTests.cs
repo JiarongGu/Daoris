@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SWITCH1c-ii (D165 point 3; the switch design §4) with real conversations: a conversation whose account is over its usage curve
+/// With real conversations: a conversation whose account is over its usage curve
 /// moves on its own at its turn's end to another account of the same agent that has room. The old ends, a new one opens in its tree
 /// on that account, told Daoris's briefing; its record continues the old by <c>curve</c>, asked by <c>daoris</c>; the old one's last
 /// line is <c>chat.moved</c> and the new one's first <c>chat.moved-from</c>. Moved once: within thirty minutes of that move, a turn's
@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// The conversation runs on the <c>acp-stub</c> adapter (a node stand-in on the protocol door), whose accounts are the stub's
-/// (TOOL4j: <c>accountOf</c>), two of them in the machine's list; the stub's command answers the sign-in question. What each account
+/// (<c>accountOf</c>), two of them in the machine's list; the stub's command answers the sign-in question. What each account
 /// said is written as a read would write it, and the roster's clock stands ten minutes after the in-process ledger's records were
 /// made, so the hold is counted from the new record's <c>created</c>. Written without a run: the merge's Process half runs it.
 /// </remarks>
@@ -112,7 +112,7 @@ public sealed class CurveMoveProcessTests : IDisposable
         var next = (await client.RecordAsync("c2"))!;
         Assert.Equal(("acp-stub", "account-2", _root), (next.Adapter, next.Profile, next.Tree));
         Assert.Equal((old, "curve", "daoris"), (next.From, next.FromWhy, next.FromBy));
-        // FOUNDATION1f-iii part a: the move is the store's record, closed delivered once the new one is briefed (its record can stand before
+        // The move is the store's record, closed delivered once the new one is briefed (its record can stand before
         // then); no box is kept for it.
         MoveRecord? kept = null;
         await Poll.Until(
@@ -121,12 +121,12 @@ public sealed class CurveMoveProcessTests : IDisposable
         Assert.Equal(("curve", "daoris", "c2", "account-2"), (kept!.Why, kept.By, kept.Destination, kept.Account));
         Assert.Null(new HandOverBox(_home).Read(old));
 
-        // Said where it happened, as SWITCH1c-i's pair: the old one's last line, the new one's first.
+        // Said where it happens, as a pair: the old one's last line, the new one's first.
         await Poll.Until(() => events.After(next.Session, 0).Events.Any(e => Coded(e)?.Code == "chat.moved-from"), () => Seen(ledger, events, next.Session));
         var opened = events.After(next.Session, 0).Events.Select(Coded).OfType<NotePart>().ToList();
         Assert.DoesNotContain(opened, part => part.Code is "chat.taken-over" or "chat.handed-over");
         var came = opened.First(part => part.Code == "chat.moved-from");
-        // A value read back from the record is the number JSON held, not the int the note was made with: compare as numbers.
+        // A value read back from the record is the number JSON holds, not the int the note is made with: compare as numbers.
         Assert.Equal(
             ("chat.moved-from", "account-1", "weekly", 75, 70),
             (came.Code, came.Value("from"), came.Value("window"), Convert.ToInt32(came.Value("used")), Convert.ToInt32(came.Value("curve"))));

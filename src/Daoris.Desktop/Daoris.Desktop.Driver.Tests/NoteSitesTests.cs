@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Every note site the driver writes, held to two things at once (LANG1a, D142 point 2; the language design §3–§4): its English
+/// Every note site the driver writes, held to two things at once: its English
 /// byte for byte as the record always kept it, which the terminal, the next prompt, an older page and the rehearsals read; and
 /// its parts, each line's code with its values, each coded part's text inside that English.
 /// </summary>
@@ -19,7 +19,7 @@ public sealed class NoteSitesTests
 
     // ——— A session's end (Observation): rows 1–17.
 
-    /// <summary>MODELROLE1c2 (D205 §3.5(c)): a choice its agent refused at the open ends `failed`, naming the agent and the model, no account.</summary>
+    /// <summary>A choice its agent refused at the open ends `failed`, naming the agent and the model, no account.</summary>
     [Fact]
     public void A_choice_its_agent_did_not_offer_names_the_agent_and_the_model()
     {
@@ -136,7 +136,7 @@ public sealed class NoteSitesTests
 
     /// <summary>
     /// As <c>Driver.AccountLimited</c> composes it: the lead-in, then the cooling line in place of the agent's sentence, which
-    /// names a zone and travels no further than the raw view (AGT3c).
+    /// names a zone and travels no further than the raw view.
     /// </summary>
     [Fact]
     public void A_cooling_account_s_line_carries_its_moment_and_why_by_code_and_names_no_account()
@@ -156,14 +156,14 @@ public sealed class NoteSitesTests
         var cooling = conclusion.Parts![^1];
         Assert.Equal("account.cooling-window", cooling.Code);
         Assert.Equal(("2026-10-03T09:30:00Z", CoolingWhy.Stated), ((string?)cooling.Value("until"), (string?)cooling.Value("why")));
-        // AGT3d: whose account and the kind of limit travel as facts, the page wording the window (`harness.window.*`).
+        // Whose account and the kind of limit travel as facts, the page wording the window (`harness.window.*`).
         Assert.Equal(("claude-code", "weekly"), ((string?)cooling.Value("owner"), (string?)cooling.Value("window")));
         Assert.DoesNotContain(cooling.Values, value => value.Value is string text && text.Contains("work", StringComparison.Ordinal));
         Assert.DoesNotContain("work", conclusion.Note);
     }
 
     /// <summary>
-    /// AGT3d: a limit whose reset named no window (Codex's, a spend limit with no reset) says whose account and no kind, by a
+    /// A limit whose reset names no window (Codex's, a spend limit with no reset) says whose account and no kind, by a
     /// code of its own, so the page words it rather than showing the line as recorded for a value it lacks.
     /// </summary>
     [Fact]
@@ -203,7 +203,7 @@ public sealed class NoteSitesTests
         Assert.Equal("claude-code", Assert.Single(named.Parts[0].Values, value => value.Key == "owner").Value);
         Assert.Single(named.Parts[0].Values);
 
-        // POOL1c (D197 point 3; the account-pool design §4.4): the own sign-in is the person's, outside Daoris's accounts, so its
+        // The own sign-in is the person's, outside Daoris's accounts, so its
         // line sends them to the tool itself at their terminal, never to Daoris to sign it in again.
         Line(RefusedAccounts.RefusedNote("claude-code", null),
             "Its provider refused `claude-code`'s own sign-in (401). It is your own, outside Daoris's accounts: sign it in again with "
@@ -215,7 +215,7 @@ public sealed class NoteSitesTests
             "held.refused-own");
     }
 
-    /// <summary>ROSTER1b: a refused sign-in's line names its owner as a value and its account, with its sign-in, only in the English.</summary>
+    /// <summary>A refused sign-in's line names its owner as a value and its account, with its sign-in, only in the English.</summary>
     [Fact]
     public void A_refused_sign_in_s_line_names_its_owner_as_a_value_and_its_account_only_in_the_English()
     {
@@ -259,7 +259,7 @@ public sealed class NoteSitesTests
         Assert.Equal(NoteBy.Program, unrecorded.Parts[2].By);
     }
 
-    /// <summary>TREEDEPS1 (D51's note): a tree its checkout's dependencies were copied into says so, and why any were not.</summary>
+    /// <summary>A tree its checkout's dependencies are copied into says so, and why any are not.</summary>
     [Fact]
     public void A_tree_s_opening_says_the_dependencies_copied_in_and_why_any_were_not()
     {
@@ -278,7 +278,7 @@ public sealed class NoteSitesTests
         Assert.Equal(["node_modules", "web/node_modules"], Assert.IsAssignableFrom<IReadOnlyList<string>>(copied.Parts[0].Value("copied")));
         Assert.Equal("tools/node_modules", copied.Parts[1].Value("modules"));
 
-        // Nothing copied: the opening as it was, then why each was not.
+        // Nothing copied: the opening alone, then why each is not.
         var none = TreeOpening.OpeningOf(path, "daoris/s-1a2b3c4d", "`main` (the line set for `engine`)", "main", unrecorded: null,
             new DependencyCopy([],
             [
@@ -307,7 +307,7 @@ public sealed class NoteSitesTests
     }
 
     /// <summary>
-    /// TREELOCAL1 (D216): the machine-local files a repository's gates read, copied in read-only, are said after the opening and its
+    /// The machine-local files a repository's gates read, copied in read-only, are said after the opening and its
     /// dependencies' lines, and each declared one not copied says why; `started.tree` keeps its words.
     /// </summary>
     [Fact]
@@ -342,7 +342,7 @@ public sealed class NoteSitesTests
         Assert.Equal("secrets/token.txt", opening.Parts[4].Value("input"));
         Assert.Equal(NoteBy.Program, opening.Parts[6].By);
 
-        // Nothing declared: the opening as it was.
+        // Nothing declared: the opening alone.
         Assert.Equal(
             TreeOpening.OpeningOf(path, "daoris/s-1a2b3c4d", "`main`", "main", unrecorded: null).Note,
             TreeOpening.OpeningOf(path, "daoris/s-1a2b3c4d", "`main`", "main", unrecorded: null, inputs: LocalCopy.None).Note);
@@ -378,7 +378,7 @@ public sealed class NoteSitesTests
         var cut = new PriorSession("s0", "/t", "failed");
         Line(StartSentence.Of(null, Quest(), null, null, true, cut, null, false, null)!,
             "carries `#q1` on after session `s0` was cut off.", "started.cut-off");
-        // RETRYWORK1: an open quest carried on in the tree its failed session committed work in says so, never that it was cut off.
+        // An open quest carried on in the tree its failed session committed work in says so, never that the session is cut off.
         Line(StartSentence.Of(null, Quest(), null, null, true, cut, null, false, null, carriesWork: true)!,
             "carries `#q1` on with the work session `s0` committed before it failed.", "started.carried-work");
 
@@ -387,7 +387,7 @@ public sealed class NoteSitesTests
             "carries `#q1` on: you stopped session `s0`, and released it, on another account, in the tree it worked in.",
             "started.released", "started.other-account", "started.same-tree");
 
-        // MIXAGENT1a-ii (D163 point 1): handed over, not released by the person; the agent it came from, never an account's name.
+        // Handed over, not released by the person; the agent it came from, never an account's name.
         var handed = released with { Adapter = "claude-code" };
         var carriedOver = StartSentence.Of(null, Quest(), null, "/t", true, handed, null, false, null, handedOver: true)!;
         Line(carriedOver, "carries `#q1` on: session `s0` was handed over from claude-code, in the tree it worked in.",
@@ -416,8 +416,8 @@ public sealed class NoteSitesTests
     }
 
     /// <summary>
-    /// SYNCMERGE1b (D178 point 7): a stand-down carried on once the person brought its lost take forward says the press, by its own code,
-    /// never that the session was cut off.
+    /// A stand-down carried on once the person brought its lost take forward says the press, by its own code,
+    /// never that the session is cut off.
     /// </summary>
     [Fact]
     public void A_bring_forward_s_carry_on_says_the_press_never_a_cut_off()
@@ -482,7 +482,7 @@ public sealed class NoteSitesTests
             "intake.person-deleted");
     }
 
-    // ——— A stop: rows 52–63, and MSG1c's line.
+    // ——— A stop.
 
     [Fact]
     public void A_pause_s_and_an_abandon_s_lines_name_their_work()

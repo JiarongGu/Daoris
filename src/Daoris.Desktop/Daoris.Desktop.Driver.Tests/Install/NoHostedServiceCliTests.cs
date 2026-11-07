@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// D241 point 5 and D228: the hosted services' command lines (<c>gh</c>, <c>az</c>) are no tool Daoris declares, lists or downloads. A pull
+/// The hosted services' command lines (<c>gh</c>, <c>az</c>) are no tool Daoris declares, lists or downloads. A pull
 /// request is a plugin's REST calls with the identity's token, so no part of the tool list names either program.
 /// </summary>
 public sealed class NoHostedServiceCliTests

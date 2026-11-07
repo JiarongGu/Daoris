@@ -4,8 +4,8 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COMMS1g (the comms design §5.3 and §13 point 8; the context-counters design §2.3, §2.4): the answers-alone count kept as one serialized
-/// admission per line in the desktop store. Seeded once from the line's events, zero where none read and at least where the history was cut
+/// The answers-alone count kept as one serialized
+/// admission per line in the desktop store. Seeded once from the line's events, zero where none read and at least where the history is cut
 /// or trimmed; read on over the events after what it read for the person's and Daoris's words and for the go-ons taken; a go-on judged
 /// inside one write, so two answers queued together are admitted once; and a waited quest's result reserved on its line.
 /// </summary>
@@ -73,7 +73,7 @@ public sealed class ContinuationAdmissionsTests : IDisposable
         Assert.Equal((0, LineCounts.Exact, (string?)null), Known(reset));
     }
 
-    /// <summary>Read on, a go-on the events show is counted once, whether it was reserved or not, and an event read once is never read again.</summary>
+    /// <summary>Read on, a go-on the events show is counted once, whether it is reserved or not, and an event read once is never read again.</summary>
     [Fact]
     public void Read_on_counts_each_go_on_once_and_takes_a_reserved_one()
     {

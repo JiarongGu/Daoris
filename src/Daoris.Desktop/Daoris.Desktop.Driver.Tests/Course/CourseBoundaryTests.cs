@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-xiv, the Course cuts: what they keep. Each case reads the surface that is there before the cuts and after, so it runs
-/// on the move commit as well as on the cuts: the channel claim and the acknowledgments' words, the lines a conversation's record keeps
+/// What the Course cuts keep. Each case reads the surface that is there on both sides of the cuts, so it runs
+/// across them: the channel claim and the acknowledgments' words, the lines a conversation's record keeps
 /// and ends by, the lost and withdrawn words, Ask Daoris's room spelling and where a kept conversation goes on, its modes as a record
 /// keeps them, the quest's take judged after a session ended and the transient end, the start's codes, and the stop's answer. The seams
 /// the cuts add are <c>CoursePortsTests</c>'.

@@ -6,7 +6,7 @@ namespace Daoris.Driver.Tests;
 public sealed class HelpRoomMakingAPluginTests
 {
     /// <summary>
-    /// PLUG9: a plugin runs on this machine as the person, so making one is work. The room sends it to the
+    /// A plugin runs on this machine as the person, so making one is work. The room sends it to the
     /// repository that holds plugins as an ask, naming every point a plugin may speak on, says the helper
     /// never writes one and never proposes adding one that has not landed, and leaves where plugins live
     /// to the person when no repository says it holds them.
@@ -24,7 +24,7 @@ public sealed class HelpRoomMakingAPluginTests
         Assert.Contains("the person decides where plugins live (a repository of their own, connected like any other)", agents);
         Assert.Contains("never propose adding one that has not landed", agents);
         Assert.Contains("`plugin_propose`", agents);
-        // The doors (D50): the terminal twins of what a plugin card applies.
+        // The doors: the terminal twins of what a plugin card applies.
         Assert.Contains("`daoris plugin add <folder>`, `daoris plugin enable|disable <id>`", agents);
     }
 }

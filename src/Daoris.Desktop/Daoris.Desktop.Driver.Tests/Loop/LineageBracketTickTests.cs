@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORKVIEW1a rule 4, through a REAL tick on the protocol door: a driven session's first process is bracketed, a <c>start</c>
-/// naming its token and this Daoris process before its spawn and an <c>end</c> naming the same token once its exit was read and
+/// Through a REAL tick on the protocol door: a driven session's first process is bracketed, a <c>start</c>
+/// naming its token and this Daoris process before its spawn and an <c>end</c> naming the same token once its exit is read and
 /// its capture drained; its environment and every line written for it carry that token, and the token leaves once its exit is seen.
 /// </summary>
 [Trait(Category.Name, Category.Process)]

@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HELPMODE1c3 (D183's note; the Ask Daoris modes design §4.1): Ask Daoris's chosen settings, the five ordinary ones. The person's
+/// Ask Daoris's chosen settings, the five ordinary ones. The person's
 /// record of what is chosen, beside housekeeping's; each start composing it again onto the allow-list; and the driver's judgement of
-/// each tool's request at every call, as housekeeping's is: the record is Ask Daoris's, the setting is chosen now and was handed at
+/// each tool's request at every call, as housekeeping's is: the record is Ask Daoris's, the setting is chosen now and handed at
 /// this start, and what it names is the conversation's workspace's. Then the setting's own checks, the proposal's, and the writer
 /// every door uses: the driver's file, edited where it is, so what it holds besides stays as written.
 /// </summary>
@@ -27,7 +27,7 @@ public sealed class HelpChosenSettingsTests : IDisposable
 
     private void Choose(string json) => File.WriteAllText(ConfiguredAccess.PathOf(_home), json);
 
-    /// <summary>What this start was handed, as its receipt keeps it.</summary>
+    /// <summary>What this start is handed, as its receipt keeps it.</summary>
     private void Handed(string session, params string[] settings) =>
         new HelpWired(_home).Keep(session, new HelpReceipt
         {
@@ -68,7 +68,7 @@ public sealed class HelpChosenSettingsTests : IDisposable
         Choose("""{ "housekeeping": "inspect", "settings": ["cooloff"] }""");
         Assert.Equal([ConfiguredAccess.CoolOff], ConfiguredAccess.Read(_home).Settings);
 
-        // SESSWATCH1a (D200): the timeout is no setting any more, so a grant of it kept in the file grants nothing.
+        // The timeout is no setting, so a grant of it kept in the file grants nothing.
         Choose("""{ "settings": ["timeout", "cap"] }""");
         Assert.Equal([ConfiguredAccess.Cap], ConfiguredAccess.Read(_home).Settings);
         Assert.Contains("`timeout` is no setting", Assert.Throws<DriverException>(() => ConfiguredAccess.Choose(_home, "settings", "timeout", true)).Message);
@@ -92,7 +92,7 @@ public sealed class HelpChosenSettingsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Each start composes the grant again (design §4.1's trap): the place a start is handed reads the record then, and its
+    /// 🔴 Each start composes the grant again: the place a start is handed reads the record then, and its
     /// allow-list names the chosen settings' tools beside the room's own and no other.
     /// </summary>
     [Fact]
@@ -138,7 +138,7 @@ public sealed class HelpChosenSettingsTests : IDisposable
 
     /// <summary>
     /// 🔴 Granted and handed, each setting is changed through its own door's edit on the driver's file, and the answer says what it
-    /// is now, with the terminal command that does the same; the rest of the file stays as it was.
+    /// is now, with the terminal command that does the same; the rest of the file stays as written.
     /// </summary>
     [Fact]
     public async Task A_granted_setting_is_changed_through_its_own_doors_edit()
@@ -197,7 +197,7 @@ public sealed class HelpChosenSettingsTests : IDisposable
 
     /// <summary>
     /// 🔴 A revoke refuses the next call, since each call reads the record; and a grant chosen after this start began waits for its
-    /// next turn, as its allow-list does (ACCESSSWAP1).
+    /// next turn, as its allow-list does.
     /// </summary>
     [Fact]
     public async Task A_revoke_refuses_the_next_call_and_a_grant_since_takes_the_next_turn()

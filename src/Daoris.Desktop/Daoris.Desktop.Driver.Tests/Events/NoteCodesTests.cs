@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The driver's note codes and the page's catalogues are two lists that must agree, in two languages and two artefacts, with
-/// no compiler between them (LANG1a, D142 point 4; the language design §5). Read from this side, as the modules'
+/// no compiler between them. Read from this side, as the modules'
 /// <c>RefusalCatalogueTests</c> reads its codes, so a new line the driver writes fails here until both languages word it.
 /// </summary>
 public sealed class NoteCodesTests
@@ -79,7 +79,7 @@ public sealed class NoteCodesTests
     }
 
     /// <summary>
-    /// Every reason no helper answered (<see cref="HelperWhy"/>, the person's no among them since HELPERNO1) is one the helper's
+    /// Every reason no helper answered (<see cref="HelperWhy"/>, the person's no among them) is one the helper's
     /// <c>why</c> declares, once, so the page words each one.
     /// </summary>
     [Fact]
@@ -94,7 +94,7 @@ public sealed class NoteCodesTests
         Assert.Equal(reasons, NoteCodes.Helper.All.Select(reason => reason.Code).Order(StringComparer.Ordinal));
     }
 
-    /// <summary>COAGENT1b: every reason a piece is refused, held or uncertain (<see cref="PartnerWhy"/>) is one the partner's <c>why</c> declares, once.</summary>
+    /// <summary>Every reason a piece is refused, held or uncertain (<see cref="PartnerWhy"/>) is one the partner's <c>why</c> declares, once.</summary>
     [Fact]
     public void Every_partner_reason_is_declared_once()
     {
@@ -106,7 +106,7 @@ public sealed class NoteCodesTests
         Assert.Equal(reasons, NoteCodes.Partner.All.Select(reason => reason.Code).Order(StringComparer.Ordinal));
     }
 
-    /// <summary>Every reason the driver can give (MSG1f's <see cref="ContinueWhy"/>) is one a <c>why</c> declares, and only those.</summary>
+    /// <summary>Every reason the driver can give (<see cref="ContinueWhy"/>) is one a <c>why</c> declares, and only those.</summary>
     [Fact]
     public void Every_continue_reason_is_declared_once()
     {
@@ -120,7 +120,7 @@ public sealed class NoteCodesTests
     }
 
     /// <summary>
-    /// UX7d-1: every step the walk can name (<see cref="OpeningWhy"/>) is a reason the opening's <c>why</c> declares, once, and
+    /// Every step the walk can name (<see cref="OpeningWhy"/>) is a reason the opening's <c>why</c> declares, once, and
     /// the codes that name it carry no value a reason does, so a reason's values never shadow the line's.
     /// </summary>
     [Fact]
@@ -138,7 +138,7 @@ public sealed class NoteCodesTests
         }
     }
 
-    /// <summary>CONVNOTE2a: every way a resumed line says whose words (<see cref="ResumedWhy"/>) is a reason, once, and none shadows the line's values.</summary>
+    /// <summary>Every way a resumed line says whose words (<see cref="ResumedWhy"/>) is a reason, once, and none shadows the line's values.</summary>
     [Fact]
     public void Every_resumed_reason_is_declared_once_and_none_shadows_its_line_s_values()
     {
@@ -181,10 +181,10 @@ public sealed class NoteCodesTests
     }
 
     /// <summary>
-    /// AGT3d (D125's AGT3c note): a limit's cooling line says whose account it was and, where the agent named one, the kind
+    /// A limit's cooling line says whose account it is and, where the agent named one, the kind
     /// of limit, so a reader on another machine learns both, by codes of their own. <c>account.cooling</c> keeps what it
-    /// declared, since notes already on machines carry it and the page words a line only with every value its entry says
-    /// (D142 point 4); a limit whose reset named no window has its own line for the same reason.
+    /// declares, since notes already on machines carry it and the page words a line only with every value its entry says;
+    /// a limit whose reset names no window has its own line for the same reason.
     /// </summary>
     [Fact]
     public void A_cooling_line_carries_its_owner_and_the_window_it_named_and_the_old_code_keeps_its_values()
@@ -201,8 +201,8 @@ public sealed class NoteCodesTests
     }
 
     /// <summary>
-    /// XAGENT1g: the look held for a second opinion says so under a code of its own, never a refused landing's, now that the page
-    /// words it; a note written before it keeps <c>landing.refused</c>.
+    /// The look held for a second opinion says so under a code of its own, never a refused landing's;
+    /// a note written before it keeps <c>landing.refused</c>.
     /// </summary>
     [Fact]
     public void A_look_held_for_a_second_opinion_is_noted_under_its_own_code()
@@ -305,7 +305,7 @@ public sealed class NoteCodesTests
     }
 
     /// <summary>
-    /// FOUNDATION1f-i part 2 (the foundation design §19.1 point 4): a move a live Daoris keeps past ten minutes is said on its line by a code
+    /// A move a live Daoris keeps past ten minutes is said on its line by a code
     /// of its own beside the watcher's quiet run, carrying how long it stood, worded in both catalogues; its English is the page's.
     /// </summary>
     [Fact]
@@ -324,7 +324,7 @@ public sealed class NoteCodesTests
     }
 }
 
-/// <summary>CONVNOTE2d1: words that did not reach an agent, or were not taken, by code; the English as it was written.</summary>
+/// <summary>Words that did not reach an agent, or were not taken, by code; the English as written.</summary>
 public sealed class WordsNotesTests
 {
     [Fact]
@@ -411,11 +411,11 @@ public sealed class WordsNotesTests
     }
 
     /// <summary>
-    /// MIXAGENT1a-i: why a conversation was handed over is a family of its own, each reason declared once; the two lines carry facts
-    /// only. `curve` (MIXAGENT1a-iii, D165) is a reason a record continues another by, and since SWITCH1c-i one the box takes.
-    /// SESSCTX1b (D189 point 4, the session-context design §7): every continuation names its link, so `resume`, `carry-on` and
+    /// Why a conversation is handed over is a family of its own, each reason declared once; the two lines carry facts
+    /// only. `curve` is a reason a record continues another by, and one the box takes.
+    /// Every continuation names its link, so `resume`, `carry-on` and
     /// `retry` are reasons a record continues another by, worded as every reason is, and no box takes them: the box's check stays on
-    /// the five a hand-over is asked for. MODELROLE1d2 (D205 §3.5(b)): `not-offered`, a replacement of a record its agent refused at the
+    /// the five a hand-over is asked for. `not-offered`, a replacement of a record its agent refused at the
     /// open, is one more such reason.
     /// </summary>
     [Fact]
@@ -452,7 +452,7 @@ public sealed class WordsNotesTests
     }
 
     /// <summary>
-    /// SWITCH1c-i (the switch design §4): a conversation moved by the usage curve says so on both sides, naming the accounts, as a
+    /// A conversation moved by the usage curve says so on both sides, naming the accounts, as a
     /// start's `opening.*` lines do, since a conversation's record is this machine's: the window over its curve, the use there as a
     /// whole percent and the curve's value there now, in whole points, as the walk's `over-curve` says them.
     /// </summary>
@@ -480,7 +480,7 @@ public sealed class WordsNotesTests
         NoteAssert.Holds(came);
     }
 
-    /// <summary>MIXAGENT1a-ii: a quest's session handed over ends with a line of its own, the agent it went to, and no account or path.</summary>
+    /// <summary>A quest's session handed over ends with a line of its own, the agent it went to, and no account or path.</summary>
     [Fact]
     public void A_quest_s_session_handed_over_says_where_it_went_by_code_with_facts_only()
     {
@@ -493,7 +493,7 @@ public sealed class WordsNotesTests
     }
 }
 
-/// <summary>CONVNOTE2f: a session's own background work (BGWAIT1), by code; the English as it was written.</summary>
+/// <summary>A session's own background work, by code; the English as written.</summary>
 public sealed class BackgroundNotesTests
 {
     [Fact]
@@ -507,7 +507,7 @@ public sealed class BackgroundNotesTests
         NoteAssert.Holds(waits);
     }
 
-    /// <summary>DONEEND1: the wait a quest no longer needs ends, naming the work that ends with the session.</summary>
+    /// <summary>The wait a quest no longer needs ends, naming the work that ends with the session.</summary>
     [Fact]
     public void A_wait_the_quest_no_longer_needs_names_the_work_that_ends_with_the_session()
     {
@@ -522,7 +522,7 @@ public sealed class BackgroundNotesTests
         NoteAssert.Holds(over);
     }
 
-    /// <summary>RUNENDS1: the quest closed, and the session ends rather than wait for what its agent scheduled for itself.</summary>
+    /// <summary>The quest closed, and the session ends rather than wait for what its agent scheduled for itself.</summary>
     [Fact]
     public void A_quest_that_closed_ends_the_session_without_waiting_for_its_agents_own_next_turn()
     {
@@ -541,7 +541,7 @@ public sealed class BackgroundNotesTests
         NoteAssert.Holds(closed);
     }
 
-    /// <summary>LANDBACK1 part 2: a done quest's tree left uncommitted is carried on, and the bound says when it stops.</summary>
+    /// <summary>A done quest's tree left uncommitted is carried on, and the bound says when it stops.</summary>
     [Fact]
     public void A_done_quest_with_uncommitted_work_is_carried_on_and_the_bound_is_said()
     {
@@ -594,7 +594,7 @@ public sealed class BackgroundNotesTests
     }
 }
 
-/// <summary>CONVNOTE2h: a review set-up's record and a second opinion's answers, by code; the English as it was written.</summary>
+/// <summary>A review set-up's record and a second opinion's answers, by code; the English as written.</summary>
 public sealed class ReviewAndOpinionNotesTests
 {
     [Fact]
@@ -640,7 +640,7 @@ public sealed class ReviewAndOpinionNotesTests
     [Fact]
     public void A_set_up_posted_at_a_commit_shorter_than_eight_names_it_whole()
     {
-        // DEDUP7c: the cut was commit[..8], which threw on a short id.
+        // A short id is named whole; cutting it to its first eight characters would throw.
         var posted = ReviewNotes.Posted("abc12", "browser", "Kept.", null);
         Assert.Equal("Daoris read `abc12` from its tree and posted what it showed in `browser`: Kept.", posted.Note);
         Assert.Equal("abc12", posted.Parts[0].Value("commit"));
@@ -673,7 +673,7 @@ public sealed class ReviewAndOpinionNotesTests
         NoteAssert.Holds(noted);
     }
 
-    /// <summary>XAGENT1g4a: the reviewer's own conclusion, by code; the English as it was written.</summary>
+    /// <summary>The reviewer's own conclusion, by code; the English as written.</summary>
     [Fact]
     public void A_reviewers_conclusion_codes_each_ending_and_leaves_the_failure_as_the_programs()
     {
@@ -710,7 +710,7 @@ public sealed class ReviewAndOpinionNotesTests
     }
 }
 
-/// <summary>CONVNOTE2e: a conversation's door that failed, by code; the English as it was written.</summary>
+/// <summary>A conversation's door that failed, by code; the English as written.</summary>
 public sealed class DoorNotesTests
 {
     [Fact]
@@ -773,7 +773,7 @@ public sealed class DoorNotesTests
     }
 }
 
-/// <summary>AGT3c: a words part a coded line will say as facts leaves the note, its space with it, and nothing else does.</summary>
+/// <summary>A words part a coded line will say as facts leaves the note, its space with it, and nothing else does.</summary>
 public sealed class NoteUnsaidTests
 {
     [Fact]
@@ -805,7 +805,7 @@ public sealed class NoteUnsaidTests
     }
 }
 
-/// <summary>What every note site's test asks of what it wrote (LANG1a): each coded part's text inside the note it built.</summary>
+/// <summary>What every note site's test asks of what it wrote: each coded part's text inside the note it built.</summary>
 internal static class NoteAssert
 {
     public static void Holds(Noted noted) => Holds(noted.Note, noted.Parts);

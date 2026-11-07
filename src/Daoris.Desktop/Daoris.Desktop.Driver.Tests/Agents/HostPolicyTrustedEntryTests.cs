@@ -56,7 +56,7 @@ public sealed class HostPolicyTrustedEntryTests : IDisposable
     }
 
     /// <summary>
-    /// Which readers each door's site has today (§5.2's round-4 and round-5 paragraphs, D125's recorded state): the protocol door's
+    /// Which readers each door's site has today: the protocol door's
     /// conclusion all four; the native door's driven conclusion is handed no failure, so the refused credential and the refused model act
     /// alone; a protocol conversation and a protocol brainstorm pass read their limit, the conversation its sign-in too; a native
     /// conversation and a native pass read nothing.

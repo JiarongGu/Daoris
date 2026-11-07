@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The native door's half of an answer continuing its session (ANSWER1a, D131 §1): the conversation's id read off the
+/// The native door's half of an answer continuing its session: the conversation's id read off the
 /// harness's own <c>system</c>/<c>init</c> line, and <c>claude -p &lt;answer&gt; --resume &lt;id&gt;</c> under the posture a
 /// start has. 🔴 Both are the maker's published shapes (<c>SDKSystemMessage</c> in <c>@anthropic-ai/claude-agent-sdk</c>
 /// 0.3.284, and the CLI's <c>--resume</c>), not yet a run on this machine. No process, so the fast half.
@@ -26,7 +26,7 @@ public sealed class NativeResumeTests
 
         var arguments = info.ArgumentList.ToList();
         Assert.Equal("claude", info.FileName);
-        // AGENTLYNTAI1s-i: the answer goes on the input (SessionMessagesTickTests proves the bytes), so `-p` is bare here.
+        // The answer goes on the input (SessionMessagesTickTests proves the bytes), so `-p` is bare here.
         Assert.Equal("--resume", arguments[arguments.IndexOf("-p") + 1]);
         Assert.DoesNotContain("Port 8080.", arguments);
         Assert.True(info.RedirectStandardInput);
@@ -96,7 +96,7 @@ public sealed class NativeResumeTests
     }
 
     /// <summary>
-    /// XAGENT1e (D155 point 7, design §6.3): another agent's findings waiting on an ended record go on in the session's own
+    /// Another agent's findings waiting on an ended record go on in the session's own
     /// conversation on the native door as the one argument it takes, in Daoris's fixed words exactly as the host composed
     /// them, after the person's word and a blank line, never the target again.
     /// </summary>
@@ -117,7 +117,7 @@ public sealed class NativeResumeTests
         var info = ProviderRegistry.Built().Resume("claude-code", Target(), ["claude"], resume.Conversation)!;
 
         var arguments = info.ArgumentList.ToList();
-        // The prompt is the resume's own, written on the input (AGENTLYNTAI1s-i), so it is read where it is composed.
+        // The prompt is the resume's own, written on the input, so it is read where it is composed.
         Assert.Equal("Also log the port.\n\n" + Findings, resume.Prompt);
         Assert.DoesNotContain(resume.Prompt, arguments);
         Assert.Equal("--resume", arguments[arguments.IndexOf("-p") + 1]);
@@ -128,8 +128,8 @@ public sealed class NativeResumeTests
     }
 
     /// <summary>
-    /// Every word held goes in one prompt, in the order said, joined by a blank line on the native door's argument (D137
-    /// §2.2), each with where its files are kept.
+    /// Every word held goes in one prompt, in the order said, joined by a blank line on the native door's argument,
+    /// each with where its files are kept.
     /// </summary>
     [Fact]
     public void The_words_held_are_one_argument_joined_by_a_blank_line()
@@ -145,8 +145,8 @@ public sealed class NativeResumeTests
     }
 
     /// <summary>
-    /// The run that takes them opens with the driver's line, then the same words under the ids they were shown with while
-    /// they waited (D137 §3.1), the person's, so the page pairs what waited with where it was taken.
+    /// The run that takes them opens with the driver's line, then the same words under the ids they are shown with while
+    /// they wait, the person's, so the page pairs what waits with where it is taken.
     /// </summary>
     [Fact]
     public void The_run_that_takes_them_says_them_again_under_their_ids()
@@ -181,12 +181,12 @@ public sealed class NativeResumeTests
         Assert.Equal([DrivenReach.TurnEnd, DrivenReach.TurnEnd], told);
         Assert.Equal(["Also log the port.", "And 9090."], inbox.TakeAllOrClose().Select(word => word.Text));
         Assert.Empty(inbox.TakeAllOrClose());
-        // Taking nothing closed it: a word said as the run winds up is refused, for the record's door to keep (MSG1d).
+        // Taking nothing closed it: a word said as the run winds up is refused, for the record's door to keep.
         Assert.False(inbox.Hold(new ChatMessage("Too late.", [])));
     }
 
     /// <summary>
-    /// TURNFAIL2 (D137's TURNFAIL1 note): a native run whose turn the harness said failed (<c>result</c> with <c>is_error</c>) is
+    /// A native run whose turn the harness reports failed (<c>result</c> with <c>is_error</c>) is
     /// not gone on from with the words held. They are handed back to wait on its ended record, as the protocol door's are, and the
     /// inbox is closed so a word said as it winds up is refused for the record's door to keep.
     /// </summary>
@@ -206,8 +206,8 @@ public sealed class NativeResumeTests
     }
 
     /// <summary>
-    /// TURNFAIL4 (D137's TURNFAIL2 note): the second-failure bound reads the native door's failed <c>result</c> as it reads the
-    /// protocol door's refused turn. The first failure leaves the words waiting; a run that went on from that, failing again,
+    /// The second-failure bound reads the native door's failed <c>result</c> as it reads the
+    /// protocol door's refused turn. The first failure leaves the words waiting; a run that goes on from that, failing again,
     /// marks them for the person, so a door that fails at once is not tried at every look.
     /// </summary>
     [Fact]
@@ -256,7 +256,7 @@ public sealed class NativeResumeTests
     }
 
     /// <summary>
-    /// 🔴 A conversation that goes on, on the native door (MSG1c, D137 §4.2): its own conversation resumed by the id it kept,
+    /// 🔴 A conversation that goes on, on the native door: its own conversation resumed by the id it kept,
     /// <c>--resume &lt;id&gt;</c> beside the structured stdin a conversation always has, so the words go as its first message.
     /// Never <c>--continue</c>, which takes the newest conversation in the folder.
     /// </summary>
@@ -287,7 +287,7 @@ public sealed class NativeResumeTests
     }
 
     /// <summary>
-    /// The native capture tells the conversation's id the moment its <c>init</c> line names it (MSG1c), once, so a
+    /// The native capture tells the conversation's id the moment its <c>init</c> line names it, once, so a
     /// conversation that lives for hours keeps it before it ends, as the protocol door keeps <c>session/new</c>'s.
     /// </summary>
     [Fact]

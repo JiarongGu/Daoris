@@ -3,13 +3,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Reading and writing across repositories (READ1, D107): a checkout is readable by agents outside it
+/// Reading and writing across repositories: a checkout is readable by agents outside it
 /// unless its repository, or failing that its workspace, says off; a repository's sessions write into
 /// another only where the person declared it. The setting lives in `driver.json`.
 /// </summary>
 /// <remarks>
-/// The file's shape was a twin (`.claude/knowledge/twins.md`) until the CLI's <c>driverconfig.ts</c> left (PUSH1f2b); these
-/// are its shape cases. Only the driver resolves the setting, so the precedence, the
+/// These are the file's shape cases. Only the driver resolves the setting, so the precedence, the
 /// reach and the rules are held here alone.
 /// </remarks>
 public sealed class AcrossTests
@@ -86,7 +85,7 @@ public sealed class AcrossTests
         var fewer = config.WithWriteAcross("plugins", "Engine", allow: false);
         Assert.Equal(["game"], fewer.WriteAcross["plugins"]);
         Assert.Empty(fewer.WithWriteAcross("plugins", "game", allow: false).WriteAcross);
-        // Clearing what was never declared changes nothing.
+        // Clearing what is not declared changes nothing.
         Assert.Equal(config.WriteAcross["plugins"], config.WithWriteAcross("plugins", "tools", allow: false).WriteAcross["plugins"]);
     }
 
@@ -101,9 +100,8 @@ public sealed class AcrossTests
     }
 
     /// <summary>
-    /// CASEFOLD1d: a relationship's names compare by <c>OrdinalIgnoreCase</c>, each letter to its one capital, as the CLI's
-    /// <c>writeAcrossProblem</c> and its reader compare them through <c>casefold.ts</c> (as the CLI's twin did until PUSH1f2b, naming this
-    /// behaviour): a name full case mapping would lower to the same letters is another repository, so it is neither refused
+    /// A relationship's names compare by <c>OrdinalIgnoreCase</c>, each letter to its one capital, as the CLI's
+    /// <c>writeAcrossProblem</c> and its reader compare them through <c>casefold.ts</c>: a name full case mapping would lower to the same letters is another repository, so it is neither refused
     /// as the repository's own, nor read as a repeat, nor cleared with the other.
     /// </summary>
     [Fact]
@@ -175,7 +173,7 @@ public sealed class AcrossTests
         Assert.Equal(["engine", "plugins", "secret"], reach.Reads.Select(c => c.Repository));
         Assert.Equal("/work/engine", reach.Reads[0].Path);
         Assert.Empty(reach.Writes);
-        // Another workspace's checkout is not read across (D48); one with no checkout here is nowhere.
+        // Another workspace's checkout is not read across; one with no checkout here is nowhere.
         Assert.Equal(["personal"], reach.Unread.Select(c => c.Repository));
     }
 
@@ -268,7 +266,7 @@ public sealed class AcrossTests
 
     /// <summary>
     /// 🔴 Deny beats allow, so a refusal on a checkout that holds the session's own tree, its kept files, or
-    /// a checkout it may use would refuse the session exactly what it was given.
+    /// a checkout it may use would refuse the session exactly what it is given.
     /// </summary>
     [Fact]
     public void No_refusal_lands_on_a_checkout_that_holds_the_sessions_own_or_what_it_may_use()

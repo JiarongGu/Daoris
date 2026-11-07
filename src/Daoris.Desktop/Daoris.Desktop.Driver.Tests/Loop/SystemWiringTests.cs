@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver.Tests.Platform;
 
 /// <summary>
-/// What This Daoris reads (WIRING1b, the this-Daoris design §3, §5, §6): one reader in the library, which the window's
+/// What This Daoris reads: one reader in the library, which the window's
 /// <c>SYSTEM_WIRING</c> and the terminal's <c>daoris wiring</c> both call, each fact with its source, a fact not read
 /// <c>null</c> with its <c>…Why</c>, and no secret anywhere in the answer. Every world here is handed in: no test reads this
 /// machine's environment, its account's or its home.
@@ -44,7 +44,7 @@ public sealed class SystemWiringTests : IDisposable
         return folder;
     }
 
-    /// <summary>An install's shape (D93): the marker at its root, the application under <c>app/</c>, its home <c>data/</c>.</summary>
+    /// <summary>An install's shape: the marker at its root, the application under <c>app/</c>, its home <c>data/</c>.</summary>
     private (string Install, string Home, string Driver) Install()
     {
         var install = Scratch("install");
@@ -165,7 +165,7 @@ public sealed class SystemWiringTests : IDisposable
 
     /// <summary>
     /// The layout as it runs (the second opinion's point 4): every entry where it is, an install's sign-ins still in its
-    /// <c>data/</c> (a home from before HOMELAYOUT3 moved them), said under <c>profiles</c> with why they stay; never the planned
+    /// <c>data/</c> (a home laid out in an earlier build), said under <c>profiles</c> with why they stay; never the planned
     /// table as an installed fact.
     /// </summary>
     [Fact]
@@ -219,7 +219,7 @@ public sealed class SystemWiringTests : IDisposable
         Assert.False(reading.Partial);
 
         var after = SystemWiring.Read(Terminal(home, driver, sizes: sizes));
-        // driver.json and the sessions' records are data; the kept file under a session is work's (D172's table), counted once.
+        // driver.json and the sessions' records are data; the kept file under a session is work's, counted once.
         Assert.Equal(130, (long)Folder(after, "data")["bytes"]!);
         Assert.Equal(7, (long)Folder(after, "work")["bytes"]!);
         Assert.Equal(11, (long)Folder(after, "profiles")["bytes"]!);
@@ -231,7 +231,7 @@ public sealed class SystemWiringTests : IDisposable
         Assert.Equal("not-daoris", (string?)left["stranger.txt"]["why"]);
     }
 
-    /// <summary>A named workspace's Ask Daoris room (ASKSCOPE1b) is the table's (HOMEROOMS1), so the census does not list it left over.</summary>
+    /// <summary>A named workspace's Ask Daoris room is the table's, so the census does not list it left over.</summary>
     [Theory]
     [InlineData("help", true)]
     [InlineData("help-alpha", true)]
@@ -514,7 +514,7 @@ public sealed class SystemWiringTests : IDisposable
         var (_, home, driver) = Install();
         string? Why(Func<int, long, bool> lives, Func<string, ServiceProbe?> ask) =>
             (string?)SystemWiring.Read(Terminal(home, driver) with { Lives = lives, AskStatus = ask })["terminal"]!["address"]!["why"];
-        // A host answering as this home's (HOMEID1): its status names the home's id.
+        // A host answering as this home's: its status names the home's id.
         var mine = HomeIdentity.Ensure(home);
         ServiceProbe Answering(string _) => new(true, DateTimeOffset.UtcNow, null, "lexical only", null, mine);
 
@@ -529,7 +529,7 @@ public sealed class SystemWiringTests : IDisposable
 
         var taken = SystemWiring.Read(Terminal(home, driver) with { Lives = (_, _) => true, AskStatus = Answering });
         Assert.True((bool)taken["terminal"]!["address"]!["taken"]!);
-        // With no variable, a terminal an install carries takes the service from the address file (FINDDAORIS1).
+        // With no variable, a terminal an install carries takes the service from the address file.
         Assert.Equal("address-file", (string?)taken["service"]!["from"]);
 
         File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Running), """{ "url": "http://192.0.2.7:5177", "pid": 42, "started": 1 }""");
@@ -639,7 +639,7 @@ public sealed class SystemWiringTests : IDisposable
         Assert.True(status.Answers);
         Assert.Equal("2.0.0+deadbeef", status.Version);
         Assert.Equal("lexical only", status.Tier);
-        // The home's id read as discovery reads it (RunningService.ReadStatus, HOMEID1).
+        // The home's id read as discovery reads it (RunningService.ReadStatus).
         Assert.Equal("0123456789abcdef0123456789abcdef", status.Home);
 
         var foreign = ServiceProbe.Of("<html>not a status</html>", at);

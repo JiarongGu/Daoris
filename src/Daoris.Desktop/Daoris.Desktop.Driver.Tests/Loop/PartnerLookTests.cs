@@ -3,11 +3,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1b (D199 points 2 to 4; the co-agent design §2.3, §7.2): the look's partner pieces, in process. A person's ask on file is
+/// The look's partner pieces, in process. A person's ask on file is
 /// judged, reserved, prepared and started beside the look; the state names the copy before it is made and the record and the job
-/// before the turn; the end is written with the keeper's moment only once the pass is back, which is after its job was waited empty;
+/// before the turn; the end is written with the keeper's moment only once the pass is back, which is after its job is waited empty;
 /// the keeper's result moves the piece to its answer, held or refused; and a restart reconciles a piece from what it observes. The pass
-/// and the keeper are stand-ins here (the real ones are the <c>Process</c> and git halves'), so nothing starts a process (MOD8).
+/// and the keeper are stand-ins here (the real ones are the <c>Process</c> and git halves'), so nothing starts a process.
 /// </summary>
 public sealed class PartnerLookTests : IDisposable
 {
@@ -50,7 +50,7 @@ public sealed class PartnerLookTests : IDisposable
         }
     }
 
-    /// <summary>The stand-in keeper: what it is told to say, and the state it was handed.</summary>
+    /// <summary>The stand-in keeper: what it is told to say, and the state it is handed.</summary>
     private sealed class Keeper
     {
         public List<PartnerState> Handed { get; } = [];
@@ -103,7 +103,7 @@ public sealed class PartnerLookTests : IDisposable
     }
 
     /// <summary>
-    /// DRAINHOLD1 (the driver follow-up): an update's drain holds the piece's start, its restart's preparing and its keeping, which start a
+    /// An update's drain holds the piece's start, its restart's preparing and its keeping, which start a
     /// session or change a tree. The look takes no slot, writes no state and says the drain's hold once; after *Not now* it starts.
     /// </summary>
     [Fact]
@@ -208,7 +208,7 @@ public sealed class PartnerLookTests : IDisposable
     }
 
     /// <summary>
-    /// FOUNDATION1 row p (the design §3.4 rule 5): a hand the host answers settled (the piece's word was kept by an earlier hand, whose answer was
+    /// A hand the host answers settled (the piece's word is kept by an earlier hand, whose answer is
     /// lost, and taken) marks the piece handed, its receipt taken naming the record the word left, and records nothing: no note on the lead, no
     /// event for its conversation to hear, nothing kept.
     /// </summary>
@@ -261,7 +261,7 @@ public sealed class PartnerLookTests : IDisposable
         Assert.Equal(PartnerStates.Answered, Files.ReadState("p1")!.State);
     }
 
-    // ——— COMMS1b (the comms design §4.2, §13 points 1 and 3): against a host with the one door for solicited answers.
+    // ——— Against a host with the one door for solicited answers.
 
     /// <summary>An answered piece on file, its partner's record serving <c>s1</c>, and the host with the one door.</summary>
     private OpinionStandIn Door(string lead = "completed")
@@ -276,7 +276,7 @@ public sealed class PartnerLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 §13 point 1 (B1): the look reads the line's head and whether its park was answered, as the helper's does. A park still waiting on the
+    /// The look reads the line's head and whether its park is answered, as the helper's does. A park still waiting on the
     /// person is asked nothing; once the person answered it, the piece's answer is handed beside theirs, so its go-on takes both in one prompt.
     /// </summary>
     [Fact]
@@ -371,7 +371,7 @@ public sealed class PartnerLookTests : IDisposable
         Assert.Equal((PartnerStates.Refused, PartnerWhy.AskerUnfit), (Files.ReadState("p2")!.State, Files.ReadState("p2")!.Code));
     }
 
-    /// <summary>🔴 D199 point 4: a choice the sheet refuses (`not-measured`) refuses the piece, and nothing is reserved or started.</summary>
+    /// <summary>A choice the sheet refuses (`not-measured`) refuses the piece, and nothing is reserved or started.</summary>
     [Fact]
     public async Task An_agent_not_measured_is_refused_at_the_persons_own_ask()
     {

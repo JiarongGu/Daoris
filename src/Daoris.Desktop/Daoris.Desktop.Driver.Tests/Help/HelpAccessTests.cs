@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// HELPMODE1a1 (D183 points 1, 3): what a start of Ask Daoris gets on its harness under the mode the person chose. Restricted
+/// What a start of Ask Daoris gets on its harness under the mode the person chose. Restricted
 /// keeps each harness as it ran; full runs each in its own mode that asks nothing, a flag on the native door and a required mode
 /// on the protocol door; a harness with no such mode is refused, naming it. No process, so the fast half.
 /// </summary>
@@ -74,7 +74,7 @@ public sealed class HelpAccessTests : IDisposable
     /// <summary>
     /// Its place under full access: no allow-list and nothing asked, its harness's mode that asks nothing, every plugin server and no
     /// tree guard, since its tree is the room and its housekeeping is outside it; the person's own denies still go, the shipped
-    /// no-push among them. Restricted leaves the place exactly as HELP1a made it.
+    /// no-push among them. Restricted leaves the place unchanged.
     /// </summary>
     [Fact]
     public void Its_place_under_full_access_asks_nothing_and_keeps_the_persons_denies()
@@ -104,8 +104,7 @@ public sealed class HelpAccessTests : IDisposable
     }
 
     /// <summary>
-    /// A start's place is put under the mode in the driver's file at that start, with what it got for its transcript's first line
-    /// (D183 point 3), kept apart from the mode chosen; a repository's conversation is left as it is and says nothing; and full access
+    /// A start's place is put under the mode in the driver's file at that start, with what it got for its transcript's first line, kept apart from the mode chosen; a repository's conversation is left as it is and says nothing; and full access
     /// on an agent with none such ends the start, saying so.
     /// </summary>
     [Fact]
@@ -133,7 +132,7 @@ public sealed class HelpAccessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HELPMODE1a2 (D183 point 3): a conversation going on under another mode than it last ran under says the change first, then
+    /// A conversation going on under another mode than it last ran under says the change first, then
     /// what it runs under now, in one line; one going on under the same mode says what it runs under alone. A record from before the
     /// modes ran restricted.
     /// </summary>
@@ -160,10 +159,10 @@ public sealed class HelpAccessTests : IDisposable
     }
 
     /// <summary>
-    /// ACCESSSWAP1 (D183 point 2, replacing HELPMODE1a2's next start): a change under a running conversation is said as what changed,
+    /// A change under a running conversation is said as what changed,
     /// its mode and its housekeeping grant each, and when it applies: its agent ends at its turn's end, never mid-turn, or now where it
     /// is idle, and its next words resume the same conversation under the new access. Under the access chosen there is nothing to say.
-    /// HELPMODE1c3: the chosen settings are compared and said the same way.
+    /// The chosen settings are compared and said the same way.
     /// </summary>
     [Fact]
     public void A_change_while_a_conversation_runs_says_what_changed_and_that_its_next_turn_takes_it()

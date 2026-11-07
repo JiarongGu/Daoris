@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Ask and wait (D79), through REAL ticks: a quest's session asks another repository and waits, the
+/// Ask and wait, through REAL ticks: a quest's session asks another repository and waits, the
 /// driver leaves the quest sitting while the question is open, and once it closes the driver resumes
 /// the quest — in the same tree, handed the answer. A real process (node) and a stand-in service on a
 /// loopback port, the shape <see cref="DrivenSessionInputTests"/> uses; no model and no account.
@@ -83,7 +83,7 @@ public sealed class AskAndWaitTickTests : IDisposable
 
     /// <summary>
     /// 🔴 A resumed session that stops short — the answer in hand, the quest still taken and still
-    /// waiting on the old question — is waiting on the person (STANDDOWN2), never "someone else has
+    /// waiting on its question — is waiting on the person, never "someone else has
     /// it", and a park is not resumed again by itself, so nothing loops.
     /// </summary>
     [Fact]
@@ -105,7 +105,7 @@ public sealed class AskAndWaitTickTests : IDisposable
     }
 
     /// <summary>
-    /// SESSONE1d (D167 point 4 as amended; the co-working design §3): while the first part waits on its question, a request of the
+    /// While the first part waits on its question, a request of the
     /// same ask reaches the same repository, published by the session that answers the question. It is a further part of the same
     /// session, so it goes into the tree the first part left free, and is told what that part did and where.
     /// </summary>
@@ -167,7 +167,7 @@ public sealed class AskAndWaitTickTests : IDisposable
     }
 
     /// <summary>
-    /// The stand-in harness: it writes down where it ran and what it was handed, then does what an
+    /// The stand-in harness: it writes down where it ran and what it is handed, then does what an
     /// agent following that target would — take, ask and wait on a first start; close done on a resume.
     /// </summary>
     private string Agent()
@@ -254,32 +254,32 @@ public sealed class AskAndWaitTickTests : IDisposable
         }
 
         /// <summary>
-        /// The person's words on ask <c>a1</c>, which asked <c>q1</c> (DRIFT1b): served on its ask route once set. Until then
-        /// the route is unknown, so a start reads them as not read, as on a host from before them.
+        /// The person's words on ask <c>a1</c>, which asked <c>q1</c>: served on its ask route once set. Until then
+        /// the route is unknown, so a start reads them as not read.
         /// </summary>
         public JsonArray? Words { get; set; }
 
         /// <summary>
-        /// Whether a session's record keeps the adapter it opened on, as the service does (MIXAGENT1a-ii's hand-over reads it): off,
-        /// as before, so the tests that never named one read as they did.
+        /// Whether a session's record keeps the adapter it opened on, as the service does (a hand-over reads it): off by default,
+        /// so the tests that never name one are unaffected.
         /// </summary>
         public bool KeepsAdapter { get; set; }
 
         /// <summary>
-        /// Whether a session's record keeps the commit its tree stood at as it opened, as the service does (SURF6; RETRYWORK1's look reads
-        /// it): off, as before, so the tests that never read it read as they did.
+        /// Whether a session's record keeps the commit its tree stood at as it opened, as the service does (a retry's look reads
+        /// it): off by default, so the tests that never read it are unaffected.
         /// </summary>
         public bool KeepsBaseCommit { get; set; }
 
-        /// <summary>What a quest's claim door answers (D68 §4), or null where the stand-in has none, as before.</summary>
+        /// <summary>What a quest's claim door answers, or null where the stand-in has none.</summary>
         public string? Claim { get; set; }
 
-        /// <summary>The person's bring-forward the claim door names beside the claim (SYNCMERGE1b0), or null for none, as before.</summary>
+        /// <summary>The person's bring-forward the claim door names beside the claim, or null for none.</summary>
         public JsonObject? ClaimForward { get; set; }
 
         /// <summary>
-        /// Whether a take marks the newest session as the one that took <c>q1</c> (STANDDOWN2's <c>took</c>), as the service's connector
-        /// does: off, as before, so the tests that never read it read as they did (FABRIC-CLOSE1h5).
+        /// Whether a take marks the newest session as the one that took <c>q1</c> (its <c>took</c> mark), as the service's connector
+        /// does: off by default, so the tests that never read it are unaffected.
         /// </summary>
         public bool Took { get; set; }
 
@@ -308,18 +308,18 @@ public sealed class AskAndWaitTickTests : IDisposable
         }
 
         /// <summary>
-        /// The session entry the ledger writes at each open (SESSONE1a), by the quest the session serves: the stand-in holds no rule,
+        /// The session entry the ledger writes at each open, by the quest the session serves: the stand-in holds no rule,
         /// so a test names each key. A quest named none opens a record with none, as a host from before the key answers.
         /// </summary>
         public Dictionary<string, string> Entries { get; } = new(StringComparer.Ordinal);
 
-        /// <summary>A quest published since, served beside the two (SESSONE1d).</summary>
+        /// <summary>A quest published later, served beside the two.</summary>
         public void Add(JsonObject quest)
         {
             lock (_sessions) _quests.Add(quest);
         }
 
-        /// <summary>A record of another repository's session, served among the records as a teammate's or a sibling's is (SESSONE1d).</summary>
+        /// <summary>A record of another repository's session, served among the records as a teammate's or a sibling's is.</summary>
         public void Keep(JsonObject session)
         {
             lock (_sessions) _sessions.Add(session);
@@ -406,14 +406,14 @@ public sealed class AskAndWaitTickTests : IDisposable
                             ["id"] = $"s{_sessions.Count + 1}", ["quest"] = body["quest"]!.GetValue<string>(),
                             ["repository"] = "engine", ["state"] = "queued", ["kind"] = "drive",
                             ["tree"] = body["tree"]?.GetValue<string>(),
-                            // The account it runs on, as the service answers it on loopback (TOOL4f reads it back).
+                            // The account it runs on, as the service answers it on loopback.
                             ["profile"] = body["profile"]?.GetValue<string>(),
                             ["created"] = DateTimeOffset.UtcNow.AddMinutes(_sessions.Count).ToString("O"),
                         };
                         if (KeepsAdapter) session["door"] = body["door"]?.GetValue<string>();
                         if (KeepsBaseCommit) session["baseCommit"] = body["baseCommit"]?.GetValue<string>();
                         if (Entries.TryGetValue(body["quest"]!.GetValue<string>(), out var entry)) session["entry"] = entry;
-                        // The session it continues, why and who asked (MIXAGENT1a-iii), as the service answers them on loopback.
+                        // The session it continues, why and who asked, as the service answers them on loopback.
                         StandInLedger.Continues(session, body.AsObject());
                         _sessions.Add(session);
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "opened" }.ToJsonString());
@@ -436,12 +436,12 @@ public sealed class AskAndWaitTickTests : IDisposable
                         if (body["note"] is { } note)
                         {
                             session["note"] = note.GetValue<string>();
-                            // Its parts beside it, as the service keeps them (LANG1a): a note sent without them clears them.
-                            // The strikes read an account's line by its code (ROSTER1b).
+                            // Its parts beside it, as the service keeps them: a note sent without them clears them.
+                            // The strikes read an account's line by its code.
                             session["noteParts"] = body["noteParts"]?.DeepClone();
                         }
 
-                        // Kept once said, as the service keeps it (TOOL4c).
+                        // Kept once said, as the service keeps it.
                         if (body["limit"] is { } limit && limit.GetValue<bool>()) session["limit"] = true;
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "moved" }.ToJsonString());
                     }
@@ -456,8 +456,8 @@ public sealed class AskAndWaitTickTests : IDisposable
                                 quest["status"] = "Taken";
                                 if (Took && _sessions.Count > 0) _sessions[^1]["took"] = true;
                                 break;
-                            // FABRIC-CLOSE1h5: the agent's `ready` in a closure graph (§E5), standing in for the bind its take made: the quest
-                            // stays taken, at a submission naming the session that said it and the commit it was made at.
+                            // The agent's `ready` in a closure graph, standing in for the bind its take made: the quest
+                            // stays taken, at a submission naming the session that said it and the commit it is made at.
                             case "ready" when quest["status"]!.GetValue<string>() == "Taken":
                                 quest["closure"] = "gph-0123";
                                 quest["submission"] = new JsonObject

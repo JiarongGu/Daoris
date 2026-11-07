@@ -3,7 +3,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>REVIEW2: a store held below step 18 (the stamp raise at 16 waits for the start's confirmation) takes a move without the model and effort columns it has not got.</summary>
+/// <summary>A store held below step 18 (the stamp raise at 16 waits for the start's confirmation) takes a move without the model and effort columns it does not have.</summary>
 public sealed class MoveStoreHeldStepTests : IDisposable
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "move-store-held", Guid.NewGuid().ToString("N")[..8]);

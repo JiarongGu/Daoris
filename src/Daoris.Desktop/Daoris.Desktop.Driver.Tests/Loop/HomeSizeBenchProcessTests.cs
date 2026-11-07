@@ -6,9 +6,9 @@ using Xunit.Abstractions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PERF1b: what the driver's reads cost on a home of a working machine's size (<see cref="BenchHome"/>: 3,000 ended records, two dozen
+/// What the driver's reads cost on a home of a working machine's size (<see cref="BenchHome"/>: 3,000 ended records, two dozen
 /// trees, one holding 12,000 ignored files), each against its budget. The service's own list read is timed apart and held to nothing
-/// here, since what it costs is the service's (PERF1a); every budget below is the driver's own part on top of it.
+/// here, since what it costs is the service's; every budget below is the driver's own part on top of it.
 /// </summary>
 /// <remarks>
 /// <para><b>The budgets.</b> A look runs every 15 seconds and a wake runs one at once, so a look that takes more than half a second is
@@ -17,7 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// still running at the next. A review and the help room's look are a person waiting: a tree's ignored build adds under a second to
 /// either, so a tree of gigabytes of build reads as a tracked tree does. The review and the tidy are each tens of git starts at a third
 /// of a second apiece on a loaded machine; their times are said, not held, and the git starts and the requests for session records of the look,
-/// the tidy, the nodes' read and a tree's walk are held (PERF1g).</para>
+/// the tidy, the nodes' read and a tree's walk are held.</para>
 ///
 /// <para>Each read runs once cold and is timed warm, the second time, as a running driver reads it at every look after its first. Its
 /// claims are bounds of under a second, which a neighbour's load would break, so it runs alone.</para>
@@ -98,7 +98,7 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
         Within("the large tree's review past a small tree's", large - small, ReviewBudget);
         output.WriteLine($"not yet held: the tidy {tidy} ms, past its {BesideBudget.TotalMilliseconds} ms beside a look");
 
-        // What each read asks of git and of the service's session records, held at the size it was measured at (PERF1g): the look asks the
+        // What each read asks of git and of the service's session records, held at the size measured: the look asks the
         // service for the session records once (its change count, then the list), and git nothing; the tidy of two dozen trees asks git
         // six times, not once per tree; the nodes' read one worktree list; a tree's walk, the offer's judgement, the starts it made.
         StartsWithin("look", 0);

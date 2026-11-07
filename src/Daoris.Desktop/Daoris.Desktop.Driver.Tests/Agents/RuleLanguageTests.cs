@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row o (the agent-provider design §4.5): a provider takes the product's rules by its own language. Claude Code's two
-/// doors are handed exactly the file they were, byte for byte, with the lineage hook Claude Code's language installs for the file Loop
+/// A provider takes the product's rules by its own language. Claude Code's two
+/// doors are handed exactly the file, byte for byte, with the lineage hook Claude Code's language installs for the file Loop
 /// hands; a provider that states no language (Codex, dsh, the stand-ins) is handed none, so none of the person's denies is presented
 /// as reaching it.
 /// </summary>

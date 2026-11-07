@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 FOUNDATION1j part ii (the foundation design §2.4's first row and §7 row 5; D205 point 1): a continuation takes its record's role and
-/// asked choice, never the machine's <c>adapter</c> key. A quest whose part ran on Build's second choice and was cut off is carried on with
+/// 🔴 A continuation takes its record's role and
+/// asked choice, never the machine's <c>adapter</c> key. A quest whose part ran on Build's second choice and is cut off is carried on with
 /// that choice's agent and model: its start asks that agent's accounts, so where they cool it waits for their reset, never the first
 /// agent's.
 /// </summary>
@@ -57,7 +57,7 @@ public sealed class ContinuedChoiceTests : IDisposable
     private void Cool(string agent, DateTimeOffset until) =>
         AccountCooling.Cool(_home, new CoolingEntry(agent, "account-1", until, true, "weekly", Now, "s0"), Now);
 
-    /// <summary>A part of quest <c>q1</c> that ran on Build's second choice, on <c>second</c> · sonnet, and was cut off with the quest taken.</summary>
+    /// <summary>A part of quest <c>q1</c> that ran on Build's second choice, on <c>second</c> · sonnet, and is cut off with the quest taken.</summary>
     private async Task<string> CutOffOnTheSecondChoiceAsync(ServiceClient service)
     {
         _ledger.Publish("q1", "engine");
@@ -90,8 +90,8 @@ public sealed class ContinuedChoiceTests : IDisposable
     }
 
     /// <summary>
-    /// The foundation design §2.4's fourth row: a reviewer's same-agent press reads the agent the work ran on, else the agent its record's
-    /// choice was asked of, else its role's first entry; never the machine's <c>adapter</c> key. A named reviewer and the rule's are as before.
+    /// A reviewer's same-agent press reads the agent the work ran on, else the agent its record's
+    /// choice is asked of, else its role's first entry; never the machine's <c>adapter</c> key. A named reviewer and the rule's keep their own agent.
     /// </summary>
     [Fact]
     public void A_same_agent_press_reads_the_record_s_agent_never_the_machine_s_adapter()

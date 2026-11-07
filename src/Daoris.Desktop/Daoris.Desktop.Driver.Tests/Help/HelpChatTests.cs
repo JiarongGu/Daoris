@@ -5,7 +5,7 @@ using StandInService = Daoris.Desktop.Driver.Tests.OrphanedSessionTests.StandInS
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Ask Daoris's conversation (HELP1a, D89): a chat in the room the driver writes under its home, on the
+/// Ask Daoris's conversation: a chat in the room the driver writes under its home, on the
 /// helper's agent — the knowledge connector handed, the room's allows and nothing of the person's, no
 /// plugin server, and one conversation running at a time.
 /// </summary>
@@ -19,7 +19,7 @@ public sealed class HelpChatTests : IDisposable
     public HelpChatTests()
     {
         Directory.CreateDirectory(Path.Combine(_home, "engine"));
-        // A Daoris account for Claude Code's doors, where Ask Daoris's room now runs (OWNSPACE1a): never the person's own home.
+        // A Daoris account for Claude Code's doors, where Ask Daoris's room runs: never the person's own home.
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "daoris"));
     }
 
@@ -77,8 +77,8 @@ public sealed class HelpChatTests : IDisposable
         await Until(() => service.State(id!) == "working"
                           && StubFile.Lines(Heard).Any(line => line.StartsWith("session/new ", StringComparison.Ordinal)), Seen);
 
-        // 🔴 In the agent's own asking mode, whatever it started in: since D81 a session judges its own
-        // actions, and a helper that could run a command could apply a change nobody confirmed (D89).
+        // 🔴 In the agent's own asking mode, whatever it started in: a session judges its own
+        // actions, and a helper that could run a command could apply a change nobody confirmed.
         await Until(() => StubFile.Lines(Heard).Contains("session/set_mode default"), Seen);
 
         // In the room, handed the knowledge connector and no plugin server.
@@ -103,8 +103,8 @@ public sealed class HelpChatTests : IDisposable
     }
 
     /// <summary>
-    /// Where the person is (HELP1b): handed to the agent ahead of their words, and kept in the record as
-    /// what it was told — never as something the person said.
+    /// Where the person is: handed to the agent ahead of their words, and kept in the record as
+    /// what it is told — never as something the person said.
     /// </summary>
     [Fact]
     public async Task Where_the_person_is_reaches_the_agent_ahead_of_their_words_and_is_not_theirs_in_the_record()
@@ -124,7 +124,7 @@ public sealed class HelpChatTests : IDisposable
             // Noted as JSON, so the blank line between the preface and the words is spelled `\n\n`.
             ["prompt: \"Where the person is now: the Sessions view.\\n\\nwhy is this parked?\"", "prompt: \"and now?\""],
             StubFile.Lines(Heard).Where(line => line.StartsWith("prompt: ", StringComparison.Ordinal)));
-        // CONTEXTONE1c: its standing block after the first message's words alone, the workspace's part, with no routing.
+        // Its standing block after the first message's words alone, the workspace's part, with no routing.
         var block = Assert.Single(StubFile.Lines(Heard), line => line.StartsWith("block: ", StringComparison.Ordinal));
         Assert.Contains("this session works for this machine's workspaces, in no repository.", block, StringComparison.Ordinal);
         Assert.DoesNotContain("Routing standing", block, StringComparison.Ordinal);
@@ -139,7 +139,7 @@ public sealed class HelpChatTests : IDisposable
     }
 
     /// <summary>
-    /// HELPSTART1: placing opens the record in the room's folder before anything is read or written, which is what the person's
+    /// Placing opens the record in the room's folder before anything is read or written, which is what the person's
     /// press waits for; the run reads the machine, writes the room and spawns the agent, and words said once it runs reach it.
     /// </summary>
     [Fact]
@@ -167,7 +167,7 @@ public sealed class HelpChatTests : IDisposable
         await Until(() => service.State(id) == "completed", Seen);
     }
 
-    /// <summary>HELPSTART1: a machine that cannot be read ends the placed record failed, saying why, so it never waits at its opening.</summary>
+    /// <summary>A machine that cannot be read ends the placed record failed, saying why, so it never waits at its opening.</summary>
     [Fact]
     public async Task A_placed_conversation_whose_machine_cannot_be_read_ends_failed_saying_why()
     {
@@ -207,7 +207,7 @@ public sealed class HelpChatTests : IDisposable
     }
 
     /// <summary>
-    /// HELP5, then CONTEXTONE1d (D230 point 3): a conversation's spawn carries the adapter's switch on both doors, Ask Daoris's and a
+    /// A conversation's spawn carries the adapter's switch on both doors, Ask Daoris's and a
     /// repository's alike, so its connector's tools come with the first request. An adapter that declares no switch has nothing added.
     /// Which doors declare it is <see cref="ToolsAtTheStartTests"/>' census.
     /// </summary>
@@ -227,7 +227,7 @@ public sealed class HelpChatTests : IDisposable
         IReadOnlyList<string> agent = ["node", EnvironmentAgent(), seen];
         var config = DriverConfig.Empty with
         {
-            // Claude's own command too: a door onto it asks the account's usage with that command (CODEXUSE1, USAGEPROBE1), which
+            // Claude's own command too: a door onto it asks the account's usage with that command, which
             // with none named would run the `claude` on this machine's PATH.
             Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = agent, ["claude-code"] = agent },
         };
@@ -311,7 +311,7 @@ public sealed class HelpChatTests : IDisposable
         return script;
     }
 
-    /// <summary>A protocol-door agent that writes down where its session opened and which servers it was handed.</summary>
+    /// <summary>A protocol-door agent that writes down where its session opened and which servers it is handed.</summary>
     private string Agent()
     {
         var script = Path.Combine(_home, "acp-help-agent.mjs");

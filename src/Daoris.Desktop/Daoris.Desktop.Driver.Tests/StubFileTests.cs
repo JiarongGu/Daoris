@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 REV3's final gate run: a chat test failed on a sharing violation reading the file its stub agent
-/// was still appending to. The stub holds the file open to write, sharing it the way node does, and
+/// 🔴 A chat test must not fail on a sharing violation reading the file its stub agent
+/// is still appending to. The stub holds the file open to write, sharing it the way node does, and
 /// <c>File.ReadAllLines</c> asks that nobody write while it reads — which Windows refuses outright.
 /// </summary>
 public sealed class StubFileTests : IDisposable

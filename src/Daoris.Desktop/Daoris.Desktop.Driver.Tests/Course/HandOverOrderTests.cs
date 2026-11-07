@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT1c (D191's settling of the design): under the `on` rule an agent's ask goes to the next agent in the person's order, the
-/// roster's order the page's hand-over offer draws from (`otherToolDoors`, MIXAGENT1b-iii). The driver's half of a TWIN: both are
+/// Under the `on` rule an agent's ask goes to the next agent in the person's order, the
+/// roster's order the page's hand-over offer draws from (`otherToolDoors`). The driver's half of a TWIN: both are
 /// held, row for row, to ONE table, <c>fixtures/hand-over-order.json</c>, which the page's <c>handOverOrder.test.ts</c> reads too.
 /// </summary>
 public sealed class HandOverOrderTests
@@ -53,7 +53,7 @@ public sealed class HandOverOrderTests
     }
 
     /// <summary>
-    /// MODELROLE1e (D205 §3.5(e), round 4's Opus N1): once the session's actor has an order of its own, a hand-over goes to the actor's next
+    /// Once the session's actor has an order of its own, a hand-over goes to the actor's next
     /// entry on another agent with that entry's model, and no maker outside its entries is ever a step. The page's <c>nextChoices</c> is
     /// held to the same rows.
     /// </summary>
@@ -95,7 +95,7 @@ public sealed class HandOverOrderTests
     }
 
     /// <summary>
-    /// STAFFPOLICY1d: the steps are taken over the order a start would walk (the arranged entries where the role's policy arranges them), kept
+    /// The steps are taken over the order a start would walk (the arranged entries where the role's policy arranges them), kept
     /// as it is and not the stored one, and the page's <c>nextChoices</c> is held to the same rows.
     /// </summary>
     [Theory]

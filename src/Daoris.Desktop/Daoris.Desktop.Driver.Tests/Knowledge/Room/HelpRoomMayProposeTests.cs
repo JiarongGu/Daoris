@@ -6,8 +6,8 @@ namespace Daoris.Driver.Tests;
 public sealed class HelpRoomMayProposeTests
 {
     /// <summary>
-    /// HELP7: tried with the real helper, it told the person to *press Apply* on a card whose button reads
-    /// *go there*. The room gives each card's buttons as the card labels them, in both languages.
+    /// The room gives each card's buttons as the card labels them, in both languages, so the helper never
+    /// tells the person to *press Apply* on a card whose button reads *go there*.
     /// </summary>
     [Fact]
     public void The_room_names_each_cards_own_buttons()
@@ -15,21 +15,20 @@ public sealed class HelpRoomMayProposeTests
         var agents = HelpRoom.Render(HelpRoomFixture.Machine);
 
         Assert.Contains("every other card reads **apply** and **not now**", agents);
-        // ASKDISMISS1: a go card's second press only takes the card away, and the room says nothing comes back of it.
+        // A go card's second press only takes the card away, and the room says nothing comes back of it.
         Assert.Contains("a go card reads **go there** and **dismiss** (in 中文 **前往** and **移除**)", agents);
         Assert.Contains("dismissing a go card only takes it out of the conversation: nothing comes back to you", agents);
         Assert.Contains("**应用**", agents);
         Assert.Contains("**前往**", agents);
-        // HELP10: a delete's press is its own word, as its card labels it, and a bring-up-to-date card's first is the look.
+        // A delete's press is its own word, as its card labels it, and a bring-up-to-date card's first is the look.
         Assert.Contains("a delete card **delete** and **not now** (in 中文 **删除** and **暂不**)", agents);
         Assert.Contains("a bring-up-to-date card **look for updates** until the person has looked, then **apply**", agents);
         Assert.Contains("**查看更新**", agents);
     }
 
     /// <summary>
-    /// LAYOUT8 (D170 point 1): a repository is set up by the press's own door, proposed by name: one quest to its own session and
-    /// the rule its session needs, refused in `--plan`'s words, and never a shell or a write into the repository. The owner's
-    /// helper could only name the terminal command; now it proposes the press.
+    /// A repository is set up by the press's own door, proposed by name: one quest to its own session and
+    /// the rule its session needs, refused in `--plan`'s words, and never a shell or a write into the repository.
     /// </summary>
     /// <summary>A repository with no rooms and no classes is offered them through its own session; the room drafts nothing itself.</summary>
     [Fact]
@@ -60,7 +59,7 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
-    /// HELP10: WSR6's *Bring up to date* (D109) is proposed, and the room says its card's two presses: the look, which is
+    /// *Bring up to date* is proposed, and the room says its card's two presses: the look, which is
     /// the person's and fetches, and the Apply, on the rows the look listed only.
     /// </summary>
     [Fact]
@@ -75,7 +74,7 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
-    /// D233 (D161): the person's yes to a done's departure and a landed branch's hand-off are never proposed; the room says they
+    /// The person's yes to a done's departure and a landed branch's hand-off are never proposed; the room says they
     /// are the person's own presses, which a go reaches.
     /// </summary>
     [Fact]
@@ -89,9 +88,9 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
-    /// ENTRY1d1 (D161's ENTRY1d note): a repository is moved to a workspace by name, a new workspace allowed, as the Manage
+    /// A repository is moved to a workspace by name, a new workspace allowed, as the Manage
     /// drawer's *Move to workspace* moves it; adding or importing one needs a folder, which stays the person's pick, so a go
-    /// opens the drawer with the workspace filled (ENTRY1d2a).
+    /// opens the drawer with the workspace filled.
     /// </summary>
     [Fact]
     public void The_room_says_how_a_repository_is_moved_to_a_workspace()
@@ -103,15 +102,15 @@ public sealed class HelpRoomMayProposeTests
         Assert.Contains("It changes one row of this machine's registry and touches no file.", proposes);
         Assert.Contains("Adding or importing a repository needs a folder, which stays the person's pick: `go_propose` opens", proposes);
         Assert.Contains("Repositories' `add` or `import` with the workspace filled, and the person picks the folder there.", proposes);
-        // NEW1d-a: a go may open New conversation with a repository and words.
+        // A go may open New conversation with a repository and words.
         Assert.Contains("or open New conversation with a repository and the person's words in the composer.", proposes);
         Assert.DoesNotContain("the person's pick in Repositories.", proposes);
     }
 
     /// <summary>
-    /// SESSUX1h2b (D126 §5.2–§5.4, §7.3): sessions are archived or unarchived by id, or every one that ended archived, and a
+    /// Sessions are archived or unarchived by id, or every one that ended archived, and a
     /// conversation that served no quest deleted, each judged as Sessions' own press is; a stop is no proposal, since a session's
-    /// stop is its own conversation (D161's SESSUX1h1 note).
+    /// stop is its own conversation.
     /// </summary>
     [Fact]
     public void The_room_says_how_sessions_are_archived_and_a_conversation_deleted()
@@ -128,8 +127,8 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
-    /// PAUSE1f-b (D132 §7.4): an ask's work or one quest's is paused or resumed by its id, the room saying what a pause stops
-    /// and what it leaves (design §2.1); abandon is never proposed, since its reason is the person's answer (D37).
+    /// An ask's work or one quest's is paused or resumed by its id, the room saying what a pause stops
+    /// and what it leaves; abandon is never proposed, since its reason is the person's answer.
     /// </summary>
     [Fact]
     public void The_room_says_how_a_pause_is_proposed_and_that_abandon_is_the_persons_own()
@@ -145,7 +144,7 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
-    /// HELP6: every door built since HELP1c is a proposal too — an agent's update or pin, a delete of a
+    /// Every further door is a proposal too — an agent's update or pin, a delete of a
     /// record made by mistake, an account's model and effort, and a screen to open — each named with its
     /// tool and the rule its route judges it by, so the helper does not propose what would be refused.
     /// </summary>
@@ -171,7 +170,7 @@ public sealed class HelpRoomMayProposeTests
         Assert.DoesNotContain("Settings → Agents", agents);
         // An account: the tool's own values, and `max` never an account's default.
         Assert.Contains("`max` is for one conversation, never an account's default", agents);
-        // The doors table carries the terminal twins of the new kinds (D50).
+        // The doors table carries the terminal twins of the kinds.
         foreach (var command in new[]
         {
             "daoris agent update <agent>", "daoris agent pin <agent> <version>",
@@ -184,8 +183,8 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
-    /// HELP9: a setting's doors are every setting verb, reading and writing across among them (D107), each
-    /// form said as the terminal spells it, and a write-to named as the person's standing say-so; since HELP10
+    /// A setting's doors are every setting verb, reading and writing across among them, each
+    /// form said as the terminal spells it, and a write-to named as the person's standing say-so;
     /// `retry` too, of a quest the driver parked.
     /// </summary>
     [Fact]
@@ -201,9 +200,9 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
-    /// POOL1b (D197 point 6, the account-pool design §5.3): the room words Daoris's accounts as one set, whose <c>use</c> and
-    /// <c>order</c> name no workspace, and offers no default; HELP10 held here that an agent's default account, for the machine or a
-    /// workspace, was proposed, beside <c>daoris agent account default</c>.
+    /// The room words Daoris's accounts as one set, whose <c>use</c> and
+    /// <c>order</c> name no workspace, and offers no default account, for the machine or a workspace,
+    /// and no <c>daoris agent account default</c>.
     /// </summary>
     [Fact]
     public void The_room_says_an_agents_accounts_are_one_set_and_offers_no_default()
@@ -217,7 +216,7 @@ public sealed class HelpRoomMayProposeTests
         Assert.DoesNotContain("this machine's accounts", agents);
     }
 
-    /// <summary>HELP10: the browser's settings, each named as the terminal spells it, and when each holds.</summary>
+    /// <summary>The browser's settings, each named as the terminal spells it, and when each holds.</summary>
     [Fact]
     public void The_room_says_how_the_browsers_settings_are_proposed()
     {
@@ -230,8 +229,8 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
-    /// HIST1f-b (D153, design §6.4): a clear names one quest, one ask or one workspace; its card lists and Apply clears exactly
-    /// that, what runs or waits on the person is never cleared; HIST1f-d adds the `failed` door, a closed quest's failed sessions alone.
+    /// A clear names one quest, one ask or one workspace; its card lists and Apply clears exactly
+    /// that, what runs or waits on the person is never cleared; the `failed` door clears a closed quest's failed sessions alone.
     /// </summary>
     [Fact]
     public void The_room_says_how_a_clear_is_proposed_and_what_it_never_takes()
@@ -247,8 +246,8 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
-    /// WORKFLOW1h-b (D157 point 13, design §8): a workflow is proposed as a whole version, new or on its newest, with its choice
-    /// optional; a stale base is refused, what a step needs first makes a draft, and a merge with nobody is never proposed (§8.3).
+    /// A workflow is proposed as a whole version, new or on its newest, with its choice
+    /// optional; a stale base is refused, what a step needs first makes a draft, and a merge with nobody is never proposed.
     /// </summary>
     [Fact]
     public void The_room_says_how_a_workflow_is_proposed_and_what_makes_it_a_draft()
@@ -263,7 +262,7 @@ public sealed class HelpRoomMayProposeTests
         Assert.Contains("Merging with nobody is never proposed:", proposes);
     }
 
-    /// <summary>MOD6: every kind registered is a tool the room teaches, so a kind cannot be added that the helper never hears of.</summary>
+    /// <summary>Every kind registered is a tool the room teaches, so a kind cannot be added that the helper never hears of.</summary>
     [Fact]
     public void Every_kinds_tool_is_named_in_what_it_may_propose()
     {

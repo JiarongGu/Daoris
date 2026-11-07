@@ -3,22 +3,21 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ANSWER2, the owner's case on the install (2026-10-08): two driven sessions parked to ask the person, the person answered
-/// each from the window, and each then ended <c>failed</c> with the service refusing <i>working → working</i>. The answer's
-/// path keeps the words on the record and moves nothing; the first look takes the park up and moves it to working, and its
-/// run takes the words off only as it concludes. A look while it worked read the words still on it and took it up a second
-/// time, whose move to working the ledger refused, and the driver failed the session it was resuming.
+/// Two driven sessions parked to ask the person, the person answered each from the window, and each must not end
+/// <c>failed</c> with the service refusing <i>working → working</i>. The answer's path keeps the words on the record and
+/// moves nothing; the first look takes the park up and moves it to working, and its run takes the words off only as it
+/// concludes. A look while it works reads the words still on it and must not take it up a second time.
 /// </summary>
 /// <remarks>
 /// Driven over the real client, the real planner and a look's real scheduling, with the service's doors and the resumed run
-/// standing in, in-process (DEV3's way): the run stands in for <c>Driver.ContinueAsync</c>, told it opened before its working
-/// move as the real one was until SAIDBACK1e moved the move before the spawn, and failing its record with the ledger's sentence
-/// where that move is refused, as the real one did after its spawn. The look's guard holds either order. The real resume over a
-/// protocol stub is <c>AnswerContinuesTickTests</c>' and <c>SessionMessagesTickTests</c>', in the <c>Process</c> half.
+/// standing in, in-process: the run stands in for <c>Driver.ContinueAsync</c>, told it opened before its working
+/// move, and failing its record with the ledger's sentence where that move is refused. The look's guard holds either
+/// order. The real resume over a protocol stub is <c>AnswerContinuesTickTests</c>' and <c>SessionMessagesTickTests</c>', in
+/// the <c>Process</c> half.
 /// </remarks>
 public sealed class AnswerGoesOnOnceTests : IDisposable
 {
-    // ANSWERWAIT1: these are waits for signals and completed calls, not windows measuring the driver's timing.
+    // These are waits for signals and completed calls, not windows measuring the driver's timing.
     private static readonly TimeSpan Bound = Poll.Patience;
 
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-answer2-" + Guid.NewGuid().ToString("N")[..8]);
@@ -130,9 +129,8 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 TICKSHOWN1: words planned to go on whose start the service refuses (the FIX-LOG 2026-10-15 case) said so only in the
-    /// tick's events, so the record's row showed <i>going on</i> at every look. The refusal is the consideration's own verdict
-    /// now, Blocked with the refusal's sentence, as a hold's is, and the look names it on the row.
+    /// Words planned to go on whose start the service refuses must not show <i>going on</i> at every look. The refusal is
+    /// the consideration's own verdict, Blocked with the refusal's sentence, as a hold's is, and the look names it on the row.
     /// </summary>
     [Fact]
     public async Task A_refused_start_of_the_persons_words_is_the_considerations_blocked_verdict()
@@ -161,7 +159,7 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The unobserved task beside each failure: a run the driver gives up before it awaited what it was reading (here, the
+    /// 🔴 The unobserved task beside each failure: a run the driver gives up before it awaits what it reads (here, the
     /// record refusing to move) leaves that capture to fail on its own. Observed, its failure is written with its reason, to the
     /// machine log as an <c>error</c> that names its place, and to the session's console, never left to the finalizer.
     /// </summary>
@@ -205,7 +203,7 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
         Assert.EndsWith("IOException: the pipe closed late", output.Tail("s1").Lines[0].Text);
     }
 
-    /// <summary>A capture that ended cleanly, or was cancelled with its run, is no failure: nothing is written.</summary>
+    /// <summary>A capture that ended cleanly, or is cancelled with its run, is no failure: nothing is written.</summary>
     [Fact]
     public async Task A_given_up_runs_capture_that_ended_cleanly_writes_nothing()
     {
@@ -220,8 +218,8 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
     }
 
     /// <summary>
-    /// The point of it: the given-up capture's failure never reaches the finalizer, where it was an AggregateException whose only
-    /// place was <i>an unobserved task</i>. The same failure left alone does, which shows the probe can see one.
+    /// The point of it: the given-up capture's failure never reaches the finalizer as an AggregateException whose only
+    /// place is <i>an unobserved task</i>. The same failure left alone does, which shows the probe can see one.
     /// </summary>
     [Fact]
     public async Task A_given_up_runs_capture_never_reaches_the_finalizer()
@@ -291,8 +289,8 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
     }
 
     /// <summary>
-    /// A run that goes on in the record the person's words wait on, standing in for <c>Driver.ContinueAsync</c> (ANSWER1a,
-    /// MSG1b): told it opened at once, as the real run is before its process starts; then, once <see cref="Moving"/> lets it,
+    /// A run that goes on in the record the person's words wait on, standing in for <c>Driver.ContinueAsync</c>:
+    /// told it opened at once, as the real run is before its process starts; then, once <see cref="Moving"/> lets it,
     /// its record moved to working, a refusal there failing the record with the ledger's sentence as the real run's catch
     /// does; then working until the test ends it, its words taken off by their ids and the record completed.
     /// </summary>

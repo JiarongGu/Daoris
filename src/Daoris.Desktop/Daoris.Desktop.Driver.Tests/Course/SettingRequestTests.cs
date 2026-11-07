@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HELPMODE1c3 (D183's note): Ask Daoris's chosen settings reach the driver as its housekeeping does, through the session requests
+/// Ask Daoris's chosen settings reach the driver as its housekeeping does, through the session requests
 /// every loop watches: a keyed request for the conversation's own session, move <c>set</c>, taken once by the loop whose registry runs
 /// that conversation and answered beside it. Any other loop leaves it, and so does a loop that answers no setting.
 /// </summary>
@@ -125,8 +125,8 @@ public sealed class SettingRequestTests : IDisposable
     }
 
     /// <summary>
-    /// The outcome record (the modes design §4.1): each request a loop answers is a line in the machine log, the setting, its value,
-    /// where it was set, and whether it was changed with the refusal's code, never the answer's words.
+    /// The outcome record: each request a loop answers is a line in the machine log, the setting, its value,
+    /// where it is set, and whether it is changed with the refusal's code, never the answer's words.
     /// </summary>
     [Fact]
     public async Task Each_answer_is_kept_in_the_machine_log()

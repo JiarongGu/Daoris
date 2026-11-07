@@ -1,7 +1,7 @@
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The watcher's pipe-door stand-in (SESSWATCH1a, the session-watch design §7): one agent that can be told what to do, so a test of the
+/// The watcher's pipe-door stand-in: one agent that can be told what to do, so a test of the
 /// watch writes no script of its own. It takes its quest, does what its cue says, then finishes the quest (or not, for a crash) and
 /// exits, or hangs where the cue is a hang. Told by its arguments, else by a <c>cue: …</c> line in its target, so one stand-in serves
 /// quests with different cues. Never a real agent binary: <c>node</c> runs it, as every stand-in here does.
@@ -17,7 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <item><c>grandchild</c>: done, then exit leaving a detached grandchild holding its output (state E).</item>
 /// <item><c>crash</c>: exit 3 without finishing its quest.</item>
 /// </list>
-/// The DONEEND1 stand-in (<c>DoneEndTickTests</c>) and the family rehearsal's pipe stub's cues are its exemplars.
+/// The stand-in of <c>DoneEndTickTests</c> and the family rehearsal's pipe stub's cues are its exemplars.
 /// </remarks>
 internal static class WatchStandIn
 {
@@ -90,7 +90,7 @@ internal static class WatchStandIn
     /// Write the protocol door's stand-in into <paramref name="folder"/>, run with <c>node</c> under an <c>acp-stub</c> adapter. Its one cue,
     /// <c>background-compute &lt;for&gt;</c>: it takes its quest, starts a child beside itself that writes a line and computes for
     /// <c>for</c>, announces it as the adapter does, says it will pick up when it finishes and ends its turn; once the child ends it
-    /// finishes its quest. It answers every request after, and never exits on its own (state C, then DONEEND1's end).
+    /// finishes its quest. It answers every request after, and never exits on its own (state C, then the end).
     /// </summary>
     public static string WriteAcp(string folder)
     {

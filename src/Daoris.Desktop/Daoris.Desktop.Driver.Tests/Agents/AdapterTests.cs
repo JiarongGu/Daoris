@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// D23, one layer up: one adapter is supported, others are explicit, and an unknown one is an error
-/// NAMING WHAT EXISTS — never a silent fallback. An adapter names a harness, never a model (D24).
+/// One adapter is supported, others are explicit, and an unknown one is an error
+/// NAMING WHAT EXISTS — never a silent fallback. An adapter names a harness, never a model.
 /// </summary>
 public sealed class AdapterTests
 {
@@ -69,7 +69,7 @@ public sealed class AdapterTests
     }
 
     /// <summary>
-    /// MAKERTRAIL2: a carry-on whose earlier part ran on another maker and left work uncommitted is told, beside its own attribution,
+    /// A carry-on whose earlier part ran on another maker and left work uncommitted is told, beside its own attribution,
     /// that maker's trailer from the harness and model that part's record reports, or model unreported; within a maker, or with
     /// nothing left uncommitted, it is told nothing more.
     /// </summary>
@@ -123,8 +123,8 @@ public sealed class AdapterTests
     }
 
     /// <summary>
-    /// The protocol door is opt-in per adapter (D53). Silence means the pipe, so every adapter that
-    /// existed before the door behaves exactly as it did — the same silence-preserves rule the
+    /// The protocol door is opt-in per adapter. Silence means the pipe, so every adapter that
+    /// does not declare the door behaves as a pipe adapter — the same silence-preserves rule the
     /// toolchain and the session trees follow.
     /// </summary>
     [Fact]
@@ -193,7 +193,7 @@ public sealed class AdapterTests
         Assert.True(info.RedirectStandardError);
     }
 
-    /// <summary>`claude-code` is the supported harness (D23, one layer up) and ships in the set.</summary>
+    /// <summary>`claude-code` is the supported harness and ships in the set.</summary>
     [Fact]
     public void The_claude_code_adapter_is_built_in()
     {
@@ -202,8 +202,8 @@ public sealed class AdapterTests
 
     /// <summary>
     /// The session is the harness's non-interactive mode, in the repository root, with the composed
-    /// target as its prompt, which goes on its standard input and never in its arguments (AGENTLYNTAI1s-i: a process's arguments are
-    /// readable machine-wide). Edits auto-accept — reversible, in-repository, D37's middle — and
+    /// target as its prompt, which goes on its standard input and never in its arguments (a process's arguments are
+    /// readable machine-wide). Edits auto-accept — reversible, in-repository, the middle posture — and
     /// everything else stays under the repository's own checked-in permission configuration: the
     /// adapter grants nothing an interactive session there would not have.
     /// </summary>
@@ -240,8 +240,8 @@ public sealed class AdapterTests
     }
 
     /// <summary>
-    /// AGENTLYNTAI1s-i: the resume's words are the standard input's too, so a person's answer is never an argument: the resume is prepared
-    /// without them (ONEWAY1h-ii), its input open for the driver to write them. The stub, which takes its prompt where it always did,
+    /// The resume's words are the standard input's too, so a person's answer is never an argument: the resume is prepared
+    /// without them, its input open for the driver to write them. The stub, which takes its prompt in its arguments,
     /// redirects nothing (<c>ProvidersBuiltTests</c> pins it); the chat is untouched.
     /// </summary>
     [Fact]
@@ -255,7 +255,7 @@ public sealed class AdapterTests
         Assert.Empty(info.StandardInputEncoding!.GetPreamble());
     }
 
-    /// <summary>An adapter names a harness, never a model (D24) — which model answers is the
+    /// <summary>An adapter names a harness, never a model — which model answers is the
     /// repository's own harness configuration, and the driver must not reach into it.</summary>
     [Fact]
     public void Claude_code_never_names_a_model()
@@ -266,7 +266,7 @@ public sealed class AdapterTests
     }
 
     /// <summary>
-    /// The composed target is the claiming instruction of D46 §3: take, work under the repository's
+    /// The composed target is the claiming instruction: take, work under the repository's
     /// own doctrine, close with done or a reasoned decline, stand down if someone already has it —
     /// and never write outside the repository. The wording is project-agnostic: it travels to
     /// repositories that know nothing of this one's decision numbering.
@@ -287,7 +287,7 @@ public sealed class AdapterTests
         Assert.DoesNotContain("D46", prompt);
     }
 
-    // ——— What a quest carries (D65 §2): its links, and its files — handed by name and by directory.
+    // ——— What a quest carries: its links, and its files — handed by name and by directory.
 
     private const string Kept = "C:/somewhere/data/quests/abc123/attachments";
 
@@ -321,7 +321,7 @@ public sealed class AdapterTests
 
     /// <summary>
     /// A chain's step is told what it follows, and a quest with steps after it is told what its close
-    /// will publish (D65 §4) — so a developing session knows a verifier comes next, and a verifying one
+    /// will publish — so a developing session knows a verifier comes next, and a verifying one
     /// knows which quest's work it is checking.
     /// </summary>
     [Fact]
@@ -351,7 +351,7 @@ public sealed class AdapterTests
 
     /// <summary>
     /// The directory rides the environment when a file is here — and is ABSENT, not empty, when none
-    /// is: a blank directory would read to a session as one that was emptied.
+    /// is: a blank directory would read to a session as one that is emptied.
     /// </summary>
     [Fact]
     public void The_attachments_directory_is_in_the_environment_only_when_a_file_is_here()
@@ -368,7 +368,7 @@ public sealed class AdapterTests
         Assert.False(ProviderRegistry.Built().Start(stub, Target(), ["node", "agent.mjs"]).Environment.ContainsKey("DAORIS_QUEST_ATTACHMENTS"));
     }
 
-    // ——— The interactive capability (D49 §3). Declared honestly and opted into: an adapter that has
+    // ——— The interactive capability. Declared honestly and opted into: an adapter that has
     // not been wired for a conversation says so, and asking errors naming what the harness is.
 
     private static SpawnRequest Chat(string? session = null) => SpawnRequests.Chat("Game", "D:/fam/Game", "http://localhost:5177", session);
@@ -407,8 +407,8 @@ public sealed class AdapterTests
 
         Assert.False(info.Environment.ContainsKey("DAORIS_QUEST_ID"));
         Assert.False(info.Environment.ContainsKey("DAORIS_TARGET"));
-        // And no one-shot prompt: the person supplies every message, as `stream-json` lines on stdin
-        // (CONV3). `-p` is the harness's print mode here, followed by a flag and never by a prompt.
+        // And no one-shot prompt: the person supplies every message, as `stream-json` lines on stdin.
+        // `-p` is the harness's print mode here, followed by a flag and never by a prompt.
         var arguments = info.ArgumentList.ToList();
         var print = arguments.IndexOf("-p");
         Assert.True(print >= 0 && arguments[print + 1].StartsWith("--", StringComparison.Ordinal), string.Join(' ', arguments));
@@ -417,8 +417,8 @@ public sealed class AdapterTests
     }
 
     /// <summary>
-    /// CHATTAKE1b (D126's CHATTAKE1 note): a chat's spawn names its own record, as a driven session's and an intake's do
-    /// (SESS1), on every door. A connector its harness starts from the repository's own server list inherits it, so a take
+    /// A chat's spawn names its own record, as a driven session's and an intake's do,
+    /// on every door. A connector its harness starts from the repository's own server list inherits it, so a take
     /// or a publication through it says which conversation made it, and the take marks that record.
     /// </summary>
     [Fact]
@@ -452,7 +452,7 @@ public sealed class AdapterTests
     }
 
     /// <summary>
-    /// ENVLEAK1: a driver run inside a session Daoris drives inherits that session's quest, target and record, and a start
+    /// A driver run inside a session Daoris drives inherits that session's quest, target and record, and a start
     /// drops every one before it sets its own role, so the chat tests above hold in any environment. What is no role stays.
     /// </summary>
     [Fact]
@@ -476,8 +476,8 @@ public sealed class AdapterTests
     }
 
     /// <summary>
-    /// A driven session speaks the harness's structured output too (CONV3), and keeps its composed
-    /// target as the one prompt — checked against the binary (docs/2026-09-25-stream-json-evidence.md).
+    /// A driven session speaks the harness's structured output too, and keeps its composed
+    /// target as the one prompt — checked against the binary.
     /// </summary>
     [Fact]
     public void A_driven_session_asks_for_the_harnesss_structured_output()
@@ -493,7 +493,7 @@ public sealed class AdapterTests
         Assert.Null(ProviderRegistry.Built().Door("stub").StructuredOutput());
     }
 
-    /// <summary>The permission posture does not soften because a person is watching (D46 §5).</summary>
+    /// <summary>The permission posture does not soften because a person is watching.</summary>
     [Fact]
     public void A_chat_runs_under_the_same_permission_posture_as_driven_work()
     {
@@ -505,9 +505,9 @@ public sealed class AdapterTests
     }
 
     /// <summary>
-    /// HELPMODE1a1 (D183 point 1): a conversation naming its permission mode, as Ask Daoris in full access does, runs in it on the
+    /// A conversation naming its permission mode, as Ask Daoris in full access does, runs in it on the
     /// native door, <c>bypassPermissions</c> in place of <c>acceptEdits</c> and never beside it, a resumed one too; one naming none
-    /// keeps <c>acceptEdits</c>. The native door never took the asking mode HELP1a meant, which reached the protocol door alone.
+    /// keeps <c>acceptEdits</c>. The native door never takes the asking mode, which reaches the protocol door alone.
     /// </summary>
     [Fact]
     public void A_chat_naming_its_permission_mode_runs_in_it_and_one_naming_none_keeps_accept_edits()
@@ -527,8 +527,8 @@ public sealed class AdapterTests
     }
 
     /// <summary>
-    /// AUTONOMY1b (D184 point 3): a driven start and its resume run in the permission mode their repository's setup names, on the
-    /// native door: <c>acceptEdits</c> under auto as always (D81), <c>default</c> asking, <c>bypassPermissions</c> unrestricted, each in
+    /// A driven start and its resume run in the permission mode their repository's setup names, on the
+    /// native door: <c>acceptEdits</c> under auto, <c>default</c> asking, <c>bypassPermissions</c> unrestricted, each in
     /// place of the others and never beside them. A target the setup does not reach keeps <c>acceptEdits</c>.
     /// </summary>
     [Fact]

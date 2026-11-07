@@ -4,14 +4,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSWATCH1a's watcher over REAL runs on the pipe door (D200, the session-watch design §7, cases 1 and 4), told what to do through the
+/// The session watcher over REAL runs on the pipe door, told what to do through the
 /// watch's stand-in (<see cref="WatchStandIn"/>). The watcher's clock is moved, never waited out: a second of the run is five minutes
 /// of its clock. A stand-in that streams on stdout, or on stderr alone, is left alone across three hours of that clock; a silent
 /// one is marked quiet under the same clock; and a silent one whose child computes is busy, never marked, and brought to the person as
 /// <i>busy, nothing heard</i>.
 /// </summary>
 /// <remarks>
-/// Alone (PROCPAR1): its claim is a bound of a few seconds on a real process, a line heard within a second or two of the last on a clock
+/// Runs alone: its claim is a bound of a few seconds on a real process, a line heard within a second or two of the last on a clock
 /// that counts each second as five minutes, and a computation's CPU over a one-second window, which the load of classes beside it could
 /// break.
 /// </remarks>

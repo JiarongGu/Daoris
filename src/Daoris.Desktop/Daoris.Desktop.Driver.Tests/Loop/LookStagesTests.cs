@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LOOKWAIT1 (D181 point 6): each stage of a look, and each piece of its work beside it, timed with its subject, so a slow look
+/// Each stage of a look, and each piece of its work beside it, timed with its subject, so a slow look
 /// names its slow part in the machine log: folded into the next <c>watch.looked</c>'s <c>stages</c>, compact, and a stage still
 /// running past the threshold written at once as <c>look.slow</c>, so a hung one is named while it hangs.
 /// </summary>
@@ -74,7 +74,7 @@ public sealed class LookStagesTests : IDisposable
     }
 
     /// <summary>
-    /// LOOKWAIT1b: a stage's starts waiting for a place are its queue, apart from its hold. A fan-out's waits overlap, so the queue is
+    /// A stage's starts waiting for a place are its queue, apart from its hold. A fan-out's waits overlap, so the queue is
     /// the time any of them waited, never their sum, and never longer than the stage.
     /// </summary>
     [Fact]
@@ -186,7 +186,7 @@ public sealed class LookStagesTests : IDisposable
         Assert.True(slow.GetProperty("ms").GetInt64() >= 0);
     }
 
-    /// <summary>LOOKSLOW2: the slow line says its queue so far, a wait still open counted, a wait ended counted, none as 0.</summary>
+    /// <summary>The slow line says its queue so far, a wait still open counted, a wait ended counted, none as 0.</summary>
     [Fact]
     public async Task A_slow_line_says_its_queue_so_far_counting_a_wait_still_open()
     {

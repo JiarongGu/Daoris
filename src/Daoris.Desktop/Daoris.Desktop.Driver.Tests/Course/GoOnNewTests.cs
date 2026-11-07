@@ -5,9 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MSG1g's door (D137 §2.2, D50): *Go on in a new session*. Words a resume holds while the account its session ran on cools
+/// The door *Go on in a new session*. Words a resume holds while the account its session ran on cools
 /// go on now in a new session, handed them, without that conversation. The person's choice is kept by the words' ids with when
-/// it was given (D143 point 4), and the driver's next look carries the words on; what cannot is refused by a code, before
+/// it is given, and the driver's next look carries the words on; what cannot is refused by a code, before
 /// anything is kept. The library's door, which the modules' hand-over press and <c>daoris session hand-over &lt;id&gt;</c> both call.
 /// </summary>
 /// <remarks>In-process: the service is a stand-in reached through the real client, and the cool-off is handed in. The fast half.</remarks>
@@ -53,7 +53,7 @@ public sealed class GoOnNewTests : IDisposable
 
     /// <summary>
     /// 🔴 The words a resume holds while its account cools go on in a new session: the choice is kept by the ids of the words
-    /// waiting, with when it was made, and the answer says what comes of it and what it costs.
+    /// waiting, with when it is made, and the answer says what comes of it and what it costs.
     /// </summary>
     [Fact]
     public async Task Words_held_while_their_account_cools_are_chosen_to_go_on_in_a_new_session()
@@ -71,7 +71,7 @@ public sealed class GoOnNewTests : IDisposable
         Assert.Equal(T0.AddMinutes(30), choice.At);
     }
 
-    /// <summary>A park answered while its account cools may go on in a new session too: its answer is its words (D83).</summary>
+    /// <summary>A park answered while its account cools may go on in a new session too: its answer is its words.</summary>
     [Fact]
     public async Task An_answered_park_may_go_on_in_a_new_session()
     {
@@ -99,7 +99,7 @@ public sealed class GoOnNewTests : IDisposable
     };
 
     /// <summary>
-    /// What cannot go on in a new session is refused by its code before anything is kept: D137 §2.2's nevers, a session with
+    /// What cannot go on in a new session is refused by its code before anything is kept: the nevers, a session with
     /// nothing waiting or still running, and what nothing carries on by itself, a conversation and a closed quest's session,
     /// which are pointed at *Start a conversation with these words* instead.
     /// </summary>
@@ -149,7 +149,7 @@ public sealed class GoOnNewTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1h branch 2 (the foundation design §3.1, C5-1.14): whether the words may go on in a new session is the course's one decision
+    /// 🔴 Whether the words may go on in a new session is the course's one decision
     /// for <see cref="CourseTrigger.GoOnNew"/>. Heard from the door, its answer is what kept the choice (a wait for the cooling account) or
     /// what refused (a never, or a hold by its code); every sentence the person reads stays the door's.
     /// </summary>
@@ -259,7 +259,7 @@ public sealed class GoOnNewTests : IDisposable
         Assert.False(new NewSessionChoices(_home).Covers(Waiting("w1")));
     }
 
-    // ——— The terminal's door (D50): `daoris session hand-over <id>`, naming no agent; `go-on-new` is no verb.
+    // ——— The terminal's door: `daoris session hand-over <id>`, naming no agent; `go-on-new` is no verb.
 
     [Fact]
     public void The_terminal_reads_one_session_s_id_with_no_agent_and_its_usage_says_the_verb()

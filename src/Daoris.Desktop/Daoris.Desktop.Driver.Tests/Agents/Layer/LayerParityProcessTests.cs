@@ -59,7 +59,7 @@ public sealed class LayerParityProcessTests : IDisposable
 
     private static readonly ParityPair RefusedPair = new("unread", "layer:" + LayerTestProvider.RefusedBy);
 
-    /// <summary>The tool's own message names an unknown model and nothing answers: the door's refusal of the model it was handed (AG12).</summary>
+    /// <summary>The tool's own message names an unknown model and nothing answers: the door's refusal of the model it is handed.</summary>
     private static readonly object Refused = new
     {
         @out = new object[]
@@ -88,7 +88,7 @@ public sealed class LayerParityProcessTests : IDisposable
 
     private static readonly object Counts = new { @in = 100, @out = 5, read = 50, write = 0 };
 
-    /// <summary>The turn's own report: the context its last message held, the tokens by model with the window the harness names (AG33).</summary>
+    /// <summary>The turn's own report: the context its last message held, the tokens by model with the window the harness names.</summary>
     private static readonly object Reported = new
     {
         @out = Spoke(Counts, Counts, new { m1 = new { @in = 100, @out = 5, read = 50, write = 0, window = 200000 } }),
@@ -121,7 +121,7 @@ public sealed class LayerParityProcessTests : IDisposable
         },
     };
 
-    /// <summary>A status frame carrying an id before the agent's own initialization: it names nothing (AG35).</summary>
+    /// <summary>A status frame carrying an id before the agent's own initialization: it names nothing.</summary>
     private static readonly object Announced = new
     {
         @out = new object[]
@@ -131,7 +131,7 @@ public sealed class LayerParityProcessTests : IDisposable
         },
     };
 
-    /// <summary>A failed turn that showed a meter alone: the layer's own stamp counts it as the prompt taken, Daoris's hearing does not (AG37).</summary>
+    /// <summary>A failed turn that showed a meter alone: the layer's own stamp counts it as the prompt taken, Daoris's hearing does not.</summary>
     private static readonly object Metered = new
     {
         @out = new object[]

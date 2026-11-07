@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BGWAIT1b: the one judgement a start and a resumed run share for a turn that ends on the session's own background work
-/// (BGWAIT1): wait, as a park would leave the quest, or end as before. In-process over the stand-in ledger, the real client
+/// The one judgement a start and a resumed run share for a turn that ends on the session's own background work:
+/// wait, as a park would leave the quest, or end. In-process over the stand-in ledger, the real client
 /// and the real rule; the resumed run itself is the full set's, since the ledger's stand-in runs do not run
 /// <c>Driver.ContinueAsync</c>.
 /// </summary>
@@ -59,7 +59,7 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
     }
 
     /// <summary>
-    /// DONEEND1: the judgement is read again while the session waits, each read the quest as it stands, so a quest that reached done
+    /// The judgement is read again while the session waits, each read the quest as it stands, so a quest that reached done
     /// meanwhile ends the wait.
     /// </summary>
     [Fact]
@@ -72,7 +72,7 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
         Assert.False(await judge(CancellationToken.None));
     }
 
-    /// <summary>DONEEND1: a start's judgement, read again, holds while the quest it took stays taken, and ends once it is done.</summary>
+    /// <summary>A start's judgement, read again, holds while the quest it took stays taken, and ends once it is done.</summary>
     [Fact]
     public async Task A_start_s_judgement_read_again_holds_while_taken_and_turns_false_once_done()
     {
@@ -91,7 +91,7 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
         Assert.False(await JudgeAsync(Planned("Open"), resumed: false));
     }
 
-    // ——— LANDBACK1 part 2: the look a turn's end takes of a quest that closed with uncommitted work in its tree, one for a start and a
+    // ——— The look a turn's end takes of a quest that closed with uncommitted work in its tree, one for a start and a
     // resumed run, over a real repository's tree.
 
     private string? _tree;
@@ -129,7 +129,7 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
         return look is null ? null : await look(CancellationToken.None);
     }
 
-    /// <summary>TURNWAIT1: a quest done with its fix uncommitted is owed a carry-on, in Daoris's own words and never an Accept's.</summary>
+    /// <summary>A quest done with its fix uncommitted is owed a carry-on, in Daoris's own words and never an Accept's.</summary>
     [Fact]
     public async Task A_done_quest_with_an_uncommitted_tree_is_owed_a_carry_on_in_daoris_s_own_words()
     {
@@ -191,9 +191,9 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
     }
 
     /// <summary>
-    /// LANDBACK1 part 3 (b): a resumed run on a quest already closed as planned (a went-on run, D83) is carried on once where the quest
-    /// stands done and its tree is dirty, and owes nothing where the tree is clean or the quest was declined. It still never waits on
-    /// background work: <see cref="SessionWaits.OnBackground"/> keeps BGWAIT1b's null for it.
+    /// A resumed run on a quest already closed as planned (a went-on run) is carried on once where the quest
+    /// stands done and its tree is dirty, and owes nothing where the tree is clean or the quest is declined. It still never waits on
+    /// background work: <see cref="SessionWaits.OnBackground"/> answers null for it.
     /// </summary>
     [Fact]
     public async Task A_resumed_run_on_a_quest_closed_as_planned_is_carried_on_once_where_its_tree_is_dirty()
@@ -203,7 +203,7 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
         var dirty = await LookAsync(Planned("Done"), resumed: true, Tree(dirty: true));
         Assert.True(dirty!.Dirty);
         Assert.Equal(1, dirty.Limit);
-        // A turn's end, resumed or not, keeps the two of part 2.
+        // A turn's end, resumed or not, keeps the default bound.
         Assert.Equal(TurnCarry.Bound, (await LookAsync(Planned("Taken"), resumed: false, Tree(dirty: true)))!.Limit);
         Assert.Null(SessionWaits.OnBackground(_ledger.Client(), Planned("Done"), "s1", resumed: true));
     }
@@ -219,7 +219,7 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
     }
 
     /// <summary>
-    /// A resumed run that is an Accept's carry-on (the session's yes is kept, LANDBACK1 part 1) is carried on by that Accept's own bound,
+    /// A resumed run that is an Accept's carry-on (the session's yes is kept) is carried on by that Accept's own bound,
     /// never also by the run's: one cause has one counter.
     /// </summary>
     [Fact]

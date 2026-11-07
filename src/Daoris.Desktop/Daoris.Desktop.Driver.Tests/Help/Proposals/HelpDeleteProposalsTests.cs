@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
 
-/// <summary>Ask Daoris's <c>delete</c> proposal (HELP6): a quest or an ask made by mistake, by the service's own <c>deletable</c>.</summary>
+/// <summary>Ask Daoris's <c>delete</c> proposal: a quest or an ask made by mistake, by the service's own <c>deletable</c>.</summary>
 public sealed class HelpDeleteProposalsTests : HelpProposalsFixture
 {
     [Fact]
@@ -17,7 +17,7 @@ public sealed class HelpDeleteProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// A taken, done or declined quest keeps its record (D95), and so does an open one a session started
+    /// A taken, done or declined quest keeps its record, and so does an open one a session started
     /// on: never shown to the person, and the refusal says what to do instead.
     /// </summary>
     [Theory]
@@ -51,7 +51,7 @@ public sealed class HelpDeleteProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// SESSUX1h2b (D126 §5.4): a conversation that served no quest, ended, this machine's, named by nothing and holding no tree
+    /// A conversation that served no quest, ended, this machine's, named by nothing and holding no tree
     /// here, goes with what this machine kept of it, and the card says so in the words Sessions' *Delete…* asks with.
     /// </summary>
     [Fact]
@@ -69,7 +69,7 @@ public sealed class HelpDeleteProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// §5.4's refusals in its order, each in the words the delete itself refuses with: no such session here, a teammate's, Ask
+    /// The refusals in order, each in the words the delete itself refuses with: no such session here, a teammate's, Ask
     /// Daoris's own (its History deletes it), a live one, the ledger's own sentence, and the machine's half last.
     /// </summary>
     [Theory]

@@ -29,7 +29,7 @@ public sealed class HostPolicyModelRefusalTests
 
     /// <summary>
     /// On the native door after a prompt it is the ending's refused model under today's guard, a failed, unstopped turn that ran nothing;
-    /// at a protocol open it is D205's re-ask on the same session, never the ending's flag; anywhere else it reads as today's tables read
+    /// at a protocol open it is a re-ask on the same session, never the ending's flag; anywhere else it reads as today's tables read
     /// the same failure.
     /// </summary>
     [Theory]

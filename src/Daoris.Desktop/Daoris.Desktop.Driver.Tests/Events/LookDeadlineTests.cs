@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The <c>look</c> topic's deadline (FOUNDATION1 mod-vii, the design §14.1), the rule the look held and the events own: <c>pollSeconds</c>
+/// The <c>look</c> topic's deadline, the rule the look holds and the events own: <c>pollSeconds</c>
 /// since the last whole look ended, a timer's granularity allowed. Handed the time since, never a clock.
 /// </summary>
 public sealed class LookDeadlineTests

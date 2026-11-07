@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// CONSOLE3a: what stops a session's background work, held by session while its protocol-door session
+/// What stops a session's background work, held by session while its protocol-door session
 /// is open, so the page's route reaches it across the ticks and the conversations that own the sessions.
 /// </summary>
 public sealed class TaskStopsTests

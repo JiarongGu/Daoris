@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// ASKQUESTS1 (the Ask Daoris design §9 item 12): what an Ask Daoris conversation's Applies published, kept with it by id. The ids are
+/// What an Ask Daoris conversation's Applies published, kept with it by id. The ids are
 /// the service's answer, never read from a sentence; the list survives a restart, since it is a file beside the conversation's other
 /// files, and goes with them at a delete. Files only, so this is the suite's fast half.
 /// </summary>
@@ -25,7 +25,7 @@ public sealed class HelpPublishedTests : HelpProposalsFixture
 
     /// <summary>
     /// What the conversation is told names the ask and the quest by id, whatever the service's sentence says: an id it names already is
-    /// not said twice. Codex's read of the design (D191): the ids reached the agent only where the sentence happened to name them.
+    /// not said twice, and the ids reach the agent even where the sentence names none of them.
     /// </summary>
     [Theory]
     [InlineData("Asked as `#a1b2c3d4` in `work`.", "Asked as `#a1b2c3d4` in `work`. (quest `#q1a2b3c4`)")]
@@ -41,7 +41,7 @@ public sealed class HelpPublishedTests : HelpProposalsFixture
         Assert.EndsWith($" — {told}", applied.Told);
     }
 
-    /// <summary>One Apply settles a proposal (HELPAPPLY1's claim), so a second entry for it is never kept.</summary>
+    /// <summary>One Apply settles a proposal, so a second entry for it is never kept.</summary>
     [Fact]
     public void A_proposal_kept_already_keeps_its_first_entry()
     {

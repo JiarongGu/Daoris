@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The background tasks a native stream says (AGENTPROVIDER1l, BGWAIT1c): each command's start and end read once from its frames into one
+/// The background tasks a native stream says: each command's start and end read once from its frames into one
 /// reading, the end in its notification's word or else its update's, marked where it came after its turn's result.
 /// </summary>
 public sealed class NativeTasksTests
@@ -36,7 +36,7 @@ public sealed class NativeTasksTests
     }
 
     /// <summary>
-    /// The stream's close (BGWAIT1c): a command its update killed after the turn's result, its notification never written because the process
+    /// The stream's close: a command its update killed after the turn's result, its notification never written because the process
     /// ended first (Daoris ending it at its turn's end), is ended in its update's word, which the run's ending cuts; one its update killed before
     /// the result is ended too, never cut; each said once.
     /// </summary>
@@ -58,7 +58,7 @@ public sealed class NativeTasksTests
 
     /// <summary>
     /// A command with no ending word at the close, started alone or updated only as running, says no end: its end is unsaid, which the run's
-    /// ending reads as no cut, as it read a stream that ended before its work's end was said; a command its notification ended says none again.
+    /// ending reads as no cut, as it reads a stream that ends before its work's end is said; a command its notification ended says none again.
     /// </summary>
     [Fact]
     public void A_command_started_alone_at_the_close_says_no_end()

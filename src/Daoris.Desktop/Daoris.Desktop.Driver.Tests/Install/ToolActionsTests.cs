@@ -6,10 +6,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A download as an action the page starts and follows (TOOLS4, D121 §3.6): answered once it has started, its end news
+/// A download as an action the page starts and follows: answered once it has started, its end news
 /// after, one at a time for each tool, and stopped by the person — the shape <c>HARNESS_ACTION</c>'s install has, since
-/// the bridge gives up after thirty seconds and a download outlives that (WSR7 a). The route that carries it to the
-/// page is TOOLS7's.
+/// the bridge gives up after thirty seconds and a download outlives that.
 /// </summary>
 /// <remarks>Nothing here reaches a network: a host is a stand-in, and one of them stalls until it is stopped.</remarks>
 public sealed class ToolActionsTests : IDisposable

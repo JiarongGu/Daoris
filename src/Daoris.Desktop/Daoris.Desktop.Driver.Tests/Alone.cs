@@ -1,7 +1,7 @@
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The Process classes that run alone, after the rest (PROCPAR1). The Process half runs its classes several at once
+/// The Process classes that run alone, after the rest. The Process half runs its classes several at once
 /// (<c>process.runsettings</c> says how many), and each class here holds something every class beside it would share.
 /// </summary>
 /// <remarks>

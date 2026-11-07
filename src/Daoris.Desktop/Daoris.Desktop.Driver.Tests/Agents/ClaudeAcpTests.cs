@@ -3,14 +3,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// `claude-code` over the protocol door (ACP2/D53) — the adapter, its two seams, and what a spawn
+/// `claude-code` over the protocol door — the adapter, its two seams, and what a spawn
 /// carries. <b>Everything here is keyless</b>: what is left for a real login is one driven turn.
 /// </summary>
 /// <remarks>
-/// <para>The evaluation's §1a established both seams against the real adapter with no model spent:
+/// <para>Both seams hold against the real adapter with no model spent:
 /// <c>CLAUDE_CODE_EXECUTABLE</c> points the Agent SDK at a <c>claude</c> of our choosing, and
-/// <c>CLAUDE_CONFIG_DIR</c> isolates the account — an empty one received its own `.claude.json` and
-/// the machine's real profile was untouched. These tests hold that wiring from this side.</para>
+/// <c>CLAUDE_CONFIG_DIR</c> isolates the account — an empty one receives its own `.claude.json` and
+/// the machine's real profile is untouched. These tests hold that wiring from this side.</para>
 /// </remarks>
 public sealed class ClaudeAcpTests : IDisposable
 {
@@ -57,8 +57,8 @@ public sealed class ClaudeAcpTests : IDisposable
     }
 
     /// <summary>
-    /// Seam one (§1a): the adapter runs <b>the `claude` the toolchain manages</b> rather than
-    /// carrying a second copy — which is the whole reason probe 3's failure was the useful part.
+    /// Seam one: the adapter runs <b>the `claude` the toolchain manages</b> rather than
+    /// carrying a second copy.
     /// </summary>
     [Fact]
     public void The_managed_claude_is_handed_to_the_agent_sdk_through_its_own_seam()
@@ -73,8 +73,8 @@ public sealed class ClaudeAcpTests : IDisposable
 
     /// <summary>
     /// 🔴 Nothing pinned means the seam is <b>not set at all</b> — the SDK then finds `claude` the way
-    /// it always did. Setting it to an empty string, or to a path that is not there, would break a
-    /// machine that works today, which is the additive rule TOOL2 holds everywhere else (D48 §2a).
+    /// it otherwise would. Setting it to an empty string, or to a path that is not there, would break a
+    /// machine that works without it, which is the additive rule held everywhere else.
     /// </summary>
     [Fact]
     public void With_nothing_managed_the_seam_is_left_untouched()
@@ -99,8 +99,8 @@ public sealed class ClaudeAcpTests : IDisposable
     }
 
     /// <summary>
-    /// It is a managed toolchain entry of its own (ACP2): the adapter is an npm package, pinned
-    /// exact, that Daoris can install into a directory it owns — which is TOOL2's machinery reused
+    /// It is a managed toolchain entry of its own: the adapter is an npm package, pinned
+    /// exact, that Daoris can install into a directory it owns — the toolchain's machinery reused
     /// rather than a second mechanism.
     /// </summary>
     [Fact]
@@ -125,7 +125,7 @@ public sealed class ClaudeAcpTests : IDisposable
         var acp = ProviderRegistry.Built().AgentNamed(Adapter().Id.Value);
         var pipe = ProviderRegistry.Built().AgentNamed("claude-code");
 
-        // Since AGT2b they do not even share a SOURCE: `claude` pins from Anthropic's release bucket,
+        // They do not even share a SOURCE: `claude` pins from Anthropic's release bucket,
         // verified, and the adapter — which ships only on npm — from its package.
         Assert.Equal(ClaudeReleases.Channel, pipe?.Program.Channel);
         Assert.Null(pipe?.Program.Package);
@@ -138,7 +138,7 @@ public sealed class ClaudeAcpTests : IDisposable
 
     /// <summary>
     /// 🔴 <b>Both seams reach a real spawn, through the one line that governs both doors.</b> This is
-    /// the keyless half of ACP2's proof: everything the real run will depend on, asserted where the
+    /// the keyless half of the proof: everything the real run will depend on, asserted where the
     /// driver actually applies it rather than where an adapter happens to build it.
     /// </summary>
     [Fact]
@@ -165,7 +165,7 @@ public sealed class ClaudeAcpTests : IDisposable
 
     /// <summary>
     /// The pipe door's spawn is <b>untouched</b> by the ACP seam — a machine driving the old way must
-    /// not acquire an environment variable because a new adapter exists (D48 §2a, again).
+    /// not acquire an environment variable because a new adapter exists.
     /// </summary>
     [Fact]
     public void The_pipe_door_gains_no_executable_seam()
@@ -178,8 +178,7 @@ public sealed class ClaudeAcpTests : IDisposable
     }
 
     /// <summary>
-    /// The pipe door stays supported until the protocol door passes its real run (ACP2's own
-    /// sentence). Asserted so that "we will keep it" cannot quietly stop being true.
+    /// The pipe door stays supported until the protocol door passes its real run. Asserted so that "we will keep it" cannot quietly stop being true.
     /// </summary>
     [Fact]
     public void The_pipe_door_is_still_there()

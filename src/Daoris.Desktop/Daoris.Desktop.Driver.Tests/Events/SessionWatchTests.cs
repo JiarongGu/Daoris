@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSWATCH1a's watcher (D200, the session-watch design §1, §2, §7), on a clock the test moves and a job CPU it hands: a session heard is
+/// The session watcher, on a clock the test moves and a job CPU it hands: a session heard is
 /// left alone however long it runs; one that says nothing and runs nothing is marked at Q and brought to the person at 3Q; a busy one
 /// that says nothing is brought at 3Q as busy, offered no end; busy is read by window, never from past work; a held permission request
 /// is the person's wait; the clock that stops in sleep counts no sleep, and off it a gap is not counted; and nothing is ended but under a
@@ -74,7 +74,7 @@ public sealed class SessionWatchTests : IDisposable
         Assert.Null(_watch.RowOf("s1"));
         Assert.Null(_watch.QuietSince("s1"));
         Assert.True(heard > 2000);
-        // Heard within half its bound, its job was never read.
+        // Heard within half its bound, its job is never read.
         Assert.Equal(0, _jobReads);
     }
 
@@ -123,7 +123,7 @@ public sealed class SessionWatchTests : IDisposable
     }
 
     /// <summary>
-    /// §5.1's <c>{{what}}</c>: the mark's note names the call its agent was inside as it went quiet, or in state C the background work
+    /// The mark's note (<c>{{what}}</c>) names the call its agent is inside as it goes quiet, or in state C the background work
     /// that showed nothing, each as a coded note of its own.
     /// </summary>
     [Fact]
@@ -211,7 +211,7 @@ public sealed class SessionWatchTests : IDisposable
     }
 
     /// <summary>
-    /// Case 5's second half (§1.3): a call waiting for its repository's heavy-run slot behind another run is a wait, never marked, and at
+    /// A call waiting for its repository's heavy-run slot behind another run is a wait, never marked, and at
     /// three times its bound it is brought to the person all the same, naming the holder: a terminal's run has no session to help.
     /// </summary>
     [Fact]
@@ -310,7 +310,7 @@ public sealed class SessionWatchTests : IDisposable
     }
 
     /// <summary>
-    /// AGENTERRORS1a (D210 §5.1, amending D200): a run waiting between a transient episode's tries waits on Daoris's own timer, so the
+    /// A run waiting between a transient episode's tries waits on Daoris's own timer, so the
     /// watch opens no episode and a headless <c>--quiet-end</c> ends nothing through the 16-minute wait; once the wait is over and the
     /// try's prompt is out, its quiet counts from the heard stamp the wait's end made, never from the last line before the wait.
     /// </summary>

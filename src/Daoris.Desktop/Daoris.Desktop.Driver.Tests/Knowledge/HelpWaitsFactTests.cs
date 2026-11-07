@@ -11,7 +11,7 @@ public sealed class HelpWaitsFactTests
 
     /// <summary>
     /// Woken by a session's records, a quest or a word moving, and by no ask, channel post, ref or configuration; the room's read says it
-    /// not read until it was judged, and as judged once it was.
+    /// not read until it is judged, and as judged once it is.
     /// </summary>
     [Fact]
     public void COMMS1i_what_each_line_waits_on_is_woken_by_the_records_a_quest_or_a_word_and_read_as_judged()

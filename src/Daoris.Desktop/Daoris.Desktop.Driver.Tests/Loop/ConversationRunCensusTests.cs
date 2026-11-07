@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ONEWAY1h-iii (AGENTPROVIDER1m-i part 4): the conversation's runner holds the run over today's transports for its start, its end, its
+/// The conversation's runner holds the run over the transports for its start, its end, its
 /// stop and its close, and keeps its words beside it on the session and the process the run holds. A source scan, line comments read
 /// out: the runner's files bracket, spawn, capture and keep no downloads themselves, and the one protocol session in the driver is the
 /// run's, which the runner reaches through <c>TransportRun.Session</c>.
@@ -46,7 +46,7 @@ public sealed class ConversationRunCensusTests
     }
 
     /// <summary>
-    /// D243 point 1: a conversation's words reach its process through the run's <c>DoorInput</c> alone, so the one file that writes a line to a
+    /// A conversation's words reach its process through the run's <c>DoorInput</c> alone, so the one file that writes a line to a
     /// tracked process's stdin is the run's; no executor, turn or hand-over does.
     /// </summary>
     [Fact]
@@ -61,7 +61,7 @@ public sealed class ConversationRunCensusTests
     }
 
     /// <summary>
-    /// D243 point 1 on the protocol door: the conversation's turns say a prompt, a word into a running turn and a steer on the run's
+    /// On the protocol door the conversation's turns say a prompt, a word into a running turn and a steer on the run's
     /// <c>ProtocolWords</c>, never through the session, which they read for its options alone.
     /// </summary>
     [Fact]

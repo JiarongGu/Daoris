@@ -5,13 +5,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT1c (D163 point 3; D191: "a quest session's ask under `on` is taken at its turn's end, never mid-turn, its note written
-/// before the session stops") through REAL ticks: the machine's agent (the protocol stub) takes its quest, asks to hand its session
+/// A quest session's ask under `on` is taken at its turn's end, never mid-turn, its note written
+/// before the session stops. Through REAL ticks: the machine's agent (the protocol stub) takes its quest, asks to hand its session
 /// over with a note, as `handover_propose` writes it, and ends its turn holding the quest. Under the repository's `on` rule its run
 /// takes the ask at that turn's end: the record stops as handed over, the quest is held on the next agent in the person's order with
 /// the note, and the next look carries it on in the same tree on that agent, told the note as the outgoing agent's claim.
 /// </summary>
-/// <remarks>Written by MIXAGENT1c: a Process case (node and git). The roster's doors are the test's, so no binary is asked its version.</remarks>
+/// <remarks>A Process case (node and git). The roster's doors are the test's, so no binary is asked its version.</remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class HandOverAskTickTests : IDisposable
 {
@@ -53,7 +53,7 @@ public sealed class HandOverAskTickTests : IDisposable
         await UntilAsync(() => service.SessionCount == 1 && service.Session("s1")["state"]!.GetValue<string>() == "stopped");
         await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
 
-        // 2. Taken at its turn's end, never mid-turn: the record says it was handed over, and the quest is held on the next agent with the note.
+        // 2. Taken at its turn's end, never mid-turn: the record says it is handed over, and the quest is held on the next agent with the note.
         Assert.Contains("Handed over to stub", service.Session("s1")["note"]!.GetValue<string>());
         Assert.Equal("Taken", service.Status("q1"));
         var handed = new HandedQuests(_home).Read("q1")!;
@@ -142,7 +142,7 @@ public sealed class HandOverAskTickTests : IDisposable
         return script;
     }
 
-    /// <summary>The agent the quest is handed to: it writes down what it was handed, then closes the quest done.</summary>
+    /// <summary>The agent the quest is handed to: it writes down what it is handed, then closes the quest done.</summary>
     private string Agent()
     {
         var script = Path.Combine(_home, "agent.mjs");

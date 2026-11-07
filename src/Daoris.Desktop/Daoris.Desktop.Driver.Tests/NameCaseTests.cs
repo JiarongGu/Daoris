@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A name compared without case (CASEFOLD1, CASEFOLD1d; D125's notes): every driver twin of a CLI file compares a name by
+/// A name compared without case: every driver twin of a CLI file compares a name by
 /// .NET's <c>OrdinalIgnoreCase</c>, each code point to its one capital and never a wider one, and every CLI twin compares
 /// through <c>casefold.ts</c>, whose table, the CLI's <c>test/fixtures/name-case.json</c>, is .NET's answers, measured. The
 /// driver's half reads the same table, row for row: whether each pair is one name, and the sign the pair orders by. A row

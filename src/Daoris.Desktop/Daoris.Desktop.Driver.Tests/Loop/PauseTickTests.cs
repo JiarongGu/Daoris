@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PAUSE1b (D132 points 2–4, design §2) through REAL ticks: the person pauses an ask while its session works, the session is
+/// Through REAL ticks: the person pauses an ask while its session works, the session is
 /// stopped as their stop with the pause's words on its record, the looks that follow hold its quest with nothing spawned, and
 /// *Resume* carries it on in its tree. A real process (node) and the stand-in service <see cref="AskAndWaitTickTests.StandIn"/>,
 /// as the stop's ticks use them; no model and no account.
@@ -144,7 +144,7 @@ public sealed class PauseTickTests : IDisposable
     private WorkWorld World(AskAndWaitTickTests.StandIn service) =>
         new(new ServiceClient(service.Url, null), _home, ConfigPath, _processes) { Poll = TimeSpan.FromMilliseconds(50) };
 
-    // A driver per look over the file as it stands, sharing the processes, as the watch builds one per look (DEV3).
+    // A driver per look over the file as it stands, sharing the processes, as the watch builds one per look.
     private Daoris.Driver.Driver Driver(AskAndWaitTickTests.StandIn service)
     {
         var adapters = ProviderRegistry.Built();
@@ -154,7 +154,7 @@ public sealed class PauseTickTests : IDisposable
     }
 
     /// <summary>
-    /// The stand-in harness: it writes down what it was handed; on its first run it takes the quest and works until it is
+    /// The stand-in harness: it writes down what it is handed; on its first run it takes the quest and works until it is
     /// stopped (<c>take</c>), or takes it and closes it (<c>close</c>); on any later run it takes the quest unless it is
     /// carrying it on, and closes it done.
     /// </summary>

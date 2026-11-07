@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// USAGECAP1a1 (D179 point 2) through the roster: every reading is kept in the usage history before <c>windows.json</c> keeps
+/// Through the roster: every reading is kept in the usage history before <c>windows.json</c> keeps
 /// the newest of each window, from both seams. A session's frame (<see cref="HarnessRoster.Said"/>, from the recorded
 /// <c>rate_limit_info</c>) and an asked read (Claude's <c>get_usage</c> and Codex's <c>account/rateLimits/read</c>, from their
 /// recorded answers), each with the account's epoch, the plan as read, and nothing of who signed in.
@@ -211,7 +211,7 @@ public sealed class UsageHistoryRosterTests : IDisposable
         Assert.Equal([1, 1, 2, 2, 3, 3], History().Readings.Select(each => each.Epoch!.Value));
     }
 
-    // ——— What is never written (D179 point 2): a prompt, a word, a raw frame, a key, an email, an organisation, who signed in.
+    // ——— What is never written: a prompt, a word, a raw frame, a key, an email, an organisation, who signed in.
 
     [Fact]
     public async Task No_email_organisation_key_or_words_reach_the_history_from_either_seam()

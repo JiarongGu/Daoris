@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The git Daoris runs, by its version (TOOLS6 inside GITAUTH1c; D121 §2.5, the git-auth design §4.1): git's answer read, asked of a
+/// The git Daoris runs, by its version: git's answer read, asked of a
 /// file once per change of it, and the two floors judged, each refusal naming the version it found and the floor it needs.
 /// </summary>
 public sealed class GitVersionsTests : IDisposable

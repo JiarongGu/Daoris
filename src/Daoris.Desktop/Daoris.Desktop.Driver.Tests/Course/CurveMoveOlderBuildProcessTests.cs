@@ -4,15 +4,15 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-iii part b (D212; the foundation design §3.4 rule 4, §13.4 step 5, §19.1, §19.3, row f-iii's proof): the cases where an older
+/// The cases where an older
 /// build acts on a line beside the curve's move, as <c>LimitMoveOlderBuildProcessTests</c> proves them beside the live limit move's: an older
 /// build opening a successor of the move's destination before it moved the destination's words; Codex's delayed older move, delivering its own
-/// copy after a newer move ended; an older shell's resume of the old part beside the newer open, in both orders; and the reading part a
-/// took, a word the person kept on the old part after its end, which the keyed open moves and the new part's own go-on carries, once.
+/// copy after a newer move ended; an older shell's resume of the old part beside the newer open, in both orders; and a word
+/// the person kept on the old part after its end, which the keyed open moves and the new part's own go-on carries, once.
 /// </summary>
 /// <remarks>
 /// The older build's own statements are made at the ledger, as the build before the store made them: an unkeyed open of a successor, its
-/// state moves, its takes. Words land at the real protocol stub where a go-on carries them, so what is heard there is what an agent was sent.
+/// state moves, its takes. Words land at the real protocol stub where a go-on carries them, so what is heard there is what an agent is sent.
 /// The curve's move moves the word and never writes it (its brief is its one message), so what the stub hears of a word is a go-on's.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
@@ -97,7 +97,7 @@ public sealed class CurveMoveOlderBuildProcessTests : IAsyncLifetime
         var word = Assert.Single(_h.Store("run-probe").WordsOf(move.Id));
         Assert.Equal(("k1", MoveWordDispositions.Held), (word.Word, word.Disposition));
 
-        // Nothing was delivered to the destination, by the move or by its go-on, which a record that went on elsewhere never restarts.
+        // Nothing is delivered to the destination, by the move or by its go-on, which a record that went on elsewhere never restarts.
         Assert.Equal((0, 0, 0), (_h.Briefed(shell), LiveLimitHarness.Wrote(shell, LiveLimitHarness.Word), _h.Heard(LiveLimitHarness.Word)));
         Assert.Equal(["c2:k1"], _h.Waiting());
 

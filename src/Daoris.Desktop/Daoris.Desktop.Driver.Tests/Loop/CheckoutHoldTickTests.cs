@@ -4,10 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STEWARDROLE1b (D209 §3.1a, Codex's final read, finding 2) through REAL ticks: a repository whose earlier session worked in its
+/// Through REAL ticks: a repository whose earlier session worked in its
 /// checkout, given trees since and driven by a steward's act, never has its continuation started in the checkout. The start is held
 /// <c>held.checkout</c> where its directory is actually chosen, nothing is spawned, and the steward's operations on the quest end; with no
-/// role's act behind it the same start carries the quest on as before. A stand-in harness (node) and the stand-in service
+/// role's act behind it the same start carries the quest on. A stand-in harness (node) and the stand-in service
 /// <see cref="AskAndWaitTickTests.StandIn"/>, as <see cref="StopHoldTickTests"/> uses them; no model and no account.
 /// </summary>
 /// <remarks>

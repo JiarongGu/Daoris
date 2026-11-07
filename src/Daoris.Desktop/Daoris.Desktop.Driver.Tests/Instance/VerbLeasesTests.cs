@@ -3,13 +3,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HOMELEASE1 (the terminal RPC design §5, §7.1): a verb acting alone holds the home's lease for its mutation, never for a read,
+/// A verb acting alone holds the home's lease for its mutation, never for a read,
 /// and a verb whose one writer is the service, a conversation, or the loop takes none of a verb's. An unclassed verb holds it.
 /// </summary>
 public sealed class VerbLeasesTests
 {
     [Theory]
-    // The mutations a verb makes alone (§1.2's census), for its run.
+    // The mutations a verb makes alone, for its run.
     [InlineData("trees land s-1")]
     [InlineData("trees remove some-branch --force")]
     [InlineData("trees clean --yes")]
@@ -45,10 +45,10 @@ public sealed class VerbLeasesTests
     [InlineData("plugins new id --point p")]
     [InlineData("update --now")]
     [InlineData("workflow keep s-1")]
-    // FABRIC-CUTOVER1f: the person's skip and stop of a run's node keep a word on its record.
+    // The person's skip and stop of a run's node keep a word on its record.
     [InlineData("workflow skip q7 go nobody raises it")]
     [InlineData("workflow stop q7 go")]
-    // The driver's standing choices, `daoris settings …` handed on (PUSH1f2a, D194 point 2): each a short change, held from the top.
+    // The driver's standing choices, `daoris settings …` handed on: each a short change, held from the top.
     [InlineData("driver drive engine")]
     [InlineData("driver undrive engine")]
     [InlineData("driver hold engine")]
@@ -70,7 +70,7 @@ public sealed class VerbLeasesTests
     [InlineData("driver helpers engine --mode on")]
     [InlineData("driver handover engine --mode on")]
     [InlineData("driver commits engine --mode ask")]
-    // The family's last verbs (PUSH1f2b): the brainstorm policy set or cleared, and a workflow's writes.
+    // The family's last verbs: the brainstorm policy set or cleared, and a workflow's writes.
     [InlineData("driver brainstorms --mode off")]
     [InlineData("driver brainstorms --workspace work --pass-minutes 5")]
     [InlineData("driver brainstorms --clear")]
@@ -81,14 +81,14 @@ public sealed class VerbLeasesTests
     [InlineData("driver workflow use docs --repository engine")]
     [InlineData("driver workflow use web-verify --repository engine --landed")]
     [InlineData("driver workflow kind work docs --label Documentation")]
-    // The tools `daoris tool …` hands on (PUSH1f2c, D194 point 2): each short change, held from the top.
+    // The tools `daoris tool …` hands on: each short change, held from the top.
     [InlineData("tool use git system")]
     [InlineData("tool use git file C:/bin/git.exe")]
     [InlineData("tool delete pwsh 2.62.0")]
     [InlineData("tool locations add https://lists.example/r.json")]
     [InlineData("tool locations remove https://lists.example/r.json")]
     [InlineData("tool look")]
-    // The agents' rules, trust and settings `daoris agent …` hands on (PUSH1f2d), a pin taken back and an account's change (PUSH1f2e2):
+    // The agents' rules, trust and settings `daoris agent …` hands on, a pin taken back and an account's change:
     // each change, held from the top.
     [InlineData("agent rules allow WebFetch")]
     [InlineData("agent rules deny Bash(rm:*) --workspace work")]
@@ -111,7 +111,7 @@ public sealed class VerbLeasesTests
     [InlineData("agent profile use claude-code --switch off --workspace work")]
     [InlineData("agent profile use claude-code --clear")]
     [InlineData("agent profile use claude-code --frob")]
-    // This machine's plugins changed (PUSH1f2f): an add, an update pressed, a remove and a switch, each a short act.
+    // This machine's plugins changed: an add, an update pressed, a remove and a switch, each a short act.
     [InlineData("plugin add D:/work/acme.gate")]
     [InlineData("plugin add --offer github-pull-request")]
     [InlineData("plugin update acme.gate --yes")]
@@ -161,25 +161,25 @@ public sealed class VerbLeasesTests
     [InlineData("ask --publish a-1 --to r")]
     [InlineData("ask channel a-1")]
     [InlineData("ask channel a-1 --ordinary when you can")]
-    // A conversation held from the terminal (RPC1g); and the loop, which holds it as an instance.
+    // A conversation held from the terminal; and the loop, which holds it as an instance.
     [InlineData("chat --repository r")]
     [InlineData("chat --session s-1")]
     [InlineData("sessions start-from s-1")]
     [InlineData("sessions hand-over s-1 --agent codex")]
     [InlineData("drive --once")]
     [InlineData("--until-idle")]
-    // A repository's heavy gates, which run for minutes and write the home only in their own slot (HEAVYRUN1a).
+    // A repository's heavy gates, which run for minutes and write the home only in their own slot.
     [InlineData("run-heavy")]
     [InlineData("run-heavy --gate web")]
-    // A person's verification, which writes only its run's binding once (FABRIC-PIPELINE1d).
+    // A person's verification, which writes only its run's binding once.
     [InlineData("verify engine --branch feature/x")]
-    // The driver's standing choices read, or the usage: `list`, the bare family, a verb it does not have, a plan (PUSH1f2a).
+    // The driver's standing choices read, or the usage: `list`, the bare family, a verb it does not have, a plan.
     [InlineData("driver")]
     [InlineData("driver list")]
     [InlineData("driver --help")]
     [InlineData("driver frobnicate engine")]
     [InlineData("driver landing engine merge --plan")]
-    // The family's last reads (PUSH1f2b): the brainstorm policy said, and a workflow shown, listed, exported or planned.
+    // The family's last reads: the brainstorm policy said, and a workflow shown, listed, exported or planned.
     [InlineData("driver brainstorms")]
     [InlineData("driver brainstorms --workspace work")]
     [InlineData("driver workflow")]
@@ -190,7 +190,7 @@ public sealed class VerbLeasesTests
     [InlineData("driver workflow new docs --from merge-after-accept --plan")]
     [InlineData("driver workflow use docs --workspace work --plan")]
     [InlineData("driver workflow frobnicate")]
-    // The tools read, their usage, and the long verbs, which take the lease themselves to publish (PUSH1f2c, the alone-path design §1.4).
+    // The tools read, their usage, and the long verbs, which take the lease themselves to publish.
     [InlineData("tool")]
     [InlineData("tool list")]
     [InlineData("tool path git")]
@@ -201,7 +201,7 @@ public sealed class VerbLeasesTests
     [InlineData("tool use pwsh managed 2.62.0")]
     [InlineData("tool download pwsh")]
     [InlineData("tool update pwsh")]
-    // The agents' rules, proposals and settings read, a trust asked or dry-run, and the usage (PUSH1f2d).
+    // The agents' rules, proposals and settings read, a trust asked or dry-run, and the usage.
     [InlineData("agent")]
     [InlineData("agent rules")]
     [InlineData("agent rules list")]
@@ -211,7 +211,7 @@ public sealed class VerbLeasesTests
     [InlineData("agent settings claude-code --account work")]
     [InlineData("agent trust claude-code D:/work/engine")]
     [InlineData("agent trust claude-code D:/work/engine --yes --dry-run")]
-    // What an agent runs as, read (PUSH1f2e).
+    // What an agent runs as, read.
     [InlineData("agent which claude-code")]
     [InlineData("agent profile")]
     [InlineData("agent profile list")]
@@ -219,25 +219,25 @@ public sealed class VerbLeasesTests
     [InlineData("agent profile use claude-code order --help")]
     [InlineData("agent profile order claude-code account-1 --help")]
     [InlineData("agent which claude-code-acp --workspace work --json")]
-    // This machine's agents and their accounts, read, by its word and by none (PUSH1f2e4).
+    // This machine's agents and their accounts, read, by its word and by none.
     [InlineData("agent list")]
     [InlineData("agent list --help")]
     [InlineData("agent --help")]
     [InlineData("agent rules allow WebFetch --help")]
     [InlineData("agent frobnicate")]
-    // The long verbs (PUSH1f2e5, the alone-path design §1.4): an install holds none at all, its installer writing the machine; a key
+    // The long verbs: an install holds none at all, its installer writing the machine; a key
     // holds none at its top, taking the lease itself to publish.
     [InlineData("agent install claude-code")]
     [InlineData("agent login claude-code --new")]
     [InlineData("agent login codex --profile work --join aurora --device-code")]
     [InlineData("agent key claude-code")]
     [InlineData("agent key claude-code --account work")]
-    // PUSH1f2e: a pin downloads or installs holding nothing and takes the lease to publish; an unpinned update writes the machine.
+    // A pin downloads or installs holding nothing and takes the lease to publish; an unpinned update writes the machine.
     [InlineData("agent pin claude-code 2.1.300")]
     [InlineData("agent pin codex 0.156.1 --workspace aurora")]
     [InlineData("agent update claude-code")]
     [InlineData("agent update codex --workspace aurora")]
-    // This machine's plugins read, an update's plan, the kit's pointers and the usage (PUSH1f2f).
+    // This machine's plugins read, an update's plan, the kit's pointers and the usage.
     [InlineData("plugin")]
     [InlineData("plugin list")]
     [InlineData("plugin update acme.gate")]
@@ -253,7 +253,7 @@ public sealed class VerbLeasesTests
     public void No_words_hold_nothing() => Assert.False(VerbLeases.Holds([]));
 
     /// <summary>
-    /// ONEWAY1c-i: no variable names another driver file, so a driver choice holds the home whatever the retired variable says.
+    /// No variable names another driver file, so a driver choice holds the home whatever the retired variable says.
     /// </summary>
     [Fact]
     public void ONEWAY1c_i_a_driver_choice_holds_the_home_whatever_the_retired_variable_names()
@@ -264,7 +264,7 @@ public sealed class VerbLeasesTests
     }
 
     /// <summary>
-    /// A file `DAORIS_HARNESS_CONFIG` names is no instance's (PUSH1f2d, the alone-path design §1.2): an account's settings and a trust on
+    /// A file `DAORIS_HARNESS_CONFIG` names is no instance's: an account's settings and a trust on
     /// its home act alone, holding nothing; the rules and their proposals are `DAORIS_HOME`'s whatever it names, so they hold that home.
     /// </summary>
     [Fact]
@@ -280,7 +280,7 @@ public sealed class VerbLeasesTests
         Assert.True(VerbLeases.HoldsHere(["driver", "drive", "engine"], Named));
     }
 
-    /// <summary>ONEWAY1ai-i: the remotes' and the browser's edits hold the lease; their reads and the registry, the service's, hold none.</summary>
+    /// <summary>The remotes' and the browser's edits hold the lease; their reads and the registry, the service's, hold none.</summary>
     [Theory]
     [InlineData("remote add work --url https://x", true)]
     [InlineData("remote remove work", true)]

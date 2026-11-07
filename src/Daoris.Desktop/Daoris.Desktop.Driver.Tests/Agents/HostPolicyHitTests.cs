@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Host policy (the agent-lyntai design §5.3, round 5): what was hit is a payload the account lines say, so it is compared exactly and
+/// Host policy: what is hit is a payload the account lines say, so it is compared exactly and
 /// filled from Daoris's own window names where today's sentence names that window, never from a vendor's (<c>seven_day</c>); anything
 /// else is unknown until it is stated as the door read it. Daoris's own types, never a proof that the layer supplies the window.
 /// </summary>

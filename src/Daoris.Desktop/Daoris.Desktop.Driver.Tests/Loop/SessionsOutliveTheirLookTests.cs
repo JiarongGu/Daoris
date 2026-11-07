@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// DEV3 (D115 §3.1): a session outlives the look that started it. A look starts what may start and returns;
+/// A session outlives the look that started it. A look starts what may start and returns;
 /// the sessions still running are the driver's to keep, each ending joins the next look's report, and the
 /// modes a gate drives wait until nothing runs.
 /// </summary>
@@ -16,7 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class SessionsOutliveTheirLookTests : IDisposable
 {
     /// <summary>How long anything here may take. A look that waits for its sessions waits forever here.</summary>
-    /// <remarks>TESTCLOCK1: every wait here is on a signal (a look, a count), so the bound elapses only on a real failure; it is minutes, as a loaded merge needs.</remarks>
+    /// <remarks>Every wait here is on a signal (a look, a count), so the bound elapses only on a real failure; it is minutes, as a loaded merge needs.</remarks>
     private static readonly TimeSpan Bound = TimeSpan.FromMinutes(2);
 
     private readonly string _home = Path.Combine(
@@ -60,8 +60,8 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The row's own case: a quest published while a long session runs starts at the next look, beside it,
-    /// rather than after it. Where the repository opens a tree per session, the two run side by side (PAR1).
+    /// A quest published while a long session runs starts at the next look, beside it,
+    /// rather than after it. Where the repository opens a tree per session, the two run side by side.
     /// </summary>
     [Fact]
     public async Task A_quest_published_during_a_long_session_starts_at_the_next_look()
@@ -133,7 +133,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
 
     /// <summary>
     /// An ending is said once, in the report of the look after it — the line a person reads and the fact a
-    /// watcher acts on (SURF5b) — and never again.
+    /// watcher acts on — and never again.
     /// </summary>
     [Fact]
     public async Task An_ending_joins_the_next_looks_report_and_no_other()
@@ -157,7 +157,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
     }
 
     /// <summary>
-    /// Where a repository's sessions run in its root, the root is its one tree (D51): a quest published while
+    /// Where a repository's sessions run in its root, the root is its one tree: a quest published while
     /// one works there waits for it, says whose session holds it, and starts at the look after it ends.
     /// </summary>
     [Fact]
@@ -251,8 +251,8 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
     }
 
     /// <summary>
-    /// The sync still runs beside the sessions (D68 §6), and after it the lost-claim stop asks where this
-    /// machine's claim on each running session's quest stands (D68 §5) — now at every look while one works,
+    /// The sync still runs beside the sessions, and after it the lost-claim stop asks where this
+    /// machine's claim on each running session's quest stands — at every look while one works,
     /// and never once it has ended.
     /// </summary>
     [Fact]
@@ -324,7 +324,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 D104's shutdown, for sessions started at two looks: closing the watch ends both on its own token, and
+    /// The shutdown, for sessions started at two looks: closing the watch ends both on its own token, and
     /// it lets go only once each has written how it ended — stopped, and interrupted, so a take either held is
     /// carried on at the next start.
     /// </summary>
@@ -452,7 +452,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
         }
     }
 
-    // ——— DEV3a: a run the headless host makes (`--once`, `--until-idle`) lets go only once what it caused has landed: each
+    // ——— A run the headless host makes (`--once`, `--until-idle`) lets go only once what it caused has landed: each
     // session's ending written and said, and what a pass beside the sessions met said, rather than lost with the process.
 
     /// <summary>
@@ -518,7 +518,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
     /// <summary>
     /// <c>--until-idle</c> says each look as it ends, not all of them once the run is over, and a look that fails lets go only
     /// once every session it started has ended, its record written and its ending said: the looks before it and the endings after
-    /// it reach the person, where they used to go with the process.
+    /// it reach the person, and do not go with the process.
     /// </summary>
     [Fact]
     public async Task Until_idle_says_each_look_as_it_ends_and_a_failed_look_says_the_endings_it_waited_for()
@@ -579,7 +579,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
         Assert.Equal(report.Concluded, said.SelectMany(each => each.Concluded));
     }
 
-    // ——— DEV3b (D115's DEV3a note): a run whose own look meets the client's timeout fails, and the headless host says so and
+    // ——— A run whose own look meets the client's timeout fails, and the headless host says so and
     // exits 2; only the person's own close is a close, *driver: stopped.*, exit 0. The host hands what ended the run to
     // `DriverCommand.Cancelled` and prints what it answers, so these are the host's ending, held over the real throw.
 
@@ -620,12 +620,11 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
         Assert.Equal(new LoopEnded(0, "driver: stopped.", Failed: false), DriverCommand.Cancelled(closed, closing.IsCancellationRequested));
     }
 
-    // ——— DEV3b (D115's DEV3b note on the losing session): a stop made by a pass beside the sessions is said as that pass ends, so
-    // the run that made it says so whatever ends the process after: the family rehearsal's run had stopped its session, its record
-    // said so, and its print held only its look, the passes' lines kept back for its end.
+    // ——— A stop made by a pass beside the sessions is said as that pass ends, so
+    // the run that made it says so whatever ends the process after, not only in its look's print.
 
     /// <summary>
-    /// 🔴 The family rehearsal's lost-claim case, as it failed after DEV3a: the look's sync cannot reach the remote, a later pass
+    /// The lost-claim case: the look's sync cannot reach the remote, a later pass
     /// beside the session can, finds the take lost and stops the session. The stop is said as that pass ends, while the stopped
     /// run still writes how it ended, and before anything after it can end the run; each line is said once, and the said parts
     /// are the report.
@@ -687,7 +686,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
         }
     }
 
-    // ——— DEV3c (D115's DEV3b note on the losing session): a look that fails says what it had said before the failure, so a stop
+    // ——— A look that fails says what it had said before the failure, so a stop
     // it made, or an ending it drained, is not lost with the look; `--until-idle` and the watch looked that way, and `--once`'s
     // own look too.
 
@@ -725,7 +724,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
     }
 
     /// <summary>
-    /// The gap DEV3a's note named: a look drains what ended, then its own sync after the endings fails. What it drained is said,
+    /// A look drains what ended, then its own sync after the endings fails. What it drained is said,
     /// the line and the fact, rather than lost with the look whose report would have carried it.
     /// </summary>
     [Fact]
@@ -819,7 +818,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FLAKE3, the case above with its order held: the stopped session is still ending when the failure closes the watch, as a
+    /// The case above with its order held: the stopped session is still ending when the failure closes the watch, as a
     /// real process killed for its lost take may still be exiting then. The stop decided the end first, so the record says the
     /// stop, stood down for the lost take and never interrupted, rather than the close's own stop. Under load the case above met
     /// this order now and then, and read <c>stopped</c>.

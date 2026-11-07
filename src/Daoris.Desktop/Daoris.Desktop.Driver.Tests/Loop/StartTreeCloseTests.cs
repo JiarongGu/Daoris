@@ -4,14 +4,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// QUEUEDTREE1b (D51, D181's QUEUEDTREE1 note): a start's own path, from the look to its record's open, when the driver closes after
+/// A start's own path, from the look to its record's open, when the driver closes after
 /// its tree opened and before the record's open is asked. The tree goes by the clean path on no token, and no record opens.
 /// </summary>
 /// <remarks>
 /// The fast half: no process starts. The driver has no <c>Runner</c>, so the look reaches the start's own path; git is a small model
 /// of one repository standing in through <see cref="WorkingTree.Runs"/>, which sees the token each git is asked on, and every other
 /// start in the flow is refused through <see cref="ProcessStarts.Within"/>. The loop closes as the start reads its tree's head, the
-/// last await between the open and the record's. The branch's delete is the journal's <c>ref.delete</c> act (ONEWAY1r), whose git
+/// last await between the open and the record's. The branch's delete is the journal's <c>ref.delete</c> act, whose git
 /// starts as a held child no stand-in reaches, so that half of the case, with the tree's, is <see cref="StartTreeCloseGitTests"/>', over
 /// real git in the git process family.
 /// </remarks>
@@ -25,7 +25,7 @@ public sealed class StartTreeCloseTests : IDisposable
 
     private readonly CancellationTokenSource _closing = new();
 
-    // Each git asked, in order, marked where it was asked on no token; and each other start, refused.
+    // Each git asked, in order, marked with where it is asked on no token; and each other start, refused.
     private readonly List<string> _asked = [];
     private readonly List<string> _seen = [];
 
@@ -120,7 +120,7 @@ public sealed class StartTreeCloseTests : IDisposable
                 ct.ThrowIfCancellationRequested();
                 return Said(Tip);
             case ["rev-parse", "--path-format=absolute", "--git-common-dir", "--show-toplevel", "--abbrev-ref", "HEAD"]:
-                // The tree's repository, its own working root (GITWORKTREECONFIG1) and its branch, in one start.
+                // The tree's repository, its own working root and its branch, in one start.
                 return Said($"{Path.Combine(_root, ".git")}\n{_tree}\n{_branch}");
             case ["for-each-ref", "--contains", ..]:
                 return Said($"{Tip}\trefs/heads/main\t");

@@ -7,16 +7,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>resources.json</c>, schema 1, and the merge of every list read (TOOLS3, D121; the tools design §3.1–§3.5,
-/// §5): the one reader's tables since PUSH1f2c (D194), when the CLI's twin, <c>resources.ts</c>, left with
-/// <c>daoris tool</c>; a test named for the CLI names the twin it was held to.
+/// <c>resources.json</c>, schema 1, and the merge of every list read: the one reader's tables.
 /// </summary>
 /// <remarks>
-/// <para>The list's rules (§3.2), each a table below:</para>
+/// <para>The list's rules, each a table below:</para>
 /// <list type="number">
 /// <item><c>schema</c> is read first: anything but 1 refuses the whole list, and so does a <c>tools</c> that is
 /// no object.</item>
-/// <item>A tool this build does not declare is named and never offered (§3.4 rule 1).</item>
+/// <item>A tool this build does not declare is named and never offered.</item>
 /// <item>A version is one to four numbers; a platform is one of the table's; a version names its
 /// <c>files</c>.</item>
 /// <item>A file names its <c>url</c> (https://, or http:// to this machine), its <c>sha256</c> (64 hex, kept in
@@ -25,7 +23,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the archive's root.</item>
 /// <item>What does not read is skipped and said, and never guessed at.</item>
 /// </list>
-/// <para>Then the merge (§3.4): the person's locations in order, then the list built in; one tool, version and
+/// <para>Then the merge: the person's locations in order, then the list built in; one tool, version and
 /// platform is one download, so lists that disagree refuse that version, naming both; lists that agree under
 /// other addresses are mirrors; the versions are the union, and the newest is the highest by number.</para>
 /// <para>Nothing here opens a connection: a list is text, or a file on disk.</para>
@@ -90,7 +88,7 @@ public sealed class ToolResourcesTests : IDisposable
         Assert.Equal("the built-in list", ToolResources.BuiltIn);
     }
 
-    // ── The platform table (§3.2). The CLI's `a platform is named as the driver names it` ───────────────
+    // ── The platform table───────────────
 
     [Theory]
     [InlineData("win-x64", "win32", "x64", "Windows", "X64")]
@@ -117,7 +115,7 @@ public sealed class ToolResourcesTests : IDisposable
         Assert.Equal(ToolResources.PlatformFor(os, RuntimeInformation.ProcessArchitecture), ToolResources.Current);
     }
 
-    // ── Versions, by number (§3.4 rule 6). The CLI's `versions compare by number…` ────────────────────
+    // ── Versions, by number────────────────────
 
     [Theory]
     [InlineData("2.10.0", "2.9.0", 1)]
@@ -134,7 +132,7 @@ public sealed class ToolResourcesTests : IDisposable
         Assert.Equal(sign, Math.Sign(ToolResources.CompareVersions(a, b)));
     }
 
-    // ── Rules 1–3, 5: the list's shape. The CLI's `a list reads as the driver reads it` ──────────────────
+    // ── Rules 1–3, 5: the list's shape──────────────────
 
     [Theory]
     [InlineData("not JSON", "not json", "is not readable JSON", null, "")]
@@ -195,7 +193,7 @@ public sealed class ToolResourcesTests : IDisposable
         Assert.Equal(["first names `bun`, which is not a tool this build runs: nothing of it is offered"], list.Notes);
     }
 
-    // ── Rule 4: one file. The CLI's `a file reads as the driver reads it` ─────────────────────────────────
+    // ── Rule 4: one file─────────────────────────────────
 
     [Theory]
     [InlineData("the whole file", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/pwsh.exe"}""", null, "bin")]
@@ -282,7 +280,7 @@ public sealed class ToolResourcesTests : IDisposable
         Assert.Null(list.Tools["pwsh"].Source);
     }
 
-    // ── The merge (§3.4). The CLI's `lists merge as the driver merges them` ──────────────────────────────
+    // ── The merge──────────────────────────────
 
     /// <summary>
     /// A list, spelled short: downloads separated by <c>; </c>, each <c>&lt;tool&gt; &lt;version&gt; &lt;platform&gt;
@@ -436,7 +434,7 @@ public sealed class ToolResourcesTests : IDisposable
         Assert.Equal("built in names `bun`, which is not a tool this build runs: nothing of it is offered", merged.Notes[1]);
     }
 
-    // ── Where the lists are (§3.1, §3.3). The CLI's `a location's copy is named…` and `a list is vouched for…` ──
+    // ── Where the lists are──
 
     [Theory]
     [InlineData("https://example.org/daoris/resources.json", "83e03ee627324bedbd8aaea591e2a14753db2074954ef09fc29f5417fb769fe8.json")]
@@ -445,7 +443,7 @@ public sealed class ToolResourcesTests : IDisposable
     [InlineData("https://例え.jp/r.json", "e2e2d45ac6cca9317d9ebea32cf02ce29eb338fe0926e0e2eecdd7111a125f9b.json")]
     public void A_location_s_copy_is_named_as_the_cli_names_it(string address, string name)
     {
-        // Under the cache since HOMELAYOUT3 (D172 §3.4), as the CLI's twin asks it.
+        // Under the cache.
         Assert.Equal(Path.Combine(["HOME", "cache", .. ToolResources.LocationsFolder, name]), ToolResources.LocationCopy("HOME", address));
     }
 
@@ -507,7 +505,7 @@ public sealed class ToolResourcesTests : IDisposable
             Render(ToolResources.Merge(ToolResources.ReadLists(Home, application), "win-x64")));
     }
 
-    /// <summary>HOMELAYOUT4: a development run's root is its own Daoris folder, so the list built in is its <c>app/resources.json</c>.</summary>
+    /// <summary>A development run's root is its own Daoris folder, so the list built in is its <c>app/resources.json</c>.</summary>
     [Fact]
     public void A_dev_runs_list_built_in_is_its_roots_own_app_resources()
     {
@@ -541,7 +539,7 @@ public sealed class ToolResourcesTests : IDisposable
         Assert.Equal("c5dd286d689d840e89162ec6c963a65cac731a88e08d4b8389c416d88185ac3b", ToolResources.ReadFile(path, "https://example.org/r.json").Sha256);
     }
 
-    // ── The list built in (§3.1, §3.2), beside this build as it is beside an installed application ──────
+    // ── The list built in, beside this build as it is beside an installed application ──────
 
     [Fact]
     public void The_list_built_in_is_beside_the_driver_reads_whole_and_names_one_version_of_every_tool_for_win_x64()

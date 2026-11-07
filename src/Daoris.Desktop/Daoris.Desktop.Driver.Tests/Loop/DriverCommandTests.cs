@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What the desktop's program was asked for (DRV8a, D104). Run with no verb to read its usage, it started a
-/// headless loop on the install's home, and that loop took a quest two seconds before the desktop's
+/// What the desktop's program is asked for. Run with no verb to read its usage, it must not start a
+/// headless loop on the install's home, which would take a quest before the desktop's
 /// own. The loop is asked for by its verb, `drive`, and everything else is the usage.
 /// </summary>
 public sealed class DriverCommandTests
@@ -18,7 +18,7 @@ public sealed class DriverCommandTests
         Assert.Null(problem);
     }
 
-    /// <summary>The loop by its verb, in each of its modes; a mode flag before it is one spelling too many (ONEWAY1ai-i).</summary>
+    /// <summary>The loop by its verb, in each of its modes; a mode flag before it is one spelling too many.</summary>
     [Theory]
     [InlineData(new[] { "drive" }, LoopMode.Watch, false)]
     [InlineData(new[] { "drive", "--once" }, LoopMode.Once, false)]
@@ -34,7 +34,7 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// SESSWATCH1a (D200, the session-watch design §2, case 12): <c>--quiet-end &lt;minutes&gt;</c> gives a run that must return its end, on
+    /// <c>--quiet-end &lt;minutes&gt;</c> gives a run that must return its end, on
     /// <c>--once</c> and <c>--until-idle</c> alone; the watch waits for the person, and a value that is no whole number of minutes is refused.
     /// </summary>
     [Theory]
@@ -61,8 +61,8 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// Anything else starts nothing, and says what was not understood — a word nobody answers used to fall
-    /// through to the watch loop, which is how reading the usage became driving.
+    /// Anything else starts nothing, and says what is not understood — a word nobody answers must not fall
+    /// through to the watch loop, which would turn reading the usage into driving.
     /// </summary>
     [Theory]
     [InlineData(new[] { "watch" }, "`watch`")]
@@ -119,7 +119,7 @@ public sealed class DriverCommandTests
         Assert.Empty(verbs.Where(verb => !reached.Contains(verb)));
 
         var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
-        // CONFIRMWAIT1b (the confirm-wait design §4.1, §4.3): how long a press waits.
+        // How long a press waits.
         Assert.Contains("\n  --wait <minutes> | --no-wait\n", usage);
         foreach (var group in CommandWords.Groups)
         {
@@ -132,8 +132,8 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// WSR6: bringing a repository up to date after its pull request merged is a `trees` verb, and the host's
-    /// terminal door says it in the usage — the list first, `--yes` the press. WSR7 (D112): `--all` takes every
+    /// Bringing a repository up to date after its pull request merged is a `trees` verb, and the host's
+    /// terminal door says it in the usage — the list first, `--yes` the press. `--all` takes every
     /// repository with a checkout, beside those holding Daoris's branches, and the host reads it.
     /// </summary>
     [Fact]
@@ -144,9 +144,9 @@ public sealed class DriverCommandTests
         Assert.Contains("case [\"sync\", ..]", program);
         Assert.Contains("var scope = TreesCommand.Scope(ask);", program);
         Assert.Contains("| sync [--repository <name>] [--workspace <name>] [--all] [--yes]]", program);
-        // WSR7: what was not fetched is said once, first, on the list and on the press alike: the list's here, the press's in the
-        // words the route answers too (RPC1b3, `TreesWords.Sync`).
-        // RPCOPEN1: the list's words are the library's too (`TreesPlanWords.SyncPlan`), which the route answers, so each says it once there.
+        // What is not fetched is said once, first, on the list and on the press alike: the list's here, the press's in the
+        // words the route answers too (`TreesWords.Sync`).
+        // The list's words are the library's too (`TreesPlanWords.SyncPlan`), which the route answers, so each says it once there.
         Assert.DoesNotContain("SyncWords.NotFetched(", program);
         Assert.Contains("TreesPlanWords.SyncPlan(plan, ask,", program);
         Assert.Contains("TreesWords.Sync(done", program);
@@ -155,7 +155,7 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// BRSCOPE1a (D150's BRSCOPE1 note, D50, WSP5): the terminal's clean-up and bringing up to date take one workspace's checkouts
+    /// The terminal's clean-up and bringing up to date take one workspace's checkouts
     /// where the words name one, as its Branches tab does, and the usage says so. Each reads its words before the service is
     /// asked, refuses a workspace the registry does not name, and hands its look and its press the checkouts
     /// <see cref="TreesCommand.Take"/> took, which <c>TreesCommandTests</c> holds; the press each list suggests carries it.
@@ -186,7 +186,7 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// LAND3: a failed or superseded attempt's branch is removed from a terminal by the session or the branch, a door the
+    /// A failed or superseded attempt's branch is removed from a terminal by the session or the branch, a door the
     /// usage names and the host reads; the clean-up's list offers it beside such a row.
     /// </summary>
     [Fact]
@@ -200,7 +200,7 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// SQUASHTIDY1f: the terminal's `trees land` refuses work the line holds by content where every door does, in the landing
+    /// The terminal's `trees land` refuses work the line holds by content where every door does, in the landing
     /// itself, and its <c>--plan</c> says so before the press in the same sentence, asked of the driver's own judgement, as the
     /// review's pane shows it where <i>Accept</i> would be. The host composes no content proof of its own. <c>ContentLandingTests</c>
     /// holds the refusal over real git, and <c>ContentHoldWordsTests</c> its sentence.
@@ -210,7 +210,7 @@ public sealed class DriverCommandTests
     {
         var program = TreesConsoleSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
 
-        // RPCOPEN1: the plan's lines are the library's (`TreesPlanWords.LandPlanAsync`), which the route answers as `said` too.
+        // The plan's lines are the library's (`TreesPlanWords.LandPlanAsync`), which the route answers as `said` too.
         Assert.Contains("TreesPlanWords.LandPlanAsync(landing, home, session, tree, plan, gate, before, [])", program);
         Assert.Contains(
             "if (await landing.DiscardOfferAsync(tree, ct).ConfigureAwait(false) is { } carried) said.Add($\"trees: {carried.NotLanded}\");",
@@ -223,8 +223,8 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// LANDNAME1a: `trees land` takes <c>--branch &lt;name&gt;</c> for the plan and the press alike, and the usage says so. A
-    /// <c>--branch</c> with no name is the usage, never the rule's name quietly: the person would think theirs was used.
+    /// `trees land` takes <c>--branch &lt;name&gt;</c> for the plan and the press alike, and the usage says so. A
+    /// <c>--branch</c> with no name is the usage, never the rule's name quietly: the person would think theirs is used.
     /// <c>LandingTests</c> holds what the name does over real git.
     /// </summary>
     [Fact]
@@ -242,10 +242,10 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// ACCEPTALL1e (D50's twin rule): an entry's one Accept and an ask's are a terminal's verb, the page's <c>LAND_ENTRY</c> and
+    /// An entry's one Accept and an ask's are a terminal's verb, the page's <c>LAND_ENTRY</c> and
     /// <c>LAND_ASK</c> over the library's one code (<c>EntryAccepts</c>, which <c>DriverModuleEntriesTests</c> and the entry landings
     /// hold over the route). The usage says so, the words are read by <c>TreesCommand.ReadEntryLand</c> before the service is asked,
-    /// and the press tells the open windows once, as each other press of the family does (STATEHUB1e).
+    /// and the press tells the open windows once, as each other press of the family does.
     /// </summary>
     [Fact]
     public void The_terminal_lands_an_entry_or_an_ask_by_the_drivers_one_code_and_tells_the_windows()
@@ -268,7 +268,7 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// ACCEPTALL1f (D167's 2026-10-15 amendment point 2): the terminal's `trees land &lt;session&gt;` names a part of an entry with others
+    /// The terminal's `trees land &lt;session&gt;` names a part of an entry with others
     /// as the review's Accept does, by the library's one call after its gate (<c>SessionTrees.OwnSubjectAsync</c>, which
     /// <c>OwnAcceptSubjectTests</c> holds), and lands it on the entry's branch where that call says it joins. No naming of its own.
     /// </summary>
@@ -288,8 +288,8 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1h3 (D173's note; D50's twin rule): each press reads the quest once where it names the work (<c>PressQuests</c>), and the
-    /// run's <c>land</c> holds the landing to the result it was made on (<c>AcceptDoorsTests</c>). An entry's Accept holds each part to its
+    /// Each press reads the quest once where it names the work (<c>PressQuests</c>), and the
+    /// run's <c>land</c> holds the landing to the result it is made on (<c>AcceptDoorsTests</c>). An entry's Accept holds each part to its
     /// own quest in the library, judged under that part's own holds.
     /// </summary>
     [Fact]
@@ -310,7 +310,7 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// LAND3c: the terminal's `trees remove &lt;session|branch&gt;` is the driver's one discard, the call the screen's
+    /// The terminal's `trees remove &lt;session|branch&gt;` is the driver's one discard, the call the screen's
     /// <c>DISCARD_SESSION_BRANCH</c> ends in, so it keeps a branch a live session's tree holds as the screen does. The host
     /// composes none of its pieces itself: no layout read, no removal by branch. <c>SessionBranchDiscardTests</c> holds the act.
     /// </summary>
@@ -326,7 +326,7 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// PLUGDIST1a: a plugin package is installed from a terminal, a door the usage names, and the host asks for it
+    /// A plugin package is installed from a terminal, a door the usage names, and the host asks for it
     /// before the `plugins` words the kit answers, which would otherwise take it.
     /// </summary>
     [Fact]
@@ -341,7 +341,7 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// WORKFLOWCLEAN1 1f: the one adoption door is <c>place … --adoption</c>, named in the usage and routed by the host to the place console; the
+    /// The one adoption door is <c>place … --adoption</c>, named in the usage and routed by the host to the place console; the
     /// <c>setup</c> verb is gone from both.
     /// </summary>
     [Fact]
@@ -359,7 +359,7 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// WSSETUP6 (D124 §4.5): the workspace plan's terminal door is <c>place --workspace</c>, each form on its own line, and the place console
+    /// The workspace plan's terminal door is <c>place --workspace</c>, each form on its own line, and the place console
     /// hands the words that name a workspace to the library's command, with the real world and this host's log.
     /// </summary>
     [Fact]
@@ -380,7 +380,7 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// UPDATE1 (D139 §3, D50): an install's update is a door the usage names, routed by the host to the library's words, which
+    /// An install's update is a door the usage names, routed by the host to the library's words, which
     /// <c>UpdateCommandTests</c> holds, with this host's log and no service.
     /// </summary>
     [Fact]
@@ -397,7 +397,7 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// WIRING1b (the this-Daoris design §6, D50): This Daoris's terminal twin is a door the usage names, routed by the host to the
+    /// This Daoris's terminal twin is a door the usage names, routed by the host to the
     /// library's reader, which <c>SystemWiringTests</c> holds, over this terminal's world.
     /// </summary>
     [Fact]
@@ -412,7 +412,7 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// KEEP1c (the cleanup design §4.4, D50): the <i>Disk space</i> card's terminal twin is a door the usage names, routed by the host to
+    /// The <i>Disk space</i> card's terminal twin is a door the usage names, routed by the host to
     /// the library's reader, which <c>SystemSpaceTests</c> holds, over this terminal's world.
     /// </summary>
     [Fact]
@@ -427,7 +427,7 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// KEEP1e (the cleanup design §4.4): <c>space free</c> is a door the usage names, routed by the host to the library's verb before the
+    /// <c>space free</c> is a door the usage names, routed by the host to the library's verb before the
     /// read, with this host's log and the instance's door for its home.
     /// </summary>
     [Fact]
@@ -444,7 +444,7 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// WSSETUP5 (D124 §3.1, §4.5): following each line when the person asks is a door the usage names, routed by the host to
+    /// Following each line when the person asks is a door the usage names, routed by the host to
     /// its console with this host's log, and spoken in the library's words, which <c>RegisterCommandTests</c> holds.
     /// </summary>
     [Fact]
@@ -464,7 +464,7 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// SESSUX1g (D126 §7.1): Sessions' terminal door is named in the usage, each form on its own line, and routed by the host
+    /// Sessions' terminal door is named in the usage, each form on its own line, and routed by the host
     /// to its console with this host's log, where the archive's and the delete's lines say the terminal's door; the words
     /// are the library's, which <c>SessionsCommandTests</c> holds.
     /// </summary>
@@ -476,12 +476,12 @@ public sealed class DriverCommandTests
         Assert.Contains("\n  session stop <id> [--turn]  ·  session finish <id> [--note \"…\"]  ·  session decline <id> --reason \"…\"\n", usage);
         Assert.Contains("\n  session archive <id>… | --ended [--yes]  ·  session unarchive <id>…  ·  session delete <id>\n", usage);
         Assert.Contains("session stop <id> [--turn]", SessionsCommand.Usage);
-        // MSG1e (D137 §5.2): what the screen's box says to a session, a terminal says too, at a level (COWORK1a).
+        // What the screen's box says to a session, a terminal says too, at a level.
         Assert.Contains("\n  session say <id> \"…\" [--file <path>]… [--level ordinary|urgent|now]\n", usage);
         Assert.Contains("session say <id> \"…\" [--file <path>]…", SessionsCommand.Usage);
 
         var program = HostProgramSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
-        // ONEWAY1l's usage lines: the usage names `--level` alone for a say (ONEWAY1ai-i: the host's header teaches no verb now).
+        // The usage names `--level` alone for a say: the host's header teaches no verb.
         var say = usage.Split('\n').Single(line => line.TrimStart().StartsWith("session say <id>", StringComparison.Ordinal));
         Assert.Contains("[--level ordinary|urgent|now]", say);
         Assert.DoesNotContain("--now", say);
@@ -492,25 +492,25 @@ public sealed class DriverCommandTests
         Assert.Contains("SessionsConsole.RunAsync(sessionsArgs, log)", program);
         // Every loop on the home watches the requests: the headless loop as the desktop's does.
         Assert.Contains("new SessionRequestWatch(home, processes, () => service)", program);
-        // MSG1e: the headless loop's own record of each session shows the words it keeps, and its look is nudged to take them up.
+        // The headless loop's own record of each session shows the words it keeps, and its look is nudged to take them up.
         Assert.Contains("Say = new LoopWords(processes, () => service) { Events = events, Nudge = session => watching?.Said(session), Home = home }.HoldAsync", program);
 
         var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "SessionsConsole.cs"));
         Assert.Contains("SessionsCommand.Read(args, out var problem)", console);
         Assert.Contains("SessionsCommand.RunAsync(ask, new SessionsWorld(service, home, config, unadopted, log)", console);
-        // MSG1f3 (D50, D137 §2.2): *Start a conversation with these words* at a terminal opens the terminal's own conversation,
+        // *Start a conversation with these words* at a terminal opens the terminal's own conversation,
         // as `chat` does, through the chat runner's one act the screen's `SESSION_START_FROM` calls, on Chat's order as the screen's press
-        // walks it (FOUNDATION1j part iii, the foundation design §2.4's third row), never the machine's adapter.
+        // walks it, never the machine's adapter.
         Assert.Contains("\n  session start-from <id>\n", usage);
         Assert.Contains("StartFrom = (id, _) => ChatConsole.StartFromAsync(id)", console);
-        // RPC1g3 (D238): the terminal holds the running Daoris's conversation; the chat's order is the instance's route's to walk.
+        // The terminal holds the running Daoris's conversation; the chat's order is the instance's route's to walk.
         var chat = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "ChatConsole.cs"));
         Assert.Contains("HeldChatConsole.StartFromAsync(session)", chat);
         Assert.DoesNotContain("config.Adapter", chat);
     }
 
     /// <summary>
-    /// EVID1b (D144 §5, D50): <c>quest check</c> is a door the usage names, routed by the host to its console inside the one
+    /// <c>quest check</c> is a door the usage names, routed by the host to its console inside the one
     /// catch with this host's log, where the read's <c>evidence.checked</c> line goes; asked for before the quest's other words,
     /// which would take it as a usage mistake. The words are the library's, which <c>QuestCheckCommandTests</c> holds.
     /// </summary>
@@ -534,14 +534,14 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// QUESTCLOSE1 (D126's note, D50): <c>quest done</c> is the person's done at a terminal, the quest page's <i>Mark done…</i>
+    /// <c>quest done</c> is the person's done at a terminal, the quest page's <i>Mark done…</i>
     /// beside it, routed by the host to the library's words before the quest's other words, which would take it as a usage
     /// mistake. The words are the library's, which <c>QuestDoneCommandTests</c> holds.
     /// </summary>
     [Fact]
     public void The_host_routes_the_persons_done_to_the_librarys_words()
     {
-        // FABRIC-CLOSE1c3: the person's reopen and go-on (QuestReopenCommandTests) are routed the same way, before the quest's usage.
+        // The person's reopen and go-on (QuestReopenCommandTests) are routed the same way, before the quest's usage.
         var reading = HostProgramSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
         var reopen = reading.IndexOf("QuestReopenCommand.Asks(questArgs)", StringComparison.Ordinal);
         Assert.True(reopen > 0 && reading.IndexOf("usage: daoris quest delete <id>", StringComparison.Ordinal) > reopen);
@@ -557,7 +557,7 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// HIST1d (D153 point 7, the history-clearing design §6.2, D50): the history verbs are doors the usage names, routed by the
+    /// The history verbs are doors the usage names, routed by the
     /// host to its console inside the one catch, with this host's log, where a clear's line says the terminal's door. <c>quest
     /// clear</c> and <c>ask --clear</c> are asked for before the quest's other words and an ask's words, which would take them as
     /// a usage mistake and as the words of a new ask. The words are the library's, which <c>HistoryCommandTests</c> holds.
@@ -591,13 +591,13 @@ public sealed class DriverCommandTests
         Assert.Contains("HistoryCommand.Read(scope, args, out var problem)", console);
         Assert.Contains("Console.Error.WriteLine(HistoryCommand.Usage);", console);
         Assert.Contains("new HistoryWorld(service, home, configPath, new SessionProcesses(DaorisHome.Entry(home, HomeEntry.SessionPids)))", console);
-        // RPC1e: the running Daoris's client where one answers.
+        // The running Daoris's client where one answers.
         Assert.Contains("Instance = InstanceHost.World(home, \"daoris\")", console);
         Assert.Contains("HistoryCommand.RunAsync(ask, world, Console.Out)", console);
     }
 
     /// <summary>
-    /// FINDDAORIS1 (D171 point 1): an install's launcher sets no variable, so the host takes its install's home as its own
+    /// An install's launcher sets no variable, so the host takes its install's home as its own
     /// before any door is routed, the trace's and the branch list's included, and before its machine log opens there.
     /// The service is found where it is asked for (<c>ServiceHttp.FromEnvironment</c>), so a verb needing none asks nothing.
     /// </summary>
@@ -612,7 +612,7 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// TRACE1 (D143, D50): one read back to the ask is a door the usage names, routed by the host to its console before the
+    /// One read back to the ask is a door the usage names, routed by the host to its console before the
     /// machine log opens, since that open prunes old files and the trace writes nothing anywhere. The words are the library's,
     /// which <c>TraceTests</c> holds.
     /// </summary>
@@ -635,7 +635,7 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// GIT1c (D147 §3.3, D50): the branch list is a door the usage names, routed by the host to its console before the machine
+    /// The branch list is a door the usage names, routed by the host to its console before the machine
     /// log opens, since that open prunes old files and the list writes nothing anywhere. The words are the library's, which
     /// <c>GitBranchesCommandTests</c> holds.
     /// </summary>
@@ -654,13 +654,13 @@ public sealed class DriverCommandTests
         var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "GitConsole.cs"));
         Assert.Contains("GitBranchesCommand.Read(args, out var problem)", console);
         Assert.Contains("GitBranchesCommand.RunAsync(", console);
-        // GITAPP1a-i: `git review --time` appends its one line; the log is never opened as the host opens it, which prunes.
+        // `git review --time` appends its one line; the log is never opened as the host opens it, which prunes.
         Assert.DoesNotContain("MachineLog.Open", console);
         Assert.DoesNotContain("Prune", console);
     }
 
     /// <summary>
-    /// GITAPP1a-i (D202 point 2, the git-app design P1.5): Review's read from a terminal is a <c>git</c> verb the usage names, routed
+    /// Review's read from a terminal is a <c>git</c> verb the usage names, routed
     /// to the library's command through the route's own code, its log line appended without the open that prunes.
     /// </summary>
     [Fact]
@@ -679,7 +679,7 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// PLUGHOOK1c (D148 point 2, design §2.1 occasion 4, D50): <i>Ask again</i> from a terminal is a <c>trees</c> verb the usage
+    /// <i>Ask again</i> from a terminal is a <c>trees</c> verb the usage
     /// names, the host reads and routes to the library's ask, whose words the library says (<c>PullRequestWordsTests</c>). The
     /// plugin's lines are said under its name, and its frames written to the machine log, as a landing's are. The clean-up's and
     /// bringing up to date's looks, which ask too, say and write theirs the same way.
@@ -698,11 +698,11 @@ public sealed class DriverCommandTests
         Assert.Contains("new LandingPlugins(home, say: (id, line) => Console.WriteLine($\"  plugin:{id}  {line}\"), log: log)", console);
     }
 
-    // ——— DEV3b (D115's DEV3a note): a loop the host runs ends on a cancellation two ways, and only the person's close is a close.
+    // ——— A loop the host runs ends on a cancellation two ways, and only the person's close is a close.
 
     /// <summary>
-    /// 🔴 The host read every cancellation as Ctrl+C, so a look whose own request met the client's timeout printed
-    /// <i>driver: stopped.</i> and exited 0. A close is the person's: the timeout is a failure that names itself, exit 2, and a
+    /// 🔴 The host must not read every cancellation as Ctrl+C, else a look whose own request meets the client's timeout prints
+    /// <i>driver: stopped.</i> and exits 0. A close is the person's: the timeout is a failure that names itself, exit 2, and a
     /// cancellation nothing asked for is one too.
     /// </summary>
     [Fact]
@@ -723,7 +723,7 @@ public sealed class DriverCommandTests
             DriverCommand.Cancelled(other, closed: false));
     }
 
-    /// <summary>The host hands every cancellation to that reading, with whether its own close was asked for, and prints its answer.</summary>
+    /// <summary>The host hands every cancellation to that reading, with whether its own close is asked for, and prints its answer.</summary>
     [Fact]
     public void The_host_reads_a_cancellation_by_whether_its_close_was_asked_for()
     {
@@ -737,7 +737,7 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// DEV3c: the host's watch is handed its console as the door for a part of a look, so a look that stopped a session and then
+    /// The host's watch is handed its console as the door for a part of a look, so a look that stopped a session and then
     /// failed prints the stop before the failure ends the loop. Without it the watch carries the part to a next look that a
     /// failure here never reaches.
     /// </summary>

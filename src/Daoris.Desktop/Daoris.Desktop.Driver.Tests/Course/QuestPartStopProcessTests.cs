@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1g, for a quest's part (the co-agent design §2.6): a quest's session handed over waits for what it left running before its move's
+/// A quest's session handed over waits for what it left running before its move's
 /// old end is written, as a conversation's hand-over does. The session's process, joined to its job as a run tracks it, starts a command in
 /// the background and stays; the stop ends the process, and what the job still holds is ended and waited for before the stop returns.
 /// </summary>

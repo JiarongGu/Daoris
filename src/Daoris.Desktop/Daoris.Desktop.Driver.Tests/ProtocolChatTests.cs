@@ -4,14 +4,14 @@ using StandInService = Daoris.Desktop.Driver.Tests.OrphanedSessionTests.StandInS
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A conversation on the protocol door (CONV3b, D76 §4): one ACP session for the whole conversation,
+/// A conversation on the protocol door: one ACP session for the whole conversation,
 /// each message a turn on it, and the person's words in the record.
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>The door was broken, not merely unrecorded.</b> A chat on an ACP harness was spawned as a
-/// pipe — no <c>initialize</c>, no <c>session/new</c> — and a person's message was written into the
+/// <para>🔴 <b>A chat on an ACP harness must not be spawned as a
+/// pipe</b> — no <c>initialize</c>, no <c>session/new</c> — with a person's message written into the
 /// JSON-RPC stream as raw text. The agent here writes down any line that is not a frame, which is what
-/// that message was.</para>
+/// such a message would be.</para>
 ///
 /// <para>A real process (node) speaking the wire, and a stand-in service on a loopback port. No model,
 /// no account.</para>
@@ -86,8 +86,8 @@ public sealed class ProtocolChatTests : IDisposable
     }
 
     /// <summary>
-    /// ASKQUESTS1 (the Ask Daoris design §9 item 12): what Ask Daoris's Apply did is Daoris's word, a turn as the person's words make
-    /// one, so the agent hears it at once, and kept on the record as Daoris's (COWORK1b's mark), never the person's.
+    /// What Ask Daoris's Apply did is Daoris's word, a turn as the person's words make
+    /// one, so the agent hears it at once, and kept on the record as Daoris's, never the person's.
     /// </summary>
     [Fact]
     public async Task Daoris_s_word_to_a_chat_is_a_turn_the_record_keeps_as_daoris_s()
@@ -124,8 +124,8 @@ public sealed class ProtocolChatTests : IDisposable
 
     /// <summary>
     /// When a conversation's end is told, its console has already ended: a page that asks again on
-    /// hearing it reads the console as ended. Found looking at CONSOLE3c: the ending was told first and
-    /// the console closed after, so a page asking at once still read it as live, beside `completed`.
+    /// hearing it reads the console as ended. If the ending were told first and
+    /// the console closed after, a page asking at once would still read it as live, beside `completed`.
     /// </summary>
     [Fact]
     public async Task A_conversations_console_has_ended_by_the_time_its_end_is_told()
@@ -157,8 +157,8 @@ public sealed class ProtocolChatTests : IDisposable
     }
 
     /// <summary>
-    /// USAGE1: a conversation counts toward the account it ran as, at its high-water mark — what each
-    /// account has carried was driven sessions and intakes only, so every conversation was missing.
+    /// A conversation counts toward the account it ran as, at its high-water mark, beside the
+    /// driven sessions and intakes the account carries.
     /// </summary>
     [Fact]
     public async Task A_conversation_counts_toward_its_account_at_its_high_water_mark()
@@ -197,9 +197,9 @@ public sealed class ProtocolChatTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 REV3: a turn the agent refused (a JSON-RPC error — auth expired, overloaded) recorded a note and
-    /// never a turn's end, so the page drew *working…* under the driver's own failure note until the
-    /// next message, while the composer beside it said nothing was running. A refused turn ENDS.
+    /// 🔴 A turn the agent refused (a JSON-RPC error — auth expired, overloaded) must record a turn's end
+    /// as well as a note, or the page draws *working…* under the driver's own failure note until the
+    /// next message, while the composer beside it says nothing is running. A refused turn ENDS.
     /// </summary>
     [Fact]
     public async Task A_turn_the_agent_refused_ends_in_the_record_and_the_next_one_is_taken()
@@ -231,7 +231,7 @@ public sealed class ProtocolChatTests : IDisposable
     }
 
     /// <summary>
-    /// SIGNIN1b (D125 ROSTER1b): a turn the agent refused for its sign-in reads the account it runs as signed out, from the
+    /// A turn the agent refused for its sign-in reads the account it runs as signed out, from the
     /// door's refusal as a driven start's conclusion reads it, so the next start walks past it. The record says so by the
     /// line's code, the turn ends, and the conversation goes on.
     /// </summary>
@@ -267,7 +267,7 @@ public sealed class ProtocolChatTests : IDisposable
     }
 
     /// <summary>
-    /// CONVNOTE1b (D125 TOOL4d; LANG1a): a turn refused for an account's limit cools the account, and the record's note carries
+    /// A turn refused for an account's limit cools the account, and the record's note carries
     /// the cooling line's code beside its English, as a refused sign-in's does, so the page words it in either language. The
     /// turn ends, and the conversation goes on.
     /// </summary>
@@ -296,7 +296,7 @@ public sealed class ProtocolChatTests : IDisposable
 
         var turns = events.Page(id).Events.Where(e => e.Kind == SessionEventKind.Turn).Select(e => e.StopReason).ToList();
         Assert.Equal(["error", "end_turn"], turns);
-        // The stub's refusal names no reset, so no window: the line without one, naming whose accounts (AGT3d).
+        // The stub's refusal names no reset, so no window: the line without one, naming whose accounts.
         var said = Assert.Single(
             events.Page(id).Events, e => e.Parts is { Count: > 0 } parts && parts[^1].Code == "account.cooling-no-window");
         Assert.StartsWith("The `stub` account this conversation runs on is cooling until", said.Text);
@@ -306,7 +306,7 @@ public sealed class ProtocolChatTests : IDisposable
     }
 
     /// <summary>
-    /// CHATTAKE1b (D126's CHATTAKE1 note): the agent a conversation runs is spawned naming its record, as a driven session's
+    /// The agent a conversation runs is spawned naming its record, as a driven session's
     /// is, so a connector it starts from the repository's own server list says which conversation took a quest.
     /// </summary>
     [Fact]
@@ -333,8 +333,8 @@ public sealed class ProtocolChatTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 REV3 chat F9: a person stopping the session mid-turn ended the agent, and the turn's prompt then
-    /// failed with "the stream ended" — which was recorded as the turn "could not be taken", a failure
+    /// 🔴 A person stopping the session mid-turn ends the agent, and the turn's prompt then
+    /// fails with "the stream ended" — which must not be recorded as the turn "could not be taken", a failure
     /// of the agent's. The person stopped it. The turn ends as cancelled, and no failure is written.
     /// </summary>
     [Fact]
@@ -368,9 +368,9 @@ public sealed class ProtocolChatTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 REV3 chat F7: a session that could not open for any reason but a <c>DriverException</c> — here a
-    /// <c>session/new</c> answer whose id is a number — skipped the open's own ending. The queue waited
-    /// for a session that would never come, and the transcript closed under the stderr pump still
+    /// 🔴 A session that cannot open for any reason but a <c>DriverException</c> — here a
+    /// <c>session/new</c> answer whose id is a number — must not skip the open's own ending, or the queue waits
+    /// for a session that never comes and the transcript closes under the stderr pump still
     /// writing to it. It concludes like any other open that failed: a note, and the record ended.
     /// </summary>
     [Fact]
@@ -393,7 +393,7 @@ public sealed class ProtocolChatTests : IDisposable
 
         await Until(() => service.State(id) == "failed", Seen);
         Assert.Contains(events.Page(id).Events, e => e.Kind == SessionEventKind.Note && e.Text!.Contains("could not open"));
-        // Its lead by code and the program's message its own words (CONVNOTE2e), so the page words it in either language.
+        // Its lead by code and the program's message its own words, so the page words it in either language.
         Assert.Contains(events.Page(id).Events, e => e.Kind == SessionEventKind.Note && e.Parts is [{ Code: "door.not-open" }, { By: NoteBy.Program }]);
     }
 
@@ -433,7 +433,7 @@ public sealed class ProtocolChatTests : IDisposable
         Assert.Contains("heard hello", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Sessions,$"{id}.log")));
     }
 
-    // ——— One conversation's model and effort (AGT6b, D98), over the stand-in's config options.
+    // ——— One conversation's model and effort, over the stand-in's config options.
 
     /// <summary>
     /// A conversation on the protocol door offers the person its model and its effort, as the agent
@@ -480,7 +480,7 @@ public sealed class ProtocolChatTests : IDisposable
         Assert.Contains(told, entry => entry.Session == id && entry.Options.Count == 1);
         var set = Assert.Single(events.Page(id).Events,
             e => e.Kind == SessionEventKind.Note && e.Text == "the person set Model to Haiku for this conversation.");
-        // CONVNOTE2c: the option and its value are the agent's names, facts the page words the sentence around.
+        // The option and its value are the agent's names, facts the page words the sentence around.
         var part = Assert.Single(set.Parts!);
         Assert.Equal("chat.option-set", part.Code);
         Assert.Equal(("Model", "Haiku"), (part.Value("option"), part.Value("chosen")));
@@ -489,8 +489,8 @@ public sealed class ProtocolChatTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The mode is not the person's to set here: it is the posture D37 and D81 set, and a menu that
-    /// widened it would be the approval surface D52 refuses. Refused before anything reaches the agent.
+    /// 🔴 The mode is not the person's to set here: it is the posture Daoris sets, and a menu that
+    /// widened it would be an approval surface Daoris refuses. Refused before anything reaches the agent.
     /// So is an option the agent never offered, and a conversation nothing here holds.
     /// </summary>
     [Fact]
@@ -514,7 +514,7 @@ public sealed class ProtocolChatTests : IDisposable
     }
 
     /// <summary>
-    /// MODELROLE1d (D205 §3.2, §6.4, §13: the composer opening on the actor's model): a new conversation whose Chat entry names a model
+    /// A new conversation whose Chat entry names a model
     /// and an effort sets both on its session, the model first, before its first prompt, so the composer opens on them.
     /// </summary>
     [Fact]
@@ -580,7 +580,7 @@ public sealed class ProtocolChatTests : IDisposable
     /// <summary>
     /// A stand-in ACP agent: it writes down every method it is called with and every prompt's words,
     /// answers each prompt a moment later so a second message arrives mid-turn, and writes down any
-    /// line that is not a frame — the raw text the broken door used to send.
+    /// line that is not a frame — the raw text a pipe-spawned chat would send.
     /// </summary>
     /// <remarks>
     /// Its <c>session/new</c> offers config options in the shape <c>claude-agent-acp</c> 0.84.0 does — a

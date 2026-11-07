@@ -15,7 +15,7 @@ internal sealed record TypeEdge(string File, int Line, string Type, IReadOnlyLis
 internal sealed record StaticRule(string File, int Line, string Member);
 
 /// <summary>
-/// What the structure gate reads of the driver's sources through Roslyn's semantic model (FOUNDATION1 mod-0, §14.5): one compilation of
+/// What the structure gate reads of the driver's sources through Roslyn's semantic model: one compilation of
 /// every source over the base library and the store's SQLite package, which are all the driver references, and, in it, each name that binds to a type a source declares
 /// as an edge from the file that names it to the file that declares the type. The binding is the compiler's, so every spelling of a
 /// reference is one (plain, namespace-qualified, <c>global::</c>-qualified, through an alias or a static import), a member's occurrence is
@@ -49,7 +49,7 @@ internal sealed class StructureAnalysis
             references.Add(MetadataReference.CreateFromFile(path));
         }
 
-        // The driver's one package, the desktop store's (FOUNDATION1 z-i): the SQLite library `DesktopStore` and its reader name.
+        // The driver's one package, the desktop store's: the SQLite library `DesktopStore` and its reader name.
         references.Add(MetadataReference.CreateFromFile(typeof(Microsoft.Data.Sqlite.SqliteConnection).Assembly.Location));
 
         // The contracts the driver names, the parts' kit and the routes' records among them.

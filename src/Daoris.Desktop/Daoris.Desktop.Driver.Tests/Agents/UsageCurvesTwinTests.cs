@@ -5,11 +5,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The usage curve (D165 point 2; the switch design §2, §3 and §5; SWITCH1b-iii): how much of each window an account may have
+/// The usage curve: how much of each window an account may have
 /// used by now, and whether what its agent said is over that, which the start's line says as <c>opening.said-over</c>. The
-/// driver reads the table <c>fixtures/usage-curves.json</c> among its tests (moved from the CLI's, PUSH1f2e), row for row, as the page's
-/// <c>usageCurves.test.ts</c> does; the CLI's <c>usagecurves.ts</c>, its twin until then, left with <c>daoris agent list</c>
-/// (PUSH1f2e4). <see cref="UsageCurvesTests"/> holds the curve's own cases.
+/// driver reads the table <c>fixtures/usage-curves.json</c> among its tests, row for row, as the page's
+/// <c>usageCurves.test.ts</c> does. <see cref="UsageCurvesTests"/> holds the curve's own cases.
 /// </summary>
 public sealed class UsageCurvesTwinTests
 {

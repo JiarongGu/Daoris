@@ -6,9 +6,9 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// Ask Daoris's conversations, kept (ASKHIST1): each is a help record the host already keeps, its words this machine's own
+/// Ask Daoris's conversations, kept: each is a help record the host already keeps, its words this machine's own
 /// record of it, and what the person adds to it (a name, a pin, the earlier conversation it started from) a file beside it
-/// under the home. The list says each one's title, when, and a line of what it was about; a search finds them by words. Files
+/// under the home. The list says each one's title, when, and a line of what it is about; a search finds them by words. Files
 /// only, so this is the suite's fast half.
 /// </summary>
 public sealed class HelpConversationsTests : IDisposable
@@ -32,7 +32,7 @@ public sealed class HelpConversationsTests : IDisposable
     /// <summary>A conversation as its record keeps it: the person's question, then the agent's answer in chunks.</summary>
     private void Said(string id, string question, params string[] answer) => SaidAt(Monday, id, question, answer);
 
-    /// <summary>The same, every event stamped when it was said.</summary>
+    /// <summary>The same, every event stamped when it is said.</summary>
     private void SaidAt(DateTimeOffset at, string id, string question, params string[] answer)
     {
         var events = Events;
@@ -99,7 +99,7 @@ public sealed class HelpConversationsTests : IDisposable
         Assert.Equal(["h1"], listed.Select(row => row.Session));
     }
 
-    /// <summary>Pinned first, the newest pin first; then the newest by when each was last spoken in, its record's last word.</summary>
+    /// <summary>Pinned first, the newest pin first; then the newest by when each is last spoken in, its record's last word.</summary>
     [Fact]
     public void Pinned_conversations_come_first_then_the_newest()
     {
@@ -119,7 +119,7 @@ public sealed class HelpConversationsTests : IDisposable
         Assert.Equal(Monday.AddDays(3), listed[2].Last);
     }
 
-    /// <summary>Unpinning puts it back among the rest by when it was last spoken in.</summary>
+    /// <summary>Unpinning puts it back among the rest by when it is last spoken in.</summary>
     [Fact]
     public void Unpinning_puts_a_conversation_back_among_the_rest()
     {
@@ -199,8 +199,8 @@ public sealed class HelpConversationsTests : IDisposable
     }
 
     /// <summary>
-    /// Whether a conversation can go on in itself: its harness conversation's id kept, on an agent whose door resumes. One from
-    /// before its id was kept is listed all the same, and offered a new conversation from its words instead.
+    /// Whether a conversation can go on in itself: its harness conversation's id kept, on an agent whose door resumes. One
+    /// recorded without its id is listed all the same, and offered a new conversation from its words instead.
     /// </summary>
     [Fact]
     public void A_conversation_goes_on_where_its_id_was_kept_on_a_door_that_resumes()
@@ -218,7 +218,7 @@ public sealed class HelpConversationsTests : IDisposable
         Assert.False(listed["h3"]);
     }
 
-    /// <summary>A live one is listed live, and the earlier conversation one started from is said with what it was handed.</summary>
+    /// <summary>A live one is listed live, and the earlier conversation one started from is said with what it is handed.</summary>
     [Fact]
     public void A_live_conversation_and_where_one_started_from_are_said()
     {
@@ -269,8 +269,8 @@ public sealed class HelpConversationsTests : IDisposable
     }
 
     /// <summary>
-    /// ASKHIST1d: one Han character is a word, so it is searched for, in the title and in what was said; one letter of any other
-    /// script still finds nothing rather than nearly everything. The page said the minimum rather than search for 圈.
+    /// One Han character is a word, so it is searched for, in the title and in what is said; one letter of any other
+    /// script still finds nothing rather than nearly everything.
     /// </summary>
     [Fact]
     public void One_han_character_is_searched_for_and_one_other_letter_is_not()
@@ -285,7 +285,7 @@ public sealed class HelpConversationsTests : IDisposable
         Assert.Empty(Find("é").Conversations);
     }
 
-    /// <summary>Conversations h000 to h(n-1), each opened a minute after the one before, and spoken in as it was opened.</summary>
+    /// <summary>Conversations h000 to h(n-1), each opened a minute after the one before, and spoken in as it opens.</summary>
     private List<SessionRecord> Many(int count)
     {
         var records = new List<SessionRecord>();
@@ -300,9 +300,8 @@ public sealed class HelpConversationsTests : IDisposable
     }
 
     /// <summary>
-    /// ASKHIST1d: every conversation is ordered before a page is taken, so one pinned, or spoken in lately, comes first however
-    /// long ago it was opened. The list took the newest 200 by when each was opened and only then read pins and last words, so
-    /// both of these fell off it.
+    /// Every conversation is ordered before a page is taken, so one pinned, or spoken in lately, comes first however
+    /// long ago it opened.
     /// </summary>
     [Fact]
     public void A_pinned_or_lately_spoken_conversation_comes_first_however_long_ago_it_was_opened()
@@ -322,7 +321,7 @@ public sealed class HelpConversationsTests : IDisposable
     }
 
     /// <summary>
-    /// ASKHIST1d: pages asked one after the next hold every conversation once, in the list's order, and the last one says it is
+    /// Pages asked one after the next hold every conversation once, in the list's order, and the last one says it is
     /// the last. Two spoken in at the same moment are ordered the same way every time, the newer opened first, so a page's edge
     /// never moves between asks.
     /// </summary>
@@ -360,7 +359,7 @@ public sealed class HelpConversationsTests : IDisposable
     }
 
     /// <summary>
-    /// ASKHIST1d: a search reads every conversation, not only the newest 200 the list once read, and its finds page as the list
+    /// A search reads every conversation, not only the newest 200, and its finds page as the list
     /// does, counted whole.
     /// </summary>
     [Fact]
@@ -384,9 +383,9 @@ public sealed class HelpConversationsTests : IDisposable
     }
 
     /// <summary>
-    /// ASKSCOPE1d (D158's ASKSCOPE1 note, point 6): the list holds one workspace's conversations, its name matched whatever its
-    /// letters' case (D48), or every workspace's where none is named, each row with the workspace its record keeps. A record from
-    /// before ASKSCOPE1a keeps none, and is read as `default`'s, exactly as it was recorded.
+    /// The list holds one workspace's conversations, its name matched whatever its
+    /// letters' case, or every workspace's where none is named, each row with the workspace its record keeps. A record
+    /// that keeps none is read as `default`'s, exactly as recorded.
     /// </summary>
     [Fact]
     public void The_list_holds_one_workspaces_conversations_or_every_ones_each_with_its_workspace()
@@ -412,7 +411,7 @@ public sealed class HelpConversationsTests : IDisposable
     }
 
     /// <summary>
-    /// ASKSCOPE1d (point 6): a search runs over the chosen workspace before the page is taken, so another workspace's finds never
+    /// A search runs over the chosen workspace before the page is taken, so another workspace's finds never
     /// fill its page, and its count and its next page are that workspace's.
     /// </summary>
     [Fact]
@@ -436,8 +435,8 @@ public sealed class HelpConversationsTests : IDisposable
     }
 
     /// <summary>
-    /// ASKHIST1d: the line of what it was about is the answer's first line whole, so the page parses its Markdown before it cuts
-    /// it to a row; the driver cut it at 160 characters first, and a delimiter could lose its partner. Only a line longer than
+    /// The line of what it is about is the answer's first line whole, so the page parses its Markdown before it cuts
+    /// it to a row, and a delimiter never loses its partner. Only a line longer than
     /// any row shows is cut, and says so.
     /// </summary>
     [Fact]
@@ -455,8 +454,8 @@ public sealed class HelpConversationsTests : IDisposable
     }
 
     /// <summary>
-    /// ASKHIST1d: where a search found its words in what was said, the row has the line they are on as Markdown, whole, for the
-    /// page to parse before it cuts around them; the snippet the rows read until now is kept beside it as it was. A line longer
+    /// Where a search finds its words in what is said, the row has the line they are on as Markdown, whole, for the
+    /// page to parse before it cuts around them; the plain snippet is kept beside it. A line longer
     /// than any row shows is a window around the words, cut between words and saying so. A find in the title has no line: the
     /// title is marked where it is.
     /// </summary>

@@ -8,7 +8,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 rows b and d (the agent-provider design §11): the one registration list holds the stand-ins, Claude Code, Codex and
+/// The one registration list holds the stand-ins, Claude Code, Codex and
 /// dsh written on the contract. The ports a provider written on the contract alone needs are declared; each provider states the ones it uses.
 /// </summary>
 public sealed class ProvidersBuiltTests

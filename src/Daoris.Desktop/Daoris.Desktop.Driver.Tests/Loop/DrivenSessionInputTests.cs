@@ -7,15 +7,15 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A driven quest session takes no person's line, on either door (INT4i) — what INT4h settled for an
-/// intake, for the session the driver starts on a quest.
+/// A driven quest session takes no person's line, on either door, as an intake takes none,
+/// for the session the driver starts on a quest.
 /// </summary>
 /// <remarks>
 /// <para>A driven session is handed its whole quest at once and works it in one turn. On the pipe door
 /// it has no stdin; on the protocol door its stdin is open, because the driver writes the protocol's
-/// frames into it (D53) — so a person's line sent there would land in the middle of the JSON-RPC
-/// stream. The page offers such a session no box, but `SESSION_INPUT` names a session by id, and the
-/// registry used to track a driven one as taking input.</para>
+/// frames into it — so a person's line sent there would land in the middle of the JSON-RPC
+/// stream. The page offers such a session no box, but `SESSION_INPUT` names a session by id, so the
+/// registry must not track a driven one as taking input.</para>
 ///
 /// <para>Driven through a REAL tick: a real process — node, the stand-in harness every gate already
 /// needs — spawned by the executor against a stand-in service on a loopback port. The spawn, the door
@@ -71,14 +71,14 @@ public sealed class DrivenSessionInputTests : IDisposable
         Assert.False(processes.Send("s1", "are you there?"));
         Assert.False(processes.CloseInput("s1"));
 
-        // Given the agent a moment to have heard anything it was sent: on the protocol door a written
+        // Give the agent a moment to have heard anything it is sent: on the protocol door a written
         // line would arrive between its frames, and it records every line that is not one.
         await Task.Delay(300);
         Assert.False(File.Exists(heard), File.Exists(heard) ? File.ReadAllText(heard) : "");
 
         Assert.True(processes.Stop("s1"));
         var report = await tick;
-        // FLAKE1: under a loaded run this has read `failed` a few times and never alone; the record's
+        // Under a loaded run this can read `failed`; the record's
         // note and the tick's own lines say which ending the driver chose and why.
         var record = service.Session("s1");
         Assert.True(
@@ -87,9 +87,8 @@ public sealed class DrivenSessionInputTests : IDisposable
     }
 
     /// <summary>
-    /// A stop that lands before the protocol's handshake has finished is still the person's stop. Written
-    /// to test a reading of FLAKE1 (under load, a stop landing mid-handshake): it passed on the driver as it
-    /// was, so that is not the flake's cause, and it stays as the edge it pins. An agent that never answers
+    /// A stop that lands before the protocol's handshake has finished is still the person's stop; under load
+    /// a stop can land mid-handshake, and this pins that edge. An agent that never answers
     /// makes that moment certain.
     /// </summary>
     [Fact]
@@ -105,13 +104,13 @@ public sealed class DrivenSessionInputTests : IDisposable
         Assert.True(processes.Stop("s1"));
         await tick;
         Assert.Equal("stopped", service.Session("s1")["state"]!.GetValue<string>());
-        // The person's stop is theirs (D104): never marked interrupted, so never carried on.
+        // The person's stop is theirs: never marked interrupted, so never carried on.
         Assert.Null(service.Session("s1")["interrupted"]);
     }
 
     /// <summary>
-    /// D104: the driver shut down under a session — the desktop closing, Ctrl+C at a terminal — ends its
-    /// record `stopped` and says it was interrupted, not the person's stop, so a take it held is carried
+    /// The driver shutting down under a session — the desktop closing, Ctrl+C at a terminal — ends its
+    /// record `stopped` and says it is interrupted, not the person's stop, so a take it holds is carried
     /// on at the next start.
     /// </summary>
     [Fact]
@@ -135,10 +134,10 @@ public sealed class DrivenSessionInputTests : IDisposable
     }
 
     /// <summary>
-    /// SESS3 (a working session can be told more): on the
+    /// A working session can be told more: on the
     /// protocol door a driven session's inbox holds what the person says, and the words are the next
     /// prompt of the SAME session — when its turn ends, or at once by stopping the turn — kept in the
-    /// record as the person's. Still nothing is written into the stream (INT4i's line holds).
+    /// record as the person's. Still nothing is written into the stream.
     /// </summary>
     [Theory]
     [InlineData("after-the-turn")]
@@ -154,7 +153,7 @@ public sealed class DrivenSessionInputTests : IDisposable
         await Poll.Until(() => processes.InboxOf("s1") is not null && File.Exists(prompts), () => "the first turn never began");
         var inbox = processes.InboxOf("s1")!;
         Assert.True(inbox.Hold(new ChatMessage("the budget is in level.json, not config.json", [])));
-        // Still refused as a line written into the stream: the frames are the driver's (INT4i).
+        // Still refused as a line written into the stream: the frames are the driver's.
         Assert.False(processes.Send("s1", "are you there?"));
 
         if (when == "send-now")
@@ -170,11 +169,11 @@ public sealed class DrivenSessionInputTests : IDisposable
         Assert.Equal(2, heard.Count);
         Assert.Contains("#q1", heard[0]);
         Assert.Equal("the budget is in level.json, not config.json", heard[1]);
-        // The same session, not a second one: the agent was asked for one session only.
+        // The same session, not a second one: the agent is asked for one session only.
         Assert.Single(File.ReadAllLines(prompts + ".sessions"));
-        // And the record keeps the words as the person's, where the conversation is read: the moment they were said, with
-        // when they reach the session — this stand-in says nothing about prompts during a turn, so its turn's end (STEER1)
-        // — and again where the session took them.
+        // And the record keeps the words as the person's, where the conversation is read: the moment they are said, with
+        // when they reach the session — this stand-in says nothing about prompts during a turn, so its turn's end
+        // — and again where the session takes them.
         var record = File.ReadAllLines(Directory.GetFiles(_home, "s1.events.jsonl", SearchOption.AllDirectories).Single());
         Assert.Contains(record, line =>
             line.Contains("\"origin\":\"person\"") && line.Contains("\"reaches\":\"turn-end\"")
@@ -186,9 +185,9 @@ public sealed class DrivenSessionInputTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 REV3: a failure between the spawn and the wait — here the record refusing to move to
-    /// `working`, which is what a stop pressed during `starting` makes it do — concluded the record and
-    /// left the harness running: untracked, unmarked, and holding a tree whose lock had just been freed.
+    /// 🔴 A failure between the spawn and the wait — here the record refusing to move to
+    /// `working`, which is what a stop pressed during `starting` makes it do — must not conclude the record and
+    /// leave the harness running: untracked, unmarked, and holding a tree whose lock is just freed.
     /// However the tick's session ends, its process ends with it.
     /// </summary>
     [Fact]
@@ -209,9 +208,9 @@ public sealed class DrivenSessionInputTests : IDisposable
     }
 
     /// <summary>
-    /// REV3: an adapter name nobody knows — a typo in `driver.json` — threw from the harness selection
+    /// An adapter name nobody knows — a typo in `driver.json` — must not throw from the harness selection
     /// out of the whole tick, every tick. The quest is held on the driver's sentence instead, as the
-    /// intake's twin already did, and the tick reports.
+    /// intake's twin does, and the tick reports.
     /// </summary>
     [Fact]
     public async Task An_adapter_nobody_knows_holds_the_quest_and_the_tick_still_reports()
@@ -227,9 +226,9 @@ public sealed class DrivenSessionInputTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 REV3 driver F9: when the application closes, the tick's own token is cancelled, and the sync
-    /// that runs beside the sessions then threw on it — so the tick left before its sessions had written
-    /// how they ended, and the process exited with their records still saying `working`. A tick
+    /// 🔴 When the application closes, the tick's own token is cancelled, and the sync
+    /// that runs beside the sessions must not throw on it — else the tick leaves before its sessions have written
+    /// how they ended, and the process exits with their records still saying `working`. A tick
     /// cancelled mid-session returns only after every session it started is recorded.
     /// </summary>
     [Fact]
@@ -246,8 +245,8 @@ public sealed class DrivenSessionInputTests : IDisposable
         await Task.Delay(1500);   // past one beside-sync, so the loop is where the close finds it
         closing.Cancel();
 
-        // About 50 ms on a quiet machine (measured). Bounded generously because the full suite runs
-        // classes in parallel, each spawning node, and one loaded run went past 30 s (2026-09-25).
+        // About 50 ms on a quiet machine. Bounded generously because the full suite runs
+        // classes in parallel, each spawning node, and a loaded run can go past 30 s.
         try { await tick.WaitAsync(Poll.Patience); }
         catch (OperationCanceledException) { }
 
@@ -255,9 +254,9 @@ public sealed class DrivenSessionInputTests : IDisposable
     }
 
     /// <summary>
-    /// BRW8: who is driving Daoris's browser is read from what the driver handed. A driven session given
+    /// Who is driving Daoris's browser is read from what the driver hands. A driven session given
     /// a plugin server that drives the browser is named as driving it for as long as it runs; where the
-    /// server was withheld — no shell carries a browser — it is not.
+    /// server is withheld — no shell carries a browser — it is not.
     /// </summary>
     [Theory]
     [InlineData(true)]
@@ -289,7 +288,7 @@ public sealed class DrivenSessionInputTests : IDisposable
     }
 
     /// <summary>
-    /// BROWSERSTART1 (Process: it runs a stand-in harness): a quest session's start hands the browser's endpoint and brings no
+    /// Runs a stand-in harness: a quest session's start hands the browser's endpoint and brings no
     /// browser up, and the session is still named as driving it.
     /// </summary>
     [Fact]
@@ -319,8 +318,8 @@ public sealed class DrivenSessionInputTests : IDisposable
     }
 
     /// <summary>
-    /// BRWHINT1b (Process: it runs a stand-in harness): a driven session's first prompt carries the line telling it the
-    /// browser it was handed, by the server's own name; where the server was withheld, none says so.
+    /// Runs a stand-in harness: a driven session's first prompt carries the line telling it the
+    /// browser it is handed, by the server's own name; where the server is withheld, none says so.
     /// </summary>
     [Theory]
     [InlineData(true)]
@@ -348,7 +347,7 @@ public sealed class DrivenSessionInputTests : IDisposable
     }
 
     /// <summary>
-    /// PROCESS1d-i (Process: it runs a stand-in harness): a driven session in a tree of its own is told its process in its first
+    /// Runs a stand-in harness: a driven session in a tree of its own is told its process in its first
     /// prompt, the commit rule set for its repository with the person's convention quoted, beside where its work goes; one in the
     /// person's checkout is told nothing of either.
     /// </summary>
@@ -472,7 +471,7 @@ public sealed class DrivenSessionInputTests : IDisposable
     }
 
     /// <summary>
-    /// SESS3's stand-in: it writes down every prompt it is given (as a JSON string a line) and every
+    /// The turns stand-in: it writes down every prompt it is given (as a JSON string a line) and every
     /// session it is asked for. Its first turn ends by itself after a beat (<c>quick</c>), or only when
     /// the turn is stopped (<c>hold</c>); every later turn ends at once. It exits when its input ends.
     /// </summary>
@@ -520,9 +519,9 @@ public sealed class DrivenSessionInputTests : IDisposable
         process.WaitForExit();
     }
 
-    // Sixty seconds, not fifteen: the suite now runs several classes that spawn node at once, and this
-    // wait failed twice in one day under that load while passing alone (TASKS, FLAKE1). It only waits for
-    // a START, so a longer bound hides no defect in what the test asserts.
+    // A long wait: the suite runs several classes that spawn node at once, and under that load a shorter
+    // wait can fail while passing alone. It only waits for a START, so a longer bound hides no defect in
+    // what the test asserts.
     private static Task Until(Func<bool> condition) =>
         Poll.Until(condition, () => "the driven session never started");
 
@@ -556,9 +555,9 @@ public sealed class DrivenSessionInputTests : IDisposable
             _serving = ServeAsync();
         }
 
-        /// <param name="kept">Where this machine keeps a file the quest carries, or null for a quest with none (INT4j).</param>
+        /// <param name="kept">Where this machine keeps a file the quest carries, or null for a quest with none.</param>
         /// <param name="refuses">A state this ledger will not move a record to, as a terminal record refuses every move.</param>
-        /// <param name="others">More registered checkouts beside `engine`, for what a session may reach across (D107).</param>
+        /// <param name="others">More registered checkouts beside `engine`, for what a session may reach across.</param>
         public static StandInService Start(
             string root, string? kept = null, string? refuses = null,
             IReadOnlyList<(string Repository, string Root, string Workspace)>? others = null)

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-i part 3 (D212; the foundation design §3.3, §13.4 step 4, §13.5's downgrade table, §19.4): the moved words' <c>sent</c>, read by
+/// The moved words' <c>sent</c>, read by
 /// nothing. Each word's delivery evidence is written in one transaction as its door's write returns and before its take, and the move closes
 /// <c>delivered</c> after the take and only once every word it moved has <c>sent</c>. A crash at <c>delivering</c> is read by <c>sent</c> alone:
 /// a word with it is taken, taken off where it still waits; one gone without it is <i>left</i>; one waiting, attempted and without it, is
@@ -312,7 +312,7 @@ public sealed class MoveDeliveryTests : IDisposable
         Assert.Equal(MoveDeliveryOutcome.GoesOn, (await Delivery(fresh).ReadAsync(unmarked)).Outcome);
     }
 
-    // ——— The line's head, read before anything is delivered (FOUNDATION1f-ii part b; §13.4 step 5, §19.3).
+    // ——— The line's head, read before anything is delivered.
 
     /// <summary>
     /// 🔴 Where an older build has continued the destination, nothing is delivered there: the move is held <c>superseded</c>, naming the person's
@@ -339,7 +339,7 @@ public sealed class MoveDeliveryTests : IDisposable
             store.WordsOf(claim.Move).Select(word => (word.Word, word.Disposition)));
         Assert.Equal(["w1"], Words(read.Waiting.Where(word => word.Word != "w3").ToList()));
 
-        // Nothing was written to the destination or taken off it as delivered; the attempted word was settled, and the person's and the claim wait.
+        // Nothing is written to the destination or taken off it as delivered; the attempted word is settled, and the person's and the claim wait.
         Assert.Equal(["settle s2 w2"], _said.Calls);
         Assert.Equal(["w1", "w3"], _said.Of("s2"));
         Assert.Null(store.Read(claim.Move)!.Effect!.Outcome);
@@ -367,7 +367,7 @@ public sealed class MoveDeliveryTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A word the move wrote (<c>sent</c>) that still waits is taken off as taken before the hold, since its agent was written; the word not
+    /// 🔴 A word the move wrote (<c>sent</c>) that still waits is taken off as taken before the hold, since its agent is written; the word not
     /// yet written is the one the hold names.
     /// </summary>
     [Fact]
@@ -415,7 +415,7 @@ public sealed class MoveDeliveryTests : IDisposable
 }
 
 /// <summary>
-/// A move's destination's <c>said</c>, standing in (FOUNDATION1f-i part 3): each record's waiting words in order with their attempt marks,
+/// A move's destination's <c>said</c>, standing in: each record's waiting words in order with their attempt marks,
 /// the take of words a session took and the settlement of uncertain ones, each call kept in order. It keeps no session event: the move's
 /// readings read none. A record set unreadable answers that it cannot be told; one set keeping leaves its words through a take and a settle.
 /// </summary>
@@ -437,7 +437,7 @@ internal sealed class MoveSaidStandIn : IMoveSaid
     /// <summary>Called with the record before each take, still holding its words: what a case reads at that moment.</summary>
     public Action<string>? OnTake { get; set; }
 
-    /// <summary>The head past a record, where an older build continued it (FOUNDATION1f-ii part b); a record named here is read so, others as the head.</summary>
+    /// <summary>The head past a record, where an older build continued it; a record named here is read so, others as the head.</summary>
     public Dictionary<string, string> Heads { get; } = new(StringComparer.Ordinal);
 
     Task<string?> IMoveSaid.HeadPastAsync(string record, CancellationToken ct) => Task.FromResult(Heads.GetValueOrDefault(record));

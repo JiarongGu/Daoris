@@ -5,7 +5,7 @@ using Xunit.Sdk;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-// The conformance suite's engine (AGENTPROVIDER1 row b, part 2; the agent-provider design §10): the views it runs over, the cases, the
+// The conformance suite's engine: the views it runs over, the cases, the
 // pending reader and its two failing rules. Its three test classes are the halves: in-process, the spawn cases that plant the process's
 // environment (run alone), and the stand-ins' live cases (the Process half).
 
@@ -258,8 +258,8 @@ internal sealed class PendingCasePasses(string message) : XunitException(message
 internal sealed class NotAnsweredYet(string reader) : Exception($"no reader answers this case yet: {reader}");
 
 /// <summary>
-/// The pending layout (D213's row b part 2 note): one <c>pending.json</c> per provider, an array of <c>{ case, door, row, why }</c> with
-/// an optional <c>run</c> (the agent-lyntai design §6.2), beside its <c>provider.json</c> in its folder under <c>Agents/Providers/</c>,
+/// The pending layout: one <c>pending.json</c> per provider, an array of <c>{ case, door, row, why }</c> with
+/// an optional <c>run</c>, beside its <c>provider.json</c> in its folder under <c>Agents/Providers/</c>,
 /// or, for a provider with no folder, under the tests' <c>fixtures/providers/&lt;id&gt;/</c>. A new provider brings its own file and
 /// edits none shared. Its twin is <c>tools/stand-ins.mjs</c>'s reader.
 /// </summary>
@@ -268,8 +268,7 @@ internal static class ConformancePending
     public const string FileName = "pending.json";
 
     /// <summary>
-    /// The rows a case can wait for: D213's §11 rows, row a landed and i and k re-cut by the agent-lyntai design, whose own rows that have
-    /// not landed are named whole (its §6.2, §6.4).
+    /// The rows a case can wait for; a row of the agent-layer work is named whole.
     /// </summary>
     public static IReadOnlyList<string> Rows { get; } =
     [
