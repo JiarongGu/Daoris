@@ -65,6 +65,8 @@ public static class HeldNoteCodes
     // its own, its refresh `waits.read-again`. `profile` is the id as a shell spells it in the sign-in command.
     public static readonly NoteCode HeldCoolingAccount = new("held.cooling-account", ["owner", "account", "until", "why"]) { Why = NoteCodes.Cooling };
     public static readonly NoteCode HeldCoolingOwn = new("held.cooling-own", ["owner", "until", "why"]) { Why = NoteCodes.Cooling };
+    // A model family's limit on a named account: a start asking another family still runs on it.
+    public static readonly NoteCode HeldCoolingModel = new("held.cooling-model", ["owner", "account", "model", "until", "why"]) { Why = NoteCodes.Cooling };
 
     // A line a limit cut off, every account it may run on at its limit, goes on by itself once the earliest is ready.
     public static readonly NoteCode HeldLimitWaits = new("held.limit-waits", ["owner", "account", "until"]) { Why = NoteCodes.Cooling };

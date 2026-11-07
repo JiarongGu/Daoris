@@ -395,6 +395,7 @@
   "note.held.tail": "Your words wait on it.",
   "note.held.agent-gone": "It does not go on yet: `{{agent}}` is no longer an agent on this machine, so its words cannot go on with it. They wait on it: hand it over to another agent to go on with them, `daoris session hand-over {{session}} --agent <agent>`.",
   "note.held.cooling-account": "The `{{owner}}` account `{{account}}` is cooling until {{until}} ({{why}}). Daoris starts nothing on it until then.",
+  "note.held.cooling-model": "The `{{owner}}` account `{{account}}` reached its `{{model}}` limit and is cooling for `{{model}}` until {{until}} ({{why}}). Daoris starts nothing on it that asks for `{{model}}` until then.",
   "note.held.limit-waits": "Every account it may run on is at its limit: it goes on by itself once the `{{owner}}` account `{{account}}` is ready again at {{until}}.",
   "note.held.limit-waits-own": "Every account it may run on is at its limit: it goes on by itself once `{{owner}}`'s own sign-in is ready again at {{until}}.",
   "note.held.limit-waits-sign-in": "No account it may run on is ready: these need a sign-in, {{accounts}}, and the rest are at their limit. It goes on by itself once the `{{owner}}` account `{{account}}` is ready again at {{until}}.",

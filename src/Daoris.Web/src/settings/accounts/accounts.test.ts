@@ -62,6 +62,13 @@ describe('what is said', () => {
     expect(coolingLine(cooling, now)).toMatch(/^冷却至 .+ · 还有 .+ · 智能体如此说明$/);
   });
 
+  /** MODELROLE1k: a model family's cool-off names the family, since a start asking another still runs on the account. */
+  it('says a model family\'s cool-off for that family, in either language', async () => {
+    expect(coolingLine({ ...cooling, model: 'opus' }, now)).toMatch(/^Cooling for opus until .+ · in 3h 12m · the agent said so$/);
+    await i18n.changeLanguage('zh');
+    expect(coolingLine({ ...cooling, model: 'opus' }, now)).toMatch(/^opus 冷却至 .+ · 还有 .+ · 智能体如此说明$/);
+  });
+
   /** WINDOWNAME1: a window of another length is named in the reader's language, its digits kept. */
   it('names a "<n>-minute" window in either language', async () => {
     expect(windowName('90-minute')).toBe('90-minute');

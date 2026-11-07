@@ -133,6 +133,23 @@ internal sealed class RosterCooling(HarnessRoster roster)
         }
 
         UsageHistory.Kept(roster.Home, new ReadingFrom(owner, account, door, source, reader, now, session, plan, planFrom), windows, now);
+        ModelsSpent(owner, account, door, windows, now, session);
+    }
+
+    /// <summary>
+    /// A reading that puts a model family's week at its limit cools the account for that family until the week's reset, as its agent
+    /// said it (MODELROLE1k): the walk reads only the whole plan's windows, so the family's limit is kept as a cool-off of account plus
+    /// model. A cool-off the file will not take is held in memory, as a limit's is.
+    /// </summary>
+    private void ModelsSpent(string owner, string account, string door, IReadOnlyList<WindowSeen> windows, DateTimeOffset now, string? session)
+    {
+        foreach (var (family, reset) in ModelLimits.Spent(windows, WindowsOf(door)?.Models, now))
+        {
+            AccountCooling.Keep(
+                roster.Home,
+                new CoolingEntry(owner, account == AccountWindows.Own ? null : account, reset, Stated: true, AccountWindows.Weekly, now, session, Model: family),
+                now);
+        }
     }
 
     /// <summary>The account's cool-off now, or null when it is ready, a start on this adapter as <paramref name="profile"/> would read it.</summary>
@@ -173,7 +190,7 @@ internal sealed class RosterCooling(HarnessRoster roster)
         var now = roster.Clock();
         var read = AccountLimits.Read(LimitsOf(resolved.Id.Value), failure, now, roster.Zone, coolOff ?? AccountLimits.DefaultCoolOff)
                    ?? (byCode is { Stated: false } coded ? coded with { Until = now + (coolOff ?? AccountLimits.DefaultCoolOff) } : null);
-        return read is { } seen ? Cool(agent, profile, seen, now, session) : null;
+        return read is { } seen ? Cool(agent, profile, seen, now, session, resolved.Id.Value) : null;
     }
 
     /// <summary>
@@ -181,12 +198,17 @@ internal sealed class RosterCooling(HarnessRoster roster)
     /// ingress under D125's bounds, cools its account with the same writes, reading no sentence. Null where the door cools no account.
     /// </summary>
     public (CoolingEntry Entry, LimitSeen Seen)? LimitedTrusted(string adapter, string? profile, LimitSeen seen, string session) =>
-        CoolingAgent(roster.Adapters.Door(adapter)) is { } agent ? Cool(agent, profile, seen, roster.Clock(), session) : null;
+        CoolingAgent(roster.Adapters.Door(adapter)) is { } agent ? Cool(agent, profile, seen, roster.Clock(), session, adapter) : null;
 
-    /// <summary>The writes a limit makes: the cooling entry, the account's set point, and a named weekly reset kept for the weeks after.</summary>
-    private (CoolingEntry Entry, LimitSeen Seen) Cool(string agent, string? profile, LimitSeen seen, DateTimeOffset now, string session)
+    /// <summary>
+    /// The writes a limit makes: the cooling entry, the account's set point, and a named weekly reset kept for the weeks after. A limit
+    /// whose words name a model family the door's windows declare (MODELROLE1k) cools the account for that family alone, and tells
+    /// nothing of the account's week.
+    /// </summary>
+    private (CoolingEntry Entry, LimitSeen Seen) Cool(string agent, string? profile, LimitSeen seen, DateTimeOffset now, string session, string door)
     {
-        var entry = new CoolingEntry(agent, profile, seen.Until, seen.Stated, seen.Window, now, session, seen.AssumedZone, seen.NotBelieved);
+        var model = ModelLimits.In(seen, WindowsOf(door)?.Models);
+        var entry = new CoolingEntry(agent, profile, seen.Until, seen.Stated, seen.Window, now, session, seen.AssumedZone, seen.NotBelieved, model);
         // LIMITRESUME1b (D206; D125 point 3 amended): a cool-off the file will not take is held in memory, never lost to a strike.
         AccountCooling.Keep(roster.Home, entry, now);
         // A limit's sentence is a set point: the account's maker is asked once it is ready again, its reading older (USAGEPROBE1).
@@ -194,7 +216,7 @@ internal sealed class RosterCooling(HarnessRoster roster)
 
         // A weekly reset the agent named is that account's for the weeks after (TOOL6b, D130 §16.3 step 4): a start spends a
         // week about to lapse first. Only a named account's, since the tool's own sign-in is never in a list (D125 §3.7).
-        if (profile is not null && seen.Stated && IsWeekly(seen))
+        if (profile is not null && model is null && seen.Stated && IsWeekly(seen))
         {
             try
             {

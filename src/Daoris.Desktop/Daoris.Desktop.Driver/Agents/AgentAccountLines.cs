@@ -128,7 +128,8 @@ internal static class AgentAccountLines
     public static string CoolingLine(CoolingEntry entry, DateTimeOffset now, TimeZoneInfo zone)
     {
         var ready = $"`daoris agent account ready {entry.Agent} {(entry.Account is null ? "--own" : ShellWord.Of(entry.Account, ShellWord.Account))}`";
-        return $"cooling until {CoolingWords.When(entry.Until, zone)}, in {Span(entry.Until - now)} — {CoolingWords.Why(entry)}; {ready} tries it now";
+        var family = entry.Model is { } model ? $" for `{model}`" : "";
+        return $"cooling{family} until {CoolingWords.When(entry.Until, zone)}, in {Span(entry.Until - now)} — {CoolingWords.Why(entry)}; {ready} tries it now";
     }
 
     /// <summary>How long until then, to the minute and rounded up: <c>2 d 2 h</c>, <c>3 h 10 min</c>, <c>1 min</c>.</summary>

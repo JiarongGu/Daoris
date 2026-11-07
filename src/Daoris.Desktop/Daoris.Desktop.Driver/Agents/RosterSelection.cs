@@ -160,7 +160,7 @@ internal sealed class RosterSelection(HarnessRoster roster)
         }
 
         var names = AccountNames.Of(roster.Home, owner);
-        var before = roster.Before(owner, named, roster.Clock(), names);
+        var before = roster.Before(owner, named, roster.Clock(), names, model: model);
         var own = ResumeAccount.Judge(named, scope, kind, before, present);
         // LIMITRESUME1b (the design §3.3 step 1, round 2's B2): a limited record's own account, ready by its cool-off, is asked its maker's
         // reading first, where its door carries none of its windows, and judged again on what that left; where its door carries them, the
@@ -168,7 +168,7 @@ internal sealed class RosterSelection(HarnessRoster roster)
         if (limited && named is not null && own == NextHold.Ready)
         {
             await roster.FreshenAsync(adapter, owner, [named], config, ct).ConfigureAwait(false);
-            before = roster.Before(owner, named, roster.Clock(), names);
+            before = roster.Before(owner, named, roster.Clock(), names, model: model);
             own = ResumeAccount.Judge(named, scope, kind, before, present);
         }
 

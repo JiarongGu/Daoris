@@ -13,6 +13,10 @@ namespace Daoris.Driver;
 /// <param name="Session">The session the limit refused, or null.</param>
 /// <param name="AssumedZone">Whether the machine's zone stood in for the one the agent named.</param>
 /// <param name="NotBelieved">Whether the agent named a date more than 8 days off, so the default stood in for it.</param>
+/// <param name="Model">
+/// The model family whose limit this is (<c>opus</c>, <c>sonnet</c>), kept as account plus model, so a start asking another family
+/// still runs on the account (<see cref="ModelLimits"/>); null for the whole account's, which holds every start.
+/// </param>
 public sealed record CoolingEntry(
     string Agent, string? Account, DateTimeOffset Until, bool Stated, string? Window, DateTimeOffset Seen, string? Session,
-    bool AssumedZone = false, bool NotBelieved = false);
+    bool AssumedZone = false, bool NotBelieved = false, string? Model = null);

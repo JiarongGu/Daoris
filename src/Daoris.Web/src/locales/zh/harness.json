@@ -135,6 +135,7 @@
   "harness.use.problem.alone": "留作对话的账户 {{account}} 是唯一的账户，所以没有为驱动的工作保留什么。请再添加一个账户，或不保留。",
   "harness.use.unknown": "这些账户还设置了 {{settings}}，本版本不认识；它按原样保留。",
   "harness.cooling.until": "冷却至 {{when}} · 还有 {{span}} · {{why}}",
+  "harness.cooling.untilModel": "{{model}} 冷却至 {{when}} · 还有 {{span}} · {{why}}",
   "harness.cooling.why.stated": "智能体如此说明",
   "harness.cooling.why.assumed": "智能体如此说明，按本机时区解读",
   "harness.cooling.why.default": "Daoris 的默认值：智能体没有说明时间",

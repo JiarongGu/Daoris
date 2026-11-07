@@ -24,7 +24,9 @@ namespace Daoris.Driver;
 ///
 /// <para>The file's shape, each field written only where it says something:
 /// <c>{ "&lt;agent&gt;": { "&lt;profile or empty&gt;": { "until": "…Z", "stated": true, "window": "weekly",
-/// "seen": "…Z", "session": "3f9c2a71", "assumedZone": true, "notBelieved": true } } }</c>.</para>
+/// "seen": "…Z", "session": "3f9c2a71", "assumedZone": true, "notBelieved": true, "models": { "opus": { "until": "…Z", … } } } } }</c>:
+/// a model family's cool-off (MODELROLE1k) is the same entry under the account's <c>models</c>, by its family, and an account cooling
+/// for a family alone holds only <c>models</c>. A file with no <c>models</c> reads as it always did.</para>
 /// </remarks>
 public static class AccountCooling
 {
@@ -38,10 +40,11 @@ public static class AccountCooling
     public static IReadOnlyList<CoolingEntry> Read(string home, DateTimeOffset now)
     {
         var unkept = Unwritten(home, now);
-        var written = Entries(Load(home)).Where(entry => entry.Until > now && !unkept.Any(held => Same(held, entry.Agent, entry.Account)));
+        var written = Entries(Load(home)).Where(entry => entry.Until > now && !unkept.Any(held => SameKey(held, entry)));
         return [.. written.Concat(unkept)
             .OrderBy(entry => entry.Agent, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(entry => entry.Account ?? "", StringComparer.OrdinalIgnoreCase)];
+            .ThenBy(entry => entry.Account ?? "", StringComparer.OrdinalIgnoreCase)
+            .ThenBy(entry => entry.Model ?? "", StringComparer.OrdinalIgnoreCase)];
     }
 
     /// <summary>
@@ -50,10 +53,12 @@ public static class AccountCooling
     /// reads the file, until the file takes it or its <c>until</c> passes. A shell that ends loses it, and the first attempt after meets
     /// the refusal again, limited again: one attempt per come-up.
     /// </summary>
-    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(string Home, string Agent, string Account), CoolingEntry> Unkept = new();
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(string Home, string Agent, string Account, string Model), CoolingEntry> Unkept = new();
 
-    private static (string, string, string) UnkeptKey(string home, string agent, string? account) =>
-        (Path.GetFullPath(home).ToUpperInvariant(), agent.ToUpperInvariant(), (account ?? "").ToUpperInvariant());
+    private static (string, string, string, string) UnkeptKey(string home, string agent, string? account, string? model = null) =>
+        (Path.GetFullPath(home).ToUpperInvariant(), agent.ToUpperInvariant(), (account ?? "").ToUpperInvariant(), (model ?? "").ToUpperInvariant());
+
+    private static (string, string, string, string) UnkeptKey(string home, CoolingEntry entry) => UnkeptKey(home, entry.Agent, entry.Account, entry.Model);
 
     /// <summary>
     /// Cool an account, as <see cref="Cool"/> does, or, where the file will not take it, hold it in memory (LIMITRESUME1b): the account is
@@ -61,7 +66,7 @@ public static class AccountCooling
     /// </summary>
     public static bool Keep(string home, CoolingEntry entry, DateTimeOffset now)
     {
-        var key = UnkeptKey(home, entry.Agent, entry.Account);
+        var key = UnkeptKey(home, entry);
         try
         {
             Cool(home, entry, now);
@@ -76,7 +81,8 @@ public static class AccountCooling
     }
 
     /// <summary>Whether the account's cool-off is held in memory only, the file not having taken it (LIMITRESUME1b).</summary>
-    public static bool Unwritten(string home, string agent, string? account) => Unkept.ContainsKey(UnkeptKey(home, agent, account));
+    public static bool Unwritten(string home, string agent, string? account, string? model = null) =>
+        Unkept.ContainsKey(UnkeptKey(home, agent, account, model));
 
     /// <summary>The cool-offs held in memory for this home that still hold at <paramref name="now"/>; one whose <c>until</c> passed is let go.</summary>
     private static List<CoolingEntry> Unwritten(string home, DateTimeOffset now)
@@ -106,7 +112,7 @@ public static class AccountCooling
             try
             {
                 Cool(home, entry, now);
-                Unkept.TryRemove(UnkeptKey(home, entry.Agent, entry.Account), out _);
+                Unkept.TryRemove(UnkeptKey(home, entry), out _);
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
@@ -139,33 +145,67 @@ public static class AccountCooling
         Entries(Load(home)).Concat(Unwritten(home, DateTimeOffset.MinValue))
             .FirstOrDefault(entry => string.Equals(entry.Session, session, StringComparison.Ordinal));
 
-    /// <summary>The account's cool-off at <paramref name="now"/>, or null when it is ready.</summary>
-    public static CoolingEntry? Of(string home, string agent, string? account, DateTimeOffset now) =>
-        Read(home, now).FirstOrDefault(entry => Same(entry, agent, account));
+    /// <summary>
+    /// The account's cool-off that holds a start of <paramref name="model"/> at <paramref name="now"/>, the latest where two do, or null
+    /// when it is ready: the whole account's always, a model family's unless the start names another (<see cref="ModelLimits.Holds"/>).
+    /// </summary>
+    /// <param name="model">The model the start asks; null for the account default, or a reader with no start, held by every cool-off.</param>
+    public static CoolingEntry? Of(string home, string agent, string? account, DateTimeOffset now, string? model = null) =>
+        Read(home, now).Where(entry => Same(entry, agent, account) && (entry.Model is null || ModelLimits.Holds(entry.Model, model)))
+            .MaxBy(entry => entry.Until);
 
     /// <summary>
-    /// Cool an account (a limit read): its entry replaced whole, every passed entry dropped, and the rest kept as written.
+    /// Cool an account (a limit read): its entry replaced whole, a model family's beside the account's under <c>models</c>, each keeping
+    /// the other, every passed entry dropped, and the rest kept as written.
     /// </summary>
     /// <param name="read">Called once the file is read, before the edit is written: a test's other writer, held off by the keep lock.</param>
     public static void Cool(string home, CoolingEntry entry, DateTimeOffset now, Action? read = null) => Edit(home, now, root =>
     {
         var agent = Made(root, entry.Agent);
-        if (Key(agent, entry.Account ?? "") is { } held) agent.Remove(held);
-        agent[entry.Account ?? ""] = Written(entry);
+        var key = Key(agent, entry.Account ?? "");
+        var account = key is not null && agent[key] is JsonObject kept ? kept : new JsonObject();
+        if (key is not null) agent.Remove(key);
+        agent[entry.Account ?? ""] = account;
+
+        if (entry.Model is { } model)
+        {
+            var models = account[Models] as JsonObject ?? new JsonObject();
+            account[Models] = models;
+            if (Key(models, model) is { } family) models.Remove(family);
+            models[model] = Written(entry);
+            return true;
+        }
+
+        var whole = Written(entry);
+        if (account[Models] is JsonObject families) whole[Models] = families.DeepClone();
+        agent[entry.Account ?? ""] = whole;
         return true;
     }, read);
 
-    /// <summary>End one account's cool-off early (<i>Try now</i>, a sign-in, a key). True when it was cooling.</summary>
+    /// <summary>The key under an account's entry that holds its model families' cool-offs, each by its family.</summary>
+    private const string Models = "models";
+
+    /// <summary>
+    /// End one account's cool-off early (<i>Try now</i>, a sign-in, a key), its model families' with it. True when one was cooling.
+    /// </summary>
     public static bool End(string home, string agent, string? account, DateTimeOffset now)
     {
         // One held in memory ends too (LIMITRESUME1b), whether or not the file reads.
-        var ended = Unkept.TryRemove(UnkeptKey(home, agent, account), out var unkept) && unkept.Until > now;
+        CoolingEntry? unkept = null;
+        var ended = false;
+        foreach (var (key, held) in Unkept)
+        {
+            if (key != UnkeptKey(home, agent, account, held.Model) || !Unkept.TryRemove(key, out var gone)) continue;
+            unkept = gone;
+            ended |= gone.Until > now;
+        }
+
         try
         {
             Edit(home, now, root =>
             {
                 if (Child(root, agent) is not { } held || Key(held, account ?? "") is not { } key) return false;
-                ended |= held[key] is JsonObject entry && Moment(entry, "until") is { } until && until > now;
+                ended |= held[key] is JsonObject entry && EntriesOf(agent, account ?? "", entry).Any(each => each.Until > now);
                 held.Remove(key);
                 return true;
             });
@@ -213,6 +253,9 @@ public static class AccountCooling
         string.Equals(entry.Agent, agent, StringComparison.OrdinalIgnoreCase)
         && string.Equals(entry.Account ?? "", account ?? "", StringComparison.OrdinalIgnoreCase);
 
+    private static bool SameKey(CoolingEntry one, CoolingEntry other) =>
+        Same(one, other.Agent, other.Account) && string.Equals(one.Model ?? "", other.Model ?? "", StringComparison.OrdinalIgnoreCase);
+
     /// <summary>The file's root, or an empty one when it is missing or does not read: no account cooling.</summary>
     private static JsonObject Load(string home) => AccountFileNodes.Load(PathOf(home));
 
@@ -224,14 +267,29 @@ public static class AccountCooling
             if (accounts is not JsonObject held) continue;
             foreach (var (account, node) in held)
             {
-                if (node is not JsonObject entry || Moment(entry, "until") is not { } until) continue;
-                yield return new CoolingEntry(
-                    agent, account.Length == 0 ? null : account, until, Json.Flag(entry, "stated"), Json.NonEmpty(entry, "window"),
-                    Moment(entry, "seen") ?? until, Json.NonEmpty(entry, "session"), Json.Flag(entry, "assumedZone"),
-                    Json.Flag(entry, "notBelieved"));
+                if (node is not JsonObject entry) continue;
+                foreach (var each in EntriesOf(agent, account, entry)) yield return each;
             }
         }
     }
+
+    /// <summary>An account's entries that read: its own where it has an <c>until</c>, then each model family's.</summary>
+    private static IEnumerable<CoolingEntry> EntriesOf(string agent, string account, JsonObject entry)
+    {
+        if (Read(agent, account, entry, model: null) is { } whole) yield return whole;
+        if (entry[Models] is not JsonObject models) yield break;
+        foreach (var (model, node) in models)
+        {
+            if (node is JsonObject scoped && model.Length > 0 && Read(agent, account, scoped, model) is { } family) yield return family;
+        }
+    }
+
+    private static CoolingEntry? Read(string agent, string account, JsonObject entry, string? model) =>
+        Moment(entry, "until") is not { } until ? null
+        : new CoolingEntry(
+            agent, account.Length == 0 ? null : account, until, Json.Flag(entry, "stated"), Json.NonEmpty(entry, "window"),
+            Moment(entry, "seen") ?? until, Json.NonEmpty(entry, "session"), Json.Flag(entry, "assumedZone"),
+            Json.Flag(entry, "notBelieved"), model);
 
     /// <summary>Read, change and write the file whole, atomically, with every passed entry dropped.</summary>
     /// <remarks>
@@ -253,8 +311,26 @@ public static class AccountCooling
                 if (accounts is not JsonObject held) continue;
                 foreach (var (account, node) in held.ToList())
                 {
-                    // Passed, or never readable: nothing a reader would ever call cooling.
-                    if (node is not JsonObject entry || Moment(entry, "until") is not { } until || until <= now) held.Remove(account);
+                    // Passed, or never readable: nothing a reader would ever call cooling. An account's own passed leaves its families'.
+                    if (node is not JsonObject entry)
+                    {
+                        held.Remove(account);
+                        continue;
+                    }
+
+                    if (entry[Models] is JsonObject models)
+                    {
+                        foreach (var (model, scoped) in models.ToList())
+                        {
+                            if (scoped is not JsonObject family || Moment(family, "until") is not { } ends || ends <= now) models.Remove(model);
+                        }
+
+                        if (models.Count == 0) entry.Remove(Models);
+                    }
+
+                    if (Moment(entry, "until") is { } until && until > now) continue;
+                    if (entry[Models] is JsonObject kept) held[account] = new JsonObject { [Models] = kept.DeepClone() };
+                    else held.Remove(account);
                 }
 
                 if (held.Count == 0) root.Remove(name);
@@ -306,9 +382,19 @@ public static class CoolingWords
     /// </summary>
     public static Noted HoldOf(CoolingEntry entry, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null)
     {
-        var said = $"{Who(entry, names)} is cooling until {When(entry.Until, zone)}, {Why(entry)}. Daoris starts nothing on it until then.";
         (string Name, object? Value)[] facts =
             [("owner", entry.Agent), ("until", NoteCodes.Moment(entry.Until)), ("why", CoolingWhy.Of(entry))];
+        // A model family's limit (MODELROLE1k) holds only a start of that family, so the hold names it.
+        if (entry is { Account: { } scoped, Model: { } model })
+        {
+            return Noted.Of(
+                HeldNoteCodes.HeldCoolingModel,
+                $"{Who(entry, names)} reached its `{model}` limit and is cooling for `{model}` until {When(entry.Until, zone)}, {Why(entry)}. "
+                + $"Daoris starts nothing on it that asks for `{model}` until then.",
+                [("account", scoped), ("model", model), .. facts]);
+        }
+
+        var said = $"{Who(entry, names)} is cooling until {When(entry.Until, zone)}, {Why(entry)}. Daoris starts nothing on it until then.";
         if (entry.Account is { } account) return Noted.Of(HeldNoteCodes.HeldCoolingAccount, said, [("account", account), .. facts]);
 
         // The own home holds whoever last signed in at the person's terminal, and the roster's refresh ends its
