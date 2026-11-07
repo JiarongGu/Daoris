@@ -32,15 +32,15 @@ public sealed record AgentReads(AccountRead? Own, IReadOnlyDictionary<string, Ac
 /// reads (AGENTREAD1b). The CLI's <c>accountreads.ts</c>, its twin, left with <c>daoris agent</c>'s TypeScript (PUSH1f2e): a terminal's
 /// reading is this program's.</para>
 /// <para>The file's shape: <c>{ "&lt;agent&gt;": { "own": { "login": "in", "read": "…Z" }, "accounts": { "&lt;account&gt;":
-/// { "login": "out", "read": "…Z" } } } }</c>.</para>
+/// { "login": "out", "read": "…Z" } } } }</c>; a door's binary's version reading sits beside them as its <c>binary</c> (<see cref="BinaryReads"/>).</para>
 /// </remarks>
 public static class AccountReads
 {
     private const string Own = "own";
     private const string AccountsKey = "accounts";
 
-    // One writer at a time in this process: a press and a start's question may answer together.
-    private static readonly object Gate = new();
+    // One writer of the file at a time in this process, the binaries' readings' among them: a press and a start's question may answer together.
+    internal static readonly object Gate = new();
 
 
     private static readonly AgentReads Nothing = new(null, new Dictionary<string, AccountRead>(StringComparer.OrdinalIgnoreCase));

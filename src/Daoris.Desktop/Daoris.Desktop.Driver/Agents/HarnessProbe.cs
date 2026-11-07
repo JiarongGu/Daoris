@@ -6,7 +6,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Detection (D49 §4): locate a harness, ask its version, and ask each profile whether it is logged
-/// in. <b>Free and read-only</b> — it runs the tool's own reporting commands and writes nothing.
+/// in. <b>Free and read-only</b> — it runs the tool's own reporting commands and writes nothing of the tool's; the version is asked
+/// once per binary, kept in <c>reads.json</c> (<see cref="BinaryVersion"/>, PERF3).
 /// </summary>
 /// <remarks>
 /// Acting is the person's click: install, update and login spawn the harness's own mechanism and are
@@ -41,6 +42,10 @@ public static class HarnessProbe
     /// Told each question that was asked, the account's name, with what it said: the roster keeps
     /// the state under the home and who, the organisation and the plan in memory (D66 §3, ACCOUNTID1).
     /// </param>
+    /// <param name="again">
+    /// Whether the binary is asked its version though what it answered of the same files is kept (<see cref="BinaryVersion"/>, PERF3):
+    /// a press, an install, an update or a pin; a look takes the reading.
+    /// </param>
     public static async Task<HarnessReport> ProbeAsync(
         string adapter,
         AccountAgent toolchain,
@@ -53,7 +58,8 @@ public static class HarnessProbe
         Func<string, bool>? asks = null,
         Func<DateTimeOffset>? clock = null,
         Action<string?, LoginRead, DateTimeOffset>? answered = null,
-        string? accountOf = null)
+        string? accountOf = null,
+        bool again = false)
     {
         // Whose accounts it lists (AGT7): the key the registry answers (<c>ProviderRegistry.OwnerOfAgent</c>), the agent itself where none is given.
         var owner = accountOf ?? adapter;
@@ -82,8 +88,10 @@ public static class HarnessProbe
 
         var version = toolchain.Program.ProbeByPresence
             ? (Ran: resolved.Count > 0 && CommandPresence.Resolvable(resolved[0]), Output: "", Problem: (string?)null)
-            : await AskAsync(resolved, toolchain.Program.VersionArguments, profileHome: null, toolchain, ct, isManaged)
-                .ConfigureAwait(false);
+            : resolved.Count == 0 ? (Ran: false, Output: "", Problem: "no command to run")
+            : await BinaryVersion.AskAsync(
+                home, adapter, Prepared(resolved, toolchain.Program.VersionArguments, profileHome: null, toolchain, isManaged), resolved[0],
+                again, now, ct).ConfigureAwait(false);
 
         var present = version.Ran;
         var profiles = new List<ProfileReport>();
@@ -275,10 +283,16 @@ public static class HarnessProbe
         AccountAgent toolchain,
         CancellationToken ct,
         bool managed = false,
+        IReadOnlyDictionary<string, string>? account = null) =>
+        resolved.Count == 0
+            ? (false, "", "no command to run")
+            : await RunAsync(Prepared(resolved, arguments, profileHome, toolchain, managed, account), resolved[0], ct).ConfigureAwait(false);
+
+    /// <summary>One of the harness's reporting commands as it starts: on a session's <c>PATH</c>, equipped as a session runs it.</summary>
+    internal static ProcessStartInfo Prepared(
+        IReadOnlyList<string> resolved, IReadOnlyList<string> arguments, string? profileHome, AccountAgent toolchain, bool managed,
         IReadOnlyDictionary<string, string>? account = null)
     {
-        if (resolved.Count == 0) return (false, "", "no command to run");
-
         var info = new ProcessStartInfo
         {
             FileName = resolved[0],
@@ -297,30 +311,35 @@ public static class HarnessProbe
         Tools.Hand(info);
         // A pinned binary is asked the way a session runs it (AGT2), so asking is not when it moves.
         Shell.Equip(info, toolchain, profileHome, binary: managed ? resolved[0] : null, account: account);
+        return info;
+    }
 
+    /// <summary>Run a prepared reporting command and collect what it said, said of it as <paramref name="named"/>, the command as asked.</summary>
+    internal static async Task<(bool Ran, string Output, string? Problem)> RunAsync(ProcessStartInfo info, string named, CancellationToken ct)
+    {
         var run = await ChildProcess.RunAsync(info, Patience, ct, closeInput: false).ConfigureAwait(false);
         if (!run.Started)
         {
             return run.Error switch
             {
-                null => (false, "", $"`{resolved[0]}` did not start"),
+                null => (false, "", $"`{named}` did not start"),
                 // 🔴 The sentence, and only the sentence. The runtime's own message for this case — "An
                 // error occurred trying to start process '…' with working directory '<cwd>'. The system
                 // cannot find the file specified." — restates the fact and adds a machine path, and the
                 // deployed application's roster showed both. Any OTHER failure keeps the runtime's words:
                 // a binary that exists and will not start is news the sentence alone does not carry.
-                System.ComponentModel.Win32Exception { NativeErrorCode: FileNotFound } => (false, "", $"`{resolved[0]}` is not on this machine's PATH"),
-                var error => (false, "", $"`{resolved[0]}` is not on this machine's PATH — {error.Message}"),
+                System.ComponentModel.Win32Exception { NativeErrorCode: FileNotFound } => (false, "", $"`{named}` is not on this machine's PATH"),
+                var error => (false, "", $"`{named}` is not on this machine's PATH — {error.Message}"),
             };
         }
 
-        if (run.TimedOut) return (false, "", $"`{resolved[0]}` did not answer within {Patience.TotalSeconds:0}s");
+        if (run.TimedOut) return (false, "", $"`{named}` did not answer within {Patience.TotalSeconds:0}s");
 
         // Both streams: a harness that reports its version on stderr is not an absent harness.
         return (true, $"{run.Stdout}\n{run.Stderr}", null);
     }
 
-    private static string? FirstLine(string output)
+    internal static string? FirstLine(string output)
     {
         foreach (var line in output.Split('\n'))
         {

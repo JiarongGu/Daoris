@@ -14,7 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// questions: the start is held.</para>
 /// <para>ROSTER1: each case starts as a restart does, from a fresh roster and what the person's last press read, kept under
 /// the home (<see cref="AccountReads"/>): the accounts signed out at the test's moment. A look reads none of them, so a status
-/// line is a question a look asked; the binary is asked its version once a process, which is no question of an account.</para>
+/// line is a question a look asked; the binary is asked its version once per binary, which is no question of an account.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class SignedOutLooksTests : IDisposable
@@ -153,7 +153,7 @@ public sealed class SignedOutLooksTests : IDisposable
         // Written once in three looks, with no time and the accounts by name.
         var line = Assert.Single(lines, l => l.Event == "starts.waiting");
         var data = line.Data.ToDictionary(field => field.Key, field => field.Value);
-        Assert.Equal(("stub", null, null, "account-1,account-2,gmail"), (data["adapter"], data["account"], data["until"], data["signedOut"]));
+        Assert.Equal(("stub", null, null, "account-1,account-2,gmail"), (data["door"], data["account"], data["until"], data["signedOut"]));
     }
 
     [Fact]

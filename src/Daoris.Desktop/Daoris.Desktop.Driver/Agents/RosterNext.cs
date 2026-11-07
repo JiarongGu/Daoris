@@ -43,7 +43,7 @@ internal sealed class RosterNext(HarnessRoster roster)
             ? []
             : [.. order.Select(account => new AccountLastRead(account, Before(owner, account, now, fact: FactOf(facts, account)), ReadOf(account)))];
 
-        var known = roster._binaries.TryGetValue(resolved.Id.Value, out var binary) ? binary : null;
+        var known = BinaryReads.Of(roster.Home, resolved.Id.Value);
         // The binary a start would run (TOOL2/D57): an explicit command, then a pin's managed install, which is its presence.
         if (config.Commands.GetValueOrDefault(resolved.Id.Value) is not { Count: > 0 } && settings.ResolveVersion(resolved.Id.Value, workspace, chosen: null) is { } pinned)
         {

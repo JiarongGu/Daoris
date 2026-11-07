@@ -5655,8 +5655,10 @@
       "err": [],
       "after": {
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"0.0.0-none\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"}}",
-        "daoris/data/plugins/acme.agent/plugin.json": "{\"id\":\"acme.agent\",\"harnesses\":[{\"name\":\"acme-agent\",\"command\":[\"acme-agent-not-here\"],\"versionArguments\":[\"--version\"],\"profileVariable\":\"ACME_HOME\"}]}"
-      }
+        "daoris/data/plugins/acme.agent/plugin.json": "{\"id\":\"acme.agent\",\"harnesses\":[{\"name\":\"acme-agent\",\"command\":[\"acme-agent-not-here\"],\"versionArguments\":[\"--version\"],\"profileVariable\":\"ACME_HOME\"}]}",
+        "daoris/data/reads.json": "{\n  \"acme-agent\": {\n    \"binary\": {\n      \"files\": [],\n      \"present\": false,\n      \"problem\": \"`acme-agent-not-here` is not on this machine's PATH\",\n      \"read\": \"2026-10-22T12:00:00Z\"\n    }\n  }\n}\n"
+      },
+      "changed": "PERF3: what a binary answered its version question is kept in `reads.json`, of the files it would start, an absent one's where nothing is there to start, so the next list starts nothing until a file is there."
     },
     {
       "name": "list, a wiring file named by DAORIS_HARNESS_CONFIG",
@@ -5722,7 +5724,8 @@
     {
       "name": "list, Claude Code here through a pin, each account asked and its reading kept (Windows)",
       "argv": [
-        "list"
+        "list",
+        "--again"
       ],
       "folders": [
         "daoris/profiles/agents/claude-code/account-1",
@@ -5790,16 +5793,17 @@
       "err": [],
       "after": {
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"1.2.3\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"},\"workspaces\":{\"work\":{\"claude-code\":\"account-1\"}}}",
-        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {\n      \"account-1\": {\n        \"login\": \"in\",\n        \"read\": \"2026-10-22T12:00:00Z\"\n      },\n      \"account-2\": {\n        \"login\": \"out\",\n        \"read\": \"2026-10-22T12:00:00Z\"\n      }\n    }\n  }\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"binary\": {\n      \"files\": [\n        {\n          \"path\": \"<root>/daoris/cache/toolchain/claude-code/1.2.3/node_modules/.bin/claude.cmd\",\n          \"size\": 205,\n          \"written\": \"2026-01-01T00:00:00.0000000Z\"\n        }\n      ],\n      \"present\": true,\n      \"version\": \"2.1.0 (Claude Code)\",\n      \"read\": \"2026-10-22T12:00:00Z\"\n    },\n    \"accounts\": {\n      \"account-1\": {\n        \"login\": \"in\",\n        \"read\": \"2026-10-22T12:00:00Z\"\n      },\n      \"account-2\": {\n        \"login\": \"out\",\n        \"read\": \"2026-10-22T12:00:00Z\"\n      }\n    }\n  }\n}\n",
         "daoris/profiles/agents/claude-code/account-1/who.json": "{\"loggedIn\":true,\"email\":\"someone@example.invalid\"}",
         "daoris/cache/toolchain/claude-code/1.2.3/node_modules/.bin/claude.cmd": "@echo off\r\nif \"%~1\"==\"--version\" (\r\n  echo 2.1.0 ^(Claude Code^)\r\n  exit /b 0\r\n)\r\nif exist \"%CLAUDE_CONFIG_DIR%/who.json\" (\r\n  type \"%CLAUDE_CONFIG_DIR%/who.json\"\r\n) else (\r\n  echo {\"loggedIn\": false}\r\n)\r\n"
       },
-      "changed": "POOL1b (D197, the account-pool design §5.1): `agent list` shows the set — its order for every workspace, how it is used and the next start — then the person's own sign-in outside it, never asked; no account is marked a default or said to run nowhere, and no workspace's list is shown."
+      "changed": "POOL1b (D197, the account-pool design §5.1): `agent list` shows the set — its order for every workspace, how it is used and the next start — then the person's own sign-in outside it, never asked; no account is marked a default or said to run nowhere, and no workspace's list is shown. PERF3: `list` says what was read and `list --again` asks each binary and account, keeping the binary's answer in `reads.json` with the files it was read of."
     },
     {
       "name": "list, Claude Code here, two sign-ins of one email told apart (Windows)",
       "argv": [
-        "list"
+        "list",
+        "--again"
       ],
       "folders": [
         "daoris/profiles/agents/claude-code/acct-0000000a",
@@ -5876,14 +5880,14 @@
       "after": {
         "daoris/data/accounts.json": "{\"claude-code\":{\"acct-0000000a\":{\"name\":\"person@example.invalid\"},\"acct-0000000b\":{\"name\":\"person@example.invalid·Org-B\"}}}",
         "daoris/data/harnesses.json": "{\"versions\":{\"claude-code\":\"1.2.3\",\"claude-code-acp\":\"0.0.0-none\",\"codex\":\"0.0.0-none\",\"codex-acp\":\"0.0.0-none\",\"dsh\":\"0.0.0-none\"}}",
-        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"accounts\": {\n      \"acct-0000000a\": {\n        \"login\": \"in\",\n        \"read\": \"2026-10-22T12:00:00Z\"\n      },\n      \"acct-0000000b\": {\n        \"login\": \"in\",\n        \"read\": \"2026-10-22T12:00:00Z\"\n      },\n      \"acct-0000000c\": {\n        \"login\": \"in\",\n        \"read\": \"2026-10-22T12:00:00Z\"\n      },\n      \"acct-0000000d\": {\n        \"login\": \"in\",\n        \"read\": \"2026-10-22T12:00:00Z\"\n      }\n    }\n  }\n}\n",
+        "daoris/data/reads.json": "{\n  \"claude-code\": {\n    \"binary\": {\n      \"files\": [\n        {\n          \"path\": \"<root>/daoris/cache/toolchain/claude-code/1.2.3/node_modules/.bin/claude.cmd\",\n          \"size\": 205,\n          \"written\": \"2026-01-01T00:00:00.0000000Z\"\n        }\n      ],\n      \"present\": true,\n      \"version\": \"2.1.0 (Claude Code)\",\n      \"read\": \"2026-10-22T12:00:00Z\"\n    },\n    \"accounts\": {\n      \"acct-0000000a\": {\n        \"login\": \"in\",\n        \"read\": \"2026-10-22T12:00:00Z\"\n      },\n      \"acct-0000000b\": {\n        \"login\": \"in\",\n        \"read\": \"2026-10-22T12:00:00Z\"\n      },\n      \"acct-0000000c\": {\n        \"login\": \"in\",\n        \"read\": \"2026-10-22T12:00:00Z\"\n      },\n      \"acct-0000000d\": {\n        \"login\": \"in\",\n        \"read\": \"2026-10-22T12:00:00Z\"\n      }\n    }\n  }\n}\n",
         "daoris/profiles/agents/claude-code/acct-0000000a/who.json": "{\"loggedIn\":true,\"email\":\"person@example.invalid\",\"orgName\":\"Org A\",\"subscriptionType\":\"max\"}",
         "daoris/profiles/agents/claude-code/acct-0000000b/who.json": "{\"loggedIn\":true,\"email\":\"person@example.invalid\",\"orgName\":\"Org B\",\"subscriptionType\":\"max\"}",
         "daoris/profiles/agents/claude-code/acct-0000000c/who.json": "{\"loggedIn\":true,\"email\":\"other@example.invalid\",\"orgName\":\"Org A\",\"subscriptionType\":\"pro\"}",
         "daoris/profiles/agents/claude-code/acct-0000000d/who.json": "{\"loggedIn\":true,\"email\":\"person@example.invalid\",\"orgName\":\"Org D\",\"subscriptionType\":\"max\"}",
         "daoris/cache/toolchain/claude-code/1.2.3/node_modules/.bin/claude.cmd": "@echo off\r\nif \"%~1\"==\"--version\" (\r\n  echo 2.1.0 ^(Claude Code^)\r\n  exit /b 0\r\n)\r\nif exist \"%CLAUDE_CONFIG_DIR%/who.json\" (\r\n  type \"%CLAUDE_CONFIG_DIR%/who.json\"\r\n) else (\r\n  echo {\"loggedIn\": false}\r\n)\r\n"
       },
-      "changed": "POOL1b (D197, the account-pool design §5.1): `agent list` shows the set — its order for every workspace, how it is used and the next start — then the person's own sign-in outside it, never asked; no account is marked a default or said to run nowhere, and no workspace's list is shown."
+      "changed": "POOL1b (D197, the account-pool design §5.1): `agent list` shows the set — its order for every workspace, how it is used and the next start — then the person's own sign-in outside it, never asked; no account is marked a default or said to run nowhere, and no workspace's list is shown. PERF3: who signed in is read fresh and kept nowhere, so it is said by `list --again`, which asks each binary and account."
     },
     {
       "name": "list, a cooling account's Try now names an account a shell cannot take by a placeholder",

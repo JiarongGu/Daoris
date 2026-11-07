@@ -80,7 +80,7 @@ internal sealed class LoopContext(
 
     /// <summary>
     /// The roster's doors in its order, as a hand-over's order reads them (MIXAGENT1c, <see cref="HandOverOrder"/>), unless a test hands
-    /// in a stand-in, since the roster asks each binary its version once a process (MOD8).
+    /// in a stand-in, since the roster asks each binary its version once per binary (MOD8).
     /// </summary>
     public Func<CancellationToken, Task<IReadOnlyList<HandOverDoor>>>? HandOverDoors { get; set; }
 
