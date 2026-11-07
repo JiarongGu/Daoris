@@ -2860,3 +2860,32 @@ round-11 finding n, *Fn* this read's; a bare path is under `src/Daoris.Desktop/D
 
 Nothing I found loses committed work. F1 and F2 lose a line's uncommitted work through Daoris's own write-back; F3 costs a hook's
 output; F4 is row i's sentence. None reopens an owner's choice.
+
+
+## Codex, round 12
+
+Codex's confirming read of rows 3 and 4 as round 12 left them, at `f22f391b94`, run by the steward from outside the install, read-only, without seeing the independent Opus reader's; verbatim but for its headings set down.
+
+**Rows 3 and 4: another round, narrowly.** One remaining blocking case can place the wrong install in a worked tree. Read at `f22f391b94`; no files changed, no `local/` folder read, and no builds or tests run.
+
+**My round-11 companion case is answered.** R5.6’s revised note, §29.7 step 4 and §32.1 C record install-written paths classified by another rule as “other writes.” After the hook, an absent other write invalidates the retained placement and repeats its install in the unworked tree. That closes the earlier lifecycle-generated client sequence while preserving output clearing.
+
+1. **Blocking — a worked-tree hit can use a preceding dependency’s expected key despite that dependency’s changed files.**
+
+   **Where:** §29.7’s worked-tree paragraph, particularly lines 3476–3478; R5.6’s round-11 group bullet, whose last sentence retains preceding dependency keys for installs that read earlier folders without changing them.
+
+   **Concrete sequence:**
+
+   - Dependency A installs headers. Dependency B’s install reads A’s headers and compiles files entirely inside B’s namespace. B changes nothing in A, so they form no group. B seals successfully; its key includes A’s key.
+   - A session changes A’s ignored headers, then removes B’s folder to rebuild against them. Tracked key inputs remain unchanged.
+   - The session resumes. A’s placement record fails, so the worked-tree stage correctly leaves A’s changed files alone.
+   - B’s folder is absent, its tracked inputs have no working change, and no group names it. Its calculated key still contains A’s original **expected key**, which has not changed with the ignored header edit.
+   - The stage places sealed B, compiled against A’s original headers, beside the session’s changed A. It supplies the wrong install before the session can rebuild B.
+
+   The cited code confirms that standing trees preserve this working state: `Workplace/TreeReturns.cs:59–65` accepts the standing tree, and `Loop/Run/Tree/GrowTree.cs:58–63` selects it for resume or carry-on. §32.1 F4 prevents independent placement of a **group member**, but this read-only dependency relationship creates no group.
+
+   **Smallest change:** Extend the worked-tree hit condition to the preceding dependency state represented in the key. Before placing B, require those dependencies’ actual placements or groups to validate at their current keys, including their recorded companions and other writes. If one is changed, absent or unrecorded, leave B absent and report `started.deps-left`. Add this sequence to row 3’s proof; row 4 inherits it through worked-slot resumes.
+
+I found no further work-loss case in the positive `unworked` mark, its removal before run/conversation/terminal access, or the treatment of missing and unreadable files records. The early write-back now covers a cut-off install even when its retry is held. I found nothing further in the keyed environment values, `toolchain` read allowance, failed-install mark cleanup, or §10’s record-based protection of a returning line’s set-aside files, including a no-output line.
+
+I found no committed-work loss or additional case of a session receiving another line’s files within the specified scope.
