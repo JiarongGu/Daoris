@@ -213,7 +213,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     answer* and *Not now*, and the act is kept as `refer`. The supervisor's list (`SUPERVISOR_WAITING`) names the point where a
     started terminal holds the supervisor for the line's repository and no decision answers it, a question decision still moving
     on the line answering first; the holder decides it once (`sessions supervise <id> --point --course go-on|hold`,
-    `SUPERVISOR_COURSE`, the role's third act). `hold` leaves it to the person at once. `go-on` is held for the role's window,
+    `SUPERVISOR_COURSE`, the supervisor's third route beside answer and defer). `hold` leaves it to the person at once. `go-on` is held for the role's window,
     *Overrule* taking it back, then the supervisor's look releases it between turns through the count's own door, the
     admission and the rules read again first (`role-changed`, `rule-holds`, `answered` move it stale): the mark taken away and
     `answers.supervised` kept, which resets the count as the person's press does. No course act stops, ends or moves a
@@ -286,7 +286,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 ## Where a change goes
 
 - **A new work or kind of start:** `RoleWork`, `StartPlan.RoleOf`, the seed in `Defaults/roles.json`, and the participant's
-  work rule (`Participants/Domain/ParticipantWork.cs`). Tools for it go in the service's call table and its fixture.
+  work rule (`Roles/Domain/ParticipantWork.cs`, with its service and page twins). Tools for it go in the service's call table and its fixture.
 - **A role's field or judge:** `RoleCatalog` and `RoleRecords`, reached only through `RoleDoor`. No second writer.
 - **Staffing:** `RoleStaffing.Set` is the one writer. A reader of an order that is not the start's goes through
   `RoleOrders` and is named in `OrderReadersCensusTests`.
@@ -299,14 +299,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
   person's route on the pipe is refused outside the grant (`StewardUpdateAct`). Its name in `StewardActNames`, the verb's grammar, the web's `ACTS` and
   `STEWARD_ACTS`, and its words in both catalogues.
 - **An Ask Daoris door:** a file of its own in `Help/Proposals/`, registered by one line in `HelpProposalKinds.All`, with
-  the service's writer `HelpProposalBox.<Kind>.cs`, the page's card, and its row in the room's doors table. Only where one is wanted.
+  the service's writer `Help<Kind>ProposalWriter.cs` (`Daoris.Service.Core/Help/`), the page's card, and its row in the room's doors table. Only where one is wanted.
 - **The page:** `Web/agents/roles/` and `Web/agents/setup/`.
-- **An old way kept:** an entry in `Transitional/Register.cs`.
+- **A changed stored shape:** a step in `Transitional/Migration/`, one entry of `HomeMigration.Steps`; the old read is deleted in the same change.
 
 **Tests that pin it.** Driver: `Roles/*Tests` (catalogue, door, verbs, staffing, walk, judge, ledger, rules, decisions,
 holder key, steward), `Install/HomeMigrationTests`, `Course/LineCourseTests`, `Course/StaffCourseLookTests`,
 `Loop/StaffPolicy*TickTests`, `Help/HelpProposalKindsTests`, `Help/Proposals/*Tests`, and
-`Knowledge/HelpRoom*Tests` with the room goldens. Modules: `Bridge/DriverModuleRoleTests`, `DriverModuleAppointmentTests`,
+`Knowledge/HelpRoom*Tests` with the room goldens. Modules: `Bridge/DriverModuleRoleTests`, `DriverModuleRoleTerminalTests`,
 `Platform/RoleTerminalTests`, `RoleActTests`, `Holder*Tests`, `SupervisorScopeTests`. Service:
 `Help/HelpRoleProposalTests`, `Help/HelpProposalBoxKindsTests`, `Mcp/McpRoleFilterTests`, `Sessions/SupervisorWordTests`.
 Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
@@ -316,30 +316,26 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 
 ## Contradictions
 
-1. D212 point 16 (supervisor and steward are seeded catalogue roles; an appointed shape) vs `Roles/RoleCatalog.cs:35,49,281`:
-   the catalogue holds working roles alone and reserves both ids. Code reads right.
-2. D229 point 5 (a rule is a holder of the supervisor role) vs `Modules/Platform/StandingConfirmation.cs:172-176` (holders
-   are `terminal` and `actor`; rules are a store set through the role door). Same meaning; the code's split reads right.
-3. D229's 2026-11-04 note (`daoris role rules`, `daoris role supervisor`) vs `Roles/RoleVerbs.cs` (`driver role rules`):
+1. D229's 2026-11-04 note (`daoris role rules`, `daoris role supervisor`) vs `Roles/RoleVerbs.cs` (`driver role rules`):
    Ask Daoris's role cards print the note's form as their terminal twin (`Roles/SupervisorRulesFlags.cs`, `Terminal`
    and the role card's command), while the verb's own grammar and help say `driver role`. The verb's grammar reads right.
-4. D226 (seven conditions, each with its actions) vs `Roles/StaffPolicyDoor.cs:12-34` (moves for four; signed-out,
-   model-refused and budget are the walk's). Code reads right.
-5. D226 (moves and `most` live in the policy) vs D229 and `Roles/StaffPolicy.cs` (the policy holds neither; they are the supervisor's rules).
+2. D226 (seven conditions, each with its actions) vs `Roles/StaffPolicy.cs` (`StaffConditions`) and `Roles/SupervisorRules.cs`
+   (moves for four counts; signed-out, model-refused and budget are the walk's). Code reads right.
+3. D226 (moves and `most` live in the policy) vs D229 and `Roles/StaffPolicy.cs` (the policy holds neither; they are the supervisor's rules).
    D229 reads right.
-6. D205 points 2 and 7 (choices in `driver.json`'s `actors`) vs `Roles/RoleStaffing.cs` (`role_staffing` alone). Code reads right.
-7. D205 points 8-9 (Settings → Actors, `driver actor`, `ACTORS`/`SET_ACTOR`, `actor_propose`) vs `driver role`,
+4. D205 points 2 and 7 (choices in `driver.json`'s `actors`) vs `Roles/RoleStaffing.cs` (`role_staffing` alone). Code reads right.
+5. D205 points 8-9 (Settings → Actors, `driver actor`, `ACTORS`/`SET_ACTOR`, `actor_propose`) vs `driver role`,
    `ROLES`/`SET_ROLE` and `role_propose` (`Help/Proposals/HelpRoleProposals.cs:20`). Code reads right.
-8. D89 (Ask Daoris's agent named under Settings → *Daoris's own AI* as a third job) vs the `ask-daoris` role's staffing
+6. D89 (Ask Daoris's agent named under Settings → *Daoris's own AI* as a third job) vs the `ask-daoris` role's staffing
    (`Defaults/roles.json`, `Settings/ActorKey.cs:20`). Code reads right.
-9. D170 (never a shell) vs D183 full access (`Help/HelpMode.cs:17`). D183 reads right; D170 holds in restricted mode.
-10. D209 point 1 and its COMPANYVIEW1e note, and D205's COMPANYVIEW1b note (appointed and staffed under Settings → This
+7. D170 (never a shell) vs D183 full access (`Help/HelpMode.cs:17`). D183 reads right; D170 holds in restricted mode.
+8. D209 point 1 and its COMPANYVIEW1e note, and D205's COMPANYVIEW1b note (appointed and staffed under Settings → This
     Daoris, then Agents → Roles) vs `Web/agents/modes.ts:3-8,29-33` (the Roles mode is retired; its sections sit under
     Agents → Setup). Code reads right.
-11. D110 point 4 (a rule is never proposed by an agent) vs `role_propose` carrying the supervisor's rules
-    (`Help/Proposals/HelpRoleProposals.cs:145`). D110 means permission rules; it should say so.
-12. D208 points 4 and 8 (a workspace's supervisor later; held five minutes) vs SUPERVISOR1e as built (workspace
-    appointments, `Web/agents/setup/PlaceSupervisor.tsx`; a window of 1 to 60, `StandingConfirmation.cs:183-184`). Code reads right.
+9. D110 point 4 (a rule is never proposed by an agent) vs `role_propose` carrying the supervisor's rules
+   (`Help/Proposals/HelpRoleProposals.cs`, `RulesPlan`). D110 means permission rules; it should say so.
+10. D208 points 4 and 8 (a workspace's supervisor later; held five minutes) vs SUPERVISOR1e as built (workspace
+    appointments, `Web/agents/setup/PlaceSupervisorRules.tsx`; a window of 1 to 60, `Roles/RoleHold.cs`, `RoleHold.InWindow`). Code reads right.
 
 ## Open
 
@@ -350,7 +346,6 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 - **MODELROLE1l/e2:** the installed proof of a design quest on Design; the partner's real-process case. D233 choice 5
   removes Ask Daoris's Accept and hand-over proposals, not the hand-over doors a person or an agent presses, so the
   hand-over's model stands; the four fenced roles are edited in the one role editor.
-- **ONEWAY1af:** delete `actor-key-before` and `staffing-copy` once the staffing part's census ends.
 - **SUPERVISOR1a-i (rest):** the author sweep test, the page's mark with *Overrule* on a question's answer (a referred point's
   decision has its card), the go-on's process cases.
 - **SUPERVISOR1a-iii:** the installed proof of the activation: a place's supervisor held by a started terminal on the install's
