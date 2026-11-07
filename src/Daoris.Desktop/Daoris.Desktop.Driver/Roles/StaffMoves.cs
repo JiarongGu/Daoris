@@ -12,8 +12,8 @@ public sealed record StaffMoved(int Moves, bool Approved);
 public sealed record StaffMoving(string Session, string Condition, string? From);
 
 /// <summary>
-/// A line's moves to another choice, kept by the line's identity in <c>role_moves</c> (STAFFPOLICY1e, D226; the staff policy design §4.2,
-/// §11 point 5). A quest's id or a conversation's names the line, so the count survives a restart and covers the moves that write no part
+/// A line's moves to another choice, kept by the line's identity in <c>role_moves</c>.
+/// A quest's id or a conversation's names the line, so the count survives a restart and covers the moves that write no part
 /// link: a model the agent refused or a sign-in replaced inside one start (<c>kind</c> <see cref="Moved"/> either way). A move is written
 /// when it is decided, so two decisions at once cannot both pass the bound.
 /// </summary>
@@ -60,7 +60,7 @@ public sealed class StaffMoves(string home, Func<StoreSettled>? settled = null, 
             "SELECT id, kind FROM role_moves WHERE line = $line AND at >= $since ORDER BY id",
             row => (Id: row.GetInt64(0), Kind: row.GetString(1)), ("$line", line), ("$since", since));
         var moves = rows.Count(row => row.Kind == Moved);
-        // A yes closed at the start it released (Spent) was never used for a move: it cancels itself and loosens nothing.
+        // A yes closed at the start it released (Spent) is never used for a move: it cancels itself and loosens nothing.
         var approvals = Math.Max(0, rows.Count(row => row.Kind == Approval) - rows.Count(row => row.Kind == Spent));
         var lastClosed = rows.Where(row => row.Kind is Moved or Spent).Select(row => row.Id).DefaultIfEmpty(0).Max();
         return new StaffMoved(Math.Max(0, moves - approvals), rows.Any(row => row.Kind == Approval && row.Id > lastClosed));
@@ -92,7 +92,7 @@ public sealed class StaffMoves(string home, Func<StoreSettled>? settled = null, 
     }
 
     /// <summary>
-    /// The choices <paramref name="line"/> moved off within <see cref="StaffJudge.Hold"/>, each with when it was left (the judge's
+    /// The choices <paramref name="line"/> moved off within <see cref="StaffJudge.Hold"/>, each with when it is left (the judge's
     /// <c>moved-off</c> pass keeps the line from walking back onto one): the line's facts a start arranges by.
     /// </summary>
     public StaffFacts LineFacts(string line)

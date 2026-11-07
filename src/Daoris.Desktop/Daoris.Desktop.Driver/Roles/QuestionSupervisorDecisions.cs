@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The supervisor's decisions, live in this instance's memory (SUPERVISOR1a-i, D208; the supervisor design §3.4, §3.6, §6.1, §6.3):
+/// The supervisor's decisions, live in this instance's memory:
 /// one per instance, shared by the modules' handler and the driver's look, since both run in the window's process.
 /// </summary>
 /// <remarks>
@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// and <see cref="SupervisorReads"/>; the files are <see cref="SupervisorDecisionFiles"/>.</para>
 ///
 /// <para><b>Every check reads memory alone.</b> Each live decision is kept whole here: its question's snapshot, choice, reasons, holder,
-/// generation, when it was kept and goes on, its state, the release's receipt, the id of the word its release wrote, and an admission's
+/// generation, when it is kept and goes on, its state, the release's receipt, the id of the word its release wrote, and an admission's
 /// ticket. The release, the hold, the admission, the hand, the attribution and the overrule read nothing else.</para>
 ///
 /// <para><b>The files are written and never read back to decide</b>: <c>&lt;session&gt;.decisions/&lt;decision&gt;.json</c>, written once,
@@ -29,7 +29,7 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed class QuestionSupervisorDecisions
 {
-    /// <summary>Row 1's overrule window (§6.3): five minutes, where the role keeps none.</summary>
+    /// <summary>Row 1's overrule window: five minutes, where the role keeps none.</summary>
     public static readonly TimeSpan Window = TimeSpan.FromMinutes(RoleHold.DefaultWindow);
 
     /// <summary>The window the role may keep (<see cref="RoleHold"/>): 1 to 60 minutes.</summary>
@@ -42,7 +42,7 @@ public sealed class QuestionSupervisorDecisions
     public const string DecisionsSuffix = SessionHomeFiles.SupervisorDecisionsSuffix;
     public const string PointerSuffix = SessionHomeFiles.SupervisorPointerSuffix;
 
-    /// <summary>A reason's bounds, and how many (§3.1): 1 to 5, each <c>says</c> 1-300 and <c>source</c> 1-200.</summary>
+    /// <summary>A reason's bounds, and how many: 1 to 5, each <c>says</c> 1-300 and <c>source</c> 1-200.</summary>
     public const int MostReasons = 5, MaxSays = 300, MaxSource = 200;
 
     private readonly SupervisorBook _book;
@@ -66,7 +66,7 @@ public sealed class QuestionSupervisorDecisions
         _admission = admission;
     }
 
-    /// <summary>Whether a holder is admitted for <paramref name="repository"/> now: the agent supervisor is on there (CONTEXTDRIVE1j).</summary>
+    /// <summary>Whether a holder is admitted for <paramref name="repository"/> now: the agent supervisor is on there.</summary>
     public bool Admits(string? repository) => repository is not null && _admission.Admit(repository) is { Why: null, Generation: not null };
 
     /// <summary>Keep a course act on a referred point (<see cref="SupervisorCourses.KeepAsync"/>).</summary>
@@ -107,7 +107,7 @@ public sealed class QuestionSupervisorDecisions
         _releasing.SettleAsync(session, parked, ownerWaits, waiting, takeBack, now, ct);
 
     /// <summary>
-    /// <c>CannotGoOn</c> for a park whose own conversation cannot resume (§6.1): its released decision goes <c>stale</c>, its word taken
+    /// <c>CannotGoOn</c> for a park whose own conversation cannot resume: its released decision goes <c>stale</c>, its word taken
     /// back, and the park is a wait on the owner again.
     /// </summary>
     public Task CannotGoOnAsync(string session, SupervisorTakeBack takeBack, DateTimeOffset now, CancellationToken ct = default) =>
@@ -150,11 +150,11 @@ public sealed class QuestionSupervisorDecisions
     /// <summary>The paragraph the ticket's prompt hands, consuming the ticket (<see cref="SupervisorTickets.Hand"/>).</summary>
     public string? Hand(SupervisorTicket ticket) => _tickets.Hand(ticket);
 
-    /// <summary>The run built with the ticket's word was spawned (§6.3): <c>went-on</c>, at that moment.</summary>
+    /// <summary>The run built with the ticket's word is spawned: <c>went-on</c>, at that moment.</summary>
     public Task<bool> WentOnAsync(SupervisorTicket ticket, DateTimeOffset at, CancellationToken ct = default) =>
         _tickets.AfterAdmissionAsync(ticket, SupervisorState.WentOn, null, at, ct);
 
-    /// <summary>A failure between the admission and the wire (§6.3): <c>not-handed</c>, its caller restoring the park less the word.</summary>
+    /// <summary>A failure between the admission and the wire: <c>not-handed</c>, its caller restoring the park less the word.</summary>
     public Task<bool> NotHandedAsync(SupervisorTicket ticket, string why, DateTimeOffset at, CancellationToken ct = default) =>
         _tickets.AfterAdmissionAsync(ticket, SupervisorState.NotHanded, why, at, ct);
 
@@ -191,7 +191,7 @@ public sealed class QuestionSupervisorDecisions
     /// <summary>A session's decisions for its history (<see cref="SupervisorReads.History"/>).</summary>
     public IReadOnlyList<SupervisorDecisionView> History(string session) => _reads.History(session);
 
-    /// <summary>Exposed for the tests of §3.6's table: try any move on a live decision; true where it moved.</summary>
+    /// <summary>Exposed for the tests of the move table: try any move on a live decision; true where it moved.</summary>
     internal Task<bool> TryMoveAsync(string session, string decision, SupervisorState to, DateTimeOffset at) =>
         _book.TryMoveAsync(session, decision, to, at);
 }

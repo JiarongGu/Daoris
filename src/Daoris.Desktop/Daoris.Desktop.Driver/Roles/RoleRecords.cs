@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The work vocabulary a role takes (§2.7), spelled as the participant's work codes spell them, since Roles sits below Participants (as
+/// The work vocabulary a role takes, spelled as the participant's work codes spell them, since Roles sits below Participants (as
 /// <c>StartPlan.RoleOf</c> does); <c>RoleCatalogTests</c> holds the two alike.
 /// </summary>
 public static class RoleWork
@@ -24,7 +24,7 @@ public static class RoleWork
     public static IReadOnlyList<string> Codes { get; } = [Build, Design, Chat, AskDaoris, Intake, Help, Partner, Review, Brainstorm];
 }
 
-/// <summary>Where a role works (§2.7): the machine, a workspace or a repository, the most specific scope's role taking a work there.</summary>
+/// <summary>Where a role works: the machine, a workspace or a repository, the most specific scope's role taking a work there.</summary>
 /// <param name="Kind"><c>machine</c>, <c>workspace</c> or <c>repository</c>.</param>
 /// <param name="Id">The workspace's or repository's id; none for the machine.</param>
 public sealed record RoleScope(string Kind, string? Id = null)
@@ -55,7 +55,7 @@ public sealed record RoleScope(string Kind, string? Id = null)
 public readonly record struct RolePlace(string? Workspace = null, string? Repository = null);
 
 /// <summary>
-/// A role of the catalogue (the foundation design §2.7): <c>filled</c> is <c>always</c> for a working role, which <c>takes</c> work and
+/// A role of the catalogue: <c>filled</c> is <c>always</c> for a working role, which <c>takes</c> work and
 /// holds no acts, or <c>appointed</c> for the supervisor and the steward, which hold acts and take no work (<see cref="RoleHold"/>). A
 /// record holding both is a mixed shape, which no door writes and no read accepts.
 /// </summary>

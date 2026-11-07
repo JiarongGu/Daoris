@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 public sealed record SuggestedChoices(string Role, IReadOnlyList<ActorChoice> Choices);
 
 /// <summary>
-/// The choices Daoris suggests for the seeded roles (MODELROLE1g; D205 point 7 and its 2026-10-25 note, the actors design §6.2): one dated
+/// The choices Daoris suggests for the seeded roles: one dated
 /// table in Claude Code's own aliases, held to <c>docs/model-roles.md</c> by <see cref="Census"/>. Build is led by the <b>build-settled</b>
 /// row (<c>sonnet</c> · high) and then the <b>build-judgement</b> row (<c>opus</c> · high); Second opinion, Helper, Partner and Brainstorm
 /// are decision support and keep <c>opus</c> · high where they name Claude Code. Never a preset: the person's press copies it into their
@@ -14,7 +14,7 @@ public sealed record SuggestedChoices(string Role, IReadOnlyList<ActorChoice> Ch
 /// </summary>
 public static partial class ActorSuggestion
 {
-    /// <summary>The day the table was read from the reference.</summary>
+    /// <summary>The day of the reference the table is read from.</summary>
     public const string Dated = "2026-10-31";
 
     /// <summary>The roles the table suggests for, in the screen's order.</summary>

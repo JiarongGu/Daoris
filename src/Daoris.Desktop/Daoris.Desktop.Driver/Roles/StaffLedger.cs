@@ -3,7 +3,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A role's policy as the store holds it (the staff policy design §2.1): its state, <see cref="Default"/> with no row, <see cref="Set"/>
+/// A role's policy as the store holds it: its state, <see cref="Default"/> with no row, <see cref="Set"/>
 /// while its digest is the role's choices', <see cref="Stale"/> once they changed or it does not read; the record, kept for the editor
 /// even when stale; its revision, the deletion's where there is no row; and the moment its window starts from.
 /// </summary>
@@ -18,8 +18,8 @@ public sealed record StaffPolicyRead(string State, StaffPolicy? Policy, long Rev
 }
 
 /// <summary>
-/// The store's half of a role's policy (STAFFPOLICY1a, D226; the staff policy design §2.1): <c>role_policy</c> and its revisions, read and
-/// written inside a caller's transaction, so the choices' writer can save or re-key the policy in its own (row b).
+/// The store's half of a role's policy: <c>role_policy</c> and its revisions, read and
+/// written inside a caller's transaction, so the choices' writer can save or re-key the policy in its own.
 /// </summary>
 /// <remarks>Its callers write a store at <see cref="Step"/> or later; a store held before it, by a start not yet settled, has no table.</remarks>
 public static class StaffPolicies
@@ -48,8 +48,8 @@ public static class StaffPolicies
 
     /// <summary>
     /// Save <paramref name="policy"/> as <paramref name="role"/>'s, set for <paramref name="choices"/>, where the revision the person read is
-    /// still the store's, and keep the revision; the window starts afresh where the rule or a choice's weight changed (§3.2). The caller
-    /// judged it (<see cref="StaffPolicy.Judge"/>). The new revision.
+    /// still the store's, and keep the revision; the window starts afresh where the rule or a choice's weight changed. The caller
+    /// judges it (<see cref="StaffPolicy.Judge"/>). The new revision.
     /// </summary>
     /// <exception cref="RoleRefusedException">The policy changed since <paramref name="read"/>: nothing is written, and the draft is the caller's to keep.</exception>
     public static long Save(DesktopWrite write, string role, StaffPolicy policy, IReadOnlyList<ActorChoice> choices, long read, string at)
@@ -80,8 +80,8 @@ public static class StaffPolicies
     }
 
     /// <summary>
-    /// Delete <paramref name="role"/>'s policy, as <i>Restore role defaults</i>, <i>Clear staffing</i> and a removal do (§2.4): its revisions
-    /// kept, a revision with no policy marking the deletion. Whether there was one.
+    /// Delete <paramref name="role"/>'s policy, as <i>Restore role defaults</i>, <i>Clear staffing</i> and a removal do: its revisions
+    /// kept, a revision with no policy marking the deletion. Whether there is one.
     /// </summary>
     public static bool Delete(DesktopWrite write, string role, string at)
     {
@@ -99,7 +99,7 @@ public static class StaffPolicies
         write.Scalar<long>("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'role_policy'") > 0;
 
     /// <summary>
-    /// Bind <paramref name="policy"/> to <paramref name="choices"/>, the staffing a write of Daoris's own just made (§2.1): the digest set and the
+    /// Bind <paramref name="policy"/> to <paramref name="choices"/>, the staffing a write of Daoris's own just made: the digest set and the
     /// record re-keyed in the revision it has, which is rewritten to say the same. Nothing where the digest is already the choices'.
     /// </summary>
     public static void Rekey(DesktopWrite write, string role, StaffPolicy policy, IReadOnlyList<ActorChoice> choices)
@@ -138,7 +138,7 @@ public static class StaffPolicies
     }
 }
 
-/// <summary>A start's hold on a choice in this process (§3.2): the role and the choice it counts on until the start opens or is refused.</summary>
+/// <summary>A start's hold on a choice in this process: the role and the choice it counts on until the start opens or is refused.</summary>
 public sealed class StaffReservation
 {
     internal StaffReservation(string role, StaffKey choice, DateTimeOffset at)
@@ -148,7 +148,7 @@ public sealed class StaffReservation
         At = at;
     }
 
-    /// <summary>When it was taken, by which a reservation no open or refusal ever answered is dropped (<see cref="StaffLedger.ReservationLife"/>).</summary>
+    /// <summary>When it is taken, by which a reservation no open or refusal ever answered is dropped (<see cref="StaffLedger.ReservationLife"/>).</summary>
     internal DateTimeOffset At { get; }
 
     public string Role { get; }
@@ -158,29 +158,29 @@ public sealed class StaffReservation
 }
 
 /// <summary>
-/// A look at a role's staffing (§3.1): the policy as read, the facts it was arranged by, the arrangement, and the reservation of its top pick
+/// A look at a role's staffing: the policy as read, the facts it is arranged by, the arrangement, and the reservation of its top pick
 /// where the look takes one (<see cref="StaffLedger.Take"/>); a preview takes none.
 /// </summary>
 public sealed record StaffTake(StaffPolicyRead Policy, StaffFacts Facts, StaffArrangement Arrangement, StaffReservation? Reservation);
 
 /// <summary>
-/// What a start that took an account count holds until it opens or is refused (STAFFPOLICY1c): the role and choice, the rule and why
+/// What a start that took an account count holds until it opens or is refused: the role and choice, the rule and why
 /// (<see cref="StaffBy"/>) with that said, and the reservation where a set policy arranged the walk.
 /// </summary>
 public sealed record StaffBinding(string Role, StaffKey Choice, string Rule, string By, string Said, StaffReservation? Reservation);
 
-/// <summary>A new start's row of <c>role_starts</c> (§3.2): its session, role, choice, why it was chosen, and the condition where it moved.</summary>
+/// <summary>A new start's row of <c>role_starts</c>: its session, role, choice, why it is chosen, and the condition where it moved.</summary>
 public sealed record StaffStart(string Session, string Role, StaffKey Choice, string By, string? Condition = null);
 
 /// <summary>
-/// The ledger of a home's role starts (STAFFPOLICY1a, D226; the staff policy design §3.2, §4.2): <c>role_starts</c>, a row per new start at
+/// The ledger of a home's role starts: <c>role_starts</c>, a row per new start at
 /// its open; the reservations of this process's looks under one lock; the day's counts; and the health mark. It coordinates a look's
 /// snapshot, its arrangement by <see cref="StaffJudge.Arrange"/> and its reservation under its lock, so two starts in one look count each
 /// other. Nothing reads it at a start yet (row c).
 /// </summary>
 /// <remarks>
 /// <para><b>In memory, this process's:</b> the reservations and the marks. A restart drops them and keeps <c>role_starts</c>.</para>
-/// <para><b>The day</b> is the machine's local day, in its zone as D125 reads a reset; an edit of the policy never refills it.</para>
+/// <para><b>The day</b> is the machine's local day, in the zone a reset is read in; an edit of the policy never refills it.</para>
 /// <para>The store is opened for one use and closed, a read never creating or writing it.</para>
 /// </remarks>
 /// <param name="home">The home whose store this is.</param>
@@ -192,7 +192,7 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
     /// <summary>The family a start's write moves.</summary>
     public const string Family = "role_starts";
 
-    /// <summary>How long an agent marked not answering stays marked, unless a prompt on it answers sooner (§4.2).</summary>
+    /// <summary>How long an agent marked not answering stays marked, unless a prompt on it answers sooner.</summary>
     public static readonly TimeSpan Mark = TimeSpan.FromMinutes(15);
 
     /// <summary>How many of the latest starts since a policy's <c>since</c> the balances are replayed from; held within −W and 2W they forget the rest.</summary>
@@ -212,10 +212,10 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
     /// <summary>The home this ledger keeps its tables in.</summary>
     public string Home => home;
 
-    /// <summary>The lines' moves to another choice, kept beside the starts (STAFFPOLICY1e).</summary>
+    /// <summary>The lines' moves to another choice, kept beside the starts.</summary>
     public StaffMoves Moves => new(home, settled, clock);
 
-    /// <summary>The supervisor's rules as this home's store holds them now (CONTEXTDRIVE1e).</summary>
+    /// <summary>The supervisor's rules as this home's store holds them now.</summary>
     public SupervisorRuleBook Rules() => SupervisorRuleBook.Read(home);
 
     /// <summary><paramref name="role"/>'s policy as the store holds it; default where there is no store or it is before the policy's step.</summary>
@@ -272,7 +272,7 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
         }
     }
 
-    /// <summary>The start's account count was given back: its reservation goes with it, once.</summary>
+    /// <summary>The start's account count is given back: its reservation goes with it, once.</summary>
     public void ReleaseBound(long number)
     {
         lock (_gate)
@@ -284,7 +284,7 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
     /// <summary>
     /// The start on account count <paramref name="number"/> opened as <paramref name="session"/>: its row of <c>role_starts</c> is written, once
     /// for the session, and its reservation dropped. A store that will not take the row does not fail the start; the binding is answered all the same.
-    /// Null where nothing was bound.
+    /// Null where nothing is bound.
     /// </summary>
     public StaffBinding? Opened(long number, string session, string? condition = null)
     {
@@ -327,7 +327,7 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
         lock (_gate) reservation.Choice = StaffKey.Of(taken);
     }
 
-    /// <summary>Give <paramref name="reservation"/> back, once: the start was refused before it opened.</summary>
+    /// <summary>Give <paramref name="reservation"/> back, once: the start is refused before it opens.</summary>
     public void Release(StaffReservation reservation)
     {
         lock (_gate) _reserved.Remove(reservation);
@@ -416,7 +416,7 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
     }
 
     /// <summary>
-    /// The tokens <paramref name="role"/>'s turns reported today, by the choice each turn's line names (STAFFPOLICY1e2): input plus output of every
+    /// The tokens <paramref name="role"/>'s turns reported today, by the choice each turn's line names: input plus output of every
     /// turn of the local day, read only where a choice of the policy has a daily budget of tokens. A turn whose door reported no count leaves its
     /// choice <see cref="StaffTokens.Unreported"/>, which holds the choice, never zero. A turn that names no choice is nobody's budget.
     /// </summary>

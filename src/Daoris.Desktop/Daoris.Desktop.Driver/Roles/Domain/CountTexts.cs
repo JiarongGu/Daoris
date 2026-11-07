@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One count of a line as Daoris hands it (CONTEXTDRIVE1b, CONTEXTDRIVE1i; the context-counters design §3, §5): the course's
+/// One count of a line as Daoris hands it: the course's
 /// <c>LineCount</c> as plain values, read below the course by the brief, a go-on's words and the supervisor's print and decision.
 /// </summary>
 /// <param name="Count">The count's code.</param>
@@ -26,7 +26,7 @@ public sealed record CountWatch(int At, string Do, string Place);
 public sealed record LinePartFact(string Session, string? Why);
 
 /// <summary>
-/// One go-on of a line as its events show it (§5's recent course): when, in which part, what took it on (<see cref="GoOnBy"/>), and who
+/// One go-on of a line as its events show it: when, in which part, what took it on (<see cref="GoOnBy"/>), and who
 /// answered where answers did (<see cref="GoOnBy.Helper"/>, <see cref="GoOnBy.Opinion"/>, <see cref="GoOnBy.Supervisor"/>).
 /// </summary>
 public sealed record GoOnFact(DateTimeOffset At, string Session, string By, IReadOnlyList<string> Answered);
@@ -58,8 +58,8 @@ public sealed record LineFacts(IReadOnlyList<CountFact> Counts, IReadOnlyList<Li
 }
 
 /// <summary>
-/// Daoris's words for a line's counts (CONTEXTDRIVE1b, CONTEXTDRIVE1i; the context-counters design §3 point 4, §5): composed from codes and
-/// numbers alone, each code worded from a closed list, so no agent's text, account or path reaches them. They say what was counted and
+/// Daoris's words for a line's counts: composed from codes and
+/// numbers alone, each code worded from a closed list, so no agent's text, account or path reaches them. They say what is counted and
 /// what Daoris does, never what the session must do.
 /// </summary>
 public static class CountTexts
@@ -67,7 +67,7 @@ public static class CountTexts
     /// <summary>The brief's item, as its heading names it.</summary>
     public const string Heading = "The line's course, as Daoris counts it";
 
-    /// <summary>The prefix a reason's source names a count by (§5): <c>count:answers-alone=2 (exact)</c>.</summary>
+    /// <summary>The prefix a reason's source names a count by: <c>count:answers-alone=2 (exact)</c>.</summary>
     public const string Cites = "count:";
 
     private const string HandOvers = "hand-overs";
@@ -119,7 +119,7 @@ public static class CountTexts
     };
 
     /// <summary>
-    /// The brief's lines (§3 point 1): one per count the line has that is not zero or that Daoris acts on, an at-least or unknown count
+    /// The brief's lines: one per count the line has that is not zero or that Daoris acts on, an at-least or unknown count
     /// saying so, in the order the counts were read. A count Daoris does not word is left out.
     /// </summary>
     public static IReadOnlyList<string> Lines(IReadOnlyList<CountFact> counts) =>
@@ -161,7 +161,7 @@ public static class CountTexts
         : "this machine";
 
     /// <summary>
-    /// A go-on's one line (§3 point 2), or none: the go-ons by answers alone in a row, which every go-on moves, and each count Daoris acts on
+    /// A go-on's one line, or none: the go-ons by answers alone in a row, which every go-on moves, and each count Daoris acts on
     /// that stands at its number or one short of it, with what Daoris does next.
     /// </summary>
     public static string? GoOn(IReadOnlyList<CountFact> counts)
@@ -194,7 +194,7 @@ public static class CountTexts
             : $"{phrase}; Daoris {does} after {watch.At}.";
     }
 
-    /// <summary>How a reason's source names <paramref name="count"/> (§5): its code, what it stands at and how it is known.</summary>
+    /// <summary>How a reason's source names <paramref name="count"/>: its code, what it stands at and how it is known.</summary>
     public static string Cite(CountFact count) =>
         count.N is { } n ? $"{Cites}{count.Count}={n} ({count.Known})" : $"{Cites}{count.Count} ({count.Known})";
 
@@ -202,7 +202,7 @@ public static class CountTexts
 
     /// <summary>
     /// Whether a reason's <paramref name="source"/> names a count, and if so whether it names one of <paramref name="handed"/>: its code, and
-    /// what it stood at and how it was known where the source says them. A source that does not name a count is none of this check's.
+    /// what it stands at and how it is known where the source says them. A source that does not name a count is none of this check's.
     /// </summary>
     public static bool NamesNone(string source, IReadOnlyList<CountFact>? handed)
     {
@@ -215,7 +215,7 @@ public static class CountTexts
     }
 
     /// <summary>
-    /// The supervisor's part (§5): every count with how it is known and its source, cited as a reason names it, what Daoris does on each
+    /// The supervisor's part: every count with how it is known and its source, cited as a reason names it, what Daoris does on each
     /// and whose that is, the line's parts with why each began, and its last go-ons with who answered. Daoris's facts, from its records.
     /// </summary>
     public static string Print(LineFacts facts)

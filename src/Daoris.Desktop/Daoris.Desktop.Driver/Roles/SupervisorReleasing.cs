@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The look's moves on a held decision (§3.4, §3.6, §6.3): the release that says the word, the settling of a record the owner or the run
+/// The look's moves on a held decision: the release that says the word, the settling of a record the owner or the run
 /// moved, the owner's overrule and the owner's words superseding. Every move is made under the session's lock in the
 /// <see cref="SupervisorBook"/>; this type holds no state of its own.
 /// </summary>
@@ -31,7 +31,7 @@ internal sealed class SupervisorReleasing(SupervisorBook book, IDecisionAdmissio
                     return book.Move(decision, SupervisorState.Stale, now, SupervisorWhy.Revoked);
                 }
 
-                // SUPERVISOR1b (§4.3): the line's counts read again here, under the decision's lock, before anything is said; the question's
+                // The line's counts read again here, under the decision's lock, before anything is said; the question's
                 // mark is read again by the service's own step, which refuses `owner-question` from the file it reads.
                 if (bound is not null && await bound(session, ct).ConfigureAwait(false) is { } held)
                 {
@@ -58,7 +58,7 @@ internal sealed class SupervisorReleasing(SupervisorBook book, IDecisionAdmissio
 
                 if (said.Refusal == "decision-taken")
                 {
-                    // A word claiming this decision under another key was never the release's: it is taken back by the look's quarantine.
+                    // A word claiming this decision under another key is never the release's: it is taken back by the look's quarantine.
                     log?.Warn("supervisor.unattributed", ("session", session));
                     return book.Move(decision, SupervisorState.Stale, now, SupervisorWhy.Forged);
                 }
@@ -74,7 +74,7 @@ internal sealed class SupervisorReleasing(SupervisorBook book, IDecisionAdmissio
     }
 
     /// <summary>
-    /// The look's reading of <paramref name="session"/>'s record, before it plans (§6.3, §3.6): a held decision with an owner's word
+    /// The look's reading of <paramref name="session"/>'s record, before it plans: a held decision with an owner's word
     /// waiting is <c>superseded</c>; a released one whose word is gone is <c>superseded</c>, and one on a record no longer parked is
     /// <c>stale</c> with its word taken back.
     /// </summary>
@@ -101,7 +101,7 @@ internal sealed class SupervisorReleasing(SupervisorBook book, IDecisionAdmissio
     }
 
     /// <summary>
-    /// The owner's <b>Overrule</b> (§6.3, <c>SUPERVISOR_OVERRULE</c>), under the decision's lock: while held it moves to <c>overruled</c>
+    /// The owner's <b>Overrule</b> (<c>SUPERVISOR_OVERRULE</c>), under the decision's lock: while held it moves to <c>overruled</c>
     /// with nothing to take back; while released its word is taken back first. From <c>admitted</c> on it changes nothing and answers
     /// the state. Null where no decision of this session is live by that id.
     /// </summary>
@@ -122,7 +122,7 @@ internal sealed class SupervisorReleasing(SupervisorBook book, IDecisionAdmissio
         }, ct);
 
     /// <summary>
-    /// The owner's words named <paramref name="question"/> (§6.3, <c>SESSION_INPUT</c> with its question): every held or released
+    /// The owner's words named <paramref name="question"/> (<c>SESSION_INPUT</c> with its question): every held or released
     /// decision on it moves to <c>superseded</c> at once, since the service's one owner-word operation already took a released word back.
     /// </summary>
     /// <returns>How many moved.</returns>

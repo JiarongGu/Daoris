@@ -4,14 +4,14 @@ using Microsoft.Data.Sqlite;
 
 namespace Daoris.Driver;
 
-/// <summary>What a write of a place's rules came to: the revision it wrote, or why it was refused, or neither where the store would not take it.</summary>
+/// <summary>What a write of a place's rules came to: the revision it wrote, or why it is refused, or neither where the store would not take it.</summary>
 public sealed record RuleWritten(long? Revision, RuleRefusal? Refusal)
 {
     public bool Stored => Revision is not null;
 }
 
 /// <summary>
-/// A place's rules kept in the desktop store (CONTEXTDRIVE1c; the context counters design §4.4): <c>supervisor_rules</c>, one row per rule,
+/// A place's rules kept in the desktop store: <c>supervisor_rules</c>, one row per rule,
 /// and <c>supervisor_rule_revisions</c>, each place's set as written. A set is written whole, judged by <see cref="SupervisorRules.Judge"/>
 /// in the same transaction, so a refused write leaves nothing. A store before the step, or none, holds no rule and takes none; a write the
 /// store refuses does not raise, it is said so (<see cref="RuleWritten.Stored"/> false). The executors read them through <see cref="SupervisorRuleBook"/>.
@@ -64,7 +64,7 @@ public sealed class SupervisorRuleStore(string home, Func<StoreSettled>? settled
     }
 
     /// <summary>
-    /// <see cref="Write"/> inside a transaction the caller holds (CONTEXTDRIVE1d), so the role door publishes a role, its policy and a place's
+    /// <see cref="Write"/> inside a transaction the caller holds, so the role door publishes a role, its policy and a place's
     /// rules in one. Judged against every place's set as the transaction reads it. The place's new revision.
     /// </summary>
     /// <exception cref="RuleRefusedException">The judge's refusal; the caller's transaction rolls back.</exception>

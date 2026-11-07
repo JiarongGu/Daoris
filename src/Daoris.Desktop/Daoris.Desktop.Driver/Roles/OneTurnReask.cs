@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The one re-ask comparison (D205 §3.3, §3.5(b), §3.5(f); FOUNDATION1j): a refusal at the open passes the refused entry on its account and
+/// The one re-ask comparison: a refusal at the open passes the refused entry on its account and
 /// the owner's walk is asked again, and the session already open goes on only where that walk names another entry of the refused one's agent
 /// on the very account it refused on. Every re-ask reads it here: a quest's start and an intake's through their start plan
 /// (<see cref="StartPlan.ReaskAsync"/>) and a one-turn owner's through <see cref="OneTurnReask{TChoice, TPassed}"/>.
@@ -20,7 +20,7 @@ public static class ReaskMove
 }
 
 /// <summary>
-/// A one-turn owner's refusal at the open, handled inside its own call (D205 §3.5(f), MODELROLE1e): a second opinion's reviewer, a helper
+/// A one-turn owner's refusal at the open, handled inside its own call: a second opinion's reviewer, a helper
 /// and a partner each walk their entries before the spawn, and their agent may still refuse the entry's model at the open, before any
 /// prompt. None of them has a next look to plan it again, so the refused (entry, account) is passed and the owner's own walk is asked
 /// again: a later entry of the same agent on the same account is set on the open session, and anything else ends the refused record
@@ -35,7 +35,7 @@ internal class OneTurnReask<TChoice, TPassed>
     private readonly List<TPassed> _passed = [];
 
     /// <param name="first">The choice the owner's walk answered, whose entry runs first.</param>
-    /// <param name="walk">The owner's own walk, asked again with what was passed left out.</param>
+    /// <param name="walk">The owner's own walk, asked again with what is passed left out.</param>
     public OneTurnReask(TChoice first, Func<IReadOnlyList<TPassed>, Task<TChoice>> walk)
     {
         Current = first;
@@ -43,16 +43,16 @@ internal class OneTurnReask<TChoice, TPassed>
     }
 
     /// <summary>
-    /// The opening note's actor line (§4.6) when a later entry of the actor ran, its passes the walk's own: <c>Ran as Second opinion's choice
-    /// 2, …</c>; nothing where entry 1 ran or nothing was passed.
+    /// The opening note's actor line when a later entry of the actor ran, its passes the walk's own: <c>Ran as Second opinion's choice
+    /// 2, …</c>; nothing where entry 1 ran or nothing is passed.
     /// </summary>
     public static void Say(ISessionEvents events, string sessionId, string actor, TChoice choice, MachineLog? log = null)
     {
         if (choice.Effective is not { } ran) return;
-        // The passes in the plan's one vocabulary (FOUNDATION1j part ii), never the owner's own codes.
+        // The passes in the plan's one vocabulary, never the owner's own codes.
         var passed = choice.Passes;
         RotatedOpening.SayActor(events, sessionId, actor, ran, passed);
-        // The machine log's line (§4.6): the choice and each passed one with its code, as every actor's start writes them.
+        // The machine log's line: the choice and each passed one with its code, as every actor's start writes them.
         log?.Write("info", "actor.chose", [("actor", actor), ("session", sessionId), ("choice", ran.From), ("agent", ran.Agent), ("model", ran.Model),
             ("passed", passed.Select(pass => pass.Word).ToList())]);
     }

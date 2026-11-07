@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The steward's verb hearing that its act asks the owner (STEWARDROLE1d): an act outside the acts the owner gave the steward waits for
+/// The steward's verb hearing that its act asks the owner: an act outside the acts the owner gave the steward waits for
 /// the owner's Confirm in Daoris's window as the owner's own press, and confirmed it is the owner's, never the steward's.
 /// </summary>
 public sealed class StewardAsked(string id, TextWriter output)
@@ -28,7 +28,7 @@ public sealed class StewardAsked(string id, TextWriter output)
         }
     }
 
-    /// <summary>What the verb says of an act the owner was asked: confirmed and done as theirs, or not done.</summary>
+    /// <summary>What the verb says of an act the owner is asked: confirmed and done as theirs, or not done.</summary>
     public string Ended(string act, bool done) => done
         ? $"steward: {act}: the owner confirmed it in Daoris's window; it is recorded as the owner's."
         : $"steward: {act}: the owner did not confirm it; nothing was done.";
