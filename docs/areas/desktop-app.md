@@ -101,8 +101,11 @@ web paths are under `src/Daoris.Web/src/`.
     session, one more for the terminal's, two to an asker; an ask naming no session is bound by its process, read from the loopback
     connection (`AskerProcess`, Windows), one place each, so an agent leaving its session off cannot hold both of the terminal's.
     (from D156, D196, D238)
-15. A standing confirmation the person grants in the window lets a terminal outside Daoris's agents stop or finish a
-    session and hold or resume a repository with no card. Each use is logged and can be revoked at once. (from D201)
+15. The steward's acts are the standing confirmation: the person appoints the steward to the terminal and grants its acts in
+    the window, and its terminal's press proved by the role's key stops or finishes a session, holds or resumes a repository
+    and makes its other acts with no card, outside Daoris's agents. Each use is logged and said on the steward's line in
+    *Notifications*, and taking an act back holds from the next press, which asks as the person's own. D201's grant of its own
+    is not offered. (from D201, D209)
 
 **The windows**
 

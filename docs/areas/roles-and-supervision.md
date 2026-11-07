@@ -40,7 +40,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `SupervisorBook`, `SupervisorDecisionFiles`, `SupervisorKeeping`, `SupervisorReleasing`, `SupervisorSweeps`, `SupervisorTickets`, `SupervisorReads` | `Roles/Supervisor*.cs` | The decisions' shared memory (live decisions, session locks, closed questions) and its one move in the book; the files, keeping, releasing, sweeps, tickets and reads each reach it and keep no state |
 | `SessionsSuperviseCommand`, `SupervisorQuarantine`, `HolderKey` | `Roles/SessionsSuperviseCommand.cs`, `Roles/SupervisorQuarantine.cs`, `Roles/SupervisorProof.cs` | The holder's verb; unattributed words taken back; the key, its proof and the role terminal's verbs |
 | `StandingConfirmation` | `Modules/Platform/StandingConfirmation.cs` | The roles' terminals this run: holds, generations, holders; the act judge over the catalogue. The doors; the memory is `StandingState`'s under its one lock, which `StandingGrant` (the grant and a press's judgement), `RoleTerminals` (starts, catalogue changes, a holder's end), `RoleJudge` (the role method, the decisions' admission), `RoleActsLedger` (acts, operations, the owner's marks) and `StewardRecord` (the steward's acts this run) reach |
-| Steward | `Roles/StewardCommand.cs`, `Modules/Bridge/StewardActRows.cs`, `Modules/Platform/RoleActs.cs` | `steward <act>` over `ROLE_ACT`; the eight acts; pending operations |
+| Steward | `Roles/StewardCommand.cs`, `Roles/StewardAsked.cs`, `Modules/Bridge/StewardActRows.cs`, `Modules/Bridge/StewardRouteAct.cs`, `Modules/Platform/RoleActs.cs`, `Modules/Platform/StewardAsk.cs` | `steward <act>` over `ROLE_ACT`, and its words when an act asks the owner; the nine acts, the route acts among them; pending operations; an act outside the granted ones sent on as its person's press |
 | `StartAdmission`, `CallTable` | `Participants/Domain/StartAdmission.cs`, `Service/Daoris.Service.Mcp/CallTable.cs` | Who may ask for a co-worker; which tools each work is served |
 | `HelpProposals`, `HelpProposalKinds` | `Help/HelpProposals.cs`, `Help/HelpProposalKinds.cs`, `Help/Proposals/` | Ask Daoris's 16 proposal kinds, each judged by its route's code and applied by the person |
 | `HelpModes`, `HelpSwap`, `HelpHousekeeping`, `HelpSettings`, `HelpReceipt` | `Help/HelpMode.cs` and its neighbours, `Help/HelpWired.cs` | Access mode, its change at a turn, configured access, what a start handed |
@@ -206,9 +206,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     unattributable one is quarantined. (from D208, D233)
 50. The owner's own words supersede a supervisor's decision; *Overrule* takes it back until the move to working admits
     it. (from D208)
-51. The steward, scoped to this Daoris, makes the acts its role's `authority` lists of eight with no card: drive, undrive,
-    trees, hold, resume, stop, finish and try again, each one exact form over `ROLE_ACT`; `setup` only where the person lists
-    it. Everything else is never a role's act. (from D209, D233)
+51. The steward, scoped to this Daoris, makes the acts its role's `authority` lists of nine with no card: drive, undrive,
+    trees, hold, resume, stop, finish, try again and a repository's workflow, each one exact form over `ROLE_ACT`, logged
+    `role.act` and said on its line; `setup` only where the person lists it. The workflow is a route act (`StewardRouteAct`):
+    its person's route, `WORKFLOW_USE`, run inside the role's door, a refusal of the route refusing the act. These acts are
+    D201's standing confirmation: the person grants and takes back each in the role editor, read at every act. A proved
+    holder's act outside them asks the person as its row's person's route (`StewardAsk`, `role.asked`), a card in
+    *Notifications*, and confirmed it is the person's own press; a process that does not prove the key is refused, nothing
+    asked. Everything else is never a role's act. (from D201, D209, D233)
 52. What the owner does to a repository, a quest or a session makes it the owner's for the run (`owner-set`). Every
     release the steward writes is kept in `roleReleases`, `by: steward`. (from D209)
 
@@ -250,7 +255,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 - **A supervisor count or action:** `SupervisorRules` (windows, allowed actions, bounds), the count in
   `Course/Domain/LineCounts.cs`, and the executor's read through `SupervisorRuleBook`. No course step.
 - **The agent supervisor:** `QuestionSupervisorDecisions`, `SupervisorDecision`, `Modules/Bridge/SupervisorDoor.cs`.
-- **A steward act:** a row in `Modules/Bridge/StewardActRows.cs`, behind its own look.
+- **A steward act:** a row in `Modules/Bridge/StewardActRows.cs`, naming its person's route; one that is a person's route
+  writing no one's words is a `StewardRouteAct`. Its name in `StewardActNames`, the verb's grammar, the web's `ACTS` and
+  `STEWARD_ACTS`, and its words in both catalogues.
 - **An Ask Daoris door:** a file of its own in `Help/Proposals/`, registered by one line in `HelpProposalKinds.All`, with
   the service's writer `HelpProposalBox.<Kind>.cs`, the page's card, and its row in the room's doors table. Only where one is wanted.
 - **The page:** `Web/agents/roles/` and `Web/agents/setup/`.
@@ -307,6 +314,10 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 - **SUPERVISOR1a-i (rest):** the author sweep test, the page's decision mark with *Overrule*, the go-on's process cases.
 - **SUPERVISOR1a-iii:** the supervisor's activation (its flag on, on a candidate build).
 - **QUESTIONUI1b, SUPERVISOR1d, SUPERVISOR1c, SUPERVISOR1f:** the pick on the card; the bench; the `actor` holder; words.
-- **STEWARDROLE1d to 1h:** the steward's activation, hand-over, go-on, set-up, and free words.
+- **STEWARDROLE1d (rest):** a quest's pause, resume, done and delete, a tree's land and clean, and an update's now and cancel as
+  the steward's acts: pause and resume write the person's stop, done and delete are the service's doors with no pipe route, and
+  the update is another module's, so each needs its own steward wording or route first; D201's grant of its own deleted
+  (`SET_STANDING_CONFIRMATION`, its record, This Daoris's row, `PipeDoor.Standing`, `standing.terminal`); the installed look.
+- **STEWARDROLE1e to 1h:** the steward's hand-over, go-on, set-up, and free words.
 - **ROLEPERM1, PERSONDOOR1c-i:** permission answers through appointed actors; the role's boundary at every door.
 - **SETUPUX1y:** the places tree lit by default, retiring the Roles sections under Setup.
