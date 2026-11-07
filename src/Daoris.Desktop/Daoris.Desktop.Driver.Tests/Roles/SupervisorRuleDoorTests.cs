@@ -123,8 +123,9 @@ public sealed class SupervisorRuleDoorTests : IDisposable
     [Theory]
     [InlineData("""{ "id": "supervisor", "change": "remove" }""", "may-not-be-off")]
     [InlineData("""{ "id": "supervisor", "change": "set", "role": { "name": "Supervisor", "takes": ["build"] } }""", "mixed-shape")]
-    [InlineData("""{ "id": "supervisor", "change": "set", "role": { "name": "Supervisor", "filled": "appointed", "kind": "supervisor", "authority": ["question.answer", "course.go-on", "limit.move"], "holder": "agent" } }""", "appointed-not-configurable")]
-    [InlineData("""{ "id": "supervisor", "change": "set", "role": { "name": "Supervisor", "filled": "appointed", "kind": "supervisor", "authority": ["question.answer", "course.go-on", "limit.move"], "holder": "terminal" }, "choices": [{ "agent": "claude" }] }""", "appointed-not-configurable")]
+    [InlineData("""{ "id": "supervisor", "change": "set", "role": { "name": "Supervisor", "filled": "appointed", "kind": "supervisor", "authority": ["question.answer", "course.go-on", "limit.move"], "holder": "agent" } }""", "choices")]
+    [InlineData("""{ "id": "supervisor", "change": "set", "role": { "name": "Supervisor", "filled": "appointed", "kind": "supervisor", "authority": ["question.answer", "course.go-on", "limit.move"], "holder": "agent" }, "choices": [{ "agent": "claude", "model": "opus" }] }""", null)]
+    [InlineData("""{ "id": "supervisor", "change": "set", "role": { "name": "Supervisor", "filled": "appointed", "kind": "supervisor", "authority": ["question.answer", "course.go-on", "limit.move"], "holder": "terminal" }, "choices": [{ "agent": "claude" }] }""", "choices")]
     [InlineData("""{ "id": "supervisor", "change": "set", "role": { "name": "Supervisor", "filled": "appointed", "kind": "supervisor", "authority": ["question.answer", "course.go-on", "limit.move"], "holder": "terminal", "window": 12 } }""", null)]
     [InlineData("""{ "id": "supervisor", "change": "set", "role": { "name": "Supervisor", "filled": "appointed", "kind": "supervisor", "authority": ["answer"], "holder": "terminal" } }""", "bad-record")]
     public void ROLEONE1_the_supervisor_s_own_press_is_a_role_s_press_its_judge_reads(string json, string? code)

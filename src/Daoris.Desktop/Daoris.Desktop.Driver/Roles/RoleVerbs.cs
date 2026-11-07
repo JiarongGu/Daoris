@@ -18,12 +18,19 @@ public sealed class RoleVerb : ChoiceVerb
 
     private const string Grammar =
         "`driver role set <id> [--name \"…\"] [--name-in <tag>=\"…\"]… [--takes <work,…>] [--scope machine|workspace:<id>|repository:<id>] "
-        + "[\"<agent> [<model>|-] [<effort>|-]\" … | off]`, an appointed role's `[--decides <kind,…>|every] [--acts <act,…>] [--holder terminal|rules|none] [--window <1-60>]`, "
+        + "[\"<agent> [<model>|-] [<effort>|-]\" … | off]`, an appointed role's `[--decides <kind,…>|every] [--acts <act,…>] [--holder terminal|rules|agent|none] [--window <1-60>]`, an agent's choices as a working role's, "
         + "`driver role remove <id>`, `driver role default <id>` or `driver role default --all`";
 
     /// <summary><c>role suggested [--use]</c>: the choices Daoris suggests for the seeded roles, said, or with <c>--use</c> set through the role door; null for the rest.</summary>
     public override Task<int>? RunAsync(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world, CancellationToken ct) =>
         args.Count > 1 && args[1] == "suggested" ? Task.FromResult(Suggested(args, world)) : null;
+
+    /// <summary>
+    /// The refusal of every write of the person's roles from a process an agents' job holds: a supervisor's turn would otherwise widen
+    /// its own grants from its own process, whatever its harness denies.
+    /// </summary>
+    internal const string InAgentJob =
+        "`driver role` writes the person's roles, and this process is one of an agent Daoris runs: make the change in Daoris's window or from your own terminal; nothing was written.";
 
     private static int Suggested(IReadOnlyList<string> args, DriverChoicesWorld world)
     {
@@ -32,6 +39,12 @@ public sealed class RoleVerb : ChoiceVerb
         {
             world.Instance.Error.WriteLine($"{DriverChoicesCommand.Prefix}: `driver role suggested` takes `--use` alone.");
             return 2;
+        }
+
+        if (args.Contains("--use") && world.InAgentJob() == true)
+        {
+            world.Instance.Error.WriteLine($"{DriverChoicesCommand.Prefix}: {InAgentJob}");
+            return 1;
         }
 
         var use = args.Contains("--use");
@@ -224,6 +237,7 @@ public sealed class RoleVerb : ChoiceVerb
 
     public override ChoicePress Plan(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
+        if (world.InAgentJob() == true) throw new ChoiceWords(InAgentJob, 1);
         if (args.Count > 1 && args[1] == "policy") return PolicyPlan(args, before, world);
         if (args.Count > 1 && args[1] == "rules") return RulesPlan(args, world);
         if (args.Count < 3 || !Changes.Contains(args[1]) || args[1] == "policy") throw new ChoiceWords($"{Grammar}.");
@@ -440,7 +454,7 @@ public sealed class RoleVerb : ChoiceVerb
     /// <summary>An appointed role's line: the acts it holds, where, who holds it, and the supervisor's window.</summary>
     private static string Held(RoleHold hold, string? kind, string? scope) =>
         $"holds {string.Join(", ", hold.Acts)} {Where(kind, scope)} · "
-        + (hold.Holder switch { RoleHolders.Terminal => "held by a terminal", RoleHolders.Rules => "held by your rules", _ => "held by no one" })
+        + (hold.Holder switch { RoleHolders.Terminal => "held by a terminal", RoleHolders.Rules => "held by your rules", RoleHolders.Agent => "held by an agent", _ => "held by no one" })
         + (hold.Kind == AppointedRoles.Supervisor ? $" · answers held {hold.Window} minutes for your overrule" : "");
 
     private static string Where(string? kind, string? scope) => kind is null or RoleScope.Machine ? "on the machine" : $"in {kind} `{scope}`";
