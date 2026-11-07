@@ -34,7 +34,7 @@ export function sheetsOf(doors: readonly ToolDoor[], rows: (door: ToolDoor) => S
         deviceCode: ordered.some((door) => Boolean(door.deviceCode)),
         installs: ordered.some((door) => door.installs !== false),
       },
-      doors: ordered.map((door) => ({ door: door.harness, wire: door.wire === 'acp' ? 'acp' as const : 'pipe' as const, rows: rows(door) })),
+      doors: ordered.map((door) => ({ door: door.harness, transport: door.transport === 'protocol' ? 'protocol' as const : 'native' as const, rows: rows(door) })),
       lead: ordered[0]?.harness ?? null,
     };
   });
@@ -51,7 +51,7 @@ export const toolsOf = (doors: readonly ToolDoor[], rows?: (door: ToolDoor) => S
 
 const CLAUDE: ToolDoor = {
   harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: '2.1.4 (Claude Code)',
-  wire: 'pipe', structured: true, takesRules: true, signsIn: true, takesKey: true, pinnable: true, updates: 'tool',
+  transport: 'native', structured: true, takesRules: true, signsIn: true, takesKey: true, pinnable: true, updates: 'tool',
   ownLogin: 'unknown', ownRead: null, ownAccount: null,
   settingsChoices: { models: ['default', 'sonnet', 'opus'], efforts: ['low', 'medium', 'high'] },
   profiles: [
@@ -65,22 +65,22 @@ const CLAUDE: ToolDoor = {
 };
 
 const CLAUDE_ACP: ToolDoor = {
-  ...CLAUDE, harness: 'claude-code-acp', accountOf: 'claude-code', wire: 'acp', version: '0.9.1', updates: 'pin', takesKey: false,
+  ...CLAUDE, harness: 'claude-code-acp', accountOf: 'claude-code', transport: 'protocol', version: '0.9.1', updates: 'pin', takesKey: false,
 };
 
 const CODEX: ToolDoor = {
-  harness: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', present: true, version: '0.159.3', wire: 'acp',
+  harness: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', present: true, version: '0.159.3', transport: 'protocol',
   signsIn: true, pinnable: true, ownLogin: 'unknown', settingsChoices: null,
   profiles: [{ name: 'account-1', home: 'C:/somewhere/data/harnesses/codex/account-1', login: 'in', account: 'codex@example.invalid', read: READ }],
 };
 
 const DSH: ToolDoor = {
-  harness: 'dsh', product: 'DeepSeek Harness', maker: 'DeepSeek', present: false, version: null, wire: 'acp', pinnable: true,
+  harness: 'dsh', product: 'DeepSeek Harness', maker: 'DeepSeek', present: false, version: null, transport: 'protocol', pinnable: true,
   problem: '`dsh` is not on this machine\'s PATH — `daoris agent install dsh` installs it', profiles: [],
 };
 
 const DECLARED: ToolDoor = {
-  harness: 'acme-agent', product: 'Acme agent', maker: 'Acme', present: true, version: '(not asked)', wire: 'acp',
+  harness: 'acme-agent', product: 'Acme agent', maker: 'Acme', present: true, version: '(not asked)', transport: 'protocol',
   plugin: 'acme.gate', pinnable: false, signsIn: false, profiles: [],
 };
 
@@ -92,7 +92,7 @@ const row = (capability: string, value: string | null, source: SheetRow['source'
 
 /** A door's sheet as a driver answers it: the native door declares most, the protocol door's come from its opening. */
 function sheetRows(door: ToolDoor): SheetRow[] {
-  const protocol = door.wire === 'acp';
+  const protocol = door.transport === 'protocol';
   return [
     row('door', protocol ? 'protocol' : 'native', 'declared'),
     row('conversation', 'yes', 'declared'),

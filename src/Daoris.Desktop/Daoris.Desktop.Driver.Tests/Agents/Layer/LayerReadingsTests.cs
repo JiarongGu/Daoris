@@ -15,7 +15,7 @@ public sealed class LayerReadingsTests
 {
     private static readonly DateTimeOffset Now = new(2026, 11, 6, 9, 0, 0, TimeSpan.Zero);
 
-    private static LayerReadings Readings() => new("pipe", new FixedClock(Now), TimeSpan.FromHours(1));
+    private static LayerReadings Readings() => new("native", new FixedClock(Now), TimeSpan.FromHours(1));
 
     [Fact]
     public void The_agent_s_words_are_its_lines_shown_and_one_message_kept()
@@ -73,7 +73,7 @@ public sealed class LayerReadingsTests
     public void A_terminal_the_stream_never_stated_says_nothing_on_a_clean_exit_or_after_Daoris_s_kill(
         string? subtype, bool failed, bool clean, bool killed, int said)
     {
-        var translation = new LayerReadings("pipe", TimeProvider.System, TimeSpan.FromHours(1)) { Clean = () => clean, Killed = () => killed };
+        var translation = new LayerReadings("native", TimeProvider.System, TimeSpan.FromHours(1)) { Clean = () => clean, Killed = () => killed };
 
         var read = translation.Read(new SessionEnded(failed ? ProviderVerdict.Failed : ProviderVerdict.Ok, failed, subtype, null, null, "why")
         {
@@ -128,7 +128,7 @@ public sealed class LayerReadingsTests
         });
 
         var failed = Assert.IsType<WireReading.Failed>(ended[0]).Failure;
-        Assert.Equal(("pipe", DoorWhere.Result, "the words"), (failed.Door, failed.Where, failed.Words));
+        Assert.Equal(("native", DoorWhere.Result, "the words"), (failed.Door, failed.Where, failed.Words));
         Assert.Equal(("layer:tests:limit", AgentErrorKind.Limit), (translation.Failure!.By, translation.Failure.Kind));
         Assert.Equal("— the turn failed (error_during_execution): the words", Assert.IsType<WireReading.Shown>(ended[1]).Text);
     }
@@ -245,23 +245,23 @@ public sealed class LayerReadingsTests
     [Fact]
     public void A_refused_model_is_the_ending_s_flag_by_its_whole_outcome_on_a_native_turn_that_ran_nothing()
     {
-        Assert.True(Refused("pipe", AgentFailureKind.Fatal, LayerTestProvider.RefusedBy, OwnersModel));
+        Assert.True(Refused("native", AgentFailureKind.Fatal, LayerTestProvider.RefusedBy, OwnersModel));
 
         // A limit and a capacity scoped to the model, another entry, no restriction, a turn that spoke, a stop, a protocol open's turn: none.
-        Assert.False(Refused("pipe", AgentFailureKind.Limit, LayerTestProvider.RefusedBy, OwnersModel with { Cause = RestrictionCause.Credit }));
+        Assert.False(Refused("native", AgentFailureKind.Limit, LayerTestProvider.RefusedBy, OwnersModel with { Cause = RestrictionCause.Credit }));
         Assert.False(Refused(
-            "pipe", AgentFailureKind.Transient, LayerTestProvider.RefusedBy, new(RestrictionCause.Capacity, RestrictionSubject.Model, RestrictionRecovery.Unknown)));
-        Assert.False(Refused("pipe", AgentFailureKind.Fatal, "tests:other", OwnersModel));
-        Assert.False(Refused("pipe", AgentFailureKind.Fatal, LayerTestProvider.RefusedBy, null));
-        Assert.False(Refused("pipe", AgentFailureKind.Fatal, LayerTestProvider.RefusedBy, OwnersModel, speaks: true));
-        Assert.False(Refused("pipe", AgentFailureKind.Fatal, LayerTestProvider.RefusedBy, OwnersModel, stops: true));
+            "native", AgentFailureKind.Transient, LayerTestProvider.RefusedBy, new(RestrictionCause.Capacity, RestrictionSubject.Model, RestrictionRecovery.Unknown)));
+        Assert.False(Refused("native", AgentFailureKind.Fatal, "tests:other", OwnersModel));
+        Assert.False(Refused("native", AgentFailureKind.Fatal, LayerTestProvider.RefusedBy, null));
+        Assert.False(Refused("native", AgentFailureKind.Fatal, LayerTestProvider.RefusedBy, OwnersModel, speaks: true));
+        Assert.False(Refused("native", AgentFailureKind.Fatal, LayerTestProvider.RefusedBy, OwnersModel, stops: true));
         Assert.False(Refused("protocol", AgentFailureKind.Fatal, LayerTestProvider.RefusedBy, OwnersModel));
     }
 
     [Fact]
     public void A_child_s_words_do_not_count_as_the_turn_having_run()
     {
-        var translation = new LayerReadings("pipe", new FixedClock(Now), TimeSpan.FromHours(1), new LayerRefusals([LayerTestProvider.RefusedBy]));
+        var translation = new LayerReadings("native", new FixedClock(Now), TimeSpan.FromHours(1), new LayerRefusals([LayerTestProvider.RefusedBy]));
         translation.Read(new TextDelta("a child's") { ParentCallId = "c1" });
         translation.Read(new SessionEnded(ProviderVerdict.Failed, true, "error_during_execution", null, null, "why")
         {

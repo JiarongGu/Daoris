@@ -23,7 +23,7 @@ public sealed class AccessDispositionTests
         Assert.Equal(AccessDisposition.Refused, Read("claude-code-acp", -32603, null, "Internal error: API Error: 401 API key is invalid.").Access);
         Assert.Equal(
             AccessDisposition.Refused,
-            Read("claude-code-acp", null, null, "Failed to authenticate. API Error: 401 API key is invalid.", DoorWhere.Harness).Access);
+            Read("claude-code-acp", null, null, "Failed to authenticate. API Error: 401 API key is invalid.", DoorWhere.Lines).Access);
     }
 
     [Fact]

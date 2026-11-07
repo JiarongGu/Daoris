@@ -143,7 +143,7 @@ describe('the box on every session that takes words', () => {
 
   /** D137 §2.4: a driven session on the native door takes its words as one argument, so longer ones are refused first. */
   it('refuses words longer than the native door takes, before sending, and keeps them', async () => {
-    const PIPE = { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], wire: 'pipe' }] };
+    const PIPE = { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], transport: 'native' }] };
     driver({ reaches: 'resume' }, undefined, { HARNESSES: PIPE });
     show('s1a2b3c4');
 

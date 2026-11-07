@@ -117,7 +117,7 @@ public sealed partial class UsageStateSliceTests : DriverModuleBridge
         Assert.Equal(("claude-code", "work", 2, 60_000L), (
             account.GetProperty("agent").GetString(), account.GetProperty("profile").GetString(), account.GetProperty("sessions").GetInt32(),
             account.GetProperty("used").GetInt64()));
-        Assert.Equal(["claude-code", "claude-code-acp"], usage.GetProperty("sessions").EnumerateArray().Select(each => each.GetProperty("harness").GetString()).Order(StringComparer.Ordinal));
+        Assert.Equal(["claude-code", "claude-code-acp"], usage.GetProperty("sessions").EnumerateArray().Select(each => each.GetProperty("door").GetString()).Order(StringComparer.Ordinal));
     }
 
     /// <summary>

@@ -36,7 +36,7 @@ public sealed class HostPolicyModelRefusalTests
     [InlineData(Transport.Native, DoorWhere.Result, true, false, ModelRefusalPath.Ending)]
     [InlineData(Transport.Native, DoorWhere.Result, false, false, ModelRefusalPath.AsToday)]
     [InlineData(Transport.Native, DoorWhere.Result, true, true, ModelRefusalPath.AsToday)]
-    [InlineData(Transport.Native, DoorWhere.Harness, true, false, ModelRefusalPath.AsToday)]
+    [InlineData(Transport.Native, DoorWhere.Lines, true, false, ModelRefusalPath.AsToday)]
     [InlineData(Transport.Protocol, DoorWhere.Open, true, false, ModelRefusalPath.ReAsk)]
     [InlineData(Transport.Protocol, DoorWhere.Prompt, true, false, ModelRefusalPath.AsToday)]
     public void Host_policy_maps_a_refused_model_by_door_and_phase(Transport door, string where, bool ranNothing, bool stopped, ModelRefusalPath path)

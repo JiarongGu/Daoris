@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// <param name="Used">Context held, at its high-water mark, in the harness's own units.</param>
 /// <param name="Size">The window it was held against.</param>
 public sealed record UsageEntry(
-    string Session, string Repository, string Harness, string? Profile,
+    string Session, string Repository, string Door, string? Profile,
     long Used, long Size, DateTimeOffset When)
 {
     /// <summary>
@@ -84,7 +84,7 @@ public sealed class SessionUsage(string home)
     public static IReadOnlyList<AccountUsage> ByAccount(IEnumerable<UsageEntry> sessions, AgentOfDoor agents) =>
     [
         .. sessions
-            .GroupBy(e => (Agent: agents.Of(e.Harness), e.Profile))
+            .GroupBy(e => (Agent: agents.Of(e.Door), e.Profile))
             .Select(g => new AccountUsage(g.Key.Agent, g.Key.Profile, g.Count(), g.Sum(e => e.Used)))
             .OrderBy(a => a.Agent, StringComparer.Ordinal)
             .ThenBy(a => a.Profile ?? "", StringComparer.Ordinal),
@@ -169,7 +169,7 @@ public sealed class SessionUsage(string home)
         return new UsageEntry(
             session,
             Json.Text(row, "repository") ?? "",
-            Json.Text(row, "harness") ?? "",
+            Json.Text(row, "door") ?? "",
             Json.Text(row, "profile"),
             Json.Long(row, "used") ?? 0,
             Json.Long(row, "size") ?? 0,
@@ -192,7 +192,7 @@ public sealed class SessionUsage(string home)
                 writer.WriteStartObject();
                 writer.WriteString("session", entry.Session);
                 writer.WriteString("repository", entry.Repository);
-                writer.WriteString("harness", entry.Harness);
+                writer.WriteString("door", entry.Door);
                 if (entry.Profile is { Length: > 0 } profile) writer.WriteString("profile", profile);
                 if (entry.Brainstorm is { Length: > 0 } brainstorm) writer.WriteString("brainstorm", brainstorm);
                 writer.WriteNumber("used", entry.Used);

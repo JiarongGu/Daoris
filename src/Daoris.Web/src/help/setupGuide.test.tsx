@@ -31,7 +31,7 @@ type World = {
 
 const FRESH: World = {
   registry: [],
-  state: { drivable: [], holds: [], trees: [], running: [], helperAdapter: '', intakeAdapter: '' },
+  state: { drivable: [], holds: [], trees: [], running: [], helperAgent: '', intakeAgent: '' },
   harnesses: [{ harness: 'claude-code', present: false, ownLogin: 'unknown' }],
   lines: [],
   landings: [],
@@ -131,7 +131,7 @@ describe('Get started, on the desktop', () => {
 
   /** SETUP1b: the head hands Ask Daoris a first message, once it has an agent to run on. */
   it('hands Ask Daoris the steps not yet done, once it has an agent', async () => {
-    machine({ ...FRESH, state: { ...FRESH.state, helperAdapter: 'claude-code-acp' } });
+    machine({ ...FRESH, state: { ...FRESH.state, helperAgent: 'claude-code-acp' } });
     const onAskSetup = vi.fn();
     show(vi.fn(), onAskSetup);
 

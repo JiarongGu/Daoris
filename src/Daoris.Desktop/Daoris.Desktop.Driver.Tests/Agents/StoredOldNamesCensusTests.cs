@@ -91,24 +91,12 @@ public sealed class StoredOldNamesCensusTests : IDisposable
             "Daoris.Desktop/Daoris.Desktop.Driver/Store/DesktopStoreSteps.cs",
         ],
         ["Ask Daoris's wired file"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/WiredFilesStep.cs"],
-        ["the usage entries"] =
-        [
-            "Daoris.Desktop/Daoris.Desktop.Driver/Agents/Usage.cs",
-            "Daoris.Desktop/Daoris.Desktop.Modules/Loop/UsageStateSlice.cs",
-        ],
+        ["the usage file"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/UsageFileStep.cs"],
         ["the lineage"] =
         [
             "Daoris.Desktop/Daoris.Desktop.Driver/Events/Chain.cs",
             "Daoris.Desktop/Daoris.Desktop.Driver/Participants/Domain/ChildBindings.cs",
             "Daoris.Service/Daoris.Service.Core/Sessions/LineageFile.cs",
-        ],
-        ["a door's failure and transport"] =
-        [
-            "Daoris.Desktop/Daoris.Desktop.Driver/Agents/DoorFailures.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Events/Readings/DoorFailure.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Loop/Session/NativeLimits.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Agents/Layer/LayerStart.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/AgentCapabilities.cs",
         ],
         ["the chat start's press"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Instance/HeldVerbs.cs"],
         ["the account presses"] =
@@ -120,7 +108,6 @@ public sealed class StoredOldNamesCensusTests : IDisposable
             "Daoris.Desktop/Daoris.Desktop.Modules/Loop/AttentionStateSlice.cs",
             "Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeReads.cs",
         ],
-        ["the driver's state"] = ["Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverStateSlice.cs"],
         ["not a seam's word"] =
         [
             "Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpWired.cs",

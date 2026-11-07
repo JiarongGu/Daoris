@@ -12,7 +12,7 @@
  * to hold a session on it.
  *
  * Nothing here is invented to make that true: `accountOf` has said *"this entry runs as that one's
- * account"* since ACP2, and `wire` says which door an entry is. The grouping is those two fields
+ * account"* since ACP2, and `transport` says which door an entry is. The grouping is those two fields
  * read the way they were written — which is why this is a pure function over the payload rather
  * than a table somebody maintains.
  */
@@ -24,7 +24,7 @@ export interface ToolDoor {
   present: boolean;
   version?: string | null;
   problem?: string | null;
-  wire?: string | null;
+  transport?: string | null;
   accountOf?: string | null;
   /** What a person calls the tool this door runs, and who makes it (AGT1). Left out where it has none. */
   product?: string | null;
@@ -193,7 +193,7 @@ export type SheetRow = {
 };
 
 /** One door's sheet (COAGENT1 §3): its word and each capability. */
-export type DoorSheet = { door: string; wire: 'acp' | 'pipe'; rows: SheetRow[] };
+export type DoorSheet = { door: string; transport: 'protocol' | 'native'; rows: SheetRow[] };
 
 /** What a person can do with an agent's accounts, by its own flows (AGT7, CODEXACCT1, AGENTMARK1). */
 export type AgentActs = { signsIn: boolean; takesKey: boolean; deviceCode: boolean; installs: boolean };
@@ -259,13 +259,13 @@ export interface Tool {
 }
 
 /**
- * Which door this machine's starts ride: the configured adapter's own `wire`, as the roster says it
- * (INT3c). Null when it cannot be read — no adapter, one the roster does not carry, or a wire it does
+ * Which transport this machine's starts ride: the configured adapter's own `transport`, as the roster says it
+ * (INT3c). Null when it cannot be read — no adapter, one the roster does not carry, or a transport it does
  * not name — and a surface then says nothing rather than guess.
  */
-export function doorOf(adapter: string | undefined, doors: readonly ToolDoor[]): 'acp' | 'pipe' | null {
-  const wire = doors.find((door) => door.harness === adapter)?.wire;
-  return wire === 'acp' || wire === 'pipe' ? wire : null;
+export function doorOf(adapter: string | undefined, doors: readonly ToolDoor[]): 'protocol' | 'native' | null {
+  const transport = doors.find((door) => door.harness === adapter)?.transport;
+  return transport === 'protocol' || transport === 'native' ? transport : null;
 }
 
 /**
@@ -288,7 +288,7 @@ export function doorLabel(t: (key: string, options?: Record<string, unknown>) =>
   if (!door.product) return door.harness;
   return t('settings.ai.intake.choice', {
     product: door.product,
-    door: t(door.wire === 'acp' ? 'harness.wire.acp' : 'harness.wire.pipe'),
+    door: t(door.transport === 'protocol' ? 'harness.wire.acp' : 'harness.wire.pipe'),
     agent: door.harness,
   });
 }

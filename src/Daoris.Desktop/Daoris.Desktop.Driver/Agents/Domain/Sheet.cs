@@ -44,7 +44,7 @@ public static class Sheet
         var postures = new[] { door.Postures.Ordinary, door.Postures.Asking, door.Postures.Full }.OfType<string>().ToList();
         var rows = new List<SheetRow>
         {
-            new(SheetCapability.Door, door.Transport.ToString().ToLowerInvariant(), SheetRow.Declared, own, Known<bool>.Anywhere,
+            new(SheetCapability.Door, TransportWord(door.Transport), SheetRow.Declared, own, Known<bool>.Anywhere,
                 "none: without a door it is no agent"),
             Known(SheetCapability.Conversation, door.Abilities.Interactive, null,
                 "driven one-turn parts only: a partner, never a conversation's lead"),
@@ -63,11 +63,11 @@ public static class Sheet
                 ? confined with { Fallback = "not admitted as a partner" }
                 : Absent(SheetCapability.Confinement, "not admitted as a partner"),
         };
-        return new AgentCapabilities(door.Id.Value, WireOf(door.Transport), rows);
+        return new AgentCapabilities(door.Id.Value, TransportWord(door.Transport), rows);
     }
 
-    /// <summary>The page's word for a transport (<see cref="AgentCapabilities.Wire"/>).</summary>
-    public static string WireOf(Transport transport) => transport == Transport.Protocol ? AgentCapabilities.Acp : AgentCapabilities.Pipe;
+    /// <summary>A transport's word on the sheet and the page: <c>protocol</c> or <c>native</c>.</summary>
+    public static string TransportWord(Transport transport) => transport.ToString().ToLowerInvariant();
 
     /// <summary>
     /// What a person can do with an agent's accounts, by its pool's flows, and whether Daoris installs it, by its leading door's program,

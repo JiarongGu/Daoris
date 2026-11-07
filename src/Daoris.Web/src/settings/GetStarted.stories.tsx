@@ -32,7 +32,7 @@ export const Halfway: Story = {
     steps: setupSteps(readMachine({
       attached: true,
       registry: [{ repository: 'engine' }, { repository: 'game' }],
-      driver: { drivable: ['engine'], helperAdapter: 'claude-code-acp' },
+      driver: { drivable: ['engine'], helperAgent: 'claude-code-acp' },
       harnesses: [IN],
       lines: [{ repository: 'engine', workspace: 'aurora', source: 'none' }],
     })),
@@ -46,7 +46,7 @@ export const Done: Story = {
     steps: setupSteps(readMachine({
       attached: true,
       registry: [{ repository: 'engine' }],
-      driver: { drivable: ['engine'], helperAdapter: 'claude-code-acp' },
+      driver: { drivable: ['engine'], helperAgent: 'claude-code-acp' },
       harnesses: [IN],
       lines: [{ repository: 'engine', workspace: 'aurora', branch: 'develop', source: 'workspace' }],
     })),

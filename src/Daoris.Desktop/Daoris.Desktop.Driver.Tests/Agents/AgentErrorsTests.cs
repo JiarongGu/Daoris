@@ -172,7 +172,7 @@ public sealed class AgentErrorsTests
     [Fact]
     public void The_harness_s_lines_are_read_for_access_alone()
     {
-        var lines = new DoorFailure("protocol", null, null, null, Overloaded, DoorWhere.Harness);
+        var lines = new DoorFailure("protocol", null, null, null, Overloaded, DoorWhere.Lines);
         Assert.Equal(AgentErrorKind.Fatal, AgentErrors.Read(Built, Built.Door("claude-code-acp"), lines, Seen, TimeZoneInfo.Utc).Kind);
 
         var refused = lines with { Words = "Failed to authenticate. API Error: 401 API key is invalid." };
@@ -195,11 +195,11 @@ public sealed class AgentErrorsTests
     [Fact]
     public void A_harness_line_never_reads_a_limit_by_its_sentence_or_its_code()
     {
-        var weekly = new DoorFailure("protocol", null, null, null, "You've hit your weekly limit · resets Oct 26, 10pm (UTC)", DoorWhere.Harness);
+        var weekly = new DoorFailure("protocol", null, null, null, "You've hit your weekly limit · resets Oct 26, 10pm (UTC)", DoorWhere.Lines);
         var read = AgentErrors.Read(Built, Built.Door("claude-code-acp"), weekly, Seen, TimeZoneInfo.Utc);
         Assert.Equal((AgentErrorKind.Fatal, (LimitSeen?)null), (read.Kind, read.Limit));
 
-        var coded = new DoorFailure("protocol", -32603, "rate_limit", 429, "Internal error", DoorWhere.Harness);
+        var coded = new DoorFailure("protocol", -32603, "rate_limit", 429, "Internal error", DoorWhere.Lines);
         Assert.Equal(AgentErrorKind.Fatal, AgentErrors.Read(Built, Built.Door("claude-code-acp"), coded, Seen, TimeZoneInfo.Utc).Kind);
         Assert.Equal(AgentErrorKind.Fatal, AgentErrors.Read(Built, Built.Door("claude-code-acp"), coded with { Kind = "overloaded", Status = 529 }, Seen, TimeZoneInfo.Utc).Kind);
     }

@@ -60,9 +60,9 @@ internal static class DriverStateAnswer
             // 🔴 Reported so the page can show it, and modelled on the record so no toggle deletes it.
             // Off is "" on the wire, never null: the bridge leaves a null out, and the page tells a
             // shell older than the intake by this field's absence (AGT6, seen on the window).
-            IntakeAdapter = ActorKey.FirstAgent("intake", config) ?? "",
+            IntakeAgent = ActorKey.FirstAgent("intake", config) ?? "",
             // Off is "" on the wire for the intake's reason: a shell older than Ask Daoris sends no field.
-            HelperAdapter = ActorKey.FirstAgent("ask-daoris", config) ?? "",
+            HelperAgent = ActorKey.FirstAgent("ask-daoris", config) ?? "",
             // Ask Daoris's access mode as the person chose it (HELPMODE1a2): `restricted` or `full`, what its next start reads. A
             // conversation's own, the mode its start got, is its record's (`HELP_CONVERSATIONS`' `mode`).
             config.HelpMode,

@@ -18,7 +18,7 @@ describe('byTool', () => {
   it('folds a door that borrows an account into the tool that owns it', () => {
     const tools = byTool([
       door({ harness: 'claude-code', present: true, version: '2.1.278' }),
-      door({ harness: 'claude-code-acp', accountOf: 'claude-code', wire: 'acp' }),
+      door({ harness: 'claude-code-acp', accountOf: 'claude-code', transport: 'protocol' }),
     ]);
 
     expect(tools).toHaveLength(1);
@@ -33,14 +33,14 @@ describe('byTool', () => {
    * called `codex-acp`, which is the confusion this was written to remove.
    */
   it('names a tool after its account even when no door carries that name', () => {
-    const tools = byTool([door({ harness: 'codex-acp', accountOf: 'codex', wire: 'acp' })]);
+    const tools = byTool([door({ harness: 'codex-acp', accountOf: 'codex', transport: 'protocol' })]);
 
     expect(tools.map((t) => t.name)).toEqual(['codex']);
     expect(tools[0]!.doors.map((d) => d.harness)).toEqual(['codex-acp']);
   });
 
   it('leaves a tool that owns its own account alone', () => {
-    const tools = byTool([door({ harness: 'dsh', present: true, wire: 'acp' })]);
+    const tools = byTool([door({ harness: 'dsh', present: true, transport: 'protocol' })]);
 
     expect(tools.map((t) => t.name)).toEqual(['dsh']);
     expect(tools[0]!.doors).toHaveLength(1);
@@ -220,20 +220,20 @@ describe('byTool and an account\'s own settings', () => {
 
 describe('doorOf', () => {
   const roster = [
-    door({ harness: 'claude-code', present: true, wire: 'pipe' }),
-    door({ harness: 'claude-code-acp', accountOf: 'claude-code', wire: 'acp' }),
+    door({ harness: 'claude-code', present: true, transport: 'native' }),
+    door({ harness: 'claude-code-acp', accountOf: 'claude-code', transport: 'protocol' }),
   ];
 
   it('answers the configured adapter\'s own door', () => {
-    expect(doorOf('claude-code', roster)).toBe('pipe');
-    expect(doorOf('claude-code-acp', roster)).toBe('acp');
+    expect(doorOf('claude-code', roster)).toBe('native');
+    expect(doorOf('claude-code-acp', roster)).toBe('protocol');
   });
 
   it('answers nothing it cannot read: no adapter, one the roster lacks, or a door it does not name', () => {
     expect(doorOf(undefined, roster)).toBeNull();
     expect(doorOf('dsh', roster)).toBeNull();
     expect(doorOf('claude-code', [door({ harness: 'claude-code' })])).toBeNull();
-    expect(doorOf('claude-code', [door({ harness: 'claude-code', wire: 'smoke-signal' })])).toBeNull();
+    expect(doorOf('claude-code', [door({ harness: 'claude-code', transport: 'smoke-signal' })])).toBeNull();
   });
 });
 
@@ -241,7 +241,7 @@ describe("the roster's sheet half (COAGENT1e)", () => {
   const acts = { signsIn: true, takesKey: false, deviceCode: true, installs: true };
   const sheet = (id: string, doors: string[]): AgentSheet => ({
     id, product: null, maker: null, mark: null, standIn: false, acts, lead: doors[0] ?? null,
-    doors: doors.map((each) => ({ door: each, wire: 'acp', rows: [] })),
+    doors: doors.map((each) => ({ door: each, transport: 'protocol', rows: [] })),
   });
 
   it("gives each tool its agent's acts, lead and sheets, found by its id or by any of its doors", () => {

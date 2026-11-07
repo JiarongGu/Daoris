@@ -112,8 +112,8 @@ export function useAsksPart({
   // Whether this machine sets an intake agent (UX5 U34): "" is off, and a door with no driver
   // cannot say, so the composer promises neither.
   const driverState = useDriver().data;
-  const intakeAdapter = driverState?.intakeAdapter;
-  const intakeSet = intakeAdapter === undefined ? null : intakeAdapter !== '';
+  const intakeAgent = driverState?.intakeAgent;
+  const intakeSet = intakeAgent === undefined ? null : intakeAgent !== '';
   // Scoped like every cross-repository read: scoped, its rows are that circle's and the circle is fixed;
   // unscoped, they are every circle's, which is exactly the list the composer asks the person to pick from.
   const family = useRegistry();

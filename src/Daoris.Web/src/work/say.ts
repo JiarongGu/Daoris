@@ -355,6 +355,6 @@ export function reasonOf(t: Translate, code: string, values: ReasonValues): stri
 export const NATIVE_WORDS_LIMIT = 24_000;
 
 /** Whether these words are longer than the session's door takes at once: a driven session's on the native door alone. */
-export function tooLong(text: string, { door, kind }: { door: 'acp' | 'pipe' | null; kind?: Session['kind'] }): boolean {
-  return door === 'pipe' && kind !== 'chat' && text.length > NATIVE_WORDS_LIMIT;
+export function tooLong(text: string, { door, kind }: { door: 'protocol' | 'native' | null; kind?: Session['kind'] }): boolean {
+  return door === 'native' && kind !== 'chat' && text.length > NATIVE_WORDS_LIMIT;
 }

@@ -29,7 +29,7 @@ export function AgentDoors({ t, tool, adapter, open, toggle, onOpenPlugin, busy,
         {tool.doors.map((each) => (
           <div key={each.harness} className="border-t border-line py-2 first:border-t-0">
             <header className="flex flex-wrap items-center gap-2">
-              <Pill tone="neutral">{t(each.wire === 'acp' ? 'harness.wire.acp' : 'harness.wire.pipe')}</Pill>
+              <Pill tone="neutral">{t(each.transport === 'protocol' ? 'harness.wire.acp' : 'harness.wire.pipe')}</Pill>
               <span className="font-mono text-small text-ink">{each.harness}</span>
               {each.present
                 ? <span className="font-mono text-small text-ink-faint">{versionOnly(each.version ?? '')}</span>

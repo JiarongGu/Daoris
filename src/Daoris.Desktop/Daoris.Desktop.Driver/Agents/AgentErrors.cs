@@ -116,7 +116,7 @@ public static class AgentErrors
 
         // 🔴 The source before any kind (Codex's owed read of D210, finding 8): the harness's own lines are read for its credential's
         // refusal alone (§3.3). Read after the limit, a weekly limit's sentence on stderr was a limit, and would cool an account.
-        if (failure.Where == DoorWhere.Harness)
+        if (failure.Where == DoorWhere.Lines)
         {
             return (own?.Tables.Refused ?? owner?.Tables.Refused) is { Length: > 0 } words
                    && failure.Words?.Contains(words, StringComparison.OrdinalIgnoreCase) == true

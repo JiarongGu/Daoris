@@ -78,7 +78,7 @@ function respond(url: string): Response {
 function bridge(start: { sessionId: string | null; message: string } = { sessionId: HELP.id, message: 'opened' }) {
   invoke.mockImplementation(async (_module: string, type: string) => {
     switch (type) {
-      case 'STATE': return { drivable: ['engine'], holds: [], trees: [], helperAdapter: HELPER ?? '' };
+      case 'STATE': return { drivable: ['engine'], holds: [], trees: [], helperAgent: HELPER ?? '' };
       case 'HARNESSES': return { harnesses: [] };
       case 'LINES': return { lines: [], landings: [] };
       case 'START_HELP': return start;
@@ -395,7 +395,7 @@ describe('Ask Daoris, with an agent named', () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     // Known before the first render, as on a page that has read them already: the panel is idle as it
     // mounts, which is when the double-mount runs the effect twice.
-    client.setQueryData(keys.driver, { drivable: ['engine'], holds: [], trees: [], helperAdapter: HELPER });
+    client.setQueryData(keys.driver, { drivable: ['engine'], holds: [], trees: [], helperAgent: HELPER });
     client.setQueryData(keys.sessions(HELP.repository, true, null), []);
     render(
       <StrictMode>
@@ -478,7 +478,7 @@ describe('Ask Daoris, with an agent named', () => {
       return answered(module, type, ...rest);
     });
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    client.setQueryData(keys.driver, { drivable: ['engine'], holds: [], trees: [], helperAdapter: HELPER });
+    client.setQueryData(keys.driver, { drivable: ['engine'], holds: [], trees: [], helperAgent: HELPER });
     client.setQueryData(keys.sessions(HELP.repository, true, null), []);
     // The window's hub hears what each opening published (STATEHUB1h): the sessions it opened one among.
     const hosts = (count: number) => (
@@ -1893,7 +1893,7 @@ describe('Ask Daoris’s access and what it has', () => {
     ],
   };
   const STATE = () => ({
-    drivable: ['engine'], holds: [], trees: [], helperAdapter: HELPER ?? '', helpMode: MODE, helpSwapping: SWAPPING,
+    drivable: ['engine'], holds: [], trees: [], helperAgent: HELPER ?? '', helpMode: MODE, helpSwapping: SWAPPING,
   });
 
   /** The bridge as {@link bridge} answers it, with the mode in the driver's state, its press, the history, the receipts and the plugins. */

@@ -166,16 +166,16 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
         {
             var module = Module();
 
-            Assert.Equal("", (await AnswerAsync(module, "STATE")).GetProperty("intakeAdapter").GetString());
+            Assert.Equal("", (await AnswerAsync(module, "STATE")).GetProperty("intakeAgent").GetString());
 
             var on = await AnswerAsync(module, "SET_ROLE", Staff("intake", [new { agent = "claude-code-acp" }]));
-            Assert.Equal("claude-code-acp", on.GetProperty("intakeAdapter").GetString());
+            Assert.Equal("claude-code-acp", on.GetProperty("intakeAgent").GetString());
 
             await AnswerAsync(module, "SET_NOTIFY", new { notify = false });
             Assert.Equal("claude-code-acp", ActorChoices.FirstAgent("intake", DriverConfig.Load(DriverConfigPath)));
 
             var off = await AnswerAsync(module, "SET_ROLE", Staff("intake", []));
-            Assert.Equal("", off.GetProperty("intakeAdapter").GetString());
+            Assert.Equal("", off.GetProperty("intakeAgent").GetString());
             Assert.Null(ActorChoices.FirstAgent("intake", DriverConfig.Load(DriverConfigPath)));
             Assert.Empty(DriverConfig.Load(DriverConfigPath).Actors["intake"]);
         }
@@ -193,15 +193,15 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
         try
         {
             var module = Module();
-            Assert.Equal("", (await AnswerAsync(module, "STATE")).GetProperty("helperAdapter").GetString());
+            Assert.Equal("", (await AnswerAsync(module, "STATE")).GetProperty("helperAgent").GetString());
 
             await AnswerAsync(module, "SET_ROLE", Staff("intake", [new { agent = "claude-code-acp" }]));
             var on = await AnswerAsync(module, "SET_ROLE", Staff("ask-daoris", [new { agent = "codex-acp" }]));
-            Assert.Equal("codex-acp", on.GetProperty("helperAdapter").GetString());
-            Assert.Equal("claude-code-acp", on.GetProperty("intakeAdapter").GetString());
+            Assert.Equal("codex-acp", on.GetProperty("helperAgent").GetString());
+            Assert.Equal("claude-code-acp", on.GetProperty("intakeAgent").GetString());
 
             var off = await AnswerAsync(module, "SET_ROLE", Staff("ask-daoris", []));
-            Assert.Equal("", off.GetProperty("helperAdapter").GetString());
+            Assert.Equal("", off.GetProperty("helperAgent").GetString());
             Assert.Null(ActorChoices.FirstAgent("ask-daoris", DriverConfig.Load(DriverConfigPath)));
         }
         finally

@@ -16,8 +16,8 @@ internal sealed record LayerStart(string Door, string Prompt, string Transcript,
     /// <summary>The layer door it opens: a native door's turn is the layer's <c>cli</c>.</summary>
     public string Kind { get; init; } = AgentDoorKinds.Cli;
 
-    /// <summary>The door's transport word a failure is read on (<c>pipe</c>, <c>protocol</c>).</summary>
-    public string Transport { get; init; } = "pipe";
+    /// <summary>The door's transport word a failure is read on (<c>native</c>, <c>protocol</c>).</summary>
+    public string Transport { get; init; } = "native";
 
     public string? WorkingDirectory { get; init; }
 
