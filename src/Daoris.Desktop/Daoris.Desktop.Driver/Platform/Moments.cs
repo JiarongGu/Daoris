@@ -11,9 +11,9 @@ namespace Daoris.Driver;
 /// calendar other than the Gregorian one would have written other digits.
 /// </summary>
 /// <remarks>
-/// A moment is written round-trip (<c>O</c>: seven fraction digits and the offset as it was) in the invariant culture,
-/// and read in the invariant culture with <see cref="DateTimeStyles.RoundtripKind"/>, so the offset a record was written
-/// with is the offset read back. A reader answers null for text that is no moment; each caller keeps its own fallback
+/// A moment is written round-trip (<c>O</c>: seven fraction digits and the offset kept) in the invariant culture,
+/// and read in the invariant culture with <see cref="DateTimeStyles.RoundtripKind"/>, so the offset a record carries
+/// is the offset read back. A reader answers null for text that is no moment; each caller keeps its own fallback
 /// (now, a file's time, <c>MinValue</c>). <see cref="ReadStrict"/> is for a file a person or the CLI also writes, where
 /// a lenient parse would read <i>Oct 3</i> as this year's.
 /// </remarks>

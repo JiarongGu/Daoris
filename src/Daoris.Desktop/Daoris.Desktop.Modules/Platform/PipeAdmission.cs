@@ -189,7 +189,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         return (null, Held(answer));
     }
 
-    /// <summary>The refusal of a press whose id was bound and never asked: its place let go, and what the terminal is answered.</summary>
+    /// <summary>The refusal of a press whose id is bound and never asked: its place let go, and what the terminal is answered.</summary>
     private string Settled(IpcRequest request, string id, TaskCompletionSource<string> mine, IpcResponse refusal)
     {
         var text = IpcJson.Serialize(refusal);

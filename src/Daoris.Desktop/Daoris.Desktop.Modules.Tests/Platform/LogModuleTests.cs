@@ -165,7 +165,7 @@ public sealed class LogModuleTests : Bridge
         Assert.DoesNotContain(lines, line => line.Contains("secret", StringComparison.Ordinal) || line.Contains("plan", StringComparison.Ordinal));
     }
 
-    /// <summary>A long string is cut short, and says it was: the log keeps a clue, not a paragraph.</summary>
+    /// <summary>A long string is cut short, and says so: the log keeps a clue, not a paragraph.</summary>
     [Fact]
     public async Task A_long_string_is_capped()
     {
@@ -182,7 +182,7 @@ public sealed class LogModuleTests : Bridge
 
     /// <summary>
     /// A render failure's view is a name, so a view with an address's query or a sentence in it is dropped, and
-    /// its stack is a text cut short like the message: the log keeps where the page broke, never what was on it.
+    /// its stack is a text cut short like the message: the log keeps where the page broke, never what is on it.
     /// </summary>
     [Fact]
     public async Task A_render_failure_keeps_its_view_only_as_a_name_and_its_stack_cut_short()

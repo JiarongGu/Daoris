@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// branch back while git keeps its commits (<c>git branch &lt;branch&gt; &lt;tip&gt;</c> in its repository).
 /// </summary>
 /// <param name="Sessions">The sessions that worked in it, oldest first.</param>
-/// <param name="Alone">A branch whose tree was already gone, deleted on its own.</param>
+/// <param name="Alone">A branch whose tree is already gone, deleted on its own.</param>
 public sealed record AbandonedTree(
     string Repository, string Branch, string? Tip, int? Commits, int? Uncommitted, IReadOnlyList<string> Sessions, bool Alone = false);
 
@@ -20,12 +20,12 @@ public sealed record AbandonKeep(string Piece, string Why)
     public string? Where { get; init; }
 
     /// <summary>
-    /// For a piece listed to go that was kept, whether it changed since the list (true) or a step could not take it (false,
+    /// For a piece listed to go that is kept, whether it changed since the list (true) or a step could not take it (false,
     /// with the service's or git's sentence in <see cref="Detail"/>); null for a piece the list itself kept.
     /// </summary>
     public bool? Changed { get; init; }
 
-    /// <summary>What refused it, in the service's or git's words: for the terminal and the log of what was tried. Never a path in the record.</summary>
+    /// <summary>What refused it, in the service's or git's words: for the terminal and the log of what is tried. Never a path in the record.</summary>
     public string? Detail { get; init; }
 }
 
@@ -54,7 +54,7 @@ public sealed record AbandonEntry(string Scope, string Id, DateTimeOffset At, st
     /// <summary>Each quest declined.</summary>
     public IReadOnlyList<string> Declined { get; init; } = [];
 
-    /// <summary>Whether the ask was closed with the reason (ask scope).</summary>
+    /// <summary>Whether the ask is closed with the reason (ask scope).</summary>
     public bool Closed { get; init; }
 
     /// <summary>Each tree discarded with its branch, and each branch deleted alone (<see cref="AbandonedTree.Alone"/>).</summary>

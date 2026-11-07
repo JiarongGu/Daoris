@@ -24,8 +24,8 @@ namespace Daoris.Driver;
 /// <para><b>The copy</b> is made under a name of its own beside where it goes, and renamed into place once whole, so an open cut
 /// off leaves no half copy; the open's undo deletes the tree it is in. A link in it (npm's workspace link, on Windows a junction to
 /// its absolute path) is made again as a link leading to the same place in the tree, never the checkout's; one that leads
-/// anywhere else copies nothing. A cache at the top of a <c>node_modules</c> (<c>.cache</c>, <c>.vite</c>) names where it was
-/// made, and is left for the tree's tools to make again.</para>
+/// anywhere else copies nothing. A cache at the top of a <c>node_modules</c> (<c>.cache</c>, <c>.vite</c>) names where it
+/// is made, and is left for the tree's tools to make again.</para>
 ///
 /// <para>It runs inline, eight files at once, on a measurement: a fraction of the <c>npm ci</c> it saves.</para>
 /// </remarks>
@@ -41,7 +41,7 @@ internal static class TreeDependencies
     /// <summary>Another manager's lockfile: its project is copied nothing.</summary>
     private static readonly string[] OtherLockfiles = ["pnpm-lock.yaml", "yarn.lock"];
 
-    /// <summary>The caches at the top of a <c>node_modules</c> a copy leaves behind: each names where it was made.</summary>
+    /// <summary>The caches at the top of a <c>node_modules</c> a copy leaves behind: each names where it is made.</summary>
     private static readonly HashSet<string> Caches = new(StringComparer.OrdinalIgnoreCase) { ".cache", ".vite", ".vite-temp" };
 
     /// <summary>git's pathspecs for every tracked lockfile, at any depth.</summary>
@@ -364,7 +364,7 @@ internal static class TreeDependencies
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
-                // The copy it was part of is discarded whole.
+                // The copy it belongs to is discarded whole.
             }
 
             throw;
@@ -502,7 +502,7 @@ internal sealed record DependencyCopy(IReadOnlyList<string> Copied, IReadOnlyLis
     public string Listed => string.Join(", ", Copied.Select(folder => $"`{folder}`"));
 
     /// <summary>
-    /// What the session's agent is told, where anything was copied: without it the session runs the <c>npm ci</c> it always ran,
+    /// What the session's agent is told, where anything is copied: without it the session runs the <c>npm ci</c> it always runs,
     /// which deletes the copy first, and the copy saves nothing.
     /// </summary>
     public string? Told => Copied.Count == 0

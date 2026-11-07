@@ -77,7 +77,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     /// seen" — every line arriving as number 0 would render as one line repeatedly overwritten.</para>
     ///
     /// <para><b>The latest run's lines are kept</b>, bounded as a session's are, and answered over
-    /// <c>TAIL_SESSION</c> (<see cref="Tail"/>): a sign-in's panel mounted after its link was printed, as one is on coming
+    /// <c>TAIL_SESSION</c> (<see cref="Tail"/>): a sign-in's panel mounted after its link is printed, as one is on coming
     /// back to its page, read nothing, and its phases are lines too. The number goes on across runs of one action, so a panel
     /// that stayed up through a *Try again* merges the second run's lines after the first's rather than dropping them as seen.</para>
     /// </remarks>
@@ -142,7 +142,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     /// (HARNESS_ENDED) — the same way a conversation's ending is. It waits on a network, or on
     /// a person in a browser, and a request that waited with it timed out on the bridge at thirty seconds
     /// while the login ran on: the page closed its panel, the row said nothing had changed, and the
-    /// process kept waiting for a browser nobody was told about (measured on the installed shell,
+    /// process kept waiting for a browser nobody knew about (measured on the installed shell,
     /// 2026-09-23). While it runs the page may answer it or stop it (HARNESS_INPUT, HARNESS_CANCEL).
     /// </remarks>
     /// <param name="ended">Told the exit code and any problem once the process ends, after the news goes out.</param>
@@ -310,7 +310,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         }
         catch (Exception)
         {
-            // Its end was said as news; this one starts whatever it was.
+            // Its end is said as news; this one starts whatever it is.
         }
     }
 
@@ -349,7 +349,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         Tell(code, null);
 
         // Whoever asked to hear the end (Ask Daoris's conversation) hears it after the news; a
-        // listener that fails costs its own view, never the end the screen was told.
+        // listener that fails costs its own view, never the end the screen is told.
         void Tell(int exit, string? problem)
         {
             try
@@ -393,7 +393,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         }
         catch (Exception)
         {
-            // The roster says what was last read on the page's next question; the end is still news.
+            // The roster says what is last read on the page's next question; the end is still news.
         }
 
         var signedIn = signingIn ? report?.Profiles.FirstOrDefault(each => each.Name == profile) : null;
@@ -450,7 +450,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     /// zero exit whose home still reports signed OUT signed nobody in. An answer it cannot give is
     /// kept, by the rule every unknown login state follows — the person watched the sign-in
     /// and can remove it. Otherwise the directory existed only for this sign-in, and goes: the list
-    /// is exactly what it was before the press, whether the tool failed, was stopped, or never
+    /// is exactly as the press found it, whether the tool failed, stopped, or never
     /// started.
     /// </remarks>
     /// <param name="harness">The door pressed, whose account agent's end question reads the new account.</param>
@@ -574,7 +574,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     /// </summary>
     public static string JoinedSaid(string shown) => OneSetWords.Joined(shown);
 
-    /// <summary>A name given at a sign-in's end, or null where none was asked or it could not be kept, which is said.</summary>
+    /// <summary>A name given at a sign-in's end, or null where none is asked or it could not be kept, which is said.</summary>
     private static string? Kept(Func<string?> rename, bool asked, Action<string> stream)
     {
         if (!asked) return null;

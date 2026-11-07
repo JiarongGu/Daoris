@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The second stand-in's program (AGENTPROVIDER1 row c; the agent-provider design §10, §11 row c): one Node module serving both doors of
+ * The second stand-in's program: one Node module serving both doors of
  * provider `alt-stub`, chosen by the arguments its `provider.json` states for each (`--door native`, `--door protocol`). No model, no
  * account and no credential anywhere in it. The driver's project carries it beside the driver by one glob
  * (`Agents/Providers/*\/Program/**`), so the conformance suite runs it from its build output and the family rehearsal from its own.
@@ -8,19 +8,19 @@
  * It answers the same scenario contract as the first stand-in, so a check reads what it says whichever spoke, but in a grammar of its
  * own where an agent says what is its own: its sign-in (`session: active as <who>`, `workspace:`, `tier:`), its limit
  * (`quota spent (<window>) · refills <when>`), its refused credential (`credential rejected (401)`) and its sign-in refusal
- * (`login needed`). `--scenario <name>` picks a case, `open` where none is named, and `--seen <file>` keeps each protocol method it was
- * sent, a line each.
+ * (`login needed`). `--scenario <name>` picks a case, `open` where none is named, and `--seen <file>` keeps each protocol method it
+ * is sent, a line each.
  *
  * - The probes first, whatever the case: `--version`, `--login-state` (signed in) and `--login`.
  * - `open`, on the native door: a start (a quest in its environment) says where it started, then takes and closes its quest through the
- *   service's door its environment names; a conversation (no quest) says back each line it hears.
+ * service's door its environment names; a conversation (no quest) says back each line it hears.
  * - `open`, on the protocol door: the spec's calls answered, a new conversation `s-1`, any conversation resumed, each prompt said back as
- *   `heard: ` and its first line, and a prompt with a quest taken and closed through the service's door before its turn ends.
+ * `heard: ` and its first line, and a prompt with a quest taken and closed through the service's door before its turn ends.
  * - `missing` and `elsewhere`: a resume refused, as gone (`Resource not found`) or held by another client (`thread_active_writer`).
  * - `transient`: the first prompt refused overloaded, the next answered. `access` (or `refused`): the credential refused. `signin`: a
- *   login needed. `fatal`: the turn failed. `limit`: a limit said, with its refill.
+ * login needed. `fatal`: the turn failed. `limit`: a limit said, with its refill.
  *
- * A failed call to the service is said, never thrown. It ends by its input closing, never by `process.exit` after a call (STUB1: Node 24
+ * A failed call to the service is said, never thrown. It ends by its input closing, never by `process.exit` after a call (Node 24
  * on Windows could end in a libuv assertion with a socket still open).
  */
 import { appendFileSync } from 'node:fs';

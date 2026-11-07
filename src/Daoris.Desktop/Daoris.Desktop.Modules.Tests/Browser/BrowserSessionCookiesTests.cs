@@ -16,7 +16,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </remarks>
 public sealed class BrowserSessionCookiesTests : Bridge
 {
-    /// <summary>Reverses the bytes, which is enough to prove nothing reaches the disk as it was.</summary>
+    /// <summary>Reverses the bytes, which is enough to prove nothing reaches the disk unchanged.</summary>
     private sealed class StandInSeal : ICookieSeal
     {
         public byte[] Seal(byte[] plain) => [.. plain.Reverse()];
@@ -111,7 +111,7 @@ public sealed class BrowserSessionCookiesTests : Bridge
 
     /// <summary>
     /// Nothing kept, a file this account cannot open (copied from another machine or account), or one
-    /// that is not what was written, restores nothing and says why. A browser that cannot put a sign-in
+    /// that is not what is written, restores nothing and says why. A browser that cannot put a sign-in
     /// back still opens, signed out.
     /// </summary>
     [Fact]

@@ -218,7 +218,7 @@ internal sealed class GitRefDesk(DriverContext context)
         return new { run.Run.Act, run.Run.Outcome, run.Run.Refused, Said = WithoutRoots(run.Run.Said, [checkout], repository) ?? "", run.Tip, run.Kept };
     }
 
-    /// <summary>The ids a shown plan pinned, as the page or the verb sends them back; null where none was sent.</summary>
+    /// <summary>The ids a shown plan pinned, as the page or the verb sends them back; null where none is sent.</summary>
     private static HistoryEditPins? PinsOf(JsonElement? sent) =>
         sent is { } pins && pins.ValueKind == JsonValueKind.Object
         && pins.TryGetProperty("tip", out var tip) && tip.ValueKind == JsonValueKind.String

@@ -351,7 +351,7 @@ public sealed class OwnerSetTests : IDisposable
         new StandingConfirmation(_home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside),
             walk: new StandingConfirmationTests.Walked()).Acting(steward, new RoleKit.Probe(), new QuestProbe());
 
-    /// <summary>The steward's terminal started on <paramref name="judge"/>, the key its stand-in tab was handed.</summary>
+    /// <summary>The steward's terminal started on <paramref name="judge"/>, the key its stand-in tab is handed.</summary>
     private static (HoldChange Change, string Key) Appointed(StandingConfirmation judge)
     {
         var (change, key) = RoleKit.Start(judge, RoleKit.Stewarding(share: null));

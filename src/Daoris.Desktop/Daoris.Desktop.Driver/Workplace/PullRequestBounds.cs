@@ -17,7 +17,7 @@ public static class PullRequestMinute
 {
     private static readonly ConcurrentDictionary<string, DateTimeOffset> Taken = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Take the entry's minute at <paramref name="at"/>: false where it was taken within the minute before, and nothing changes.</summary>
+    /// <summary>Take the entry's minute at <paramref name="at"/>: false where it has been taken within the minute before, and nothing changes.</summary>
     public static bool TryTake(string home, LandedBranch entry, DateTimeOffset at)
     {
         var key = Key(home, entry);
@@ -34,14 +34,14 @@ public static class PullRequestMinute
         }
     }
 
-    /// <summary>Whether the entry's minute was taken within the minute before <paramref name="now"/>.</summary>
+    /// <summary>Whether the entry's minute has been taken within the minute before <paramref name="now"/>.</summary>
     public static bool Within(string home, LandedBranch entry, DateTimeOffset now) =>
         Taken.TryGetValue(Key(home, entry), out var was) && now - was < PullRequestAsking.Fresh;
 
     /// <summary>When the entry's minute last got taken in this process, or null where it never has been.</summary>
     public static DateTimeOffset? TakenAt(string home, LandedBranch entry) => Taken.TryGetValue(Key(home, entry), out var was) ? was : null;
 
-    /// <summary>The entry was asked at <paramref name="at"/>, its own request's time: kept where it is the later.</summary>
+    /// <summary>The entry asked at <paramref name="at"/>, its own request's time: kept where it is the later.</summary>
     public static void Asked(string home, LandedBranch entry, DateTimeOffset at) =>
         Taken.AddOrUpdate(Key(home, entry), at, (_, was) => was > at ? was : at);
 
@@ -107,7 +107,7 @@ public static class RepositoryHolds
 
 /// <summary>
 /// The window's focus kept until there is someone to tell: the main window can take the person's focus before the loop's
-/// watch, or the watch's moments, exist, and that focus was the only one a start had. One pending flag, not a queue: any number of focuses
+/// watch, or the watch's moments, exist, and that focus is the only one a start has. One pending flag, not a queue: any number of focuses
 /// before is one moment after.
 /// </summary>
 public sealed class PendingFocus

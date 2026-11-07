@@ -76,7 +76,7 @@ public static class WorkspaceSetupFile
 
     /// <summary>
     /// Read the workspace's plan as it stands now, change it, and write it: null where none reads, and nothing is written
-    /// when the change hands back the plan it was given.
+    /// when the change hands back the plan it is given.
     /// </summary>
     public static WorkspaceSetupPlan? Update(string home, string workspace, Func<WorkspaceSetupPlan, WorkspaceSetupPlan> change)
     {

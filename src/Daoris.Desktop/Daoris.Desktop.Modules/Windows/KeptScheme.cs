@@ -24,8 +24,8 @@ public static class KeptScheme
     public const string FileName = "color-scheme.json";
 
     /// <summary>
-    /// The choice kept at <paramref name="path"/>, or <see cref="ColorScheme.System"/> where none was kept or it cannot
-    /// be read: a start that follows the OS, as every start did before, never a window that does not open.
+    /// The choice kept at <paramref name="path"/>, or <see cref="ColorScheme.System"/> where none is kept or it cannot
+    /// be read: a start that follows the OS, never a window that does not open.
     /// </summary>
     public static ColorScheme Read(string path)
     {

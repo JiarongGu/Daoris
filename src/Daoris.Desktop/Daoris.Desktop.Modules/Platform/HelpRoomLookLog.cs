@@ -32,13 +32,13 @@ public static class HelpRoomLookLog
     public static readonly TimeSpan Recent = TimeSpan.FromSeconds(30);
 
     /// <summary>
-    /// Write one line for a look that took <paramref name="took"/>; <paramref name="read"/> is whether it was taken, and
-    /// <paramref name="kept"/> whether it was the look kept from the last <see cref="Recent"/> rather than a fresh one.
+    /// Write one line for a look that took <paramref name="took"/>; <paramref name="read"/> is whether it is taken, and
+    /// <paramref name="kept"/> whether it is the look kept from the last <see cref="Recent"/> rather than a fresh one.
     /// </summary>
     /// <param name="times">
     /// Where the time went: each step of the look as <c>&lt;step&gt;Ms</c> (<c>recordsMs</c>, <c>questsMs</c>,
-    /// <c>verdictsMs</c>, <c>marksMs</c>, <c>waitingMs</c>, <c>treesMs</c>) and <c>trees</c>, how many trees the git check was
-    /// asked about. None where the look was kept, which took no steps, or could not be taken before its first.
+    /// <c>verdictsMs</c>, <c>marksMs</c>, <c>waitingMs</c>, <c>treesMs</c>) and <c>trees</c>, how many trees the git check asks
+    /// about. None where the look is kept, which takes no steps, or cannot be taken before its first.
     /// </param>
     public static void Said(MachineLog? log, TimeSpan took, bool read, bool kept = false, LookTimes? times = null)
     {

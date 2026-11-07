@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The one boundary for words that may hold a secret: every text from git, ssh,
 /// the credential door or a landing plugin passes <see cref="Redact"/> before Daoris keeps, says or answers it. Beside
-/// <see cref="WiringRedact"/>, which cuts what This Daoris shows of a value it was handed; this one cuts what a child wrote.
+/// <see cref="WiringRedact"/>, which cuts what This Daoris shows of a value it is handed; this one cuts what a child wrote.
 /// </summary>
 /// <remarks>
 /// <para><b>What it cuts</b>, each held by a row of <c>GitWordsTests</c>: an address's user-info (a token is often carried as
@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 /// </remarks>
 public static partial class GitWords
 {
-    /// <summary>What stands where something was cut.</summary>
+    /// <summary>What stands where something is cut.</summary>
     public const string Cut = "[cut]";
 
     [GeneratedRegex(@"(?<scheme>\b[A-Za-z][A-Za-z0-9+.\-]*://)(?<info>[^\s/@'""<>]+)@")]

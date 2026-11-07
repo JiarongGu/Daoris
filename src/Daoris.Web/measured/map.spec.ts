@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// The reference map on the canvas measured (CANVAS1e; D224, the canvas design §3.3, §9 row e): the layered map's largest fixture at 80 and
+// The reference map on the canvas measured (the canvas design §3.3, §9 row e): the layered map's largest fixture at 80 and
 // 39rem with no card over another, a line pressed through its stroke, the ring fitted with no sizing, and the walk from a card along a
 // line and back, in a real browser.
 

@@ -234,7 +234,7 @@ public sealed class ReviewTabs(IInAppBrowser browser) : IReviewTabs, IDisposable
                 tab.Serve = serve;
             }
 
-            // One serving per tab: what it was served before goes now, and a newer set-up's build is the one it shows.
+            // One serving per tab: the earlier serving goes now, and a newer set-up's build is the one it shows.
             if (replaced is not null) _ = replaced.DisposeAsync().AsTask();
 
             await channel.CallAsync("Page.navigate", new { url = serve.Look }, session, ct).ConfigureAwait(false);
@@ -319,7 +319,7 @@ public sealed class ReviewTabs(IInAppBrowser browser) : IReviewTabs, IDisposable
             + $"<p>Daoris opened this tab for set-up step #{WebUtility.HtmlEncode(quest.TrimStart('#'))}.</p>"
             + "<p>Its session shows the work here, and Daoris keeps it shown until you say whether it is right.</p></body>");
 
-    /// <summary>The browser's port, brought up in the background where it was not running.</summary>
+    /// <summary>The browser's port, brought up in the background where it is not running.</summary>
     private async Task<int> PortAsync(CancellationToken ct)
     {
         var endpoint = await browser.EnsureAsync(ct).ConfigureAwait(false)
@@ -363,7 +363,7 @@ public sealed class ReviewTabs(IInAppBrowser browser) : IReviewTabs, IDisposable
         }
         catch (Exception error) when (error is WebSocketException or InvalidOperationException or TimeoutException or ObjectDisposedException)
         {
-            // The tab or the browser went while it was answered.
+            // The tab or the browser went before the answer came.
         }
     }
 
@@ -382,7 +382,7 @@ public sealed class ReviewTabs(IInAppBrowser browser) : IReviewTabs, IDisposable
         }
         catch (Exception error) when (error is WebSocketException or InvalidOperationException or TimeoutException or ObjectDisposedException)
         {
-            // The tab or the browser went while it was answered.
+            // The tab or the browser went before the answer came.
         }
     }
 }

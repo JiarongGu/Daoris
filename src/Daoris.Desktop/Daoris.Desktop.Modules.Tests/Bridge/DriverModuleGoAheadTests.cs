@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 /// <remarks>
 /// The stand-in is the service's decision, not a copy of it: its go-ahead door keeps the park's blank answer only where a
-/// test says this answer was the last one open, and only when the caller lets it (<c>goesOn</c> true or absent).
+/// test says this answer is the last one open, and only when the caller lets it (<c>goesOn</c> true or absent).
 /// </remarks>
 public sealed class DriverModuleGoAheadTests : DriverModuleBridge
 {
@@ -108,7 +108,7 @@ public sealed class DriverModuleGoAheadTests : DriverModuleBridge
 
     /// <summary>
     /// The person's words beside a go-ahead are that go-ahead's, kept on its answer as at the ask's page, and never said to
-    /// the park: said there, they would send it on with a go-ahead still open, or join a <i>carry on.</i> that was never
+    /// the park: said there, they would send it on with a go-ahead still open, or join a <i>carry on.</i> that is never
     /// theirs. The resumed session is handed them quoted as theirs, beneath the park's answer.
     /// </summary>
     [Theory]
@@ -157,7 +157,7 @@ public sealed class DriverModuleGoAheadTests : DriverModuleBridge
 
     /// <summary>
     /// The go-ahead's door refuses (a number the ask does not hold, a host older than the door): its sentence is the
-    /// answer, verbatim, and nothing else is answered, so a session never goes on believing a go-ahead was given.
+    /// answer, verbatim, and nothing else is answered, so a session never goes on believing a go-ahead is given.
     /// </summary>
     [Fact]
     public async Task A_refused_go_ahead_answers_nothing_else_and_says_the_services_sentence()
@@ -180,7 +180,7 @@ public sealed class DriverModuleGoAheadTests : DriverModuleBridge
 
     /// <summary>
     /// A session no longer parked by the time the press lands (the driver took it up, or another door answered it and it
-    /// went on): its go-ahead is answered and nothing waits on the person, so the page is told the session was not answered
+    /// went on): its go-ahead is answered and nothing waits on the person, so the page is told the session is not answered
     /// and does not wait.
     /// </summary>
     [Theory]
@@ -273,7 +273,7 @@ public sealed class DriverModuleGoAheadTests : DriverModuleBridge
         public string Records { get; set; } = "[]";
 
         /// <summary>
-        /// The records once the go-ahead's door sent a park on: this answer was the last one open of its go-aheads. Null where
+        /// The records once the go-ahead's door sent a park on: this answer is the last one open of its go-aheads. Null where
         /// one is still open, so the door keeps nothing.
         /// </summary>
         public string? AfterGoAhead { get; init; }
@@ -309,7 +309,7 @@ public sealed class DriverModuleGoAheadTests : DriverModuleBridge
 
         /// <summary>
         /// The go-ahead door as the service answers it: the answer kept, and, unless the caller answers the park
-        /// itself, the park's blank answer where this was the last one open, its sentence saying which.
+        /// itself, the park's blank answer where this is the last one open, its sentence saying which.
         /// </summary>
         private (HttpStatusCode, string) Decided(string ask, int number, string body)
         {

@@ -28,7 +28,7 @@ rmSync(scratch, { recursive: true, force: true });
 mkdirSync(scratch, { recursive: true });
 
 // The host roots at a scratch COPY of the example family, not the tracked tree: the suite includes a
-// project being born mid-run (D44), and a newcomer must never dirty tracked examples.
+// project being born mid-run, and a newcomer must never dirty tracked examples.
 for (const name of ['engine', 'game']) {
   copyTree(join(repoRoot, 'examples', name), join(family, name));
 }
@@ -38,7 +38,7 @@ const host = spawn('dotnet', [dll], {
   windowsHide: true,
   // Content root is the working directory, and the static bundle lives at <content root>/wwwroot —
   // beside the project, where vite builds it. Spawned from anywhere else the API answers and the
-  // page is a 404, which reads as "the app is broken" rather than "the cwd was wrong".
+  // page is a 404, which reads as "the app is broken" rather than "the cwd is wrong".
   cwd: join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Http'),
   env: {
     ...process.env,
@@ -50,7 +50,7 @@ const host = spawn('dotnet', [dll], {
     ASPNETCORE_URLS: 'http://localhost:5196',
     // Hermetic like the family rehearsal (its own prelude states the argument): the developer's real
     // remotes map must never leak a deployment into a gate run — and the home itself points at
-    // scratch (D63), so nothing this host derives from it is the machine's either.
+    // scratch, so nothing this host derives from it is the machine's either.
     DAORIS_HOME: scratch,
     DAORIS_REMOTE_CONFIG: join(scratch, 'no-remote.json'),
   },

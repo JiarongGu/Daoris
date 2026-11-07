@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// What the workplace asks of the workflows: the landed route's accepted declaration, the process a quest's work follows, and a chat run's
 /// bind and press. Workflows keeps each and implements this, installed when the driver loads
-/// (<c>Workflows/WorkplaceWorkflowsWiring.cs</c>); each operation does exactly what its caller did before it was a port, over the
+/// (<c>Workflows/WorkplaceWorkflowsWiring.cs</c>); each operation does its caller's own work, over the
 /// workplace's own facets (<see cref="IWorkplaceProcess"/>, <see cref="IWorkplacePluginCatalog"/>) and the service's quests.
 /// </summary>
 internal interface IWorkplaceWorkflows
@@ -24,7 +24,7 @@ internal interface IWorkplaceWorkflows
 
     /// <summary>
     /// A chat run bound first, as the press binds it (see <c>ChatRuns.BindFirst</c>): why the home could not keep the binding, or null
-    /// where it was bound, read back, or a graph choice bound nothing.
+    /// where it is bound, read back, or a graph choice binds nothing.
     /// </summary>
     string? BindChatFirst(DriverConfig config, string home, string run, string tree, IWorkplacePluginCatalog plugins, DateTimeOffset at);
 
@@ -59,7 +59,7 @@ internal interface IWorkplaceWorkflows
     /// <summary>Takes the review's repair back (see <c>RunRepairs.Take</c>).</summary>
     void TakeRepair(string home, Func<bool>? holdsLease, string unit, string review);
 
-    /// <summary>How many times the session was carried on for the review's Accept; 0 where no repair is kept (see <c>RunRepairs.Of</c>).</summary>
+    /// <summary>How many times the session is carried on for the review's Accept; 0 where no repair is kept (see <c>RunRepairs.Of</c>).</summary>
     int RepairCarries(string home, Func<bool>? holdsLease, string unit, string review);
 
     /// <summary>
@@ -73,11 +73,11 @@ internal interface IWorkplaceWorkflows
 }
 
 /// <summary>What keeping the person's Accept as a run's review word came to.</summary>
-/// <param name="HasReview">Whether the run's graph holds a review, so a word was to be kept; false lands by itself.</param>
+/// <param name="HasReview">Whether the run's graph holds a review, so a word is to be kept; false lands by itself.</param>
 /// <param name="Kept">Whether the word is on the run's record: kept now, or kept already and not applied yet.</param>
 /// <param name="Unit">The run's own unit, whose record holds the review.</param>
 /// <param name="Review">The review node's id.</param>
-/// <param name="Said">Why the word was refused, as a sentence; null where it was kept, or where the review does not wait for it yet.</param>
+/// <param name="Said">Why the word is refused, as a sentence; null where it is kept, or where the review does not wait for it yet.</param>
 public sealed record ReviewWord(bool HasReview, bool Kept, string? Unit, string? Review, string? Said);
 
 internal static class WorkplaceWorkflows

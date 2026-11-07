@@ -18,8 +18,8 @@ namespace Daoris.Desktop;
 /// "the app is broken" (<c>MainForm</c> waits the same way). Where the service never came up, the main window already says
 /// why, and no window opens.</para>
 ///
-/// <para><b>A put-away first window is the launch's</b>: where the person closed the first main window while
-/// another was open, it was hidden rather than closed (<see cref="MainWindows"/>), and a launch shows that one again rather
+/// <para><b>A put-away first window is the launch's</b>: where the person closes the first main window while
+/// another is open, it is hidden rather than closed (<see cref="MainWindows"/>), and a launch shows that one again rather
 /// than opening another. Its page is already up, so it waits on nothing.</para>
 /// </remarks>
 public sealed class SecondLaunch(ISecondaryWindows windows, PlatformAddress platform, Func<Task<bool>> hostReady,
@@ -29,13 +29,13 @@ public sealed class SecondLaunch(ISecondaryWindows windows, PlatformAddress plat
     MainWindows? mains = null, Action? showFirst = null)
 {
     /// <summary>
-    /// Open a new main window for a later launch, once the service answers, or show the first main window again where it was
+    /// Open a new main window for a later launch, once the service answers, or show the first main window again where it is
     /// put away: its name (<see cref="MainWindows.First"/> for that one), or null when none opened.
     /// </summary>
     /// <param name="arguments">The later launch's arguments, which say nothing about what to open today; their count is logged.</param>
     public async Task<string?> OpenAsync(IReadOnlyList<string> arguments)
     {
-        // Asked before anything is awaited: the kit has just brought the first forward on this thread, and that was this launch's.
+        // Asked before anything is awaited: the kit has just brought the first forward on this thread, and that is this launch's.
         if (mains?.TakeBackFirst() == true)
         {
             showFirst?.Invoke();

@@ -8,7 +8,7 @@ public enum TreeStand
     /// <summary>git lists it at its folder, which is there.</summary>
     Stands,
 
-    /// <summary>Its folder was gone and its branch stood, so the tree was made again there, on that branch.</summary>
+    /// <summary>Its folder is gone and its branch stands, so the tree is made again there, on that branch.</summary>
     Remade,
 
     /// <summary>Its folder and its branch are both gone: nothing on this machine holds its work under its name.</summary>
@@ -34,7 +34,7 @@ public sealed record TreeStanding(TreeStand Stand, string? Branch, Noted? Said, 
 /// <remarks>
 /// <para><b>Why git's list and not the disk.</b> A tool that removes a worktree may leave its folder behind with what it could not
 /// delete, and <see cref="Directory.Exists"/> then answers yes for a folder that is no tree: git asked there walks up to whatever
-/// holds it. A folder left where the tree was is moved aside, never deleted, as the look's own tidy moves one
+/// holds it. A folder left where the tree stood is moved aside, never deleted, as the look's own tidy moves one
 /// (<see cref="TreeSetAside.MoveFolderAside"/>), so nothing in it is lost.</para>
 ///
 /// <para><b>The branch the session is on</b> is the one the layout names, or the one its agent moved its tree onto, as the ledger

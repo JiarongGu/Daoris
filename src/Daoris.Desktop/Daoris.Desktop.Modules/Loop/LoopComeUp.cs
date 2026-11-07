@@ -81,7 +81,7 @@ internal static class LoopComeUp
         };
         chat.TakenUpEnded += (session, state) => _ = DriverLoop.Ended(eventBus, session, state);
         chat.Answered += item => _ = loop.AnsweredAsync(item);
-        // A hand-over's or a curve move's take is over: the words held while it was taken go to the conversation that continues it,
+        // A hand-over's or a curve move's take is over: the words held while it is taken go to the conversation that continues it,
         // and what a word said to the old one now would do is told again.
         chat.TakeEnded += loop.Words.OnTakeEnded;
         chat.DescribeHelp = ct => loop.DescribeHelp is { } describe ? describe(ct) : Task.FromResult<HelpMachine?>(null);
@@ -104,7 +104,7 @@ internal static class LoopComeUp
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {
-            // Unread, and left as it was: the receipt keeps what it said, and a press of its plan reads again.
+            // Unread, and left as it stands: the receipt keeps what it said, and a press of its plan reads again.
         }
     }
 }

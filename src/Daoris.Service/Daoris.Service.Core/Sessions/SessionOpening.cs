@@ -30,10 +30,8 @@ internal sealed class SessionOpening(
     /// <para><b>Its own open, not a chat's.</b> A chat names a registered repository and takes its
     /// circle from the row; the room is no repository, so the circle comes from the ASK — derived,
     /// never passed beside it, for the same reason a driven session's comes from its quest.</para>
-    ///
     /// <para><b>Recorded as a chat</b>, serving no quest, in "repository" <c>ask #id</c> — the sender its
     /// quests are published by. Every build already reads a chat as a session nothing plans from.</para>
-    ///
     /// <para><b>The room's lock is the process, not the record</b>: one intake RUNNING per room, and a
     /// parked one — which has asked the person and ended — leaves it to the next ask
     /// (<see cref="SessionStore.RunningInTreeAsync"/>).</para>
@@ -190,11 +188,9 @@ internal sealed class SessionOpening(
     /// <para><b>The same lock, for the same reason.</b> One active session per repository holds for
     /// chats exactly as for driven work: two agents in one working tree corrupt each other's git
     /// state regardless of who is typing. The refusal names the session that holds it.</para>
-    ///
     /// <para><b>No quest, and no quest required.</b> The point of a chat is starting work that is not
     /// yet shaped as an ask; a chat may take a quest mid-conversation through its own connector, or
     /// end by publishing several. The quest system is where the work lands, not the toll to begin.</para>
-    ///
     /// <para><b>The circle comes from the repository</b>, because there is no quest to take it from —
     /// the registry row is the machine's own wiring, and it is the only honest source.</para>
     /// </remarks>

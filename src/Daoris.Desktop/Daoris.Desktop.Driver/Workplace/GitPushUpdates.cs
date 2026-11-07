@@ -79,7 +79,7 @@ public static class GitPushUpdates
 
     /// <summary>
     /// Read receive-pack's commands from git's side of an ssh push, as pkt-lines, up to the flush that ends them: every byte read, to be
-    /// forwarded as it was, and each update they name. A shallow line, a push certificate's other lines and the capabilities after the
+    /// forwarded as read, and each update they name. A shallow line, a push certificate's other lines and the capabilities after the
     /// first command's NUL name no update. Null where the stream ends or a pkt-line does not read before the flush.
     /// </summary>
     public static (byte[] Read, IReadOnlyList<GitPushUpdate> Updates)? ReadCommands(Stream input)

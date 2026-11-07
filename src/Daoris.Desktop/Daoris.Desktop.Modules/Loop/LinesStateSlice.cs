@@ -16,7 +16,7 @@ namespace Daoris.Desktop;
 ///
 /// <para><b>A partition per repository</b>, named by it: a ref moved in one repository, whose line is judged again alone
 /// (<see cref="HelpFacts"/>), pushes that partition alone, and a line or a rule set for a workspace pushes its repositories'. A
-/// repository whose line was not judged yet is pushed with its rules and its line said not read yet (no branch,
+/// repository whose line is not judged yet is pushed with its rules and its line said not read yet (no branch,
 /// <c>notReadYet</c>), never left out, which a window would read as removed; one the registry no longer names is pushed gone.</para>
 ///
 /// <para><b>Not judged until the facts land.</b> The slices start with the loop, the machine's facts once the service answers:
@@ -60,13 +60,13 @@ public static class LinesStateSlice
         {
             WakesOn = WakesOn,
             Hears = [wake => HearFacts(loop.Facts, wake), _ => HearRegistry(bus, loop.Facts)],
-            // The file unreadable: the windows keep what was judged, and the next wake judges again.
+            // The file unreadable: the windows keep the last judgement, and the next wake judges again.
             Failed = error => loop.Log?.Warn("state.slice", ("slice", Name), ("message", error.Message)),
         };
 
     /// <summary>
     /// One judgement: each repository the service's answers name, a partition of its rows of <c>LINES</c>' answer, its line as far as
-    /// its checkout's guess was judged; null where the service's answers were never judged, which judges nothing. Reads nothing
+    /// its checkout's guess is judged; null where the service's answers have never been judged, which judges nothing. Reads nothing
     /// outside <paramref name="facts"/>, <paramref name="config"/> and <paramref name="adapters"/>: no git, no service.
     /// </summary>
     public static IReadOnlyList<SliceJudged>? Judge(MachineFactsSnapshot facts, DriverConfig config, ProviderRegistry adapters)
@@ -81,7 +81,7 @@ public static class LinesStateSlice
         ];
     }
 
-    /// <summary>A repository's line as far as it was judged; with no guess judged yet, none, said not read yet.</summary>
+    /// <summary>A repository's line as far as it is judged; with no guess judged yet, none, said not read yet.</summary>
     private static LineRow Row(MachineFactsSnapshot facts, DriverConfig config, RepoView known)
     {
         var workspace = RemoteTarget.Workspace(known.Workspace);

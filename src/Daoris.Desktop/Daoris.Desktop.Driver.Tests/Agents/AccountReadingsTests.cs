@@ -6,14 +6,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL6c (D130 §5.2, §6, §16.3 steps 2 and 5, as the limit-signals evidence corrects them): what an agent says about an
+/// What an agent says about an
 /// account's windows, read from its frame by the agent's table. Claude Code's <c>rate_limit_event</c> carries each window's
 /// use as a fraction and its reset on every frame of an ordinary turn (evidence §1.1, §1.2), and its protocol door forwards
 /// the same object as <c>usage_update._meta["_claude/rateLimit"]</c> (§3). Pure, so these tables are the whole contract:
 /// which window a frame names, its standing, its use, and when an account is near or behind its week's pace.
 /// </summary>
 /// <remarks>
-/// The frames are the evidence's (§1.1), each moment written relative to when it was seen (<c>&lt;+2.0 h&gt;</c>) and
+/// The frames are the evidence's (§1.1), each moment written relative to when it is seen (<c>&lt;+2.0 h&gt;</c>) and
 /// placed here against this test's own moment: no account, no address and no machine time is in them.
 /// </remarks>
 public sealed class AccountReadingsTests
@@ -37,7 +37,7 @@ public sealed class AccountReadingsTests
     private static DateTimeOffset In(double hours) =>
         DateTimeOffset.FromUnixTimeSeconds((Now + TimeSpan.FromHours(hours)).ToUnixTimeSeconds());
 
-    // ——— The table (D125 §1.3's rule, kept for readings, §5.2): every entry stands on a frame the evidence recorded.
+    // ——— The table: every entry stands on a frame the evidence recorded.
 
     [Fact]
     public void Every_window_status_word_and_field_the_table_reads_stands_on_a_recorded_frame()
@@ -71,7 +71,7 @@ public sealed class AccountReadingsTests
             .Order(StringComparer.Ordinal)
             .ToArray();
 
-        // The protocol doors run as their owners' accounts (AGT7), so their readings are their owners' tables'; Codex's
+        // The protocol doors run as their owners' accounts, so their readings are their owners' tables'; Codex's
         // door forwards none of Codex's limits (evidence §4), so no table is declared for it.
         Assert.Equal(["alt-stub", "claude-code", "stub"], declaring);
         var roster = new HarnessRoster(adapters, Path.Combine(TestHomes.Root, "daoris-readings-unused", "harnesses.json"));
@@ -101,7 +101,7 @@ public sealed class AccountReadingsTests
     {
         // { status, the window it names, standing }
         { "allowed", "five_hour", "clear" },
-        // Claude Code's own pace warning (USAGEREAD3a, design §1.3): kept as the agent's warning, never as near.
+        // Claude Code's own pace warning: kept as the agent's warning, never as near.
         { "allowed_warning", "five_hour", "warned" },
         { "allowed_warning", "seven_day", "warned" },
         { "rejected", "seven_day", "refused" },
@@ -164,8 +164,8 @@ public sealed class AccountReadingsTests
             Read(frame));
     }
 
-    // ——— What the usage history keeps of a frame (USAGECAP1a1, D179 point 2): a parse beside the walk's, every window the
-    // frame says, by its key, its length and its scope, with the precision its number was written to.
+    // ——— What the usage history keeps of a frame: a parse beside the walk's, every window the
+    // frame says, by its key, its length and its scope, with the precision its number is written to.
 
     private static IReadOnlyList<WindowSeen> Seen(string frame) =>
         AccountReadings.Seen(JsonDocument.Parse(frame).RootElement.Clone(), Claude);
@@ -229,11 +229,11 @@ public sealed class AccountReadingsTests
         Assert.Empty(Seen(frame));
     }
 
-    // ——— Near (§6 as the evidence corrects it; D165 point 2): the agent's word that a limit was reached, drawing on usage
-    // credits, or a window's use over the scope's curve now (SWITCH1b-ii, the switch design §2–§3). Claude Code's `allowed`
+    // ——— Near (§6 as the evidence corrects it): the agent's word that a limit is reached, drawing on usage
+    // credits, or a window's use over the scope's curve now. Claude Code's `allowed`
     // came at 88% with two hours left (evidence §1.3), so its word alone would pass nothing a number says; the number, which
     // comes on every frame, is the agent's word too. Its `allowed_warning` is its own pace warning, use ahead of the time gone
-    // in a window (USAGEREAD3a, account-switch design §1.3): kept as `warned`, and never near alone. A window resets three
+    // in a window: kept as `warned`, and never near alone. A window resets three
     // hours on unless `@<hours>` says otherwise: the session is then two fifths gone, under the smart curve's flat 90.
 
     private static AccountSaid Said(params WindowSaid[] windows) => new(windows);
@@ -268,7 +268,7 @@ public sealed class AccountReadingsTests
 
     public static TheoryData<string, string, bool> Nears => new()
     {
-        // { what was said, the scope's switch and curve, whether near }
+        // { what is said, the scope's switch and curve, whether near }
         { "session 0.88 clear", "smart", false },
         { "session 0.88 clear", "curve session=85", true },
         // On its curve is not over it; a point over is.
@@ -283,11 +283,11 @@ public sealed class AccountReadingsTests
         // `off` reads the smart curve: a start still passes an account over it (the switch design §3).
         { "session 0.95 clear", "off", true },
         { "session 0.88 clear", "off", false },
-        // By the agent's word that a limit was reached, whatever the number; by credits.
+        // By the agent's word that a limit is reached, whatever the number; by credits.
         { "weekly 0.40 refused", "smart", true },
         { "session 0.10 clear credits", "smart", true },
         { "session 0.10 clear, weekly 0.20", "curve session=50", false },
-        // Its pace warning is not near alone (USAGEREAD3a): the number decides, as it does for a clear word.
+        // Its pace warning is not near alone: the number decides, as it does for a clear word.
         { "session 0.10 warned", "smart", false },
         { "session - warned", "smart", false },
         { "weekly 0.60 warned", "smart", false },
@@ -304,9 +304,9 @@ public sealed class AccountReadingsTests
     }
 
     /// <summary>
-    /// USAGEREAD3a: a near account is near by a limit reached, by credits or by its number, and never by a warning word, so
+    /// A near account is near by a limit reached, by credits or by its number, and never by a warning word, so
     /// the page's <c>near[].by</c> and the start's reason name no word. By its number, the window named is the one with the
-    /// least room under its curve (SWITCH1b-ii).
+    /// least room under its curve.
     /// </summary>
     [Fact]
     public void Near_is_by_a_limit_reached_by_credits_or_by_the_number_and_never_by_a_warning()
@@ -334,10 +334,10 @@ public sealed class AccountReadingsTests
     [InlineData("session 0.88 clear", "curve session=85", "near")]
     [InlineData("session 0.10 clear credits", "smart", "near")]
     [InlineData("weekly 0.40 refused", "smart", "refused")]
-    // Warned and not near is its own word in the log (USAGEREAD3a); warned and near by its number is near.
+    // Warned and not near is its own word in the log; warned and near by its number is near.
     [InlineData("session 0.10 warned", "smart", "warned")]
     [InlineData("session 0.95 warned", "smart", "near")]
-    // Over its curve is the log's `near` (SWITCH1b-ii): the log's word for an account passed.
+    // Over its curve is the log's `near`: the log's word for an account passed.
     [InlineData("weekly 0.70@96", "smart", "near")]
     public void Its_standing_for_the_log_is_refused_near_warned_or_clear(string written, string use, string standing)
     {
@@ -345,7 +345,7 @@ public sealed class AccountReadingsTests
     }
 
     // ——— Pace (§16.3 step 5): how far the week's use is behind the share of the week already gone, from the weekly
-    // window's reading; nothing where the week was not said.
+    // window's reading; nothing where the week is not said.
 
     [Theory]
     // 4 days to its reset: 3 of 7 days gone.

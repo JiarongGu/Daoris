@@ -16,7 +16,7 @@ namespace Daoris.Driver;
 /// row (<c>UnionJoinsTests</c>, <c>merge-branch.test.ts</c>), and a change to one is a change to both.</para>
 /// <para><b>Which files.</b> The decisions folder <c>daoris.json</c> declares and every path <c>.gitattributes</c> marks <c>merge=union</c> or
 /// <c>merge=rows</c>, both read at the line's commit the replay builds on, never the session's copy; and only those the replay changed
-/// against the line. A join either side already held (the line's file, the session's own tip's) is not the replay's and stays as it was.</para>
+/// against the line. A join either side already held (the line's file, the session's own tip's) is not the replay's and stays untouched.</para>
 /// </remarks>
 internal static partial class UnionJoins
 {
@@ -214,7 +214,7 @@ internal static partial class UnionJoins
     /// one commit of Daoris's, so the session's commits stay as replayed: in each file the replay changed against
     /// <paramref name="onto"/> that is a decision of the declared folder, a note label glued to the line above; in each other union
     /// record, a heading glued to it that neither <paramref name="onto"/>'s copy nor <paramref name="session"/>'s (the work's own tip)
-    /// held. Nothing where there is none, or git could not say: a join left as it was is what the replay made before.
+    /// held. Nothing where there is none, or git could not say: a join left as it stands is what the replay made.
     /// </summary>
     internal static async Task<IReadOnlyList<Set>> SetApartAsync(string tree, string onto, string session, CancellationToken ct)
     {

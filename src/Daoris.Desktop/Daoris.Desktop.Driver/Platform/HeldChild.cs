@@ -42,7 +42,7 @@ internal sealed class HeldChild : IDisposable
     /// <summary>The child's process id.</summary>
     public int Pid { get; }
 
-    /// <summary>When the child was made, in UTC ticks: with its id, what tells it from a later process of the same id (<see cref="ProcessLiveness"/>).</summary>
+    /// <summary>When the child is made, in UTC ticks: with its id, what tells it from a later process of the same id (<see cref="ProcessLiveness"/>).</summary>
     public long Started { get; }
 
     /// <summary>
@@ -151,7 +151,7 @@ internal sealed class HeldChild : IDisposable
         }
         catch (Exception error) when (error is IOException or ObjectDisposedException)
         {
-            // The pipe closed under the write, or the child was let go of: its exit is the answer that counts.
+            // The pipe closed under the write, or the child is let go of: its exit is the answer that counts.
         }
         finally
         {

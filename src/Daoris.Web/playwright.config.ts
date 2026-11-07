@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test';
 
-// The example family (D39) is the UI's fixture: the suite boots the REAL HTTP host over examples/
+// The example family is the UI's fixture: the suite boots the REAL HTTP host over examples/
 // with a scratch store, and drives the same bundle a person uses — the host serves wwwroot — not a
 // dev server with different behaviour. Build first; `npm run test:web` at the workspace root does.
 export default defineConfig({

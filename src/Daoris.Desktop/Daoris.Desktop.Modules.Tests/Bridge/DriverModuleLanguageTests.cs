@@ -58,7 +58,7 @@ public sealed class DriverModuleLanguageTests : DriverModuleBridge
             state.GetProperty("languageTable").EnumerateArray().Select(row => $"{row.GetProperty("code").GetString()}={row.GetProperty("name").GetString()}"));
     }
 
-    /// <summary>Each repository the registry holds, what its sessions are asked to write in and where that was set; none is absent.</summary>
+    /// <summary>Each repository the registry holds, what its sessions are asked to write in and where that is set; none is absent.</summary>
     [Fact]
     public async Task The_lines_answer_what_each_repository_resolves_to_and_from_where()
     {

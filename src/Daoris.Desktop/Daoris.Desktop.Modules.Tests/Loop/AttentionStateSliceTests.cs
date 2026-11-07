@@ -310,7 +310,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.True(AttentionStateSlice.Picked(ownRow)["trust"]!["own"]!.GetValue<bool>());
     }
 
-    /// <summary>An intake's room is named by its ask, which the page words; it waits since the ask was asked.</summary>
+    /// <summary>An intake's room is named by its ask, which the page words; it waits since its ask.</summary>
     [Fact]
     public void An_intake_s_room_carries_its_ask_since_the_ask_was_asked()
     {
@@ -859,7 +859,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
 
     /// <summary>
     /// 🔴 The owner's case (2026-10-21): go-aheads to write production configuration sat in What needs you for days after their asks'
-    /// work was done another way. Its asker ended and its ask's one quest is done, so nothing on the ask can use its answer: the row says
+    /// work had been done another way. Its asker ended and its ask's one quest is done, so nothing on the ask can use its answer: the row says
     /// it is stale, since the last thing on its ask moved, and keeps its workspace.
     /// </summary>
     [Fact]
@@ -878,7 +878,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// Nothing on its ask in hand at all (its asker's record forgotten, no quest of it held): stale since it was last asked, the one moment
+    /// Nothing on its ask in hand at all (its asker's record forgotten, no quest of it held): stale since its last ask, the one moment
     /// left that says something needed it.
     /// </summary>
     [Fact]
@@ -1392,7 +1392,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
 
     /// <summary>
     /// A terminal's press waiting for the window is a row of <i>What needs you</i>, which the badge counts: by its route and
-    /// the terminal as the system names it, since it was asked, never a value it carries; and it is gone once it no longer waits.
+    /// the terminal as the system names it, since its ask, never a value it carries; and it is gone once it no longer waits.
     /// </summary>
     [Fact]
     public async Task A_terminal_s_press_waiting_for_the_window_is_a_row_by_its_route_and_terminal_never_its_values()
@@ -1429,7 +1429,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
 
     /// <summary>
     /// A volume still below its free-space floor once the floor's acts ran is a row of <i>What needs
-    /// you</i>, by its volume since it was said, with its free space, size and floor, what the floor freed and what the press could; the
+    /// you</i>, by its volume since its saying, with its free space, size and floor, what the floor freed and what the press could; the
     /// slice is woken as it is said and as it ends, and the row is gone once the volume is above its floor by the margin. A stand-in read.
     /// </summary>
     [Fact]
@@ -1693,7 +1693,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         over);
 
     /// <summary>
-    /// A node record that does not read is a row of its own, by its file, naming the unit it names where it names one, since it was last
+    /// A node record that does not read is a row of its own, by its file, naming the unit it names where it names one, since its last write,
     /// written, with the record whole for the page to word; one naming no unit is a row too, said where nothing names it.
     /// </summary>
     [Fact]

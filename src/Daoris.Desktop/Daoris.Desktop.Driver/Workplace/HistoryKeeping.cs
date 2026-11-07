@@ -23,7 +23,7 @@ public static class HistoryKeeping
     /// One daily clear at <paramref name="policy"/>'s age: every workspace with finished work listed, what is past its days and may go
     /// cleared, what is past its days and stays said. Nothing at all where no age is set.
     /// </summary>
-    /// <exception cref="DriverException">The service did not answer, or has no history door; what was cleared before it stays cleared.</exception>
+    /// <exception cref="DriverException">The service did not answer, or has no history door; what is cleared before it stays cleared.</exception>
     public static async Task<HistoryKeepingPass> PassAsync(HistoryWorld world, HistoryPolicy policy, CancellationToken ct = default)
     {
         if (policy.Days is not { } days) return HistoryKeepingPass.None;

@@ -22,7 +22,7 @@ public sealed class SessionWordsKeptIdentityTests : DriverModuleBridge
     private const string Words = "Port 9090, not 8080.";
 
     /// <summary>
-    /// A restart keeps what the word was said with: its key, level, files and display choice are in the held file beside its text and
+    /// A restart keeps what the word is said with: its key, level, files and display choice are in the held file beside its text and
     /// door, and the record keeps the word under that key and those files once it ends, the display choice shown with it. The record
     /// path says no <c>choice</c> and no level: the say door refuses a choice from any author but the supervisor and keeps nothing.
     /// </summary>
@@ -137,7 +137,7 @@ public sealed class SessionWordsKeptIdentityTests : DriverModuleBridge
 
     /// <summary>
     /// A hold restarted and then forwarded to a live successor keeps its key and level there: the successor's inbox is handed
-    /// the word at the level it was said at, and its record keeps it under the producer's key, so a producer's retry said to the successor
+    /// the word at the level it is said at, and its record keeps it under the producer's key, so a producer's retry said to the successor
     /// while the word waits there keeps one word.
     /// </summary>
     [Fact]

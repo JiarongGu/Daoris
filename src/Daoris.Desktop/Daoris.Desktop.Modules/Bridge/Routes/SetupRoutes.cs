@@ -93,7 +93,7 @@ public sealed class SetupRoutes(DriverContext context)
     // A repository's reconcile with the shared doctrine, the set-up press's own case, planned:
     // {repository} answers {repository, offered, status, refusals, pressable, title}. `status` is what the doctrine tool's `status --json` said of
     // its checkout (`synced`, `update` `behind` or `differs`, `carried` and `locked`, the files a sync would `changed`, `added` and `retired`, the
-    // keeps `reopened`, a `newerLock`), absent where it was not asked or printed none; `offered` is where it says the canon moved or a keep
+    // keeps `reopened`, a `newerLock`), absent where it is not asked or printed none; `offered` is where it says the canon moved or a keep
     // reopened. It reads the registry, the quests, the line and the tool, and writes nothing.
     [DriverRoute("RECONCILE_PLAN", PipeClass.Open)]
     [ByEvent("RECONCILE_PLAN", Untold = "the service's registry and quests, driver.json, the repository's line and the doctrine tool's status for its checkout")]
@@ -135,7 +135,7 @@ public sealed class SetupRoutes(DriverContext context)
         return new { Done = outcome.Published, Refused = outcome.Published ? null : "refused", outcome.Message, Quest = outcome.QuestId, Ask = outcome.AskId };
     }
 
-    /// <summary>The reconcile's plan for the payload's <c>repository</c>, and the world it was read from, which its press asks through.</summary>
+    /// <summary>The reconcile's plan for the payload's <c>repository</c>, and the world it reads from, which its press asks through.</summary>
     private async Task<(SetupPlan Plan, ISetupWorld World)> ReconcileOfAsync(string? named, CancellationToken cancellationToken)
     {
         var repository = named ?? throw new DriverException("a reconcile names its repository as `repository`.");

@@ -17,7 +17,7 @@ public sealed record TreeMoved(string Line, string From, string To, string? Bran
 /// What a session's start did with its tree against the line: where the line holds some
 /// of the tree's commits, the tree is brought up to date before the turn, and the session is told either way.
 /// </summary>
-/// <param name="Moved">Where the tree went, where it was brought up to date; null where it stayed.</param>
+/// <param name="Moved">Where the tree went, where it is brought up to date; null where it stayed.</param>
 /// <param name="Told">
 /// What the session's instruction carries (<see cref="TreeStartWords"/>): what moved, or that the line holds some of its work and the
 /// tree could not be brought up to date, and a fetch that failed. Null where there is nothing to tell it.
@@ -35,8 +35,8 @@ public sealed record TreeStartSync(TreeMoved? Moved, string? Told)
 public static class TreeStartWords
 {
     /// <summary>
-    /// The tree was brought up to date: the line held <paramref name="leftOut"/> of its commits, left out, and
-    /// <paramref name="kept"/> of its own were replayed onto <paramref name="ontoName"/>.
+    /// The tree is brought up to date: the line holds <paramref name="leftOut"/> of its commits, left out, and
+    /// <paramref name="kept"/> of its own replayed onto <paramref name="ontoName"/>.
     /// </summary>
     public static string Moved(string line, string ontoName, int leftOut, int kept) =>
         $"Before this turn Daoris brought this tree up to date with `{line}`: the line already holds {leftOut} of its commit(s), "
@@ -46,7 +46,7 @@ public static class TreeStartWords
         + " Read the log before you go on: the commits you made have new ids.";
 
     /// <summary>
-    /// The line holds some of the tree's work and the tree was not brought up to date (a conflict in git's words, or why it was left):
+    /// The line holds some of the tree's work and the tree is not brought up to date (a conflict in git's words, or why it is left):
     /// the session is asked to replay its own commits onto the line itself before anything else.
     /// </summary>
     public static string NotMoved(string line, string ontoName, int leftOut, string why) =>
@@ -54,7 +54,7 @@ public static class TreeStartWords
         + $"turn: {why.Trim().TrimEnd('.')}. Before anything else, replay your own commits onto `{ontoName}`, keeping only what the line "
         + "lacks, resolve any conflict, and check that the work still holds: a landing carries only what the line lacks.";
 
-    /// <summary>The line holds none of the tree's work, said only where the fetch failed, so the session knows what it was judged against.</summary>
+    /// <summary>The line holds none of the tree's work, said only where the fetch failed, so the session knows what it is judged against.</summary>
     public static string HoldsNone(string line) => $"Before this turn Daoris judged this tree against `{line}`, and the line holds none of its work.";
 
     /// <summary>
@@ -109,7 +109,7 @@ public static class TreeStartWords
 /// <summary>
 /// What a go-on's start did with a step's tree against its source's new submission, before the line's sync.
 /// </summary>
-/// <param name="Stops">The tree was left for a reason that changes nothing else: the line's sync is not asked.</param>
+/// <param name="Stops">The tree is left for a reason that changes nothing else: the line's sync is not asked.</param>
 internal sealed record SubmissionOnto(TreeMoved? Moved, string? Told, bool Stops)
 {
     /// <summary>Nothing to do and nothing to tell: not a tree of this home's, or one that holds the commit already.</summary>
@@ -161,7 +161,7 @@ public sealed record TreeFacts(string? Repository = null, string? Line = null, s
 
     public bool Held { get; init; }
 
-    /// <summary>Why the line was not fetched, in git's words; null where it was, or none was tried yet.</summary>
+    /// <summary>Why the line is not fetched, in git's words; null where it is, or none is tried yet.</summary>
     public string? NotFetched { get; init; }
 
     public bool UpToDate { get; init; }
@@ -228,7 +228,7 @@ public static class TreeUpdateWords
           + (leftOut > 0 ? $", leaving out {leftOut} the line holds" : "")
           + (kept < had ? $" ({had - kept} became empty, their changes already on the line)." : ".");
 
-    /// <summary>A detached tree's replay git would not make: a conflict names its files. <paramref name="back"/>: HEAD is where it was.</summary>
+    /// <summary>A detached tree's replay git would not make: a conflict names its files. <paramref name="back"/>: HEAD is unmoved.</summary>
     public static string NotReplayed(string line, string words, bool back) => $"the tree would not replay onto `{line}`: {words} " + (back
         ? "The replay was aborted, and the tree is as it was."
         : "Git could not put the tree back where it was: look at the tree before anything else (`git rebase --abort`, then `git status`).");

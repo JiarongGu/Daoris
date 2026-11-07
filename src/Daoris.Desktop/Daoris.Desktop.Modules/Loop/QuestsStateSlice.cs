@@ -44,7 +44,7 @@ public static class QuestsStateSlice
         "paths", "request",
     ];
 
-    /// <summary>What the service answers of a quest that no view reads from the list: what was read of its evidence.</summary>
+    /// <summary>What the service answers of a quest that no view reads from the list: what is read of its evidence.</summary>
     public static readonly IReadOnlyList<string> PulledOnly = ["awaitsEvidence", "evidence", "weight"];
 
     /// <summary>What each file a quest or an ask carries is pushed with, as the service answers it.</summary>
@@ -73,7 +73,7 @@ public static class QuestsStateSlice
             Keyed = true,
             WakesOn = WakesOn,
             Hears = [wake => HearLedger(loop, Families, wake)],
-            // The service away or refusing: the windows keep what was judged, and the next wake reads it again.
+            // The service away or refusing: the windows keep the last judgement, and the next wake reads it again.
             Failed = error => loop.Log?.Warn("state.slice", ("slice", Name), ("message", error.Message)),
         };
 

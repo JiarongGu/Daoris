@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// A change to the draft open in the person's editor, over the bridge. The card is judged
-/// against the draft the conversation's record says it was told, and carries the changes, what a save would refuse and the candidate graph;
+/// against the draft the conversation's record says it has been told, and carries the changes, what a save would refuse and the candidate graph;
 /// its Apply opens the place's Workflow and stands, and the editor's press naming each change taken or left settles it. Neither writes a
 /// workflow or a choice: the workflow store and the driver's file are as they were, byte for byte.
 /// </summary>

@@ -78,13 +78,13 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
 
     /// <summary>
     /// The process a session's own tree runs under, for its page's *Details*: how its work is
-    /// committed and how it lands, each with where it was set. Read from the driver file and the tree's place alone: no git, so a
+    /// committed and how it lands, each with where it is set. Read from the driver file and the tree's place alone: no git, so a
     /// page may ask it for every session it shows.
     /// </summary>
     /// <remarks>
     /// Only a tree this home made is told a process: a session in the person's
     /// checkout, or whose record names no tree here, answers none, as its start told it none. The rules are as resolved now, which a
-    /// press of Accept reads; a rule changed since the session's start was not told to it.
+    /// press of Accept reads; a rule changed since the session's start is not told to it.
     /// </remarks>
     [DriverRoute("SESSION_PROCESS", PipeClass.Open)]
     private async Task<object?> ProcessAsync(SessionProcess press, CancellationToken cancellationToken)
@@ -97,7 +97,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
     }
 
     /// <summary>
-    /// What <c>SESSION_PROCESS</c> says of a tree: its repository's commit rule as <c>LINES</c> says it, with where it was set, the
+    /// What <c>SESSION_PROCESS</c> says of a tree: its repository's commit rule as <c>LINES</c> says it, with where it is set, the
     /// repository and workspace read from the tree's place; null where the tree is not one this home made. How its work lands is its run's
     /// bound <c>land</c>, which the run's view says.
     /// </summary>
@@ -307,8 +307,8 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
         string session, LandingPlan plan, int uncommitted, LandingGate gate, string? leftOutOf, CarriedAccept? carried = null,
         LandingDelivery? delivery = null) => new
     {
-        // the session's newest delivery, where one was written: who authorized it and when, the phase
-        // an unresolved one stands at, and when it was delivered; each null where there is none.
+        // the session's newest delivery, where one is written: who authorized it and when, the phase
+        // an unresolved one stands at, and when it is delivered; each null where there is none.
         Authorized = delivery is null ? null : new { delivery.Record.Authorization.Authority, delivery.Record.At },
         Running = delivery is { Record.Unresolved: true } ? new { delivery.Record.Intent.Method, delivery.Phase } : null,
         Completed = delivery?.Record is { Settled: DeliverySettlements.Delivered, SettledAt: { } delivered } ? delivered : (DateTimeOffset?)null,
@@ -481,7 +481,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
     /// </remarks>
     public static object? OpinionDetail(OpinionGateState gate, Func<string, UsageEntry?>? usageOf = null)
     {
-        // The reviewer's measured use: read by the reviewer's own session; null where none was measured, never 0.
+        // The reviewer's measured use: read by the reviewer's own session; null where none is measured, never 0.
         object? Usage(OpinionView view) => usageOf?.Invoke(view.Session) is { } entry ? new { entry.Used, entry.Size } : null;
         object Pass<T>(OpinionView view, Func<OpinionFindingView, T> beside) => PassOf(view, Usage(view), beside);
         if (gate.State == OpinionGateStates.None) return null;

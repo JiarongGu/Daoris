@@ -151,7 +151,7 @@ internal sealed class PipeTakeBacks(InstancePipe pipe)
                 if (!_state.Reserved.Remove(id, out reserved))
                 {
                     waiting = _state.WaitingFor.GetValueOrDefault(id);
-                    // Marked before the confirmations are asked, so the press's ending says it was this route's.
+                    // Marked before the confirmations are asked, so the press's ending says it is this route's.
                     if (waiting is not null) _state.Withdrawn.Add(id);
                 }
             }
@@ -202,7 +202,7 @@ internal sealed class PipeTakeBacks(InstancePipe pipe)
         return IpcResponse.CreateSuccess(request.Id, new { state = "running" });
     }
 
-    /// <summary>The answer of a press begun by an instance that stopped before it ended: whether it was done is not known.</summary>
+    /// <summary>The answer of a press begun by an instance that stopped before it ended: whether it finished is not known.</summary>
     private static IpcResponse InterruptedAnswer(string id) => IpcResponse.CreateError(id, InstancePipe.Interrupted, null,
         "Daoris stopped while this request was under way, so whether it was done is not known; it was not run again.");
 }

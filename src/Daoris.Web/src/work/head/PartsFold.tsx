@@ -19,12 +19,12 @@ const PRESS = 'cursor-pointer border-0 bg-transparent p-0 text-small text-accent
  * (the flow's own heading says *Part 2 of 3* again) and *Hide the parts* is the press back, as the chain's *Show how it ran* is.
  *
  * - **Where the fold's state lives**: in this molecule, as the milestone's does, and the page mounts it under the line of work's
- *   id, not the session's: pressing a part in the open flow shows another session of the same line of work, and the flow the
- *   person is reading must not fold under their press. Another line of work starts folded.
+ * id, not the session's: pressing a part in the open flow shows another session of the same line of work, and the flow the
+ * person is reading must not fold under their press. Another line of work starts folded.
  * - **Accept's plan is read for the open flow only**: folded, no landing node is drawn, and the person's press on Accept is not
- *   what opens it (a block opening itself under a press elsewhere would move the control the person just pressed).
+ * what opens it (a block opening itself under a press elsewhere would move the control the person just pressed).
  * - **The newest is the last of the list**, which is oldest first (the ledger's order, never a time): how it began is the strip's
- *   own sentence (`beganLine`).
+ * own sentence (`beganLine`).
  * - Nothing is drawn for a line of work of one part, as the strip and the flow draw none.
  */
 export function PartsFold({ plan, defaultOpen = false, ...props }: PartsProps & {

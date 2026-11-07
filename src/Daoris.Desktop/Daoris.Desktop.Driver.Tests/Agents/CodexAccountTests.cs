@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CODEXACCT1 (D125's CODEXACCT1 note): the window adds a Codex account as the terminal does. Codex reaches the driver only
+/// The window adds a Codex account as the terminal does. Codex reaches the driver only
 /// through <c>codex-acp</c>, which runs <c>codex</c> and has no sign-in of its own, and no <c>codex</c> door exists, so the
 /// agent whose accounts the door runs as is declared for it: <c>codex</c>'s own binary, its <c>login</c>, its
 /// <c>login status</c> and its <c>CODEX_HOME</c>, the CLI's <c>codex</c> entry's twin.
@@ -26,8 +26,7 @@ public sealed class CodexAccountTests : IDisposable
     private HarnessRoster Roster() => new(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses));
 
     /// <summary>
-    /// The door's accounts are asked and signed in by <c>codex</c>, as <c>claude-code-acp</c>'s are by <c>claude-code</c>
-    /// (AGT7): the account agent is <c>codex</c>, with its own binary, never the door's <c>codex-acp</c>, and the door keeps
+    /// The door's accounts are asked and signed in by <c>codex</c>, as <c>claude-code-acp</c>'s are by <c>claude-code</c>: the account agent is <c>codex</c>, with its own binary, never the door's <c>codex-acp</c>, and the door keeps
     /// no sign-in of its own.
     /// </summary>
     [Fact]
@@ -38,24 +37,24 @@ public sealed class CodexAccountTests : IDisposable
         Assert.Equal("codex", agent.Name);
         Assert.Equal(["codex"], agent.Program.Binary);
         Assert.Equal("CODEX_HOME", agent.Home.Variable);
-        // CODEXLOGIN1: the browser sign-in first, as ChatGPT's desktop app signs in, on the ports 0.160.0 tries in order; the
+        // The browser sign-in first, as ChatGPT's desktop app signs in, on the ports 0.160.0 tries in order; the
         // device code beside it, since a workspace may refuse either.
         Assert.Equal(["login"], agent.Accounts.LoginArguments!);
         Assert.Equal(["login", "--device-auth"], agent.Accounts.DeviceLoginArguments!);
         Assert.Equal([1455, 1457], agent.Accounts.LoginPorts!);
         Assert.Equal(["login", "status"], agent.Accounts.Login!.Arguments);
         Assert.Equal(["codex"], Roster().AccountAgentOf("codex-acp")!.Program.Binary);
-        // The door itself still has none: it runs `codex` and reads the home `codex` signed into (ACP3).
+        // The door itself still has none: it runs `codex` and reads the home `codex` signed into.
         Assert.Null(Roster().AgentOf("codex-acp")!.Accounts.LoginArguments);
-        // Measured with no key spent: `--with-api-key` stores a key in Codex's own home, which D67 §1 does not carry.
+        // Measured with no key spent: `--with-api-key` stores a key in Codex's own home, which Daoris does not carry.
         Assert.Null(agent.Accounts.KeyVariable);
     }
 
     /// <summary>
-    /// 🔴 POOL1a3 (D197 point 3; the account-pool design §3 point 1): every sign-in action's spawn, each door's agent and each
+    /// 🔴 POOL1a3: every sign-in action's spawn, each door's agent and each
     /// way it signs in, sets the agent's configuration-home variable to an account's folder under the home; a folder anywhere
     /// else, the person's own profile folder among them, is refused before anything is made. Prepared, never started, on a named
-    /// stub: no test starts a real sign-in (LIVELOGIN1).
+    /// stub: no test starts a real sign-in.
     /// </summary>
     [Fact]
     public void Every_sign_in_s_spawn_sets_the_configuration_home_under_the_home_and_none_runs_elsewhere()
@@ -65,7 +64,7 @@ public sealed class CodexAccountTests : IDisposable
         foreach (var door in ProviderRegistry.Built().Names)
         {
             if (roster.AccountAgentOf(door) is not { Accounts.LoginArguments: not null } agent) continue;
-            // A command named for the agent, so the binary prepared is never PATH's, which a scratch home refuses (LIVELOGIN1).
+            // A command named for the agent, so the binary prepared is never PATH's, which a scratch home refuses.
             var named = DriverConfig.Empty with { Commands = new Dictionary<string, IReadOnlyList<string>> { [agent.Name] = ["node", "stub.mjs"] } };
             var run = roster.SignInCommand(door, named)!;
             SignInWay[] ways = agent.Accounts.DeviceLoginArguments is null ? [SignInWay.Browser] : [SignInWay.Browser, SignInWay.DeviceCode];
@@ -129,17 +128,16 @@ public sealed class CodexAccountTests : IDisposable
         var said = Roster().AccountAgentOf("codex-acp")!.Accounts.Login!.Read(output);
 
         Assert.Equal(expected, said.Login);
-        // Codex names nobody in its answer, so the account is named by the person (ACCT2), never guessed.
+        // Codex names nobody in its answer, so the account is named by the person, never guessed.
         Assert.Null(said.Account);
     }
 
-    // The declaration was held to the CLI's `codex` entry in `toolchain.ts` until `TOOLCHAINS` left with the plugins' TypeScript
-    // (PUSH1f2f): every sign-in is the driver's since `daoris agent` became its program's (PUSH1f2e), so the declaration has one home.
+    // Every sign-in is the driver's, so the declaration has one home.
 
     /// <summary>
-    /// CODEXACCT2: what <c>codex login --device-auth</c> prints reaches the window's console as plain lines, as Claude
+    /// What <c>codex login --device-auth</c> prints reaches the window's console as plain lines, as Claude
     /// Code's sign-in does: its colours gone, the link a line of its own for the page to offer, and the one-time code the
-    /// line after the sentence that asks for it. The words are those measured with 0.160.0 (D125's CODEXACCT2 note), shaped
+    /// line after the sentence that asks for it. The words are those measured with 0.160.0, shaped
     /// as Codex prints them, with a colour around the version, the link, the code and the notes; the code is invented.
     /// </summary>
     [Fact]
@@ -163,7 +161,7 @@ public sealed class CodexAccountTests : IDisposable
         Assert.Equal("   ABCD-12345", lines[asked + 1]);
     }
 
-    // ——— Which `codex` a sign-in runs (D57 rule 4): the command named for it, then its pin, then PATH's, as its status
+    // ——— Which `codex` a sign-in runs: the command named for it, then its pin, then PATH's, as its status
     // question asks. The owner's install pins Codex and has none on PATH, so a sign-in that ran PATH's could not start.
 
     private string Pin(string version)
@@ -180,8 +178,7 @@ public sealed class CodexAccountTests : IDisposable
     private string Fresh => HarnessSettings.ProfileHome(_home, "codex", "acct-0a1b2c3d");
 
     /// <summary>
-    /// Only a pin, no command named: the sign-in's start names the pinned <c>codex</c> and its browser sign-in first
-    /// (CODEXLOGIN1), into its new folder; asked for, its device code (CODEXACCT2).
+    /// Only a pin, no command named: the sign-in's start names the pinned <c>codex</c> and its browser sign-in first, into its new folder; asked for, its device code.
     /// </summary>
     [Fact]
     public void A_sign_in_with_only_a_pin_runs_the_pinned_codex_into_its_new_folder()
@@ -222,7 +219,7 @@ public sealed class CodexAccountTests : IDisposable
         Assert.Equal("`by-phone` is no way to sign in — `browser` or `device-code`.", Assert.Throws<DriverException>(() => SignInWays.Of("by-phone")).Message);
     }
 
-    // ——— CODEXLOGIN1: the browser sign-in's ports, tried for a moment, never read from Windows' table.
+    // ——— The browser sign-in's ports, tried for a moment, never read from Windows' table.
 
     /// <summary>
     /// A port another program holds reads as held, and one nobody holds as free, by taking it on the loopback address as
@@ -283,7 +280,7 @@ public sealed class CodexAccountTests : IDisposable
 
     /// <summary>
     /// What <c>codex login</c> 0.160.0 printed on its error stream, measured on 2026-10-21 under a throwaway home and stopped
-    /// before any sign-in (D125's CODEXLOGIN1 note): where it listens, then the page to open, then the other way. The page's
+    /// before any sign-in: where it listens, then the page to open, then the other way. The page's
     /// address is the measured one with every value of its query replaced. It reaches the console as plain lines, and the
     /// link to open is the one on <c>auth.openai.com</c>, never the local server's.
     /// </summary>
@@ -340,7 +337,7 @@ public sealed class CodexAccountTests : IDisposable
     // ——— A start on a door whose owner is declared, not carried: the walk reads the owner's accounts in the door's report,
     // and asks one through the owner's question. A stand-in answers in place of the agent, so no process starts.
 
-    // The system's clock, which a sign-in's mark is read by: a word older than the backstop is asked again (TOOL6g).
+    // The system's clock, which a sign-in's mark is read by: a word older than the backstop is asked again.
     private static readonly DateTimeOffset Now = DateTimeOffset.UtcNow;
 
     private readonly List<string> _asked = [];
@@ -378,7 +375,7 @@ public sealed class CodexAccountTests : IDisposable
     }
 
     /// <summary>
-    /// An account whose word that it is signed out is past the backstop is asked again at a start (TOOL6g), through the
+    /// An account whose word that it is signed out is past the backstop is asked again at a start, through the
     /// declared owner: the walk reads it in the door's report, where it asked a report of the owner, which is no adapter.
     /// </summary>
     [Fact]
@@ -396,7 +393,7 @@ public sealed class CodexAccountTests : IDisposable
         Assert.Equal(LoginState.In, AccountReads.Of(_home, "fake").Accounts["account-1"].Login);
     }
 
-    /// <summary>A pick that is cooling is refused naming the owner's accounts that are ready (D125 §3.3), read in the door's report.</summary>
+    /// <summary>A pick that is cooling is refused naming the owner's accounts that are ready, read in the door's report.</summary>
     [Fact]
     public async Task A_cooling_pick_on_a_door_onto_a_declared_owner_names_the_accounts_ready_instead()
     {

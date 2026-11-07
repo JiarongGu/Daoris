@@ -128,7 +128,7 @@ public static class GitAsks
     /// Answer a go-ahead (<c>git answer</c>, the window's press): the answer is written for a door that waits; for one that has gone an
     /// allow is kept as a grant for the same act, and a refuse is dropped.
     /// </summary>
-    /// <returns>Whether a door was still waiting for it.</returns>
+    /// <returns>Whether a door is still waiting for it.</returns>
     /// <exception cref="DriverException">There is no such go-ahead.</exception>
     public static bool Answer(string home, string id, bool allow, DateTimeOffset now)
     {

@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// One unit link 2 is pending for: its id, its repository, the branches of it still standing that the line holds, the
-/// tree its session branch has here (null where none stands), and when the line was first found holding it.
+/// tree its session branch has here (null where none stands), and when the line is first found holding it.
 /// </summary>
 public sealed record TidyUnit(string Unit, string Repository, string Workspace, IReadOnlyList<string> Branches, string? Tree, DateTimeOffset Since);
 

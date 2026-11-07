@@ -175,7 +175,7 @@ public sealed class SessionWordsContinuedTests : DriverModuleBridge
 
     /// <summary>
     /// A planted cycle, <c>c1</c>'s head <c>c2</c> and <c>c2</c>'s <c>c1</c>: the walk ends at the record it would ask again, never looping. Nothing is
-    /// kept anywhere, the word leaves the held file and the conversation it was said to says it was not kept, by the code <c>continued</c>.
+    /// kept anywhere, the word leaves the held file and the conversation it is said to says it is not kept, by the code <c>continued</c>.
     /// </summary>
     [Fact]
     public async Task A_planted_cycle_ends_the_walk_and_the_word_is_said_lost()

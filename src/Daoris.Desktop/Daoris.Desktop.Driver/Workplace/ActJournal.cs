@@ -23,7 +23,7 @@ public static class ActPhases
     /// <summary>Nothing more is written but the act ref's expiry; the checkout lock goes.</summary>
     public const string Closed = "closed";
 
-    /// <summary>Every phase this build writes and reads: a record at another was written by a newer build, and is held.</summary>
+    /// <summary>Every phase this build writes and reads: a record at another comes from a newer build, and is held.</summary>
     public static IReadOnlyList<string> All { get; } = [Judged, Prepared, Started, Ended, Reconciled, Closed];
 }
 
@@ -33,13 +33,13 @@ public static class ActOutcomes
     /// <summary>Every step's postconditions hold.</summary>
     public const string Done = "done";
 
-    /// <summary>No step's effect stands: every one began reads as it was before, or none began.</summary>
+    /// <summary>No step's effect stands: every one that began reads as before, or none began.</summary>
     public const string NotDone = "not-done";
 
     /// <summary>Some steps' effects stand and others do not, each read: the case of a rename stopped between its ref and its section.</summary>
     public const string Partial = "partial";
 
-    /// <summary>A step's postconditions read as neither, or its process is unended: nothing was retried.</summary>
+    /// <summary>A step's postconditions read as neither, or its process is unended: nothing is retried.</summary>
     public const string Unknown = "unknown";
 }
 
@@ -139,7 +139,7 @@ public sealed record ActStep(string Act, int Ordinal, string Kind, string Argume
 
     public int? ExitCode { get; init; }
 
-    /// <summary>Whether its process was not seen to end: its effect is then unknown, never failed.</summary>
+    /// <summary>Whether its process is not seen to end: its effect is then unknown, never failed.</summary>
     public bool Unended { get; init; }
 
     public string? Outcome { get; init; }
@@ -150,10 +150,10 @@ public sealed record ActStep(string Act, int Ordinal, string Kind, string Argume
     public bool Open => BeganAt is not null && EndedAt is null;
 }
 
-/// <summary>What a take answered: the record and the claim taken, or why it was refused, nothing written.</summary>
+/// <summary>What a take answered: the record and the claim taken, or why it is refused, nothing written.</summary>
 public sealed record ActTaken(ActRecord? Act, ActClaim? Claim, string? Refused);
 
-/// <summary>An act's write refused before anything was written: another act stands open in the checkout, or the record is not the claim's.</summary>
+/// <summary>An act's write refused before anything is written: another act stands open in the checkout, or the record is not the claim's.</summary>
 public sealed class ActRefusedException(string act, string why) : Exception($"act {act}: {why}")
 {
     public string Act { get; } = act;
@@ -380,8 +380,8 @@ public sealed class ActJournal(
 
     /// <summary>
     /// Take up an act whose claim's run is dead by the lease's test, in one guarded update that writes this run and raises the generation:
-    /// refused, nothing written, where the act is gone or closed, its claim is this run's own, the generation moved since
-    /// <paramref name="generation"/> was read, or its run lives or cannot be told dead (said taken first where that run is a reconciler's).
+    /// refused, nothing written, where the act is gone or closed, its claim is this run's own, the generation is no longer
+    /// <paramref name="generation"/>, or its run lives or cannot be told dead (said taken first where that run is a reconciler's).
     /// </summary>
     public ActTaken Take(string act, long generation)
     {

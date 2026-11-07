@@ -1,8 +1,6 @@
-// MCPMEM1: keeps a stdio MCP server's memory under a ceiling by starting it afresh when it has grown past it and no call is in
+// Keeps a stdio MCP server's memory under a ceiling by starting it afresh when it has grown past it and no call is in
 // flight. The harness sees one server throughout: the client's initialize is replayed to the new one and its answer swallowed.
-//
-//   node server-keeper.mjs <ceiling MB> <check every ms> <script> [arguments...]
-//
+//  node server-keeper.mjs <ceiling MB> <check every ms> <script> [arguments...]
 // Newline-delimited JSON-RPC, as the MCP stdio transport writes it. Anything that is not a line of JSON passes through.
 import { spawn, execFileSync } from 'node:child_process';
 

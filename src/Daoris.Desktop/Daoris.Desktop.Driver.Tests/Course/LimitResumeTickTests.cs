@@ -5,14 +5,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LIMITRESUME1b (D206; the limit-resume design §3.3) through REAL ticks on the protocol door: a driven line an account's limit cut off
+/// Through REAL ticks on the protocol door: a driven line an account's limit cut off
 /// resumes its own conversation once that account is ready again, decided inside the carry-on's own start, with Daoris's word kept on
 /// the ended record and taken off at its conclusion; where its own conversation is refused, it goes on in the same start, briefed; and
 /// a limited end is never a strike.
 /// </summary>
 /// <remarks>
 /// The stand-in agent takes its quest and is refused at its first turn by an account's limit (observation 4's sentence, the zone the
-/// test's); what a resumed or carried-on prompt meets is its mode's. The stand-in service is MSG1a's (<c>SaidStandIn</c>), which keeps
+/// test's); what a resumed or carried-on prompt meets is its mode's. The stand-in service is <c>SaidStandIn</c>, which keeps
 /// the ledger's limit flag and Daoris's words under their key. The clock and the zone are the roster's, the test's. The stub's own
 /// sign-in is the account that cools.
 /// </remarks>
@@ -142,7 +142,7 @@ public sealed class LimitResumeTickTests : IDisposable
         Assert.Empty(service.DaorisSaid);
 
         _now = Until.AddMinutes(1);
-        // FOUNDATION1i path 1: the start's step 1 is the course's answer for the limit's end, a resume of its own conversation.
+        // The start's step 1 is the course's answer for the limit's end, a resume of its own conversation.
         var decided = new List<LineCourse>();
         driver.Decided = decided.Add;
         var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
@@ -226,7 +226,7 @@ public sealed class LimitResumeTickTests : IDisposable
     }
 
     /// <summary>
-    /// TURNFAIL1 amended: two limited full resumes running leave the person's words waiting, unmarked, never <i>failed twice</i>; at most
+    /// Two limited full resumes running leave the person's words waiting, unmarked, never <i>failed twice</i>; at most
     /// one Daoris word is ever on the record, and none once each run concluded; no strike is counted.
     /// </summary>
     [Fact]
@@ -283,7 +283,7 @@ public sealed class LimitResumeTickTests : IDisposable
     }
 
     /// <summary>
-    /// Round 3's Codex 10 (D125 point 3 amended): a cool-off the file will not take still ends the run limited, no strike, its account
+    /// A cool-off the file will not take still ends the run limited, no strike, its account
     /// passed until its reset from memory, and the line resumes at it as any limited line does.
     /// </summary>
     [Fact]

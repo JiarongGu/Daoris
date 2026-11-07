@@ -20,15 +20,15 @@ export type FlowMeasure = {
   collisions: string[];
   overlaps: string[];
   crossings: number;
-  /** The paths a decision's outcome sends from its port (FLOWCHART2a), counted. */
+  /** The paths a decision's outcome sends from its port, counted. */
   ported: number;
-  /** A port's path that does not leave the bottom of its port's box (FLOWCHART2a). */
+  /** A port's path that does not leave the bottom of its port's box. */
   portMisses: string[];
   /** How many times the flow drew its edges (trap 14). */
   drawn: number;
-  /** An editor's ＋ on a way shown (FLOWCHART2b), counted. */
+  /** An editor's ＋ on a way shown, counted. */
   inserts: number;
-  /** A ＋ shown over a node, a shown label or another ＋ shown (FLOWCHART2b). */
+  /** A ＋ shown over a node, a shown label or another ＋ shown. */
   insertOverlaps: string[];
 };
 

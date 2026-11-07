@@ -27,7 +27,7 @@ namespace Daoris.Driver;
 public sealed class IntegrationRequests(IIntegrationRecords records, IIntegrationRequestStore store, Func<DriverConfig> config, string home)
 {
     /// <summary>
-    /// Admit <paramref name="ask"/>, or refuse it in a sentence that says why and that nothing was requested. An admitted request is kept in
+    /// Admit <paramref name="ask"/>, or refuse it in a sentence that says why and that nothing is requested. An admitted request is kept in
     /// the store, where none is open for its branch.
     /// </summary>
     public async Task<IntegrationAdmission> AdmitAsync(IntegrationAsk ask, CancellationToken ct = default)
@@ -97,7 +97,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
 
     /// <summary>
     /// The unit's own landing (F40, C30): the <c>integrate</c> node's start, by Daoris, for the unit and the tip it
-    /// froze. The landing's record decides whether its acceptance was the request, by the provenance it keeps for that tip and who accepted it;
+    /// froze. The landing's record decides whether its acceptance is the request, by the provenance it keeps for that tip and who accepted it;
     /// then it is admitted as a recorded landing is, on its record, exact tip, gate proof and no double.
     /// </summary>
     private async Task<IntegrationAdmission> NodeAsync(IntegrationAsk ask, LandingIntegrate? line, DriverConfig settings, CancellationToken ct)

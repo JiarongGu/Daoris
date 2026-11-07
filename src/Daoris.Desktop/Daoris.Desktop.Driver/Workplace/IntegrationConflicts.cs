@@ -17,7 +17,7 @@ internal static class IntegrationConflicts
 
     /// <summary>
     /// The sentence for <paramref name="paths"/>, which the member <paramref name="tip"/> conflicted in on the candidate: the files, then the commits
-    /// the line made to them since the work began (the line is <paramref name="lineBase"/>, the commit the candidate was formed on), then the
+    /// the line made to them since the work began (the line is <paramref name="lineBase"/>, the commit the candidate is formed on), then the
     /// earlier replayed members whose merge changed them. git unable to say leaves that part out: the files are what the session needs.
     /// </summary>
     /// <param name="earlier">The members replayed before this one, each by its branch and the merge commit its replay made.</param>

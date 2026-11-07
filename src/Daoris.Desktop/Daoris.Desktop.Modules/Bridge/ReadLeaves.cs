@@ -2,7 +2,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The page's door to stop a read it sent: each call that carries a
-/// <c>read</c> id waits under a source of its own, linked to the token the route was handed, and <c>READ_LEAVE { read }</c> cancels
+/// <c>read</c> id waits under a source of its own, linked to the token the route is handed, and <c>READ_LEAVE { read }</c> cancels
 /// that source. The bridge's call carries no cancellation of its own (`bridge/call.ts`), so this is how a page that left is heard.
 /// </summary>
 /// <remarks>

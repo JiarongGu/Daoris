@@ -6,7 +6,7 @@ using static Daoris.Desktop.Driver.Tests.SessionMessagesTickTests;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STAFFPOLICY1e (D226; the staff policy design §4, §9 row e) through REAL ticks, the transient condition: a driven run on Build's first
+/// Through REAL ticks, the transient condition: a driven run on Build's first
 /// choice whose service never answers makes the role's <c>after</c> tries (two, three minutes of waits on the held clock,
 /// <c>.claude/knowledge/held-clocks.md</c>) and ends <c>ended.transient</c>; the next look's course moves the line, once, to the second
 /// choice in a new part that continues the first with the reason <c>transient</c>, the first choice's agent passed on the walk. A role with
@@ -144,7 +144,7 @@ public sealed class StaffPolicyTransientTickTests : IAsyncLifetime
         var driver = Protocol(service, clock, Moving);
 
         var tick = driver.RunOnceAsync();
-        // The role's `after` is two tries: waits of one and two minutes, three in all, where D210's five make thirty-one.
+        // The role's `after` is two tries: waits of one and two minutes, three in all, where five tries make thirty-one.
         await PassAsync(clock, tick, 1, 2);
         await tick.WaitAsync(Poll.Patience);
 
@@ -161,7 +161,7 @@ public sealed class StaffPolicyTransientTickTests : IAsyncLifetime
         var second = service.Record("s2");
         Assert.Contains("\"door\":\"acp-other\"", second, StringComparison.Ordinal);
         Assert.Equal("Done", service.Status("q1"));
-        // The part after was handed D189's brief by the second choice's agent, and the first choice's agent was not asked again.
+        // The part after is handed the brief by the second choice's agent, and the first choice's agent is not asked again.
         var prompts = Prompts();
         Assert.Equal(4, prompts.Length);
         Assert.True(

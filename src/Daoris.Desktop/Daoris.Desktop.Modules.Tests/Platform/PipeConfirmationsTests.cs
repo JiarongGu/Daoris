@@ -254,7 +254,7 @@ public sealed class PipeConfirmationsTests : Bridge
 
     /// <summary>
     /// Whether a Confirm is held is asked of its own module and route, before its grounds are read and again after, so a drain
-    /// that holds a start lets a take-back's Confirm through, whether it began before the Confirm or while it was judged.
+    /// that holds a start lets a take-back's Confirm through, whether it began before the Confirm or while the Confirm is judged.
     /// </summary>
     [Fact]
     public async Task A_Confirm_is_held_by_its_own_route_before_and_after_its_grounds_are_read()

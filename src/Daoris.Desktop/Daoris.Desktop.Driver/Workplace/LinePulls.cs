@@ -46,7 +46,7 @@ internal static class LinePulls
     /// <summary>
     /// The fast-forward: in the repository's own checkout, a <c>merge --ff-only</c> while it is clean and on the
     /// line, both read immediately before; where the line is checked out nowhere, the ref moved only from the commit
-    /// it was judged at. Never a merge commit, never a force.
+    /// it is judged at. Never a merge commit, never a force.
     /// </summary>
     /// <param name="writing">The checkout held alone since the pull is judged, until its move is read back.</param>
     internal static async Task<PullResult> PullAsync(string root, LinePull pull, bool inRoot, TreeLock writing, CancellationToken ct)
@@ -80,7 +80,7 @@ internal static class LinePulls
                 : new(pull, false, $"git would not fast-forward `{line}`: {Failure(err)} The checkout is as it was.");
         }
 
-        // The ref alone, and only from the commit it was judged at: git refuses the move if it is elsewhere now.
+        // The ref alone, and only from the commit it is judged at: git refuses the move if it is elsewhere now.
         var (moved, _, moveErr) = await WorkingTree.GitAsync(
             root, ["update-ref", "-m", $"daoris: fast-forward {line} to origin/{line}", $"refs/heads/{line}", pull.To!, pull.From!], ct)
             .ConfigureAwait(false);

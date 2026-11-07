@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The order in <c>harnesses.json</c> (TOOL4e, D125 §3.1): <c>rotation</c> and <c>workspaceRotation</c>, the accounts
+/// The order in <c>harnesses.json</c>: <c>rotation</c> and <c>workspaceRotation</c>, the accounts
 /// rotation may use per agent, for the machine and for a workspace.
 /// </summary>
 /// <remarks>
@@ -127,7 +127,7 @@ public sealed class RotationOrderTests : IDisposable
         Assert.True(refused == said, $"{why}: {said}");
     }
 
-    // ——— An account removed (D66 §3): no default and no order names it afterwards.
+    // ——— An account removed: no default and no order names it afterwards.
 
     [Theory]
     [InlineData("a machine default naming it is cleared, another agent's kept", """{"defaults":{"claude-code":"account-1","codex":"account-1"}}""", "claude-code", "account-1", """{"defaults":{"codex":"account-1"}}""")]
@@ -160,7 +160,7 @@ public sealed class RotationOrderTests : IDisposable
     [InlineData("a workspace written twice in any case is read as one, and both are kept as written when another section is edited", """{"workspaces":{"work":{"claude-code":"account-1"},"WORK":{"claude-code":"account-2"}},"workspaceVersions":{"Lab":{"codex":"0.50.0"},"lab":{"codex":"0.51.0"}},"workspaceRotation":{"work":{"claude-code":["account-1"]},"Work":{"claude-code":["account-2"]}},"workspaceRotationUse":{"work":{"claude-code":{"use":"goal"}},"WORK":{"claude-code":{"use":"order"}}}}""", "account-9", """{"defaults":{"codex":"account-9"},"workspaces":{"work":{"claude-code":"account-1"},"WORK":{"claude-code":"account-2"}},"workspaceVersions":{"Lab":{"codex":"0.50.0"},"lab":{"codex":"0.51.0"}},"workspaceRotation":{"work":{"claude-code":["account-1"]},"Work":{"claude-code":["account-2"]}},"workspaceRotationUse":{"work":{"claude-code":{"use":"goal"}},"WORK":{"claude-code":{"use":"order"}}}}""")]
     public void A_save_keeps_every_section_it_does_not_edit(string why, string before, string? codexDefault, string after)
     {
-        // The file in the writer's layout, so a save with no edit, which writes nothing (KEEPALL1b), leaves the bytes it wrote.
+        // The file in the writer's layout, so a save with no edit, which writes nothing, leaves the bytes it wrote.
         static string Laid(string file) => JsonNode.Parse(file)!.ToJsonString(new JsonSerializerOptions { WriteIndented = true, NewLine = "\n" }) + "\n";
         var settings = Read(Laid(before));
         if (codexDefault is not null) settings = settings.WithDefault("codex", codexDefault);

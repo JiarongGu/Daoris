@@ -216,7 +216,7 @@ public sealed class DriverModule : ModuleBase
         }
         catch (Exception error) when (!cancellationToken.IsCancellationRequested && Stalled(error))
         {
-            // The client's own bound ran out while the person's token stood: the service was too busy to answer, which is no fault of the press.
+            // The client's own bound ran out while the person's token stood: the service is too busy to answer, which is no fault of the press.
             throw Refusals.Because(Refusals.ServiceBusy, "the service did not answer in time; try again in a moment");
         }
     }
@@ -365,7 +365,7 @@ public sealed class DriverModule : ModuleBase
 
     /// <summary>
     /// The key a request of a read told by event is held under: its route and payload, as a shared read's flight is.
-    /// What a test waits on when an ask was answered <see cref="HeldAnswers.Pending"/>.
+    /// What a test waits on when an ask is answered <see cref="HeldAnswers.Pending"/>.
     /// </summary>
     public static string HeldKey(IpcRequest request) => FlightOf(request.Type ?? "", request, null);
 
@@ -605,7 +605,7 @@ internal sealed class PublishesAttribute(string route, StateScopes changes) : At
 
     public StateScopes Changes { get; } = changes;
 
-    /// <summary>The payload's field naming the session the change was about, where it is one session's.</summary>
+    /// <summary>The payload's field naming the session the change is about, where it is one session's.</summary>
     public string? Session { get; set; }
 
     /// <summary>The payload's field naming the entry or ask the press is for, where it is no one session's.</summary>

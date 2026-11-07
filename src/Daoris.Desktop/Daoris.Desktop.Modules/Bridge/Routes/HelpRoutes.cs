@@ -282,7 +282,7 @@ public sealed class HelpRoutes(DriverContext context)
     };
 
     // The person's Apply: made through the door the screen's own route uses, judged again
-    // first, since the machine may have moved since the card was drawn. The result goes back into
+    // first, since the machine may have moved after the card's drawing. The result goes back into
     // the conversation as a turn, so the agent knows, told as Daoris's word, never the person's;
     // what it published is kept with the conversation by `HelpProposals.ApplyAsync`. It acts through the doors directly, not through
     // their routes, so it declares every family a door it holds may move: the driver's file and what reads
@@ -354,7 +354,7 @@ public sealed class HelpRoutes(DriverContext context)
     ];
 
     /// <summary>
-    /// What an Apply answers the page, the page's <c>HelpSettled</c>: the driver's sentence, whether it was
+    /// What an Apply answers the page, the page's <c>HelpSettled</c>: the driver's sentence, whether it is
     /// applied, where a go takes the person, and the agent action the Agents screen follows. Public so the fast half holds
     /// the answer without a service, as it holds a conversation's options.
     /// </summary>
@@ -582,7 +582,7 @@ public sealed class HelpRoutes(DriverContext context)
         var chat = _loop.Chat ?? throw NotReady();
         var service = _loop.Service ?? throw NotReady();
 
-        // in the workspace its press names, as START_HELP's, whatever the earlier one's was; its running one set aside.
+        // in the workspace its press names, as START_HELP's, whatever the earlier one's is; its running one set aside.
         var named = WorkspaceAsked(press.Workspace);
         var circle = RemoteTarget.Workspace(named);
         var spelled = HeldWorkspace(await service.SnapshotAsync(cancellationToken).ConfigureAwait(false), circle);
@@ -611,7 +611,7 @@ public sealed class HelpRoutes(DriverContext context)
 
     /// <summary>
     /// The id when it names an Ask Daoris conversation of this machine's, judged from the records as the service answers them;
-    /// otherwise the sentence why not, which the page says where it was pressed.
+    /// otherwise the sentence why not, which the page says where it is pressed.
     /// </summary>
     private async Task<string> HelpConversationOfAsync(string id, CancellationToken cancellationToken)
     {

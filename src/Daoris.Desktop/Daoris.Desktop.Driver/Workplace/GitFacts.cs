@@ -15,7 +15,7 @@ namespace Daoris.Driver;
 /// this one drops nothing of it, as the snapshot's remark says: the judgement again right before an act is what guards it.</para>
 /// <para><b>Reads only, and nothing the files decide.</b> `status`, and a `diff` that reads the working tree or the index, are never
 /// kept: what the working tree holds is not a ref (a `diff` of two commits by their ids is). A git that did not start
-/// (code -1), a read that was cancelled and a question of commits git could not answer (<see cref="Answered"/>) are not kept, so
+/// (code -1), a read cancelled and a question of commits git could not answer (<see cref="Answered"/>) are not kept, so
 /// the next asker asks again. A call with its own environment or bound (a fetch) and a test's stand-in answer
 /// (<see cref="WorkingTree.Answered"/>) are not touched. Outside a landing, a judgement keeps the same questions of commits for
 /// itself (<see cref="RefSnapshot.Asked"/>).</para>
@@ -98,7 +98,7 @@ internal sealed class GitFacts
         lock (facts._gate)
         {
             facts._pairs[tree] = root;
-            // What the tree was asked before it was known to be the checkout's is the checkout's answer from now on.
+            // What the tree is asked before it is known to be the checkout's is the checkout's answer from now on.
             foreach (var key in facts._wide.Where(each => each.StartsWith(tree + "\n", StringComparison.Ordinal)).ToList())
             {
                 facts._wide.Remove(key);
@@ -175,7 +175,7 @@ internal sealed class GitFacts
         }
     }
 
-    // The keys of what was asked of a repository by full names, kept to move to the checkout once its folder is known (SameRepository).
+    // The keys of what is asked of a repository by full names, kept to move to the checkout once its folder is known (SameRepository).
     private readonly HashSet<string> _wide = new(StringComparer.Ordinal);
 
     /// <summary>A folder as one spelling: Windows compares blind to case, as <c>TreeGit.SamePath</c> does.</summary>

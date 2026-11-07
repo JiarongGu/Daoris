@@ -28,7 +28,7 @@ internal sealed class IntegrationAppointments : IIntegrationAppointments
 /// <summary>
 /// The requester's authority, judged again at promotion: the door judged it
 /// at admission, and the line moves only after it is read again, since the steward's appointment may have been revoked, the owner may have acted,
-/// or the rule may have changed since the request was kept. A request that fails it is held and the candidate formed again without it.
+/// or the rule may have changed while the request waited. A request that fails it is held and the candidate formed again without it.
 /// </summary>
 /// <remarks>
 /// <para>A <b>person's</b> request (the owner's card, or an Accept) is the owner's own authority and is not withdrawn by any revoke, so it stands.

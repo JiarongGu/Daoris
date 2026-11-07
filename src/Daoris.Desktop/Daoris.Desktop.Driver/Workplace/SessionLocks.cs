@@ -73,7 +73,7 @@ internal static class SessionLocks
 
     /// <summary>
     /// <paramref name="session"/> lets go of <paramref name="tree"/>: its lock is lifted where it is that session's, and anything else
-    /// is left as it is. Whether a lock of that session's was lifted.
+    /// is left as it is. Whether it lifts a lock of that session's.
     /// </summary>
     internal static async Task<bool> LetGoAsync(string tree, string session, CancellationToken ct)
     {

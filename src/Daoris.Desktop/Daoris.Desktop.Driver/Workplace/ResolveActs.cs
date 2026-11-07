@@ -47,7 +47,7 @@ public sealed partial class ResolveActs(ActJournal journal)
 {
     internal ActRuns Runs { get; } = new(journal);
 
-    /// <summary>A line git writes at the start or the end of a conflict it was asked to leave: a file that holds both was not resolved.</summary>
+    /// <summary>A line git writes at the start or the end of a conflict it is asked to leave: a file that holds both is not resolved.</summary>
     [GeneratedRegex(@"^(?:<{7,}(?: |$)|>{7,}(?: |$))", RegexOptions.Multiline)]
     private static partial Regex Markers();
 

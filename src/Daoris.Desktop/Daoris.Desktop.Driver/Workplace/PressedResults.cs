@@ -24,7 +24,7 @@ public sealed class PressQuests(Func<string, CancellationToken, Task<QuestView?>
     /// before: a conversation (no quest), and a quest whose result is not in (open, or taken with no submission), the parent's decision 3.
     /// </summary>
     /// <param name="late">
-    /// The press was made before its landing's own moment: an entry's part, behind the press's fetch and its earlier parts. Its result is
+    /// The press is made before its landing's own moment: an entry's part, behind the press's fetch and its earlier parts. Its result is
     /// then read again under its tree's hold whether or not that hold waited.
     /// </param>
     public async Task<PressedResult?> PressedAsync(string session, string? quest, bool late = false, CancellationToken ct = default)
@@ -45,7 +45,7 @@ public sealed class PressQuests(Func<string, CancellationToken, Task<QuestView?>
 /// <see cref="QuestResults.Same"/>). A quest's hold is never read here: Accept is the person's own word, and a press never reads it;
 /// the automatic landing's predicate is not copied, which would make a press an automatic acceptance.</para>
 /// <para><b>Read only where time could have moved it.</b> Under the tree's hold, where that hold waited behind another landing, or the
-/// press was <c>late</c>; just before the push, a submission every time (the branch's making lies between), a done only where the push
+/// press is <c>late</c>; just before the push, a submission every time (the branch's making lies between), a done only where the push
 /// waited. An uncontended press reads one quest more at most, and only on a submission, so the owner's install, which binds nothing,
 /// reads nothing more.</para>
 /// </remarks>

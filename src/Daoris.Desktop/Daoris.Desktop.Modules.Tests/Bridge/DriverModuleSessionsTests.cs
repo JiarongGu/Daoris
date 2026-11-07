@@ -140,7 +140,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.Equal(JsonValueKind.Null, rows["working1"].GetProperty("landed").ValueKind);
         // A folder that is no tree of this home's is never looked at, and nothing is said of it.
         Assert.False(rows.ContainsKey("rooted1"));
-        // Never a machine path back: the page sent the trees it was answered, and has no use for them again.
+        // Never a machine path back: the page sent the trees, and has no use for them again.
         Assert.DoesNotContain(JsonSerializer.Serialize(Home).Trim('"'), answer.GetRawText(), StringComparison.OrdinalIgnoreCase);
     }
 
@@ -409,7 +409,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
 
     /// <summary>
     /// An ended session is archived on this machine, its mark in the home's
-    /// <c>sessions/archived.json</c>, and listed as archived; unarchived, it is back in its group, and one that was not
+    /// <c>sessions/archived.json</c>, and listed as archived; unarchived, it is back in its group, and one that is not
     /// archived is said, never refused.
     /// </summary>
     [Fact]

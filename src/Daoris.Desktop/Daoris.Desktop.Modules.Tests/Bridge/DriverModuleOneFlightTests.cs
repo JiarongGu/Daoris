@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// One look at a time per route: the frozen window's stack held 22 clean-up lists at once, each a
-/// whole git fan-out, because every window and every change the page heard asked the list again while the last was still
+/// whole git fan-out, because every window and every change the page heard asked the list again with the last one still
 /// running. Concurrent identical asks of the clean-up's list and of the lines share the one under way; a finished one is
 /// kept for no one, and one a press overtook is joined no more.
 /// </summary>

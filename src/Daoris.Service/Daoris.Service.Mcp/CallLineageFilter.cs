@@ -13,7 +13,6 @@ namespace Daoris.Knowledge.Mcp;
 /// <remarks>
 /// <para>Only the harness's <c>_meta</c> says who called, never the arguments, which are the model's; they are read only to refuse
 /// a child's quest that is not plain, never to allow anything.</para>
-///
 /// <para>A read (<see cref="ToolClasses"/>) is served to every caller. Any other tool runs only for a caller
 /// <see cref="CallerProof"/> proves a root; a child, and a caller whose lineage cannot be read, get an error result before the
 /// tool runs. <c>quest_publish</c> alone passes a child, in its plain shape. A connector naming no session, a person's own

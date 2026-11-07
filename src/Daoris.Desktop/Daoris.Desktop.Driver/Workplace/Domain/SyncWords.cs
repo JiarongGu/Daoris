@@ -19,7 +19,7 @@ public static class SyncWords
 
     /// <summary>
     /// Said once, before the rows: how many repositories were not fetched, grouped by git's reason; that each is
-    /// judged against what origin said when it was last fetched here, and when that was; and what the git Daoris runs
+    /// judged against what origin said at the last fetch here, and when that fetch ran; and what the git Daoris runs
     /// needs to reach an origin over SSH or HTTPS. Nothing where every repository fetched.
     /// </summary>
     /// <remarks>

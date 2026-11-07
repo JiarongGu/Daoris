@@ -10,7 +10,7 @@ public sealed record HomeMove(string Entry, string From, string? To, string? Rea
 
 /// <summary>
 /// What a start's move into the home's places did: what moved, what could not and why, what a start that stopped mid-move left and
-/// this one put back, and why nothing was tried this start where nothing was.
+/// this one put back, and, where nothing is tried this start, why.
 /// </summary>
 public sealed record HomePlaced(
     IReadOnlyList<HomeMove> Moved, IReadOnlyList<HomeMove> Failed, IReadOnlyList<HomeMove> Recovered, string? Held)
@@ -42,7 +42,7 @@ public sealed record HomePlaced(
 /// <para><b>The window's memory moves as one</b>: its two folders into <c>profiles/window.moving/</c>, which takes its name once
 /// both are in, or both go back. The move's journal (<see cref="HomeEntry.HomeMove"/>) names each rename before it is made, so a
 /// start that stopped between the two folders is put right at the next start, before anything resolves: what went into the
-/// staging folder goes back where its old place is free (the staging folder alone says so where the journal was lost).</para>
+/// staging folder goes back where its old place is free (the staging folder alone says so where the journal is lost).</para>
 /// </remarks>
 public static class HomePlacing
 {
@@ -143,7 +143,7 @@ public static class HomePlacing
                 }
                 catch (Exception error) when (error is System.ComponentModel.Win32Exception or InvalidOperationException or NotSupportedException)
                 {
-                    // Another account's, or a process that ended as it was asked: not one of the folder's.
+                    // Another account's, or a process that ended as it is asked: not one of the folder's.
                 }
             }
         }
@@ -204,7 +204,7 @@ public static class HomePlacing
     private static bool Holds(string place) =>
         File.Exists(place) || (Directory.Exists(place) && Directory.EnumerateFileSystemEntries(place).Any());
 
-    /// <summary>One rename, file or folder, an empty folder at its new place taken away first; a refusal leaves it where it was.</summary>
+    /// <summary>One rename, file or folder, an empty folder at its new place taken away first; a refusal leaves it where it stands.</summary>
     private static void Move(HomeMove move, List<HomeMove> moved, List<HomeMove> failed)
     {
         try
@@ -228,7 +228,7 @@ public static class HomePlacing
 
     /// <summary>
     /// The window's memory, as one: each of its folders into the staging folder, which then takes the new
-    /// place's name; a refusal on the way puts back what went in, so the window reads its memory where it was.
+    /// place's name; a refusal on the way puts back what went in, so the window reads its memory where it stands.
     /// </summary>
     private static void MoveWindow(IReadOnlyList<HomeMove> steps, string staging, string final, List<HomeMove> moved, List<HomeMove> failed)
     {

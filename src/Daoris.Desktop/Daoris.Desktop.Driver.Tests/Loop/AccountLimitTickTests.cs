@@ -4,14 +4,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL4d (D125 §4, §5.2), observation 4 replayed through REAL ticks on the protocol door. On 1 October a driven session
-/// carrying a quest on was refused mid-turn by the account's weekly spend limit; the driver carried the quest on twice
-/// more, each refused at once, and the third failure parked the quest on its strikes in seconds. Now the refusal cools
+/// Observation 4 replayed through REAL ticks on the protocol door: a driven session carrying a quest on is refused
+/// mid-turn by the account's weekly spend limit; the refusal cools
 /// the account until the reset the agent named, the carry-on waits for it with nothing spawned, the quest is never
 /// parked for it, the wait is said once, and at the reset the carry-on runs and closes the quest.
 /// </summary>
 /// <remarks>
-/// The stub agent speaks the wire and nothing else (D46 §8): it takes its quest and is cut off by a failure no table
+/// The stub agent speaks the wire and nothing else: it takes its quest and is cut off by a failure no table
 /// knows, so the quest holds one strike; carrying it on, it answers its prompt with observation 4's sentence, the zone
 /// the test's; carrying it on again, it closes the quest. The protocol stub reads the stub's words as its owner's, so
 /// what cools is the stub's own sign-in. The clock and the zone are the roster's, the test's.
@@ -83,10 +82,10 @@ public sealed class AccountLimitTickTests : IDisposable
         var refused = service.Session("s2");
         Assert.Equal("failed", refused["state"]!.GetValue<string>());
         Assert.True(refused["limit"]!.GetValue<bool>());
-        // The note travels, so it carries the facts and never the agent's sentence, which its transcript keeps (AGT3c).
+        // The note travels, so it carries the facts and never the agent's sentence, which its transcript keeps.
         Assert.DoesNotContain("You've hit your individual spend limit", refused["note"]!.GetValue<string>());
         Assert.Contains("You've hit your individual spend limit", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Sessions,"s2.log")));
-        // Whose accounts and the kind of limit, never which account (AGT3d).
+        // Whose accounts and the kind of limit, never which account.
         Assert.Contains(
             $"The `stub` account it ran on hit its weekly limit and is cooling until Oct 3, 16:02 ({Zone.Id}), as the agent said",
             refused["note"]!.GetValue<string>());
@@ -103,7 +102,7 @@ public sealed class AccountLimitTickTests : IDisposable
             Assert.Equal(2, service.SessionCount);
             var sitting = held.Considerations.Single(c => c.Quest.Id == "q1");
             Assert.Equal(StartVerdict.Blocked, sitting.Verdict);
-            // LIMITRESUME1b: a line a limit cut off says its own wait, the earliest reset and whose account.
+            // A line a limit cut off says its own wait, the earliest reset and whose account.
             Assert.Equal(LimitResume.Waits(cooling, Zone).Note, sitting.Reason);
             Assert.Equal(["q1"], Assert.Single(held.Waits).Quests);
         }

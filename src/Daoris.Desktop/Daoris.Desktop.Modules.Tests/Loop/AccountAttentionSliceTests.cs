@@ -97,7 +97,7 @@ public sealed class AccountAttentionSliceTests
         var row = Assert.Single(Derive(waits: [Wait()]));
 
         Assert.Equal(("account-wait", "work", true), (row["kind"]!.GetValue<string>(), row["where"]!.GetValue<string>(), row["wholeWorkspace"]!.GetValue<bool>()));
-        // Since the first ask was asked: its accounts were held before it.
+        // Since the first ask: its accounts are held before it.
         Assert.Equal("2026-10-05T10:25:00Z", row["since"]!.GetValue<string>());
         Is("""{"quests":[],"asks":["a1","a2"]}""", row["holding"]!.AsObject());
         Assert.Equal(("claude-code", "Claude Code", "claude-code", true),
@@ -138,7 +138,7 @@ public sealed class AccountAttentionSliceTests
             Assert.Single(Derive(waits: [Wait("""{"quests":["q1","q2"]}""")], quests: [QuestIn(), QuestIn("""{"id":"q2","to":"game"}""")]))["holding"]!.AsObject());
 
     /// <summary>
-    /// Waiting is counted from what the start was asked for, or from the limit that held it where that came later: a quest filed last
+    /// Waiting is counted from when the start is asked for, or from the limit that held it where that came later: a quest filed last
     /// week behind an account cooled an hour ago has waited an hour.
     /// </summary>
     [Fact]

@@ -132,7 +132,7 @@ public sealed class StartStages
         _ = Task.Delay(_bound).ContinueWith(_ => Write(), CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
     }
 
-    /// <summary>Write the line now with what was marked, once: at the stop, or the bound after the splash.</summary>
+    /// <summary>Write the line now with what is marked, once: at the stop, or the bound after the splash.</summary>
     public void Write()
     {
         List<(string Key, object? Value)> data;

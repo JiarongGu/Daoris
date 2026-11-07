@@ -1,10 +1,10 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
-// One file per area, merged into one catalogue per language before i18next sees it (MOD2).
+// One file per area, merged into one catalogue per language before i18next sees it.
 import { catalogues, languages } from './index';
 
-// UI chrome is translated; DATA is not (D42). Quest content, registry declarations, knowledge bodies
+// UI chrome is translated; DATA is not. Quest content, registry declarations, knowledge bodies
 // and the service's own sentences render verbatim — machine-translating a refusal would break the
 // contract that the service's sentence is the message. English is a catalog like any other, so a
 // missing key is a visible `key.name`, never a silent fallback that "works" in one language only.
@@ -12,7 +12,7 @@ void i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    // The languages are the catalogues present (D222), English the source and the fallback.
+    // The languages are the catalogues present, English the source and the fallback.
     resources: Object.fromEntries(languages.map((language) => [language, { translation: catalogues[language] }])),
     fallbackLng: 'en',
     supportedLngs: languages,

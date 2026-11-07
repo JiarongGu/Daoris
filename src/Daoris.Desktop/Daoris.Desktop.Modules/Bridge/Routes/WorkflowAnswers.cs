@@ -54,7 +54,7 @@ internal static class WorkflowAnswers
     }
 
     /// <summary>
-    /// A route's effective graph: the workflow it follows and how it was chosen, its version or Current's digest, the graph to
+    /// A route's effective graph: the workflow it follows and how it is chosen, its version or Current's digest, the graph to
     /// draw, and each node's cell as <c>WORKFLOW_RUN</c> answers a step, with each limit a cell carries in the driver's words.
     /// </summary>
     private static object EffectiveAnswer(WorkflowEffective effective)

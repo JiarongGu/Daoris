@@ -38,7 +38,7 @@ public sealed class DriverLoopAttentionTests : DriverModuleBridge
         var loop = Loop();
 
         await loop.AnsweredAsync(new AttentionEvent(AttentionKind.Answered, "c1", "engine"));
-        // Turned back on, the next is told: so the first was not merely late.
+        // Turned back on, the next is told: so the first is not merely late.
         DriverConfig.Empty.Save(DriverConfigPath);
         await loop.AnsweredAsync(new AttentionEvent(AttentionKind.Answered, "c2", "engine"));
 

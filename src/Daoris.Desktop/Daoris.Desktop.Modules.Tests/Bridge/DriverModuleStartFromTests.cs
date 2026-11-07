@@ -132,7 +132,7 @@ public sealed class DriverModuleStartFromTests : DriverModuleBridge
         // Its words already judged unable to go on, as an earlier look leaves a chat that kept no conversation: the line the
         // press stands under. The loop's own look as it comes up then leaves them waiting, so the press is judged
         // alone. Waiting for that look's line is not enough: it holds the chat until after its line is kept, and a
-        // press inside that hold was answered that the conversation is going on with its words already.
+        // press inside that hold is answered that the conversation is going on with its words already.
         if (words) new GoOnMarks(loop.Home).Mark("c1", ["w1"], ContinueWhy.Of(ContinueWhy.Unkept), DateTimeOffset.UtcNow);
         var adapters = TestDoors.Registry([Talk()]);
         var client = new ServiceClient("http://stand-in", null, new HttpClient(service));

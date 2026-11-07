@@ -178,7 +178,7 @@ public sealed class AskMessagesTests : DriverModuleBridge
         Assert.Single(Arrivals());
     }
 
-    /// <summary>The notify switch governs the saying, never the listing; turned on again, what arrived while it was off is not said late.</summary>
+    /// <summary>The notify switch governs the saying, never the listing; turned on again, what arrives while it is off is not said late.</summary>
     [Fact]
     public async Task With_the_switch_off_nothing_is_said_and_everything_is_listed()
     {
@@ -220,7 +220,7 @@ public sealed class AskMessagesTests : DriverModuleBridge
         Assert.Equal(3, _reads);
     }
 
-    /// <summary>A read that fails keeps what was pushed, and is asked again at the next judgement; a slice never read names no partition.</summary>
+    /// <summary>A read that fails keeps what is pushed, and is asked again at the next judgement; a slice never read names no partition.</summary>
     [Fact]
     public async Task A_failed_read_keeps_the_last_partition()
     {

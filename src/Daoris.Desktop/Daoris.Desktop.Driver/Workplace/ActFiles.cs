@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The file step of the act journal: a worktree file's bytes replaced by the plan's, only
-/// where it still holds the bytes the plan was judged on. The bytes it replaces and the bytes it writes are files beside the record
+/// where it still holds the bytes the plan is judged on. The bytes it replaces and the bytes it writes are files beside the record
 /// (<see cref="Dir"/>), made before the step and let go of with the record's expiry; the postcondition is the file's digest, never an exit.
 /// </summary>
 internal static class ActFiles

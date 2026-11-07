@@ -22,7 +22,7 @@ internal static class LandedProofs
         /// </summary>
         internal string? At { get; init; }
 
-        /// <summary>What git is asked by: the commit it was read at, else its reference.</summary>
+        /// <summary>What git is asked by: the commit it is read at, else its reference.</summary>
         internal string Rev => At ?? Ref;
 
         /// <summary>Its name, as every sentence says it.</summary>
@@ -30,17 +30,17 @@ internal static class LandedProofs
     }
 
     /// <summary>What the proof found, before anything that keeps a branch is asked.</summary>
-    /// <param name="Judgeable">Whether the branch may still be inside another: its line was read and its files compared.</param>
+    /// <param name="Judgeable">Whether the branch may still be inside another: its line is read and its files are compared.</param>
     internal sealed record Proof(string Kind, string? Where, IReadOnlyList<string> Files, string? Detail, int Commits, bool Judgeable)
     {
         /// <summary>
         /// What a removal by it rests on: the form of the line it found the work on, at the commit it compared.
-        /// Empty where it found none, or where the form was a caller's, read at no commit.
+        /// Empty where it found none, or where the form is a caller's, read at no commit.
         /// </summary>
         internal IReadOnlyList<(string Ref, string Commit)> Rests { get; init; } = [];
     }
 
-    /// <summary>The form at the commit it was read at, as a removal verifies it; none where it was read at none.</summary>
+    /// <summary>The form at the commit it is read at, as a removal verifies it; none where it is read at none.</summary>
     internal static IReadOnlyList<(string Ref, string Commit)> RestsOn(LineForm? form) => form?.At is { } at ? [(form.Ref, at)] : [];
 
     /// <summary>The landing's own branches of one repository the record holds, standing or not.</summary>
@@ -69,7 +69,7 @@ internal static class LandedProofs
 
     /// <summary>
     /// <see cref="LineFormsAsync"/> with what it could not read: git's exit 1 from <c>rev-parse --verify --quiet</c> is
-    /// "there is no such ref", and any other failure (git missing, a timeout, a repository it cannot open) is a read that was not
+    /// "there is no such ref", and any other failure (git missing, a timeout, a repository it cannot open) is a read not
     /// made, which must not read as a line with no forms.
     /// </summary>
     internal static async Task<(IReadOnlyList<LineForm> Forms, string? Unread)> ReadLineFormsAsync(

@@ -510,7 +510,7 @@ internal sealed class TreeSweeps(
     /// Whether the line's own branch, <c>refs/heads/&lt;line&gt;</c>, holds <paramref name="tip"/> by ancestry: the one hold
     /// that needs no recovery ref. Any other answer, origin's copy alone included, writes one.
     /// </summary>
-    /// <returns>The commit the line's own branch was read at, where it holds the tip; null where it does not, or git could not say.</returns>
+    /// <returns>The commit the line's own branch is read at, where it holds the tip; null where it does not, or git could not say.</returns>
     private static async Task<string?> LineOwnHoldsAsync(string root, string? line, string tip, CancellationToken ct)
     {
         if (line is null) return null;
@@ -563,7 +563,7 @@ internal sealed class TreeSweeps(
 /// by ancestry, or its pull request's completed merge is there. A session branch whose commits it holds has its work on the line
 /// through it, so the look takes that session branch before it, as the press does, and neither waits on the other.
 /// </summary>
-/// <param name="Tip">The commit it was judged at.</param>
+/// <param name="Tip">The commit it is judged at.</param>
 /// <param name="Line">The form of the line its proof named (<c>main</c>, <c>origin/main</c>).</param>
 internal sealed record LineLanding(string Branch, string Tip, string Line)
 {

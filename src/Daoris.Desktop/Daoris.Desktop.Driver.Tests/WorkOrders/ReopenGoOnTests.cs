@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// FABRIC-CLOSE1c5 (§E5): which commit a step the person went on with is brought up to date with. Its source's current submission's,
-/// where the step grew from that one now, and none otherwise. Runs no process: the fast half (MOD8).
+/// where the step grew from that one now, and none otherwise. Runs no process: the fast half.
 /// </summary>
 public sealed class ReopenGoOnTests
 {
@@ -36,7 +36,7 @@ public sealed class ReopenGoOnTests
 
     // FABRIC-CLOSE1c13: which going-on is brought up to date with the source first. The session the reopen stopped, as CLOSE1c5 has
     // it, and a session that ended normally going on with the words Daoris told it of the go-on to the submission the step grows
-    // from now; every other going-on syncs with the line alone, as before. FABRIC-CLOSE1c17 (COWORK1b): the gate reads the word's
+    // from now; every other going-on syncs with the line alone, as before. FABRIC-CLOSE1c17: the gate reads the word's
     // mark, Daoris's with the go-on's key, and never its sentence.
 
     private static readonly QuestSubmissionRef Grew = new("desk", 43);

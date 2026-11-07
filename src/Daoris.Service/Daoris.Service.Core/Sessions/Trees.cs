@@ -16,7 +16,6 @@ namespace Daoris.Knowledge;
 /// nothing — and the lock reads that as "possibly the tree you are asking about". Unknown is
 /// conservative on purpose: the cost of refusing wrongly is a sentence naming what holds the tree, and
 /// the cost of permitting wrongly is two agents in one working tree.</para>
-///
 /// <para><b>Convergence comes from one source, not from clever comparison.</b> Both doors resolve an
 /// unstated tree through the registration's root, so two sessions in one tree carry byte-identical
 /// strings by construction. <see cref="Normalize"/> is the safety net for the ways a path is spelled

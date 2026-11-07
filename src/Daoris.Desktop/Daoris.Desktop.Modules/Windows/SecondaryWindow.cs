@@ -14,7 +14,7 @@ public interface ISecondaryWindows
     /// <summary>
     /// Open the named window at this page (a path on the engine's app origin), or bring it forward when it is already open.
     /// </summary>
-    /// <returns>True when a window was created; false when an existing one was activated.</returns>
+    /// <returns>True when a window is created; false when an existing one is activated.</returns>
     bool Open(string name, string address);
 
     /// <summary>The names open right now.</summary>
@@ -23,7 +23,7 @@ public interface ISecondaryWindows
     /// <summary>
     /// Tell the named window which theme its page is in, for the caption its frame paints.
     /// Shenora's window commands route a second window's <c>SET_THEME</c> nowhere (0.17: NO_ROUTE), so
-    /// the page says it here, by the name it was opened with.
+    /// the page says it here, by the name it is opened with.
     /// </summary>
     /// <returns>False when no window by that name is open: nothing to tell, and nothing wrong.</returns>
     bool SetTheme(string name, bool dark);

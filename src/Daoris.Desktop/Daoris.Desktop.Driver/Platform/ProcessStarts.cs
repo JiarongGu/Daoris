@@ -203,7 +203,7 @@ public sealed class ProcessStarts
             await waiter.Task.ConfigureAwait(false);
         }
 
-        // A place handed on just as the wait was given up is given back: a start cancelled before it began never begins.
+        // A place handed on just as the wait is given up is given back: a start cancelled before it began never begins.
         if (ct.IsCancellationRequested)
         {
             Leave(whose);
@@ -211,7 +211,7 @@ public sealed class ProcessStarts
         }
     }
 
-    /// <summary>A wait given up: out of its queue, unless a place was handed to it first, which its start then uses.</summary>
+    /// <summary>A wait given up: out of its queue, unless a place is handed to it first, which its start then uses.</summary>
     private void Abandon(StartClass whose, LinkedListNode<TaskCompletionSource> waiting, CancellationToken ct)
     {
         lock (_gate)
@@ -265,7 +265,7 @@ public sealed class ProcessStarts
     /// <summary>
     /// The test seam: until disposed, every start this flow makes through a gate is made by
     /// <paramref name="start"/> instead of the runtime, still on the thread pool and inside its place, so a test sees where a
-    /// site's start was made and answers it without a process. Production opens none.
+    /// site's start is made and answers it without a process. Production opens none.
     /// </summary>
     public static IDisposable Within(Func<ProcessStartInfo, Process?> start)
     {

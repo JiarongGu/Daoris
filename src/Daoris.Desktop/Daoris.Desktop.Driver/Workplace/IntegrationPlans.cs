@@ -38,7 +38,7 @@ public sealed record IntegrationPlan(string Repository, string Branch, string Li
     /// <summary>The merged tree is the line's own: the line holds the branch's work already.</summary>
     public bool Contained { get; init; }
 
-    /// <summary>Why no preview was made; null where one was.</summary>
+    /// <summary>Why no preview is made; null where one is.</summary>
     public string? Problem { get; init; }
 }
 

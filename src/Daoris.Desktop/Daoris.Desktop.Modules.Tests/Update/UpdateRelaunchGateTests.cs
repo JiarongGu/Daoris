@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class UpdateRelaunchGateTests : Bridge
 {
-    // True on the thread making the request, while it makes it: a start seen there was made on the caller's thread.
+    // True on the thread making the request, while it makes it: a start seen there is made on the caller's thread.
     [ThreadStatic]
     private static bool t_calling;
 

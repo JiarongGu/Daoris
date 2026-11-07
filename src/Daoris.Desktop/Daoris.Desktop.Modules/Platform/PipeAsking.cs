@@ -189,7 +189,7 @@ internal sealed class PipeAsking(InstancePipe pipe)
             return;
         }
 
-        // The answer its record was rewritten with as the ending was taken; one with none (a Confirm that met the close) is written now.
+        // The answer its record is rewritten with as the ending is taken; one with none (a Confirm that met the close) is written now.
         var text = _keep.TakeEnding(confirmation);
         if (text is null)
         {
@@ -225,7 +225,7 @@ internal sealed class PipeAsking(InstancePipe pipe)
     /// <remarks>
     /// A Confirm's hold is judged here for the last time, before <c>begun</c> is written: one the drain's hold or the close
     /// reached since the window's own check is held, nothing written, and waits on in its record for the restart. One written <c>begun</c>
-    /// runs whatever begins after, as the person was told, and a close begun meanwhile is its to wait for (<see cref="ConfirmThenRunAsync"/>,
+    /// runs whatever begins after, as the person is told, and a close begun meanwhile is its to wait for (<see cref="ConfirmThenRunAsync"/>,
     /// <see cref="InstancePipe.KeepAtClose"/>): never told confirmed and then ended unrun.
     /// </remarks>
     public PipePersisted Persisted(PipeConfirmation card, PipeEnding ending)

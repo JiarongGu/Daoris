@@ -48,7 +48,7 @@ public static class GitTokens
         AtomicFile.WriteText(Path.Combine(folder, kind), token);
     }
 
-    /// <summary>Clear a token of one kind; nothing is said where none was set. The folder goes when it holds none.</summary>
+    /// <summary>Clear a token of one kind; nothing is said where none is set. The folder goes when it holds none.</summary>
     public static void Clear(string home, string id, string kind)
     {
         if (!GitIdentities.IsId(id) || !IsKind(kind)) return;

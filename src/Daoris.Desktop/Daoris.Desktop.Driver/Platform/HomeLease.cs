@@ -167,7 +167,7 @@ public sealed class HomeLease : IDisposable
                 return null;
             }
 
-            // Stale. Removed only while it still says what was judged stale, so a lease another has just taken is not the one
+            // Stale. Removed only while it still says what is judged stale, so a lease another has just taken is not the one
             // removed.
             if (Read(path, out _) == seen) TryDelete(path);
         }
@@ -254,7 +254,7 @@ public sealed class HomeLease : IDisposable
     /// <param name="ct">The person's Ctrl+C, which ends the wait; nothing is taken.</param>
     /// <param name="waiting">Called once, the first time another act is found holding the home: a test's sign that this waits.</param>
     /// <param name="clock">The moment, read for <paramref name="tellAfter"/>: the machine's, or a test's.</param>
-    /// <exception cref="OperationCanceledException">The wait was stopped.</exception>
+    /// <exception cref="OperationCanceledException">The wait is stopped.</exception>
     public static async Task<HomeLease> ForPublicationAsync(
         string home, string what, Action<LeaseHolder> told, CancellationToken ct, Action? waiting = null, Func<DateTimeOffset>? clock = null,
         TimeSpan? tellAfter = null, TimeSpan? poll = null)

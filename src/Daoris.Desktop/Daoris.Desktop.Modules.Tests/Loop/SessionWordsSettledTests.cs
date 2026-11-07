@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// A keyed say the service answers <b>settled</b>, a retry of a
-/// word kept and taken whose answer was lost, is handled by the shell before it reads a word. Its record path shows no <c>User</c> event and
+/// word kept and taken whose answer is lost, is handled by the shell before it reads a word. Its record path shows no <c>User</c> event and
 /// nudges nothing; its held words go off the held file with nothing shown; the forward of a held word to a live successor's inbox and a say to a
 /// driven session's inbox hold, send and keep nothing on the ask. Each case holds the answer the service's say door gives to a client that asks,
 /// by the stand-in that models it (<see cref="KeyedSayService.Settle"/>).
@@ -33,7 +33,7 @@ public sealed class SessionWordsSettledTests : DriverModuleBridge
 
     /// <summary>
     /// The record path: a retry of a word the line settled, said to a record that ended, is answered sent with no word and no reach, shows no
-    /// <c>User</c> event in the conversation, keeps nothing on the ask and asks the service once; the same key said to a record on which it was
+    /// <c>User</c> event in the conversation, keeps nothing on the ask and asks the service once; the same key said to a record on which it is
     /// never settled is kept and shown as ever.
     /// </summary>
     [Fact]
@@ -63,7 +63,7 @@ public sealed class SessionWordsSettledTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The pump: a word held while its record wound up, then tried when it ended, is answered settled (its first say's answer was lost, the word
+    /// The pump: a word held while its record wound up, then tried when it ended, is answered settled (its first say's answer is lost, the word
     /// kept and taken meanwhile): off the held file with nothing shown, never a second word on the record and nothing said to the person.
     /// </summary>
     [Fact]

@@ -9,7 +9,7 @@ public enum GitReadRefusal
     /// <summary>The root is not the top of a repository of its own: git walks up, so it is not asked.</summary>
     NotTop,
 
-    /// <summary>A commit was named by anything but its whole id (a ref moves, and a read is asked of commits), or a name to resolve could be read as an option.</summary>
+    /// <summary>A commit named by anything but its whole id (a ref moves, and a read is asked of commits), or a name to resolve that could be read as an option.</summary>
     NotACommit,
 
     /// <summary>The path is empty, rooted, or climbs out of the repository.</summary>

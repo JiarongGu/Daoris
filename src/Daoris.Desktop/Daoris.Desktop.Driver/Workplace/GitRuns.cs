@@ -54,7 +54,7 @@ internal static class GitRuns
 
     /// <summary>
     /// The git Daoris's own git runs, as a held remote names it: its file, and when that file
-    /// was last written, so a git the person chooses in Tools, or one updated in place, is another git and a held remote is tried
+    /// is last written, so a git the person chooses in Tools, or one updated in place, is another git and a held remote is tried
     /// again. Null where no git resolves.
     /// </summary>
     internal static string? GitInUse(string? home)
@@ -338,7 +338,7 @@ internal static class GitRuns
     /// <summary>
     /// git, read as it answers: each piece of what it writes is handed to <paramref name="take"/>, decoded as
     /// UTF-8, and once <paramref name="take"/> answers false git is stopped rather than drained, since the rest is not
-    /// wanted. 0 where it was stopped so, git's own code otherwise, -1 where git did not start or could not be read.
+    /// wanted. 0 where it is stopped so, git's own code otherwise, -1 where git did not start or could not be read.
     /// </summary>
     /// <remarks>
     /// <see cref="GitBytesAsync"/>'s shape for text: a range's patch has no upper size, and a review that has spent its

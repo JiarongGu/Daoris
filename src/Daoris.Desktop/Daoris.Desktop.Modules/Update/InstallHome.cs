@@ -7,10 +7,10 @@ namespace Daoris.Desktop;
 /// <param name="SetForUser">True when the user's environment gained the variable — this start, not any earlier one.</param>
 /// <param name="Moved">The entries that moved in from an earlier `~/.daoris`, by name.</param>
 /// <param name="Failed">The entries that should have moved and could not — still where they were, named with the reason.</param>
-/// <param name="Notice">One sentence for the person, naming the home and anything that moved, could not, or was overridden.</param>
+/// <param name="Notice">One sentence for the person, naming the home and anything that moved, could not, or is overridden.</param>
 /// <param name="Overrode">
 /// The home this start inherited from the account and did not use: another install's
-/// `data/`, or this one's before it moved. Null when nothing was inherited, or it was this install's own.
+/// `data/`, or this one's before it moved. Null when nothing is inherited, or it is this install's own.
 /// </param>
 /// <param name="Placing">What this start's move into the home's places did, or null where none ran.</param>
 public sealed record HomeEstablished(
@@ -20,7 +20,7 @@ public sealed record HomeEstablished(
     /// <summary>The entries this start renamed into the home's places.</summary>
     public IReadOnlyList<HomeMove> Placed => Placing?.Moved ?? [];
 
-    /// <summary>The entries that should have moved into their places and could not, each still read where it was, with why.</summary>
+    /// <summary>The entries that should have moved into their places and could not, each still read where it stands, with why.</summary>
     public IReadOnlyList<HomeMove> NotPlaced => Placing?.Failed ?? [];
 
     /// <summary>Why this start tried no move at all (an update not settled, another process of the folder, the lease held), or null.</summary>
@@ -53,7 +53,7 @@ public static class HomeAccount
     public const string Overridden = "overridden";
 
     /// <summary>
-    /// The home was named for this start alone — a gate's scratch home, a terminal's one-off, the dev loop's — and the
+    /// The home is named for this start alone — a gate's scratch home, a terminal's one-off, the dev loop's — and the
     /// account's variable names another folder or none. A terminal's daoris does not read this one.
     /// </summary>
     public const string ThisStart = "this-start";
@@ -123,12 +123,12 @@ public static class InstallHome
     /// <summary>
     /// The folder a shell running from an install's <c>app/</c> stands in instead: the install's root, while
     /// it stands in <c>app/</c> or below it, as the launcher started it. Null otherwise — a workspace build, or a start given a
-    /// working folder elsewhere — which is left as it was.
+    /// working folder elsewhere — which is left alone.
     /// </summary>
     /// <remarks>
     /// Every child started without a working folder of its own inherits the shell's, and on Windows a process's working folder
     /// keeps the folders above it from being renamed while it lives: a browser, a harness or a tool started from <c>app/</c>,
-    /// running from somewhere else, held the swap's move of <c>app/</c> and was not among what the launcher waits for.
+    /// running from somewhere else, holds the swap's move of <c>app/</c> and is not among what the launcher waits for.
     /// </remarks>
     public static string? WorkingFolder(string baseDirectory, string current)
     {
@@ -185,8 +185,8 @@ public static class InstallHome
 
             // The account's variable reaches every process the person starts, so a second or
             // moved install inherited the first one's home and ran on it without a word. A value that
-            // equals the account's was inherited, and the install's own `data/` wins over it. A value
-            // that differs was named for this start alone — a gate's scratch home, a terminal's
+            // equals the account's is inherited, and the install's own `data/` wins over it. A value
+            // that differs is named for this start alone — a gate's scratch home, a terminal's
             // one-off — and is respected, or no gate could keep an install off the real machine.
             if (!SamePath(named, account)) return null;
             overrode = named;
@@ -198,7 +198,7 @@ public static class InstallHome
         // Once, and never over one the person set themselves: a user variable is theirs to change,
         // and a shell that reset it on every start would make the setting impossible to keep. That
         // holds for an overridden one too: rewriting it would move every terminal to whichever
-        // install was opened last, so it is left, and the notice says a terminal still reads it.
+        // install is opened last, so it is left, and the notice says a terminal still reads it.
         var setForUser = false;
         if (string.IsNullOrWhiteSpace(account))
         {
@@ -247,7 +247,7 @@ public static class InstallHome
     /// What the move into the home's places did, into the machine log: a
     /// <c>home.moved</c> line for each rename, a <c>home.move-failed</c> line for each that could not be, a
     /// <c>home.move-recovered</c> line for each a stopped start left and this one put back, and <c>home.move-held</c> where
-    /// nothing was tried. Written once the log is open, which the move ran before, since the log is one of the entries it moves.
+    /// nothing is tried. Written once the log is open, which the move runs before, since the log is one of the entries it moves.
     /// </summary>
     public static void Log(HomeEstablished? established, MachineLog log)
     {
@@ -294,7 +294,7 @@ public static class InstallHome
     /// <remarks>
     /// An override is said as one, since the notice then names the folder a terminal reads. Otherwise the two
     /// spellings are compared as <see cref="Establish"/> compares them: the same folder, or a home this start named
-    /// for itself. No variable for the account is not this folder, whatever the process was handed.
+    /// for itself. No variable for the account is not this folder, whatever the process is handed.
     /// </remarks>
     public static string AccountOf(string home, HomeEstablished? established, string? account) =>
         established?.Overrode is not null ? HomeAccount.Overridden

@@ -96,7 +96,7 @@ public sealed class EngineBrowserTests : Bridge
         Assert.Contains(named, problem);
     }
 
-    /// <summary>The two locales an install keeps: the engine is never asked for one that was left out.</summary>
+    /// <summary>The two locales an install keeps: the engine is never asked for one that is left out.</summary>
     [Theory]
     [InlineData("zh-CN", "zh-CN")]
     [InlineData("zh-Hans-CN", "zh-CN")]

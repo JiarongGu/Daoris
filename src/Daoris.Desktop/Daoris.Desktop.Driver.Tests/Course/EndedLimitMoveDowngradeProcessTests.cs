@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-vi part b (D212; the foundation design §13.5's downgrade table, §19.4, row f-vi's proof): the ended limit move across a
+/// The ended limit move across a
 /// downgrade, as <c>LimitMoveDowngradeProcessTests</c> proves the live move's, and the box an older build writes imported once at the return. A
 /// shell is killed at each boundary of the move, an older build comes up on the home and writes its own box, then this build returns: its
 /// come-up ends the killed move by its phase, a later one imports the box into a record of its own and sets it aside, and a third finds nothing
@@ -29,10 +29,10 @@ public sealed class EndedLimitMoveDowngradeProcessTests : IAsyncLifetime
     public async Task DisposeAsync() => await _h.DisposeAsync();
 
     /// <param name="Phase">The killed move's phase after this build's return.</param>
-    /// <param name="Held">The reason it was held, where it was.</param>
+    /// <param name="Held">The reason it is held, where it is held.</param>
     /// <param name="Closed">The reason it closed, where it did.</param>
     /// <param name="Word">The disposition the return gave the moved word, where it read it.</param>
-    /// <param name="Boxed">The phase, hold and close of the record the older build's box was imported as.</param>
+    /// <param name="Boxed">The phase, hold and close of the record the older build's box is imported as.</param>
     /// <param name="OnOldPart">Whether the word still waits on the old record: the open never moved it.</param>
     /// <param name="Wrote">How many messages the killed shell's door wrote to the new part.</param>
     /// <param name="Carried">How many times an older build's go-on carried the word to the stub.</param>
@@ -47,7 +47,7 @@ public sealed class EndedLimitMoveDowngradeProcessTests : IAsyncLifetime
     /// <summary>The row of a boundary, where the person's word waited on the record (<paramref name="word"/>) or none did.</summary>
     private static After Row(string cut, bool word) => (cut, word) switch
     {
-        // Before the open: the old part as it was, an older build opening nothing here. The box names no destination, so it is imported at
+        // Before the open: the old part as it stands, an older build opening nothing here. The box names no destination, so it is imported at
         // `old-ended` and falls back, `not-opened`, as the killed move does.
         (Cuts.Decided, _) => new("fell-back", null, null, null, BoxedFellBack, OnOldPart: word, 0, 0),
         (Cuts.Opening, _) => new("closed", MoveHoldWhy.Unrecorded, MoveCloseWhy.Resolved, null, BoxedFellBack, OnOldPart: word, 0, 0),
@@ -68,7 +68,7 @@ public sealed class EndedLimitMoveDowngradeProcessTests : IAsyncLifetime
         (Cuts.Written, true) => new("closed", MoveHoldWhy.Undelivered, MoveCloseWhy.Resolved, MoveWordDispositions.Left, BoxedUndelivered, OnOldPart: false, 1, 0),
         (Cuts.Written, false) => new("closed", MoveHoldWhy.Unrecorded, MoveCloseWhy.Resolved, null, BoxedUndelivered, OnOldPart: false, 1, 0),
 
-        // `sent` written: the move is delivered by it, whether its take was made or not.
+        // `sent` written: the move is delivered by it, whether its take is made or not.
         (Cuts.Sent or Cuts.Taken, true) => new("delivered", null, null, MoveWordDispositions.Sent, BoxedUndelivered, OnOldPart: false, 1, 0),
         (Cuts.Sent or Cuts.Taken, false) => new("delivered", null, null, null, BoxedUndelivered, OnOldPart: false, 1, 0),
         _ => throw new InvalidOperationException($"a boundary with no row: {cut}"),
@@ -170,7 +170,7 @@ public sealed class EndedLimitMoveDowngradeProcessTests : IAsyncLifetime
         Assert.Equal(waiting, _h.Waiting());
         Assert.Equal(0, _h.Events.After("c2", 0).Events.Count(e => e.Code == SessionEventCodes.Lost));
 
-        // A third come-up finds nothing to do: the box was imported once, and the return acted once.
+        // A third come-up finds nothing to do: the box has been imported once, and the return acted once.
         var shape = string.Join(" | ", Store().Of("c1").Select(Shape));
         await _h.Runner().TakeUpAsync();
         await Task.Delay(1000);
@@ -180,7 +180,7 @@ public sealed class EndedLimitMoveDowngradeProcessTests : IAsyncLifetime
 
     /// <summary>
     /// 🔴 The box an older build wrote at each phase of its own move, imported at this build's return and nothing else on the home: with no
-    /// destination it is imported at <c>old-ended</c> and falls back, the word where it was; naming one whose open moved the word, at
+    /// destination it is imported at <c>old-ended</c> and falls back, the word where it is; naming one whose open moved the word, at
     /// <c>opened</c>, the word never attempted left on the new part for its own go-on, which carries it once, or attempted without a
     /// <c>sent</c>, settled uncertain with the <c>lost</c> note and taken back, never sent again; naming one whose open moved nothing, with no word.
     /// Each is set aside once and nothing is delivered from the box.

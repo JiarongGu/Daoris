@@ -105,7 +105,6 @@ internal sealed class SessionSaidMoves(QuestStore quests, SessionStore sessions)
     /// record, and any word of a record that runs again (queued, starting, working), whose run may already be building its
     /// prompt from it. A park takes its words back, as it takes them (§2.2). What never goes on refuses as the say door does,
     /// before anything is read of the words.</para>
-    ///
     /// <para><b>Nothing is kept on the ask</b>, unlike <see cref="TakeSaidAsync"/>'s door: nothing took the words. A park's
     /// answer line stays on its note, which travelled already; a reworded park's answer adds its own line, as a second
     /// answer does. Order among several waiting words is not kept: the new words wait last.</para>

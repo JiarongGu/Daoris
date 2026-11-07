@@ -7,7 +7,7 @@ public sealed record PlaceApplyDoors(
     IPlaceWorld Place, ISetupWorld Setup, string Home, IWorkplacePluginCatalog Plugins, bool Unadopted,
     Func<DriverConfig> Config, Action<Func<DriverConfig, DriverConfig>> Change, DateOnly Day);
 
-/// <summary>What an apply came to: whether every operation is done, a code where it was refused, and each operation as the receipt keeps it.</summary>
+/// <summary>What an apply came to: whether every operation is done, a code where it is refused, and each operation as the receipt keeps it.</summary>
 public sealed record PlaceResult(bool Done, string? Refused, string Message, string Digest, IReadOnlyList<PlaceOperation> Operations);
 
 /// <summary>The codes an apply is refused by, each with nothing written.</summary>
@@ -52,12 +52,12 @@ public static class PlaceApplyRefusals
 /// </remarks>
 public static class PlaceApplies
 {
-    /// <summary>The line of an adoption quest's body that names the plan it was asked by, so a retry finds it.</summary>
+    /// <summary>The line of an adoption quest's body that names the plan it is asked by, so a retry finds it.</summary>
     public static string KeyOf(string digest) => $"<!-- daoris place-apply {digest} -->";
 
     /// <summary>
     /// Apply the plan <paramref name="digest"/> names, <paramref name="accepted"/> the acceptances chosen. A digest already holding a receipt goes on
-    /// from it, whatever <paramref name="ask"/> and <paramref name="accepted"/> say: the receipt is what was authorized.
+    /// from it, whatever <paramref name="ask"/> and <paramref name="accepted"/> say: the receipt is what is authorized.
     /// </summary>
     public static async Task<PlaceResult> ApplyAsync(
         PlaceApplyDoors doors, PlaceAsk ask, string digest, IReadOnlyList<PlaceAccept> accepted, CancellationToken ct = default)
@@ -384,7 +384,7 @@ public static class PlaceApplies
     }
 
     /// <summary>
-    /// Step 6, one repository's adoption quest: found by its key where it was asked before, else asked now, as the set-up press asks it, with the
+    /// Step 6, one repository's adoption quest: found by its key where it has been asked before, else asked now, as the set-up press asks it, with the
     /// key as the last line of its body. The operation is <c>uncertain</c> in the receipt from before the ask until its answer.
     /// </summary>
     private static async Task<PlaceReceipt> AdoptAsync(

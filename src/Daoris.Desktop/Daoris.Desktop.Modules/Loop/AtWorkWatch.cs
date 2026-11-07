@@ -132,7 +132,7 @@ public sealed class AtWorkWatch
     }
 
     /// <summary>
-    /// What a file's new lines say against what was read: null where its stamp stands; else whether one wakes, or the file read on to
+    /// What a file's new lines say against what is read: null where its stamp stands; else whether one wakes, or the file read on to
     /// its last full line where none does.
     /// </summary>
     private static (bool Woke, AtWorkFile File)? Lines(AtWorkFile file)

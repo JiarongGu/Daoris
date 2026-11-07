@@ -97,11 +97,11 @@ public static class SweepStateSlice
     /// <summary>
     /// One judgement: each repository's part judged, a partition of what <c>SWEEP_PLAN</c> writes of it, its rows' sessions read from
     /// <paramref name="look"/>. Null where the service's answers were never judged (<paramref name="parts"/> null), or, unless
-    /// <paramref name="partly"/>, while any part or the look was never judged: nothing to judge from yet.
+    /// <paramref name="partly"/>, while any part or the look has not been judged: nothing to judge from yet.
     /// </summary>
     /// <param name="parts">The facts' parts (<see cref="HelpFacts.SweepParts"/>), each as last judged or null.</param>
     /// <param name="look">The sessions' look as the facts hold it; once judged whole, none reads no record, as the door's records that do not read.</param>
-    /// <param name="partly">Whether a part never judged is left out rather than leaving the slice not judged: once one judgement was whole.</param>
+    /// <param name="partly">Whether a part never judged is left out rather than leaving the slice not judged: once a whole judgement has been made.</param>
     public static IReadOnlyList<SliceJudged>? Judge(IReadOnlyList<(string Part, IKnowledgeSweep? Plan)>? parts, SessionLook? look, bool partly)
     {
         if (parts is null || (!partly && (look is null || parts.Any(part => part.Plan is null)))) return null;
@@ -158,7 +158,7 @@ public static class SweepStateSlice
         return moved;
     }
 
-    /// <summary>Each repository's kept answers, entry by entry in the record's order: what an ask writes and what it was written of.</summary>
+    /// <summary>Each repository's kept answers, entry by entry in the record's order: what an ask writes and what it is written of.</summary>
     private static Dictionary<string, List<(string Branch, string Tip, PullRequestState? State, PullRequestAskFailed? Failed)>> Kept(
         IEnumerable<LandedBranch> entries) =>
         entries.GroupBy(entry => entry.Repository, StringComparer.OrdinalIgnoreCase).ToDictionary(

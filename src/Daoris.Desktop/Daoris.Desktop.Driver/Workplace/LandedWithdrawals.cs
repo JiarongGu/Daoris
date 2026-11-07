@@ -3,14 +3,14 @@ namespace Daoris.Driver;
 /// <summary>
 /// What one withdrawal of a landing's branch did, or with <see cref="Planned"/> would do, in the driver's words.
 /// </summary>
-/// <param name="Done">The branch was taken away and its record says why.</param>
+/// <param name="Done">The branch is taken away and its record says why.</param>
 /// <param name="Message">The sentence both doors say.</param>
 public sealed record LandedWithdrawal(bool Done, string Message)
 {
-    /// <summary>The recovery ref its commits were kept on, where it was withdrawn.</summary>
+    /// <summary>The recovery ref its commits are kept on, where it is withdrawn.</summary>
     public string? KeptRef { get; init; }
 
-    /// <summary>A plan: <see cref="Message"/> says what would happen, and nothing was changed.</summary>
+    /// <summary>A plan: <see cref="Message"/> says what would happen, and nothing is changed.</summary>
     public bool Planned { get; init; }
 }
 
@@ -103,7 +103,7 @@ internal sealed class LandedWithdrawals(TreeContext context, ContentHolds conten
         { KeptRef = reference };
     }
 
-    /// <summary>The entry judged over its repository's whole set, as the clean-up judges it, at the refs as they are now; null where it was not judged.</summary>
+    /// <summary>The entry judged over its repository's whole set, as the clean-up judges it, at the refs as they are now; null where it is not judged.</summary>
     private async Task<LandedCleanups.Judged?> JudgeAsync(string root, string repository, LandedBranch entry, CancellationToken ct)
     {
         var refs = RefSnapshot.Take(root);
@@ -133,7 +133,7 @@ internal sealed class LandedWithdrawals(TreeContext context, ContentHolds conten
                 return $"{subject}: {item.Detail}.";
         }
 
-        // A pull request may still carry what a plugin pushed, unless the platform said it was abandoned: the clean-up asks it, with proof.
+        // A pull request may still carry what a plugin pushed, unless the platform said it is abandoned: the clean-up asks it, with proof.
         if ((entry.Pushed || entry.PullRequest is not null) && entry.PullRequestState?.State != PullRequestStates.Abandoned)
         {
             return $"{subject}: a pull request may still carry it ({(entry.PullRequest is { } pull ? pull : "a plugin pushed it")}); "

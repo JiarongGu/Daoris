@@ -5,7 +5,7 @@ public sealed record IntegrationLookRequest(string Request, string Line, string 
 {
     public string? Unit { get; init; }
 
-    /// <summary>The words a member was handed back or held with; null where none were said.</summary>
+    /// <summary>The words a member is handed back or held with; null where none are said.</summary>
     public string? Said { get; init; }
 
     /// <summary>Where an <c>order</c> moved a queued request (<see cref="IntegrationOrders"/>); null where it stands by arrival.</summary>
@@ -45,7 +45,7 @@ public sealed record IntegrationLookCandidate(string Candidate, string Line, str
     /// <summary>Who may press it: <c>owner</c>, <c>steward</c>; null where nothing does.</summary>
     public string? By { get; init; }
 
-    /// <summary>The words it was held with: the judge's for a decide; null where none were said.</summary>
+    /// <summary>The words it is held with: the judge's for a decide; null where none are said.</summary>
     public string? Why { get; init; }
 
     /// <summary>The decide recorded on it that the line's run has still to act on (<see cref="IntegrationDecides"/>); null where none is.</summary>

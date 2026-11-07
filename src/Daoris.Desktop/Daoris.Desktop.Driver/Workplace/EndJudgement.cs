@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>What a branch's work is, as far as git and the record can say.</summary>
 internal enum EndState
 {
-    /// <summary>Nothing was handed on and the line does not hold the tip: at most the agent's word that it is done.</summary>
+    /// <summary>Nothing is handed on and the line does not hold the tip: at most the agent's word that it is done.</summary>
     Claim,
 
     /// <summary>The work left the tree into the person's flow (a landing's branch, a pull request, a branch of the person's) and the line does not hold it yet.</summary>
@@ -31,7 +31,7 @@ internal static class EndBy
     /// <summary>The landing's pull request completed, and git confirms it here.</summary>
     public const string PullRequest = LandedKind.PullRequest;
 
-    /// <summary>A session branch inside the branch a landing made, whose own end was proven.</summary>
+    /// <summary>A session branch inside the branch a landing made, whose own end is proven.</summary>
     public const string Landed = "landed";
 
     /// <summary>A session branch a completed pull request carried.</summary>
@@ -57,7 +57,7 @@ internal sealed record EndHost(LandedBranch Entry, string Tip, EndVerdict End);
 /// <c>end</c> setting. The cycle is an input to <see cref="EndJudgement"/>, so a workspace's or a repository's own definition of its
 /// end plugs in where it is resolved.
 /// </summary>
-/// <param name="Form"><see cref="LandingForm.Merge"/>, <see cref="LandingForm.Branch"/>, or <see cref="None"/> where nothing was ever handed by Daoris.</param>
+/// <param name="Form"><see cref="LandingForm.Merge"/>, <see cref="LandingForm.Branch"/>, or <see cref="None"/> where nothing is ever handed by Daoris.</param>
 /// <param name="Plugin">A plugin pushes the branch and opens its pull request, so its completed answer is a proof.</param>
 /// <param name="Squash">The landing branch is one commit, the recorded squash tip vouching for the session's commits.</param>
 /// <param name="Workflow">The named workflow whose landing decided it; null under Current.</param>
@@ -170,7 +170,7 @@ internal sealed record EndFacts(string? Line)
     public string? Carrier { get; init; }
 
     /// <summary>
-    /// The form of the line (<c>main</c>, <c>origin/main</c>) that carrier's merge commit was found on, as the carried proof rests on it
+    /// The form of the line (<c>main</c>, <c>origin/main</c>) that carrier's merge commit is found on, as the carried proof rests on it
     /// (<see cref="PullRequestCarrier.Rests"/>); null where it names none.
     /// </summary>
     public string? CarrierOn { get; init; }
@@ -467,7 +467,7 @@ internal static class EndJudgement
 
     /// <summary>
     /// The first of <paramref name="hosts"/>
-    /// whose branch, at the tip it was judged at, holds <paramref name="tip"/> by ancestry; null where none does, or git could not say. One
+    /// whose branch, at the tip it is judged at, holds <paramref name="tip"/> by ancestry; null where none does, or git could not say. One
     /// <c>merge-base --is-ancestor</c> a host, until one holds it.
     /// </summary>
     internal static async Task<EndHost?> WithinAsync(string root, string tip, IEnumerable<EndHost> hosts, CancellationToken ct)

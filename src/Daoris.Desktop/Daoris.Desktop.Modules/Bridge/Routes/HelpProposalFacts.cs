@@ -49,7 +49,7 @@ public sealed class HelpProposalFacts(DriverContext context)
 
     /// <summary>
     /// Whether a pending proposal is a change to the open workflow draft, judged against the drafts its conversation's record
-    /// says it was told, so the record is read for those only then.
+    /// says it has been told, so the record is read for those only then.
     /// </summary>
     public static bool JudgedAgainstDrafts(IEnumerable<HelpProposal> proposals) =>
         proposals.Any(proposal => proposal.Kind == "workflow" && proposal.Door == "draft");
@@ -254,7 +254,7 @@ public sealed class HelpProposalFacts(DriverContext context)
             };
         }
 
-        // a change to the open draft is judged against the drafts its conversation's own record says it was told,
+        // a change to the open draft is judged against the drafts its conversation's own record says it has been told,
         // read from this machine's record only for one.
         if (JudgedAgainstDrafts(proposals) && conversation is not null && SessionEventText.IsLocalId(conversation))
         {

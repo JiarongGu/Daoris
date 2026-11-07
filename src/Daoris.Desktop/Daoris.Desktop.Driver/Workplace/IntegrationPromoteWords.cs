@@ -53,7 +53,7 @@ internal static class IntegrationPromoteWords
         + (string.IsNullOrWhiteSpace(each.Why) ? "." : $": {each.Why}");
 
     /// <summary>
-    /// The promote step's end where authority lapsed: nothing was moved; each lapsed member is held (its request stays open and out of the
+    /// The promote step's end where authority lapsed: nothing is moved; each lapsed member is held (its request stays open and out of the
     /// queue, for the steward's or the owner's act) and the candidate is formed again without it, or ended <c>empty</c> where none is left.
     /// </summary>
     internal static IntegrationStepEnd LapsedEnd(IReadOnlyList<IntegrationMember> replayed, IReadOnlyList<(IntegrationMember Member, string Why)> lapsed) =>

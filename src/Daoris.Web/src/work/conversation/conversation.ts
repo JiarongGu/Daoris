@@ -59,12 +59,12 @@ export type Usage = { used: number; size: number; most: number };
  *
  * @remarks
  * - **An ask opens a turn**, and the wire's turn end closes it. Anything before the first ask sits in
- *   a turn of its own rather than being dropped.
+ * a turn of its own rather than being dropped.
  * - **Chunks join**: consecutive message chunks are one message, consecutive thought chunks one
- *   thought — the wire streams words, a reader reads sentences. Two messages in a row are two, by
- *   the ids the wire gives them.
+ * thought — the wire streams words, a reader reads sentences. Two messages in a row are two, by
+ * the ids the wire gives them.
  * - **A tool call is one card**, where it first appeared, carrying the latest of every field its
- *   updates set; an update's content replaces what came before, as the protocol says it does.
+ * updates set; an update's content replaces what came before, as the protocol says it does.
  * - **A plan is its latest entries**, in the place it first appeared in the turn.
  * - **Usage is a meter, never a block.**
  * - **A cancelled turn's last open calls are the ones its stop cut**: the tool calls at its

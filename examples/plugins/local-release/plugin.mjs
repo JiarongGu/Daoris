@@ -46,7 +46,7 @@ const steps = {
     return stage(call, `found ${version}`, version, () => writeJson(join(data, 'found', `${version}.json`), found), 'release');
   },
 
-  // Records the release it was given: its tag name and notes, kept in the data folder. Pushes no tag.
+  // Records the release it is given: its tag name and notes, kept in the data folder. Pushes no tag.
   release: async (call) => {
     const version = versionOf(call);
     const found = readJson(join(data, 'found', `${version}.json`));
@@ -83,7 +83,7 @@ const kit = work({
     if (!run) return failed('unknown-step', `no step ${call.step}`);
     return run(call);
   },
-  // A step with `done` was made, and says what it reached; one without was begun and is cleared, so the redelivery makes it whole.
+  // A step with `done` is made, and says what it reached; one without is begun and is cleared, so the redelivery makes it whole.
   check: async (attempt) => {
     const folder = staging(attempt.invocation);
     const outcome = readJson(join(folder, 'outcome.json'));
@@ -121,7 +121,7 @@ function failed(code, message) {
   return { state: 'failed', code, evidence: { message } };
 }
 
-/** The version a step was given: the id of its `local-release/release@1` input. */
+/** The version a step is given: the id of its `local-release/release@1` input. */
 function versionOf(call) {
   const prefix = `${RELEASE}:`;
   const given = (call.inputs ?? []).find((input) => typeof input === 'string' && input.startsWith(prefix));

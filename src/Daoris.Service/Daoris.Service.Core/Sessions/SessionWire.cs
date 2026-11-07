@@ -13,7 +13,6 @@ namespace Daoris.Knowledge;
 /// a machine's disk, and the PROFILE is the name of the account it ran as. Absent,
 /// not policed: a record read from a store that holds them is copied field by field, and none of the
 /// three is a field.</para>
-///
 /// <para>Hand-written rather than reflected, for the reason every JSON shape in Core is: nothing here may
 /// quietly stop working under AOT.</para>
 /// </remarks>

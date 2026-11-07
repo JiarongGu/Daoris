@@ -401,7 +401,7 @@ public sealed class ToolsRoutes(DriverContext context)
 
     // A git go-ahead answered: its row's Allow or Refuse in What needs you and on its session's head,
     // and `daoris git answer` through the window. A door that waits takes the answer; for one that has gone an Allow is kept as a grant for
-    // the identical retry. `{ ask, answer, waiting }`, waiting whether the door was still there. The row goes as the slice hears the file.
+    // the identical retry. `{ ask, answer, waiting }`, waiting whether the door is still there. The row goes as the slice hears the file.
     [DriverRoute("GIT_ANSWER", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("GIT_ANSWER", None = OwnerNone.ActsOnNothing)]
     [GroundWait("GIT_ANSWER", "git-ask", "ask")]
@@ -544,7 +544,7 @@ public sealed class ToolsRoutes(DriverContext context)
         return new { Tool = declared.Id, Action = action, Started = true, run.Version };
     }
 
-    /// <summary>A tool's action to its end, and the end announced, after the request that started it was answered.</summary>
+    /// <summary>A tool's action to its end, and the end announced, after the request that started it is answered.</summary>
     private async Task FollowToolAsync(ToolDeclaration declared, string action, ToolRun run, string console)
     {
         var end = await run.Ended.ConfigureAwait(false);
@@ -630,7 +630,7 @@ public sealed class ToolsRoutes(DriverContext context)
         return (ToolQuestions.ConfigIn(answer.Output), null);
     }
 
-    /// <summary>A downloaded version's size, as its record says it was downloaded.</summary>
+    /// <summary>A downloaded version's size, as its record says.</summary>
     private static long? RecordSize(string home, string tool, string version)
     {
         try

@@ -6,8 +6,8 @@ import tailwindcss from '@tailwindcss/vite';
 // deployment — which is what makes CORS unnecessary there, and what lets the desktop shell host
 // exactly the same bytes rather than a second copy built differently.
 export default defineConfig({
-  // WEBFAST1: Tailwind stays out of the unit tests (vitest sets VITEST before it reads this file).
-  // `css: false` below hands every test an empty stylesheet, so Tailwind's output was thrown away;
+  // Tailwind stays out of the unit tests (vitest sets VITEST before it reads this file).
+  // `css: false` below hands every test an empty stylesheet, so Tailwind's output is thrown away;
   // under the vm pool its scan also had vite transform files no test imports, the node scripts
   // among them, and a full run printed a vite warning 187 times about `scripts/e2e-host.mjs`. The
   // tests that check `tokens.css` read it from disk.
@@ -23,11 +23,11 @@ export default defineConfig({
     // them — the class of bug where a feature works only in one.
     proxy: { '/api': 'http://localhost:5177' },
   },
-  // The fast inner loop (D42): unit tests in jsdom, inline in the vite config — the bilingual
+  // The fast inner loop: unit tests in jsdom, inline in the vite config — the bilingual
   // sibling's proven arrangement, shims included. Playwright stays the outer loop over examples/.
   test: {
     environment: 'jsdom',
-    // WEBFAST1: workers outlive a file. Under the default pool (`forks`, isolated) each of the 225
+    // Workers outlive a file. Under the default pool (`forks`, isolated) each of the 225
     // files started a fresh process that loaded jsdom and vitest again, a third of the tracked time.
     // A vm pool keeps the worker and runs each file in a fresh jsdom window as its own vm context,
     // with its own module instances, so no file sees another's DOM, globals or module state. The
@@ -42,14 +42,14 @@ export default defineConfig({
     // keystroke, and across ~60 files in parallel workers they ran 1–5s alone and 5.1–6s on a loaded
     // machine: four full runs on 2026-09-24 each timed out a DIFFERENT typing test at the 5s default,
     // and every one passed alone. A real failure is an assertion, and it still fails at once.
-    // WEBPATIENCE1: two minutes, the desktop suites' patience (TESTPATIENCE1). WorkFrame's free-answer test takes
+    // Two minutes, the desktop suites' patience. WorkFrame's free-answer test takes
     // about 8 s alone and reached 20 s and 47 s in two merge-queue candidates on 2026-10-28 beside the other gates.
     testTimeout: 120_000,
-    // WEBGATE1: a quarter of the machine, not all of it. By default every logical processor but one ran a worker (21 on the
+    // A quarter of the machine, not all of it. By default every logical processor but one ran a worker (21 on the
     // owner's machine), beside the installed window, the antivirus and the other gates, and on 2026-10-15 three gate runs
     // failed on 20 s timeouts in files that passed alone. `DAORIS_WEB_WORKERS` (a count or a percentage) says otherwise.
     maxWorkers: process.env.DAORIS_WEB_WORKERS ?? '25%',
-    // Transforming the modules was 40-71% of a run's tracked time and was redone by every gate that runs vitest (the rules, the unit
+    // Transforming the modules takes 40-71% of a run's tracked time and is redone by every gate that runs vitest (the rules, the unit
     // run): the transformed modules persist under node_modules and are reused by the next process, keyed by the sources' content.
     fsModuleCache: true,
   },

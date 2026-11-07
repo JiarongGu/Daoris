@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// <para><b>Nothing here pushes, merges or writes a quest.</b> The landing is the session trees' own act through the delivery: the push is the
 /// plugin's, and a landing writes no quest state.</para>
 ///
-/// <para><b>A refusal is not tried every pass.</b> Each try is kept in memory with the tree's tip and status it was made at, and the next is made
+/// <para><b>A refusal is not tried every pass.</b> Each try is kept in memory with the tree's tip and status it is made at, and the next is made
 /// only once either moves (<see cref="LandTries.ShouldTry"/>), or the person's press asks again (<see cref="Retry"/>). A restart reads as
 /// no try, and the next pass judges afresh.</para>
 ///
@@ -38,7 +38,7 @@ public sealed class LandPerformer(
 
     private void TakeRepair(LandStart run) { if (run.Review is { } review) Flows.TakeRepair(home, HoldsLease, run.Unit, review); }
 
-    /// <summary>A session chosen to land, with what was read of it: its quest, its tree's tip and status, the gate pinned to that tip.</summary>
+    /// <summary>A session chosen to land, with what is read of it: its quest, its tree's tip and status, the gate pinned to that tip.</summary>
     private sealed record Choice(LandEntry Entry, QuestView Quest, string? Tip, string Status, LandStart Run)
     {
         public IWorkplaceGate? Gate { get; init; }
@@ -48,7 +48,7 @@ public sealed class LandPerformer(
     }
 
     /// <summary>
-    /// The person's press on a run whose <c>land</c> was refused: the refusal is forgotten, so the next pass tries the landing again though
+    /// The person's press on a run whose <c>land</c> is refused: the refusal is forgotten, so the next pass tries the landing again though
     /// neither its tip nor its tree's status moved. Nothing else repeats a refusal that nothing changed.
     /// </summary>
     public static void Retry(string home, string session, string? unit = null, string? tip = null)
@@ -213,7 +213,7 @@ public sealed class LandPerformer(
         return (null, new Choice(entry, quest, tip, status, run) { Gate = gate.WithTip(tip), Uncommitted = status == Unreadable ? null : uncommitted });
     }
 
-    /// <param name="fresh">The world the choice was judged from, which names the landing and the trees in use.</param>
+    /// <param name="fresh">The world the choice is judged from, which names the landing and the trees in use.</param>
     private async Task<string> LandOneAsync(Choice choice, IWorkplaceLandingWorld fresh, CancellationToken ct)
     {
         var entry = choice.Entry;
@@ -358,8 +358,8 @@ public sealed class LandPerformer(
 
     /// <summary>Keep one try: in memory with its facts, in the conversation where its code is said there, and in the machine log by its code.</summary>
     /// <param name="named">The branch the pattern names, which a refusal's note names where the landing made none.</param>
-    /// <param name="rebaseTold">Its replay conflicted and its session was told to rebase, which its note says.</param>
-    /// <param name="carry">What the review's word was carried on for, or that it accepted the landing (<see cref="LandTryNotes.Of"/>).</param>
+    /// <param name="rebaseTold">Its replay conflicted and its session has been told to rebase, which its note says.</param>
+    /// <param name="carry">What the review's word is carried on for, or that it accepted the landing (<see cref="LandTryNotes.Of"/>).</param>
     private string Tried(
         LandEntry entry, string code, string? tip, string? status, TreeLanding? landed = null,
         string? named = null, int? commits = null, int? uncommitted = null, bool rebaseTold = false, string? carry = null)
@@ -394,7 +394,7 @@ public sealed class LandPerformer(
     /// What the run's graph holds, or a partner's record that lands nothing (<see cref="PieceLandings"/>): a refusal kept once, with no tip and no
     /// status, so the next pass reads the gate again whatever the tree does.
     /// </summary>
-    /// <returns>The line said, or null where it was said already.</returns>
+    /// <returns>The line said, or null where it is said already.</returns>
     private string? Workflow(LandEntry entry, TreeLanding held, LandingLine? line)
     {
         if (entry.Last is { Code: LandingCode.Refused, Tip: null, Status: null }) return null;

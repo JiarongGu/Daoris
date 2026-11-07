@@ -35,8 +35,8 @@ public sealed class SessionArchive(string home)
 
     /// <summary>
     /// Archive these sessions, each judged by its place in <paramref name="groups"/>: what is ended and needs nobody is
-    /// marked, keeping when it was first archived; what is live, needs the person or is no record here is refused and
-    /// left as it was. Nothing is written when nothing was archived.
+    /// marked, keeping its first archived time; what is live, needs the person or is no record here is refused and
+    /// left as it stands. Nothing is written when nothing is archived.
     /// </summary>
     /// <param name="groups">Where the reader placed the sessions asked about, as the archive is asked.</param>
     /// <param name="known">Every record's id: a mark for a record that is gone is dropped as this writes.</param>
@@ -59,7 +59,7 @@ public sealed class SessionArchive(string home)
     }
 
     /// <summary>
-    /// Take these sessions' marks away, so each is back in the group its state puts it in. One that was not archived is
+    /// Take these sessions' marks away, so each is back in the group its state puts it in. One that is not archived is
     /// named in the answer, never refused. Nothing is written when no mark went.
     /// </summary>
     /// <param name="known">Every record's id where the door has them, to drop a mark for a record that is gone; null keeps every other mark.</param>
@@ -89,7 +89,7 @@ public sealed class SessionArchive(string home)
     }
 
     /// <summary>
-    /// What <c>sessions archive &lt;id&gt;…</c> says of each outcome, and its exit: 0 where every one was archived, 1 where one was
+    /// What <c>sessions archive &lt;id&gt;…</c> says of each outcome, and its exit: 0 where every one is archived, 1 where one is
     /// kept. The alone path prints it, and <c>SESSION_ARCHIVE</c> answers it as <c>said</c> to a
     /// terminal that sent its archive over the pipe, so the two cannot drift.
     /// </summary>

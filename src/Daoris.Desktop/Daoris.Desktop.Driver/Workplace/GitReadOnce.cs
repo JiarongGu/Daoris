@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// a third of them a question another of its stages had asked, or one of those three.
 /// </summary>
 /// <remarks>
-/// <para><b>Reads only.</b> A command that may move a ref (<see cref="RefSnapshot.MayWrite"/>) is asked as written and drops what was
+/// <para><b>Reads only.</b> A command that may move a ref (<see cref="RefSnapshot.MayWrite"/>) is asked as written and drops what is
 /// kept, and only an answer git gave is kept: a git that did not start, a read cancelled or one that threw is asked again.</para>
 /// <para><b>One moment.</b> Two stages that ask one question see one answer, where each saw its own a moment apart before. A ref
 /// answered from the listing is answered as <c>rev-parse --verify --quiet</c> would: its commit, or nothing with code 1; a name the

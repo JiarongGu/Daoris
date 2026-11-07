@@ -50,17 +50,17 @@ internal sealed class LandedCleanups(
         // One look at the checkout's line for both halves, as the person's look takes.
         using var look = context.OneLook();
         var sessions = await sweeps.SweepPlanAsync(one, inUse, ct).ConfigureAwait(false);
-        // Nothing was asked, so a row says only what holds whatever the occasion: no plugin pushed it and the rule names none.
+        // Nothing is asked, so a row says only what holds whatever the occasion: no plugin pushed it and the rule names none.
         return new(sessions, await LandedPlanAsync(one, sessions, [], ct, closedQuests).ConfigureAwait(false));
     }
 
     /// <summary>
     /// The landed half of the list: every branch a landing made and recorded in these repositories, judged over its repository's
-    /// set beside the session branches that stay, each row saying why its pull request was not asked about where <paramref name="asked"/>
+    /// set beside the session branches that stay, each row saying why its pull request is not asked about where <paramref name="asked"/>
     /// or the rule says so. Nothing is changed.
     /// </summary>
     /// <param name="sessions">The session branches the list judged: those it keeps may lean on a landed branch.</param>
-    /// <param name="asked">What the occasion asked and heard; none where nothing was asked (<see cref="SweepPartAsync"/>).</param>
+    /// <param name="asked">What the occasion asked and heard; none where nothing is asked (<see cref="SweepPartAsync"/>).</param>
     private async Task<List<LandedItem>> LandedPlanAsync(
         IReadOnlyList<(string Repository, string? Workspace, string? Root)> known, IReadOnlyList<SweepItem> sessions,
         IReadOnlyList<StateAnswer> asked, CancellationToken ct, IReadOnlySet<string>? closedQuests = null)
@@ -253,7 +253,7 @@ internal sealed class LandedCleanups(
 
     private const string ChangedSince = "it changed since the list, and is kept";
 
-    /// <summary>A landed branch as judged, and the commit it was judged at — the one a removal must still find.</summary>
+    /// <summary>A landed branch as judged, and the commit it is judged at — the one a removal must still find.</summary>
     internal sealed record Judged(LandedItem Item, string Tip)
     {
         /// <summary>
@@ -427,7 +427,7 @@ internal sealed class LandedCleanups(
     internal async Task<int> MarkAbsentAsync(string root, string repository, string? line, CancellationToken ct, RefSnapshot? refs = null)
     {
         // Asked: a standing entry (its end held or not), and a trace that says no why, neither removed by Daoris; a held trace reads ended.
-        // And a trace that moved, once the branch it moved to no longer stands at the commit it was found holding the work at (re-check:
+        // And a trace that moved, once the branch it moved to no longer stands at the commit found holding the work (re-check:
         // a name made again elsewhere resolves, and holds nothing of it): read from the refs the look already holds, so a moved trace whose
         // branch stands still costs no git of its own, and one whose branch went on is asked once and written at its new commit.
         var entries = context.Recorded.Entries()
@@ -493,7 +493,7 @@ internal sealed class LandedCleanups(
     /// (<see cref="RecoveryKeeps.KeepAsync"/>), which nothing else holds and so stays until the person deletes it: the record never
     /// goes as the only way back to it. A remote-tracking ref does not count, since a fetch moves or prunes it, as the
     /// recovery refs' holders do not (<see cref="RecoveryRetention"/>). A commit this repository no longer has, which git's own collection
-    /// took once nothing held it, is missing with nothing to keep. Null, writing nothing, where git could not say or the ref was not made:
+    /// took once nothing held it, is missing with nothing to keep. Null, writing nothing, where git could not say or the ref is not made:
     /// asked again at the next look.
     /// </summary>
     /// <remarks>

@@ -91,7 +91,7 @@ public static class NeedsAPerson
 
             var proposal = Row("proposal", Text(ask, "id"), Text(ask, "asked"), Scope(ask));
             proposal["where"] = workspace;
-            // A refused receiver's sentence is the service's, verbatim; otherwise the page says what was proposed.
+            // A refused receiver's sentence is the service's, verbatim; otherwise the page says what is proposed.
             if (Text(ask, "note") is { } refused) proposal["detail"] = refused;
             proposal["publishTo"] = Strings(Objects(ask["proposal"]).Select(match => Text(match, "repository")));
             proposal["choices"] = Strings(ReceiversIn(workspace));
@@ -400,7 +400,7 @@ public static class NeedsAPerson
     /// those records' moves and its own askings, so its age says how long nothing has needed it. Null while anything could still use it.
     /// </summary>
     /// <remarks>
-    /// A record not in hand is not running: the sessions slice holds every record the service answers, so one it lacks was forgotten. What
+    /// A record not in hand is not running: the sessions slice holds every record the service answers, so one it lacks is forgotten. What
     /// is on another ask never counts. Judged from the records alone, as every row is, so it moves when they do and never with the clock.
     /// </remarks>
     private static JsonObject? Stale(JsonObject ask, JsonObject goAhead, AttentionFacts facts)
@@ -433,7 +433,7 @@ public static class NeedsAPerson
         Text(quest, "status") is "Open" or "Taken"
         || (quest["held"] is JsonValue held && held.TryGetValue<bool>(out var yes) && yes && Truthy(quest, "accepted") is null);
 
-    /// <summary>The newest of <paramref name="moments"/> as it was written, by the moment it names; null where none reads.</summary>
+    /// <summary>The newest of <paramref name="moments"/> as it is written, by the moment it names; null where none reads.</summary>
     private static string? Latest(IEnumerable<string?> moments)
     {
         (string Text, DateTimeOffset At)? newest = null;

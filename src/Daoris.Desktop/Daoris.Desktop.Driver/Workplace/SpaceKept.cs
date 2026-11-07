@@ -24,7 +24,7 @@ public static class SpaceKept
     /// <summary>No Daoris runs to say whether the browser does, so its caches stay.</summary>
     public const string NoShell = "no-shell";
 
-    /// <summary>A program holds it: its rename aside was refused.</summary>
+    /// <summary>A program holds it: its rename aside is refused.</summary>
     public const string InUse = "in-use";
 
     /// <summary>An entry of this build names it, so it is no earlier build's.</summary>

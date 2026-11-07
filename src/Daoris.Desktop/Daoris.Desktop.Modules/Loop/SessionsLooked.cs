@@ -26,7 +26,7 @@ public sealed class SessionsLooked
     /// <summary>Keep a whole look, taken at <paramref name="at"/>, without its trees' judgement.</summary>
     public void Keep(SessionLook look, DateTimeOffset at) => _looked = new Looked(look with { Trees = NoTrees }, at);
 
-    /// <summary>The look kept, where it was taken no longer than <paramref name="span"/> before <paramref name="now"/>; null otherwise.</summary>
+    /// <summary>The look kept, where its taking lies no further than <paramref name="span"/> before <paramref name="now"/>; null otherwise.</summary>
     public SessionLook? Within(TimeSpan span, DateTimeOffset now) =>
         _looked is { } looked && looked.At <= now && now - looked.At <= span ? looked.Look : null;
 }

@@ -9,13 +9,13 @@ namespace Daoris.Driver;
 /// with it; and drops the grant once git ends, taken or not. Nothing runs it again.
 /// </summary>
 /// <remarks>
-/// A push's end state is origin's, which no local read knows. A step that ended with exit 0 is done; one refused before anything was sent
+/// A push's end state is origin's, which no local read knows. A step that ended with exit 0 is done; one refused before anything is sent
 /// (the door's refusal, git's own <c>rejected</c>, git's own stop before it sends such as a <c>pre-push</c> hook refusing, or a hold on origin)
-/// is not done; any other end, a connection cut after origin was reached included, is unknown, never done and never retried.
+/// is not done; any other end, a connection cut after origin is reached included, is unknown, never done and never retried.
 /// </remarks>
 internal static class ActPushSteps
 {
-    /// <summary>The start of the words a push step says where nothing was sent, which its postconditions read as not done.</summary>
+    /// <summary>The start of the words a push step says where nothing is sent, which its postconditions read as not done.</summary>
     internal const string NothingSent = "nothing was pushed: ";
 
     /// <summary>A push step: the git words, the address it pushes to (redacted, as the plan showed it), and the one update its grant carries.</summary>
@@ -93,7 +93,7 @@ internal static class ActPushSteps
         return run.End($"git did not say the push finished ({ContentHolds.Said(TreeGit.Failure(stderr))})");
     }
 
-    /// <summary>Done where the step ended with exit 0, not done where it says nothing was sent, else unknown.</summary>
+    /// <summary>Done where the step ended with exit 0, not done where it says nothing is sent, else unknown.</summary>
     public static string Read(ActStep step) =>
         step.ExitCode == 0 && !step.Unended ? ActOutcomes.Done
         : !step.Unended && step.Said?.StartsWith(NothingSent, StringComparison.Ordinal) == true ? ActOutcomes.NotDone

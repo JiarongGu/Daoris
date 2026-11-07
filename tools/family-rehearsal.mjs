@@ -8,9 +8,9 @@
  * the tracked example family in `examples/`: current doctrine in both projects, the HTTP host over a
  * scratch store, registration through the real `daoris repository connect`, a quest published, refused where it
  * should be, taken, finished, and still there after a restart — plus one project's knowledge
- * answering a search made from outside it. See docs/decisions/D39.md.
+ * answering a search made from outside it.
  *
- *   npm run rehearse:family
+ * npm run rehearse:family
  *
  * Exit 0 = the router works. Exit 1 = it does not; the transcript names the first thing that broke.
  */
@@ -21,7 +21,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { copyTree, treeDiff } from './fsx.mjs';
-// Every home place is asked of D172's table (HOMELAYOUT2b), never joined here.
+// Every home place is asked of the home table, never joined here.
 import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 import {
   ACP_STUB_AGENT, STUB_COMMIT, capture, evidenceFolder, makeChecker, openTranscript, ownBuild, ownBuildRoot, ownBuilt, portRefusal,
@@ -41,12 +41,12 @@ const httpProject = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Http
 const httpDll = join(httpProject, 'bin', 'Debug', 'net10.0', 'daoris-knowledge-http.dll');
 const driverProject = join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Host');
 const connectorProject = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Mcp');
-// REHLANE1: this rehearsal runs beside the driver's git half, which builds into and runs from the desktop projects' own folders,
+// This rehearsal runs beside the driver's git half, which builds into and runs from the desktop projects' own folders,
 // so the driver host is built into an output of this rehearsal's own. The HTTP host and the connector stay where the driver
 // finds a development build (ServiceHostLocator, KnowledgeConnector): the service's folders, which no git half builds.
 const ownOutput = ownBuildRoot(repoRoot, 'family');
 const driverDll = ownBuilt(ownOutput, driverProject, 'daoris-driver.dll');
-// The apphost the same build writes beside the DLL (PUSH1f2a, D194 point 1): the program a checkout's `daoris …` is handed to.
+// The apphost the same build writes beside the DLL: the program a checkout's `daoris …` is handed to.
 const driverProgram = ownBuilt(ownOutput, driverProject, process.platform === 'win32' ? 'daoris-driver.exe' : 'daoris-driver');
 const scratch = join(repoRoot, '_fixtures', 'family-rehearsal');
 const family = join(scratch, 'family');
@@ -59,33 +59,33 @@ const EXAMPLES = ['engine', 'game'];
 // at a map this run wrote itself.
 const NO_REMOTE = { DAORIS_REMOTE_CONFIG: join(scratch, 'no-remote.json') };
 
-// The same guard for the toolchain (D49 §4). Profiles live BESIDE this file, so pointing it into
+// The same guard for the toolchain. Profiles live BESIDE this file, so pointing it into
 // scratch keeps the developer's real harness wiring — and their real credential directories —
 // entirely out of a gate run. The toolchain phase opts into a map it writes itself.
 const NO_HARNESS = { DAORIS_HARNESS_CONFIG: join(scratch, 'no-harness.json') };
 
-// The home itself (D63), for every child of this run at once: a CLI or driver that resolves a default
+// The home itself, for every child of this run at once: a CLI or driver that resolves a default
 // path resolves it under `DAORIS_HOME`, and with none set it REFUSES — there is no default under the
 // profile any more, and a gate must never make one there. Set on the process because every child
 // inherits it; the per-file guards above still outrank it where a phase wants a file of its own.
 process.env.DAORIS_HOME = join(scratch, 'home');
 
-// PUSH1f2a (D194 point 1): a checkout's `daoris` hands a group to the driver's program DAORIS_DRIVER_PROGRAM names, never one it
+// A checkout's `daoris` hands a group to the driver's program DAORIS_DRIVER_PROGRAM names, never one it
 // finds by itself: this run's own build's apphost, beside the DLL its own driver runs through `dotnet`. Set on the process, as the home
 // is, so every `daoris` group below runs this build.
 process.env.DAORIS_DRIVER_PROGRAM = driverProgram;
 
-// The person's own terminal (D194 point 5): a call this run makes as the person carries no session's marker, whatever its caller's
+// The person's own terminal: a call this run makes as the person carries no session's marker, whatever its caller's
 // environment carries, since an agent may run this gate and the driver's program refuses a person's press from a session's terminal.
 // An undefined value is left out of a child's environment. One check below hands the marker back on purpose, to see the refusal.
 const PERSON = { DAORIS_SESSION_ID: undefined };
 
 openTranscript(repoRoot, 'family', { beforeExit: () => stopEverything() });
-// A failed check that hands its evidence keeps it beside the transcripts, in a folder of this run's (DEV3b): the scratch is
+// A failed check that hands its evidence keeps it beside the transcripts, in a folder of this run's: the scratch is
 // wiped at the next start, and the rerun after a failure took the failed run's session transcript with it.
 const { totals, check, section } = makeChecker({ keep: evidenceFolder(repoRoot, 'family') });
 
-// Every command this run makes, its git held to the repositories it made, under its scratch (REHEARSEGIT1): git walks UP from
+// Every command this run makes, its git held to the repositories it made, under its scratch: git walks UP from
 // a folder that is not one, and a fallback to the scratch committed a worktree's uncommitted work as "Family Rehearsal".
 const run = rehearsalRun({ within: scratch });
 
@@ -95,13 +95,13 @@ const run = rehearsalRun({ within: scratch });
 // FAIL, never a frozen gate — and NO_REMOTE is always underneath: a phase that wants a remote opts in
 // by env pair, which outranks the config-file lookup by the loader's own rule.
 const DRIVE_TIMEOUT = 90_000;
-// The loop by its verb (DRV8a, D104): a bare `daoris` is the usage and drives nothing, so a loop
+// The loop by its verb: a bare `daoris` is the usage and drives nothing, so a loop
 // mode (a flag) is asked for as `drive`; any other verb this helper carries (`ask`, `quest delete`) goes
 // as it is. Prefixing every mode sent `drive ask …` and failed fourteen checks.
 const verbOf = (mode) => (mode.startsWith('--') ? `drive ${mode}` : mode);
 
-// ONEWAY1c-i (the oneway design §2 S2): no variable names another driver file, so a run is on the home its config sits in, as
-// the loop always took it, named as `DAORIS_HOME`. That home's own `driver.json` holds the config for the run, and what the run
+// No variable names another driver file, so a run is on the home its config sits in, as
+// the loop takes it, named as `DAORIS_HOME`. That home's own `driver.json` holds the config for the run, and what the run
 // wrote there is kept back into the config, so each phase keeps a file of its own while the phases that share a home share its
 // records. A home's staffing is its store's: the first config a home holds is imported at its first start, a later config's
 // never written over it, and a change goes through the role door (`staffRole`).
@@ -145,13 +145,13 @@ const driver = ({ serviceUrl, config, remote = {}, harness = {}, env = {}, mode 
 
 /**
  * The same driver, running WHILE the gate acts — for a session that must be alive when something
- * happens to it (D68 §5: a losing session stopped). Same environment, same timeout, same answer.
+ * happens to it (a losing session stopped). Same environment, same timeout, same answer.
  * `mode: null` is the watch itself, a bare `drive` ticking until it is stopped, and aborting `signal`
- * stops it as Ctrl+C does, the watch's own stop where the platform delivers one (MSG1e3: a terminal's
+ * stops it as Ctrl+C does, the watch's own stop where the platform delivers one (a terminal's
  * words said while the loop runs). The timeout still ends a watch that does not stop.
  *
  * The answer says when the run started (`startedAt`) and how long it took (`ms`), and a run its timeout ended says so
- * under its print, as `capture` does (DEV3b): the lost-claim run's print read as a whole run's, and nothing said when the
+ * under its print, as `capture` does: the lost-claim run's print read as a whole run's, and nothing said when the
  * run had started against the record's own times.
  */
 const driverInBackground = ({ serviceUrl, config, remote = {}, harness = {}, mode = '--once', signal, timeout = DRIVE_TIMEOUT }) =>
@@ -195,7 +195,7 @@ const API_TIMEOUT = 30_000;
 /**
  * One HTTP call against a host. The key rides only when a step is meant to be authorized.
  *
- * Bounded (REV3 CLEAN1): a host that accepts a connection and never answers would hang the gate with
+ * Bounded: a host that accepts a connection and never answers would hang the gate with
  * nothing on screen. No answer in time is an answer a check fails on; a refused connection still
  * throws, which is what the start-up poll waits through.
  */
@@ -229,7 +229,7 @@ async function api(method, path, { body, key, base = BASE } = {}) {
 let host = null;
 const children = [];
 
-// Each host's port, taken free for this run (REHEARSEPORT1). They were fixed, and a run beside another (the merge gate's on
+// Each host's port, taken free for this run. They were fixed, and a run beside another (the merge gate's on
 // the main checkout, a branch's in its worktree) found the other's host answering on them, read its registry and failed ten
 // checks. Taken before anything starts, so a machine without them refuses here, and each host's start asks again
 // (`startServer`). `refused` is the port a host must refuse to start on (§12) and `absent` the remote nothing listens on
@@ -255,7 +255,7 @@ const AURORA_BASE = `http://localhost:${PORTS.aurora}`;
  * Readiness accepts 401 as listening: a shared-mode host answers nothing without a key, and "the gate
  * is up" is exactly the signal being waited for.
  *
- * Only on a port nobody holds, and only while the host it started runs (REHEARSEPORT1): a host started on a held port fails
+ * Only on a port nobody holds, and only while the host it started runs: a host started on a held port fails
  * to bind and ends, and the probe then reads the holder's answer as this host's. A held port is refused, naming its holder,
  * after the wait a host this run stopped needs to let it go; and a host that ended is never up, whatever answers there.
  */
@@ -290,7 +290,7 @@ async function startServer(env, base) {
 }
 
 /**
- * The desktop page's origin on the Chromium the shell ships (D92) — the host's `DesktopPage.Origin`
+ * The desktop page's origin on the Chromium the shell ships — the host's `DesktopPage.Origin`
  * and the shell's `DesktopPage.VirtualHost`, spelled a third time here so the rehearsal holds them.
  */
 const DESKTOP_ORIGIN = 'https://daoris.localhost';
@@ -305,7 +305,7 @@ async function preflight(base, origin) {
 }
 
 /**
- * A read as a website's page makes it once its DNS name points at the loopback (ORIGIN2): the request reaches this
+ * A read as a website's page makes it once its DNS name points at the loopback: the request reaches this
  * machine, naming the website. `fetch` sends the address's own name whatever it is told, so `node:http` names it.
  */
 function asRebound(base, path) {
@@ -358,9 +358,9 @@ function stopEverything() {
 section('1. The examples hold current, clean doctrine');
 
 // What the question is: WOULD sync change anything? Asked of a copy, compared file by file with the
-// example. Synced in place, the first run repaired the examples it had just found stale, and every
-// later run passed on the repair (REV3). A gate must not fix the tree it is judging. A git diff was
-// tried once too, and read an in-progress edit to `examples/README.md`, a file sync never touches, as
+// example. Synced in place, the first run would repair the examples it had just found stale, and every
+// later run would pass on the repair. A gate must not fix the tree it is judging. A git diff would
+// read an in-progress edit to `examples/README.md`, a file sync never touches, as
 // a canon change nobody synced.
 rmSync(scratch, { recursive: true, force: true });
 const changedBySync = [];
@@ -388,23 +388,23 @@ section('2. The service, over the example family');
 rmSync(scratch, { recursive: true, force: true });
 mkdirSync(scratch, { recursive: true });
 
-// The service runs over a COPY of the tracked examples: a newcomer is born mid-rehearsal (D44), and
+// The service runs over a COPY of the tracked examples: a newcomer is born mid-rehearsal, and
 // nothing may dirty the tracked tree.
 for (const name of EXAMPLES) copyTree(join(examplesRoot, name), join(family, name));
 
 const build = run(`dotnet build "${httpProject}"`, repoRoot);
 check('the HTTP host builds', build.code === 0, build.out.split('\n').slice(-4).join('\n'));
 check('the host answers /api/status', await startHost());
-// D92: on the Chromium it ships, the desktop's page lives on its engine's app origin and reaches this
+// On the Chromium it ships, the desktop's page lives on its engine's app origin and reaches this
 // host at the loopback address, cross-origin. A local host allows exactly that origin, and no other.
 check('a local host allows the desktop page’s origin', await preflight(BASE, DESKTOP_ORIGIN) === DESKTOP_ORIGIN);
 check('…and no other origin', await preflight(BASE, 'https://elsewhere.example') === null);
-// ORIGIN1, on Kestrel: CORS keeps a page from reading an answer, never from sending a no-body POST, so the host refuses
+// On Kestrel: CORS keeps a page from reading an answer, never from sending a no-body POST, so the host refuses
 // a page elsewhere before the route runs.
 const pressedElsewhere = await fetch(`${BASE}/api/quests/x/accept`, { method: 'POST', headers: { Origin: 'https://elsewhere.example' } });
 const pressedSays = await pressedElsewhere.text();
 check('a page on another site cannot press a door', pressedElsewhere.status === 403 && pressedSays.includes('"code":"cross-site"'), pressedSays);
-// ORIGIN2, on Kestrel: a website's name pointed at the loopback reads nothing, the roots in the registry among it.
+// On Kestrel: a website's name pointed at the loopback reads nothing, the roots in the registry among it.
 const rebound = await asRebound(BASE, '/api/registry');
 check('a name rebound to the loopback reads nothing', rebound.status === 403 && rebound.json?.code === 'host', rebound.text);
 
@@ -416,7 +416,7 @@ check(
   (registry.json ?? []).filter((r) => r.registered).length === 2,
   registry.text,
 );
-// D91: what a repository says it uses is read from its own manifest by the import, as the rest is.
+// What a repository says it uses is read from its own manifest by the import, as the rest is.
 const usesOf = (rows, name) => JSON.stringify((rows ?? []).find((r) => r.repository === name)?.uses ?? []);
 check('the game says it uses the engine, read from its manifest', usesOf(registry.json, 'game') === '["engine"]', registry.text);
 
@@ -429,10 +429,10 @@ for (const name of EXAMPLES) {
   });
   check(`${name}: connect exits 0`, connect.code === 0, connect.out);
 }
-// …and the real client carries it through the real door, the twin's other half (D91).
+// …and the real client carries it through the real door, the twin's other half.
 const connected = await api('GET', '/api/registry');
 check('after connect, the host still keeps what the game says it uses', usesOf(connected.json, 'game') === '["engine"]', connected.text);
-// D115 §2.2 (DEV4): connect reads the engine's daoris.lanes.json and sends each lane's words; the
+// Connect reads the engine's daoris.lanes.json and sends each lane's words; the
 // registry answers them, so an asker can see what it may address. The import read no lanes.
 const laneIdsOf = (rows, name) =>
   JSON.stringify(((rows ?? []).find((r) => r.repository === name)?.lanes ?? []).map((lane) => lane.id));
@@ -444,7 +444,7 @@ check('…as words alone: no lane’s paths reach the registry', !connected.text
 
 section('4. Work routes as quests — published, refused, taken, done');
 
-// No key on this door: local trust — the OS account is the boundary (D21), and the host refuses to
+// No key on this door: local trust — the OS account is the boundary, and the host refuses to
 // bind anywhere but the loopback in local mode. The keyed gate is the SHARED deployment's, phase 9.
 const published = await api('POST', '/api/quests', {
   body: {
@@ -494,7 +494,7 @@ const done = await api('POST', `/api/quests/${questId}/respond`, {
 });
 check('engine finishes it', done.status === 200 && done.json?.quest?.status === 'Done', done.text);
 
-// Ask and wait (D79): a taker whose work needs another repository asks it, and parks its own quest on
+// Ask and wait: a taker whose work needs another repository asks it, and parks its own quest on
 // the question. The quest stays TAKEN — the take is still the one lock — and the ledger opens a session
 // on it only once the question is answered: the resume.
 const needing = await api('POST', '/api/quests', {
@@ -535,7 +535,7 @@ check('…and once game answers, a session opens on the taken quest — the resu
 await api('POST', `/api/sessions/${resumption.json?.session?.id}/state`, { body: { state: 'stopped' } });
 await api('POST', `/api/quests/${needingId}/respond`, { body: { action: 'done', reason: 'Costed per size.' } });
 
-// Carrying on after a cut-off (D80): a session that took its quest and FAILED before closing it —
+// Carrying on after a cut-off: a session that took its quest and FAILED before closing it —
 // timed out, refused, crashed — leaves the take with this machine, so a session opens on the taken
 // quest to carry it on. A stand-down is somebody else's take, and nothing opens on it.
 const cutQuest = await api('POST', '/api/quests', {
@@ -556,10 +556,10 @@ const afterStandDown = await api('POST', '/api/sessions', { body: { quest: cutQu
 check('…and once its last session stood down, the take is somebody else’s and nothing opens', afterStandDown.status === 409, afterStandDown.text);
 await api('POST', `/api/quests/${cutQuestId}/respond`, { body: { action: 'done', reason: 'Profiled.' } });
 
-// Answering a session that parked to ask the person (STANDDOWN2), through the say door alone (ONEWAY1k): the answer KEEPS the
-// park (ANSWER1b, D131), its words kept on `said` and said on its note, for the driver's next look to go on with that same record
+// Answering a session that parked to ask the person, through the say door alone: the answer KEEPS the
+// park, its words kept on `said` and said on its note, for the driver's next look to go on with that same record
 // — 17a drives that look over the protocol door. While it is parked nothing new opens on its quest. Where the driver cannot go on
-// with it, its fallback ends the park with the answer kept (D131 §2), and a session then opens on the taken quest, as after a cut-off.
+// with it, its fallback ends the park with the answer kept, and a session then opens on the taken quest, as after a cut-off.
 const saidOf = (session) => (session?.said ?? []).map((word) => word.text);
 const askingQuest = await api('POST', '/api/quests', {
   body: { from: 'game', to: 'engine', title: 'Check the budget on the device', body: 'It needs a sign-in first.' },
@@ -580,7 +580,7 @@ check(
     && answered.json?.session?.note === 'it needs a sign-in.\n\nAnswered: Signed in.',
   answered.text,
 );
-// A second answer joins the first (MSG1a, D137 §2.4): the person's words are all kept, each its own word.
+// A second answer joins the first: the person's words are all kept, each its own word.
 const reanswered = await api('POST', `/api/sessions/${askingId}/say`, { body: { text: 'Signed in on the device.' } });
 check(
   '…a second answer before the driver looks joins the first, on the record and on its note',
@@ -664,18 +664,18 @@ check(
   found.status === 200 && (found.json ?? []).some((hit) => hit.repository === 'game'),
   found.text.slice(0, 300),
 );
-// TIER1 (D24): a search says which tier ANSWERED it, not which was configured — here no embedder is
+// A search says which tier ANSWERED it, not which is configured — here no embedder is
 // configured, so words answered, and the header says exactly that. The HTTP host has no suite of its
-// own (HTTP1), so this door's half of the rule is held here.
+// own, so this door's half of the rule is held here.
 check(
   'a search says which tier answered it — words, where no embedder is configured',
   found.headers?.get('x-daoris-tier') === 'lexical',
   `x-daoris-tier: ${found.headers?.get('x-daoris-tier')}`,
 );
 
-// 🔴 The gate that would have caught CANON8e. When the always-loaded tier moved out of
-// `.claude/rules/` and into a span (D59), the scanner kept reading the empty directory and every
-// canonical rule fell out of the index — silently, because nothing asserted one was in there. The
+// 🔴 The always-loaded tier lives in a span, not in
+// `.claude/rules/`; a scanner reading the empty directory would drop every
+// canonical rule from the index — silently, because nothing else asserts one is in there. The
 // count is not enough: an entry that is indexed under the wrong kind, or whose body came back empty,
 // passes a count and fails a reader.
 const canonical = await api(
@@ -755,13 +755,13 @@ check(
 
 section('7. The driver starts what should start (D46)');
 
-// The newcomer is the drivable one: it was born in scratch and connected FROM scratch, so its
+// The newcomer is the drivable one: it is born in scratch and connected FROM scratch, so its
 // registered root is a tree the rehearsal owns — never the tracked examples, which connect from the
 // real repository and must never be spawned into by a test.
 const driverBuild = run(ownBuild(driverProject, ownOutput), repoRoot);
 check('the driver host builds', driverBuild.code === 0, driverBuild.out.split('\n').slice(-4).join('\n'));
-// The connector the protocol door hands every session (ACP4), which the driver finds as a development build. Section 17 reads that
-// it is offered, and 17e's stub calls it (REVIEWENV1h), so it is built here: one another gate built may be older than the tools a
+// The connector the protocol door hands every session, which the driver finds as a development build. Section 17 reads that
+// it is offered, and 17e's stub calls it, so it is built here: one another gate built may be older than the tools a
 // phase calls on it, and a fresh checkout has none.
 const connectorBuild = run(`dotnet build "${connectorProject}"`, repoRoot);
 check('the knowledge connector a session is handed builds', connectorBuild.code === 0, connectorBuild.out.split('\n').slice(-4).join('\n'));
@@ -773,7 +773,7 @@ run('git init -q', newcomer);
 run(`git ${GIT_ID} add -A`, newcomer);
 run(`git ${GIT_ID} commit -q -m "the newcomer is born"`, newcomer);
 
-// What the person requires, in their own words (DRIFT1c2, D133 §3–§4): the intake's stub quotes a fragment of an ask's
+// What the person requires, in their own words: the intake's stub quotes a fragment of an ask's
 // own sentence below (a fragment of their words is still their words) with the check it names, and first tries a quote
 // the person never said, which the host refuses naming it. A wave is the departure's ask: the working stub answers its
 // requirement departed, with the reason and the quote, and every other requirement met.
@@ -785,7 +785,7 @@ const WAVE_QUOTE = 'should wave';
 const REQUIRED_CHECK = "The newcomer's history holds a commit answering the quest.";
 const MET = 'The stub landed a commit answering the quest.';
 const DEPARTED = 'The stub cannot wave, so it landed a commit instead.';
-// What Daoris reads itself (EVID1b2, D144 §2–§3): an ask to keep a note, whose intake names the note's path as its
+// What Daoris reads itself: an ask to keep a note, whose intake names the note's path as its
 // requirement's evidence, and an ask to keep a late one, whose quest the working stub closes met before the note is committed.
 const NOTE_SENTENCE = 'the newcomer should keep a note in notes/kept.md, and a check should follow';
 const NOTE_QUOTE = 'should keep a note in notes/kept.md';
@@ -794,11 +794,11 @@ const LATE_NOTE_SENTENCE = 'the newcomer should keep a late note in notes/late.m
 const LATE_NOTE_QUOTE = 'should keep a late note in notes/late.md';
 const LATE_NOTE_PATH = 'notes/late.md';
 
-// The stub agent: a session with real mechanics and no model (D46 §8). It claims its own quest
+// The stub agent: a session with real mechanics and no model. It claims its own quest
 // through the same HTTP door a real session's connector would use, works (a commit), and closes —
 // or declines when the ask says to, because judging the ask is the session's job, not the driver's.
 const stubAgent = join(scratch, 'stub-agent.mjs');
-// Where the stub also says what a phase must read while its session still works (DEV3d), a file per quest: the driver
+// Where the stub also says what a phase must read while its session still works, a file per quest: the driver
 // writes a session's transcript through a buffer it does not flush, so a few lines reach the disk only as the session ends.
 const stubSaidFolder = join(scratch, 'stub-said');
 const stubSaid = (quest) => join(stubSaidFolder, `${quest}.log`);
@@ -1030,7 +1030,7 @@ writeFileSync(driverConfig, `${JSON.stringify({
 
 const drive = (mode = '--until-idle') => driver({ serviceUrl: BASE, config: driverConfig, mode });
 
-// It carries a link and a file (D65 §2), so the loop proves the file reaches the session whole — kept
+// It carries a link and a file, so the loop proves the file reaches the session whole — kept
 // by the host under ITS home, which is not the driver's (the driver's is the folder its config sits in),
 // and handed over by the path the host answered rather than one the driver guessed.
 const BRIEF = 'the brief the asker attached, read back by the session';
@@ -1093,7 +1093,7 @@ check(
   JSON.stringify(completed),
 );
 check('the transcript path was recorded', Boolean(completed?.transcript), JSON.stringify(completed));
-// The capture pump tees since D49 §2 — the console is a second destination, never a replacement.
+// The capture pump tees — the console is a second destination, never a replacement.
 // What this gate can reach is the DURABLE half: the file still holds what the session said. The
 // in-memory half rides the shell's IPC bridge, which has no headless door by design, and is held by
 // the driver's own tests and the platform's.
@@ -1110,7 +1110,7 @@ check(
   said.split('\n').filter((line) => line.startsWith('stub:')).join('\n'),
 );
 // The newcomer keeps no code map yet (it gains one before the crossing, below), so its session is
-// not asked about one (MAP3d): a map nobody started is not a session's to invent.
+// not asked about one: a map nobody started is not a session's to invent.
 check(
   'a repository that keeps no code map is not asked to keep one',
   said.includes(`stub: taking quest ${drivenId}`) && !said.includes('stub: told to keep the code map'),
@@ -1123,7 +1123,7 @@ check(
   landed.out,
 );
 
-// A CHAIN (D65 §4): develop, then verify. The close of the first publishes the second in the same
+// A CHAIN: develop, then verify. The close of the first publishes the second in the same
 // transaction, and the driver starts it at its next look — no engine, no coordinator, the loop that
 // already exists. One --until-idle run takes both, because the second exists the moment the first is
 // done.
@@ -1159,10 +1159,10 @@ check(
   chainRun.out,
 );
 
-// AN ASK (D65 §1a): a sentence entered at a WORKSPACE, not at a repository. With no intake harness
+// AN ASK: a sentence entered at a WORKSPACE, not at a repository. With no intake harness
 // the declarations tier answers — it proposes, says that is all that ran, and publishes NOTHING. A
 // receiver named with --to is the asker deciding: published at once, asked BY the ask, carrying its
-// link and file, and driven like any quest. `daoris ask` is the terminal door (D50).
+// link and file, and driven like any quest. `daoris ask` is the terminal door.
 const askVerb = (args) => driver({ serviceUrl: BASE, config: driverConfig, mode: `ask ${args}` });
 const questCount = async () => ((await api('GET', '/api/quests?includeClosed=true')).json ?? []).length;
 const questsBeforeAsk = await questCount();
@@ -1206,7 +1206,7 @@ check(
   `${askRun.out}\n${askSaid.split('\n').filter((line) => line.startsWith('stub:')).join('\n')}`,
 );
 
-// AN INTAKE (D65 §1b, INT4b): the same kind of ask, on a machine that names a harness for it. The loop
+// AN INTAKE: the same kind of ask, on a machine that names a harness for it. The loop
 // opens a SESSION for the ask in the circle's room under the driver's home, seeded with the
 // declarations; the stub reads them and publishes onto the ask in its own words, with a chain the loop
 // then drives like any. Where the words do not settle it, the intake publishes nothing and parks for
@@ -1249,7 +1249,7 @@ check(
 const settled = (await api('GET', `/api/asks/${settledAskId}`)).json;
 const newcomerQuests = (await api('GET', '/api/quests?repository=newcomer&includeClosed=true')).json ?? [];
 const intakeQuest = newcomerQuests.find((q) => q.from === `ask #${settledAskId}` && !q.parent);
-// DONE, not published (USE1c): the loop drove its whole chain in the same run, so every quest asked by
+// DONE, not published: the loop drove its whole chain in the same run, so every quest asked by
 // the ask has closed, and the service derives that the ask's work is finished.
 check(
   '…it published onto the ask — asked BY the ask, in its words — and the ask says the intake answered it',
@@ -1265,12 +1265,12 @@ check(
   `${intakeRun.out}\n${JSON.stringify({ intakeQuest, intakeStep })}`,
 );
 
-// WHAT THE PERSON REQUIRES, IN THEIR WORDS (DRIFT1c2, D133 §3): the intake names the requirement as words of the ask's
+// WHAT THE PERSON REQUIRES, IN THEIR WORDS: the intake names the requirement as words of the ask's
 // own sentence, judged by the real host. It first quoted words the person never said: refused at the publish door,
 // naming them, with nothing published. The words they did say are kept on the quest with their check, and the chain's
 // step inherits them.
 const stubLines = (said) => said.split('\n').filter((line) => line.startsWith('stub:')).join('\n');
-// EVID1a: every requirement reads its evidence, `[]` where it names none.
+// Every requirement reads its evidence, `[]` where it names none.
 const requiredAs = (quote, evidence = []) => JSON.stringify([{ quote, check: REQUIRED_CHECK, evidence }]);
 const askedBySettled = newcomerQuests.filter((q) => q.from === `ask #${settledAskId}`);
 check(
@@ -1288,8 +1288,8 @@ check(
   JSON.stringify({ quest: intakeQuest?.requirements, step: intakeStep?.requirements }),
 );
 
-// …AND A DONE ANSWERS IT (DRIFT1d, D133 §4): each session working the quest and its step was handed the requirement in
-// the person's words beneath the quest, saw a done answering none refused naming it, and closed answering it met. The
+// …AND A DONE ANSWERS IT: each session working the quest and its step is handed the requirement in
+// the person's words beneath the quest, sees a done answering none refused naming it, and closes answering it met. The
 // record keeps the answer and holds nothing, which is why the chain went on and the ask reads done above.
 const newcomerRecords = (await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [];
 const transcriptOf = (questId) => {
@@ -1312,7 +1312,7 @@ check(
   JSON.stringify({ quest: [intakeQuest?.answers, intakeQuest?.held], step: [intakeStep?.answers, intakeStep?.held] }),
 );
 
-// A DEPARTURE WAITS FOR THE PERSON'S YES (DRIFT1d, D133 §4): an ask to wave, whose intake publishes a quest the working
+// A DEPARTURE WAITS FOR THE PERSON'S YES: an ask to wave, whose intake publishes a quest the working
 // stub departs from, answering its requirement with the reason and the person's words it turns on. The departure closes
 // the quest done and HOLDS it: still outstanding, its chain's step unpublished, its ask not done. The person's yes from a
 // terminal publishes the step, which inherits the requirement; a second yes is refused, since nothing waits for one; and
@@ -1357,7 +1357,7 @@ check(
   `${waveYesAgain.out}\n${waveStepRun.out}\n${JSON.stringify({ waveStepDone, ask: waveDoneAsk?.state })}`,
 );
 
-// WHAT DAORIS READS ITSELF (EVID1b, D144 §2–§3): an ask to keep a note, whose intake names the note's path as its requirement's
+// WHAT DAORIS READS ITSELF: an ask to keep a note, whose intake names the note's path as its requirement's
 // evidence. The session working the quest is handed what Daoris reads beneath the requirement, commits the note with its
 // answer and closes met, which holds the done until the note is read. The driver reads the path at the tree's HEAD when that
 // session ends and posts the verdict; found, it lifts the hold and publishes the step the done held, which the loop drives like
@@ -1416,7 +1416,7 @@ check(
   `${noteRun.out}\n${JSON.stringify({ noteStep, ask: noteDoneAsk?.state })}`,
 );
 
-// MISSING EVIDENCE WAITS FOR THE PERSON (EVID1b, D144 §3, §6): an ask to keep a late note, whose working stub closes met with
+// MISSING EVIDENCE WAITS FOR THE PERSON: an ask to keep a late note, whose working stub closes met with
 // the note written and not committed. The read at the session's end finds it in the tree and not in the commit, so the done
 // stays held, its step unpublished. Once the note is committed, the terminal's check reads it at that commit, lifts the hold and
 // publishes the step. A commit before the done is refused first: a check reads the done's commit or one after it, and once the
@@ -1531,7 +1531,7 @@ check(
   declinedQuest.text,
 );
 
-// DELETING WHAT WAS MADE BY MISTAKE (QUEST1, D95), over the real host's doors and from a terminal. A
+// DELETING WHAT IS MADE BY MISTAKE, over the real host's doors and from a terminal. A
 // quest nobody has started on goes, and the host said so on the list beforehand; nothing here has a
 // remote, so it simply goes. A declined one keeps its record, refused in the service's words. An ask
 // goes with the quest it became. Nothing is driven in between, so no session starts on either.
@@ -1566,9 +1566,9 @@ check(
   `${mistakenAsk.out}\n${deletedAsk.out}`,
 );
 
-// 🔴 DRV6 — a quest that keeps failing is PARKED, and parking is what stops an unattended loop
-// spending an account on something no retry can fix. Measured before it was designed: ACP2's real
-// driven run started one quest 18 times, because a session that dies before taking leaves the quest
+// 🔴 A quest that keeps failing is PARKED, and parking is what stops an unattended loop
+// spending an account on something no retry can fix. Without it a real
+// driven run starts one quest 18 times, because a session that dies before taking leaves the quest
 // `Open` and untouched, and an untouched open quest is eligible again next tick.
 const doomedAsk = await api('POST', '/api/quests', {
   body: {
@@ -1602,8 +1602,8 @@ check(
   doomedQuest.text,
 );
 
-// And the person's way back in, from a terminal — the second door (D50). It counts the quest's failures from this
-// machine's records, as the driver does (RETRY1b), so it asks the host the driver watches.
+// And the person's way back in, from a terminal — the second door. It counts the quest's failures from this
+// machine's records, as the driver does, so it asks the host the driver watches.
 const retried = runOn(driverConfig, `node "${cliBin}" quest retry ${doomedId}`, { DAORIS_SERVICE_URL: BASE, ...PERSON });
 const afterRetry = drive();
 const retriedSessions = await api('GET', '/api/sessions?includeClosed=true');
@@ -1614,7 +1614,7 @@ check(
   `${retried.out}\n${afterRetry.out}`,
 );
 
-// 🔴 RETRY1b: parked a second time, six failures against a mark of three. A mark at the limit (3) left it parked, as both
+// 🔴 Parked a second time, six failures against a mark of three. A mark at the limit (3) left it parked, as both
 // doors did on the install; a retry marks it at its six, and it runs again.
 const retriedAgain = runOn(driverConfig, `node "${cliBin}" quest retry ${doomedId}`, { DAORIS_SERVICE_URL: BASE, ...PERSON });
 const afterSecondRetry = drive();
@@ -1626,7 +1626,7 @@ check(
   `${retriedAgain.out}\n${afterSecondRetry.out}`,
 );
 
-// Driving is additive, never exclusive (D46 §2): a quest an outside session already took is not the
+// Driving is additive, never exclusive: a quest an outside session already took is not the
 // driver's to start — it is not even considered, and no record appears.
 const outside = await api('POST', '/api/quests', {
   body: {
@@ -1660,21 +1660,21 @@ check(
   (after.json ?? []).some((q) => q.id === questId && q.status === 'Done'),
   after.text,
 );
-// The wait is a logged move like any other (D79), so the store replayed from the log still knows it; the quest it waited on
-// closed since, and a close clears what it names (AWAITSTALE1), so the closed quest reads none.
+// The wait is a logged move like any other, so the store replayed from the log still knows it; the quest it waited on
+// closed since, and a close clears what it names, so the closed quest reads none.
 check(
   '…and a quest that closed after a wait names no question',
   (after.json ?? []).some((q) => q.id === needingId && q.status === 'Done' && (q.awaits ?? null) === null),
   after.text,
 );
-// A deleted quest stays deleted (D95): its row and its history went together, so the open that gives
+// A deleted quest stays deleted: its row and its history went together, so the open that gives
 // a row the log never saw its history has nothing to give one back from.
 check(
   'a quest deleted before the restart is still gone',
   !(after.json ?? []).some((q) => q.id === mistakenId),
   after.text,
 );
-// The person's words, a done's answers and a departure's yes are logged with their moves (DRIFT1c, DRIFT1d), so the
+// The person's words, a done's answers and a departure's yes are logged with their moves, so the
 // store replayed from the log still holds them.
 const requiredAfter = (await api('GET', '/api/quests?repository=newcomer&includeClosed=true')).json ?? [];
 const helloAfter = requiredAfter.find((q) => q.id === intakeQuest?.id);
@@ -1721,7 +1721,7 @@ const circleMember = (name, summary, lesson) => {
     join(directory, '.claude', 'knowledge', 'shared-lesson.md'),
     `# shared lesson\n\n${lesson}\n`,
   );
-  // A real history, because since D48 §6 knowledge feeds from a named commit on the canonical line —
+  // A real history, because knowledge feeds from a named commit on the canonical line —
   // a checkout git cannot answer for feeds nothing, which is a property worth having the gate live
   // with rather than arrange around. The branch is named explicitly: `git init` picks `master` or
   // `main` depending on the version, and a gate that changed behaviour with the developer's git is
@@ -1736,7 +1736,7 @@ const circleMember = (name, summary, lesson) => {
 const atelier = circleMember('atelier', 'A studio in the aurora circle.', 'Cap the batch size per tick.');
 const foundry = circleMember('foundry', 'A workshop in the tools circle.', 'Cap the batch size per tick.');
 
-// `--workspace` is the wiring statement (D48 §2). The repository's own files are untouched by it,
+// `--workspace` is the wiring statement. The repository's own files are untouched by it,
 // which the next check proves by hashing the manifest across the call.
 const manifestBefore = readFileSync(join(atelier, 'daoris.json'), 'utf8');
 const wireAtelier = run(`node "${cliBin}" repository connect --workspace aurora`, atelier, { DAORIS_SERVICE_URL: BASE });
@@ -1928,7 +1928,7 @@ const remoteRoot = join(scratch, 'remote-root');
 mkdirSync(remoteRoot, { recursive: true });
 
 // A decoy repository on the SERVER'S own disk, under the root the shared host is pointed at. A shared
-// deployment is fed, not scanned (D47 §4) — and not only at the refresh route: the service indexes on
+// deployment is fed, not scanned — and not only at the refresh route: the service indexes on
 // first use when its store is empty, so without the empty-source composition the host's first request
 // would scan this in and serve it to every keyed caller.
 const decoy = join(remoteRoot, 'server-decoy');
@@ -1938,7 +1938,7 @@ writeFileSync(
   '# server secret\n\nThe shared host must never scan this off its own disk.\n',
 );
 
-// Keys are minted on the serving binary, against the same store it will serve (D47 §7).
+// Keys are minted on the serving binary, against the same store it will serve.
 const mint = (name) => run(`dotnet "${httpDll}" keys mint --name ${name} --days 2`, repoRoot, {
   DAORIS_KNOWLEDGE_DB: remoteDb,
 });
@@ -1950,7 +1950,7 @@ const keyB = (mintB.out.split('\n')[0] ?? '').trim();
 check('a second key for machine b', mintB.code === 0 && keyB.startsWith('dk_') && keyB !== keyA, mintB.out);
 
 // Kept whole so the remote can be stopped and started again over the same store: a remote that is
-// DOWN is a case this phase proves (D68 §1), not only one it survives.
+// DOWN is a case this phase proves, not only one it survives.
 const remoteEnv = {
   DAORIS_MODE: 'shared',
   DAORIS_KNOWLEDGE_DB: remoteDb,
@@ -1960,7 +1960,7 @@ const remoteEnv = {
 let remoteHost = await startServer(remoteEnv, REMOTE_BASE);
 check('the shared host is up', remoteHost !== null);
 
-// The gate: every route, reads included (D47 §7) — and a refusal never echoes what was presented.
+// The gate: every route, reads included — and a refusal never echoes what is presented.
 const noKey = await api('GET', '/api/quests', { base: REMOTE_BASE });
 check('a read without a key answers 401', noKey.status === 401, noKey.text);
 const garbage = 'dk_00000000notakey';
@@ -1974,11 +1974,11 @@ const withKey = await api('GET', '/api/quests', { base: REMOTE_BASE, key: keyA }
 check('a minted key opens the door', withKey.status === 200, withKey.text);
 const page = await api('GET', '/', { base: REMOTE_BASE });
 check('the shared host serves no page — an API until person-auth exists', page.status === 404, String(page.status));
-// D92: the desktop's own page is a LOCAL host's caller only; a shared host allows it no origin.
+// The desktop's own page is a LOCAL host's caller only; a shared host allows it no origin.
 const sharedAllows = await preflight(REMOTE_BASE, DESKTOP_ORIGIN);
 check('a shared host allows the desktop page’s origin nothing', sharedAllows === null, String(sharedAllows));
 
-// The read above was the shared host's first — exactly when index-on-first-use would have scanned.
+// The read above is the shared host's first — exactly when index-on-first-use would have scanned.
 const decoySearch = await api(
   'GET', `/api/search?q=${encodeURIComponent('server secret')}`, { base: REMOTE_BASE, key: keyA });
 const decoyRepos = await api('GET', '/api/repositories', { base: REMOTE_BASE, key: keyA });
@@ -1990,7 +1990,7 @@ check(
 );
 
 // Machine B is born whole: its own family, its own store, its own host — joined, keeping its
-// knowledge home. The manifest is the declaration (D47 §4).
+// knowledge home. The manifest is the declaration.
 const familyB = join(scratch, 'family-b');
 const borealis = join(familyB, 'borealis');
 mkdirSync(borealis, { recursive: true });
@@ -2016,16 +2016,16 @@ run(`git ${GIT_ID} commit -q -m "borealis is born"`, borealis);
 
 // Kept whole, like the remote's, so machine b's host can be restarted over the same store — pointed
 // at a remote that is not there, which is how this phase takes ONE machine offline while the other
-// stays on (D68 §5).
+// stays on.
 const hostBEnv = {
   DAORIS_KNOWLEDGE_ROOT: familyB,
   DAORIS_KNOWLEDGE_DB: join(scratch, 'knowledge-b.db'),
   ASPNETCORE_URLS: HOST_B_BASE,
   DAORIS_REMOTE_URL: REMOTE_BASE,
   DAORIS_REMOTE_KEY: keyB,
-  // A machine of its own has a HOME of its own (D63). Inheriting machine a's would let b's host find
+  // A machine of its own has a HOME of its own. Inheriting machine a's would let b's host find
   // a's quest files on disk and call them here — two simulated machines quietly sharing one, which
-  // is exactly the disclosure boundary this phase exists to prove (D65 §2).
+  // is exactly the disclosure boundary this phase exists to prove.
   DAORIS_HOME: join(scratch, 'home-b'),
 };
 let hostB = await startServer(hostBEnv, HOST_B_BASE);
@@ -2034,7 +2034,7 @@ const borealisConnect = run(`node "${cliBin}" repository connect`, borealis, { D
 check('borealis connects on machine b', borealisConnect.code === 0, borealisConnect.out);
 
 // Machine A opts the newcomer in and restarts its host carrying the remote — the relay is a
-// composition-time choice (D47 §9), and the restart re-proves the store on the way.
+// composition-time choice, and the restart re-proves the store on the way.
 stopHost();
 const joinedManifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
 joinedManifest.remote = { join: true, knowledge: true };
@@ -2044,8 +2044,7 @@ writeFileSync(
   join(newcomer, '.claude', 'knowledge', 'rehearsal-lesson.md'),
   '# rehearsal lesson\n\nThe stub taught the remote a lesson about crossings.\n',
 );
-// And a code map of its own, so the one machine without its checkout has something to bring down
-// (MAP3e) — committed, as a repository's map is.
+// And a code map of its own, so the one machine without its checkout has something to bring down — committed, as a repository's map is.
 mkdirSync(join(newcomer, 'docs'), { recursive: true });
 writeFileSync(join(newcomer, 'docs', 'code-map.json'), `${JSON.stringify({
   version: 1,
@@ -2066,7 +2065,7 @@ check('the newcomer re-registers with its declaration', rejoin.code === 0, rejoi
 await api('POST', '/api/refresh');
 await api('POST', '/api/refresh', { base: HOST_B_BASE });
 
-// The sync rides the driver tick (D47 §9): machine b feeds first so the remote knows borealis, then
+// The sync rides the driver tick: machine b feeds first so the remote knows borealis, then
 // machine a feeds the newcomer and mirrors the family down.
 const driverConfigB = join(scratch, 'driver-b.json');
 writeFileSync(driverConfigB, `${JSON.stringify({
@@ -2077,13 +2076,13 @@ writeFileSync(driverConfigB, `${JSON.stringify({
   commands: { stub: ['node', stubAgent] },
 }, null, 2)}\n`);
 // Default to a single tick — one --once does sync → plan → run-to-conclusion, which is all any of
-// these steps needs. (An omitted mode used to fall through to watch-forever, which a bounded gate can
+// these steps needs. (An omitted mode would fall through to watch-forever, which a bounded gate can
 // never end — the shared helper's timeout is the backstop, but the default is what keeps a step from
 // ever reaching it.)
-// Machine b runs its sessions as a NAMED ACCOUNT (D49 §4). The name is distinctive on purpose: it is
+// Machine b runs its sessions as a NAMED ACCOUNT. The name is distinctive on purpose: it is
 // what the scans below look for. Which account a session ran as is machine-local — a person may well
 // have named a profile after themselves — so it must answer on the machine that ran it and nowhere
-// else, exactly like the transcript beside it (D47 §4).
+// else, exactly like the transcript beside it.
 const machineBHarness = join(scratch, 'machine-b', 'harnesses.json');
 const machineBProfile = join(scratch, 'machine-b', 'harnesses', 'stub', 'mach-b-account');
 mkdirSync(machineBProfile, { recursive: true });
@@ -2101,7 +2100,7 @@ const driveB = (mode = '--once') => driver({
   harness: { DAORIS_HARNESS_CONFIG: machineBHarness },
 });
 
-// The sync on demand, from a terminal (SYNC6a): the tick's own pass when asked, and where a circle
+// The sync on demand, from a terminal: the tick's own pass when asked, and where a circle
 // stands — read from the machine's host, reaching no remote.
 const syncA = (args) => run(`dotnet "${driverDll}" remote sync ${args}`, scratch, {
   DAORIS_SERVICE_URL: BASE, ...NO_REMOTE, DAORIS_REMOTE_URL: REMOTE_BASE, DAORIS_REMOTE_KEY: keyA,
@@ -2145,7 +2144,7 @@ check(
   lesson.text.slice(0, 300),
 );
 
-// What the remote holds, and at which commit (SYNC5a): the question a feeding machine asks git about
+// What the remote holds, and at which commit: the question a feeding machine asks git about
 // before its next feed. A clean checkout fed both its knowledge and its code map.
 const newcomerHead = run('git rev-parse HEAD', newcomer).out.trim();
 const heldNewcomer = await api('GET', '/api/feed/held?repository=newcomer', { base: REMOTE_BASE, key: keyA });
@@ -2165,8 +2164,8 @@ check(
 );
 
 // The crossing: published on machine a through its own local door, committed there, pushed by a's
-// next sync, fetched and driven to done on machine b — the loop D45's part 3 exists for (D68).
-// It carries a file (D65 §2), and the file is the boundary under test: machine a keeps the bytes,
+// next sync, fetched and driven to done on machine b — the loop this gate exists for.
+// It carries a file, and the file is the boundary under test: machine a keeps the bytes,
 // the remote and machine b learn the NAME, and the session on b is told the file is elsewhere.
 const CROSSING_BYTES = 'the crossing marker bytes, which never leave machine a';
 const crossing = await api('POST', '/api/quests', {
@@ -2198,8 +2197,8 @@ check(
   crossingAtRemote?.attachments?.[0]?.name === 'crossing.txt' && !('path' in (crossingAtRemote.attachments[0] ?? {})),
   JSON.stringify(crossingAtRemote),
 );
-// What the person required crosses the sync wire with its quest (DRIFT1c), and so do a done's answers and a departure's
-// yes (DRIFT1d): the newcomer's history went up once it joined, and the remote, which holds no ask, keeps the words as
+// What the person required crosses the sync wire with its quest, and so do a done's answers and a departure's
+// yes: the newcomer's history went up once it joined, and the remote, which holds no ask, keeps the words as
 // machine a judged them.
 const requiredAtRemote = (await api('GET', '/api/quests?includeClosed=true', { base: REMOTE_BASE, key: keyA })).json ?? [];
 const helloAtRemote = requiredAtRemote.find((q) => q.id === intakeQuest?.id);
@@ -2258,8 +2257,8 @@ check(
   closedOnRemote.text,
 );
 
-// A TEAMMATE'S CODE MAP, ON THIS MACHINE (MAP3e). Machine b has no checkout of the newcomer, so it
-// used to answer "no map" for a repository that keeps one. Its host's pass now brings the map down
+// A TEAMMATE'S CODE MAP, ON THIS MACHINE. Machine b has no checkout of the newcomer, yet it
+// answers a map for a repository that keeps one: its host's pass brings the map down
 // as the remote holds it, and the answer says where it came from — a commit and a key, never a path.
 const mapOnB = await api('GET', '/api/code-map/newcomer', { base: HOST_B_BASE });
 const heldMapNow = (await api('GET', '/api/feed/held?repository=newcomer', { base: REMOTE_BASE, key: keyA })).json?.codeMap;
@@ -2278,7 +2277,7 @@ check(
   tickBack.code === 0 && (closureOnA.json ?? []).some((q) => q.id === crossingId && q.status === 'Done'),
   closureOnA.text,
 );
-// Every machine sees the team's records (SYNC4): b's session came down to a keyed by its origin, the
+// Every machine sees the team's records: b's session came down to a keyed by its origin, the
 // id the platform reads as "elsewhere" — with nothing that stays on b's machine — and none of a's
 // own records came back doubled under a's key.
 const recordsOnA = (await api('GET', '/api/sessions?includeClosed=true')).json ?? [];
@@ -2290,7 +2289,7 @@ check(
   JSON.stringify(recordsOnA.filter((s) => s.id.includes('/'))),
 );
 
-// The ONLINE race (D46 §2, D68): two machines both believe they can drive one quest. The quest is
+// The ONLINE race: two machines both believe they can drive one quest. The quest is
 // published on machine a and pushed; an outside taker (standing in for another machine whose take
 // reached the remote first) claims it there. Machine b then drives — its tick syncs first, sees the
 // quest already Taken in the remote's order, and LEAVES IT ALONE: the driver observes the lock and
@@ -2327,7 +2326,7 @@ check(
   stillTheirs.text,
 );
 
-// The ONLINE race at the take (D69): both machines hold the same ask, and both take it while the
+// The ONLINE race at the take: both machines hold the same ask, and both take it while the
 // remote answers. The take claims by push, so machine a's take is confirmed before its answer
 // returns — and machine b's, pushed a moment later, finds the quest already taken there: it is
 // rebased into a CONFLICT on the quest, and b hears the stand-down before any work starts.
@@ -2370,7 +2369,7 @@ check(
   `${JSON.stringify(conflictAtRemote)}\n${JSON.stringify(conflictOnA)}`,
 );
 
-// The OFFLINE race (D68 §4/§5): with the remote DOWN, every verb still commits locally and succeeds
+// The OFFLINE race: with the remote DOWN, every verb still commits locally and succeeds
 // — a take stands UNCONFIRMED, and the answer says so. The tick names the wall and carries on. When
 // the remote returns, machine a's tick pushes first and wins; machine b's fetches, rebases its take
 // into a conflict, and says so. (A machine with NO remote at all is phases 1–10: nothing in them
@@ -2434,7 +2433,7 @@ check(
   losingStatus.out,
 );
 
-// A person dismisses that conflict (SYNC6c), on the machine that lost, from a terminal: an operation
+// A person dismisses that conflict, on the machine that lost, from a terminal: an operation
 // like any other, so the next pass carries it and every machine stops showing it.
 const dismissedOnB = syncB(`dismiss ${offlineId}`);
 syncB('--workspace default');
@@ -2475,7 +2474,7 @@ check(
   unwiredSync.out,
 );
 
-// A LOSING SESSION STOPPED (D68 §5): a session on machine b takes its quest while b cannot reach the
+// A LOSING SESSION STOPPED: a session on machine b takes its quest while b cannot reach the
 // remote — so the take stands unconfirmed and the session works. Machine a, still online, takes the
 // same quest and wins. When b reaches the remote again, the sync running BESIDE the session finds b's
 // take lost, and b's driver stops its own session — before it lands anything — with the reason on
@@ -2492,17 +2491,16 @@ const bConfig = (extra) => writeFileSync(driverConfigB, `${JSON.stringify({
 }, null, 2)}\n`);
 bConfig({ holds: ['borealis'] });
 driveB('--once');
-// b goes offline: its host is restarted pointed at a remote that is not there, on a port this run took free and never binds
-// (REHEARSEPORT1). Asked again here: one another process took since would be reached, and is said instead.
+// b goes offline: its host is restarted pointed at a remote that is not there, on a port this run took free and never binds. Asked again here: one another process took since would be reached, and is said instead.
 if (hostB && !hostB.killed) hostB.kill();
 await sleep(700);
 const absentHeld = await portRefusal(PORTS.absent, { within: 0 });
 if (absentHeld) console.log(`  the absent remote is not absent: ${absentHeld}`);
 hostB = await startServer({ ...hostBEnv, DAORIS_REMOTE_URL: `http://localhost:${PORTS.absent}` }, HOST_B_BASE);
 bConfig({ holds: [] });
-// Bounded by what the run holds through (DEV3b): its session's own two minutes (`timeoutMinutes`), which cover this
+// Bounded by what the run holds through: its session's own two minutes (`timeoutMinutes`), which cover this
 // phase's wait, a host's restart and the stub's minute of lingering, and a minute more for its look and its ending. The
-// shared ninety seconds started with the run, and under load ended it after its stop and before it was said.
+// shared ninety seconds start with the run, and under load end it after its stop and before it is said.
 const LINGERING_TIMEOUT = (2 + 1) * 60_000;
 const lingeringRun = driverInBackground({
   serviceUrl: HOST_B_BASE, config: driverConfigB,
@@ -2513,7 +2511,7 @@ const lingeringRun = driverInBackground({
 // Waited on until the session has its take's ANSWER and is lingering — the stub says so —
 // not merely until it spawned, nor until the take committed: the host answers only after its push
 // failed, and restarting it under a take still in flight would cut the answer off, not the take.
-// Read where the stub says it as it says it, and bounded by the clock and by the run (DEV3d): the wait read the session's
+// Read where the stub says it as it says it, and bounded by the clock and by the run: the wait read the session's
 // transcript, which holds none of its few lines until the session ends, so it always ran its 160 asks out, about 40 s
 // from the spawn, and the phase restarted host b then. Under load the session started 41 s in, the restart cut its take off, and the stub crashed
 // before the driver could stop it. Two minutes, the session's own: one started in time has long lingered by then.
@@ -2541,7 +2539,7 @@ check(
 );
 const winsOnA = await api('POST', `/api/quests/${lingeringId}/respond`, { body: { action: 'take', reason: 'machine a, online' } });
 check('machine a, online, takes the same quest and the remote confirms it', /the remote confirmed the claim/.test(winsOnA.text), winsOnA.text);
-// b comes back: the same host, over the same store, pointed at the remote again. Only while the stub lingers (DEV3d),
+// b comes back: the same host, over the same store, pointed at the remote again. Only while the stub lingers,
 // between its take's answer and its work, when no request of its is in flight: the check reads a stop, so nothing else
 // may end the session first.
 const backOnline = await restartBetweenRequests({
@@ -2555,8 +2553,8 @@ const lingered = await lingeringRun;
 const stoppedRecord = ((await api('GET', '/api/sessions?repository=borealis&includeClosed=true', { base: HOST_B_BASE })).json ?? [])
   .find((s) => s.quest === lingeringId);
 // What the run printed, when it started, how it ended and how long it took, and the record it left: the record's
-// `updated` against the run's start and length says which pass stopped the session (DEV3b). And whether host b came back
-// while the stub lingered (DEV3d), since a restart under a request in flight ends the session before any pass can.
+// `updated` against the run's start and length says which pass stopped the session. And whether host b came back
+// while the stub lingered, since a restart under a request in flight ends the session before any pass can.
 const lingeredSaid = `exit ${lingered.code} after ${Math.round(lingered.ms / 1000)}s, started ${lingered.startedAt}\n`
   + `host b restarted ${backOnline.quiet ? 'while the stub lingered' : `with the stub not lingering, after ${Math.round(backOnline.waited / 1000)}s`}\n`
   + `${lingered.out}\n${JSON.stringify(stoppedRecord)}`;
@@ -2595,7 +2593,7 @@ check(
   remoteSessions.text,
 );
 
-// Which TOOL did the work travels; which ACCOUNT it ran as does not (D49 §4). The positive half
+// Which TOOL did the work travels; which ACCOUNT it ran as does not. The positive half
 // matters as much as the negative one: a field that crossed as null because nothing ever set it
 // would pass the second check and prove nothing.
 const ownRecords = await api('GET', '/api/sessions?repository=borealis&includeClosed=true',
@@ -2604,7 +2602,7 @@ check(
   'machine b’s own record names the account it ran as, the tool that ran it, and the TREE it held',
   (ownRecords.json ?? []).some((s) => s.profile === 'mach-b-account'
     && s.doorVersion === 'stub-harness 1.0.0'
-    // The tree is the unit of exclusion since D51, and the record says which one it was — answered
+    // The tree is the unit of exclusion, and the record says which one it held — answered
     // to the machine that ran the session, like the profile and the transcript beside it.
     && s.tree === borealis),
   ownRecords.text,
@@ -2616,8 +2614,8 @@ check(
   remoteSessions.text,
 );
 
-// REGISTRATIONS FOLLOW THEIR CHECKOUT, BOTH WAYS (SYNC5b). The mirror used to copy a teammate's row
-// once and never again (SYNC0b): a revised declaration never came down, and a retire went nowhere.
+// REGISTRATIONS FOLLOW THEIR CHECKOUT, BOTH WAYS. The mirror follows a teammate's row
+// after copying it: a revised declaration comes down, and a retire goes with it.
 // Machine b holds borealis for these ticks, so no session moves its history underneath them.
 bConfig({ holds: ['borealis'] });
 const revised = JSON.parse(readFileSync(join(borealis, 'daoris.json'), 'utf8'));
@@ -2644,7 +2642,7 @@ check(
   JSON.stringify(revisedOnA),
 );
 
-// A second checkout behind the first: its older declaration used to win by arriving last.
+// A second checkout behind the first: its older declaration must not win by arriving last.
 const staleDeclaration = await api('POST', '/api/registry', {
   base: REMOTE_BASE, key: keyA,
   body: {
@@ -2724,7 +2722,7 @@ check(
 if (remoteHost && !remoteHost.killed) remoteHost.kill();
 await sleep(700);
 const remoteBytes = readFileSync(remoteDb, 'latin1');
-// Every machine path at once: the registration's root, a session's transcript, and — since D51 — the
+// Every machine path at once: the registration's root, a session's transcript, and the
 // working TREE a session held. All three live under the scratch root, so one scan answers for all of
 // them; the tree gets its own check below because a new field is exactly the kind of thing that
 // starts travelling without anyone noticing.
@@ -2737,12 +2735,12 @@ check('…and specifically not the working tree a session held',
 check('…and none of the knowledge that was kept home', !remoteBytes.includes('keeps this lesson at home'),
   'unshared knowledge reached the remote store');
 // The account a session ran as is the newest thing on this list, and the one most likely to be a
-// person's own name (D49 §4). Byte-level like the rest, and for the same reason: three guards drop
+// person's own name. Byte-level like the rest, and for the same reason: three guards drop
 // it — the feed has no field, the payload builder omits it, the store's mirror writes NULL — and
 // "three guards" is a claim about code, while this is a claim about the artefact.
 check('…and no account name a session ran as', !remoteBytes.includes('mach-b-account'),
   'a credential profile name reached the remote store');
-// A quest's file is the newest machine-local thing (D65 §2): its NAME is on the remote by design, and
+// A quest's file is the newest machine-local thing: its NAME is on the remote by design, and
 // its bytes — kept by machine a — must be nowhere in the store, including the ones a client sent
 // straight at the shared door and were refused.
 check('…and none of a quest file’s bytes, relayed or sent straight at it',
@@ -2753,7 +2751,7 @@ check('…and none of a quest file’s bytes, relayed or sent straight at it',
 
 section('11a. Finished history cleared from one machine: forgotten there, kept by the other and the remote, never fetched back; and what never left simply goes (D153/HIST1g)');
 
-// The clear (D153), from a terminal, on the two machines above. Machine a clears what it keeps of the crossing, a closed quest it
+// The clear, from a terminal, on the two machines above. Machine a clears what it keeps of the crossing, a closed quest it
 // published with a file it keeps and machine b drove to done: the quest, its log, the kept file and its copy of b's record. A quest
 // a remote numbered is FORGOTTEN here (`quest_forgotten`, design §3.2): nothing is pushed and nothing travels, so b and the remote
 // keep theirs, and its words asked again are refused. Then a teammate moves on a quest a forgot, and a's next pass passes over the
@@ -2774,7 +2772,7 @@ check(
 
 // The terminal's history verbs on machine a, driven as `quest delete` is: its host, and its driver.json, whose folder is its home.
 const clearVerb = (words) => driver({ serviceUrl: BASE, config: driverConfig, mode: words });
-// A workspace's reading as `HISTORY_PLAN` answers it (HIST1d): `reading` counts, `units[]` each with the quests it would forget.
+// A workspace's reading as `HISTORY_PLAN` answers it: `reading` counts, `units[]` each with the quests it would forget.
 const readingOf = (workspace) => {
   const read = clearVerb(`history --workspace ${workspace} --json`);
   try {
@@ -2923,7 +2921,7 @@ check(
 
 const passedOver = syncA('--workspace default');
 // Each host still holds its store open; a read it refuses is said, and fails the positive half rather than the gate.
-// A store writes ahead into a log beside its file (D236): what it holds is in the file and its log together.
+// A store writes ahead into a log beside its file: what it holds is in the file and its log together.
 const storeBytes = (file) => {
   try {
     const log = join(scratch, `${file}-wal`);
@@ -2944,7 +2942,7 @@ check(
 
 // A workspace with no remote: aurora, which machine a's host carries no remote for until section 12 wires one, asking engine,
 // which joins nothing. A quest declined there never left the machine, so clearing the workspace's history removes it outright,
-// row and log together, and keeps nothing of it: its words make it again, as after a delete (D95).
+// row and log together, and keeps nothing of it: its words make it again, as after a delete.
 const NEVER_LEFT = {
   from: 'atelier', to: 'engine', title: 'A quest that never left machine a', body: 'Declined, then cleared with its workspace’s history.',
 };
@@ -3027,8 +3025,7 @@ mkdirSync(auroraRoot, { recursive: true });
 
 // A workspace's host declares which workspace it is. A LOCAL host may not: it holds every circle the
 // person wired, so an identity there is a claim it cannot honour — and it refuses to start rather
-// than ignoring the variable, the same fail-safe inversion as the loopback rule (D47 §3). On a port of this run's
-// (REHEARSEPORT1): a host that started after all would hold it, never another run's.
+// than ignoring the variable, the same fail-safe inversion as the loopback rule. On a port of this run's: a host that started after all would hold it, never another run's.
 const localWithIdentity = run(`dotnet "${httpDll}" --urls http://localhost:${PORTS.refused}`, repoRoot, {
   DAORIS_WORKSPACE: 'aurora',
   DAORIS_KNOWLEDGE_DB: join(scratch, 'never-created.db'),
@@ -3056,7 +3053,7 @@ const auroraHost = await startServer({
 }, AURORA_BASE);
 check('aurora’s host is up, carrying its own identity', auroraHost !== null);
 
-// The map, through the real CLI — file-local, offline, and never printing a key back (D50).
+// The map, through the real CLI — file-local, offline, and never printing a key back.
 const remotesFile = join(scratch, 'remotes.json');
 const wire = run(
   `node "${cliBin}" remote add aurora --url ${AURORA_BASE} --key ${keyC}`, scratch,
@@ -3083,11 +3080,11 @@ check(
   machineStatus.out,
 );
 
-// Both circles now DECLARE that their material may leave — the manifest says MAY (D47 §4). Only the
+// Both circles now DECLARE that their material may leave — the manifest says MAY. Only the
 // machine's map says where, and it names one circle. `lantern` joins aurora so the crossing has a
 // sender the remote knows: a quest needs both sides registered where it homes.
 const lantern = circleMember('lantern', 'A lamp in the aurora circle.', 'Light the batch before capping it.');
-// Committed, as a reviewed declaration is: since SYNC5a a checkout with work in flight feeds no
+// Committed, as a reviewed declaration is: a checkout with work in flight feeds no
 // knowledge, because the feed speaks for a commit and the index would describe the working tree.
 const declareJoin = (directory, knowledge) => {
   const declaration = JSON.parse(readFileSync(join(directory, 'daoris.json'), 'utf8'));
@@ -3104,7 +3101,7 @@ for (const [directory, workspace] of [[atelier, 'aurora'], [foundry, 'tools'], [
 }
 
 // Machine A's host restarts carrying the MAP rather than an env pair — the relay resolves a quest's
-// remote by the quest's workspace (D48 §5), and it can only do that from a map.
+// remote by the quest's workspace, and it can only do that from a map.
 stopHost();
 check('machine a’s host restarts carrying the map', await startHost({ DAORIS_REMOTE_CONFIG: remotesFile }));
 await api('POST', '/api/refresh');
@@ -3186,9 +3183,9 @@ check(
   atAurora.text,
 );
 
-// The unwired circle publishes locally and says nothing to anyone: absence is the default (D21).
-// It needs someone in that circle to ask. Addressed to a name nobody registered, the quest was refused
-// as unaddressable and the check passed without a remote ever being consulted (REV3).
+// The unwired circle publishes locally and says nothing to anyone: absence is the default.
+// It needs someone in that circle to ask. Addressed to a name nobody registered, the quest is refused
+// as unaddressable and the check would pass without a remote ever being consulted.
 const anvil = circleMember('anvil', 'An anvil in the tools circle.', 'Temper before you strike.');
 run(`node "${cliBin}" repository connect --workspace tools`, anvil, { DAORIS_SERVICE_URL: BASE });
 const toolsQuest = await api('POST', '/api/quests', {
@@ -3259,9 +3256,9 @@ check(
 // A newer commit replaces wholesale — which is what makes DELETE work for free: an entry absent from
 // the newest canonical view is an entry the repository deleted.
 //
-// The times are RELATIVE to this run, and that is load-bearing: the first version hard-coded a
-// wall-clock date as "newer", which was true only while the rehearsal ran before that hour. It aged
-// out mid-morning and five checks went red with nothing wrong in the product — a fixture with an
+// The times are RELATIVE to this run, and that is load-bearing: a hard-coded
+// wall-clock date as "newer" is true only while the rehearsal runs before that hour. It ages
+// out mid-morning and checks go red with nothing wrong in the product — a fixture with an
 // expiry date, which is the same failure as a test that only passes on one machine.
 const hoursFromNow = (hours) => new Date(Date.now() + hours * 3_600_000).toISOString();
 const newer = await feed({
@@ -3280,7 +3277,7 @@ check(
 check(
   '…and what the newer view no longer carries is gone — a deletion travels',
   // The driver's own feed put `shared lesson` here a phase ago; the newest canonical view does not
-  // carry it, so it is deleted. That is the whole of "delete for free" (D48 §6).
+  // carry it, so it is deleted. That is the whole of "delete for free".
   afterNewer.length === 1 && !afterNewer.includes('shared lesson'),
   afterNewer.join(', '),
 );
@@ -3345,7 +3342,7 @@ check(
   JSON.stringify(served),
 );
 
-// Ancestry, where it was asked (SYNC5a). The feeding machine asks git whether its commit descends
+// Ancestry, where it is asked. The feeding machine asks git whether its commit descends
 // from the one held, and names that commit as its `base`; the door checks it still holds it. Commit
 // time is only the fallback for a feed that could not be ordered — the checks above.
 const fastForward = await feed({
@@ -3378,7 +3375,7 @@ check(
   moved.text,
 );
 
-// SYNC0c: the same commit, read two ways, used to replace itself on every tick. The first reading
+// The same commit, read two ways, must not replace itself on every tick. The first reading
 // stands; the same reading again is simply already held.
 const sameCommit = (title) => feed({
   repository: 'atelier', entries: [fedEntry(title)], commit: 'abab0000cdcd1111',
@@ -3398,7 +3395,7 @@ check(
   readOtherwise.text,
 );
 
-// The code map rides the same judgement at its own commit (MAP3b). The driver fed atelier's with its
+// The code map rides the same judgement at its own commit. The driver fed atelier's with its
 // knowledge a phase ago — none, since atelier keeps none — and a shared deployment has no checkout,
 // so what is fed is what it answers with.
 const heldAtelier = (await api('GET', '/api/feed/held?repository=atelier', { base: AURORA_BASE, key: keyC })).json;
@@ -3479,9 +3476,9 @@ check(
 
 section('14. A conversation is a session (D49 §3)');
 
-// A chat is the entity D46 built, entered by a person instead of planned from a quest: the same
+// A chat is a session record, entered by a person instead of planned from a quest: the same
 // record, the same observed lifecycle, the same one-session-per-repository lock. A conversation runs
-// in the running Daoris alone and a terminal holds it (D238), which no headless rehearsal has, so
+// in the running Daoris alone and a terminal holds it, which no headless rehearsal has, so
 // what is checked here is the lock over the service's own door.
 
 // The lock is the working tree, and it does not care which way in a session came.
@@ -3491,10 +3488,10 @@ check('a chat opens through the ordinary door', firstChat.status === 200, firstC
 check(
   'a second conversation in the same TREE is refused, naming what holds it',
   secondChat.status === 409 && /newcomer/.test(secondChat.text)
-    // The sentence moved with the lock (D51): the repository was never the reason, the tree was.
+    // The sentence follows the lock: the repository is never the reason, the tree is.
     && /one session per working tree/i.test(secondChat.text)
     // …and it names the holder, never the holder's PATH — a refusal is the one surface with no
-    // strip on it, so a machine path in it would travel wherever the sentence travels (D47 §4).
+    // strip on it, so a machine path in it would travel wherever the sentence travels.
     && !secondChat.text.includes('_fixtures'),
   secondChat.text,
 );
@@ -3517,9 +3514,9 @@ check(
   chatBlocksDriven.text,
 );
 
-// …and the other half of D51, over the real door: the lock is the TREE, not the repository, so a
+// …and the other half, over the real door: the lock is the TREE, not the repository, so a
 // session in a second tree of the same repository is not the collision the rule exists to prevent.
-// Nothing creates a tree yet (that is SURF3) — this states one, which is what a driver will do.
+// Nothing creates a tree here — this states one, which is what a driver will do.
 const besideIt = await api('POST', '/api/sessions/chat', {
   body: { repository: 'newcomer', door: 'stub', tree: join(scratch, 'trees', 'newcomer-2') },
 });
@@ -3559,7 +3556,7 @@ section('15. The toolchain: which tool, and which account (D49 §4)');
 const toolchainHome = join(scratch, 'toolchain');
 const harnessConfig = join(toolchainHome, 'harnesses.json');
 const HARNESS_ENV = { DAORIS_HARNESS_CONFIG: harnessConfig };
-// An account's folder, where the home's table keeps it (HOMELAYOUT3): `profiles/agents/` for one made now.
+// An account's folder, where the home's table keeps it: `profiles/agents/` for one made now.
 const profileAt = (harness, name) => homeEntry(toolchainHome, 'agent-homes', harness, name);
 mkdirSync(toolchainHome, { recursive: true });
 
@@ -3569,7 +3566,7 @@ mkdirSync(profileAt('stub', 'alpha'), { recursive: true });
 writeFileSync(join(profileAt('stub', 'alpha'), 'credentials.json'), '{}\n');
 mkdirSync(profileAt('stub', 'fresh'), { recursive: true });
 
-// Both folders are Daoris's accounts of the stub, one set that serves every workspace (D197 point 1). Its order, written
+// Both folders are Daoris's accounts of the stub, one set that serves every workspace. Its order, written
 // whole, says where starts begin, and *One by one, in order* (`use: order`) makes the walk begin at its first (point 2).
 // The file is written in the set's own shape, so no fold (`HarnessSettings.Change`) has anything to say of it.
 const setOrder = (order) => writeFileSync(
@@ -3607,7 +3604,7 @@ check(
   `${profiled?.transcript}`,
 );
 // By now the newcomer keeps a code map (committed before the crossing), so its session is asked to
-// keep it current, by the file the reader would find (MAP3d, the agent producer).
+// keep it current, by the file the reader would find (the agent producer).
 check(
   'a repository that keeps a code map is asked to keep it current, by its file',
   existsSync(join(newcomer, 'docs', 'code-map.json'))
@@ -3618,7 +3615,7 @@ check(
     : `${profiled?.transcript}`,
 );
 
-// What the person's press read (ROSTER1): a look reads no account, so a start passes an account only once it is known to be
+// What the person's press read: a look reads no account, so a start passes an account only once it is known to be
 // signed out. Any read time holds it: should the hour's backstop ask again, the stub still answers logged out, since an
 // account read so here has no credentials.
 const readAt = () => new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -3628,15 +3625,14 @@ const readSignedOut = (accounts) => {
     stub: { accounts: Object.fromEntries(accounts.map((account) => [account, { login: 'out', read: readAt() }])) },
   }, null, 2)}\n`);
 };
-// A sign-in Daoris sees (TOOL6g): the mark a sign-in through either door leaves, in the home's probe marks (HOMELAYOUT3:
-// `run/probing/`, beside the locks the looks take), after which the next start asks the account again.
+// A sign-in Daoris sees: the mark a sign-in through either door leaves, in the home's probe marks (`run/probing/`, beside the locks the looks take), after which the next start asks the account again.
 const markSignedIn = (account) => {
   const mark = homeEntry(toolchainHome, 'probing', 'stub', `${account}.signed-in`);
   mkdirSync(dirname(mark), { recursive: true });
   writeFileSync(mark, `${JSON.stringify({ at: readAt() })}\n`);
 };
 
-// A signed-out account stays in the set and is passed until it is signed in again (D197 point 1): with `fresh` first and
+// A signed-out account stays in the set and is passed until it is signed in again: with `fresh` first and
 // known to be signed out, the start is not held for it, and runs on the next account of the set.
 setOrder(['fresh', 'alpha']);
 readSignedOut(['fresh']);
@@ -3657,7 +3653,7 @@ check(
   `${passedRun.out}\n${JSON.stringify(passedRecord)}`,
 );
 
-// A hold is where no account of the set may run (D197): `alpha` signed out too, its credentials gone as a sign-out leaves
+// A hold is where no account of the set may run: `alpha` signed out too, its credentials gone as a sign-out leaves
 // it. The start is held BEFORE anything is recorded, naming each account's sign-in.
 const alphaCredentials = join(profileAt('stub', 'alpha'), 'credentials.json');
 rmSync(alphaCredentials, { force: true });
@@ -3704,12 +3700,12 @@ check(
   missingRun.out,
 );
 
-// An account its provider refused (AGT3b). Claude Code, measured, is silent for minutes of retries
+// An account its provider refused. Claude Code, measured, is silent for minutes of retries
 // and then prints "Failed to authenticate. API Error: 401 …" and exits 1 — so every further session
 // on that account would pay the same minutes to fail the same way. The stub mirrors those words: the
 // first session ends saying so, and the NEXT start is held rather than spent. One run, one driver,
 // because the hold lives with the roster the loop keeps. `alpha` is signed in again and first in the order, and `fresh`
-// still signed out, so once `alpha` is refused no account of the set is ready (D197): the hold names each, and why.
+// still signed out, so once `alpha` is refused no account of the set is ready: the hold names each, and why.
 setOrder(['alpha', 'fresh']);
 writeFileSync(alphaCredentials, '{}\n');
 markSignedIn('alpha');
@@ -3743,8 +3739,7 @@ check(
 );
 
 // Put the machine back, and let the held quests through — a held quest that never ran would leave the
-// next phase looking at a queue nobody explained. The refusal read `alpha` signed out under the home
-// (ROSTER1b), which outlives the run, so logging it in is a sign-in Daoris sees, after which the next start asks `alpha`
+// next phase looking at a queue nobody explained. The refusal read `alpha` signed out under the home, which outlives the run, so logging it in is a sign-in Daoris sees, after which the next start asks `alpha`
 // again.
 markSignedIn('alpha');
 const releasedRun = driver({ serviceUrl: BASE, config: driverConfig, harness: HARNESS_ENV, mode: '--until-idle' });
@@ -3754,8 +3749,8 @@ check(
   releasedRun.out,
 );
 
-// D50, from a terminal: the same directories and the same file, through the real CLI. A machine with
-// no screen sets all of this up the same way the desktop's roster does. PUSH1f2e2: `agent account …` is the driver's program's, which
+// From a terminal: the same directories and the same file, through the real CLI. A machine with
+// no screen sets all of this up the same way the desktop's roster does. `agent account …` is the driver's program's, which
 // refuses a person's change from a session's terminal, so these run as the person.
 const cliHarness = (args) => run(`node "${cliBin}" agent ${args}`, scratch, { ...HARNESS_ENV, ...PERSON });
 const added = cliHarness('account add claude-code work');
@@ -3764,8 +3759,8 @@ check(
   added.code === 0 && existsSync(profileAt('claude-code', 'work')) && /empty until you log into it/.test(added.out),
   added.out,
 );
-// One set serves every workspace (D197): a workspace's own account, or a default beside the order, is no longer a thing to
-// write, so `account default` refuses in the set's words (POOL1b, the account-pool design §5.1) and writes nothing, naming
+// One set serves every workspace: a workspace's own account, or a default beside the order, is no longer a thing to
+// write, so `account default` refuses in the set's words and writes nothing, naming
 // the verb that puts an account first: `account order`, over the agent's one order.
 cliHarness('account add claude-code spare');
 const beforeDefault = readFileSync(harnessConfig, 'utf8');
@@ -3788,7 +3783,7 @@ check(
   `${ordered.out}\n${JSON.stringify(afterEdit)}`,
 );
 // The stub's own set, its order and how it is used, written by hand above, survives the CLI's edit — the CLI is an editor
-// over the file, not its owner. Its edit folds the file first (D197 point 7), and a set already whole has nothing to fold,
+// over the file, not its owner. Its edit folds the file first, and a set already whole has nothing to fold,
 // so nothing is said of it either.
 check(
   '…and the edit left every other agent’s set in the file standing: the stub’s order and its use, with nothing folded',
@@ -3803,7 +3798,7 @@ check(
   typo.code !== 0 && /has no account `typo`/.test(typo.out) && /work/.test(typo.out) && /spare/.test(typo.out),
   typo.out,
 );
-// Removing an account removes it (D66 §3): out of the agent's order, and the directory gone with it.
+// Removing an account removes it: out of the agent's order, and the directory gone with it.
 const removed = cliHarness('account remove claude-code work');
 check(
   '`account remove` takes it out of the agent’s order, and the directory goes with it',
@@ -3812,9 +3807,8 @@ check(
     && JSON.stringify(JSON.parse(readFileSync(harnessConfig, 'utf8')).rotation?.['claude-code']) === JSON.stringify(['spare']),
   removed.out,
 );
-// 🔴 A signed-in one too, sign-in and all — amending SES3's "deletes nothing", on the owner's word
-// that Forget did not delete the account: the old rule kept any directory the harness would not call
-// signed out, so a removed account stayed listed and signed in.
+// 🔴 A signed-in one too, sign-in and all — Forget deletes the account, so a removed account
+// must not stay listed and signed in.
 cliHarness('account add dsh signed');
 writeFileSync(join(profileAt('dsh', 'signed'), 'credentials.json'), '{}\n');
 const removedSigned = cliHarness('account remove dsh signed');
@@ -3825,7 +3819,7 @@ check(
   removedSigned.out,
 );
 
-// An account that is an API key (AGT3, D67 §1), from a terminal. The key goes in on stdin, because an
+// An account that is an API key, from a terminal. The key goes in on stdin, because an
 // argument is visible in the process list and the shell's history, and it comes back only as its
 // last four characters. The file it lands in is the one the desktop's roster reads.
 const REHEARSAL_KEY = 'sk-ant-api03-rehearsal-0000-wxyz';
@@ -3841,7 +3835,7 @@ check(
   keyed.out,
 );
 
-// What an agent may do (PERM1, D72), from a terminal: Claude Code's own permission rules in Daoris's
+// What an agent may do, from a terminal: Claude Code's own permission rules in Daoris's
 // scopes, one file under the home the driver composes each spawn from. The stub agent is handed none
 // of them (a Claude Code rule means nothing to another program), so the FILE is what is asserted here;
 // the spawn's half is the driver's tests, and a rule firing is a real session's. PUSH1f2d: `agent rules` is the driver's program's,
@@ -3870,7 +3864,7 @@ check(
   notARule.out,
 );
 
-// An agent's proposal to change them (PERM2, D74), answered from a terminal. A session proposes over
+// An agent's proposal to change them, answered from a terminal. A session proposes over
 // its connector, which writes one file per proposal under the home; the driver's tick applies a
 // narrowing and holds a widening. 🔴 A widening never applies without the person — so the file is
 // written here exactly as the connector writes it and the driver leaves it, and the person's yes is
@@ -3917,7 +3911,7 @@ check(
   answeredTwice.code === 2 && /already declined/.test(answeredTwice.out),
   answeredTwice.out,
 );
-// PUSH1f2d (D194 point 5): the person's yes from a session's terminal, acting in the driver's program with no window to confirm it, is
+// The person's yes from a session's terminal, acting in the driver's program with no window to confirm it, is
 // refused, exit 1: the proposal waits and the rules are as they were.
 const pending = proposalFile('9e1a7c22', { action: 'add', list: 'allow', rule: 'WebSearch' });
 const rulesBefore = readFileSync(rulesFile, 'utf8');
@@ -3939,7 +3933,7 @@ check(
   namedYes.out,
 );
 
-// And the driving choices themselves, from a terminal (D50): the same `driver.json` the desktop's
+// And the driving choices themselves, from a terminal: the same `driver.json` the desktop's
 // checkboxes edit and the loop re-reads every tick.
 const cliDriver = (args) => runOn(driverConfig, `node "${cliBin}" place ${args}`, PERSON);
 const held = cliDriver('hold newcomer');
@@ -3962,7 +3956,7 @@ check(
   heldRunFromCli.code === 0 && /held by the person/.test(heldRunFromCli.out),
   heldRunFromCli.out,
 );
-// PUSH1f2a (D194 point 5): the same press from a session's terminal, acting in the driver's program with no window to confirm it, is
+// The same press from a session's terminal, acting in the driver's program with no window to confirm it, is
 // refused, exit 1, and nothing is written: the marker refuses an agent's honest attempt, the person's own terminal carrying none.
 const heldBefore = readFileSync(driverConfig, 'utf8');
 const marked = runOn(driverConfig, `node "${cliBin}" place drive marked-elsewhere`, { DAORIS_SESSION_ID: 's-rehearsal' });
@@ -4040,7 +4034,7 @@ check(
   JSON.stringify(isolatedRecord),
 );
 
-// The lifecycle from a terminal (D50): the tree is listed, refuses to die holding unmerged work —
+// The lifecycle from a terminal: the tree is listed, refuses to die holding unmerged work —
 // the stub's commit is real work the canonical line has not taken — and goes when the person means it.
 const treesListed = runOn(driverConfig, `dotnet "${driverDll}" tree list`);
 check(
@@ -4065,7 +4059,7 @@ check(
   fromTree.out,
 );
 
-// The feed still reads only the registered root (D51 rule 1): the tree is not a repository, so the
+// The feed still reads only the registered root: the tree is not a repository, so the
 // registry has no row for it and its content answers no search. The phrase searched for exists ONLY
 // in the tree — the root's earlier stub answers share a body, so the body would match the wrong copy.
 const rowsAfterTree = (await api('GET', '/api/registry')).json ?? [];
@@ -4078,7 +4072,7 @@ check(
   treeOnly.text,
 );
 
-// The clean-up from a terminal (WSR3, D88): the list first, and work no branch of the person's holds
+// The clean-up from a terminal: the list first, and work no branch of the person's holds
 // is kept and named — even when the press is made.
 // The scratch home, whose own file holds the main config since the run before (`onHome`).
 const cleanEnv = { DAORIS_HOME: dirname(driverConfig), DAORIS_SERVICE_URL: BASE };
@@ -4091,8 +4085,8 @@ check(
   cleanListed.out + cleanKept.out,
 );
 
-// Accepting a session's work from a terminal (WSR1, D87): D50's second door, which the landing had not
-// had until TK-2202's work was landed. --plan says where it would go by the workspace's rule, and does
+// Accepting a session's work from a terminal: the landing's second door.
+// --plan says where it would go by the workspace's rule, and does
 // nothing: with no rule set, a merge into the line.
 const landPlan = run(`dotnet "${driverDll}" tree land ${isolatedRecord?.id} --plan`, scratch, cleanEnv);
 check(
@@ -4121,7 +4115,7 @@ check(
   emptyListed.out + emptyCleaned.out,
 );
 
-// One workspace's branches from a terminal (BRSCOPE1a, D150's BRSCOPE1 note, D50, WSP5), as its Branches tab looks at them:
+// One workspace's branches from a terminal, as its Branches tab looks at them:
 // a session branch holding nothing in each of two workspaces' checkouts, newcomer's in `default` and foundry's in `tools`
 // (section 9 wired it). Each look given a workspace lists, and its press removes, that workspace's alone; bringing up to date
 // looks at none of the other's; and a workspace the registry does not name is refused, naming it, with nothing changed. The
@@ -4173,13 +4167,13 @@ run('git branch -D daoris/s-rehearse-default', newcomer);
 // Leave the root as section 7 left it — later phases assume the dirty file is theirs to manage.
 rmSync(join(newcomer, 'work-in-flight.txt'), { force: true });
 
-// Bringing a repository up to date after its pull request merged (WSR6, D109), from a terminal: the owner's case
+// Bringing a repository up to date after its pull request merged, from a terminal: the owner's case
 // over the newcomer. A session's work is put on a branch by the landing rule, the person pushes it to an `origin`
 // (a bare repository in scratch, so nothing reaches a network), and the platform squash-merges it, so the line
 // holds its content and none of its commits. The session had carried on in its tree after its landing. `trees
 // sync` then fast-forwards the line, replays the session branch with only its own commit, and deletes the landed
 // branch. Its landed commit is the squash's patch, so the list counts one commit, not two, and the list and the press both
-// say they leave that one out (LANDSYNC3 and LANDSYNC3b, D87's 2026-10-15 amendment point 1). Only `--repository newcomer`: the examples' registered roots are not repositories of their own, and git
+// say they leave that one out. Only `--repository newcomer`: the examples' registered roots are not repositories of their own, and git
 // walks UP from a folder that is not one. The replay makes commits, so it is handed an identity as every git
 // call here is, since the rehearsal runs on machines with no git config.
 const escaped = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -4267,16 +4261,16 @@ cliDriver('trees newcomer off');
 
 section('16a. An ask abandoned: listed first, then declined with the reason, discarding only what nothing else holds (D132/PAUSE1d)');
 
-// The owner's case (D132), from a terminal: an ask whose work went the wrong way is given up in one listed press. The ask
+// The owner's case, from a terminal: an ask whose work went the wrong way is given up in one listed press. The ask
 // is made with its receiver named, which publishes ONE quest; a person's `ask --publish` to the same receiver answers that
 // same quest again (the exchange keeps one quest per words), so the ask's two other quests are published onto it through
-// its publish door with words of their own, a draft, as an intake publishes (D65 §1b), each asked BY the ask, which is how
+// its publish door with words of their own, a draft, as an intake publishes, each asked BY the ask, which is how
 // `AskWork.Read` gathers them. Its first quest is driven to done in a tree whose one commit is on no ref but its own
 // `daoris/*` branch; its second is driven to done and its branch pushed to an `origin` (a bare repository in scratch, so
 // nothing reaches a network), which counts as elsewhere; its third is published after the last drive, so it stays open.
 // The family's stub takes over HTTP and never marks `Took`, so the phase keeps to open and done quests and the trees the
 // stub made. No remote is wired here, so the abandon's pass has nothing to carry: the race a `whileOpen` decline loses is
-// PAUSE1c's suite's, over the real wire. Whatever else sits in newcomer from earlier phases (a quest parked on its strikes)
+// the pause suite's, over the real wire. Whatever else sits in newcomer from earlier phases (a quest parked on its strikes)
 // is not asked by this ask, and a check below holds that nothing of it moves.
 cliDriver('trees newcomer on');
 const abandonAsk = askVerb('--workspace default --to newcomer "abandon rehearsal: build the widget"');
@@ -4456,9 +4450,9 @@ cliDriver('trees newcomer off');
 
 section('17. The protocol door — a session held over ACP (D53/ACP1)');
 
-// The ACP stub: the same fake-session trick as section 7's, one door over (D46 §8), speaking the
+// The ACP stub: the same fake-session trick as section 7's, one door over, speaking the
 // wire and nothing else. No model, no account, no credential anywhere in this phase. Its source is the
-// rehearsal kit's since DEPLOY5, because the deployment gate opens a conversation on it too.
+// rehearsal kit's, because the deployment gate opens a conversation on it too.
 const acpAgent = join(scratch, 'acp-agent.mjs');
 writeFileSync(acpAgent, ACP_STUB_AGENT);
 
@@ -4518,18 +4512,18 @@ check(
   acpTranscript.slice(0, 600),
 );
 
-// 🔴 ACP4, read back from what the AGENT said it received. The composed target instructs every
+// 🔴 Read back from what the AGENT said it received. The composed target instructs every
 // session to take and close its quest over its own connector; the pipe door leans on the repository's
 // own `.mcp.json`, which an adopted repository may not have and which the driver may never reach in
-// and write. The protocol carries it instead — measured before it was built, when a real driven
-// session called `take`, found no such tool and ended its turn having touched nothing.
+// and write. The protocol carries it instead — without it a real driven
+// session calls `take`, finds no such tool and ends its turn having touched nothing.
 check(
   'the session is handed the knowledge server it is told to use, over the protocol',
   /mcp servers offered: daoris-knowledge/.test(acpTranscript),
   acpTranscript.slice(0, 600),
 );
 
-// The D37 boundary, proven on the wire: the driver refused, and the agent was TOLD it was refused.
+// The permission boundary, proven on the wire: the driver refuses, and the agent is TOLD it is refused.
 check(
   'a permission request is refused by the driver, and the refusal reaches the session',
   /permission refused/.test(acpTranscript) && /"selected"/.test(acpTranscript)
@@ -4537,8 +4531,8 @@ check(
   acpTranscript.slice(-800),
 );
 
-// D46 §4 on the wire: the protocol's own ending is written down and nothing more. The record above
-// was concluded from the exit code and the quest's state — this line is the transcript saying so.
+// On the wire, the protocol's own ending is written down and nothing more. The record above
+// is concluded from the exit code and the quest's state — this line is the transcript saying so.
 check(
   'the wire’s ending is recorded as a self-report, never as the verdict',
   /the turn ended: end_turn/.test(acpTranscript) && /not\s+from this line/.test(acpTranscript),
@@ -4553,7 +4547,7 @@ check(
 );
 
 // A conversation over the ACP door, its turn stopped and a file attached from a terminal, runs in the
-// running Daoris and a terminal holds it (D238); no headless rehearsal has a Daoris to hold one in.
+// running Daoris and a terminal holds it; no headless rehearsal has a Daoris to hold one in.
 
 // -------------------------------------------------- 17a. an answer continues the session that asked
 
@@ -4562,9 +4556,8 @@ section('17a. An answer continues the session that asked — its own record and 
 // The person answers a session that parked to ask, and the driver's next look goes on with THAT session: its record
 // moves back to working, the stub's own conversation is resumed over `session/resume` with the answer as its next
 // prompt, and the work is done there. One record, one conversation, one transcript that goes on.
-//
 // The stub takes through the service's HTTP door, which marks no session as the taker, so a first session's ending
-// would read as a stand-down; a session that carries a take on parks (D80, STANDDOWN2). So the cut-off is made through
+// would read as a stand-down; a session that carries a take on parks. So the cut-off is made through
 // the doors as section 4's is, the driver carries it on, and that session asks which port, holding the quest.
 const portAsk = await api('POST', '/api/quests', {
   body: {
@@ -4611,7 +4604,7 @@ check(
   `${portParkRun.out}\n${JSON.stringify(portPark)}\n${JSON.stringify(portKept)}`,
 );
 
-// ONEWAY1k: a park is answered through the say door alone, `sessions say` at the terminal.
+// A park is answered through the say door alone, `sessions say` at the terminal.
 const portAnswer = driver({ serviceUrl: BASE, config: acpConfig, mode: `session say ${portPark?.id} "Port 8080."` });
 const portAnswered = (await portRecords()).find((s) => s.id === portPark?.id) ?? null;
 check(
@@ -4630,7 +4623,7 @@ check(
   'the next look goes on with the SAME session: one record, reopened, ends completed, and the quest is done by it',
   portResumeRun.code === 0 && /\[resumed its conversation\]/.test(portResumeRun.out)
     && portAfter.length === 2 && portGoneOn?.state === 'completed' && portQuest?.status === 'Done',
-  // The park as the look found it first (MSG1b's merge): its state and the words waiting on it are what the look planned from.
+  // The park as the look found it first: its state and the words waiting on it are what the look planned from.
   `the park before the look: ${JSON.stringify(portAnswered)}\n${portResumeRun.out}\n${JSON.stringify(portAfter)}\n${JSON.stringify(portQuest)}`,
 );
 
@@ -4670,7 +4663,7 @@ check(
 
 section('17a2. Words from a terminal reach an ended session, which goes on in its own record (D137/MSG1e)');
 
-// `daoris session say` is the terminal's door to what the screen's box says to a session (D137 §5.2, D50). Said
+// `daoris session say` is the terminal's door to what the screen's box says to a session. Said
 // before any loop drives the home, words to a session that ended are kept on its record for the next loop, whose first
 // look goes on with them: the same record reopens, the stub's own conversation resumed with the words as its next prompt.
 // Said while the headless loop runs, its request watch keeps them, shows them and nudges its look (LoopWords), and the
@@ -4743,9 +4736,9 @@ check(
 
 const goingOn = sayFromTerminal(heardId, 'and say where it lives');
 // The verb polls the record: a stub fast enough to take the words, work and end between two polls is read as taken and
-// moved on, which is as true; the next check proves it was the same record that went on (merging LAND2c, 2026-10-04).
+// moved on, which is as true; the next check proves it is the same record that goes on.
 // It follows the words for its ten seconds and no longer (design §5.2), and kept words no look took by then are held for the
-// look it nudged, exit 0 (D137's MSG1e): under load the nudged look reopened the record after that, twice (FLAKE3). That
+// look it nudged, exit 0: under load the nudged look reopened the record after that, twice. That
 // answer is as true, and the next check proves the same record went on with them.
 const goingOnLines = [
   'sessions: going on: the same session took it.',
@@ -4831,7 +4824,7 @@ check(
 );
 
 // The pipe door keeps its own requirement: its session reaches the knowledge tools only through the
-// repository's own `.mcp.json`, which the driver may never write for it (D32). So it sits, saying why.
+// repository's own `.mcp.json`, which the driver may never write for it. So it sits, saying why.
 const unadoptedPipe = join(scratch, 'driver-unadopted-pipe.json');
 writeFileSync(unadoptedPipe, `${JSON.stringify({
   drivable: ['unadopted'], adapter: 'stub', cap: 1, timeoutMinutes: 2,
@@ -4847,7 +4840,7 @@ check(
   pipeHeld.out,
 );
 
-// The protocol door hands the session its connector on the wire (ACP4), so the same quest is driven
+// The protocol door hands the session its connector on the wire, so the same quest is driven
 // to done — with nothing of Daoris's written into the tree to make it possible.
 const unadoptedAcp = join(acpHome, 'driver-unadopted-acp.json');
 writeFileSync(unadoptedAcp, `${JSON.stringify({
@@ -4875,7 +4868,7 @@ check(
   unadoptedTranscript.slice(0, 600),
 );
 
-// D32, read off the tree itself: the only change is the session's own commit.
+// Read off the tree itself: the only change is the session's own commit.
 const unadoptedStatus = run('git status --porcelain', unadopted);
 const unadoptedLog = run('git log --oneline', unadopted);
 check(
@@ -4893,17 +4886,15 @@ check('it is retired again, so no later phase meets it', unadoptedRetired.status
 
 section('17c. A repository nobody adopted is set up by its own session, and registered from its line (LAYOUT7, D117 §6, D124 §2–§3)');
 
-// The one adoption door (LAYOUT7, WORKFLOWCLEAN1 1f): `daoris place <repository> --preset keep --adoption` plans, then
+// The one adoption door: `daoris place <repository> --preset keep --adoption` plans, then
 // applies, the set-up press: it reads the repository's LINE as git objects, says every refusal with its door, and publishes one ask to
 // it as the person's, adding the doctrine tool's exact verbs to its rules. Its own session then takes up the doctrine with the tool
 // found by its bare name, in a tree of its own,
 // and the person lands the work. The ACP stub above is that session: a set-up's title takes its set-up branch. The
-// landing moves the line, and the driver registers what the line now declares, with no `connect` (WSSETUP5).
-//
-// atlas is born here with a README and nothing for agents, outside the family folder as 17b's was, and registered
+// landing moves the line, and the driver registers what the line now declares, with no `connect`.
+// atlas is born here with a README and nothing for agents, outside the family folder as 17b's is, and registered
 // without adopting. The doctrine tool its session finds is the WORKSPACE's CLI behind a launcher first on the PATH
-// this phase starts the driver with, since the install's own `app/bin/` is the deployment rehearsal's to test
-// (WSSETUP2). And its machine log is a home of its own, so the usage report read from it counts this phase alone.
+// this phase starts the driver with, since the install's own `app/bin/` is the deployment rehearsal's to test. And its machine log is a home of its own, so the usage report read from it counts this phase alone.
 const atlas = join(scratch, 'atlas');
 mkdirSync(atlas, { recursive: true });
 writeFileSync(join(atlas, 'README.md'), '# atlas\n\nServes the map tiles the game draws its world from.\n');
@@ -4931,7 +4922,7 @@ const onSetupMachine = (mode, { config = setupConfig, env = {} } = {}) =>
   driver({ serviceUrl: BASE, config, mode, env: { ...SETUP_MACHINE, ...env } });
 const atlasQuests = async () => (await api('GET', '/api/quests?repository=atlas&includeClosed=true')).json ?? [];
 const askCount = async () => ((await api('GET', '/api/asks?includeClosed=true')).json ?? []).length;
-// The press's rule lands in the home its driver's choices sit in (`permissions.json`, PERM1), the set-up machine's.
+// The press's rule lands in the home its driver's choices sit in, the set-up machine's.
 const atlasAllows = () => {
   const file = homeEntry(setupHome, 'permissions');
   return existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')).repositories?.atlas?.allow ?? [] : [];
@@ -4944,8 +4935,8 @@ const sessionStarts = (out) => out.split(/\r?\n/).filter((line) => line.trim()).
   }
 });
 
-// Each refusal that applies is said with its door (LAYOUT7): here, no tree of its own, read by the same binary from the
-// same line. Not being driven is none: the set-up's quest would be admitted alone (AGENTSPLACE1b).
+// Each refusal that applies is said with its door: here, no tree of its own, read by the same binary from the
+// same line. Not being driven is none: the set-up's quest would be admitted alone.
 const unreadyConfig = join(setupHome, 'driver-setup-unready.json');
 writeFileSync(unreadyConfig, `${JSON.stringify({
   drivable: [], adapter: 'acp-stub', cap: 1, timeoutMinutes: 2, commands: { 'acp-stub': ['node', acpAgent] },
@@ -5011,7 +5002,7 @@ check(
   again.out,
 );
 
-// Driven: the protocol door, since atlas has not adopted (D70), in a tree of its own, by the loop that drives any.
+// Driven: the protocol door, since atlas has not adopted, in a tree of its own, by the loop that drives any.
 const setupRun = driver({ serviceUrl: BASE, config: setupConfig, mode: '--until-idle', env: SETUP_MACHINE });
 const atlasSessions = async () => (await api('GET', '/api/sessions?repository=atlas&includeClosed=true')).json ?? [];
 const setupRecord = (await atlasSessions()).find((s) => s.quest === setupQuest?.id);
@@ -5043,7 +5034,7 @@ check(
   setupTree === '' ? '(no tree on the record)' : run('git log --oneline -3', setupTree).out,
 );
 
-// Recognised as a set-up, where WSSETUP11 says it is: the machine log's start line, read through the driver's own door.
+// Recognised as a set-up: the machine log's start line, read through the driver's own door.
 const startsRead = onSetupMachine('logs --event session.started --json');
 const setupStart = sessionStarts(startsRead.out).find((line) => line.data?.session === setupRecord?.id);
 check(
@@ -5053,13 +5044,13 @@ check(
   startsRead.out,
 );
 
-// Registration follows the line (WSSETUP5a, D124 §3). Until the line moves, atlas's row is as the press found it, not
+// Registration follows the line. Until the line moves, atlas's row is as the press found it, not
 // adopted and declaring nothing, though its set-up is done: its session ran no `connect`, and the press's rule holds
 // none. Nothing in this phase runs one. The landing below is what moves the line.
 const atlasRow = async () => ((await api('GET', '/api/registry')).json ?? []).find((r) => r.repository === 'atlas') ?? null;
 const rowBeforeLanding = await atlasRow();
 
-// Landed by the person's press, by the workspace's rule (WSR1): merged into the line. A merge commit needs an
+// Landed by the person's press, by the workspace's rule: merged into the line. A merge commit needs an
 // identity, handed as every git call here is, since the rehearsal runs on machines with no git config.
 const landedSetup = onSetupMachine(`tree land ${setupRecord?.id}`, {
   env: {
@@ -5106,7 +5097,7 @@ check(
 );
 
 // Each outcome is the machine log's `registry.followed`, read through the driver's own door: a name and a word from a
-// fixed list, never a path or a summary (D124 §3.4).
+// fixed list, never a path or a summary.
 const atlasFollowed = () => {
   const read = onSetupMachine('logs --event registry.followed --json');
   return { code: read.code, lines: readFollowed(read.out).filter((line) => line.repository === 'atlas') };
@@ -5120,7 +5111,7 @@ check(
 );
 
 // A second follow with nothing changed sends nothing: a registration goes only where the row holds something else.
-// The terminal's door asks for it as the row's *Refresh* would (D124 §3.1).
+// The terminal's door asks for it as the row's *Refresh* would.
 const DECLARATION = ['adopted', 'registered', 'summary', 'owns', 'accepts', 'uses', 'packs', 'joined', 'sharesKnowledge', 'workspace', 'root', 'lanes'];
 const declarationOf = (row) => JSON.stringify(DECLARATION.map((field) => row?.[field] ?? null));
 const followAgain = onSetupMachine('repository register --repository atlas');
@@ -5139,7 +5130,7 @@ check(
 );
 
 // Read from the line again, the set-up is done, and what a set-up repository is asked next is its index of where things
-// are (ORIENT2c, D151's note: `Done` means set up and naming an index). Atlas is a README and what its set-up wrote, so
+// are (`Done` means set up and naming an index). Atlas is a README and what its set-up wrote, so
 // the press cannot read what it is built with and cannot name the generator: it refuses (`no-index-form`), naming the
 // ask to make by hand, and asks nothing.
 // An ask of another shape (what it builds) is a plan of its own, so it is applied afresh rather than finding the first press's receipt.
@@ -5170,7 +5161,7 @@ check(
   `${ordinaryRun.out}\n${allStarts.map((line) => JSON.stringify(line.data)).join('\n')}`,
 );
 
-// The usage report's Set-ups section (WSSETUP11), read from this phase's log the way a person reads an install's.
+// The usage report's Set-ups section, read from this phase's log the way a person reads an install's.
 const usageReport = join(repoRoot, 'tools', 'usage-report.mjs');
 const reported = run(`node "${usageReport}" --home "${setupHome}" --json`, repoRoot);
 let usage = null;
@@ -5208,11 +5199,10 @@ check(
 
 section('17d. A workspace is set up one repository at a time, pausing after its pilot (WSSETUP6, D124 §4)');
 
-// The workspace plan (WSSETUP6): `daoris place --workspace <name> --adoption` writes a plan of single set-ups and adds the
+// The workspace plan: `daoris place --workspace <name> --adoption` writes a plan of single set-ups and adds the
 // doctrine tool's verbs once, at the workspace's scope; each look of the loop publishes the next to go while fewer than its
 // `atOnce` are open (never the last slot: `cap − 1`), and once its pilot has closed the plan pauses itself until the person
 // resumes it. Nothing in the plan is a count: each state is read from the registry and the quests.
-//
 // Two repositories nobody adopted, each a README and one commit on `main`, registered without adopting in a workspace of
 // their own, so the plan's list is theirs alone. Both drivable here, in trees of their own, on the protocol stub, at a cap
 // of two. The doctrine tool is 17c's launcher, first on the PATH, and the machine log is a home of its own again.
@@ -5353,14 +5343,14 @@ check(
   JSON.stringify(publishedLines),
 );
 
-// Each lands by the workspace's rule, and its line moving registers it (WSSETUP5): no `connect` anywhere in the phase.
+// Each lands by the workspace's rule, and its line moving registers it: no `connect` anywhere in the phase.
 const rowsBeforeLanding = await plannedRows();
 const plannedLandings = [firstRecord, secondRecord].map((record) => onPlanMachine(`tree land ${record?.id}`, {
   GIT_AUTHOR_NAME: 'Family Rehearsal', GIT_AUTHOR_EMAIL: 'rehearsal@example.invalid',
   GIT_COMMITTER_NAME: 'Family Rehearsal', GIT_COMMITTER_EMAIL: 'rehearsal@example.invalid',
 }));
 const rowsAfterLanding = await plannedRows();
-// Set up, each is to go again in the plan, for its index of where things are (ORIENT2c, D151's note: the plan asks a set-up
+// Set up, each is to go again in the plan, for its index of where things are (the plan asks a set-up
 // repository its index in its turn, and it is set up once that closes done). Read from its line, each asks only that.
 const standingAfter = readWorkspaceSetup(onPlanMachine(`place --workspace ${PLAN_WORKSPACE} --adoption --plan`).out);
 const planAfterLanding = readPlan();
@@ -5408,12 +5398,10 @@ check(
 
 section('17e. Work is reviewed where it runs before it lands: a set-up said, the person’s verdict at a terminal, a landing that waits for it (D154/REVIEWENV1)');
 
-// The review's chain over the example family, with no model, no account and no credential (D154, the review environment design
-// §3). The newcomer declares where its work is shown to the person, from a terminal: the rule is this machine's (`driver.json`),
+// The review's chain over the example family, with no model, no account and no credential. The newcomer declares where its work is shown to the person, from a terminal: the rule is this machine's (`driver.json`),
 // and the procedures it names are the newcomer's own documents, committed on its line. A stub chain does the work over the
 // protocol door, its set-up step says what it showed through the connector the door hands it, and the landing waits for the
 // person's verdict, given at `daoris quest review`.
-//
 // Two environments, because the shell is not in this rehearsal. A local one is shown in Daoris's browser, which a headless loop
 // does not carry, so a local set-up step sits here saying so, and what this phase checks of it is what the record and the
 // terminal show (design §2.1). The stub chain is set up in the deployed one, whose step a headless loop starts.
@@ -5446,7 +5434,7 @@ const landingOf = (session) => {
   }
 };
 
-// PERSONDOOR1a (D156): a local host is gated only once its starter hands it a person key, and this rehearsal's hosts are handed
+// A local host is gated only once its starter hands it a person key, and this rehearsal's hosts are handed
 // none, so the person's doors (the verdict among them) answer a terminal on the loopback as they did. Said by the host itself.
 const keyless = await api('GET', '/api/status?prove=rehearsal');
 check(
@@ -5622,7 +5610,7 @@ check(
 );
 
 // A commit after the verdict, in the tree that would land: work the person has not seen run. In that tree alone: with none on
-// the record nothing is written, git refuses the folder it is not handed, and the checks below fail on it (REHEARSEGIT1). This
+// the record nothing is written, git refuses the folder it is not handed, and the checks below fail on it. This
 // fell back to the scratch once, which is no repository, so git walked up and committed the enclosing checkout's work.
 const lateTree = wentOn?.tree ?? '';
 if (lateTree && existsSync(lateTree)) writeFileSync(join(lateTree, 'late.md'), 'added after the look\n');
@@ -5725,7 +5713,7 @@ writeFileSync(brainstormConfig, `${JSON.stringify({
 const BRAINSTORM_STORE = { DAORIS_KNOWLEDGE_ROOT: family, DAORIS_KNOWLEDGE_DB: join(scratch, 'knowledge.db') };
 const brainstormDrive = () => driver({ serviceUrl: BASE, config: brainstormConfig, env: BRAINSTORM_STORE, mode: '--until-idle' });
 const brainstormCli = (args, url = BASE) => run(`node "${cliBin}" brainstorm ${args}`, scratch, { DAORIS_SERVICE_URL: url });
-// D172's places: an entry at its new place under its category, or at its old place where only that holds it.
+// The home table's places: an entry at its new place under its category, or at its old place where only that holds it.
 const placeOf = (category, name, ...rest) => [join(brainstormHome, category, name, ...rest), join(brainstormHome, name, ...rest)]
   .find((at) => existsSync(at)) ?? join(brainstormHome, category, name, ...rest);
 const brainstormRead = (id, file) => {
@@ -5794,7 +5782,7 @@ check(
   `${brainstormSent.out}\n${brainstormRan.out}\n${JSON.stringify(brainstormState)}\n${brainstormGenerator}\n${brainstormDocument.out}`,
 );
 
-// 🔴 D176 point 1, "what it never is": no quest and no session record on the host, no commit, branch or change in the asker's
+// 🔴 What it never is: no quest and no session record on the host, no commit, branch or change in the asker's
 // checkout, no landing record, and the rooms gone once it ended.
 const brainstormAfter = { quests: await questsNow(), sessions: await sessionsNow(), newcomer: newcomerNow(), landings: landingsNow() };
 check(
@@ -5823,18 +5811,17 @@ rmSync(brainstormConfig, { force: true });
 
 section('18. Three plugins: one declares a harness, one hands a server, one holds a quest with a sentence (D64, D65)');
 
-// A plugin is a folder under the home (D63) with a manifest. Three here, one for each thing a plugin
+// A plugin is a folder under the home with a manifest. Three here, one for each thing a plugin
 // can do. `rehearsal.agent` DECLARES a harness — the ACP stub agent above, as a configuration of the
 // door, so a session runs on a harness this build never named; it is written here because it has to
-// name that agent's scratch path. `browser` HANDS every session a server (D65 §1f) — the tracked
+// name that agent's scratch path. `browser` HANDS every session a server — the tracked
 // example declaring the Playwright MCP, which nothing here runs: what the gate proves is that a
-// declared server reaches the session over the door, in the agent's own account of what it was
+// declared server reaches the session over the door, in the agent's own account of what it is
 // offered. `hold-by-title` SPEAKS — a process the driver starts, asks and stops. The last two are the
 // TRACKED examples under `examples/plugins/`, installed with the real `daoris plugin add`, so the
 // example somebody copies is the one this gate drives. No code of any of them loads anywhere.
-//
 // The driver's home is its config's directory (`onHome`), `scratch` for the main config, so the plugins live there. `daoris plugin`
-// is the driver program's (PUSH1f2f) and each change a person's press, so the calls are the person's (`PERSON`).
+// is the driver program's and each change a person's press, so the calls are the person's (`PERSON`).
 const PLUGIN_HOME = { DAORIS_HOME: scratch, ...PERSON };
 const agentPlugin = homeEntry(scratch, 'plugins', 'rehearsal.agent');
 mkdirSync(agentPlugin, { recursive: true });
@@ -5886,7 +5873,7 @@ check('`agent list` shows Stub Two by file', stubTwoListed(harnessList.out), har
 
 // Driven on the DECLARED harness: nothing in driver.json names a command, because the declaration
 // carries it. Two quests — one the gate lets through, one it holds. Build takes the declared agent through the role door, as
-// the person staffs it (ONEWAY1c-i): the scratch home's staffing is its store's, the stub's until now.
+// the person staffs it: the scratch home's staffing is its store's, the stub's until now.
 const gateConfig = join(scratch, 'driver-gate.json');
 writeFileSync(gateConfig, `${JSON.stringify({
   drivable: ['newcomer'], cap: 2, timeoutMinutes: 2,
@@ -5932,7 +5919,7 @@ check(
   JSON.stringify(gateRecord),
 );
 
-// 🔴 INT1, read back from what the AGENT said it received: the plugin's server rides `session/new`
+// 🔴 Read back from what the AGENT said it received: the plugin's server rides `session/new`
 // BESIDE the knowledge host, never in its place — and the browser example is proven to reach a
 // session without anything running the browser.
 const gateTranscript = existsSync(gateRecord?.transcript ?? '') ? readFileSync(gateRecord.transcript, 'utf8') : '';
@@ -5980,7 +5967,7 @@ check(
 
 section('18a. Every stand-in the files declare answers the scenario contract, each door through the driver (AGENTPROVIDER1b, D213)');
 
-// AGENTPROVIDER1 row b, part 3 (D213's row b part 3 note): the stand-ins are found from their files and named nowhere here. Each
+// The stand-ins are found from their files and named nowhere here. Each
 // provider folder's `provider.json` says whether it is a stand-in, its doors and their kinds, and its program's layout, which the driver
 // project's one glob carries into this run's own build of the driver host; its `pending.json` holds what it cannot answer yet. Over each
 // door the scenario contract is driven through the driver as a machine runs it (`scenarioPlan`): a case its file holds is said with its
@@ -6013,7 +6000,7 @@ const reopenedOf = (config, session) =>
   readEvents(driver({ serviceUrl: BASE, config, mode: 'logs --event session.reopened --json' }).out, 'session.reopened')
     .filter((data) => data.session === session);
 
-// Words a case leaves waiting for the person are taken back by their press before the next case (AGENTPROVIDER1b, D213). A closed
+// Words a case leaves waiting for the person are taken back by their press before the next case. A closed
 // quest's session whose conversation is proven lost keeps its words for the person, since a headless loop has no chat runner to go on
 // with them, and marks them unable to go on in its door's home alone: a mark is the machine's, never the record's. The record is the
 // one service's, which every door's home reads, so another door's loop planned those words as a go-on on an agent its config has not,

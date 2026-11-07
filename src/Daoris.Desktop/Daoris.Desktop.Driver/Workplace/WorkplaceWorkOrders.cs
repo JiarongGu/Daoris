@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// What the workplace asks of the work: the abandons' record a history clear tidies, what a unit still owes beyond its branch records,
 /// the inventory read over the records the workplace gathers, and a done's evidence read where a session's tree ends. Work orders
 /// keeps each and implements this, installed when the driver loads (<c>WorkOrders/Work/WorkplaceWorkOrdersWiring.cs</c>); each
-/// operation does exactly what its caller did before it was a port.
+/// operation does its caller's own work.
 /// </summary>
 internal interface IWorkplaceWorkOrders
 {
@@ -14,7 +14,7 @@ internal interface IWorkplaceWorkOrders
     /// <summary>The units that still owe anything beyond their branch records, by id: what the traces' pruning never drops.</summary>
     IReadOnlySet<string> Owing(string home);
 
-    /// <summary>Every unit the facts name, read as the inventory derives it: its milestone, with the entries it was read from.</summary>
+    /// <summary>Every unit the facts name, read as the inventory derives it: its milestone, with the entries it is read from.</summary>
     IReadOnlyList<IKnowledgeMilestone> Derive(InventoryFacts facts);
 
     /// <summary>The submission whose commit a session's end posts alone, or null (see <c>EvidenceCheck.CommitWanted</c>).</summary>

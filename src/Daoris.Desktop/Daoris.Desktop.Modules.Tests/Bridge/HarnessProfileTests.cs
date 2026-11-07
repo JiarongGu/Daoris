@@ -277,7 +277,7 @@ public sealed class HarnessProfileTests : Bridge
     /// <summary>
     /// A sign-in that does not finish leaves nothing behind — the tool failed, got
     /// stopped, or ended without signing anyone in. The account existed only for the sign-in, so
-    /// the list is exactly what it was before the press.
+    /// the list is unchanged by the press.
     /// </summary>
     [Theory]
     [InlineData("process.exit(1);")]

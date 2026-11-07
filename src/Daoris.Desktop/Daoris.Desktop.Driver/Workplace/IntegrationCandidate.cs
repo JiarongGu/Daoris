@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// formed on and that line's commit then, the job its processes run in, the run that holds it, and, once its members are replayed, its tip.
 /// One stands per line at a time; an ended one is kept as evidence.
 /// </summary>
-/// <param name="Base">The line's commit the candidate was formed on.</param>
+/// <param name="Base">The line's commit the candidate is formed on.</param>
 /// <param name="Job">The name of the one job every process the candidate starts runs in (<see cref="IntegrationJobs"/>).</param>
 /// <param name="ClaimRun">The process run that holds it, a row of <c>store_runs</c>.</param>
 /// <param name="ClaimGeneration">Raised by each take, so a run that lost the claim writes nothing more.</param>
@@ -15,7 +15,7 @@ public sealed record IntegrationCandidate(
     /// <summary>The candidate's tip once its members are replayed onto <see cref="Base"/>; null before.</summary>
     public string? Tip { get; init; }
 
-    /// <summary>When its promotion was recorded: by the promotion step's end, or by ancestry at a resume; null before.</summary>
+    /// <summary>When its promotion is recorded: by the promotion step's end, or by ancestry at a resume; null before.</summary>
     public DateTimeOffset? PromotedAt { get; init; }
 
     public DateTimeOffset? EndedAt { get; init; }
@@ -37,7 +37,7 @@ public sealed record IntegrationMember(string Candidate, string Request, int Pos
     /// <summary>The earlier member whose replay holds this one's work (step 3, provisional until that member promotes); null otherwise.</summary>
     public string? ContainedBy { get; init; }
 
-    /// <summary>Why it is where it is, in words: what was handed back, what holds it; null where nothing was said.</summary>
+    /// <summary>Why it is where it is, in words: what is handed back, what holds it; null where nothing is said.</summary>
     public string? Said { get; init; }
 
     public DateTimeOffset? EndedAt { get; init; }
@@ -137,7 +137,7 @@ public sealed record IntegrationDisposition(string Request, string Commit, strin
     /// <summary>The candidate whose settle made it; set by the store.</summary>
     public string Candidate { get; init; } = "";
 
-    /// <summary>When it was recorded; set by the store.</summary>
+    /// <summary>When it is recorded; set by the store.</summary>
     public DateTimeOffset At { get; init; }
 
     /// <summary>When the session, the steward or the owner answered it; null while it is pending.</summary>
@@ -169,7 +169,7 @@ public static class IntegrationAnswers
 /// <param name="Requester">Who decided: <see cref="IntegrationRequester.Person"/> or <see cref="IntegrationRequester.Steward"/>.</param>
 public sealed record IntegrationDecide(string Candidate, string Decide, string Requester, DateTimeOffset At);
 
-/// <summary>What a decide answered: the decide that stands (this one, or the first), and why it was refused; null where it was recorded.</summary>
+/// <summary>What a decide answered: the decide that stands (this one, or the first), and why it is refused; null where it is recorded.</summary>
 public sealed record IntegrationDecided(IntegrationDecide? Decide, string? Refused);
 
 /// <summary>A held candidate's decides: <c>land</c> is the person's alone.</summary>
@@ -187,7 +187,7 @@ public static class IntegrationDecides
     public static IReadOnlyList<string> All { get; } = [Split, HandBack, Land];
 }
 
-/// <summary>Why a decide was refused, nothing written.</summary>
+/// <summary>Why a decide is refused, nothing written.</summary>
 public static class IntegrationDecideRefusals
 {
     /// <summary>No such candidate stands.</summary>
@@ -212,7 +212,7 @@ public static class IntegrationOrders
     public static IReadOnlyList<string> All { get; } = [First, Last];
 }
 
-/// <summary>Why an order was refused, nothing written.</summary>
+/// <summary>Why an order is refused, nothing written.</summary>
 public static class IntegrationOrderRefusals
 {
     /// <summary>No such request is open.</summary>
@@ -237,7 +237,7 @@ public sealed record IntegrationMemberChange(string Request, string State)
 /// <summary>A request closed by a step's end, with its reason.</summary>
 public sealed record IntegrationRequestClose(string Request, string Why);
 
-/// <summary>What a take answered: the candidate as it stands, and the new claim; or the reason it was refused (<see cref="IntegrationTakeRefusals"/>).</summary>
+/// <summary>What a take answered: the candidate as it stands, and the new claim; or the reason it is refused (<see cref="IntegrationTakeRefusals"/>).</summary>
 public sealed record IntegrationTaken(IntegrationCandidate? Candidate, IntegrationClaim? Claim, string? Refused);
 
 /// <summary>A candidate's steps, in their order; the request, step 1, is the door's and is kept as the request's own row.</summary>
@@ -337,7 +337,7 @@ public static class IntegrationCandidateEnds
 /// <summary>Why a request is no longer open.</summary>
 public static class IntegrationRequestCloses
 {
-    /// <summary>Its member promoted and settled, or was contained and settled with the member that holds it.</summary>
+    /// <summary>Its member promoted and settled, or contained and settled with the member that holds it.</summary>
     public const string Settled = "settled";
 
     /// <summary>Handed back to its session or the steward, with its words.</summary>
@@ -349,14 +349,14 @@ public static class IntegrationRequestCloses
     public static IReadOnlyList<string> All { get; } = [Settled, HandedBack, Dropped];
 }
 
-/// <summary>Why a take was refused, nothing written.</summary>
+/// <summary>Why a take is refused, nothing written.</summary>
 public static class IntegrationTakeRefusals
 {
     public const string Gone = "gone";
     public const string Ended = "ended";
     public const string Own = "own";
 
-    /// <summary>The generation moved since it was read: another took it first.</summary>
+    /// <summary>The generation moved after the read: another took it first.</summary>
     public const string Moved = "moved";
 
     /// <summary>Its run lives, or cannot be told dead.</summary>
@@ -377,14 +377,14 @@ public static class IntegrationJobs
     public static string NameOf(string candidate) => Prefix + candidate;
 }
 
-/// <summary>The claim no longer holds the candidate: another run took it, or it ended; nothing was written.</summary>
+/// <summary>The claim no longer holds the candidate: another run took it, or it ended; nothing is written.</summary>
 public sealed class IntegrationClaimLostException(IntegrationClaim claim, string why)
     : InvalidOperationException($"candidate {claim.Candidate} is not held by run {claim.Run} at generation {claim.Generation}: {why}. Nothing was written.")
 {
     public IntegrationClaim Claim { get; } = claim;
 }
 
-/// <summary>The write does not follow from the candidate as it stands; nothing was written.</summary>
+/// <summary>The write does not follow from the candidate as it stands; nothing is written.</summary>
 public sealed class IntegrationRefusedException(string candidate, string why)
     : InvalidOperationException($"candidate {candidate}: {why}. Nothing was written.")
 {

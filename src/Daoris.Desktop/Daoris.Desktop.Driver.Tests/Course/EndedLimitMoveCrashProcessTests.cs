@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-vi part b (D212; the foundation design §3.3, §13.4 steps 1 to 5, §19.4, row f-vi's proof): the ended limit move's record holds
+/// The ended limit move's record holds
 /// through a crash at every boundary it passes, as <c>LimitMoveCrashProcessTests</c> proves the live move's. A shell is killed at each place
 /// the ended move's executor passes, and a shell that comes up takes its move up and ends it by its phase; the word the open moved is then
 /// delivered once by the dead shell's write, held uncertain and said, or carried once by its destination's go-on, and never twice; the move is
@@ -31,7 +31,7 @@ public sealed class EndedLimitMoveCrashProcessTests : IAsyncLifetime
 
     /// <summary>What a killed shell's ended move comes to once a shell comes up.</summary>
     /// <param name="Phase">The move's phase after the come-up.</param>
-    /// <param name="Held">The reason it was held, where it was.</param>
+    /// <param name="Held">The reason it is held, where it is held.</param>
     /// <param name="Closed">The reason it closed, where it did.</param>
     /// <param name="OnOldPart">Whether the word still waits on the old record: the open never moved it.</param>
     /// <param name="Wrote">How many messages the dead shell's door wrote to the new part.</param>
@@ -46,7 +46,7 @@ public sealed class EndedLimitMoveCrashProcessTests : IAsyncLifetime
         (Cuts.Decided, true) => new("fell-back", null, null, OnOldPart: true, 0, 0, 0),
         (Cuts.Decided, false) => new("fell-back", null, null, OnOldPart: false, 0, 0, 0),
 
-        // The open asked and never made: held `unrecorded` and closed, nothing opened, the word where it was.
+        // The open asked and never made: held `unrecorded` and closed, nothing opened, the word stays where it is.
         (Cuts.Opening, true) => new("closed", MoveHoldWhy.Unrecorded, MoveCloseWhy.Resolved, OnOldPart: true, 0, 0, 0),
         (Cuts.Opening, false) => new("closed", MoveHoldWhy.Unrecorded, MoveCloseWhy.Resolved, OnOldPart: false, 0, 0, 0),
 

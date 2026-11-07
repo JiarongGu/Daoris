@@ -8,6 +8,7 @@
  * on `main`, change the working tree or a branch, and hold the verdict: a decision number and a row id are refused, so are a
  * history note and a rise in the share; a change that only removes comments, a code-only change, a string that looks like a
  * comment and a moved comment pass. The last case runs the tool's command line.
+ * `--all` is held on a tree whose old comment names a row id (refused) and on a clean one (passes).
  */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -15,7 +16,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { added, checkChange, comments, judge, namings, share } from './comment-gate.mjs';
+import { added, checkAll, checkChange, comments, judge, namings, share } from './comment-gate.mjs';
 import { execGit } from './fsx.mjs';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -180,4 +181,30 @@ test('the command line exits 0 on a clean change, 1 on a breach and 2 where ther
 
 test('judge passes a file that gains code and keeps its comments', () => {
   assert.deepEqual(judge('src/Reads.cs', BASE, `${BASE}public static class Three { }\npublic static class Four { }\n`), []);
+});
+
+test('--all reads every source file: an old comment naming a row id is refused, and a clean tree passes', () => {
+  const clean = repo({ 'src/Reads.cs': BASE, 'tools/Tidy.mjs': '// Says why.\nexport const a = 1;\n', 'src/obj/Gen.cs': '// D99\n', 'README.md': '# D99 was here\n' });
+  assert.deepEqual(checkAll(clean.dir), { problems: [], checked: 2 });
+  const old = repo({ 'src/Old.cs': `${BASE}// Kept for LOG2b, as D12 says: it was once longer.\n` });
+  const { problems, checked } = checkAll(old.dir);
+  assert.equal(checked, 1);
+  assert.equal(problems.length, 3, problems.join('\n'));
+  assert.ok(problems.every((p) => p.startsWith('src/Old.cs:8:')));
+  const run = (dir) => spawnSync(process.execPath, [join(root, 'tools', 'comment-gate.mjs'), '--root', dir, '--all'], { encoding: 'utf8' });
+  assert.equal(run(clean.dir).status, 0);
+  assert.match(run(clean.dir).stdout, /clean \(all 2 source files\)/);
+  const refused = run(old.dir);
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /comment-gate: src\/Old\.cs:8: a comment names a row id \(LOG2b\)/);
+});
+
+test('--all holds a comment the share rule would let pass, since it has no base to measure against', () => {
+  const { dir } = repo({ 'src/Wordy.cs': '// D7 explains.\n// More.\n// More.\npublic static class Wordy { }\n' });
+  assert.equal(checkAll(dir).problems.length, 1);
+});
+
+test('the census marker of child environments is no naming', () => {
+  assert.deepEqual(namings("Not the tools' environment (TOOLS5): git's own git."), []);
+  assert.equal(namings("Not the tools' environment (TOOLS5): see TOOLS6.").length, 1);
 });

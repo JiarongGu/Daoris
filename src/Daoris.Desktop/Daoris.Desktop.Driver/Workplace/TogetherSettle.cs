@@ -28,8 +28,8 @@ internal sealed record RefRead(string? Tip, bool Missing)
 internal sealed record CorrelatedRequest(string Id, bool Settled, bool Closed);
 
 /// <summary>What a restart reads of an attempt's effects.</summary>
-/// <param name="Recorded">A landing record or advance correlated with the attempt was found.</param>
-/// <param name="Request">The request correlated with it, by its id or at the replayed tip; null where none was found.</param>
+/// <param name="Recorded">A landing record or advance correlated with the attempt is found.</param>
+/// <param name="Request">The request correlated with it, by its id or at the replayed tip; null where none is found.</param>
 /// <param name="RequestUnread">The integration store could not be read, so a request may stand unseen.</param>
 /// <param name="Target">The target ref as it stands.</param>
 /// <param name="HoldsPinned">Whether the target's tip holds the pinned tip's work; null where unasked or unread.</param>
@@ -56,7 +56,7 @@ internal static class TogetherSettle
 
     /// <summary>
     /// Read an attempt's effects in <paramref name="root"/>: the target ref, whether its tip holds the pinned tip's work, the request by
-    /// its id or, for a merge whose correlation was never written, the head branch's request at the replayed tip.
+    /// its id or, for a merge whose correlation is not written, the head branch's request at the replayed tip.
     /// </summary>
     /// <param name="recorded">Whether a landing record or advance names the attempt's target at its tip; null where it does not read.</param>
     /// <param name="requestById">The integration store's request by id.</param>
@@ -100,9 +100,9 @@ internal static class TogetherSettle
 
     /// <summary>
     /// The record a landing made before its crash wrote none of, written as the Accept would have: a new branch's landing record, or the
-    /// advance of the one standing, each listing the members. Nothing for a merge, which keeps no record, or where one was found.
+    /// advance of the one standing, each listing the members. Nothing for a merge, which keeps no record, or where one is found.
     /// </summary>
-    /// <returns>Whether a record was written.</returns>
+    /// <returns>Whether a record is written.</returns>
     public static bool WriteMissed(
         string home, TogetherOperation operation, LandingEvidence evidence, string workspace, string? line, DateTimeOffset at)
     {

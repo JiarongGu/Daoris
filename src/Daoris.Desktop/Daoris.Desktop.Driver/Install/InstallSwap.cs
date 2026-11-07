@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A move a held file still refused when the wait for it ran out: the swap's <c>busy</c>, and the only one. Any
-/// other failure of a move is thrown as it was. Its message names each process found holding it, with when it started and
+/// other failure of a move is thrown unchanged. Its message names each process found holding it, with when it started and
 /// its command line, for the journal's detail.
 /// </summary>
 public sealed class HeldMoveException(SwapHold hold, Exception refusal)
@@ -156,7 +156,7 @@ public sealed class InstallSwap(
     /// What a launcher that died left, put right before anything else: a journal still <c>swapping</c> is undone;
     /// one <c>started</c> and never confirmed, with nothing running from <c>app/</c>, is a new application that failed, and
     /// is undone too; one confirmed and never marked installed is installed. The phase it put right to, or null when there
-    /// was nothing to put right; either way the launcher goes on as it would have. A roll-back that stopped part way left
+    /// is nothing to put right; either way the launcher goes on as it would have. A roll-back that stopped part way left
     /// its reason in the journal, and is finished with it.
     /// </summary>
     /// <remarks>
@@ -213,7 +213,7 @@ public sealed class InstallSwap(
 
     /// <summary>
     /// The update met an error: a swap under way is put right from its journal, as a launcher that died is,
-    /// keeping the reason it was undoing for; one started whose application runs is left to it. With no swap under way, an
+    /// keeping the reason it is undoing for; one started whose application runs is left to it. With no swap under way, an
     /// update asked for refuses the staged build as <c>error</c>, so the application is not closed for the same build
     /// again. Never a refusal written over a swap under way, and never <c>busy</c>.
     /// </summary>
@@ -389,7 +389,7 @@ public sealed class InstallSwap(
     /// <remarks>
     /// The reason is journalled before the first move back, and the moves still to undo after each one: a move back
     /// that a hold outlasts throws with the journal still under way, so the launcher's <see cref="AfterError"/>, or the next
-    /// start, finishes it with the reason it was undoing for and never moves a file it already put back. A journal that
+    /// start, finishes it with the reason it is undoing for and never moves a file it already put back. A journal that
     /// already carries a reason is such a finish, and keeps what the first attempt moved to <c>update/failed/</c>.
     /// </remarks>
     private void Undo(SwapRecord record, string reason, string detail)
@@ -457,7 +457,7 @@ public sealed class InstallSwap(
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            // Left where it is: the journal already says it was not installed, and a next stage replaces it.
+            // Left where it is: the journal already says it is not installed, and a next stage replaces it.
         }
     }
 

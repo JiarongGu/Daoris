@@ -19,7 +19,7 @@ public sealed class StateObservedTests : DriverModuleBridge
 {
     private static readonly JsonSerializerOptions Wire = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
-    /// <summary>A route that answers at once with what it was asked to say.</summary>
+    /// <summary>A route that answers at once with what it is asked to say.</summary>
     private sealed class Moving : ModuleBase
     {
         public override string ModuleName => "TEST.OBSERVED";

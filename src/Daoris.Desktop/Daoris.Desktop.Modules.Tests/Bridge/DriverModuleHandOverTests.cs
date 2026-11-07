@@ -66,7 +66,7 @@ public sealed class DriverModuleHandOverTests : DriverModuleBridge
 
     /// <summary>
     /// The person's yes in the window to a conversation's agent's ask, which the take could not go on with: the session's
-    /// record says it was not taken, by the take's own reason in words and what the session does next, never that it was refused.
+    /// record says it is not taken, by the take's own reason in words and what the session does next, never that it is refused.
     /// </summary>
     [Fact]
     public async Task A_yes_the_take_cannot_go_on_with_is_said_as_not_taken_with_its_reason()

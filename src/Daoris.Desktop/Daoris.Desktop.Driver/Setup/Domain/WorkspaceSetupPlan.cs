@@ -153,7 +153,7 @@ public sealed record WorkspaceSetupPreview(string Workspace)
 
     public int Pilot { get; init; } = WorkspaceSetupRules.DefaultPilot;
 
-    /// <summary>The driver's cap when this was read, which bounds <see cref="AtOnce"/>.</summary>
+    /// <summary>The driver's cap when this is read, which bounds <see cref="AtOnce"/>.</summary>
     public int Cap { get; init; }
 
     /// <summary>The agent this machine's driven sessions start on, which would carry each set-up.</summary>

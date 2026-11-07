@@ -22,7 +22,7 @@ public sealed class RoleTerminalTests : Bridge
         return steward is null ? standing : standing.Probing(steward);
     }
 
-    /// <summary>The supervisor's terminal started, the tab a stand-in that keeps the key it was handed.</summary>
+    /// <summary>The supervisor's terminal started, the tab a stand-in that keeps the key it is handed.</summary>
     private static (HoldChange Change, string? Key) Start(StandingConfirmation standing, string? share = "own") =>
         RoleKit.Start(standing, new HoldRequest(AppointedRoles.Supervisor, share));
 

@@ -43,7 +43,7 @@ public static class InstallUpdate
     public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Update);
 
     /// <summary>
-    /// The mode that holds for the build staged now: the request's, where it was said of this build or of whatever is
+    /// The mode that holds for the build staged now: the request's, where it is said of this build or of whatever is
     /// staged; <see cref="UpdateMode.WhenIdle"/> otherwise, so a newer stage drains again after a *Not now*.
     /// </summary>
     public static string ModeFor(UpdateRequest? request, string? staged) => UpdateRequests.ModeFor(request, staged);

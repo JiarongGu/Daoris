@@ -21,7 +21,7 @@ public static class GitSessionHolds
         environment[AzFolder] = Empty(home, "az");
     }
 
-    /// <summary>The folder Daoris keeps for <paramref name="tool"/>'s configuration, made empty where it was not there.</summary>
+    /// <summary>The folder Daoris keeps for <paramref name="tool"/>'s configuration, made empty where it is not there.</summary>
     public static string Empty(string home, string tool)
     {
         var folder = DaorisHome.Entry(home, HomeEntry.GitSessions, "empty", tool);

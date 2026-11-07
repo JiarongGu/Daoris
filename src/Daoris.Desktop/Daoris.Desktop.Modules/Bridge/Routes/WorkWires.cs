@@ -44,7 +44,7 @@ public static class WorkWires
 
     /// <summary>
     /// The node records that do not read as the wire carries them: the file's name, the unit it names where it still
-    /// names one, when it was last written, and the driver's sentence; the page words it in the reader's language.
+    /// names one, when it is last written, and the driver's sentence; the page words it in the reader's language.
     /// </summary>
     public static object[] UnreadableAnswer(IEnumerable<UnreadableRecord> unreadable) =>
         [.. unreadable.Select(each => new { each.File, each.Unit, each.At, Said = HeldAttempts.UnreadableSaid(each) })];

@@ -85,8 +85,8 @@ public static class AttentionWaits
 
     /// <summary>
     /// Each volume still below its free-space floor once the floor's acts ran, as the look's pass said
-    /// it, oldest first: by the volume's identity, since it was said, its root, free space, size and floor as read then, what the floor
-    /// freed in this stretch and what the person's press could free (null where none was read). A volume above its floor by the margin
+    /// it, oldest first: by the volume's identity, since its saying, its root, free space, size and floor as read then, what the floor
+    /// freed in this stretch and what the person's press could free (null where none is read). A volume above its floor by the margin
     /// holds no stretch, so none is said. From the process's memory.
     /// </summary>
     public static IReadOnlyList<object> SpaceWaits(SpaceFloors floors, string home) =>
@@ -120,8 +120,8 @@ public static class AttentionWaits
 
     /// <summary>
     /// The sessions the watcher brings to the person, oldest heard first, from its
-    /// memory: each with its kind and quest, the minutes nothing was heard from it, whether something it runs keeps the machine busy (a row
-    /// offered no end), when it was last heard, and whether the person's words wait to reach it, which ending it hands to the next part.
+    /// memory: each with its kind and quest, the minutes of silence from it, whether something it runs keeps the machine busy (a row
+    /// offered no end), when it is last heard, and whether the person's words wait to reach it, which ending it hands to the next part.
     /// </summary>
     public static IReadOnlyList<object> QuietWaits(SessionWatch watch, SessionProcesses processes) =>
     [
@@ -135,7 +135,7 @@ public static class AttentionWaits
 
     /// <summary>
     /// Each remote the home holds since it could not authenticate, oldest first: its repository,
-    /// workspace, remote, host, class, what it holds, what the transport said (redacted when it was kept) and since when; its way, and what
+    /// workspace, remote, host, class, what it holds, what the transport said (redacted when it is kept) and since when; its way, and what
     /// serves it now as the doors resolve it (the identity a refusal names, or <c>own</c>). No machine path: the checkout
     /// it is keyed by stays in the file.
     /// </summary>

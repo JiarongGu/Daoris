@@ -39,7 +39,7 @@ public sealed class HostSupervisorNoHostTests
 
     /// <summary>
     /// The early start is claimed by one process for an address at a time, so a later launch,
-    /// which the kit's guard hands over after the host was begun, begins none; let go, it is claimed again. Another address is its own.
+    /// which the kit's guard hands over after the host is begun, begins none; let go, it is claimed again. Another address is its own.
     /// </summary>
     [Fact]
     public void The_early_start_is_claimed_once_per_address()
@@ -167,7 +167,7 @@ public sealed class HostSupervisorTests : IDisposable
     }
 
     /// <summary>
-    /// The case itself: a host somebody else started, serving the page it was installed with, and an
+    /// The case itself: a host somebody else started, serving the page it carries, and an
     /// install that carries a different one. The notice names both, so the person can tell which
     /// page they are looking at without listing a folder.
     /// </summary>

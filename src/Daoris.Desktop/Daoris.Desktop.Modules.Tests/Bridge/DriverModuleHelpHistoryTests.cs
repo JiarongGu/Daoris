@@ -110,7 +110,7 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
 
     /// <summary>
     /// The route answers a page, as the terminal does: <c>limit</c> how many, <c>offset</c> where it starts, with how
-    /// many there are and where the next page starts, and <c>cut</c> read as it was, whether this answer left some out. A search
+    /// many there are and where the next page starts, and <c>cut</c>, whether this answer left some out. A search
     /// pages the same way, each find with the line it found its words on.
     /// </summary>
     [Fact]

@@ -56,7 +56,7 @@ internal sealed class KeyedSayService : HttpMessageHandler
     /// <summary>Whether <c>GET /api/protocol</c> answers the <c>presses</c> mark, as a host that checks a person's press does.</summary>
     public bool PressMark { get; init; }
 
-    /// <summary>Every say to a record, in order, and whether it was refused as <c>running</c>.</summary>
+    /// <summary>Every say to a record, in order, and whether it is refused as <c>running</c>.</summary>
     public IReadOnlyList<(string Body, bool Refused)> Said(string session)
     {
         lock (_gate) return [.. _said.Where(post => post.Session == session).Select(post => (post.Body, post.Refused))];

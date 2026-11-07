@@ -43,7 +43,7 @@ public sealed partial class UiStallWatch : IDisposable
     private Timer? _timer;
     private bool _disposed;
 
-    // The probe on its way, by when it was posted; null while none waits.
+    // The probe on its way, by when it is posted; null while none waits.
     private DateTimeOffset? _sent;
 
     // The thread the probes run on, once one has (0 before): a route on another window's thread holds this one up not at all.
@@ -111,7 +111,7 @@ public sealed partial class UiStallWatch : IDisposable
     public TimeSpan Longest { get; init; } = TimeSpan.FromMinutes(1);
 
     /// <summary>Look every <see cref="Every"/> from now on, on a timer of its own.</summary>
-    /// <param name="post">The window's thread, where it was not handed in at construction.</param>
+    /// <param name="post">The window's thread, where it is not handed in at construction.</param>
     public void Start(Func<Action, bool>? post = null)
     {
         lock (_gate)
@@ -209,7 +209,7 @@ public sealed partial class UiStallWatch : IDisposable
                 return;
             }
 
-            // In time: a stall that was open ends here, and what is counted starts again from now.
+            // In time: a stall that is open ends here, and what is counted starts again from now.
             if (_stall is { } ended) Write(ended, ongoing: false);
             Since();
         }

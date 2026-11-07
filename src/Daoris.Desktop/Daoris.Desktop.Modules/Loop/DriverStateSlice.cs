@@ -70,7 +70,7 @@ public static class DriverStateSlice
         new(Name, bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>(Judge(loop)))
         {
             WakesOn = WakesOn,
-            // The file unreadable: the windows keep what was judged, and the page's own reads say the driver's refusal.
+            // The file unreadable: the windows keep the last judgement, and the page's own reads say the driver's refusal.
             Failed = error => loop.Log?.Warn("state.slice", ("slice", Name), ("message", error.Message)),
         };
 

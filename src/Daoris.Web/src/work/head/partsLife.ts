@@ -97,10 +97,10 @@ const LANDING = 'landing';
  * Parts with no `after` branch from the entry's start, which is where a part carried on from a chain's parent hangs too, since it
  * keeps none. A part with an `after` the page does not hold hangs from the start and says which it followed by its id.
  * - **What a part says of itself**: its word as the list shows it, and its quest. Its agent and when it began only where the page
- *   holds that part's session record, since the part keeps neither (`SessionEntries.cs`).
+ * holds that part's session record, since the part keeps neither (`SessionEntries.cs`).
  * - **What is lit**: the part the page is on, and a line says which part's record is the list's row.
  * - **The landing is a plan, not a join**: it is drawn only once Accept's plan is read, as where the parts *would* land, with what
- *   holds or leaves out each on its edge; what did land is the landing flow's.
+ * holds or leaves out each on its edge; what did land is the landing flow's.
  * - A way of beginning this page does not know is shown as recorded (trap 10), hung by what it follows.
  */
 export function partsFlow(

@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// One node of Review's graph: a read, the nodes whose answers it needs, whether it can run a
-/// configured program (Π) and whether it was started before the condition that decides its use (speculative). What the census
+/// configured program (Π) and whether it is started before the condition that decides its use (speculative). What the census
 /// generates depth and starts from.
 /// </summary>
 internal sealed class ReviewRead(string name, IReadOnlyList<ReviewRead> needs, bool program, bool speculative, GitBudget budget)
@@ -32,7 +32,7 @@ internal sealed class ReviewRead(string name, IReadOnlyList<ReviewRead> needs, b
     /// <summary>The longest chain of dependent nodes ending at it, itself counted: 1 + its deepest need's.</summary>
     public int Depth { get; private set; }
 
-    /// <summary>Whether its answer was used: a node not speculative always is; a speculative one only where its condition went its way.</summary>
+    /// <summary>Whether its answer is used: a node not speculative always is; a speculative one only where its condition went its way.</summary>
     public bool Used => !Speculative || Volatile.Read(ref _used) == 1;
 
     /// <summary>Whether it has answered (or failed): what a node needing it waits for.</summary>
@@ -138,7 +138,7 @@ internal sealed class ReviewGraph
             }
             catch (Exception)
             {
-                // Each failure is the flow's own, said where its answer was used; an unused one is dropped with it.
+                // Each failure is the flow's own, said where its answer is used; an unused one is dropped with it.
             }
 
             lock (_gate)

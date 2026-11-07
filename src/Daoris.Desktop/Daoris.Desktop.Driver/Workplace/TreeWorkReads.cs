@@ -27,7 +27,7 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
     /// either: the recovery ref an unforced discard would keep is named, never made.</para>
     ///
     /// <para><b>One commit judged</b>: the tree's commit is read once, and the count and the content proof are
-    /// both asked of that id, so a commit made meanwhile is never half of what was judged.</para>
+    /// both asked of that id, so a commit made meanwhile is never half of what is judged.</para>
     /// </remarks>
     /// <param name="uncommitted">
     /// The tree's uncommitted paths as its door read them a moment before (the look's automatic landing reads them where it
@@ -212,7 +212,7 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
             var root = Path.GetDirectoryName(common.TrimEnd('\\', '/'))!;
             declared ??= await DeclaredAsync(full, common, ct).ConfigureAwait(false);
             var stays = await StaysOfAsync(full, root, declared, ct).ConfigureAwait(false);
-            // The ref a discard keeps its commits at was named when the proof was read; where none was, it is named by a walk.
+            // The ref a discard keeps its commits at is named when the proof is read; where none is, it is named by a walk.
             return (stays is not null ? kept with { Keeps = null, Stays = stays } : kept.Keeps is null ? null : kept with { Stays = null }, declared);
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)

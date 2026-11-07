@@ -7,8 +7,8 @@ import {
 } from '../../scripts/names-check.mjs';
 
 /**
- * The names check (NAME1a, D116): `scripts/names-check.mjs`, beside the parity check. NAME1b turned its
- * facts' half to a gate: `--strict` runs in the web's build and fails on a glossary, form or door finding;
+ * The names check: `scripts/names-check.mjs`, beside the parity check. Its
+ * facts' half is a gate: `--strict` runs in the web's build and fails on a glossary, form or door finding;
  * the budgets report and never fail (`docs/2026-10-01-naming-design.md` §6).
  */
 
@@ -123,9 +123,9 @@ describe('the glossary rules', () => {
   });
 
   /**
-   * NAME1b: *like a git remote* says 远程仓库, git remote's own name, which holds 远程, a word the workspace's
-   * remote must not be called. A term the same English names is its own name, never a stray word.
-   */
+ * *like a git remote* says 远程仓库, git remote's own name, which holds 远程, a word the workspace's
+ * remote must not be called. A term the same English names is its own name, never a stray word.
+ */
   it("does not take another term's name, where the English names that term too, for a stray word", () => {
     const glossary = fixture();
     glossary.terms.push(
@@ -168,9 +168,9 @@ describe('the budgets', () => {
   });
 
   /**
-   * NAME2: a judgement looked at and kept is recorded in the glossary with its reason, and the report stops
-   * repeating it; the acceptance holds the name it accepted, so a rename is judged again.
-   */
+ * A judgement looked at and kept is recorded in the glossary with its reason, and the report stops
+ * repeating it; the acceptance holds the name it accepted, so a rename is judged again.
+ */
   describe('accepted in the glossary', () => {
     const accepting = (names: NonNullable<Glossary['accepted']>['names']): Glossary => ({ ...fixture(), accepted: { names } });
     const budgets = (glossary: Glossary, entries: Record<string, [string, string]>) => {
@@ -256,9 +256,9 @@ describe('the form rules', () => {
   });
 
   /**
-   * UX6j (D150 §2.3): a tab is a place a door names as a view is (*Change in Setup*), so its own name keeps its capitals
-   * mid-label. While the guide was named Setup that name was a domain's and passed by accident; Get started took it back.
-   */
+ * A tab is a place a door names as a view is (*Change in Setup*), so its own name keeps its capitals
+ * mid-label.
+ */
   it("keeps a tab's own name capitalised inside a label, as a view's", () => {
     const glossary = fixture();
     glossary.kinds.tab!.keys.push('page.tab.*');
@@ -298,7 +298,7 @@ describe('the doors', () => {
 });
 
 /**
- * SETUPUX1g (D221, the design's §2.5): no workflow, delivery or step name contains another kind's whole name, in either
+ * No workflow, delivery or step name contains another kind's whole name, in either
  * language. The glossary's `distinct` lists hold the names, a pair of languages each, and the check reports a name that
  * holds another kind's.
  */
@@ -373,19 +373,19 @@ describe('the real glossary and catalogues', () => {
   });
 
   /**
-   * NAME1b: the owner's examples, named as the owner approved them (2026-10-01): Settings' names were
-   * translated, a door had a third name, and a heading named another act than the press under it.
-   */
+ * The owner's examples, named as the owner approved them (2026-10-01): Settings' names were
+ * translated, a door had a third name, and a heading named another act than the press under it.
+ */
   it("name the owner's examples as approved, and the check finds nothing in them", () => {
     const found = check(glossary, en, zh);
     const approved: Record<string, [string, string]> = {
       'settings.domain.ai': ['AI features', 'AI 功能'],
-      // Agents left Settings for a place of its own (UX6e, D150 §5), keeping the name the owner approved; *Agent settings*
+      // Agents left Settings for a place of its own, keeping the name the owner approved; *Agent settings*
       // went with the domain it opened.
       'nav.agents': ['Agents', '智能体'],
       'settings.sync.title': ['Updates', '更新'],
       'settings.sync.look': ['Look for updates', '检查更新'],
-      // The palette's row was its own key until UX7a (D152 §2); Go › Convergence and the palette's *Go to:* read the place's.
+      // Go › Convergence and the palette's *Go to:* read the place's.
       'nav.convergence': ['Convergence', '同归'],
       // The owner's two calls: the view of repositories is named for them, and an ask is 需求.
       'nav.projects': ['Repositories', '仓库'],
@@ -398,9 +398,9 @@ describe('the real glossary and catalogues', () => {
   });
 
   /**
-   * NAME2: DEV4 put a quest's lanes on the window (D115 §2.2) after NAME1's glossary was written, so the
-   * concept had no term and the drawer's *Lanes* no kind. A lane is 泳道 wherever either language names it.
-   */
+ * A quest's lanes on the window need a glossary term, so the
+ * concept has one and the drawer's *Lanes* no kind. A lane is 泳道 wherever either language names it.
+ */
   it('name a lane 泳道 wherever it is said, and read the drawer\'s Lanes as a field', () => {
     const lane = glossary.terms.find((term) => term.term === 'lane');
     expect([lane?.en, lane?.zh]).toEqual(['lane', '泳道']);
@@ -413,16 +413,16 @@ describe('the real glossary and catalogues', () => {
   });
 
   /**
-   * NAME2, seen on the install: a plugin's switch read 关闭, close's word, so *Turn off* said *close* as much
-   * as *turn off*, and an off plugin wore a closed quest's 已关闭. The glossary settles the pair, and the
-   * check holds every label whose English turns a plugin on or off to it.
-   */
+ * A plugin's switch read 关闭, close's word, so *Turn off* said *close* as much
+ * as *turn off*, and an off plugin wore a closed quest's 已关闭. The glossary settles the pair, and the
+ * check holds every label whose English turns a plugin on or off to it.
+ */
   it("name a plugin's switch 启用 and 停用, never close's 关闭", () => {
     const byTerm = new Map(glossary.terms.map((term) => [term.term, term]));
     expect([byTerm.get('turn on')?.en, byTerm.get('turn on')?.zh]).toEqual(['turn on', '启用']);
     expect([byTerm.get('turn off')?.en, byTerm.get('turn off')?.zh]).toEqual(['turn off', '停用']);
     expect(byTerm.get('turn off')?.avoid.zh).toContain('关闭');
-    // The list's On and Off headings retired with the catalogue (PLUGUI2, D140 §5): the state is each row's word.
+    // The list's On and Off headings retired with the catalogue: the state is each row's word.
     const named: Record<string, [string, string]> = {
       'plugin.enable': ['Turn on', '启用'],
       'plugin.disable': ['Turn off', '停用'],
@@ -439,9 +439,9 @@ describe('the real glossary and catalogues', () => {
   });
 
   /**
-   * NAME2 went through the budget judgements NAME1b left by kind: a shorter name where it says the same as
-   * well, an acceptance with its reason where the length is the name, and the rest left for the window.
-   */
+ * The budget judgements go by kind: a shorter name where it says the same as
+ * well, an acceptance with its reason where the length is the name, and the rest left for the window.
+ */
   it('name the budget judgements NAME2 renamed by the shorter names that say the same', () => {
     const renamed: Record<string, [string, string]> = {
       'help.proposal.titleSync': ['Ask Daoris proposes updates', '问道衍提议更新到最新'],
@@ -460,21 +460,21 @@ describe('the real glossary and catalogues', () => {
     const left = check(glossary, en, zh).filter(({ rule }) => rule === 'budget').map(({ key, language }) => `${key}:${language}`).sort();
     expect(left).toEqual([
       'help.setup:en', 'help.setup:zh',
-      // CHATFLOW1d: the chat-flow design's own words for the press past the look (§5), a menu row that wraps rather than clipping.
+      // The chat-flow design's own words for the press past the look (§5), a menu row that wraps rather than clipping.
       'review.act.withoutLook:en',
       'scope.every:en', 'scope.every:zh',
       'signin.titleNew:en', 'signin.titleNew:zh',
-      // MIXAGENT1b-i: the owner's own name for the act, a menu row that wraps in the ⋯ rather than clipping.
+      // The owner's own name for the act, a menu row that wraps in the ⋯ rather than clipping.
       'work.act.handOver:en',
       'work.group.noCheckout:en',
     ]);
   });
 
   /**
-   * NAME1b turned the facts' half to a gate: the build runs `--strict` beside the parity check, and it
-   * passes, because no label breaks the glossary, its form or its door. The budgets still report and never
-   * gate (D54): a character count estimates a width, and the window is where a width is a fact.
-   */
+ * The facts' half is a gate: the build runs `--strict` beside the parity check, and it
+ * passes, because no label breaks the glossary, its form or its door. The budgets still report and never
+ * gate: a character count estimates a width, and the window is where a width is a fact.
+ */
   it('find no glossary, form or door finding, so --strict passes, while the budgets still report', () => {
     const found = check(glossary, en, zh);
     expect(found.filter((finding) => finding.rule !== 'budget' && finding.rule !== 'reword').map(({ key, rule, language }) => `${key} ${rule}:${language}`))
@@ -491,9 +491,9 @@ describe('the real glossary and catalogues', () => {
   }, 90_000);
 
   /**
-   * FOUNDATION1u: the role is 角色 in both its shapes, so a label that says Actor, Actors or Roles in English must say it
-   * in Chinese, and a sentence that says *role* must not call it 职责 (the words *role*'s entry avoids), under `--all`.
-   */
+ * The role is 角色 in both its shapes, so a label that says Actor, Actors or Roles in English must say it
+ * in Chinese, and a sentence that says *role* must not call it 职责 (the words *role*'s entry avoids), under `--all`.
+ */
   it('hold the role to 角色: its labels say it and no sentence about a role says 职责', () => {
     const labels = ['work.role.title', 'settings.ai.roles.title', 'settings.daoris.label.roles'];
     const sentence = 'projects.supervisor.refused.window-only';
@@ -506,10 +506,10 @@ describe('the real glossary and catalogues', () => {
   });
 
   /**
-   * SETUPUX1g (D221, the design's §2.5): the glossary holds every name the Setup mode's rows will write before a visible row
-   * writes one. Each row is a term with its two names and the words it must not be called, or an amended term; the names of
-   * workflows, deliveries and steps are the `distinct` lists.
-   */
+ * The glossary holds every name the Setup mode's rows will write before a visible row
+ * writes one. Each row is a term with its two names and the words it must not be called, or an amended term; the names of
+ * workflows, deliveries and steps are the `distinct` lists.
+ */
   describe('hold the Setup design\'s words (SETUPUX1g)', () => {
     type Row = { term: string; en: string; zh: string; zhForms?: string[]; avoidZh?: string[] };
     const rows: Row[] = [
@@ -564,9 +564,9 @@ describe('the real glossary and catalogues', () => {
     });
 
     /**
-     * The words the rewording row (SETUPUX1w) moved from `avoid.later` into `avoid`: no catalogue string says them for their
-     * term, and a planted one fails the glossary rule, which `--strict` gates.
-     */
+ * The words the rewording row moved from `avoid.later` into `avoid`: no catalogue string says them for their
+ * term, and a planted one fails the glossary rule, which `--strict` gates.
+ */
     it('forbids the words of the old Setup names, in the catalogues and on a planted string', () => {
       expect(glossary.terms.filter((term) => term.avoid.later)).toEqual([]);
       const unsaid = ['打开设置', '搁置', '委任', '范围', '关卡', '检查', '关口', '交付', '当前', '回到前面的步骤'];
@@ -649,11 +649,11 @@ describe('the real glossary and catalogues', () => {
   });
 
   /**
-   * A sentence's words are held only under `--all`, which reports; what it still finds are words a sentence
-   * rightly says of something else (the audit's §5 lists them): a browser's or Windows' profile, a request's
-   * value no application accepts, a process that ended. *helper* is no longer one of them: since MIXAGENT3a-i a
-   * helper is its own term (D163), so a note that says it and git's credential helper are no stray word for Ask Daoris.
-   */
+ * A sentence's words are held only under `--all`, which reports; what it still finds are words a sentence
+ * rightly says of something else (the audit's §5 lists them): a browser's or Windows' profile, a request's
+ * value no application accepts, a process that ended. *helper* is no longer one of them: a
+ * helper is its own term, so a note that says it and git's credential helper are no stray word for Ask Daoris.
+ */
   it("say in sentences only what the audit found to be another thing's word", () => {
     const stray = check(glossary, en, zh, { all: true })
       .filter((finding) => finding.rule === 'glossary' && finding.kind === 'sentence')
@@ -665,13 +665,13 @@ describe('the real glossary and catalogues', () => {
       // 远端 is the glossary's own word for a Daoris remote, which this sentence means; git remote's entry avoids it (FABRIC-CLOSE1i2).
       'projects.workspace.machines.none:zh',
       'settings.browser.which.hintDaoris:en', 'settings.browser.which.hintEdge:en',
-      // COWORKVIEW1a: a subagent its hook said stopped, which says no outcome, is 已结束, never done's 已完成 (the cowork view design §5.4).
+      // A subagent its hook said stopped, which says no outcome, is 已结束, never done's 已完成 (the cowork view design §5.4).
       'work.atWork.child.finished:zh',
     ]);
   });
 });
 
-/** D222: the page's languages are the catalogues present, so the names check holds a third one beside English and Chinese. */
+/** The page's languages are the catalogues present, so the names check holds a third one beside English and Chinese. */
 describe('a third catalogue', () => {
   const base = catalogues({
     'area.new': ['New quest', '新建委托'], 'nav.quests': ['Quests', '委托'], 'area.title': ['Area', '区域'], 'menu.go': ['Go to quests', '前往委托'],

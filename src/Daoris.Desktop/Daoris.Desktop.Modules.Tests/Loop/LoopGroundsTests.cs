@@ -70,7 +70,7 @@ public sealed class LoopGroundsTests : DriverModuleBridge
 
     /// <summary>
     /// A terminal's attachments are read by their bytes, so a file replaced at the
-    /// same path moves the press; a path that is no rooted file is bound as it was given.
+    /// same path moves the press; a path that is no rooted file is bound as given.
     /// </summary>
     [Fact]
     public async Task A_terminal_s_attachments_are_read_by_their_bytes()

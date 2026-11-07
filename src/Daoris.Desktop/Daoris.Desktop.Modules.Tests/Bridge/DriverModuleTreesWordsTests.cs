@@ -99,7 +99,7 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
         Assert.Equal(0, Said(answer).Code);
     }
 
-    /// <summary><c>trees sync --yes</c>: fetches, takes the verb's scope, and says what was left apart and what the registry followed.</summary>
+    /// <summary><c>trees sync --yes</c>: fetches, takes the verb's scope, and says what is left apart and what the registry followed.</summary>
     [Fact]
     public async Task A_sync_press_that_takes_no_checkout_says_so_as_the_verb_does()
     {

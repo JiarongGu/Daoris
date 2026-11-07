@@ -22,7 +22,7 @@ public sealed record ChangesRead(
 /// **The Changes tab's read**. Three observations, each fresh, started through the
 /// counting seam as a question under its own flags: HEAD to index (<c>diff --cached HEAD</c>), index to worktree (<c>diff</c>,
 /// the index not refreshed) and status's untracked and unmerged entries (<c>--porcelain=v2</c>). Nothing is kept across calls and no
-/// memo of a landing or a judgement answers one; a staged addition whose file was then removed is in both diffs.
+/// memo of a landing or a judgement answers one; a staged addition whose file is then removed is in both diffs.
 /// </summary>
 public static class GitChanges
 {

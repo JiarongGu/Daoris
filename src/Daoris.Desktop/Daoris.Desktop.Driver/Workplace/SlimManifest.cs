@@ -240,7 +240,7 @@ internal sealed record SlimManifest(
 /// <param name="GrewFrom">The commit it grew from, from <c>session-branches.json</c>; null where none is kept.</param>
 /// <param name="Unit">Its work unit, where <c>session-branches.json</c> names one.</param>
 /// <param name="Ref">The recovery ref at the tip, or null where <c>refs/heads/&lt;line&gt;</c> held it by ancestry.</param>
-/// <param name="Whole">Whether <c>whole</c> was set at the move.</param>
+/// <param name="Whole">Whether <c>whole</c> is set at the move.</param>
 internal sealed record FinishedTree(
     DateTimeOffset Read, string Workspace, string Tree, string? Line, string Tip, string? GrewFrom, string? Unit, FinishedHold Hold, string? Ref,
     FinishedLeft Left, bool Whole)
@@ -256,13 +256,13 @@ internal sealed record FinishedTree(
     internal string? LandingWhy { get; init; }
 }
 
-/// <summary>A landing as the record names it: the branch it made, the line, when it landed, and its pull request where one was opened.</summary>
+/// <summary>A landing as the record names it: the branch it made, the line, when it landed, and its pull request where one is opened.</summary>
 internal sealed record FinishedLanding(string Branch, string? Line, DateTimeOffset At, string? PullRequest);
 
 /// <summary>
 /// A removal's own record beside its folder in <c>.tidied/.going</c>: which door removed it, when, the
 /// threshold a later write is read against, and whether its delete began. A stop before the delete moves the folder back whole; one after
-/// it finishes only where nothing was written in it since and, for the hour's door, its holding check passes again; else what remains goes
+/// it finishes only where nothing is written in it since and, for the hour's door, its holding check passes again; else what remains goes
 /// back, saying why. Its manifest moves into <c>.going</c> with it, and back with it.
 /// </summary>
 /// <param name="Door"><c>hour</c>, <c>days</c> or <c>press</c>.</param>
@@ -377,7 +377,7 @@ public static class SlimStates
 /// <summary>Why the slim kept a path: a manifest's <c>why</c>, and the machine log's <c>tidied.slimmed</c> count.</summary>
 public static class SlimKept
 {
-    /// <summary>Something in its folder was written after the move: the folder is kept whole for its days (step 1).</summary>
+    /// <summary>Something in its folder is written after the move: the folder is kept whole for its days (step 1).</summary>
     public const string Written = "written";
 
     /// <summary>A link lies on the way from the trees home to it, it included, or its folder holds a link outside a build folder (step 2).</summary>

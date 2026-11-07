@@ -77,13 +77,13 @@ const isState = (value: unknown): value is SessionState => (SESSION_STATES as re
  * @remarks
  * **It claims only what the record holds** (trap 19):
  * - **No path.** The record keeps where a session stands, not how it got there, so no state before the lit one is drawn
- *   reached or not; only the outcomes are not reached while the record is live. No state is given an entry time either:
- *   `updated` is the last write, not when the session entered its state.
+ * reached or not; only the outcomes are not reached while the record is live. No state is given an entry time either:
+ * `updated` is the last write, not when the session entered its state.
  * - **The outcomes are one node.** The reached member is lit and the person's stop is said once on the node, not drawn from
- *   each live state. Going on leaves only the members the ledger lets it leave, so the node says a stand-down never goes on,
- *   and a record that can never go on has the move drawn refused, with its reason.
+ * each live state. Going on leaves only the members the ledger lets it leave, so the node says a stand-down never goes on,
+ * and a record that can never go on has the move drawn refused, with its reason.
  * - **The shown word** (*idle*, *parked*, *awaiting reply*, *answered*, *going on*) is the page's reading over the record's
- *   state, and appears on the lit node in its own tone, where it differs from the node's own name.
+ * state, and appears on the lit node in its own tone, where it differs from the node's own name.
  * - A state this page does not know is lit as recorded (trap 10), with no move drawn to or from it.
  */
 export function sessionFlow(t: Translate, session: SessionOfLife, shown?: ShownState): SessionLife {

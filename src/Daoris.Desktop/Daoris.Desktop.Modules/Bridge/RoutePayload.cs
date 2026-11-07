@@ -27,7 +27,7 @@ public enum PayloadRead
 
     /// <summary>
     /// <c>JsonElement?</c>: the value as sent, a JSON null kept as one; null only where the field is absent, so it also says whether
-    /// the field was sent at all. For a shape another reader owns: a graph, a rule's object.
+    /// the field is sent at all. For a shape another reader owns: a graph, a rule's object.
     /// </summary>
     Json,
 

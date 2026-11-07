@@ -49,7 +49,7 @@ public sealed class SupervisorScopeTests : IDisposable
         return standing.Staff(staffed);
     }
 
-    /// <summary>A role's terminal started, the tab a stand-in that keeps the key it was handed.</summary>
+    /// <summary>A role's terminal started, the tab a stand-in that keeps the key it is handed.</summary>
     private static (HoldChange Change, string? Key) Start(StandingConfirmation standing, string role) =>
         RoleKit.Start(standing, new HoldRequest(role, "own"));
 

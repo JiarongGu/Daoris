@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>The supplied facts used to read what Daoris left in the person's tool home.</summary>
+/// <summary>The supplied facts for reading what Daoris left in the person's tool home.</summary>
 public interface IToolHomeWorld
 {
     string? Home { get; }

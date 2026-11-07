@@ -371,12 +371,12 @@ public sealed class PipeHoldTests : Bridge
 
     private Task<JsonElement> PipeNotificationAsync(PipeClient client, string type) => NotificationOfAsync(client, InstancePipe.Module, type);
 
-    /// <summary>The notifications already taken, by their envelope's id: one kept while an answer was awaited is taken once.</summary>
+    /// <summary>The notifications already taken, by their envelope's id: one kept while an answer is awaited is taken once.</summary>
     private readonly HashSet<string> _taken = new(StringComparer.Ordinal);
 
     /// <summary>
     /// The payload of the next notification of <paramref name="module"/>'s <paramref name="type"/> not taken yet: first among those kept while
-    /// an answer was awaited, then read on past any other notification.
+    /// an answer is awaited, then read on past any other notification.
     /// </summary>
     private async Task<JsonElement> NotificationOfAsync(PipeClient client, string module, string type)
     {

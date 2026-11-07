@@ -354,7 +354,7 @@ internal static class LandedBranchJson
         return carried;
     }
 
-    /// <summary>One entry, or null where it lacks what makes it one: a repository, a branch, the commit it was made at, a session.</summary>
+    /// <summary>One entry, or null where it lacks what makes it one: a repository, a branch, the commit it is made at, a session.</summary>
     internal static LandedBranch? Read(JsonElement element)
     {
         if (element.ValueKind != JsonValueKind.Object) return null;

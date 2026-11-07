@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// Where a door says it is waiting behind another landing: the press's page and the
 /// terminal's verb each hand a callback for the call they make, and <see cref="LandingHolds"/> calls it with true before it waits for a
-/// tree's or a branch's hold, and with false once the wait is over, whether the hold was taken or not. A door that waits for nothing
+/// tree's or a branch's hold, and with false once the wait is over, whether the hold is taken or not. A door that waits for nothing
 /// calls it never, so an uncontended landing says nothing new.
 /// </summary>
 /// <remarks>
@@ -26,7 +26,7 @@ public static class LandingHoldNotice
         return new Restore(before);
     }
 
-    /// <summary>A door says it waits (true) or has stopped (false) to the callback of the call it runs in; to nobody where none was handed.</summary>
+    /// <summary>A door says it waits (true) or has stopped (false) to the callback of the call it runs in; to nobody where none is handed.</summary>
     public static void Waiting(bool waiting, LandingHolder? behind = null) => Current.Value?.Invoke(waiting, behind);
 
     private sealed class Restore(Action<bool, LandingHolder?>? before) : IDisposable

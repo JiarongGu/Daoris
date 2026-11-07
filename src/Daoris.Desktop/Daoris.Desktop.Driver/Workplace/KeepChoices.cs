@@ -19,7 +19,7 @@ public sealed record KeepSet(
 {
     /// <summary>
     /// The size of the Daoris folder's volume in bytes, where the door read it: a floor's size is judged against half of it. Null
-    /// where it was not read; each volume's floor is then still at most half of that volume (<see cref="FloorPolicy.Of"/>).
+    /// where it is not read; each volume's floor is then still at most half of that volume (<see cref="FloorPolicy.Of"/>).
     /// </summary>
     public long? Volume { get; init; }
 }

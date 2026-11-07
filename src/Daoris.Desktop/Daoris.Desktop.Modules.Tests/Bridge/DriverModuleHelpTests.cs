@@ -52,7 +52,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
 
     /// <summary>
     /// A go card's dismiss is a view act. Its card is settled, so no window draws it again, and the answer says the
-    /// conversation was told nothing: a go changes nothing, so its dismiss is no word on the quest it names.
+    /// conversation is told nothing: a go changes nothing, so its dismiss is no word on the quest it names.
     /// </summary>
     [Fact]
     public async Task Dismissing_a_go_card_settles_it_and_tells_the_conversation_nothing()

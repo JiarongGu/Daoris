@@ -271,7 +271,7 @@ internal sealed class PipeClient : IAsyncDisposable
         return await AnswerAsync(id);
     }
 
-    /// <summary><c>RESULT</c> for <paramref name="id"/>, with the key it was sent with (this client's, unless one is named), answered.</summary>
+    /// <summary><c>RESULT</c> for <paramref name="id"/>, with the key it is sent with (this client's, unless one is named), answered.</summary>
     public async Task<JsonElement> ResultAsync(string id, string? key = null)
     {
         var answer = await ResultAnswerAsync(id, key);
@@ -340,7 +340,7 @@ internal sealed class PipeClient : IAsyncDisposable
         }
     }
 
-    /// <summary>The answer to <paramref name="id"/>, keeping what was told on the way and the answers to other ids, which come in any order.</summary>
+    /// <summary>The answer to <paramref name="id"/>, keeping what is told on the way and the answers to other ids, which come in any order.</summary>
     public async Task<JsonElement> AnswerAsync(string id)
     {
         if (_answers.Remove(id, out var kept)) return kept;

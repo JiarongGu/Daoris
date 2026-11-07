@@ -45,5 +45,5 @@ public sealed class ChannelJoinRoutes(DriverLoop loop)
     }
 }
 
-/// <summary>What a join answers the window: whether the member was admitted, the member, or the service's code.</summary>
+/// <summary>What a join answers the window: whether the member is admitted, the member, or the service's code.</summary>
 public sealed record ChannelJoinAnswer(bool Joined, ChannelMemberView? Member, string? Code);

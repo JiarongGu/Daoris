@@ -1,30 +1,28 @@
 import { expect, test, type Page } from '@playwright/test';
 import { measureRecordHead, type RecordHeadMeasure } from './recordHead';
 
-// The record head's budget, measured (MILESTONEUX1; the UI/UX design §3.7 and §9 row 6; UX7's budget, the UX7 design §6.2):
+// The record head's budget, measured:
 // how far down the main area the conversation starts, with every block of the head present (the page head, the parts, the one
 // Accept, the chain's line, the relations, the channel, the milestone's line and the trace's line), drawn in a real browser at the
 // three widths the frame gives (`MAIN_WIDTHS`), in English and 中文. jsdom lays nothing out, so no unit test can hold it. The
 // stories are `work/AttendedSession.head.stories.tsx`.
-//
-// UX7's 200 px binds a typical record (HEADFIT1b; D185's MILESTONEUX1, HEADFIT1 and HEADFIT1b notes): its page head, the record's
+// The 200 px budget binds a typical record: its page head, the record's
 // head and *Details*, the chain's line and one folded line, the trace's, drawn as stories of their own and held to the budget. The
 // head with every block is a ratchet: the folds took it from 806-1030 px to 375-472 and the head's blocks 8 px apart, not 16, to
 // 307-404; what remains is the page head, the folded lines' own heights and the 8 px between nine blocks. Its budget stays a test
 // expected to fail, which turns red the day a head fits it and says to remove the mark, and the head's height today is a ceiling a
 // change that makes it worse fails. Each fold's cost is held exactly: the milestone's, the parts' and the relations' is one line
 // where the main area is wide (two where its words wrap), and opening one moves what is under it and nothing above.
-//
 // `npm --prefix src/Daoris.Web run e2e:measured -- --grep head/`.
 
-/** UX7's budget: the conversation's top, down from the main area's top, in px. */
+/** The budget: the conversation's top, down from the main area's top, in px. */
 const BUDGET = 200;
 const WIDTH_PX = { wide: 80 * 16, half: 39 * 16, narrow: 25 * 16 } as const;
 /** The milestone's label, as its region is named in each language. */
 const MILESTONE = { en: 'Where this work stands', zh: '这项工作进展到哪里' } as const;
 
 /**
- * The other two folds (HEADFIT1): the block as its landmark is named in each language, the press that opens it, the press that
+ * The other two folds: the block as its landmark is named in each language, the press that opens it, the press that
  * folds it again, and the least it grows by opening, so a fold that opened nothing fails.
  */
 const FOLDS = [
@@ -40,9 +38,8 @@ const FOLDS = [
 /**
  * Each story, by its book and name: the main-area width it is drawn at, its language, and the head's height today with the
  * margin a font's rounding needs. A change that draws the head taller fails; one that draws it shorter lowers its ceiling.
- * Measured 2026-10-20, HEADFIT1b: 307, 324 and 342 px in English, 307, 307 and 324 in 中文, the head's blocks 8 px apart, the page
- * head's acts beside its title and the chain one line (375, 433, 472, 375, 416 and 455 before, HEADFIT1; 806, 916, 995, 806, 881
- * and 1030 before the parts and the relations folded).
+ * Measured 2026-10-20: 307, 324 and 342 px in English, 307, 307 and 324 in 中文, the head's blocks 8 px apart, the page
+ * head's acts beside its title and the chain one line.
  */
 const TABLE: Record<string, { width: keyof typeof WIDTH_PX; language: keyof typeof MILESTONE; ceiling: number }> = {
   'head/Wide': { width: 'wide', language: 'en', ceiling: 317 },
@@ -76,7 +73,7 @@ async function open(page: Page, story: string): Promise<RecordHeadMeasure> {
 const said = (measured: RecordHeadMeasure) => measured.blocks.map((block) => `${Math.round(block.height)} px ${block.name}`).join('; ');
 
 /**
- * The typical record's stories (HEADFIT1b): the width and the language, and the name *Stop…* and the chain's press carry there.
+ * The typical record's stories: the width and the language, and the name *Stop…* and the chain's press carry there.
  * Measured 2026-10-20: 167 px at every width in either language, the page head 70 px with its acts beside the title and the
  * chain's line 30 (208 at half and 229 at the English floor when the acts took a row under the facts and the press wrapped).
  */
@@ -131,7 +128,7 @@ for (const [story, { width, language, ceiling }] of Object.entries(TABLE)) {
   test(`${story} at ${width}: every block of the head is drawn, the milestone, the parts and the relations folded to one line (two where it wraps), the head no taller than today`, async ({ page }) => {
     const measured = await open(page, story);
     expect(measured.width, `the main area is ${WIDTH_PX[width]} px, not ${measured.width}`).toBe(WIDTH_PX[width]);
-    // The page head (its *Accept all* the session's work to land since REVIEWFLOW1a, no block of its own), the head's own line, the
+    // The page head (its *Accept all* the session's work to land, no block of its own), the head's own line, the
     // parts, the chain's line, the relations, the channel, the milestone and the trace: a head that lost one would pass its ceiling
     // by losing what it measures.
     expect(measured.blocks.length, `the blocks: ${said(measured)}`).toBe(8);
@@ -224,7 +221,7 @@ for (const [story, { width, language, ceiling }] of Object.entries(TABLE)) {
       }
       expect(opened.down - folded.down, `the conversation moves down by what ${fold.block.en} grew`).toBeCloseTo(grew, 0);
 
-      // The press back folds it to the line it was.
+      // The press back folds it to its line.
       await page.getByRole('button', { name: fold.hide[language] }).click();
       await expect(page.getByRole('button', { name: fold.show[language] })).toBeVisible();
       const again = await settled(page);

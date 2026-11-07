@@ -12,7 +12,7 @@ public sealed class TogetherRoutes(DriverContext context)
 
     /// <summary>
     /// The operation bringing sessions together a session is in, its open one first, else
-    /// its newest: the phase on its head's page and each member's, and where it was brought into. None where it is in none.
+    /// its newest: the phase on its head's page and each member's, and where it is brought into. None where it is in none.
     /// </summary>
     [DriverRoute("TOGETHER", PipeClass.Open)]
     [ByEvent("TOGETHER", Untold = "the operations file, which the look rewrites at each look and the presses rewrite")]

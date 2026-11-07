@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>One record ended because nothing on this machine was running it.</summary>
+/// <summary>One record ended because nothing on this machine is running it.</summary>
 public sealed record OrphanEnded(string Id, string Repository)
 {
     /// <summary>The quest it served, or null: whether its done lands at the next look.</summary>
@@ -33,7 +33,7 @@ public sealed record OrphanEnded(string Id, string Repository)
 /// and the markers are that home's. A second home driving the same host would see the first's
 /// sessions as unmarked, which is why nothing but a driver's own loop and a person's stop ever asks.</para>
 ///
-/// <para><b>Ended <c>stopped</c></b>, as the driven path records a session the driver was closed under:
+/// <para><b>Ended <c>stopped</c></b>, as the driven path records a session at the driver's close:
 /// what ended it is not known, only that nothing runs it, and the note says exactly that. The sweep's stop
 /// is <b>interrupted</b>, not the person's, so a take it ended is carried on; the person's stop on
 /// one record is theirs, since they asked about that one, and never is.</para>
@@ -67,7 +67,7 @@ public static class Orphans
         {
             if (only is not null && !string.Equals(session.Id, only, StringComparison.OrdinalIgnoreCase)) continue;
             // The person's stop takes a start that never spawned, `starting` or still `queued` (an Ask Daoris start left
-            // `queued` by a driver that went held the room, and every later start was refused naming it). The sweep takes one only
+            // `queued` by a driver that went held the room, and every later start is refused naming it). The sweep takes one only
             // where the process that opened it is proven gone: a live opener here is still starting it.
             var claimsProcess = session.State == "working"
                 || (session.State is "starting" or "queued" && (only is not null || processes.OpenerWent(session.Id)));
@@ -90,7 +90,7 @@ public static class Orphans
 
     /// <summary>
     /// What the record of a lost session gains as it ends: where its quest closed done and waits on its evidence, the
-    /// commits since its base and what was read at its tree's HEAD; null for every other, which ends as before. A quest the
+    /// commits since its base and what is read at its tree's HEAD; null for every other, which ends as before. A quest the
     /// service does not answer is not read: the sweep's work is ending the record.
     /// </summary>
     private static async Task<string?> LostDoneAsync(ServiceClient service, SessionView session, WorkingTree.GitRead git, CancellationToken ct)

@@ -3,7 +3,7 @@ using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
 
-/// <summary>Ask Daoris's <c>account</c> proposal (HELP6): an account's own model and effort, by <c>SET_AGENT_SETTINGS</c>'s rules.</summary>
+/// <summary>Ask Daoris's <c>account</c> proposal: an account's own model and effort, by <c>SET_AGENT_SETTINGS</c>'s rules.</summary>
 public sealed class HelpAccountProposalsTests : HelpProposalsFixture
 {
     private static HelpProposal Account(string agent, string? account, string? model, string? effort) =>

@@ -5,12 +5,12 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What a landing judged before it lands: the repository's checkout, the tree's branch and tip, the line and the commit
-/// of it the tree was judged against, and what the line holds of the tree's commits (<see cref="LineHolds"/>).
+/// of it the tree is judged against, and what the line holds of the tree's commits (<see cref="LineHolds"/>).
 /// </summary>
 /// <param name="OntoName">How the line's commit is named in words: the line, or <c>origin/&lt;line&gt;</c> where origin's is newer.</param>
 internal sealed record LandSync(string Root, string Branch, string Line, string Onto, string OntoName, string Tip, LineHeld Held);
 
-/// <summary>What a landing's replay made: the new tip, the commits on it beyond what it was replayed onto, and what was left out.</summary>
+/// <summary>What a landing's replay made: the new tip, the commits on it beyond what it replayed onto, and what is left out.</summary>
 /// <param name="LeftOut">What the line holds, with what the replay found empty among the kept, oldest first.</param>
 internal sealed record LandReplay(string Now, IReadOnlyList<LandingCommit> Landed, IReadOnlyList<LeftOutCommit> LeftOut)
 {
@@ -22,7 +22,7 @@ internal sealed record LandReplay(string Now, IReadOnlyList<LandingCommit> Lande
 
     /// <summary>
     /// Those written again from the replayed tree by the writers the person accepted: the files its commit changed and the
-    /// commands run, or why they were not; nothing run where none was accepted.
+    /// commands run, or why they are not; nothing run where none is accepted.
     /// </summary>
     public GeneratedWriters.Written Written { get; init; } = GeneratedWriters.Written.None;
 
@@ -91,7 +91,7 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
     /// <summary>
     /// The press's one fetch of the line a tree's landing is judged against, for an entry's Accept, which fetches once before
     /// its parts and judges each against it: the same fetch <see cref="JudgeAsync"/> makes. Its words where it failed,
-    /// said once; null where it fetched, where there was nothing to fetch, or where the tree has no line to judge against.
+    /// said once; null where it fetched, where there is nothing to fetch, or where the tree has no line to judge against.
     /// </summary>
     internal async Task<string?> FetchLineAsync(string full, string repository, string workspace, CancellationToken ct)
     {
@@ -365,7 +365,7 @@ public static class LandingSyncWords
         : $" The backlog `{path}` conflicted with the line's and was settled by the merge base: {kept} line(s) a side added kept, "
           + $"{dropped} line(s) a side removed dropped.";
 
-    /// <summary>The commits the replay found empty, said after the sentence; nothing where none was.</summary>
+    /// <summary>The commits the replay found empty, said after the sentence; nothing where none is.</summary>
     public static string Emptied(IReadOnlyList<LeftOutCommit> leftOut)
     {
         var empty = leftOut.Where(each => each.Why == LeftOutWhy.Empty).ToList();
@@ -381,7 +381,7 @@ public static class LandingSyncWords
         return (held.Count == 0 ? "" : $" It left out {held.Count} the line holds: {string.Join(", ", held.Select(Each))}.") + Emptied(leftOut);
     }
 
-    /// <summary>What a refusal left out, said beside it; nothing where nothing was.</summary>
+    /// <summary>What a refusal left out, said beside it; nothing where nothing is.</summary>
     public static string LeftOutSentence(IReadOnlyList<LeftOutCommit> leftOut) =>
         leftOut.Count == 0 ? "" : $" The line already holds {string.Join(", ", leftOut.Select(Each))}.";
 

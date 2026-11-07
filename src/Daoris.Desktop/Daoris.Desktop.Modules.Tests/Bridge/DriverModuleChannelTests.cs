@@ -344,7 +344,7 @@ public sealed class DriverModuleChannelTests : DriverModuleBridge
 
         public List<string> Bodies { get; } = [];
 
-        /// <summary>Forget what was heard so far: the come-up's own reads.</summary>
+        /// <summary>Forget what is heard so far: the come-up's own reads.</summary>
         public void Forget()
         {
             lock (Requests) Requests.Clear();

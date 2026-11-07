@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// The launcher every agent, plugin process and piece starts through: a small program of Daoris's own, <c>daoris-piece-start.exe</c> in the install's <c>app/bin/</c>
 /// beside the git doors (<c>Daoris.Desktop.PieceStart</c>). It joins the jobs it is named, in order (this Daoris process's agents' job,
 /// <see cref="AgentJobs"/>, then a piece's, <see cref="PieceJobs.NameOf"/>, which nests beneath it), each made empty and held by the driver,
-/// then a job of its own that ends what it holds when the launcher ends, and only then starts the harness as its child with the stdio it was
+/// then a job of its own that ends what it holds when the launcher ends, and only then starts the harness as its child with the stdio it is
 /// handed: no instruction of the harness runs outside them, and the doors read the launcher as they read any session's process. Where a job
 /// cannot be joined it refuses, <see cref="Refused"/>, and starts nothing: a refused start is rejected, never made outside the jobs it named.
 /// </summary>
@@ -130,7 +130,7 @@ public static class PieceLauncher
             UseShellExecute = false,
             // inherits its console: the launcher is the agent's process to the doors, and the harness speaks its protocol over the stdio
             // the driver handed the launcher. A spawn with no stream redirected and no window is given a console of its own, which cuts
-            // that stdio; the launcher's own console was made with no window, so the harness's has none either.
+            // that stdio; the launcher's own console is made with no window, so the harness's has none either.
             CreateNoWindow = false,
         };
         foreach (var word in taken.Arguments) info.ArgumentList.Add(word);

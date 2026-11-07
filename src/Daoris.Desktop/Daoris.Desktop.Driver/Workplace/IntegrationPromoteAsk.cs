@@ -17,7 +17,7 @@ internal sealed record IntegrationPromoteAsk(string Repository, string Workspace
     public IIntegrationAppointments Appointments { get; init; } = IntegrationAppointments.Unread;
 
     /// <summary>
-    /// The landing's own clean-up, through which the tidy step removes a landed branch the line now holds; null where none was
+    /// The landing's own clean-up, through which the tidy step removes a landed branch the line now holds; null where none is
     /// handed in, and the tidy then removes nothing. Never a delete of its own.
     /// </summary>
     public IntegrationTidy? Tidy { get; init; }

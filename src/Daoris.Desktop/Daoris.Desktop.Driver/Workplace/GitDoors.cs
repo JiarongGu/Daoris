@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>Started only by git</b>, as <c>daoris-git-ssh.exe</c> and <c>git-remote-daoris.exe</c> in the install's <c>app/bin/</c>
 /// (<c>Daoris.Desktop.GitDoor</c>, whose <c>Program</c> calls <see cref="Ssh"/> or <see cref="Helper"/> by its own file's name). Its
-/// home is <see cref="GitRouting.HomeVariable"/>; where that is absent the door refuses, saying it was started outside Daoris's wiring.</para>
+/// home is <see cref="GitRouting.HomeVariable"/>; where that is absent the door refuses, saying it is started outside Daoris's wiring.</para>
 /// <para><b>Nothing prompts</b>: the ssh door gives <c>-o BatchMode=yes</c> first, before any option of a command the
 /// repository names, since OpenSSH takes the first value given; the helper's transport inherits the prompt variables
 /// <see cref="GitWiring"/> handed.</para>

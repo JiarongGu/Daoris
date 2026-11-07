@@ -36,7 +36,7 @@ public static class CallsStateSlice
 
     /// <summary>
     /// The quiet partition: each session the watcher marks quiet, keyed by session, with when
-    /// it was last heard, which the rail and the head say as <i>quiet · 14 min</i>. Judged empty, pushed empty.
+    /// it is last heard, which the rail and the head say as <i>quiet · 14 min</i>. Judged empty, pushed empty.
     /// </summary>
     public const string QuietPartition = "quiet";
 
@@ -71,7 +71,7 @@ public static class CallsStateSlice
 
     /// <summary>
     /// The watcher's marks: each quiet session under its id as <c>{since, told}</c>, when it is last heard and
-    /// whether Daoris's word to it was kept.
+    /// whether Daoris's word to it is kept.
     /// </summary>
     public static SliceJudged Quiet(IReadOnlyDictionary<string, QuietMark> quiet)
     {

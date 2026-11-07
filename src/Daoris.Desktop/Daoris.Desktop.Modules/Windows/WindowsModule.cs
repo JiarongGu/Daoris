@@ -83,7 +83,7 @@ public sealed class WindowsModule(
             }
 
             // A window's page telling its own frame the theme it is in, so its native caption
-            // follows the viewer's choice. By name, the same checked name it was opened with.
+            // follows the viewer's choice. By name, the same checked name it is opened with.
             case "SET_THEME":
             {
                 var name = Known(PayloadHelper.GetRequiredValue<string>(request.Payload, "name"));

@@ -61,13 +61,13 @@ public static class PullRequestCodes
     /// <summary>The pull request merged a commit this machine never had.</summary>
     public const string SourceNotHere = "source-not-here";
 
-    /// <summary>Nothing was asked: no plugin pushed it, and no landing rule names one.</summary>
+    /// <summary>Nothing is asked: no plugin pushed it, and no landing rule names one.</summary>
     public const string NoPlugin = "no-plugin";
 
-    /// <summary>Nothing was asked: the plugin is not installed, switched off, unsound, or speaks on no <c>work/state</c> point.</summary>
+    /// <summary>Nothing is asked: the plugin is not installed, switched off, unsound, or speaks on no <c>work/state</c> point.</summary>
     public const string Unready = "plugin-unready";
 
-    /// <summary>Nothing was asked this time: the occasion's bound came first.</summary>
+    /// <summary>Nothing is asked this time: the occasion's bound came first.</summary>
     public const string NotAsked = "not-asked";
 }
 
@@ -190,7 +190,7 @@ public static class PullRequestAsking
     /// <summary>The plugin that pushed the branch, which opened its pull request; null where none did.</summary>
     public static string? PluginFor(LandedBranch entry) => entry.Plugin;
 
-    /// <summary>When it was last asked, answered or not; <see cref="DateTimeOffset.MinValue"/> where it never was.</summary>
+    /// <summary>When it last got asked, answered or not; <see cref="DateTimeOffset.MinValue"/> where it never did.</summary>
     public static DateTimeOffset LastAsked(LandedBranch entry)
     {
         var answered = entry.PullRequestState?.AskedAt ?? DateTimeOffset.MinValue;
@@ -199,7 +199,7 @@ public static class PullRequestAsking
     }
 
     /// <summary>
-    /// Whether an entry is due an ask, git's question aside: its kept answer is not completed, and it was not asked in the last
+    /// Whether an entry is due an ask, git's question aside: its kept answer is not completed, and it has not been asked in the last
     /// minute. <paramref name="again"/> is <i>Ask again</i>, which asks whatever the kept answer's age.
     /// </summary>
     public static bool Due(LandedBranch entry, DateTimeOffset now, bool again = false) =>
@@ -243,6 +243,6 @@ public sealed record StateFrame(
 /// <param name="Failure">One of <see cref="PluginEvents"/>' failure kinds, or <see cref="PullRequestCodes.NotAsked"/>; null where it answered.</param>
 public sealed record StateAnswer(StateAsk Ask, PullRequestState? Answer, string? Failure, string? Sentence = null)
 {
-    /// <summary>When its own request was sent, or null where none was.</summary>
+    /// <summary>When its own request is sent, or null where none is.</summary>
     public DateTimeOffset? AskedAt { get; init; }
 }

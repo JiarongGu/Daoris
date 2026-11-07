@@ -26,7 +26,7 @@ public static class SetAsideClass
 
     /// <summary>
     /// No manifest, one of schema 1, or a finished one whose holding check said for certain that nothing holds its tip: a stray, a pass's
-    /// leftover, a folder from before this build, or one whose ref was dropped by hand: its days, as built.
+    /// leftover, a folder from before this build, or one whose ref is dropped by hand: its days, as built.
     /// </summary>
     public const string Unmarked = "unmarked";
 }

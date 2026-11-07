@@ -85,7 +85,7 @@ public sealed class DriverModuleSessionPermissionsTests : DriverModuleBridge
 
     /// <summary>
     /// 🔴 An option the agent did not offer, its standing allow, and a request not held are each refused by code with the sentence
-    /// beside it, and what was held waits on as it was.
+    /// beside it, and what is held waits on unchanged.
     /// </summary>
     [Theory]
     [InlineData("d1", "900", "maybe", "unoffered")]

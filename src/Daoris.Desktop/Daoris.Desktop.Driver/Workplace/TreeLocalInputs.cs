@@ -254,7 +254,7 @@ internal sealed record LocalCopy(IReadOnlyList<string> Copied, IReadOnlyList<Loc
     /// <summary>The files copied, each in code, as a sentence lists them.</summary>
     public string Listed => string.Join(", ", Copied.Select(path => $"`{path}`"));
 
-    /// <summary>Its line of the opening where anything was copied, with its code; null where nothing was.</summary>
+    /// <summary>Its line of the opening where anything is copied, with its code; null where nothing is.</summary>
     public Noted? Line() => Copied.Count == 0
         ? null
         : Noted.Of(
@@ -263,8 +263,8 @@ internal sealed record LocalCopy(IReadOnlyList<string> Copied, IReadOnlyList<Loc
             ("inputs", (IReadOnlyList<string>)[.. Copied]));
 
     /// <summary>
-    /// What the session's agent is told, where anything was copied: what the files are, and that they are the checkout's to keep,
-    /// so a gate's finding is fixed in the work and never in the list it was found with.
+    /// What the session's agent is told, where anything is copied: what the files are, and that they are the checkout's to keep,
+    /// so a gate's finding is fixed in the work and never in the list it is found with.
     /// </summary>
     public string? Told => Copied.Count == 0
         ? null

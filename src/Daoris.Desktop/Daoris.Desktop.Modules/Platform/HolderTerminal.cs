@@ -253,6 +253,6 @@ public sealed record HolderOpened(string? Tab, HolderProcess? Process, string? W
 
 /// <summary>
 /// The holder's harness process as the terminal module started it: its id and creation time, which name it, the image it
-/// was started from and the configuration directory it was handed. The judge's walk reads the process itself against these.
+/// is started from and the configuration directory it is handed. The judge's walk reads the process itself against these.
 /// </summary>
 public sealed record HolderProcess(int Id, DateTime Created, string Image, string Config);

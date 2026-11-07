@@ -1,35 +1,34 @@
 import { expect, test, type Page } from '@playwright/test';
 import { measureFlows } from './measure';
 
-// The measured-box check (FLOWCHART1a1; the flowchart design §7, traps 3 and 14): each of the hardest fixtures' stories,
+// The measured-box check (the flowchart design §7, traps 3 and 14): each of the hardest fixtures' stories,
 // and the quest's own, drawn by `Flow` in a real browser at the frame's widths; every node's and every label's box
 // measured and every edge sampled along its length by the browser's own geometry. No edge enters a box but its own ends',
 // no label lies over a node or another label, and each drawn frame's crossings stay at or under its ceiling.
-//
-// The table is the engine's (§4.3): the same fixtures were drawn by @dagrejs/dagre over the same measured boxes on
-// 2026-10-20, and D186's note of that day says what each engine gave and which was locked. Each ceiling is what the hand
-// layout drew that day: a change that draws worse fails here, and one that draws better lowers it.
+// The table is the engine's (§4.3).
+// Each ceiling is what the hand
+// layout draws: a change that draws worse fails here, and one that draws better lowers it.
 
 /**
  * A story, by its stories file and name, and each frame it draws (not the rail) with that frame's crossing ceiling. A name ending
- * `:whole` is measured once *Show whole* is pressed in every frame (FLOWCHART1d).
+ * `:whole` is measured once *Show whole* is pressed in every frame.
  */
 const TABLE: Record<string, Record<number, number>> = {
   // The node lifecycle's multigraph, top to bottom with its eight returns on their lanes; the rail narrower.
   'flow/Lifecycle': { 1200: 29 },
   'flow/LifecycleChinese': { 1200: 29 },
-  // The dense graph at the bounds: folded after its entries, nothing having started (FLOWCHART1d), and drawn whole, once *Show
-  // whole* is pressed: in its 1440 px frame it fits, and in the 1200 px one, past the canvas's floor, the same drawing pans (D224).
+  // The dense graph at the bounds: folded after its entries, nothing having started, and drawn whole, once *Show
+  // whole* is pressed: in its 1440 px frame it fits, and in the 1200 px one, past the canvas's floor, the same drawing pans.
   'flow/Dense': { 1200: 5, 1440: 5 },
   'flow/DenseChinese': { 1200: 5, 1440: 5 },
   'flow/Dense:whole': { 1200: 155, 1440: 155 },
   'flow/DenseChinese:whole': { 1200: 155, 1440: 155 },
-  // A run too large (FLOWCHART1d): 96 nodes folded around one current node, three, and none, three lines of work a rank wide.
+  // A run too large: 96 nodes folded around one current node, three, and none, three lines of work a rank wide.
   'flow/TooLarge': { 544: 0, 1200: 0 },
   'flow/TooLargeChinese': { 544: 0, 1200: 0 },
   'flow/TooLargeThreeCurrent': { 544: 0, 1200: 0 },
   'flow/TooLargeNoneCurrent': { 544: 0, 1200: 0 },
-  // A workflow and its run (FLOWCHART1d), through the one drawing (SETUPUX1n): a step a rank under its sections from the side bar's
+  // A workflow and its run, through the one drawing: a step a rank under its sections from the side bar's
   // 300 px, since its 14rem track fits there; a failure path follows its step alone, so it draws at every width too.
   'workflow/Current': { 300: 0, 400: 0, 544: 0, 1200: 0 },
   'workflow/CurrentChinese': { 300: 0, 400: 0, 544: 0, 1200: 0 },
@@ -40,7 +39,7 @@ const TABLE: Record<string, Record<number, number>> = {
   'workflow/RunInReviewChinese': { 300: 0, 400: 0, 544: 0, 1200: 0 },
   'workflow/RunPassedOver': { 300: 0, 400: 0, 544: 0, 1200: 0 },
   'workflow/RunLanded': { 300: 0, 400: 0, 544: 0, 1200: 0 },
-  // One drawing of a workflow graph (SETUPUX1n): always in sections, so top to bottom at 80 and 39rem (1280 and 624 px) and the rail at
+  // One drawing of a workflow graph: always in sections, so top to bottom at 80 and 39rem (1280 and 624 px) and the rail at
   // 25rem, whose two-way branch needs 29.5rem; the way back on its lane, the holds one group, and no crossing at all.
   'graph/Release': { 1280: 0, 624: 0 },
   'graph/ReleaseDark': { 1280: 0, 624: 0 },
@@ -49,7 +48,7 @@ const TABLE: Record<string, Record<number, number>> = {
   'graph/ReleaseHoldsOpen': { 1280: 0, 624: 0 },
   'graph/Merge': { 1280: 0, 624: 0, 400: 0 },
   'graph/MergeChinese': { 1280: 0, 624: 0, 400: 0 },
-  // Two outcomes that reach one step (FLOWCHART2a), each from its own port, the third going nowhere; and the data wires drawn dotted at the
+  // Two outcomes that reach one step, each from its own port, the third going nowhere; and the data wires drawn dotted at the
   // right while a step is selected (they cross the ways on in the gaps they pass), with the lanes kept free when none is.
   'graph/TwoOutcomes': { 1280: 0, 624: 0 },
   'graph/TwoOutcomesDark': { 1280: 0, 624: 0 },
@@ -57,7 +56,7 @@ const TABLE: Record<string, Record<number, number>> = {
   'graph/ReleaseData': { 1280: 1, 624: 1 },
   'graph/ReleaseDataChinese': { 1280: 1, 624: 1 },
   'graph/ReleaseDataUnselected': { 1280: 0, 624: 0 },
-  // A run's view (SETUPUX1u): a run draws the route its decision took, so the release outcome is one chain that draws from the side bar's
+  // A run's view: a run draws the route its decision took, so the release outcome is one chain that draws from the side bar's
   // floor, like a review's; the none outcome keeps the route not taken beside *No further step*, a two-way branch that needs 31rem, so the
   // 300 px and 25rem frames are the rail and 45% of the window (696 px) draws it. A selected step's record makes its node taller, never wider.
   'runview/ReleaseRun': { 300: 0, 400: 0, 696: 0 },
@@ -92,7 +91,7 @@ const TABLE: Record<string, Record<number, number>> = {
   'quest/WentChinese': { 400: 0, 544: 0, 1200: 0 },
   // Its refused edge ranks Done after Declined, so each rank holds one node and the side bar's floor draws it top to bottom.
   'quest/Refused': { 300: 0, 400: 0, 544: 0, 1200: 0 },
-  // A session's states (FLOWCHART1b): five ranks of one node each, the outcomes last, its three skipping edges threading the
+  // A session's states: five ranks of one node each, the outcomes last, its three skipping edges threading the
   // ranks between and the working ⇄ awaiting-person return and going on each on a lane of their own.
   // Top to bottom it crosses nothing; left to right, its three skipping edges cross each other and the returns' runs.
   'session/Working': { 400: 0, 544: 0, 1200: 7 },
@@ -100,7 +99,7 @@ const TABLE: Record<string, Record<number, number>> = {
   'session/WaitingOnYou': { 400: 0, 544: 0, 1200: 7 },
   'session/Completed': { 400: 0, 544: 0, 1200: 7 },
   'session/StoodDown': { 400: 0, 544: 0, 1200: 7 },
-  // A session's parts (FLOWCHART1b): the strip is the rail at the side bar's floor. A retry and an asked part, and with the landing
+  // A session's parts: the strip is the rail at the side bar's floor. A retry and an asked part, and with the landing
   // plan's dashed node, draw top to bottom from 400 px; a fork's six parts need a rank of three, so its 400 px frame is the rail.
   'parts/Retry': { 400: 0, 544: 0, 1200: 0 },
   'parts/RetryChinese': { 400: 0, 544: 0, 1200: 0 },
@@ -108,7 +107,7 @@ const TABLE: Record<string, Record<number, number>> = {
   'parts/ForkChinese': { 544: 0, 1200: 0 },
   'parts/WithTheLandingPlan': { 400: 0, 544: 0, 1200: 0 },
   'parts/WithTheLandingPlanChinese': { 400: 0, 544: 0, 1200: 0 },
-  // How a landed branch landed (FLOWCHART1c): its tries and its advances stacked, the push, the pull request and the first advance
+  // How a landed branch landed: its tries and its advances stacked, the push, the pull request and the first advance
   // hung side by side from the landing, a rank of three, so it is the rail below 544 px; top to bottom from there, being too long
   // for left to right. A landing from before the advances is two nodes, left to right from 400 px; a merge's is one node a rank.
   'landing/Shared': { 544: 0, 1200: 0 },
@@ -120,7 +119,7 @@ const TABLE: Record<string, Record<number, number>> = {
 };
 
 /**
- * The paths that leave a decision's port in each drawn frame of these stories (FLOWCHART2a): the release workflow's two outcomes, and the
+ * The paths that leave a decision's port in each drawn frame of these stories: the release workflow's two outcomes, and the
  * three of the decision whose two outcomes reach one step. Each leaves its own port's box, and a story that drew none fails.
  */
 const PORTED: Record<string, number> = {
@@ -182,7 +181,7 @@ for (const [story, ceilings] of Object.entries(TABLE)) {
 }
 
 /**
- * The workflow editor's stories (FLOWCHART2b; D223 §6): whether each draws its chart or the rail, at the main area's 80, 39 and 25rem in
+ * The workflow editor's stories: whether each draws its chart or the rail, at the main area's 80, 39 and 25rem in
  * both languages and themes. Where it draws, every ＋ shown on a way clears every node, every label shown and every other ＋, at least one
  * is shown, and no edge runs through a box or a label lies over one.
  */
@@ -210,7 +209,7 @@ for (const [story, placed] of Object.entries(EDITOR)) {
 }
 
 /**
- * Ask Daoris's proposal on the editor's chart (FLOWCHART2f; D223 §4.3): whether each story draws the union of the draft and the proposal
+ * Ask Daoris's proposal on the editor's chart: whether each story draws the union of the draft and the proposal
  * or the rail, at 80, 39 and 25rem in both languages and themes. Where it draws, no edge runs through a box, no label or ＋ lies over one,
  * and each way the proposal marks wears its word in a chip; at the rail, the marks are the words of each way's cause.
  */
@@ -219,7 +218,7 @@ const PROPOSAL: Record<string, 'drawn' | 'rail'> = {
   'proposal/ProposalChinese': 'drawn', 'proposal/ProposalChineseHalf': 'drawn', 'proposal/ProposalChineseNarrow': 'rail',
   'proposal/ProposalDark': 'drawn', 'proposal/ProposalDarkHalf': 'drawn', 'proposal/ProposalChineseDarkNarrow': 'rail',
   // The stale draft's line stands apart from the landing, so its union is wider: drawn in the canvas from its 36rem floor, panning where the
-  // theme's frame or 39rem leaves less room than it needs (CANVAS1a), and the rail at 25rem.
+  // theme's frame or 39rem leaves less room than it needs, and the rail at 25rem.
   'proposal/Stale': 'drawn', 'proposal/StaleHalf': 'drawn', 'proposal/StaleChineseNarrow': 'rail', 'proposal/StaleDark': 'drawn',
   'proposal/Removes': 'drawn', 'proposal/RemovesHalf': 'drawn', 'proposal/RemovesChineseDark': 'drawn',
 };

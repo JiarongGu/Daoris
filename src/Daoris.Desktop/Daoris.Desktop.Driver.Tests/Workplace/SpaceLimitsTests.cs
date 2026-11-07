@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEEPSIZE1d (D195's keep-size note): a size limit per kind beside its days. The choice judged by the one door, stored and read back as a
+/// A size limit per kind beside its days. The choice judged by the one door, stored and read back as a
 /// stored shape, and a kind over its limit letting go of its oldest eligible units, the downloads here and the set-aside folders in
 /// <see cref="SpaceLimitsGitTests"/>. Files only, in a home under <c>_fixtures/</c>.
 /// </summary>

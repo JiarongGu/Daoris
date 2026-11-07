@@ -40,7 +40,7 @@ public interface IPlaceWorld
 /// </summary>
 public sealed record PlaceTip(string? Line, string? Commit, string? Gates, string? Text, string? Host, string? Problem = null);
 
-/// <summary>A work's consent as <see cref="WorkPolicies.Of"/> resolves it at the repository, where it was set, or why it did not resolve.</summary>
+/// <summary>A work's consent as <see cref="WorkPolicies.Of"/> resolves it at the repository, where it is set, or why it did not resolve.</summary>
 public sealed record PlacePolicy(string Work, string? Consent, string Source, string? Failed);
 
 /// <summary>A repository read through the resolvers, before the plan or after it: driving, the land its work follows and the preset it matches.</summary>
@@ -73,7 +73,7 @@ public sealed record PlaceRepository(
     string Repository, string Workspace, PlaceSide Before, PlaceSide After, IReadOnlyList<PlaceChange> Changes, IReadOnlyList<string> Lowers,
     IReadOnlyList<WorkflowReach> Reach, IReadOnlyList<PlaceReleased> Released, PlaceDeclaration? Declaration, string? Unread, PlaceSuggestion Suggested);
 
-/// <summary>A plan: what was asked, each repository, the changes each said once, every refusal, and the terminal's twin of it.</summary>
+/// <summary>A plan: what is asked, each repository, the changes each said once, every refusal, and the terminal's twin of it.</summary>
 public sealed record PlacePlanned(
     PlaceAsk Asked, IReadOnlyList<PlaceRepository> Repositories, IReadOnlyList<PlaceChanged> Changes, IReadOnlyList<PlaceRefusal> Refusals, string Terminal)
 {

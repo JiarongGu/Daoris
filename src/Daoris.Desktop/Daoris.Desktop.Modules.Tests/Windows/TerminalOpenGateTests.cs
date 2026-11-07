@@ -8,10 +8,10 @@ namespace Daoris.Desktop.Modules.Tests;
 /// the caller's thread. <c>OPEN</c> started it with <c>CreateProcessW</c> in the route's synchronous part, which runs on the
 /// window's thread, where an antivirus hook on process creation held the window.
 /// </summary>
-/// <remarks>The fast half: the factory is a stand-in that notes the thread it was called on, and no shell starts.</remarks>
+/// <remarks>The fast half: the factory is a stand-in that notes the thread it is called on, and no shell starts.</remarks>
 public sealed class TerminalOpenGateTests : Bridge
 {
-    // True on the thread making the request, while it makes it: a start seen there was made on the caller's thread.
+    // True on the thread making the request, while it makes it: a start seen there is made on the caller's thread.
     [ThreadStatic]
     private static bool t_calling;
 

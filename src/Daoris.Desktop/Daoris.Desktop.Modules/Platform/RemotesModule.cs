@@ -71,7 +71,7 @@ public sealed class RemotesModule(IEventBus events, DriverLoop loop) : ModuleBas
             case "REMOVE":
             {
                 var workspace = PayloadHelper.GetRequiredValue<string>(request.Payload, "workspace");
-                // Nothing to take is an answer, not an error: the end state is the one that was asked for, and nothing is written.
+                // Nothing to take is an answer, not an error: the end state is the one asked for, and nothing is written.
                 var path = Path;
                 Kept(() => RemoteOperations.Remove(path, workspace));
                 loop.Nudge();
@@ -85,7 +85,7 @@ public sealed class RemotesModule(IEventBus events, DriverLoop loop) : ModuleBas
 
     /// <summary>
     /// An edit of the map, its refusal said in the code the library's table gives it, else with its sentence (a file that does not
-    /// read, a key written twice, a lock held throughout), as the driver's other doors say theirs; nothing was written.
+    /// read, a key written twice, a lock held throughout), as the driver's other doors say theirs; nothing is written.
     /// </summary>
     private static void Kept<T>(Func<T> edit)
     {

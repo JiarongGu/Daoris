@@ -8,12 +8,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ROSTER1 (D150 §5.3): <c>reads.json</c> under the home keeps what was last read of each account's sign-in, and of the tool's
-/// own, with when, so a restart starts from what was last read rather than from a probe. Nothing here starts a process.
+/// <c>reads.json</c> under the home keeps the last reading of each account's sign-in, and of the tool's
+/// own, with when, so a restart starts from that reading rather than from a probe. Nothing here starts a process.
 /// </summary>
 /// <remarks>
-/// Held, row for row, to one table, <c>fixtures/account-reads.json</c> (reading, keeping, forgetting; AGENTREAD1, AGENTREAD1b). The
-/// CLI's <c>accountreads.ts</c>, its twin, left with <c>daoris agent</c>'s TypeScript (PUSH1f2e), and the table moved here with it.
+/// Held, row for row, to one table, <c>fixtures/account-reads.json</c> (reading, keeping, forgetting). The
+/// CLI's <c>accountreads.ts</c>, its twin, left with <c>daoris agent</c>'s TypeScript, and the table moved here with it.
 /// </remarks>
 public sealed class AccountReadsTests : IDisposable
 {
@@ -83,7 +83,7 @@ public sealed class AccountReadsTests : IDisposable
     }
 
     /// <summary>
-    /// The file holds a word and a time per account, never who signed in (D66 §3: read fresh, written nowhere), and keeps what
+    /// The file holds a word and a time per account, never who signed in (read fresh, written nowhere), and keeps what
     /// it has no field for, as every file the home holds does.
     /// </summary>
     [Fact]
@@ -117,7 +117,7 @@ public sealed class AccountReadsTests : IDisposable
         Assert.Empty(AccountReads.Of(_home, "claude-code").Accounts);
     }
 
-    // ——— The shared table (AGENTREAD1b): the CLI's twin is held to the same rows, so a rule changed on one side fails both.
+    // ——— The shared table: the CLI's twin is held to the same rows, so a rule changed on one side fails both.
 
     public static IEnumerable<object?[]> Reads => Table("read");
 
@@ -172,7 +172,7 @@ public sealed class AccountReadsTests : IDisposable
         Same(why, after == "unchanged" ? file : Written(after), OnDisk());
     }
 
-    // ——— The driver's own rows, in the table's shape (AGENTREAD1b): a name or a word beyond plain ASCII is written as the CLI
+    // ——— The driver's own rows, in the table's shape: a name or a word beyond plain ASCII is written as the CLI
     // writes it, as it is, where System.Text.Json's default encoder would escape it. Proposed for the shared table.
 
     [Theory]

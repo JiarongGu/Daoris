@@ -29,7 +29,7 @@ public sealed record HeldEntry(string Path, IReadOnlyList<FileHolder> By);
 
 /// <summary>
 /// What holds a file or a folder open, where Windows can tell: a move the swap is refused names the entry that
-/// was held and the processes holding it, so a <c>busy</c> says who, not only that.
+/// is held and the processes holding it, so a <c>busy</c> says who, not only that.
 /// </summary>
 /// <remarks>
 /// <para>Each entry is asked with <c>NtQueryInformationFile</c>'s <c>FileProcessIdsUsingFileInformation</c>, the question the
@@ -38,8 +38,8 @@ public sealed record HeldEntry(string Path, IReadOnlyList<FileHolder> By);
 /// <c>RmGetList</c> takes files alone, and a working folder is what holds a folder against a move with no file open in it.
 /// Asked of each entry rather than of the whole list at once, so the answer names the file and not only the process.</para>
 ///
-/// <para>Only on the path where a move was refused, so it costs nothing when nothing is held. Elsewhere than Windows, and
-/// wherever the call fails, nothing is found, and a hold is said as before.</para>
+/// <para>Only on the path where a move is refused, so it costs nothing when nothing is held. Elsewhere than Windows, and
+/// wherever the call fails, nothing is found, and a hold is said without them.</para>
 ///
 /// <para><b>Compiled into the launcher too</b>, beside <see cref="InstallSwap"/>: the base library and Windows' own calls
 /// alone.</para>
@@ -71,7 +71,7 @@ public static class HeldFiles
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or System.Security.SecurityException)
         {
-            // What was found before the walk failed is still what was found.
+            // What the walk found before it failed stays found.
         }
 
         return found;

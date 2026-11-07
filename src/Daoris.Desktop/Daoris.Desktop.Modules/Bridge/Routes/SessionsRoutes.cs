@@ -62,7 +62,7 @@ public sealed class SessionsRoutes(DriverContext context)
 
     // The asks a session made of helpers, oldest first, each as the driver's look left it: its state and code, the
     // helper's session once started and the agent it started on. Read off the home's `helpers` folder, the driver's own files;
-    // what the state keeps for the driver alone (the last words, the word it was handed as) is not the page's.
+    // what the state keeps for the driver alone (the last words, the word it is handed as) is not the page's.
     [DriverRoute("SESSION_HELPERS", PipeClass.Open)]
     private Task<object?> SessionHelpersAsync(SessionHelpers press, CancellationToken cancellationToken) => _asks.HelpersAsync(press, cancellationToken);
 
@@ -199,7 +199,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // The person's answer to a request a session holds for them: an option the agent offered, by its id, or none to
     // refuse it, which takes the offered one-time rejection, else none. The allow is the person's press for this call alone, and
     // Daoris never answers one by itself; a standing allow is a rule's to give. What cannot is `answered: false` with
-    // its code (`unheld`, `unoffered`, `standing`) and the registry's sentence, the hold left as it was. Its session hears the answer
+    // its code (`unheld`, `unoffered`, `standing`) and the registry's sentence, the hold left in place. Its session hears the answer
     // at once, off its own reader, and the hold's end is told through the registry's `Changed`; the route publishes nothing.
     [DriverRoute("SESSION_PERMISSION_ANSWER", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SESSION_PERMISSION_ANSWER", Session = "session")]
@@ -388,7 +388,7 @@ public sealed class SessionsRoutes(DriverContext context)
     /// second press asks, what may go is archived and the rest are kept, each with its code, since a list is a fact about
     /// a moment.</para>
     ///
-    /// <para><b>Unarchive needs no service</b>: it takes marks away, and one that was not archived is said, never refused
+    /// <para><b>Unarchive needs no service</b>: it takes marks away, and one that is not archived is said, never refused
     ///</para>
     /// </remarks>
     [DriverRoute("SESSION_ARCHIVE", PipeClass.Person, Drain = PipeDrain.Passes)]

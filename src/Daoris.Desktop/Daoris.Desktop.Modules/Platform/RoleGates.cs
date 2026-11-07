@@ -50,7 +50,7 @@ public sealed class RoleGates
 
     /// <summary>
     /// Every gate of <paramref name="scopes"/> taken in the fixed order, <paramref name="alone"/> for a role's act, beside the owner's
-    /// others otherwise; released, in the reverse order, as the answer is disposed. A cancel while waiting releases what was taken.
+    /// others otherwise; released, in the reverse order, as the answer is disposed. A cancel while waiting releases what it has taken.
     /// </summary>
     public async Task<IAsyncDisposable> EnterAsync(IEnumerable<RoleScope> scopes, bool alone, CancellationToken ct)
     {

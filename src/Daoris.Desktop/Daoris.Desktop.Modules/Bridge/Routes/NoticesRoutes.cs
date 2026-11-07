@@ -18,7 +18,7 @@ namespace Daoris.Desktop;
 /// would hide it from them; Ask Daoris's coverage holds them exempt, the person's own reading.</para>
 ///
 /// <para><b>A write refused is an answer</b>, <c>{ written: false }</c>: the record's lock held past its wait, or a record this build
-/// will not write over. The machine log says why; the notice stays as it was, and the press may be made again.</para>
+/// will not write over. The machine log says why; the notice stays unchanged, and the press may be made again.</para>
 /// </remarks>
 public sealed class NoticesRoutes(DriverLoop loop)
 {

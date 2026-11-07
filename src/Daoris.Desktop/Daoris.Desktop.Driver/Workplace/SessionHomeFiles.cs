@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// <param name="Stayed">
 /// Each session's names the disk kept, in the same order and words as <paramref name="Went"/>, so a delete can say which
 /// stayed. A file several sessions share (the held words, the closed automatic landings, the archive marks) that would not be read
-/// or written again is named for each session it was asked of, since what it held of each stays.
+/// or written again is named for each session it is asked of, since what it held of each stays.
 /// </param>
 public sealed record SessionFilesRemoved(
     IReadOnlyDictionary<string, IReadOnlyList<string>> Went,

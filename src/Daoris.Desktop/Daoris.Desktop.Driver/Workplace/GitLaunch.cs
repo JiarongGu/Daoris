@@ -299,7 +299,7 @@ internal static class GitLaunch
     }
 }
 
-/// <summary>The starts a flow made while a <see cref="GitLaunch.Count"/> was open: thread-safe, as a flow's reads may run side by side.</summary>
+/// <summary>The starts a flow makes while a <see cref="GitLaunch.Count"/> is open: thread-safe, as a flow's reads may run side by side.</summary>
 internal sealed class GitCount : IDisposable
 {
     private readonly GitCount? _outer;
@@ -323,6 +323,6 @@ internal sealed class GitCount : IDisposable
     /// <summary>The starts in <paramref name="budget"/>.</summary>
     public int In(GitBudget budget) => _starts.Count(start => start.Budget == budget);
 
-    /// <summary>The count ended: the flow's count is the one it was inside again. Disposed in the flow that opened it, as a <c>using</c> is.</summary>
+    /// <summary>The count ended: the flow's count is the enclosing one again. Disposed in the flow that opened it, as a <c>using</c> is.</summary>
     public void Dispose() => GitLaunch.Ended(this, _outer);
 }

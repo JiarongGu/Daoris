@@ -14,7 +14,6 @@ internal sealed class SessionAskWords(QuestStore quests, SessionStore sessions, 
     /// asked by one when its sender is <c>ask #id</c>, a chain step included. A quest one repository asked
     /// of another, and a conversation on no quest, are on no ask, and the answer says so rather than filing
     /// the words under an ask they were not given on.</para>
-    ///
     /// <para><b>In any state.</b> An answer is kept after the answer moved the record, and a message while
     /// the session runs; a record of another machine's is not this machine's person talking.</para>
     /// </remarks>

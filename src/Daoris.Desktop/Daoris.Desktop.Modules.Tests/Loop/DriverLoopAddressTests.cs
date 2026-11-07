@@ -113,7 +113,7 @@ public sealed class DriverLoopAddressTests : Bridge
 
     /// <summary>
     /// A stop whose drain ends with a press still under way goes on, as it always did, and says so in the machine log:
-    /// <c>pipe.drained</c> with how many presses were left, so a terminal told <i>nothing was done</i> by a closing Daoris can be read
+    /// <c>pipe.drained</c> with how many presses were left, so a terminal told <i>nothing done</i> by a closing Daoris can be read
     /// against what the instance knew. A drain that ends clean says nothing.
     /// </summary>
     [Fact]

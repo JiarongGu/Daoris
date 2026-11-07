@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL4f (D125 §4) through a look: when every account of the person's order is cooling, a carry-on is held at spawn
+/// Through a look: when every account of the person's order is cooling, a carry-on is held at spawn
 /// with nothing spawned and no record, waiting for the first reset, never parked, and the wait is said once.
 /// </summary>
 /// <remarks>
@@ -86,7 +86,7 @@ public sealed class AccountRotationHoldTests : IDisposable
 
         var sitting = Assert.Single(look.Considerations);
         Assert.Equal(StartVerdict.Blocked, sitting.Verdict);
-        // LIMITRESUME1b: a line a limit cut off says its own wait, naming the first account ready and when.
+        // A line a limit cut off says its own wait, naming the first account ready and when.
         Assert.Equal(
             $"Every account it may run on is at its limit: it goes on by itself once the `stub` account `account-2` is ready again "
             + $"at Oct 3, 16:02 ({Zone.Id}).",
