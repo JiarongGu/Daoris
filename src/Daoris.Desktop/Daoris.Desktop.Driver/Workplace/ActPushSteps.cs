@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The push step (GITAPP2g and n, D204, D241 point 2; the git-writes design §5, §9): its plan, its effect and its postconditions. The effect
+/// The push step (n): its plan, its effect and its postconditions. The effect
 /// writes the one grant its push carries, bound to origin's push address, the ref, the commit the ref stands at on origin and the commit it
 /// moves to; runs one git push in the act's job with that grant handed to it alone, its <c>pre-push</c> hook and the hook's children ending
 /// with it; and drops the grant once git ends, taken or not. Nothing runs it again.

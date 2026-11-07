@@ -4,11 +4,11 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The archive marks (SESSUX1a, D126 §5.2): <c>&lt;home&gt;/sessions/archived.json</c>, each archived session and when,
+/// The archive marks: <c>&lt;home&gt;/sessions/archived.json</c>, each archived session and when,
 /// written whole by both doors, the screen's route and the terminal's verb.
 /// </summary>
 /// <remarks>
-/// <para><b>This machine's, never the record's.</b> The record is the service's and travels (D47 §4); what one person
+/// <para><b>This machine's, never the record's.</b> The record is the service's and travels; what one person
 /// keeps in their list is not a fact about the work, so the record is unchanged and a teammate's may be archived too.</para>
 ///
 /// <para><b>A file that does not read is nothing archived</b>: a mark lost costs a row back in the list, never a row
@@ -79,7 +79,7 @@ public sealed class SessionArchive(string home)
     }
 
     /// <summary>
-    /// The machine log's <c>sessions.archived</c> (SESSUX1g, D126 §7.4): how many an archive took, and from which door,
+    /// The machine log's <c>sessions.archived</c>: how many an archive took, and from which door,
     /// <see cref="PluginEvents.Screen"/> or <see cref="PluginEvents.Terminal"/>. An archive changes no work, so it is counted,
     /// never listed; one that took nothing writes nothing.
     /// </summary>
@@ -90,7 +90,7 @@ public sealed class SessionArchive(string home)
 
     /// <summary>
     /// What <c>sessions archive &lt;id&gt;…</c> says of each outcome, and its exit: 0 where every one was archived, 1 where one was
-    /// kept (RPC1c, the terminal RPC design §7.3). The alone path prints it, and <c>SESSION_ARCHIVE</c> answers it as <c>said</c> to a
+    /// kept. The alone path prints it, and <c>SESSION_ARCHIVE</c> answers it as <c>said</c> to a
     /// terminal that sent its archive over the pipe, so the two cannot drift.
     /// </summary>
     public static TreesSaid ArchiveSaid(IReadOnlyList<ArchiveOutcome> outcomes) => new(

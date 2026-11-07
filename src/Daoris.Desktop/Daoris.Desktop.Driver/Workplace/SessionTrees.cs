@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>Daoris owns the location; git owns the contents</b> (D51 rule 2) — the same arrangement as
-/// a credential profile (D49 §4), and for the same reason: a directory Daoris created is one it may
+/// a credential profile, and for the same reason: a directory Daoris created is one it may
 /// reason about, and one scattered beside somebody's checkout is not. That is also why
 /// <see cref="RemoveAsync"/> refuses anything outside the trees home outright, whatever git would say.</para>
 ///
@@ -18,9 +18,9 @@ namespace Daoris.Driver;
 /// the root's own state; removal refuses while the tree holds uncommitted changes or commits the
 /// canonical line has not taken, naming what would be lost — and the person may say it again with
 /// force, meaning it. Commits whose work a squash merge or a cherry-pick holds by content lose nothing,
-/// and go unforced saying where that work is (SQUASHTIDY1), the commits themselves kept on a recovery
+/// and go unforced saying where that work is, the commits themselves kept on a recovery
 /// ref the sentence names. A branch goes only while it is the commit judged, and a tree only while
-/// nothing in it is uncommitted or ignored and its alone (SQUASHTIDY1c).</para>
+/// nothing in it is uncommitted or ignored and its alone.</para>
 ///
 /// <para><b>The name is minted here, not borrowed from the session id</b>, because the order is
 /// tree → open → spawn: the ledger's open needs the tree path for the lock, so the id it would borrow
@@ -31,15 +31,15 @@ namespace Daoris.Driver;
 /// constructor, and this keeps its callers' one-line calls.</para>
 /// </remarks>
 /// <param name="plugins">
-/// The plugin wire a branch rule's landing speaks (WSR4, D100) — the home's own plugins by default; the
+/// The plugin wire a branch rule's landing speaks — the home's own plugins by default; the
 /// shell and the terminal hand one that says the plugin's lines where each says things.
 /// </param>
 public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = null) : IWorkTrees
 {
-    /// <summary>What the parts share (PART10i): the home, the plugin wire, the seams.</summary>
+    /// <summary>What the parts share: the home, the plugin wire, the seams.</summary>
     private readonly TreeContext _context = new(home, plugins ?? WorkplacePlugins.Current.Wire(home));
 
-    /// <summary>The shared context, for Review's graph (GITAPP1a-ii), which reads what <see cref="ReviewRanges"/> and <see cref="LandedReviews"/> read.</summary>
+    /// <summary>The shared context, for Review's graph, which reads what <see cref="ReviewRanges"/> and <see cref="LandedReviews"/> read.</summary>
     internal TreeContext Context => _context;
 
     // The parts, each built once at first use (a field initializer cannot read `_context`), leaves first; a class takes the
@@ -73,93 +73,93 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     private EndKeeping? _keeping;
     private TreeReturns? _returns;
 
-    /// <summary>The end judgement's one writer (FABRIC-END2): where the look's tidy and <i>Accept</i>'s tidy keep what the line holds.</summary>
+    /// <summary>The end judgement's one writer: where the look's tidy and <i>Accept</i>'s tidy keep what the line holds.</summary>
     internal EndKeeping Ends => _keeping ??= new(_context, Asks);
 
-    /// <summary>Where each session tree's work is, and the branch the layout names for it (TREEFOLLOW1).</summary>
+    /// <summary>Where each session tree's work is, and the branch the layout names for it.</summary>
     private TreeFollows Follows => _follows ??= new(_context);
 
-    /// <summary>Where a branch's work is held by content, and the delete at the commit judged (SQUASHTIDY1, SQUASHTIDY1c).</summary>
+    /// <summary>Where a branch's work is held by content, and the delete at the commit judged.</summary>
     private ContentHolds Content => _content ??= new(_context);
 
-    /// <summary>The squash's commit and the record's word of what it squashed (PROCESS1b-ii).</summary>
+    /// <summary>The squash's commit and the record's word of what it squashed.</summary>
     private TreeSquashes Squashes => _squashes ??= new(_context);
 
-    /// <summary>The occasions' asks, <i>Ask again</i> and what a kept answer proves (PLUGHOOK1a, PLUGHOOK1c).</summary>
+    /// <summary>The occasions' asks, <i>Ask again</i> and what a kept answer proves.</summary>
     private PullRequestAsks Asks => _asks ??= new(_context);
 
 
-    /// <summary>A judged branch replayed, and the grown record's tidying (WSR6).</summary>
+    /// <summary>A judged branch replayed, and the grown record's tidying.</summary>
     private BranchReplays Replays => _replays ??= new(_context, Leftovers);
 
-    /// <summary>Where a session tree's review is measured from (REVIEWBASE1).</summary>
+    /// <summary>Where a session tree's review is measured from.</summary>
     private ReviewRanges Ranges => _ranges ??= new(_context);
 
-    /// <summary>A landed session's review (REVIEW2, D113).</summary>
+    /// <summary>A landed session's review.</summary>
     private LandedReviews Reviews => _reviews ??= new(_context);
 
-    /// <summary>The landing gate's parts for a tree (XAGENT1f, WORKFLOW1f).</summary>
+    /// <summary>The landing gate's parts for a tree.</summary>
     internal TreeGates Gates => _gates ??= new(_context);
 
-    /// <summary>What the look's own tidy takes by itself, its last guards, and its set-aside (AUTOTIDY1).</summary>
+    /// <summary>What the look's own tidy takes by itself, its last guards, and its set-aside.</summary>
     private TreeSetAside SetAsides => _setAside ??= new(_context);
 
-    /// <summary>The set-aside kind's removal, the purge and the slim, which the Keeping pass runs (KEEP1a).</summary>
+    /// <summary>The set-aside kind's removal, the purge and the slim, which the Keeping pass runs.</summary>
     private SetAsideKeeping Keeping => _setAsideKeeping ??= new(_context, SetAsides);
 
-    /// <summary>A session tree's removal (D51 rule 7, D88, SQUASHTIDY1c).</summary>
+    /// <summary>A session tree's removal (D51 rule 7).</summary>
     private TreeRemovals Removals => _removals ??= new(_context, Follows, Content, Squashes);
 
-    /// <summary>The session branches' half of the clean-up, for the person's press and the look's own (D88, AUTOTIDY1).</summary>
+    /// <summary>The session branches' half of the clean-up, for the person's press and the look's own.</summary>
     private TreeSweeps Sweeps => _sweeps ??= new(_context, Asks, Content, Follows, Squashes, SetAsides);
 
-    /// <summary>The look's own tidy of one repository (AUTOTIDY1), the landings' branches with it (AUTOTIDY2b).</summary>
+    /// <summary>The look's own tidy of one repository, the landings' branches with it.</summary>
     private AutoTidies AutoTidy => _autoTidy ??= new(_context, Follows, Replays, Sweeps, SetAsides, Cleanups, Ends);
 
-    /// <summary>The look's own tidy of the folders under a repository's trees that are no tree of its own (AUTOTIDY2c, OPENCUT1).</summary>
+    /// <summary>The look's own tidy of the folders under a repository's trees that are no tree of its own.</summary>
     private TreeStrays Strays => _strays ??= new(_context, SetAsides, Content);
 
-    /// <summary>What a killed opinion's or replay's pass left under a repository's trees, moved aside by the next (STRAYOTHERS1).</summary>
+    /// <summary>What a killed opinion's or replay's pass left under a repository's trees, moved aside by the next.</summary>
     private PassLeftovers Leftovers => _leftovers ??= new(_context, SetAsides);
 
-    /// <summary>The clean-up's list and press, and each landed branch judged (D88, WSR5).</summary>
+    /// <summary>The clean-up's list and press, and each landed branch judged.</summary>
     private LandedCleanups Cleanups => _cleanups ??= new(_context, Asks, Content, Replays, Sweeps, Ends);
 
-    /// <summary>A landing's branch the line will never hold, withdrawn on the person's word (LANDRETIRE1).</summary>
+    /// <summary>A landing's branch the line will never hold, withdrawn on the person's word.</summary>
     private LandedWithdrawals Withdrawals => _withdrawals ??= new(_context, Content, Cleanups);
 
-    /// <summary>Each branch judged for the replay (WSR6).</summary>
+    /// <summary>Each branch judged for the replay.</summary>
     private BranchJudging Judging => _judging ??= new(_context, Cleanups);
 
-    /// <summary>The look, the press and the scope of bringing up to date (WSR6, WSR7).</summary>
+    /// <summary>The look, the press and the scope of bringing up to date.</summary>
     private TreeSync Sync => _sync ??= new(_context, Asks, Cleanups, Judging, Replays);
 
-    /// <summary>The press that brings one tree up to date (REVIEWBASE2-i).</summary>
+    /// <summary>The press that brings one tree up to date.</summary>
     private TreeUpdates Updates => _updates ??= new(_context, Follows, Judging, Replays, Ranges);
 
-    /// <summary>What a tree holds that nobody has accepted (SESSUX1a, D126 §2.1).</summary>
+    /// <summary>What a tree holds that nobody has accepted.</summary>
     private TreeWorkReads WorkReads => _work ??= new(_context, Squashes, Content, Follows);
 
-    /// <summary>Whether a tree's work is anywhere but Daoris's own branches, and its discard (PAUSE1d).</summary>
+    /// <summary>Whether a tree's work is anywhere but Daoris's own branches, and its discard.</summary>
     private OnlyHereProof OnlyHere => _onlyHere ??= new(_context, Removals);
 
-    /// <summary>A landing's tidy of the other session branches its work holds, and the person's door for one (LAND3).</summary>
+    /// <summary>A landing's tidy of the other session branches its work holds, and the person's door for one.</summary>
     private TreeTidies Tidies => _tidies ??= new(_context, Content, Squashes, Removals);
 
-    /// <summary>A landing in sync with its line: the fetch, the replay of what the line lacks, the tree's follow (LANDSYNC1).</summary>
+    /// <summary>A landing in sync with its line: the fetch, the replay of what the line lacks, the tree's follow.</summary>
     private TreeLandSyncs Syncs => _syncs ??= new(_context, Replays);
 
-    /// <summary>The landing: its plan, the merge, the branch form and its advance, and the rule's tidy (WSR1, D87, D100).</summary>
+    /// <summary>The landing: its plan, the merge, the branch form and its advance, and the rule's tidy.</summary>
     private TreeLands Lands => _lands ??= new(_context, Follows, WorkReads, Syncs);
 
-    /// <summary>An entry's Accept: its parts' work on one branch, in ledger order (ACCEPTALL1, D167).</summary>
+    /// <summary>An entry's Accept: its parts' work on one branch, in ledger order.</summary>
     private EntryLands Entries => _entries ??= new(_context, Lands, Syncs);
 
-    /// <summary>A session's tree asked for before it goes on, and made again where its folder is gone (TREEGONE1).</summary>
+    /// <summary>A session's tree asked for before it goes on, and made again where its folder is gone.</summary>
     private TreeReturns Returns => _returns ??= new(_context, Follows, SetAsides);
 
     /// <summary>
-    /// The test seam (SQUASHTIDY1c): run with the branch's name between a judgement and the delete it cleared, where a test
+    /// The test seam: run with the branch's name between a judgement and the delete it cleared, where a test
     /// moves the branch as a session or a person could. Production sets none.
     /// </summary>
     internal Func<string, Task>? BeforeDeleting { get => _context.BeforeDeleting; init => _context.BeforeDeleting = value; }
@@ -167,19 +167,19 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     /// <inheritdoc cref="TreeContext.BeforeRefDeleted"/>
     internal Func<string, Task>? BeforeRefDeleted { get => _context.BeforeRefDeleted; init => _context.BeforeRefDeleted = value; }
 
-    /// <summary>The test seam (AUTOTIDY1): true for a checkout whose working trees git could not list. Production sets none.</summary>
+    /// <summary>The test seam: true for a checkout whose working trees git could not list. Production sets none.</summary>
     internal Func<string, bool>? ListFails { get => _context.ListFails; init => _context.ListFails = value; }
 
     /// <inheritdoc cref="TreeContext.Clock"/>
     internal Func<DateTimeOffset> Clock { get => _context.Clock; init => _context.Clock = value; }
 
-    /// <summary>The test seam (UIFREEZE1): git's guess at a checkout's line, which a test counts. Production asks git.</summary>
+    /// <summary>The test seam: git's guess at a checkout's line, which a test counts. Production asks git.</summary>
     internal Func<string, CancellationToken, Task<string?>> CheckoutLine { get => _context.CheckoutLine; init => _context.CheckoutLine = value; }
 
-    /// <summary>The branches this machine's landings made (WSR5) — the only ones the clean-up and the hand-off act on.</summary>
+    /// <summary>The branches this machine's landings made — the only ones the clean-up and the hand-off act on.</summary>
     public LandedBranches Recorded => _context.Recorded;
 
-    /// <summary>Where this machine's session branches started (WSR6) — what bringing one up to date cuts at.</summary>
+    /// <summary>Where this machine's session branches started — what bringing one up to date cuts at.</summary>
     public SessionBranches Grown => _context.Grown;
 
     /// <summary>Every tree this machine's Daoris has opened lives under here, and only here.</summary>
@@ -216,8 +216,8 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
 
     /// <summary>
     /// Every session tree on this machine, read from the layout itself — the directory is the
-    /// registry, the same argument the credential profiles made (D49 §4). Then each folder the look moved aside
-    /// (AUTOTIDY1, AUTOTIDY2c), with when, until the purge deletes it.
+    /// registry, the same argument the credential profiles made. Then each folder the look moved aside,
+    /// with when, until the purge deletes it.
     /// </summary>
     public Task<IReadOnlyList<SessionTree>> ListAsync(CancellationToken ct = default) => ListAsync(null, ct);
 
@@ -272,14 +272,14 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     /// landing at done. A part of an entry with others (<see cref="EntryLandings.LeadOf"/>) is its entry's Accept for that part alone:
     /// named for the entry's first part (its chain's first quest), its own session recorded, on the entry's branch
     /// (<see cref="JoinEntryAsync"/>), which <see cref="LandingSubject.Joins"/> then lands on. Otherwise the session's own subject, the
-    /// chain's first quest (WSR5), as before. A merge rule makes no branch to join; a TREEFOLLOW1 tree still lands as its own branch, and
-    /// is named for its own quest and title (TREEFOLLOWNAME1).
+    /// chain's first quest, as before. A merge rule makes no branch to join; a TREEFOLLOW1 tree still lands as its own branch, and
+    /// is named for its own quest and title.
     /// </summary>
     /// <param name="quest">The session's own quest, null for a conversation.</param>
     /// <param name="records">The service's session records, which say the session's entry and its parts.</param>
     /// <param name="find">A quest by id, as the service holds it, for the chain's walk.</param>
     /// <param name="opening">A session's opening words, which name a conversation with no quest.</param>
-    /// <param name="process">The run's process the door's gate read (WORKFLOW1f), whose landing step names the entry's branch.</param>
+    /// <param name="process">The run's process the door's gate read, whose landing step names the entry's branch.</param>
     public async Task<LandingSubject> OwnSubjectAsync(
         string path, string session, string? quest, IReadOnlyList<SessionRecord> records, Func<string, Task<QuestView?>> find,
         Func<string, string?> opening, IWorkplaceProcess? process, CancellationToken ct = default)
@@ -287,17 +287,17 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         var lead = EntryLandings.LeadOf(records, session);
         var named = lead?.Id ?? session;
         var subject = await BranchPatterns.SubjectAsync(named, lead is null ? quest : lead.Quest, find, opening(named)).ConfigureAwait(false);
-        // FABRIC-UNITLINK1, FABRIC-CLOSE1h13: whatever it is named for, the quest this session served and the submission its landing is
+        // Whatever it is named for, the quest this session served and the submission its landing is
         // made on, as the door's own find read it (each door's find reads a quest once), which the landing's record keeps.
         var served = quest is null ? null : quest.TrimStart('#');
         var submission = served is null ? null : (await find(served).ConfigureAwait(false))?.Submission is { } made
             ? new QuestSubmissionRef(made.Machine, made.Sequence)
             : null;
         if (lead is null) return subject with { Served = served, Submission = submission };
-        // ACCEPTFOOT2: a conversation's entry is named for its first part's work, not for the part pressed here.
+        // A conversation's entry is named for its first part's work, not for the part pressed here.
         subject = await Lands.EntryForWorkAsync(subject, lead.Tree, path, ct, process).ConfigureAwait(false);
         var joined = await JoinEntryAsync(path, session, subject, ct, process).ConfigureAwait(false) with { Served = served, Submission = submission };
-        // TREEFOLLOWNAME1: a tree on a branch of its own lands as that branch, so it is named for its own quest, not its entry's first part's.
+        // A tree on a branch of its own lands as that branch, so it is named for its own quest, not its entry's first part's.
         if (joined.EntryBranch is null || !await Entries.FollowsOwnAsync(path, ct).ConfigureAwait(false)) return joined;
         return joined.NamedFor(await BranchPatterns.SubjectAsync(session, quest, find, opening(session)).ConfigureAwait(false));
     }
@@ -337,7 +337,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         Sweeps.SweepPlanAsync(repositories, inUse, ct, only);
 
     /// <summary>
-    /// The clean-up (D88): every session branch the proof clears goes, with its tree, and the rest are
+    /// The clean-up: every session branch the proof clears goes, with its tree, and the rest are
     /// kept and named. 🔴 Each is judged again right before it goes — a list is a fact about a moment.
     /// </summary>
     /// <param name="only">The branches the person saw listed to go, as <c>repository:branch</c>; null for every one the proof clears now.</param>
@@ -355,13 +355,13 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         CancellationToken ct = default)
     {
         var pass = await AutoTidy.TidyEmptyAsync(root, repository, workspace, inUse, ct).ConfigureAwait(false);
-        // FABRIC-END3: the tidy's own removals are Daoris's ref moves, judged at once by the ref watch with their echo (§B4, canary 11).
+        // The tidy's own removals are Daoris's ref moves, judged at once by the ref watch with their echo (§B4, canary 11).
         if (pass.Results.Any(result => result.Removed) || pass.Landed.Any(result => result.Removed)) RefMoves.Mine(_context.Home, repository);
         return pass;
     }
 
     /// <summary>
-    /// One repository's end judgement, its line read here as the look's tidy reads it (FABRIC-END3, link 1 of the design §C6): what the
+    /// One repository's end judgement, its line read here as the look's tidy reads it (link 1 of the design §C6): what the
     /// ref watch's hint asks. How many facts were written; nothing where this process does not hold the home's lease.
     /// </summary>
     /// <param name="root">The repository's main checkout, whose <c>.git</c> folder is its common dir.</param>
@@ -390,7 +390,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         new FinishedRecords(SetAsides).RunAsync(rootOf, post, clock, ct, only, spent);
 
     /// <summary>
-    /// The registry's checkouts, by workspace and repository, for the record pass's git reads outside every hold (the keep-size design §3.4):
+    /// The registry's checkouts, by workspace and repository, for the record pass's git reads outside every hold:
     /// a repository it does not name is unresolved, and its folder waits its days. Null where the registry did not read: then no step runs.
     /// </summary>
     internal static Func<string, string, string?>? RootsOf(IReadOnlyList<RepoView>? registry) => registry is null ? null :
@@ -526,7 +526,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     public Task<int?> UncommittedAsync(string tree, CancellationToken ct = default) => WorkReads.UncommittedAsync(tree, ct);
 
     /// <summary>
-    /// One <c>git status</c> of a tree a kept read proved this home's linked tree (TREELOOK1, <see cref="TreeReadPass"/>), counted;
+    /// One <c>git status</c> of a tree a kept read proved this home's linked tree (<see cref="TreeReadPass"/>), counted;
     /// null where git cannot say. Nothing else is asked, so a caller that has not proved it asks <see cref="UncommittedAsync"/>.
     /// </summary>
     internal Task<int?> StatusCountAsync(string tree, CancellationToken ct = default) => TreeWorkReads.UncommittedOfAsync(tree, ct);
@@ -570,7 +570,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         string root, string repository, string? workspace, IReadOnlyCollection<LandedBranch> entries, CancellationToken ct = default) =>
         Asks.AskAtMomentAsync(root, repository, RemoteTarget.Workspace(workspace), entries, ct);
 
-    /// <summary>A repository's line as the asks and the tidy read it (FABRIC-END6): the person's choice, else git's guess; null where none.</summary>
+    /// <summary>A repository's line as the asks and the tidy read it: the person's choice, else git's guess; null where none.</summary>
     internal async Task<string?> LineOfAsync(string root, string repository, string? workspace, CancellationToken ct = default) =>
         (await _context.LineAsync(root, repository, RemoteTarget.Workspace(workspace), ct).ConfigureAwait(false)).Branch;
 }

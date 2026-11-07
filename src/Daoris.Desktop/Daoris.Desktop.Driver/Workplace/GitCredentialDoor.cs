@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The door's third name, <c>git-credential-daoris</c> (D241 point 6; the git design §2.3): git's credential helper for an identity's
+/// The door's third name, <c>git-credential-daoris</c>: git's credential helper for an identity's
 /// HTTPS act, which the remote helper names for its inner transport alone. On <c>get</c> it answers the token of the identity the
 /// helper named (<see cref="GitRouting.IdentityVariable"/>) and only for that identity's own host; any other host, no identity, no
 /// token or a way that is not HTTPS gets nothing, said by an empty answer and exit 0 as git's helpers say it. <c>store</c> and

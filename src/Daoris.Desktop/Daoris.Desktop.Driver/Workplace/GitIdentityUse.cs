@@ -3,13 +3,13 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>What serves a git act (the git-auth design §3.2): an identity, the person's own sign-ins, or nothing.</summary>
+/// <summary>What serves a git act: an identity, the person's own sign-ins, or nothing.</summary>
 public enum GitServeKind
 {
-    /// <summary>No pointer and no default: until GITAUTH1e, the act keeps today's ambient credentials (§6.8).</summary>
+    /// <summary>No pointer and no default: the act keeps the ambient credentials.</summary>
     None,
 
-    /// <summary>The person chose <i>Your own git sign-ins</i> for this scope (§3.3).</summary>
+    /// <summary>The person chose <i>Your own git sign-ins</i> for this scope.</summary>
     Own,
 
     /// <summary>A git identity of Daoris's.</summary>
@@ -17,7 +17,7 @@ public enum GitServeKind
 }
 
 /// <summary>
-/// The answer of a resolution (§3.2): what serves the act, the identity where one does, and where the answer came from
+/// The answer of a resolution: what serves the act, the identity where one does, and where the answer came from
 /// (<c>repository</c>, <c>workspace</c>, <c>machine</c>, <c>default</c>), with every pointer passed over on the way and why.
 /// </summary>
 public sealed record GitServes(GitServeKind Kind, GitIdentity? Identity, string? Source, IReadOnlyList<string> Passed)
@@ -25,7 +25,7 @@ public sealed record GitServes(GitServeKind Kind, GitIdentity? Identity, string?
     /// <summary>Nothing serves the act.</summary>
     public static GitServes Nothing(IReadOnlyList<string> passed) => new(GitServeKind.None, null, null, passed);
 
-    /// <summary>What served the act, as a hold keys it (§5.2): the identity's id, <c>own</c>, or <c>none</c>.</summary>
+    /// <summary>What served the act, as a hold keys it: the identity's id, <c>own</c>, or <c>none</c>.</summary>
     public string Served => Kind switch
     {
         GitServeKind.Identity => Identity!.Id,
@@ -35,7 +35,7 @@ public sealed record GitServes(GitServeKind Kind, GitIdentity? Identity, string?
 }
 
 /// <summary>
-/// The pointers and their resolution (GITAUTH1c, D198 point 1; the git-auth design §3.2). The identities are one set on the machine;
+/// The pointers and their resolution. The identities are one set on the machine;
 /// each scope only points, and the pointers live in <c>driver.json</c> beside the access keys, holding no secret:
 /// <c>gitIdentity</c> (<c>{repository: {remote: id | "own"}}</c>), <c>workspaceGitIdentity</c> (<c>{workspace: {host: id | "own"}}</c>)
 /// and <c>machineGitIdentity</c> (<c>{host: "own"}</c>); a host's default is the identity's own <c>default</c>.
@@ -120,7 +120,7 @@ public static class GitIdentityUse
     }
 
     /// <summary>
-    /// Resolve what serves an act (§3.2).
+    /// Resolve what serves an act.
     /// </summary>
     /// <param name="identities">The machine's identities.</param>
     /// <param name="pointers">The pointers.</param>

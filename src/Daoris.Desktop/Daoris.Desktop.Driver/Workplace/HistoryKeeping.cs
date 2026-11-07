@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Finished history by an age the person sets (KEEP1g, D195 point 7, decided by the owner; the cleanup design §3.6): once a day, each
-/// workspace's finished units whose last move is older than the person's days go through the clear itself, every refusal holding
-/// (the history clearing design §1.2). With no age set, the default, it runs nothing: nothing clears finished history by itself unless the
-/// person has set an age (the history clearing design §7 as D195 amends it).
+/// Finished history by an age the person sets (decided by the owner): once a day, each
+/// workspace's finished units whose last move is older than the person's days go through the clear itself, every refusal holding.
+/// With no age set, the default, it runs nothing: nothing clears finished history by itself unless the
+/// person has set an age.
 /// </summary>
 /// <remarks>
 /// <para><b>The clear's own two presses</b>: <see cref="HistoryClearing.PlanAsync"/> lists each workspace, and

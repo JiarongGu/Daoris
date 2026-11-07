@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>The words a pull request's state takes at <see cref="HookPoints.State"/> (PLUGHOOK1a, D148 point 3, design §2.2).</summary>
+/// <summary>The words a pull request's state takes at <see cref="HookPoints.State"/>.</summary>
 public static class PullRequestStates
 {
     public const string Open = "open";
@@ -20,7 +20,7 @@ public static class PullRequestStates
     public static readonly IReadOnlyList<string> All = [Open, Completed, Abandoned, Unknown];
 }
 
-/// <summary>How a completed pull request merged, where its platform says (design §2.2). Any other word is read as none.</summary>
+/// <summary>How a completed pull request merged, where its platform says. Any other word is read as none.</summary>
 public static class MergeHow
 {
     public const string Merge = "merge";
@@ -36,7 +36,7 @@ public static class MergeHow
 /// <summary>Which occasion removed a session branch on a pull request's answer.</summary>
 public static class CarriedBy
 {
-    /// <summary>LAND3's tidy, after a landing's plugin step.</summary>
+    /// <summary>The tidy, after a landing's plugin step.</summary>
     public const string Tidy = "tidy";
 
     /// <summary>The clean-up's press.</summary>
@@ -44,7 +44,7 @@ public static class CarriedBy
 }
 
 /// <summary>
-/// What a row says where a kept answer does not clear a branch (design §2.3), and why nothing was asked (§2.1, §2.4). Nothing
+/// What a row says where a kept answer does not clear a branch, and why nothing was asked. Nothing
 /// goes on any of them.
 /// </summary>
 public static class PullRequestCodes
@@ -55,7 +55,7 @@ public static class PullRequestCodes
     /// <summary>The merge commit is not on the line here; bringing the repository up to date fetches it.</summary>
     public const string MergeNotHere = "merge-not-here";
 
-    /// <summary>The branch holds commits the pull request did not carry, as after LAND2c advanced it.</summary>
+    /// <summary>The branch holds commits the pull request did not carry, as after a landing's advance.</summary>
     public const string Beyond = "beyond";
 
     /// <summary>The pull request merged a commit this machine never had.</summary>
@@ -72,7 +72,7 @@ public static class PullRequestCodes
 }
 
 /// <summary>
-/// The answer read by shape (PLUGHOOK1a, design §2.2): what <see cref="HookPeer"/> takes from the wire. The plugin kit's wire
+/// The answer read by shape: what <see cref="HookPeer"/> takes from the wire. The plugin kit's wire
 /// test holds the same rules in its own code, and <c>PluginKitTests</c> holds the two to one table.
 /// </summary>
 public static partial class PullRequestAnswers
@@ -139,8 +139,8 @@ public static partial class PullRequestAnswers
     }
 }
 
-/// <summary>What git found here for one entry's kept answer (design §2.3), gathered by <see cref="SessionTrees"/>.</summary>
-/// <param name="Line">The repository's line (D86), or null where none is set and git names none.</param>
+/// <summary>What git found here for one entry's kept answer, gathered by <see cref="SessionTrees"/>.</summary>
+/// <param name="Line">The repository's line, or null where none is set and git names none.</param>
 /// <param name="MergeOn">The form of the line that holds the merge commit (<c>main</c>, <c>origin/main</c>), or null.</param>
 /// <param name="SourceHeld">Whether this machine holds the source commit.</param>
 /// <param name="Standing">Whether the landed branch stands, holding the commit the landing recorded.</param>
@@ -148,7 +148,7 @@ public static partial class PullRequestAnswers
 public sealed record PullRequestFacts(string? Line, string? MergeOn, bool SourceHeld, bool Standing, bool UnderSource);
 
 /// <summary>
-/// What a kept answer proves here (design §2.3).
+/// What a kept answer proves here.
 /// </summary>
 /// <param name="Code">Null where nothing stands in the way; else the state (<c>open</c>, <c>abandoned</c>, <c>unknown</c>) or one of <see cref="PullRequestCodes"/>.</param>
 /// <param name="Form">The form of the line that holds the merge commit, where it is held there.</param>
@@ -157,7 +157,7 @@ public sealed record PullRequestFacts(string? Line, string? MergeOn, bool Source
 public sealed record PullRequestVerdict(string? Code, string? Form, bool Carries, bool Clears);
 
 /// <summary>
-/// The proof a completed answer gives (PLUGHOOK1a, D148 point 4, design §2.3): pure, so its table holds every code without git.
+/// The proof a completed answer gives: pure, so its table holds every code without git.
 /// The platform's word is that the merge commit merged that source commit; git confirms the rest.
 /// </summary>
 public static class PullRequestProof
@@ -179,7 +179,7 @@ public static class PullRequestProof
 }
 
 /// <summary>
-/// Who is asked about an entry, and whether it is due (PLUGHOOK1a, D148 points 1–2, design §2.1): pure, so the rule is held
+/// Who is asked about an entry, and whether it is due: pure, so the rule is held
 /// without git. Whether its answer could remove something now is git's question, asked by <see cref="SessionTrees"/>.
 /// </summary>
 public static class PullRequestAsking
@@ -206,7 +206,7 @@ public static class PullRequestAsking
         entry.PullRequestState?.State != PullRequestStates.Completed && (again || now - LastAsked(entry) >= Fresh);
 
     /// <summary>
-    /// Why <paramref name="plugin"/> cannot be asked here, in a sentence, or null (D100's four reasons, each its own sentence):
+    /// Why <paramref name="plugin"/> cannot be asked here, in a sentence, or null (four reasons, each its own sentence):
     /// not installed, switched off, unsound, or speaking on no <see cref="HookPoints.State"/> point.
     /// </summary>
     public static string? Problem(string plugin, IWorkplacePluginCatalog catalog)
@@ -224,17 +224,17 @@ public static class PullRequestAsking
 /// <summary>A landed branch asked about at an occasion: the entry, the plugin asked, and the frame it is sent.</summary>
 public sealed record StateAsk(LandedBranch Entry, string Plugin, StateFrame Frame);
 
-/// <summary>What <see cref="HookPoints.State"/> is sent (design §2.2).</summary>
+/// <summary>What <see cref="HookPoints.State"/> is sent.</summary>
 /// <param name="Root">The repository's checkout here, where the plugin runs its platform's tool.</param>
-/// <param name="Line">The repository's line (D86), or null.</param>
+/// <param name="Line">The repository's line, or null.</param>
 /// <param name="PullRequest">The pull request the record holds, or null.</param>
 /// <param name="PushedTip">The commit the plugin pushed, or null.</param>
 /// <param name="Origin">
-/// <c>origin</c>'s address as the one reader gives it (GITAUTH1b, the git-auth design §4.4), the land frame's twin: a plugin's tool that
+/// <c>origin</c>'s address as the one reader gives it, the land frame's twin: a plugin's tool that
 /// reads remotes is named the repository from it, since under Daoris's doors the checkout's remotes read <c>daoris::https://…</c>.
 /// Null where there is no <c>origin</c>.
 /// </param>
-/// <param name="Key">The delivery key (LANDNODE1e), asked of a plugin that declares one to settle a dispatch left without its answer; null otherwise.</param>
+/// <param name="Key">The delivery key, asked of a plugin that declares one to settle a dispatch left without its answer; null otherwise.</param>
 public sealed record StateFrame(
     string Repository, string Workspace, string Root, string Branch, string? Line, string? PullRequest, string? PushedTip,
     string? Origin = null, string? Key = null);

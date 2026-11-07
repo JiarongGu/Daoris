@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The message of the one commit a squashing landing makes (PROCESS1b-ii, D164's PROCESS1b-ii note point 2): the quest's title as
+/// The message of the one commit a squashing landing makes: the quest's title as
 /// its subject, the session's commits' subjects oldest first as its body, one line each, and the line naming the session last.
 /// Bounded, so a long chain or a conversation's opening never makes a commit nobody can read.
 /// </summary>
@@ -19,7 +19,7 @@ public static class SquashMessage
     /// <summary>The whole message: the subject, a blank line, the list where there is one and another blank line, and the ending.</summary>
     /// <param name="title">The quest's title, or a conversation's own: its opening.</param>
     /// <param name="commits">The commits squashed, oldest first: at a chain's later landing, only those added since the last.</param>
-    /// <param name="message">A delivery's rendered message (LANDNODE1f), which takes the title's place as the commit's opening; null names it by the title.</param>
+    /// <param name="message">A delivery's rendered message, which takes the title's place as the commit's opening; null names it by the title.</param>
     public static string Of(string? title, IReadOnlyList<LandingCommit> commits, string session, string? message = null)
     {
         var body = Body(commits);

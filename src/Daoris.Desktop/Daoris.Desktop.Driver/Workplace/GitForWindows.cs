@@ -4,24 +4,24 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Git for Windows' launcher, started past (GITSTART1): the <c>git.exe</c> in an install's <c>cmd</c> folder is a
+/// Git for Windows' launcher, started past: the <c>git.exe</c> in an install's <c>cmd</c> folder is a
 /// launcher that starts <c>&lt;top&gt;\&lt;prefix&gt;\bin\git.exe</c> as a second process, and a start costs 100–700 ms
-/// on a loaded machine (PROC1a). Where the system's git is that launcher, the real git starts directly, handed the
+/// on a loaded machine. Where the system's git is that launcher, the real git starts directly, handed the
 /// environment the launcher would have handed it.
 /// </summary>
 /// <remarks>
-/// <para>The service's <c>GitForWindows</c> is its twin (GITSTART2; <c>.claude/knowledge/twins.md</c>): the same rule in
+/// <para>The service's <c>GitForWindows</c> is its twin (<c>.claude/knowledge/twins.md</c>): the same rule in
 /// the service's own code, its <c>GitForWindowsTests</c> holding this side's rows case for case. The two change together.</para>
-/// <para>🔴 The launcher's variables are what it was measured setting (git 2.53.0.windows.3; FIX-LOG, GITSTART1), held to
+/// <para>🔴 The launcher's variables are what it was measured setting (git 2.53.0.windows.3), held to
 /// a real install by <c>GitForWindowsProcessTests</c>. git started bare with no <c>MSYSTEM</c> repairs its own
 /// <c>PATH</c>, but in another order (<c>HOME\bin</c> first), and with any <c>MSYSTEM</c> set it repairs nothing, so
 /// <c>sh</c>, and with it every hook and <c>!</c> alias, would go unfound; so the start sets them all.</para>
 /// <para>Recognised only where the layout is unmistakable: a <c>git.exe</c> in a <c>cmd</c> folder, a git under a known
 /// prefix beside it, and <c>usr\bin</c>. An install with an <c>etc\git-bash.config</c>, whose <c>MSYS=</c> lines the
 /// launcher reads, starts through the launcher as before, as does any other layout and any other platform.</para>
-/// <para>The devkit carries a twin (<c>Daoris.Devkit.Core/GitStart.cs</c>, GITSTART3), since it references nothing of the
+/// <para>The devkit carries a twin (<c>Daoris.Devkit.Core/GitStart.cs</c>), since it references nothing of the
 /// desktop's: a change to this rule is made there too, and its <c>GitStartTests</c> keeps this class's tests' rows.</para>
-/// <para>🔴 A TWIN of the CLI's <c>gitforwindows.ts</c> (GITSTART4), which the CLI's toolchain and the repository's tools
+/// <para>🔴 A TWIN of the CLI's <c>gitforwindows.ts</c>, which the CLI's toolchain and the repository's tools
 /// start their git through; <c>gitforwindows.test.ts</c> holds <c>GitForWindowsTests</c>' tables row for row. A rule
 /// changed here is changed there, in the same commit.</para>
 /// </remarks>

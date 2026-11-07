@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A tree's tip read from git's own files, with no process (FABRIC-END7): the <c>HEAD</c> of its git directory, and the branch it names
+/// A tree's tip read from git's own files, with no process: the <c>HEAD</c> of its git directory, and the branch it names
 /// as a loose ref or a line of <c>packed-refs</c> in the common directory. Null wherever the files cannot say it (an unborn branch, the
 /// reftable format, a file being replaced), so the caller asks git.
 /// </summary>
@@ -26,7 +26,7 @@ public static class TreeTips
 
     /// <summary>
     /// The branch <paramref name="tree"/>'s <c>HEAD</c> names, without <c>refs/heads/</c>, or null where it is detached or the files
-    /// cannot say: what a landing's hold names its tree by (LANDHOLD3).
+    /// cannot say: what a landing's hold names its tree by.
     /// </summary>
     public static string? Branch(string tree)
     {

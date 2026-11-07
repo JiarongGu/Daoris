@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The names both doors and <see cref="GitWiring"/> share (GITAUTH1b, the git-auth design §4.1-§4.3): the home variable, the grant
+/// The names both doors and <see cref="GitWiring"/> share (the git-auth design §4.1-§4.3): the home variable, the grant
 /// variable, the rewrite's prefix and settings, and the command scope's reading and writing. The base library alone: the doors
 /// compile it in (<c>Daoris.Desktop.GitDoor</c>).
 /// </summary>
@@ -10,7 +10,7 @@ public static class GitRouting
     /// <summary>The Daoris home both doors act for, written by <c>GitWiring.Hand</c> over any inherited value.</summary>
     public const string HomeVariable = "DAORIS_GIT_HOME";
 
-    /// <summary>The push act's grant, handed to that act's own git start alone (§6.7; <see cref="GitGrants"/>).</summary>
+    /// <summary>The push act's grant, handed to that act's own git start alone (<see cref="GitGrants"/>).</summary>
     public const string GrantVariable = "DAORIS_GIT_GRANT";
 
     /// <summary>The API token of the identity serving a place's origin, handed to one plugin process alone (<c>PluginHostToken</c>); no other start carries it.</summary>
@@ -23,7 +23,7 @@ public static class GitRouting
     public const string Prefix = "daoris::";
 
     /// <summary>
-    /// The command scope's settings that send every HTTP and HTTPS act to the remote helper (§4.1): fetch and push addresses alike,
+    /// The command scope's settings that send every HTTP and HTTPS act to the remote helper: fetch and push addresses alike,
     /// and a submodule's recursive fetch, which git allows an unknown protocol only from the user.
     /// </summary>
     public static readonly IReadOnlyList<(string Key, string Value)> Rewrites =
@@ -54,7 +54,7 @@ public static class GitRouting
     }
 
     /// <summary>
-    /// Take Daoris's routing out of an environment (§4.3): the remote helper starts git's own transport so, and nothing it starts comes
+    /// Take Daoris's routing out of an environment: the remote helper starts git's own transport so, and nothing it starts comes
     /// back through the door. Every other command-scope setting is kept, renumbered.
     /// </summary>
     public static void Unroute(IDictionary<string, string?> environment)

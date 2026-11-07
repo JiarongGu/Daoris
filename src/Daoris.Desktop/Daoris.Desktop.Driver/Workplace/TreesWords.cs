@@ -3,12 +3,12 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The words of the <c>trees</c> presses, one function per press, shared by the alone path and the routes (RPC1b3). Each takes the
+/// The words of the <c>trees</c> presses, one function per press, shared by the alone path and the routes. Each takes the
 /// record the press's core returns and says what <c>daoris tree list</c> prints; nothing here runs git or asks the service.
 /// </summary>
 public static class TreesWords
 {
-    /// <summary>A plugin's own line, said under its name as the landing and the hand-off say it (D64 §4).</summary>
+    /// <summary>A plugin's own line, said under its name as the landing and the hand-off say it.</summary>
     public static string PluginLine(string plugin, string line) => $"  plugin:{plugin}  {line}";
 
     /// <summary>One branch of the clean-up's list, in words: whose, which, and what it holds.</summary>
@@ -29,21 +29,21 @@ public static class TreesWords
     public static TreesSaid Remove(TreeRemoval removal) => new([$"trees: {removal.Message}"], [], removal.Removed ? 0 : 1);
 
     /// <summary>
-    /// <c>trees remove &lt;landing branch&gt; --why</c> (LANDRETIRE1): a landing's branch withdrawn, or what <c>--plan</c> says it would do, exit 0;
+    /// <c>trees remove &lt;landing branch&gt; --why</c>: a landing's branch withdrawn, or what <c>--plan</c> says it would do, exit 0;
     /// a refusal that keeps it is policy and exit 1.
     /// </summary>
     public static TreesSaid Withdraw(LandedWithdrawal withdrawal) => new([$"trees: {withdrawal.Message}"], [], withdrawal.Done || withdrawal.Planned ? 0 : 1);
 
     /// <summary>
     /// <c>trees land &lt;session&gt;</c>: the plugin's lines as they came, then the landing's sentence; 1 where the step the rule asked for did
-    /// not happen, a push held back once the branch was made among them (FABRIC-CLOSE1h3).
+    /// not happen, a push held back once the branch was made among them.
     /// </summary>
     public static TreesSaid Land(TreeLanding landed, IReadOnlyList<string> pluginLines) =>
         new([.. pluginLines, $"trees: {landed.Message}"], [],
             landed.Landed ? 0 : 1);
 
     /// <summary>
-    /// <c>trees land &lt;session&gt;</c> with no running Daoris (WORKFLOWCLEAN1 1c; the cleanup design §2.1): the verb never lands. For a run
+    /// <c>trees land &lt;session&gt;</c> with no running Daoris: the verb never lands. For a run
     /// whose <c>land</c> the runtime performs, the review's word is kept under the verb's lease (<see cref="VerbLeases"/>), exit 0 once kept;
     /// what holds the work, or why no run's land lands it (<see cref="RunLandHolds"/>), is said as a press says it, exit 1.
     /// </summary>
@@ -66,7 +66,7 @@ public static class TreesWords
         var said = new List<string>();
         foreach (var result in done.Sessions)
         {
-            // A removal on content says where its commits stay (SQUASHTIDY1c); every other removal says nothing more.
+            // A removal on content says where its commits stay; every other removal says nothing more.
             said.Add($"  {(result.Removed ? "removed" : "kept   ")} {Describe(result.Item)}"
                 + ((result.Removed && result.Item.HeldBy is null) || result.Message == "kept" ? "" : $" — {result.Message}"));
         }
@@ -113,7 +113,7 @@ public static class TreesWords
     }
 
     /// <summary>
-    /// The lines a press moved, registered from the line at once (WSSETUP5, D124 §3.1) rather than at a loop's next look, so a landing
+    /// The lines a press moved, registered from the line at once rather than at a loop's next look, so a landing
     /// reads as registered when its press returns; each outcome to <paramref name="log"/>. What changed or must be fixed is said. A
     /// service that did not answer leaves them due, for the loop to follow. Shared by the terminal's presses and the routes that answer them.
     /// </summary>
@@ -150,8 +150,8 @@ public static class TreesWords
     public static TreesSaid Refused(string sentence) => new([], [sentence], 1);
 
     /// <summary>
-    /// A landing the review already reads as landed (REVIEW2, D113): <c>trees land</c> says why nothing is landed again, on its output,
-    /// exit 1, and the route that answers the press says the same (RPC1b4).
+    /// A landing the review already reads as landed: <c>trees land</c> says why nothing is landed again, on its output,
+    /// exit 1, and the route that answers the press says the same.
     /// </summary>
     public static TreesSaid NotAgain(string session, LandedReview review, bool treeGone) =>
         new([$"trees: {LandedReviewWords.NotAgain(session, review, treeGone)}"], [], 1);
@@ -166,7 +166,7 @@ public static class TreesWords
             : null;
 
     /// <summary>
-    /// A chat run whose bind the home could not keep (CHATFLOW1c, the chat-flow design §4.3, <c>bind-failed</c>): the press is refused with
+    /// A chat run whose bind the home could not keep (<c>bind-failed</c>): the press is refused with
     /// the reason, never landed under Current, which could skip what the repository's chosen workflow asks of the person.
     /// </summary>
     public static TreesSaid BindFailed(string session, string why) =>
@@ -188,13 +188,13 @@ public static class TreesWords
             : new([], [$"trees: `{name}` is a tree's name, and this verb takes the session: that tree is session `{owner.Id}`'s, so say `{owner.Id}`."], 1);
     }
 
-    /// <summary>A press on a run whose <c>land</c> the runtime performs, before Daoris judged the commit it would land (WORKFLOWCLEAN1 1c).</summary>
+    /// <summary>A press on a run whose <c>land</c> the runtime performs, before Daoris judged the commit it would land.</summary>
     public static TreesSaid NotJudged(string session) =>
         new([], [$"trees: Daoris has not judged session `{session}`'s work at its commit yet, so nothing was landed; its next pass does, and this asks for it."], 1);
 
     /// <summary>
     /// The review's reading of a session's earlier landing, for the press that would land it again: null where this machine kept no
-    /// landing of it. The verb and the route ask it alike, so the two refuse alike (RPC1b4).
+    /// landing of it. The verb and the route ask it alike, so the two refuse alike.
     /// </summary>
     public static async Task<LandedReview?> LandedBeforeAsync(
         SessionTrees trees, ServiceClient service, string session, CancellationToken ct = default)

@@ -4,11 +4,11 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Which repository a git act's working folder belongs to, from the files alone (GITAUTH1c; the git-auth design §4.2 step 1): the
+/// Which repository a git act's working folder belongs to, from the files alone: the
 /// door is started by git in the act's own folder, so a <c>git -C</c> into another repository resolves for itself, and it reads no
 /// variable to know it. A session's tree is named by the layout Daoris chose (<c>work/trees/&lt;workspace&gt;/&lt;repository&gt;/&lt;name&gt;</c>);
 /// a checkout by <c>run/git/checkouts.json</c>, the registry's roots as the driver last read them (<see cref="Remember"/>). A folder in
-/// neither is a repository Daoris does not know, which resolves by the machine's steps alone (§3.2).
+/// neither is a repository Daoris does not know, which resolves by the machine's steps alone.
 /// </summary>
 /// <remarks>The base library alone: the door compiles this in.</remarks>
 public static class GitFolders

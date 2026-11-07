@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What a clear is asked of (HIST1c, D153 point 1; the history-clearing design §1.1).</summary>
+/// <summary>What a clear is asked of.</summary>
 public enum HistoryScope
 {
     /// <summary>A workspace's finished history: every unit in it that may go, the home's left-over files, and its intake's room where it keeps no ask.</summary>
@@ -17,9 +17,9 @@ public enum HistoryScope
 }
 
 // Every constant of HistoryKinds, HistoryWords, HistoryWaits, HistoryStands and HistoryAwaitedBy is held, with the service's
-// spellings, to one table: the service suite's fixtures/history-words.json, which HistoryWordsTwinTests reads (HIST1m).
+// spellings, to one table: the service suite's fixtures/history-words.json, which HistoryWordsTwinTests reads.
 
-/// <summary>The kinds of unit, as the service's history door spells them (HIST1b).</summary>
+/// <summary>The kinds of unit, as the service's history door spells them.</summary>
 public static class HistoryKinds
 {
     public const string Quest = "quest";
@@ -30,8 +30,8 @@ public static class HistoryKinds
 }
 
 /// <summary>
-/// The words a unit, or a piece of one, is kept by (the history-clearing design §1.2): the service's, which judge the records
-/// (HIST1b), and this machine's, which judge the trees, the landings and the processes (HIST1c). A door says each in its own
+/// The words a unit, or a piece of one, is kept by: the service's, which judge the records,
+/// and this machine's, which judge the trees, the landings and the processes. A door says each in its own
 /// words by the word, never by the sentence beside it.
 /// </summary>
 public static class HistoryWords
@@ -45,7 +45,7 @@ public static class HistoryWords
     public const string Unpushed = "unpushed";
     public const string NotOurs = "not-ours";
 
-    /// <summary>A session's tree is still on this machine: the clean-up or *Discard tree* frees it (D88).</summary>
+    /// <summary>A session's tree is still on this machine: the clean-up or *Discard tree* frees it.</summary>
     public const string TreeHere = "tree-here";
 
     /// <summary>A landing's branch for one of its sessions still stands: the clean-up frees it once it has merged.</summary>
@@ -64,7 +64,7 @@ public static class HistoryContexts
     /// <summary><c>open</c>: the quest is taken, where the word's own sentence is an open one's.</summary>
     public const string Taken = "taken";
 
-    /// <summary><c>open</c>: failed sessions of a quest still open or taken, whose strikes are counted from them (D58).</summary>
+    /// <summary><c>open</c>: failed sessions of a quest still open or taken, whose strikes are counted from them.</summary>
     public const string Failed = "failed";
 
     /// <summary><c>live</c>: a teammate's record still reads as running on their machine.</summary>
@@ -99,7 +99,7 @@ public static class HistoryContexts
 }
 
 /// <summary>
-/// What waits on the person, as the service names it beside <c>needs-you</c> (HIST1l): the service judged it from the records it
+/// What waits on the person, as the service names it beside <c>needs-you</c>: the service judged it from the records it
 /// read, so the driver says the sentence meant from these and not from a second read, which may have moved since.
 /// </summary>
 public static class HistoryWaits
@@ -121,7 +121,7 @@ public static class HistoryWaits
 }
 
 /// <summary>
-/// How the work in progress stands, as the service names it beside <c>open</c> (HIST1m), for the reason <see cref="HistoryWaits"/>
+/// How the work in progress stands, as the service names it beside <c>open</c>, for the reason <see cref="HistoryWaits"/>
 /// is read: the service judged it from the quest it read, and a second read here may find it taken or closed since.
 /// </summary>
 public static class HistoryStands
@@ -134,7 +134,7 @@ public static class HistoryStands
 }
 
 /// <summary>
-/// The open work that names a unit, as the service names it beside <c>awaited</c> (HIST1m): judged from the quests the service
+/// The open work that names a unit, as the service names it beside <c>awaited</c>: judged from the quests the service
 /// read, so a quest that had its answer or closed between the two reads is not said in another's sentence.
 /// </summary>
 public static class HistoryAwaitedBy
@@ -181,7 +181,7 @@ public sealed record HistoryUnitPlan(string Kind, string Id, string? Workspace)
 {
     public IReadOnlyList<string> Quests { get; init; } = [];
 
-    /// <summary>Of <see cref="Quests"/>, those a remote numbered: forgotten here, and kept by the team (§3.2).</summary>
+    /// <summary>Of <see cref="Quests"/>, those a remote numbered: forgotten here, and kept by the team.</summary>
     public IReadOnlyList<string> Forgotten { get; init; } = [];
 
     public IReadOnlyList<string> Asks { get; init; } = [];
@@ -192,7 +192,7 @@ public sealed record HistoryUnitPlan(string Kind, string Id, string? Workspace)
     /// <summary>This machine's copies of a teammate's records it takes, keyed <c>origin/id</c>.</summary>
     public IReadOnlyList<string> Teammates { get; init; } = [];
 
-    /// <summary>The runs among <see cref="Quests"/> that are bound here, whose bindings go with the unit (WORKFLOW1e3); never on the wire.</summary>
+    /// <summary>The runs among <see cref="Quests"/> that are bound here, whose bindings go with the unit; never on the wire.</summary>
     public IReadOnlyList<string> Bindings { get; init; } = [];
 
     /// <summary>Why the whole unit stays, the first piece a person meets; null when it may go.</summary>
@@ -215,7 +215,7 @@ public sealed record HistoryPlan(HistoryScope Scope, string Id, IReadOnlyList<Hi
     public HistoryReading? Reading { get; init; }
 }
 
-/// <summary>What the second press did (the design §5): what went, what changed since the list and stayed, and what the home freed.</summary>
+/// <summary>What the second press did: what went, what changed since the list and stayed, and what the home freed.</summary>
 public sealed record HistoryOutcome(HistoryScope Scope, string Id)
 {
     /// <summary>How many units the press sent.</summary>
@@ -237,7 +237,7 @@ public sealed record HistoryOutcome(HistoryScope Scope, string Id)
 
     public int Forgotten => Cleared.Sum(unit => unit.Forgotten.Count);
 
-    /// <summary>Left-over files a workspace's clear took (§2.3).</summary>
+    /// <summary>Left-over files a workspace's clear took.</summary>
     public int LeftOver { get; init; }
 
     /// <summary>Whether a workspace's clear took its intake's room.</summary>

@@ -37,7 +37,7 @@ public sealed record ResolvePick(string Id, string Take);
 public sealed record ResolvePress(string Verb, string Path, string? Head, string Base, string Ours, string Theirs, string Worktree, IReadOnlyList<ResolvePick> Picks);
 
 /// <summary>
-/// **Resolve a conflicted file** (GITAPP2j, D204, the git-writes design §8). <i>Resolve</i> is one file step of the act journal: the file's
+/// **Resolve a conflicted file**. <i>Resolve</i> is one file step of the act journal: the file's
 /// bytes become the stages' merge with each conflict taken ours, theirs or both, where the file still holds the bytes the page showed. The bytes
 /// it replaces and the bytes it writes are files beside the record, and the three stages are held by the act's own ref, so a restart loses
 /// neither. <i>Mark resolved</i> is a second act, one index step as stage's is, in which <c>git add</c> on a copy finds the entry that

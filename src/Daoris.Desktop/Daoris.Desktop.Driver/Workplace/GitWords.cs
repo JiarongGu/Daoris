@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The one boundary for words that may hold a secret (GITAUTH1a, D198 point 16; the git-auth design §10): every text from git, ssh,
+/// The one boundary for words that may hold a secret: every text from git, ssh,
 /// the credential door or a landing plugin passes <see cref="Redact"/> before Daoris keeps, says or answers it. Beside
 /// <see cref="WiringRedact"/>, which cuts what This Daoris shows of a value it was handed; this one cuts what a child wrote.
 /// </summary>
@@ -44,7 +44,7 @@ public static partial class GitWords
     }
 
     /// <summary>
-    /// The host of a remote's address (the git-auth design §3.2), with its port where the address names one: <c>github.com</c>,
+    /// The host of a remote's address, with its port where the address names one: <c>github.com</c>,
     /// <c>ssh.dev.azure.com</c>, <c>127.0.0.1:2222</c>. Null for an address that names no host (a local path, <c>file://</c>).
     /// </summary>
     public static string? HostOf(string? address)

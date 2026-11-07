@@ -5,7 +5,7 @@ using static Daoris.Driver.ChoiceArgs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris settings keep</c> (KEEP1d, D195 point 2, KEEP1f; FOUNDATION1 mod-iii): the workplace's own verb, the settings' port
+/// <c>daoris settings keep</c>: the workplace's own verb, the settings' port
 /// (<see cref="ChoiceVerb"/>) implemented beside the rules it sets (<see cref="KeepRules"/>), the free-space floor among them, whose volume it reads.
 /// </summary>
 public sealed class KeepVerb : ChoiceVerb
@@ -13,7 +13,7 @@ public sealed class KeepVerb : ChoiceVerb
     public override string Word => "keep";
 
     /// <summary>
-    /// The person's keep rules (KEEP1d, D195 point 2; the cleanup design §2.2): one kind's days, `whole` or `slim`, `never`, or its
+    /// The person's keep rules: one kind's days, `whole` or `slim`, `never`, or its
     /// default again. Judged here by the one judgement the window's SET_KEEP makes, so a value out of its bounds is refused before
     /// the window is asked, in the line both paths say (`… (KEEP_OUT_OF_RANGE)`).
     /// </summary>
@@ -45,7 +45,7 @@ public sealed class KeepVerb : ChoiceVerb
         if (set.Never) payload["never"] = true;
         if (set.Whole is { } whole) payload["whole"] = whole;
         if (set.Default) payload["default"] = true;
-        // KEEP1f: the floor's size, share or `off`; the window judges a size against its own read of the volume.
+        // The floor's size, share or `off`; the window judges a size against its own read of the volume.
         if (set.Gb is { } gb) payload["gb"] = gb;
         if (set.Percent is { } percent) payload["percent"] = percent;
         if (set.Off) payload["off"] = true;
@@ -57,7 +57,7 @@ public sealed class KeepVerb : ChoiceVerb
         });
     }
 
-    /// <summary><c>keep</c>: each kind's rule the person sets, and whether it is the default (KEEP1d).</summary>
+    /// <summary><c>keep</c>: each kind's rule the person sets, and whether it is the default.</summary>
     public override int? Said(IReadOnlyList<string> args, DriverConfig choices, DriverChoicesWorld world)
     {
         var write = world.Instance.Out;
@@ -75,7 +75,7 @@ public sealed class KeepVerb : ChoiceVerb
             ? $"  {KeepRules.Allowance,-10} {allowance}  (the default — `daoris settings keep allowance …` changes it)"
             : $"  {KeepRules.Allowance,-10} {allowance}  (set — `daoris settings keep allowance default` takes the default again)");
 
-        // KEEP1f: the free-space floor, set beside the kinds' rules.
+        // The free-space floor, set beside the kinds' rules.
         var floor = KeepRules.Said(KeepRules.Floor, choices.Keep);
         write.WriteLine(choices.Keep.IsDefault(KeepRules.Floor)
             ? $"  {KeepRules.Floor,-10} {floor}  (the default — `daoris settings keep floor …` changes it)"
@@ -83,7 +83,7 @@ public sealed class KeepVerb : ChoiceVerb
         return 0;
     }
 
-    /// <summary><c>keep &lt;kind&gt; &lt;value&gt;</c>'s words read as the rule they set (KEEP1d); anything else is its usage.</summary>
+    /// <summary><c>keep &lt;kind&gt; &lt;value&gt;</c>'s words read as the rule they set; anything else is its usage.</summary>
     private static KeepSet KeepAsked(IReadOnlyList<string> args, DriverChoicesWorld world)
     {
         const string Usage = "`driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default`, "
@@ -102,7 +102,7 @@ public sealed class KeepVerb : ChoiceVerb
         {
             var set = KeepRules.Asked(args[1], args[2]);
             if (!(KeepRules.IsFloor(set.Kind) || KeepRules.IsAllowance(set.Kind)) || set.Gb is null) return set;
-            // KEEP1f: a size is at most half the Daoris folder's volume, read here so the refusal comes before the window is asked.
+            // A size is at most half the Daoris folder's volume, read here so the refusal comes before the window is asked.
             var volume = world.FloorVolume is { } read
                 ? read()
                 : world.Instance.Home is { } home ? SpaceVolumes.Read(DaorisHome.FolderOf(home).Folder)?.Total : null;

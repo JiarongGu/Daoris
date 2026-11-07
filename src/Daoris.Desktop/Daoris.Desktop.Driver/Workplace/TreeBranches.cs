@@ -6,7 +6,7 @@ using static Daoris.Driver.LandingSayings;
 
 namespace Daoris.Driver;
 
-/// <summary>The branch form of a landing: a new branch made from the session's commits, or a recorded one advanced (D100).</summary>
+/// <summary>The branch form of a landing: a new branch made from the session's commits, or a recorded one advanced.</summary>
 internal sealed class TreeBranches(TreeContext context, TreeFollows follows, TreeLandSyncs syncs)
 {
     /// <summary>
@@ -15,38 +15,38 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
     /// <remarks>
     /// 🔴 <b>It writes nothing to the checkout</b>: it makes one ref in the repository and moves no
     /// checkout, so the root may be dirty and on any branch, and is left exactly so. A branch of that
-    /// name already there is refused and never moved — it may be somebody's. Nothing pushes (D87).
+    /// name already there is refused and never moved — it may be somebody's. Nothing pushes.
     /// </remarks>
-    /// <param name="handedOn">A plugin pushes it next (D100), so the sentence does not tell the person to.</param>
+    /// <param name="handedOn">A plugin pushes it next, so the sentence does not tell the person to.</param>
     /// <param name="squash">
-    /// The session the rule squashes (PROCESS1b-ii), whose title and id the one commit's message says; null where the rule keeps
+    /// The session the rule squashes, whose title and id the one commit's message says; null where the rule keeps
     /// the session's own commits. A tree on a branch of its own is never squashed.
     /// </param>
     /// <param name="sync">
-    /// What the line holds of the tree's commits, where it holds some (LANDSYNC1, D87's 2026-10-15 amendment points 2 and 3), or where it
-    /// only moved since the tree left it (LANDREBASE1): only the rest is replayed, aside, onto the line's latest, and the branch is made at
+    /// What the line holds of the tree's commits, where it holds some, or where it
+    /// only moved since the tree left it: only the rest is replayed, aside, onto the line's latest, and the branch is made at
     /// the replay's tip; a branch the landing advances takes what neither it nor the line holds, replayed onto its tip, and nothing where
     /// the line only moved; a branch of the tree's own is replayed in place, unless it is on its remote and the line only moved. Null
     /// lands the commits as made.
     /// </param>
     /// <param name="join">
-    /// The tree's judgement where it joins its entry's branch (ACCEPTALL1), even where the line holds none of its commits: where the
+    /// The tree's judgement where it joins its entry's branch, even where the line holds none of its commits: where the
     /// branch stands and the tree's tip does not grow from it, what neither holds is replayed onto the branch's tip, as
-    /// <paramref name="sync"/>'s would be. Null advances only by the session's own tip, as before.
+    /// <paramref name="sync"/>'s would be. Null advances only by the session's own tip.
     /// </param>
     /// <param name="pinned">
-    /// The tip the door judged (FABRIC-END7's review, <see cref="LandingGate.Tip"/>): the session's branch must stand there when its
+    /// The tip the door judged (<see cref="LandingGate.Tip"/>): the session's branch must stand there when its
     /// commits are read, or nothing lands, and the branch is made or moved to that commit, so one made after the judgement never lands
     /// unseen. Null lands the branch as it stands, as the press does.
     /// </param>
     /// <param name="uncommitted">
-    /// The tree's uncommitted paths as the landing's judgement counted them a moment before (LANDGIT1c); null asks git.
+    /// The tree's uncommitted paths as the landing's judgement counted them a moment before; null asks git.
     /// </param>
-    /// <param name="here">The tree's repository and branch as its landing read them a moment ago (LANDGIT1b); null reads them here.</param>
+    /// <param name="here">The tree's repository and branch as its landing read them a moment ago; null reads them here.</param>
     /// <param name="delivering">
-    /// The delivery it performs (LANDNODE1b2): <paramref name="name"/> is its intent's, and the branch's ref is written by its one transaction under
+    /// The delivery it performs: <paramref name="name"/> is its intent's, and the branch's ref is written by its one transaction under
     /// the checkout's lock, each in its phase, the tree's own branch verified standing at the tip or, replayed in place, moved from it while its
-    /// tree is detached. Null writes the ref as before.
+    /// tree is detached. Null writes the ref.
     /// </param>
     internal async Task<Branched> BranchAsync(
         string full, string workspace, string repository, string name, bool handedOn, CancellationToken ct, bool entered = false,
@@ -63,7 +63,7 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
             return new TreeLanding(false, $"there is no tree at {full}.");
         }
 
-        // Its repository and its branch, one start (PROC1d-iii), or the landing's own read of them a moment ago (LANDGIT1b): what it lands
+        // Its repository and its branch, one start, or the landing's own read of them a moment ago: what it lands
         // is read from that branch below, as it stands.
         here ??= await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
         if (here.Code != 0)
@@ -89,7 +89,7 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
 
         var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         var against = line is null ? "HEAD" : await ComparableAsync(root, line, ct).ConfigureAwait(false) ?? line;
-        // Oldest first, each commit's id and subject: what a plugin writes a pull request from (D100).
+        // Oldest first, each commit's id and subject: what a plugin writes a pull request from.
         var (logCode, ahead, logErr) = await WorkingTree.GitAsync(
             root, ["log", "--reverse", "--format=%H%x09%s", $"{against}..{branch}"], ct).ConfigureAwait(false);
         if (logCode != 0)
@@ -109,15 +109,15 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
             .Select(parts => new LandingCommit(parts[0], parts.Length > 1 ? parts[1] : ""))
             .ToList();
 
-        // FABRIC-END7's review: pinned, the work read here is the work judged, or nothing lands.
+        // Pinned, the work read here is the work judged, or nothing lands.
         if (pinned is not null && !string.Equals(commits[^1].Sha, pinned, StringComparison.OrdinalIgnoreCase)) return Moved(branch, commits[^1].Sha, pinned);
 
-        // TREEFOLLOW1 (D164 point 4): the tree its agent moved onto a branch of its own lands as that branch stands: it is already the
+        // The tree its agent moved onto a branch of its own lands as that branch stands: it is already the
         // pull request's branch, named as the repository names its own, so none is made and the rule's pattern is not asked.
         if (!branch.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal))
         {
             if (entered) return new TreeLanding(false, EnteredOwn(branch));
-            // LANDNODE1b2: a delivery lands the branch it names; the tree's own is landed only where it is that one.
+            // A delivery lands the branch it names; the tree's own is landed only where it is that one.
             if (delivering is not null && !string.Equals(branch, name, StringComparison.Ordinal))
             {
                 return new TreeLanding(false, $"Nothing was landed: this session's tree is on its own branch, `{branch}`, and its delivery lands `{name}`.")
@@ -125,16 +125,16 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
             }
 
             var pushOwn = handedOn ? "" : $" Push it and open the pull request from there: `git push -u origin {branch}`.";
-            // LANDSYNC1 (point 3): where the line holds some of its commits, the branch is replayed in place and keeps its name; one on its
-            // remote is never rewritten (D109), and is refused as a conflict is. LANDREBASE1: so is one whose line only moved, unless it is
-            // on its remote, where it lands as it stands, as before, its pull request the place it meets the line.
+            // Where the line holds some of its commits, the branch is replayed in place and keeps its name; one on its
+            // remote is never rewritten, and is refused as a conflict is. So is one whose line only moved, unless it is
+            // on its remote, where it lands as it stands, its pull request the place it meets the line.
             var pushed = sync is not null && await OnRemoteAsync(root, branch, ct).ConfigureAwait(false);
             if (sync is not null && !(pushed && sync.Held.HoldsNone))
             {
                 if (pushed) return TreeLandSyncs.OwnOnRemote(sync);
                 var (made, refused) = await syncs.ReplayAsync(sync, repository, workspace, sync.Onto, sync.Held.Kept, ct).ConfigureAwait(false);
                 if (refused is not null) return refused;
-                // LANDNODE1l: a delivery's ref is the branch its tree has out, moved from the tip judged by its one transaction.
+                // A delivery's ref is the branch its tree has out, moved from the tip judged by its one transaction.
                 if (await syncs.MoveTreeAsync(full, sync, made!.Now, repository, workspace, inUse: null, ct, delivering).ConfigureAwait(false) is { } stays)
                 {
                     return new TreeLanding(false, $"Nothing was landed: `{branch}`, the session's own branch, could not be replayed in place ({stays}). "
@@ -152,7 +152,7 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
                 { Replay = made, Followed = true };
             }
 
-            // LANDNODE1b2: the delivery's ref is the tree's own branch, verified standing at the tip it pinned.
+            // The delivery's ref is the tree's own branch, verified standing at the tip it pinned.
             if (delivering is not null && await delivering.WriteAsync(root, $"refs/heads/{branch}", commits[^1].Sha, commits[^1].Sha, ct).ConfigureAwait(false)
                     is { Code: not 0 } unverified)
             {
@@ -170,7 +170,7 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
 
         if (!BranchName.IsValid(name)) return new TreeLanding(false, Untaken(name, entered));
 
-        // PROCESS1b-ii (point 1): the squash is a commit Daoris makes, so git's own identity here makes it, asked before anything is.
+        // The squash is a commit Daoris makes, so git's own identity here makes it, asked before anything is.
         if (squash is not null && await TreeSquashes.IdentityProblemAsync(context.Home, root, repository, ct).ConfigureAwait(false) is { } nobody)
         {
             return new TreeLanding(false, nobody);
@@ -183,7 +183,7 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
             return new TreeLanding(false, EnteredStands(name, repository)) { Refusal = LandingCode.Exists };
         }
 
-        // LANDNODE1b3: the branch this delivery wrote and read back before Daoris stopped goes on to its record (the land node design §3, a
+        // The branch this delivery wrote and read back before Daoris stopped goes on to its record (the land node design §3, a
         // restart's rule 1): never judged as a branch another made, never written twice; an advance from where the record had it.
         if (exists == 0 && delivering?.Wrote(name) is { } wrote && string.Equals(wrote, standing.Trim(), StringComparison.OrdinalIgnoreCase))
         {
@@ -202,16 +202,16 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
 
         if (exists == 0)
         {
-            // A chain's later done moves the chain's branch on (LAND2c, D149): only one Daoris made, as a fast-forward, or under
-            // a squash by one more commit (PROCESS1b-ii point 4).
+            // A chain's later done moves the chain's branch on: only one Daoris made, as a fast-forward, or under
+            // a squash by one more commit.
             var standsAt = standing.Trim();
-            // Under a squash the branch holds the session tip it squashed by content alone (PROCESS1b-ii point 4): work grown from that
-            // tip grows from the branch, and its commits up to it are on the branch already (ACCEPTALL1d).
+            // Under a squash the branch holds the session tip it squashed by content alone: work grown from that
+            // tip grows from the branch, and its commits up to it are on the branch already.
             var squashedTip = squash is null ? null : context.Recorded.Of(repository, name)?.Squashed;
             var grown = squashedTip ?? standsAt;
-            // ACCEPTALL1 (D167's amendment point 2): a part that ran alongside, its work not grown from the entry's branch, joins it by
-            // the same replay as what the line partly holds; one grown from it still moves it by its own tip. LANDREBASE1: a line that only
-            // moved replays nothing onto a standing branch, which grows from its own tip (D145 §3) and is never rewritten.
+            // A part that ran alongside, its work not grown from the entry's branch, joins it by
+            // the same replay as what the line partly holds; one grown from it still moves it by its own tip. A line that only
+            // moved replays nothing onto a standing branch, which grows from its own tip and is never rewritten.
             var holding = sync is { Held.HoldsNone: false } ? sync : null;
             var onto = holding ?? (join is not null && !await IsAncestorAsync(root, grown, join.Tip, ct).ConfigureAwait(false) ? join : null);
             if (onto is null)
@@ -220,8 +220,8 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
                     .ConfigureAwait(false);
             }
 
-            // LANDSYNC1 (point 3): what neither the branch nor the line holds, replayed onto the branch's tip, which then moves by D145
-            // §3's fast-forward as before.
+            // What neither the branch nor the line holds, replayed onto the branch's tip, which then moves by
+            // fast-forward.
             var lacking = new List<LandingCommit>();
             foreach (var commit in onto.Held.Kept)
             {
@@ -250,12 +250,12 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
             };
         }
 
-        // PROCESS1b-ii (points 1 and 2): one commit of the session's tip's tree, its parent where the session left the line, and the
+        // One commit of the session's tip's tree, its parent where the session left the line, and the
         // branch made at it; the session's own branch is left as it is, and the record keeps the tip squashed. Pinned, at the tip judged.
         var start = pinned ?? branch;
         string? squashed = null;
         IReadOnlyList<LandingCommit> carried = commits;
-        // LANDSYNC1 (point 2): only what the line lacks, replayed aside onto the line's latest; the branch is made at the replay's tip.
+        // Only what the line lacks, replayed aside onto the line's latest; the branch is made at the replay's tip.
         LandReplay? replayed = null;
         if (sync is not null)
         {
@@ -279,7 +279,7 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
             }
 
             var squashing = replayed?.Landed ?? commits;
-            // LANDNODE1f: a delivery's message, frozen in its intent, is the commit's opening; under Current none is named (LANDNODE1c3).
+            // A delivery's message, frozen in its intent, is the commit's opening; under Current none is named.
             var said = delivering?.Template;
             var (made, why) = await TreeSquashes.SquashAsync(context.Home, root, tip, mergeBase.Trim(), SquashMessage.Of(squash.SquashTitle, squashing, squash.Session, said), ct)
                 .ConfigureAwait(false);
@@ -313,17 +313,17 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
     }
 
     /// <summary>
-    /// Move a standing branch on to the session's work (LAND2c, D145 §3, D149): the chain's branch, which an earlier done
+    /// Move a standing branch on to the session's work: the chain's branch, which an earlier done
     /// made, grows by this session's commits, so a ticket has one branch and one pull request.
     /// </summary>
     /// <remarks>
-    /// <para>🔴 <b>Only a fast-forward of a branch Daoris made, and never forced.</b> It must be the record's (D102), standing at
+    /// <para>🔴 <b>Only a fast-forward of a branch Daoris made, and never forced.</b> It must be the record's, standing at
     /// the recorded tip, checked out in no working tree, with its work not already on the line, and the session's tip must grow
     /// from it with something new (<see cref="LandingAdvance"/>). Then git moves it by compare-and-swap from the tip judged
     /// (<c>update-ref</c>), so a branch moved in between is refused by git itself. Like the branch form, it writes one ref and
     /// touches no checkout.</para>
     ///
-    /// <para><b>A branch whose pull request was merged is not moved on</b> (D149 point 3): D102's proof on the recorded tip, the
+    /// <para><b>A branch whose pull request was merged is not moved on</b>: the content proof on the recorded tip, the
     /// same one the clean-up and the hand-off make, finds its work on the line, and commits added now would ride no pull
     /// request.</para>
     /// </remarks>
@@ -332,15 +332,15 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
     /// <param name="commits">What the branch would hold beyond the line once moved: what a plugin is told, as at a first landing.</param>
     /// <param name="against">The line's form the commits were counted from, which a squash's branch is counted from again.</param>
     /// <param name="squash">
-    /// The session the rule squashes (PROCESS1b-ii point 4): the advance is one more commit on the branch, its tree the session's
+    /// The session the rule squashes: the advance is one more commit on the branch, its tree the session's
     /// tip's, its parent the branch's tip, its message only what was added since the recorded tip; null is the fast-forward.
     /// </param>
     /// <param name="replayed">
-    /// The tip of what the line lacks replayed onto the branch's (LANDSYNC1), which the branch moves to in place of the session's tip;
-    /// null moves it to the session's tip, as before.
+    /// The tip of what the line lacks replayed onto the branch's, which the branch moves to in place of the session's tip;
+    /// null moves it to the session's tip.
     /// </param>
-    /// <param name="pinned">The session's tip the door judged (FABRIC-END7's review), which the branch moves to in place of the tip read now.</param>
-    /// <param name="delivering">The delivery it performs (LANDNODE1b2), whose transaction moves the branch in its phase; null moves it as before.</param>
+    /// <param name="pinned">The session's tip the door judged, which the branch moves to in place of the tip read now.</param>
+    /// <param name="delivering">The delivery it performs, whose transaction moves the branch in its phase; null moves it outside any delivery.</param>
     private async Task<Branched> AdvanceAsync(
         string root, string repository, string name, string standsAt, string branch, string? line,
         IReadOnlyList<LandingCommit> commits, bool handedOn, CancellationToken ct, string? against = null, LandingSubject? squash = null,
@@ -350,8 +350,8 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
         var (_, headOut, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}^{{commit}}"], ct)
             .ConfigureAwait(false);
         var head = replayed ?? pinned ?? headOut.Trim();
-        // What the session's work must grow from: the tip the record says was squashed where it says one (point 4), else the tip
-        // the branch was made or last moved at, its commits the session's own; a replay onto that tip grows from it (ACCEPTALL1d).
+        // What the session's work must grow from: the tip the record says was squashed where it says one, else the tip
+        // the branch was made or last moved at, its commits the session's own; a replay onto that tip grows from it.
         var grewFrom = LandingAdvance.GrewFrom(recorded, squash is not null, replayed is not null);
 
         // Each fact read only where the one before it allowed an advance, in the order the refusals are said.

@@ -5,7 +5,7 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A session tree's opening, and an opening cut off (OPENCUT1): while <see cref="SessionTrees.OpenAsync"/> opens a tree, git
+/// A session tree's opening, and an opening cut off: while <see cref="SessionTrees.OpenAsync"/> opens a tree, git
 /// holds it locked under a reason that names the process opening it, and lets go once where its branch started is recorded. An
 /// open that a cancel cuts off undoes itself here; one a kill cuts off is left locked, and a later look tells it from a person's
 /// lock by its reason (<see cref="TreeStrays"/>).
@@ -17,7 +17,7 @@ internal static class TreeOpenings
 
     /// <summary>
     /// git's own reason for the lock it holds while <c>git worktree add</c> runs, left behind where the add was killed: an open
-    /// from before OPENCUT1, or one cut off before git wrote the reason it was handed.
+    /// that gave no reason of Daoris's, or one cut off before git wrote the reason it was handed.
     /// </summary>
     internal const string GitsOwn = "initializing";
 
@@ -32,7 +32,7 @@ internal static class TreeOpenings
             : null;
 
     /// <summary>
-    /// Whether a tree locked for this reason is an opening that was cut off (OPENCUT1): git's own lock from an add that never
+    /// Whether a tree locked for this reason is an opening that was cut off: git's own lock from an add that never
     /// finished, or Daoris's opening lock whose process no longer runs. A person's lock, any other reason or none, is never one.
     /// </summary>
     /// <remarks>
@@ -63,23 +63,23 @@ internal static class TreeOpenings
     }
 
     /// <summary>
-    /// An open that did not finish, undone (OPENCUT1): git lets go of its tree and deletes the tree's files, lock or none
+    /// An open that did not finish, undone: git lets go of its tree and deletes the tree's files, lock or none
     /// (<c>--force</c> twice); what git did not delete of the folder is deleted here, where the open made it; and its branch goes.
     /// Each step runs to its end whatever the open's token said, since a cancel is what brought it here.
     /// </summary>
     /// <remarks>
-    /// TREELINK1: git's removal follows a junction out of the tree, as a copy of the dependencies may leave one, so each link in it
+    /// Git's removal follows a junction out of the tree, as a copy of the dependencies may leave one, so each link in it
     /// goes as a link first, where the open made the folder or git may keep it as this tree (one git cannot list may be). A tree whose
     /// links cannot all go is left, with its branch, for the look, which moves its folder aside whole (<see cref="TreeStrays"/>).
     /// </remarks>
     /// <param name="ours">Whether the open made the folder: one that was there before the add is never deleted.</param>
-    /// <param name="keepBranch">Whether the branch stands: a tree made again (TREELOCAL2) is cut off with the session's commits on its
+    /// <param name="keepBranch">Whether the branch stands: a tree made again is cut off with the session's commits on its
     /// branch, which only an open that made the branch itself takes back.</param>
-    /// <remarks>GITWORKTREECONFIG1: a tree git binds to another checkout is left too, with its branch and its opening's lock, and the look
+    /// <remarks>A tree git binds to another checkout is left too, with its branch and its opening's lock, and the look
     /// says why each time it meets it (<see cref="TreeStrays"/>).</remarks>
     /// <param name="unused">Whether the open made the tree a moment ago and nothing was recorded, copied or told of it: the opening's own
     /// refusal of a tree git binds elsewhere lets go of it so, since git's own removal names a tree by its record and deletes that
-    /// folder alone (D51's note), where the look would leave it for the person to meet.</param>
+    /// folder alone, where the look would leave it for the person to meet.</param>
     internal static async Task UndoAsync(string root, string path, string branch, bool ours, bool keepBranch = false, bool unused = false)
     {
         var done = CancellationToken.None;
@@ -107,7 +107,7 @@ internal static class TreeOpenings
             }
         }
 
-        // A record git still keeps of it, its folder gone now: that record alone, never a prune of every stale one (AUTOTIDY1).
+        // A record git still keeps of it, its folder gone now: that record alone, never a prune of every stale one.
         if (await TreeLeftovers.RegisteredAsync(root, path, done).ConfigureAwait(false) is true)
         {
             await WorkingTree.GitAsync(root, ["worktree", "remove", "--force", "--force", path], done).ConfigureAwait(false);

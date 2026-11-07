@@ -10,9 +10,9 @@ namespace Daoris.Driver;
 public sealed record GitAccessWorld(string Home, GitPress Press, Func<string, string?> Environment, Func<string, Task<string?>> Workspaces);
 
 /// <summary>
-/// The terminal's git access and git go-aheads (GITAUTH1f, D198 points 8, 10 and 12; the git-auth design §8): <c>git access</c>,
+/// The terminal's git access and git go-aheads (10 and 12): <c>git access</c>,
 /// <c>git asks</c> and <c>git answer</c>, each change one typed operation (<see cref="GitAccessActs"/>, <see cref="GitAsks"/>), one text
-/// per verb, a refusal one line. From a session's environment every change is refused (D194 point 5): an agent changes no access,
+/// per verb, a refusal one line. From a session's environment every change is refused: an agent changes no access,
 /// its own included, and answers no go-ahead. While the window runs a widening and an answer are pressed through it
 /// (<c>SET_GIT_ACCESS</c>, <c>GIT_ANSWER</c>), as <see cref="GitIdentityCommand"/>'s are, so the window confirms each first.
 /// </summary>

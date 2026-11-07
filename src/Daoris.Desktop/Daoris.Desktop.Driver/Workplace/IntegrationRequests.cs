@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The one door a request to integrate a repository's line comes through (INTEGRATE1e part e1; the integration design §4.6, D215): who
+/// The one door a request to integrate a repository's line comes through: who
 /// asked, under the rule and policy as they stand, for which branch at which frozen tip. Its callers are the <c>integrate</c> node's start
 /// (<see cref="IntegrationRoutes.Node"/>) and a merge rule's press (<see cref="Press"/>); the owner's card (row h) and the steward's act (row i) are to come. Its requests
 /// are kept in the desktop store's integration family (<see cref="IntegrationStore"/>).
@@ -9,19 +9,19 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>A unit's request comes only from that unit's own landing.</b> So no request passes a session's stopped <c>handed</c>, a required
 /// opinion or a review. <see cref="IntegrationRoutes.Node"/> takes the unit's own landing at the tip its node froze, by the acceptance
-/// provenance its record keeps (<see cref="LandedIntegrate"/>, §17.4), then as a recorded landing is taken.
+/// provenance its record keeps (<see cref="LandedIntegrate"/>), then as a recorded landing is taken.
 /// <see cref="IntegrationRoutes.Recorded"/> takes an existing recorded
 /// landing, made by the owner's press or a done, only on its record, its exact tip, its gate proof read as the record keeps it, and no
 /// double. <see cref="IntegrationRoutes.Records"/> takes a records branch, no unit's and no run's, and refuses a session's branch and a
 /// landing's there.</para>
 ///
 /// <para><b>It reads, and writes nothing through a tree.</b> Each git it asks is a read of a ref or of ancestry in the repository's
-/// checkout, so a landing whose tree LAND3's tidy took needs no tree. The steps that write through a tree (the form, the replay) pass
+/// checkout, so a landing whose tree a tidy took needs no tree. The steps that write through a tree (the form, the replay) pass
 /// <see cref="TreeBinding.RefusalAsync"/> first, in the parts that build them.</para>
 ///
 /// <para><b>The gate proof is read, never judged again.</b> The review, the second opinion and the workflow version that let the landing go,
 /// and who accepted it, are copied from the record as it holds them for its tip: the Accept it records is done. Only a record that does not
-/// say who accepted that tip, one from before that was kept, holds no proof to read.</para>
+/// say who accepted that tip holds no proof to read.</para>
 /// </remarks>
 /// <param name="home">The Daoris home whose saved workflows' <c>integrate</c> step says who requests outside a run (<see cref="PlaceIntegrate"/>).</param>
 public sealed class IntegrationRequests(IIntegrationRecords records, IIntegrationRequestStore store, Func<DriverConfig> config, string home)
@@ -59,11 +59,11 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
         new LandingIntegrate(Request: LandingIntegrate.Owner, Commit: LandingIntegrate.Merge, Batch: 1, Gates: LandingIntegrate.NoGates).Resolved();
 
     /// <summary>
-    /// The person's press under a merge rule (INTEGRATE1g): the session's branch at <paramref name="tip"/>, the commit the press merges, admitted
+    /// The person's press under a merge rule: the session's branch at <paramref name="tip"/>, the commit the press merges, admitted
     /// for <paramref name="line"/> under <see cref="Legacy"/> only where the repository's effective rule is a merge rule.
     /// </summary>
     /// <param name="delivered">
-    /// A delivery's merge (LANDNODE1b2): its method is its intent's, so the rule is not read and no rule source is kept.
+    /// A delivery's merge: its method is its intent's, so the rule is not read and no rule source is kept.
     /// </param>
     /// <param name="automatic">
     /// A delivery the standing automatic authority lands, with no press: requested through its own door (<see cref="IntegrationRequester.Landing"/>)
@@ -96,7 +96,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
         $"`{repository}`'s line carries no policy, so nothing was requested: its landed branches stay the result, as always.";
 
     /// <summary>
-    /// The unit's own landing (INTEGRATE1n part n2; §17.4, F40, C30): the <c>integrate</c> node's start, by Daoris, for the unit and the tip it
+    /// The unit's own landing (F40, C30): the <c>integrate</c> node's start, by Daoris, for the unit and the tip it
     /// froze. The landing's record decides whether its acceptance was the request, by the provenance it keeps for that tip and who accepted it;
     /// then it is admitted as a recorded landing is, on its record, exact tip, gate proof and no double.
     /// </summary>
@@ -121,7 +121,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     }
 
     /// <summary>
-    /// Whether the acceptance at <paramref name="entry"/>'s tip was the request (§17.4), by the provenance its newest advance, else its own,
+    /// Whether the acceptance at <paramref name="entry"/>'s tip was the request, by the provenance its newest advance, else its own,
     /// keeps and who accepted it, and the policy the request then freezes: the request the acceptance stood under (the node's own where the
     /// version's step asks), the rest the rule's. Nothing is read from git, and a record that says neither is no request.
     /// </summary>
@@ -158,7 +158,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     }
 
     /// <summary>
-    /// The come-up sweep (§4.6): where the place's workflow's <c>integrate</c> says <c>request: done</c>, every standing landing of
+    /// The come-up sweep: where the place's workflow's <c>integrate</c> says <c>request: done</c>, every standing landing of
     /// <paramref name="repository"/> asked through the recorded-landing door once, by Daoris, in the order they landed; what each answered comes
     /// back. Under any other <c>request</c>, or where the line carries no policy, it asks nothing. Run once at each come-up and once when the
     /// workflow is set, by callers to come.
@@ -215,7 +215,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     }
 
     /// <summary>
-    /// The recorded-landing door (§4.6, F32 and C27): a standing entry of the machine's landings, bound to the unit, session and quest it
+    /// The recorded-landing door (F32 and C27): a standing entry of the machine's landings, bound to the unit, session and quest it
     /// records; its exact tip, the entry's or its newest advance's, at which the branch must stand; its gate proof as it recorded it; and no
     /// request open for it, nor the line holding it.
     /// </summary>
@@ -240,7 +240,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
                 $"`{ask.Branch}`'s landing carries no unit `{unit}`, so it is not that unit's to request: nothing was requested.");
         }
 
-        // The route's own judgement of the landing, before git is asked: the node's reads the acceptance's provenance (§17.4).
+        // The route's own judgement of the landing, before git is asked: the node's reads the acceptance's provenance.
         var (judged, unjudged) = judge(entry);
         if (unjudged is not null) return unjudged;
         var policy = judged!;
@@ -286,7 +286,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     }
 
     /// <summary>
-    /// The records-branch door (§4.6, D156): a branch no unit's and no run's, requested by the owner's card or the steward's act, at the
+    /// The records-branch door: a branch no unit's and no run's, requested by the owner's card or the steward's act, at the
     /// commit it stands at, carrying no workflow gate. A session's branch, by its name or its record, and a branch any landing of the
     /// repository recorded, standing or a trace, are refused here: a unit comes only through its own landing or its recorded landing.
     /// </summary>
@@ -339,7 +339,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     }
 
     /// <summary>
-    /// The gate proof the record keeps for its tip: its newest advance's where it moved on (LAND2c), else its landing's own; null where that
+    /// The gate proof the record keeps for its tip: its newest advance's where it moved on, else its landing's own; null where that
     /// acceptance's record does not say who accepted it.
     /// </summary>
     private static IntegrationProof? ProofOf(LandedBranch entry)

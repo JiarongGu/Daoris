@@ -4,16 +4,16 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Daoris's two doors at each git act (GITAUTH1b, D198 points 2 and 11; the git-auth design §4.2, §4.3 and §6.5): the ssh door, which
+/// Daoris's two doors at each git act (11): the ssh door, which
 /// git starts as its ssh, and the remote helper, which git runs for every <c>daoris::</c> address the rewrite made. Each asks the judge
 /// (<see cref="GitAccessRules"/>) for the act's class at its remote command, refuses with one line git prints, and otherwise starts what
-/// git would have started without Daoris, carrying today's credentials: no git identity serves an act before GITAUTH1c and 1d.
+/// git would have started without Daoris, carrying today's credentials.
 /// </summary>
 /// <remarks>
 /// <para><b>Started only by git</b>, as <c>daoris-git-ssh.exe</c> and <c>git-remote-daoris.exe</c> in the install's <c>app/bin/</c>
 /// (<c>Daoris.Desktop.GitDoor</c>, whose <c>Program</c> calls <see cref="Ssh"/> or <see cref="Helper"/> by its own file's name). Its
 /// home is <see cref="GitRouting.HomeVariable"/>; where that is absent the door refuses, saying it was started outside Daoris's wiring.</para>
-/// <para><b>Nothing prompts</b> (§4.6): the ssh door gives <c>-o BatchMode=yes</c> first, before any option of a command the
+/// <para><b>Nothing prompts</b>: the ssh door gives <c>-o BatchMode=yes</c> first, before any option of a command the
 /// repository names, since OpenSSH takes the first value given; the helper's transport inherits the prompt variables
 /// <see cref="GitWiring"/> handed.</para>
 /// <para>The base library alone, as everything the door compiles in.</para>
@@ -25,7 +25,7 @@ public static class GitDoors
 
     private const string BatchMode = "BatchMode=yes";
 
-    // ---- The ssh door (§4.2) ----
+    // ---- The ssh door ----
 
     /// <summary>
     /// What git handed the ssh door (§4.2's contract, OpenSSH's variant): its options, the <c>[user@]host</c>, and the remote command,
@@ -92,7 +92,7 @@ public static class GitDoors
         var verdict = Judge(home, act, key, variable, remote: null, host, folder, serves.Identity);
         if (!verdict.Allowed) return Refuse(error, verdict.Line!);
 
-        // D233 choice 3, D241 point 3: each update of a push is judged by its kind for every agent, whatever its harness's rules, and the
+        // Each update of a push is judged by its kind for every agent, whatever its harness's rules, and the
         // grant by the refs it carries, before the remote hears any of them.
         var pushes = call.Program == "git-receive-pack"
             ? new SshPush(input ?? Console.OpenStandardInput(), updates =>
@@ -101,7 +101,7 @@ public static class GitDoors
 
         if (serves.Kind == GitServeKind.Identity) return IdentitySsh(home, serves.Identity!, call, variable, error, folder, act, host, pushes);
 
-        // Nothing serving a host means no key to reach it with (GITAUTH1e, §6.8).
+        // Nothing serving a host means no key to reach it with.
         if (serves.Kind == GitServeKind.None)
         {
             GitLog.Refused(home, variable, "no-identity", act, null, host);
@@ -126,13 +126,13 @@ public static class GitDoors
     /// <summary>The ssh the door starts, under an identity or as git would have: its file, its folder and its words.</summary>
     private static ProcessStartInfo SshStart(string file, string folder, IReadOnlyList<string> words)
     {
-        // Not the tools' environment (TOOLS5): the door is git's child, and its ssh takes git's environment as git would have handed it.
+        // Not the tools' environment: the door is git's child, and its ssh takes git's environment as git would have handed it.
         var info = new ProcessStartInfo(file)
         {
             UseShellExecute = false,
             WorkingDirectory = folder,
             // inherits its console: the door is git's console child, and its ssh speaks git's protocol over the stdio it hands down. A
-            // spawn with no stream redirected and no window is given a console of its own, which cuts that stdio (GITAUTH1b's merge).
+            // spawn with no stream redirected and no window is given a console of its own, which cuts that stdio.
             CreateNoWindow = false,
         };
         foreach (var word in words) info.ArgumentList.Add(word);
@@ -140,7 +140,7 @@ public static class GitDoors
     }
 
     /// <summary>
-    /// What serves an ssh act (§3.2, §4.2 step 1): the repository its working folder belongs to (<see cref="GitFolders"/>), the
+    /// What serves an ssh act: the repository its working folder belongs to (<see cref="GitFolders"/>), the
     /// remotes whose address is the act's, and the act's host with git's port, resolved from the files alone, taking no lease.
     /// </summary>
     public static GitServes Serving(string home, string folder, SshCall call, Func<string, string?> variable)
@@ -159,7 +159,7 @@ public static class GitDoors
     }
 
     /// <summary>
-    /// What serves an HTTP or HTTPS act (§3.2, §4.3 step 1): as <see cref="Serving"/>, by the act's address, its host with a port where
+    /// What serves an HTTP or HTTPS act: as <see cref="Serving"/>, by the act's address, its host with a port where
     /// not the scheme's default. From the files alone, taking no lease.
     /// </summary>
     public static GitServes ServingHttps(string home, string folder, string address, Func<string, string?> variable)
@@ -211,7 +211,7 @@ public static class GitDoors
     }
 
     /// <summary>
-    /// An identity's act (§4.2 step 3): the ssh the person chose, else git's own, started by its absolute path with Daoris's options
+    /// An identity's act: the ssh the person chose, else git's own, started by its absolute path with Daoris's options
     /// first, the identity's key alone, no agent and Daoris's known hosts checked strictly; then git's <c>-p</c>, <c>-4</c>, <c>-6</c> and
     /// <c>SendEnv</c>. A chosen ssh that is not OpenSSH cannot carry an identity, and is refused naming it.
     /// </summary>
@@ -236,12 +236,12 @@ public static class GitDoors
         return Run(SshStart(ssh, folder, IdentityArguments(home, identity.Id, call)), error, pushes);
     }
 
-    /// <summary>Every argument an identity's ssh is started with (§4.2 step 3), in order: the door's argument table holds it.</summary>
+    /// <summary>Every argument an identity's ssh is started with, in order: the door's argument table holds it.</summary>
     public static IReadOnlyList<string> IdentityArguments(string home, string id, SshCall call) =>
         [.. GitSshFiles.IdentityOptions(home, id), .. call.Options, call.Host, call.Command];
 
     /// <summary>
-    /// The OpenSSH ssh an identity's act runs (D121 §2.5's choice): the command the person named in <c>tools.json</c>'s
+    /// The OpenSSH ssh an identity's act runs: the command the person named in <c>tools.json</c>'s
     /// <c>git.core.sshCommand</c>, by its first word, where it is OpenSSH; else the <c>ssh</c> git's own path finds.
     /// </summary>
     public static (string? File, string? Problem) OpenSsh(string home, Func<string, string?> variable)
@@ -279,7 +279,7 @@ public static class GitDoors
     }
 
     /// <summary>
-    /// The ssh git would have started without Daoris (§4.2 step 4, today's credentials): the repository's <c>core.sshCommand</c> at
+    /// The ssh git would have started without Daoris (today's credentials): the repository's <c>core.sshCommand</c> at
     /// whatever scope git reads it, through <c>sh</c> where it holds git's shell characters; else the <c>ssh</c> git's own path finds.
     /// Answered as the file to start and the words before git's own: <c>-o BatchMode=yes</c> first of all. PuTTY's <c>plink</c>,
     /// which takes other arguments, is refused.
@@ -322,7 +322,7 @@ public static class GitDoors
     /// <summary>What git answers in <paramref name="folder"/> on its standard output; null where it fails or cannot start.</summary>
     private static string? Ask(string git, string folder, IReadOnlyList<string> arguments)
     {
-        // Not the tools' environment (TOOLS5): git's own git, on git's PATH, asked its configuration.
+        // Not the tools' environment: git's own git, on git's PATH, asked its configuration.
         var info = new ProcessStartInfo(git)
         {
             UseShellExecute = false,
@@ -395,7 +395,7 @@ public static class GitDoors
         return (built.ToString(), "");
     }
 
-    // ---- The remote helper (§4.3) ----
+    // ---- The remote helper ----
 
     /// <summary>
     /// The remote helper: start git's own <c>git-remote-https</c> (or <c>-http</c>) for the address, without Daoris's routing, and relay
@@ -424,12 +424,12 @@ public static class GitDoors
 
         var serves = ServingHttps(home, folder ?? Environment.CurrentDirectory, address, variable);
         var identity = serves.Kind == GitServeKind.Identity ? serves.Identity : null;
-        // GITAUTH1e: a remote nothing serves reads anonymously, as an identity's with no sign-in would.
+        // A remote nothing serves reads anonymously, as an identity's with no sign-in would.
         var anonymous = serves.Kind == GitServeKind.None;
         if ((identity is not null || anonymous) && GitHttps.HasPassword(address))
             return Refuse(error, "git-remote-daoris: refuses an address carrying a password: a git identity's token is kept in Daoris's tokens folder, not written into an address.");
 
-        // Not the tools' environment (TOOLS5): git's own transport, with git's environment less Daoris's routing (§4.3).
+        // Not the tools' environment: git's own transport, with git's environment less Daoris's routing.
         // The relay reads and writes the streams' bytes (BaseStream); the encodings are named for the census, and change no byte.
         var info = new ProcessStartInfo(file)
         {
@@ -473,7 +473,7 @@ public static class GitDoors
                 while (ReadLine(input) is { } line)
                 {
                     var text = Encoding.UTF8.GetString(line).TrimEnd('\n', '\r');
-                    // D241 point 3: a push's lines are held to the batch's end, judged together with the remote's refs and their objects, and
+                    // A push's lines are held to the batch's end, judged together with the remote's refs and their objects, and
                     // forwarded as the objects judged: a refused update stops the transport before it has been told of any.
                     if (text.StartsWith("push ", StringComparison.Ordinal))
                     {
@@ -539,7 +539,7 @@ public static class GitDoors
     }
 
     /// <summary>
-    /// The batch of push lines judged (D241 point 3): the lines to forward, the objects judged in place of git's source names, or the line
+    /// The batch of push lines judged: the lines to forward, the objects judged in place of git's source names, or the line
     /// that refuses the whole batch. Refused too where the remote's refs or a source could not be read, since an update unread is unjudged.
     /// </summary>
     private static (IReadOnlyList<string> Forward, string? Refusal) PushBatch(
@@ -557,7 +557,7 @@ public static class GitDoors
         return refusal is null ? (batch.Lines, null) : ([], refusal);
     }
 
-    /// <summary>The class of a remote-helper command git sends (§4.3 step 4); null for one that moves nothing (<c>capabilities</c>, <c>option</c>).</summary>
+    /// <summary>The class of a remote-helper command git sends; null for one that moves nothing (<c>capabilities</c>, <c>option</c>).</summary>
     public static GitAct? ClassOfHelperCommand(string line) => line switch
     {
         "list for-push" => GitAct.Write,
@@ -572,7 +572,7 @@ public static class GitDoors
     // ---- Shared ----
 
     /// <summary>
-    /// The judge asked for one act, its grant's use and its refusal each a coded line (§11). <paramref name="identity"/> is the one serving
+    /// The judge asked for one act, its grant's use and its refusal each a coded line. <paramref name="identity"/> is the one serving
     /// the act, or null; one read only on its host refuses a Write.
     /// </summary>
     private static GitVerdict Judge(
@@ -583,7 +583,7 @@ public static class GitDoors
         var (repository, workspace) = GitFolders.RepositoryOf(home, folder);
         var value = GitSessionAccess.Held(home, variable(GitLog.SessionVariable), repository, workspace).Of(GitLog.ClassName(act)).Value;
         var verdict = GitAccessRules.Judge(act, value, granted, identity is { ReadOnly: true } readOnly ? readOnly.Label : null);
-        // Asked at the door while the act waits (§6.6), where Daoris runs to ask: the person's yes lets this one act through.
+        // Asked at the door while the act waits, where Daoris runs to ask: the person's yes lets this one act through.
         if (verdict.Ask) verdict = GitDoorAsks.Hold(home, repository, workspace, remote, host, GitLog.ClassName(act), act, key, variable);
         if (!verdict.Allowed) GitLog.Refused(home, variable, verdict.Code, act, remote, host);
         return verdict;

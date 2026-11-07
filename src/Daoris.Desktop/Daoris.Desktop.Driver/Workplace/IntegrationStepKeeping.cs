@@ -5,7 +5,7 @@ using static Daoris.Driver.IntegrationStore;
 
 namespace Daoris.Driver;
 
-/// <summary>The candidate's steps in the family: a stale claim taken up, a step begun before its effect and ended after it (§5.6), each under the claim's check.</summary>
+/// <summary>The candidate's steps in the family: a stale claim taken up, a step begun before its effect and ended after it, each under the claim's check.</summary>
 internal sealed class IntegrationStepKeeping(IntegrationStore store)
 {
     private DesktopStore Writer() => store.Writer();
@@ -17,7 +17,7 @@ internal sealed class IntegrationStepKeeping(IntegrationStore store)
     private Func<StoreRun, bool> _alive => store._alive;
 
     /// <summary>
-    /// Take up a candidate whose claim's run is dead by the lease's test (§5.6, as the move record's take), in one guarded update that writes
+    /// Take up a candidate whose claim's run is dead by the lease's test (as the move record's take), in one guarded update that writes
     /// this store's run and raises the generation: refused, nothing written, where the candidate is gone or ended, where its claim is this
     /// run's own, where the generation moved since <paramref name="generation"/> was read, or where its run lives or cannot be told dead.
     /// </summary>
@@ -54,10 +54,10 @@ internal sealed class IntegrationStepKeeping(IntegrationStore store)
         static Unwritten Refused(IntegrationCandidate? found, string why) => new(new IntegrationTaken(found, null, why));
     }
 
-    // ——— A superseded member's pending dispositions (§5.7).
+    // ——— A superseded member's pending dispositions.
 
     /// <summary>
-    /// A step's start, written before its effect (§5.6), in one transaction under the claim's check: its next attempt, the member it is of and
+    /// A step's start, written before its effect, in one transaction under the claim's check: its next attempt, the member it is of and
     /// the line's commit it read. Refused while another step of the candidate is open, which must end first (a resume ends a cut one), and
     /// for an ended candidate.
     /// </summary>
@@ -92,7 +92,7 @@ internal sealed class IntegrationStepKeeping(IntegrationStore store)
     }
 
     /// <summary>
-    /// A step's end, written after its effect (§5.6), in one transaction under the claim's check: its outcome and words, the candidate's tip,
+    /// A step's end, written after its effect, in one transaction under the claim's check: its outcome and words, the candidate's tip,
     /// its promotion, its members' changes, the requests it closes and the candidate's end, all or none. An end written again is the first
     /// end's, and changes nothing.
     /// </summary>
@@ -158,7 +158,7 @@ internal sealed class IntegrationStepKeeping(IntegrationStore store)
                         ("$at", at), ("$why", close.Why), ("$request", close.Request));
                 }
 
-                // A superseded commit's disposition is visible from the moment its member settles, in the same transaction (§5.7).
+                // A superseded commit's disposition is visible from the moment its member settles, in the same transaction.
                 foreach (var disposition in end.Dispositions)
                 {
                     if (MemberIn(write, claim.Candidate, disposition.Request) is null)

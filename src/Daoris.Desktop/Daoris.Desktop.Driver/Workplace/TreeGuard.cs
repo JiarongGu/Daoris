@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The tree guard (PERM3): a PreToolUse hook Daoris ships, refusing a file write outside the session's
-/// own tree — the one boundary a permission rule cannot say (design §3).
+/// The tree guard: a PreToolUse hook Daoris ships, refusing a file write outside the session's
+/// own tree — the one boundary a permission rule cannot say.
 /// </summary>
 /// <remarks>
 /// <para><b>A script carried in the assembly, written under the home.</b> The hook runs on the
@@ -55,7 +55,7 @@ public static class TreeGuard
 
     /// <summary>The guard for one session: the script, installed, the tree it guards, the declared targets, and its node.</summary>
     /// <exception cref="DriverException">
-    /// Node.js is run a way that cannot run (TOOLS5): the session is not started rather than handed a guard that would
+    /// Node.js is run a way that cannot run: the session is not started rather than handed a guard that would
     /// start whatever node <c>PATH</c> finds, or none — and whether a harness then lets the write through is its own rule.
     /// </exception>
     public static TreeGuardHook For(string home, string tree, IEnumerable<string>? also = null)

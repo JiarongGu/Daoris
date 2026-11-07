@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 internal sealed record JournaledDelete(string? Act, string? Kept, string? Said);
 
 /// <summary>
-/// **Every branch delete through the journal** (ONEWAY1r, D204, D228; the oneway design §5 G3): a delete Daoris's own door judged (a session
+/// **Every branch delete through the journal** (the oneway design §5 G3): a delete Daoris's own door judged (a session
 /// branch discarded, a landing withdrawn, a sweep, the look's clean-up, a housekeeping discard) runs as the same <c>ref.delete</c> act the
 /// person's <c>GIT_REF_DELETE</c> runs, so it is journaled, reconciled by its postconditions and undone by <c>GIT_REF_UNDO</c>. The door keeps
 /// its judgement; this keeps the performer: one transaction verifying what the proof rested on and deleting the branch at the commit judged,

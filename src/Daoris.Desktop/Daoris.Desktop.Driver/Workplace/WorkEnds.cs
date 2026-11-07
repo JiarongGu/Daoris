@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 public sealed record WorkEnd(string Home, string Session, string? Quest);
 
 /// <summary>
-/// The ends the end keeping writes (EVENTHOOK1d-iii, D244's note on <c>work.ended</c>; the event channel design §3.4): whichever caller
+/// The ends the end keeping writes (D244's note on <c>work.ended</c>): whichever caller
 /// asked it (link 1, the look's tidy, Accept's tidy, a gone landing's retirement), each entry it writes ended that names a session is said
 /// here, each session once a pass, and the lease's hook set hears its home. Where nothing of that home listens (a verb alone, a test),
 /// nothing hears it, as an event minted while no plugin listens.

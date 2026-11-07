@@ -3,9 +3,9 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The repository's declared backlog and its merge by the merge base (LANDBACKLOG1, D87's note): a landing's replay that conflicts only in
+/// The repository's declared backlog and its merge by the merge base: a landing's replay that conflicts only in
 /// the backlog, or in it beside files the repository marks generated (<see cref="GeneratedPaths"/>), settles the backlog as the merge tool
-/// settles it (MERGETASKS1): a line one side added is kept, one a side removed is dropped, and a base line both sides changed stays the
+/// settles it: a line one side added is kept, one a side removed is dropped, and a base line both sides changed stays the
 /// session's conflict. In this repository nearly every landing touches the backlog, since each session archives its own row, so a
 /// refusal there cost the session a rebase turn over a line the merge tool settles by itself.
 /// </summary>
@@ -40,14 +40,13 @@ internal static class BacklogMerge
     internal sealed record Settled(string Path, int Kept, int Dropped);
 
     /// <summary>
-    /// The files a replay settles by the merge base (INTEGRATE1c): the declared backlog, null where the manifest does not read, and the
+    /// The files a replay settles by the merge base: the declared backlog, null where the manifest does not read, and the
     /// declared row tables (<see cref="RowTablesOf"/>), each other than the backlog once.
     /// </summary>
     internal sealed record Declared(string? Backlog, IReadOnlyList<string> Tables)
     {
         /// <summary>
-        /// The line rules the owner accepted for integration, as declared at the commit replayed onto (INTEGRATE1d,
-        /// <see cref="LineRules"/>): a file of one settles by its pattern and its writer; none where none is accepted.
+        /// The line rules the owner accepted for integration, as declared at the commit replayed onto (<see cref="LineRules"/>): a file of one settles by its pattern and its writer; none where none is accepted.
         /// </summary>
         public IReadOnlyList<IntegrationMergeRule> Lines { get; init; } = [];
 
@@ -108,9 +107,9 @@ internal static class BacklogMerge
     }
 
     /// <summary>
-    /// The files a declaration's text says settle by rows (INTEGRATE1c; the integration design's §4.1 <c>merge</c>): <c>daoris.gates.json</c>'s
+    /// The files a declaration's text says settle by rows (the integration design's §4.1 <c>merge</c>): <c>daoris.gates.json</c>'s
     /// <c>integration.merge</c>, each rule <c>{ "paths": file, "by": "rows" }</c>, settled by the merge base line by line as the backlog
-    /// is (<see cref="ByBase"/>), read through the whole declaration (<see cref="IntegrationDeclaration.Read"/>, INTEGRATE1d). No command
+    /// is (<see cref="ByBase"/>), read through the whole declaration (<see cref="IntegrationDeclaration.Read"/>). No command
     /// runs, so no acceptance is read: a <c>line</c> rule's <c>run</c> writer waits for the accepted declaration and is passed over.
     /// Nothing where the text is null or declares no integration, or where the declaration has a problem the reader names: never a
     /// partial read. Each path trimmed, a backslash a slash, once, in the order first declared. The merge tool's <c>rowTablesOf</c>, row
@@ -246,7 +245,7 @@ internal static class BacklogMerge
     }
 
     /// <summary>
-    /// What the line declares to settle by the merge base at <paramref name="source"/>, read in <paramref name="place"/> (INTEGRATE1c):
+    /// What the line declares to settle by the merge base at <paramref name="source"/>, read in <paramref name="place"/>:
     /// the backlog (<see cref="DeclaredAsync"/>) and the row tables the line's <c>daoris.gates.json</c> names, never the session's copy.
     /// A declaration git cannot read declares no tables, as a manifest it cannot read declares no backlog.
     /// </summary>
@@ -261,11 +260,11 @@ internal static class BacklogMerge
     }
 
     /// <summary>
-    /// A trial's step settled (LANDBACKLOG1 in <see cref="LineHolds.TrialTreeAsync"/>), objects only: the tree git wrote for the step,
+    /// A trial's step settled (in <see cref="LineHolds.TrialTreeAsync"/>), objects only: the tree git wrote for the step,
     /// <paramref name="written"/>, with <paramref name="path"/> the merge by base of the step's base, the trial's tree so far and the
     /// replayed commit. Null where a side has no such file, git could not say, or both sides changed one base line.
     /// </summary>
-    /// <param name="declared">What settles <paramref name="path"/>: its merge base, or its accepted line rule (INTEGRATE1d), whose writer a trial never runs.</param>
+    /// <param name="declared">What settles <paramref name="path"/>: its merge base, or its accepted line rule, whose writer a trial never runs.</param>
     internal static async Task<string?> TrialAsync(
         string root, string path, string @base, string ours, string theirs, string written, CancellationToken ct, Declared? declared = null)
     {
@@ -306,9 +305,9 @@ internal static class BacklogMerge
     }
 
     /// <summary>
-    /// The settling by the merge base over one landing's replay (LANDBACKLOG1 and INTEGRATE1c in <see cref="BranchReplays"/>): the backlog
+    /// The settling by the merge base over one landing's replay (in <see cref="BranchReplays"/>): the backlog
     /// and the row tables the line declares at <paramref name="source"/>, read once, at the first stop that needs them, and what each stop
-    /// settled, summed. INTEGRATE1d: beside them, the line rules the owner accepted for integration at <paramref name="source"/>
+    /// settled, summed. Beside them, the line rules the owner accepted for integration at <paramref name="source"/>
     /// (<paramref name="lines"/>), each file of one settled by its pattern, for its writer to write again once the replay is made.
     /// </summary>
     internal sealed class Stops(string source, IReadOnlyList<IntegrationMergeRule>? lines = null)
@@ -376,7 +375,7 @@ internal static class BacklogMerge
             if (written != 0) return false;
             if (declared.LineOf(path) is { } rule)
             {
-                // INTEGRATE1d: the line's side of the declared lines stands only until its writer writes them again.
+                // The line's side of the declared lines stands only until its writer writes them again.
                 if (!_lined.Any(each => each.Path == path)) _lined.Add(new LineRules.Settled(path, rule.Run!));
             }
             else if (path == declared.Backlog)

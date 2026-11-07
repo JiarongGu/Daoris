@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Whether a remote act reads or writes (the git-auth design §5.1, §6.1).</summary>
+/// <summary>Whether a remote act reads or writes.</summary>
 public enum GitAct
 {
     Read,
@@ -8,7 +8,7 @@ public enum GitAct
 }
 
 /// <summary>
-/// The classes of a remote act's failure GITAUTH1a holds on (the git-auth design §5.1): those today's ambient credentials meet,
+/// The classes of a remote act's failure GITAUTH1a holds on: those today's ambient credentials meet,
 /// and GITAUTH1b's <c>own-input</c>. The identity's and the judge's classes (<c>no-identity</c>, <c>denied</c>, <c>ask</c>) join with
 /// the rows that make them.
 /// </summary>
@@ -33,21 +33,21 @@ public enum GitFailureClass
     HostChanged,
 
     /// <summary>
-    /// An input the doors cannot outrank (§4.2): a repository's own <c>core.sshCommand</c> where the ssh door is named by
+    /// An input the doors cannot outrank: a repository's own <c>core.sshCommand</c> where the ssh door is named by
     /// <c>GIT_SSH</c>, which that setting outranks. Never read from words: <see cref="GitOwnInput"/> finds it before an act.
     /// Holds reads and writes.
     /// </summary>
     OwnInput,
 
     /// <summary>
-    /// Nothing serves the remote once the move off ambient credentials has happened (<see cref="GitMove"/>, §6.8), and the host refused
+    /// Nothing serves the remote once the move off ambient credentials has happened (<see cref="GitMove"/>), and the host refused
     /// anonymous use: an SSH remote is found before the act, an HTTPS one is a refusal read where nothing served it. Holds reads and writes.
     /// </summary>
     NoIdentity,
 }
 
 /// <summary>
-/// A remote act's failure classed by the transport's own words (GITAUTH1a, D198 point 7; the git-auth design §5.1). The words
+/// A remote act's failure classed by the transport's own words. The words
 /// are the ones git, its curl and OpenSSH write, measured against real git and OpenSSH on local servers in
 /// <c>GitFailuresProcessTests</c> and <c>GitPromptsProcessTests</c>, and recorded in the GITAUTH1a measurements; a host's own
 /// sentence before them (<c>remote: …</c>) is never what classes a failure, since git and ssh say theirs after it.
@@ -101,13 +101,13 @@ public static class GitFailures
         return GitFailureClass.Unclassed;
     }
 
-    /// <summary>Whether a class holds anything (§5.2): the network's and the unclassed hold nothing.</summary>
+    /// <summary>Whether a class holds anything: the network's and the unclassed hold nothing.</summary>
     public static bool Holds(GitFailureClass failure) => failure is not (GitFailureClass.Unclassed or GitFailureClass.Unreachable);
 
-    /// <summary>Whether a class holds writes alone (§5.1).</summary>
+    /// <summary>Whether a class holds writes alone.</summary>
     public static bool WritesAlone(GitFailureClass failure) => failure == GitFailureClass.WriteRefused;
 
-    /// <summary>The class's code, as the hold, the machine log and the page name it (§11).</summary>
+    /// <summary>The class's code, as the hold, the machine log and the page name it.</summary>
     public static string Code(GitFailureClass failure) => failure switch
     {
         GitFailureClass.Refused => "refused",

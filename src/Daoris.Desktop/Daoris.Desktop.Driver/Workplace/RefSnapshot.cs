@@ -1,20 +1,20 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One checkout's branches and origin's copies of them, read with one git start (PROC1d-ii): where each points, what it points
-/// at, and its upstream. <c>rev-parse --verify</c> was 389 of PROC1a's 1278 product starts, each a branch's tip, a form of the
-/// line or an upstream asked one at a time; a judgement takes one of these and hands it to the reads that ask (an optional
-/// parameter, null asking git as before), so a judgement reads a repository's refs once. Its working trees, which branch each
-/// holds, are one more start kept the same way (PROC1d-iii): <c>worktree list</c> was 47 of those starts, asked by each part
-/// of a judgement in turn. And what git answered the judgement of commits by their ids is kept with them (PROC1d-iv,
-/// <see cref="Asked"/>): <c>diff</c> and <c>merge-base --is-ancestor</c> were 132 and 130 more, the same pair asked per branch.
+/// One checkout's branches and origin's copies of them, read with one git start: where each points, what it points
+/// at, and its upstream. A judgement takes one of these and hands it to the reads that ask (an optional
+/// parameter, null asking git), so a judgement reads a repository's refs once rather than a branch's tip, a form of the
+/// line or an upstream one at a time. Its working trees, which branch each
+/// holds, are one more start kept the same way, not asked by each part of a judgement in turn. And what git answered the
+/// judgement of commits by their ids is kept with them (<see cref="Asked"/>), so the same <c>diff</c> and
+/// <c>merge-base --is-ancestor</c> pair is not asked per branch.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>Never stale across a write.</b> It is read at its first question, not when taken, so one taken before a fetch is
 /// read after it; and every git this flow starts that may move a ref or an upstream (<see cref="MayWrite"/>) drops each snapshot
 /// the flow holds, through <see cref="WorkingTree"/>'s one runner, so the next question reads again. A write in a flow beside
 /// it drops nothing of it: that is news from another moment, as the person's own git is, and what guards against it is what
-/// always did, the judgement again right before an act and the delete only at the commit judged (D88).</para>
+/// always did, the judgement again right before an act and the delete only at the commit judged.</para>
 /// <para><b>It answers only what git would.</b> A revision that is not a full name under <c>refs/heads/</c> or
 /// <c>refs/remotes/origin/</c>, a name only case tells from one it holds (git finds a loose ref so named on a disk blind to
 /// case), a commit asked of a ref that is no commit, an upstream asked of a branch it does not hold (its configuration may
@@ -73,23 +73,23 @@ internal sealed class RefSnapshot
     // The checkout this judgement is of, as one spelling (GitFacts.Folder); null for a seam's snapshot.
     private string? _root;
 
-    // What git answered this judgement of commits by their ids (PROC1d-iv), by the question's arguments: dropped with the refs.
+    // What git answered this judgement of commits by their ids, by the question's arguments: dropped with the refs.
     private Dictionary<string, Task<(int Code, string Stdout, string Stderr)>> _facts = new(StringComparer.Ordinal);
 
     /// <summary>
     /// <paramref name="ask"/>'s answer to a question of commits by their full ids alone, or the one this judgement already holds for
     /// <paramref name="root"/>; null where no judgement of that checkout is held in this flow, or the question is not one that is
-    /// kept, and the caller asks git as before (PROC1d-iv). <c>merge-base --is-ancestor</c>, the files two commits differ in
+    /// kept, and the caller asks git as before. <c>merge-base --is-ancestor</c>, the files two commits differ in
     /// (<c>LandedProofs.NamesAsync</c>) and <c>rev-list --count</c> were asked per pair, the same pair by each branch that left the
     /// line at one commit.
     /// </summary>
     /// <remarks>
     /// <para><b>One judgement's, one checkout's.</b> The newest snapshot of <paramref name="root"/> this flow holds answers: a
-    /// judgement again takes its own refs, so it asks git afresh (D88), and another repository, or another folder, is never one.</para>
+    /// judgement again takes its own refs, so it asks git afresh, and another repository, or another folder, is never one.</para>
     /// <para><b>Nothing that moves.</b> The question names no ref, no head and no path (<see cref="GitFacts.ById"/>): what it
     /// asks of two commits git answers the same while the objects stay. Every write this flow starts drops it with the refs all the
     /// same, and only an answer git gave is kept (<see cref="GitFacts.Answered"/>): a missing object or a start that failed is
-    /// asked again, never read as "no" (RECORDUNREAD1).</para>
+    /// asked again, never read as "no".</para>
     /// </remarks>
     internal static Task<(int Code, string Stdout, string Stderr)>? Asked(
         string root, IReadOnlyList<string> arguments, Func<Task<(int Code, string Stdout, string Stderr)>> ask)
@@ -107,7 +107,7 @@ internal sealed class RefSnapshot
     /// <summary>
     /// A listing of this checkout's refs by name alone (<c>for-each-ref</c> with only a format and an order, of patterns under
     /// <c>refs/</c>): what the snapshot's own refs are, kept as they are, until a write of the flow. The content proof listed
-    /// every branch by date once per branch it judged (PERF1c).
+    /// every branch by date once per branch it judged.
     /// </summary>
     private static bool RefsListing(IReadOnlyList<string> arguments) =>
         arguments.Count > 1 && arguments[0] == "for-each-ref"
@@ -117,14 +117,14 @@ internal sealed class RefSnapshot
 
     /// <summary>
     /// Where the checkout's working tree is and which trees git lists for it, as the snapshot's own list reads them: the look's tidy
-    /// asked each once per stage of a repository's pass (PERF1c). A <c>worktree</c> write drops them with the refs.
+    /// asked each once per stage of a repository's pass. A <c>worktree</c> write drops them with the refs.
     /// </summary>
     private static bool Layout(IReadOnlyList<string> arguments) =>
         arguments is ["rev-parse", "--show-toplevel"] or ["worktree", "list", "--porcelain"];
 
     /// <summary>
     /// A question's key: its arguments, but the two commits the files of a <c>diff</c> are named between in one order, since the
-    /// names two commits differ in are the same either way round (PERF1c: the content proof asked each pair both ways).
+    /// names two commits differ in are the same either way round (the content proof asked each pair both ways).
     /// </summary>
     private static string KeyOf(IReadOnlyList<string> arguments)
     {
@@ -176,20 +176,20 @@ internal sealed class RefSnapshot
         static string? Empty(string field) => field.Length == 0 ? null : field;
     }
 
-    /// <summary>Drop what was read, and what git answered of commits (PROC1d-iv): the next question reads again.</summary>
+    /// <summary>Drop what was read, and what git answered of commits: the next question reads again.</summary>
     internal void Invalidate()
     {
         lock (_gate) (_refs, _trees, _facts, Unheld) = (null, null, new(StringComparer.Ordinal), new UnheldTips());
     }
 
-    /// <summary>Which session branches no branch of the person's holds, read once for the judgement (PERF1g); dropped with the refs.</summary>
+    /// <summary>Which session branches no branch of the person's holds, read once for the judgement; dropped with the refs.</summary>
     internal UnheldTips Unheld { get; private set; } = new();
 
     /// <summary>The snapshot's refs as one read, for a fact that is of all of them; null where git could not list them.</summary>
     internal Task<Refs?> ListedAsync(CancellationToken ct) => RefsAsync(ct);
 
     /// <summary>
-    /// Until disposed, this flow holds no snapshot (GITAPP2a: the act journal's reconciler, run inside a writer's judgement): every question
+    /// Until disposed, this flow holds no snapshot (the act journal's reconciler, run inside a writer's judgement): every question
     /// is git's. The judgement's snapshots are this flow's again after, untouched.
     /// </summary>
     internal static IDisposable Outside()
@@ -313,7 +313,7 @@ internal sealed class RefSnapshot
 
     /// <summary>
     /// The listing a snapshot of this flow already read, for the repository <paramref name="folder"/> is a folder of: a tree of it and
-    /// its checkout list the same refs, so one start serves both (PERF1). Nothing is started; null where none is read.
+    /// its checkout list the same refs, so one start serves both. Nothing is started; null where none is read.
     /// </summary>
     internal static Refs? ListedFor(string folder)
     {
@@ -342,9 +342,9 @@ internal sealed class RefSnapshot
     }
 
     /// <summary>
-    /// The working trees git lists for this checkout (PROC1d-iii), read at the first question and kept with the refs, so a
+    /// The working trees git lists for this checkout, read at the first question and kept with the refs, so a
     /// write in the flow drops both; null where git could not list them, which the next question asks again, as each caller
-    /// asked before: a list never read is never an empty one (AUTOTIDY1). Null for the task itself where this snapshot has no
+    /// asked before: a list never read is never an empty one. Null for the task itself where this snapshot has no
     /// list to read, and the caller asks git.
     /// </summary>
     internal Task<IReadOnlyList<WorktreeEntry>?>? WorktreesAsync(CancellationToken ct)

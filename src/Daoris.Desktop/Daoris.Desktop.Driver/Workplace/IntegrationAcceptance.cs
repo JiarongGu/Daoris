@@ -3,17 +3,17 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The owner's acceptance of a repository's integration declaration (INTEGRATE1d; D215 point 2, the integration design §4.1, §4.3): git's
+/// The owner's acceptance of a repository's integration declaration: git's
 /// blob id of the <c>daoris.gates.json</c> the person accepted for integration, kept by this machine in <c>driver.json</c>'s
-/// <c>integrationGates</c> (<see cref="IntegrationGatesKey"/>), apart from the landed route's (D192), so a repository needs no
+/// <c>integrationGates</c> (<see cref="IntegrationGatesKey"/>), apart from the landed route's, so a repository needs no
 /// verification pipeline to integrate. Only the accepted blob's text is read for what runs: a member that changes the declaration
 /// integrates under the line's accepted one, and its own blob waits for the owner.
 /// </summary>
 /// <remarks>
 /// The states are pure (<see cref="StateOf"/>); the reads beside them ask git of the checkout's objects alone, never its working files,
-/// so what the person has in flight there is neither read nor touched. Their consumers (INTEGRATE1d's second part): the window's door,
-/// which accepts the tip's blob; GENREGEN1's writers and the line rules' writers in a landing's replay; and the tidy's declared
-/// scratch (D218's note). Each reads the accepted blob's text only where it is the declaration at the commit it acts on.
+/// so what the person has in flight there is neither read nor touched. Their consumers: the window's door,
+/// which accepts the tip's blob; the generated-file writers and the line rules' writers in a landing's replay; and the tidy's declared
+/// scratch. Each reads the accepted blob's text only where it is the declaration at the commit it acts on.
 /// </remarks>
 public static class IntegrationAcceptance
 {
@@ -85,7 +85,7 @@ public static class IntegrationAcceptance
     /// <summary>
     /// The text of the declaration <paramref name="repository"/>'s integration acceptance names, read only where that blob is the one at
     /// <paramref name="commit"/> (the design §4.3: the accepted blob alone, at the commit it acts on); <paramref name="frozen"/> is the blob an
-    /// epoch froze (LANDNODE1g), which stands in for the configuration's current acceptance; null where nothing is accepted,
+    /// epoch froze, which stands in for the configuration's current acceptance; null where nothing is accepted,
     /// the declaration there is another (it waits for the owner), git cannot say, or the line held none.
     /// </summary>
     internal static async Task<string?> AcceptedTextAsync(

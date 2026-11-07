@@ -3,12 +3,12 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// When each repository's line was last fetched here, or heard fetched (FABRIC-END6, the design §A4.3): kept in this process for the
-/// minute that bounds the next fetch (D148), so a moment fetches only where nothing brought the remote's facts within it. Every fetch
+/// When each repository's line was last fetched here, or heard fetched: kept in this process for the
+/// minute that bounds the next fetch, so a moment fetches only where nothing brought the remote's facts within it. Every fetch
 /// of a line, made or failed, is counted by <see cref="TreeRefs.FetchAsync"/>, the landing press's and bringing up to date's among them;
 /// the person's own fetch, heard by the ref watch moving origin's line, is counted by the moments, and git's own files say when it was last
-/// fetched across restarts (<see cref="InGit"/>, FABRIC-END6c). A fetch in flight counts as made: every fetch of a line goes through
-/// <see cref="OnceAsync"/>, so a second joins it (FABRIC-END6c).
+/// fetched across restarts (<see cref="InGit"/>). A fetch in flight counts as made: every fetch of a line goes through
+/// <see cref="OnceAsync"/>, so a second joins it.
 /// </summary>
 public static class RemoteFetches
 {
@@ -26,7 +26,7 @@ public static class RemoteFetches
     public static DateTimeOffset? When(string root, string line) => Key(root, line) is { } key && Last.TryGetValue(key, out var at) ? at : null;
 
     /// <summary>
-    /// The line's fetch, one at a time per repository and line, whichever path asks (FABRIC-END6c): a landing's press, bringing up to
+    /// The line's fetch, one at a time per repository and line, whichever path asks: a landing's press, bringing up to
     /// date, a moment. A fetch in flight counts as made: a second caller joins it and answers what it answered, rather than start another
     /// beside it. A fetch its own caller cancelled, or that threw, is no answer for one that joined it, which fetches afresh.
     /// </summary>
@@ -70,7 +70,7 @@ public static class RemoteFetches
     }
 
     /// <summary>
-    /// When git's own files say the line was last fetched here, across restarts, or null (FABRIC-END6c): <c>FETCH_HEAD</c>'s time where it
+    /// When git's own files say the line was last fetched here, across restarts, or null: <c>FETCH_HEAD</c>'s time where it
     /// names the line (every fetch writes it, a fetch that changed nothing too; Daoris's own writes none, and an empty one is a fetch that
     /// failed), and the newest entry of <c>origin/&lt;line&gt;</c>'s log, which every fetch that moved it writes, Daoris's own included. The
     /// later of the two. Read from the main checkout's git dir, with no process; a fetch made in a linked tree writes its own.
@@ -130,7 +130,7 @@ public static class RemoteFetches
 }
 
 /// <summary>
-/// What the moments read and do (FABRIC-END6): the driver's record, git's files, a fetch, the plugin's ask and the ref watch, behind one
+/// What the moments read and do: the driver's record, git's files, a fetch, the plugin's ask and the ref watch, behind one
 /// seam so the fast tests count each without git or a plugin.
 /// </summary>
 internal interface IPullRequestMomentWorld
@@ -155,7 +155,7 @@ internal interface IPullRequestMomentWorld
 
     /// <summary>
     /// Fetch the line from origin, counted as every fetch is: null where it fetched, else why not, a held origin's sentence where it is
-    /// held (GITAUTH1a), which connects nothing.
+    /// held, which connects nothing.
     /// </summary>
     Task<string?> FetchAsync(RefRepository repository, string line, CancellationToken ct);
 
@@ -167,10 +167,10 @@ internal interface IPullRequestMomentWorld
 }
 
 /// <summary>
-/// A plugin asked about an open pull request when the remote's facts may have moved (FABRIC-END6, the design §A4.3, link 6 of §C6): at
+/// A plugin asked about an open pull request when the remote's facts may have moved: at
 /// origin's line heard moving, right after Daoris pushes a handed branch, and at the window's focus while a pull request is open. The
-/// line is fetched only where the moment did not bring it, so a completed answer's merge commit is here for git to confirm (D148 point
-/// 4), and both stay within D148's minute.
+/// line is fetched only where the moment did not bring it, so a completed answer's merge commit is here for git to confirm,
+/// and both stay within the minute.
 /// </summary>
 /// <remarks>
 /// <para><b>The moments</b>, each a wake of link 6 on this chain of its own, never a value:</para>
@@ -178,21 +178,21 @@ internal interface IPullRequestMomentWorld
 /// <item><b>Origin's line moved</b> (<c>refs</c>): the ref watch tells each repository it judges (<see cref="Moved"/>), and origin's line
 /// is read from git's files and compared with the commit last seen here. The person's fetch brought the remote's facts, so nothing is
 /// fetched. The first reading of a repository's line is its baseline, and asks nothing. A move that came while a pull request was inside
-/// its minute is kept for it, and the first wake of that repository past the minute asks it, once (FABRIC-END6b).</item>
-/// <item><b>Daoris pushed</b> (<c>refs</c>, <see cref="Pushed"/>): after the landing's plugin step and its tidy, whose own ask (LAND3) it
+/// its minute is kept for it, and the first wake of that repository past the minute asks it, once.</item>
+/// <item><b>Daoris pushed</b> (<c>refs</c>, <see cref="Pushed"/>): after the landing's plugin step and its tidy, whose own ask it
 /// counts, and after a hand-off. The landing press's fetch of the line counts as the push's.</item>
 /// <item><b>The window's focus</b> (<c>focus</c>, <see cref="Focused"/>): every repository with an open pull request.</item>
 /// </list>
 ///
-/// <para><b>The bounds.</b> A pull request is asked at most once a minute: D148's minute over the record's last ask
-/// (<see cref="PullRequestAsking.Due"/>), and over every occasion's asks in this process (<see cref="PullRequestMinute"/>, FABRIC-END6c),
+/// <para><b>The bounds.</b> A pull request is asked at most once a minute: the minute over the record's last ask
+/// (<see cref="PullRequestAsking.Due"/>), and over every occasion's asks in this process (<see cref="PullRequestMinute"/>),
 /// so a plugin not ready is not started again inside it and two occasions at once ask once. A
 /// repository's line is fetched at most once a minute, every fetch of it counted (<see cref="RemoteFetches"/>). A moment with nothing due
 /// fetches nothing and asks nothing. A moment that concerns no open pull request reads no line and starts no process.</para>
 ///
 /// <para><b>Never at a removing press.</b> A <c>press</c> is no moment here, and a removing press's own ref moves (a branch deleted) move
 /// no line of origin's. A repository a removing press, bringing it up to date or a landing holds is skipped, and asked once it is let
-/// go (<see cref="RepositoryHolds"/>, FABRIC-END6c). The asks run one at a time, and only in the process holding the home's lease,
+/// go (<see cref="RepositoryHolds"/>). The asks run one at a time, and only in the process holding the home's lease,
 /// which alone keeps ends.</para>
 ///
 /// <para><b>An end with no press.</b> Where an answer comes back completed, the repository's ends are judged again at once, as Daoris's own
@@ -200,7 +200,7 @@ internal interface IPullRequestMomentWorld
 ///
 /// <para><b>What the person sees:</b> nothing new on the window. The machine log has link 6's <c>chain.fired</c> (topic <c>refs</c> or
 /// <c>focus</c>, the count asked), the plugin's own lines, and a failure where a moment failed. The topics' deadlines wake no link: the
-/// moments add no clock, and D148's occasions stay the reconciliation.</para>
+/// moments add no clock, and the other occasions stay the reconciliation.</para>
 /// </remarks>
 public sealed class PullRequestMoments : IAsyncDisposable
 {
@@ -224,9 +224,9 @@ public sealed class PullRequestMoments : IAsyncDisposable
     private readonly Dictionary<string, RefRepository> _known = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _pushed = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, string?> _seen = new(StringComparer.OrdinalIgnoreCase);
-    // The repositories a moment skipped while something held them (FABRIC-END6c), asked once they are let go.
+    // The repositories a moment skipped while something held them, asked once they are let go.
     private readonly HashSet<string> _owed = new(StringComparer.OrdinalIgnoreCase);
-    // FABRIC-END6b: when origin's line last moved in each repository while a pull request there was inside its minute, kept until every
+    // When origin's line last moved in each repository while a pull request there was inside its minute, kept until every
     // open pull request of it was asked after that move, so the first wake past the minute asks it.
     private readonly Dictionary<string, DateTimeOffset> _moved = new(StringComparer.OrdinalIgnoreCase);
     private bool _listening;
@@ -290,7 +290,7 @@ public sealed class PullRequestMoments : IAsyncDisposable
     }
 
     /// <summary>
-    /// What held <paramref name="repository"/> under <paramref name="home"/> let it go (<see cref="RepositoryHolds"/>, FABRIC-END6c): a
+    /// What held <paramref name="repository"/> under <paramref name="home"/> let it go (<see cref="RepositoryHolds"/>): a
     /// moment it skipped is due now. Never throws.
     /// </summary>
     public static void Released(string home, string repository)
@@ -339,7 +339,7 @@ public sealed class PullRequestMoments : IAsyncDisposable
 
     /// <summary>
     /// Link 6: the moments heard, one at a time, so a moment's ask is on the record before the next one reads it. A press is no moment
-    /// (D148 point 2: never at a press that removes); a press that pushes is told by its push. How many pull requests were asked.
+    /// (never at a press that removes); a press that pushes is told by its push. How many pull requests were asked.
     /// </summary>
     private async Task<ChainFired> AskAsync(IReadOnlyList<ChainEvent> heard, CancellationToken ct)
     {
@@ -379,11 +379,11 @@ public sealed class PullRequestMoments : IAsyncDisposable
     /// <summary>
     /// A repository's refs moved, or Daoris pushed there: a moment where origin's line moved since it was last seen here (nothing fetched,
     /// since that fetch brought the remote's facts), or where Daoris pushed (fetched unless the line was within the minute). A move that
-    /// came while a pull request was inside its minute stays a moment for it (FABRIC-END6b), asked at the first wake past the minute.
+    /// came while a pull request was inside its minute stays a moment for it, asked at the first wake past the minute.
     /// </summary>
     private async Task<int> RefsAsync(string name, CancellationToken ct)
     {
-        // A push, or a moment skipped while the repository was held (FABRIC-END6c): asked as a push is, fetched where the minute allows.
+        // A push, or a moment skipped while the repository was held: asked as a push is, fetched where the minute allows.
         bool pushed;
         DateTimeOffset? pending;
         lock (_gate)
@@ -453,10 +453,10 @@ public sealed class PullRequestMoments : IAsyncDisposable
     }
 
     /// <summary>
-    /// The entries still due by D148's minute, asked: the line fetched first where <paramref name="fetch"/> and no fetch of it came within
+    /// The entries still due by the minute, asked: the line fetched first where <paramref name="fetch"/> and no fetch of it came within
     /// the minute, so a completed answer's merge commit is here for git to confirm; the repository judged again where one completed.
-    /// Nothing due: nothing fetched and nothing asked. A repository something holds (<see cref="RepositoryHolds"/>) is skipped and owed
-    /// (FABRIC-END6c). Each entry's minute is taken just before the ask, shared with every other occasion (<see cref="PullRequestMinute"/>).
+    /// Nothing due: nothing fetched and nothing asked. A repository something holds (<see cref="RepositoryHolds"/>) is skipped and owed.
+    /// Each entry's minute is taken just before the ask, shared with every other occasion (<see cref="PullRequestMinute"/>).
     /// </summary>
     private async Task<int> AskDueAsync(
         RefRepository repository, string line, IReadOnlyList<LandedBranch> open, bool fetch, DateTimeOffset now, CancellationToken ct)
@@ -467,8 +467,8 @@ public sealed class PullRequestMoments : IAsyncDisposable
 
         if (fetch && !(_world.Fetched(repository, line) is { } last && now - last < PullRequestAsking.Fresh))
         {
-            // GITAUTH1a: the fetch's answer is read. One that failed moved nothing of origin's here, so nothing is seen; a held origin
-            // was not tried at all, and its hold, not the minute, keeps the next moment from trying it (the git-auth design §5.2). The
+            // The fetch's answer is read. One that failed moved nothing of origin's here, so nothing is seen; a held origin
+            // was not tried at all, and its hold, not the minute, keeps the next moment from trying it. The
             // plugin is asked all the same: it asks the host's own service, not git.
             // The fetch's own write to origin's line is no one else's fetch when the ref watch tells it.
             if (await _world.FetchAsync(repository, line, ct).ConfigureAwait(false) is null) Seen(repository, line, _world.OriginTip(repository, line));
@@ -580,7 +580,7 @@ public sealed class PullRequestMoments : IAsyncDisposable
 
         public string? OriginTip(RefRepository repository, string line) => TreeTips.Named(repository.CommonDir, $"refs/remotes/origin/{line}");
 
-        // FABRIC-END6c: git's own files as well, so the person's fetch that changed nothing counts, and one made before a restart.
+        // Git's own files as well, so the person's fetch that changed nothing counts, and one made before a restart.
         public DateTimeOffset? Fetched(RefRepository repository, string line) =>
             (RemoteFetches.When(repository.Root, line), RemoteFetches.InGit(repository.CommonDir, line)) switch
             {

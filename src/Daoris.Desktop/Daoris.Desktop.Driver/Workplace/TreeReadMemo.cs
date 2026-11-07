@@ -6,7 +6,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Each kept tree's last read, by what it was read from (TREELOOK1): the trees fact walks a tree again only where something its
+/// Each kept tree's last read, by what it was read from: the trees fact walks a tree again only where something its
 /// work is judged from moved since, and asks one <c>git status</c> of every other.
 /// </summary>
 /// <remarks>
@@ -23,7 +23,7 @@ namespace Daoris.Driver;
 /// <para>🔴 <b>Never unchanged where it changed.</b> What the working tree holds is in no file of git's, so <c>git status</c> is
 /// asked of every tree every time, and a tree whose status git cannot give is walked. A read is kept only where git counted its
 /// commits. A tree whose commits the line holds by content (<see cref="TreeWork.Held"/>) keeps its proof, which rests on the same
-/// refs exactly, and asks again what it holds beyond its commits, which reads the working tree's ignored paths (TREELOOK2). A tree's stamp is taken before its walk, so a change during it is a different stamp the next time.</para>
+/// refs exactly, and asks again what it holds beyond its commits, which reads the working tree's ignored paths. A tree's stamp is taken before its walk, so a change during it is a different stamp the next time.</para>
 ///
 /// <para><b>The line moving on.</b> A landing moves the line, which would walk every tree of the repository again. A tree whose
 /// walk counted no commit stays at none where its own stamp is the same and its repository's refs only moved forward since:
@@ -76,7 +76,7 @@ internal sealed class TreeReadMemo
     /// <summary>A tree's kept read: its own stamp, its repository's refs version and the home's stamp it was taken at, and its work.</summary>
     internal sealed record Kept(string Tree, string Refs, string Home, TreeWork Work)
     {
-        /// <summary>A held tree's repository's declared output, once read (TREELOOK2); it rests on what <see cref="Refs"/> and <see cref="Home"/> hold.</summary>
+        /// <summary>A held tree's repository's declared output, once read; it rests on what <see cref="Refs"/> and <see cref="Home"/> hold.</summary>
         internal IReadOnlyList<System.Text.RegularExpressions.Regex>? Declared { get; init; }
     }
 }
@@ -142,7 +142,7 @@ internal sealed record CountedRefs(string CommonDir, string Version, IReadOnlyDi
 }
 
 /// <summary>
-/// One read of some trees (TREELOOK1, <see cref="TreeReadMemo"/>): each tree's kept read where nothing it rests on moved, its
+/// One read of some trees (<see cref="TreeReadMemo"/>): each tree's kept read where nothing it rests on moved, its
 /// <c>git status</c> asked again; a walk where anything did. Safe to use from several trees at once.
 /// </summary>
 internal sealed class TreeReadPass(TreeReadMemo memo, SessionTrees trees, LookTimes? times = null)
@@ -184,7 +184,7 @@ internal sealed class TreeReadPass(TreeReadMemo memo, SessionTrees trees, LookTi
             times?.AddTree(full, "status", watch.ElapsedMilliseconds);
             TreeWork? work = kept.Work with { Uncommitted = uncommitted };
             var declared = kept.Declared;
-            // TREELOOK2: a tree held by content keeps its proof (its refs are the same, exactly), and asks what it holds beyond its commits.
+            // A tree held by content keeps its proof (its refs are the same, exactly), and asks what it holds beyond its commits.
             if (kept.Work.Held is { } held)
             {
                 watch.Restart();

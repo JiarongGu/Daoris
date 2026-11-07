@@ -18,7 +18,7 @@ public static class SyncWords
     } + (pull.Fetch is not null ? " (not fetched)" : "");
 
     /// <summary>
-    /// Said once, before the rows (WSR7): how many repositories were not fetched, grouped by git's reason; that each is
+    /// Said once, before the rows: how many repositories were not fetched, grouped by git's reason; that each is
     /// judged against what origin said when it was last fetched here, and when that was; and what the git Daoris runs
     /// needs to reach an origin over SSH or HTTPS. Nothing where every repository fetched.
     /// </summary>
@@ -46,8 +46,8 @@ public static class SyncWords
     }
 
     /// <summary>
-    /// What the git Daoris runs needs to reach an origin by <paramref name="reach"/> (WSR7): over SSH a key, over HTTPS a helper that
-    /// answers without asking; null for any other way. A landing whose fetch failed says it too (LANDSYNC1).
+    /// What the git Daoris runs needs to reach an origin by <paramref name="reach"/>: over SSH a key, over HTTPS a helper that
+    /// answers without asking; null for any other way. A landing whose fetch failed says it too.
     /// </summary>
     public static string? Reaching(string? reach) => reach switch
     {
@@ -72,12 +72,12 @@ public static class SyncWords
 
     /// <summary>
     /// A branch's row: what the press does with it, and on a landed branch what its pull request's answer was and why it does not
-    /// clear it, or why nothing was asked (PLUGHOOK1c, design §2.5), as the clean-up's rows say it.
+    /// clear it, or why nothing was asked, as the clean-up's rows say it.
     /// </summary>
     public static string Describe(RebaseItem item) => Replay(item)
         + (item.Landed ? PullRequestWords.Row(item.State, item.StateCode, item.AskFailed, item.NotAsked) : "");
 
-    // What the line holds is said beside what the replay carries, in the press's own words (LANDSYNC3b; BranchReplays' answer).
+    // What the line holds is said beside what the replay carries, in the press's own words (BranchReplays' answer).
     private static string Replay(RebaseItem item) => $"{item.Repository}  {item.Branch}  " + item.Kind switch
     {
         RebaseKind.Replay when item.Commits == 0 => $"moves onto `{item.Onto}`: it holds nothing of its own beyond work that reached the line"
@@ -98,7 +98,7 @@ public static class SyncWords
         _ => $"git could not tell: {item.Detail}",
     };
 
-    /// <summary>The repositories a look or a press did not take (WSR7, D112), in one line, and how to include them; null for none.</summary>
+    /// <summary>The repositories a look or a press did not take, in one line, and how to include them; null for none.</summary>
     public static string? Apart(IReadOnlyList<SyncRepository> apart) => apart.Count == 0
         ? null
         : $"trees: not looked at, since they hold no branch of Daoris's ({apart.Count}): "

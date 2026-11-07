@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the reads behind a page keep in memory (GIT1b, D147 §4.2): answers named only by whole commit ids, least recently
+/// What the reads behind a page keep in memory: answers named only by whole commit ids, least recently
 /// used first out, bounded by bytes. Which answers may be kept, and under what key, is <see cref="GitReads"/>'.
 /// </summary>
 /// <remarks>

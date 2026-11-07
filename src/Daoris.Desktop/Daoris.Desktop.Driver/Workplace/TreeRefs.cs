@@ -3,7 +3,7 @@ using static Daoris.Driver.TreeGit;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The sync's reads of a checkout's refs (PART10j, out of <c>SessionTrees.Sync.cs</c>): where a revision is, whether one holds
+/// The sync's reads of a checkout's refs (out of <c>SessionTrees.Sync.cs</c>): where a revision is, whether one holds
 /// another, how far apart, where the line stands, whether a branch is on its remote, the fetch and when origin was last heard
 /// from, and the bound over many checkouts at once. Static, since none reads anything of the trees' context.
 /// </summary>
@@ -17,7 +17,7 @@ internal static class TreeRefs
     private static readonly Dictionary<string, string> NoPrompt = new(StringComparer.Ordinal) { ["GIT_TERMINAL_PROMPT"] = "0" };
 
     /// <summary>
-    /// When this checkout last heard from origin (WSR7): the newer of <c>FETCH_HEAD</c>'s time, where it holds a fetch,
+    /// When this checkout last heard from origin: the newer of <c>FETCH_HEAD</c>'s time, where it holds a fetch,
     /// and the time <c>origin/&lt;line&gt;</c> last moved here, from its log; null where neither says. Daoris's own fetch
     /// writes no <c>FETCH_HEAD</c>, so its time is the person's own last fetch.
     /// </summary>
@@ -48,7 +48,7 @@ internal static class TreeRefs
         return fetchHead is null ? moved : moved is null || fetchHead > moved ? fetchHead : moved;
     }
 
-    /// <summary>How origin is reached, from its address (WSR7): `ssh`, `https`, `http`, `git` or `file`; null for none.</summary>
+    /// <summary>How origin is reached, from its address: `ssh`, `https`, `http`, `git` or `file`; null for none.</summary>
     /// <remarks>An address with no scheme is ssh's `[user@]host:path` where a colon comes before any slash, after a host of
     /// more than one letter: `C:\repos` is a folder on a drive, not a host.</remarks>
     internal static string? ReachOf(string? url)
@@ -67,7 +67,7 @@ internal static class TreeRefs
         return colon > 1 && (slash < 0 || colon < slash) ? "ssh" : "file";
     }
 
-    /// <summary><paramref name="work"/> over each item, at most <paramref name="atOnce"/> at a time, the answers in the items' order (WSR7).</summary>
+    /// <summary><paramref name="work"/> over each item, at most <paramref name="atOnce"/> at a time, the answers in the items' order.</summary>
     internal static async Task<IReadOnlyList<TResult>> AtMostAsync<T, TResult>(
         IReadOnlyList<T> items, int atOnce, Func<T, CancellationToken, Task<TResult>> work, CancellationToken ct)
     {
@@ -80,16 +80,16 @@ internal static class TreeRefs
     }
 
     /// <summary>
-    /// Fetch the line from <c>origin</c> (WSR6), with whatever sign-in git finds here: the one network step, and it moves only
+    /// Fetch the line from <c>origin</c>, with whatever sign-in git finds here: the one network step, and it moves only
     /// origin's own refs here. Null where it fetched; otherwise why not, in git's words redacted (<see cref="GitWords"/>), or the
     /// hold's sentence where origin is held — and origin's address.
     /// </summary>
     /// <remarks>
-    /// <para><b>It writes no <c>FETCH_HEAD</c></b> (WSR7): a fetch that fails empties that file and stamps it with the failure's
+    /// <para><b>It writes no <c>FETCH_HEAD</c></b>: a fetch that fails empties that file and stamps it with the failure's
     /// time, which made the person's own last fetch unreadable, and only origin's refs are the look's to move.</para>
-    /// <para><b>One at a time per line</b> (FABRIC-END6c): a fetch of the line already in flight, whichever path started it, is joined
+    /// <para><b>One at a time per line</b>: a fetch of the line already in flight, whichever path started it, is joined
     /// rather than started again beside it (<see cref="RemoteFetches.OnceAsync"/>).</para>
-    /// <para><b>Held, and not tried</b> (GITAUTH1a, the git-auth design §5.2): a failure whose class holds (<see cref="GitFailures"/>)
+    /// <para><b>Held, and not tried</b>: a failure whose class holds (<see cref="GitFailures"/>)
     /// holds origin (<see cref="GitHolds"/>), and while it is held no fetch connects, whichever path asks: the hold's sentence is the
     /// answer, at once. A fetch that passes lifts a hold over reads. <paramref name="repository"/> and <paramref name="workspace"/>
     /// name the hold's row; <paramref name="home"/> holds the holds, the caller's own, and null holds none.</para>
@@ -103,17 +103,17 @@ internal static class TreeRefs
     private static async Task<(string? Failed, string? Url)> FetchingAsync(
         string? home, string root, string line, string repository, string? workspace, CancellationToken ct)
     {
-        // GITAUTH1b: the one reader, which takes Daoris's own prefix off the address the rewrite shows (the git-auth design §4.4).
+        // The one reader, which takes Daoris's own prefix off the address the rewrite shows.
         if (await GitRemotes.AddressOf(root, "origin", ct: ct).ConfigureAwait(false) is not { } address)
             return ("there is no `origin` remote here", null);
-        // GITAUTH1c: a git older than the doors need reaches no remote of Daoris's (the git-auth design §4.1).
+        // A git older than the doors need reaches no remote of Daoris's.
         if (home is not null && await GitWiring.RefusesAsync(home, repository, "origin", address, GitAct.Read, ct).ConfigureAwait(false) is { } older)
         {
             return (older, GitWords.Redact(address));
         }
 
         var git = home is null ? null : WorkingTree.GitInUse(home);
-        // GITAUTH1b: a repository whose own ssh command would pass round the door is held before it connects (the git-auth design §4.2).
+        // A repository whose own ssh command would pass round the door is held before it connects.
         if (home is not null && await GitOwnInput.HeldAsync(home, root, repository, workspace, "origin", address, git, ct).ConfigureAwait(false) is { } own)
         {
             return (GitHolds.Said(own), GitWords.Redact(address));
@@ -126,7 +126,7 @@ internal static class TreeRefs
 
         var (code, _, err) = await WorkingTree.GitAsync(
             root, ["fetch", "--quiet", "--no-write-fetch-head", "origin", line], NoPrompt, SyncBounds.Fetch, ct).ConfigureAwait(false);
-        // FABRIC-END6: every fetch of the line counted, made or failed, so a moment inside its minute fetches nothing more (§A4.3).
+        // Every fetch of the line counted, made or failed, so a moment inside its minute fetches nothing more (§A4.3).
         RemoteFetches.Fetched(root, line, DateTimeOffset.UtcNow);
         if (code == 0)
         {
@@ -146,9 +146,9 @@ internal static class TreeRefs
     }
 
     /// <summary>
-    /// The line's latest as this checkout knows it once fetched (REVIEWBASE2-i): origin's where the line here is behind it or absent,
+    /// The line's latest as this checkout knows it once fetched: origin's where the line here is behind it or absent,
     /// which is what WSR6's pull would take; else the line here. Null where neither is here. A landing's branch form builds on it
-    /// (LANDSYNC1, D87's 2026-10-15 amendment point 3).
+    /// (D87's 2026-10-15 amendment point 3).
     /// </summary>
     internal static async Task<string?> LatestAsync(string root, string line, CancellationToken ct, RefSnapshot? refs = null)
     {
@@ -165,7 +165,7 @@ internal static class TreeRefs
         return await CommitOfAsync(root, name, ct, refs).ConfigureAwait(false);
     }
 
-    /// <summary>The commit <paramref name="revision"/> names, or null; from <paramref name="refs"/> where it holds the answer (PROC1d-ii).</summary>
+    /// <summary>The commit <paramref name="revision"/> names, or null; from <paramref name="refs"/> where it holds the answer.</summary>
     internal static async Task<string?> CommitOfAsync(string root, string revision, CancellationToken ct, RefSnapshot? refs = null)
     {
         if (refs is not null && await refs.CommitAsync(revision, ct).ConfigureAwait(false) is { Known: true } read) return read.Commit;

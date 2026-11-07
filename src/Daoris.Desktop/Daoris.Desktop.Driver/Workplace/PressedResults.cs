@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One press's reads of the service's quests (FABRIC-CLOSE1h3, D173's note): each quest read once while the door names its landing,
+/// One press's reads of the service's quests: each quest read once while the door names its landing,
 /// so the quest the press is made on is the one its door read, with no read of its own, and read afresh only where the landing judges
 /// it again (<see cref="PressedResult"/>). The page's press, the terminal's and an entry's Accept make one each.
 /// </summary>
@@ -36,18 +36,18 @@ public sealed class PressQuests(Func<string, CancellationToken, Task<QuestView?>
 }
 
 /// <summary>
-/// The quest result a person's press was made on (FABRIC-CLOSE1h3, D173's note; the fabric design §E5), and the landing's judgement
+/// The quest result a person's press was made on, and the landing's judgement
 /// of it (<see cref="TreeLands.LandAsync"/>'s <c>judged</c>), once it holds its tree. This reads the one quest.
 /// </summary>
 /// <remarks>
-/// <para><b>Only the result moving stops a press</b> (the parent's decisions 1 and 2): a reopen or a done turned down (its quest's result
+/// <para><b>Only the result moving stops a press</b>: a reopen or a done turned down (its quest's result
 /// is no longer in), a later submission, or another <c>ready</c> at the same commit (a submission is known by its machine and sequence,
-/// <see cref="QuestResults.Same"/>). A quest's hold is never read here: Accept is the person's own word, and today's press never read it;
+/// <see cref="QuestResults.Same"/>). A quest's hold is never read here: Accept is the person's own word, and a press never reads it;
 /// the automatic landing's predicate is not copied, which would make a press an automatic acceptance.</para>
 /// <para><b>Read only where time could have moved it.</b> Under the tree's hold, where that hold waited behind another landing, or the
 /// press was <c>late</c>; just before the push, a submission every time (the branch's making lies between), a done only where the push
 /// waited. An uncontended press reads one quest more at most, and only on a submission, so the owner's install, which binds nothing,
-/// reads nothing more than it did.</para>
+/// reads nothing more.</para>
 /// </remarks>
 public sealed class PressedResult
 {

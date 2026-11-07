@@ -7,14 +7,14 @@ public static class LandedWords
 {
     /// <summary>
     /// The row: what proved it or keeps it, and on a row that is kept what its pull request's answer was and why it does not
-    /// clear the branch, or why nothing was asked (PLUGHOOK1c, design §2.5). A row that goes says what proved it, and no more.
+    /// clear the branch, or why nothing was asked. A row that goes says what proved it, and no more.
     /// </summary>
     public static string Describe(LandedItem item) => Proof(item)
         + (item.Removable ? "" : PullRequestWords.Row(item.State, item.StateCode, item.AskFailed, item.NotAsked));
 
     private static string Proof(LandedItem item) => $"{item.Repository}  {item.Branch}  " + Clause(item);
 
-    /// <summary>What proved a row or keeps it, with no repository or branch before it (LANDRETIRE1): a refusal says it after its own subject.</summary>
+    /// <summary>What proved a row or keeps it, with no repository or branch before it: a refusal says it after its own subject.</summary>
     public static string Clause(LandedItem item) => item.Kind switch
     {
         LandedKind.OnLine => $"its pull request reached `{item.Where}`: every file it changed reads there as it left it",
@@ -31,7 +31,7 @@ public static class LandedWords
     };
 
     /// <summary>
-    /// How long a row the line does not hold has stood, and whether its quest is closed (LANDRETIRE1 part 2): <c>; landed 29 hours ago, and
+    /// How long a row the line does not hold has stood, and whether its quest is closed: <c>; landed 29 hours ago, and
     /// its quest #q2 is closed</c>, to say after <see cref="Describe"/>. Nothing where the line holds it (it goes by its proof) or the
     /// record gave no moment.
     /// </summary>
@@ -43,7 +43,7 @@ public static class LandedWords
     }
 
     /// <summary>
-    /// The door that withdraws a row whose files still differ on the line (LANDRETIRE1, <see cref="LandedWithdrawals"/>), said under it: the
+    /// The door that withdraws a row whose files still differ on the line (<see cref="LandedWithdrawals"/>), said under it: the
     /// one way past the clean-up, which keeps such a branch for ever. Null for a row the clean-up already takes or keeps for another reason.
     /// </summary>
     public static string? Door(LandedItem item) => item.Kind == LandedKind.Differs

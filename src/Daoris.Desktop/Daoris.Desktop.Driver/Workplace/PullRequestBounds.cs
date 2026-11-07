@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// D148's minute per pull request, one for every occasion in this process (FABRIC-END6c, the review of FABRIC-END6): a look, the tidy and
+/// The minute per pull request, one for every occasion in this process: a look, the tidy and
 /// a due moment each take an entry's minute before they ask it, so an entry one of them is asking, or asked within the minute, is not
 /// asked by another, answered or not. The record's own last ask (<see cref="PullRequestAsking.Due"/>) still counts beside it; this one
 /// also holds an ask still in flight, and a plugin not ready, which keeps nothing on the record.
@@ -38,7 +38,7 @@ public static class PullRequestMinute
     public static bool Within(string home, LandedBranch entry, DateTimeOffset now) =>
         Taken.TryGetValue(Key(home, entry), out var was) && now - was < PullRequestAsking.Fresh;
 
-    /// <summary>When the entry's minute was last taken in this process, or null where it never was (FABRIC-END6b reads a move asked about by it).</summary>
+    /// <summary>When the entry's minute was last taken in this process, or null where it never was.</summary>
     public static DateTimeOffset? TakenAt(string home, LandedBranch entry) => Taken.TryGetValue(Key(home, entry), out var was) ? was : null;
 
     /// <summary>The entry was asked at <paramref name="at"/>, its own request's time: kept where it is the later.</summary>
@@ -54,7 +54,7 @@ public static class PullRequestMinute
 }
 
 /// <summary>
-/// A repository held, in this process, by what a due moment must not run beside (FABRIC-END6c): a removing press and bringing it up to
+/// A repository held, in this process, by what a due moment must not run beside: a removing press and bringing it up to
 /// date, through the replay's lock (<see cref="TreeLock.TryReplaying"/>), and a landing (<c>TreeLands.LandAsync</c>). Holds nest; the last
 /// one let go tells the moments (<see cref="PullRequestMoments.Released"/>).
 /// </summary>
@@ -62,7 +62,7 @@ public static class PullRequestMinute
 /// <b>A moment skips a held repository, and is owed</b>, rather than wait for it: the moments run one at a time, and a landing's plugin
 /// push or a press's removals can take long enough to hold every other repository's moment behind it. A skipped moment fetches and asks
 /// nothing, and the repository is asked once the hold is let go, as Daoris's push is. A press or a landing that starts while a moment
-/// runs is never made to wait for it: D148 asks nothing at a press, and nothing waits on a plugin's answer there.
+/// runs is never made to wait for it: nothing is asked at a press, and nothing waits on a plugin's answer there.
 /// </remarks>
 public static class RepositoryHolds
 {
@@ -106,7 +106,7 @@ public static class RepositoryHolds
 }
 
 /// <summary>
-/// The window's focus kept until there is someone to tell (FABRIC-END6c): the main window can take the person's focus before the loop's
+/// The window's focus kept until there is someone to tell: the main window can take the person's focus before the loop's
 /// watch, or the watch's moments, exist, and that focus was the only one a start had. One pending flag, not a queue: any number of focuses
 /// before is one moment after.
 /// </summary>

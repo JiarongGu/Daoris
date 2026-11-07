@@ -4,7 +4,7 @@ using static Daoris.Driver.TreeRefs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a landing judged before it lands (LANDSYNC1): the repository's checkout, the tree's branch and tip, the line and the commit
+/// What a landing judged before it lands: the repository's checkout, the tree's branch and tip, the line and the commit
 /// of it the tree was judged against, and what the line holds of the tree's commits (<see cref="LineHolds"/>).
 /// </summary>
 /// <param name="OntoName">How the line's commit is named in words: the line, or <c>origin/&lt;line&gt;</c> where origin's is newer.</param>
@@ -15,31 +15,31 @@ internal sealed record LandSync(string Root, string Branch, string Line, string 
 internal sealed record LandReplay(string Now, IReadOnlyList<LandingCommit> Landed, IReadOnlyList<LeftOutCommit> LeftOut)
 {
     /// <summary>
-    /// The files the repository marks generated that the work and the line both changed, which the replay took at the line's copy
-    /// (LANDREBASE1): written again where the work is merged, never the session's conflict. Empty where there were none.
+    /// The files the repository marks generated that the work and the line both changed, which the replay took at the line's copy:
+    /// written again where the work is merged, never the session's conflict. Empty where there were none.
     /// </summary>
     public IReadOnlyList<string> Generated { get; init; } = [];
 
     /// <summary>
-    /// Those written again from the replayed tree by the writers the person accepted (GENREGEN1): the files its commit changed and the
+    /// Those written again from the replayed tree by the writers the person accepted: the files its commit changed and the
     /// commands run, or why they were not; nothing run where none was accepted.
     /// </summary>
     public GeneratedWriters.Written Written { get; init; } = GeneratedWriters.Written.None;
 
     /// <summary>
-    /// The declared backlog the work and the line both changed, which the replay settled by the merge base (LANDBACKLOG1): its path and
+    /// The declared backlog the work and the line both changed, which the replay settled by the merge base: its path and
     /// the lines kept and dropped. Null where it settled none.
     /// </summary>
     internal BacklogMerge.Settled? Backlog { get; init; }
 
-    /// <summary>The declared row tables the replay settled by the merge base the same way (INTEGRATE1c): each path and its lines kept and dropped.</summary>
+    /// <summary>The declared row tables the replay settled by the merge base the same way: each path and its lines kept and dropped.</summary>
     internal IReadOnlyList<BacklogMerge.Settled> Tables { get; init; } = [];
 
-    /// <summary>The joins union left in the replay that were set apart in a commit on top (INTEGRATE1c): each file, line and label.</summary>
+    /// <summary>The joins union left in the replay that were set apart in a commit on top: each file, line and label.</summary>
     internal IReadOnlyList<UnionJoins.Set> Joined { get; init; } = [];
 
     /// <summary>
-    /// The files the replay settled by a line rule the owner accepted for integration (INTEGRATE1d), each with its writer, which wrote
+    /// The files the replay settled by a line rule the owner accepted for integration, each with its writer, which wrote
     /// them again from the replayed tree (<see cref="LineWritten"/>); none where it settled none.
     /// </summary>
     internal IReadOnlyList<LineRules.Settled> Lined { get; init; } = [];
@@ -49,7 +49,7 @@ internal sealed record LandReplay(string Now, IReadOnlyList<LandingCommit> Lande
 }
 
 /// <summary>
-/// A landing in sync with its line (LANDSYNC1, D87's 2026-10-15 amendment): the press's one fetch and its words where it fails, the
+/// A landing in sync with its line (D87's 2026-10-15 amendment): the press's one fetch and its words where it fails, the
 /// judgement against the line, the replay of what the line lacks in a tree of Daoris's own and its proof, the conflict's refusal,
 /// and the session's tree moved to what landed. Over the trees' context, and WSR6's replay.
 /// </summary>
@@ -57,19 +57,19 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
 {
     /// <summary>
     /// Read what a landing of <paramref name="full"/> is judged against, and judge it: the branch form against the line's latest by
-    /// REVIEWBASE2-i's rule, the merge form against the line here (point 3). <paramref name="fetch"/> fetches the line first, once
-    /// (point 6), and a fetch that fails is said and judged against the last one, never refused. Null where there is nothing to judge
+    /// REVIEWBASE2-i's rule, the merge form against the line here. <paramref name="fetch"/> fetches the line first, once,
+    /// and a fetch that fails is said and judged against the last one, never refused. Null where there is nothing to judge
     /// (not a tree of this home's, not on a branch, no line, or git cannot say), and the landing goes on as before.
     /// </summary>
     /// <param name="read">
-    /// The tree's repository and branch as the landing read them a moment ago (LANDGIT1b), handed down rather than read again; null
+    /// The tree's repository and branch as the landing read them a moment ago, handed down rather than read again; null
     /// reads them here. The tip judged is read here all the same: it is what a replay is made from.
     /// </param>
     internal async Task<(LandSync? Sync, string? Fetched)> JudgeAsync(
         string full, string repository, string workspace, bool branchForm, bool fetch, CancellationToken ct, CommonDirAndBranch? read = null)
     {
         if (!context.Holds(full) || !Directory.Exists(full)) return (null, null);
-        // Its repository and its branch, one start (PROC1d-iii).
+        // Its repository and its branch, one start.
         var tree = read ?? await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
         if (tree.Code != 0) return (null, null);
         var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(tree.CommonDir.Trim()))!;
@@ -78,7 +78,7 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
         if ((await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch is not { } line) return (null, null);
 
         var fetched = fetch ? await FetchedAsync(root, line, repository, workspace, ct).ConfigureAwait(false) : null;
-        // LANDGIT1b: the line here and origin's copy of it, one read after the fetch (PROC1d-ii), where each form was a start of its own
+        // The line here and origin's copy of it, one read after the fetch, where each form was a start of its own
         // and the line here was asked twice. Read at the moment the forms were, and the judgement's alone: it ends with this method.
         var refs = RefSnapshot.Take(root);
         var here = await CommitOfAsync(root, $"refs/heads/{line}", ct, refs).ConfigureAwait(false);
@@ -89,8 +89,8 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
     }
 
     /// <summary>
-    /// The press's one fetch of the line a tree's landing is judged against (point 6), for an entry's Accept, which fetches once before
-    /// its parts and judges each against it (ACCEPTALL1d): the same fetch <see cref="JudgeAsync"/> makes. Its words where it failed,
+    /// The press's one fetch of the line a tree's landing is judged against, for an entry's Accept, which fetches once before
+    /// its parts and judges each against it: the same fetch <see cref="JudgeAsync"/> makes. Its words where it failed,
     /// said once; null where it fetched, where there was nothing to fetch, or where the tree has no line to judge against.
     /// </summary>
     internal async Task<string?> FetchLineAsync(string full, string repository, string workspace, CancellationToken ct)
@@ -113,12 +113,12 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
     }
 
     /// <summary>
-    /// Replay <paramref name="kept"/> onto <paramref name="onto"/> aside, and prove it before anything is made (point 2): between the
+    /// Replay <paramref name="kept"/> onto <paramref name="onto"/> aside, and prove it before anything is made: between the
     /// tree's tip and the replay's only files the line brought may differ, or, where <paramref name="onto"/> is a branch the landing
     /// advances, files that branch or the line brought. A conflict refuses with the rebase words; any other failure refuses in git's.
     /// </summary>
     /// <param name="joining">
-    /// The entry's branch a part that ran alongside is joining (ACCEPTALL1), where nothing the line holds made it replay: a conflict
+    /// The entry's branch a part that ran alongside is joining, where nothing the line holds made it replay: a conflict
     /// is then with the entry's earlier work on that branch, and said so. Null for a replay onto the line, or past what it holds.
     /// </param>
     internal async Task<(LandReplay? Replay, TreeLanding? Refused)> ReplayAsync(
@@ -165,7 +165,7 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
         }, null);
     }
 
-    /// <summary>The conflict's refusal (point 5): git's lines, nothing made, and the words the review offers to say to the session.</summary>
+    /// <summary>The conflict's refusal: git's lines, nothing made, and the words the review offers to say to the session.</summary>
     internal static TreeLanding Conflicted(LandSync sync, string conflicts) =>
         new(false, $"Nothing was landed: replaying its own commits onto `{sync.OntoName}` conflicts with what the line changed since: {conflicts} "
             + "Nothing was made, and the tree and its branch are as they were." + LandingSyncWords.LeftOutSentence(sync.Held.LeftOut)
@@ -177,8 +177,8 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
         };
 
     /// <summary>
-    /// A branch of the tree's own (TREEFOLLOW1) that is on its remote, where the line holds some of its commits: never rewritten
-    /// (D109), so refused as a conflict is, with the rebase words (point 3).
+    /// A branch of the tree's own that is on its remote, where the line holds some of its commits: never rewritten,
+    /// so refused as a conflict is, with the rebase words.
     /// </summary>
     internal static TreeLanding OwnOnRemote(LandSync sync)
     {
@@ -193,18 +193,18 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
     }
 
     /// <summary>
-    /// The session's tree moved to what landed (point 7), as WSR6 moves a session branch: detached where it stands, its branch moved
+    /// The session's tree moved to what landed, as WSR6 moves a session branch: detached where it stands, its branch moved
     /// by compare-and-swap from the commit the landing judged, switched back. Only while it is clean, on that branch at that commit,
     /// nothing runs in it and its branch is not on its remote. Null where it moved; else why it stays.
     /// </summary>
-    /// <param name="delivering">The delivery whose ref the branch is (LANDNODE1l), moved by its one transaction in its phase; null moves it as before.</param>
+    /// <param name="delivering">The delivery whose ref the branch is, moved by its one transaction in its phase; null moves it as before.</param>
     internal async Task<string?> MoveTreeAsync(
         string full, LandSync sync, string now, string repository, string workspace, IReadOnlySet<string>? inUse, CancellationToken ct,
         TreeDelivering? delivering = null)
     {
         if (!Directory.Exists(full)) return "its tree is gone";
         if (inUse is not null && inUse.Any(tree => SamePath(tree, full))) return "a session still running or waiting holds it";
-        // GITWORKTREECONFIG1: git's own working root for the tree, in the start that reads its branch, before its status or a switch.
+        // Git's own working root for the tree, in the start that reads its branch, before its status or a switch.
         var (onCode, onOut, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--show-toplevel", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
         var on = onOut.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (await TreeBinding.RefusalAsync(full, ct, onCode == 0 && on.Length == 2 ? on[0] : null).ConfigureAwait(false) is { } bound) return bound;
@@ -222,7 +222,7 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
         await WorkingTree.GitAsync(full, ["switch", "--quiet", sync.Branch], ct).ConfigureAwait(false);
         if (moved != 0) return $"git would not move `{sync.Branch}`: {Failure(moveErr)}";
 
-        // Where it grows from now is the line (WSR6): bringing it up to date and the review cut here.
+        // Where it grows from now is the line: bringing it up to date and the review cut here.
         try
         {
             var grown = context.Grown.Of(repository, sync.Branch);
@@ -238,7 +238,7 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
 
     /// <summary>
     /// Files that differ between the tree's tip and the replay's beyond what the line, or the branch replayed onto, brought, and the
-    /// generated files the accepted writers wrote again from the replayed tree (GENREGEN1), which are the tree's as it now stands.
+    /// generated files the accepted writers wrote again from the replayed tree, which are the tree's as it now stands.
     /// </summary>
     private static async Task<string?> BeyondAsync(LandSync sync, string now, string onto, IReadOnlyList<string> written, CancellationToken ct)
     {
@@ -252,13 +252,13 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
     }
 }
 
-/// <summary>A landing in sync with its line, in words (LANDSYNC1): what it left out and why, the fetch, the follow and the rebase words.</summary>
+/// <summary>A landing in sync with its line, in words: what it left out and why, the fetch, the follow and the rebase words.</summary>
 public static class LandingSyncWords
 {
     /// <summary>
-    /// What <c>trees land --plan</c> says of what the line holds (LANDSYNC1, D87's amendment point 4): what the press would leave out
+    /// What <c>trees land --plan</c> says of what the line holds (D87's amendment point 4): what the press would leave out
     /// and why, what it would replay, and a conflict it would be refused for; where the line holds none of the tree's commits and only
-    /// moved since the work began, what it would replay onto it first (LANDREBASE1); nothing where it lands the commits as made.
+    /// moved since the work began, what it would replay onto it first; nothing where it lands the commits as made.
     /// </summary>
     public static IEnumerable<string> Plan(LandingPlan plan)
     {
@@ -291,7 +291,7 @@ public static class LandingSyncWords
 
     /// <summary>
     /// What a replayed landing carried: <c>N commit(s) replayed onto `line`, leaving out M the line holds: …</c>; where it left out
-    /// nothing the line holds, the line only moved since the work began (LANDREBASE1), and that is said.
+    /// nothing the line holds, the line only moved since the work began, and that is said.
     /// </summary>
     public static string Replayed(int landed, string ontoName, IReadOnlyList<LeftOutCommit> leftOut)
     {
@@ -302,11 +302,11 @@ public static class LandingSyncWords
     }
 
     /// <summary>
-    /// The generated files a replay took at the line's copy (LANDREBASE1), said after the sentence: up to three named, to be written again
+    /// The generated files a replay took at the line's copy, said after the sentence: up to three named, to be written again
     /// where the work is merged. Nothing where there were none.
     /// </summary>
     /// <remarks>
-    /// GENREGEN1: where the writers the person accepted wrote them again from the replayed tree, <paramref name="written"/> names their
+    /// Where the writers the person accepted wrote them again from the replayed tree, <paramref name="written"/> names their
     /// commands and that is said instead; where one failed, <paramref name="unwritten"/> says why, beside the line's copy.
     /// </remarks>
     public static string Generated(IReadOnlyList<string> paths, IReadOnlyList<string>? written = null, string? unwritten = null)
@@ -325,7 +325,7 @@ public static class LandingSyncWords
         Generated(replay.Generated, replay.Written.Failed is null ? replay.Written.Runs : null, replay.Written.Failed);
 
     /// <summary>
-    /// What a replay settled without the session (LANDREBASE1, LANDBACKLOG1), said after the sentence: the backlog it merged by its base,
+    /// What a replay settled without the session, said after the sentence: the backlog it merged by its base,
     /// then the generated files it took at the line's copy. Nothing where it settled neither.
     /// </summary>
     internal static string Settled(LandReplay replay) =>
@@ -334,7 +334,7 @@ public static class LandingSyncWords
         + Lines(replay.Lined);
 
     /// <summary>
-    /// The files a replay settled by a line rule the owner accepted for integration (INTEGRATE1d), said after the sentence: each file and
+    /// The files a replay settled by a line rule the owner accepted for integration, said after the sentence: each file and
     /// the writer that wrote its lines again from the replayed tree. Nothing where it settled none.
     /// </summary>
     internal static string Lines(IReadOnlyList<LineRules.Settled> lined) => lined.Count == 0 ? ""
@@ -342,7 +342,7 @@ public static class LandingSyncWords
           + string.Join(", ", lined.Select(each => $"`{each.Run}`").Distinct(StringComparer.Ordinal)) + ".";
 
     /// <summary>
-    /// The joins union left in a replay and Daoris set apart (INTEGRATE1c), said after the sentence as the merge tool says them: each
+    /// The joins union left in a replay and Daoris set apart, said after the sentence as the merge tool says them: each
     /// file and the line its label or heading now stands on. Nothing where it set none.
     /// </summary>
     internal static string Joined(IReadOnlyList<UnionJoins.Set> joined) => joined.Count == 0 ? ""
@@ -350,7 +350,7 @@ public static class LandingSyncWords
           + string.Join(", ", joined.Select(each => $"`{each.Path}:{each.Line}`")) + ".";
 
     /// <summary>
-    /// A declared row table a replay settled by the merge base (INTEGRATE1c), said after the sentence as <see cref="Backlog"/> says the
+    /// A declared row table a replay settled by the merge base, said after the sentence as <see cref="Backlog"/> says the
     /// backlog: the lines a side added kept and those a side removed dropped.
     /// </summary>
     public static string Table(string path, int kept, int dropped) =>
@@ -358,7 +358,7 @@ public static class LandingSyncWords
         + $"{dropped} line(s) a side removed dropped.";
 
     /// <summary>
-    /// The backlog a replay settled by the merge base (LANDBACKLOG1), said after the sentence: the lines a side added kept and those a
+    /// The backlog a replay settled by the merge base, said after the sentence: the lines a side added kept and those a
     /// side removed dropped, as the merge tool counts them. Nothing where it settled none.
     /// </summary>
     public static string Backlog(string? path, int kept, int dropped) => path is null ? ""
@@ -386,8 +386,8 @@ public static class LandingSyncWords
         leftOut.Count == 0 ? "" : $" The line already holds {string.Join(", ", leftOut.Select(Each))}.";
 
     /// <summary>
-    /// The words the session is asked to rebase with where its replay conflicts (point 5): the review offers them to the person's press,
-    /// and an automatic landing says them itself (LANDREBASE1). That the line moved, and what of the work it holds where it holds some,
+    /// The words the session is asked to rebase with where its replay conflicts: the review offers them to the person's press,
+    /// and an automatic landing says them itself. That the line moved, and what of the work it holds where it holds some,
     /// the files, and the steps in the session's own tree: replay its own commits onto the line (keeping only what the line lacks where it
     /// holds some), resolve, rerun the tests its change reaches, and commit.
     /// </summary>
@@ -402,14 +402,14 @@ public static class LandingSyncWords
         + ", resolve each conflict, rerun the tests your change reaches, and commit. It can land again once your tree has changed.";
 
     /// <summary>
-    /// A fetch that failed (point 6), in WSR7's words: git's reason, that the landing was judged against what origin said when it was
+    /// A fetch that failed, in WSR7's words: git's reason, that the landing was judged against what origin said when it was
     /// last fetched here and when that was, and what the git Daoris runs needs to reach an origin over SSH or HTTPS.
     /// </summary>
     public static string NotFetched(string reason, DateTimeOffset? lastFetch, string? reach, DateTimeOffset now) =>
         $" `origin` was not fetched ({reason}), so this was judged against what it said when it was last fetched here "
         + $"({SyncWords.LastFetched(lastFetch, now)})." + (SyncWords.Reaching(reach) is { } needs ? $" {needs}" : "");
 
-    /// <summary>The follow's words (point 7): the tree moved to what landed, or why it stays.</summary>
+    /// <summary>The follow's words: the tree moved to what landed, or why it stays.</summary>
     public static string Followed(string? stays) => stays is null
         ? " The session's tree now stands on what landed, so its next turn starts in sync with the line."
         : $" The session's tree stays where it was ({stays}), so its next turn starts from its old commits.";

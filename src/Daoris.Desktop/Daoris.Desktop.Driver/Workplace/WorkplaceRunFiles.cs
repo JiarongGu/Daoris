@@ -46,6 +46,6 @@ public static class WorkplaceRunFiles
     /// <summary>The folder of the opinion gates' files, by chain or by chat run.</summary>
     public static string GatesFolder(string home) => DaorisHome.Entry(home, HomeEntry.OpinionGates);
 
-    /// <summary>The folder of a chat run's look files (§5.3), apart from a quest's, which lives on its quest.</summary>
+    /// <summary>The folder of a chat run's look files, apart from a quest's, which lives on its quest.</summary>
     public static string LooksFolder(string home) => Path.Combine(DaorisHome.Entry(home, HomeEntry.Workflows), Looks);
 }

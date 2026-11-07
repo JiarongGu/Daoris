@@ -45,34 +45,34 @@ public interface IWorkplaceProcess
     string? OpinionCannot { get; }
 
     /// <summary>
-    /// The <c>request</c> the bound version's own <c>integrate</c> step names (INTEGRATE1n part n2), which its landing records as the
+    /// The <c>request</c> the bound version's own <c>integrate</c> step names, which its landing records as the
     /// acceptance's provenance; null where the version holds no such step, and under Current, whose rule's <c>integrate</c> is read instead.
     /// </summary>
     string? IntegrateRequest => null;
 
     /// <summary>
-    /// Whether the landing's start judges the quest's holds, D88's proof and what the line holds by content itself (LANDNODE1k): under Current, under
+    /// Whether the landing's start judges the quest's holds, the content proof and what the line holds by content itself: under Current, under
     /// a steps version and under a graph version that lands by a <c>handed</c>, where they are judged at the start as before; not where a graph
     /// version lands by a <c>land</c>, whose own steps judge them, or which holds none of them, and lands without.
     /// </summary>
     bool JudgesHolds => true;
 
     /// <summary>
-    /// Whether the runtime performs this work's landing (WORKFLOWCLEAN1 1c): a run bound to a readable graph version holding a <c>land</c>. Its
+    /// Whether the runtime performs this work's landing: a run bound to a readable graph version holding a <c>land</c>. Its
     /// doors write the review's word and wait, the look chooses nothing for it, and no door lands it in place; Current, a steps version and a
-    /// <c>handed</c> version land through today's doors until the transitional paths end (the cleanup design §4.7).
+    /// <c>handed</c> version land through today's doors until the transitional paths end.
     /// </summary>
     bool LandsByRuntime => false;
 
     /// <summary>
-    /// The bound graph version's <c>land</c> for <paramref name="subject"/>'s work (LANDNODE1m), which a door's delivery is written from, as
+    /// The bound graph version's <c>land</c> for <paramref name="subject"/>'s work, which a door's delivery is written from, as
     /// Current's is from its rule; null under Current, under a steps version and under a graph version that lands by a <c>handed</c>, which land
-    /// through today's doors until they end (the land node design §4).
+    /// through today's doors until they end.
     /// </summary>
     BoundLand? Land(LandingSubject subject) => null;
 }
 
-/// <summary>A bound graph version's <c>land</c>, as a door's delivery is written from it (LANDNODE1m).</summary>
+/// <summary>A bound graph version's <c>land</c>, as a door's delivery is written from it.</summary>
 /// <param name="Method">Its method, written or derived from the landing step it stands for.</param>
 /// <param name="Target">The line its <c>target</c> names; null lands into the tree's line.</param>
 /// <param name="Squash">Whether it squashes the work into one commit: only a branch, a push and a pull request do.</param>

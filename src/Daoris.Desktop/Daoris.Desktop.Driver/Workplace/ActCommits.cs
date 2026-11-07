@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The commit step's plan, its effect and its postconditions (GITAPP2i, D204; the git-writes design §5, §8). The effect is one <c>git commit</c>
+/// The commit step's plan, its effect and its postconditions. The effect is one <c>git commit</c>
 /// in the act's job, so its hooks and their children are ended with it; it is never run again, and no hook is skipped. Its postconditions read
 /// <c>HEAD</c> against the old tip and the plan's parents, and its message against the plan's, never the exit code.
 /// </summary>

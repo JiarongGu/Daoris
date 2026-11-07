@@ -1,48 +1,47 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A completed pull request that carried work here (PLUGHOOK1a, D148 point 4): the landing entry whose kept answer it is, the
+/// A completed pull request that carried work here: the landing entry whose kept answer it is, the
 /// source commit it merged, and the landed branch's tip where the answer cleared that branch too. A session branch at or under
 /// either goes, every keep still applying.
 /// </summary>
 public sealed record PullRequestCarrier(LandedBranch Entry, string Source, string? ClearedTip)
 {
     /// <summary>
-    /// What a removal on its word rests on (FABRIC-END4a, third review): the form of the line its merge commit was found on, at the commit
+    /// What a removal on its word rests on: the form of the line its merge commit was found on, at the commit
     /// read, and the cleared tip's branch where that tip is what carried the revision (<see cref="PullRequestAsks.CarrierOfAsync"/>).
     /// </summary>
     internal IReadOnlyList<(string Ref, string Commit)> Rests { get; init; } = [];
 }
 
 /// <summary>
-/// A landed branch's pull request, asked about and judged (PLUGHOOK1a, PLUGHOOK1c, D148; PART10l, out of
-/// <c>SessionTrees.PullRequests.cs</c>): one occasion's asks over the plugin wire, <i>Ask again</i>, what a kept answer proves
+/// A landed branch's pull request, asked about and judged: one occasion's asks over the plugin wire, <i>Ask again</i>, what a kept answer proves
 /// here, and the completed pull requests that carried work. Over the trees' context for the wire, the record and the line.
 /// </summary>
 /// <remarks>
-/// The occasions that ask are the clean-up's look, bringing up to date's look, LAND3's tidy, <i>Ask again</i> and the due moments
-/// (FABRIC-END6, <see cref="PullRequestMoments"/>), each by its method's name (<c>PullRequestOccasionTests</c>):
+/// The occasions that ask are the clean-up's look, bringing up to date's look, the tidy, <i>Ask again</i> and the due moments
+/// (<see cref="PullRequestMoments"/>), each by its method's name (<c>PullRequestOccasionTests</c>):
 /// <see cref="AskStatesAsync"/> is called from those alone.
 /// </remarks>
 internal sealed class PullRequestAsks(TreeContext context)
 {
     /// <summary>
-    /// One occasion's asks (PLUGHOOK1a, D148 point 2, design §2.1), over every repository it looks at: each entry, standing or a
+    /// One occasion's asks, over every repository it looks at: each entry, standing or a
     /// trace, whose kept answer is not completed, that was not asked in the last minute, and whose answer could remove something
     /// now, is asked of the plugin that pushed it, else the one the rule names. One process per plugin and one bound for the
     /// whole occasion. Answers and failures are kept on the record; a failure never overwrites an answer. Never at a press that
     /// removes, nor at a read: the callers are the looks that may remove, which <c>PullRequestOccasionTests</c> holds.
     /// </summary>
     /// <param name="landedMayGo">
-    /// Whether this occasion may remove a landed branch: the clean-up's look and bringing up to date's, yes; LAND3's tidy, which
-    /// removes session branches only, no. A standing entry D102's proof does not clear is asked about only where it may.
+    /// Whether this occasion may remove a landed branch: the clean-up's look and bringing up to date's, yes; the tidy, which
+    /// removes session branches only, no. A standing entry the content proof does not clear is asked about only where it may.
     /// </param>
     /// <param name="again">
-    /// <i>Ask again</i> (PLUGHOOK1c, design §2.1 occasion 4): this one entry alone, asked whatever its kept answer's age and
+    /// <i>Ask again</i>: this one entry alone, asked whatever its kept answer's age and
     /// whether or not its answer could remove something now, since a person asked. Completed is final and still asked no more.
     /// </param>
     /// <param name="moment">
-    /// A due moment's entries (FABRIC-END6): these alone, each still due by D148's minute, asked whether or not the answer could remove
+    /// A due moment's entries: these alone, each still due by the minute, asked whether or not the answer could remove
     /// something now.
     /// </param>
     internal async Task<IReadOnlyList<StateAnswer>> AskStatesAsync(
@@ -59,9 +58,9 @@ internal sealed class PullRequestAsks(TreeContext context)
         var answers = await context.Plugins.AskStatesAsync(asks, ct).ConfigureAwait(false);
         foreach (var answer in answers)
         {
-            // FABRIC-END6c: each answer stamped with the time its own request went out, the minute counted from there for every occasion.
+            // Each answer stamped with the time its own request went out, the minute counted from there for every occasion.
             // A look's minute for an entry it sent nothing for (a plugin not ready, or its bound first) is given back, so the next look asks
-            // again as D148 says; a due moment's stays, so a plugin not ready is not started again inside it.
+            // again; a due moment's stays, so a plugin not ready is not started again inside it.
             var asked = answer.AskedAt ?? now;
             if (answer.AskedAt is { } sent) PullRequestMinute.Asked(context.Home, answer.Ask.Entry, sent);
             else if (again is null && moment is null) PullRequestMinute.Release(context.Home, answer.Ask.Entry, now);
@@ -86,7 +85,7 @@ internal sealed class PullRequestAsks(TreeContext context)
     }
 
     /// <summary>
-    /// One repository's entries due an ask at this occasion, each with its plugin and its frame (design §2.1); with
+    /// One repository's entries due an ask at this occasion, each with its plugin and its frame; with
     /// <paramref name="again"/>, that entry alone, due whatever its kept answer's age.
     /// </summary>
     private async Task<IReadOnlyList<StateAsk>> DueAsksAsync(
@@ -94,11 +93,11 @@ internal sealed class PullRequestAsks(TreeContext context)
         IReadOnlyCollection<LandedBranch>? moment = null)
     {
         var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
-        // The repository's refs read once for its entries (PROC1d-ii), and only where one is due.
+        // The repository's refs read once for its entries, and only where one is due.
         var refs = RefSnapshot.Take(root);
         IReadOnlyList<LandedProofs.LineForm>? forms = null;
         IReadOnlyList<string>? unlanded = null;
-        // GITAUTH1b: origin as the one reader gives it, read once and only where an entry is asked (the git-auth design §4.4).
+        // Origin as the one reader gives it, read once and only where an entry is asked.
         var originRead = false;
         string? origin = null;
 
@@ -107,7 +106,7 @@ internal sealed class PullRequestAsks(TreeContext context)
         {
             if (!PullRequestAsking.Due(entry, now, again is not null)) continue;
             if (PullRequestAsking.PluginFor(entry) is not { } plugin) continue;
-            // A due moment's own entries alone, its answer now feeding the end as well as a removal (FABRIC-END6).
+            // A due moment's own entries alone, its answer now feeding the end as well as a removal.
             if (moment is not null && !moment.Any(each => SameLanding(each, entry))) continue;
             if (again is null && moment is null)
             {
@@ -116,7 +115,7 @@ internal sealed class PullRequestAsks(TreeContext context)
                 if (!await CouldRemoveAsync(root, entry, line, forms, unlanded, landedMayGo, ct, refs).ConfigureAwait(false)) continue;
             }
 
-            // FABRIC-END6c: D148's minute shared with every other occasion in this process, taken last so only an entry asked takes it. A
+            // The minute is shared with every other occasion in this process, taken last so only an entry asked takes it. A
             // due moment took its entries' minutes itself, just before it asked; Ask again, a person's door, asks whatever it says.
             if (again is null && moment is null && !PullRequestMinute.TryTake(context.Home, entry, now)) continue;
             if (!originRead)
@@ -133,9 +132,9 @@ internal sealed class PullRequestAsks(TreeContext context)
     }
 
     /// <summary>
-    /// A due moment's asks (FABRIC-END6, the design §A4.3, link 6): origin's line moved, Daoris pushed, or the window's focus, as
-    /// <see cref="PullRequestMoments"/> judged it. These entries alone, each still due by D148's minute as the record keeps it, are asked
-    /// of their plugin whether or not the answer could remove something now, since it now feeds the end (§B) as well as a removal. Kept
+    /// A due moment's asks: origin's line moved, Daoris pushed, or the window's focus, as
+    /// <see cref="PullRequestMoments"/> judged it. These entries alone, each still due by the minute as the record keeps it, are asked
+    /// of their plugin whether or not the answer could remove something now, since it feeds the end as well as a removal. Kept
     /// as an occasion keeps it; it removes nothing. How many came back completed where the kept answer was not.
     /// </summary>
     internal async Task<int> AskAtMomentAsync(
@@ -154,11 +153,11 @@ internal sealed class PullRequestAsks(TreeContext context)
         && each.LandedAt == entry.LandedAt;
 
     /// <summary>
-    /// <i>Ask again</i> (PLUGHOOK1c, D148 point 2, design §2.1 occasion 4): one landed branch's plugin — the one that pushed it, else
+    /// <i>Ask again</i>: one landed branch's plugin — the one that pushed it, else
     /// the one its repository's rule names — asked about its pull request whatever the kept answer's age, as an occasion asks;
     /// the answer or the failure kept as an occasion keeps it; and what the kept answer proves here, by the kept answer alone,
     /// as a look judges it. Completed is final and asked no more. A person's door alone opens it: `trees state`, and the review's
-    /// press (PLUGHOOK1d), which <c>PullRequestOccasionTests</c> holds.
+    /// press, which <c>PullRequestOccasionTests</c> holds.
     /// </summary>
     /// <param name="root">The repository's checkout here, where the plugin runs its platform's tool and git judges the answer.</param>
     /// <param name="entry">The landing, standing or a trace.</param>
@@ -179,7 +178,7 @@ internal sealed class PullRequestAsks(TreeContext context)
             var answers = await AskStatesAsync([(root, entry.Repository, workspace)], landedMayGo: true, ct, again: entry).ConfigureAwait(false);
             asked = answers.FirstOrDefault() is { } said
                 ? asked with { Answered = said.Answer is not null, Code = said.Failure, Why = said.Sentence }
-                // Nothing was due: a branch under Daoris's own namespace, which D88 judges, or a landing the record no longer holds.
+                // Nothing was due: a branch under Daoris's own namespace, which the session branches' own judgement covers, or a landing the record no longer holds.
                 : asked with
                 {
                     Code = PullRequestCodes.NotAsked,
@@ -195,15 +194,15 @@ internal sealed class PullRequestAsks(TreeContext context)
         return asked with { Entry = now, Verdict = await VerdictAsync(root, line, forms, kept, tip, ct).ConfigureAwait(false) };
     }
 
-    /// <summary>A landing's own branch in this repository: a session branch's name is D88's to judge.</summary>
+    /// <summary>A landing's own branch in this repository: a session branch's name is the session branches' own to judge.</summary>
     private static bool Ours(LandedBranch entry, string repository) =>
         string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
         && !entry.Branch.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal);
 
     /// <summary>
-    /// Whether an entry's answer could remove something now (design §2.1): it stands, this occasion may remove a landed branch,
-    /// and D102's proof did not clear it; or its recorded tip, where git still holds that commit, contains the tip of a session
-    /// branch that stands and that D88 does not clear.
+    /// Whether an entry's answer could remove something now: it stands, this occasion may remove a landed branch,
+    /// and the content proof did not clear it; or its recorded tip, where git still holds that commit, contains the tip of a session
+    /// branch that stands and that the session branches' own judgement does not clear.
     /// </summary>
     private static async Task<bool> CouldRemoveAsync(
         string root, LandedBranch entry, string? line, IReadOnlyList<LandedProofs.LineForm> forms, IReadOnlyList<string> unlanded,
@@ -227,7 +226,7 @@ internal sealed class PullRequestAsks(TreeContext context)
         return false;
     }
 
-    /// <summary>The tips of the session branches that stand here and hold commits no branch of the person's holds (D88).</summary>
+    /// <summary>The tips of the session branches that stand here and hold commits no branch of the person's holds.</summary>
     private static async Task<IReadOnlyList<string>> UnlandedSessionTipsAsync(string root, CancellationToken ct, RefSnapshot? refs = null)
     {
         var tips = new List<string>();
@@ -241,7 +240,7 @@ internal sealed class PullRequestAsks(TreeContext context)
     }
 
     /// <summary>
-    /// What a kept answer proves here (design §2.3): git asked only what the answer needs, in the proof's order, and the pure
+    /// What a kept answer proves here: git asked only what the answer needs, in the proof's order, and the pure
     /// table (<see cref="PullRequestProof"/>) says the rest.
     /// </summary>
     /// <param name="standingTip">The landed branch's tip where it stands as the landing's, else null.</param>
@@ -256,7 +255,7 @@ internal sealed class PullRequestAsks(TreeContext context)
         string? mergeOn = null;
         foreach (var form in forms)
         {
-            // FABRIC-END4a, third review: at the commit the form was read at, which a removal by this verdict verifies.
+            // At the commit the form was read at, which a removal by this verdict verifies.
             var (on, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", merge, form.Rev], ct).ConfigureAwait(false);
             if (on != 0) continue;
             mergeOn = form.Name;
@@ -275,10 +274,10 @@ internal sealed class PullRequestAsks(TreeContext context)
     }
 
     /// <summary>
-    /// Every completed pull request of one repository that carried work here, by the kept answers alone (design §2.3): what a
+    /// Every completed pull request of one repository that carried work here, by the kept answers alone: what a
     /// look lists and a press re-judges by, so what was listed is what goes. Nothing is asked.
     /// </summary>
-    /// <param name="refs">The judgement's refs (PROC1d-ii); null asks git.</param>
+    /// <param name="refs">The judgement's refs; null asks git.</param>
     internal async Task<IReadOnlyList<PullRequestCarrier>> CarriersAsync(
         string root, string repository, string? line, CancellationToken ct, RefSnapshot? refs = null)
     {
@@ -305,7 +304,7 @@ internal sealed class PullRequestAsks(TreeContext context)
 
     /// <summary>
     /// The carrier whose pull request carried <paramref name="revision"/>: at or under its source commit, or under a tip it cleared; that tip's
-    /// branch at it is then one more thing a removal by it rests on (FABRIC-END4a, third review).
+    /// branch at it is then one more thing a removal by it rests on (third review).
     /// </summary>
     internal static async Task<PullRequestCarrier?> CarrierOfAsync(
         string root, string revision, IReadOnlyList<PullRequestCarrier> carriers, CancellationToken ct)

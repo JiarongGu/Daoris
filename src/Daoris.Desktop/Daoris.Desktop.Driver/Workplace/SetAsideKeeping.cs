@@ -3,10 +3,10 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The set-aside kind's one removal (KEEP1a, D195 points 1 and 3; the cleanup design §2.1, §3.1 and §5): the purge at the policy's days,
+/// The set-aside kind's one removal (3): the purge at the policy's days,
 /// then the slims due, within the pass's budget. The look's Keeping pass calls it holding the home's run lock (<see cref="KeepingRun"/>);
-/// a press's run and a terminal's call it the same way (KEEP1e, <see cref="SpaceFree"/>), so the three share one set of guards. Outside every repository's
-/// hold: it touches no live tree, and reads git only read-only, for a recorded folder's holding check right before its rename (KEEPSIZE1b).
+/// a press's run and a terminal's call it the same way (<see cref="SpaceFree"/>), so the three share one set of guards. Outside every repository's
+/// hold: it touches no live tree, and reads git only read-only, for a recorded folder's holding check right before its rename.
 /// </summary>
 /// <remarks>
 /// <para><b>The slim</b>, of each manifest at <see cref="SlimStates.Moved"/> whose folder moved an hour or more ago, where the policy is
@@ -15,27 +15,27 @@ namespace Daoris.Driver;
 /// words (<see cref="TreeSlims.Refusal"/>), lying under the folder by whole segments, no link on the way from the trees home to it, it
 /// included, and still a folder; (3) removed never following a link (<see cref="TreeSetAside.DeleteNeverFollowing"/>), written
 /// <c>removing</c> before and <c>removed</c> with when it ended after. A stop midway leaves it <c>removing</c>, taken up from (1).</para>
-/// <para><b>Bounded</b> (Codex 3.2): removals stop once the budget is spent or a stop is asked, between paths and never inside one; a path
+/// <para><b>Bounded</b>: removals stop once the budget is spent or a stop is asked, between paths and never inside one; a path
 /// whose removal failed for the same reason as at its last try waits a day.</para>
 /// </remarks>
 internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside)
 {
-    /// <summary>How long a pass removes for, at most (§3.1).</summary>
+    /// <summary>How long a pass removes for, at most.</summary>
     internal static readonly TimeSpan DefaultBudget = TimeSpan.FromSeconds(60);
 
-    /// <summary>How long a path whose removal failed the same way twice waits before it is tried again (§3.1).</summary>
+    /// <summary>How long a path whose removal failed the same way twice waits before it is tried again.</summary>
     internal static readonly TimeSpan Again = TimeSpan.FromDays(1);
 
     /// <summary>One run of the set-aside kind's removal at <paramref name="now"/>, by <paramref name="policy"/>.</summary>
-    /// <param name="purge">The folders past their days a press listed (KEEP1e); null purges every one.</param>
-    /// <param name="slim">The folders whose slim is due a press listed (KEEP1e); null slims every one.</param>
+    /// <param name="purge">The folders past their days a press listed; null purges every one.</param>
+    /// <param name="slim">The folders whose slim is due a press listed; null slims every one.</param>
     internal SetAsideRun Run(
         KeepPolicy policy, DateTimeOffset now, TimeSpan budget, CancellationToken ct, Func<string, bool>? purge = null, Func<string, bool>? slim = null) =>
         // With no registry no step awaits git, so this completes as it is called; no recorded folder goes by the hour.
         RunAsync(policy, now, budget, ct, purge, slim, null).GetAwaiter().GetResult();
 
     /// <summary>
-    /// <inheritdoc cref="Run"/> KEEPSIZE1b (the keep-size design §3.4): one purge, the hour's and the days', each folder by its class, a recorded
+    /// <inheritdoc cref="Run"/> One purge, the hour's and the days', each folder by its class, a recorded
     /// folder's holding check run right before its rename in the root <paramref name="rootOf"/> gives; with none, no folder goes by the hour.
     /// </summary>
     internal async Task<SetAsideRun> RunAsync(
@@ -52,21 +52,21 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
     }
 
     /// <summary>
-    /// What the press lists of the set-aside folders (KEEP1e, the cleanup design §3.3), read and never written: each folder with when it
+    /// What the press lists of the set-aside folders, read and never written: each folder with when it
     /// was moved and when its days end; whether the purge takes it now (past its days, nothing written in it since), whether its slim is
     /// due, and whether it holds files of its own (something written in it after the move, or a link in it, which the purge keeps it for).
     /// </summary>
     internal IReadOnlyList<SetAsideListed> List(KeepPolicy policy, DateTimeOffset now)
     {
         var listed = new List<SetAsideListed>();
-        // KEEPSIZE1a: every place of the trees entry, the folders set aside before the home's layout moved included.
+        // Every place of the trees entry, the folders set aside before the home's layout moved included.
         foreach (var root in setAside.SetAsideRoots.Where(Directory.Exists))
         foreach (var workspace in SetAsideEligibility.Workspaces(root))
         foreach (var repository in Directory.EnumerateDirectories(workspace))
         foreach (var folder in Directory.EnumerateDirectories(repository))
         {
             if (TreeSetAside.MovedAt(Path.GetFileName(folder)) is not { } moved) continue;
-            // KEEPSIZE1b (§3.4, §5): its class, and its threshold for a write, from its manifest.
+            // Its class, and its threshold for a write, from its manifest.
             var judged = SetAsideEligibility.Of(folder, moved, policy.SetAside.Days, policy.SetAside.Whole);
             var kept = setAside.Kept(folder, judged.Threshold, top: judged.Manifest?.Finished is not null);
             var past = judged.Due is { } due && now >= due;
@@ -90,12 +90,12 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
         && manifest.Paths.Any(path => !path.Final && !Waits(path, now));
 
     /// <summary>
-    /// A folder set aside removed before its date by the person's word (KEEP1e, the cleanup design §3.3), whole and with its manifest,
+    /// A folder set aside removed before its date by the person's word, whole and with its manifest,
     /// judged again right before it goes: one reached through a link, or that cannot be read, is kept; one that holds files of its own now
     /// where the list said it held none changed since the list, and is kept. Never following a link inside it.
     /// </summary>
     /// <param name="listedOwn">Whether the list the person read said it holds files of its own.</param>
-    /// <param name="listedClass">The class the list said it was (KEEPSIZE1b, <see cref="ListedClass"/>); one that reads another now is kept,
+    /// <param name="listedClass">The class the list said it was (<see cref="ListedClass"/>); one that reads another now is kept,
     /// <c>changed</c> (Codex's read of the branch, finding 4). Null from a door that lists no class, which compares none.</param>
     /// <param name="listedRef">The recovery ref the list named its tip on; one that reads another now is kept, <c>changed</c>.</param>
     internal (long Bytes, string? Kept) RemoveEarly(string folder, bool listedOwn, string? listedClass = null, string? listedRef = null)
@@ -103,7 +103,7 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
         if (!Directory.Exists(folder)) return (0, SpaceKept.Gone);
         if (TreeSetAside.MovedAt(Path.GetFileName(folder)) is not { } moved) return (0, SpaceKept.Refused);
         if (context.Worktrees.LinkBelowTreesRoot(folder) is not null) return (0, SetAsideKept.Linked);
-        // KEEPSIZE1b (§3.4): a finished folder's threshold is its manifest's `read`; a class or a holder changed since the list keeps it.
+        // A finished folder's threshold is its manifest's `read`; a class or a holder changed since the list keeps it.
         var judged = SetAsideEligibility.Of(folder, moved, TimeSpan.Zero, whole: true);
         var finished = judged.Manifest?.Finished;
         if (listedClass is not null
@@ -115,7 +115,7 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
         var kept = setAside.Kept(folder, judged.Threshold, top: finished is not null);
         if (kept is { Code: SetAsideKept.Unread }) return (0, SetAsideKept.Unread);
         if (kept is not null && !listedOwn) return (0, SpaceKept.Changed);
-        // Renamed into `.going` first, then deleted (§3.4): a refused rename keeps it whole.
+        // Renamed into `.going` first, then deleted: a refused rename keeps it whole.
         var (bytes, refused) = setAside.Remove(folder, GoingDoors.Press, judged.Threshold, DateTimeOffset.UtcNow);
         return refused is null ? (bytes, null)
             : (0, refused.Value.Code switch { TidyKept.Busy => SpaceKept.InUse, SetAsideKept.Linked => SetAsideKept.Linked, _ => SpaceKept.Failed });
@@ -124,7 +124,7 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
     /// <summary>The slims due: each manifest at <c>moved</c> an hour after its move; true where the budget or a stop ended the pass.</summary>
     private bool SlimDue(DateTimeOffset now, Func<bool> spent, List<SlimResult> slims, Func<string, bool>? only)
     {
-        // KEEPSIZE1a: every place; a folder at the old place set aside before KEEP1a has no manifest, so it is never slimmed.
+        // Every place; a folder set aside with no manifest is never slimmed.
         foreach (var root in setAside.SetAsideRoots.Where(Directory.Exists))
         foreach (var workspace in SetAsideEligibility.Workspaces(root))
         foreach (var repository in Directory.EnumerateDirectories(workspace))
@@ -135,14 +135,14 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
             if (!Directory.Exists(folder))
             {
                 // Its folder went at its days, or by the person's hand: the manifest goes with it. One whose folder a removal holds in `.going`
-                // stays, its identity, until that removal ends or puts the folder back (KEEPSIZE1b).
+                // stays, its identity, until that removal ends or puts the folder back.
                 if (!Directory.Exists(GoingOf(root, folder))) Drop(file);
                 continue;
             }
 
             // A manifest that does not read is unknown: its folder stays whole, and the purge reads it whole.
             if (SlimManifest.Read(file).Manifest is not { } manifest) continue;
-            // KEEPSIZE1b (§3.5): a finished tree's manifest at `judged` holds its record's inputs, so it is never dropped; its folder stays whole.
+            // A finished tree's manifest at `judged` holds its record's inputs, so it is never dropped; its folder stays whole.
             if (manifest.State == SlimStates.Judged && manifest.Finished is not null) continue;
             if (manifest.State == SlimStates.Judged)
             {
@@ -164,7 +164,7 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
 
     /// <summary>
     /// Whether the slim may take a manifest's paths: a schema-1 one at <c>moved</c>, as built; a finished tree's at any step after its move,
-    /// since its folder waits its days or its record and the slim stays for those (the keep-size design §3.6).
+    /// since its folder waits its days or its record and the slim stays for those.
     /// </summary>
     private static bool Slimmable(SlimManifest manifest) =>
         manifest.Finished is null ? manifest.State == SlimStates.Moved
@@ -293,7 +293,7 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
 internal sealed record SetAsideListed(
     string Folder, string Workspace, string Repository, DateTimeOffset Moved, DateTimeOffset Goes, bool Past, bool Slim, string? Kept)
 {
-    /// <summary>Its class (KEEPSIZE1b, <see cref="SetAsideClass"/>), which the press lists and checks again before it removes.</summary>
+    /// <summary>Its class (<see cref="SetAsideClass"/>), which the press lists and checks again before it removes.</summary>
     public string Class { get; init; } = SetAsideClass.Unmarked;
 
     /// <summary>A finished tree's recovery ref at its tip, where one holds it; null where the line does, or none is known.</summary>
@@ -321,7 +321,7 @@ internal sealed record SetAsideRun(IReadOnlyList<SetAside> Purged, IReadOnlyList
     public bool Stopped { get; init; }
 }
 
-/// <summary>What one pass's slim did of one folder set aside (the cleanup design §5).</summary>
+/// <summary>What one pass's slim did of one folder set aside.</summary>
 /// <param name="Removed">The package folders it removed, in git's spelling.</param>
 /// <param name="Bytes">The bytes they held.</param>
 /// <param name="Kept">The paths it kept for the folder's days, each with why.</param>

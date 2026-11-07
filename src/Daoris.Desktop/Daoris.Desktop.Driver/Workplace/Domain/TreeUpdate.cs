@@ -1,20 +1,20 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What bringing one session's tree up to date did (REVIEWBASE2-i, D164's REVIEWBASE2 note). A refusal is an answer, not an error:
+/// What bringing one session's tree up to date did. A refusal is an answer, not an error:
 /// <paramref name="Done"/> false with the sentence that says why, as a discarded tree's is, because the person's next move differs
 /// for each.
 /// </summary>
 /// <param name="Moved">Where the tree's HEAD went, where it moved; null where nothing moved.</param>
 public sealed record TreeUpdate(bool Done, string Message, TreeMoved? Moved = null);
 
-/// <summary>Where a press moved a tree (REVIEWBASE2-i): its HEAD's commit before and after, onto the line named.</summary>
-/// <param name="Branch">The branch moved with it, the session's or one of its own (TREEFOLLOW1); null for a detached tree.</param>
+/// <summary>Where a press moved a tree: its HEAD's commit before and after, onto the line named.</summary>
+/// <param name="Branch">The branch moved with it, the session's or one of its own; null for a detached tree.</param>
 /// <param name="Commits">The tree's own commits beyond the line now.</param>
 public sealed record TreeMoved(string Line, string From, string To, string? Branch, int Commits);
 
 /// <summary>
-/// What a session's start did with its tree against the line (LANDSYNC2, D87's 2026-10-15 amendment point 7): where the line holds some
+/// What a session's start did with its tree against the line: where the line holds some
 /// of the tree's commits, the tree is brought up to date before the turn, and the session is told either way.
 /// </summary>
 /// <param name="Moved">Where the tree went, where it was brought up to date; null where it stayed.</param>
@@ -29,7 +29,7 @@ public sealed record TreeStartSync(TreeMoved? Moved, string? Told)
 }
 
 /// <summary>
-/// What a session going on in an old tree is told before its work (LANDSYNC2, D87's amendment point 7): the agent's words, in the
+/// What a session going on in an old tree is told before its work: the agent's words, in the
 /// instruction or after the person's words where its conversation resumes, never the page's.
 /// </summary>
 public static class TreeStartWords
@@ -47,7 +47,7 @@ public static class TreeStartWords
 
     /// <summary>
     /// The line holds some of the tree's work and the tree was not brought up to date (a conflict in git's words, or why it was left):
-    /// the session is asked to replay its own commits onto the line itself before anything else (point 5's words, for a start).
+    /// the session is asked to replay its own commits onto the line itself before anything else.
     /// </summary>
     public static string NotMoved(string line, string ontoName, int leftOut, string why) =>
         $"The line `{line}` already holds {leftOut} of this tree's commit(s), and Daoris could not bring the tree up to date before this "
@@ -58,7 +58,7 @@ public static class TreeStartWords
     public static string HoldsNone(string line) => $"Before this turn Daoris judged this tree against `{line}`, and the line holds none of its work.";
 
     /// <summary>
-    /// A step the person went on with was brought up to date with its source's new submission (FABRIC-CLOSE1c5): <paramref name="kept"/>
+    /// A step the person went on with was brought up to date with its source's new submission: <paramref name="kept"/>
     /// of its own commits replayed onto <paramref name="commit"/>, as a tree is replayed onto the line.
     /// </summary>
     public static string OntoSubmission(string source, string commit, int kept) =>
@@ -67,7 +67,7 @@ public static class TreeStartWords
         + "you made have new ids.";
 
     /// <summary>
-    /// The step's tree was left exactly as it was (FABRIC-CLOSE1c5): a conflict in git's words, or why it was left; nothing else was
+    /// The step's tree was left exactly as it was: a conflict in git's words, or why it was left; nothing else was
     /// brought up to date, the line included. A conflict is the person's to resolve, and the session is told to say so.
     /// </summary>
     public static string NotOntoSubmission(string source, string commit, string why, bool conflict) =>
@@ -77,13 +77,12 @@ public static class TreeStartWords
             : $"Tell the person why, and build nothing on `{source}`'s new work until the tree holds it.");
 
     /// <summary>
-    /// The host names no commit for the new submission (FABRIC-CLOSE1c5): only the line was synced, as a carry-on's start is. Since
-    /// FABRIC-CLOSE1c6 the end of the session that said the <c>ready</c> posts its commit whether or not evidence was asked, so none is named
-    /// only by a host before it, or where no session's end read it (a ready no session said, or a tree git could not read then).
+    /// The host names no commit for the new submission: only the line was synced, as a carry-on's start is. The end of the session that said the <c>ready</c>
+    /// posts its commit whether or not evidence was asked, so none is named only by an older host, or where no session's end read it (a ready no session said, or a tree git could not read then).
     /// </summary>
     /// <param name="broughtForward">
-    /// A bring-forward's carry-on (SYNCMERGE1b2): its source may never have moved, so no new submission is claimed, and the words say only
-    /// the line was brought up to date (D178's rejected wording is a branch said brought up to date where only the line was).
+    /// A bring-forward's carry-on: its source may never have moved, so no new submission is claimed, and the words say only
+    /// the line was brought up to date.
     /// </param>
     public static string NoSubmissionCommit(string source, bool broughtForward = false) => broughtForward
         ? $"Daoris could not tell whether `{source}` moved since this tree last held its work: the service names no commit for its "
@@ -93,8 +92,8 @@ public static class TreeStartWords
           + $"it, or a submission whose commit no session's end read), so only the line was brought up to date. Read what `{source}` now holds "
           + "before you build on its work.";
 
-    /// <summary>The new submission's commit is not in this repository (FABRIC-CLOSE1c5): only the line was synced.</summary>
-    /// <param name="broughtForward">As <see cref="NoSubmissionCommit"/>'s (SYNCMERGE1b2).</param>
+    /// <summary>The new submission's commit is not in this repository: only the line was synced.</summary>
+    /// <param name="broughtForward">As <see cref="NoSubmissionCommit"/>'s.</param>
     public static string SubmissionNotHere(string source, string commit, bool broughtForward = false) => broughtForward
         ? $"Daoris could not tell whether `{source}` moved since this tree last held its work: its submission's commit (`{commit}`) is not "
           + "held by this repository (its work is in another repository, or was not fetched here), so only the line was brought up to date. "
@@ -108,7 +107,7 @@ public static class TreeStartWords
 }
 
 /// <summary>
-/// What a go-on's start did with a step's tree against its source's new submission (FABRIC-CLOSE1c5), before the line's sync.
+/// What a go-on's start did with a step's tree against its source's new submission, before the line's sync.
 /// </summary>
 /// <param name="Stops">The tree was left for a reason that changes nothing else: the line's sync is not asked.</param>
 internal sealed record SubmissionOnto(TreeMoved? Moved, string? Told, bool Stops)
@@ -117,13 +116,13 @@ internal sealed record SubmissionOnto(TreeMoved? Moved, string? Told, bool Stops
     public static SubmissionOnto Nothing { get; } = new(null, null, false);
 }
 
-/// <summary>Why a tree is not brought up to date, in the order the press asks (REVIEWBASE2-i): the first found is the answer.</summary>
+/// <summary>Why a tree is not brought up to date, in the order the press asks: the first found is the answer.</summary>
 public enum TreeRefusal
 {
     /// <summary>Not a tree this home opened: nothing else of it is read.</summary>
     NotOurs,
 
-    /// <summary>Something runs in it: a conversation's turn taking or queued, or a driven session working (point 3).</summary>
+    /// <summary>Something runs in it: a conversation's turn taking or queued, or a driven session working.</summary>
     Running,
 
     /// <summary>It holds uncommitted work, which a replay does not carry.</summary>
@@ -132,10 +131,10 @@ public enum TreeRefusal
     /// <summary>No line is set for its repository and git names none.</summary>
     NoLine,
 
-    /// <summary>The repository's trees are held: a session starting in one, or another replay (LEFT2).</summary>
+    /// <summary>The repository's trees are held: a session starting in one, or another replay.</summary>
     Held,
 
-    /// <summary>The line could not be fetched (point 2): the press refuses rather than judge against the last look's.</summary>
+    /// <summary>The line could not be fetched: the press refuses rather than judge against the last look's.</summary>
     NotFetched,
 
     /// <summary>It already holds the line's latest commit.</summary>
@@ -146,7 +145,7 @@ public enum TreeRefusal
 }
 
 /// <summary>
-/// What a press knows of a tree at each of its steps (REVIEWBASE2-i): each fact is found false until it is asked, so one record
+/// What a press knows of a tree at each of its steps: each fact is found false until it is asked, so one record
 /// is asked again after each step, and <see cref="First"/> is the one place the refusals' order is written.
 /// </summary>
 public sealed record TreeFacts(string? Repository = null, string? Line = null, string? Branch = null)
@@ -172,7 +171,7 @@ public sealed record TreeFacts(string? Repository = null, string? Line = null, s
     /// <summary>
     /// The first refusal found, in the order the press asks: a tree not this home's first, since nothing else of it is read; what
     /// runs in it, its uncommitted work and its line, all read on the machine; the hold and the fetch; then whether it already holds
-    /// the line's latest, which only a fetched line can say; a branch on its remote last, as WSR6's judgement has it. Null for none.
+    /// the line's latest, which only a fetched line can say; a branch on its remote last. Null for none.
     /// </summary>
     public TreeRefusal? First() =>
         NotOurs ? TreeRefusal.NotOurs
@@ -187,8 +186,8 @@ public sealed record TreeFacts(string? Repository = null, string? Line = null, s
 }
 
 /// <summary>
-/// A tree's press in words (REVIEWBASE2-i), beside <c>SyncWords</c>'s rows: its refusals, and a detached tree's replay. A tree on
-/// a branch is replayed by WSR6's own replay, which says what it did in its own words.
+/// A tree's press in words, beside <c>SyncWords</c>'s rows: its refusals, and a detached tree's replay. A tree on
+/// a branch is replayed by its own replay, which says what it did in its own words.
 /// </summary>
 public static class TreeUpdateWords
 {
@@ -209,7 +208,7 @@ public static class TreeUpdateWords
     };
 
     /// <summary>
-    /// What WSR6's judgement left of a tree on a branch, where it is none of the refusals above: a chain's step whose parent's work
+    /// What the replay's judgement left of a tree on a branch, where it is none of the refusals above: a chain's step whose parent's work
     /// has not reached the line, or git unable to say.
     /// </summary>
     public static string Left(TreeFacts facts, string kind, string? grewFrom, string? detail) => kind == RebaseKind.Waits
@@ -218,8 +217,8 @@ public static class TreeUpdateWords
         : $"git could not tell: {detail}";
 
     /// <summary>
-    /// A detached tree replayed in place (point 4): <paramref name="kept"/> of its <paramref name="had"/> commits of its own, leaving out
-    /// <paramref name="leftOut"/> the line already holds (LANDSYNC3), said apart from those the replay found empty.
+    /// A detached tree replayed in place: <paramref name="kept"/> of its <paramref name="had"/> commits of its own, leaving out
+    /// <paramref name="leftOut"/> the line already holds, said apart from those the replay found empty.
     /// </summary>
     public static string Replayed(string line, int kept, int had, int leftOut = 0) => had == 0
         ? leftOut == 0

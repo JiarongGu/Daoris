@@ -10,7 +10,7 @@ internal static class LandingSayings
     private const int HookSaidLimit = 600;
 
     /// <summary>
-    /// What a merge its repository's hook refused says (HOOKMERGE1), told from the merge the integration tree made for the press (INTEGRATE1g): that it was the hook and no conflict, the hook's own output, and
+    /// What a merge its repository's hook refused says, told from the merge the integration tree made for the press: that it was the hook and no conflict, the hook's own output, and
     /// that Daoris does not skip a repository's hooks (this merge never passes <c>--no-verify</c>, as the git writes design's §4.1
     /// proposes for the person's own acts), so the person changes what the hook refuses or merges by hand. git runs a hook with its output on stderr; its own closing line, where it is in English, is left out.
     /// </summary>
@@ -25,7 +25,7 @@ internal static class LandingSayings
     }
 
     /// <summary>
-    /// A pinned landing whose branch moved past the commit its door judged (FABRIC-END7's review; FABRIC-CUTOVER1d's merge too): nothing lands, and
+    /// A pinned landing whose branch moved past the commit its door judged: nothing lands, and
     /// it is judged again at its new tip.
     /// </summary>
     internal static TreeLanding Moved(string branch, string stands, string pinned) =>
@@ -35,7 +35,7 @@ internal static class LandingSayings
             Refusal = LandingCode.Refused,
         };
 
-    /// <summary>What a landing says that waited for another of its tree past <see cref="LandingHolds.Wait"/> (LANDRACE1).</summary>
+    /// <summary>What a landing says that waited for another of its tree past <see cref="LandingHolds.Wait"/>.</summary>
     internal static string StillLanding =>
         $"another landing of this session's work was still under way after {(int)LandingHolds.Wait.TotalMinutes} minutes, so nothing was "
         + "landed: accept it again once that one ends.";
@@ -45,7 +45,7 @@ internal static class LandingSayings
         ? message[..^TreeStays.Length] + words + TreeStays
         : message + words;
 
-    /// <summary>What a pattern is expanded from: the quest, or the session where there is none; the quest's name's words (LANDNAME1).</summary>
+    /// <summary>What a pattern is expanded from: the quest, or the session where there is none; the quest's name's words.</summary>
     internal static string EnteredInvalid(string name) =>
         $"the branch name you entered, `{name}`, is not a branch name git would take. Enter another, or leave it blank for the rule's.";
 
@@ -53,12 +53,12 @@ internal static class LandingSayings
     internal static string Untaken(string name, bool entered) => entered ? EnteredInvalid(name)
         : $"the landing rule names `{name}` for this session, which is not a branch name git would take. Change the pattern with `daoris place landing`.";
 
-    /// <summary>An entered name that is already a branch Daoris did not make (LANDNAME1a): the press's refusal, which the plan says first.</summary>
+    /// <summary>An entered name that is already a branch Daoris did not make: the press's refusal, which the plan says first.</summary>
     internal static string EnteredStands(string name, string repository) =>
         $"the branch name you entered, `{name}`, is already a branch in `{repository}`, and Daoris does "
         + "not move a branch it did not make. Enter another name, or leave it blank for the rule's.";
 
-    /// <summary>A name entered where the tree's own branch lands as it stands (TREEFOLLOW1): refused, not ignored, as a merge's is.</summary>
+    /// <summary>A name entered where the tree's own branch lands as it stands: refused, not ignored, as a merge's is.</summary>
     internal static string EnteredOwn(string own) =>
         $"this session's tree is on its own branch, `{own}`, which lands as it stands and is not renamed, so there is no branch name "
         + "to enter. Leave it blank.";

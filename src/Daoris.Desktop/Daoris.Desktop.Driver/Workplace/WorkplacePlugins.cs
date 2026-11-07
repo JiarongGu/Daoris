@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One plugin as the workplace judges it (D100): the id its manifest names, whether the person switched it on, why it contributes
+/// One plugin as the workplace judges it: the id its manifest names, whether the person switched it on, why it contributes
 /// nothing, and the points it speaks on. Plugins keeps the catalogue's entry, which implements this directly.
 /// </summary>
 public interface IWorkplacePluginEntry

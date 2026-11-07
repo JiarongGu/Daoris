@@ -3,7 +3,7 @@ using static Daoris.Driver.TreeGit;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The clean-up of the branches landings made (D88, WSR5; PART10l, out of <c>SessionTrees.Landed.cs</c>): the list, the press, and
+/// The clean-up of the branches landings made (out of <c>SessionTrees.Landed.cs</c>): the list, the press, and
 /// each recorded branch judged over the whole set. Over the trees' context, the pull request's asks (the look's one occasion), the
 /// content proof's keep and delete, the replay's record tidying, the session branches' half of the clean-up
 /// (<see cref="TreeSweeps"/>), and the end judgement's keeper for a landing whose branch went (<see cref="EndKeeping.KeepGoneAsync"/>).
@@ -12,19 +12,18 @@ internal sealed class LandedCleanups(
     TreeContext context, PullRequestAsks asks, ContentHolds content, BranchReplays replays, TreeSweeps sweeps, EndKeeping ends)
 {
     /// <summary>
-    /// The clean-up's list (D88, WSR5): every session branch with what it holds, then every branch a landing
+    /// The clean-up's list: every session branch with what it holds, then every branch a landing
     /// made and recorded, with whether its work reached the line. Nothing is changed.
     /// </summary>
-    /// <param name="closedQuests">The quests the service says are closed, which a row's quest is read against (LANDRETIRE1 part 2); none, none is said closed.</param>
+    /// <param name="closedQuests">The quests the service says are closed, which a row's quest is read against; none, none is said closed.</param>
     internal async Task<SweepPlan> CleanPlanAsync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
         CancellationToken ct = default, IReadOnlySet<string>? closedQuests = null)
     {
         var known = repositories.ToList();
-        // One look: git is asked each checkout's line once, not by each of the three readers below (UIFREEZE1).
+        // One look: git is asked each checkout's line once, not by each of the three readers below.
         using var look = context.OneLook();
-        // The look may remove, so it asks first where git cannot tell, as one occasion over every repository (PLUGHOOK1a, design
-        // §2.1 occasion 2); the press asks nothing.
+        // The look may remove, so it asks first where git cannot tell, as one occasion over every repository; the press asks nothing.
         var asked = await asks.AskStatesAsync(
             known.Where(each => !string.IsNullOrWhiteSpace(each.Root) && Directory.Exists(each.Root))
                 .Select(each => (each.Root!, each.Repository, RemoteTarget.Workspace(each.Workspace))),
@@ -35,20 +34,20 @@ internal sealed class LandedCleanups(
     }
 
     /// <summary>
-    /// The clean-up's list of one repository as the machine's facts judge it (PUSH1c4a, D182): its git half alone, every session branch
-    /// and every branch a landing made, each judged by the pull-request answers the landing record keeps. It asks no plugin: D148
-    /// point 2 keeps the asks to an occasion that may remove, and a fact judged at each ref's move and at a deadline is none. The
+    /// The clean-up's list of one repository as the machine's facts judge it: its git half alone, every session branch
+    /// and every branch a landing made, each judged by the pull-request answers the landing record keeps. It asks no plugin: asking
+    /// is kept to an occasion that may remove, and a fact judged at each ref's move and at a deadline is none. The
     /// person's look (<see cref="CleanPlanAsync"/>) asks first and keeps what it heard, which this reads at its next judgement.
     /// Nothing is changed.
     /// </summary>
     /// <param name="inUse">The trees sessions still running or waiting name, as the service's answers the facts hold say.</param>
-    /// <param name="closedQuests">The quests the service says are closed, as the facts' part reads them (LANDRETIRE1 part 2); none, none is said closed.</param>
+    /// <param name="closedQuests">The quests the service says are closed, as the facts' part reads them; none, none is said closed.</param>
     internal async Task<SweepPlan> SweepPartAsync(
         string repository, string? workspace, string root, IReadOnlySet<string> inUse, CancellationToken ct = default,
         IReadOnlySet<string>? closedQuests = null)
     {
         IReadOnlyList<(string Repository, string? Workspace, string? Root)> one = [(repository, workspace, root)];
-        // One look at the checkout's line for both halves (UIFREEZE1), as the person's look takes.
+        // One look at the checkout's line for both halves, as the person's look takes.
         using var look = context.OneLook();
         var sessions = await sweeps.SweepPlanAsync(one, inUse, ct).ConfigureAwait(false);
         // Nothing was asked, so a row says only what holds whatever the occasion: no plugin pushed it and the rule names none.
@@ -56,7 +55,7 @@ internal sealed class LandedCleanups(
     }
 
     /// <summary>
-    /// The landed half of the list (WSR5): every branch a landing made and recorded in these repositories, judged over its repository's
+    /// The landed half of the list: every branch a landing made and recorded in these repositories, judged over its repository's
     /// set beside the session branches that stay, each row saying why its pull request was not asked about where <paramref name="asked"/>
     /// or the rule says so. Nothing is changed.
     /// </summary>
@@ -79,8 +78,8 @@ internal sealed class LandedCleanups(
                 .Select(item => item.Branch).ToList();
             var judged = await JudgeLandedAsync(root, repository, RemoteTarget.Workspace(workspace), entries, staying, stale: null, ct)
                 .ConfigureAwait(false);
-            // Each row says why its pull request was not asked about, where it would have been (PLUGHOOK1c, design §2.1).
-            // LANDRETIRE1 part 2: and whether its quest is closed, as the caller read the service once.
+            // Each row says why its pull request was not asked about, where it would have been.
+            // And whether its quest is closed, as the caller read the service once.
             landed.AddRange(judged.Select(each => each.Item with
             {
                 NotAsked = NotAskedOf(each.Item, asked, config),
@@ -92,8 +91,8 @@ internal sealed class LandedCleanups(
     }
 
     /// <summary>
-    /// Why an occasion did not ask about a landed row's pull request, where it would have (PLUGHOOK1c, design §2.1): what the
-    /// occasion said of its entry (the plugin not ready, or its bound reached first); else, on a row kept for want of D102's proof
+    /// Why an occasion did not ask about a landed row's pull request, where it would have: what the
+    /// occasion said of its entry (the plugin not ready, or its bound reached first); else, on a row kept for want of the end proof
     /// with nothing final kept, that no plugin pushed it and the rule names none. A row asked about, or not due, says nothing.
     /// </summary>
     internal PullRequestNotAsked? NotAskedOf(LandedItem item, IReadOnlyList<StateAnswer> asked, DriverConfig config)
@@ -108,15 +107,15 @@ internal sealed class LandedCleanups(
     }
 
     /// <summary>
-    /// The clean-up's press (D88, WSR5): the session branches the proof clears go first — their proof may
+    /// The clean-up's press: the session branches the proof clears go first — their proof may
     /// count a landed branch as holding their commits — then the landed branches whose work reached the line.
     /// </summary>
     /// <remarks>
     /// 🔴 <b>Judged over the whole set, then again right before each goes</b>, because the list is a fact about a
     /// moment and "inside another landed branch" is a fact about the set: the branches that are inside another
     /// go before the one they are inside, and each re-judgment proves that one again. Removal deletes exactly
-    /// the branch judged, only while it is the commit it was judged at (<c>git update-ref -d</c> with that id,
-    /// SQUASHTIDY1c), in the repository's own checkout — no working tree, no other ref, and never a remote branch.
+    /// the branch judged, only while it is the commit it was judged at (<c>git update-ref -d</c> with that id),
+    /// in the repository's own checkout — no working tree, no other ref, and never a remote branch.
     /// </remarks>
     /// <param name="only">The branches the person saw listed to go, as <c>repository:branch</c>; null for every one the proof clears now.</param>
     internal async Task<SweepDone> CleanAsync(
@@ -124,10 +123,10 @@ internal sealed class LandedCleanups(
         IReadOnlySet<string>? only = null, CancellationToken ct = default)
     {
         var known = repositories.ToList();
-        // One press, one look at each checkout's line (UIFREEZE1): the proofs are still judged again before each removal.
+        // One press, one look at each checkout's line: the proofs are still judged again before each removal.
         using var look = context.OneLook();
         var sessions = await sweeps.SweepAsync(known, inUse, only, ct).ConfigureAwait(false);
-        // The record of where session branches grew from drops what is gone (LAND3), this press's removals among them.
+        // The record of where session branches grew from drops what is gone, this press's removals among them.
         foreach (var (repository, _, root) in known)
         {
             if (!string.IsNullOrWhiteSpace(root) && Directory.Exists(root)) await replays.ForgetGoneAsync(root, repository, ct).ConfigureAwait(false);
@@ -139,9 +138,9 @@ internal sealed class LandedCleanups(
     }
 
     /// <summary>
-    /// The landed half of the clean-up's press (WSR5): the recorded branches whose work reached the line go, each
+    /// The landed half of the clean-up's press: the recorded branches whose work reached the line go, each
     /// judged over the whole set and again right before it goes. Bringing a repository up to date presses this
-    /// half alone (WSR6), after its rebases.
+    /// half alone, after its rebases.
     /// </summary>
     internal async Task<List<LandedResult>> CleanLandedAsync(
         IReadOnlyList<(string Repository, string? Workspace, string? Root)> known, IReadOnlySet<string>? only, CancellationToken ct)
@@ -154,12 +153,12 @@ internal sealed class LandedCleanups(
             var stale = new List<(LandedBranch Entry, string Why)>();
             var removed = new List<string>();
             var proven = new List<LandedItem>();
-            // The session each branch's newest landing carried (AUTOTIDY2b), read before a removal makes the entry a trace: what the
+            // The session each branch's newest landing carried, read before a removal makes the entry a trace: what the
             // look's machine log names a removal by, since the branch's own name carries the title's words.
             var sessions = LandedProofs.EntriesOf(context.Recorded.All(), repository)
                 .GroupBy(entry => entry.Branch, StringComparer.Ordinal)
                 .ToDictionary(group => group.Key, group => group.MaxBy(entry => entry.LandedAt)!.Session, StringComparer.Ordinal);
-            // The refs read once for the judgement over the whole set, and afresh for each judgement again (PROC1d-ii).
+            // The refs read once for the judgement over the whole set, and afresh for each judgement again.
             var refs = RefSnapshot.Take(root);
             var first = await JudgeLandedAsync(
                 root, repository, workspace, LandedProofs.EntriesOf(context.Recorded.All(), repository),
@@ -191,9 +190,9 @@ internal sealed class LandedCleanups(
                     continue;
                 }
 
-                // Only while it is still the commit judged (SQUASHTIDY1c): git's own -d asks only whether HEAD holds the
+                // Only while it is still the commit judged: git's own -d asks only whether HEAD holds the
                 // commits, and a squash merge put none of them anywhere, so the proof made here is the one that counts.
-                // Its commits are kept on a ref of their own in the delete's act (SQUASHTIDY1e), as a session branch's are (SQUASHTIDY1c): a
+                // Its commits are kept on a ref of their own in the delete's act, as a session branch's are: a
                 // squash carries the aggregate content only, so their own history and messages live on this branch alone. A merged
                 // branch's tip is on the line, so nothing is lost and no ref is made.
                 RecoveryName? keep = null;
@@ -209,7 +208,7 @@ internal sealed class LandedCleanups(
                     keep = name;
                 }
 
-                // FABRIC-END4a, third review: what the judgement again's proof returned, each ref at the commit it read, verified in the delete's
+                // What the judgement again's proof returned, each ref at the commit it read, verified in the delete's
                 // own transaction beside the recovery ref it makes; nothing is read again here.
                 var keptAt = keep?.Ref;
                 var kept = await content.DeleteJudgedAsync(root, item.Repository, item.Branch, now.Tip, now.Rests, ct, keep).ConfigureAwait(false);
@@ -229,11 +228,11 @@ internal sealed class LandedCleanups(
             }
 
             // Gone, or no longer the landing's: never judged again — the name may be the person's now — and kept as a
-            // trace with what the proof found, so the review of the session that landed it says where its work went (D113).
+            // trace with what the proof found, so the review of the session that landed it says where its work went.
             foreach (var item in proven) context.Recorded.Removed(repository, item.Branch, item.Kind, item.Where);
-            // CLEANUP1: with why, on git's word: a branch of its name standing that is not the landing's, or missing, where what holds its
-            // recorded tip is asked first (after review): moved to a branch that holds it, or its commit kept on a ref where nothing does.
-            // Each written to the landing judged alone, so a new landing of its name keeps its standing. CLEANUP1b: a missing one the line
+            // With why, on git's word: a branch of its name standing that is not the landing's, or missing, where what holds its
+            // recorded tip is asked first: moved to a branch that holds it, or its commit kept on a ref where nothing does.
+            // Each written to the landing judged alone, so a new landing of its name keeps its standing. A missing one the line
             // holds is the end judgement's first, kept ended as it retires, never read as moved to the line.
             var line = stale.Any(each => each.Why == LandedGone.Missing)
                 ? (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch
@@ -258,39 +257,39 @@ internal sealed class LandedCleanups(
     internal sealed record Judged(LandedItem Item, string Tip)
     {
         /// <summary>
-        /// The form of the line its own proof found its work on (AUTOTIDY2b): on the line by content, merged, or its pull request's
+        /// The form of the line its own proof found its work on: on the line by content, merged, or its pull request's
         /// completed merge, before anything that keeps the branch itself is asked. Null where its proof did not find it there; a
         /// branch inside another is found through that one.
         /// </summary>
         internal string? Line { get; init; }
 
         /// <summary>
-        /// What its removal rests on (FABRIC-END4a, third review), as its proof returned it: the form of the line it was proved on, or the
+        /// What its removal rests on, as its proof returned it: the form of the line it was proved on, or the
         /// landing it is inside at the tip judged with what that one rests on, each at the commit read; its delete verifies exactly these.
         /// </summary>
         internal IReadOnlyList<(string Ref, string Commit)> Rests { get; init; } = [];
     }
 
     /// <summary>
-    /// Judge every recorded branch of one repository (WSR5): each by content against the line, then those
+    /// Judge every recorded branch of one repository: each by content against the line, then those
     /// inside another that passed, then what must keep them.
     /// </summary>
     /// <param name="staying">The session branches that stay: a landed branch one of them leans on stays too.</param>
     /// <param name="stale">Where a branch that is gone, or no longer the landing's, is named for the record to forget; null to only look.</param>
-    /// <param name="refs">The refs the caller's judgement read (PROC1d-ii); null takes this judgement's own, so each judgement again reads afresh.</param>
+    /// <param name="refs">The refs the caller's judgement read; null takes this judgement's own, so each judgement again reads afresh.</param>
     internal async Task<List<Judged>> JudgeLandedAsync(
         string root, string repository, string workspace, IReadOnlyList<LandedBranch> entries, IReadOnlyCollection<string> staying,
         List<(LandedBranch Entry, string Why)>? stale, CancellationToken ct, RefSnapshot? refs = null)
     {
-        // One read of the refs and the working trees for every branch judged here (PROC1d-ii, -iii); a write in this flow drops it.
+        // One read of the refs and the working trees for every branch judged here (-iii); a write in this flow drops it.
         refs ??= RefSnapshot.Take(root);
-        // A list git could not give is never "no tree here" (AUTOTIDY1): every branch is then kept as one checked out.
+        // A list git could not give is never "no tree here": every branch is then kept as one checked out.
         var worktrees = await context.Worktrees.ReadAsync(root, ct, refs).ConfigureAwait(false);
         var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         var forms = await LandedProofs.LineFormsAsync(root, line, ct, refs).ConfigureAwait(false);
 
         var judged = new List<(LandedBranch Entry, string Tip, LandedProofs.Proof Proof, string? Keep, int Ahead, PullRequestVerdict? Verdict)>();
-        // RECORDUNREAD1: a branch git could not read is kept and said, never retired: only git's own word retires a record.
+        // A branch git could not read is kept and said, never retired: only git's own word retires a record.
         var unread = new List<Judged>();
         foreach (var entry in entries)
         {
@@ -304,7 +303,7 @@ internal sealed class LandedCleanups(
             }
 
             // 🔴 A person's own branch is never judged: one that took the recorded name since does not hold the
-            // commit the landing made it at, whatever its files say. Only git's "not an ancestor" (exit 1) says so (RECORDUNREAD1).
+            // commit the landing made it at, whatever its files say. Only git's "not an ancestor" (exit 1) says so.
             var (ours, _, oursErr) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", entry.Tip, tip], ct).ConfigureAwait(false);
             if (ours == 1)
             {
@@ -320,7 +319,7 @@ internal sealed class LandedCleanups(
             }
 
             var proof = await LandedProofs.ProveAsync(root, tip, line, forms, ct).ConfigureAwait(false);
-            // PLUGHOOK1a: a fourth proof, the platform's word confirmed by git, where D102's could not see the work on the line.
+            // A fourth proof, the platform's word confirmed by git, where the others could not see the work on the line.
             var verdict = entry.PullRequestState is { } kept
                 ? await PullRequestAsks.VerdictAsync(root, line, forms, kept, tip, ct).ConfigureAwait(false)
                 : null;
@@ -329,7 +328,7 @@ internal sealed class LandedCleanups(
                 proof = proof with
                 {
                     Kind = LandedKind.PullRequest, Where = verdict.Form, Files = [], Detail = null, Judgeable = false,
-                    // FABRIC-END4a, third review: the form its merge commit was found on, at the commit read.
+                    // The form its merge commit was found on, at the commit read.
                     Rests = LandedProofs.RestsOn(forms.FirstOrDefault(form => form.Name == verdict.Form)),
                 };
             }
@@ -367,7 +366,7 @@ internal sealed class LandedCleanups(
                     if (inside != 0) continue;
                     kind = LandedKind.Inside;
                     where = other.Entry.Branch;
-                    // FABRIC-END4a, third review: it rests on that branch at the tip judged, and on what that one's proof rests on.
+                    // It rests on that branch at the tip judged, and on what that one's proof rests on.
                     rests = [($"refs/heads/{other.Entry.Branch}", other.Tip), .. other.Proof.Rests];
                     break;
                 }
@@ -391,7 +390,7 @@ internal sealed class LandedCleanups(
                 new LandedItem(repository, workspace, entry.Branch, kind, where, files, proof.Detail, entry.PullRequest,
                     kind == LandedKind.AheadOfRemote ? ahead : proof.Commits)
                 {
-                    // What the platform last said, and why it does not clear the branch where it does not (design §2.3, §2.5).
+                    // What the platform last said, and why it does not clear the branch where it does not.
                     State = entry.PullRequestState,
                     StateCode = verdict is { Clears: false } ? verdict.Code : null,
                     AskFailed = entry.PullRequestAskFailed,
@@ -410,17 +409,17 @@ internal sealed class LandedCleanups(
     }
 
     /// <summary>
-    /// The landings of one repository whose branch went outside Daoris, said on git's own word (CLEANUP1): a standing entry whose branch the
-    /// refs do not list is retired as a trace once git says it is missing, and a trace from before <see cref="LandedBranch.GoneAs"/> was kept
+    /// The landings of one repository whose branch went outside Daoris, said on git's own word: a standing entry whose branch the
+    /// refs do not list is retired as a trace once git says it is missing, and a trace with no <see cref="LandedBranch.GoneAs"/>
     /// is asked once. Missing, with no branch of its name in another case standing, is <see cref="LandedGone.Missing"/>, the person's end of
-    /// it, once what holds its recorded tip is asked (<see cref="WentAsync"/>, after review); a branch of its name standing is
+    /// it, once what holds its recorded tip is asked (<see cref="WentAsync"/>); a branch of its name standing is
     /// <see cref="LandedGone.Stands"/>; a read git could not make writes nothing, and is asked again at the next look. A trace that moved is
     /// followed: asked again once the branch it moved to is no longer listed. Each write names the landing it read, never its name alone,
     /// so a landing recorded since keeps its standing. No git where nothing needs asking.
     /// </summary>
     /// <remarks>
-    /// CLEANUP1b: a landing git says is missing is the end judgement's first (<see cref="EndKeeping.KeepGoneAsync"/>): where the line holds
-    /// the tip its landing recorded, by ancestry or (CLEANUP1c) by content, it is kept ended as it retires, never read as moved to the line
+    /// A landing git says is missing is the end judgement's first (<see cref="EndKeeping.KeepGoneAsync"/>): where the line holds
+    /// the tip its landing recorded, by ancestry or by content, it is kept ended as it retires, never read as moved to the line
     /// nor as dropped, and no recovery ref is made. A trace an earlier look read as moved to the line, with no fact, is asked again for it.
     /// </remarks>
     /// <param name="line">The line the repository's cycle names, as the look reads it; null where none is set, so nothing is judged ended.</param>
@@ -440,7 +439,7 @@ internal sealed class LandedCleanups(
         refs ??= RefSnapshot.Take(root);
         foreach (var each in moved)
         {
-            // CLEANUP1b: moved to the line with no fact is the end judgement's to prove, whether or not the line has moved since.
+            // Moved to the line with no fact is the end judgement's to prove, whether or not the line has moved since.
             if (each.Held is null && line is not null && string.Equals(each.MovedTo, line, StringComparison.Ordinal))
             {
                 asking.Add(each);
@@ -468,7 +467,7 @@ internal sealed class LandedCleanups(
                 }
                 else if (await ends.KeepGoneAsync(root, repository, entry, line, ct, refs).ConfigureAwait(false))
                 {
-                    // CLEANUP1b: the line holds what its landing recorded, so its end is kept and the entry retired with it.
+                    // The line holds what its landing recorded, so its end is kept and the entry retired with it.
                 }
                 else if (await WentAsync(context.Home, root, entry, ct).ConfigureAwait(false) is { } went)
                 {
@@ -487,12 +486,12 @@ internal sealed class LandedCleanups(
     }
 
     /// <summary>
-    /// What holds a landing's recorded tip once git said its branch is missing (CLEANUP1, after review), asked before its record retires.
+    /// What holds a landing's recorded tip once git said its branch is missing, asked before its record retires.
     /// A local branch holding it by ancestry is <see cref="LandedGone.Moved"/> to that branch, a branch of the person's named first: a rename,
     /// or a branch made from it, so the work goes on and is never read as the person's end. Else <see cref="LandedGone.Missing"/>; and where
     /// neither a tag nor a recovery ref holds it, its commit is first kept on a recovery ref of the landing's name
     /// (<see cref="RecoveryKeeps.KeepAsync"/>), which nothing else holds and so stays until the person deletes it: the record never
-    /// goes as the only way back to it. A remote-tracking ref does not count, since a fetch moves or prunes it (SQUASHTIDY1c 6), as the
+    /// goes as the only way back to it. A remote-tracking ref does not count, since a fetch moves or prunes it, as the
     /// recovery refs' holders do not (<see cref="RecoveryRetention"/>). A commit this repository no longer has, which git's own collection
     /// took once nothing held it, is missing with nothing to keep. Null, writing nothing, where git could not say or the ref was not made:
     /// asked again at the next look.
@@ -515,7 +514,7 @@ internal sealed class LandedCleanups(
             return has == 1 && WorkingTree.IsCommitId(entry.Tip) ? (LandedGone.Missing, null, null, null) : null;
         }
 
-        // GITAPP2a: an act's own ref holds an index's blobs until its record expires, never a landing's work.
+        // An act's own ref holds an index's blobs until its record expires, never a landing's work.
         var holders = ContentHolds.Unaliased(listed)
             .Where(pair => !(pair.Ref.StartsWith("refs/remotes/", StringComparison.Ordinal) && pair.Ref.EndsWith("/HEAD", StringComparison.Ordinal)))
             .Where(pair => !ActRefs.IsAct(pair.Ref)).ToList();
@@ -536,7 +535,7 @@ internal sealed class LandedCleanups(
     }
 
     /// <summary>
-    /// Git's word on a landing's branch that did not resolve (CLEANUP1): <see cref="LandedGone.Missing"/> where <c>show-ref --exists</c>
+    /// Git's word on a landing's branch that did not resolve: <see cref="LandedGone.Missing"/> where <c>show-ref --exists</c>
     /// says missing and no branch of its name in another case stands (packed refs compare case exactly, so git calls such a name missing on
     /// a disk blind to case); <see cref="LandedGone.Stands"/> where one does; null, with git's words, where either read failed.
     /// </summary>
@@ -552,7 +551,7 @@ internal sealed class LandedCleanups(
     }
 
     /// <summary>
-    /// A recorded branch git could not read (RECORDUNREAD1): kept as <see cref="LandedKind.Unknown"/> with why, at no tip, so no removal and
+    /// A recorded branch git could not read: kept as <see cref="LandedKind.Unknown"/> with why, at no tip, so no removal and
     /// no judgement again takes it, and its record stays for the next read.
     /// </summary>
     private static Judged Unread(string repository, string workspace, LandedBranch entry, string why) =>
@@ -569,7 +568,7 @@ internal sealed class LandedCleanups(
     /// upstream, else <c>origin/&lt;branch&gt;</c> — or null where it has none: never pushed, or its remote
     /// branch deleted and pruned since.
     /// </summary>
-    /// <param name="refs">The judgement's refs (PROC1d-ii), where they hold the upstream and origin's copy; null asks git.</param>
+    /// <param name="refs">The judgement's refs, where they hold the upstream and origin's copy; null asks git.</param>
     internal static async Task<int?> AheadOfRemoteAsync(string root, string branch, string tip, CancellationToken ct, RefSnapshot? refs = null)
     {
         // Its upstream as `<branch>@{upstream}` resolves it: none, or one whose ref is gone, falls to origin's copy.
@@ -594,9 +593,9 @@ internal sealed class LandedCleanups(
     }
 
     /// <summary>
-    /// A session branch that stays and shares commits with this one that the line does not hold: D88 counts
+    /// A session branch that stays and shares commits with this one that the line does not hold: the end proof counts
     /// this branch as holding them, so removing it would leave that session's work looking unlanded. The look asks it of the
-    /// session branches it leaves (AUTOTIDY2b).
+    /// session branches it leaves.
     /// </summary>
     internal static async Task<string?> LeanerAsync(
         string root, string tip, IReadOnlyCollection<string> staying, IReadOnlyList<LandedProofs.LineForm> forms, CancellationToken ct)

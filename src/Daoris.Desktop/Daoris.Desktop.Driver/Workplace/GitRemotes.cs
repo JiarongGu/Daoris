@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The one reader of a remote's address (GITAUTH1b, D198 point 2; the git-auth design §4.4). Under Daoris's wiring git applies the
+/// The one reader of a remote's address. Under Daoris's wiring git applies the
 /// rewrite wherever it hands out an address, so <c>git remote get-url</c> answers <c>daoris::https://…</c> for every HTTP and HTTPS
 /// remote; this asks git for the effective address and takes Daoris's own prefix off it, exactly once and nothing else, so the person's
 /// own rewrites stay applied. Every address Daoris keeps, says or judges goes through it: <c>GitRemotesTests</c> holds that no

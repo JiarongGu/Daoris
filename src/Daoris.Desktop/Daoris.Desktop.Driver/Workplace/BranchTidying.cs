@@ -3,18 +3,18 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The look's own tidy of session branches (AUTOTIDY1, AUTOTIDY2a, D88's notes): a session branch the press would clear goes
+/// The look's own tidy of session branches: a session branch the press would clear goes
 /// without a press, its tree only where it holds no uncommitted or untracked path, and the look says so in its report and the
-/// machine log; and after them each branch a landing made that the press would clear (AUTOTIDY2b). Held by the watch across its
+/// machine log; and after them each branch a landing made that the press would clear. Held by the watch across its
 /// looks, since each look's driver is built fresh: what it already said, and when it last looked.
 /// </summary>
 /// <remarks>
 /// <para><b>The press's path, not a second one.</b> Each repository is tidied by <see cref="SessionTrees.TidyEmptyAsync"/>,
-/// which judges each session branch the line is kept holding (FABRIC-END4a) as the press's list does and runs the clean-up's own path over those the look takes
+/// which judges each session branch the line is kept holding as the press's list does and runs the clean-up's own path over those the look takes
 /// (<see cref="SessionTrees.GoesByItself"/>). Every guard is the press's: judged again right before it goes, deleted only
 /// while it is the commit judged, never forced. The look adds its last guards, and never deletes a tree's folder: it moves it
 /// aside, its package folders go an hour later, and a later look deletes it only once it has waited the policy's days with nothing
-/// written in it since (KEEP1a, <see cref="KeepPolicy"/>).</para>
+/// written in it since (<see cref="KeepPolicy"/>).</para>
 ///
 /// <para><b>Said once.</b> A branch kept by a last guard, because git could not read one, or because the removal did not
 /// happen, is said in the report and written to the log the first look it is met, and not again while it lasts: a branch that
@@ -30,7 +30,7 @@ public sealed class BranchTidying(string home)
     public static readonly TimeSpan DefaultPace = TimeSpan.FromMinutes(5);
 
     /// <summary>
-    /// How long after the person's last word to a session the look's tidy leaves its tree (TREEGONE2). No window of a session's fits: the
+    /// How long after the person's last word to a session the look's tidy leaves its tree. No window of a session's fits: the
     /// watch's quiet is a running turn's silence, and a stray folder's quiet is writes. The pause seen was four minutes, under one pace;
     /// an hour covers a person stepping away, and past it the tree may go, since the next word goes on with Daoris's brief in a fresh one.
     /// </summary>
@@ -47,7 +47,7 @@ public sealed class BranchTidying(string home)
     public TimeSpan Pace { get; init; } = DefaultPace;
 
     /// <summary>
-    /// The look's classing (NOTIFY2h2), by which each line is classed as it is made: what the tidy removed or kept, which the session's
+    /// The look's classing, by which each line is classed as it is made: what the tidy removed or kept, which the session's
     /// page, its branch's line and This Daoris's cards say, is what moved; what it could not do now, a later look's. None by default.
     /// </summary>
     public LookSaid Look { get; init; } = LookSaid.None;
@@ -135,16 +135,16 @@ public sealed class BranchTidying(string home)
         Task<IReadOnlySet<string>> InUseAsync(CancellationToken token) => BranchTidying.InUseAsync(home, service, reviewing, token, Clock());
     }
 
-    /// <summary>One repository's stages, over one reading of its checkout's refs, top and working trees (PERF1c), held for them alone.</summary>
+    /// <summary>One repository's stages, over one reading of its checkout's refs, top and working trees, held for them alone.</summary>
     private async Task<TidyPass> RepositoryAsync(
         SessionTrees trees, RepoView row, Func<CancellationToken, Task<IReadOnlySet<string>>> inUse,
         Action<IReadOnlyList<StrayResult>> strayed, CancellationToken ct)
     {
         // Read at its first question and dropped by every write a stage makes; the stages' own judgements take their own.
         RefSnapshot.Take(row.Root!);
-        // TREELOCK1: a session lock whose session no longer holds its tree goes first, since the tidy refuses a locked tree.
+        // A session lock whose session no longer holds its tree goes first, since the tidy refuses a locked tree.
         await trees.LetGoUnheldLocksAsync(row.Root!, row.Repository, row.Workspace, inUse, ct).ConfigureAwait(false);
-        // AUTOTIDY2c, OPENCUT1: the folders under its trees that are no tree first, so a branch whose folder one was
+        // The folders under its trees that are no tree first, so a branch whose folder one was
         // goes in the same look rather than being kept as unreadable.
         strayed(await trees.TidyStraysAsync(row.Root!, row.Repository, row.Workspace, inUse, Clock(), ct).ConfigureAwait(false));
         return await trees.TidyEmptyAsync(row.Root!, row.Repository, row.Workspace, inUse, ct).ConfigureAwait(false);
@@ -171,22 +171,22 @@ public sealed class BranchTidying(string home)
     private TidyKeeping Keeping => _keeping ??= new(this, home);
 
     /// <summary>
-    /// The policy a pass keeps by (KEEP1a): the one effective policy every reader of the set-aside days reads (<see cref="KeepPolicy"/>); a
+    /// The policy a pass keeps by: the one effective policy every reader of the set-aside days reads (<see cref="KeepPolicy"/>); a
     /// test hands another, as it hands a clock.
     /// </summary>
     internal Func<string, KeepPolicy> Policy { get; init; } = KeepPolicy.Of;
 
-    /// <summary>How long the Keeping pass removes for, at most (the cleanup design §3.1); a test's may be none.</summary>
+    /// <summary>How long the Keeping pass removes for, at most; a test's may be none.</summary>
     internal TimeSpan Budget { get; init; } = SetAsideKeeping.DefaultBudget;
 
     /// <summary>
     /// The person's choices as the loop resolves them, which the downloads' rule reads for a command naming a file inside a version and locks
-    /// at its judgement (KEEP1b, the cleanup design §3.5); this home's own resolution unless the watch names the loop's.
+    /// at its judgement; this home's own resolution unless the watch names the loop's.
     /// </summary>
     public string? ConfigPath { get; init; }
 
     /// <summary>
-    /// The card's sizes the Keeping pass counts by itself (KEEP1c): the watch names the process's own; null, a test's tidy, counts none.
+    /// The card's sizes the Keeping pass counts by itself: the watch names the process's own; null, a test's tidy, counts none.
     /// </summary>
     public SpaceSizes? Sizes { get; init; }
 
@@ -194,30 +194,30 @@ public sealed class BranchTidying(string home)
     internal Func<ServiceClient, CancellationToken, Task<LiveSessions>>? Sessions { get; init; }
 
     /// <summary>
-    /// This machine's session processes, which history's daily clear judges a live session by (KEEP1g); the watch names the loop's, and
+    /// This machine's session processes, which history's daily clear judges a live session by; the watch names the loop's, and
     /// none reads the home's markers.
     /// </summary>
     public SessionProcesses? Processes { get; init; }
 
-    /// <summary>The loop's record of conversations, so history's daily clear forgets a cleared one's numbering (KEEP1g); null removes the files alone.</summary>
+    /// <summary>The loop's record of conversations, so history's daily clear forgets a cleared one's numbering; null removes the files alone.</summary>
     public ISessionEventRemoval? Events { get; init; }
 
     /// <summary>
-    /// The shell's browser host, which says whether Daoris's own browser runs and holds its start through a clear of its caches (KEEP1f's
-    /// third act); null with no shell, which keeps them.
+    /// The shell's browser host, which says whether Daoris's own browser runs and holds its start through a clear of its caches;
+    /// null with no shell, which keeps them.
     /// </summary>
     public IBrowserCaches? Caches { get; init; }
 
-    /// <summary>The stretches below the floor this process keeps (KEEP1f); a test hands its own.</summary>
+    /// <summary>The stretches below the floor this process keeps; a test hands its own.</summary>
     internal SpaceFloors Floors { get; init; } = SpaceFloors.Shared;
 
     /// <summary>
-    /// A folder's volume (KEEP1f): the watch names the system's read (<see cref="SpaceVolumes.Read"/>), a test its stand-in; null, a test's
+    /// A folder's volume: the watch names the system's read (<see cref="SpaceVolumes.Read"/>), a test its stand-in; null, a test's
     /// tidy that is about something else, runs no floor, so its lines never hang on the machine's own free space.
     /// </summary>
     public Func<string, VolumeReading?>? Volume { get; init; }
 
-    /// <summary>How often the downloads' rule removes what is past its days (the cleanup design §3.1, step 5).</summary>
+    /// <summary>How often the downloads' rule removes what is past its days (step 5).</summary>
     public static readonly TimeSpan DownloadsPace = TimeSpan.FromDays(1);
 
     /// <summary>A count of bytes as a person reads it.</summary>
@@ -264,7 +264,7 @@ public sealed class BranchTidying(string home)
         return lines;
     }
 
-    /// <summary>A repository whose pass threw, held unread with the code <see cref="TidyCause.Pass"/> (AUTOTIDY1a3); the console keeps the message.</summary>
+    /// <summary>A repository whose pass threw, held unread with the code <see cref="TidyCause.Pass"/>; the console keeps the message.</summary>
     internal static TidyPass Threw(string repository, string? workspace, Exception error) =>
         new([], TidyKept.Unread, error.Message) { Repository = repository, Workspace = RemoteTarget.Workspace(workspace), Cause = TidyCause.Pass };
 
@@ -277,8 +277,8 @@ public sealed class BranchTidying(string home)
             foreach (var pass in passes)
             {
                 SayStrays(pass, log, met, lines);
-                // CLEANUP1: a recovery ref past its retention, gone. The report alone names it: a ref carries a branch's name, which may
-                // carry a title's words, so the machine log is not told (the machine-log design §5).
+                // A recovery ref past its retention, gone. The report alone names it: a ref carries a branch's name, which may
+                // carry a title's words, so the machine log is not told.
                 foreach (var gone in pass.Recovered)
                 {
                     lines.Add(Look.Progress("tidy", $"tidy  {pass.Repository}: removed the recovery ref `{gone.Ref}`, past its {RecoveryRetention.Kept.TotalDays:0} days: "
@@ -302,10 +302,10 @@ public sealed class BranchTidying(string home)
                         lines.Add(Look.Progress("tidy", $"tidy  {pass.Repository}: removed `{item.Branch}`, {Why(item)}"
                             + (result.MovedTo is { } to
                                 ? $"; its tree's folder was moved aside to {to}, and goes once it is left untouched for {Policy(home).SetAside.Days.TotalDays:0} days."
-                                // TREEFOLLOW1: the tree stays, on the branch its agent made; this one only said where it started.
+                                // The tree stays, on the branch its agent made; this one only said where it started.
                                 : item.TreeOn is { } on && on != item.Where ? $"; the session's work is on `{on}`." : ".")
                             + (result.KeptRef is { } kept ? $" {ContentHold.KeptAt(item.Branch, kept)}" : "")));
-                        // AUTOTIDY2a: `kind` and `kept` are fields added after the rest, so what read the line before reads it the same.
+                        // `kind` and `kept` are fields added after the rest, so what read the line before reads it the same.
                         log?.Info("branch.tidied",
                             ("repository", pass.Repository), ("workspace", pass.Workspace), ("branch", item.Branch), ("tree", item.Tree is not null),
                             ("folder", result.MovedTo is { } moved ? Path.GetRelativePath(home, moved).Replace('\\', '/') : null),
@@ -332,9 +332,9 @@ public sealed class BranchTidying(string home)
     }
 
     /// <summary>
-    /// What the look did with the branches the repository's landings made (AUTOTIDY2b): each removal, and each the removal of
+    /// What the look did with the branches the repository's landings made: each removal, and each the removal of
     /// which did not happen, said the first look it is met. The report names the branch; the machine log names it by its session
-    /// alone, and never the ref its commits stay at, since both carry the title's words (the machine-log design §5).
+    /// alone, and never the ref its commits stay at, since both carry the title's words.
     /// </summary>
     private void SayLanded(TidyPass pass, MachineLog? log, HashSet<string> met, List<string> lines)
     {
@@ -359,7 +359,7 @@ public sealed class BranchTidying(string home)
     }
 
     /// <summary>
-    /// What the look did with the folders under the repository's trees that are no tree of its own (AUTOTIDY2c, OPENCUT1): each
+    /// What the look did with the folders under the repository's trees that are no tree of its own: each
     /// moved aside, and each kept, said the first look it is met. The machine log names a folder moved aside by where it went, from
     /// the home, as it names a tree's (<c>branch.tidied</c>'s <c>folder</c>), with no branch; a cut-off opening by its branch,
     /// Daoris's own name. Neither carries a sentence.
@@ -394,7 +394,7 @@ public sealed class BranchTidying(string home)
         }
     }
 
-    /// <summary>Why a landing's branch could go, by what proved its work is on the line, as the clean-up's list words it (AUTOTIDY2b).</summary>
+    /// <summary>Why a landing's branch could go, by what proved its work is on the line, as the clean-up's list words it.</summary>
     private static string LandedWhy(LandedItem item) => item.Kind switch
     {
         LandedKind.OnLine => $"since its work is on `{item.Where}` by content (each file it changed reads the same there)",
@@ -404,8 +404,8 @@ public sealed class BranchTidying(string home)
     };
 
     /// <summary>
-    /// <c>branch.kept</c>'s data: the cause (AUTOTIDY1a2) is a field only where there is one, so what was read before it reads the same.
-    /// The code only, never the sentence's path (D47 §4).
+    /// <c>branch.kept</c>'s data: the cause is a field only where there is one, so what was read before it reads the same.
+    /// The code only, never the sentence's path.
     /// </summary>
     private static (string Key, object? Value)[] Kept(string repository, string workspace, string? branch, string why, string? cause)
     {
@@ -460,7 +460,7 @@ public sealed class BranchTidying(string home)
     };
 
     /// <summary>
-    /// Why a removed branch could go, by its kind, as the clean-up's list words it (AUTOTIDY2a): nothing beyond the line, its work
+    /// Why a removed branch could go, by its kind, as the clean-up's list words it: nothing beyond the line, its work
     /// on a branch of the person's or on the line by content, or carried by a completed pull request.
     /// </summary>
     private static string Why(SweepItem item) => item.Kind switch

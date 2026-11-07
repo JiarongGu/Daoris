@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>A rule of <c>integration.merge</c> (the integration design §4.1): a file settled by rows, or a line pattern with the writer that recomputes it.</summary>
+/// <summary>A rule of <c>integration.merge</c>: a file settled by rows, or a line pattern with the writer that recomputes it.</summary>
 /// <param name="Paths">The file, trimmed, each backslash a slash.</param>
 /// <param name="Line">The line's pattern, as written; null for a file settled by rows.</param>
 /// <param name="Run">The writer's command, as written; null for a file settled by rows.</param>
@@ -14,8 +14,7 @@ internal sealed record IntegrationMergeRule(string Paths, string? Line = null, s
 }
 
 /// <summary>
-/// A repository's integration facts as its <c>daoris.gates.json</c> declares them (INTEGRATE1d; D215 point 2, the integration design
-/// §4.1), each key's absence kept as absence, so its reader reads the design's <i>Absent</i> column.
+/// A repository's integration facts as its <c>daoris.gates.json</c> declares them, each key's absence kept as absence, so its reader tells a key left out from one set.
 /// </summary>
 /// <param name="By">Who integrates the line, <c>daoris</c> or <c>tool</c>; null where absent (<c>daoris</c> where the rule integrates).</param>
 /// <param name="Gates">The declared gates run at integration, in the order written; null where absent (every declared gate) or <paramref name="Reached"/>.</param>
@@ -29,7 +28,7 @@ internal sealed record IntegrationFacts(
     string? By, IReadOnlyList<string>? Gates, bool Reached, string? Commits, IReadOnlyList<string> Scratch,
     IReadOnlyList<IntegrationMergeRule> Merge, string? Message, IReadOnlyList<string> Pass)
 {
-    /// <summary>The files settled by rows (INTEGRATE1c), each once, in the order first declared: no line rule, whose writer waits for the acceptance.</summary>
+    /// <summary>The files settled by rows, each once, in the order first declared: no line rule, whose writer waits for the acceptance.</summary>
     public IReadOnlyList<string> RowTables => [.. Merge.Where(rule => rule.ByRows).Select(rule => rule.Paths).Distinct(StringComparer.Ordinal)];
 }
 
@@ -37,7 +36,7 @@ internal sealed record IntegrationFacts(
 internal sealed record IntegrationRead(IntegrationFacts? Facts, string? Problem);
 
 /// <summary>
-/// A repository's <c>integration</c>, read whole in one place (INTEGRATE1d; D215 point 2, the integration design §4.1): <c>by</c>,
+/// A repository's <c>integration</c>, read whole in one place: <c>by</c>,
 /// <c>gates</c>, <c>commits</c>, <c>scratch</c>, <c>merge</c>, <c>message</c> and <c>env.pass</c>, each key's shape checked in that
 /// order, whatever order it is written in. A declaration that breaks a shape is one problem, named in a sentence, and reads no
 /// facts at all: never a partial read. A key written null is absent, and one this build does not know is passed over, as the
@@ -219,7 +218,7 @@ internal static class IntegrationDeclaration
                 foreach (var name in passValue.EnumerateArray().Select(each => each.GetString()!))
                 {
                     if (!VariableName.IsMatch(name)) return Refused(PassName(name));
-                    // INTEGRATE1a's composed base strips every Daoris name; a declaration never hands one back (the design §5.5).
+                    // The composed base strips every Daoris name; a declaration never hands one back.
                     if (name.StartsWith("DAORIS_", StringComparison.OrdinalIgnoreCase)) return Refused(PassDaoris(name));
                     pass.Add(name);
                 }
@@ -229,7 +228,7 @@ internal static class IntegrationDeclaration
         return new IntegrationRead(new IntegrationFacts(by, gates, reached, commits, scratch, merge, message, pass), null);
     }
 
-    /// <summary>The names of the gates <paramref name="text"/>'s own <c>gates</c> declares, as the integration's gates read them; none where it does not read (INTEGRATE1e part e4a).</summary>
+    /// <summary>The names of the gates <paramref name="text"/>'s own <c>gates</c> declares, as the integration's gates read them; none where it does not read.</summary>
     internal static IReadOnlyList<string> Declared(string text)
     {
         try

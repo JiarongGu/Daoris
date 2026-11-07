@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A repository's declared line rules (INTEGRATE1d; D215 point 6, the integration design §4.1's <c>merge</c>, §5.2 step 4):
+/// A repository's declared line rules (the integration design §4.1's <c>merge</c>):
 /// <c>daoris.gates.json</c>'s <c>integration.merge</c> entries <c>{ "paths": file, "line": pattern, "run": command line }</c>. A
 /// landing's replay that conflicts in such a file, where both sides changed only lines the pattern matches, takes the line's side
 /// of those lines and has the rule's writer recompute them from the replayed tree (<see cref="GeneratedWriters.WriteAsync"/>), in a
@@ -15,8 +15,8 @@ namespace Daoris.Driver;
 /// read from the blob the person accepted in <c>integrationGates</c> (<see cref="IntegrationAcceptance"/>), and only where that blob
 /// is the declaration at the commit the replay builds on: a declaration the line changed since waits for the owner, and a session's
 /// own copy is never read, so a session never runs a command its own branch declared. Without that, the file's conflict is the
-/// session's, as it was before (INTEGRATE1c passed these rules over).</para>
-/// <para>The merge tool runs no line rule yet: it has no twin here, and row j's runner will read the same accepted blob.</para>
+/// session's.</para>
+/// <para>The merge tool runs no line rule yet: it has no twin here.</para>
 /// </remarks>
 internal static class LineRules
 {
@@ -28,7 +28,7 @@ internal static class LineRules
 
     /// <summary>
     /// The line rules <paramref name="repository"/>'s integration acceptance accepted, as declared at <paramref name="onto"/>: none
-    /// where nothing is accepted, the accepted blob is not the one there, or its declaration does not read (D215 point 2, §4.3).
+    /// where nothing is accepted, the accepted blob is not the one there, or its declaration does not read.
     /// </summary>
     internal static async Task<IReadOnlyList<IntegrationMergeRule>> AcceptedAsync(
         DriverConfig config, string root, string repository, string onto, CancellationToken ct)

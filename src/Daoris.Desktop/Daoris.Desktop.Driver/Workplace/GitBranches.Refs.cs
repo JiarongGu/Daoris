@@ -3,7 +3,7 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One ref as the branch list's <c>for-each-ref</c> answered it (GIT1a, D147 §4.1): a local branch or one of origin's, its
+/// One ref as the branch list's <c>for-each-ref</c> answered it: a local branch or one of origin's, its
 /// commit, and what the format asks of it.
 /// </summary>
 /// <param name="Name">Its whole name: <c>refs/heads/…</c> or <c>refs/remotes/origin/…</c>.</param>
@@ -38,7 +38,7 @@ public sealed record GitRef(string Name, string Commit)
 }
 
 /// <summary>
-/// The branch list's git calls and the pure readers of what git answers (GIT1a, D147 §4.1): each call asks a machine format,
+/// The branch list's git calls and the pure readers of what git answers: each call asks a machine format,
 /// never a human one, and each format has a reader here with its own tests, apart from any process.
 /// </summary>
 /// <remarks>
@@ -148,7 +148,7 @@ public static class GitRefs
     }
 
     /// <summary>
-    /// A call as a person types it in the checkout (D147 §3.3): <c>git</c> and its arguments, an argument holding anything a
+    /// A call as a person types it in the checkout: <c>git</c> and its arguments, an argument holding anything a
     /// shell reads in double quotes. Every argument here is a ref's name, a commit id or a format of this class's, none of
     /// which holds a double quote or a dollar sign, so the quotes read the same in bash, PowerShell and the Command Prompt.
     /// Daoris's own <c>-c core.longpaths=true</c> is not the read's, and is not said.

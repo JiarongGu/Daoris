@@ -26,7 +26,7 @@ public sealed record ActPlan(string Kind, string Press, string Repository, strin
     public Func<CancellationToken, Task<string?>>? Judge { get; init; }
 
     /// <summary>
-    /// The objects an act writes before its record (a history edit's commits, the git-writes design §7), made under the lock once
+    /// The objects an act writes before its record (a history edit's commits), made under the lock once
     /// <see cref="Judge"/> holds: the steps to journal in place of <see cref="Steps"/>, or why the act is refused with only objects written.
     /// </summary>
     public Func<CancellationToken, Task<(IReadOnlyList<ActStepPlan>? Steps, string? Refusal)>>? Make { get; init; }
@@ -65,7 +65,7 @@ public static class ActSeams
 internal sealed record ActRunsLimits(Func<string, int, Task>? Seam, Action<ProcessJob>? Ending, TimeSpan ExitBound);
 
 /// <summary>
-/// An act run (GITAPP2a, D204; the git-writes design §5): judged, prepared, each effect step started and ended, the postconditions read and the
+/// An act run: judged, prepared, each effect step started and ended, the postconditions read and the
 /// record closed, all under the checkout lock held alone.
 /// </summary>
 /// <remarks>
@@ -109,14 +109,14 @@ public sealed class ActRuns(ActJournal journal)
     /// <summary>Whether this process runs <paramref name="act"/> now.</summary>
     internal static bool RunsHere(string act) => s_running.ContainsKey(act);
 
-    /// <summary>The checkout held alone for an act or its reconciliation (GITLOCK1), or null where another holds it.</summary>
+    /// <summary>The checkout held alone for an act or its reconciliation, or null where another holds it.</summary>
     internal static TreeLock? Hold(string home, string checkout, string repository) => TreeLock.TryWriting(home, checkout, repository, TreeLock.Acting);
 
     /// <summary>Run <paramref name="plan"/> to its close, or refuse it before anything is written.</summary>
     /// <param name="ct">The watch: it cancels the act before its first effect step, and after that only the watch.</param>
     public async Task<ActRun> RunAsync(ActPlan plan, CancellationToken ct)
     {
-        // ONEWAY1r: a flow that holds the checkout alone already (a tidy, a removal) runs its act under that hold, since a second open in
+        // A flow that holds the checkout alone already (a tidy, a removal) runs its act under that hold, since a second open in
         // one process is refused; any other takes it here.
         var outer = TreeLock.HeldHere(journal.Home, plan.Checkout);
         using var taken = outer is null ? Hold(journal.Home, plan.Checkout, plan.Repository) : null;

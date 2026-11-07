@@ -3,16 +3,16 @@ using static Daoris.Driver.TreeGit;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A landed session's review (REVIEW2, D113; PART10k, out of <c>SessionTrees.Review.cs</c>): where its landing's branch stands in
+/// A landed session's review (out of <c>SessionTrees.Review.cs</c>): where its landing's branch stands in
 /// the repository's own checkout, and what it holds.
 /// </summary>
 /// <remarks>
-/// It names the landing's proof by its class (<see cref="LandedProofs.ProveAsync"/>, <see cref="LandedProofs.LineFormsAsync"/>; PART10l).
+/// It names the landing's proof by its class (<see cref="LandedProofs.ProveAsync"/>, <see cref="LandedProofs.LineFormsAsync"/>).
 /// </remarks>
 internal sealed class LandedReviews(TreeContext context)
 {
     /// <summary>
-    /// A landed session's review (REVIEW2, D113): where its landing's branch stands in the repository's own checkout,
+    /// A landed session's review: where its landing's branch stands in the repository's own checkout,
     /// and, while it stands, what it holds — from where its work grew from up to the branch.
     /// </summary>
     /// <remarks>
@@ -25,7 +25,7 @@ internal sealed class LandedReviews(TreeContext context)
     /// <see cref="LandedState.NoCheckout"/>, and git is asked nothing else.</para>
     ///
     /// <para><b>A trace is gone, whatever stands under its name now</b>: the record says the landing's branch went, and
-    /// a branch of that name since is someone else's. Whether its work reads on the line is WSR5's proof by content on
+    /// a branch of that name since is someone else's. Whether its work reads on the line is the proof by content on
     /// the commit the landing made it at, while git still holds it.</para>
     /// </remarks>
     /// <param name="root">The repository's checkout on this machine, from the registry; null where it has none.</param>
@@ -69,7 +69,7 @@ internal sealed class LandedReviews(TreeContext context)
     }
 
     /// <summary>
-    /// Where a landed branch's work grew from (WSR6): the start of the session branch it was made from, as the landing
+    /// Where a landed branch's work grew from: the start of the session branch it was made from, as the landing
     /// recorded it, while that is still in the branch's history; else where the branch leaves the line.
     /// </summary>
     private async Task<string?> LandedFromAsync(string root, LandedBranch entry, string tip, CancellationToken ct)
@@ -80,7 +80,7 @@ internal sealed class LandedReviews(TreeContext context)
             if (held == 0)
             {
                 var (_, full, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{recorded}^{{commit}}"], ct).ConfigureAwait(false);
-                // GITAPP1a-ii: the choice Review's graph makes too (LandedGraph).
+                // The choice Review's graph makes too (LandedGraph).
                 if (ReviewChoices.LandedFrom(held, full) is { } commit) return commit;
             }
         }
@@ -92,7 +92,7 @@ internal sealed class LandedReviews(TreeContext context)
         return code == 0 && fork.Trim() is { Length: > 0 } found ? found : null;
     }
 
-    /// <summary>Whether a gone branch's work reads on the line: WSR5's proof on the commit the landing made it at, while git holds it.</summary>
+    /// <summary>Whether a gone branch's work reads on the line: the proof on the commit the landing made it at, while git holds it.</summary>
     private async Task<LandedReads> ReadsAsync(string root, LandedBranch entry, CancellationToken ct)
     {
         var (held, _, _) = await WorkingTree.GitAsync(root, ["cat-file", "-e", $"{entry.Tip}^{{commit}}"], ct).ConfigureAwait(false);

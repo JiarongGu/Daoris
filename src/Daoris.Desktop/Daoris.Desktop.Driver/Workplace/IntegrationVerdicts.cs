@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The repository's declared runner (D192's <c>verification</c> runner, the integration design §5.9): the command the driver starts for each
+/// The repository's declared <c>verification</c> runner: the command the driver starts for each
 /// call, in <paramref name="Cwd"/> where it names one (relative to the integration tree). A repository declaring none is judged by running
 /// each gate's own command whole.
 /// </summary>
@@ -15,7 +15,7 @@ internal sealed record VerdictMember(string Branch, string Tip)
 }
 
 /// <summary>
-/// What the integration step asks of the verdict port (INTEGRATE1f part f2; the integration design §5.2 steps 6 and 7, §5.6): judge a
+/// What the integration step asks of the verdict port (7): judge a
 /// candidate's gates at its tip. The tree stands at the tip; nothing here reads the tree for a gate or a command, only the accepted blob
 /// does (<see cref="Declaration"/>, with its id).
 /// </summary>
@@ -156,7 +156,7 @@ internal sealed record IntegrationVerdict(string Action)
 }
 
 /// <summary>
-/// What the workplace asks of the review when it integrates a candidate (INTEGRATE1f part f2; the integration design §5.6, §6.1): the gates'
+/// What the workplace asks of the review when it integrates a candidate: the gates'
 /// run on the candidate's tip and the judgement of what failed. The review keeps the runs, the admission, the job and the judge, and
 /// implements this, installed when the driver loads (<c>Review/Integration/IntegrationVerdictWiring.cs</c>). Workplace declares it in lower
 /// vocabulary only, so it names no type of the review.

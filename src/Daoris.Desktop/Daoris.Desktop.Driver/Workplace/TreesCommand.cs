@@ -3,10 +3,10 @@ namespace Daoris.Driver;
 /// <summary>Which of the two looks over the checkouts here <c>daoris tree list</c> was asked for.</summary>
 public enum TreesLook
 {
-    /// <summary>The clean-up (WSR3, D88): the session branches whose work landed or that hold nothing, and the landed branches whose work reached the line.</summary>
+    /// <summary>The clean-up: the session branches whose work landed or that hold nothing, and the landed branches whose work reached the line.</summary>
     Clean,
 
-    /// <summary>Bringing each repository up to date after a pull request merged (WSR6, D109).</summary>
+    /// <summary>Bringing each repository up to date after a pull request merged.</summary>
     Sync,
 }
 
@@ -14,20 +14,20 @@ public enum TreesLook
 /// <param name="Look">The clean-up, or bringing up to date.</param>
 public sealed record TreesAsk(TreesLook Look)
 {
-    /// <summary>The one repository named (<c>sync</c> alone), taken whatever it holds (D112); null for the scope's.</summary>
+    /// <summary>The one repository named (<c>sync</c> alone), taken whatever it holds; null for the scope's.</summary>
     public string? Repository { get; init; }
 
-    /// <summary>The one workspace named (BRSCOPE1a), whose checkouts alone are taken; null for every checkout here.</summary>
+    /// <summary>The one workspace named, whose checkouts alone are taken; null for every checkout here.</summary>
     public string? Workspace { get; init; }
 
-    /// <summary>Every repository with a checkout here, not only those holding Daoris's branches (<c>sync</c> alone, D112).</summary>
+    /// <summary>Every repository with a checkout here, not only those holding Daoris's branches (<c>sync</c> alone).</summary>
     public bool All { get; init; }
 
     /// <summary>The press, after the list.</summary>
     public bool Yes { get; init; }
 }
 
-/// <summary>What <c>daoris tree land --entry &lt;id&gt; | --ask &lt;id&gt;</c> was asked (ACCEPTALL1e, D167's amendment, D50).</summary>
+/// <summary>What <c>daoris tree land --entry &lt;id&gt; | --ask &lt;id&gt;</c> was asked.</summary>
 /// <param name="IsAsk">The ask's one Accept (<c>--ask</c>, the page's <c>LAND_ASK</c>); else the entry's (<c>--entry</c>, <c>LAND_ENTRY</c>).</param>
 /// <param name="Id">The entry's key, or the ask's id.</param>
 /// <param name="LeaveOut">The parts the person leaves out (<c>--leave-out &lt;session&gt;</c>, once each), as the page sends them.</param>
@@ -40,14 +40,14 @@ public sealed record EntryLandAsk(bool IsAsk, string Id, IReadOnlySet<string> Le
 public sealed record TreesTaken(IReadOnlyList<(string Repository, string? Workspace, string? Root)> Repositories, string? Refusal);
 
 /// <summary>
-/// The words of <c>daoris tree clean|sync</c> (BRSCOPE1a, D150's BRSCOPE1 note, D50, WSP5): what they ask, which
+/// The words of <c>daoris tree clean|sync</c>: what they ask, which
 /// checkouts each look is handed, and what its sentences call them. The looks and presses stay the host's
 /// (<c>TreesConsole</c>), which hands them <see cref="Take"/>'s rows. In the library, so a test holds them.
 /// </summary>
 /// <remarks>
 /// <para><b>One workspace's, as its Branches tab's.</b> With <c>--workspace</c>, a look and its press take that workspace's
 /// checkouts alone, by the rule the screen's look and press take one by (<see cref="Checkouts"/>), so the terminal and a
-/// workspace's tab look at the same repositories (D50). With none, every checkout here, as before. A workspace the registry
+/// workspace's tab look at the same repositories. With none, every checkout here, as before. A workspace the registry
 /// does not name is refused, naming it and the ones it does: a mistyped name would otherwise look at nothing and say all is
 /// well.</para>
 ///
@@ -117,7 +117,7 @@ public static class TreesCommand
     }
 
     /// <summary>
-    /// What the words after <c>trees</c> ask of an entry's or an ask's Accept, or null with what is wrong with them (ACCEPTALL1e, D50):
+    /// What the words after <c>trees</c> ask of an entry's or an ask's Accept, or null with what is wrong with them:
     /// <c>land (--entry &lt;id&gt; | --ask &lt;id&gt;) [--leave-out &lt;session&gt;]… [--plan]</c>, in any order, one of the two once. Every word is
     /// read: a mistyped <c>--leave-out</c> would otherwise land the part the person meant to keep out.
     /// </summary>
@@ -174,7 +174,7 @@ public static class TreesCommand
         return new EntryLandAsk(ask is not null, (entry ?? ask)!, leaveOut, plan);
     }
 
-    /// <summary>The repositories bringing up to date takes (D112): every one with <c>--all</c>, the one named, else those holding Daoris's branches.</summary>
+    /// <summary>The repositories bringing up to date takes: every one with <c>--all</c>, the one named, else those holding Daoris's branches.</summary>
     public static SyncScope Scope(TreesAsk ask) =>
         ask.All ? SyncScope.Everything : ask.Repository is { } named ? SyncScope.Named([named]) : SyncScope.Held;
 
@@ -198,7 +198,7 @@ public static class TreesCommand
 
     /// <summary>
     /// The registry's rows with a checkout here, by name: the one <paramref name="repository"/> names where it names one, and
-    /// <paramref name="workspace"/>'s alone where it names one (BRSCOPE1, WSP5), matched without case, a row with no
+    /// <paramref name="workspace"/>'s alone where it names one, matched without case, a row with no
     /// workspace read as the default's, as <see cref="RemoteTarget.Workspace"/> reads it for every door.
     /// </summary>
     /// <remarks>The modules' <c>DriverModule.Checkouts</c> is its twin; one table holds both (see the class's remarks).</remarks>
@@ -226,11 +226,11 @@ public static class TreesCommand
     /// <summary>Bringing up to date's list looked at none, since none of the checkouts it took holds a branch of Daoris's.</summary>
     public static string NoneHeld(TreesAsk ask) => $"trees: no repository{Of(ask)} with a checkout here holds a branch of Daoris's.";
 
-    /// <summary>The press a list suggests, carrying the list's own scope (D112) and its workspace, so <c>--yes</c> takes what was listed.</summary>
+    /// <summary>The press a list suggests, carrying the list's own scope and its workspace, so <c>--yes</c> takes what was listed.</summary>
     public static string Press(TreesAsk ask) =>
         $"daoris tree {(ask.Look == TreesLook.Clean ? "clean" : "sync")}"
         + (ask.Repository is { } named ? $" --repository {named}" : "")
-        // A workspace's name goes through the one spelling every shell keeps whole (ACCTQUOTE1b).
+        // A workspace's name goes through the one spelling every shell keeps whole.
         + (ask.Workspace is { } workspace ? $" --workspace {ShellWord.Of(workspace, ShellWord.Workspace)}" : "")
         + (ask.All ? " --all" : "")
         + " --yes";

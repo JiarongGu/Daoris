@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What <c>daoris work recovery drop</c> asks (RECOVERYDROP1): the refs named, or every one nothing holds, in the repository
+/// What <c>daoris work recovery drop</c> asks: the refs named, or every one nothing holds, in the repository
 /// named or in each repository with a checkout here; <see cref="Plan"/> only lists what a press would do.
 /// </summary>
 public sealed record RecoveryDropAsk(IReadOnlyList<string> Refs, bool Unheld, string? Repository, bool Plan);

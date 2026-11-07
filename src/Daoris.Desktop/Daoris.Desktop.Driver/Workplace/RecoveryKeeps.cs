@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 internal sealed record RecoveryName(string Ref, bool Made);
 
 /// <summary>
-/// **A recovery ref kept through the journal's act** (ONEWAY1r, D204, D228; the oneway design §5 G3): every ref under
+/// **A recovery ref kept through the journal's act** (the oneway design §5 G3): every ref under
 /// <see cref="ContentHolds.DiscardedPrefix"/> a door of Daoris's keeps is made or verified in an act the journal records, so a record names it
 /// and <see cref="RecoveryRetention"/> dates it from that act. A door that deletes the branch makes it in the delete's own transaction
 /// (<see cref="JournaledDeletes"/>), which its Undo takes back; a door that keeps without deleting (a settled member's work, a tidied part, a

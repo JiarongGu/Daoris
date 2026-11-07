@@ -10,15 +10,15 @@ public sealed record HunkLine(char Kind, string Text);
 public sealed record Hunk(string Id, string Header, IReadOnlyList<HunkLine> Lines);
 
 /// <summary>
-/// One file's hunks on one side (GITAPP2h): <c>unstaged</c> is the index to the worktree, <c>staged</c> HEAD to the index. The ids are what a press
+/// One file's hunks on one side: <c>unstaged</c> is the index to the worktree, <c>staged</c> HEAD to the index. The ids are what a press
 /// must still find equal: <paramref name="Index"/> the index entry (<c>mode blob</c>, or empty where the index holds none), <paramref name="Source"/>
 /// the bytes the hunks come from (the worktree file's id for <c>unstaged</c>, HEAD's entry for <c>staged</c>, empty where there is none).
 /// </summary>
 public sealed record FileHunks(string Path, string Side, string? Head, string Index, string Source, bool Binary, IReadOnlyList<Hunk> Hunks);
 
 /// <summary>
-/// **The hunks of a file and the patches made from them** (GITAPP2h, D204, the git-writes design §1, §4). Read as <c>diff --no-ext-diff
-/// --no-textconv --full-index</c> under REVIEWLOCK1's flags (the index never refreshed), through the counting seam as a question. A patch of
+/// **The hunks of a file and the patches made from them**. Read as <c>diff --no-ext-diff
+/// --no-textconv --full-index</c> with the index never refreshed, through the counting seam as a question. A patch of
 /// chosen hunks or lines is built here, never by git's own editor; it is applied only to a copy of the index to find what an act would leave.
 /// </summary>
 public static class GitHunks

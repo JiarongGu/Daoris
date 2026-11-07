@@ -25,27 +25,27 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
 
     private IReadOnlyList<string> SayPurged(IReadOnlyList<SetAside> folders, MachineLog? log, HashSet<string> met) => tidy.SayPurged(folders, log, met);
 
-    // KEEP1b: when the downloads' rule last ran its daily removal in this process, and under which days, so a changed rule runs at once.
+    // When the downloads' rule last ran its daily removal in this process, and under which days, so a changed rule runs at once.
     private DateTimeOffset? _downloadsDaily;
     private TimeSpan? _downloadsDays;
 
-    // KEEP1d: the same for the machine log's daily prune at the person's days.
+    // The same for the machine log's daily prune at the person's days.
     private DateTimeOffset? _logsDaily;
     private TimeSpan? _logsDays;
 
-    // KEEP1g: the same for finished history's daily clear at the person's age.
+    // The same for finished history's daily clear at the person's age.
     private DateTimeOffset? _historyDaily;
     private TimeSpan? _historyDays;
 
     /// <summary>
-    /// The Keeping pass (KEEP1a, D195 point 4; the cleanup design §3.1), in the tidy's task after its repositories, where the purge ran,
+    /// The Keeping pass, in the tidy's task after its repositories, where the purge ran,
     /// so it holds no repository's hold and a start never waits on it: it tries the home's run lock, and held elsewhere removes nothing
     /// this look and names the holder, once; else the set-aside kind's removal, the purge at the policy's days then the slims due, within
     /// the pass's budget; then <c>keeping.json</c>'s <c>last</c> for the kind, where it removed something or newly kept a path. Then the
-    /// downloads' rule (KEEP1b, <see cref="DownloadKeeping"/>): each version's unused stretch each pass, and once a day, or at once after
-    /// the rule changed, the versions past their days. Then the machine log's daily prune at the person's days (KEEP1d), and finished
-    /// history's daily clear where the person set an age (KEEP1g, <see cref="HistoryKeeping"/>). First of all, the free-space floor
-    /// (KEEP1f, <see cref="SpaceFloor"/>): each volume read, and below its floor the floor's three acts at once, at most hourly.
+    /// downloads' rule (<see cref="DownloadKeeping"/>): each version's unused stretch each pass, and once a day, or at once after
+    /// the rule changed, the versions past their days. Then the machine log's daily prune at the person's days, and finished
+    /// history's daily clear where the person set an age (<see cref="HistoryKeeping"/>). First of all, the free-space floor
+    /// (<see cref="SpaceFloor"/>): each volume read, and below its floor the floor's three acts at once, at most hourly.
     /// </summary>
     internal async Task<IReadOnlyList<string>> KeepAsync(SessionTrees trees, ServiceClient service, MachineLog? log, HashSet<string> met, CancellationToken ct)
     {
@@ -78,11 +78,11 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
             return lines;
         }
 
-        // One budget for the pass's removals (§3.1): what the set-aside folders spent, the downloads do not spend again.
+        // One budget for the pass's removals: what the set-aside folders spent, the downloads do not spend again.
         var spent = System.Diagnostics.Stopwatch.StartNew();
         if (setAside)
         {
-            // KEEPSIZE1b: the registry read once for the record pass and the purge's holding checks; the record pass within the pass's
+            // The registry read once for the record pass and the purge's holding checks; the record pass within the pass's
             // budget, between folders, and the purge within what it left (Codex's read of the branch, finding 11).
             var roots = SessionTrees.RootsOf(await RegistryAsync(service, ct).ConfigureAwait(false));
             lines.AddRange(await RecordSetAsideAsync(trees, service, roots, met, () => spent.Elapsed >= Budget, ct).ConfigureAwait(false));
@@ -96,7 +96,7 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
         if (historyDue) lines.AddRange(await KeepHistoryAsync(service, history, run, log, met, ct).ConfigureAwait(false));
         if (Sizes is not null && (setAside || Downloaded())) lines.AddRange(await KeepLimitsAsync(service, run, log, ct).ConfigureAwait(false));
 
-        // KEEP1c (the cleanup design §3.1 step 6, §4.3): each kind counted at most once a day, and the kinds this run wrote a `last` for at
+        // Each kind counted at most once a day, and the kinds this run wrote a `last` for at
         // its end, in the background, so the card's sizes follow the rules without a page's open walking anything.
         if (Sizes is { } sizes)
         {
@@ -108,7 +108,7 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
     }
 
     /// <summary>
-    /// Each kind's size limit, holding the home's run (KEEPSIZE1d): once a day, or at once after a limit changed, a kind over its limit
+    /// Each kind's size limit, holding the home's run: once a day, or at once after a limit changed, a kind over its limit
     /// lets go of its oldest eligible units through the press's removal (<see cref="SpaceLimits"/>); what went is said in the report.
     /// </summary>
     private async Task<IReadOnlyList<string>> KeepLimitsAsync(ServiceClient service, KeepingRun run, MachineLog? log, CancellationToken ct)
@@ -151,12 +151,12 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
         return lines;
     }
 
-    // KEEPSIZE1d: when the size limits were last judged in this process, and under which limits, so a changed limit is judged at once.
+    // When the size limits were last judged in this process, and under which limits, so a changed limit is judged at once.
     private DateTimeOffset? _limitsDaily;
     private LimitsPolicy? _limits;
 
     /// <summary>
-    /// The free-space floor, at each pass (KEEP1f; the cleanup design §3.2): each volume read for its own entries, and below its floor the
+    /// The free-space floor, at each pass: each volume read for its own entries, and below its floor the
     /// three acts that free what can be made again, at once and at most hourly, each with its own guards, under the run lock as the
     /// <c>floor</c>'s door. What they freed is said as they free it; a volume still below after them is said once, until it is above its
     /// floor by the margin again.
@@ -269,7 +269,7 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
     }
 
     /// <summary>
-    /// The downloads' rule, holding the home's run (KEEP1b): what it removed said in the report, and each version it kept past its days, and a
+    /// The downloads' rule, holding the home's run: what it removed said in the report, and each version it kept past its days, and a
     /// record it could not write, said the first look it is met. A day's removal the budget cut short is taken up by the next pass.
     /// </summary>
     private async Task<IReadOnlyList<string>> KeepDownloadsAsync(
@@ -335,7 +335,7 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
     };
 
     /// <summary>
-    /// The machine log's rule, holding the home's run (KEEP1d; the cleanup design §3.1 step 5): once a day, or at once after the person's
+    /// The machine log's rule, holding the home's run: once a day, or at once after the person's
     /// days changed, each day's file older than those days goes, today's never; <c>last.logs</c> written where one went. Each process's own
     /// prune at its open keeps its thirty, the ceiling of the person's days.
     /// </summary>
@@ -365,7 +365,7 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
     }
 
     /// <summary>
-    /// Finished history's rule, holding the home's run (KEEP1g; the cleanup design §3.1 step 5, §3.6): once a day, or at once after the
+    /// Finished history's rule, holding the home's run: once a day, or at once after the
     /// person's age changed, each workspace's finished units past it go through the clear itself, every refusal holding; what went said in
     /// the report and in <c>history.cleared</c> with <c>door: rule</c>, each unit past its days that stayed said once while it stays, and
     /// <c>last.history</c> written where one went. A service that did not answer is said once and tried at the next pass.
@@ -404,7 +404,7 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
             return lines;
         }
 
-        // KEEPSIZE1b (Codex's read of the branch, finding 8): the finished trees' records no session names age by their own `at` under the
+        // The finished trees' records no session names age by their own `at` under the
         // same age; a service that does not answer is tried again at the next day's clear.
         try
         {
@@ -451,7 +451,7 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
     }
 
     /// <summary>
-    /// The finished trees' steps after the hold (KEEPSIZE1b, the keep-size design §3.5), before the purge reads their classes: each stopped or
+    /// The finished trees' steps after the hold, before the purge reads their classes: each stopped or
     /// refused folder resumed, each record due composed from its manifest and posted, each recorded folder's holding check at its hour. Each
     /// folder that waits is said the first look it is met, with why.
     /// </summary>
@@ -485,7 +485,7 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
         }
     }
 
-    /// <summary>The set-aside kind's removal, holding the home's run (KEEP1a), a recorded folder's holding check in the root <paramref name="roots"/> gives.</summary>
+    /// <summary>The set-aside kind's removal, holding the home's run, a recorded folder's holding check in the root <paramref name="roots"/> gives.</summary>
     private async Task<IReadOnlyList<string>> KeepSetAsideAsync(
         SessionTrees trees, KeepingRun run, MachineLog? log, HashSet<string> met, Func<string, string, string?>? roots, TimeSpan budget, CancellationToken ct)
     {
@@ -512,7 +512,7 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
     }
 
     /// <summary>
-    /// What the slim says (KEEP1a, the cleanup design §5): each folder's package folders dropped, with <c>tidied.slimmed</c>; and each
+    /// What the slim says: each folder's package folders dropped, with <c>tidied.slimmed</c>; and each
     /// folder or path it kept, and each removal that failed, said the first look it is met. The log names the folder from the home, as
     /// <c>tidied.purged</c> does, and counts; never a path inside it.
     /// </summary>

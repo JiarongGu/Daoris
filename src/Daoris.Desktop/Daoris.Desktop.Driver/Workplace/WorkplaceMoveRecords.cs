@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The move records a home keeps, as the workplace's delete lets them go with their record (FOUNDATION1f-i; the foundation design §3.3: a move is
+/// The move records a home keeps, as the workplace's delete lets them go with their record: a move is
 /// deleted with the session's record by a delete or a clear, as the session's files are). The Course keeps the move store, so the workplace
 /// names only these operations, which the store implements directly.
 /// </summary>

@@ -3,25 +3,25 @@ using System.Diagnostics;
 
 namespace Daoris.Driver;
 
-/// <summary>Which of <see cref="WorkingTree"/>'s three runners started a git (GITAPP1a-i, D202 point 2).</summary>
+/// <summary>Which of <see cref="WorkingTree"/>'s three runners started a git.</summary>
 public enum GitRunner
 {
     /// <summary>Read to its end, both streams whole: <c>RunGitAsync</c>, beneath every <c>GitAsync</c>.</summary>
     Whole,
 
-    /// <summary>Read as it answers, stopped once its reader has what it needs: <c>ReadGitAsync</c>, the review's seam (REVIEW3).</summary>
+    /// <summary>Read as it answers, stopped once its reader has what it needs: <c>ReadGitAsync</c>, the review's seam.</summary>
     Streamed,
 
-    /// <summary>Its first bytes, as bytes: <c>GitBytesAsync</c>, a blob's preview (REVIEW2).</summary>
+    /// <summary>Its first bytes, as bytes: <c>GitBytesAsync</c>, a blob's preview.</summary>
     Bytes,
 
-    /// <summary>An act's effect step, started suspended in its act's job and read whole: <c>ActLaunch.HeldGitAsync</c> (GITAPP2a).</summary>
+    /// <summary>An act's effect step, started suspended in its act's job and read whole: <c>ActLaunch.HeldGitAsync</c>.</summary>
     Held,
 }
 
 /// <summary>
-/// What a git start reads, by its command (the git-app design §1.1's kinds, GITAPP1a-i): what part two's effect policy will decide a
-/// read's flags by. In part one the kind is counted and never changes an argument (Codex R3-9).
+/// What a git start reads, by its command (the git-app design §1.1's kinds): what part two's effect policy will decide a
+/// read's flags by. In part one the kind is counted and never changes an argument.
 /// </summary>
 public enum GitKind
 {
@@ -46,7 +46,7 @@ public enum GitKind
     /// <summary>An untracked file as an addition (<c>diff --no-index</c>): the clean filter and textconv run.</summary>
     UntrackedDiff,
 
-    /// <summary><c>merge-tree --write-tree</c>: a configured merge driver runs (REVIEWBASE3).</summary>
+    /// <summary><c>merge-tree --write-tree</c>: a configured merge driver runs.</summary>
     MergeTree,
 
     /// <summary><c>blame</c>.</summary>
@@ -60,7 +60,7 @@ public enum GitKind
 }
 
 /// <summary>
-/// Whose a git start is (D202 point 2, the git-app design P1.5): the review, its untracked tail, the landed or gone review, the
+/// Whose a git start is: the review, its untracked tail, the landed or gone review, the
 /// Accept offer, or none. Set for a span of work by <see cref="GitLaunch.Within"/>; a start outside every span is <see cref="None"/>.
 /// </summary>
 public enum GitBudget
@@ -71,19 +71,19 @@ public enum GitBudget
     /// <summary>Review's own chain: the uncommitted diff, the range and its line, the committed diff, the branch.</summary>
     Review,
 
-    /// <summary>The untracked files' reads, one each, while the patch budget is unspent (REVIEWDIRTY1-a).</summary>
+    /// <summary>The untracked files' reads, one each, while the patch budget is unspent.</summary>
     Untracked,
 
-    /// <summary>A landed or gone session's review: <c>LandedReviews</c>' and <c>LandedProofs</c>' reads (REVIEW2).</summary>
+    /// <summary>A landed or gone session's review: <c>LandedReviews</c>' and <c>LandedProofs</c>' reads.</summary>
     Landed,
 
-    /// <summary>The Accept offer's chain (ACCEPTFOOT1): <c>TreeWorkReads</c>, <c>TreeFollows</c> and the content holds.</summary>
+    /// <summary>The Accept offer's chain: <c>TreeWorkReads</c>, <c>TreeFollows</c> and the content holds.</summary>
     Offer,
 }
 
 /// <summary>
-/// One git start, as the seam saw it (GITAPP1a-i): its runner, kind, node and budget, its arguments as they reached git, and the
-/// three parts of its time apart (the git-app design §1.2): the gate's wait for a place, the creation inside it, and the rest.
+/// One git start, as the seam saw it: its runner, kind, node and budget, its arguments as they reached git, and the
+/// three parts of its time apart: the gate's wait for a place, the creation inside it, and the rest.
 /// </summary>
 /// <remarks>The times are filled as the start goes, so a record read before its runner returns says only what has happened.</remarks>
 internal sealed class GitLaunched(GitRunner runner, GitKind kind, string node, GitBudget budget, IReadOnlyList<string> arguments)
@@ -132,13 +132,13 @@ internal sealed class GitLaunched(GitRunner runner, GitKind kind, string node, G
 }
 
 /// <summary>
-/// The one counting seam beneath every git the driver starts (GITAPP1a-i, D202 point 2, the git-app design P1.5): <c>RunGitAsync</c>,
+/// The one counting seam beneath every git the driver starts: <c>RunGitAsync</c>,
 /// <c>ReadGitAsync</c> and <c>GitBytesAsync</c> each start through <see cref="LaunchAsync"/>, which raises
 /// <see cref="WorkingTree.Started"/> for all three, classifies the start by kind and node, counts it in the budget its flow is in, and
 /// times the gate's wait, the creation and the run apart.
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>It adds no flag and changes no answer</b> (Codex R3-9). The arguments go on to <c>WorkingTree.GitStart</c> and the gate
+/// <para>🔴 <b>It adds no flag and changes no answer</b>. The arguments go on to <c>WorkingTree.GitStart</c> and the gate
 /// (<see cref="ProcessStarts"/>, <see cref="StartClass.Background"/>) exactly as the call site passed them; what a read kind may add is
 /// part two's effect policy. <c>GitLaunchTests</c> holds the arguments unchanged per kind, and a source census refuses a git started
 /// under <c>Trees/</c> outside this seam.</para>
@@ -195,7 +195,7 @@ internal static class GitLaunch
         var began = Stopwatch.GetTimestamp();
         // The gate writes its wait and its creation here (ProcessStarts.Timed), in this start's own flow alone.
         using (ProcessStarts.Timing((waited, created) => launched.Gate(waited, created)))
-        // GITAPP1a-iii: a git that outlived its kill is said with its node, never swallowed.
+        // A git that outlived its kill is said with its node, never swallowed.
         using (ChildProcess.Telling((pid, reason) => GitUnended.Say(launched, pid, reason)))
         {
             try
@@ -258,7 +258,7 @@ internal static class GitLaunch
     }
 
     /// <summary>
-    /// The start's node (the design's P1.2) where it is the review's, by today's command for it; else its subcommand. Only the
+    /// The start's node where it is the review's, by today's command for it; else its subcommand. Only the
     /// review's budgets are read as nodes, since the offer and the landed review ask some of the same commands as their own.
     /// </summary>
     internal static string NodeOf(IReadOnlyList<string> arguments, GitBudget budget)

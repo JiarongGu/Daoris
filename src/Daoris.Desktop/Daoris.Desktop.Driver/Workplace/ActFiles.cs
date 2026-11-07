@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The file step of the act journal (GITAPP2j, D204; the git-writes design §5, §8 Resolve): a worktree file's bytes replaced by the plan's, only
+/// The file step of the act journal (§8 Resolve): a worktree file's bytes replaced by the plan's, only
 /// where it still holds the bytes the plan was judged on. The bytes it replaces and the bytes it writes are files beside the record
 /// (<see cref="Dir"/>), made before the step and let go of with the record's expiry; the postcondition is the file's digest, never an exit.
 /// </summary>

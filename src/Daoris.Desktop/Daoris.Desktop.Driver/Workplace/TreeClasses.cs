@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The classes of a repository's ignored content (the tree-pool design's R5.5), as its gates file's <c>trees</c> declares them:
+/// The classes of a repository's ignored content, as its gates file's <c>trees</c> declares them:
 /// dependencies a package manager installs from a lockfile, intermediates a build tool checks itself and valid only at the path it
 /// made them, runnable outputs never carried, and the commands that warm a tree. The local class is <c>localInputs</c>
 /// (<see cref="TreeLocalInputs"/>), never declared here; everything ignored that no class names is scratch. Nothing acts on them yet.

@@ -3,10 +3,10 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a session in a tree of its own is told of its process at its start (PROCESS1d-i, D164's amendment point 4): how its work
+/// What a session in a tree of its own is told of its process at its start: how its work
 /// lands, by the branch the pull request comes from where it has one, then the commit rule standing for its repository (its mode,
-/// where it was set, the person's convention quoted), so the agent and the repository's own rules no longer stop each other. The
-/// instruction's landing section, in every form the tail carries; Daoris's one-copy English (D142 point 6).
+/// where it was set, the person's convention quoted), so the agent and the repository's own rules do not stop each other. The
+/// instruction's landing section, in every form the tail carries; Daoris's one-copy English.
 /// </summary>
 /// <remarks>
 /// Pure, from what the driver resolved (<see cref="CommitRules.Resolve"/>, <see cref="LandingPlan"/>): null where nothing is said,
@@ -52,8 +52,8 @@ public static class ProcessWords
 
     /// <summary>
     /// How the work lands, said where it has a form: the branch it goes on and who takes it from there, the one the pull request comes
-    /// from named as the repository's rule names it (PROCESS1b-i), or the tree's own branch (TREEFOLLOW1); or the line a merge goes
-    /// into. Null with no plan. A named workflow's landing that cannot start has no branch (WORKFLOW1f), and none is named.
+    /// from named as the repository's rule names it, or the tree's own branch; or the line a merge goes
+    /// into. Null with no plan. A named workflow's landing that cannot start has no branch, and none is named.
     /// </summary>
     private static string? Lead(IStartLanding? plan) => plan switch
     {
@@ -69,8 +69,8 @@ public static class ProcessWords
           + "merge it, push it, or open a pull request yourself.";
 
     /// <summary>
-    /// Who takes the branch on from there: the person, or the plugin the rule names (D100) once the person accepts it; or, under
-    /// a rule that accepts automatically (LAND2b, D145), the quest's done, with no press.
+    /// Who takes the branch on from there: the person, or the plugin the rule names once the person accepts it; or, under
+    /// a rule that accepts automatically, the quest's done, with no press.
     /// </summary>
     private static string Lands(IStartLanding plan) => (plan.AutoAccept, plan.Plugin) switch
     {
@@ -81,12 +81,12 @@ public static class ProcessWords
     };
 
     /// <summary>
-    /// What a tree of its own is told of git's stash (STASHSHARE1): the stack is one per repository, so the checkout's and every other
+    /// What a tree of its own is told of git's stash: the stack is one per repository, so the checkout's and every other
     /// tree's entries sit on it beside this tree's, and a pop here could take another's. Said wherever the process is, which is only
     /// in a tree of its own; the person's checkout is handed no process.
     /// </summary>
     /// <summary>
-    /// Where the run's <c>land</c> squashes (PROCESS1d-iii, its option <c>squash</c>): the branch gets one commit of the work, so the session's
+    /// Where the run's <c>land</c> squashes (its option <c>squash</c>): the branch gets one commit of the work, so the session's
     /// commits are for the review, and their subjects do not reach the line.
     /// </summary>
     private const string Squashed = "When the work lands, Daoris squashes this tree's commits into one commit on its branch: commit as the work "
@@ -114,8 +114,7 @@ public static class ProcessWords
     };
 
     /// <summary>
-    /// What a conversation in a tree of its own is told of its process with its first message (PROCESS1d-ii, D164's amendment point
-    /// 4), trimmed: how its work lands, then the process in the driven words. Its branch is made at Accept from its opening, so it
+    /// What a conversation in a tree of its own is told of its process with its first message, trimmed: how its work lands, then the process in the driven words. Its branch is made at Accept from its opening, so it
     /// is never said by name, and with no quest there is nothing to close done: the person's Accept lands it under every rule.
     /// </summary>
     /// <param name="plan">The landing as Review's press would read it now; null where it could not be read, and the process alone is said.</param>

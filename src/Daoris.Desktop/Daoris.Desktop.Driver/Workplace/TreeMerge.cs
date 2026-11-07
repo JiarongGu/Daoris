@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// </summary>
 public sealed record TreeMerge(bool Merged, string Message)
 {
-    /// <summary>A refusal's code where the merge door has one (LANDBACK1 part 1): <c>uncommitted</c>, which the Accept carries its session on for.</summary>
+    /// <summary>A refusal's code where the merge door has one: <c>uncommitted</c>, which the Accept carries its session on for.</summary>
     public string? Refusal { get; init; }
 }
 

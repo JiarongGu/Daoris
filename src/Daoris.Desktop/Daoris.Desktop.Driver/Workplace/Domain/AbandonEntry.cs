@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A tree an abandon discarded, or a branch it deleted alone (design §4.2): never its path, and its tip, which brings the
+/// A tree an abandon discarded, or a branch it deleted alone: never its path, and its tip, which brings the
 /// branch back while git keeps its commits (<c>git branch &lt;branch&gt; &lt;tip&gt;</c> in its repository).
 /// </summary>
 /// <param name="Sessions">The sessions that worked in it, oldest first.</param>
@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 public sealed record AbandonedTree(
     string Repository, string Branch, string? Tip, int? Commits, int? Uncommitted, IReadOnlyList<string> Sessions, bool Alone = false);
 
-/// <summary>A piece an abandon kept, and why (design §3.2), in words from fixed lists: <see cref="AbandonWhy"/>.</summary>
+/// <summary>A piece an abandon kept, and why, in words from fixed lists: <see cref="AbandonWhy"/>.</summary>
 /// <param name="Piece">The piece's key (<see cref="AbandonKeys.QuestKey"/>, <see cref="AbandonKeys.SessionKey"/>, <see cref="AbandonKeys.TreeKey"/>).</param>
 public sealed record AbandonKeep(string Piece, string Why)
 {
@@ -29,10 +29,10 @@ public sealed record AbandonKeep(string Piece, string Why)
     public string? Detail { get; init; }
 }
 
-/// <summary>A shared decline's answer from the abandon's sync pass (design §5.2): <see cref="DeclineAnswer"/>.</summary>
+/// <summary>A shared decline's answer from the abandon's sync pass: <see cref="DeclineAnswer"/>.</summary>
 public sealed record AbandonDecline(string Quest, string Answer);
 
-/// <summary>The answers a shared decline gets from the abandon's pass (D132 point 10).</summary>
+/// <summary>The answers a shared decline gets from the abandon's pass.</summary>
 public static class DeclineAnswer
 {
     /// <summary>The remote took it.</summary>
@@ -45,7 +45,7 @@ public static class DeclineAnswer
     public const string Unconfirmed = "unconfirmed";
 }
 
-/// <summary>One abandon, as this machine keeps it (design §4.2): the scope, when, by which door, the reason, what went and what stayed.</summary>
+/// <summary>One abandon, as this machine keeps it: the scope, when, by which door, the reason, what went and what stayed.</summary>
 /// <param name="Scope"><c>ask</c> or <c>quest</c>.</param>
 /// <param name="Door"><c>screen</c> or <c>terminal</c>.</param>
 /// <param name="Reason">The person's reason, verbatim, as each declined quest keeps it.</param>

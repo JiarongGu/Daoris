@@ -4,18 +4,18 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The person's <i>Free up space…</i> (KEEP1e, D195 point 4; the cleanup design §3.3): listed first, then pressed (D88's shape, as
+/// The person's <i>Free up space…</i>: listed first, then pressed (D88's shape, as
 /// CACHECLEAR1's). The list changes nothing: per kind, what its rule takes now, and what could go early by the person's word (set-aside
 /// folders before their date, unused downloads within their days, the browser's caches, what an earlier build left, a failed update's
 /// folder). A run removes exactly the units a press names, each judged again right before it goes through its kind's one removal; one
 /// changed since the list is kept and counted. The window's route, <c>daoris space free</c> and nothing else call it.
 /// </summary>
 /// <remarks>
-/// <para><b>Each kind's one removal</b> (§2.1, §6.6): the set-aside folders through the purge and the slim (<see cref="SetAsideKeeping"/>),
+/// <para><b>Each kind's one removal</b>: the set-aside folders through the purge and the slim (<see cref="SetAsideKeeping"/>),
 /// one before its date whole with its manifest; the downloads through CACHECLEAR1's act (<see cref="DownloadClearing.ClearAsync"/>); the
 /// log's days through its prune (<see cref="MachineLog.Remove"/>); the browser's caches through the shell's host
 /// (<see cref="BrowserCacheClearing"/>); an earlier build's two folders and a failed update's by their exact paths, moved aside first.</para>
-/// <para><b>One run at a time</b> (§3.1): every run holds the home's run lock (<see cref="KeepingRun"/>), taken by <see cref="SpaceRuns"/>.</para>
+/// <para><b>One run at a time</b>: every run holds the home's run lock (<see cref="KeepingRun"/>), taken by <see cref="SpaceRuns"/>.</para>
 /// </remarks>
 public static class SpaceFree
 {
@@ -25,11 +25,11 @@ public static class SpaceFree
     /// <summary>The card's kind a run's kind is counted under, for the sizes counted again at its end.</summary>
     public static string CardKind(string kind) => kind == "update-failed" ? "rest" : kind;
 
-    /// <summary>The machine log's days by the person's rule (KEEP1d), which the press lists and removes by as the look's prune does.</summary>
+    /// <summary>The machine log's days by the person's rule, which the press lists and removes by as the look's prune does.</summary>
     private static int LogDays(KeepPolicy policy) => (int)policy.Logs.Days.TotalDays;
 
     /// <summary>
-    /// The finished trees' record pass at the press's run (KEEPSIZE1b, the keep-size design §5), before it removes: each stopped or refused
+    /// The finished trees' record pass at the press's run, before it removes: each stopped or refused
     /// folder resumed and each record due posted first, from its manifest, so a folder whose branch went reaches its record before the
     /// person's word can remove it, and a recorded folder's hour is checked. The list never runs it: it reads the classes as they stand, and
     /// changes nothing (the second maker's read, finding 7). Nothing where it has no service, or its registry did not read: then no recorded
@@ -121,7 +121,7 @@ public static class SpaceFree
             unread["downloads"] = "unreadable";
         }
 
-        // The machine log's days past the person's days (KEEP1d), which the look's daily prune takes: what is left until the next.
+        // The machine log's days past the person's days, which the look's daily prune takes: what is left until the next.
         try
         {
             var logs = DaorisHome.Entry(home, HomeEntry.Logs);
@@ -171,7 +171,7 @@ public static class SpaceFree
                 {
                     case "set-aside":
                     {
-                        // KEEPSIZE1b (§5): the listed folders' steps again, a record due posted first, before any of them goes. The last fixes'
+                        // The listed folders' steps again, a record due posted first, before any of them goes. The last fixes'
                         // check, finding 3: each listed class is compared with the class read before this run's own record pass, which moves a
                         // stopped folder to its record by the press's own word, so it is no change since the list.
                         var before = ClassesNow(world);
@@ -245,7 +245,7 @@ public static class SpaceFree
         var folders = new Dictionary<SpaceAsked, string>();
         foreach (var unit in units)
         {
-            // KEEPSIZE1a: a listed id names its folder at whichever place of the trees holds it, the new first; where neither does, the new
+            // A listed id names its folder at whichever place of the trees holds it, the new first; where neither does, the new
             // place's path, which the removal finds gone.
             var at = roots.Select(root => Under(root, unit.Id, 3)).ToList();
             if (at[0] is not null) folders[unit] = at.FirstOrDefault(Directory.Exists) ?? at[0]!;
@@ -537,7 +537,7 @@ public static class SpaceFree
     }
 
     /// <summary>
-    /// How many of a group's set-aside folders are of each listed class (KEEPSIZE1b, <see cref="SpaceUnit.Class"/>): what the list can say of
+    /// How many of a group's set-aside folders are of each listed class (<see cref="SpaceUnit.Class"/>): what the list can say of
     /// each and nothing more (the second maker's read, finding 9).
     /// </summary>
     private static JsonObject Classes(IReadOnlyList<SpaceUnit> units) => new()
@@ -570,7 +570,7 @@ public static class SpaceFree
                 ["count"] = units.Count,
                 ["bytes"] = units.All(unit => unit.Bytes is not null) ? units.Sum(unit => unit.Bytes!.Value) : null,
                 ["own"] = units.Count(unit => unit.Own == true),
-                // KEEPSIZE1b (the keep-size design §5): the set-aside folders by class, each said with what the list can say of it.
+                // The set-aside folders by class, each said with what the list can say of it.
                 ["classes"] = group == "set-aside" ? Classes(units) : null,
                 ["units"] = listed,
             });

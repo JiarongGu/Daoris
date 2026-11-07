@@ -5,7 +5,7 @@ using static Daoris.Driver.LandingSayings;
 
 namespace Daoris.Driver;
 
-/// <summary>A session tree's work merged into its line by the rule's merge form (D51 rule 6, WSR1).</summary>
+/// <summary>A session tree's work merged into its line by the rule's merge form (D51 rule 6).</summary>
 internal sealed class TreeMerges(TreeContext context)
 {
     /// <summary>
@@ -31,26 +31,26 @@ internal sealed class TreeMerges(TreeContext context)
     /// succeeded or not, and discarding it stays a separate act the person asks for.</para>
     /// </remarks>
     /// <param name="replay">
-    /// What the landing replayed onto the line here, leaving out what the line holds (LANDSYNC1, D87's 2026-10-15 amendment point 2):
+    /// What the landing replayed onto the line here, leaving out what the line holds (D87's 2026-10-15 amendment point 2):
     /// its tip is merged in place of the session's branch, as D86 merges one. Null merges the branch as made.
     /// </param>
     /// <param name="uncommitted">
-    /// The session tree's uncommitted paths as the landing's judgement counted them a moment before (LANDGIT1c); null asks git.
+    /// The session tree's uncommitted paths as the landing's judgement counted them a moment before; null asks git.
     /// </param>
     /// <param name="here">
-    /// The session tree's repository and branch as its landing read them a moment ago (LANDGIT1b); null reads them here. Only the
+    /// The session tree's repository and branch as its landing read them a moment ago; null reads them here. Only the
     /// tree's: every check of the root is still made here, immediately before the merge.
     /// </param>
     /// <param name="pinned">
-    /// The commit the door judged (FABRIC-CUTOVER1d, <see cref="LandingGate.Tip"/>: a graph run's <c>handed</c>'s): the branch must stand there
+    /// The commit the door judged (<see cref="LandingGate.Tip"/>: a graph run's <c>handed</c>'s): the branch must stand there
     /// immediately before the merge, and the merge takes that commit, never the branch as it stands then. Null merges the branch as it stands.
     /// </param>
     /// <param name="beside">
-    /// The ledger's sessions and their trees (GITLOCK2, <see cref="BranchTidying.HoldersAsync"/>), which the promotion reads inside the
+    /// The ledger's sessions and their trees (<see cref="BranchTidying.HoldersAsync"/>), which the promotion reads inside the
     /// checkout's hold, so the merge waits for a session working in that checkout. Null asks nothing and merges as before.
     /// </param>
     /// <param name="delivering">
-    /// The delivery this merge performs (LANDNODE1b2): the line's entry written ahead of the press, which the promotion's effect makes under the
+    /// The delivery this merge performs: the line's entry written ahead of the press, which the promotion's effect makes under the
     /// checkout's lock, and its outcome read from the line after. Null merges as before.
     /// </param>
     internal async Task<TreeMerge> MergeAsync(
@@ -69,7 +69,7 @@ internal sealed class TreeMerges(TreeContext context)
             return new(false, $"there is no tree at {path}.");
         }
 
-        // Its repository and its branch, one start (PROC1d-iii), or the landing's own read of them a moment ago (LANDGIT1b): what it lands
+        // Its repository and its branch, one start, or the landing's own read of them a moment ago: what it lands
         // is read from that branch below, as it stands.
         here ??= await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
         if (here.Code != 0)
@@ -77,7 +77,7 @@ internal sealed class TreeMerges(TreeContext context)
             return new(false, $"{path} is not a working tree git recognises: {FirstLine(here.Err)}");
         }
 
-        // GITWORKTREECONFIG1: the tree's own working root, from the read above, before its status is read or anything merged.
+        // The tree's own working root, from the read above, before its status is read or anything merged.
         if (await TreeBinding.RefusalAsync(full, ct, here.TopLevel).ConfigureAwait(false) is { } bound)
         {
             return new(false, $"Nothing was merged: {bound}.");
@@ -108,7 +108,7 @@ internal sealed class TreeMerges(TreeContext context)
                 + "there is nowhere to merge to. Set one with `daoris place line`.");
         }
 
-        // FABRIC-CUTOVER1d: pinned, the work merged is the commit judged, read here, as late as the root's own checks.
+        // Pinned, the work merged is the commit judged, read here, as late as the root's own checks.
         if (pinned is not null && await CommitOfAsync(root, $"refs/heads/{branch}", ct).ConfigureAwait(false) is { } stands
             && !string.Equals(stands, pinned, StringComparison.OrdinalIgnoreCase))
         {
@@ -154,16 +154,16 @@ internal sealed class TreeMerges(TreeContext context)
                 + $"not switch a branch in a checkout it did not create — put it on `{canonical}`, then merge.");
         }
 
-        // INTEGRATE1g (§4.2's named legacy exception): the press is carried by the integration transport under `{ owner, none, 1, merge }`.
+        // The press is carried by the integration transport under `{ owner, none, 1, merge }`.
         // The merge is made `--no-ff` in the line's integration tree, one commit a person can read and revert as a unit, under the branch's
-        // name whether a replay's tip or a pinned commit (FABRIC-CUTOVER1d) is merged, with the repository's own hooks; the checkout is then
-        // only fast-forwarded to it. A conflict or a refusing hook (HOOKMERGE1) leaves the checkout as it was, in today's words.
+        // name whether a replay's tip or a pinned commit is merged, with the repository's own hooks; the checkout is then
+        // only fast-forwarded to it. A conflict or a refusing hook leaves the checkout as it was, in today's words.
         var frozen = replay?.Now ?? pinned ?? await CommitOfAsync(root, $"refs/heads/{branch}", ct).ConfigureAwait(false);
         if (frozen is null) return new(false, $"git could not read where `{branch}` stands, so nothing was merged.");
-        // GITLOCK1: no hold here. The checkout's checks above are this press's early words; the promotion's effect holds the checkout alone
+        // No hold here. The checkout's checks above are this press's early words; the promotion's effect holds the checkout alone
         // and reads them again before it moves it, and a hold taken here would refuse that one in this very process.
         if (delivering is not null && await delivering.BeginMergeAsync(canonical, frozen).ConfigureAwait(false) is { } unbegun) return new(false, $"Nothing was merged: {unbegun}.");
-        // LANDNODE1c3: Current's delivery is admitted by its rule and says today's message, as the press always was.
+        // Current's delivery is admitted by its rule and says today's message, as the press always was.
         var (carried, refused) = await IntegrationPresses.MergeAsync(
             context.Home, context.Config(), root, repository, workspace, canonical, branch, frozen, ct, beside, delivered: delivering is { Live: false },
             message: delivering?.Template, automatic: delivering?.Accepted == AcceptedBy.Auto).ConfigureAwait(false);
@@ -171,7 +171,7 @@ internal sealed class TreeMerges(TreeContext context)
         if (!carried) return new(false, refused!);
 
         var landed = ahead.Trim().Split('\n').Length;
-        // The line moved: the registry follows it at the next look (WSSETUP5, D124 §3.1), whichever door pressed this.
+        // The line moved: the registry follows it at the next look, whichever door pressed this.
         RegistryFollowing.Moved(context.Home, repository, DateTimeOffset.UtcNow);
         return replay is null
             ? new(true, $"merged `{branch}` into `{canonical}` — {landed} commit(s).{TreeStays}")

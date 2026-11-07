@@ -3,8 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A commit made on a unit's branch after its request froze, as the settle judges it against the promoted line (INTEGRATE1e part e2; the
-/// integration design §5.7, §5.2 step 9).
+/// A commit made on a unit's branch after its request froze, as the settle judges it against the promoted line.
 /// </summary>
 /// <param name="Disposition">One of <see cref="AfterLandingDispositions"/>.</param>
 public sealed record AfterLandingCommit(string Sha, string Subject, string Disposition)
@@ -36,9 +35,9 @@ public static class AfterLandingDispositions
 }
 
 /// <summary>
-/// The settle's judgement of a branch's commits after its frozen tip (§5.7): judged against the promoted line by patch id and content (D87
-/// point 1, <see cref="LineHolds"/>), and by a replay over trees alone, never by the session branch's ancestry, since a replayed member's
-/// merge holds replayed commits (F27). Reads git and writes objects only, never a ref or a tree on disk. The settle
+/// The settle's judgement of a branch's commits after its frozen tip: judged against the promoted line by patch id and content
+/// (<see cref="LineHolds"/>), and by a replay over trees alone, never by the session branch's ancestry, since a replayed member's
+/// merge holds replayed commits. Reads git and writes objects only, never a ref or a tree on disk. The settle
 /// calls it.
 /// </summary>
 /// <remarks>

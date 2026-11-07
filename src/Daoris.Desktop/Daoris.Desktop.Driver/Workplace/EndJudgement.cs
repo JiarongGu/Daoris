@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What a branch's work is, as far as git and the record can say (FABRIC-END2a, the fabric events design §B2).</summary>
+/// <summary>What a branch's work is, as far as git and the record can say.</summary>
 internal enum EndState
 {
     /// <summary>Nothing was handed on and the line does not hold the tip: at most the agent's word that it is done.</summary>
@@ -12,7 +12,7 @@ internal enum EndState
     /// <summary>The line holds the committed tip, proven by git.</summary>
     Ended,
 
-    /// <summary>A read the judgement needed failed: absent is never zero (D57), so nothing is said.</summary>
+    /// <summary>A read the judgement needed failed: absent is never zero, so nothing is said.</summary>
     Unknown,
 }
 
@@ -37,31 +37,30 @@ internal static class EndBy
     /// <summary>A session branch a completed pull request carried.</summary>
     public const string Carried = "carried";
 
-    /// <summary>A part of a chain its workflow's <c>tidy</c> ended once the chain's pull request merged (D245): its record, never a proof here.</summary>
+    /// <summary>A part of a chain its workflow's <c>tidy</c> ended once the chain's pull request merged: its record, never a proof here.</summary>
     public const string Tidied = "tidied";
 
     /// <summary>
-    /// A landing branch whose own proofs did not end it, inside another landing branch whose own proof did (FABRIC-END2d, D102's group,
-    /// as <see cref="LandedCleanups.JudgeLandedAsync"/> proves it): that one's history holds its commits.
+    /// A landing branch whose own proofs did not end it, inside another landing branch whose own proof did (as <see cref="LandedCleanups.JudgeLandedAsync"/> proves it): that one's history holds its commits.
     /// </summary>
     public const string Inside = LandedKind.Inside;
 }
 
 /// <summary>
 /// A landing whose own proof ended it (<see cref="EndBy.Merged"/>, <see cref="EndBy.OnLine"/>, <see cref="EndBy.PullRequest"/>), at the tip it
-/// was judged at (FABRIC-END2d): what a landing inside it rests on, and a session branch whose work it holds with no unit naming it.
+/// was judged at: what a landing inside it rests on, and a session branch whose work it holds with no unit naming it.
 /// </summary>
 internal sealed record EndHost(LandedBranch Entry, string Tip, EndVerdict End);
 
 /// <summary>
-/// How a piece of work ends (the design's §B3): resolved as <i>Accept</i> resolves it, or from what the landing recorded. There is no
+/// How a piece of work ends: resolved as <i>Accept</i> resolves it, or from what the landing recorded. There is no
 /// <c>end</c> setting. The cycle is an input to <see cref="EndJudgement"/>, so a workspace's or a repository's own definition of its
-/// end plugs in where it is resolved (FABRIC-CHAIN1).
+/// end plugs in where it is resolved.
 /// </summary>
 /// <param name="Form"><see cref="LandingForm.Merge"/>, <see cref="LandingForm.Branch"/>, or <see cref="None"/> where nothing was ever handed by Daoris.</param>
 /// <param name="Plugin">A plugin pushes the branch and opens its pull request, so its completed answer is a proof.</param>
 /// <param name="Squash">The landing branch is one commit, the recorded squash tip vouching for the session's commits.</param>
-/// <param name="Workflow">The named workflow whose landing decided it (WORKFLOW1f); null under Current.</param>
+/// <param name="Workflow">The named workflow whose landing decided it; null under Current.</param>
 internal sealed record EndCycle(string Form, bool Plugin = false, bool Squash = false, LandingWorkflow? Workflow = null)
 {
     /// <summary>The form of work no landing handed: the person merges by hand.</summary>
@@ -130,8 +129,8 @@ internal sealed record EndSubject(string Branch, string Tip, EndRole Role, Lande
     public bool? Uncommitted { get; init; }
 
     /// <summary>
-    /// A landing whose branch git said is missing (CLEANUP1b, <see cref="LandedGone.Missing"/>), judged at the tip its landing recorded:
-    /// only the line's ancestry of that commit ends it, or its content proof on a form of the line (CLEANUP1c).
+    /// A landing whose branch git said is missing (<see cref="LandedGone.Missing"/>), judged at the tip its landing recorded:
+    /// only the line's ancestry of that commit ends it, or its content proof on a form of the line.
     /// </summary>
     public bool Gone { get; init; }
 }
@@ -149,7 +148,7 @@ internal readonly record struct Held(bool Read, string? Where)
 }
 
 /// <summary>What git and the record said, gathered through the proofs' own seams, for <see cref="EndJudgement.Judge"/> to read.</summary>
-/// <param name="Line">The repository's line (D86) the cycle named, or null where none is set.</param>
+/// <param name="Line">The repository's line the cycle named, or null where none is set.</param>
 internal sealed record EndFacts(string? Line)
 {
     /// <summary>The form of the line (<c>main</c>, <c>origin/main</c>) whose history holds the tip.</summary>
@@ -164,7 +163,7 @@ internal sealed record EndFacts(string? Line)
     /// <summary>Whether a landing branch still stands holding the commit its landing made it at; null where it could not be read.</summary>
     public bool? Standing { get; init; } = true;
 
-    /// <summary>Whether a branch of the person's (not a form of the line) holds every commit (D88); null where git could not say.</summary>
+    /// <summary>Whether a branch of the person's (not a form of the line) holds every commit; null where git could not say.</summary>
     public bool? OnPersonsBranch { get; init; }
 
     /// <summary>The landing branch of a completed pull request that carried the tip, line and merge commit confirmed here.</summary>
@@ -184,11 +183,11 @@ internal sealed record EndFacts(string? Line)
 
     /// <summary>
     /// Whether a landing's content proof read the line and compared its files (<see cref="LandedProofs.Proof.Judgeable"/>), so it may still be
-    /// inside another landing (FABRIC-END2d).
+    /// inside another landing.
     /// </summary>
     public bool Judgeable { get; init; }
 
-    /// <summary>The landing whose own proof ended it and whose branch holds this landing's tip (FABRIC-END2d); null where none does.</summary>
+    /// <summary>The landing whose own proof ended it and whose branch holds this landing's tip; null where none does.</summary>
     public EndHost? Within { get; init; }
 }
 
@@ -211,13 +210,13 @@ internal sealed record EndVerdict(EndState State, string? By, string? Where, str
 }
 
 /// <summary>
-/// The one judgement of an end (FABRIC-END2a; the fabric events design §B3 and §B7): the cycles' proofs, which four places judged
+/// The one judgement of an end (§B7): the cycles' proofs, which four places judged
 /// alone (the clean-up, the sweep, the pull request's asks and the look's tidy), behind one answer: claim, handed, ended or unknown.
 /// <see cref="Judge"/> is pure over <see cref="EndFacts"/>; <see cref="GatherAsync"/> reads them through the proofs' own seams.
 /// </summary>
 /// <remarks>
-/// <para>Nothing is stored and nothing removed here (§B8). <see cref="EndKeeping"/> keeps what it finds held (FABRIC-END2); the look's
-/// tidy takes its candidates from that (FABRIC-END4a) and judges each again, and the sweep keeps its own judgement.</para>
+/// <para>Nothing is stored and nothing removed here (§B8). <see cref="EndKeeping"/> keeps what it finds held; the look's
+/// tidy takes its candidates from that and judges each again, and the sweep keeps its own judgement.</para>
 /// <para>🔴 <b>Never ended by a guess</b> (§B7): the agent's done, a remote branch reading <c>[gone]</c>, patch equivalence, a plugin's
 /// word without its merge commit on the line here, an unread answer, a work only another branch of the person's holds. A dirty tree
 /// does not make an end a guess, it is carried beside it.</para>
@@ -247,13 +246,13 @@ internal static class EndJudgement
             return new(EndState.Ended, EndBy.OnLine, content.Where, $"every file it changed reads on `{content.Where}` as it left it");
         }
 
-        // A plugin's word is a proof only where git holds the merge commit on the line here and the branch is not beyond it (D148 point 4).
+        // A plugin's word is a proof only where git holds the merge commit on the line here and the branch is not beyond it.
         if (cycle.Plugin && facts.Verdict is { Clears: true } cleared)
         {
             return new(EndState.Ended, EndBy.PullRequest, cleared.Form, $"its pull request completed and its merge commit is on `{cleared.Form}`");
         }
 
-        // FABRIC-END2d (D102's group, as the clean-up's `Inside` proves it): its files were compared and differ, and a landing whose own proof
+        // Its files were compared and differ, and a landing whose own proof
         // ended it holds its commits, so that one's history carries them onto the line. Never inside one ended only by being inside another.
         if (facts.Judgeable && facts.Within is { } within && OwnEnd(within.End))
         {
@@ -267,10 +266,10 @@ internal static class EndJudgement
     }
 
     /// <summary>
-    /// CLEANUP1b: a landing whose branch git said is missing, judged at the tip its landing recorded. The line's ancestry of that commit is
-    /// its end (§B5): every commit the landing recorded is on a form of the line. CLEANUP1c: so is that commit's content proof on a form of
+    /// A landing whose branch git said is missing, judged at the tip its landing recorded. The line's ancestry of that commit is
+    /// its end: every commit the landing recorded is on a form of the line. So is that commit's content proof on a form of
     /// the line, every file it changed reading there as the landing left it, which is what a platform's squash merge leaves once the person
-    /// pulled and deleted the branch. Content only a branch of the person's holds is no end (D88), and a pull request's word is read of a
+    /// pulled and deleted the branch. Content only a branch of the person's holds is no end, and a pull request's word is read of a
     /// branch that stands, so neither ends anything here. A branch of its name standing again holding that commit is judged as one that
     /// stands, never here.
     /// </summary>
@@ -322,7 +321,7 @@ internal static class EndJudgement
                 return new(EndState.Ended, EndBy.OnLine, content.Where, $"its work reads on `{content.Where}` by content");
             }
 
-            // D88: landed only on another branch of the person's is kept until the line has it.
+            // Landed only on another branch of the person's is kept until the line has it.
             return new(EndState.Handed, null, content.Where, $"its work is on `{content.Where}`, a branch of the person's, and the line does not hold it yet");
         }
 
@@ -341,7 +340,7 @@ internal static class EndJudgement
     private static bool IsLine(string where, string? line) => line is not null && (where == line || where == $"origin/{line}");
 
     /// <summary>
-    /// A landing's end by its own proof (FABRIC-END2d): merged, on the line by content, or its pull request's confirmed merge, as the clean-up's
+    /// A landing's end by its own proof: merged, on the line by content, or its pull request's confirmed merge, as the clean-up's
     /// <c>proven</c> are. Only such a landing holds another inside it, or a session branch no unit names.
     /// </summary>
     internal static bool OwnEnd(EndVerdict? verdict) => verdict is { Ended: true, By: EndBy.Merged or EndBy.OnLine or EndBy.PullRequest };
@@ -349,10 +348,10 @@ internal static class EndJudgement
     /// <summary>
     /// Read what <see cref="Judge"/> needs, each through the proof's own code: the line's forms and ancestry (<see cref="LandedProofs"/>),
     /// the landing's content proof (<see cref="LandedProofs.ProveAsync"/>) or a session branch's (<see cref="ContentHolds.HeldByContentAsync"/>),
-    /// the kept pull request answer (<see cref="PullRequestAsks.VerdictAsync"/>) and D88's other branches (<see cref="TreeFollows.UnlandedAsync"/>).
+    /// the kept pull request answer (<see cref="PullRequestAsks.VerdictAsync"/>) and the other branches (<see cref="TreeFollows.UnlandedAsync"/>).
     /// The refs come from <paramref name="refs"/>; what a snapshot does not hold (merge-base, content) git is asked, as those proofs do today.
     /// </summary>
-    /// <param name="notHolders">The branches a landing made and recorded here, never a holder by content (SQUASHTIDY1c).</param>
+    /// <param name="notHolders">The branches a landing made and recorded here, never a holder by content.</param>
     /// <param name="carriers">The completed pull requests that carried work here, from <see cref="PullRequestAsks.CarriersAsync"/>.</param>
     internal static async Task<EndFacts> GatherAsync(
         string root, EndSubject subject, string? line, IReadOnlySet<string> notHolders, IReadOnlyList<PullRequestCarrier>? carriers,
@@ -366,16 +365,16 @@ internal static class EndJudgement
             var standing = await LandedProofs.StandingTipAsync(root, entry, ct, refs).ConfigureAwait(false);
             facts = facts with { Standing = standing is not null };
             if (facts.Ancestry.Found) return facts;
-            // CLEANUP1b: a landing whose branch went is judged only while it is gone (one standing again is judged as one that stands); a
+            // A landing whose branch went is judged only while it is gone (one standing again is judged as one that stands); a
             // standing one only while it is the branch its landing made.
             if (subject.Gone ? standing is not null : standing is null) return facts;
-            // A proof Unknown is no proof: a read git could not make never ends it (PROOF-UNREAD1). CLEANUP1c: a gone landing's is read at the
+            // A proof Unknown is no proof: a read git could not make never ends it. A gone landing's is read at the
             // commit its landing recorded, which a platform's squash merge leaves on no ancestry of the line.
             var proof = await LandedProofs.ProveAsync(root, subject.Tip, line, forms, ct).ConfigureAwait(false);
             if (proof.Kind == LandedKind.OnLine && proof.Where is { } on) facts = facts with { Content = Held.At(on) };
-            // FABRIC-END2d: its files compared, so it may still be inside another landing (the keeper asks, WithinAsync).
+            // Its files compared, so it may still be inside another landing (the keeper asks, WithinAsync).
             facts = facts with { Judgeable = proof.Judgeable };
-            // A pull request's word is read of a branch that stands (CLEANUP1b), so none is asked for a gone one, whose branch reads null here.
+            // A pull request's word is read of a branch that stands, so none is asked for a gone one, whose branch reads null here.
             if (standing is not null && entry.PullRequestState is { } kept)
             {
                 facts = facts with { Verdict = await PullRequestAsks.VerdictAsync(root, line, forms, kept, standing, ct).ConfigureAwait(false) };
@@ -393,7 +392,7 @@ internal static class EndJudgement
         if (carriers is { Count: > 0 }
             && await PullRequestAsks.CarrierOfAsync(root, subject.Tip, carriers, ct).ConfigureAwait(false) is { } carrier)
         {
-            // FABRIC-END2d, after the merge: the carried proof rests on the form of the line its merge commit was found on (and, through a
+            // After the merge, the carried proof rests on the form of the line its merge commit was found on (and, through a
             // cleared tip, on that branch at it), which the carried tidy verifies. The form stands once the platform and the person deleted the
             // carrier's branch, so the kept fact names it, never the gone branch, whose commit no later look can read.
             var on = forms.FirstOrDefault(form => carrier.Rests.Any(rest => string.Equals(rest.Ref, form.Ref, StringComparison.Ordinal)))?.Name;
@@ -401,7 +400,7 @@ internal static class EndJudgement
         }
 
         var content = await ContentHolds.HeldByContentAsync(root, subject.Tip, line, notHolders, ct, refs).ConfigureAwait(false);
-        // PROOF-UNREAD1: a proof git could not read (`Unread`) is never a hold, so it never ends the work by content; a later row
+        // A proof git could not read (`Unread`) is never a hold, so it never ends the work by content; a later row
         // may carry it as the judgement's unknown.
         if (content.Hold is { } hold) facts = facts with { Content = Held.At(hold.Where) };
         return facts with { OnPersonsBranch = await UnheldTips.HeldAsync(root, subject.Tip, refs, ct).ConfigureAwait(false) };
@@ -411,7 +410,7 @@ internal static class EndJudgement
     /// The whole judgement of one branch: its tip from <paramref name="refs"/>, the facts gathered, and for a session branch a landing
     /// carries, the landing branch's own end first.
     /// </summary>
-    /// <param name="landingEnd">For a session branch, its landing's end where the caller judged it already this pass (FABRIC-END2d: the keeper
+    /// <param name="landingEnd">For a session branch, its landing's end where the caller judged it already this pass (the keeper
     /// judges every landing first, an <see cref="EndBy.Inside"/> end included), so it is not judged again; null judges it here.</param>
     internal static async Task<EndVerdict> JudgeAsync(
         string root, EndCycle cycle, EndSubject subject, string? line, IReadOnlySet<string> notHolders, IReadOnlyList<PullRequestCarrier>? carriers,
@@ -468,7 +467,7 @@ internal static class EndJudgement
     private static bool IsFullId(string id) => id.Length is 40 or 64 && id.All(Uri.IsHexDigit);
 
     /// <summary>
-    /// FABRIC-END2d (D102's group, as <see cref="LandedCleanups.JudgeLandedAsync"/>'s <c>Inside</c> proves it): the first of <paramref name="hosts"/>
+    /// The first of <paramref name="hosts"/>
     /// whose branch, at the tip it was judged at, holds <paramref name="tip"/> by ancestry; null where none does, or git could not say. One
     /// <c>merge-base --is-ancestor</c> a host, until one holds it.
     /// </summary>
@@ -484,7 +483,7 @@ internal static class EndJudgement
     }
 
     /// <summary>
-    /// FABRIC-END2d: the landing, newest first, whose record holds a session branch's <paramref name="tip"/> where no unit names one: the session
+    /// The landing, newest first, whose record holds a session branch's <paramref name="tip"/> where no unit names one: the session
     /// tip its squash recorded (as <see cref="TreeSquashes.SquashedHoldAsync"/> reads a squashing landing's record), else the tip it made, which
     /// is what <see cref="InsideAsync"/> asks of a landing a unit names. Only <paramref name="hosts"/> are asked, the landings whose own proof
     /// ended them, so the line holds what each made. One <c>rev-list</c> for them all first, as the squash's record is read: where something of

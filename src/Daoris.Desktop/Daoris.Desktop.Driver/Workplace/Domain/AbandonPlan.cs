@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What an abandon does with one piece of the work (PAUSE1d, D132 point 6, design §3.2), in the public spelling the page and
+/// What an abandon does with one piece of the work, in the public spelling the page and
 /// the terminal share: a word, never a sentence.
 /// </summary>
 public static class AbandonAct
@@ -37,13 +37,13 @@ public static class AbandonAct
     public static bool Takes(string act) => act is Decline or Stop or End or Archive or Discard or Delete or Close;
 }
 
-/// <summary>Why an abandon keeps a piece (design §3.2), a word from a fixed list the page says in the reader's language.</summary>
+/// <summary>Why an abandon keeps a piece, a word from a fixed list the page says in the reader's language.</summary>
 public static class AbandonWhy
 {
     /// <summary>A quest taken on another machine: its work is theirs; decline it on its page to stop it there.</summary>
     public const string TakenElsewhere = "taken-elsewhere";
 
-    /// <summary>A quest whose take this machine lost to the person's own reopen of the work its step grew from (FABRIC-CLOSE1c20), not to another machine.</summary>
+    /// <summary>A quest whose take this machine lost to the person's own reopen of the work its step grew from, not to another machine.</summary>
     public const string SourceReopened = "source-reopened";
 
     /// <summary>A quest taken here outside Daoris (this machine's take, and no session record that took it).</summary>
@@ -52,13 +52,13 @@ public static class AbandonWhy
     /// <summary>A quest done: finished work keeps its record.</summary>
     public const string Done = "done";
 
-    /// <summary>A teammate's live session: its process is on their machine (D47 §4).</summary>
+    /// <summary>A teammate's live session: its process is on their machine.</summary>
     public const string Teammate = "teammate";
 
-    /// <summary>A session whose kept tree holds work: still to review (D126 §5.2).</summary>
+    /// <summary>A session whose kept tree holds work: still to review.</summary>
     public const string Review = "review";
 
-    /// <summary>A tree a landing names a session of, standing or a trace: landed work is the clean-up's (D102, D113).</summary>
+    /// <summary>A tree a landing names a session of, standing or a trace: landed work is the clean-up's.</summary>
     public const string Landed = "landed";
 
     /// <summary>A tree some of whose commits are on another ref: landed, pushed, or on a branch of the person's.</summary>
@@ -85,7 +85,7 @@ public static class AbandonWhy
 
 /// <summary>
 /// The key each piece of an abandon goes by: what the first press lists and the second press sends back. <c>WorkAbandoning</c>
-/// forwards each under the name its callers use (STRUCT3g-i).
+/// forwards each under the name its callers use.
 /// </summary>
 public static class AbandonKeys
 {
@@ -104,7 +104,7 @@ public enum AbandonVerdict
     /// <summary>The second press ran its steps: what went, what stayed and what changed are said.</summary>
     Abandoned,
 
-    /// <summary>Nothing is left to take, or nothing was listed: said, never refused (D48 §6).</summary>
+    /// <summary>Nothing is left to take, or nothing was listed: said, never refused.</summary>
     Nothing,
 
     /// <summary>No such ask on this machine, or no such quest here: <c>WORK_UNKNOWN</c>.</summary>

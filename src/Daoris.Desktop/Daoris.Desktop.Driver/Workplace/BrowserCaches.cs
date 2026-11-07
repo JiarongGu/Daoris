@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The shell's word on Daoris's own browser for clearing its caches (KEEP1e, D195 point 4; the cleanup design §3.2, §3.3): the shell's
+/// The shell's word on Daoris's own browser for clearing its caches: the shell's
 /// browser host, handed to the driver as it hands the in-app browser (<see cref="IInAppBrowser"/>). Only the shell can say whether its
 /// browser runs, and only it can hold the browser's start, so a terminal acting alone, with no shell to ask, keeps the caches.
 /// </summary>
@@ -18,7 +18,7 @@ public interface IBrowserCaches
 public sealed record BrowserCachesCleared(IReadOnlyDictionary<string, long> Removed, IReadOnlyDictionary<string, string> Kept);
 
 /// <summary>
-/// The browser's caches' one removal (KEEP1e, the cleanup design §2.1, §3.2): only the paths of <see cref="SpaceKinds.BrowserCaches"/>,
+/// The browser's caches' one removal: only the paths of <see cref="SpaceKinds.BrowserCaches"/>,
 /// relative to <c>browser-engine</c>'s root, each checked to lie under the root with no link on the way, moved aside by one rename, then
 /// removed never following a link. A path not in the table is never touched, nor the profile's cookies, storage or preferences, nor the
 /// window's profile. Run inside <see cref="IBrowserCaches.WhileStoppedAsync{T}"/>, which says the browser is not running.
@@ -131,7 +131,7 @@ public static class BrowserCacheClearing
 }
 
 /// <summary>
-/// The browser's caches checked at the browser's start (KEEPSIZE1e, D195's keep-size note): the host calls it inside its start gate, with
+/// The browser's caches checked at the browser's start: the host calls it inside its start gate, with
 /// no browser running, so a browser over its caches' size limit starts with them cleared and one within it starts untouched.
 /// </summary>
 public static class BrowserCacheStart

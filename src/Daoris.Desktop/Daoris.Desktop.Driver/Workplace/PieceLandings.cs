@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A partner's record lands nothing (COAGENT1b, D199 point 3; the co-agent design §2.4): its piece reaches the line only through its lead,
+/// A partner's record lands nothing: its piece reaches the line only through its lead,
 /// which merges the frozen ref in its own tree. The one sentence every landing door refuses it in: the session's press, its plan and the
 /// terminal's verb (<see cref="TreesWords.PartnerLands"/>), and a run's <c>land</c> (<see cref="LandPerformer"/>). The page's and an
 /// entry's Accept never offer it, since the work orders' eligibility leaves a partner's tree out.

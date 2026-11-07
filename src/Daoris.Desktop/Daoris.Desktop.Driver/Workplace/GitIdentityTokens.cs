@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// An identity's tokens set and cleared (D241 point 6), called by each door of the identity (the terminal's <c>git identity token</c>,
+/// An identity's tokens set and cleared, called by each door of the identity (the terminal's <c>git identity token</c>,
 /// the bridge's <c>GIT_IDENTITY</c>, the page): the identity's <c>api</c> token, which a hosted service's act is handed, on any
 /// identity; and an HTTPS identity's <c>https</c> token, replaced when the host rotates it. The value goes in and never comes out:
 /// the answer is whether one is set (<see cref="Has"/>).

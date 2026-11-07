@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 public sealed record TogetherBrought(string Operation, string Session, string Tree, string Tip, string Into, bool Line, DateTimeOffset At);
 
 /// <summary>
-/// The inclusion record of every form (LINESTOGETHER1d, the review-flow design §4): a landed operation, not a landing record, says what
+/// The inclusion record of every form: a landed operation, not a landing record, says what
 /// a member was brought into, since a merge keeps none of its own.
 /// </summary>
 public static class TogetherInclusion
@@ -57,13 +57,13 @@ public static class TogetherInclusion
 }
 
 /// <summary>
-/// The combined Accept (LINESTOGETHER1d, the review-flow design §4): the head's one landing of the operation bound to it. Each member's
+/// The combined Accept: the head's one landing of the operation bound to it. Each member's
 /// gate is read as its own Accept reads it, pinned to its bound tip, and one that holds lands nothing. Under the head tree's hold, before
 /// anything is made, the head at its checked tip, every member at its bound tip and every member change accounted again; then the attempt
 /// is written; then the landing, its record listing the members; again before the push; then what came of it.
 /// </summary>
 /// <remarks>
-/// Under a delivery (LANDNODE1b3; the land node design §9's first question): one Accept carrying several sessions is one delivery, the head's
+/// Under a delivery (the land node design §9's first question): one Accept carrying several sessions is one delivery, the head's
 /// unit's, bound at the checked tip, whose intent chooses the form and the target; each member is brought into it and starts none of its own
 /// (<see cref="DeliveryReach"/>), so there is no second fence.
 /// </remarks>

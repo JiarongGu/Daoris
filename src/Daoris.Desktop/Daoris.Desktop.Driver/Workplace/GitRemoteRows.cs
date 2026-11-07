@@ -1,21 +1,21 @@
 namespace Daoris.Driver;
 
-/// <summary>One remote of a repository as its Setup shows it (the git-auth design §7.3): its address, and what serves it.</summary>
+/// <summary>One remote of a repository as its Setup shows it: its address, and what serves it.</summary>
 /// <param name="Name">The remote's name.</param>
-/// <param name="Address">The effective address (§4.4) with no user-info; what a person reads.</param>
+/// <param name="Address">The effective address with no user-info; what a person reads.</param>
 /// <param name="Host">The address's canonical host, or null for a local path, which needs no identity.</param>
 /// <param name="Way"><c>ssh</c> or <c>https</c>; null for a local path.</param>
 /// <param name="Serves"><c>identity</c>, <c>own</c>, <c>none</c>, or <c>local</c>.</param>
 /// <param name="Identity">The serving identity's id, and its label.</param>
 /// <param name="Source"><c>repository</c>, <c>workspace</c>, <c>machine</c> or <c>default</c>; null where nothing serves.</param>
-/// <param name="Passed">Each pointer passed over and why (§3.2).</param>
+/// <param name="Passed">Each pointer passed over and why.</param>
 /// <param name="Chosen">The repository's own pointer for this remote: an identity's id, <c>own</c>, or null.</param>
 public sealed record GitRemoteRow(
     string Name, string Address, string? Host, string? Way, string Serves, string? Identity, string? Label, string? Source,
     IReadOnlyList<string> Passed, string? Chosen);
 
 /// <summary>
-/// A repository's git remotes with what serves each (GITAUTH1e, the git-auth design §3.2 and §7.3), read through §4.4's one reader of an
+/// A repository's git remotes with what serves each, read through §4.4's one reader of an
 /// address. Starts git once for the names and once for each address.
 /// </summary>
 public static class GitRemoteRows

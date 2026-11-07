@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The tree a start opened for a session whose record is not open yet (D51; GOONTREE1; QUEUEDTREE1, D181's PARALLEL1f note): let go
+/// The tree a start opened for a session whose record is not open yet: let go
 /// by the clean path on each way out that starts nothing, and on the driver's close before the record's open is asked.
 /// </summary>
 /// <remarks>
@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// and a removal on it throws at its first git, leaving the tree and its branch to the sweep. The removal is git's few starts, each
 /// bounded by its own timeout.</para>
 ///
-/// <para><b>Until the open is asked.</b> Once the record's open is asked the ledger may hold the tree (LEFT2), even where the close cut
+/// <para><b>Until the open is asked.</b> Once the record's open is asked the ledger may hold the tree, even where the close cut
 /// its answer off, so a close after that leaves it to the sweep, which reads the ledger. A refused open still lets it go itself.</para>
 ///
 /// <para><b>Only the close.</b> A start that failed otherwise fails its look as it always did, its tree the sweep's.</para>

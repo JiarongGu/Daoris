@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The integration run's steps over the store (INTEGRATE1e part e2, D215; the integration design §5.6): each step's start written before its
+/// The integration run's steps over the store: each step's start written before its
 /// effect and its end after, each in one <c>BEGIN IMMEDIATE</c> transaction under the candidate's claim, and the come-up's recovery, which
 /// judges a promotion by ancestry before anything is retried. The replay and the promotion make the steps' effects.
 /// </summary>

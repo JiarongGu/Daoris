@@ -2,7 +2,7 @@ using System.Globalization;
 
 namespace Daoris.Driver;
 
-/// <summary>What a terminal asked of finished history (HIST1d): a reading, or a clear's list, or with <see cref="Yes"/> its press.</summary>
+/// <summary>What a terminal asked of finished history: a reading, or a clear's list, or with <see cref="Yes"/> its press.</summary>
 /// <param name="Scope">What the words name: a workspace, one quest's work, one quest's failed sessions, or one ask's work.</param>
 /// <param name="Id">The workspace, quest or ask named, without its <c>#</c>; null for a reading of every workspace a record names.</param>
 public sealed record HistoryAsk(HistoryScope Scope, string? Id)
@@ -26,14 +26,14 @@ public sealed record HistoryAsk(HistoryScope Scope, string? Id)
 /// <remarks>
 /// <para><b>The reading</b> says, per workspace, what the home keeps of its finished work and what a clear would take, the units
 /// kept by reason with the line that frees each, and its conversations that served no quest; then the home's left-over files and
-/// machine log once. With no workspace it reads every workspace a record names, renamed or unregistered ones included (§2.4).
+/// machine log once. With no workspace it reads every workspace a record names, renamed or unregistered ones included.
 /// <c>--json</c> prints <c>HISTORY_PLAN</c>'s answer field for field, from the one projection both doors serialize
 /// (<see cref="HistoryAnswers"/>).</para>
 ///
 /// <para><b>Without <c>--yes</c> a clear is the first press</b>: it prints what it would take and what it keeps, each kept unit
 /// in its keep's own sentence (the service's for the records' half, the driver's for this machine's), and changes nothing. With
 /// it, it lists again and sends what may go, each unit judged again by both halves, at the door <c>terminal</c>, as
-/// <c>trees clean --yes</c> does. Nothing to clear is information, never a refusal (D48 §6).</para>
+/// <c>trees clean --yes</c> does. Nothing to clear is information, never a refusal.</para>
 ///
 /// <para>Exit codes are the family's: 0 done, listed or nothing to do · 1 a unit named was kept: one quest, one ask or one
 /// quest's failed sessions, on its list or at its press, or no such quest or ask here; a workspace's units are not named one by
@@ -131,7 +131,7 @@ public static class HistoryCommand
     }
 
     /// <summary>
-    /// The verb, as the running Daoris's client where its world names an instance to look for (RPC1e, the terminal RPC design §7.2): a
+    /// The verb, as the running Daoris's client where its world names an instance to look for: a
     /// clear's <c>--yes</c> is the person's press, which the window confirms; the reading and a clear's list are reads. Each route asked
     /// for its words runs this verb's own path in that Daoris, so the lines are the alone path's; alone where none runs.
     /// </summary>
@@ -160,7 +160,7 @@ public static class HistoryCommand
             : await OneAsync(ask, plan, world, output, ct).ConfigureAwait(false);
     }
 
-    // ——— The reading (§2.4).
+    // ——— The reading.
 
     private static async Task<int> ReadAsync(HistoryAsk ask, HistoryWorld world, TextWriter output, CancellationToken ct)
     {
@@ -194,7 +194,7 @@ public static class HistoryCommand
 
     /// <summary>
     /// Every workspace a record names, a session's, a quest's or an ask's, each once and by name, so one no page shows any more
-    /// (renamed, or no longer registered) is read too (§2.4).
+    /// (renamed, or no longer registered) is read too.
     /// </summary>
     private static async Task<IReadOnlyList<string>> WorkspacesAsync(ServiceClient service, CancellationToken ct)
     {
@@ -271,7 +271,7 @@ public static class HistoryCommand
               + "which a workspace's clear takes; ")
         + $"the machine log holds {Size(reading.Log)}, which a clear never touches.";
 
-    /// <summary>Why units are kept, by the word that keeps them, with the line that frees them where one does (§5).</summary>
+    /// <summary>Why units are kept, by the word that keeps them, with the line that frees them where one does.</summary>
     private static string Because(string word) => word switch
     {
         HistoryWords.Open => "it is still open or taken: its record is work in progress.",
@@ -451,7 +451,7 @@ public static class HistoryCommand
         plan.Reading is { Intake: > 0 } reading
         && reading.Takes.Bytes - reading.LeftOverBytes - plan.Units.Where(unit => unit.Clearable).Sum(unit => unit.Bytes.Total) >= reading.Intake;
 
-    // ——— The words. Ask Daoris's clear card says what it takes in these too (HIST1f-b), so they are the library's.
+    // ——— The words. Ask Daoris's clear card says what it takes in these too, so they are the library's.
 
     /// <summary>Whether a unit takes anything: a failed-sessions unit of a quest with none of this machine's takes nothing.</summary>
     internal static bool Takes(HistoryUnitPlan unit) => unit.Quests.Count + unit.Asks.Count + unit.Sessions.Count + unit.Teammates.Count > 0;
@@ -466,7 +466,7 @@ public static class HistoryCommand
     private static IEnumerable<string> Pieces(HistoryUnitPlan unit) =>
         unit.Kept.Select(piece => $"  keeps {piece.Session ?? (piece.Quest is { } quest ? $"#{quest}" : Name(unit))}: {piece.Message}");
 
-    /// <summary>The team's copy a remote keeps of a quest forgotten here (§3.2), in the clear's ask's words (§6.1).</summary>
+    /// <summary>The team's copy a remote keeps of a quest forgotten here, in the clear's ask's words.</summary>
     private static IEnumerable<string> Remote(int forgotten, string? workspace) => forgotten > 0
         ? [$"  the remote for {RemoteTarget.Workspace(workspace)} keeps the team's copy; this machine will not fetch it again."]
         : [];
@@ -494,7 +494,7 @@ public static class HistoryCommand
 
     /// <summary>
     /// The line that clears a scope, without its <c>--yes</c> for a workspace's (the reading names it to list first). A
-    /// workspace's name is spelled for any shell, as ACCTQUOTE1b's commands are (HIST1i): a person copies this line, and
+    /// workspace's name is spelled for any shell, as ACCTQUOTE1b's commands are: a person copies this line, and
     /// <c>my team</c> printed bare is two arguments, <c>R&amp;D</c> a second command. A quest's or an ask's id needs none: it is
     /// the store's hex (<c>QuestStore.MakeId</c>, <c>AskStore.MakeId</c>), and a unit is found only by it, in any case.
     /// </summary>

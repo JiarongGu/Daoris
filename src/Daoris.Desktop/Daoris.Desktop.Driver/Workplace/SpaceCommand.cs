@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// `daoris space [--json] [--measure]` (KEEP1c, the cleanup design §4.4, D50): the terminal's twin of This Daoris's <i>Disk
+/// `daoris space [--json] [--measure]`: the terminal's twin of This Daoris's <i>Disk
 /// space</i> card, reading the same facts through <see cref="SystemSpace"/>: the free space, and each kind's size, rule, next and last
 /// clean. <c>--json</c> prints <c>SYSTEM_SPACE</c>'s answer field for field, so the twins share one test table; <c>--measure</c> walks each
 /// kind, within its own budget, before it answers. It removes nothing: <c>space free</c> does (<see cref="SpaceFreeCommand"/>).

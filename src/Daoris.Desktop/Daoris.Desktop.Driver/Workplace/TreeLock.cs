@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A repository's checkout and its session trees, held while a session starts in one of them, while bringing its branches up
-/// to date replays them (WSR6's open window, closed by LEFT2), and while Daoris writes the checkout (GITLOCK1): one file under
+/// to date replays them (WSR6's open window, closed by LEFT2), and while Daoris writes the checkout: one file under
 /// the home per checkout, which a start takes shared and a replay or a writer takes alone.
 /// </summary>
 /// <remarks>
@@ -23,12 +23,12 @@ namespace Daoris.Driver;
 /// the first and exclusive for the second, which every Daoris process honours. The handle is the lock, so a process
 /// that dies lets go of it with its handles, and nothing stale can block.</para>
 ///
-/// <para><b>One per checkout</b> (GITLOCK1): keyed by the checkout's common git directory, as git resolves it, so a checkout
+/// <para><b>One per checkout</b>: keyed by the checkout's common git directory, as git resolves it, so a checkout
 /// registered twice, under two names or in two workspaces, is one lock, and a session tree names its checkout's.</para>
 ///
-/// <para><b>Every writer of the checkout holds it alone</b> (GITLOCK1, D51's note): a line's pull and a promotion's move, each
+/// <para><b>Every writer of the checkout holds it alone</b>: a line's pull and a promotion's move, each
 /// from its fresh judgement through its write and its read after it (<see cref="TryWriting"/>), a delivery's landing around its branch's
-/// ref transaction (LANDNODE1b2), and every start holds it shared,
+/// ref transaction, and every start holds it shared,
 /// in its own tree or the checkout. <c>CheckoutWritersCensusTests</c> names every git write and where it writes. A holder alone
 /// says what it is beside the lock (<see cref="HolderOf"/>), so a start or a writer it refuses names it.</para>
 ///
@@ -63,7 +63,7 @@ public sealed class TreeLock : IDisposable
     private readonly string? _by;
     private readonly object? _outer;
 
-    // A replay alone holds the repository for the due moments too (FABRIC-END6c), in this process: a removing press or bringing it up
+    // A replay alone holds the repository for the due moments too, in this process: a removing press or bringing it up
     // to date, which a moment skips rather than run beside.
     private IDisposable? _held;
     private int _gone;
@@ -131,7 +131,7 @@ public sealed class TreeLock : IDisposable
     /// Hold the checkout alone, to replay or tidy its trees — or null while a session is starting in it or one of its trees, or another
     /// holds it alone. <paramref name="by"/> says what holds it.
     /// </summary>
-    /// <remarks>Held, it holds the repository for the due moments as well (<see cref="RepositoryHolds"/>, FABRIC-END6c).</remarks>
+    /// <remarks>Held, it holds the repository for the due moments as well (<see cref="RepositoryHolds"/>).</remarks>
     public static TreeLock? TryReplaying(string home, string checkout, string repository, string by) => TryAlone(home, checkout, repository, by);
 
     /// <summary>

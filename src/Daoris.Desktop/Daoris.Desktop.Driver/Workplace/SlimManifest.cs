@@ -4,8 +4,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the look judged it may drop of a tree it sets aside, beside where the folder goes (KEEP1a, D195 point 3; the cleanup design §2.3
-/// and §5, Codex 2.4): <c>trees/.tidied/&lt;ws&gt;/&lt;repo&gt;/&lt;name&gt;-&lt;moment&gt;.slim.json</c>, written by the look before the move
+/// What the look judged it may drop of a tree it sets aside, beside where the folder goes: <c>trees/.tidied/&lt;ws&gt;/&lt;repo&gt;/&lt;name&gt;-&lt;moment&gt;.slim.json</c>, written by the look before the move
 /// (<see cref="SlimStates.Judged"/>) and after it (<see cref="SlimStates.Moved"/>), then by the slim as each path goes. It lives and goes
 /// with its folder; a file, so the folders' enumerations pass it over.
 /// </summary>
@@ -14,7 +13,7 @@ namespace Daoris.Driver;
 /// stopped between the move and that write, is unknown, so its folder is kept whole for its days. An older build reads no manifest: its
 /// purge keeps a slimmed folder as written, which keeps more than it should, never less (<c>compatible-builds.md</c>). A manifest of
 /// another schema is never read as this one.
-/// <para>KEEPSIZE1b (the keep-size design §3.3): the move writes one for <b>every finished tree</b>, schema 2, its paths possibly empty,
+/// <para>The move writes one for <b>every finished tree</b>, schema 2, its paths possibly empty,
 /// <c>whole</c> included, carrying the record's inputs (<see cref="Finished"/>) and its steps (<c>judged</c>, <c>moved</c>, <c>refused</c>,
 /// <c>deleted</c>, <c>recorded</c>). This build reads both schemas: a schema-1 manifest is a folder from before this build, unmarked
 /// (<see cref="SetAsideEligibility"/>), slimmed as before. An older build reads no schema-2 manifest and purges its folder by its days.</para>
@@ -25,10 +24,10 @@ namespace Daoris.Driver;
 internal sealed record SlimManifest(
     string State, DateTimeOffset Judged, DateTimeOffset? Moved, string Repository, string Branch, IReadOnlyList<SlimPath> Paths)
 {
-    /// <summary>The shape a folder from before KEEPSIZE1b carries: the slim's alone.</summary>
+    /// <summary>The shape that carries the slim's alone.</summary>
     internal const int Schema = 1;
 
-    /// <summary>The shape of a finished tree's manifest (KEEPSIZE1b): the slim's, and the record's inputs and steps.</summary>
+    /// <summary>The shape of a finished tree's manifest: the slim's, and the record's inputs and steps.</summary>
     internal const int Finishing = 2;
 
     /// <summary>The finished tree's facts, the record's inputs; null for a schema-1 manifest.</summary>
@@ -37,7 +36,7 @@ internal sealed record SlimManifest(
     /// <summary>When the branch's delete succeeded (<c>deleted</c>).</summary>
     internal DateTimeOffset? Deleted { get; init; }
 
-    /// <summary>When the service answered the record's post (<c>recorded</c>): the hour's clock (§3.4).</summary>
+    /// <summary>When the service answered the record's post (<c>recorded</c>): the hour's clock.</summary>
     internal DateTimeOffset? Recorded { get; init; }
 
     /// <summary>Why the record is not kept yet: the last post's words; null where nothing is said.</summary>
@@ -232,7 +231,7 @@ internal sealed record SlimManifest(
 }
 
 /// <summary>
-/// A finished tree's facts in its schema-2 manifest (KEEPSIZE1b, the keep-size design §3.3), written at <c>judged</c>: the record's inputs,
+/// A finished tree's facts in its schema-2 manifest, written at <c>judged</c>: the record's inputs,
 /// so the pass, the press and a restart compose the same post from it alone. Never a session: the service resolves those from its rows.
 /// </summary>
 /// <param name="Read">The moment before the judgement's read of what the tree holds: the folder's threshold (§3.5's race).</param>
@@ -240,7 +239,7 @@ internal sealed record SlimManifest(
 /// <param name="Tip">The commit judged.</param>
 /// <param name="GrewFrom">The commit it grew from, from <c>session-branches.json</c>; null where none is kept.</param>
 /// <param name="Unit">Its work unit, where <c>session-branches.json</c> names one.</param>
-/// <param name="Ref">The recovery ref at the tip, or null where <c>refs/heads/&lt;line&gt;</c> held it by ancestry (§3.1).</param>
+/// <param name="Ref">The recovery ref at the tip, or null where <c>refs/heads/&lt;line&gt;</c> held it by ancestry.</param>
 /// <param name="Whole">Whether <c>whole</c> was set at the move.</param>
 internal sealed record FinishedTree(
     DateTimeOffset Read, string Workspace, string Tree, string? Line, string Tip, string? GrewFrom, string? Unit, FinishedHold Hold, string? Ref,
@@ -312,10 +311,10 @@ internal sealed record GoingRecord(string Door, DateTimeOffset At, DateTimeOffse
     }));
 }
 
-/// <summary>Which hold kept the commits at the judgement (§1.1): <c>line</c>, <c>landing</c>, <c>squash</c>, <c>content</c>, <c>carried</c> or <c>empty</c>.</summary>
+/// <summary>Which hold kept the commits at the judgement: <c>line</c>, <c>landing</c>, <c>squash</c>, <c>content</c>, <c>carried</c> or <c>empty</c>.</summary>
 internal sealed record FinishedHold(string Kind, string? Where, string? Form);
 
-/// <summary>What the tree held that no commit holds, by name, at most <see cref="TreeScratch.ScratchWalkLimit"/>, the rest counted (§2.1).</summary>
+/// <summary>What the tree held that no commit holds, by name, at most <see cref="TreeScratch.ScratchWalkLimit"/>, the rest counted.</summary>
 internal sealed record FinishedLeft(IReadOnlyList<string> Names, int Count, bool Cut)
 {
     /// <summary>The judgement's <c>Ignored</c>, <c>Written</c> and <c>TooLarge</c>, a build folder's contents unnamed, bounded.</summary>
@@ -327,10 +326,10 @@ internal sealed record FinishedLeft(IReadOnlyList<string> Names, int Count, bool
     }
 }
 
-/// <summary>One package folder in a manifest, and its state (the cleanup design §5).</summary>
+/// <summary>One package folder in a manifest, and its state.</summary>
 /// <param name="Path">Relative to the tree's top, in git's spelling: <c>node_modules</c>, <c>web/node_modules</c>.</param>
 /// <param name="Why">Kept: why, a <see cref="SlimKept"/> code; removing: the last failure's words.</param>
-/// <param name="Tried">When a removal last failed for the same reason as the try before it: it waits a day from here (§3.1).</param>
+/// <param name="Tried">When a removal last failed for the same reason as the try before it: it waits a day from here.</param>
 /// <param name="Ended">Removed: when its removal ended, against which the purge reads the folder above it (Fable F1.1).</param>
 internal sealed record SlimPath(string Path, string State, string? Why = null, DateTimeOffset? Tried = null, DateTimeOffset? Ended = null)
 {
@@ -338,7 +337,7 @@ internal sealed record SlimPath(string Path, string State, string? Why = null, D
     internal bool Final => State is SlimStates.Removed or SlimStates.Kept;
 }
 
-/// <summary>A manifest's states, and each path's (the cleanup design §2.3).</summary>
+/// <summary>A manifest's states, and each path's.</summary>
 public static class SlimStates
 {
     /// <summary>The manifest: written before the move. Unknown on its own, so its folder is kept whole.</summary>
@@ -347,17 +346,17 @@ public static class SlimStates
     /// <summary>The manifest: the move ended and git let go of the tree. Only such a manifest is slimmed.</summary>
     public const string Moved = "moved";
 
-    /// <summary>A finished tree's (KEEPSIZE1b): the move done, the branch's delete refused, the branch standing. Never armed.</summary>
+    /// <summary>A finished tree's: the move done, the branch's delete refused, the branch standing. Never armed.</summary>
     public const string Refused = "refused";
 
-    /// <summary>A finished tree's (KEEPSIZE1b): its branch deleted, its record not yet kept.</summary>
+    /// <summary>A finished tree's: its branch deleted, its record not yet kept.</summary>
     public const string Deleted = "deleted";
 
-    /// <summary>A finished tree's (KEEPSIZE1b): its branch deleted, its record kept. Its folder goes an hour after.</summary>
+    /// <summary>A finished tree's: its branch deleted, its record kept. Its folder goes an hour after.</summary>
     public const string Recorded = "recorded";
 
     /// <summary>
-    /// A finished tree's whose holding check failed (KEEPSIZE1b, the keep-size design §3.4: its ref dropped, its line rewound, its repository
+    /// A finished tree's whose holding check failed (its ref dropped, its line rewound, its repository
     /// not resolved): unmarked from then on, it waits its days, and <see cref="SlimManifest.Why"/> says why.
     /// </summary>
     public const string Unmarked = "unmarked";
@@ -375,7 +374,7 @@ public static class SlimStates
     public const string Kept = "kept";
 }
 
-/// <summary>Why the slim kept a path (the cleanup design §5): a manifest's <c>why</c>, and the machine log's <c>tidied.slimmed</c> count.</summary>
+/// <summary>Why the slim kept a path: a manifest's <c>why</c>, and the machine log's <c>tidied.slimmed</c> count.</summary>
 public static class SlimKept
 {
     /// <summary>Something in its folder was written after the move: the folder is kept whole for its days (step 1).</summary>

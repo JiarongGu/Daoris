@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A landed branch whose unit's <c>integrate</c> node waits for the owner's card (INTEGRATE1h; the integration design §17.4): ready, its request
+/// A landed branch whose unit's <c>integrate</c> node waits for the owner's card: ready, its request
 /// not made, and the card the door that makes it. <i>What needs you</i> lists it, its door the repository's Integration tab, whose
 /// <i>Request</i> is the card (the recorded-landing door, by its branch).
 /// </summary>

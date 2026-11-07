@@ -2,20 +2,20 @@ using System.Globalization;
 
 namespace Daoris.Driver;
 
-/// <summary>A landed session's review in words (REVIEW2): the terminal's sentence, which the review's note says in its own catalogue.</summary>
+/// <summary>A landed session's review in words: the terminal's sentence, which the review's note says in its own catalogue.</summary>
 public static class LandedReviewWords
 {
     /// <summary>Where <paramref name="session"/>'s work landed, and where that branch stands now.</summary>
     public static string Describe(string session, LandedReview review)
     {
         var entry = review.Entry;
-        // This session's own acceptance onto the branch (LAND2c): the landing that made it, or the advance its done made.
+        // This session's own acceptance onto the branch: the landing that made it, or the advance its done made.
         var at = entry.AcceptedAt(session);
         var when = at == DateTimeOffset.MinValue
             ? ""
             : $" on {at.ToUniversalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC";
-        // Who accepted it (LAND2b, D145 point 4): said where it was the rule's switch, since a press is what the review offers.
-        // AUTONOMY1c2's setup accepts by the rule: its record keeps the level that set it, said (ACCESSWORDS1). Only the landing's own
+        // Who accepted it: said where it was the rule's switch, since a press is what the review offers.
+        // AUTONOMY1c2's setup accepts by the rule: its record keeps the level that set it, said. Only the landing's own
         // acceptance is the setup's; an advance of the branch keeps no rule.
         var by = entry.AcceptedByOf(session) != AcceptedBy.Auto ? ""
             : string.Equals(entry.Session, session, StringComparison.OrdinalIgnoreCase) && entry.Rule?.Access is { } access
@@ -38,7 +38,7 @@ public static class LandedReviewWords
 
     /// <summary>
     /// Its pull request: the address a plugin answered with when it pushed, and what the plugin last answered about it with when,
-    /// and a failed ask beside that (PLUGHOOK1c, D148 point 6, design §2.5), as the review's note says them.
+    /// and a failed ask beside that, as the review's note says them.
     /// </summary>
     /// <param name="keptOnly">Say nothing where no answer and no failure is kept: a gone branch's address alone says nothing new.</param>
     private static string PullRequest(LandedBranch entry, bool keptOnly = false)
@@ -53,7 +53,7 @@ public static class LandedReviewWords
     private static string Capital(string words) => words.Length == 0 ? words : char.ToUpperInvariant(words[0]) + words[1..];
 
     /// <summary>
-    /// Why a press to land a session whose review reads as landed lands nothing again (REVIEW2): the terminal's
+    /// Why a press to land a session whose review reads as landed lands nothing again: the terminal's
     /// answer to <c>trees land</c>, where the review offers no Accept at all.
     /// </summary>
     public static string NotAgain(string session, LandedReview review, bool treeGone)
@@ -68,7 +68,7 @@ public static class LandedReviewWords
     }
 
     /// <summary>
-    /// A branch withdrawn on the person's word (LANDRETIRE1 part 2): when, the reason they gave and the recovery ref its commits stay on. The
+    /// A branch withdrawn on the person's word: when, the reason they gave and the recovery ref its commits stay on. The
     /// clean-up's removal (<see cref="LandedBranch.RemovedAs"/>) is its own sentence, and a branch that went outside Daoris says none.
     /// </summary>
     private static string Withdrawn(LandedBranch entry) => entry is { GoneAs: LandedGone.Withdrawn, GoneAt: { } at }
@@ -81,7 +81,7 @@ public static class LandedReviewWords
     {
         null => "",
         LandedKind.Inside => $" The clean-up removed it inside `{entry.RemovedOn}`, whose work read on the line.",
-        // PLUGHOOK1a: removed on the platform's word, confirmed by git.
+        // Removed on the platform's word, confirmed by git.
         LandedKind.PullRequest => $" The clean-up removed it once its pull request completed"
             + (entry.PullRequestState?.Plugin is { } plugin ? $", as `{plugin}` answered," : "") + $" and its merge commit read on `{entry.RemovedOn}`.",
         _ => $" The clean-up removed it once its work read on `{entry.RemovedOn}`.",

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A session branch's work a squash carried with other work (SQUASHSEEN1, D102's note): the parent landed two sessions' work on the line
+/// A session branch's work a squash carried with other work: the parent landed two sessions' work on the line
 /// as one squashed commit, so neither branch's tree is that commit's tree, and the files they both changed (the backlog, the records, a
 /// generated index) read otherwise on the line than on either branch. SQUASHTIDY1's two proofs saw neither, so both sessions were told to
 /// rebase onto the line, ran again and found everything there. This is the third form of the content proof
@@ -11,10 +11,10 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>Merging adds nothing</b>: <c>git merge-tree</c> of the branch onto the line's tip, from where the branch left the line, writes
 /// the tip's own tree, the repository's own merge attributes applied (its records merge by union), except in files the line marks
-/// generated (the landing takes the line's copy of them, LANDREBASE1) and the declared backlog where the line holds every row the branch
+/// generated (the landing takes the line's copy of them) and the declared backlog where the line holds every row the branch
 /// added or removed (<see cref="RowsHeld"/>). A conflict in any other file, or any other file the merge would change, is work the line
 /// lacks: not held. A branch that changed only generated files has nothing of its own to find.</para>
-/// <para><b>The line as it stands, never a commit it passed</b> (D102, D148): a line that took the work and changed or reverted it since
+/// <para><b>The line as it stands, never a commit it passed</b>: a line that took the work and changed or reverted it since
 /// does not hold it, as a commit the line holds only by patch is never an end.</para>
 /// </remarks>
 internal static class SquashCarries

@@ -3,13 +3,13 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The performer of a run's <c>land</c> (the land node design §3, §7): <see cref="LandingDoor"/> starts it off the pass, once per node and tip,
+/// The performer of a run's <c>land</c>: <see cref="LandingDoor"/> starts it off the pass, once per node and tip,
 /// and it judges the run's work as it stands now, then lands it as the review's Accept lands it, authorized by the review's word or the
 /// standing authority. It is the one lander.
 /// </summary>
 /// <remarks>
 /// <para><b>Nothing here pushes, merges or writes a quest.</b> The landing is the session trees' own act through the delivery: the push is the
-/// plugin's (D37, D100), and a landing writes no quest state (D46).</para>
+/// plugin's, and a landing writes no quest state.</para>
 ///
 /// <para><b>A refusal is not tried every pass.</b> Each try is kept in memory with the tree's tip and status it was made at, and the next is made
 /// only once either moves (<see cref="LandTries.ShouldTry"/>), or the person's press asks again (<see cref="Retry"/>). A restart reads as
@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 /// <para><b>Judged again before each effect.</b> A landing waits behind another of its tree, and a push behind another of its branch, so the
 /// quest, its holds and the gate are read again under the tree's hold and just before the plugin is told.</para>
 /// </remarks>
-/// <param name="log">Where a try's <c>landing.auto</c> line goes (D94): the service client's watchers, which write the machine log.</param>
+/// <param name="log">Where a try's <c>landing.auto</c> line goes: the service client's watchers, which write the machine log.</param>
 public sealed class LandPerformer(
     string home, IWorkplaceLandingWorld world, SessionTrees trees, IWorkplaceEventHistory events, Action<LandingLine>? log = null,
     Func<DateTimeOffset>? clock = null)
@@ -26,7 +26,7 @@ public sealed class LandPerformer(
     /// <summary>Whether this process holds the home's lease, as the node records ask it; null asks the lease itself. A test's stand-in sets it.</summary>
     public Func<bool>? HoldsLease { get; init; }
 
-    /// <summary>Where a try that landed a branch or moved a chain's on is told at <c>work/event</c> (EVENTHOOK1b), once, as it is kept.</summary>
+    /// <summary>Where a try that landed a branch or moved a chain's on is told at <c>work/event</c>, once, as it is kept.</summary>
     public Action<WorkEvent>? Told { get; init; }
 
     private IWorkplaceWorkflows Flows => WorkplaceWorkflows.Current;
@@ -178,7 +178,7 @@ public sealed class LandPerformer(
         var (tip, status, uncommitted) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);
         if (!LandTries.ShouldTry(entry, tip, status)) return (null, null);
 
-        // Concluded again with nothing new, it is already on the branch its landing made: closed before the gate, behind D88's proof.
+        // Concluded again with nothing new, it is already on the branch its landing made: closed before the gate, behind the content proof.
         if (uncommitted == 0 && trees.Recorded.Landing(entry.Session) is { GoneAt: null } made
             && await trees.UnlandedHereAsync(entry.Tree, ct).ConfigureAwait(false) == 0)
         {
@@ -220,7 +220,7 @@ public sealed class LandPerformer(
         using var look = trees.OneLook();
         using var facts = GitFacts.Within();
 
-        // D88's proof, read at that moment: work no branch of the person's holds. A graph with a `land` judges it as its `content.holds` step.
+        // The content proof, read at that moment: work no branch of the person's holds. A graph with a `land` judges it as its `content.holds` step.
         var unlanded = choice.Gate?.Process?.JudgesHolds == false ? null : await trees.UnlandedHereAsync(entry.Tree, ct).ConfigureAwait(false);
         if (unlanded == 0)
         {

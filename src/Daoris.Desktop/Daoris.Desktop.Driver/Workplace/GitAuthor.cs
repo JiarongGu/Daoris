@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The name and email a commit carries (GITAUTH1c, D198 point 5; the git-auth design §3.6): a commit made in a session's tree, or by
+/// The name and email a commit carries: a commit made in a session's tree, or by
 /// Daoris in the repository (a squash's commit), carries the <c>commitsAs</c> of the identity its repository's <c>origin</c> resolves
 /// to, only where the repository's own configuration (its local and worktree scopes) names no <c>user.name</c> and no
 /// <c>user.email</c>. A repository that names its author keeps it; an identity with no <c>commitsAs</c>, <c>own</c>, or no identity

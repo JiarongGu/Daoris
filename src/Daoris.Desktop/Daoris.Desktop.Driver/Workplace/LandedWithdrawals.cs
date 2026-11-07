@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What one withdrawal of a landing's branch did, or with <see cref="Planned"/> would do, in the driver's words (LANDRETIRE1).
+/// What one withdrawal of a landing's branch did, or with <see cref="Planned"/> would do, in the driver's words.
 /// </summary>
 /// <param name="Done">The branch was taken away and its record says why.</param>
 /// <param name="Message">The sentence both doors say.</param>
@@ -15,8 +15,7 @@ public sealed record LandedWithdrawal(bool Done, string Message)
 }
 
 /// <summary>
-/// The act that withdraws a branch a landing made, whose work the person or the steward says the line will never take (LANDRETIRE1, amending
-/// D102's note on the clean-up of landing branches): the one way past the clean-up, which keeps a branch whose files still differ on the
+/// The act that withdraws a branch a landing made, whose work the person or the steward says the line will never take: the one way past the clean-up, which keeps a branch whose files still differ on the
 /// line for ever. Over the trees' context, the content proof's keep and delete, and the clean-up's judgement of each recorded branch.
 /// Beside <see cref="LandedCleanups.CleanLandedAsync"/>, which removes what the line holds with proof; this removes what it does not,
 /// on a word, and keeps a way back.
@@ -60,7 +59,7 @@ internal sealed class LandedWithdrawals(TreeContext context, ContentHolds conten
                 + "and a branch of yours is never.");
         }
 
-        // One look at the checkout's line (UIFREEZE1), as the clean-up's judgement takes.
+        // One look at the checkout's line, as the clean-up's judgement takes.
         using var look = context.OneLook();
         if (await JudgeAsync(root, repository, entry, ct).ConfigureAwait(false) is not { } judged)
         {
@@ -79,7 +78,7 @@ internal sealed class LandedWithdrawals(TreeContext context, ContentHolds conten
             { Planned = true };
         }
 
-        // Judged again, right before it goes (D88): the list is a fact about a moment.
+        // Judged again, right before it goes: the list is a fact about a moment.
         var now = await JudgeAsync(root, repository, entry, ct).ConfigureAwait(false);
         if (now is null || now.Tip != judged.Tip || Refusal(repository, entry, now) is not null) return new(false, $"`{branch}`: {ChangedSince}.");
 

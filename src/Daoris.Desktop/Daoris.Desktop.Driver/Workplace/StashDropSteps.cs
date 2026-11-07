@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The step of a stash Drop (GITAPP2, D204; the git-writes design §8): one <c>stash drop</c> of the entry whose commit is the id asked, found
+/// The step of a stash Drop: one <c>stash drop</c> of the entry whose commit is the id asked, found
 /// on the shared list at the moment it runs. The stash reflog is beyond any checkout lock, so the entry's place is never trusted from the
 /// plan: git names the commit it dropped, and where that is not the commit asked the entry is stored again at once and the step says so.
 /// What it did is read from the list, never from the exit code.

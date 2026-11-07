@@ -3,7 +3,7 @@ using static Daoris.Driver.TreeGit;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The proof a landed branch's work reached the line (WSR5, D102; PART10l, out of <c>SessionTrees.Landed.cs</c>): the line's forms
+/// The proof a landed branch's work reached the line (out of <c>SessionTrees.Landed.cs</c>): the line's forms
 /// this checkout has, the proof by content against them, and the reads of git every landing class shares. Static, since none of it
 /// reads the trees' context: the clean-up, the pull request's asks, the content proof, the hand-off, the squash, the sync's judging
 /// and the landed review name it by this class.
@@ -11,13 +11,13 @@ namespace Daoris.Driver;
 internal static class LandedProofs
 {
     /// <summary>
-    /// One form of the line (D86) this checkout has: its name as a person reads it (<c>main</c>, <c>origin/main</c>), and the
-    /// reference git is asked by. Never the short name to git (AUTOTIDY1): git reads a tag of that name before the branch.
+    /// One form of the line this checkout has: its name as a person reads it (<c>main</c>, <c>origin/main</c>), and the
+    /// reference git is asked by. Never the short name to git: git reads a tag of that name before the branch.
     /// </summary>
     internal sealed record LineForm(string Name, string Ref)
     {
         /// <summary>
-        /// The commit it was read at, where <see cref="LineFormsAsync"/> read it (FABRIC-END4a, third review): what every proof over it compares
+        /// The commit it was read at, where <see cref="LineFormsAsync"/> read it: what every proof over it compares
         /// with, and what a removal by such a proof verifies, so the commit verified is the commit proved. Null for a form a caller named.
         /// </summary>
         internal string? At { get; init; }
@@ -34,7 +34,7 @@ internal static class LandedProofs
     internal sealed record Proof(string Kind, string? Where, IReadOnlyList<string> Files, string? Detail, int Commits, bool Judgeable)
     {
         /// <summary>
-        /// What a removal by it rests on (FABRIC-END4a, third review): the form of the line it found the work on, at the commit it compared.
+        /// What a removal by it rests on (third review): the form of the line it found the work on, at the commit it compared.
         /// Empty where it found none, or where the form was a caller's, read at no commit.
         /// </summary>
         internal IReadOnlyList<(string Ref, string Commit)> Rests { get; init; } = [];
@@ -45,12 +45,12 @@ internal static class LandedProofs
 
     /// <summary>The landing's own branches of one repository the record holds, standing or not.</summary>
     internal static List<LandedBranch> EntriesOf(IReadOnlyList<LandedBranch> record, string repository) =>
-        // A pattern under `daoris/` would make a session branch's name, which D88 already judges.
+        // A pattern under `daoris/` would make a session branch's name, which the session branches' own judgement already covers.
         [.. record.Where(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
                                   && !entry.Branch.StartsWith("daoris/", StringComparison.Ordinal))];
 
     /// <summary>The session branches (<c>daoris/…</c>) this checkout holds, by their short names; none where git could not say.</summary>
-    /// <param name="refs">The judgement's refs (PROC1d-ii), where it holds them; null asks git.</param>
+    /// <param name="refs">The judgement's refs, where it holds them; null asks git.</param>
     internal static async Task<IReadOnlyList<string>> SessionBranchesAsync(string root, CancellationToken ct, RefSnapshot? refs = null)
     {
         if (refs is not null && await refs.BranchesAsync(TreeFollows.SessionPrefix, ct).ConfigureAwait(false) is { } held) return held;
@@ -60,15 +60,15 @@ internal static class LandedProofs
     }
 
     /// <summary>
-    /// The line in both its forms (D86) that this checkout has: its own branch, and origin's copy — a
+    /// The line in both its forms that this checkout has: its own branch, and origin's copy — a
     /// platform's squash merge reaches the second before anyone pulls it into the first.
     /// </summary>
-    /// <param name="refs">The judgement's refs (PROC1d-ii), where it holds them; null asks git.</param>
+    /// <param name="refs">The judgement's refs, where it holds them; null asks git.</param>
     internal static async Task<IReadOnlyList<LineForm>> LineFormsAsync(string root, string? line, CancellationToken ct, RefSnapshot? refs = null) =>
         (await ReadLineFormsAsync(root, line, ct, refs).ConfigureAwait(false)).Forms;
 
     /// <summary>
-    /// <see cref="LineFormsAsync"/> with what it could not read (PROOF-UNREAD1): git's exit 1 from <c>rev-parse --verify --quiet</c> is
+    /// <see cref="LineFormsAsync"/> with what it could not read: git's exit 1 from <c>rev-parse --verify --quiet</c> is
     /// "there is no such ref", and any other failure (git missing, a timeout, a repository it cannot open) is a read that was not
     /// made, which must not read as a line with no forms.
     /// </summary>
@@ -80,7 +80,7 @@ internal static class LandedProofs
         if (line is null) return (forms, null);
         foreach (var (reference, name) in new[] { ($"refs/heads/{line}", line), ($"refs/remotes/origin/{line}", $"origin/{line}") })
         {
-            // FABRIC-END4a, third review: the commit is read with the form, so a proof compares with it and a removal verifies it.
+            // The commit is read with the form, so a proof compares with it and a removal verifies it.
             bool? there = null;
             string? at = null;
             if (refs is not null && await refs.CommitAsync(reference, ct).ConfigureAwait(false) is { Known: true } read)
@@ -101,12 +101,12 @@ internal static class LandedProofs
         return (forms, unread);
     }
 
-    /// <summary>The form a <c>rev-parse --verify --quiet</c> of its commit read (GITAPP1a-ii: Review's graph reads it too): none where git did not answer 0.</summary>
+    /// <summary>The form a <c>rev-parse --verify --quiet</c> of its commit read (Review's graph reads it too): none where git did not answer 0.</summary>
     internal static LineForm? FormOf(string name, string reference, int code, string sha) =>
         code == 0 ? new LineForm(name, reference) { At = sha.Trim() } : null;
 
     /// <summary>
-    /// The proof by content (WSR5): the files the branch changed since it left the line — both paths of a
+    /// The proof by content: the files the branch changed since it left the line — both paths of a
     /// rename, and a deletion as a path the line must not hold — compared as blobs with the line, in each of
     /// its forms. A commit of it the line holds already is merged, which needs no content.
     /// </summary>
@@ -119,7 +119,7 @@ internal static class LandedProofs
                 : $"there is no `{line}` here, nor `origin/{line}`, to compare it with", 0, false);
         }
 
-        // FABRIC-END4a, third review: each form is asked at the commit it was read at (Rev), never by its live name, and the proof names
+        // Each form is asked at the commit it was read at (Rev), never by its live name, and the proof names
         // that form and commit as what a removal by it rests on.
         foreach (var form in forms)
         {
@@ -170,7 +170,7 @@ internal static class LandedProofs
 
     /// <summary>The paths that differ between two commits, as git names them with renames split into their two paths; null where git could not say.</summary>
     /// <remarks>
-    /// <c>--ignore-submodules=none</c> (SQUASHTIDY1c): <c>diff.ignoreSubmodules</c>, or a submodule's own <c>ignore</c> in its
+    /// <c>--ignore-submodules=none</c>: <c>diff.ignoreSubmodules</c>, or a submodule's own <c>ignore</c> in its
     /// configuration, hides a gitlink's change from porcelain <c>git diff</c>, and a proof that cannot see a path calls it the same.
     /// </remarks>
     internal static async Task<IReadOnlyList<string>?> NamesAsync(string root, string from, string to, CancellationToken ct)
@@ -180,8 +180,8 @@ internal static class LandedProofs
         return code != 0 ? null : output.Split('\0', StringSplitOptions.RemoveEmptyEntries);
     }
 
-    /// <summary>The landed branch's tip where it stands holding the commit the landing recorded (D102's rule), else null.</summary>
-    /// <param name="refs">The judgement's refs (PROC1d-ii), where it holds them; null asks git.</param>
+    /// <summary>The landed branch's tip where it stands holding the commit the landing recorded, else null.</summary>
+    /// <param name="refs">The judgement's refs, where it holds them; null asks git.</param>
     internal static async Task<string?> StandingTipAsync(string root, LandedBranch entry, CancellationToken ct, RefSnapshot? refs = null)
     {
         if (await TreeRefs.CommitOfAsync(root, $"refs/heads/{entry.Branch}", ct, refs).ConfigureAwait(false) is not { } tip) return null;

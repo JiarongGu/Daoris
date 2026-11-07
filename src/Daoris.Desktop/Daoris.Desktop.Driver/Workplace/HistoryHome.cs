@@ -3,13 +3,13 @@ using static Daoris.Driver.HistoryClearing;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the home keeps of finished work, read and tidied (HIST1c; the history-clearing design §2.2–§2.4, §5 step 4): the
+/// What the home keeps of finished work, read and tidied (the history-clearing design §2.2–§2.4): the
 /// kept files' sizes, a workspace's reading, the left-over files of records no store has any more, and the files that name a
-/// cleared record. <see cref="HistoryClearing"/> plans and clears; this reads the home's folders for it (PART9).
+/// cleared record. <see cref="HistoryClearing"/> plans and clears; this reads the home's folders for it.
 /// </summary>
 internal static class HistoryHome
 {
-    /// <summary>The service's folders of kept files under the home, a quest's and an ask's (D65 §1a), each <c>&lt;id&gt;/</c>.</summary>
+    /// <summary>The service's folders of kept files under the home, a quest's and an ask's, each <c>&lt;id&gt;/</c>.</summary>
     internal const string QuestFolder = "quests";
     internal const string AskFolder = "asks";
 
@@ -26,7 +26,7 @@ internal static class HistoryHome
         return new HistoryBytes(0, 0, 0, kept, 0);
     }
 
-    /// <summary>The runs among these quests that are bound here: a run's id is its chain's first quest, and its binding goes with that quest (WORKFLOW1e3).</summary>
+    /// <summary>The runs among these quests that are bound here: a run's id is its chain's first quest, and its binding goes with that quest.</summary>
     internal static IReadOnlyList<string> BoundRuns(string home, IEnumerable<string> quests) =>
         [.. quests.Where(quest => WorkplaceRunFiles.Bound(home, quest)).Distinct(StringComparer.Ordinal)];
 
@@ -41,7 +41,7 @@ internal static class HistoryHome
     private static bool Closed(AskView ask) => Is(ask.State, "Closed") || Is(ask.State, "Done");
 
     /// <summary>
-    /// A workspace's reading (§2.4): its closed quests and asks, their sessions and what they take on the disk, what a clear
+    /// A workspace's reading: its closed quests and asks, their sessions and what they take on the disk, what a clear
     /// would take now, what is kept and why, its conversations that served no quest, and the whole home's left-over files and
     /// log. Counts and bytes, never a path or a title.
     /// </summary>
@@ -91,11 +91,11 @@ internal static class HistoryHome
         };
     }
 
-    /// <summary>A file or folder of a record no store has any more (§2.3).</summary>
+    /// <summary>A file or folder of a record no store has any more.</summary>
     private sealed record LeftOverFile(string Path, bool Folder, long Bytes);
 
     /// <summary>
-    /// The home's left-over files (§2.3): a file under <c>sessions/</c>, <c>spawn/</c>, <c>quests/</c> or <c>asks/</c> whose id
+    /// The home's left-over files: a file under <c>sessions/</c>, <c>spawn/</c>, <c>quests/</c> or <c>asks/</c> whose id
     /// no record, quest or ask holds, which no process here runs, and which nothing touched for an hour. Only names a session's
     /// own files carry are read, so a file Daoris did not write is never one; it names no workspace, so every workspace's
     /// clear takes it.
@@ -126,8 +126,8 @@ internal static class HistoryHome
             if (!string.Equals(id, RequestsFolder, StringComparison.OrdinalIgnoreCase) && Gone(id)) Add(folder, folder: true);
         }
 
-        // A session's kept files and its process's marker have places of their own since HOMELAYOUT3 (`work/files/sessions/`,
-        // `run/sessions/`): read there too, where a home made after the switch keeps them.
+        // A session's kept files and its process's marker have places of their own (`work/files/sessions/`,
+        // `run/sessions/`): read there too, where the home keeps them there.
         foreach (var folder in DaorisHome.Places(world.Home, HomeEntry.SessionFiles).Take(1).Where(place => !SamePlace(place, sessions)).SelectMany(Folders))
         {
             if (Gone(Path.GetFileName(folder))) Add(folder, folder: true);
@@ -155,8 +155,8 @@ internal static class HistoryHome
             if (Plain(id) && !asks.Contains(id)) Add(folder, folder: true);
         }
 
-        // A run's binding no quest here holds any more (WORKFLOW1e3): a hand purge or an earlier clear left it. A chat run's is held by the
-        // record its key names, not by a quest (CHATFLOW1c, the chat-flow design §4.3), and kept while that record stands.
+        // A run's binding no quest here holds any more: a hand purge or an earlier clear left it. A chat run's is held by the
+        // record its key names, not by a quest, and kept while that record stands.
         foreach (var file in Files(WorkplaceRunFiles.RunsFolder(world.Home)))
         {
             var run = Path.GetFileNameWithoutExtension(file);
@@ -167,7 +167,7 @@ internal static class HistoryHome
             }
         }
 
-        // A chat run's opinion gate and look (CHATFLOW1c) whose record is gone; a chain's gate file is its quest's, which this leaves.
+        // A chat run's opinion gate and look whose record is gone; a chain's gate file is its quest's, which this leaves.
         foreach (var file in Files(WorkplaceRunFiles.GatesFolder(world.Home)).Concat(Files(WorkplaceRunFiles.LooksFolder(world.Home)))
                      .Concat(Files(WorkplaceRunFiles.CandidatesFolder(world.Home))))
         {
@@ -178,7 +178,7 @@ internal static class HistoryHome
             }
         }
 
-        // A verification run no later run makes needed (the pipeline design §4.3): no quest holds one, so it is read from the runs themselves.
+        // A verification run no later run makes needed: no quest holds one, so it is read from the runs themselves.
         foreach (var (path, folder) in WorkplaceLandedRuns.Current.Left(world.Home)) Add(path, folder);
 
         return found;
@@ -238,8 +238,8 @@ internal static class HistoryHome
     }
 
     /// <summary>
-    /// A workspace's clear takes the home's left-over files (§2.3, §5 step 4): how many went and the bytes that went, through the
-    /// helper that measures as it removes (HIST1j), so one the disk keeps is failed and counts only what it let go of.
+    /// A workspace's clear takes the home's left-over files: how many went and the bytes that went, through the
+    /// helper that measures as it removes, so one the disk keeps is failed and counts only what it let go of.
     /// </summary>
     internal static (int Count, long Bytes) RemoveLeftOver(HistoryWorld world, Facts after, Machine machine, List<string> failed)
     {
@@ -256,8 +256,8 @@ internal static class HistoryHome
     }
 
     /// <summary>
-    /// A workspace's clear that leaves it no ask takes its intake's room (§2.2): one room per workspace, rendered again at the
-    /// next intake's open. A workspace that keeps an ask keeps its room. Only the bytes that went are counted (HIST1j).
+    /// A workspace's clear that leaves it no ask takes its intake's room: one room per workspace, rendered again at the
+    /// next intake's open. A workspace that keeps an ask keeps its room. Only the bytes that went are counted.
     /// </summary>
     internal static (bool Went, long Bytes) RemoveRoom(HistoryWorld world, string workspace, Facts after, SessionHomeFiles files, List<string> failed) =>
         after.Asks.Any(ask => Here(ask.Workspace, workspace))
@@ -265,7 +265,7 @@ internal static class HistoryHome
             : files.Take(IntakeRoomPaths.PathOf(world.Home, workspace), folder: true, failed);
 
     /// <summary>
-    /// What names a cleared record, tidied (§5 step 4, §4): an empty folder a cleared session's tree left and its empty parents,
+    /// What names a cleared record, tidied: an empty folder a cleared session's tree left and its empty parents,
     /// a landing's trace, an abandon's entry, and <c>driver.json</c>'s entries for a cleared quest or ask. A workspace's clear
     /// also takes the traces and entries that name records no store has any more, as it takes their files. Never a standing
     /// landing, a tree with anything in it, or a setting.
@@ -301,7 +301,7 @@ internal static class HistoryHome
 
     /// <summary>
     /// <c>driver.json</c>'s entries for each cleared quest (its restart mark, its release, its admission, its own pause) and each cleared ask
-    /// (its pause), as abandon's step 7 tidies a closed quest's (§4); a failed-sessions clear keeps its quest, so its entries
+    /// (its pause), as abandon's step 7 tidies a closed quest's; a failed-sessions clear keeps its quest, so its entries
     /// stay. A workspace's clear also drops the entries for quests and asks no store holds, as a hand purge left them.
     /// </summary>
     private static void Config(HistoryWorld world, HistoryScope scope, IReadOnlyList<HistoryUnitPlan> cleared, Facts? after)
@@ -309,7 +309,7 @@ internal static class HistoryHome
         var config = DriverConfig.Load(world.ConfigPath);
         var quests = cleared.Where(unit => unit.Kind != HistoryKinds.Failed).SelectMany(unit => unit.Quests).ToList();
         var asks = cleared.SelectMany(unit => unit.Asks).ToList();
-        // A quest held on another agent (MIXAGENT1a-ii) is held by a store of its own, which goes with the quest's work.
+        // A quest held on another agent is held by a store of its own, which goes with the quest's work.
         var handed = WorkplaceHandedQuests.Current.Open(world.Home);
         if (scope == HistoryScope.Workspace && after is not null)
         {
@@ -338,7 +338,7 @@ internal static class HistoryHome
     }
 
     /// <summary>
-    /// An empty folder a cleared session's tree left under the trees home (§2.2), removed with each empty parent it leaves up
+    /// An empty folder a cleared session's tree left under the trees home, removed with each empty parent it leaves up
     /// to the trees home itself, which nothing removed before. A folder with anything in it is never touched: it is a tree, and
     /// the clear refused it before.
     /// </summary>

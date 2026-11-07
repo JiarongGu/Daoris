@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A line's epoch (LANDNODE1g; the land node design §5): the resolved shared policy a request was admitted under, plus the blob of the
+/// A line's epoch: the resolved shared policy a request was admitted under, plus the blob of the
 /// declaration the owner had accepted then. The unit's own <c>request</c> and <c>conflicts</c> are left out, since they say who asked and where a
 /// conflict goes, never how the line is integrated. Requests and candidates keep it as one text; two units batch only where their texts are equal.
 /// A record written before epochs has none, and reads as its own epoch: it batches alone and promotes under the configuration as it stands.

@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The home's one run of removals at a time (CLEANUP1, D195 point 4; the cleanup design §3.1): every removal of a kept kind, the look's
+/// The home's one run of removals at a time: every removal of a kept kind, the look's
 /// pass, a press's run or a terminal's alone, runs holding <c>locks/keeping</c>, so two never remove beside each other.
 /// </summary>
 /// <remarks>
@@ -14,20 +14,20 @@ namespace Daoris.Driver;
 /// <para><b>Its holder named</b>: the holder writes <c>{ pid, since, door }</c> to a file of its own beside it,
 /// <c>locks/keeping.holder</c>, as the keep lock writes its own (<see cref="KeepLock"/>), and removes it at the run's end, while it still
 /// says what this holder wrote. A refusal names the holder; a holder's file whose process is gone is a run a crash cut short (Fable F3.3),
-/// which the card says (KEEP1c).</para>
+/// which the card says.</para>
 /// </remarks>
 public sealed class KeepingRun : IDisposable
 {
     /// <summary>The look's pass, in the tidy's task.</summary>
     public const string Look = "look";
 
-    /// <summary>The free-space floor's acts (KEEP1f).</summary>
+    /// <summary>The free-space floor's acts.</summary>
     public const string Floor = "floor";
 
-    /// <summary>The person's press in the window (KEEP1e).</summary>
+    /// <summary>The person's press in the window.</summary>
     public const string Press = "press";
 
-    /// <summary>A terminal acting alone (KEEP1e).</summary>
+    /// <summary>A terminal acting alone.</summary>
     public const string Terminal = "terminal";
 
     private const string Moment = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";

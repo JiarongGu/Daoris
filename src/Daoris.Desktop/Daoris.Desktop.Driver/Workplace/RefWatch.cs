@@ -13,7 +13,7 @@ public sealed record RefRepository(string Repository, string Workspace, string R
 public sealed record RefMove(string Home, string Repository, string? Workspace, string? Root);
 
 /// <summary>
-/// Daoris's own ref moves (FABRIC-END3, the design §B4): a tree opened, <i>Accept</i> and the tidy's removals each say their repository
+/// Daoris's own ref moves: a tree opened, <i>Accept</i> and the tidy's removals each say their repository
 /// here once git is done, and the home's <see cref="RefWatch"/> judges it at once rather than after its watcher's quiet window. Where
 /// no watch of that home listens (a verb alone, a test), nothing hears it, and the next look's tidy judges the repository as before.
 /// </summary>
@@ -73,7 +73,7 @@ public static class RefMoves
 }
 
 /// <summary>
-/// The ref watch (FABRIC-END3, the design §A4.1 and §B4, link 1 of §C6): one <see cref="ChangeWatch"/> root on the common git dir of each
+/// The ref watch (§B4, link 1 of §C6): one <see cref="ChangeWatch"/> root on the common git dir of each
 /// repository holding Daoris's work, never one per tree, whose hint makes that repository's end judgement due. The judge keeps what the
 /// line holds (<see cref="EndKeeping"/>, through <see cref="SessionTrees.KeepEndsAsync"/>): a fact link, which emits only where a
 /// <see cref="HeldFact"/> was written.
@@ -103,10 +103,10 @@ public static class RefMoves
 /// </remarks>
 public sealed class RefWatch : IAsyncDisposable
 {
-    /// <summary>The <c>refs</c> topic's deadline: the tidy's pace, whose pass is the reconciliation (§B4, §C5).</summary>
+    /// <summary>The <c>refs</c> topic's deadline: the tidy's pace, whose pass is the reconciliation.</summary>
     public static readonly TimeSpan Deadline = BranchTidying.DefaultPace;
 
-    /// <summary>How many repositories are judged at once: two, under PROC1a's measured four process starts at once (§A3).</summary>
+    /// <summary>How many repositories are judged at once: two, under the measured four process starts at once.</summary>
     public const int AtOnce = 2;
 
     private readonly string _home;
@@ -117,7 +117,7 @@ public sealed class RefWatch : IAsyncDisposable
     private readonly object _gate = new();
     private readonly Dictionary<string, RefRepository> _watched = new(StringComparer.OrdinalIgnoreCase);
 
-    // OWNMOVES1: the repositories Daoris's own move made due, until the judgement that takes them up tells Heard so. The chain's event
+    // The repositories Daoris's own move made due, until the judgement that takes them up tells Heard so. The chain's event
     // names a subject alone, so the move's own word travels here, under the gate, beside it.
     private readonly HashSet<string> _mine = new(StringComparer.OrdinalIgnoreCase);
     private IDisposable? _listening;
@@ -128,7 +128,7 @@ public sealed class RefWatch : IAsyncDisposable
     /// <param name="source">What watches the folders: the machine's watchers unless a test hands its fake.</param>
     /// <param name="clock">What time it is; the system's unless a test hands its own.</param>
     /// <param name="tidy">
-    /// Link 2, the look's tidy as an effect (FABRIC-END4a), bound on this chain beside link 1, so a <c>work.held</c> it emits tries that
+    /// Link 2, the look's tidy as an effect, bound on this chain beside link 1, so a <c>work.held</c> it emits tries that
     /// repository's tidy in the same wake; null leaves the row unbound.
     /// </param>
     public RefWatch(
@@ -155,8 +155,8 @@ public sealed class RefWatch : IAsyncDisposable
 
     /// <summary>The driver's: the registry's repositories holding Daoris's work (<see cref="RepositoriesAsync"/>), judged by the end keeper.</summary>
     /// <param name="heard">
-    /// Told each repository judged, and whether Daoris's own move asked for it (<see cref="Heard"/>): the landing's wake (FABRIC-END7)
-    /// and the machine's facts (OWNMOVES1).
+    /// Told each repository judged, and whether Daoris's own move asked for it (<see cref="Heard"/>): the landing's wake
+    /// and the machine's facts.
     /// </param>
     public static RefWatch ForDriver(
         string home, Func<CancellationToken, Task<IReadOnlyList<RepoView>>> registry, TimeSpan? every = null, IChangeSource? source = null,
@@ -174,10 +174,10 @@ public sealed class RefWatch : IAsyncDisposable
         };
 
     /// <summary>
-    /// Told each repository a hint, Daoris's own move or a root's recovery judges, before its ends are kept (FABRIC-END7): the landing's
+    /// Told each repository a hint, Daoris's own move or a root's recovery judges, before its ends are kept: the landing's
     /// wake, which looks at the due entries of that repository alone (<see cref="LandingWakes.Moved"/>). Never told at a deadline.
     /// The second argument says whether Daoris's own move (<see cref="RefMoves.Mine"/>) asked for the judgement, the watcher's echo
-    /// taken up with it (OWNMOVES1): the machine's facts judge that repository past their rest then, and a hint keeps it.
+    /// taken up with it: the machine's facts judge that repository past their rest then, and a hint keeps it.
     /// </summary>
     public Action<string, bool>? Heard { get; init; }
 
@@ -365,8 +365,8 @@ public sealed class RefWatch : IAsyncDisposable
 
             if (repository is null) continue;
             Heard?.Invoke(repository.Repository, mine);
-            PullRequestMoments.Moved(_home, repository); // FABRIC-END6: origin's line may have moved, link 6's moment.
-            RegistryFollowing.Heard(_home, repository); // SETUPSTATE1: and its own line, moved outside Daoris, is the registry's to follow.
+            PullRequestMoments.Moved(_home, repository); // origin's line may have moved.
+            RegistryFollowing.Heard(_home, repository); // and its own line, moved outside Daoris, is the registry's to follow.
             var written = await _keep(repository, ct).ConfigureAwait(false);
             if (written <= 0) continue;
             acted += written;

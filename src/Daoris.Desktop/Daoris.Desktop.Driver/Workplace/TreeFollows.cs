@@ -3,11 +3,10 @@ using static Daoris.Driver.TreeGit;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A tree its agent moved onto a branch of its own is followed (TREEFOLLOW1, D164 point 4; PART10l, out of
-/// <c>SessionTrees.Follow.cs</c>): the agent ran <c>git checkout -b feature/…</c> in its tree and committed there, as its
+/// A tree its agent moved onto a branch of its own is followed: the agent ran <c>git checkout -b feature/…</c> in its tree and committed there, as its
 /// repository's own rules ask, so the session branch the layout names (<c>daoris/&lt;tree folder&gt;</c>) holds nothing and the
 /// work is on a branch the layout never heard of. The tree's branch is learned from the tree, never assumed from its folder's
-/// name. With the layout's own answer (<see cref="BranchOfTree"/>, <see cref="FindBranches"/>) and D88's count of what no branch
+/// name. With the layout's own answer (<see cref="BranchOfTree"/>, <see cref="FindBranches"/>) and the count of what no branch
 /// of the person's holds (<see cref="UnlandedAsync"/>), which every other landing class reads.
 /// </summary>
 internal sealed class TreeFollows(TreeContext context)
@@ -48,10 +47,10 @@ internal sealed class TreeFollows(TreeContext context)
         await UnlandedAsync(tree, revision, ct, await OwnBranchOfAsync(tree, ct).ConfigureAwait(false)).ConfigureAwait(false);
 
     /// <summary>
-    /// How many commits on <paramref name="revision"/> no branch of the person's holds (D88) — a local
+    /// How many commits on <paramref name="revision"/> no branch of the person's holds — a local
     /// branch outside <c>daoris/</c>, or a remote-tracking one. Zero is landed; null is git unable to say.
     /// </summary>
-    /// <param name="except">A local branch not counted as holding them (TREEFOLLOW1): the tree's own branch, which holds its own commits.</param>
+    /// <param name="except">A local branch not counted as holding them: the tree's own branch, which holds its own commits.</param>
     internal static async Task<int?> UnlandedAsync(string cwd, string revision, CancellationToken ct = default, string? except = null)
     {
         var (code, log, _) = await UnlandedLogAsync(cwd, revision, ct, except).ConfigureAwait(false);
@@ -79,23 +78,23 @@ internal sealed class TreeFollows(TreeContext context)
             return await OwnBranchOfAsync(tree, ct).ConfigureAwait(false) ?? layout.Branch;
         }
 
-        // A removed branch's trace keeps where its tree went (FABRIC-END4a, second review), so it is still known once the tree is gone.
+        // A removed branch's trace keeps where its tree went, so it is still known once the tree is gone.
         return context.Grown.Following(layout.Repository, layout.Branch)?.Now ?? layout.Branch;
     }
 
     /// <summary>
-    /// The look learns where each session tree of this repository is (TREEFOLLOW1): a tree on a branch other than the layout's has
+    /// The look learns where each session tree of this repository is: a tree on a branch other than the layout's has
     /// it written on its session branch's ledger entry, so it is known after the tree goes, and one that came back has it cleared.
     /// Reads each tree and writes only that field; an entry the ledger has none for is left, as the tree's work is judged live.
     /// </summary>
     /// <param name="root">The repository's checkout, whose working trees git lists with each one's branch.</param>
     /// <param name="refs">
-    /// The judgement's refs (PROC1d-iii): each tree's branch is read from the one list of the repository's working trees they hold,
+    /// The judgement's refs: each tree's branch is read from the one list of the repository's working trees they hold,
     /// where asking each tree was a git start per tree at every look. A tree the list does not name is asked on its own.
     /// </param>
     internal async Task LearnTreesAsync(string workspace, string repository, CancellationToken ct, string? root = null, RefSnapshot? refs = null)
     {
-        // Both places of the trees (TREEPLACE1): a tree opened before the home's layout moved stays at the old.
+        // Both places of the trees: a tree opened before the home's layout moved stays at its first place.
         var folders = context.TreesRoots.Select(trees => Path.Combine(trees, workspace, repository)).Where(Directory.Exists).ToList();
         if (folders.Count == 0) return;
         var listed = root is null || refs is null ? null : await TreeWorktrees.EntriesAsync(root, ct, refs).ConfigureAwait(false);
@@ -106,7 +105,7 @@ internal sealed class TreeFollows(TreeContext context)
                 // A linked tree's `.git` is a file; a folder with none is a leftover, which git would answer for the repository above.
                 if (!File.Exists(Path.Combine(tree, ".git"))) continue;
                 var layout = SessionPrefix + Path.GetFileName(tree);
-                // The standing entry, else the trace the tidy left of a removed branch whose tree lives on (FABRIC-END4a, second review).
+                // The standing entry, else the trace the tidy left of a removed branch whose tree lives on.
                 if (context.Grown.Following(repository, layout) is not { } entry) continue;
                 string? now;
                 try
@@ -135,7 +134,7 @@ internal sealed class TreeFollows(TreeContext context)
     }
 
     /// <summary>
-    /// The branch a session branch's tree is on where the tree moved off it (TREEFOLLOW1): git lists a tree at that folder, on a
+    /// The branch a session branch's tree is on where the tree moved off it: git lists a tree at that folder, on a
     /// branch other than this one. Null where the tree is on this branch, detached, or not listed.
     /// </summary>
     internal string? MovedOnTo(IReadOnlyList<WorktreeEntry> entries, string workspace, string repository, string branch)

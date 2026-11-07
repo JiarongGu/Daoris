@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One request to integrate a branch into its repository's line (INTEGRATE1e part e1; the integration design §4.6): the requester, the rule
+/// One request to integrate a branch into its repository's line: the requester, the rule
 /// and its policy as they stood, and the frozen tip. A recorded landing's carries the unit, session and quest its record binds it to and the
 /// gate proof the record keeps; a records branch's carries none of them, since it is no unit's and no run's. Kept as a row of the desktop
-/// store's <c>integration_requests</c> (part e2, <see cref="IntegrationStore"/>), one open per repository and branch.
+/// store's <c>integration_requests</c> (<see cref="IntegrationStore"/>), one open per repository and branch.
 /// </summary>
 /// <param name="Id">The request's own id.</param>
 /// <param name="Tip">The frozen tip: the commit the request integrates, and nothing made after it (C11).</param>
@@ -46,7 +46,7 @@ public sealed record IntegrationRequest(
     /// </summary>
     public string? Epoch { get; init; }
 
-    /// <summary>Its place in its line's queue as an <c>order</c> set it (INTEGRATE1h): below zero before the arrivals, above after; null by arrival.</summary>
+    /// <summary>Its place in its line's queue as an <c>order</c> set it: below zero before the arrivals, above after; null by arrival.</summary>
     public long? Order { get; init; }
 
     /// <summary>Where an <c>order</c> moved it (<see cref="IntegrationOrders"/>); null where it stands by arrival.</summary>
@@ -54,7 +54,7 @@ public sealed record IntegrationRequest(
 }
 
 /// <summary>
-/// The gate proof a recorded landing carries into its request (§4.6): who accepted the tip, and the review, the second opinion and the named
+/// The gate proof a recorded landing carries into its request: who accepted the tip, and the review, the second opinion and the named
 /// workflow version that let it go, each as the record holds it, null where it holds none.
 /// </summary>
 /// <param name="AcceptedBy">One of <see cref="Daoris.Driver.AcceptedBy"/>.</param>
@@ -67,7 +67,7 @@ public sealed record IntegrationProof(string AcceptedBy)
     public LandingWorkflow? Workflow { get; init; }
 }
 
-/// <summary>Who asks (§4.6): the person and their door, Daoris at its sweep, or the steward with its act's id and appointment generation.</summary>
+/// <summary>Who asks: the person and their door, Daoris at its sweep, or the steward with its act's id and appointment generation.</summary>
 /// <param name="Kind"><see cref="Person"/>, <see cref="Daoris"/> or <see cref="Steward"/>.</param>
 /// <param name="Door">One of <see cref="IntegrationDoors"/>.</param>
 public sealed record IntegrationRequester(string Kind, string Door)
@@ -82,7 +82,7 @@ public sealed record IntegrationRequester(string Kind, string Door)
     /// <summary>The generation of the steward's appointment the act was made under; null for every other requester.</summary>
     public long? Generation { get; init; }
 
-    /// <summary>The owner's card, a Person route (D156): a landing named by its branch, or a records branch.</summary>
+    /// <summary>The owner's card, a Person route: a landing named by its branch, or a records branch.</summary>
     public static IntegrationRequester Card { get; } = new(Person, IntegrationDoors.Card);
 
     /// <summary>Daoris's come-up sweep under <c>request: done</c>.</summary>
@@ -91,17 +91,17 @@ public sealed record IntegrationRequester(string Kind, string Door)
     /// <summary>The steward's <c>request</c> act under <c>request: steward</c>.</summary>
     public static IntegrationRequester StewardAct(string act, long generation) => new(Steward, IntegrationDoors.Act) { Act = act, Generation = generation };
 
-    /// <summary>A unit's <c>integrate</c> node's start (INTEGRATE1n part n2): Daoris's, on the landing's own provenance.</summary>
+    /// <summary>A unit's <c>integrate</c> node's start: Daoris's, on the landing's own provenance.</summary>
     public static IntegrationRequester NodeStart { get; } = new(Daoris, IntegrationDoors.Node);
 
-    /// <summary>The person's press under a merge rule (INTEGRATE1g, §4.2's named legacy exception): their Accept or their merge.</summary>
+    /// <summary>The person's press under a merge rule (§4.2's named legacy exception): their Accept or their merge.</summary>
     public static IntegrationRequester Press { get; } = new(Person, IntegrationDoors.Press);
 
     /// <summary>A workflow's <c>land</c> merged by the standing automatic authority, with no press: Daoris's, carried by the transport as a press is.</summary>
     public static IntegrationRequester Landing { get; } = new(Daoris, IntegrationDoors.Landing);
 }
 
-/// <summary>The doors a request comes through (§4.6).</summary>
+/// <summary>The doors a request comes through.</summary>
 public static class IntegrationDoors
 {
     /// <summary>The owner's card: <c>daoris integrate --request</c>, with <c>--landed</c> for a recorded landing (row h).</summary>
@@ -113,21 +113,21 @@ public static class IntegrationDoors
     /// <summary>The steward's act (row i).</summary>
     public const string Act = "act";
 
-    /// <summary>The unit's <c>integrate</c> node's start (INTEGRATE1n part n2).</summary>
+    /// <summary>The unit's <c>integrate</c> node's start.</summary>
     public const string Node = "node";
 
-    /// <summary>The person's press under a merge rule, carried by the transport (INTEGRATE1g).</summary>
+    /// <summary>The person's press under a merge rule, carried by the transport.</summary>
     public const string Press = "press";
 
     /// <summary>A workflow's automatic <c>land</c>, carried by the transport as the press is, with no press of the person's.</summary>
     public const string Landing = "landing";
 }
 
-/// <summary>The routes into the line (§4.6): a unit's own landing by its provenance, a recorded landing, or a records branch.</summary>
+/// <summary>The routes into the line: a unit's own landing by its provenance, a recorded landing, or a records branch.</summary>
 public static class IntegrationRoutes
 {
     /// <summary>
-    /// A unit's own landing (INTEGRATE1n part n2, §17.4): a standing entry the unit's <c>integrate</c> node asks for, at the tip it froze,
+    /// A unit's own landing: a standing entry the unit's <c>integrate</c> node asks for, at the tip it froze,
     /// admitted by the acceptance's provenance the entry keeps, and by its record, exact tip, gate proof and no double as a recorded one.
     /// </summary>
     public const string Node = "node";
@@ -139,7 +139,7 @@ public static class IntegrationRoutes
     public const string Records = "records";
 
     /// <summary>
-    /// A merge rule's press, the named legacy exception (INTEGRATE1g, §4.2): the session's branch at the commit its press merges, under
+    /// A merge rule's press, the named legacy exception: the session's branch at the commit its press merges, under
     /// <see cref="IntegrationRequests.Legacy"/>, merged with today's message and its repository's hooks, and the checkout only fast-forwarded.
     /// </summary>
     public const string Merge = "merge";
@@ -159,7 +159,7 @@ public sealed record IntegrationAsk(string Repository, string? Workspace, string
     public string? Tip { get; init; }
 
     /// <summary>
-    /// The <c>request</c> a version's own <c>integrate</c> step asks with (INTEGRATE1n part n2: the node's option, carried on the node
+    /// The <c>request</c> a version's own <c>integrate</c> step asks with (the node's option, carried on the node
     /// route's ask); null reads the landing's provenance, or the rule's.
     /// </summary>
     public string? Request { get; init; }
@@ -178,7 +178,7 @@ public sealed record IntegrationAdmission(bool Admitted, string Message)
 }
 
 /// <summary>
-/// Why the door refused (§4.6), a code each, kept in Workplace until the note codes take the integration's words (part e2 and on). The
+/// Why the door refused, a code each, kept in Workplace until the note codes take the integration's words (part e2 and on). The
 /// recorded-landing door's four conditions are <see cref="NoRecord"/> and <see cref="NotUnit"/> (its record), <see cref="Moved"/>,
 /// <see cref="Gone"/> and <see cref="Unread"/> (its exact tip), <see cref="NoProof"/> (its gate proof), <see cref="Open"/> and
 /// <see cref="Held"/> (no double).
@@ -227,7 +227,7 @@ public static class IntegrationRefusals
     /// <summary>The line itself, asked as a records branch.</summary>
     public const string IsLine = "line";
 
-    /// <summary>The landing's record says neither that <c>integrate</c> stood at its acceptance nor a <c>request</c> it can read (§17.4).</summary>
+    /// <summary>The landing's record says neither that <c>integrate</c> stood at its acceptance nor a <c>request</c> it can read.</summary>
     public const string NoRequest = "no-request";
 
     /// <summary>An automatic landing under <c>request: owner</c>: its landing is no request, the owner's card is.</summary>

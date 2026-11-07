@@ -16,8 +16,7 @@ public static class LandingNotes
     public static SessionEvent Note(TreeLanding landed) => Press(ChatNoteCodes.LandingPersonAccepted, PersonAccepted, landed.Message);
 
     /// <summary>
-    /// How a note the retired hand-off kept opens. Only read, to know an acceptance note of that time; never written again. It goes with
-    /// the notes of that shape, which G8-CONVERT1 retires.
+    /// How an acceptance note of a hand-off opens. Only read, to know such a note; never written.
     /// </summary>
     public const string PersonHanded = "the person handed this work on:";
 

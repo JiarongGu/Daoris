@@ -4,11 +4,11 @@ using static Daoris.Driver.TreeRefs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Bringing repositories up to date (WSR6, WSR7; PART10j, out of <c>SessionTrees.Sync.cs</c>): which repositories a look or a
+/// Bringing repositories up to date (out of <c>SessionTrees.Sync.cs</c>): which repositories a look or a
 /// press takes, the fetch, the look, and the press over each line's pull, each branch's replay and the landed branches that go.
 /// </summary>
 /// <remarks>
-/// It takes the two landing steps it reads through its constructor (PART10l): the pull request's asks (<c>AskStatesAsync</c>, the
+/// It takes the two landing steps it reads through its constructor: the pull request's asks (<c>AskStatesAsync</c>, the
 /// look's one occasion to ask) and the clean-up (<c>CleanLandedAsync</c>, the press's deletions), and names the landing's
 /// <see cref="LandedProofs.EntriesOf"/> by its class.
 /// </remarks>
@@ -19,30 +19,30 @@ internal sealed class TreeSync(
     internal const string LeftSince = "it changed since the list, and is left as it was";
 
     /// <summary>
-    /// Bringing repositories up to date after a pull request merged (WSR6), listed first: fetch each line from
+    /// Bringing repositories up to date after a pull request merged, listed first: fetch each line from
     /// <c>origin</c> where asked, then say what the press would do — the line's fast-forward, each branch's replay
     /// onto it, and each landed branch whose work reached it. No branch of the person's moves.
     /// </summary>
     /// <param name="fetch">Whether to fetch each line first. A fetch moves only origin's own refs here.</param>
     /// <param name="scope">
-    /// Which repositories to take (WSR7, D112); null for the default, those holding a branch of Daoris's. Every other one
+    /// Which repositories to take; null for the default, those holding a branch of Daoris's. Every other one
     /// comes back in <see cref="SyncPlan.Apart"/>, not fetched and not judged.
     /// </param>
     internal async Task<SyncPlan> SyncPlanAsync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
         bool fetch = true, CancellationToken ct = default, SyncScope? scope = null)
     {
-        // One look (UIFREEZE1, PROC1d-i): git's guess at each checkout's line is asked once, not by each judgement.
+        // One look: git's guess at each checkout's line is asked once, not by each judgement.
         using var look = context.OneLook();
         var busy = new HashSet<string>(inUse.Select(Normal), StringComparer.OrdinalIgnoreCase);
         var lines = new List<LinePull>();
         var rebases = new List<RebaseItem>();
         var deletes = new List<LandedItem>();
         var (looked, apart) = await ScopedAsync(repositories, scope ?? SyncScope.Held, ct).ConfigureAwait(false);
-        // The network first, a few repositories at a time (WSR7); then each judged in turn, from what it fetched.
+        // The network first, a few repositories at a time; then each judged in turn, from what it fetched.
         var fetches = await FetchedAsync(looked, fetch, ct).ConfigureAwait(false);
-        // After its fetch, which is where a merge commit first reaches this machine (D109), the look asks where git cannot tell,
-        // as one occasion over every repository it took (PLUGHOOK1c, design §2.1 occasion 3). The press asks nothing, and a look
+        // After its fetch, which is where a merge commit first reaches this machine, the look asks where git cannot tell,
+        // as one occasion over every repository it took. The press asks nothing, and a look
         // that fetched nothing has nothing new to ask about.
         IReadOnlyList<StateAnswer> asked = fetch
             ? await asks.AskStatesAsync(looked.Select(each => (each.Root, each.Repository, RemoteTarget.Workspace(each.Space))), landedMayGo: true, ct)
@@ -52,7 +52,7 @@ internal sealed class TreeSync(
         {
             var workspace = RemoteTarget.Workspace(space);
             var line = fetched.Line;
-            // The repository's refs read once for its line and its branches (PROC1d-ii), after its fetch; nothing here writes.
+            // The repository's refs read once for its line and its branches, after its fetch; nothing here writes.
             var refs = RefSnapshot.Take(root);
             var (asJudged, _) = await LinePulls.JudgePullAsync(root, repository, workspace, line, fetched.Failed, ct, refs).ConfigureAwait(false);
             var pull = fetched.Onto(asJudged);
@@ -69,7 +69,7 @@ internal sealed class TreeSync(
     }
 
     /// <summary>
-    /// Every repository with a checkout here, and whether each holds a branch of Daoris's (WSR7, D112): what a look takes
+    /// Every repository with a checkout here, and whether each holds a branch of Daoris's: what a look takes
     /// by default, read on the machine and never over the network.
     /// </summary>
     internal async Task<IReadOnlyList<SyncRepository>> SyncScopeAsync(
@@ -95,12 +95,12 @@ internal sealed class TreeSync(
     /// <summary>A checkout's line, and how its fetch went: why it failed, when origin was last heard from here, and how it is reached.</summary>
     private sealed record Fetched(string? Line, string? Failed = null, DateTimeOffset? LastFetch = null, string? Reach = null, string? Host = null)
     {
-        /// <summary>The pull as judged, carrying what a failed fetch leaves it judged against (WSR7).</summary>
+        /// <summary>The pull as judged, carrying what a failed fetch leaves it judged against.</summary>
         public LinePull Onto(LinePull pull) => Failed is null ? pull : pull with { LastFetch = LastFetch, Reach = Reach, Host = Host };
     }
 
     /// <summary>
-    /// Each checkout's line, and its fetch where asked (WSR7): the one network step, a few repositories at a time, so a
+    /// Each checkout's line, and its fetch where asked: the one network step, a few repositories at a time, so a
     /// look waits about one fetch's time rather than one per repository. A failed fetch is the reason, in git's words,
     /// with when this checkout last heard from origin and how origin is reached, for the words said once before the rows.
     /// </summary>
@@ -115,7 +115,7 @@ internal sealed class TreeSync(
                 : new Fetched(line, failed, await LastFetchAsync(each.Root, line, token).ConfigureAwait(false), ReachOf(url), url is null ? null : GitIdentityActs.GitAddressHost(url));
         }, ct).ConfigureAwait(false);
 
-    /// <summary>The checkouts a scope takes, and every other one, listed apart (D112).</summary>
+    /// <summary>The checkouts a scope takes, and every other one, listed apart.</summary>
     private async Task<(List<Checkout> Looked, List<SyncRepository> Apart)> ScopedAsync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, SyncScope scope, CancellationToken ct)
     {
@@ -125,7 +125,7 @@ internal sealed class TreeSync(
     }
 
     /// <summary>
-    /// Whether a repository holds a branch of Daoris's (D112): a session branch, or a branch a landing recorded that still
+    /// Whether a repository holds a branch of Daoris's: a session branch, or a branch a landing recorded that still
     /// stands — one list of its local branches, beside the landings record.
     /// </summary>
     private static async Task<bool> HoldsDaorisBranchAsync(string root, string repository, IReadOnlyList<LandedBranch> record, CancellationToken ct)
@@ -142,7 +142,7 @@ internal sealed class TreeSync(
     }
 
     /// <summary>
-    /// The press (WSR6): each repository's line fast-forwarded, the branches still at work replayed onto it, and the
+    /// The press: each repository's line fast-forwarded, the branches still at work replayed onto it, and the
     /// landed branches whose work reached it deleted — in that order, each judged again right before it acts.
     /// </summary>
     /// <remarks>
@@ -156,15 +156,15 @@ internal sealed class TreeSync(
     /// on its remote is left, since replaying it would need a force push.</para>
     ///
     /// <para><b>Replays before deletions.</b> A session branch that grew from a landed branch shares its commits,
-    /// and the landed branch's proof keeps it while one does (WSR5); once replayed past them it shares only the
+    /// and the landed branch's proof keeps it while one does; once replayed past them it shares only the
     /// line's, and the landed branch can go.</para>
     ///
     /// <para><b>Branches that shared commits keep sharing them.</b> A landing's branch made at a session's tip is
     /// the same commit replayed once, and one inside another is replayed onto the other's new commits, so the
     /// clean-up's proof reads them together afterwards as it did before.</para>
     ///
-    /// <para>🔴 <b>No session starts in a tree while it is replayed</b> (LEFT2), <b>and nothing else writes the checkout while
-    /// its line is pulled</b> (GITLOCK1). A repository's pull and replays run with its checkout held alone (<see cref="TreeLock"/>),
+    /// <para>🔴 <b>No session starts in a tree while it is replayed</b>, <b>and nothing else writes the checkout while
+    /// its line is pulled</b>. A repository's pull and replays run with its checkout held alone (<see cref="TreeLock"/>),
     /// which a driver or a conversation takes, shared, from choosing its tree until its record is open, and every other writer of
     /// the checkout alone; the sessions in use are asked again inside the hold. A repository held so has its pull and its replays
     /// left, each said with what held it, for another press.</para>
@@ -173,16 +173,16 @@ internal sealed class TreeSync(
     /// <param name="fetch">Whether to fetch first — the terminal's one command does; the screen's press acts on what its list fetched.</param>
     /// <param name="inUseNow">
     /// The trees sessions running or waiting hold, asked again while a repository's trees are held for its replays
-    /// (<see cref="TreeLock"/>, LEFT2): a session a driver opened since <paramref name="inUse"/> was read is then seen.
+    /// (<see cref="TreeLock"/>): a session a driver opened since <paramref name="inUse"/> was read is then seen.
     /// Every door with a service hands it; without it the replays judge by <paramref name="inUse"/> alone.
     /// </param>
     /// <param name="scope">
-    /// Which repositories to take (WSR7, D112); null for the default, those holding a branch of Daoris's. Each repository
+    /// Which repositories to take; null for the default, those holding a branch of Daoris's. Each repository
     /// a row in <paramref name="only"/> names is taken too: the press acts on what the person was shown.
     /// </param>
     /// <param name="beside">
     /// The ledger's sessions and their trees (<see cref="BranchTidying.HoldersAsync"/>), asked inside the checkout's hold, so a pull waits for
-    /// a session working in the checkout (GITLOCK1). Every door with a service hands it; null asks nothing and pulls as before.
+    /// a session working in the checkout. Every door with a service hands it; null asks nothing and pulls as before.
     /// </param>
     internal async Task<SyncDone> SyncAsync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
@@ -190,7 +190,7 @@ internal sealed class TreeSync(
         Func<CancellationToken, Task<IReadOnlySet<string>>>? inUseNow = null, SyncScope? scope = null,
         Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null)
     {
-        // One look (UIFREEZE1, PROC1d-i): only git's guess is kept; each judgement is still re-read right before it acts (D88).
+        // One look: only git's guess is kept; each judgement is still re-read right before it acts.
         using var look = context.OneLook();
         var busy = new HashSet<string>(inUse.Select(Normal), StringComparer.OrdinalIgnoreCase);
         var pulls = new List<PullResult>();
@@ -198,7 +198,7 @@ internal sealed class TreeSync(
         var deletes = new List<LandedResult>();
         bool Listed(string key) => only is null || only.Contains(key);
         var (looked, apart) = await ScopedAsync(repositories, (scope ?? SyncScope.Held).Listed(only), ct).ConfigureAwait(false);
-        // The network first, a few repositories at a time (WSR7); each is then judged again right before it acts.
+        // The network first, a few repositories at a time; each is then judged again right before it acts.
         var fetches = await FetchedAsync(looked, fetch, ct).ConfigureAwait(false);
 
         foreach (var ((repository, space, root, _), fetched) in looked.Zip(fetches))
@@ -206,10 +206,10 @@ internal sealed class TreeSync(
             var workspace = RemoteTarget.Workspace(space);
             var line = fetched.Line;
 
-            // GITLOCK1: the checkout held alone from the pull's own judgement through its move and the replays (LEFT2), as every writer
+            // The checkout held alone from the pull's own judgement through its move and the replays, as every writer
             // of it holds it; let go before the deletions. What held it otherwise is named on the line and on each replay it leaves.
             using var taken = TreeLock.TryWriting(context.Home, root, repository, TreeLock.Updating);
-            // GITAPP2a: the checkout's open acts reconciled under the hold, before the pull's judgement and outside the look's memos; one that
+            // The checkout's open acts reconciled under the hold, before the pull's judgement and outside the look's memos; one that
             // still runs holds the pull and the replays for the next look, named.
             var acting = taken is null ? null : await ActReconciler.ForWriterAsync(context.Home, root, ct).ConfigureAwait(false);
             var held = acting is null ? taken : null;
@@ -220,7 +220,7 @@ internal sealed class TreeSync(
             var pull = fetched.Onto(asJudged);
             if (Listed($"{repository}:{line}"))
             {
-                // GITLOCK1: a pull that would move the checkout waits for a session the ledger holds in it, read inside the hold.
+                // A pull that would move the checkout waits for a session the ledger holds in it, read inside the hold.
                 var waits = held is not null && pull.Moves && inRoot
                     ? await CheckoutBeside.WaitsAsync(beside, root, repository, $"`{line}`'s pull", ct).ConfigureAwait(false)
                     : null;
@@ -231,7 +231,7 @@ internal sealed class TreeSync(
                         : waits is not null
                             ? new PullResult(pull, false, $"{char.ToUpperInvariant(waits[0])}{waits[1..]}.")
                             : await LinePulls.PullAsync(root, pull, inRoot, held, ct).ConfigureAwait(false));
-                // A line Daoris moved is followed by the registry at the next look (WSSETUP5, D124 §3.1): under the `branch`
+                // A line Daoris moved is followed by the registry at the next look: under the `branch`
                 // rule this fast-forward is when a merged set-up first reaches this machine.
                 if (pulls[^1].Moved) RegistryFollowing.Moved(context.Home, repository, DateTimeOffset.UtcNow);
             }
@@ -260,7 +260,7 @@ internal sealed class TreeSync(
                     continue;
                 }
 
-                // LINESTOGETHER1d: a branch bound into an operation bringing sessions together is left as it stands, its operation named.
+                // A branch bound into an operation bringing sessions together is left as it stands, its operation named.
                 if (TogetherGuard.BranchRefusal(context.Home, repository, each.Item.Branch) is { } together)
                 {
                     rebases.Add(new(each.Item, false, $"`{each.Item.Branch}`: {together}."));

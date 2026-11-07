@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Daoris.Driver;
 
-/// <summary>Why a file was not read for its preview, or <see cref="None"/> when it was (PREVIEW1, D111).</summary>
+/// <summary>Why a file was not read for its preview, or <see cref="None"/> when it was.</summary>
 public enum FilePreviewRefusal
 {
     /// <summary>Read: the answer carries the file.</summary>
@@ -24,7 +24,7 @@ public enum FilePreviewRefusal
     NotAFile,
 
     /// <summary>
-    /// Read from a landed branch (REVIEW2, D113): the path is not a file that branch holds — deleted or moved there, a
+    /// Read from a landed branch: the path is not a file that branch holds — deleted or moved there, a
     /// folder, or a link, which git keeps as the link and the preview does not follow.
     /// </summary>
     NotOnBranch,
@@ -38,29 +38,29 @@ public enum FilePreviewRefusal
 /// <param name="Truncated">Whether the file holds more than <paramref name="Text"/>.</param>
 public sealed record PreviewedFile(string Path, long Size, bool Binary, string? Text, bool Truncated)
 {
-    /// <summary>The landed branch it was read from, once the session's tree is gone (REVIEW2, D113); null for the file on disk.</summary>
+    /// <summary>The landed branch it was read from, once the session's tree is gone; null for the file on disk.</summary>
     public string? Branch { get; init; }
 }
 
 /// <summary>What reading a file for its preview answered: the file, or why not.</summary>
-/// <param name="Branch">The landed branch the reading asked, where it asked one (REVIEW2), so a refusal can name it.</param>
+/// <param name="Branch">The landed branch the reading asked, where it asked one, so a refusal can name it.</param>
 public sealed record FilePreviewResult(FilePreviewRefusal Refusal, PreviewedFile? File, string? Branch = null)
 {
     public static FilePreviewResult Refused(FilePreviewRefusal why, string? branch = null) => new(why, null, branch);
 }
 
 /// <summary>
-/// A file in a session's tree, read for the person to look at without leaving the window (PREVIEW1, D111).
+/// A file in a session's tree, read for the person to look at without leaving the window.
 /// </summary>
 /// <remarks>
-/// <para><b>Reads, and never writes</b> (D55: there is no editor). The disk as it is now, not git's
+/// <para><b>Reads, and never writes</b> (there is no editor). The disk as it is now, not git's
 /// committed copy: a live session's last edit is uncommitted, and the preview says what the file is.</para>
 ///
 /// <para><b>Only inside the tree.</b> A path is judged three ways: where its string lands, where each link
-/// on the way leads, and whether any of it is `.git`. The string alone is the tree guard's lesson (PERM3):
+/// on the way leads, and whether any of it is `.git`. The string alone is the tree guard's lesson:
 /// a link inside the tree can lead out, and the bytes are then somewhere nobody asked to show.</para>
 ///
-/// <para><b>Bounded, and the bound is stated</b> (design §5): the first <see cref="Budget"/> bytes, cut at a
+/// <para><b>Bounded, and the bound is stated</b>: the first <see cref="Budget"/> bytes, cut at a
 /// line's end so no character is split, with the whole size said beside it.</para>
 /// </remarks>
 public static class FilePreview
@@ -150,7 +150,7 @@ public static class FilePreview
     }
 
     /// <summary>
-    /// A file as a session's landed branch holds it (REVIEW2, D113), for the preview of a session whose landing tidied
+    /// A file as a session's landed branch holds it, for the preview of a session whose landing tidied
     /// its tree away: <c>git cat-file blob</c> of what the branch's tree names at that path, in the repository's own
     /// checkout.
     /// </summary>
@@ -158,12 +158,12 @@ public static class FilePreview
     /// <para><b>A read of objects, and nothing else</b>: the checkout's working tree and index are never asked, so what
     /// the person has in flight there is neither shown nor touched. The same bound and binary test as a file on disk.</para>
     ///
-    /// <para>🔴 <b>The checkout is proven first</b>, since git walks UP (FIX-LOG); and <b>only the landing's own
+    /// <para>🔴 <b>The checkout is proven first</b>, since git walks UP; and <b>only the landing's own
     /// branch</b> is read: one standing and still holding the commit the landing made it at. Anything else — no
     /// checkout, the branch gone, a branch of that name that is someone else's now — is <see cref="FilePreviewRefusal.NoTree"/>,
     /// since then neither the tree nor the branch is here.</para>
     ///
-    /// <para><b>The path is judged as a path in the tree was</b>: outside the repository, and under `.git`, are refused
+    /// <para><b>The path is judged as a path in the tree is</b>: outside the repository, and under `.git`, are refused
     /// before git is asked. A path the conversation named inside the tree that is gone is the same path on the branch.
     /// Git does not follow a link inside a tree, and neither does this: a link, a folder, or a path the branch lacks is
     /// <see cref="FilePreviewRefusal.NotOnBranch"/>.</para>

@@ -1,24 +1,24 @@
 namespace Daoris.Driver;
 
-/// <summary>A recovery ref the look removed past its retention (CLEANUP1): the ref, the commit it kept, and the branch or tag that holds it.</summary>
+/// <summary>A recovery ref the look removed past its retention: the ref, the commit it kept, and the branch or tag that holds it.</summary>
 public sealed record RecoveryGone(string Ref, string Commit, string Holder);
 
 /// <summary>
-/// The recovery refs' retention (CLEANUP1, amending D102's SQUASHTIDY1c note): a ref under <c>refs/daoris/discarded/</c> whose commit a
+/// The recovery refs' retention: a ref under <c>refs/daoris/discarded/</c> whose commit a
 /// branch or a tag of the person's holds by ancestry keeps nothing no other ref keeps, and goes at the look's tidy once it is past
-/// <see cref="Kept"/>; one whose commit nothing else holds is kept until the person deletes it, as before.
+/// <see cref="Kept"/>; one whose commit nothing else holds is kept until the person deletes it.
 /// </summary>
 /// <remarks>
-/// 🔴 <b>Only the person's refs hold</b> (after review): a tag, or a local branch outside <c>daoris/</c> that no landing of Daoris's made
+/// 🔴 <b>Only the person's refs hold</b>: a tag, or a local branch outside <c>daoris/</c> that no landing of Daoris's made
 /// (<see cref="Holds"/>). Never a session branch or a landing branch, which Daoris itself removes on a proof, a squash's record among them,
-/// so the same look could remove the holder after the ref; never a remote-tracking ref, which a fetch moves or prunes (SQUASHTIDY1c 6);
-/// never another recovery ref; and never a symbolic ref (re-check), whatever its name, read by git's own <c>%(symref)</c>: a name that
+/// so the same look could remove the holder after the ref; never a remote-tracking ref, which a fetch moves or prunes;
+/// never another recovery ref; and never a symbolic ref, whatever its name, read by git's own <c>%(symref)</c>: a name that
 /// points at a session branch would dangle once the sweep removes that branch. A ref named by hand under the prefix is treated as Daoris's own, since git keeps no word of who made it
 /// (no reflog is written outside <c>refs/heads/</c>): it goes only on the same rule, its commit kept by the person's own ref.
-/// <para><b>Dated from the journal's act</b> (ONEWAY1r, D228): every door keeps its ref through an act the journal records
+/// <para><b>Dated from the journal's act</b>: every door keeps its ref through an act the journal records
 /// (<see cref="RecoveryKeeps"/>), and a ref a record names is dated from that act. <b>Transitional:</b> the dating from a ref's reflog remains
 /// only for a ref no record names, one a door kept before every keep was journaled, which <see cref="RecoveryCensus"/> counts. It ends when
-/// that census reads zero in every repository on the install; ONEWAY1af deletes it, with <see cref="RecoveryDropping"/>.</para>
+/// that census reads zero in every repository on the install, and goes with <see cref="RecoveryDropping"/>.</para>
 /// </remarks>
 public static class RecoveryRetention
 {
@@ -27,7 +27,7 @@ public static class RecoveryRetention
 
     /// <summary>
     /// The date from which the look removes it, where a branch or a tag holds its commit and its date was read; null otherwise. Counted from
-    /// the act that kept it; for a ref no record names, from its reflog's first entry (RECOVERYDATE1), else from its commit's date, so it may
+    /// the act that kept it; for a ref no record names, from its reflog's first entry, else from its commit's date, so it may
     /// go sooner after it was made, and loses nothing, since the holder keeps every commit and message it kept.
     /// </summary>
     public static DateTimeOffset? Until(RecoveryRef each) => each is { Held: true, Dated: { } dated } ? dated + Kept : null;
@@ -52,7 +52,7 @@ public static class RecoveryRetention
     /// Every recovery ref of one checkout, with its commit, its date (<see cref="Until"/>), and whether a branch or a tag of the person's
     /// holds it (<see cref="Holds"/>): one <c>for-each-ref</c>, and one <c>rev-list</c> and one <c>log --walk-reflogs</c> where there are
     /// refs. Null with git's words where the list
-    /// did not read; where the holders did not read, each ref's <see cref="RecoveryRef.Held"/> is null, never false (D57).
+    /// did not read; where the holders did not read, each ref's <see cref="RecoveryRef.Held"/> is null, never false.
     /// </summary>
     /// <param name="landed">The branches Daoris's landings made here (<see cref="Made"/>): no holders.</param>
     /// <param name="recorded">The refs the journal's acts name, each with its act's moment (<see cref="RecoveryKeeps.Recorded"/>); null reads none.</param>
@@ -64,14 +64,14 @@ public static class RecoveryRetention
     }
 
     /// <summary>
-    /// <see cref="ReadAsync"/>, and the <c>daoris/*</c> branches the same listing names (FABRIC-UNKNOWN1): a projection of rows already
+    /// <see cref="ReadAsync"/>, and the <c>daoris/*</c> branches the same listing names: a projection of rows already
     /// read, so no further git start, and never a holder (<see cref="Holds"/> leaves <c>daoris/</c> out), so never a recovery ref's keeper.
     /// </summary>
     internal static async Task<(IReadOnlyList<RecoveryRef>? Refs, string? Unread, IReadOnlyList<StandingBranch> Standing)> ReadWithBranchesAsync(
         string root, string repository, IReadOnlyCollection<string> landed, CancellationToken ct, IReadOnlyDictionary<string, DateTimeOffset>? recorded = null)
     {
         recorded ??= new Dictionary<string, DateTimeOffset>();
-        // One listing of the recovery refs and of every branch and tag, each with whether it is symbolic (CLEANUP1, re-check), by tabs: a
+        // One listing of the recovery refs and of every branch and tag, each with whether it is symbolic (re-check), by tabs: a
         // ref name holds none.
         var (code, listed, err) = await WorkingTree.GitAsync(
             root, ["for-each-ref", "--format=%(objectname)%09%(committerdate:unix)%09%(refname)%09%(symref)", ContentHolds.DiscardedPrefix, "refs/heads/", "refs/tags/"], ct)
@@ -117,9 +117,9 @@ public static class RecoveryRetention
     }
 
     /// <summary>
-    /// When each of <paramref name="refs"/>, which no journal record names, was made (RECOVERYDATE1): its reflog's oldest entry, in one
+    /// When each of <paramref name="refs"/>, which no journal record names, was made: its reflog's oldest entry, in one
     /// <c>log --walk-reflogs</c>. A ref with no reflog (made before it, or by hand) is not named, and is dated by its commit; null where git did
-    /// not answer, so no such ref is dated and none goes at this look (D57). Transitional, with the census (<see cref="RecoveryCensus"/>).
+    /// not answer, so no such ref is dated and none goes at this look. Transitional, with the census (<see cref="RecoveryCensus"/>).
     /// </summary>
     private static async Task<IReadOnlyDictionary<string, DateTimeOffset>?> MadeAsync(string root, IReadOnlyList<string> refs, CancellationToken ct)
     {

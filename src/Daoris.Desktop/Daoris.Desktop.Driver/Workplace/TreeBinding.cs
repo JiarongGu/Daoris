@@ -3,7 +3,7 @@ using static Daoris.Driver.TreeGit;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A session's tree git binds to another checkout is never removed, reset or written through (GITWORKTREECONFIG1, D51's note). With
+/// A session's tree git binds to another checkout is never removed, reset or written through. With
 /// worktree-specific configuration on (<c>extensions.worktreeConfig</c>), a <c>core.worktree</c> in the repository's shared configuration
 /// applies to every linked tree, and git then reports that folder, the main checkout on 2026-10-27, as each tree's working root: a status
 /// asked there reads the checkout's files against the tree's index, and a switch, a rebase, a reset or an index write there acts on the

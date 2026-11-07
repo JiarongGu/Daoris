@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 public sealed record SpaceAsked(string Kind, string Id, bool Early, string? Why, bool Own)
 {
     /// <summary>
-    /// A set-aside folder's class as the list gave it (KEEPSIZE1b, <see cref="ListedClass"/>), and the ref it named the folder's tip on: the
+    /// A set-aside folder's class as the list gave it (<see cref="ListedClass"/>), and the ref it named the folder's tip on: the
     /// run removes it only while both still read so, else keeps it <c>changed</c> (Codex's read of the branch, finding 4). Null from a list
     /// that gave none, an older page's.
     /// </summary>

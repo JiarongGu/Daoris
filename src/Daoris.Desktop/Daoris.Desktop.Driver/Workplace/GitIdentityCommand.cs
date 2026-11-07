@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A widening's or an answer's press (the git-auth design §8, D194 point 5): sent to the running Daoris, whose window confirms it and
+/// A widening's or an answer's press: sent to the running Daoris, whose window confirms it and
 /// runs <paramref name="route"/> as the page presses it, its answer said by <paramref name="words"/>; where no window runs,
 /// <paramref name="alone"/> does it here. The exit code is the verb's. The host's is <see cref="InstanceDoor.PressAsync"/>.
 /// </summary>
@@ -24,15 +24,15 @@ public sealed record GitIdentityWorld(
     Func<Task<string?>>? Token = null);
 
 /// <summary>
-/// The terminal's git identities (GITAUTH1c, D198 point 15; the git-auth design §8): <c>git identity</c>, <c>git default</c> and
+/// The terminal's git identities: <c>git identity</c>, <c>git default</c> and
 /// <c>git use</c>, each change one typed operation of <see cref="GitIdentityActs"/>, one text per verb, a refusal one line
 /// (<c>git: {sentence} ({code})</c>). Exit codes are the family's: 0 done · 1 refused · 2 could not (the usage, a file that does not
 /// read).
 /// </summary>
 /// <remarks>
-/// <para><b>A person's own acts.</b> From a session's environment (<c>DAORIS_SESSION_ID</c>) every change is refused, as D194 point 5
-/// refuses a person's press there: an agent cannot set up, point or trust anything here.</para>
-/// <para><b>The widenings are confirmed in the window first</b> (§8, D194 point 5): an import (it reads a file of the person's), trusting
+/// <para><b>A person's own acts.</b> From a session's environment (<c>DAORIS_SESSION_ID</c>) every change is refused, as a person's press is
+/// there: an agent cannot set up, point or trust anything here.</para>
+/// <para><b>The widenings are confirmed in the window first</b>: an import (it reads a file of the person's), trusting
 /// a host's key, choosing <c>own</c>, turning <c>read-only</c> off and removing an identity are pressed through the running Daoris as
 /// Settings → Git presses them (<c>GIT_IDENTITY</c>, <c>GIT_USE</c>), so its window confirms each before it runs there; where no window
 /// runs, the verb does it here. Nothing a widening touches is done in this process while a window runs.</para>
@@ -192,7 +192,7 @@ public static class GitIdentityCommand
     }
 
     /// <summary>
-    /// Whether the words are a widening (§8): an import, a host's key trusted, <c>own</c> chosen, <c>read-only</c> turned off, an
+    /// Whether the words are a widening: an import, a host's key trusted, <c>own</c> chosen, <c>read-only</c> turned off, an
     /// identity removed (the pointers at it fall to a looser step).
     /// </summary>
     public static bool Widens(IReadOnlyList<string> words, IReadOnlyDictionary<string, string?> flags) =>

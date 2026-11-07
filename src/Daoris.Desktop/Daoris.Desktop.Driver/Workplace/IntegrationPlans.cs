@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>A conflicted file of a plan, and what would settle it (<see cref="IntegrationPlanSettles"/>).</summary>
 public sealed record IntegrationPlanConflict(string Path, string Settled);
 
-/// <summary>How a plan's conflicted file would be settled at the run's resolve (§5.2 step 4), or that it is a conflict of meaning (step 5).</summary>
+/// <summary>How a plan's conflicted file would be settled at the run's resolve, or that it is a conflict of meaning (step 5).</summary>
 public static class IntegrationPlanSettles
 {
     /// <summary>A declared row: the backlog, a row table or a line rule, settled by the merge base or its writer.</summary>
@@ -17,7 +17,7 @@ public static class IntegrationPlanSettles
 }
 
 /// <summary>
-/// What <c>daoris integrate &lt;repository&gt; --plan &lt;branch&gt;</c> previews (INTEGRATE1h; the integration design §5.8, §6.3 point 3):
+/// What <c>daoris integrate &lt;repository&gt; --plan &lt;branch&gt;</c> previews:
 /// the branch merged onto its line's tip in git's objects alone, the commits the line lacks, the files the branch changes, and each conflict
 /// with what would settle it. Null fields are what git could not say.
 /// </summary>
@@ -43,7 +43,7 @@ public sealed record IntegrationPlan(string Repository, string Branch, string Li
 }
 
 /// <summary>
-/// The plan's read (INTEGRATE1h): git's <c>merge-tree --write-tree</c> of the branch onto the line's tip, its objects written into a quarantine
+/// The plan's read: git's <c>merge-tree --write-tree</c> of the branch onto the line's tip, its objects written into a quarantine
 /// folder the caller names and never into the repository (git's own <c>GIT_OBJECT_DIRECTORY</c> over the repository's objects as an alternate),
 /// the folder removed after. Nothing else is written: no ref, no index, no working file, no object of the repository's.
 /// </summary>

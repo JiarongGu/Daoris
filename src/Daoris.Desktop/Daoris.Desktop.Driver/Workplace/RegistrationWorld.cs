@@ -5,11 +5,11 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The world registration following reads on this machine (WSSETUP5): the registry door, each repository's line read
+/// The world registration following reads on this machine: the registry door, each repository's line read
 /// as git objects, the landings' record, and the two records under the home. The follower is
 /// <see cref="RegistrationFollow"/>; this is only where its facts come from and where its outcomes go.
 /// </summary>
-/// <param name="config">The driver's choices, which name each repository's line (D86).</param>
+/// <param name="config">The driver's choices, which name each repository's line.</param>
 public sealed class RegistrationWorld(ServiceClient service, string home, DriverConfig config) : IRegistrationWorld
 {
     public bool LocalService => Uri.TryCreate(service.BaseUrl, UriKind.Absolute, out var uri) && LoopbackHosts.Is(uri.Host);
@@ -36,7 +36,7 @@ public sealed class RegistrationWorld(ServiceClient service, string home, Driver
 
     public string? WorktreeMain(string root) => LinkedWorktree.MainOf(root);
 
-    /// <summary>The newest standing branch a set-up's landing made for this repository (D102, WSR5), by its quest's title.</summary>
+    /// <summary>The newest standing branch a set-up's landing made for this repository, by its quest's title.</summary>
     public string? SetupWaiting(string repository) =>
         new LandedBranches(home).All()
             .Where(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase) && SetupQuests.IsSetup(entry.Title))
@@ -55,7 +55,7 @@ public sealed class RegistrationWorld(ServiceClient service, string home, Driver
 }
 
 /// <summary>
-/// The two files a registration reads, from a repository's LINE as git objects (WSSETUP5, D124 §3.2): the line's commit,
+/// The two files a registration reads, from a repository's LINE as git objects: the line's commit,
 /// then <c>daoris.json</c> and <c>daoris.lanes.json</c> at its root, as <see cref="LayoutReader"/> reads the layout.
 /// Never the checkout's working files, which may be on another branch or hold edits.
 /// </summary>

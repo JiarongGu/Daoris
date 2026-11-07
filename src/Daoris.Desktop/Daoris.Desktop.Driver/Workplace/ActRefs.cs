@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// An act's own ref (GITAPP2a, D204; the git-writes design §6's recovery namespaces): <c>refs/daoris/acts/&lt;act&gt;</c>, holding the blobs of
+/// An act's own ref (the git-writes design §6's recovery namespaces): <c>refs/daoris/acts/&lt;act&gt;</c>, holding the blobs of
 /// the index entries an act touched (and, from row j, Resolve's stages) until its record expires. It holds nothing for the clean-ups: no
 /// holder of a branch's commits (<see cref="ContentHolds.AnyRef"/>), never counted by a landing's (<c>LandedCleanups</c>). Deleted branches,
 /// tags and old tips keep their recovery under <see cref="ContentHolds.DiscardedPrefix"/>, never here.

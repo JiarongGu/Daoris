@@ -4,7 +4,7 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A finished tree's record as the driver posts it (KEEPSIZE1b, the keep-size design §2.2): the manifest's facts and the commits read from
+/// A finished tree's record as the driver posts it: the manifest's facts and the commits read from
 /// the tip, oldest first; <see cref="Commits"/> null where they could not be read, and <see cref="Unread"/> says why.
 /// </summary>
 internal sealed record FinishedPost(
@@ -14,7 +14,7 @@ internal sealed record FinishedPost(
 /// <summary>One commit of a finished tree's, by <c>--first-parent</c>: its id, subject and files, each with the lines added and removed (-1 where git counts none).</summary>
 internal sealed record FinishedCommit(string Id, string Subject, IReadOnlyList<(string Path, int Added, int Removed)> Files);
 
-/// <summary>What one record pass did of one folder (§3.5): resumed, recorded, still waiting, or unmarked, with why.</summary>
+/// <summary>What one record pass did of one folder: resumed, recorded, still waiting, or unmarked, with why.</summary>
 internal sealed record FinishedStep(string Folder, string From, string To, string? Why);
 
 /// <summary>
@@ -25,7 +25,7 @@ internal sealed record FinishedStep(string Folder, string From, string To, strin
 internal sealed record RecordRefusal(string Why, bool NoDoor = false);
 
 /// <summary>
-/// The steps after the hold (KEEPSIZE1b, the keep-size design §3.5 steps 6 and 7, and its resume): at each Keeping pass before the purge,
+/// The steps after the hold (7, and its resume): at each Keeping pass before the purge,
 /// and at the press's run before it removes. Outside every repository's hold, reading git read-only (§3.4's <i>Git outside the hold</i>) in
 /// the root the registry gives. For each schema-2 manifest beside its folder:
 /// <list type="bullet">
@@ -141,7 +141,7 @@ internal sealed class FinishedRecords(TreeSetAside setAside)
     }
 
     /// <summary>
-    /// The tree's commits (§2.1): <c>git log --first-parent --numstat &lt;grewFrom&gt;..&lt;tip&gt;</c> from the tip, oldest first, a merge of the line
+    /// The tree's commits: <c>git log --first-parent --numstat &lt;grewFrom&gt;..&lt;tip&gt;</c> from the tip, oldest first, a merge of the line
     /// one commit of the tree's with its first-parent changes. Null with why where git says the tip is missing or the range is not known; a
     /// read git could not make is <c>Failed</c>, and nothing is posted on it.
     /// </summary>
@@ -193,7 +193,7 @@ internal sealed class FinishedRecords(TreeSetAside setAside)
 }
 
 /// <summary>
-/// A finished tree's record as the service takes it (<see cref="FinishedPost"/>, KEEPSIZE1b), posted through the service's client: the
+/// A finished tree's record as the service takes it (<see cref="FinishedPost"/>), posted through the service's client: the
 /// workplace's own member of it, which names the manifest and the tree it carries, so the client names neither and every caller keeps
 /// <c>service.PostWorkRecordAsync</c> as spelled, as a call or as the delegate a pass is handed.
 /// </summary>
@@ -202,7 +202,7 @@ internal static class FinishedPosts
     extension(ServiceClient client)
     {
             /// <summary>
-            /// Post a finished tree's record (KEEPSIZE1b, the keep-size design §2.2) to <c>POST /api/trees/record</c>: the manifest's facts and the
+            /// Post a finished tree's record to <c>POST /api/trees/record</c>: the manifest's facts and the
             /// commits read from the tip. Null where the service keeps it, a second post of a kept identity included; else why it does not, in its
             /// words, a store a newer build stamped among them; a 404, a service with no door for it, says so (<see cref="RecordRefusal.NoDoor"/>).
             /// </summary>

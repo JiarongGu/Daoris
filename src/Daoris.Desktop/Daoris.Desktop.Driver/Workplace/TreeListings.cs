@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 internal sealed class TreeListings(TreeContext context, TreeSetAside setAsides)
 {
     /// <summary>
-    /// How many commits a session tree's HEAD holds beyond its repository's line (LAND2b): zero is a done that made no commits,
+    /// How many commits a session tree's HEAD holds beyond its repository's line: zero is a done that made no commits,
     /// which lands nothing; null is git unable to say, or no line it can name, and the landing then decides.
     /// </summary>
     public async Task<int?> AheadOfLineAsync(string tree, CancellationToken ct = default)
@@ -27,7 +27,7 @@ internal sealed class TreeListings(TreeContext context, TreeSetAside setAsides)
     }
 
     /// <summary>
-    /// Whether the repository's line holds a commit (LIMITSWITCH3): <c>merge-base --is-ancestor</c> in its checkout against the line as a landing
+    /// Whether the repository's line holds a commit: <c>merge-base --is-ancestor</c> in its checkout against the line as a landing
     /// reads it, so work that landed by any path settles the words that asked its session to rebase. Null where git cannot say: no line it can
     /// name, a commit this checkout does not have, or git failing, which establishes nothing.
     /// </summary>
@@ -44,7 +44,7 @@ internal sealed class TreeListings(TreeContext context, TreeSetAside setAsides)
 
     /// <summary>The session trees and folders moved aside of the repositories <paramref name="only"/> holds (<see cref="ListAsync(CancellationToken)"/>).</summary>
     /// <param name="only">
-    /// Whether a repository's folder is listed, by its name, in every workspace (FACTSPLIT1a): another's is never entered, so its
+    /// Whether a repository's folder is listed, by its name, in every workspace: another's is never entered, so its
     /// trees cost no git. Every repository's where null.
     /// </param>
     public async Task<IReadOnlyList<SessionTree>> ListAsync(Func<string, bool>? only, CancellationToken ct = default)
@@ -53,7 +53,7 @@ internal sealed class TreeListings(TreeContext context, TreeSetAside setAsides)
         IEnumerable<string> Repositories(string workspace) =>
             Directory.EnumerateDirectories(workspace).Where(folder => only?.Invoke(Path.GetFileName(folder)) ?? true);
 
-        // Both places of the trees (TREEPLACE1), each as found. The folders the look moved aside are no trees (AUTOTIDY1): git no
+        // Both places of the trees, each as found. The folders the look moved aside are no trees: git no
         // longer knows them as such.
         var folders = (
             from root in context.TreesRoots.Where(Directory.Exists)
@@ -61,7 +61,7 @@ internal sealed class TreeListings(TreeContext context, TreeSetAside setAsides)
             from repository in Repositories(workspace)
             from tree in Directory.EnumerateDirectories(repository)
             select (workspace, repository, tree)).ToList();
-        // AUTOTIDY2c: a folder with no link to a repository is no tree, and git asked in it would answer for whatever repository holds the home.
+        // A folder with no link to a repository is no tree, and git asked in it would answer for whatever repository holds the home.
         var branches = await TreeHeads.ReadAsync([.. folders.Select(each => each.tree).Where(tree => Path.Exists(Path.Combine(tree, ".git")))], ct)
             .ConfigureAwait(false);
         foreach (var (workspace, repository, tree) in folders)
@@ -74,7 +74,7 @@ internal sealed class TreeListings(TreeContext context, TreeSetAside setAsides)
                 code == 0 ? branch.Trim() : branch == SessionTree.NotATree ? branch : "(unreadable)"));
         }
 
-        // KEEPSIZE1a: the folders moved aside at every place of the trees, the old place's included.
+        // The folders moved aside at every place of the trees, the old place's included.
         foreach (var aside in setAsides.SetAsideRoots.Where(Directory.Exists))
         foreach (var workspace in SetAsideEligibility.Workspaces(aside))
         foreach (var repository in Repositories(workspace))
@@ -83,7 +83,7 @@ internal sealed class TreeListings(TreeContext context, TreeSetAside setAsides)
             found.Add(new(folder, Path.GetFileName(workspace), Path.GetFileName(repository), SessionTree.SetAside)
             {
                 MovedAside = TreeSetAside.MovedAt(Path.GetFileName(folder)),
-                // KEEP1a: the package folders the slim dropped, from the manifest beside it, which the inventory's line names.
+                // The package folders the slim dropped, from the manifest beside it, which the inventory's line names.
                 Slimmed = SlimManifest.Read(SlimManifest.PathFor(folder)).Manifest?.Removed ?? [],
             });
         }

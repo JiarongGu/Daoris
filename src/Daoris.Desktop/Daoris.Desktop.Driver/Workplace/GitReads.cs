@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Why a read behind a page was not answered (GIT1b), or <see cref="None"/> where it was.</summary>
+/// <summary>Why a read behind a page was not answered, or <see cref="None"/> where it was.</summary>
 public enum GitReadRefusal
 {
     /// <summary>Answered: the answer carries its value.</summary>
@@ -25,7 +25,7 @@ public enum GitReadRefusal
     NotAnswered,
 }
 
-/// <summary>Which side of a walk of two holds a commit (D147 §2.3, §2.6).</summary>
+/// <summary>Which side of a walk of two holds a commit.</summary>
 public static class GitSide
 {
     /// <summary>The first named: the branch on its page, the left of a compare.</summary>
@@ -35,14 +35,14 @@ public static class GitSide
     public const string Right = "right";
 }
 
-/// <summary>A read's answer (GIT1b): its value or why not, and the git commands a person types for the same answer (D147 §3.3).</summary>
+/// <summary>A read's answer: its value or why not, and the git commands a person types for the same answer.</summary>
 /// <param name="Problem">The refusal said in a sentence, or null where answered.</param>
 public sealed record GitAnswer<T>(T? Value, GitReadRefusal Refusal, string? Problem) where T : class
 {
     /// <summary>Each git command that answers this read, as a person types it in the checkout, in git's own form.</summary>
     public IReadOnlyList<string> Commands { get; init; } = [];
 
-    /// <summary>Whether the answer came from memory, with no git started (D147 §4.2).</summary>
+    /// <summary>Whether the answer came from memory, with no git started.</summary>
     public bool Remembered { get; init; }
 }
 
@@ -58,7 +58,7 @@ public sealed record GitLogCommit(string Commit, IReadOnlyList<string> Parents, 
     public string? Side { get; init; }
 }
 
-/// <summary>A page of history as a graph is drawn from it (D147 §2.3): the lanes are the page's to draw, from each commit's parents.</summary>
+/// <summary>A page of history as a graph is drawn from it: the lanes are the page's to draw, from each commit's parents.</summary>
 /// <param name="Tips">The whole ids walked from, in the order they were asked and kept.</param>
 /// <param name="SinceParted">Whether it walks two tips since they parted, each commit marked with its side.</param>
 public sealed record GitGraphPage(IReadOnlyList<string> Tips, bool SinceParted, int Page)
@@ -70,7 +70,7 @@ public sealed record GitGraphPage(IReadOnlyList<string> Tips, bool SinceParted, 
     public bool More { get; init; }
 }
 
-/// <summary>A commit's page (D147 §2.4): its fields, its whole message, and its changes against its first parent.</summary>
+/// <summary>A commit's page: its fields, its whole message, and its changes against its first parent.</summary>
 public sealed record GitCommitDetail(string Commit, IReadOnlyList<string> Parents, string Subject, string Message)
 {
     public string Author { get; init; } = "";
@@ -91,11 +91,11 @@ public sealed record GitCommitDetail(string Commit, IReadOnlyList<string> Parent
     /// <summary>A merge commit, whose changes are read against its first parent, which its page says.</summary>
     public bool Merge => Parents.Count > 1;
 
-    /// <summary>Its changes, as the review reads them (REVIEW3), with the review's bound and the bound's sentence.</summary>
+    /// <summary>Its changes, as the review reads them, with the review's bound and the bound's sentence.</summary>
     public TreeDiff? Changes { get; init; }
 }
 
-/// <summary>One commit in a file's history, and the path the file had there (D147 §2.5).</summary>
+/// <summary>One commit in a file's history, and the path the file had there.</summary>
 /// <param name="Status">As the review says it: <c>added</c>, <c>modified</c>, <c>deleted</c>, <c>renamed</c>, <c>copied</c>.</param>
 /// <param name="Path">The file's path at that commit, the one to blame there; empty where git named no change.</param>
 public sealed record GitFileChange(GitLogCommit Commit, string Status, string Path)
@@ -104,7 +104,7 @@ public sealed record GitFileChange(GitLogCommit Commit, string Status, string Pa
     public string? From { get; init; }
 }
 
-/// <summary>A page of a file's history at a commit, following renames (D147 §2.5).</summary>
+/// <summary>A page of a file's history at a commit, following renames.</summary>
 public sealed record GitFileHistory(string Commit, string Path, int Page)
 {
     /// <summary>Up to <see cref="GitReads.HistoryPage"/> commits, newest first.</summary>
@@ -126,7 +126,7 @@ public sealed record GitBlameCommit(string Commit, string Author, string AuthorE
 /// <param name="Original">Its line number in the commit that last changed it.</param>
 public sealed record GitBlameLine(int Original, string Text);
 
-/// <summary>A run of lines from one commit, under one path (D147 §2.5).</summary>
+/// <summary>A run of lines from one commit, under one path.</summary>
 /// <param name="Line">Its first line's number in the file blamed.</param>
 /// <param name="Path">The file's path in that commit.</param>
 public sealed record GitBlameRun(string Commit, int Line, string Path)
@@ -140,10 +140,10 @@ public sealed record GitBlameRun(string Commit, int Line, string Path)
     public IReadOnlyList<GitBlameLine> Lines { get; init; } = [];
 }
 
-/// <summary>A file as a commit holds it, each line with the commit that last changed it (D147 §2.5).</summary>
+/// <summary>A file as a commit holds it, each line with the commit that last changed it.</summary>
 public sealed record GitBlame(string Commit, string Path)
 {
-    /// <summary>Binary by git's own test (D111): such a file has a history and no blame, and no runs.</summary>
+    /// <summary>Binary by git's own test: such a file has a history and no blame, and no runs.</summary>
     public bool Binary { get; init; }
 
     public IReadOnlyList<GitBlameRun> Runs { get; init; } = [];
@@ -151,11 +151,11 @@ public sealed record GitBlame(string Commit, string Path)
     /// <summary>Each commit the runs name, by its whole id.</summary>
     public IReadOnlyDictionary<string, GitBlameCommit> Commits { get; init; } = new Dictionary<string, GitBlameCommit>();
 
-    /// <summary>The last line shown where the file holds more than the bound (D111), or null where the blame is whole.</summary>
+    /// <summary>The last line shown where the file holds more than the bound, or null where the blame is whole.</summary>
     public int? StoppedAt { get; init; }
 }
 
-/// <summary>Two commits compared (D147 §2.6): the commits only on each side, and the changes.</summary>
+/// <summary>Two commits compared: the commits only on each side, and the changes.</summary>
 /// <param name="Everything">The changes are everything that differs (<c>A..B</c>), not what the right side changed since the two parted (<c>A...B</c>).</param>
 public sealed record GitCompare(string Left, string Right, bool Everything)
 {
@@ -164,30 +164,30 @@ public sealed record GitCompare(string Left, string Right, bool Everything)
 
     public bool More { get; init; }
 
-    /// <summary>The changes, as the review reads them (REVIEW3), with its bound.</summary>
+    /// <summary>The changes, as the review reads them, with its bound.</summary>
     public TreeDiff? Changes { get; init; }
 }
 
-/// <summary>The branches whose history holds a commit (D147 §2.4), local and origin's, by their whole names.</summary>
+/// <summary>The branches whose history holds a commit, local and origin's, by their whole names.</summary>
 public sealed record GitHolding(string Commit, IReadOnlyList<string> Branches);
 
-/// <summary>A name resolved to the commit it names now (D147 §4.2).</summary>
+/// <summary>A name resolved to the commit it names now.</summary>
 public sealed record GitResolved(string Revision, string Commit);
 
 /// <summary>
-/// The reads behind Git's pages (GIT1b, D147 §2.3–§2.6, §4): a page of a graph, a commit, a file's history, a blame and a
+/// The reads behind Git's pages: a page of a graph, a commit, a file's history, a blame and a
 /// compare, each one call in a machine format, or two for a commit and a compare, and an answer named only by whole commit
 /// ids kept in memory.
 /// </summary>
 /// <remarks>
-/// <para><b>Through Tools' git</b> (D121 §3): every call is <see cref="WorkingTree.ReadGitAsync"/>'s, which starts the file
+/// <para><b>Through Tools' git</b>: every call is <see cref="WorkingTree.ReadGitAsync"/>'s, which starts the file
 /// Tools resolves through <see cref="WorkingTree.GitStart"/>, so the page reads the git the agents run.</para>
 ///
-/// <para>🔴 <b>One process per view, never one per file</b> (REVIEW3). A commit is two calls: its fields and parents, then
-/// REVIEW3's one-call reader over its first parent to it. A compare is two: the commits only on each side, then the same
+/// <para>🔴 <b>One process per view, never one per file</b>. A commit is two calls: its fields and parents, then
+/// the review's one-call reader over its first parent to it. A compare is two: the commits only on each side, then the same
 /// reader. A graph page, a file's history and a blame are one each.</para>
 ///
-/// <para>🔴 <b>A ref is never a key</b> (D147 §4.2). Every read is asked of whole commit ids, and anything else is refused
+/// <para>🔴 <b>A ref is never a key</b>. Every read is asked of whole commit ids, and anything else is refused
 /// before git is asked: a ref is resolved first, by the list or <see cref="ResolveAsync"/>, which is never kept. An answer
 /// named only by ids cannot change, so it is kept under the repository's git directory, the ids, the path and the page. Two
 /// reads are never kept, since what they answer moves: the branches holding a commit, and a name's commit.</para>
@@ -200,10 +200,10 @@ public sealed record GitResolved(string Revision, string Commit);
 /// </remarks>
 public sealed class GitReads
 {
-    /// <summary>A graph page's commits (D147 §2.3).</summary>
+    /// <summary>A graph page's commits.</summary>
     public const int GraphPage = 200;
 
-    /// <summary>A file's history's commits a page (D147 §2.5).</summary>
+    /// <summary>A file's history's commits a page.</summary>
     public const int HistoryPage = 100;
 
     /// <summary>A compare's commits, the rest said as more.</summary>
@@ -232,7 +232,7 @@ public sealed class GitReads
     {
     }
 
-    /// <param name="git">How git is read: the seam the tests count processes through, as REVIEW3's are.</param>
+    /// <param name="git">How git is read: the seam the tests count processes through, as the review's are.</param>
     internal GitReads(GitReadCache cache, WorkingTree.GitRead git)
     {
         Cache = cache;
@@ -246,7 +246,7 @@ public sealed class GitReads
     public static bool IsWholeId(string? text) => text is { Length: 40 or 64 } && text.All(char.IsAsciiHexDigit);
 
     /// <summary>
-    /// A page of history from <paramref name="tips"/> (D147 §2.3): one <c>log</c> of <see cref="GraphPage"/> commits in date
+    /// A page of history from <paramref name="tips"/>: one <c>log</c> of <see cref="GraphPage"/> commits in date
     /// order. The tips are put in one order first, so the call and the key agree. <paramref name="sinceParted"/> walks exactly
     /// two, in the order named, since they parted (<c>A...B</c>): a branch beside its line.
     /// </summary>
@@ -288,8 +288,8 @@ public sealed class GitReads
     }
 
     /// <summary>
-    /// A commit's page (D147 §2.4): its fields and whole message, then its changes against its first parent through
-    /// REVIEW3's one-call reader, with the review's bound. Two calls.
+    /// A commit's page: its fields and whole message, then its changes against its first parent through
+    /// the review's one-call reader, with its bound. Two calls.
     /// </summary>
     public async Task<GitAnswer<GitCommitDetail>> CommitAsync(string root, string commit, CancellationToken ct = default)
     {
@@ -319,7 +319,7 @@ public sealed class GitReads
     }
 
     /// <summary>
-    /// A page of the history of <paramref name="path"/> at <paramref name="commit"/> (D147 §2.5): one <c>log --follow</c>,
+    /// A page of the history of <paramref name="path"/> at <paramref name="commit"/>: one <c>log --follow</c>,
     /// following renames, <see cref="HistoryPage"/> commits a page, each with the path the file had there.
     /// </summary>
     public async Task<GitAnswer<GitFileHistory>> HistoryAsync(string root, string commit, string path, int page = 0, CancellationToken ct = default)
@@ -351,8 +351,8 @@ public sealed class GitReads
     }
 
     /// <summary>
-    /// <paramref name="path"/> as <paramref name="commit"/> holds it, each line with the commit that last changed it (D147
-    /// §2.5): one <c>blame --porcelain</c>, with D111's bound and binary test. <i>Before this change</i> is this read of a
+    /// <paramref name="path"/> as <paramref name="commit"/> holds it, each line with the commit that last changed it:
+    /// one <c>blame --porcelain</c>, with the review's bound and binary test. <i>Before this change</i> is this read of a
     /// run's <see cref="GitBlameRun.Previous"/> at its <see cref="GitBlameRun.PreviousPath"/>.
     /// </summary>
     public async Task<GitAnswer<GitBlame>> BlameAsync(string root, string commit, string path, CancellationToken ct = default)
@@ -378,7 +378,7 @@ public sealed class GitReads
     }
 
     /// <summary>
-    /// Two commits compared (D147 §2.6): one <c>log</c> of the commits only on each side, then REVIEW3's reader over what the
+    /// Two commits compared: one <c>log</c> of the commits only on each side, then the review's reader over what the
     /// right side changed since the two parted (<c>A...B</c>), or everything that differs (<c>A..B</c>). Two calls.
     /// </summary>
     public async Task<GitAnswer<GitCompare>> CompareAsync(
@@ -411,7 +411,7 @@ public sealed class GitReads
             .ConfigureAwait(false);
     }
 
-    /// <summary>The local branches and origin's whose history holds <paramref name="commit"/> (D147 §2.4): one call, never kept.</summary>
+    /// <summary>The local branches and origin's whose history holds <paramref name="commit"/>: one call, never kept.</summary>
     public async Task<GitAnswer<GitHolding>> HoldingAsync(string root, string commit, CancellationToken ct = default)
     {
         if (!IsWholeId(commit)) return Refused<GitHolding>(GitReadRefusal.NotACommit, NotACommit(commit));
@@ -426,7 +426,7 @@ public sealed class GitReads
     }
 
     /// <summary>
-    /// The commit <paramref name="revision"/> names now (D147 §4.2): one <c>rev-parse</c>, never kept, since a ref moves. A
+    /// The commit <paramref name="revision"/> names now: one <c>rev-parse</c>, never kept, since a ref moves. A
     /// name git could read as an option, or one holding a space or a control character, is refused before git is asked.
     /// </summary>
     public async Task<GitAnswer<GitResolved>> ResolveAsync(string root, string revision, CancellationToken ct = default)
@@ -477,7 +477,7 @@ public sealed class GitReads
         return new(value, GitReadRefusal.None, null) { Commands = commands(value) };
     }
 
-    /// <summary>git's whole answer, through the review's reader (REVIEW3), for a call whose answer its own <c>--max-count</c> bounds.</summary>
+    /// <summary>git's whole answer, through the review's reader, for a call whose answer its own <c>--max-count</c> bounds.</summary>
     private async Task<(int Code, string Text)> WholeAsync(string root, IReadOnlyList<string> arguments, CancellationToken ct)
     {
         var text = new System.Text.StringBuilder();

@@ -4,7 +4,7 @@ using static Daoris.Driver.TreeGit;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A session's tree locked while the session holds it (TREELOCK1, D51's note): git's own lock (<c>git worktree lock</c>), its reason
+/// A session's tree locked while the session holds it: git's own lock (<c>git worktree lock</c>), its reason
 /// naming the session, so no tool that prunes merged branches or removes clean trees takes the tree from under it.
 /// </summary>
 /// <remarks>
@@ -84,7 +84,7 @@ internal static class SessionLocks
         return code == 0;
     }
 
-    /// <summary>A terminal record lets go of its own lock (TREELOCK2); a park, helper wait or setup continuation still holds it.</summary>
+    /// <summary>A terminal record lets go of its own lock; a park, helper wait or setup continuation still holds it.</summary>
     internal static Task<bool> LetGoEndedAsync(PriorSession record)
     {
         if (record.Teammate || record.State is not ("completed" or "declined" or "failed" or "stopped" or "stood-down")

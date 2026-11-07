@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>A running session's git access as it holds it now (D241 point 7): each class with its value, and <c>session</c> as its source where the person tightened it.</summary>
+/// <summary>A running session's git access as it holds it now: each class with its value, and <c>session</c> as its source where the person tightened it.</summary>
 /// <param name="Session">The session's id.</param>
 /// <param name="Repository">The repository it started in, where it had one.</param>
 /// <param name="Workspace">Its workspace, where known.</param>
@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 public sealed record GitSessionRecord(string Session, string? Repository, string? Workspace, IReadOnlyList<GitAccessClass> Classes);
 
 /// <summary>
-/// The git access a running session holds (D241 point 7, the git design §3.1 G5): a record in the home's <c>run/git/sessions/{id}.json</c>
+/// The git access a running session holds (the git design §3.1 G5): a record in the home's <c>run/git/sessions/{id}.json</c>
 /// begun at the session's start with its repository and workspace, and the classes the person has tightened since. What the session
 /// holds is what its repository resolves to now, narrowed by those classes; a tightening only narrows, and the doors read it
 /// through <see cref="Held"/> for every act the session's marker names. Holds no secret.

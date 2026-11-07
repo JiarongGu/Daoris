@@ -2,20 +2,20 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>A branch or a lightweight tag to create (GITAPP2c): <paramref name="Kind"/> is <c>branch</c> or <c>tag</c>, <paramref name="At"/> the commit it names (HEAD where null).</summary>
+/// <summary>A branch or a lightweight tag to create: <paramref name="Kind"/> is <c>branch</c> or <c>tag</c>, <paramref name="At"/> the commit it names (HEAD where null).</summary>
 public sealed record RefAsk(string Repository, string Checkout, string Kind, string Name, string? At);
 
 /// <summary>
-/// A branch or a lightweight tag to delete (GITAPP2d): <paramref name="At"/> the commit the page showed it at (refused where it stands elsewhere),
+/// A branch or a lightweight tag to delete: <paramref name="At"/> the commit the page showed it at (refused where it stands elsewhere),
 /// <paramref name="Line"/> the repository's line, which is never deleted.
 /// </summary>
 public sealed record RefDeleteAsk(string Repository, string Checkout, string Kind, string Name, string? At = null, string? Line = null);
 
-/// <summary>A branch or a lightweight tag to rename to <paramref name="To"/> (GITAPP2e); <paramref name="At"/> and <paramref name="Line"/> as a delete's.</summary>
+/// <summary>A branch or a lightweight tag to rename to <paramref name="To"/>; <paramref name="At"/> and <paramref name="Line"/> as a delete's.</summary>
 public sealed record RefRenameAsk(string Repository, string Checkout, string Kind, string Name, string To, string? At = null, string? Line = null);
 
 /// <summary>
-/// **Create or delete a branch or a lightweight tag, and undo either** (GITAPP2c and d, D204; the git-writes design §6, §12 rows c and d). One
+/// **Create or delete a branch or a lightweight tag, and undo either** (d; §12 rows c and d). One
 /// <c>create</c>, or one transaction of the <c>delete</c>, the recovery ref's <c>create</c> and each proof ref's <c>verify</c>, through
 /// <see cref="RefTransaction"/> run as an act of the journal (<see cref="ActRuns"/>), so it holds the checkout alone, is journaled, and is
 /// reconciled by its postconditions where its run died. The undo is an act of its own: a create's <c>delete</c> at the id the create made,
@@ -75,7 +75,7 @@ public static class GitRefActs
         if (journal.Act(act) is not { } record) return Refused($"no act `{act}` is recorded, so nothing was undone");
         if (record.Kind is not (CreateKind or DeleteKind or RenameKind or FinishKind)) return Refused($"act `{act}` is not a create, a delete or a rename, so nothing was undone");
         if (!string.Equals(record.Repository, repository, StringComparison.OrdinalIgnoreCase)) return Refused($"act `{act}` was made in another repository, so nothing was undone");
-        // A rename stopped between its ref and its section steps is undone too: its ref moves back alone (design §5).
+        // A rename stopped between its ref and its section steps is undone too: its ref moves back alone.
         var partial = record.Kind == RenameKind && record.Outcome == ActOutcomes.Partial;
         if (record.Open || (record.Outcome != ActOutcomes.Done && !partial)) return Refused($"act `{act}` did not finish as done ({record.Outcome ?? "still open"}), so there is nothing to undo");
         if (record.Kind == DeleteKind) return await UndoDeleteAsync(runs, record, checkout, press, confirmed, ct).ConfigureAwait(false);
@@ -98,7 +98,7 @@ public static class GitRefActs
         }, ct).ConfigureAwait(false);
     }
 
-    // ——— Delete (GITAPP2d).
+    // ——— Delete.
 
     /// <summary>The commands a person types in the checkout for the same act.</summary>
     public static IReadOnlyList<string> Commands(RefDeleteAsk ask) => [ask.Kind == "tag" ? $"git tag -d {ask.Name}" : $"git branch -D {ask.Name}"];
@@ -331,7 +331,7 @@ public static class GitRefActs
         }, ct).ConfigureAwait(false);
     }
 
-    // ——— Rename (GITAPP2e).
+    // ——— Rename.
 
     /// <summary>The commands a person types in the checkout for the same act.</summary>
     public static IReadOnlyList<string> Commands(RefRenameAsk ask) =>

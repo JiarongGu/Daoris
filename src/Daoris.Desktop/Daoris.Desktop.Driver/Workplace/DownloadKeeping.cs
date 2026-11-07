@@ -3,8 +3,8 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The downloads' rule (KEEP1b, D195 points 2 and 6; the cleanup design §2.1, §2.3, §3.1): a version nothing uses goes once its days have
-/// passed in its current unused stretch, through CACHECLEAR1's act (<see cref="DownloadClearing.ClearAsync"/>), each judged again under the
+/// The downloads' rule (6): a version nothing uses goes once its days have
+/// passed in its current unused stretch, through <see cref="DownloadClearing.ClearAsync"/>, each judged again under the
 /// use files' locks and kept while a running session was handed it. The look's Keeping pass runs it, holding the home's run lock.
 /// </summary>
 /// <remarks>
@@ -13,8 +13,8 @@ namespace Daoris.Driver;
 /// finds it gone, clears that time, so the next that finds it unused starts a new stretch. A version a running session was handed does not
 /// clear it: the session's own versions are the guard while it runs. One whose use cannot be read now (<c>unread</c>), or downloaded within
 /// the hour (<c>recent</c>), is left as it stands.</para>
-/// <para><b>Once a day</b> (§3.1 step 5): the versions whose stretch is past the policy's days are removed; none under <c>never</c>, and
-/// none while <c>keeping.json</c> does not read, since then no stretch is known (§6.7). The run writes the kind's <c>last</c>.</para>
+/// <para><b>Once a day</b>: the versions whose stretch is past the policy's days are removed; none under <c>never</c>, and
+/// none while <c>keeping.json</c> does not read, since then no stretch is known. The run writes the kind's <c>last</c>.</para>
 /// </remarks>
 public static class DownloadKeeping
 {
@@ -25,10 +25,10 @@ public static class DownloadKeeping
     public static string Key(DownloadedVersion row) => Key(row.Kind, row.Name, row.Version);
 
     /// <summary>
-    /// What a start of a session is handed of the downloads, kept on its record before it is spawned (KEEP1b, D195 point 6; the cleanup
-    /// design §3.5, Fable F2.5): the rule keeps each version while the session runs. Every spawn takes it, a go-on as a first start, once
+    /// What a start of a session is handed of the downloads, kept on its record before it is spawned: the rule keeps each version
+    /// while the session runs. Every spawn takes it, a go-on as a first start, once
     /// its start is prepared; a start handed none of them asks nothing. Best-effort: a record the service did not keep it on reads as one
-    /// from before, which keeps the start-time rule, so the start goes on either way.
+    /// that never carried it, which keeps the start-time rule, so the start goes on either way.
     /// </summary>
     public static async Task KeepHandedAsync(ServiceClient service, string home, string sessionId, ProcessStartInfo info, CancellationToken ct)
     {
@@ -62,7 +62,7 @@ public static class DownloadKeeping
     /// </summary>
     /// <param name="door">The run's door, <see cref="KeepingRun"/>'s, for <c>last</c> and the machine log.</param>
     /// <param name="run">The run's id, for <c>last</c>.</param>
-    /// <param name="budget">How long it removes for, at most (§3.1), heard between versions; null is no bound. What it did not reach is
+    /// <param name="budget">How long it removes for, at most, heard between versions; null is no bound. What it did not reach is
     /// <see cref="DownloadsPass.Cut"/>, and the next pass takes it up.</param>
     public static async Task<DownloadsPass> PassAsync(
         string home, DownloadsPolicy policy, DownloadJudge judge, bool daily, string door, string run, MachineLog? log = null,

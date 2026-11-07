@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A set-aside folder's class (KEEPSIZE1b, the keep-size design §3.4), read from the manifest beside it: what every removal door reads, the
-/// hour's purge, the days' purge and the press (and the allowance, KEEPSIZE1d).
+/// A set-aside folder's class, read from the manifest beside it: what every removal door reads, the
+/// hour's purge, the days' purge and the press (and the allowance).
 /// </summary>
 public static class SetAsideClass
 {
@@ -32,7 +32,7 @@ public static class SetAsideClass
 }
 
 /// <summary>
-/// One judgement of a set-aside folder (KEEPSIZE1b, the keep-size design §3.4): its class, the moment a write after which keeps it, and when
+/// One judgement of a set-aside folder: its class, the moment a write after which keeps it, and when
 /// a rule may take it. Read and never written. <see cref="Due"/> is a schedule, never an authorization: a recorded folder's hour is taken only
 /// on a holding check run right before its rename (<see cref="HoldingAsync"/>, Codex's read of the branch, finding 1).
 /// </summary>
@@ -51,7 +51,7 @@ internal sealed record SetAsideEligibility(string Class, DateTimeOffset Threshol
     /// </summary>
     internal const string NoCheckout = "the registry names no checkout of its repository on this machine";
 
-    /// <summary>The folder a removal renames its folder into first (§3.4), under <c>.tidied</c>: every other reader passes over it.</summary>
+    /// <summary>The folder a removal renames its folder into first, under <c>.tidied</c>: every other reader passes over it.</summary>
     internal const string Going = ".going";
 
     /// <summary>The workspaces' folders under one place's <c>.tidied</c>, <see cref="Going"/> passed over.</summary>
@@ -85,7 +85,7 @@ internal sealed record SetAsideEligibility(string Class, DateTimeOffset Threshol
     }
 
     /// <summary>
-    /// The holding check (§3.4), read-only and outside every hold, in the repository's root the registry gives: the branch is absent by git's
+    /// The holding check, read-only and outside every hold, in the repository's root the registry gives: the branch is absent by git's
     /// own word, and the tip is an ancestor of the manifest's ref, or of <c>refs/heads/&lt;line&gt;</c> where it names none.
     /// <see cref="Holding.Passed"/>; <see cref="Holding.Failed"/> only where git said so for certain (the branch stands, the holder is missing,
     /// the tip is no ancestor); <see cref="Holding.Unread"/> for a root not given or any answer git does not define, which keeps the folder
