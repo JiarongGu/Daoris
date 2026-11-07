@@ -322,24 +322,22 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - D215 point 2 (the install's policy on a branch rule's `integrate`) vs `DriverConfig.LinePolicyOf` (`linePolicies` alone): D227's 1a note reads right.
 - D215 point 5 (no node added to any graph) vs `Workflows/Kinds/Integrate/IntegrateNode.cs` (`integrate` kind) and `land` method `integrate`: the code reads right.
 - D221's rejection of a place's choice changing through `PLACE_APPLY` vs `PlacePlan.cs:336` (Apply chooses the copy): D227 reads right.
-- D157 and D223 (no zoom, no minimap) vs D224 and `workflow/chart/FlowChart.tsx:62`: D224 reads right; `WorkflowChart.tsx:353` still says "no zoom".
-- D186 point 3 (a flow placed left to right where it fits) vs D221/D223 (a workflow always top to bottom, `flowLayout.ts:291`): both right, each for its flows.
+- D157 and D223 (no zoom, no minimap) vs D224 and `workflowViewport` in `workflow/chart/FlowChart.tsx` (zoom 80 to 200% edited, 50 to 200% shown): D224 reads right.
+- D186 point 3 (a flow placed left to right where it fits) vs D221/D223 (a workflow is read in sections, so never left to right, `design/flowLayout.ts`): both right, each for its flows.
 - `NodeContract.cs` (`NodeKinds.Check`: started by nothing) vs `Workflows/Kinds/Check/CheckNode.cs` (its door on the heavy executor): the code reads right.
 
 ## Open
 
-- **SETUPUX1i:** the place page's tree.
 - **SETUPUX1x:** the installed sitting of the place page, and its fixes.
-- **SETUPUX1y:** Setup is the Agents place's default and its tree of places is always drawn; the opener's `roleSection` names Appointed
+- **The place page's opener** (SETUPUX1y, built): Setup is the Agents place's default and its tree of places is always drawn; the opener's `roleSection` names Appointed
   roles or All roles only. A door naming a repository's place says `placeOf`, which `placeOpening` resolves to the place's id.
 - **WORKFLOWCLEAN1j:** a saved workflow that runs a work cycle, only if a place with one is found.
-- **WORKFLOWCLEAN1z (NOCOMPAT1b2, NOCOMPAT1b4):** the runtime suites still seeding work cycles in `driver.json` (`ObservedEventTests`,
-  `LookParallel`, `NodeWakes`, which the runtime no longer reads) rebound onto saved graphs. A workspace's page has three tabs
+- **Place pages and the service's binds** (NOCOMPAT1b2, NOCOMPAT1b4, built): a workspace's page has three tabs
   (Details, Branches, Workflow); its setup is its place's (defaults under Workflow, access and Reach under Sessions) and the remote's
   wiring a row of Details, so a door naming a section is sent there by the opener. The service has no door that binds a quest to a graph, none that names one for
   a take, and no take bind: the store's open drops `quest_take_binds` and `quest_owned_take_binds`, and the `took_bind` session column is
   gone. A `Bound` operation only arrives in a log from an older build, which the replay still reads; service tests seed one with
-  `BoundSeed.SeedBound`. A start binds its own run (`WorkflowRunStart.AtStartAsync`) and the look only says what the starts bound
+  `QuestStore.SeedBound` (`BoundSeed`). A start binds its own run (`WorkflowRunStart.AtStartAsync`) and the look only says what the starts bound
   (`WorkflowRunStart.Say`); the help room names no `workspace-setup` part.
 - **CHATFLOW1 (the rest):** the installed window.
 - **INTEGRATE1 k, i, m:** the flip of this repository's integrator, the steward's acts, a sibling repository's declared integration; h's
