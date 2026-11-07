@@ -15,7 +15,7 @@ public sealed class PartnerMeasurementsTests
         "ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12");
 
     private static PartnerMeasurement Row(PartnerConfiguration at, string outcome = PartnerMeasurements.Held, bool standIn = false) =>
-        new(at.Agent, at.HarnessVersion!, "0.9.0", at.Posture!, at.WritableRoots, at.Network, at.System, at.SettingsDigest,
+        new(at.Agent, at.DoorVersion!, "0.9.0", at.Posture!, at.WritableRoots, at.Network, at.System, at.SettingsDigest,
             PartnerMeasurements.Confinement, outcome, "docs/2026-10-22-coagent-design.md")
         {
             StandIn = standIn,
@@ -28,12 +28,12 @@ public sealed class PartnerMeasurementsTests
         IReadOnlyList<PartnerMeasurement> rows = [Row(Handed)];
 
         Assert.NotNull(PartnerMeasurements.Admitting(rows, Handed, production: true));
-        Assert.Null(PartnerMeasurements.Admitting(rows, Handed with { HarnessVersion = "0.163.0" }, production: true));
+        Assert.Null(PartnerMeasurements.Admitting(rows, Handed with { DoorVersion = "0.163.0" }, production: true));
         Assert.Null(PartnerMeasurements.Admitting(rows, Handed with { Posture = "agent-full-access" }, production: true));
         Assert.Null(PartnerMeasurements.Admitting(rows, Handed with { System = "windows 10.0.26100" }, production: true));
         Assert.Null(PartnerMeasurements.Admitting(rows, Handed with { SettingsDigest = new string('0', 64) }, production: true));
         Assert.Null(PartnerMeasurements.Admitting(rows, Handed with { Agent = "claude-code-acp" }, production: true));
-        Assert.Null(PartnerMeasurements.Admitting(rows, Handed with { HarnessVersion = null }, production: true));
+        Assert.Null(PartnerMeasurements.Admitting(rows, Handed with { DoorVersion = null }, production: true));
         Assert.Null(PartnerMeasurements.Admitting([Row(Handed, outcome: "escaped")], Handed, production: true));
         Assert.Contains("not admitted as a partner", PartnerMeasurements.Refused(Handed));
     }
@@ -65,7 +65,7 @@ public sealed class PartnerMeasurementsTests
         foreach (var row in PartnerMeasurements.Rows)
         {
             Assert.StartsWith("docs/", row.Evidence);
-            Assert.True(File.Exists(Path.Combine(root, row.Evidence)), $"{row.Agent} {row.HarnessVersion}: no evidence at {row.Evidence}");
+            Assert.True(File.Exists(Path.Combine(root, row.Evidence)), $"{row.Agent} {row.DoorVersion}: no evidence at {row.Evidence}");
             Assert.Equal(PartnerMeasurements.Confinement, row.Capability);
             Assert.False(row.StandIn);
         }

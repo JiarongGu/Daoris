@@ -28,9 +28,9 @@ public sealed class HelperDoors
     /// refusal is an answer, the host's sentence, not an exception, and so is a host older than the door.
     /// </summary>
     public async Task<HelperOpened> OpenAsync(
-        string asker, string adapter, string tree, string? account, string? harnessVersion, string? baseCommit, CancellationToken ct = default)
+        string asker, string adapter, string tree, string? account, string? doorVersion, string? baseCommit, CancellationToken ct = default)
     {
-        var route = new OpenHelper(asker, adapter, tree, account, harnessVersion, baseCommit);
+        var route = new OpenHelper(asker, adapter, tree, account, doorVersion, baseCommit);
         var door = RouteRequest.Of(route).Path;
         var (ok, status, payload, root) = await _service.SendJsonAsync(route, ct).ConfigureAwait(false);
         if (root is not { } answer) return new(null, $"the service at {_service.BaseUrl} has no `{door}` door ({status}) — is it older than this driver?");
@@ -41,7 +41,7 @@ public sealed class HelperDoors
         if (id is null) return new(null, $"the service at {_service.BaseUrl} answered `{door}` with no record.");
 
         // The door the record opened by, for the session log (LOG1b): a helper's record is a chat that serves another session.
-        _service.RecordOpened(new SessionOpened(id, HelperPass.OpenedKind, Text(session, "adapter") ?? adapter, Text(session, "repository") ?? "")
+        _service.RecordOpened(new SessionOpened(id, HelperPass.OpenedKind, Text(session, "door") ?? adapter, Text(session, "repository") ?? "")
         {
             Workspace = Text(session, "workspace"),
         });

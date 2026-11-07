@@ -41,7 +41,7 @@ public sealed class HandOverTests : IDisposable
         string? from = null) => new()
     {
         ["id"] = id, ["repository"] = "engine", ["state"] = state, ["kind"] = kind, ["quest"] = quest, ["ask"] = ask,
-        ["adapter"] = "claude-code", ["profile"] = "account-1", ["tree"] = tree ?? Path.Combine(_home, "tree"),
+        ["door"] = "claude-code", ["profile"] = "account-1", ["tree"] = tree ?? Path.Combine(_home, "tree"),
         ["created"] = T0.ToString("O"), ["updated"] = T0.AddMinutes(5).ToString("O"), ["said"] = new JsonArray(), ["from"] = from,
     };
 
@@ -914,7 +914,7 @@ public sealed class HandOverTests : IDisposable
     public async Task A_park_whose_own_agent_is_no_longer_here_may_be_handed_over()
     {
         var park = Driven("p4rk0000", "q5", "awaiting-person");
-        park["adapter"] = "retired-agent";
+        park["door"] = "retired-agent";
         var room = QuestRoom(Driven("qu3st000", minute: 20), park);
         room.Quests.Add(QuestRow("q5", "Taken"));
         room.Claims["q5"] = "held";

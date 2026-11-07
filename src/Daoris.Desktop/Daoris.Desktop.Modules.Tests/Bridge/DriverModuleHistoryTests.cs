@@ -23,7 +23,7 @@ public sealed class DriverModuleHistoryTests : DriverModuleBridge
         var host = new LoopbackHost();
         var at = tree is null ? "" : $",\"tree\":\"{tree.Replace('\\', '/')}\"";
         host.Serve("/api/sessions?includeClosed=true", Json(
-            $$"""[{"id":"s1","quest":"q1","repository":"engine","adapter":"claude-code","state":"completed","kind":"driven","workspace":"aurora"{{at}},"created":"2026-10-02T09:00:00Z","updated":"2026-10-02T09:10:00Z"},{"id":"c1","repository":"engine","adapter":"claude-code","state":"completed","kind":"chat","workspace":"aurora","created":"2026-10-02T09:00:00Z","updated":"2026-10-02T09:10:00Z"}]"""));
+            $$"""[{"id":"s1","quest":"q1","repository":"engine","door":"claude-code","state":"completed","kind":"driven","workspace":"aurora"{{at}},"created":"2026-10-02T09:00:00Z","updated":"2026-10-02T09:10:00Z"},{"id":"c1","repository":"engine","door":"claude-code","state":"completed","kind":"chat","workspace":"aurora","created":"2026-10-02T09:00:00Z","updated":"2026-10-02T09:10:00Z"}]"""));
         host.Serve("/api/sessions", Json("[]"));
         host.Serve("/api/quests?includeClosed=true", Json(
             """[{"id":"q1","from":"game","to":"engine","title":"A secret title","body":"","status":"Done","workspace":"aurora"},{"id":"qt","from":"game","to":"engine","title":"t","body":"","status":"Taken","workspace":"aurora"}]"""));

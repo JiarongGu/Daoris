@@ -36,7 +36,7 @@ export type HandOverOffer = {
  * agent that owns the door's accounts (AGT7). An answer without the facts carries none, and then there is no offer.
  */
 export function handOverOffer({ session, workspace, doors, answer, now, actor }: {
-  session: Pick<Session, 'adapter' | 'profile'>;
+  session: Pick<Session, 'door' | 'profile'>;
   /** The conversation's workspace, as the registry names it (`default` where it names none). */
   workspace: string;
   doors: readonly ToolDoor[];
@@ -51,8 +51,8 @@ export function handOverOffer({ session, workspace, doors, answer, now, actor }:
   const until = coolingFor(session, doors, answer, now);
   let why: HandOverOffer['why'] | null = until ? 'limit' : null;
   if (!why && session.profile) {
-    const door = doors.find((each) => each.door === session.adapter);
-    const own = agentOf(answer, door ? toolOf(door) : session.adapter);
+    const door = doors.find((each) => each.door === session.door);
+    const own = agentOf(answer, door ? toolOf(door) : session.door);
     const near = own?.speaks && scopeOf(own).near.some((each) => each.account === session.profile);
     if (near) why = 'near';
   }
@@ -92,14 +92,14 @@ export function handOverOffer({ session, workspace, doors, answer, now, actor }:
  * (D182 point 6); an answer with no `room`, and the offer stands as before.
  */
 function switchesAway(
-  session: Pick<Session, 'adapter' | 'profile'>,
+  session: Pick<Session, 'door' | 'profile'>,
   doors: readonly ToolDoor[],
   answer: AccountsAnswer | null | undefined,
   scopeOf: (agent: NonNullable<ReturnType<typeof agentOf>>) => AccountScope,
 ): boolean {
   if (!session.profile) return false;
-  const door = doors.find((each) => each.door === session.adapter);
-  const own = agentOf(answer, door ? toolOf(door) : session.adapter);
+  const door = doors.find((each) => each.door === session.door);
+  const own = agentOf(answer, door ? toolOf(door) : session.door);
   if (!own) return false;
   const scope = scopeOf(own);
   return switchOf(scope.use) !== 'off'
@@ -114,9 +114,9 @@ const live = (cooling: { until: string } | null | undefined, now: Date): boolean
  * The present doors of tools other than the conversation's own, one door per tool, in the roster's order (MIXAGENT1b-iii): the
  * candidates Daoris's offer draws from and the hand-over's ask lists first.
  */
-export function otherToolDoors(session: Pick<Session, 'adapter'>, doors: readonly ToolDoor[]): ToolDoor[] {
-  const own = doors.find((each) => each.door === session.adapter);
-  const ownTool = own ? toolOf(own) : session.adapter;
+export function otherToolDoors(session: Pick<Session, 'door'>, doors: readonly ToolDoor[]): ToolDoor[] {
+  const own = doors.find((each) => each.door === session.door);
+  const ownTool = own ? toolOf(own) : session.door;
   const seen = new Set<string>([ownTool]);
   const found: ToolDoor[] = [];
   for (const door of doors) {
@@ -138,7 +138,7 @@ export type NextChoice = { door: ToolDoor; model: string | null; effort: string 
  * `fixtures/hand-over-order.json`'s `actorRows`.
  */
 export function nextChoices(
-  session: Pick<Session, 'adapter'>,
+  session: Pick<Session, 'door'>,
   doors: readonly ToolDoor[],
   actor?: Pick<ActorRow, 'choices' | 'arranged'> | null,
 ): NextChoice[] {
@@ -147,8 +147,8 @@ export function nextChoices(
   if (entries.length === 0 || entries.every((entry) => entry.from === 'before')) {
     return otherToolDoors(session, doors).map((door) => ({ door, model: null, effort: null, from: 'roster' }));
   }
-  const own = doors.find((each) => each.door === session.adapter);
-  const ownTool = own ? toolOf(own) : session.adapter;
+  const own = doors.find((each) => each.door === session.door);
+  const ownTool = own ? toolOf(own) : session.door;
   const found: NextChoice[] = [];
   for (const entry of entries) {
     const door = doors.find((each) => each.present && each.door === entry.agent);

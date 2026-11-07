@@ -126,7 +126,7 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
         />
         {here && (
           <div className="mt-2 min-w-0">
-            <SessionConversation session={session.id} adapter={session.adapter} chat={session.kind === 'chat'} tree={session.tree} live={SESSION_ACTIVE.has(session.state)} scroller={scroller} />
+            <SessionConversation session={session.id} adapter={session.door} chat={session.kind === 'chat'} tree={session.tree} live={SESSION_ACTIVE.has(session.state)} scroller={scroller} />
           </div>
         )}
       </div>

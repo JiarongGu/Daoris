@@ -12,7 +12,7 @@ import {
 const session = (over: Partial<Session> = {}): Session => ({
   id: 's1',
   repository: 'engine',
-  adapter: 'claude-code',
+  door: 'claude-code',
   state: 'working',
   created: '2026-09-21T09:00:00Z',
   updated: '2026-09-21T09:04:00Z',
@@ -248,7 +248,7 @@ describe('a record drawn by its work (FOUNDATION1c)', () => {
  * helper helps (`serves`), each where the list holds it; a link the list does not hold is null, and nothing is claimed of it.
  */
 describe('the sessions a record links to', () => {
-  const earlier = session({ id: 'a1b2c3d4', adapter: 'codex', kind: 'chat' });
+  const earlier = session({ id: 'a1b2c3d4', door: 'codex', kind: 'chat' });
   const asker = session({ id: 's1a2b3c4', quest: '7a82cc' });
   const byId = new Map([earlier, asker].map((row): [string, Session] => [row.id, row]));
 

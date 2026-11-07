@@ -209,7 +209,7 @@ public sealed class ReviewTreeTests : IDisposable
         Assert.Equal(30, asked["minutes"]!.GetValue<int>());
         var tree = asked["tree"]!.GetValue<string>();
         Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Trees,"work", "reports"), Path.GetDirectoryName(tree));
-        Assert.Equal("stub-harness 1.0.0", asked["harnessVersion"]!.GetValue<string>());
+        Assert.Equal("stub-harness 1.0.0", asked["doorVersion"]!.GetValue<string>());
 
         // It ran in its copy as its own session, on no quest, handed the reviewer's instruction.
         var saw = JsonNode.Parse(File.ReadAllText(Path.Combine(_home, "saw.json")))!;

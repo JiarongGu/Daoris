@@ -39,16 +39,16 @@ public sealed class SessionRoutes(HostWiring host) : IRouteModule
     // records what it is told and judges none of it. An access setup that is no short map of words is the caller's mistake.
     private async Task<Answer<SessionOpenResponse>> OpenAsync(OpenSession request, HttpContext http, CancellationToken ct)
     {
-        if (request.Opens is null && (string.IsNullOrWhiteSpace(request.Quest) || string.IsNullOrWhiteSpace(request.Adapter)))
+        if (request.Opens is null && (string.IsNullOrWhiteSpace(request.Quest) || string.IsNullOrWhiteSpace(request.Door)))
         {
-            return Refusal.BadRequest("quest and adapter are required");
+            return Refusal.BadRequest("quest and door are required");
         }
 
         SessionOpenOutcome outcome;
         try
         {
             outcome = await Service.Ledger.OpenAsync(
-                request.Quest!, request.Adapter!, DateTimeOffset.UtcNow, request.HarnessVersion, request.Profile, request.Tree,
+                request.Quest!, request.Door!, DateTimeOffset.UtcNow, request.DoorVersion, request.Profile, request.Tree,
                 request.BaseCommit, ct, request.From, request.FromWhy, request.FromBy, request.Access, actor: request.Actor,
                 opens: request.Opens, moves: SessionAnswers.MovesOf(request.Moves));
         }
@@ -73,9 +73,9 @@ public sealed class SessionRoutes(HostWiring host) : IRouteModule
         {
             outcome = await Service.Ledger.OpenChatAsync(
                 request.Repository!,
-                // The adapter is the harness, never a model. Silence takes the supported one.
-                string.IsNullOrWhiteSpace(request.Adapter) ? "claude-code" : request.Adapter,
-                DateTimeOffset.UtcNow, request.HarnessVersion, request.Profile, request.Tree, request.BaseCommit, ct,
+                // The door names an agent, never a model. Silence takes the supported one.
+                string.IsNullOrWhiteSpace(request.Door) ? "claude-code" : request.Door,
+                DateTimeOffset.UtcNow, request.DoorVersion, request.Profile, request.Tree, request.BaseCommit, ct,
                 request.From, request.FromWhy, request.FromBy, actor: request.Actor, opens: request.Opens,
                 moves: SessionAnswers.MovesOf(request.Moves));
         }

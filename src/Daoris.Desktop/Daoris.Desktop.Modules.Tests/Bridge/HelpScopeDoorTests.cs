@@ -91,7 +91,7 @@ public sealed class HelpScopeDoorTests : DriverModuleBridge
     {
         static JsonObject Help(string id, string workspace, string tree) => new()
         {
-            ["id"] = id, ["repository"] = HelpRoom.Repository, ["adapter"] = "claude-code", ["state"] = "completed", ["kind"] = "chat",
+            ["id"] = id, ["repository"] = HelpRoom.Repository, ["door"] = "claude-code", ["state"] = "completed", ["kind"] = "chat",
             ["workspace"] = workspace, ["tree"] = tree, ["created"] = "2026-10-19T09:00:00Z", ["updated"] = "2026-10-19T09:01:00Z",
         };
         var sessions = new JsonArray(Help("h1alpha0", "alpha", HelpRoom.PathOf(Home, "alpha")), Help("h2whole0", "default", HelpRoom.PathOf(Home)));

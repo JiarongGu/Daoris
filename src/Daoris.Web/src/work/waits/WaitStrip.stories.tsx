@@ -15,7 +15,7 @@ import { WaitStrip } from './WaitStrip';
 const nothing = () => {};
 
 const session = (over: Partial<Session> = {}): Session => ({
-  id: 's1a2b3c4', quest: '7a82cc', repository: 'engine', adapter: 'claude-code', state: 'completed', kind: 'driven',
+  id: 's1a2b3c4', quest: '7a82cc', repository: 'engine', door: 'claude-code', state: 'completed', kind: 'driven',
   created: '2026-10-15T09:46:00Z', updated: '2026-10-15T11:56:00Z', ...over,
 });
 

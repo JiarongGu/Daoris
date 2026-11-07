@@ -20,7 +20,7 @@ import { PauseAsk } from '../pausing/WorkAsks';
 // UI/UX design R6): the helper gives the session's gutters, which the header's sticky box reaches over as it does there.
 
 const SESSION: Session = {
-  id: 's1a2b3c4', quest: 'abc123', repository: 'engine', adapter: 'claude-code', state: 'working', kind: 'driven',
+  id: 's1a2b3c4', quest: 'abc123', repository: 'engine', door: 'claude-code', state: 'working', kind: 'driven',
   created: '2026-10-02T09:00:00Z', updated: '2026-10-02T09:30:00Z',
 };
 

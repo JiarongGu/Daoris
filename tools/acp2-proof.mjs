@@ -229,15 +229,15 @@ async function drivenRun() {
   }, 'driving');
 
   const sessions = (await ask('/api/sessions?includeClosed=true')) ?? [];
-  const session = sessions.find((s) => s.adapter === ADAPTER);
+  const session = sessions.find((s) => s.door === ADAPTER);
   check('a session ran on the protocol door', Boolean(session),
     session ? `${session.id} — ${session.state}` : 'no session with that adapter');
 
   if (session) {
     check('it ended completed', session.state === 'completed', `${session.state}: ${session.note ?? ''}`);
     // The record names what produced the work (D49 §4) — the same three facts the pipe door records.
-    check('the record names the adapter', session.adapter === ADAPTER);
-    check('the record names the harness version', Boolean(session.harnessVersion), session.harnessVersion ?? 'absent');
+    check('the record names the adapter', session.door === ADAPTER);
+    check('the record names the harness version', Boolean(session.doorVersion), session.doorVersion ?? 'absent');
     check('the record carries evidence of a commit', /[0-9a-f]{7}/i.test(session.evidence ?? ''),
       session.evidence ?? 'no evidence');
   }

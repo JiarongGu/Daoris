@@ -19,7 +19,7 @@ internal static class AttentionTestRows
     public static JsonObject With(JsonObject basis, string over) => With(basis.ToJsonString(), over);
 
     public static JsonObject Session(string over = "{}") => With(
-        """{"id":"s1a2b3c4","repository":"engine","adapter":"claude-code","state":"working","kind":"driven","created":"2026-09-21T09:00:00Z","updated":"2026-09-21T10:00:00Z"}""",
+        """{"id":"s1a2b3c4","repository":"engine","door":"claude-code","state":"working","kind":"driven","created":"2026-09-21T09:00:00Z","updated":"2026-09-21T10:00:00Z"}""",
         over);
 
     public static JsonObject Registration(string repository, string over = "{}") => With(

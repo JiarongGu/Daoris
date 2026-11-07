@@ -44,7 +44,7 @@ import { registerOpenDraft, toldGraph, toldSessions } from './openDraft';
 import { fingerprintOf } from '../workflow/draftFingerprint';
 
 const HELP = {
-  id: 'h1e1p000', quest: null, repository: 'daoris:help', adapter: 'claude-code-acp', state: 'working',
+  id: 'h1e1p000', quest: null, repository: 'daoris:help', door: 'claude-code-acp', state: 'working',
   kind: 'chat', created: '2026-09-29T00:00:00Z', updated: '2026-09-29T00:01:00Z', workspace: 'default',
 };
 
@@ -951,7 +951,7 @@ describe('Ask Daoris, with an agent named', () => {
   it('lists what the conversation published with its live state, and opens one on Quests', async () => {
     const at = '2026-10-22T09:00:00Z';
     SESSIONS = [HELP, {
-      id: 's9w8v7u6', quest: 'q1a2b3c4', repository: 'engine', adapter: 'claude-code', state: 'working', kind: 'task',
+      id: 's9w8v7u6', quest: 'q1a2b3c4', repository: 'engine', door: 'claude-code', state: 'working', kind: 'task',
       created: at, updated: at, workspace: 'default',
     }];
     QUESTS = [{

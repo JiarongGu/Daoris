@@ -22,13 +22,13 @@ const REGISTRY = [{
 
 /** A conversation in the repository's checkout: its record names the checkout as its tree (D51). */
 const CHAT = {
-  id: 'c0ffee11', quest: null, repository: 'engine', adapter: 'stub', state: 'working', tree: ROOT,
+  id: 'c0ffee11', quest: null, repository: 'engine', door: 'stub', state: 'working', tree: ROOT,
   kind: 'chat', created: '2026-09-30T10:00:00Z', updated: '2026-09-30T10:05:00Z',
 };
 
 /** A driven session in a tree of its own, whose review lists what it changed. */
 const DRIVEN = {
-  id: 's1a2b3c4', quest: null, repository: 'engine', adapter: 'claude-code', state: 'completed',
+  id: 's1a2b3c4', quest: null, repository: 'engine', door: 'claude-code', state: 'completed',
   tree: 'C:/somewhere/data/trees/default/engine/daoris-s1a2b3c4',
   kind: 'driven', created: '2026-09-30T09:00:00Z', updated: '2026-09-30T09:30:00Z',
 };

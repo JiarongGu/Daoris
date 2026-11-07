@@ -24,10 +24,10 @@ public sealed class PartnerDoors
     /// is a host older than the door.
     /// </summary>
     public async Task<HelperOpened> OpenAsync(
-        string lead, string piece, string adapter, string tree, string? account, string? harnessVersion, string? baseCommit,
+        string lead, string piece, string adapter, string tree, string? account, string? doorVersion, string? baseCommit,
         CancellationToken ct = default)
     {
-        var route = new OpenPartner(lead, piece, adapter, tree, account, harnessVersion, baseCommit);
+        var route = new OpenPartner(lead, piece, adapter, tree, account, doorVersion, baseCommit);
         var door = RouteRequest.Of(route).Path;
         var (ok, status, payload, root) = await _service.SendJsonAsync(route, ct).ConfigureAwait(false);
         if (root is not { } answer) return new(null, $"the service at {_service.BaseUrl} has no `{door}` door ({status}) — is it older than this driver?");
@@ -37,7 +37,7 @@ public sealed class PartnerDoors
         var id = Text(session, "id");
         if (id is null) return new(null, $"the service at {_service.BaseUrl} answered `{door}` with no record.");
 
-        _service.RecordOpened(new SessionOpened(id, OpenedKind, Text(session, "adapter") ?? adapter, Text(session, "repository") ?? "")
+        _service.RecordOpened(new SessionOpened(id, OpenedKind, Text(session, "door") ?? adapter, Text(session, "repository") ?? "")
         {
             Workspace = Text(session, "workspace"),
         });

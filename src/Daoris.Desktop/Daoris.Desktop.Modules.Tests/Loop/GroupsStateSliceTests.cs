@@ -27,7 +27,7 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
     /// <summary>A record as the service answers it: a conversation where it serves no quest, its transcript a path the pull keeps.</summary>
     private static JsonObject Record(string id, string state, string? quest, int minute, string repository = "engine") => new()
     {
-        ["id"] = id, ["quest"] = quest, ["repository"] = repository, ["adapter"] = "claude-code", ["state"] = state,
+        ["id"] = id, ["quest"] = quest, ["repository"] = repository, ["door"] = "claude-code", ["state"] = state,
         ["kind"] = quest is null ? "chat" : "driven", ["created"] = $"2026-10-20T09:{minute:00}:00Z", ["updated"] = $"2026-10-20T09:{minute + 1:00}:00Z",
         ["transcript"] = $"X:/daoris/transcripts/{id}.jsonl",
     };

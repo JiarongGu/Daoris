@@ -35,7 +35,7 @@ type Payload = Record<string, unknown>;
 type Start = { sessionId: string | null; message: string };
 
 const help = (id: string, workspace: string, state = 'working') => ({
-  id, quest: null, repository: 'daoris:help', adapter: 'claude-code-acp', state, kind: 'chat',
+  id, quest: null, repository: 'daoris:help', door: 'claude-code-acp', state, kind: 'chat',
   created: '2026-10-19T09:00:00Z', updated: '2026-10-19T09:01:00Z', workspace,
 });
 

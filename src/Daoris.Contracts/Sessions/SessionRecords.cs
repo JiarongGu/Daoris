@@ -61,9 +61,9 @@ public sealed record SaidWordResponse(
 /// <param name="HelpMode">The access mode an Ask Daoris record's run got.</param>
 /// <param name="Resolved">The downloaded versions its starts were handed.</param>
 public sealed record SessionResponse(
-    string Id, string? Quest, string Repository, string Adapter, [property: PageType(SessionPageTypes.State)] string State,
+    string Id, string? Quest, string Repository, string Door, [property: PageType(SessionPageTypes.State)] string State,
     string? Note, string? Evidence, string? Transcript, DateTimeOffset Created, DateTimeOffset Updated,
-    string Workspace, [property: PageType(SessionPageTypes.Kind)] string Kind, string? HarnessVersion, string? Profile, string? Tree,
+    string Workspace, [property: PageType(SessionPageTypes.Kind)] string Kind, string? DoorVersion, string? Profile, string? Tree,
     string? BaseCommit = null, string? Ask = null, bool Took = false, bool Interrupted = false, bool Limit = false, bool Deletable = false,
     IReadOnlyList<SaidWordResponse>? Said = null,
     [property: PageType(SessionPageTypes.NoteParts)] JsonElement? NoteParts = null,

@@ -484,7 +484,7 @@ export function SessionHead({
         <CoWorkers
           session={session.id}
           helpers={helpers}
-          lead={helpers.team?.lead ?? session.adapter}
+          lead={helpers.team?.lead ?? session.door}
           onPass={helpers.team?.onPass}
           passing={helpers.team?.passing}
           choices={helpers.team?.choices}
@@ -560,7 +560,7 @@ export function SessionHead({
       <DetailsFold
         summary={[
           intake ? t('work.scope.ask', { id: session.ask }) : session.quest ? t('work.scope.quest', { id: session.quest }) : null,
-          sessionTool({ adapter: session.adapter, harnessVersion: session.harnessVersion }),
+          sessionTool({ door: session.door, doorVersion: session.doorVersion }),
           t('work.facts.started', { ago: ago(session.created) }),
         ].filter(Boolean).join(' · ')}
         rows={[
@@ -583,12 +583,12 @@ export function SessionHead({
           ...countRows(t, supervision),
           supervisorRow(t, supervision),
           { label: t('work.head.quest'), value: session.quest ? `#${session.quest}` : null, mono: true },
-          { label: t('work.head.tool'), value: sessionTool({ adapter: session.adapter, harnessVersion: session.harnessVersion }) },
+          { label: t('work.head.tool'), value: sessionTool({ door: session.door, doorVersion: session.doorVersion }) },
           ...actorRows(t, session),
           {
             label: t('work.head.account'),
             value: session.profile
-              ? (nameOf ? nameOf(session.adapter, session.profile) : session.profile)
+              ? (nameOf ? nameOf(session.door, session.profile) : session.profile)
               : ownSignIn ? t('quests.session.ownSignIn') : null,
           },
           { label: t('work.head.machine'), value: sessionOrigin(session) },

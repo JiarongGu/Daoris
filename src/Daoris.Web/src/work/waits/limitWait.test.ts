@@ -28,7 +28,7 @@ AccountsAnswer {
 
 const doors = [{ door: 'claude-code-acp', accountOf: 'claude-code' }] as never[];
 const session = (profile: string | null, noteParts: unknown[] = []) =>
-  ({ adapter: 'claude-code-acp', profile, noteParts }) as never;
+  ({ door: 'claude-code-acp', profile, noteParts }) as never;
 const t = i18n.t.bind(i18n) as (key: string, options?: Record<string, unknown>) => string;
 const label = (account: string | null) => account ?? i18n.t('agents.account.own');
 
@@ -81,7 +81,7 @@ describe('a limited line\'s wait', () => {
 
   // LIMITRESUME1d2: the row and the quest's page read the head's own sentence, for a limited line alone.
   it('words a limited line’s wait for its row and its quest’s page, and nothing for another', () => {
-    const line = { adapter: 'claude-code-acp', profile: 'a', noteParts: [], state: 'failed', limit: true, kind: 'driven', quest: 'q1' } as never;
+    const line = { door: 'claude-code-acp', profile: 'a', noteParts: [], state: 'failed', limit: true, kind: 'driven', quest: 'q1' } as never;
     expect(limitWaitLines(t, { session: line, questStatus: 'Taken', doors, answer: answer(), label, now: NOW })).toEqual([
       `Waiting for a limit to reset: it resumes by itself at ${moment(SOON)}, on a.`,
       'It goes on in its own conversation.',

@@ -14,12 +14,12 @@ public static class SessionAnswers
         ToSession(await service.Ledger.WithEntryAsync(session), loopback);
 
     public static SessionResponse ToSession(Session s, bool loopback) => new(
-        s.Id, s.Quest, s.Repository, s.Adapter, s.StateName,
+        s.Id, s.Quest, s.Repository, s.Door, s.StateName,
         // The note is free text the driver wrote, and it named the tree and the account.
         loopback ? s.Note : SessionNote.ForAnotherMachine(s.Note, s), s.Evidence,
         Transcript: loopback ? s.Transcript : null,
         s.Created, s.Updated, s.Workspace, s.Kind.ToString().ToLowerInvariant(),
-        s.HarnessVersion,
+        s.DoorVersion,
         Profile: loopback ? s.Profile : null,
         Tree: loopback ? s.Tree : null,
         BaseCommit: loopback ? s.BaseCommit : null,

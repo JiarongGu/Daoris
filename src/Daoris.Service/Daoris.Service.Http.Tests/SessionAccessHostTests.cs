@@ -30,7 +30,7 @@ public sealed class SessionAccessHostTests(LocalHost host) : IClassFixture<Local
 
         var opened = await host.PostAsync("/api/sessions", new
         {
-            quest, adapter = "stub", tree = host.RootOf("warden-access"), access = new { permissions = "unrestricted", landing = "rule" },
+            quest, door = "stub", tree = host.RootOf("warden-access"), access = new { permissions = "unrestricted", landing = "rule" },
         });
 
         Assert.Equal(200, opened.Status);
@@ -51,7 +51,7 @@ public sealed class SessionAccessHostTests(LocalHost host) : IClassFixture<Local
         var quest = await QuestAsync("A quest resumed under another setup");
         var opened = await host.PostAsync("/api/sessions", new
         {
-            quest, adapter = "stub", tree = host.RootOf("warden-resumed"), access = new { permissions = "auto" },
+            quest, door = "stub", tree = host.RootOf("warden-resumed"), access = new { permissions = "auto" },
         });
         var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
 
@@ -63,7 +63,7 @@ public sealed class SessionAccessHostTests(LocalHost host) : IClassFixture<Local
         Assert.Equal(400, (await host.PostAsync($"/api/sessions/{id}/access", new { access = new Dictionary<string, string> { ["permissions"] = "a b" } })).Status);
         Assert.Equal(400, (await host.PostAsync($"/api/sessions/{id}/access", new { })).Status);
         Assert.Equal(404, (await host.PostAsync("/api/sessions/nothere/access", new { access = new { permissions = "auto" } })).Status);
-        var help = await host.PostAsync("/api/sessions/help", new { adapter = "stub", room = Path.Combine(host.Repositories, "rooms", "autonomy1b2") });
+        var help = await host.PostAsync("/api/sessions/help", new { door = "stub", room = Path.Combine(host.Repositories, "rooms", "autonomy1b2") });
         var helpId = help.Json.GetProperty("session").GetProperty("id").GetString()!;
         Assert.Equal(404, (await host.PostAsync($"/api/sessions/{helpId}/access", new { access = new { permissions = "auto" } })).Status);
     }
@@ -76,7 +76,7 @@ public sealed class SessionAccessHostTests(LocalHost host) : IClassFixture<Local
 
         var refused = await host.PostAsync("/api/sessions", new
         {
-            quest, adapter = "stub", tree = host.RootOf("warden-refused"), access = new Dictionary<string, string> { ["permissions"] = "a word\nand a line" },
+            quest, door = "stub", tree = host.RootOf("warden-refused"), access = new Dictionary<string, string> { ["permissions"] = "a word\nand a line" },
         });
 
         Assert.Equal(400, refused.Status);

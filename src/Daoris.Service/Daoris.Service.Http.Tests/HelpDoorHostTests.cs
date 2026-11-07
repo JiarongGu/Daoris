@@ -12,18 +12,18 @@ public sealed class HelpDoorHostTests(LocalHost host) : IClassFixture<LocalHost>
     {
         var room = Path.Combine(host.Repositories, "rooms", "askscope1a");
 
-        var unknown = await host.PostAsync("/api/sessions/help", new { adapter = "stub", room, workspace = "nowhere" });
+        var unknown = await host.PostAsync("/api/sessions/help", new { door = "stub", room, workspace = "nowhere" });
 
         Assert.Equal(404, unknown.Status);
         Assert.Contains("`nowhere` is not a workspace this machine holds", unknown.Json.GetProperty("error").GetString());
 
-        var opened = await host.PostAsync("/api/sessions/help", new { adapter = "stub", room, workspace = "Default" });
+        var opened = await host.PostAsync("/api/sessions/help", new { door = "stub", room, workspace = "Default" });
 
         Assert.Equal(200, opened.Status);
         Assert.Equal("default", opened.Json.GetProperty("session").GetProperty("workspace").GetString());
 
         // A driver from before names none: the default workspace's, whose conversation is running.
-        var unnamed = await host.PostAsync("/api/sessions/help", new { adapter = "stub", room });
+        var unnamed = await host.PostAsync("/api/sessions/help", new { door = "stub", room });
 
         Assert.Equal(409, unnamed.Status);
         Assert.Contains(opened.Json.GetProperty("session").GetProperty("id").GetString()!, unnamed.Json.GetProperty("error").GetString());
@@ -42,12 +42,12 @@ public sealed class HelpModeDoorHostTests(LocalHost host) : IClassFixture<LocalH
     {
         var room = Path.Combine(host.Repositories, "rooms", "helpmode1a2");
 
-        var unknown = await host.PostAsync("/api/sessions/help", new { adapter = "stub", room, mode = "sometimes" });
+        var unknown = await host.PostAsync("/api/sessions/help", new { door = "stub", room, mode = "sometimes" });
 
         Assert.Equal(400, unknown.Status);
         Assert.Contains("`sometimes`", unknown.Json.GetProperty("error").GetString());
 
-        var opened = await host.PostAsync("/api/sessions/help", new { adapter = "stub", room, mode = "full" });
+        var opened = await host.PostAsync("/api/sessions/help", new { door = "stub", room, mode = "full" });
 
         Assert.Equal(200, opened.Status);
         var session = opened.Json.GetProperty("session");

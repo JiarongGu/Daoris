@@ -56,7 +56,7 @@ public sealed class HandOverQuestTickTests : IDisposable
         await driver.TickAsync().WaitAsync(Poll.Patience);
         await UntilAsync(() => service.SessionCount == 1 && service.Status("q1") == "Taken");
         var first = service.Session("s1");
-        Assert.Equal("acp-stub", first["adapter"]!.GetValue<string>());
+        Assert.Equal("acp-stub", first["door"]!.GetValue<string>());
         var tree = first["tree"]!.GetValue<string>();
 
         // 2. The person hands it to `stub`: the look takes the box and stops the session as theirs, with the hand-over's own line.
@@ -87,7 +87,7 @@ public sealed class HandOverQuestTickTests : IDisposable
         Assert.Equal(("s2", "stub", "press", "person", "driven"), (moves[0].Destination, moves[0].Agent, moves[0].Why, moves[0].By, moves[0].Executor));
 
         var carried = service.Session("s2");
-        Assert.Equal("stub", carried["adapter"]!.GetValue<string>());
+        Assert.Equal("stub", carried["door"]!.GetValue<string>());
         Assert.Equal("completed", carried["state"]!.GetValue<string>());
         // Its record names the session it was handed over from, with the hand-over's why and asker (MIXAGENT1a-iii).
         Assert.Equal(
@@ -173,7 +173,7 @@ public sealed class HandOverQuestTickTests : IDisposable
             const [log] = process.argv.slice(2);
             const url = process.env.DAORIS_SERVICE_URL;
             const records = await (await fetch(`${url}/api/sessions?includeClosed=true`)).json();
-            const mine = records.filter((record) => record.adapter === 'stub').at(-1);
+            const mine = records.filter((record) => record.door === 'stub').at(-1);
             appendFileSync(log, JSON.stringify({
               cwd: process.cwd(), target: process.env.DAORIS_TARGET ?? '', note: JSON.stringify(mine?.noteParts ?? []) }) + '\n');
             await fetch(`${url}/api/quests/q1/respond`, {

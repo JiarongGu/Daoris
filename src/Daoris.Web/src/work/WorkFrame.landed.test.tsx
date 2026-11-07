@@ -293,7 +293,7 @@ describe('a session’s page header and its acts', () => {
       { agent: 'codex', speaks: true, own: {}, accounts: [{ name: 'team' }], scopes: [scopeOf({ next: { account: 'team', reason: 'onlyReady', others: [] } })] },
     ],
   });
-  const LOW_CHAT = { ...CHAT, adapter: 'claude-code', profile: 'personal', state: 'completed' };
+  const LOW_CHAT = { ...CHAT, door: 'claude-code', profile: 'personal', state: 'completed' };
   const lowRespond = (handOver: unknown = { sessionId: 'n3wn3w00', kept: true, why: null, message: 'goes on.' }, accounts = LOW_ACCOUNTS()) =>
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'HARNESSES') return RUNNING_LOW;
@@ -601,7 +601,7 @@ describe('a session’s page header and its acts', () => {
    * name for it, and why in the hand-over's words; its *Details* names that session and attends it on a press.
    */
   it('says whom a session continues in its header, and attends that session from Details', async () => {
-    const earlier = { ...CHAT, id: 'e4r1i3r0', adapter: 'codex', state: 'completed' };
+    const earlier = { ...CHAT, id: 'e4r1i3r0', door: 'codex', state: 'completed' };
     SESSIONS = [earlier, { ...CHAT, from: 'e4r1i3r0', fromWhy: 'near', fromBy: 'daoris' }];
     // The roster's codex, named as its product.
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'

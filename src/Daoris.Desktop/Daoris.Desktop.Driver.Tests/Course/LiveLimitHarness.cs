@@ -272,7 +272,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
     public void LeaveEnded(IReadOnlyDictionary<string, string>? keep = null)
     {
         Limited(Events, "stopped", keep);
-        Ledger.Edit("c1", record => record["adapter"] = "acp-stub");
+        Ledger.Edit("c1", record => record["door"] = "acp-stub");
         Config();
     }
 
@@ -356,7 +356,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
             Ledger.Edit($"c{at}", record =>
             {
                 record["state"] = "stopped";
-                record["adapter"] = "acp-stub";
+                record["door"] = "acp-stub";
             });
         }
     }

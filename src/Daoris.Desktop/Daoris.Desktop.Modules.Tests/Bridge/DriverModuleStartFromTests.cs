@@ -162,7 +162,7 @@ public sealed class DriverModuleStartFromTests : DriverModuleBridge
             {
                 _sessions.Add(new JsonObject
                 {
-                    ["id"] = id, ["repository"] = "engine", ["state"] = "completed", ["kind"] = "chat", ["adapter"] = "talk",
+                    ["id"] = id, ["repository"] = "engine", ["state"] = "completed", ["kind"] = "chat", ["door"] = "talk",
                     ["tree"] = tree, ["created"] = "2026-10-03T08:00:00Z",
                     ["said"] = words
                         ? new JsonArray(new JsonObject

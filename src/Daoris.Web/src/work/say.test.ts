@@ -17,7 +17,7 @@ const t = i18n.getFixedT('en');
 const zh = i18n.getFixedT('zh');
 
 const session = (over: Partial<Session> = {}): Session => ({
-  id: 's1a2b3c4', quest: 'q1', repository: 'engine', adapter: 'claude-code-acp', state: 'working', kind: 'driven',
+  id: 's1a2b3c4', quest: 'q1', repository: 'engine', door: 'claude-code-acp', state: 'working', kind: 'driven',
   created: '2026-10-03T00:00:00Z', updated: '2026-10-03T00:00:00Z', ...over,
 });
 
@@ -224,23 +224,23 @@ describe('coolingFor', () => {
   ];
 
   it('reads the cool-off of the account the record ran on, by its own door or a door onto the same tool', () => {
-    expect(coolingFor({ adapter: 'claude-code', profile: 'personal' }, doors, answer(agent()), now)).toBe(until);
-    expect(coolingFor({ adapter: 'claude-code-acp', profile: 'personal' }, doors, answer(agent()), now)).toBe(until);
+    expect(coolingFor({ door: 'claude-code', profile: 'personal' }, doors, answer(agent()), now)).toBe(until);
+    expect(coolingFor({ door: 'claude-code-acp', profile: 'personal' }, doors, answer(agent()), now)).toBe(until);
   });
 
   it('reads the tool’s own sign-in where the record names no account', () => {
     const own = agent({ own: { cooling } });
-    expect(coolingFor({ adapter: 'claude-code', profile: null }, doors, answer(own), now)).toBe(until);
-    expect(coolingFor({ adapter: 'claude-code', profile: null }, doors, answer(agent()), now)).toBeNull();
+    expect(coolingFor({ door: 'claude-code', profile: null }, doors, answer(own), now)).toBe(until);
+    expect(coolingFor({ door: 'claude-code', profile: null }, doors, answer(agent()), now)).toBeNull();
   });
 
   it('says nothing cools for a ready account, a passed cool-off, another agent, or an answer that lacks it', () => {
-    expect(coolingFor({ adapter: 'claude-code', profile: 'work' }, doors, answer(agent()), now)).toBeNull();
-    expect(coolingFor({ adapter: 'claude-code', profile: 'personal' }, doors, answer(agent()), new Date('2026-10-04T14:00:00Z')))
+    expect(coolingFor({ door: 'claude-code', profile: 'work' }, doors, answer(agent()), now)).toBeNull();
+    expect(coolingFor({ door: 'claude-code', profile: 'personal' }, doors, answer(agent()), new Date('2026-10-04T14:00:00Z')))
       .toBeNull();
-    expect(coolingFor({ adapter: 'codex', profile: 'personal' }, doors, answer(agent()), now)).toBeNull();
-    expect(coolingFor({ adapter: 'claude-code', profile: 'personal' }, doors, undefined, now)).toBeNull();
-    expect(coolingFor({ adapter: 'claude-code', profile: 'personal' }, doors, {} as AccountsAnswer, now)).toBeNull();
+    expect(coolingFor({ door: 'codex', profile: 'personal' }, doors, answer(agent()), now)).toBeNull();
+    expect(coolingFor({ door: 'claude-code', profile: 'personal' }, doors, undefined, now)).toBeNull();
+    expect(coolingFor({ door: 'claude-code', profile: 'personal' }, doors, {} as AccountsAnswer, now)).toBeNull();
   });
 });
 

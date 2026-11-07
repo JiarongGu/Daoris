@@ -139,13 +139,13 @@ export const REFILED_NAMED: Quest = { ...REFILED, short: 'TK-2203 continue the p
 
 /** A session starting for the re-filed quest, as the install's list said while its page said nothing of it. */
 export const STARTING: Session = {
-  id: 'c2b8d293', quest: REFILED.id, repository: 'engine', adapter: 'claude-code-acp', harnessVersion: '0.84.0',
+  id: 'c2b8d293', quest: REFILED.id, repository: 'engine', door: 'claude-code-acp', doorVersion: '0.84.0',
   profile: 'account-1', state: 'starting', created: hoursAgo(0), updated: hoursAgo(0),
 };
 
 /** The driven session working the open quest, and a failed attempt before it. */
 export const WORKING: Session = {
-  id: 's1a2b3c4', quest: OPEN.id, repository: 'engine', adapter: 'claude-code', harnessVersion: '2.1.4', state: 'working',
+  id: 's1a2b3c4', quest: OPEN.id, repository: 'engine', door: 'claude-code', doorVersion: '2.1.4', state: 'working',
   note: 'the process is alive', evidence: 'commits landed:\nfff000 engine: cap hydration per frame',
   created: hoursAgo(2), updated: hoursAgo(1),
 };
@@ -156,7 +156,7 @@ export const FAILED: Session = { ...WORKING, id: 's0f1r2s3', state: 'failed', no
  * record completed by them and the quest still taken, with nothing here to carry it on.
  */
 export const FINISHED_HERE: Session = {
-  id: 'f1n15h3d', quest: TAKEN.id, repository: 'engine', adapter: 'claude-code', state: 'completed', kind: 'driven',
+  id: 'f1n15h3d', quest: TAKEN.id, repository: 'engine', door: 'claude-code', state: 'completed', kind: 'driven',
   note: 'The person finished this at a checkpoint.',
   noteParts: [{ code: 'stopped.checkpoint-finished', text: 'The person finished this at a checkpoint.' }],
   created: hoursAgo(3), updated: hoursAgo(1),

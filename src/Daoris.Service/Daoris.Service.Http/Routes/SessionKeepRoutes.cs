@@ -32,9 +32,9 @@ public sealed class SessionKeepRoutes(HostWiring host) : IRouteModule
 
         var outcome = await Service.Ledger.OpenIntakeAsync(
             request.Ask,
-            // The adapter is the harness, never a model. Silence takes the supported one.
-            string.IsNullOrWhiteSpace(request.Adapter) ? "claude-code" : request.Adapter,
-            request.Room, DateTimeOffset.UtcNow, request.HarnessVersion, request.Profile, ct, actor: request.Actor);
+            // The door names an agent, never a model. Silence takes the supported one.
+            string.IsNullOrWhiteSpace(request.Door) ? "claude-code" : request.Door,
+            request.Room, DateTimeOffset.UtcNow, request.DoorVersion, request.Profile, ct, actor: request.Actor);
 
         return await OpenedAsync(
             outcome, http, SessionOpenRefusal.AskNotFound, SessionOpenRefusal.AskAnswered, SessionOpenRefusal.RepositoryBusy);
@@ -49,8 +49,8 @@ public sealed class SessionKeepRoutes(HostWiring host) : IRouteModule
         try
         {
             outcome = await Service.Ledger.OpenHelpAsync(
-                string.IsNullOrWhiteSpace(request.Adapter) ? "claude-code" : request.Adapter,
-                request.Room, DateTimeOffset.UtcNow, request.HarnessVersion, request.Profile, request.Workspace,
+                string.IsNullOrWhiteSpace(request.Door) ? "claude-code" : request.Door,
+                request.Room, DateTimeOffset.UtcNow, request.DoorVersion, request.Profile, request.Workspace,
                 string.IsNullOrWhiteSpace(request.Mode) ? null : request.Mode, ct, actor: request.Actor);
         }
         catch (ArgumentException refused)

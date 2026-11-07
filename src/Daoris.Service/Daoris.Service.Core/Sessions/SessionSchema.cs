@@ -30,7 +30,7 @@ internal static class SessionSchema
                   -- Nullable since D49 §3: a chat may serve no quest at all.
                   quest      TEXT NULL,
                   repository TEXT NOT NULL,
-                  adapter    TEXT NOT NULL,
+                  door       TEXT NOT NULL,
                   state      TEXT NOT NULL,
                   note       TEXT NULL,
                   evidence   TEXT NULL,
@@ -41,7 +41,7 @@ internal static class SessionSchema
                   kind       TEXT NOT NULL DEFAULT '{nameof(SessionKind.Driven)}',
                   -- D49 §4: which tool, and which account. Written once at spawn and never moved —
                   -- a record of what ran, not a field a later state change may revise.
-                  harness_version TEXT NULL,
+                  door_version TEXT NULL,
                   profile         TEXT NULL,
                   -- D51: which working tree it holds. Null means the repository's main tree, whose
                   -- path this deployment may not know — and the lock reads that conservatively.
@@ -58,6 +58,8 @@ internal static class SessionSchema
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
+        await SessionColumnNames.RenameAsync(db, ct).ConfigureAwait(false);
+
         // Records made before a column existed must survive its arrival: a session record is the
         // reviewable trace of work that actually happened, and a store that dropped them on an upgrade
         // would lose exactly the history the person reviews. Workspaces came with D48, kinds with D49,
@@ -66,7 +68,7 @@ internal static class SessionSchema
         {
             ("workspace", $"workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'"),
             ("kind", $"kind TEXT NOT NULL DEFAULT '{nameof(SessionKind.Driven)}'"),
-            ("harness_version", "harness_version TEXT NULL"),
+            ("door_version", "door_version TEXT NULL"),
             ("profile", "profile TEXT NULL"),
             ("tree", "tree TEXT NULL"),
             ("base_commit", "base_commit TEXT NULL"),
@@ -334,7 +336,7 @@ internal static class SessionSchema
               id         TEXT PRIMARY KEY,
               quest      TEXT NULL,
               repository TEXT NOT NULL,
-              adapter    TEXT NOT NULL,
+              door       TEXT NOT NULL,
               state      TEXT NOT NULL,
               note       TEXT NULL,
               evidence   TEXT NULL,
@@ -343,14 +345,14 @@ internal static class SessionSchema
               updated    TEXT NOT NULL,
               workspace  TEXT NOT NULL DEFAULT '{Workspaces.Default}',
               kind       TEXT NOT NULL DEFAULT '{nameof(SessionKind.Driven)}',
-              harness_version TEXT NULL,
+              door_version TEXT NULL,
               profile         TEXT NULL,
               tree            TEXT NULL,
               base_commit     TEXT NULL
             );
             INSERT INTO sessions_relaxed
-              SELECT id, quest, repository, adapter, state, note, evidence, transcript, created,
-                     updated, workspace, kind, harness_version, profile, tree, base_commit
+              SELECT id, quest, repository, door, state, note, evidence, transcript, created,
+                     updated, workspace, kind, door_version, profile, tree, base_commit
               FROM sessions;
             DROP TABLE sessions;
             ALTER TABLE sessions_relaxed RENAME TO sessions;

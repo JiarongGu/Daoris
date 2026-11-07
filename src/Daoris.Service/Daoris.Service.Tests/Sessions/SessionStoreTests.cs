@@ -69,7 +69,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
         Assert.Equal(SessionState.Queued, session.State);
         Assert.Equal("abc123", session.Quest);
         Assert.Equal("Owner", session.Repository);
-        Assert.Equal("stub", session.Adapter);
+        Assert.Equal("stub", session.Door);
         Assert.Null(session.Note);
     }
 
@@ -516,13 +516,13 @@ public sealed class SessionStoreTests : IAsyncLifetime
     {
         var session = await _sessions.CreateAsync(
             "abc123", "Owner", "claude-code", Now,
-            harnessVersion: "2.1.220 (Claude Code)", profile: "work");
+            doorVersion: "2.1.220 (Claude Code)", profile: "work");
 
         await _sessions.SetStateAsync(
             session.Id, SessionState.Completed, "done", null, null, Now.AddHours(1));
 
         var read = await _sessions.FindAsync(session.Id);
-        Assert.Equal("2.1.220 (Claude Code)", read!.HarnessVersion);
+        Assert.Equal("2.1.220 (Claude Code)", read!.DoorVersion);
         Assert.Equal("work", read.Profile);
     }
 
@@ -531,10 +531,10 @@ public sealed class SessionStoreTests : IAsyncLifetime
     public async Task An_unstated_tool_or_account_is_null_rather_than_blank()
     {
         var session = await _sessions.CreateAsync(
-            "abc123", "Owner", "stub", Now, harnessVersion: "  ", profile: "");
+            "abc123", "Owner", "stub", Now, doorVersion: "  ", profile: "");
 
         var read = await _sessions.FindAsync(session.Id);
-        Assert.Null(read!.HarnessVersion);
+        Assert.Null(read!.DoorVersion);
         Assert.Null(read.Profile);
     }
 
@@ -550,7 +550,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
         var fed = new Session(
             "alice-laptop/ab12cd34", "abc123", "Owner", "claude-code",
             SessionState.Working, null, null, null, Now, Now,
-            HarnessVersion: "2.1.220 (Claude Code)", Profile: "alice-personal",
+            DoorVersion: "2.1.220 (Claude Code)", Profile: "alice-personal",
             // A tree is a PATH on somebody else's machine (D51) — the newest thing on the list the
             // transcript started. The feed has no field for it, and this is the guard that holds even
             // when a caller fills one in anyway.
@@ -559,7 +559,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
         await _sessions.MirrorAsync(fed);
 
         var read = await _sessions.FindAsync("alice-laptop/ab12cd34");
-        Assert.Equal("2.1.220 (Claude Code)", read!.HarnessVersion);
+        Assert.Equal("2.1.220 (Claude Code)", read!.DoorVersion);
         Assert.Null(read.Profile);
         Assert.Null(read.Tree);
     }

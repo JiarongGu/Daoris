@@ -18,7 +18,7 @@ const quest = (id: string, from: string, to: string, status: Quest['status'] = '
 });
 
 const session = (repository: string, state: Session['state']): Session => ({
-  id: `s-${repository}-${state}`, repository, adapter: 'stub', state, created: '', updated: '',
+  id: `s-${repository}-${state}`, repository, door: 'stub', state, created: '', updated: '',
 });
 
 const group = (repositories: string[]): Convergence => ({

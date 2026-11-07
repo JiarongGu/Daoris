@@ -4,7 +4,7 @@ import { ago, compact, elapsed, figure, list, sentence, sessionTool, sittingDays
 
 /** ACCTNAME1 (D152 §4.2): a session's agent line names its account by the person's name where the roster's namer is handed. */
 describe('sessionTool', () => {
-  const session = { adapter: 'claude-code', harnessVersion: '2.1.288', profile: 'acct-3f9c1a2b' };
+  const session = { door: 'claude-code', doorVersion: '2.1.288', profile: 'acct-3f9c1a2b' };
 
   it('names the account by the namer handed, by its id without one, and the own sign-in where the record names none', () => {
     const nameOf = (owner: string, profile?: string | null) => (owner === 'claude-code' && profile === 'acct-3f9c1a2b' ? 'work' : profile ?? '');

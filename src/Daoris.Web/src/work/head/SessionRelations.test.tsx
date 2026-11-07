@@ -13,7 +13,7 @@ const quest = (over: Partial<Quest> & { id: string }): Quest => aQuest({
   ...over,
 });
 const ASKER: Session = {
-  id: 'a1b2c3d4', quest: null, repository: 'game', adapter: 'claude-code-acp', state: 'completed', kind: 'driven',
+  id: 'a1b2c3d4', quest: null, repository: 'game', door: 'claude-code-acp', state: 'completed', kind: 'driven',
   created: '2026-09-29T00:00:00Z', updated: '2026-09-29T00:30:00Z',
 };
 

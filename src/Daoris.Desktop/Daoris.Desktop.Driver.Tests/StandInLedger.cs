@@ -570,7 +570,7 @@ internal sealed class StandInLedger : HttpMessageHandler
             var parked = new JsonObject
             {
                 ["id"] = session, ["quest"] = quest, ["repository"] = asked["to"]!.GetValue<string>(), ["state"] = "awaiting-person",
-                ["kind"] = "driven", ["adapter"] = "stub", ["tree"] = tree, ["created"] = _clock.ToString("O"),
+                ["kind"] = "driven", ["door"] = "stub", ["tree"] = tree, ["created"] = _clock.ToString("O"),
                 ["updated"] = _clock.ToString("O"), ["note"] = "Which port should it listen on?", ["said"] = new JsonArray(),
             };
             if (entry is not null) parked["entry"] = entry;
@@ -593,7 +593,7 @@ internal sealed class StandInLedger : HttpMessageHandler
             var driven = new JsonObject
             {
                 ["id"] = session, ["quest"] = quest, ["repository"] = served["to"]!.GetValue<string>(), ["state"] = state,
-                ["kind"] = "driven", ["adapter"] = adapter, ["profile"] = profile, ["tree"] = tree, ["created"] = _clock.ToString("O"),
+                ["kind"] = "driven", ["door"] = adapter, ["profile"] = profile, ["tree"] = tree, ["created"] = _clock.ToString("O"),
                 ["updated"] = _clock.ToString("O"), ["took"] = true, ["said"] = new JsonArray(),
             };
             Works(driven);
@@ -618,7 +618,7 @@ internal sealed class StandInLedger : HttpMessageHandler
             _clock = _clock.AddSeconds(1);
             var record = new JsonObject
             {
-                ["id"] = session, ["repository"] = repository, ["state"] = state, ["kind"] = "chat", ["adapter"] = "stub",
+                ["id"] = session, ["repository"] = repository, ["state"] = state, ["kind"] = "chat", ["door"] = "stub",
                 ["tree"] = tree, ["created"] = _clock.ToString("O"),
             };
             // The marks the driver's own conversations carry, each only where it has one, as the ledger answers them on loopback.
@@ -835,7 +835,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                     var session = new JsonObject
                     {
                         ["id"] = $"s{_sessions.Count + 1}", ["quest"] = quest, ["repository"] = to,
-                        ["state"] = "queued", ["kind"] = "driven", ["adapter"] = body["adapter"]?.GetValue<string>(),
+                        ["state"] = "queued", ["kind"] = "driven", ["door"] = body["door"]?.GetValue<string>(),
                         ["tree"] = body["tree"]?.GetValue<string>(), ["created"] = _clock.ToString("O"),
                         // The account it runs on, as the service answers it on loopback (TOOL4f reads it back).
                         ["profile"] = body["profile"]?.GetValue<string>(),

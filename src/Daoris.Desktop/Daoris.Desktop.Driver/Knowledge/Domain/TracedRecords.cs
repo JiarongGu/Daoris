@@ -31,7 +31,7 @@ public sealed record TracedSession(string Id, string Repository, string State)
     public string? Adapter { get; init; }
 
     /// <summary>The tool's version the record opened on (D49 §4), or null where it names none.</summary>
-    public string? HarnessVersion { get; init; }
+    public string? DoorVersion { get; init; }
 
     /// <summary>The account it ran as, or null: the tool's own sign-in on this machine's record, unsaid on a teammate's.</summary>
     public string? Profile { get; init; }

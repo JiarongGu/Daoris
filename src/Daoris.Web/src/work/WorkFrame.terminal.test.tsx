@@ -35,7 +35,7 @@ const REGISTRY = [
 ];
 
 const DRIVEN = {
-  id: 's1a2b3c4', quest: null, repository: 'zeta', adapter: 'claude-code', state: 'working',
+  id: 's1a2b3c4', quest: null, repository: 'zeta', door: 'claude-code', state: 'working',
   kind: 'driven', created: '2026-09-02T00:00:00Z', updated: '2026-09-02T01:00:00Z',
 };
 const IN_A_TREE = { ...DRIVEN, id: 'tr33tr33', tree: 'C:/somewhere/.daoris/trees/zeta/q1' };

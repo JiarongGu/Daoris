@@ -69,12 +69,12 @@ export const QUESTS = [{
 }];
 
 export const DRIVEN = {
-  id: 's1a2b3c4', quest: 'abc123', repository: 'engine', adapter: 'claude-code', state: 'working',
+  id: 's1a2b3c4', quest: 'abc123', repository: 'engine', door: 'claude-code', state: 'working',
   kind: 'driven', created: '2026-09-02T00:00:00Z', updated: '2026-09-02T01:00:00Z',
 };
 
 export const CHAT = {
-  id: 'c0ffee11', quest: null, repository: 'engine', adapter: 'stub', state: 'working',
+  id: 'c0ffee11', quest: null, repository: 'engine', door: 'stub', state: 'working',
   kind: 'chat', created: '2026-09-02T00:00:00Z', updated: '2026-09-02T00:05:00Z',
 };
 
@@ -86,7 +86,7 @@ export const PARKED = {
 
 /** An intake that could not settle whose an ask is, parked asking the person (INT4b). */
 export const PARKED_INTAKE = {
-  id: 'i9n8t7k6', quest: null, repository: 'ask #0fda18', ask: '0fda18', adapter: 'stub',
+  id: 'i9n8t7k6', quest: null, repository: 'ask #0fda18', ask: '0fda18', door: 'stub',
   state: 'awaiting-person', kind: 'chat', tree: 'C:/somewhere/data/intake/default',
   note: 'published nothing: it asks you rather than guess.',
   noteParts: [{ words: 'published nothing: it asks you rather than guess.', by: 'before' }],

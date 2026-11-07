@@ -94,7 +94,7 @@ public sealed class ChatGoOnTests : IDisposable
         Assert.Equal(
             ("c1", HandOverWhy.Resume, HandOverBy.Daoris, _root, "talk"),
             (part["from"]?.GetValue<string>(), part["fromWhy"]?.GetValue<string>(), part["fromBy"]?.GetValue<string>(),
-             part["tree"]?.GetValue<string>(), part["adapter"]?.GetValue<string>()));
+             part["tree"]?.GetValue<string>(), part["door"]?.GetValue<string>()));
         Assert.Equal(ContinueWhy.Unkept, cannot.Why);
         Assert.Equal(["w1"], cannot.Words!);
         Assert.Equal("completed", ledger.State("c1"));
@@ -786,15 +786,15 @@ public sealed class ChatGoOnTests : IDisposable
     {
         const string json = """
             [{"id":"laptop/c1","repository":"engine","state":"completed","kind":"chat"},
-             {"id":"c1","repository":"engine","state":"stopped","kind":"chat","adapter":"claude-code","profile":"account-2",
-              "tree":"D:/trees/chat-1","harnessVersion":"2.1.287","note":"the person ended the conversation.","interrupted":true,
+             {"id":"c1","repository":"engine","state":"stopped","kind":"chat","door":"claude-code","profile":"account-2",
+              "tree":"D:/trees/chat-1","doorVersion":"2.1.287","note":"the person ended the conversation.","interrupted":true,
               "said":[{"id":"w1","text":"Also log the port.","at":"2026-10-03T09:00:00Z","files":["trace.txt"],"reopens":true}]}]
             """;
 
         var record = ServiceClient.ReadRecord(json, "c1")!;
 
         Assert.Equal(("chat", "stopped", "claude-code", "account-2"), (record.Kind, record.State, record.Adapter, record.Profile));
-        Assert.Equal(("D:/trees/chat-1", "2.1.287", "the person ended the conversation."), (record.Tree, record.HarnessVersion, record.Note));
+        Assert.Equal(("D:/trees/chat-1", "2.1.287", "the person ended the conversation."), (record.Tree, record.DoorVersion, record.Note));
         Assert.True(record.Interrupted);
         Assert.Equal(("w1", "Also log the port."), (record.Waiting.Single().Id, record.Waiting.Single().Text));
         Assert.Null(ServiceClient.ReadRecord(json, "laptop/c1"));
@@ -941,8 +941,8 @@ internal sealed class ChatLedger : HttpMessageHandler
         {
             var record = new JsonObject
             {
-                ["id"] = id, ["repository"] = repository, ["state"] = state, ["kind"] = kind, ["adapter"] = adapter,
-                ["harnessVersion"] = "1.0.0", ["tree"] = tree, ["note"] = "the conversation ended; its commits are its record.",
+                ["id"] = id, ["repository"] = repository, ["state"] = state, ["kind"] = kind, ["door"] = adapter,
+                ["doorVersion"] = "1.0.0", ["tree"] = tree, ["note"] = "the conversation ended; its commits are its record.",
                 ["created"] = "2026-10-03T08:00:00Z", ["said"] = new JsonArray(), ["quest"] = quest, ["ask"] = ask,
                 ["profile"] = profile, ["from"] = from?.Session, ["fromWhy"] = from?.Why, ["fromBy"] = from?.By,
             };
@@ -1088,8 +1088,8 @@ internal sealed class ChatLedger : HttpMessageHandler
         var session = new JsonObject
         {
             ["id"] = $"c{_sessions.Count + 1}", ["repository"] = asked["repository"]!.GetValue<string>(), ["state"] = "queued",
-            ["kind"] = "chat", ["adapter"] = asked["adapter"]!.GetValue<string>(),
-            ["harnessVersion"] = asked["harnessVersion"]?.GetValue<string>(), ["profile"] = asked["profile"]?.GetValue<string>(),
+            ["kind"] = "chat", ["door"] = asked["door"]!.GetValue<string>(),
+            ["doorVersion"] = asked["doorVersion"]?.GetValue<string>(), ["profile"] = asked["profile"]?.GetValue<string>(),
             ["tree"] = asked["tree"]?.GetValue<string>(), ["created"] = "2026-10-03T08:00:00Z", ["said"] = new JsonArray(),
         };
         // The conversation it continues, why and who asked (MIXAGENT1a-iii), as the service answers them on loopback.
@@ -1210,7 +1210,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                     var session = new JsonObject
                     {
                         ["id"] = $"h{_sessions.Count + 1}", ["repository"] = HelpRoom.Repository, ["state"] = "queued", ["kind"] = "chat",
-                        ["adapter"] = asked["adapter"]!.GetValue<string>(), ["harnessVersion"] = asked["harnessVersion"]?.GetValue<string>(),
+                        ["door"] = asked["door"]!.GetValue<string>(), ["doorVersion"] = asked["doorVersion"]?.GetValue<string>(),
                         ["profile"] = asked["profile"]?.GetValue<string>(), ["tree"] = asked["room"]?.GetValue<string>(),
                         ["created"] = "2026-10-03T08:00:00Z", ["said"] = new JsonArray(), ["workspace"] = workspace,
                         // HELPMODE1a2: the mode its start got, none told being restricted, as the ledger keeps it.

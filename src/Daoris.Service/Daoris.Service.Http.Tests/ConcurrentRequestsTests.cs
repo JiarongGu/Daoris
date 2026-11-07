@@ -146,7 +146,7 @@ public sealed class ConcurrentRequestsTests(BusyHost host, ITestOutputHelper out
     {
         var opened = await host.PostAsync("/api/sessions", new
         {
-            quest, adapter = "stub", tree = Path.Combine(host.Repositories, "trees", tree),
+            quest, door = "stub", tree = Path.Combine(host.Repositories, "trees", tree),
         });
         Assert.Equal(200, opened.Status);
         var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;

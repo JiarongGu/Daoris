@@ -69,7 +69,7 @@ public sealed record PriorSession(
     public IReadOnlyDictionary<string, string>? Access { get; init; }
 
     /// <summary>The harness version its record opened on: a resumed run says so where the version moved since (D131 §1).</summary>
-    public string? HarnessVersion { get; init; }
+    public string? DoorVersion { get; init; }
 
     /// <summary>
     /// The commit its tree stood at when it opened (SURF6): a resumed run's evidence is counted from it, so the review's

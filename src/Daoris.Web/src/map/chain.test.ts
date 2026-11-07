@@ -13,7 +13,7 @@ const quest = (id: string, extra: Partial<Quest> = {}): Quest => aQuest({
 });
 
 const session = (id: string, questId: string, created: string, extra: Partial<Session> = {}): Session => ({
-  id, quest: questId, repository: 'engine', adapter: 'claude-code', state: 'completed',
+  id, quest: questId, repository: 'engine', door: 'claude-code', state: 'completed',
   created, updated: created, ...extra,
 });
 

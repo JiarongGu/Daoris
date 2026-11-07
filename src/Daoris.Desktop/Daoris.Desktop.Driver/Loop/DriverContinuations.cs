@@ -346,7 +346,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 kept.Conversation, words,
                 // HELPERWAIT1: a helper's answer handed beside the person's at this look is among the words, though not among the look's.
                 Continuations.OpeningNoted(
-                    adapter.Id.Value, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons,
+                    adapter.Id.Value, selection.Version, park.DoorVersion, answer: park.Parked, findings, persons,
                     helper || words.Any(word => word.Helper is not null), daoris, words.Any(word => word.Supervisors)),
                 // Where its go-aheads changed since it started (AUTONOMY1c), told after the rest, since its instruction is not handed again.
                 Continuations.AfterWords(

@@ -29,7 +29,7 @@ import { AT_START } from '../help/setupGuide';
 import { WorkspaceScopeProvider } from '../data/scope';
 
 const CHAT = {
-  id: 's1a2b3c4', quest: null, repository: 'engine', adapter: 'claude-code', kind: 'chat', state: 'completed',
+  id: 's1a2b3c4', quest: null, repository: 'engine', door: 'claude-code', kind: 'chat', state: 'completed',
   created: '2026-09-30T00:00:00Z', updated: '2026-09-30T00:01:00Z', workspace: 'default',
 };
 

@@ -60,7 +60,7 @@ export function useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, account
     ? chatLimitWaitSaid(t, {
       held: heldShown,
       wait: limitWaitOf({ session: shown, workspace: shownIn, doors: harnessRows, answer: accounts.data, now: new Date() }),
-      label: (account) => namer(t, harnessRows)(shown.adapter, account),
+      label: (account) => namer(t, harnessRows)(shown.door, account),
       language: i18n.language,
       names: accountNames(harnessRows),
       now: new Date(),
@@ -88,7 +88,7 @@ export function useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, account
         const account = limitWaitOf({ session: shown, workspace: shownIn, doors: harnessRows, answer: accounts.data, now: new Date() })
           ?.account ?? shown.profile ?? null;
         accountUse.mutate(
-          { door: shown.adapter, action: 'ready', ...(account ? { profile: account } : {}) },
+          { door: shown.door, action: 'ready', ...(account ? { profile: account } : {}) },
           { onError: (error) => setLimitRefusal({ session: shown.id, sentence: sentence(error) }) },
         );
       }}

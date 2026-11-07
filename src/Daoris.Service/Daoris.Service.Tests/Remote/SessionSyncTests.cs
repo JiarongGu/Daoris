@@ -168,7 +168,7 @@ public sealed class SessionSyncTests : IAsyncLifetime
     {
         var session = await _a.CreateAsync(
             "q1", "Shared", "stub", Now, profile: "janes-own-account", tree: "C:/somewhere/private/tree",
-            harnessVersion: "stub-harness 1.0.0");
+            doorVersion: "stub-harness 1.0.0");
         await _a.SetStateAsync(session.Id, SessionState.Working, null, null, "C:/somewhere/private/log.txt", Now);
         var remote = Remote("a@one");
 
@@ -178,6 +178,24 @@ public sealed class SessionSyncTests : IAsyncLifetime
         Assert.DoesNotContain("janes-own-account", remote.LastFeed);
         Assert.DoesNotContain("private", remote.LastFeed);
         Assert.DoesNotContain("transcript", remote.LastFeed);
+    }
+
+    /// <summary>A record crosses naming its door by <c>door</c> and its version by <c>doorVersion</c>, and the teammate's copy reads both.</summary>
+    [Fact]
+    public async Task A_record_crosses_with_its_door_and_door_version_and_the_teammate_reads_them()
+    {
+        var session = await _a.CreateAsync("q1", "Shared", "stub", Now, doorVersion: "stub-harness 1.0.0");
+        var remote = Remote("a@one");
+
+        await SyncAsync(_a, "a@one", remote);
+        await SyncAsync(_b, "b@two");
+
+        Assert.Contains("\"door\":\"stub\"", remote.LastFeed);
+        Assert.Contains("\"doorVersion\":\"stub-harness 1.0.0\"", remote.LastFeed);
+        Assert.DoesNotContain("\"adapter\"", remote.LastFeed);
+        Assert.DoesNotContain("\"harnessVersion\"", remote.LastFeed);
+        var mirror = await _b.FindAsync($"a@one/{session.Id}");
+        Assert.Equal(("stub", "stub-harness 1.0.0"), (mirror!.Door, mirror.DoorVersion));
     }
 
     /// <summary>
@@ -525,7 +543,7 @@ public sealed class SessionSyncTests : IAsyncLifetime
 
         // A remote from before the field sends none: read as a record with none, which the reader then derives.
         var older = SessionWire.ReadPage(
-            """{"through":1,"more":false,"records":[{"id":"x1","origin":"a@one","repository":"Shared","adapter":"stub","state":"completed","created":"2026-09-24T10:00:00Z","updated":"2026-09-24T10:00:00Z"}]}""")!;
+            """{"through":1,"more":false,"records":[{"id":"x1","origin":"a@one","repository":"Shared","door":"stub","state":"completed","created":"2026-09-24T10:00:00Z","updated":"2026-09-24T10:00:00Z"}]}""")!;
         Assert.Null(older.Records.Single().Entry);
     }
 }

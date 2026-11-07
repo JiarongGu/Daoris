@@ -11,7 +11,7 @@ import { leadingAgentOf, nextPress, questFacts, sessionFacts, sessionFactsTip } 
 const NOW = new Date('2026-10-05T10:00:00Z');
 
 const session = (over: Partial<Session> = {}): Session => ({
-  id: 's1a2b3c4', quest: 'abc123', repository: 'engine', adapter: 'claude-code', state: 'working', kind: 'driven',
+  id: 's1a2b3c4', quest: 'abc123', repository: 'engine', door: 'claude-code', state: 'working', kind: 'driven',
   created: '2026-10-05T09:58:00Z', updated: '2026-10-05T09:59:00Z', ...over,
 });
 
@@ -230,7 +230,7 @@ describe('a session’s facts line', () => {
   it('says the agent the line is on now where its parts moved between agents, in both languages', async () => {
     const entry = { leading: 'p2', parts: [{ session: 'p1' }, { session: 'p2' }] } as never;
     const roster = [{ door: 'codex', product: 'Codex' }];
-    const moved = [session({ id: 'p1', adapter: 'claude-code' }), session({ id: 'p2', adapter: 'codex' })];
+    const moved = [session({ id: 'p1', door: 'claude-code' }), session({ id: 'p2', door: 'codex' })];
     expect(leadingAgentOf(entry, moved, roster)).toBe('Codex');
     expect(leadingAgentOf(entry, moved, [])).toBe('codex');
     expect(leadingAgentOf(entry, [session({ id: 'p1' }), session({ id: 'p2' })], roster)).toBeNull();
@@ -244,10 +244,10 @@ describe('a session’s facts line', () => {
       { id: 'claude-code', doors: [{ door: 'claude-code', transport: 'native' as const, rows: [] }, { door: 'claude-code-acp', transport: 'protocol' as const, rows: [] }] },
       { id: 'codex', doors: [{ door: 'codex-acp', transport: 'protocol' as const, rows: [] }] },
     ];
-    const doors = [session({ id: 'p1', adapter: 'claude-code' }), session({ id: 'p2', adapter: 'claude-code-acp' })];
+    const doors = [session({ id: 'p1', door: 'claude-code' }), session({ id: 'p2', door: 'claude-code-acp' })];
     expect(leadingAgentOf(entry, doors, roster, sheets)).toBeNull();
     expect(leadingAgentOf(entry, doors, roster)).toBe('claude-code-acp');
-    expect(leadingAgentOf(entry, [doors[0]!, session({ id: 'p2', adapter: 'codex-acp' })], [{ door: 'codex-acp', product: 'Codex' }], sheets)).toBe('Codex');
+    expect(leadingAgentOf(entry, [doors[0]!, session({ id: 'p2', door: 'codex-acp' })], [{ door: 'codex-acp', product: 'Codex' }], sheets)).toBe('Codex');
 
     expect(sessionFacts(t, { session: session(), shown: 'working', leadingAgent: 'Codex' }))
       .toEqual(['engine', 'the line is on Codex now', '2m']);

@@ -62,7 +62,7 @@ export function AttendedConversation({
     .flatMap((id) => {
       const row = (sessions.data ?? []).find((each) => each.id === id);
       return row
-        ? [{ id, adapter: row.adapter, chat: row.kind === 'chat', tree: row.tree, live: SESSION_ACTIVE.has(row.state), began: beganOf(id) }]
+        ? [{ id, adapter: row.door, chat: row.kind === 'chat', tree: row.tree, live: SESSION_ACTIVE.has(row.state), began: beganOf(id) }]
         : [];
     });
 
@@ -76,7 +76,7 @@ export function AttendedConversation({
           <SessionConversation
             session={attended.id}
             began={beganOf(attended.id)}
-            adapter={attended.adapter}
+            adapter={attended.door}
             chat={attended.kind === 'chat'}
             tree={attended.tree}
             live={live}
@@ -127,10 +127,10 @@ export function AttendedConversation({
               answer: newSession?.session === attended.id ? newSession.answer : null,
             } : undefined}
             reasons={{
-              from: attended.adapter,
+              from: attended.door,
               to: harnesses.data?.adapter,
               adapter: harnesses.data?.adapter,
-              agent: roster.find((row) => row.door === attended.adapter)?.product || attended.adapter,
+              agent: roster.find((row) => row.door === attended.door)?.product || attended.door,
             }}
           />
         </div>

@@ -40,7 +40,7 @@ public sealed class AtWorkReadTests
 
     private static JsonObject Record(string id, string state, string? adapter = null, string? kind = null) => new()
     {
-        ["id"] = id, ["state"] = state, ["adapter"] = adapter, ["kind"] = kind, ["note"] = "moves often",
+        ["id"] = id, ["state"] = state, ["door"] = adapter, ["kind"] = kind, ["note"] = "moves often",
     };
 
     private static JsonObject Entry(params string[] parts) => new()

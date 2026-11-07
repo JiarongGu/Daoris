@@ -126,7 +126,7 @@ public sealed class AnswerContinuesPlanTests
     public void The_last_run_says_its_adapter_and_its_base_commit()
     {
         var last = ServiceClient.ReadLastRun("""
-            [{ "id": "s1", "quest": "q1", "state": "awaiting-person", "adapter": "claude-code-acp", "baseCommit": "abc123",
+            [{ "id": "s1", "quest": "q1", "state": "awaiting-person", "door": "claude-code-acp", "baseCommit": "abc123",
                "said": [{ "id": "answer", "text": "Port 8080.", "at": "2026-10-02T10:05:00Z", "files": [] }],
                "created": "2026-10-02T10:00:00Z" },
              { "id": "s2", "quest": "q2", "state": "failed", "created": "2026-10-02T10:00:00Z" }]

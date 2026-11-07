@@ -22,21 +22,7 @@ public sealed class StoredOldNamesCensusTests : IDisposable
     /// <summary>Each kept record, by the name the area's census gives it, and the sources that spell its old word.</summary>
     private static readonly IReadOnlyDictionary<string, string[]> Kept = new Dictionary<string, string[]>
     {
-        ["the session record"] =
-        [
-            "Daoris.Service/Daoris.Service.Core/Sessions/SessionSchema.cs",
-            "Daoris.Service/Daoris.Service.Core/Sessions/SessionRowCodec.cs",
-            "Daoris.Service/Daoris.Service.Core/Sessions/SessionWire.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/Trace.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Service/SessionOpenDoors.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Service/SessionRecords.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Participants/Helpers/HelperDoors.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Participants/Partners/PartnerDoors.cs",
-            "Daoris.Desktop/Daoris.Desktop.Modules/Loop/SessionsStateSlice.cs",
-            "Daoris.Desktop/Daoris.Desktop.Modules/Loop/AccountsStateSlice.cs",
-            "Daoris.Desktop/Daoris.Desktop.Modules/Loop/AtWorkRead.cs",
-            "Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/AccountsRoutes.cs",
-        ],
+        ["the session store's renamed columns"] = ["Daoris.Service/Daoris.Service.Core/Sessions/SessionColumnNames.cs"],
         ["an opinion's record"] =
         [
             "Daoris.Service/Daoris.Service.Core/Review/Opinions.cs",

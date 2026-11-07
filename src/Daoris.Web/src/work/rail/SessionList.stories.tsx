@@ -21,7 +21,7 @@ const open = (width: number): ListLayout => ({ mode: 'open', width, beside: widt
 const CLOSED: ListLayout = { mode: 'strip', width: LIST_STRIP, beside: LIST_STRIP, auto: false };
 
 const session = (over: Partial<Session> & Pick<Session, 'id' | 'state'>): Session => ({
-  repository: 'engine', adapter: 'claude-code', kind: 'driven', created: at(95), updated: at(6), ...over,
+  repository: 'engine', door: 'claude-code', kind: 'driven', created: at(95), updated: at(6), ...over,
 });
 
 const quest = (id: string, title: string, to = 'engine'): Quest => aQuest({

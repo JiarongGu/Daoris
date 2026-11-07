@@ -38,7 +38,7 @@ type Part = { id: string; state?: string; from?: string; fromWhy?: string; adapt
 /** The line as the driver answers it: the records, its entry's parts oldest first, and each part's events. */
 function answering(parts: Part[], events: Record<string, unknown[]>, entry: Part[] = parts) {
   SESSIONS = parts.map((part, index) => ({
-    ...CHAT, id: part.id, adapter: part.adapter ?? 'claude-code', kind: part.kind ?? 'chat', state: part.state ?? 'completed',
+    ...CHAT, id: part.id, door: part.adapter ?? 'claude-code', kind: part.kind ?? 'chat', state: part.state ?? 'completed',
     ...(part.from ? { from: part.from, fromWhy: part.fromWhy ?? 'press' } : {}),
     created: `2026-10-25T0${index}:00:00Z`, updated: `2026-10-25T0${index}:30:00Z`,
   }));

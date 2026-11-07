@@ -201,7 +201,7 @@ describe("a quest's page on a right-click", () => {
   it('offers what its body offers: Try again for a stop, Resume for its own pause, its session’s door', async () => {
     const props = withMenus({
       sitting: STOPPED, work: door(),
-      session: { id: 's1a2b3c4', quest: OPEN.id, repository: 'engine', adapter: 'claude-code', state: 'stopped', created: OPEN.filed, updated: OPEN.filed },
+      session: { id: 's1a2b3c4', quest: OPEN.id, repository: 'engine', door: 'claude-code', state: 'stopped', created: OPEN.filed, updated: OPEN.filed },
       onAttend: vi.fn(),
     });
     onPage();

@@ -235,7 +235,7 @@ export function SessionRail({
     workspace: registered.get(session.repository)?.workspace,
     doors: roster,
     answer: accounts.data,
-    label: (account) => nameOf(session.adapter, account),
+    label: (account) => nameOf(session.door, account),
     now: new Date(),
   })?.[0] ?? null;
   // What each helper and each part that continues another spent, on its own row; a browser asks nothing.

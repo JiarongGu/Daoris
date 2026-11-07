@@ -66,7 +66,7 @@ public sealed class ChannelDesk(
         if (judged.Refusal != ChannelRefusal.None) return new(judged.Refusal, null);
 
         var message = new ChannelMessage(
-            NewId(), ask.Id, ask.Workspace, now, session!.Id, session.Repository, session.Adapter, entry,
+            NewId(), ask.Id, ask.Workspace, now, session!.Id, session.Repository, session.Door, entry,
             judged.To, judged.Re, question, judged.Text!) { Urgent = urgent };
         return await store.KeepAsync(message, ChannelBounds.MaxPerPart, ct).ConfigureAwait(false) is { } kept
             ? new(ChannelRefusal.None, kept)

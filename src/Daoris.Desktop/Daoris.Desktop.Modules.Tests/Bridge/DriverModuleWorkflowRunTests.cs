@@ -493,14 +493,14 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
                      {"id":"q5","from":"engine","to":"docs","title":"Quest q5","body":"","status":"Done","note":"the shape is in","publishedBy":"s1","updated":"2026-10-09T09:10:00Z"}]
                     """,
                 "/api/sessions?includeClosed=true" when requests => """
-                    [{"id":"s1","repository":"engine","state":"completed","quest":"q1","adapter":"claude-code",
+                    [{"id":"s1","repository":"engine","state":"completed","quest":"q1","door":"claude-code",
                       "created":"2026-10-09T09:00:00Z","updated":"2026-10-09T09:20:00Z","evidence":"commits landed:\nabc1234 the change"},
-                     {"id":"h1","repository":"engine","state":"working","serves":"s1","adapter":"codex-acp","created":"2026-10-09T09:05:00Z"}]
+                     {"id":"h1","repository":"engine","state":"working","serves":"s1","door":"codex-acp","created":"2026-10-09T09:05:00Z"}]
                     """,
                 "/api/quests?includeClosed=true" =>
                     """[{"id":"q1","from":"ask #a1","to":"engine","title":"Quest q1","body":"","status":"Done","updated":"2026-10-09T09:30:00Z"}]""",
                 "/api/sessions?includeClosed=true" => """
-                    [{"id":"s1","repository":"engine","state":"completed","quest":"q1","adapter":"claude-code",
+                    [{"id":"s1","repository":"engine","state":"completed","quest":"q1","door":"claude-code",
                       "created":"2026-10-09T09:00:00Z","updated":"2026-10-09T09:20:00Z","evidence":"commits landed:\nabc1234 the change"},
                      {"id":"c1","repository":"engine","state":"working","kind":"chat","created":"2026-10-09T08:00:00Z"}]
                     """,

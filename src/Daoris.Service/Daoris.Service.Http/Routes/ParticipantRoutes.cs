@@ -25,9 +25,9 @@ public sealed class ParticipantRoutes(HostWiring host) : IRouteModule
         host.MachineLocal(http)
             ? await ReplyAsync(
                 await Service.Helpers.OpenAsync(
-                    new HelperOpen(request.Asker ?? "", request.Adapter ?? "", request.Tree ?? "")
+                    new HelperOpen(request.Asker ?? "", request.Door ?? "", request.Tree ?? "")
                     {
-                        Account = request.Account, HarnessVersion = request.HarnessVersion, BaseCommit = request.BaseCommit,
+                        Account = request.Account, DoorVersion = request.DoorVersion, BaseCommit = request.BaseCommit,
                     },
                     DateTimeOffset.UtcNow, ct),
                 http)
@@ -44,9 +44,9 @@ public sealed class ParticipantRoutes(HostWiring host) : IRouteModule
         host.MachineLocal(http)
             ? await ReplyAsync(
                 await Service.Partners.OpenAsync(
-                    new PartnerOpen(request.Lead ?? "", request.Piece ?? "", request.Adapter ?? "", request.Tree ?? "")
+                    new PartnerOpen(request.Lead ?? "", request.Piece ?? "", request.Door ?? "", request.Tree ?? "")
                     {
-                        Account = request.Account, HarnessVersion = request.HarnessVersion, BaseCommit = request.BaseCommit,
+                        Account = request.Account, DoorVersion = request.DoorVersion, BaseCommit = request.BaseCommit,
                     },
                     DateTimeOffset.UtcNow, ct),
                 http)

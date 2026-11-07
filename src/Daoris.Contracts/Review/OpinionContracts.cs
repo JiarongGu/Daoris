@@ -14,7 +14,7 @@ namespace Daoris.Contracts.Review;
 public sealed record AskOpinion(
     string? Occasion, string? Pass, string? Working, OpinionCandidateWire? Candidate, OpinionReviewerWire? Reviewer,
     string? Posture, int? Minutes, string? Tree, string? Rechecks = null, IReadOnlyList<string?>? Families = null,
-    string? HarnessVersion = null) : IRoute<OpinionActionResponse>
+    string? DoorVersion = null) : IRoute<OpinionActionResponse>
 {
     public static string Method => "POST";
     public static string Path => "/api/opinions";

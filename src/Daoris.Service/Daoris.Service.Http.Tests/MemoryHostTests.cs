@@ -12,7 +12,7 @@ public sealed class MemoryHostTests(LocalHost host) : IClassFixture<LocalHost>
     /// <summary>A chat of Keeper's in its main tree, working, and a change it staged at <paramref name="at"/>.</summary>
     private async Task<(string Session, MemoryOp Op)> StagedAsync(MemoryChange change, DateTimeOffset at)
     {
-        var opened = await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", adapter = "stub" });
+        var opened = await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", door = "stub" });
         var session = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
         foreach (var state in new[] { "starting", "working" }) Assert.Equal(200, (await host.PostAsync($"/api/sessions/{session}/state", new { state })).Status);
         var op = await host.Composed.Sessions.Memory.StageAsync(
@@ -90,7 +90,7 @@ public sealed class MemoryHostTests(LocalHost host) : IClassFixture<LocalHost>
     {
         var engine = host.Composed.Memory!.Open("Keeper", MemoryReinforcement.None)!;
         var tiles = await engine.RememberAsync("Keeper draws its map in tiles.");
-        var opened = await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", adapter = "stub" });
+        var opened = await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", door = "stub" });
         var session = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
         foreach (var state in new[] { "starting", "working", "stopped" }) Assert.Equal(200, (await host.PostAsync($"/api/sessions/{session}/state", new { state })).Status);
         await host.Composed.Sessions.Memory.KeepReadsAsync(session, [new MemoryRead(new("Keeper", tiles.Id), tiles.Revision)]);

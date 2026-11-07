@@ -245,7 +245,7 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
     public async Task<string> OlderOpenAsync()
     {
         using var http = new HttpClient();
-        var body = new JsonObject { ["quest"] = "q1", ["adapter"] = "acp-stub", ["tree"] = Repository };
+        var body = new JsonObject { ["quest"] = "q1", ["door"] = "acp-stub", ["tree"] = Repository };
         using var response = await http.PostAsync($"{Service.Url}/api/sessions", new StringContent(body.ToJsonString(), System.Text.Encoding.UTF8, "application/json"));
         Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
         return JsonNode.Parse(await response.Content.ReadAsStringAsync())!["session"]!["id"]!.GetValue<string>();

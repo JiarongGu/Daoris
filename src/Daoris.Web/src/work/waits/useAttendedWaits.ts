@@ -116,7 +116,7 @@ export function useAttendedWaits({
     pieces: partnerPieces.data ?? [],
     nameOf: (agent: string) => agentRoster.names?.[agent] ?? agent,
     ask: leads ? {
-      from: attended.adapter,
+      from: attended.door,
       roster: agentRoster,
       busy: actions.askingPartner,
       onAsk: (asked, answered) => actions.askPartnerNow(attended, asked, answered),

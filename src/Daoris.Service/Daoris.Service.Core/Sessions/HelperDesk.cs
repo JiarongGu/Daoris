@@ -52,11 +52,11 @@ public sealed record HelperOutcome(HelperRefusal Refusal, string Message)
 /// <param name="Asker">The session it answers.</param>
 /// <param name="Adapter">The agent that reads.</param>
 /// <param name="Tree">Its clone of the repository, never the asker's tree.</param>
-public sealed record HelperOpen(string Asker, string Adapter, string Tree)
+public sealed record HelperOpen(string Asker, string Door, string Tree)
 {
     public string? Account { get; init; }
 
-    public string? HarnessVersion { get; init; }
+    public string? DoorVersion { get; init; }
 
     /// <summary>The asker's commit the clone stands at.</summary>
     public string? BaseCommit { get; init; }
@@ -82,7 +82,7 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
     public async Task<HelperOutcome> OpenAsync(HelperOpen open, DateTimeOffset now, CancellationToken ct = default)
     {
         if (!local) return new(HelperRefusal.Shared, Shared);
-        if (string.IsNullOrWhiteSpace(open.Asker) || string.IsNullOrWhiteSpace(open.Adapter) || Trees.Normalize(open.Tree) is not { } tree)
+        if (string.IsNullOrWhiteSpace(open.Asker) || string.IsNullOrWhiteSpace(open.Door) || Trees.Normalize(open.Tree) is not { } tree)
         {
             return Refused(HelperRefusal.BadShape, "A helper's record needs the session it answers, its agent and its own clone");
         }
@@ -112,8 +112,8 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
             }
 
             var helper = await sessions.CreateAsync(
-                    quest: null, asker.Repository, open.Adapter.Trim(), now, asker.Workspace, SessionKind.Chat,
-                    harnessVersion: open.HarnessVersion, profile: open.Account, tree: tree, baseCommit: open.BaseCommit?.ToLowerInvariant(),
+                    quest: null, asker.Repository, open.Door.Trim(), now, asker.Workspace, SessionKind.Chat,
+                    doorVersion: open.DoorVersion, profile: open.Account, tree: tree, baseCommit: open.BaseCommit?.ToLowerInvariant(),
                     ct: inside, serves: asker.Id, ownEntry: true, actor: "helper")
                 .ConfigureAwait(false);
             return new HelperOutcome(

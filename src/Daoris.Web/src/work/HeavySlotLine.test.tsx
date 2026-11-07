@@ -22,7 +22,7 @@ const RUNNING: HeavySlot = {
 };
 
 const session = (over: Partial<Session> = {}): Session => ({
-  id: 's-fts', quest: 'fts1', repository: 'engine', adapter: 'claude-code', state: 'working', kind: 'driven',
+  id: 's-fts', quest: 'fts1', repository: 'engine', door: 'claude-code', state: 'working', kind: 'driven',
   created: ago(40), updated: ago(1), ...over,
 });
 

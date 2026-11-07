@@ -163,7 +163,7 @@ public sealed class StaffPolicyLimitTickTests : IDisposable
         var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         var seen = Seeing(service, look);
         Assert.True(service.SessionCount == 2, seen);
-        Assert.Equal("acp-other", JsonNode.Parse(service.Record("s2"))!["adapter"]!.GetValue<string>());
+        Assert.Equal("acp-other", JsonNode.Parse(service.Record("s2"))!["door"]!.GetValue<string>());
         Assert.Equal(["q1:moved:limit"], Moves());
     }
 
@@ -200,7 +200,7 @@ public sealed class StaffPolicyLimitTickTests : IDisposable
         var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         var seen = Seeing(service, look);
         Assert.True(service.SessionCount == 2, seen);
-        Assert.Equal("acp-other", JsonNode.Parse(service.Record("s2"))!["adapter"]!.GetValue<string>());
+        Assert.Equal("acp-other", JsonNode.Parse(service.Record("s2"))!["door"]!.GetValue<string>());
         Assert.Equal(["q1:approved:", "q1:moved:limit"], Moves());
     }
 

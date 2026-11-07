@@ -27,8 +27,8 @@ public static class SessionWire
         foreach (var record in records)
         {
             writer.WriteStartObject();
-            Write(writer, record.Id, origin: null, record.Quest, record.Repository, record.Adapter, record.State,
-                record.Note, record.Evidence, record.Created, record.Updated, record.Kind, record.HarnessVersion,
+            Write(writer, record.Id, origin: null, record.Quest, record.Repository, record.Door, record.State,
+                record.Note, record.Evidence, record.Created, record.Updated, record.Kind, record.DoorVersion,
                 record.Limit, record.NoteParts, record.Entry, record.TookQuest);
             writer.WriteEndObject();
         }
@@ -51,9 +51,9 @@ public static class SessionWire
             }
 
             records.Add(new FedSessionRecord(
-                Text(item, "id"), Text(item, "quest"), Text(item, "repository"), Text(item, "adapter"),
+                Text(item, "id"), Text(item, "quest"), Text(item, "repository"), Text(item, "door"),
                 Text(item, "state"), Text(item, "note"), Text(item, "evidence"), created, updated,
-                Text(item, "kind"), Text(item, "harnessVersion"), Said(item, "limit"), Parts(item), Text(item, "entry"), Text(item, "tookQuest")));
+                Text(item, "kind"), Text(item, "doorVersion"), Said(item, "limit"), Parts(item), Text(item, "entry"), Text(item, "tookQuest")));
         }
 
         return records;
@@ -69,9 +69,9 @@ public static class SessionWire
         foreach (var session in page.Records)
         {
             writer.WriteStartObject();
-            Write(writer, session.Id, session.Origin, session.Quest, session.Repository, session.Adapter,
+            Write(writer, session.Id, session.Origin, session.Quest, session.Repository, session.Door,
                 session.StateName, session.Note, session.Evidence, session.Created, session.Updated,
-                session.Kind.ToString(), session.HarnessVersion, session.Limit, session.NoteParts, session.Entry, session.TookQuest);
+                session.Kind.ToString(), session.DoorVersion, session.Limit, session.NoteParts, session.Entry, session.TookQuest);
             writer.WriteEndObject();
         }
 
@@ -96,10 +96,10 @@ public static class SessionWire
             }
 
             records.Add(new Session(
-                id, Text(item, "quest"), repository, Text(item, "adapter") ?? "unknown", state,
+                id, Text(item, "quest"), repository, Text(item, "door") ?? "unknown", state,
                 Text(item, "note"), Text(item, "evidence"), Transcript: null, created, updated,
                 Kind: Enum.TryParse<SessionKind>(Text(item, "kind"), ignoreCase: true, out var kind) ? kind : SessionKind.Driven,
-                HarnessVersion: Text(item, "harnessVersion"))
+                DoorVersion: Text(item, "doorVersion"))
             {
                 Origin = origin,
                 Limit = Said(item, "limit"),
@@ -116,9 +116,9 @@ public static class SessionWire
     }
 
     private static void Write(
-        Utf8JsonWriter writer, string? id, string? origin, string? quest, string? repository, string? adapter,
+        Utf8JsonWriter writer, string? id, string? origin, string? quest, string? repository, string? door,
         string? state, string? note, string? evidence, DateTimeOffset created, DateTimeOffset updated,
-        string? kind, string? harnessVersion, bool limit, string? noteParts, string? entry,
+        string? kind, string? doorVersion, bool limit, string? noteParts, string? entry,
         string? tookQuest)
     {
         writer.WriteString("id", id);
@@ -127,7 +127,7 @@ public static class SessionWire
         // that failed to parse.
         if (quest is not null) writer.WriteString("quest", quest);
         writer.WriteString("repository", repository);
-        writer.WriteString("adapter", adapter);
+        writer.WriteString("door", door);
         writer.WriteString("state", state);
         if (note is not null) writer.WriteString("note", note);
         // LANG1a: the note's parts beside it, as kept; absent for a record from before parts, which a reader from before ignores.
@@ -141,7 +141,7 @@ public static class SessionWire
         writer.WriteString("created", Moments.Write(created));
         writer.WriteString("updated", Moments.Write(updated));
         if (kind is not null) writer.WriteString("kind", kind);
-        if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
+        if (doorVersion is not null) writer.WriteString("doorVersion", doorVersion);
         // TOOL4c: said only where true, so a record from before the field and one it never applied to read
         // alike on both sides, as false. It names no account, which is why it has a field at all.
         if (limit) writer.WriteBoolean("limit", true);

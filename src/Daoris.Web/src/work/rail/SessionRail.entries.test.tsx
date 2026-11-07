@@ -192,7 +192,7 @@ describe('the session rail over entries (SESSONE1c)', () => {
 
     it('puts a conversation under Not on an ask', async () => {
       SESSIONS = [...EVIDENCE_SESSIONS, {
-        id: 'ch000001', repository: 'app', state: 'completed', adapter: 'claude-code', kind: 'chat', quest: null,
+        id: 'ch000001', repository: 'app', state: 'completed', door: 'claude-code', kind: 'chat', quest: null,
         created: new Date().toISOString(), updated: new Date().toISOString(),
       }];
       ENTRIES = [...EVIDENCE_ENTRIES, {

@@ -121,7 +121,7 @@ internal sealed class OpinionStandIn : HttpMessageHandler
         {
             _sessions.Add(new JsonObject
             {
-                ["id"] = id, ["quest"] = "q1", ["repository"] = "reports", ["state"] = state, ["kind"] = kind, ["adapter"] = adapter,
+                ["id"] = id, ["quest"] = "q1", ["repository"] = "reports", ["state"] = state, ["kind"] = kind, ["door"] = adapter,
                 ["tree"] = tree, ["said"] = new JsonArray(),
             });
         }

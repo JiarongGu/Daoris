@@ -29,7 +29,7 @@ import { AT_START } from '../help/setupGuide';
 import { WorkspaceScopeProvider } from '../data/scope';
 
 const HELP = {
-  id: 'h1e1p000', quest: null, repository: 'daoris:help', adapter: 'claude-code-acp', state: 'working',
+  id: 'h1e1p000', quest: null, repository: 'daoris:help', door: 'claude-code-acp', state: 'working',
   kind: 'chat', created: '2026-09-30T00:00:00Z', updated: '2026-09-30T00:01:00Z', workspace: 'default',
 };
 

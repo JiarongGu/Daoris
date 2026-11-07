@@ -51,7 +51,7 @@ public sealed record OpinionAsk(
     public IReadOnlyList<string> Families { get; init; } = [];
 
     /// <summary>The harness version the reviewer's spawn observed, for its session record (D49 §4).</summary>
-    public string? HarnessVersion { get; init; }
+    public string? DoorVersion { get; init; }
 }
 
 /// <summary>

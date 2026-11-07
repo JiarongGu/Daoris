@@ -121,7 +121,7 @@ export function useAskConversation(
   const held = useChatTurns(shown && live ? [shown.id] : []);
   const turns = held[shown?.id ?? ''] ?? NO_TURNS;
   const structured = Array.isArray(roster.data?.harnesses)
-    ? roster.data.harnesses.find((row) => row.door === shown?.adapter)?.structured
+    ? roster.data.harnesses.find((row) => row.door === shown?.door)?.structured
     : undefined;
 
   // What the person is writing, kept per conversation and apart for a new one (ASKHIST1c): its words and its files, held here
@@ -217,13 +217,13 @@ export function useAskConversation(
   const earlierParts = (shownRow?.parts ?? []).filter((id) => id !== shown?.id);
   const conversation = shown ? (<>
     {earlierParts.map((id) => (
-      <SessionConversation key={id} session={id} adapter={helpSessions.find((part) => part.id === id)?.adapter ?? shown.adapter}
+      <SessionConversation key={id} session={id} adapter={helpSessions.find((part) => part.id === id)?.door ?? shown.door}
         mode="earlier" chat live={false} scroller={scroller} />
     ))}
     <SessionConversation
       key={shown.id}
       session={shown.id}
-      adapter={shown.adapter}
+      adapter={shown.door}
       chat
       tree={shown.tree}
       live={live}

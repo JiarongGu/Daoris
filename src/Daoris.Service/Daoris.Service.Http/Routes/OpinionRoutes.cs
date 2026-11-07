@@ -41,7 +41,7 @@ public sealed class OpinionRoutes(HostWiring host) : IRouteModule
         {
             Rechecks = request.Rechecks,
             Families = [.. (request.Families ?? []).Select(family => family ?? "")],
-            HarnessVersion = request.HarnessVersion,
+            DoorVersion = request.DoorVersion,
         };
         return await ReplyAsync(await Service.Opinions.AskAsync(ask, DateTimeOffset.UtcNow, ct), http, ct);
     }

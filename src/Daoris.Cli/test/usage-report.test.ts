@@ -1030,9 +1030,9 @@ const QUESTS = [
   quest('q-old', 'engine', 'game', 'Done', '2026-09-01T09:00:00', '2026-09-02T09:00:00'),
 ];
 
-const record = (id: string, questId: string | null, adapter: string, state: string, created: string, updated: string, more: Record<string, unknown> = {}) => ({
-  id, quest: questId, repository: 'engine', adapter, state, note: 'SESSION-NOTE-WORDS', evidence: null, transcript: null,
-  created: `${created}+00:00`, updated: `${updated}+00:00`, workspace: 'work', kind: 'driven', harnessVersion: '2.1.0',
+const record = (id: string, questId: string | null, door: string, state: string, created: string, updated: string, more: Record<string, unknown> = {}) => ({
+  id, quest: questId, repository: 'engine', door, state, note: 'SESSION-NOTE-WORDS', evidence: null, transcript: null,
+  created: `${created}+00:00`, updated: `${updated}+00:00`, workspace: 'work', kind: 'driven', doorVersion: '2.1.0',
   profile: null, tree: null, took: false, answer: null, interrupted: false, limit: false, said: [{ id: 'w1', text: 'SAID-WORDS' }],
   ...more,
 });

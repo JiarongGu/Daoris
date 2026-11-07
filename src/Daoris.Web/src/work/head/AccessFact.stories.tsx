@@ -15,7 +15,7 @@ const TODAY = { permissions: 'auto', routing: 'person', landing: 'person', goAhe
 const FULL = { permissions: 'unrestricted', routing: 'intake', landing: 'rule', goAheads: 'never', questions: 'claude-code' };
 
 const SESSION: Session = {
-  id: 's1a2b3c4', quest: 'abc123', repository: 'engine', adapter: 'claude-code', state: 'working', kind: 'driven',
+  id: 's1a2b3c4', quest: 'abc123', repository: 'engine', door: 'claude-code', state: 'working', kind: 'driven',
   created: '2026-10-20T09:00:00Z', updated: '2026-10-20T09:12:00Z', profile: 'account-1',
 };
 

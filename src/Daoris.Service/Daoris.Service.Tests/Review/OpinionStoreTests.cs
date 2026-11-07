@@ -50,7 +50,7 @@ public sealed class OpinionStoreTests : IAsyncLifetime
             new OpinionReviewer("codex-acp", Opinions.AnotherMaker) { Product = "Codex", Maker = "OpenAI", Account = "work" },
             Opinions.CopyAlone, minutes, Tree(clone))
         {
-            Rechecks = rechecks, Families = ["claude-code"], HarnessVersion = "1.12.0",
+            Rechecks = rechecks, Families = ["claude-code"], DoorVersion = "1.12.0",
         };
 
     private static OpinionFinding Finding(string weight = Opinions.Must, string where = "src/Report.cs:42", string claim = "The workspace name is not quoted.") =>
@@ -101,8 +101,8 @@ public sealed class OpinionStoreTests : IAsyncLifetime
         Assert.Null(opinion.Given);
 
         var reviewer = (await _sessions.FindAsync(asked.Session.Id))!;
-        Assert.Equal((SessionKind.Chat, null, "Owner", "codex-acp", opinion.Id), (reviewer.Kind, reviewer.Quest, reviewer.Repository, reviewer.Adapter, reviewer.Opinion));
-        Assert.Equal((Tree("clone-1"), Tip, "work", "1.12.0"), (reviewer.Tree, reviewer.BaseCommit, reviewer.Profile, reviewer.HarnessVersion));
+        Assert.Equal((SessionKind.Chat, null, "Owner", "codex-acp", opinion.Id), (reviewer.Kind, reviewer.Quest, reviewer.Repository, reviewer.Door, reviewer.Opinion));
+        Assert.Equal((Tree("clone-1"), Tip, "work", "1.12.0"), (reviewer.Tree, reviewer.BaseCommit, reviewer.Profile, reviewer.DoorVersion));
         Assert.Equal(working.Workspace, reviewer.Workspace);
         Assert.Contains("Codex", asked.Message);
 

@@ -36,7 +36,7 @@ public sealed class PartnerHostTests(LocalHost host) : IClassFixture<LocalHost>
 
         var opened = await host.PostAsync("/api/partners", new
         {
-            lead = lead.Id, piece = "p1a2b3c4", adapter = "codex-acp", tree = "trees/default/Partnered/p-p1a2b3c4", account = "work", baseCommit = "ABC123",
+            lead = lead.Id, piece = "p1a2b3c4", door = "codex-acp", tree = "trees/default/Partnered/p-p1a2b3c4", account = "work", baseCommit = "ABC123",
         });
 
         Assert.Equal(200, opened.Status);
@@ -47,7 +47,7 @@ public sealed class PartnerHostTests(LocalHost host) : IClassFixture<LocalHost>
             session.GetProperty("baseCommit").GetString()));
         Assert.StartsWith($"session:{id}", (await host.Composed.Sessions.FindAsync(id))!.Entry);
 
-        var again = await host.PostAsync("/api/partners", new { lead = lead.Id, piece = "p1a2b3c4", adapter = "codex-acp", tree = "trees/default/Partnered/p-p1a2b3c4" });
+        var again = await host.PostAsync("/api/partners", new { lead = lead.Id, piece = "p1a2b3c4", door = "codex-acp", tree = "trees/default/Partnered/p-p1a2b3c4" });
         Assert.Equal((200, id), (again.Status, again.Json.GetProperty("session").GetProperty("id").GetString()));
 
         Assert.Equal("p1a2b3c4", (await ListedAsync(id))!.Value.GetProperty("piece").GetString());
@@ -116,12 +116,12 @@ public sealed class PartnerHostTests(LocalHost host) : IClassFixture<LocalHost>
         Ask("r1a2b3c4", lead.Id);
         Ask("r2a2b3c4", helper.Id);
 
-        Assert.Equal(404, (await host.PostAsync("/api/partners", new { lead = lead.Id, piece = "nope0000", adapter = "codex-acp", tree = "trees/default/Refusing/p-1" })).Status);
-        Assert.Equal(400, (await host.PostAsync("/api/partners", new { lead = helper.Id, piece = "r1a2b3c4", adapter = "codex-acp", tree = "trees/default/Refusing/p-2" })).Status);
-        Assert.Equal(400, (await host.PostAsync("/api/partners", new { lead = helper.Id, piece = "r2a2b3c4", adapter = "codex-acp", tree = "trees/default/Refusing/p-3" })).Status);
-        Assert.Equal(400, (await host.PostAsync("/api/partners", new { lead = lead.Id, piece = "r1a2b3c4", adapter = "codex-acp", tree = "trees/default/Refusing/s-bbbbbbbb" })).Status);
+        Assert.Equal(404, (await host.PostAsync("/api/partners", new { lead = lead.Id, piece = "nope0000", door = "codex-acp", tree = "trees/default/Refusing/p-1" })).Status);
+        Assert.Equal(400, (await host.PostAsync("/api/partners", new { lead = helper.Id, piece = "r1a2b3c4", door = "codex-acp", tree = "trees/default/Refusing/p-2" })).Status);
+        Assert.Equal(400, (await host.PostAsync("/api/partners", new { lead = helper.Id, piece = "r2a2b3c4", door = "codex-acp", tree = "trees/default/Refusing/p-3" })).Status);
+        Assert.Equal(400, (await host.PostAsync("/api/partners", new { lead = lead.Id, piece = "r1a2b3c4", door = "codex-acp", tree = "trees/default/Refusing/s-bbbbbbbb" })).Status);
         Assert.Equal(400, (await host.PostAsync("/api/partners", new { lead = lead.Id, piece = "r1a2b3c4", tree = "trees/default/Refusing/p-4" })).Status);
         Assert.Null(await sessions.ForPieceAsync("r1a2b3c4"));
-        Assert.Equal(404, (await host.PostAsync("/api/partners", new { lead = lead.Id, piece = "r1a2b3c4", adapter = "codex-acp", tree = "trees/default/Refusing/p-5" }, DaorisHost.OffMachine)).Status);
+        Assert.Equal(404, (await host.PostAsync("/api/partners", new { lead = lead.Id, piece = "r1a2b3c4", door = "codex-acp", tree = "trees/default/Refusing/p-5" }, DaorisHost.OffMachine)).Status);
     }
 }

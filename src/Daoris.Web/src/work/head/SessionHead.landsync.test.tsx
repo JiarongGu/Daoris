@@ -20,7 +20,7 @@ import type { Session } from '../../data/api';
 import { SessionHead } from './SessionHead';
 
 const session = (over: Partial<Session> = {}): Session => ({
-  id: 's1a2b3c4', quest: 'q1', repository: 'reports', adapter: 'claude-code', state: 'completed', kind: 'driven',
+  id: 's1a2b3c4', quest: 'q1', repository: 'reports', door: 'claude-code', state: 'completed', kind: 'driven',
   created: '2026-10-09T08:00:00Z', updated: '2026-10-09T09:00:00Z', tree: 'C:/somewhere/reports', ...over,
 });
 const LANDS = { branch: 'daoris/s-1a2b3c4', tree: 's-1a2b3c4', commits: 3, uncommitted: 0 };

@@ -38,7 +38,7 @@ public sealed class HelpSessionTests : IAsyncLifetime
     [Fact]
     public async Task A_help_session_is_a_conversation_in_its_room_serving_nothing()
     {
-        var opened = await _ledger.OpenHelpAsync("stub", Room(), Now, harnessVersion: "1.2.3", profile: "work");
+        var opened = await _ledger.OpenHelpAsync("stub", Room(), Now, doorVersion: "1.2.3", profile: "work");
 
         Assert.Equal(SessionOpenRefusal.None, opened.Refusal);
         var session = opened.Session!;
@@ -53,7 +53,7 @@ public sealed class HelpSessionTests : IAsyncLifetime
         Assert.Equal(Trees.Normalize(Room()), session.Tree);
         // The room is no repository, and git asked about it would walk up.
         Assert.Null(session.BaseCommit);
-        Assert.Equal("1.2.3", session.HarnessVersion);
+        Assert.Equal("1.2.3", session.DoorVersion);
         Assert.Equal("work", session.Profile);
         Assert.Contains(session.Id, opened.Message);
     }

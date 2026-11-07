@@ -34,7 +34,7 @@ public sealed class OpinionDoors
         }
 
         // The door the record opened by, for the session log (LOG1b): a reviewer's record is a chat that serves no quest.
-        _service.RecordOpened(new SessionOpened(session.Id, OpinionPass.OpenedKind, session.Adapter ?? body.Adapter, session.Repository ?? body.Candidate.Repository)
+        _service.RecordOpened(new SessionOpened(session.Id, OpinionPass.OpenedKind, session.Door ?? body.Adapter, session.Repository ?? body.Candidate.Repository)
         {
             Workspace = session.Workspace,
         });

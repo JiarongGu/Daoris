@@ -5,11 +5,11 @@ namespace Daoris.Knowledge;
 /// <param name="Piece">The ask's id under the home's <c>partners</c> box.</param>
 /// <param name="Adapter">The agent that writes it.</param>
 /// <param name="Tree">Its clone with no remote, never the lead's tree.</param>
-public sealed record PartnerOpen(string Lead, string Piece, string Adapter, string Tree)
+public sealed record PartnerOpen(string Lead, string Piece, string Door, string Tree)
 {
     public string? Account { get; init; }
 
-    public string? HarnessVersion { get; init; }
+    public string? DoorVersion { get; init; }
 
     /// <summary>The ask's exact base commit, which the clone stands at.</summary>
     public string? BaseCommit { get; init; }
@@ -31,7 +31,7 @@ public sealed class PartnerDesk(SessionStore sessions, PartnerBox? box = null, b
     public async Task<HelperOutcome> OpenAsync(PartnerOpen open, DateTimeOffset now, CancellationToken ct = default)
     {
         if (!local) return new(HelperRefusal.Shared, Shared);
-        if (string.IsNullOrWhiteSpace(open.Lead) || string.IsNullOrWhiteSpace(open.Piece) || string.IsNullOrWhiteSpace(open.Adapter)
+        if (string.IsNullOrWhiteSpace(open.Lead) || string.IsNullOrWhiteSpace(open.Piece) || string.IsNullOrWhiteSpace(open.Door)
             || Trees.Normalize(open.Tree) is not { } tree)
         {
             return Refused(HelperRefusal.BadShape, "A partner's record needs its lead, its piece, its agent and its own clone");
@@ -77,8 +77,8 @@ public sealed class PartnerDesk(SessionStore sessions, PartnerBox? box = null, b
             }
 
             var partner = await sessions.CreateAsync(
-                    quest: null, lead.Repository, open.Adapter.Trim(), now, lead.Workspace, SessionKind.Chat,
-                    harnessVersion: open.HarnessVersion, profile: open.Account, tree: tree, baseCommit: open.BaseCommit?.ToLowerInvariant(),
+                    quest: null, lead.Repository, open.Door.Trim(), now, lead.Workspace, SessionKind.Chat,
+                    doorVersion: open.DoorVersion, profile: open.Account, tree: tree, baseCommit: open.BaseCommit?.ToLowerInvariant(),
                     ct: inside, serves: lead.Id, ownEntry: true, piece: piece, actor: "partner")
                 .ConfigureAwait(false);
             return new HelperOutcome(

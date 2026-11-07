@@ -34,7 +34,7 @@ public sealed class WorkRecordHostTests(LocalHost host) : IClassFixture<LocalHos
         var tree = host.RootOf("keeper-record");
         var published = await host.PostAsync("/api/quests", new { from = "Asker", to = "Keeper", title = "Recorded work", body = "Go on." });
         var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
-        var opened = await host.PostAsync("/api/sessions", new { quest, adapter = "stub", tree, baseCommit = "c0" });
+        var opened = await host.PostAsync("/api/sessions", new { quest, door = "stub", tree, baseCommit = "c0" });
         var session = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
 
         var first = await host.PostAsync("/api/trees/record", Record("keeper-record-20261024T100000000Z", tree));
@@ -76,7 +76,7 @@ public sealed class WorkRecordHostTests(LocalHost host) : IClassFixture<LocalHos
         var tree = host.RootOf("keeper-view");
         var published = await host.PostAsync("/api/quests", new { from = "Asker", to = "Keeper", title = "Viewed work", body = "Go on." });
         var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
-        var opened = await host.PostAsync("/api/sessions", new { quest, adapter = "stub", tree, baseCommit = "c0" });
+        var opened = await host.PostAsync("/api/sessions", new { quest, door = "stub", tree, baseCommit = "c0" });
         var session = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
         Assert.Equal(404, (await host.GetAsync($"/api/sessions/{session}/record")).Status);
 

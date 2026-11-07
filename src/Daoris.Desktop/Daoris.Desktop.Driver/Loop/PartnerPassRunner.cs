@@ -149,7 +149,7 @@ internal sealed class PartnerPassRunner(LoopContext context, Driver driver)
             // The effective configuration it was handed (§3.3), admitted by a measured row before the copy was made: what M2 measures in.
             _driver.Log?.Info(
                 "partner.started", ("session", sessionId), ("piece", piece), ("agent", configuration.Agent),
-                ("version", configuration.HarnessVersion ?? ""), ("posture", configuration.Posture ?? ""), ("roots", configuration.WritableRoots),
+                ("version", configuration.DoorVersion ?? ""), ("posture", configuration.Posture ?? ""), ("roots", configuration.WritableRoots),
                 ("network", configuration.Network), ("system", configuration.System), ("digest", configuration.SettingsDigest));
             var opening = PartnerPass.Opening(repository, ask.Ask.Base);
 

@@ -178,15 +178,15 @@ async function intakeRun() {
   const sessions = ((await ask('/api/sessions?includeClosed=true')) ?? []).filter((s) => s.ask === askId);
   const session = sessions[0];
   check('one intake session ran for the ask, on the protocol door',
-    sessions.length === 1 && session.adapter === ADAPTER,
-    sessions.length ? sessions.map((s) => `${s.id} ${s.adapter} ${s.state}`).join('; ') : 'no session for the ask');
+    sessions.length === 1 && session.door === ADAPTER,
+    sessions.length ? sessions.map((s) => `${s.id} ${s.door} ${s.state}`).join('; ') : 'no session for the ask');
   if (!session) return;
 
   check('…a conversation for the ask, in the circle\'s room under the driver\'s home — never a repository',
     session.kind === 'chat' && session.repository === `ask #${askId}` && !session.quest
       && /[\\/]intake[\\/]default$/.test(session.tree ?? ''),
     JSON.stringify(session));
-  check('…whose record names the harness version', Boolean(session.harnessVersion), session.harnessVersion ?? 'absent');
+  check('…whose record names the harness version', Boolean(session.doorVersion), session.doorVersion ?? 'absent');
 
   // What the intake reached for and was refused: evidence either way, and the first thing to read if
   // it parked. Its transcript is machine-local; only the tool lines are shown.

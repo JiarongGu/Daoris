@@ -11,7 +11,7 @@ namespace Daoris.Contracts.Participants;
 /// The driver's helper session opens its record: a chat that serves the asker, in a clone of its own, as its adapter and account.
 /// </summary>
 public sealed record OpenHelper(
-    string? Asker, string? Adapter, string? Tree, string? Account = null, string? HarnessVersion = null, string? BaseCommit = null)
+    string? Asker, string? Door, string? Tree, string? Account = null, string? DoorVersion = null, string? BaseCommit = null)
     : IRoute<HelperActionResponse>
 {
     public static string Method => "POST";
@@ -35,7 +35,7 @@ public sealed record HandHelper(string Helper, string? Text, bool? Running = nul
 /// in a clone of its own with an entry of its own.
 /// </summary>
 public sealed record OpenPartner(
-    string? Lead, string? Piece, string? Adapter, string? Tree, string? Account = null, string? HarnessVersion = null, string? BaseCommit = null)
+    string? Lead, string? Piece, string? Door, string? Tree, string? Account = null, string? DoorVersion = null, string? BaseCommit = null)
     : IRoute<HelperActionResponse>
 {
     public static string Method => "POST";

@@ -21,7 +21,7 @@ public sealed class EntryHostTests(LocalHost host) : IClassFixture<LocalHost>
         var published = await host.PostAsync("/api/quests", new { from = "ask #c98a7e", to = "Keeper", title = "An ask's quest", body = "Do it." });
         var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
 
-        var opened = await host.PostAsync("/api/sessions", new { quest, adapter = "stub", tree = host.RootOf("keeper-entry-quest") });
+        var opened = await host.PostAsync("/api/sessions", new { quest, door = "stub", tree = host.RootOf("keeper-entry-quest") });
 
         Assert.Equal(200, opened.Status);
         var session = opened.Json.GetProperty("session");
@@ -35,7 +35,7 @@ public sealed class EntryHostTests(LocalHost host) : IClassFixture<LocalHost>
     [Fact]
     public async Task A_conversation_answers_its_own_entry()
     {
-        var opened = await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", adapter = "stub", tree = host.RootOf("keeper-entry-chat") });
+        var opened = await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", door = "stub", tree = host.RootOf("keeper-entry-chat") });
 
         var session = opened.Json.GetProperty("session");
         Assert.Equal($"session:{session.GetProperty("id").GetString()}/Keeper", Entry(session));
@@ -48,9 +48,9 @@ public sealed class EntryHostTests(LocalHost host) : IClassFixture<LocalHost>
     [Fact]
     public async Task The_quest_a_chat_took_is_answered_to_this_machine_only()
     {
-        var took = (await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", adapter = "stub", tree = host.RootOf("keeper-took-chat") }))
+        var took = (await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", door = "stub", tree = host.RootOf("keeper-took-chat") }))
             .Json.GetProperty("session").GetProperty("id").GetString()!;
-        var none = (await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", adapter = "stub", tree = host.RootOf("keeper-took-none") }))
+        var none = (await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", door = "stub", tree = host.RootOf("keeper-took-none") }))
             .Json.GetProperty("session").GetProperty("id").GetString()!;
         Assert.True(await host.Composed.Sessions.MarkTookAsync(took, "a1b2c3d4e5f6"));
 

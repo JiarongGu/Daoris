@@ -12,7 +12,7 @@ import {
 const at = (minutesAgo: number) => new Date(Date.UTC(2026, 9, 2, 12, 0) - minutesAgo * 60_000).toISOString();
 
 const session = (over: Partial<Session> & { id: string; state: Session['state'] }): Session => ({
-  repository: 'engine', adapter: 'claude-code', kind: 'driven', created: at(60), updated: at(1), ...over,
+  repository: 'engine', door: 'claude-code', kind: 'driven', created: at(60), updated: at(1), ...over,
 });
 
 const grouping = (over: Partial<SessionGrouping> & { session: string; group: SessionGrouping['group'] }): SessionGrouping => ({

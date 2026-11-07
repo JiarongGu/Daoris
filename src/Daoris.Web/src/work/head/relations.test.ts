@@ -11,7 +11,7 @@ const quest = (over: Partial<Quest> & { id: string }): Quest => aQuest({
   ...over,
 });
 const session = (over: Partial<Session> & { id: string }): Session => ({
-  quest: null, repository: 'engine', adapter: 'claude-code-acp', state: 'completed', kind: 'driven',
+  quest: null, repository: 'engine', door: 'claude-code-acp', state: 'completed', kind: 'driven',
   created: '2026-09-29T01:00:00Z', updated: '2026-09-29T02:00:00Z', ...over,
 });
 

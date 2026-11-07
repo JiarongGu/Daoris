@@ -199,7 +199,7 @@ public sealed class DriverLoopQueuedTests : DriverModuleBridge
                     var session = new JsonObject
                     {
                         ["id"] = $"s{_sessions.Count + 1}", ["repository"] = "engine", ["state"] = "queued",
-                        ["quest"] = asked["quest"]!.GetValue<string>(), ["kind"] = "driven", ["adapter"] = "claude-code",
+                        ["quest"] = asked["quest"]!.GetValue<string>(), ["kind"] = "driven", ["door"] = "claude-code",
                         ["created"] = "2026-10-03T10:00:00Z",
                     };
                     _sessions.Add(session);

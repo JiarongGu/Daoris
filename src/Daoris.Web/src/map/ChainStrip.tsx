@@ -115,7 +115,7 @@ function Step({ step, attended, onQuest, onSession, nameOf }: {
 
   const { quest, sessions, current } = step;
   // The agent every session of this quest ran on, where it is one, with its version: said once, never on every row.
-  const agents = new Set(sessions.map((session) => sessionTool({ adapter: session.adapter, harnessVersion: session.harnessVersion })));
+  const agents = new Set(sessions.map((session) => sessionTool({ door: session.door, doorVersion: session.doorVersion })));
   const agentOnce = agents.size === 1 ? [...agents][0]! : null;
   const title = onQuest && !current
     ? (
@@ -164,7 +164,7 @@ function Step({ step, attended, onQuest, onSession, nameOf }: {
                   : sessionTool(session, false, nameOf);
                 // By the person's name for it (ACCTNAME1): a name, not an id, so it is set in the row's words, not as code.
                 const account = agentOnce && sessions.length > 1 && session.profile
-                  ? nameOf ? nameOf(session.adapter, session.profile) : session.profile
+                  ? nameOf ? nameOf(session.door, session.profile) : session.profile
                   : null;
                 return (
                   <li key={session.id} className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">

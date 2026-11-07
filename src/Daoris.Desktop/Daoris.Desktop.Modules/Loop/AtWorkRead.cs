@@ -151,7 +151,7 @@ public static class AtWorkRead
                 }
 
                 // COMMS1i: a reviewer's record names the line it serves, so the line's co-workers list it.
-                if (AtWorkExchangeReading.Reviewer(id, Text(record, "opinion"), Text(record, "serves"), Text(record, "adapter"), Text(record, "state")) is { } reviewer)
+                if (AtWorkExchangeReading.Reviewer(id, Text(record, "opinion"), Text(record, "serves"), Text(record, "door"), Text(record, "state")) is { } reviewer)
                 {
                     reviewers.Add(reviewer);
                 }
@@ -306,7 +306,7 @@ public static class AtWorkRead
                     Quest = serves,
                     TookQuest = took,
                     Kind = Text(record, "kind") ?? "driven",
-                    Adapter = Text(record, "adapter"),
+                    Adapter = Text(record, "door"),
                     Created = DateTimeOffset.TryParse(Text(record, "created"), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var created) ? created : default,
                 };
             }
@@ -437,7 +437,7 @@ public static class AtWorkRead
             {
                 records.TryAdd(id, new AtWorkRecord(id, Text(record, "state"))
                 {
-                    Adapter = Text(record, "adapter"),
+                    Adapter = Text(record, "door"),
                     Kind = Text(record, "kind"),
                     TookQuest = Text(record, "tookQuest"),
                     Repository = Text(record, "repository"),

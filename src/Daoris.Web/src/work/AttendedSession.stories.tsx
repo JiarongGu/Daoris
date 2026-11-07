@@ -25,10 +25,10 @@ const SESSION: Session = {
   id: 's1a2b3c4',
   quest: '7a82cc',
   repository: 'engine',
-  adapter: 'claude-code',
+  door: 'claude-code',
   state: 'working',
   kind: 'driven',
-  harnessVersion: '2.1.4',
+  doorVersion: '2.1.4',
   profile: 'owner',
   tree: 'C:/somewhere/.daoris/trees/default/engine/streaming-budget',
   created: at(134),
@@ -96,7 +96,7 @@ export const InAChain: Story = {
 
 const REFILED_TITLE = '(Re-filed from ask #0181ea, whose quest was taken outside the driver with no session.)';
 const ATTEMPT: Session = {
-  ...SESSION, id: 'c2b8d293', quest: '38e9876e3f53', adapter: 'claude-code-acp', harnessVersion: '0.84.0', profile: 'account-1',
+  ...SESSION, id: 'c2b8d293', quest: '38e9876e3f53', door: 'claude-code-acp', doorVersion: '0.84.0', profile: 'account-1',
   created: at(2), updated: at(2),
 };
 const REFILED_QUEST: Quest = {

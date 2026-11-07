@@ -6,7 +6,7 @@ import { readEvidence, sessionTimeline } from './timeline';
 const session = (over: Partial<Session> = {}): Session => ({
   id: 's1a2b3c4',
   repository: 'engine',
-  adapter: 'claude-code',
+  door: 'claude-code',
   state: 'queued',
   kind: 'driven',
   created: '2026-09-21T09:00:00Z',

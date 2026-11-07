@@ -141,7 +141,7 @@ public sealed class HelpPauseDoorTests : DriverModuleBridge
     {
         var ledger = new LoopbackHost();
         string Session(string id, string state, string quest, int minute, string? tree = null) =>
-            $$"""{"id":"{{id}}","quest":"{{quest}}","repository":"engine","adapter":"claude-code","state":"{{state}}","kind":"driven",{{(tree is null ? "" : $"\"tree\":\"{tree}\",")}}"created":"2026-10-03T09:{{minute:00}}:00Z","updated":"2026-10-03T09:{{minute + 1:00}}:00Z"}""";
+            $$"""{"id":"{{id}}","quest":"{{quest}}","repository":"engine","door":"claude-code","state":"{{state}}","kind":"driven",{{(tree is null ? "" : $"\"tree\":\"{tree}\",")}}"created":"2026-10-03T09:{{minute:00}}:00Z","updated":"2026-10-03T09:{{minute + 1:00}}:00Z"}""";
         string Quest(string id, string status) =>
             $$"""{"id":"{{id}}","from":"ask #a1","to":"engine","title":"The work of #{{id}}","body":"A body.","status":"{{status}}"}""";
         var quests = $"[{Quest("q1", "Open")},{Quest("q2", "Taken")},{Quest("q3", "Taken")}]";

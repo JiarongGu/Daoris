@@ -21,7 +21,7 @@ public sealed class OpinionHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(200, asked.Status);
         var opened = await host.PostAsync("/api/sessions", new
         {
-            quest = asked.Json.GetProperty("quest").GetProperty("id").GetString(), adapter = "stub",
+            quest = asked.Json.GetProperty("quest").GetProperty("id").GetString(), door = "stub",
             tree = Path.Combine(host.Repositories, "trees", tree),
         });
         Assert.Equal(200, opened.Status);

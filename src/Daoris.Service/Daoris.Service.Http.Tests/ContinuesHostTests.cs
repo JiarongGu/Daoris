@@ -14,7 +14,7 @@ public sealed class ContinuesHostTests(LocalHost host) : IClassFixture<LocalHost
     {
         var opened = await host.PostAsync("/api/sessions/chat", new
         {
-            repository = "Keeper", adapter = "stub", tree = host.RootOf("actor-chat"), actor = "chat",
+            repository = "Keeper", door = "stub", tree = host.RootOf("actor-chat"), actor = "chat",
         });
         Assert.Equal(200, opened.Status);
         var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
@@ -55,10 +55,10 @@ public sealed class ContinuesHostTests(LocalHost host) : IClassFixture<LocalHost
     {
         var opened = await host.PostAsync("/api/sessions/chat", new
         {
-            repository = "Keeper", adapter = "codex-acp", tree = host.RootOf("keeper-handed-chat"),
+            repository = "Keeper", door = "codex-acp", tree = host.RootOf("keeper-handed-chat"),
             from = "c0nv0001", fromWhy = "near", fromBy = "daoris",
         });
-        var plain = await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", adapter = "stub", tree = host.RootOf("keeper-plain-chat") });
+        var plain = await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", door = "stub", tree = host.RootOf("keeper-plain-chat") });
 
         Assert.Equal((200, 200), (opened.Status, plain.Status));
         var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
@@ -78,7 +78,7 @@ public sealed class ContinuesHostTests(LocalHost host) : IClassFixture<LocalHost
 
         var opened = await host.PostAsync("/api/sessions", new
         {
-            quest, adapter = "stub", tree = host.RootOf("keeper-handed-quest"), from = "s0", fromWhy = "limit", fromBy = "daoris",
+            quest, door = "stub", tree = host.RootOf("keeper-handed-quest"), from = "s0", fromWhy = "limit", fromBy = "daoris",
         });
 
         Assert.Equal(200, opened.Status);

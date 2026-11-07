@@ -108,7 +108,7 @@ public sealed class HelperProcessTests : IDisposable
 
         // The record the host opened: serves the asker, on the stub, in a clone under the home's trees.
         var opened = Assert.Single(service.Opened);
-        Assert.Equal(("s1", "stub"), (opened["asker"]!.GetValue<string>(), opened["adapter"]!.GetValue<string>()));
+        Assert.Equal(("s1", "stub"), (opened["asker"]!.GetValue<string>(), opened["door"]!.GetValue<string>()));
         Assert.StartsWith(DaorisHome.Entry(_home, HomeEntry.Trees), opened["tree"]!.GetValue<string>());
         Assert.Equal(["starting", "working", "completed"], service.States("h1"));
 
@@ -453,7 +453,7 @@ public sealed class HelperProcessTests : IDisposable
                         var asker = new JsonObject
                         {
                             ["id"] = "s1", ["quest"] = "q1", ["repository"] = "reports", ["state"] = "completed", ["kind"] = "driven",
-                            ["adapter"] = "claude-code", ["workspace"] = "work", ["tree"] = _root, ["said"] = new JsonArray([.. Words]),
+                            ["door"] = "claude-code", ["workspace"] = "work", ["tree"] = _root, ["said"] = new JsonArray([.. Words]),
                         };
                         return (200, new JsonArray(asker).ToJsonString());
                     }
@@ -467,7 +467,7 @@ public sealed class HelperProcessTests : IDisposable
                         _states[id] = [];
                         var session = new JsonObject
                         {
-                            ["id"] = id, ["repository"] = "reports", ["state"] = "queued", ["kind"] = "chat", ["adapter"] = body["adapter"]!.GetValue<string>(),
+                            ["id"] = id, ["repository"] = "reports", ["state"] = "queued", ["kind"] = "chat", ["door"] = body["door"]!.GetValue<string>(),
                             ["workspace"] = "work", ["serves"] = body["asker"]!.GetValue<string>(), ["tree"] = body["tree"]!.GetValue<string>(),
                         };
                         return (200, new JsonObject { ["message"] = $"Session `{id}` reads `reports` in a clone of its own.", ["session"] = session }.ToJsonString());

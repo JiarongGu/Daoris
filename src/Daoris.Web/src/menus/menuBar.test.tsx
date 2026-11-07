@@ -29,7 +29,7 @@ import { WorkspaceScopeProvider } from '../data/scope';
 
 /** A conversation working now: its header offers its stop and its own window. */
 const WORKING = {
-  id: 's1a2b3c4', quest: null, repository: 'engine', adapter: 'claude-code', kind: 'chat', state: 'working',
+  id: 's1a2b3c4', quest: null, repository: 'engine', door: 'claude-code', kind: 'chat', state: 'working',
   created: '2026-10-05T00:00:00Z', updated: '2026-10-05T00:01:00Z', workspace: 'default',
 };
 

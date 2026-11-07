@@ -34,7 +34,7 @@ import { AT_START } from '../help/setupGuide';
 import { WorkspaceScopeProvider } from '../data/scope';
 import type { PushedAttention } from '../work/attention/attention';
 
-const base = { adapter: 'claude-code', created: '2026-10-21T09:00:00Z', updated: '2026-10-21T09:30:00Z', workspace: 'default' };
+const base = { door: 'claude-code', created: '2026-10-21T09:00:00Z', updated: '2026-10-21T09:30:00Z', workspace: 'default' };
 const SESSIONS = [{ ...base, id: '3f2a91c4', quest: null, repository: 'game', kind: 'chat', state: 'working' }];
 
 const LATER = new Date(Date.now() + 9 * 60_000).toISOString();

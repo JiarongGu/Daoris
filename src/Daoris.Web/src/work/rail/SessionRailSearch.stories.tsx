@@ -10,7 +10,7 @@ import { SearchResults } from './SessionRail';
 const at = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
 
 const SESSIONS: Session[] = ['a1b2c3d4', 'b2c3d4e5', 'c3d4e5f6'].map((id, index) => ({
-  id, repository: 'engine', adapter: 'claude-code', kind: 'chat', state: 'completed', created: at(300), updated: at(10 + index),
+  id, repository: 'engine', door: 'claude-code', kind: 'chat', state: 'completed', created: at(300), updated: at(10 + index),
 }));
 
 const hits: SessionHit[] = SESSIONS.map((session, index) => ({

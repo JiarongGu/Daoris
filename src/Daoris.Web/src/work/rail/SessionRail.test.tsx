@@ -60,7 +60,7 @@ const QUESTS = [{
 let SESSIONS: unknown[] = [];
 
 const base = {
-  adapter: 'claude-code', kind: 'driven', created: at(120), updated: at(4),
+  door: 'claude-code', kind: 'driven', created: at(120), updated: at(4),
 };
 
 const LIVE = [

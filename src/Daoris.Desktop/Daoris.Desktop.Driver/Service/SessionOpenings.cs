@@ -26,11 +26,11 @@ public sealed class SessionOpenings
     /// machine alone; null for none.
     /// </param>
     public async Task<(string? SessionId, string Message)> SessionAsync(
-        string questId, string adapter, string? harnessVersion = null, string? profile = null,
+        string questId, string adapter, string? doorVersion = null, string? profile = null,
         string? tree = null, string? baseCommit = null, CancellationToken ct = default, bool setup = false,
         ContinuedFrom? from = null, IReadOnlyDictionary<string, string>? access = null) =>
         await OpenRecordAsync(
-                DrivenOpen(questId, adapter, harnessVersion, profile, tree, baseCommit, from, access), opened => (opened.Session, opened.Message),
+                DrivenOpen(questId, adapter, doorVersion, profile, tree, baseCommit, from, access), opened => (opened.Session, opened.Message),
                 SessionOpened.Driven, adapter, repository: null, ct, setup)
             .ConfigureAwait(false);
 
@@ -46,14 +46,14 @@ public sealed class SessionOpenings
     /// </param>
     /// <param name="opens">The key the open is sent under: the move record's, written before the open; null draws one of the open's own.</param>
     public async Task<DestinationOpen> SessionMovingAsync(
-        string questId, string adapter, string? harnessVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from,
+        string questId, string adapter, string? doorVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from,
         MoveWords? moves, CancellationToken ct = default, bool setup = false, IReadOnlyDictionary<string, string>? access = null,
         string? opens = null)
     {
         var left = moves?.From ?? from?.Session ?? throw new ArgumentException("A keyed open names the record it continues.", nameof(from));
         var opened = await _service.Opens
             .OpenAsync(
-                DrivenOpen(questId, adapter, harnessVersion, profile, tree, baseCommit, from, access),
+                DrivenOpen(questId, adapter, doorVersion, profile, tree, baseCommit, from, access),
                 opens ?? moves?.Opens ?? MoveWords.DrivenKey(), left, ct: ct, moves: moves)
             .ConfigureAwait(false);
         if (opened.SessionId is { } id)
@@ -74,9 +74,9 @@ public sealed class SessionOpenings
     /// resolved here, which holds the driver's file; <paramref name="from"/> is the session it continues, why and who asked, known on this side alone.
     /// </summary>
     private static OpenSession DrivenOpen(
-        string questId, string adapter, string? harnessVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from,
+        string questId, string adapter, string? doorVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from,
         IReadOnlyDictionary<string, string>? access) =>
-        new(questId, adapter, harnessVersion, profile, tree, baseCommit, from?.Session, from?.Why, from?.By,
+        new(questId, adapter, doorVersion, profile, tree, baseCommit, from?.Session, from?.Why, from?.By,
             access is { Count: > 0 } ? new Dictionary<string, string>(access) : null, "build");
 
     /// <summary>
@@ -85,10 +85,10 @@ public sealed class SessionOpenings
     /// </summary>
     /// <param name="from">The conversation this one continues, handed over (MIXAGENT1a-iii), for its record; null for none.</param>
     public async Task<(string? SessionId, string Message)> ChatAsync(
-        string repository, string adapter, string? harnessVersion = null, string? profile = null,
+        string repository, string adapter, string? doorVersion = null, string? profile = null,
         string? tree = null, string? baseCommit = null, CancellationToken ct = default, ContinuedFrom? from = null) =>
         await OpenRecordAsync(
-                ChatOpen(repository, adapter, harnessVersion, profile, tree, baseCommit, from), opened => (opened.Session, opened.Message),
+                ChatOpen(repository, adapter, doorVersion, profile, tree, baseCommit, from), opened => (opened.Session, opened.Message),
                 SessionOpened.Chat, adapter, repository, ct)
             .ConfigureAwait(false);
 
@@ -100,12 +100,12 @@ public sealed class SessionOpenings
     /// </summary>
     /// <param name="workspace">The circle the repository is wired into on this machine, for the watchers: the keyed answer names no record.</param>
     public async Task<DestinationOpen> ChatMovingAsync(
-        string repository, string adapter, string? harnessVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from,
+        string repository, string adapter, string? doorVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from,
         MoveWords moves, string? workspace, CancellationToken ct = default)
     {
         var opened = await _service.Opens
             .OpenAsync(
-                ChatOpen(repository, adapter, harnessVersion, profile, tree, baseCommit, from),
+                ChatOpen(repository, adapter, doorVersion, profile, tree, baseCommit, from),
                 moves.Opens ?? MoveWords.ChatKey(), moves.From, ct: ct, moves: moves)
             .ConfigureAwait(false);
         if (opened.SessionId is { } id) _service.RecordOpened(new SessionOpened(id, SessionOpened.Chat, adapter, repository) { Workspace = workspace });
@@ -114,18 +114,18 @@ public sealed class SessionOpenings
 
     /// <summary>A chat's open, as both of its doors send it.</summary>
     private static OpenChat ChatOpen(
-        string repository, string adapter, string? harnessVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from) =>
-        new(repository, adapter, harnessVersion, profile, tree, baseCommit, from?.Session, from?.Why, from?.By, "chat");
+        string repository, string adapter, string? doorVersion, string? profile, string? tree, string? baseCommit, ContinuedFrom? from) =>
+        new(repository, adapter, doorVersion, profile, tree, baseCommit, from?.Session, from?.Why, from?.By, "chat");
 
     /// <summary>
     /// Ask the ledger to open an INTAKE for an ask (D65 §1b), in the room this side is about to run it in. A refusal is an answer, not an
     /// exception — usually that the ask is already answered.
     /// </summary>
     public async Task<(string? SessionId, string Message)> IntakeAsync(
-        string ask, string adapter, string room, string? harnessVersion = null, string? profile = null,
+        string ask, string adapter, string room, string? doorVersion = null, string? profile = null,
         CancellationToken ct = default) =>
         await OpenRecordAsync(
-                new OpenIntake(ask, adapter, room, harnessVersion, profile, "intake"), opened => (opened.Session, opened.Message),
+                new OpenIntake(ask, adapter, room, doorVersion, profile, "intake"), opened => (opened.Session, opened.Message),
                 SessionOpened.Intake, adapter, repository: null, ct)
             .ConfigureAwait(false);
 
@@ -142,10 +142,10 @@ public sealed class SessionOpenings
     /// records as restricted.
     /// </param>
     public async Task<(string? SessionId, string Message)> HelpAsync(
-        string adapter, string room, string? harnessVersion = null, string? profile = null, string? workspace = null,
+        string adapter, string room, string? doorVersion = null, string? profile = null, string? workspace = null,
         string? mode = null, CancellationToken ct = default) =>
         await OpenRecordAsync(
-                new OpenHelp(adapter, room, harnessVersion, profile, workspace, mode, "ask-daoris"), opened => (opened.Session, opened.Message),
+                new OpenHelp(adapter, room, doorVersion, profile, workspace, mode, "ask-daoris"), opened => (opened.Session, opened.Message),
                 SessionOpened.Help, adapter, repository: null, ct)
             .ConfigureAwait(false);
 
@@ -175,7 +175,7 @@ public sealed class SessionOpenings
             // What the ledger recorded rather than what was asked: a driven session names its quest, and the record answers with the quest's
             // receiver; a blank adapter takes the ledger's default. The workspace is the record's too, the circle its repository is wired into
             // on this machine (D48).
-            _service.RecordOpened(new SessionOpened(id, kind, session.Adapter ?? adapter, session.Repository ?? repository)
+            _service.RecordOpened(new SessionOpened(id, kind, session.Door ?? adapter, session.Repository ?? repository)
             {
                 Workspace = session.Workspace,
                 Setup = setup,
