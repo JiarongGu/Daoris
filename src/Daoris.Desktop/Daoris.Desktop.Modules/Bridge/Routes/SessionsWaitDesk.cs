@@ -4,9 +4,8 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What waits on the person or on a role across this machine's sessions, behind the sessions doors: a quiet session's row, the
-/// permission requests and third answers held for the person, the supervisor's decisions and the steward's desk. Each reads the
-/// driver's memory or its files in the home, or writes the one move its press names.
+/// What waits on the person or on a role across this machine's sessions, behind the sessions doors: a quiet session's row, the requests
+/// and third answers held for the person, the supervisor's decisions and the steward's desk, each read from the driver's memory or files.
 /// </summary>
 internal sealed class SessionsWaitDesk(DriverContext context)
 {
@@ -91,6 +90,7 @@ internal sealed class SessionsWaitDesk(DriverContext context)
     internal static object SupervisorDecisionRow(SupervisorDecisionView view) => new
     {
         view.Id,
+        Kind = SupervisorKinds.Question,
         Question = new { view.Question.Id, Text = view.Question.Question, Choices = view.Question.Choices.Select(choice => choice.Label).ToList() },
         view.Choice,
         view.Bound,
@@ -108,6 +108,7 @@ internal sealed class SessionsWaitDesk(DriverContext context)
     internal static object SupervisorCourseRow(SupervisorCourseView view) => new
     {
         view.Id,
+        Kind = SupervisorKinds.Course,
         view.Point,
         view.Count,
         view.N,
@@ -135,17 +136,8 @@ internal sealed class SessionsWaitDesk(DriverContext context)
         return new { Done = state == SupervisorState.Overruled, State = state is { } moved ? SupervisorStates.Spell(moved) : null };
     }
 
-    public async Task<object?> AnswerAsync(SupervisorActPress press, CancellationToken cancellationToken) =>
-        await SupervisorDoor.AnswerAsync(_loop, press.Form.Json, cancellationToken).ConfigureAwait(false);
-
-    public async Task<object?> DeferAsync(SupervisorActPress press, CancellationToken cancellationToken) =>
-        await SupervisorDoor.DeferAsync(_loop, press.Form.Json, cancellationToken).ConfigureAwait(false);
-
     public async Task<object?> RoleActAsync(RoleActPress press, CancellationToken cancellationToken) =>
         await SupervisorDoor.ActAsync(_loop.Pipe, press.Form.Json, cancellationToken, context.OwnerScopesOf(), context.StewardWorldOf()).ConfigureAwait(false);
-
-    public async Task<object?> WaitingAsync(CancellationToken cancellationToken) =>
-        new { Waiting = await SupervisorDoor.WaitingAsync(_loop, cancellationToken).ConfigureAwait(false), At = Moments.Write(DateTimeOffset.UtcNow) };
 
     public object? StewardActs() => _loop.Pipe?.StandingConfirmation is { } judge
         ? new { Generation = judge.LiveGeneration(AppointedRoles.Steward), Acts = judge.StewardActsNow() }

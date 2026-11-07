@@ -9,7 +9,7 @@ import { SupervisorCourseCard } from './SupervisorCourseCard';
 // *Overrule* while the window lasts, in each shipped language.
 
 const course = (state: string, over: Partial<CourseRead> = {}): CourseRead => ({
-  id: 'd1', point: 'rule-1', count: 'answers-alone', n: 2, rule: 'aa', place: 'repository:engine', do: 'go-on', state, why: null,
+  id: 'd1', kind: 'course', point: 'rule-1', count: 'answers-alone', n: 2, rule: 'aa', place: 'repository:engine', do: 'go-on', state, why: null,
   holder: { kind: 'terminal' }, keptAt: new Date(Date.now() - 120_000).toISOString(), goesOnAt: new Date(Date.now() + 180_000).toISOString(),
   stateAt: new Date(Date.now() - 120_000).toISOString(), earlier: false, ...over,
 });
@@ -18,8 +18,8 @@ describe('the supervisor’s decision card', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
   it.each([
-    ['en', "The supervisor's decision", /^Your rule for answers alone in a row \(engine\) asked the supervisor at 2; it chose to go on 2m ago\. It goes on at .+ unless you overrule it\.$/, 'Overrule'],
-    ['zh', '主管的决定', /^你为连续仅靠回答继续（engine）设的规则在 2 时请主管判断；它决定继续，2 分钟前。到 .+ 时继续，除非你否决它。$/, '否决'],
+    ['en', "The supervisor's decision on the line's course", /^Your rule for answers alone in a row \(engine\) asked the supervisor at 2; it chose to go on 2m ago\. It goes on at .+ unless you overrule it\.$/, 'Overrule'],
+    ['zh', '主管对这条线去向的决定', /^你为连续仅靠回答继续（engine）设的规则在 2 时请主管判断；它决定继续，2 分钟前。到 .+ 时继续，除非你否决它。$/, '否决'],
   ])('says which rule referred, what it chose and when, with Overrule while it is held (%s)', async (language, title, says, overrule) => {
     await i18n.changeLanguage(language);
     render(<SupervisorCourseCard course={course('held')} onOverrule={() => {}} />);

@@ -44,7 +44,7 @@ public static class SessionsCommand
                daoris session pass <ask>
                daoris session partner <id> "<piece>" --agent <name> [--paths <path>…]
                daoris session partner <id> --list  ·  session partner <piece> --stop
-               daoris session supervise [<id>]  ·  session supervise <id> --question <qid> --generation <g> --choice <label>|--leave <bound> (--reason "…" --source <where>)…
+               daoris session supervise [<id>]  ·  session supervise <id> --kind <kind> --subject <sid> --generation <g> --do <act> [--choice <label>]|--leave <bound> (--reason "…" --source <where>)…
                daoris session handback <session|quest> [--json]
         """;
 
@@ -109,7 +109,7 @@ public static class SessionsCommand
             // A read, so no press and never through the running Daoris.
             "handback" => await SessionsHandback.RunAsync(world, ask, output, ct).ConfigureAwait(false),
             // The supervisor's holder's verb, through the running Daoris alone.
-            "supervise-list" or "supervise-print" or "supervise-answer" or "supervise-leave" or "supervise-course" => await SessionsSuperviseCommand.RunAsync(world, ask, output, ct).ConfigureAwait(false),
+            "supervise-list" or "supervise-print" or "supervise-decide" or "supervise-leave" => await SessionsSuperviseCommand.RunAsync(world, ask, output, ct).ConfigureAwait(false),
             // A piece's stop is its partner's record's stop, the same press: the driver reads it as the person's and keeps the work.
             "partner-stop" => SessionsPartnerCommand.Working(world, ask.Ids[0], output) is { } partner
                 ? await SessionsPresses.ThroughAsync(

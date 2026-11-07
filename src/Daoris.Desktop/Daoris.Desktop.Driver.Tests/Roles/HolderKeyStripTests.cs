@@ -110,7 +110,7 @@ public sealed partial class HolderKeyStripTests
                 HolderKey = () => inherited,
             };
             var ask = SessionsCommand.Read(
-                ["supervise", "s1", "--question", "q", "--generation", "g", "--choice", "A", "--reason", "r", "--source", "s"], out _)!;
+                ["supervise", "s1", "--kind", "question", "--subject", "q", "--generation", "g", "--do", "answer", "--choice", "A", "--reason", "r", "--source", "s"], out _)!;
             var output = new StringWriter();
             Assert.Equal(2, await SessionsCommand.RunAsync(ask, world, output));
             Assert.Contains(HolderKey.Variable, output.ToString(), StringComparison.Ordinal);
@@ -122,7 +122,7 @@ public sealed partial class HolderKeyStripTests
 
         // A key of its own proves nothing against the appointment's hash.
         var nonce = SupervisorProof.Nonce();
-        var form = SupervisorProof.Canonical("s1", "q", "g", "A", [new("r", "s")]);
+        var form = SupervisorProof.Canonical(SupervisorRoutes.Decide, SupervisorSubject.Question("s1", "q"), "g", SupervisorKinds.Answer, "A", [new("r", "s")]);
         var forged = SupervisorProof.Prove(HolderKey.Draw(), nonce, form);
         Assert.False(SupervisorProof.Verify(HolderKey.Hash(Sentinel)!, nonce, form, forged));
     }

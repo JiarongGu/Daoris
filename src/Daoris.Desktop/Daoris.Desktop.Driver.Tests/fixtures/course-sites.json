@@ -17,7 +17,7 @@
   "sites": [
     { "file": "Daoris.Desktop.Driver/Course/LimitResume.cs", "shape": "path-owner", "count": 1, "paths": ["F"], "hands": false, "row": "i", "status": "not yet moved", "what": "the driven limit resume: which record, its word keyed by the cool-off" },
     { "file": "Daoris.Desktop.Driver/Course/LimitResume.cs", "shape": "transient-bound", "count": 1, "paths": ["N"], "hands": false, "row": "i", "status": "not yet moved", "what": "a record ended past its transient bound" },
-    { "file": "Daoris.Desktop.Modules/Bridge/SupervisorDoor.cs", "shape": "answers-alone-read", "count": 1, "paths": ["A"], "hands": false, "row": "i", "status": "not yet moved", "what": "the supervisor's door refusing a decision while the line stands at the bound" },
+    { "file": "Daoris.Desktop.Modules/Bridge/SupervisorKinds/SupervisedParks.cs", "shape": "answers-alone-read", "count": 1, "paths": ["A"], "hands": false, "row": "i", "status": "not yet moved", "what": "the question kind's park read, refusing a decision while the line stands at the bound" },
     { "file": "Daoris.Desktop.Driver/Loop/Chat/ChatStarts.cs", "shape": "opens-from", "count": 1, "paths": ["B"], "hands": true, "moving": "moves", "reads": "Daoris.Desktop.Driver/Course/Chat/ChatReplacement.cs", "row": "h", "status": "not yet moved", "what": "the replacement of a conversation whose model the account did not offer" },
     { "file": "Daoris.Desktop.Driver/Loop/Chat/ChatSendBack.cs", "shape": "send-back", "count": 2, "paths": ["L"], "hands": false, "row": "h", "status": "not yet moved", "what": "a workflow's send-back and a go-on with findings: a word the dispatcher owns, an ended chat going on as path B" }
   ],

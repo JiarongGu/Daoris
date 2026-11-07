@@ -35,7 +35,10 @@ public sealed class ReferredPoints(string home, ISessionEvents events, GoOnMarks
 
     /// <summary>The point as the keeping reads it, with the counts the holder's print handed.</summary>
     public ReferredPoint PointOf(PriorSession record, IReadOnlyList<CountFact>? counts, IReadOnlyList<Consideration>? plan = null) =>
-        new(record.Repository ?? "", Open(record.Session, plan), counts);
+        new(record.Repository ?? "", Open(record.Session, plan), counts)
+        {
+            Passed = [.. new SupervisorRuleActs(home).Of(record.Session).Where(act => act.Rule.Do == SupervisorRules.Refer).Select(act => act.Id)],
+        };
 
     /// <summary>
     /// Why <paramref name="point"/> does not take the supervisor's go-on: <c>answered</c> where it is not open (the person or another

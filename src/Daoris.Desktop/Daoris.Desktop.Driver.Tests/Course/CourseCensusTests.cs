@@ -138,7 +138,7 @@ public sealed class CourseCensusTests
             .Select(site => Path.GetFileName(site.GetProperty("file").GetString()!))
             .OrderBy(file => file, StringComparer.Ordinal);
         // The chat's go-on, the helper's words and the driver read the course.
-        Assert.Equal(["SupervisorDoor.cs"], holds);
+        Assert.Equal(["SupervisedParks.cs"], holds);
     }
 
     /// <summary>

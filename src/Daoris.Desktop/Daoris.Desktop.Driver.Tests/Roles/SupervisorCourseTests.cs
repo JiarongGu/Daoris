@@ -276,4 +276,58 @@ public sealed class SupervisorCourseTests : IDisposable
         await decisions.CourseAsync(Course(act.Id), Points(book).PointOf(Asker, null), At);
         Assert.False(decisions.Refers("s1", act.Id));
     }
+
+    [Fact]
+    public async Task A_decide_naming_an_earlier_point_of_the_line_is_refused_answered_and_one_it_never_reached_not_referred()
+    {
+        var book = Book(SupervisorRules.Refer);
+        var act = Referred(book, _ => true);
+        var decisions = new QuestionSupervisorDecisions(_home, new Admits("g-1"));
+        var now = Points(book).PointOf(Asker, null);
+        Assert.Equal([act.Id], now.Passed);
+
+        // The line moved on to a later point before the decide arrived.
+        var later = act with { At = act.At.AddMinutes(5) };
+        var moved = now with { Open = later, Passed = [act.Id, later.Id] };
+        Assert.Equal(SupervisorWhy.Answered, (await decisions.CourseAsync(Course(act.Id), moved, At)).Why);
+        Assert.Equal(SupervisorWhy.NotReferred, (await decisions.CourseAsync(Course("rule-elsewhere"), moved, At)).Why);
+        Assert.True((await decisions.CourseAsync(Course(later.Id), moved, At)).Kept);
+    }
+
+    [Fact]
+    public async Task A_course_decision_overruled_before_a_restart_leaves_its_point_the_persons_after_it()
+    {
+        var book = Book(SupervisorRules.Refer);
+        var act = Referred(book, _ => true);
+        var before = new QuestionSupervisorDecisions(_home, new Admits("g-1"));
+        var kept = await before.CourseAsync(Course(act.Id), Points(book).PointOf(Asker, null), At);
+        Assert.Equal(SupervisorState.Overruled, await before.OverruleAsync("s1", kept.Decision!, (_, _, _) => Task.FromResult(true), At.AddSeconds(10)));
+        var file = File.ReadAllText(Path.Combine(DaorisHome.Entry(_home, HomeEntry.Sessions, "s1" + QuestionSupervisorDecisions.DecisionsSuffix), kept.Decision + ".json"));
+        Assert.Contains("\"subject\"", file);
+
+        var after = new QuestionSupervisorDecisions(_home, new Admits("g-2"));
+        Assert.True(after.Refers("s1", act.Id));
+        after.SweepAtStart(At.AddMinutes(1));
+
+        Assert.False(after.Refers("s1", act.Id));
+        Assert.Equal(SupervisorWhy.Overruled, (await after.CourseAsync(Course(act.Id, generation: "g-2"), Points(book).PointOf(Asker, null), At.AddMinutes(2))).Why);
+    }
+
+    [Fact]
+    public async Task A_held_go_on_whose_overrule_line_was_not_written_is_closed_as_the_persons_at_the_next_start()
+    {
+        var book = Book(SupervisorRules.Refer);
+        var act = Referred(book, _ => true);
+        var kept = await new QuestionSupervisorDecisions(_home, new Admits("g-1")).CourseAsync(Course(act.Id), Points(book).PointOf(Asker, null), At);
+        Assert.True(kept.Kept, kept.Why);
+
+        // The overrule's line never reached the file: the decision reads held, and the start closes it stale as the person's.
+        var after = new QuestionSupervisorDecisions(_home, new Admits("g-2"));
+        after.SweepAtStart(At.AddMinutes(1));
+
+        Assert.False(after.Refers("s1", act.Id));
+        var read = Assert.Single(after.CoursesOf("s1"));
+        Assert.Equal((SupervisorState.Stale, SupervisorWhy.Restarted), (read.State, read.Why));
+        Assert.Empty(await after.ReleaseCoursesAsync(Points(book).Line(_ => Asker, _ => false), At.AddHours(1)));
+    }
 }

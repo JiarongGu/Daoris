@@ -60,15 +60,14 @@ public sealed class SupervisorScopeTests : IDisposable
     private static JsonElement Answer(string key, string nonce, string generation, string session = "s1")
     {
         SupervisorReason[] reasons = [new("The ticket says monthly.", "the quest's line 2")];
-        var proof = SupervisorProof.Prove(key, nonce, SupervisorProof.Canonical(session, "q-1", generation, "Monthly", reasons))!;
-        var form = new SupervisorForm(session, "q-1", generation, proof, "Monthly", reasons);
+        var form = new SupervisorDecideForm(SupervisorSubject.Question(session, "q-1"), generation, "", SupervisorKinds.Answer, "Monthly", reasons).Proved(key, nonce);
         return JsonDocument.Parse(JsonSerializer.Serialize(form.Payload())).RootElement.Clone();
     }
 
     private static RoleJudgement JudgeAnswer(StandingConfirmation standing, string key, string generation)
     {
         var nonce = SupervisorProof.Nonce();
-        return standing.JudgeRole(DriverModule.Name, SupervisorRoutes.Answer, Answer(key, nonce, generation), null, nonce);
+        return standing.JudgeRole(DriverModule.Name, SupervisorRoutes.Decide, Answer(key, nonce, generation), null, nonce);
     }
 
     private static ParkQuestion Asked(string session) =>
@@ -194,9 +193,8 @@ public sealed class SupervisorScopeTests : IDisposable
     }
 
     /// <summary>
-    /// A terminal started again is a new hold with a new key, so the old holder's late answer is refused <c>role-changed</c>, and so is
-    /// a workspace holder's answer for a repository whose own supervisor acts there now.
-    /// </summary>
+    /// A terminal started again is a new hold with a new key, so the old holder's late answer is refused <c>role-changed</c>, as is a
+    /// workspace holder's answer for a repository whose own supervisor acts there now.</summary>
     [Fact]
     public void A_late_answer_of_an_earlier_holder_or_generation_is_refused_role_changed()
     {

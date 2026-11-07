@@ -70,7 +70,7 @@
   "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Loop/AttentionStateSliceTests.cs": 134520,
   "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/InstancePipeTests.cs": 44380,
   "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeConfirmTests.cs": 87043,
-  "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeStandingTests.cs": 41284,
+  "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeStandingTests.cs": 41154,
   "src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs": 54010,
   "src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs": 169656,
   "src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs": 46623,

@@ -60,8 +60,8 @@ public sealed record SessionsAsk(string Verb) : ISupervisorAsk, IParticipantsAsk
     public bool ToMe { get; init; }
 
     /// <summary>
-    /// The supervisor's answer (<c>sessions supervise &lt;id&gt; --choice …</c>): its question, generation, label and reasons; or its
-    /// leave (<c>--leave &lt;bound&gt;</c>), its bound in place of the label.
+    /// The supervisor's decision (<c>sessions supervise &lt;id&gt; --kind … --subject … --do …</c>): its subject, generation, act, label
+    /// where the act takes one, and reasons; or its leave (<c>--leave &lt;bound&gt;</c>), its bound in place of the act.
     /// </summary>
     public SupervisorDraft? Supervised { get; init; }
 }

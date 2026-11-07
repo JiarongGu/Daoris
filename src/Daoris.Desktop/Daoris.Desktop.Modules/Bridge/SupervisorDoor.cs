@@ -3,10 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The roles' terminals' door as its routes share it: the
-/// holder's terminal's start, the sweep an ended hold runs after the judge's step, and the park as the holder's answer is kept on it.
-/// The routes are the person's <c>START_ROLE_TERMINAL</c> (<see cref="PersonRoutes"/>), the role door's presses, and the sessions'
-/// <c>SUPERVISOR_ANSWER</c> and <c>SUPERVISOR_WAITING</c> (<see cref="SessionsRoutes"/>).
+/// The roles' terminals' door: the holder's terminal's start (<c>START_ROLE_TERMINAL</c>), the sweep an ended hold runs after the judge's
+/// step, and the steward's <c>ROLE_ACT</c>; the supervisor's decisions have their own door (<see cref="SupervisorDecisionDoor"/>).
 /// </summary>
 public static class SupervisorDoor
 {
@@ -220,131 +218,6 @@ public static class SupervisorDoor
         ? new { Done = done, Why = why, Answer = (object?)null, Roles = roles ?? [], Brief = RolesBrief.Revision }
         : new { Done = done, Why = why, Answer = (object?)null, Roles = roles ?? [], Brief = RolesBrief.Revision, Message = message };
 
-    /// <summary>
-    /// The holder's answer, on the role's door alone: the session's repository the supervisor's, the park read, and the decision
-    /// kept in memory, held for the supervisor's role's window. Refused as data, keeping nothing.
-    /// </summary>
-    public static async Task<KeptAnswer> AnswerAsync(DriverLoop loop, System.Text.Json.JsonElement? payload, CancellationToken ct)
-    {
-        if (PipeDoor.Role is not { Generation: { } generation }) return Refused(SupervisorWhy.NotHolder);
-        if (SupervisorForm.Read(payload) is not { } form) return Refused(SupervisorWhy.Form);
-        if (form.Generation != generation) return Refused(SupervisorWhy.RoleChanged);
-        var service = loop.Service ?? throw DriverArguments.NotReady();
-        if (await ParkAsync(loop, service, form.Id, ct).ConfigureAwait(false) is not { } park) return Refused(SupervisorWhy.NotParked);
-        if (Covers(loop, generation, park.Repository) is { } uncovered) return Refused(uncovered);
-
-        var kept = await loop.Supervisor.KeepAsync(
-            new SupervisorAnswer(form.Id, form.Question, form.Generation, form.Choice, form.Reasons, new SupervisorHolder(RoleHolders.Terminal, null)),
-            park, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
-        if (!kept.Kept) return Refused(kept.Why ?? SupervisorWhy.NotParked);
-
-        // The loop waits for the soonest decision's moment: told of this one now.
-        loop.Nudge();
-        return new KeptAnswer(true, kept.Decision, kept.GoesOnAt is { } at ? Moments.Write(at) : null, null);
-    }
-
-    /// <summary>
-    /// The holder's leaving a question to the owner (<c>SUPERVISOR_DEFER</c>), on the role's door alone as the answer
-    /// is: kept as a decision of state <c>left</c>, final at once, nothing said to the session. Refused as data, keeping nothing.
-    /// </summary>
-    public static async Task<KeptAnswer> DeferAsync(DriverLoop loop, System.Text.Json.JsonElement? payload, CancellationToken ct)
-    {
-        if (PipeDoor.Role is not { Generation: { } generation }) return Refused(SupervisorWhy.NotHolder);
-        if (SupervisorDeferForm.Read(payload) is not { } form) return Refused(SupervisorWhy.Form);
-        if (form.Generation != generation) return Refused(SupervisorWhy.RoleChanged);
-        var service = loop.Service ?? throw DriverArguments.NotReady();
-        if (await ParkAsync(loop, service, form.Id, ct).ConfigureAwait(false) is not { } park) return Refused(SupervisorWhy.NotParked);
-        if (Covers(loop, generation, park.Repository) is { } uncovered) return Refused(uncovered);
-
-        var kept = await loop.Supervisor.LeaveAsync(
-            new SupervisorDefer(form.Id, form.Question, form.Generation, form.Bound, form.Reasons, new SupervisorHolder(RoleHolders.Terminal, null)),
-            park, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
-        return kept.Kept ? new KeptAnswer(true, kept.Decision, null, null) : Refused(kept.Why ?? SupervisorWhy.NotParked);
-    }
-
-    /// <summary>
-    /// What waits for the holder: the parked sessions here with a recorded question and no decision on it, in a repository a
-    /// live supervisor's hold covers, each with that hold's generation. Names no key.
-    /// </summary>
-    public static async Task<IReadOnlyList<object>> WaitingAsync(DriverLoop loop, CancellationToken ct)
-    {
-        var service = loop.Service ?? throw DriverArguments.NotReady();
-        var admission = (IDecisionAdmission?)loop.Pipe?.StandingConfirmation ?? NoDecisionAdmission.Instance;
-        var waiting = new List<object>();
-        var records = (await service.RecordsAsync(ct).ConfigureAwait(false)).ToList();
-        foreach (var record in records.Where(each => each.Parked && !each.Teammate))
-        {
-            if (record.Repository is not { } repository
-                || admission.Admit(SupervisorKinds.Question, new RolePlace(Repository: repository), SupervisorKinds.Answer) is not { Why: null, Generation: { } generation })
-            {
-                continue;
-            }
-            var asked = await Task.Run(() => new QuestionFiles(loop.Home).Read(record.Session), ct).ConfigureAwait(false);
-            // A question its agent marked the owner's is never the holder's to look at.
-            if (asked is null || asked.Owner is not null || loop.Supervisor.Decided(record.Session, asked.Id)) continue;
-            waiting.Add(new
-            {
-                Session = record.Session, Repository = repository, Question = asked.Id, Asked = Moments.Write(asked.At), Generation = generation,
-            });
-        }
-
-        waiting.AddRange(SupervisorCourseDoor.Waiting(loop, records, admission));
-        return waiting;
-    }
-
-    /// <summary>
-    /// The park as the keeping reads it (the checks the driver makes): its repository, whether it is parked here and holds a quest, the
-    /// question on file, whether a word of the owner's waits, whether its ask's go-aheads are open or cannot be read, whether its line
-    /// is at its answers-alone bound, and its line's counts. Null where no record of this machine has the id.
-    /// </summary>
-    public static async Task<SupervisedPark?> ParkAsync(DriverLoop loop, ServiceClient service, string id, CancellationToken ct)
-    {
-        if (await service.RecordAsync(id, ct).ConfigureAwait(false) is not { } record) return null;
-        var filed = await Task.Run(() => new QuestionFiles(loop.Home).Read(id), ct).ConfigureAwait(false);
-        var ownerWaits = record.Waiting.Any(word => word.Persons);
-        var (open, unread) = (false, false);
-        if (record.Quest is { } quest)
-        {
-            var asked = await service.FindQuestAsync(quest, ct).ConfigureAwait(false);
-            if (AskWords.AskOf(asked?.From) is { } askId)
-            {
-                var ask = await service.FindAskAsync(askId, ct).ConfigureAwait(false);
-                unread = ask?.GoAheads is null;
-                open = ask?.GoAheads?.Any(each => each.Answer is null) == true;
-            }
-            else
-            {
-                unread = true;
-            }
-        }
-
-        // The one count, the line's admission, as the look's hold reads it.
-        var atBound = record.Parked && new AnswersAloneHold(loop.Events, new GoOnMarks(loop.Home), new ContinuationAdmissions(loop.Home), SupervisorRuleBook.Read(loop.Home))
-            .AtBound(id, await AnswersAloneHold.RecordsAsync(service, ct).ConfigureAwait(false));
-        // The line's counts as the print hands them, which a reason's `count:` source names and the decision keeps.
-        var counts = (await LineCountsRead.FactsAsync(service, loop.Home, id, ct).ConfigureAwait(false)).Counts;
-        return new SupervisedPark(record.Repository ?? "", record.Parked, record.Quest is not null, filed, ownerWaits, open, unread, atBound)
-        {
-            Counts = counts,
-        };
-    }
-
-    private static KeptAnswer Refused(string why) => new(false, null, null, why);
-
-    // The act's hold the park's repository's effective supervisor's, a workspace's included; why not, else null.
-    private static string? Covers(DriverLoop loop, string generation, string repository) =>
-        loop.Pipe?.StandingConfirmation is { } judge ? judge.Covers(generation, SupervisorKinds.Question, repository) : SupervisorWhy.NotStaffed;
-
-    /// <summary>
-    /// The answer's answer: kept with the decision and when it goes on, or refused with why, keeping nothing; with the roles the
-    /// holder holds now and the brief's revision.
-    /// </summary>
-    public sealed record KeptAnswer(bool Kept, string? Decision, string? GoesOnAt, string? Why)
-    {
-        public IReadOnlyList<string> Roles { get; init; } = PipeDoor.Role?.Roles ?? [];
-
-        public string Brief { get; init; } = RolesBrief.Revision;
-    }
 }
 
 /// <summary>The panel's door for the holders' tabs: open one, tell one a line, close one.</summary>

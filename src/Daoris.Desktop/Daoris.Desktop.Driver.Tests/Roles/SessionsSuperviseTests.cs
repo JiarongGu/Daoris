@@ -91,29 +91,40 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
 
     private static readonly string[] AnswerArgs =
     [
-        "supervise", "s1", "--question", "q-1", "--generation", "g-1", "--choice", "Monthly",
+        "supervise", "s1", "--kind", "question", "--subject", "q-1", "--generation", "g-1", "--do", "answer", "--choice", "Monthly",
         "--reason", "The ticket says monthly.", "--source", "the quest's line 2",
     ];
 
     private static readonly SupervisorReason[] Reasons = [new("The ticket says monthly.", "the quest's line 2")];
 
-    private static byte[] Canonical(string choice = "Monthly") => SupervisorProof.Canonical("s1", "q-1", "g-1", choice, Reasons);
+    private static readonly SupervisorSubject Asked = SupervisorSubject.Question("s1", "q-1");
+
+    private static byte[] Canonical(string choice = "Monthly") =>
+        SupervisorProof.Canonical(SupervisorRoutes.Decide, Asked, "g-1", SupervisorKinds.Answer, choice, Reasons);
 
     [Fact]
-    public void The_verb_reads_its_three_forms_and_takes_no_key_and_no_reason_without_its_source()
+    public void The_verb_reads_its_forms_and_takes_no_key_and_no_reason_without_its_source()
     {
         Assert.Equal("supervise-list", SessionsCommand.Read(["supervise"], out _)!.Verb);
         Assert.Equal("supervise-print", SessionsCommand.Read(["supervise", "s1"], out _)!.Verb);
         var answer = SessionsCommand.Read(AnswerArgs, out _)!;
-        Assert.Equal(("supervise-answer", "q-1", "g-1", "Monthly"), (answer.Verb, answer.Supervised!.Question, answer.Supervised.Generation, answer.Supervised.Choice));
+        Assert.Equal(("supervise-decide", "question", "q-1", "g-1", "answer", "Monthly"),
+            (answer.Verb, answer.Supervised!.Kind, answer.Supervised.Subject, answer.Supervised.Generation, answer.Supervised.Do, answer.Supervised.Choice));
         Assert.Equal(Reasons, answer.Supervised.Reasons);
 
         Assert.Null(SessionsCommand.Read([.. AnswerArgs, "--key", Key], out var keyed));
         Assert.Contains(HolderKey.Variable, keyed, StringComparison.Ordinal);
         Assert.Null(SessionsCommand.Read([.. AnswerArgs, "--reason", "No source."], out _));
-        Assert.Null(SessionsCommand.Read([.. AnswerArgs[..8], "--source", "x"], out _));
-        var six = AnswerArgs[..8].Concat(Enumerable.Range(0, 6).SelectMany(at => new[] { "--reason", $"r{at}", "--source", "s" })).ToArray();
+        Assert.Null(SessionsCommand.Read([.. AnswerArgs[..12], "--source", "x"], out _));
+        var six = AnswerArgs[..12].Concat(Enumerable.Range(0, 6).SelectMany(at => new[] { "--reason", $"r{at}", "--source", "s" })).ToArray();
         Assert.Null(SessionsCommand.Read(six, out _));
+        // The old flags are gone, and a kind this build's door does not take is refused.
+        Assert.Null(SessionsCommand.Read(["supervise", "s1", "--question", "q-1", "--generation", "g-1", "--choice", "Monthly", .. AnswerArgs[12..]], out _));
+        Assert.Null(SessionsCommand.Read([.. AnswerArgs[..3], "limit", .. AnswerArgs[4..]], out _));
+        Assert.Null(SessionsCommand.Read([.. AnswerArgs[..10], .. AnswerArgs[12..]], out var unlabelled));
+        Assert.Contains("--choice", unlabelled, StringComparison.Ordinal);
+        Assert.Null(SessionsCommand.Read([.. AnswerArgs[..9], "go-on", .. AnswerArgs[10..]], out var other));
+        Assert.Contains("answer", other, StringComparison.Ordinal);
     }
 
     /// <summary>§4.6: no alone path; with no running Daoris every form is refused, exit 2.</summary>
@@ -186,49 +197,54 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
         Assert.Contains("kept as decision d1", said, StringComparison.Ordinal);
 
         var press = Assert.Single(_standIn.Presses);
-        Assert.Equal(SupervisorRoutes.Answer, press.GetProperty("type").GetString());
+        Assert.Equal(SupervisorRoutes.Decide, press.GetProperty("type").GetString());
         var sent = string.Concat(_standIn.Sent.Select(each => each.GetRawText()));
         Assert.DoesNotContain(Key, sent, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain(Convert.ToHexStringLower(HolderKey.Hash(Key)!), sent, StringComparison.OrdinalIgnoreCase);
         var payload = press.GetProperty("payload");
-        Assert.Equal(["id", "question", "generation", "proof", "choice", "reasons"], payload.EnumerateObject().Select(each => each.Name));
+        Assert.Equal(["kind", "subject", "generation", "proof", "do", "choice", "reasons"], payload.EnumerateObject().Select(each => each.Name));
+        Assert.Equal(["session", "question"], payload.GetProperty("subject").EnumerateObject().Select(each => each.Name));
         var proof = payload.GetProperty("proof").GetString();
         var hash = HolderKey.Hash(Key)!;
 
         Assert.True(SupervisorProof.Verify(hash, _standIn.Nonce, Canonical(), proof));
         Assert.False(SupervisorProof.Verify(hash, relays ? SupervisorProof.Nonce() : real, Canonical(), proof));
         Assert.False(SupervisorProof.Verify(hash, _standIn.Nonce, Canonical("Weekly"), proof));
+        // The subject is in the proof's bytes: the same answer about another question of the session does not verify.
+        Assert.False(SupervisorProof.Verify(hash, _standIn.Nonce,
+            SupervisorProof.Canonical(SupervisorRoutes.Decide, SupervisorSubject.Question("s1", "q-2"), "g-1", SupervisorKinds.Answer, "Monthly", Reasons), proof));
     }
 
     private static readonly string[] LeaveArgs =
     [
-        "supervise", "s1", "--question", "q-1", "--generation", "g-1", "--leave", "sign-in",
+        "supervise", "s1", "--kind", "question", "--subject", "q-1", "--generation", "g-1", "--leave", "sign-in",
         "--reason", "The ticket says monthly.", "--source", "the quest's line 2",
     ];
 
     /// <summary>
-    /// <c>--leave &lt;bound&gt;</c> in place of <c>--choice</c> (<c>SUPERVISOR_DEFER</c>) leaves the question to the
+    /// <c>--leave &lt;bound&gt;</c> in place of <c>--do</c> (<c>SUPERVISOR_LEAVE</c>) leaves the subject to the
     /// owner, with a named bound and each reason with its source; never both, never an unnamed bound.
     /// </summary>
     [Fact]
-    public void The_verb_reads_a_leave_in_place_of_a_choice_naming_one_of_the_bounds()
+    public void The_verb_reads_a_leave_in_place_of_an_act_naming_one_of_the_bounds()
     {
         var leave = SessionsCommand.Read(LeaveArgs, out _)!;
-        Assert.Equal(("supervise-leave", "sign-in", null), (leave.Verb, leave.Supervised!.Bound, leave.Supervised.Choice));
+        Assert.Equal(("supervise-leave", "sign-in", null, null), (leave.Verb, leave.Supervised!.Bound, leave.Supervised.Choice, leave.Supervised.Do));
         Assert.Equal(Reasons, leave.Supervised.Reasons);
 
         Assert.Null(SessionsCommand.Read([.. LeaveArgs, "--choice", "Monthly"], out _));
-        Assert.Null(SessionsCommand.Read([.. LeaveArgs[..7], "because", .. LeaveArgs[8..]], out var unnamed));
+        Assert.Null(SessionsCommand.Read([.. LeaveArgs, "--do", "answer"], out _));
+        Assert.Null(SessionsCommand.Read([.. LeaveArgs[..9], "because", .. LeaveArgs[10..]], out var unnamed));
         Assert.Contains("sign-in", unnamed, StringComparison.Ordinal);
-        Assert.Null(SessionsCommand.Read([.. LeaveArgs[..8]], out _));
+        Assert.Null(SessionsCommand.Read([.. LeaveArgs[..10]], out _));
     }
 
     /// <summary>
-    /// The leave goes as the role's second act, <c>SUPERVISOR_DEFER</c>, in its exact form with a proof over its own route's canonical
-    /// bytes, never the key; the answer's proof does not verify for it.
+    /// The leave goes as the role's second act, <c>SUPERVISOR_LEAVE</c>, in its exact form with a proof over its own route's canonical
+    /// bytes, never the key; the decide's proof does not verify for it.
     /// </summary>
     [Fact]
-    public async Task A_leave_is_sent_as_the_defer_with_a_proof_over_its_own_route()
+    public async Task A_leave_is_sent_with_a_proof_over_its_own_route()
     {
         if (!OperatingSystem.IsWindows()) return;
         _standIn = new InstanceStandIn(_pipe, _id) { Data = new { kept = true, decision = "d1" } };
@@ -239,33 +255,36 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
         Assert.Contains("left to the owner as decision d1", said, StringComparison.Ordinal);
 
         var press = Assert.Single(_standIn.Presses);
-        Assert.Equal(SupervisorRoutes.Defer, press.GetProperty("type").GetString());
+        Assert.Equal(SupervisorRoutes.Leave, press.GetProperty("type").GetString());
         var payload = press.GetProperty("payload");
-        Assert.Equal(["id", "question", "generation", "proof", "bound", "reasons"], payload.EnumerateObject().Select(each => each.Name));
+        Assert.Equal(["kind", "subject", "generation", "proof", "bound", "reasons"], payload.EnumerateObject().Select(each => each.Name));
         var proof = payload.GetProperty("proof").GetString();
         var hash = HolderKey.Hash(Key)!;
-        Assert.True(SupervisorProof.Verify(hash, _standIn.Nonce, SupervisorProof.Canonical(SupervisorRoutes.Defer, "s1", "q-1", "g-1", "sign-in", Reasons), proof));
-        Assert.False(SupervisorProof.Verify(hash, _standIn.Nonce, Canonical("sign-in"), proof));
+        Assert.True(SupervisorProof.Verify(hash, _standIn.Nonce, SupervisorProof.Canonical(SupervisorRoutes.Leave, Asked, "g-1", "sign-in", null, Reasons), proof));
+        Assert.False(SupervisorProof.Verify(hash, _standIn.Nonce, SupervisorProof.Canonical(SupervisorRoutes.Decide, Asked, "g-1", "sign-in", null, Reasons), proof));
+        Assert.NotNull(SupervisorActs.Read(SupervisorRoutes.Leave, payload));
         Assert.DoesNotContain(Key, string.Concat(_standIn.Sent.Select(each => each.GetRawText())), StringComparison.OrdinalIgnoreCase);
     }
 
     private static readonly string[] CourseArgs =
     [
-        "supervise", "s1", "--point", "rule-1", "--generation", "g-1", "--course", "go-on",
+        "supervise", "s1", "--kind", "course", "--subject", "rule-1", "--generation", "g-1", "--do", "go-on",
         "--reason", "The ticket says monthly.", "--source", "the quest's line 2",
     ];
 
     /// <summary>
-    /// A referred point is decided by <c>--point … --course go-on|hold</c>, sent as the role's third act,
-    /// <c>SUPERVISOR_COURSE</c>, its proof over its own route's bytes; a course takes no choice or bound, and no act but go-on or hold.
+    /// A referred point is decided by <c>--kind course --subject &lt;point&gt; --do go-on</c>, sent through the one door,
+    /// <c>SUPERVISOR_DECIDE</c>, its proof over the point whole; a course takes no choice and no act but go-on, and its hold is a leave.
     /// </summary>
     [Fact]
-    public async Task A_course_on_a_referred_point_is_sent_as_its_own_act_and_takes_only_go_on_or_hold()
+    public async Task A_course_on_a_referred_point_is_sent_through_the_one_door_and_takes_only_go_on()
     {
-        Assert.Equal(("supervise-course", "go-on"), (SessionsCommand.Read(CourseArgs, out _)!.Verb, SessionsCommand.Read(CourseArgs, out _)!.Supervised!.Course));
-        Assert.Null(SessionsCommand.Read([.. CourseArgs[..7], "stop", .. CourseArgs[8..]], out _));
+        var read = SessionsCommand.Read(CourseArgs, out _)!;
+        Assert.Equal(("supervise-decide", "course", "rule-1", "go-on"), (read.Verb, read.Supervised!.Kind, read.Supervised.Subject, read.Supervised.Do));
+        Assert.Null(SessionsCommand.Read([.. CourseArgs[..9], "stop", .. CourseArgs[10..]], out _));
+        Assert.Null(SessionsCommand.Read([.. CourseArgs[..9], "hold", .. CourseArgs[10..]], out _));
         Assert.Null(SessionsCommand.Read([.. CourseArgs, "--choice", "Monthly"], out _));
-        Assert.Null(SessionsCommand.Read([.. LeaveArgs[..6], "--course", "go-on", .. LeaveArgs[8..]], out _));
+        Assert.Equal("supervise-leave", SessionsCommand.Read([.. CourseArgs[..8], "--leave", "unrecorded", .. CourseArgs[10..]], out _)!.Verb);
         if (!OperatingSystem.IsWindows()) return;
         _standIn = new InstanceStandIn(_pipe, _id) { Data = new { kept = true, decision = "d1", goesOnAt = "2026-11-07T09:01:00Z" } };
         using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
@@ -274,11 +293,13 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
         Assert.Equal(0, exit);
         Assert.Contains("kept as decision d1", said, StringComparison.Ordinal);
         var press = Assert.Single(_standIn.Presses);
-        Assert.Equal(SupervisorRoutes.Course, press.GetProperty("type").GetString());
+        Assert.Equal(SupervisorRoutes.Decide, press.GetProperty("type").GetString());
         var payload = press.GetProperty("payload");
-        Assert.Equal(["id", "point", "generation", "proof", "do", "reasons"], payload.EnumerateObject().Select(each => each.Name));
-        Assert.True(SupervisorProof.Verify(HolderKey.Hash(Key)!, _standIn.Nonce, SupervisorProof.Canonical(SupervisorRoutes.Course, "s1", "rule-1", "g-1", "go-on", Reasons), payload.GetProperty("proof").GetString()));
-        Assert.NotNull(SupervisorActs.Read(SupervisorRoutes.Course, payload));
+        Assert.Equal(["kind", "subject", "generation", "proof", "do", "reasons"], payload.EnumerateObject().Select(each => each.Name));
+        Assert.Equal(["session", "point"], payload.GetProperty("subject").EnumerateObject().Select(each => each.Name));
+        Assert.True(SupervisorProof.Verify(HolderKey.Hash(Key)!, _standIn.Nonce,
+            SupervisorProof.Canonical(SupervisorRoutes.Decide, SupervisorSubject.Point("s1", "rule-1"), "g-1", "go-on", null, Reasons), payload.GetProperty("proof").GetString()));
+        Assert.NotNull(SupervisorActs.Read(SupervisorRoutes.Decide, payload));
     }
 
     /// <summary>
@@ -295,8 +316,8 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
             Respond = (type, _) => type != SupervisorRoutes.Waiting ? null : Interlocked.Increment(ref asks) switch
             {
                 1 => new { pending = true },
-                2 => new { waiting = new[] { new { session = "old", repository = "engine", question = "q-0", asked = "2026-10-24T08:00:00Z", generation = "g-0" } }, at = "2020-01-01T00:00:00Z" },
-                _ => new { waiting = new[] { new { session = "s1", repository = "engine", question = "q-1", asked = "2026-10-24T08:00:00Z", generation = "g-1" } }, at = Moments.Write(DateTimeOffset.UtcNow.AddMinutes(1)) },
+                2 => new { waiting = new[] { new { kind = "question", subject = new { session = "old", question = "q-0" }, repository = "engine", asked = "2026-10-24T08:00:00Z", generation = "g-0", acts = new[] { "answer" } } }, at = "2020-01-01T00:00:00Z" },
+                _ => new { waiting = new[] { new { kind = "question", subject = new { session = "s1", question = "q-1" }, repository = "engine", asked = "2026-10-24T08:00:00Z", generation = "g-1", acts = new[] { "answer" } } }, at = Moments.Write(DateTimeOffset.UtcNow.AddMinutes(1)) },
             },
         };
         using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
@@ -304,6 +325,7 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
         var (exit, said) = await RunAsync(["supervise"], Instance());
         Assert.Equal(0, exit);
         Assert.Contains("s1  engine  question q-1", said, StringComparison.Ordinal);
+        Assert.Contains("(decide with --kind question --subject q-1 --do answer, or --leave <bound>)", said, StringComparison.Ordinal);
         Assert.DoesNotContain("old", said, StringComparison.Ordinal);
         Assert.Equal(3, Volatile.Read(ref asks));
     }
@@ -319,7 +341,7 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
         _standIn = new InstanceStandIn(_pipe, _id)
         {
             Respond = (type, _) => type == SupervisorRoutes.Waiting
-                ? new { waiting = new[] { new { session = "s1", repository = "engine", question = "q-1", asked = "2026-10-24T08:00:00Z", generation = "g-1" } } }
+                ? new { waiting = new[] { new { kind = "question", subject = new { session = "s1", question = "q-1" }, repository = "engine", asked = "2026-10-24T08:00:00Z", generation = "g-1", acts = new[] { "answer" } } } }
                 : null,
         };
         using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
@@ -359,7 +381,7 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
         _standIn = new InstanceStandIn(_pipe, _id)
         {
             Respond = (type, _) => type == SupervisorRoutes.Waiting
-                ? new { waiting = new[] { new { session = "s1", repository = "engine", question = "q-1", asked = "2026-10-24T08:00:00Z", generation = "g-1" } } }
+                ? new { waiting = new[] { new { kind = "question", subject = new { session = "s1", question = "q-1" }, repository = "engine", asked = "2026-10-24T08:00:00Z", generation = "g-1", acts = new[] { "answer" } } } }
                 : null,
         };
         using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
@@ -387,7 +409,11 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
     {
         waiting = new[]
         {
-            new { session = "s1", repository = "engine", point = "rule-1", count = "answers-alone", n = 2, rule = "aa", place = "repository:engine", generation = "g-1" },
+            new
+            {
+                kind = "course", subject = new { session = "s1", point = "rule-1" }, repository = "engine", count = "answers-alone", n = 2, rule = "aa",
+                place = "repository:engine", generation = "g-1", acts = new[] { "go-on" },
+            },
         },
     };
 
@@ -418,7 +444,8 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
         Assert.Equal(["point: rule-1", "count: answers-alone", "value: 2", "rule: aa, the person's rule for repository:engine, refers it", "course: waiting for you to decide"], lines[(at + 1)..(at + 6)]);
         Assert.Contains("<<< the line's course: Daoris's count from its records, not the asking agent's", said, StringComparison.Ordinal);
         Assert.Contains("generation: g-1", said, StringComparison.Ordinal);
-        Assert.Contains("decide: daoris session supervise s1 --point rule-1 --generation g-1 --course go-on|hold --reason \"…\" --source \"<where>\"", said, StringComparison.Ordinal);
+        Assert.Contains("decide: daoris session supervise s1 --kind course --subject rule-1 --generation g-1 --do go-on --reason \"…\" --source \"<where>\"", said, StringComparison.Ordinal);
+        Assert.Contains("or leave it to the owner: … --leave <", said, StringComparison.Ordinal);
         Assert.DoesNotContain("--choice", said, StringComparison.Ordinal);
         Assert.DoesNotContain("the asking agent's question", said, StringComparison.Ordinal);
     }

@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 public static class RolesBrief
 {
     /// <summary>The brief's revision, which every role act's answer names.</summary>
-    public const string Revision = "r5";
+    public const string Revision = "r6";
 
     /// <summary>The brief whole.</summary>
     public static string Text { get; } = string.Join('\n',
@@ -30,11 +30,12 @@ public static class RolesBrief
         "",
         "The supervisor (主管) answers a parked session's recorded question in the repository it was appointed for, with one of the",
         "answers the session offered, each reason naming its source; or leaves it to the owner by one of the owner's bounds.",
-        "  Verbs: `daoris session supervise` lists what waits; `session supervise <id>` prints a question; `--choice <label>`",
-        "  answers it, `--leave <bound>` leaves it to the owner.",
-        "  Where the owner's rule asks the supervisor, the list names a point (answers alone in a row) and the command that decides it:",
-        "  `--point <p> --course go-on` lets the line go on once the owner's overrule window passes, between turns; `--course hold`",
-        "  leaves it to the owner. Each reason names its source. A course never stops, ends or moves a session.",
+        "  Verbs: `daoris session supervise` lists what waits, each subject with its kind and the command that decides it;",
+        "  `session supervise <id>` prints it. `--kind question --subject <q> --do answer --choice <label>` answers a question;",
+        "  `--leave <bound>` in place of `--do` leaves any subject to the owner.",
+        "  Where the owner's rule asks the supervisor, the list names a point (answers alone in a row): `--kind course --subject <p>",
+        "  --do go-on` lets the line go on once the owner's overrule window passes, between turns. Each reason names its source. A",
+        "  course never stops, ends or moves a session.",
         "  Never: a go-ahead, a sign-in, access, spending, deleting the owner's data or rewriting history, the owner's own preference,",
         "  a question the records do not answer, or one that would contradict a decision.",
         "",
