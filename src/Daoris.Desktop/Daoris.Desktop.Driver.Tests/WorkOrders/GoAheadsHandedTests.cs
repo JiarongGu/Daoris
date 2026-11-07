@@ -5,11 +5,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KNOWUSE1a (D135 §2): a go-ahead is asked once and held on the ask, and every session on the ask is handed what was
-/// approved, what was refused and what still waits, read from the ask at its start (<c>GET /api/asks/{id}</c>) beside the
-/// person's words: a first start, a resume, a carry-on on any account and a follow-up step alike. Three production acts
-/// drew thirteen asks because each session re-listed the go-aheads still open (`docs/2026-10-03-knowledge-use-evidence.md`
-/// §5.1).
+/// A go-ahead is asked once and held on the ask, and every session on the ask is handed what is
+/// approved, what is refused and what still waits, read from the ask at its start (<c>GET /api/asks/{id}</c>) beside the
+/// person's words: a first start, a resume, a carry-on on any account and a follow-up step alike. Otherwise each session
+/// re-lists the go-aheads still open and the same act is asked again.
 /// </summary>
 public sealed class GoAheadsHandedTests
 {
@@ -106,7 +105,7 @@ public sealed class GoAheadsHandedTests
     }
 
     /// <summary>
-    /// A follow-up step is asked by the ask too (D65 §4): its session, in whichever repository, is handed the go-aheads its
+    /// A follow-up step is asked by the ask too: its session, in whichever repository, is handed the go-aheads its
     /// parent's sessions asked, read from the same ask.
     /// </summary>
     [Fact]
@@ -191,12 +190,12 @@ public sealed class GoAheadsHandedTests
     }
 
     /// <summary>
-    /// An answer continues its own session (ANSWER1a), whose conversation was handed the go-aheads at its start but not the
-    /// person's answer to the ones it asked since: the resumed prompt is the person's answer, verbatim, then what was
+    /// An answer continues its own session, whose conversation is handed the go-aheads at its start but not the
+    /// person's answer to the ones it asked since: the resumed prompt is the person's answer, verbatim, then what is
     /// answered on the go-aheads this session asked. The record keeps the person's words as theirs, and only those.
     /// </summary>
     /// <remarks>
-    /// SAYHELD1: the person's words to a park go on while a go-ahead it asked still waits (MSG1b; GOAHEAD2b), so the turn says that
+    /// The person's words to a park go on while a go-ahead it asked still waits, so the turn says that
     /// one still waits and its act is not the session's to do, after the answered ones. Another session's go-ahead is not said.
     /// </remarks>
     [Fact]
@@ -238,7 +237,7 @@ public sealed class GoAheadsHandedTests
         var resume = new ResumeAsk("conversation-1", said, "It goes on.", GoAheadsText.Resumed("", words, "s9").TrimStart());
 
         Assert.Equal(prompt, resume.Prompt);
-        // The protocol door's blocks (MSG1b): the person's words, then what Daoris adds, as its own block.
+        // The protocol door's blocks: the person's words, then what Daoris adds, as its own block.
         Assert.Equal(2, resume.Blocks.Count);
         Assert.Equal("carry on", resume.Blocks[0]);
         var opening = resume.Opening();
@@ -270,7 +269,7 @@ public sealed class GoAheadsHandedTests
         Assert.Equal((true, "Go-ahead 2 on ask `#a1` refused."), refused);
         Assert.Equal((false, "Ask `#a1` holds no go-ahead 7: it holds 1, 2."), none);
         Assert.Contains("\"answer\":\"approved\"", body);
-        // GOAHEAD2: the park is the caller's unless it says otherwise, as the terminal's door does.
+        // The park is the caller's unless it says otherwise, as the terminal's door does.
         Assert.Contains("\"goesOn\":false", body);
         await service.AnswerGoAheadAsync("a1", 2, approved: true, null, goesOn: true);
         Assert.Contains("\"goesOn\":true", body);
@@ -278,7 +277,7 @@ public sealed class GoAheadsHandedTests
 
     /// <summary>
     /// The headless host's usage spells the door, as its ask verb takes it; and the door is the ask page's twin, so the answer
-    /// that leaves none of a park's go-aheads waiting sends it on (GOAHEAD2).
+    /// that leaves none of a park's go-aheads waiting sends it on.
     /// </summary>
     [Fact]
     public void The_hosts_usage_spells_the_go_ahead_door()

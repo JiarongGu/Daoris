@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// D245 end to end over real git: a run's passes over the shipped chain (<c>land</c>, <c>push</c>, a plugin's <c>pull-request</c>, a
+/// End to end over real git: a run's passes over the shipped chain (<c>land</c>, <c>push</c>, a plugin's <c>pull-request</c>, a
 /// <c>monitor</c>, a <c>tidy</c>) reach the monitor when its request merged, start the tidy on the merged route, and leave the tidy reached
 /// with the chain's part ended on a recovery ref and the landing's record; a request closed without merging reaches the monitor and routes to a
 /// person's task, touching nothing.

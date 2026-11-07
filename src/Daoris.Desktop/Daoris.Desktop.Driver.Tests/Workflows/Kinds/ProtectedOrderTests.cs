@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The protected order (D157 §2.2: holds, opinion, look, landing) is one graph rule the kit runs once per save, beside each kind's own rules
-/// (D247): the gates it holds before every landing are the kinds that declare a guard, read from their units and kept in no list beside them.
+/// The protected order (holds, opinion, look, landing) is one graph rule the kit runs once per save, beside each kind's own rules:
+/// the gates it holds before every landing are the kinds that declare a guard, read from their units and kept in no list beside them.
 /// </summary>
 public sealed class ProtectedOrderTests
 {

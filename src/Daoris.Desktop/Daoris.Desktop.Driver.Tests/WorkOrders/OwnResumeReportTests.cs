@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 s-ii (the agent-provider design §7 row 3; D205 point 1): the sessions' groups report a resume's wait where the continuation
+/// The sessions' groups report a resume's wait where the continuation
 /// resumes its record's own conversation, by one rule (<see cref="OwnResume"/>), on the record's own door and never the machine's
 /// <c>adapter</c> key. A reader by the machine's key is planted beside it and disagrees on Build's second choice, so the comparison holds.
 /// </summary>
@@ -42,7 +42,7 @@ public sealed class OwnResumeReportTests : IDisposable
     }
 
     /// <summary>
-    /// Each case: the record's own door, the agent its kept conversation was bound under, and the agent its start goes on with, as the walk
+    /// Each case: the record's own door, the agent its kept conversation is bound under, and the agent its start goes on with, as the walk
     /// would run it (its record's asked choice, else the door it opened on, else Build's first).
     /// </summary>
     public static TheoryData<string, string?, string?, string?> Cases() => new()

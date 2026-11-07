@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-CUTOVER1e (D190 points 2, 3 and 7; the cutover design §2.2, §2.3, §6, §11.1): a run bound to a graph version is drawn from its record,
+/// A run bound to a graph version is drawn from its record,
 /// <c>run:&lt;run&gt;</c>, each node a step where its record's status says it stands, on the subject its binding names, named; an opinion, a look and
-/// a plugin's performed step its wires let start ready as any node (CUTOVER1d took the not-begun row away); its branches said to be its graph's; and a
+/// a plugin's performed step its wires let start ready as any node; its branches said to be its graph's; and a
 /// look the work's own choice adds drawn beside the graph. Pure, over facts: the reader gathers them (<c>WorkflowPortsTests</c>) and the route answers them
 /// (<c>DriverModuleWorkflowRunTests</c>).
 /// </summary>
@@ -53,7 +53,7 @@ public sealed class WorkflowGraphRunTests
         """;
 
     /// <summary>
-    /// INTEGRATE1h (§17.9): the run's view draws the <c>integrate</c> node with its record's head, on that node alone, and the terminal says it.
+    /// The run's view draws the <c>integrate</c> node with its record's head, on that node alone, and the terminal says it.
     /// </summary>
     [Fact]
     public void The_integrate_node_is_drawn_with_its_records_head_and_no_other_step_carries_one()
@@ -74,7 +74,7 @@ public sealed class WorkflowGraphRunTests
         Assert.All(WorkflowGraphRuns.Derive(facts with { Integration = null }, "default", "a1").Steps, step => Assert.Null(step.Integration));
     }
 
-    /// <summary>The work held on its requests before the landing (INTEGRATE1o).</summary>
+    /// <summary>The work held on its requests before the landing.</summary>
     private const string ClaimedRequestsHanded = """
         {"schemaVersion":2,"entries":["claimed"],"end":"handed",
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"requests","kind":"work.requests","version":1,"reach":"observed"},
@@ -130,7 +130,7 @@ public sealed class WorkflowGraphRunTests
         { Outcome = outcome, Code = code, Resolution = resolution };
 
     /// <summary>
-    /// FABRIC-PIPELINE1d part 5 (the pipeline design §4.4): a check's step carries the verdict's facts the page words: the gate a failed check named, and
+    /// A check's step carries the verdict's facts the page words: the gate a failed check named, and
     /// the attempt held unknown with the words its person may say (<i>Run again</i> is <c>again</c>, <i>Not now</i> is <c>stop</c>), or kept as their stop.
     /// </summary>
     [Fact]
@@ -197,8 +197,8 @@ public sealed class WorkflowGraphRunTests
 
     /// <summary>
     /// Each node says its record's state on the subject its binding names: the claim reached on its quest, the landing observed on the branch the
-    /// session's records name at the tip it was bound to; the opinion, the look and the plugin's performed deploy its wires let start ready, as any
-    /// node is (FABRIC-CUTOVER1d: the runtime begins them now its doors read the run), and the run stands at the first of them.
+    /// session's records name at the tip it is bound to; the opinion, the look and the plugin's performed deploy its wires let start ready, as any
+    /// node is, and the run stands at the first of them.
     /// </summary>
     [Fact]
     public void Each_node_says_its_records_state_on_the_subject_it_observes_and_a_ready_gate_is_ready()
@@ -263,7 +263,7 @@ public sealed class WorkflowGraphRunTests
     }
 
     /// <summary>
-    /// D190 point 7 (the cutover design §6): a look the chain's choice asks for is D154's hold, drawn beside a graph that holds no look, before its
+    /// A look the chain's choice asks for is a hold, drawn beside a graph that holds no look, before its
     /// landing, as a steps run's added look is; a graph holding its own look draws none beside it.
     /// </summary>
     [Fact]
@@ -318,7 +318,7 @@ public sealed class WorkflowGraphRunTests
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1f (the cutover design §5.2): each node says what the person may say of it now, by the one table: a go-ahead under way its skip
+    /// Each node says what the person may say of it, by the one table: a go-ahead under way its skip
     /// and its stop, the landing under way its stop alone (its kind is never passed over), a node not reached or settled neither. A word kept and not
     /// applied yet is drawn on its node, which then offers nothing more; a run that ended, or whose record does not read, offers nothing. The
     /// terminal names the run's own commands under each node, and the word waiting with its words.
@@ -351,7 +351,7 @@ public sealed class WorkflowGraphRunTests
 
     /// <summary>
     /// The work, its review and its landing, then a plugin's find whose <c>release</c> outcome leads to its release; the review's changes go back
-    /// to the work, and the find's <c>none</c> goes back there too, from after the landing (DECIDE1c).
+    /// to the work, and the find's <c>none</c> goes back there too, from after the landing.
     /// </summary>
     private const string ReviewedThenFound = """
         {"schemaVersion":2,"entries":["work"],"end":"release",
@@ -365,7 +365,7 @@ public sealed class WorkflowGraphRunTests
         """;
 
     /// <summary>
-    /// DECIDE1c: a run's view says which routes were taken. A decision's outcome is on the graph beside its node, a node its outcome left no route
+    /// A run's view says which routes were taken. A decision's outcome is on the graph beside its node, a node its outcome left no route
     /// to is not taken (and the run stands nowhere once nothing else moves), a <c>when</c> wire names its outcome, and a <c>back</c> wire is drawn
     /// apart from the wires the run is read along, so neither the landing's subjects nor the drawing walk one. The terminal says each.
     /// </summary>
@@ -395,7 +395,7 @@ public sealed class WorkflowGraphRunTests
     }
 
     /// <summary>
-    /// DECIDE1c: a review waiting on the person's Accept offers their changes beside its stop, and the terminal names its command; a review not
+    /// A review waiting on the person's Accept offers their changes beside its stop, and the terminal names its command; a review not
     /// waiting on them offers none.
     /// </summary>
     [Fact]
@@ -415,7 +415,7 @@ public sealed class WorkflowGraphRunTests
         new(WorkflowRunRequestKinds.Quest, id, to, state) { Session = "s1" };
 
     /// <summary>
-    /// INTEGRATE1o part o2 (§17.3): the quests a run's sessions published are drawn inside its work node, whatever the graph holds, and a graph with
+    /// The quests a run's sessions published are drawn inside its work node, whatever the graph holds, and a graph with
     /// none draws none on any step. The hold itself, the <c>work.requests</c> node, says where it stands: active while one is open, and, held by a
     /// decline, waiting on you with the code that says so and the person's pass over offered; reached when each is done.
     /// </summary>
@@ -467,8 +467,8 @@ public sealed class WorkflowGraphRunTests
     }
 
     /// <summary>
-    /// INTEGRATE1n part n3 (F50): a node whose integration the record says promoted is offered no stop, since nothing reverses the line; a node
-    /// beside it is offered what the table takes as before.
+    /// A node whose integration the record says promoted is offered no stop, since nothing reverses the line; a node
+    /// beside it is offered what the table takes.
     /// </summary>
     [Fact]
     public void A_node_the_integration_record_says_promoted_is_offered_no_stop()

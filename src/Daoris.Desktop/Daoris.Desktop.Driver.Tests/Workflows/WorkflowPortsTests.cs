@@ -5,10 +5,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STRUCT3b (D166; the code-structure design §3): Workflows' use cases are written against the ports its Application declares,
+/// Workflows' use cases are written against the ports its Application declares,
 /// so a stand-in over memory drives each with no file: a version added and trimmed by the versions the runs name, a run bound to
 /// the newest version saved, the person's keep written on its run, a run's process read and held, and a run's records read beside
-/// the service. The files behind the ports are held where they always were, over a scratch home: <c>WorkflowNamedTests</c>,
+/// the service. The files behind the ports are held over a scratch home: <c>WorkflowNamedTests</c>,
 /// <c>WorkflowRunBindingTests</c>, <c>WorkflowGateTests</c>, <c>WorkflowRunTests</c> and <c>WorkflowRunCommandTests</c>.
 /// </summary>
 public sealed class WorkflowPortsTests
@@ -17,7 +17,7 @@ public sealed class WorkflowPortsTests
 
     private static readonly DriverConfig Choice = DriverConfig.Parse("""{"workflows":{"web-app":{"default":"docs-to-pr"}}}""");
 
-    /// <summary>A graph version (WORKFLOWCLEAN1 1b: a list of steps is no longer saved): the merge with no review for <c>automatic</c>, else after you accept.</summary>
+    /// <summary>A graph version: the merge with no review for <c>automatic</c>, else after you accept.</summary>
     private static JsonNode Graph(string accept) =>
         JsonNode.Parse(WorkflowDefaults.Of(accept == "automatic" ? "merge-automatic" : "merge-after-accept")!.GraphJson)!;
 
@@ -115,8 +115,8 @@ public sealed class WorkflowPortsTests
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1e (the cutover design §11.1): what work would follow without its kind takes the newest version that reads, a graph's
-    /// among them, its person part read from its gate and go-ahead nodes; a newer version that does not read is passed over as before.
+    /// What work would follow without its kind takes the newest version that reads, a graph's
+    /// among them, its person part read from its gate and go-ahead nodes; a newer version that does not read is passed over.
     /// </summary>
     [Fact]
     public void What_work_would_follow_otherwise_takes_a_graph_newest_its_person_part_read_from_its_nodes()
@@ -190,7 +190,7 @@ public sealed class WorkflowPortsTests
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1e: a run bound to a graph version is read from its record through the port, never written, and drawn from it whatever its
+    /// A run bound to a graph version is read from its record through the port, never written, and drawn from it whatever its
     /// gates still hold: its nodes as its steps, no problem, its branch named by this machine's session branches, read once.
     /// </summary>
     [Fact]
@@ -239,7 +239,7 @@ public sealed class WorkflowPortsTests
     }
 
     /// <summary>
-    /// INTEGRATE1n part n3 (F50): the run's view asks the integration door which of its nodes promoted, and offers a promoted <c>integrate</c> no
+    /// The run's view asks the integration door which of its nodes promoted, and offers a promoted <c>integrate</c> no
     /// stop; one still queued is offered it, and a run whose graph holds no <c>integrate</c> asks the door nothing.
     /// </summary>
     [Theory]
@@ -372,7 +372,7 @@ public sealed class WorkflowPortsTests
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1g (D190's binding moment, the cutover design §8): a start binds its run before its take and says what the bind came
+    /// A start binds its run before its take and says what the bind came
     /// to: bound by it, bound already with the binding kept, or not bound with why, which holds the start. The look says a binding a start
     /// made, once, and binds nothing again; a service that answers at the next start binds the run then.
     /// </summary>
@@ -419,7 +419,7 @@ public sealed class WorkflowPortsTests
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1g (design §8, *the choice read once*): a start that holds after its bind keeps its run bound to what it chose, so a
+    /// A start that holds after its bind keeps its run bound to what it chose, so a
     /// choice the person changes on the quest since applies to the next run, never to this one; a binding that does not read holds the
     /// start, since the workflow its take would name is not known.
     /// </summary>

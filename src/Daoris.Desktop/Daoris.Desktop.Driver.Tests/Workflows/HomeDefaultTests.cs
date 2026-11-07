@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WORKFLOWCLEAN1 1a (the cleanup design §1.1, §1.4, §1.5): the home's default, the seed a fresh home is given once, the line's policy, the
+/// The home's default, the seed a fresh home is given once, the line's policy, the
 /// consent a home-default edit asks, and the rollback refusal a converted home makes.
 /// </summary>
 public sealed class HomeDefaultTests : IDisposable

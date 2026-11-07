@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The records the service's desk writes (ONEWAY1t), laid down by a test as the desk lays them, so the look's tests start from a
+/// The records the service's desk writes, laid down by a test as the desk lays them, so the look's tests start from a
 /// request, a send or a stop with no service. The driver itself writes none of them. <c>brainstorm-files.json</c> holds both sides
 /// to one shape: the service suite's tests read the desk's files against its rows, and <c>BrainstormFilesTwinTests</c> reads these.
 /// </summary>

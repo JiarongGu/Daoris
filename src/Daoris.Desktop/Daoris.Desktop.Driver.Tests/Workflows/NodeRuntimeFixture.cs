@@ -3,10 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What the evaluation runtime's test classes share (PARTWHOLE1): a scratch home, a stand-in port that counts each call, a held clock, the
-/// plugin's deploy and build steps, and a look over the units a test sets, every read it may make counted. One class over three hand-split
-/// parts until PARTWHOLE1 gave each part a class of its own: <see cref="NodeRuntimeTests"/>, <see cref="NodeRuntimeRunTests"/> and
-/// <see cref="RunNodeWordsTests"/>, the last two over <see cref="NodeRunFixture"/>.
+/// What the evaluation runtime's test classes share: a scratch home, a stand-in port that counts each call, a held clock, the
+/// plugin's deploy and build steps, and a look over the units a test sets, every read it may make counted. <see cref="NodeRuntimeTests"/>,
+/// <see cref="NodeRuntimeRunTests"/> and <see cref="RunNodeWordsTests"/> derive from it, the last two over <see cref="NodeRunFixture"/>.
 /// </summary>
 public abstract class NodeRuntimeFixture : IDisposable
 {
@@ -20,7 +19,7 @@ public abstract class NodeRuntimeFixture : IDisposable
         Perform = new NodePerform(Idempotent: true, Reconcile: true, Transient: ["unavailable"]),
     };
 
-    /// <summary>The plugin's build step (FABRIC-PERFORM1c): a pipeline's producer, its artifact a deploy's release.</summary>
+    /// <summary>The plugin's build step: a pipeline's producer, its artifact a deploy's release.</summary>
     protected static readonly NodeDeclaration Build = Step with { Id = Plugin + "/build", Kind = Plugin + "/build" };
 
     protected readonly string _home = Path.Combine(TestHomes.Root, "daoris-runtime-" + Guid.NewGuid().ToString("N")[..8]);
@@ -33,7 +32,7 @@ public abstract class NodeRuntimeFixture : IDisposable
 
     protected int _stepsRead;
 
-    /// <summary>The git and gate reads a pass made (FABRIC-RUN1b, RUN1c).</summary>
+    /// <summary>The git and gate reads a pass made.</summary>
     protected int _gitRead;
 
     public void Dispose()
@@ -78,12 +77,12 @@ public abstract class NodeRuntimeFixture : IDisposable
 
         public int? GenerationOf(string plugin) => Generation;
 
-        /// <summary>The cleanups asked (FABRIC-PERFORM1d), and what each is answered.</summary>
+        /// <summary>The cleanups asked, and what each is answered.</summary>
         public List<WorkCleanupCall> Cleaned { get; } = [];
 
         public Func<WorkCleanupCall, WorkCleanupAnswer> Cleanup { get; set; } = _ => new(CleanupDispositions.Removed);
 
-        /// <summary>The plugins told owed a cleanup, each time (FABRIC-PERFORM1d).</summary>
+        /// <summary>The plugins told owed a cleanup, each time.</summary>
         public List<IReadOnlySet<string>> Owed { get; } = [];
 
         public Task<(WorkCleanupAnswer Answer, int Generation)> CleanupAsync(string plugin, WorkCleanupCall call, CancellationToken ct)
@@ -140,7 +139,7 @@ public abstract class NodeRuntimeFixture : IDisposable
             Interlocked.Increment(ref _stepsRead);
             return [Step, Build];
         },
-        // FABRIC-RUN1b, RUN1c: every git read and gate read the runtime may make, counted, so an install with no graph is seen to make none.
+        // Every git read and gate read the runtime may make, counted, so an install with no graph is seen to make none.
         Tips = (_, _, _) =>
         {
             Interlocked.Increment(ref _gitRead);

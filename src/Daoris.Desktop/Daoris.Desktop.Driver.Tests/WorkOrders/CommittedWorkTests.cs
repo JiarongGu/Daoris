@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The look's half of RETRYWORK1: the commits a failed session left beyond its start are read for an open quest it failed before
+/// The commits a failed session left beyond its start are read for an open quest it failed before
 /// taking, and for nothing else, so a look with no such quest asks git nothing.
 /// </summary>
 public sealed class CommittedWorkTests

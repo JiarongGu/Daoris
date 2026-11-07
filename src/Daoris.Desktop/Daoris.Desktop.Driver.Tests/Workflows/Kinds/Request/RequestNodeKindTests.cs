@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1p (the integration design §17.5, §17.6): the <c>request</c> kind, a quest published to another repository at the node's place in
+/// The <c>request</c> kind, a quest published to another repository at the node's place in
 /// the flow and waited on: its authority (the commitment's, as <c>wait.unit</c>'s), its options, its subject, its title, an older build's
-/// refusal of it, and the person's part compared by its node's id (R5's C29).
+/// refusal of it, and the person's part compared by its node's id.
 /// </summary>
 public sealed class RequestNodeKindTests
 {

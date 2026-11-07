@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTROOM1a (D177 points 1, 2 and 7), ONEWAY1t: <c>daoris brainstorm --kind meeting</c> at the terminal. <c>ask</c>, <c>send</c>, <c>stop</c> and
+/// <c>daoris brainstorm --kind meeting</c> at the terminal. <c>ask</c>, <c>send</c>, <c>stop</c> and
 /// <c>clear</c> are presses of the running service's brainstorm desk, its meeting kind, which writes the records and says the sentence
 /// the verb prints; <c>show</c> prints the round's packet whole, what a refreshed packet adds and the transcript, and <c>list</c> names
 /// each, read here. The records sit under the brainstorms' entry, apart from them, and the brainstorm's verb never takes them for one.

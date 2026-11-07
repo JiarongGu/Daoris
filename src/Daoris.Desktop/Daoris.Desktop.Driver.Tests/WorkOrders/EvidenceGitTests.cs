@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// EVID1b (D144 §3): a done's evidence read from a real repository through the git Daoris runs: a path found with git's own
+/// A done's evidence read from a real repository through the git Daoris runs: a path found with git's own
 /// object id and whether the work changed it, a folder found as its tree, a path the commit spells only in another case, one
 /// written and never committed, one missing; the commit a check reads placed against the done's on its history; and the
 /// commits since a base, as the sweep's record says them. <c>EvidenceReaderTests</c> holds the reads with git standing in.
@@ -122,7 +122,7 @@ public sealed class EvidenceGitTests : IDisposable
 
     private static async Task<string> RevAsync(string root, string revision) => (await GitAsync(root, "rev-parse", revision)).Trim();
 
-    /// <summary>git through the fixture's one runner (TESTGIT1), its stdout once it has exited cleanly.</summary>
+    /// <summary>git through the fixture's one runner, its stdout once it has exited cleanly.</summary>
     private static async Task<string> GitAsync(string cwd, params string[] arguments)
     {
         var run = await GitFixture.RunAsync(cwd, arguments);

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-CLOSE1p (the fabric events design §E5 step 1; D173's CLOSE1b note, "After review (FABRIC-CLOSE1l)", finding 5): a closing quest's
+/// A closing quest's
 /// revision digests the tip git answers for each branch its chain worked, read with one snapshot per repository for one judgement, and a tip
 /// git did not answer leaves the close waiting. The fast half: each snapshot's read is the test's, so no git starts.
 /// </summary>

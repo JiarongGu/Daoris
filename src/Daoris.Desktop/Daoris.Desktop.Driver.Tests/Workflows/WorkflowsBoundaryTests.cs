@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-xviii, the Workflows cut: what it keeps. A workflow node's execution and its record kept whole, a chat run's room for
+/// What the Workflows cut keeps. A workflow node's execution and its record kept whole, a chat run's room for
 /// Ask Daoris (a chat run is no conversation of Ask Daoris's) and a workflow run's read of a session in that room, each through the surface
-/// that stood on both sides of the move and of the cut.
+/// that stands on both sides of the cut.
 /// </summary>
 public sealed class WorkflowsBoundaryTests : IDisposable
 {

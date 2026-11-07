@@ -4,7 +4,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PIPELINE1a (D192 point 2, the pipeline design §4.2): the gates a landed route runs unasked are accepted by git's blob id of
+/// The gates a landed route runs unasked are accepted by git's blob id of
 /// <c>daoris.gates.json</c> at the line's tip, read with no checkout, and <c>none</c> where the tip holds none. Against real git: what the
 /// checkout holds uncommitted, and another branch's declaration, are never read.
 /// </summary>

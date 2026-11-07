@@ -5,9 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BRAINSTORM1b (D176 point 9): the brainstorm policy, <c>brainstorms</c> and <c>workspaceBrainstorms</c> in <c>driver.json</c> —
-/// read, refused, resolved, said and edited, cell for cell, by ONE table, <c>fixtures/brainstorm-rules.json</c> (the CLI's twin,
-/// <c>brainstorms.ts</c>, left with the driver family's TypeScript in PUSH1f2b).
+/// The brainstorm policy, <c>brainstorms</c> and <c>workspaceBrainstorms</c> in <c>driver.json</c> —
+/// read, refused, resolved, said and edited, cell for cell, by ONE table, <c>fixtures/brainstorm-rules.json</c>.
 /// </summary>
 public sealed class BrainstormRulesTests
 {

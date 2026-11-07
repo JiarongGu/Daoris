@@ -26,7 +26,7 @@ public sealed class SetupPresetsTests
             SetupPresets.Table.Select(preset => (preset.Id, preset.Name, preset.Land)));
     }
 
-    /// <summary>DEFAULTCONFIG1a: a place's quick set-up offers the defaults the data marks for it, each with the delivery the data says.</summary>
+    /// <summary>A place's quick set-up offers the defaults the data marks for it, each with the delivery the data says.</summary>
     [Fact]
     public void The_presets_after_not_driven_are_the_defaults_the_set_up_offers()
     {
@@ -49,7 +49,7 @@ public sealed class SetupPresetsTests
         Assert.Equal(new SetupMatch(null, ["method `push`"]), SetupPresets.Match(driven: true, new SetupLand("push", "you")));
     }
 
-    /// <summary>WORKFLOWCLEAN1 1a: a delivery is what the graph says, and a preset is a saved copy's, never a rule written beside it.</summary>
+    /// <summary>A delivery is what the graph says, and a preset is a saved copy's, never a rule written beside it.</summary>
     [Theory]
     [InlineData("merge-after-accept", "merge", "you", null, null)]
     [InlineData("merge-automatic", "merge", "automatic", null, null)]
@@ -124,7 +124,7 @@ public sealed class SetupPresetsTests
         Assert.Null(SetupPresets.PluginFor("github.com", new Catalog(new Entry(Plugin, [HookPoints.Perform]) { Enabled = false })));
     }
 
-    /// <summary>G8, D240 point 5: the delivery is preselected from a match and the declaration alone; a plugin serving the platform suggests nothing.</summary>
+    /// <summary>The delivery is preselected from a match and the declaration alone; a plugin serving the platform suggests nothing.</summary>
     [Fact]
     public void The_delivery_preselected_keeps_a_match_else_reads_the_declaration_and_never_suggests_a_pull_request()
     {
@@ -138,7 +138,7 @@ public sealed class SetupPresetsTests
             .Select(declares => SetupPresets.Suggest(new SetupMatch("not-driven", []), chosen, declares))));
     }
 
-    /// <summary>SETUPUX1a: the suggestion says why by a code the page words, with the driver's sentence beside it.</summary>
+    /// <summary>The suggestion says why by a code the page words, with the driver's sentence beside it.</summary>
     [Fact]
     public void The_suggestion_says_why_by_a_code_with_the_drivers_sentence()
     {

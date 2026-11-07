@@ -3,7 +3,7 @@ using static Daoris.Desktop.Driver.Tests.ObservedFixture;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>FABRIC-NODE1 (§B3, §C7): <c>line</c> is the kept end fact, git's proof that the line holds the work, observed and never skipped.</summary>
+/// <summary><c>line</c> is the kept end fact, git's proof that the line holds the work, observed and never skipped.</summary>
 public sealed class LineNodeTests
 {
     /// <summary>The kept end fact is <c>line</c>, reached by git with an acceptance bound to the commit its evidence names and pointing at its record, never a path.</summary>

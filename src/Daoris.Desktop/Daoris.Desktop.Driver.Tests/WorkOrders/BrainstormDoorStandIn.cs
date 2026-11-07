@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The service the brainstorm and meeting verbs press (ONEWAY1t), in memory: each request kept, each answered as the test says,
+/// The service the brainstorm and meeting verbs press, in memory: each request kept, each answered as the test says,
 /// by default as the desk's success. The desk's own rules are the service suite's; here the verb's line, its path, its body and
 /// what it prints are held.
 /// </summary>

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What the tests of the built-in nodes observed from the records share (FABRIC-NODE1; the fabric events design §E4, §C2, §C7): a branch unit and its
+/// What the tests of the built-in nodes observed from the records share: a branch unit and its
 /// landing as the records keep them, a node's binding, and an observation applied through the one table as any node's report is.
 /// </summary>
 internal static class ObservedFixture

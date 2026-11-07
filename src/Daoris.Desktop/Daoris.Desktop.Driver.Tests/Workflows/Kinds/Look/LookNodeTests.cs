@@ -4,7 +4,7 @@ using static Daoris.Desktop.Driver.Tests.GateFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-NODE1b (the fabric events design §E4, §E2): the <c>look</c> observed from its gate's records alone and through the one table. It is
+/// The <c>look</c> observed from its gate's records alone and through the one table. It is
 /// reached by the person's <i>reviewed</i> at the bound commit, rejected by their <i>not yet</i> and passed over by their skip, in their words; a
 /// landing at the bound commit keeps the review that let it go. Anything else waits.
 /// </summary>
@@ -86,7 +86,7 @@ public sealed class LookNodeTests
         Assert.Null(Seen(Landed(tip: "tip-0", review: new LandingReview(ReviewVerdicts.Reviewed, "preview", "q2") { Commit = "tip-0" })).Move);
     }
 
-    /// <summary>The person's words a run's look was skipped with, or their skip waits to apply, are read from the run's record (CHATFLOW1d2).</summary>
+    /// <summary>The person's words a run's look is skipped with, or their skip waits to apply, are read from the run's record.</summary>
     [Fact]
     public void A_skipped_looks_words_are_read_from_the_record_or_the_skip_waiting_on_it()
     {

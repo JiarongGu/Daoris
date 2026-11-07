@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-NODE1 (the fabric events design §E2, generalizing §D4 and §B5's lapse): an acceptance binds the unit, its revision, the graph,
+/// An acceptance binds the unit, its revision, the graph,
 /// the node's version, its inputs, its prerequisites and the attempt; a changed dependency invalidates every acceptance downstream,
 /// transitively, across units, and keeps each as history.
 /// </summary>
@@ -43,7 +43,7 @@ public sealed class NodeAcceptancesTests
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1a (the cutover design §2.1): an acceptance names the subject its node observes where that is not its unit, a run's
+    /// An acceptance names the subject its node observes where that is not its unit, a run's
     /// node kept on the run's record. The subject is in the id only when set, so an acceptance written before keeps the id it had, and one
     /// with none observes its unit.
     /// </summary>
@@ -62,7 +62,7 @@ public sealed class NodeAcceptancesTests
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1a (the cutover design §2.2): a binding lapses as <c>subject</c> when its node's subject moves, whatever its revision, so a
+    /// A binding lapses as <c>subject</c> when its node's subject moves, whatever its revision, so a
     /// branch replaced by another at the same commit is new work; and a new revision roots the acceptances observing that unit, a run's
     /// included, never one whose unit is the run but whose subject is another.
     /// </summary>
@@ -152,8 +152,8 @@ public sealed class NodeAcceptancesTests
     }
 
     /// <summary>
-    /// FABRIC-NODE1c, defect 5: an issued id never changes. The inputs, receipts and outputs an acceptance was made of are copied, so
-    /// changing the collections that were supplied changes nothing of it.
+    /// An issued id never changes. The inputs, receipts and outputs an acceptance is made of are copied, so
+    /// changing the collections supplied changes nothing of it.
     /// </summary>
     [Fact]
     public void An_issued_acceptance_keeps_its_id_when_what_was_supplied_changes()
@@ -177,7 +177,7 @@ public sealed class NodeAcceptancesTests
     }
 
     /// <summary>
-    /// FABRIC-NODE1c, defect 6: one immutable result per binding. The evidence and outputs are not in the id, so a replay of the same
+    /// One immutable result per binding. The evidence and outputs are not in the id, so a replay of the same
     /// result is kept once, and a second, different one is refused, never overwritten. Another attempt is another binding.
     /// </summary>
     [Fact]
@@ -206,7 +206,7 @@ public sealed class NodeAcceptancesTests
     }
 
     /// <summary>
-    /// DECIDE1a: a decision's outcome is outside the binding, as its evidence is, so a start's binding and every id naming it stand whichever
+    /// A decision's outcome is outside the binding, as its evidence is, so a start's binding and every id naming it stand whichever
     /// outcome its reach names; and inside the result, so a second reach of that binding naming another outcome is refused.
     /// </summary>
     [Fact]

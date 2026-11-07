@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PERFORM1b (the fabric events design §D6, §E2): durable execution of a plugin's performed node over a stand-in port. An attempt is
+/// Durable execution of a plugin's performed node over a stand-in port. An attempt is
 /// on its unit's record before it is sent; a loop that ended between the record and the send is reconciled, never sent twice; an outcome is
 /// applied once; an answer is taken from the plugin's current process alone, a replay of it from a later one included; a transient failure is
 /// retried after its persisted delay, any other never; an outcome nothing establishes is held for the person.
@@ -20,7 +20,7 @@ public sealed class WorkPerformerTests : IDisposable
         Perform = new NodePerform(Idempotent: true, Reconcile: true, Transient: ["unavailable"]),
     };
 
-    /// <summary>A second performed node on the same unit (FABRIC-PERFORM1h): its record is the one both nodes' attempts share.</summary>
+    /// <summary>A second performed node on the same unit: its record is the one both nodes' attempts share.</summary>
     private static readonly NodeDeclaration Notify = new("notify", Plugin + "/notify", 1, NodeReach.Performed)
     {
         Perform = new NodePerform(Idempotent: true, Reconcile: true, Transient: []),
@@ -54,7 +54,7 @@ public sealed class WorkPerformerTests : IDisposable
 
         public Func<WorkPerformCall, Task>? OnPerform { get; set; }
 
-        /// <summary>What a reconciliation waits on before it answers: a test hears an outcome meanwhile (FABRIC-PERFORM1h).</summary>
+        /// <summary>What a reconciliation waits on before it answers: a test hears an outcome meanwhile.</summary>
         public Func<WorkReconcileCall, Task>? OnReconcile { get; set; }
 
         public Func<WorkReconcileCall, WorkReconcileAnswer> Answer { get; set; } = _ => new(ReconcileStates.Unknown);
@@ -78,13 +78,13 @@ public sealed class WorkPerformerTests : IDisposable
 
         public int? GenerationOf(string plugin) => Generation;
 
-        /// <summary>The frames not believed, by plugin and code (FABRIC-PERFORM1c): what the hook set counts as <c>plugin.step</c> lines.</summary>
+        /// <summary>The frames not believed, by plugin and code: what the hook set counts as <c>plugin.step</c> lines.</summary>
         public List<(string Plugin, string Code)> Refusals { get; } = [];
 
         public void Refused(string plugin, string code) => Refusals.Add((plugin, code));
     }
 
-    /// <summary>The unit's revision as the runtime last read it (FABRIC-PERFORM1c): a test moves it, as a new tip moves a branch.</summary>
+    /// <summary>The unit's revision as the runtime last read it: a test moves it, as a new tip moves a branch.</summary>
     private string _revision = Tip;
 
     /// <summary>The unit as Daoris tells its plugin about it: the one a completion must name, at its current revision.</summary>
@@ -295,7 +295,7 @@ public sealed class WorkPerformerTests : IDisposable
         var performer = Performer();
         await StartAsync(performer);
 
-        // A restart: the attempt was sent by a loop that has ended, so it is asked after before anything else.
+        // A restart: the attempt sent by a loop that has ended is asked after before anything else.
         _port.Answer = _ => new(ReconcileStates.Done, Reached);
         var reconciled = await Performer().ReconcileAsync(Declared, CancellationToken.None);
 
@@ -303,8 +303,6 @@ public sealed class WorkPerformerTests : IDisposable
         Assert.Equal(NodeStates.Reached, Status().State);
         Assert.Equal(AttemptStates.Settled, Assert.Single(Record().Attempts).State);
     }
-
-    // ——— FABRIC-PERFORM1h: the review's findings, each seen failing on PERFORM1b first
 
     [Fact]
     public async Task Two_starts_on_one_ready_node_dispatch_one_attempt()
@@ -462,7 +460,7 @@ public sealed class WorkPerformerTests : IDisposable
     [Fact]
     public async Task A_reach_whose_evidence_is_not_of_its_declared_schema_is_held_and_reaches_nothing()
     {
-        // FABRIC-PERFORM1c: the evidence is the plugin's reference at the schema the node declares, never stamped with it.
+        // The evidence is the plugin's reference at the schema the node declares, never stamped with it.
         _deploy = Deploy with { Evidence = "acme.deploy/receipt@1" };
         var performer = Performer();
         await StartAsync(performer);
@@ -510,7 +508,7 @@ public sealed class WorkPerformerTests : IDisposable
         await StartAsync(performer);
         var invocation = Assert.Single(_port.Sent).Call.Invocation;
 
-        // The unit moved on (a new tip) before the completion of the attempt dispatched on the old one was heard.
+        // The unit moves on (a new tip) before the completion of the attempt dispatched on the old one is heard.
         _revision = new string('f', 40);
         var heard = Assert.Single(performer.Hear([Heard(invocation, Reached)], Declared, Watched));
 
@@ -538,7 +536,7 @@ public sealed class WorkPerformerTests : IDisposable
         Assert.Equal([(Plugin, WorkRefusals.Late)], _port.Refusals);
     }
 
-    /// <summary>A build whose artifact a deploy takes as its release (FABRIC-PERFORM1c): a data wire, read from the build's acceptance.</summary>
+    /// <summary>A build whose artifact a deploy takes as its release: a data wire, read from the build's acceptance.</summary>
     private static readonly NodeGraph Pipeline = NodeGraphs.Read("""
         { "schemaVersion": 2, "entries": ["build"], "end": "deploy",
           "nodes": [
@@ -581,7 +579,7 @@ public sealed class WorkPerformerTests : IDisposable
         Assert.Equal(NodeStates.Ready, Record().Statuses["deploy"].State);
     }
 
-    // ——— PLUGINSTEP1b: a decision's outcome on its acceptance
+    // ——— A decision's outcome on its acceptance
 
     private static WorkOutcome Chose(string route) => Reached with { Decision = route };
 

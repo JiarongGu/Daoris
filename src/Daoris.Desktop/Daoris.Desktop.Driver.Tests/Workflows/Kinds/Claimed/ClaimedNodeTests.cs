@@ -3,7 +3,7 @@ using static Daoris.Desktop.Driver.Tests.ObservedFixture;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>FABRIC-NODE1 (§C2): <c>claimed</c> is the agent's done on the quest's record, read by the ledger and nothing else's evidence.</summary>
+/// <summary><c>claimed</c> is the agent's done on the quest's record, read by the ledger and nothing else's evidence.</summary>
 public sealed class ClaimedNodeTests
 {
     /// <summary><c>claimed</c> is the agent's done on the quest's record, held or not: a claim, by the ledger, and never anything else's evidence.</summary>
@@ -27,7 +27,7 @@ public sealed class ClaimedNodeTests
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1a (the cutover design §2.2): on a run's subject, <c>claimed</c> reaches on its quest's done only where that quest's steps
+    /// On a run's subject, <c>claimed</c> reaches on its quest's done only where that quest's steps
     /// name none still to come in its repository, as the close and the opinion's gate read a chain; a look's set-up step is no step of the
     /// work. On a quest unit bound to a graph it reads as today.
     /// </summary>

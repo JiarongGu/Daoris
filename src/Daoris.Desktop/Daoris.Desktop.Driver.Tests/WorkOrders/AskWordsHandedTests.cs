@@ -5,10 +5,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// DRIFT1b (D133 §2): every session on an ask is handed all of the person's words on it, oldest first and newest last,
-/// beneath its quest, read from the ask at its start (<c>GET /api/asks/{id}</c>, DRIFT1a). The drift's own chain is the
-/// proof: the person answered a session, the carry-on was cut off by an account's limit, so was the next, and the carry-on
-/// after that ran on another account, handed only the last cut-off. It is handed the answer now.
+/// Every session on an ask is handed all of the person's words on it, oldest first and newest last,
+/// beneath its quest, read from the ask at its start (<c>GET /api/asks/{id}</c>). The drift's own chain is the
+/// proof: the person answered a session, an account's limit cut the carry-on off, the same limit cut off the next, and the carry-on
+/// after that ran on another account, handed only the last cut-off. It is handed the answer.
 /// </summary>
 public sealed class AskWordsHandedTests
 {
@@ -21,7 +21,7 @@ public sealed class AskWordsHandedTests
 
     private const string Limit = "the agent's turn failed: the account reached its spend limit.";
 
-    /// <summary>The ask as the service answers it, its words oldest first (DRIFT1a).</summary>
+    /// <summary>The ask as the service answers it, its words oldest first.</summary>
     private static string AskJson(string words) =>
         $$"""
         {"id":"a1","workspace":"work","sentence":"{{Sentence}}","state":"Published","tier":"intake","quests":["q1","q2"],
@@ -35,7 +35,7 @@ public sealed class AskWordsHandedTests
         {"kind":"answered","text":"{{Answer}}","at":"2026-10-01T08:14:00+00:00","session":"s3","quest":"q2"}
         """;
 
-    /// <summary>The verification step the answer was given on, a `then` step of the build, asked by the ask itself.</summary>
+    /// <summary>The verification step the answer came on, a `then` step of the build, asked by the ask itself.</summary>
     private static QuestView Quest(string from = "ask #a1") =>
         new("q2", from, "report", "Verify the new report in the browser", "Check each line's figures against its daily report.", "Taken")
         {
@@ -55,8 +55,8 @@ public sealed class AskWordsHandedTests
     // ——— The chain the drift took.
 
     /// <summary>
-    /// 🔴 The evidence's §2, S3 to S8: the person answered session s3 on the verification quest; s4 carried it on and was
-    /// cut off by the account's limit before it kept a plan; s5 was cut off the same way; s6 carries it on on another
+    /// The person answered session s3 on the verification quest; s4 carried it on and the account's limit cut it
+    /// off before it kept a plan; the same limit cut s5 off; s6 carries it on on another
     /// account. The driver reads the last run (s5, which holds no answer) and the ask's words, and composes the carry-on
     /// through its own reading: the answer is quoted, though the record the carry-on follows says only the limit.
     /// </summary>
@@ -80,7 +80,7 @@ public sealed class AskWordsHandedTests
         });
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(standIn)));
         // The carry-on as the driver composes it (Driver.RunAsync): the cut-off's note, the last record's answer (none), the account
-        // changed, and the ask's words read for the start; its brief (SESSCTX1b) is the record's, not the ask's.
+        // changed, and the ask's words read for the start; its brief is the record's, not the ask's.
         var carryOn = SessionTarget.ForQuest(Quest(), "C:/somewhere/report", service.BaseUrl) with
         {
             CutOff = prior.Note,
@@ -90,7 +90,7 @@ public sealed class AskWordsHandedTests
 
         var handed = TargetPrompt.Compose(await Daoris.Driver.StartTargets.WithAskWordsAsync(carryOn, "s6", service, CancellationToken.None));
 
-        // One hop, as it was: the answer is nowhere in what the carry-on was handed.
+        // One hop alone: the answer is nowhere in what the carry-on is handed.
         Assert.DoesNotContain(Answer, TargetPrompt.Compose(carryOn));
         Assert.Contains("  > " + Answer, handed);
         Assert.Contains("  > " + Added, handed);
@@ -124,8 +124,8 @@ public sealed class AskWordsHandedTests
     }
 
     /// <summary>
-    /// Words said to a session after it ended, kept on the ask once a session took them (MSG1a's <c>reopened</c>), are said as
-    /// added after it ended (D137 §2.4), so a session handed them on knows they came after that session's work.
+    /// Words said to a session after it ended, kept on the ask once a session took them (<c>reopened</c>), are said as
+    /// added after it ended, so a session handed them on knows they came after that session's work.
     /// </summary>
     [Fact]
     public void A_word_said_to_a_session_after_it_ended_is_said_so()
@@ -210,7 +210,7 @@ public sealed class AskWordsHandedTests
         var said = AskWordsText.UnreadSentence("a1");
         Assert.Contains(said, prompt);
         Assert.Equal(today, prompt.Replace("\n" + said + "\n", "", StringComparison.Ordinal));
-        // The one hop still stands where nothing better was read.
+        // The one hop still stands where nothing better is read.
         Assert.Contains("> " + Answer, prompt);
     }
 
@@ -230,7 +230,7 @@ public sealed class AskWordsHandedTests
     [Fact]
     public void A_carry_on_whose_answer_is_not_among_the_words_still_quotes_it()
     {
-        // Kept before the words were (DRIFT1a keeps nothing back), so the ask holds only its sentence.
+        // Kept before any words, so the ask holds only its sentence.
         var words = new AskWords("a1", [Word("asked", Sentence, 0)], DateTimeOffset.Parse("2026-10-02T11:30:00Z"));
 
         var prompt = TargetPrompt.Compose(Target(words) with { CutOff = "It stopped to ask which report.", PersonSaid = Answer });
@@ -315,7 +315,7 @@ public sealed class AskWordsHandedTests
         Assert.Empty(standIn.Paths);
     }
 
-    /// <summary>COMMS1c: the ask is the session's entry origin, so a session on a quest a sibling published reads the ask's words.</summary>
+    /// <summary>The ask is the session's entry origin, so a session on a quest a sibling published reads the ask's words.</summary>
     [Fact]
     public async Task A_session_is_on_the_ask_its_records_entry_names_whoever_asked_its_quest()
     {
@@ -431,7 +431,7 @@ public sealed class AskWordsHandedTests
     }
 
     /// <summary>
-    /// SESSONE2b (SESSONE2a's note): the person's message on the ask's channel is kept on the ask as the word kind <c>channel</c>,
+    /// The person's message on the ask's channel is kept on the ask as the word kind <c>channel</c>,
     /// which a later session is handed among their words as written on the channel, once; never as a word they said to a session.
     /// </summary>
     [Fact]

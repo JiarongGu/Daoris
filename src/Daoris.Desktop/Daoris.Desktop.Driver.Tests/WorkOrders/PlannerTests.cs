@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// plan/apply split the CLI holds, for the same reason: a decision that can be asserted without
 /// spawning anything is a decision that stays tested.
 ///
-/// Every non-start carries its reason, because the Overview's question splits under a driver (D46 §3):
+/// Every non-start carries its reason, because the Overview's question splits under a driver:
 /// sitting because nobody CAN take it is the person's setup work; sitting because the driver has not
 /// started it is the driver's state to explain.
 /// </summary>
@@ -31,10 +31,10 @@ public sealed class ConsiderationSignatureTests
     }
 
     /// <summary>
-    /// 🔴 The holds a real machine actually hits — a dirty tree, a logged-out harness, a trust flag
-    /// never given — are decided at SPAWN, after the planner said Start. The report used to keep the
-    /// plan, so the quest the deployed application was holding every ten seconds read `Start` in
-    /// every consideration and the Overview had nothing to say under it.
+    /// The holds a real machine actually hits — a dirty tree, a logged-out harness, a trust flag
+    /// never given — are decided at SPAWN, after the planner says Start. The report keeps a held
+    /// quest's reason rather than the plan, or the quest held every ten seconds would read `Start` in
+    /// every consideration and the Overview would have nothing to say under it.
     /// </summary>
     [Fact]
     public void A_start_held_at_spawn_is_reported_as_blocked_with_the_holds_own_sentence()
@@ -57,7 +57,7 @@ public sealed class ConsiderationSignatureTests
         Assert.Equal("q1", reported[0].Quest.Id);
         Assert.Equal(plan[1], reported[1]);
         Assert.Equal(2, reported.Count);
-        // The plan itself is untouched: what was decided and what happened are two records.
+        // The plan itself is untouched: the decision and the outcome are two records.
         Assert.Equal(StartVerdict.Start, plan[0].Verdict);
     }
 
@@ -75,10 +75,9 @@ public sealed class ConsiderationSignatureTests
 }
 
 /// <summary>
-/// And when the ACTIVE SESSIONS changed (UX5 U13): a conversation started or ended from the main
-/// window moves nothing a tick reports, so a quiet tick never told the other windows, and the monitor
-/// never showed a chat the person had just opened. Seen on the window: a minute and two ticks later,
-/// still absent.
+/// And when the ACTIVE SESSIONS change: a conversation started or ended from the main
+/// window moves nothing a tick reports, so a quiet tick would never tell the other windows, and the monitor
+/// would never show a chat the person has just opened.
 /// </summary>
 public sealed class ActiveSessionSignatureTests
 {
@@ -105,9 +104,8 @@ public sealed class ActiveSessionSignatureTests
 }
 
 /// <summary>
-/// And when the REGISTRY changed (FG4): a folder imported from a terminal moves nothing a tick
-/// reports, so the page kept saying *no workspace yet* until it was reloaded. Seen on the deployed
-/// application, with 29 repositories just registered.
+/// And when the REGISTRY changes: a folder imported from a terminal moves nothing a tick
+/// reports, so the page would keep saying *no workspace yet* until it is reloaded.
 /// </summary>
 public sealed class RepositorySignatureTests
 {
@@ -133,7 +131,7 @@ public sealed class RepositorySignatureTests
         Assert.Equal(string.Empty, Repositories.Signature([]));
     }
 
-    /// <summary>COWORKVIEW1e-i (the cowork view design §R11.2 point 2): the lanes a repository declares are heard, whatever their order.</summary>
+    /// <summary>The lanes a repository declares are heard, whatever their order.</summary>
     [Fact]
     public void A_repository_s_lanes_alone_move_the_signature_and_their_order_does_not()
     {
@@ -168,9 +166,9 @@ public sealed class PlannerTests
         Planner.Plan(new Snapshot(quests, repos ?? [Repo()], active ?? []), config ?? Config(), unadopted);
 
     /// <summary>
-    /// 🔴 Two active sessions in ONE repository is a state D51 allows — a conversation in the checkout
-    /// and another in a tree of its own. The plan keyed the active sessions by repository and threw on
-    /// the second, so every tick failed for as long as both were open and nothing could start.
+    /// Two active sessions in ONE repository is a state that is allowed — a conversation in the checkout
+    /// and another in a tree of its own. The plan must not key the active sessions by repository and throw on
+    /// the second, or every tick would fail for as long as both were open and nothing could start.
     /// </summary>
     [Fact]
     public void Two_active_sessions_in_one_repository_block_it_rather_than_break_the_tick()
@@ -201,7 +199,7 @@ public sealed class PlannerTests
         Assert.Empty(plan);
     }
 
-    /// <summary>Drivable is opt-in per repository, per machine (D46 §2) — silence means untouched.</summary>
+    /// <summary>Drivable is opt-in per repository, per machine — silence means untouched.</summary>
     [Fact]
     public void A_repository_that_never_opted_in_is_not_driven_and_the_reason_says_so()
     {
@@ -221,9 +219,9 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// The pipe door keeps its own requirement (D70): its session reaches the knowledge tools only
+    /// The pipe door keeps its own requirement: its session reaches the knowledge tools only
     /// through the repository's own `.mcp.json`, which adoption writes and the driver may never write
-    /// for it (D32). So an unadopted receiver sits there, saying which door would carry it.
+    /// for it. So an unadopted receiver sits there, saying which door would carry it.
     /// </summary>
     [Fact]
     public void Over_the_pipe_door_a_receiver_that_has_not_adopted_sits_saying_why()
@@ -234,12 +232,12 @@ public sealed class PlannerTests
         Assert.Equal(StartVerdict.NotAdopted, only.Verdict);
         Assert.Contains("connector", only.Reason);
         Assert.Contains("protocol door", only.Reason);
-        // OVERVIEWNOISE1c: which sentence, by code, so the page words it.
+        // Which sentence, by code, so the page words it.
         Assert.Equal(new SittingFact(SittingFact.NoConnector), only.Said);
     }
 
     /// <summary>
-    /// Registered is drivable over the protocol door (D70): the session is handed its connector on the
+    /// Registered is drivable over the protocol door: the session is handed its connector on the
     /// wire, so a repository registered with a root starts like an adopter — opted in and not held.
     /// </summary>
     [Fact]
@@ -300,7 +298,7 @@ public sealed class PlannerTests
         Assert.Contains("connect", only.Reason);
     }
 
-    /// <summary>One session per repository: an active session holds the tree (D46 §3).</summary>
+    /// <summary>One session per repository: an active session holds the tree.</summary>
     [Fact]
     public void An_active_session_blocks_its_repository_and_is_named()
     {
@@ -312,10 +310,10 @@ public sealed class PlannerTests
         Assert.Equal(new SittingFact(SittingFact.InRepository) { Session = "s1" }, only.Said);
     }
 
-    // ── parallel sessions, one per tree (PAR1) ────────────────────────────────────────────────────
+    // ── parallel sessions, one per tree ───────────────────────────────────────────────────────────
     //
-    // Separate repositories and sessions exist for clean domain separation and parallel running
-    // (PAR1). D51 made the TREE the lock; a repository whose sessions each open their
+    // Separate repositories and sessions exist for clean domain separation and parallel running.
+    // The TREE is the lock; a repository whose sessions each open their
     // own tree has no reason to run one at a time, and the ledger already locks per tree.
 
     [Fact]
@@ -332,16 +330,16 @@ public sealed class PlannerTests
         var plan = Plan([Quest("q1"), Quest("q2"), Quest("q3")], config: Config(cap: 2) with { Trees = ["Game"] });
 
         Assert.Equal([StartVerdict.Start, StartVerdict.Start, StartVerdict.AtCapacity], plan.Select(c => c.Verdict));
-        // OVERVIEWNOISE1c: the cap as a number, which the page words; a start says no code.
+        // The cap as a number, which the page words; a start says no code.
         Assert.Equal(new SittingFact(SittingFact.CapSpent) { Cap = 2 }, plan[2].Said);
         Assert.Null(plan[0].Said);
     }
 
     /// <summary>
-    /// 🔴 DEV3: a session outlives the look that started it, so the next look can find its quest still open —
+    /// A session outlives the look that started it, so the next look can find its quest still open —
     /// before the session has taken it, or when it never will. Where every session opens its own tree, nothing
-    /// else held that quest, and a second session would start on it in a second tree. The session serving a
-    /// quest holds it, named, and the rest of the repository stays free (PAR1).
+    /// else would hold that quest, and a second session would start on it in a second tree. The session serving a
+    /// quest holds it, named, and the rest of the repository stays free.
     /// </summary>
     [Fact]
     public void A_quest_whose_own_session_still_works_is_not_started_again()
@@ -422,11 +420,11 @@ public sealed class PlannerTests
         Assert.Equal(StartVerdict.Start, Assert.Single(plan).Verdict);
     }
 
-    // ── strikes (DRV6) ────────────────────────────────────────────────────────────────────────────
+    // ── strikes ───────────────────────────────────────────────────────────────────────────────────
     //
-    // 🔴 Measured, not imagined: ACP2's driven run failed for a reason no retry could fix, and the
-    // driver started the same quest 18 times — each one a real login — because a failed spawn leaves
-    // the quest `Open` and untouched (design §3), which is exactly what makes it eligible again.
+    // A run can fail for a reason no retry fixes, and a failed spawn leaves the quest `Open` and
+    // untouched, which is exactly what makes it eligible again; without a cap the driver would start
+    // the same quest over and over, each one a real login.
     //
     // The count is DERIVED from the session records the driver already writes, so there is no second
     // register to drift. What a person sets is the limit and the forgiveness.
@@ -502,9 +500,9 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// RETRY1b: a park carries the quest's failures as the records count them, before any mark, which is where *Try again*
-    /// marks it. Parked a second time (six failures, retried once at three), a mark at the limit left it parked, as both
-    /// doors did on the install; a mark at its failures starts it, and the limit's count parks it again. No other verdict
+    /// A park carries the quest's failures as the records count them, before any mark, which is where *Try again*
+    /// marks it. Parked a second time (six failures, retried once at three), a mark at the limit leaves it parked, as both
+    /// doors do; a mark at its failures starts it, and the limit's count parks it again. No other verdict
     /// carries a count.
     /// </summary>
     [Fact]
@@ -541,7 +539,7 @@ public sealed class PlannerTests
         Assert.Equal(StartVerdict.Held, Assert.Single(plan).Verdict);
     }
 
-    // ── ask and wait (D79) ────────────────────────────────────────────────────────────────────────
+    // ── ask and wait ──────────────────────────────────────────────────────────────────────────────
     //
     // A session that needs another repository's knowledge asks it and waits: its quest stays TAKEN,
     // marked with the question, and this machine resumes it in the same tree once the question closes.
@@ -571,7 +569,7 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// DRIFT1d (D133 §4): a question closed done departing from what the person required is held for their yes, and
+    /// A question closed done departing from what the person required is held for their yes, and
     /// stays on the open list — so the quest waiting on it waits too, saying it is the person's yes it waits for, and
     /// the terminal's door to give it.
     /// </summary>
@@ -593,7 +591,7 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// EVID1b (D144 §6): a question whose done waits on its evidence while the session that made it still runs is not yet the
+    /// A question whose done waits on its evidence while the session that made it still runs is not yet the
     /// person's: the sentence says its evidence is read when that session ends, and names no yes.
     /// </summary>
     [Fact]
@@ -616,7 +614,7 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// EVID1b (D144 §6): evidence nobody read, with no session running on it, and evidence read and not found, are the person's:
+    /// Evidence nobody read, with no session running on it, and evidence read and not found, are the person's:
     /// the sentence names the cause and both doors, the check and the yes. The check names a commit where no session here ran it.
     /// </summary>
     [Fact]
@@ -645,8 +643,8 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// The open list holds open and taken quests, and a done a departure holds (DRIFT1d), so a question absent from
-    /// it has closed — and the quest resumes where its earlier session left off, carrying which session that was.
+    /// The open list holds open and taken quests, and a done a departure holds, so a question absent from
+    /// it has closed — and the quest resumes where its earlier session left off, carrying which session that is.
     /// </summary>
     [Fact]
     public void Once_its_question_closes_the_waiting_quest_resumes_from_the_session_that_asked()
@@ -684,10 +682,9 @@ public sealed class PlannerTests
         Assert.Empty(Planner.Plan(Ran([WaitingOn("q2")]), Config()));
     }
 
-    // ── carrying on after a cut-off (D80) ─────────────────────────────────────────────────────────
+    // ── carrying on after a cut-off ───────────────────────────────────────────────────────────────
     //
-    // Found on FG5's second run: the session took its quest, worked half an hour, and the timeout
-    // killed it. A failed START leaves a quest open and is retried; a session cut off AFTER its take
+    // A session can take its quest, work half an hour, and be killed by the timeout. A failed START leaves a quest open and is retried; a session cut off AFTER its take
     // left the quest taken for good, with the work in its tree. It is carried on, like a retry.
 
     [Fact]
@@ -720,10 +717,10 @@ public sealed class PlannerTests
     /// Only a FAILED last run is a cut-off. A completed one ended well (its close or its wait), and a
     /// taken quest that just sits after one is a person's or another machine's to move.
     /// </summary>
-    // ── a chain's next step starts on the step before (CHAIN2) ───────────────────────────────────
+    // ── a chain's next step starts on the step before ────────────────────────────────────────────
     //
-    // FG5: the verify step grew a fresh tree from the canonical line and could not see the develop
-    // step's work, which sat unmerged on that session's branch. The owner: start on the parent's branch.
+    // A step that grew a fresh tree from the canonical line could not see the previous
+    // step's work, which sits unmerged on that session's branch, so it starts on the parent's branch.
 
     [Fact]
     public void A_next_step_in_the_same_repository_builds_on_its_parents_last_run()
@@ -750,7 +747,7 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// STANDDOWN2: the person answered a session that parked to ask them, and its quest is carried on
+    /// The person answered a session that parked to ask them, and its quest is carried on
     /// in the same tree, the reason naming what they said.
     /// </summary>
     [Fact]
@@ -766,10 +763,10 @@ public sealed class PlannerTests
         Assert.Contains("Signed in; go ahead.", only.Reason);
     }
 
-    // ── a take the sweep or a shutdown cut off (D104) ─────────────────────────────────────────────
+    // ── a take the sweep or a shutdown cut off ────────────────────────────────────────────────────
     //
-    // Found running the owner's ticket: the orphan sweep ended the take's record `stopped`, and a
-    // stopped take was never carried on, so the quest sat taken with nothing to move it. A stop that was
+    // The orphan sweep ends the take's record `stopped`, and a stopped take that is never carried on
+    // leaves the quest taken with nothing to move it. A stop that is
     // not the person's is a cut-off; the person's own stop is their decision.
 
     [Theory]
@@ -797,10 +794,10 @@ public sealed class PlannerTests
         Assert.Equal(StartVerdict.Exhausted, Assert.Single(Planner.Plan(snapshot, Config())).Verdict);
     }
 
-    // ── a failed session's committed work is carried on (RETRYWORK1) ──────────────────────────────
+    // ── a failed session's committed work is carried on ───────────────────────────────────────────
     //
-    // Found watching the install: two sessions built their rows, committed them, and failed only because their connector could not
-    // start, so they never took their quests. Each open quest was started again in a new tree, which built the same row from nothing.
+    // A session can build its row, commit it, and fail only because its connector could not
+    // start, so it never takes its quest. Starting the open quest again in a new tree would build the same row from nothing.
 
     private static readonly PriorSession FailedBeforeTake =
         new("s1", "D:/trees/s1", "failed", "the connector could not start.", Repository: "Game") { BaseCommit = "4f2a9c1" };
@@ -863,7 +860,7 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// LIMITRESUME1b (D206, design §3.3): an open quest whose last session here an account's limit ended is the line's resume, carried
+    /// An open quest whose last session here an account's limit ended is the line's resume, carried
     /// on from that record in its tree, never started afresh: its first part held a conversation too. Its strikes are not counted for it.
     /// </summary>
     [Fact]
@@ -904,10 +901,10 @@ public sealed class PlannerTests
             Ran([Quest(status: "Taken")], ("q1", new PriorSession("s1", null, "completed", "reached done."))), Config()));
     }
 
-    // ── a carry-on asks whose the take is (CARRY2b) ───────────────────────────────────────────────
+    // ── a carry-on asks whose the take is ─────────────────────────────────────────────────────────
     //
-    // Since CARRY2 the ledger refuses a carry-on over a take that is not this machine's (`TakenElsewhere`, a 409), and the
-    // planner still planned one for every cut-off, so each look asked and was refused: no strike, and the same line again.
+    // The ledger refuses a carry-on over a take that is not this machine's (`TakenElsewhere`, a 409), so a planner that
+    // planned one for every cut-off would ask and be refused at each look: no strike, and the same line again.
     // The take is read as an abandon reads it, by the claim and a record here marking `took`, and the quest sits with the
     // ledger's own sentence.
 
@@ -937,7 +934,7 @@ public sealed class PlannerTests
         Assert.Null(only.Resumes);
     }
 
-    /// <summary>A take that lost the race to the remote (D68 §5) is another machine's; with no record of theirs here, unnamed.</summary>
+    /// <summary>A take that lost the race to the remote is another machine's; with no record of theirs here, unnamed.</summary>
     [Fact]
     public void A_cut_off_whose_take_was_lost_sits_naming_another_machine()
     {
@@ -986,9 +983,8 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// CARRY2c: the sentence was the driver's English in both languages, since the tick carried nothing the page could word it
-    /// from. The consideration now names whose the take is as facts: the machine and its session where a teammate's record
-    /// names them, a take made here, and the session here not carried on. The sentence stays as it was, for the terminal and
+    /// The consideration names whose the take is as facts the page can word: the machine and its session where a teammate's record
+    /// names them, a take made here, and the session here not carried on. The sentence stays, for the terminal and
     /// an older page; every other verdict names none.
     /// </summary>
     [Fact]
@@ -1010,7 +1006,7 @@ public sealed class PlannerTests
     /// <summary>
     /// 🔴 What the ledger still carries on, the planner plans: a take a record here marks, and an unmarked one made while the
     /// session ran, which the HTTP door makes and the family rehearsal's stub takes by. A take with no time said, and one
-    /// not read, are the ledger's to judge, as every carry-on was.
+    /// not read, are the ledger's to judge, as every carry-on is.
     /// </summary>
     [Fact]
     public void This_machine_s_take_is_carried_on_marked_or_made_while_the_session_ran_and_an_unread_one_is_planned()
@@ -1033,7 +1029,7 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// CARRY3: a take's own time, where the claim's answer says it, judges a take made here after the session ended, not the quest's
+    /// A take's own time, where the claim's answer says it, judges a take made here after the session ended, not the quest's
     /// <c>updated</c>, which a submission, an evidence read, a reopen and a go-on move too. A take made while the session ran is carried
     /// on however late the quest last moved; one made after it ended sits however early; a host before it is judged by <c>updated</c>.
     /// </summary>
@@ -1054,7 +1050,7 @@ public sealed class PlannerTests
         Assert.True(Planner.TakenAway(Quest(status: "Taken") with { Updated = during }, Cut, new QuestTake("held", At: after)));
     }
 
-    /// <summary>CARRY3: the claim's answer says when its take was made; a host before it says none.</summary>
+    /// <summary>The claim's answer says when its take is made; a host before it says none.</summary>
     [Fact]
     public void The_claim_s_take_time_is_read_where_the_host_says_it()
     {
@@ -1099,7 +1095,7 @@ public sealed class PlannerTests
     /// <summary>
     /// The records say the rest of whose a take is: a record of this machine's in any state marks `took` (as the ledger
     /// asks it), and the newest teammate's record that did not stand down names another machine's take. A quest whose
-    /// claim was not read is not read.
+    /// claim is not read is not read.
     /// </summary>
     [Fact]
     public void Whose_a_take_is_is_read_from_the_claim_and_the_records()
@@ -1185,16 +1181,16 @@ public sealed class PlannerTests
         Assert.Null(quests[1].Updated);
     }
 
-    // ── a lost take brought forward (SYNCMERGE1b, D178 points 3 and 8) ─────────────────────────────────────────────────────────
+    // ── a lost take brought forward ───────────────────────────────────────────────────────────────
     //
-    // A take that lost stands its session down (D68 §5), and a stand-down is never a run (ReadLastRun). Once the person brings its work
+    // A take that lost stands its session down, and a stand-down is never a run (ReadLastRun). Once the person brings its work
     // forward, the quest stands taken by the fresh take that settled its conflict, made after the record began, which the claim names as
-    // its `forward`: the planner carries that record on in its tree, once, as the ledger opens it (SYNCMERGE1b0 point 1). A forward that
-    // lost again carries nothing; no forward is the refusal as before; and a forward older than the stand-down is one already gone on with.
+    // its `forward`: the planner carries that record on in its tree, once, as the ledger opens it. A forward that
+    // lost again carries nothing; no forward is the refusal; and a forward older than the stand-down is one already gone on with.
 
     private static readonly DateTimeOffset LostAt = new(2026, 10, 19, 9, 0, 0, TimeSpan.Zero);
 
-    /// <summary>The session whose take lost, stood down by the driver with its tree kept (D68 §5).</summary>
+    /// <summary>The session whose take lost, stood down by the driver with its tree kept.</summary>
     private static readonly PriorSession Lost = new("s1", "D:/trees/s1", "stood-down", LostClaimStop.LostClaim, Repository: "Game")
     {
         Created = LostAt, Updated = LostAt.AddMinutes(20),
@@ -1239,7 +1235,7 @@ public sealed class PlannerTests
             only.Reason);
     }
 
-    /// <summary>Offline (D68 rule 1, D178 point 8): an unconfirmed fresh take goes on as well, never said as settled.</summary>
+    /// <summary>Offline: an unconfirmed fresh take goes on as well, never said as settled.</summary>
     [Fact]
     public void An_unconfirmed_bring_forward_carries_on_saying_it_may_still_lose()
     {
@@ -1255,7 +1251,7 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// A take lost to the person's reopen and brought forward once the work was ready again: the claim still says why it once lost, and
+    /// A take lost to the person's reopen and brought forward once the work is ready again: the claim still says why it once lost, and
     /// the held take is carried on all the same, never said as lost to the reopen.
     /// </summary>
     [Fact]
@@ -1270,7 +1266,7 @@ public sealed class PlannerTests
         Assert.Equal(Lost, only.Resumes);
     }
 
-    /// <summary>A bring-forward that lost again (D178 point 3): nothing goes on, and nothing is said of a take not this machine's.</summary>
+    /// <summary>A bring-forward that lost again: nothing goes on, and nothing is said of a take not this machine's.</summary>
     [Fact]
     public void A_bring_forward_that_lost_again_carries_nothing()
     {
@@ -1296,8 +1292,8 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// 🔴 Once: a forward made before the stand-down began is one already gone on with, since the session it carried on was opened after
-    /// the press (SYNCMERGE1b0 point 1). That session standing down too carries nothing, and nor does a press at the same moment.
+    /// Once: a forward made before the stand-down began is one already gone on with, since the session it carried on opened after
+    /// the press. That session standing down too carries nothing, and nor does a press at the same moment.
     /// </summary>
     [Fact]
     public void A_bring_forward_older_than_the_stand_down_carries_nothing_so_the_carry_on_goes_on_once()
@@ -1324,7 +1320,7 @@ public sealed class PlannerTests
 
     /// <summary>
     /// A chain's step brought forward goes on with its branch brought up to date with its current source first, as the go-on's does
-    /// (FABRIC-CLOSE1c5), since its fresh take was made on that source as it stands; a quest that grew from none syncs with the line
+    /// since its fresh take is made on that source as it stands; a quest that grew from none syncs with the line
     /// alone, as every carry-on does. A cut-off's carry-on is not brought to its source.
     /// </summary>
     [Fact]
@@ -1339,7 +1335,7 @@ public sealed class PlannerTests
         Assert.False(ReopenTelling.BringsToSource(step, Lost));
     }
 
-    /// <summary>A pause holds a bring-forward's carry-on as any carry-on (PAUSE1b), and an active session on the quest holds it (DEV3).</summary>
+    /// <summary>A pause holds a bring-forward's carry-on as any carry-on, and an active session on the quest holds it.</summary>
     [Fact]
     public void A_bring_forward_waits_for_a_pause_and_for_a_session_still_on_its_quest()
     {
@@ -1374,7 +1370,7 @@ public sealed class PlannerTests
         Assert.Equal("s1", ServiceClient.ReadLastRun(records)["q1"].Session);
     }
 
-    /// <summary>The take's bring-forward rides beside its claim, for the quests it was read for.</summary>
+    /// <summary>The take's bring-forward rides beside its claim, for the quests it is read for.</summary>
     [Fact]
     public void A_take_s_bring_forward_is_read_beside_its_claim()
     {
@@ -1417,10 +1413,10 @@ public sealed class PlannerTests
         Assert.Equal((StartVerdict.Start, lost), (carried.Verdict, carried.Resumes?.Session));
     }
 
-    // ── a person's stop holds its quest, and Try again releases it (SESSUX1b, D126 §3.3, §3.4) ───────
+    // ── a person's stop holds its quest, and Try again releases it ────────────────────────────────
     //
-    // Read from the code (M3): a take the person stopped was never looked at again, so it sat with no sentence and no
-    // way back, and an open quest whose session they stopped before its take was planned again at the next look. A
+    // A take the person stopped must be looked at again, or it sits with no sentence and no
+    // way back, and an open quest whose session they stopped before its take is planned again at the next look. A
     // stop that undoes itself, or leaves its quest in silence, is not one a person can manage with.
 
     private static readonly PriorSession PersonStop = new("s1", "D:/trees/s1", "stopped", "the person stopped it.");
@@ -1437,7 +1433,7 @@ public sealed class PlannerTests
         Assert.Null(only.Resumes);
     }
 
-    // ── the steward's stop: held the same way, said as the steward's, released by its Try again only through memory (STEWARDROLE1b) ──
+    // ── the steward's stop: held the same way, said as the steward's, released by its Try again only through memory ──
 
     private static readonly PriorSession StewardStop = PersonStop with
     {
@@ -1461,7 +1457,7 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// D209 §5.1: the steward's stop, live or at a checkpoint, holds its quest as the person's does, with its own reason and its sitting
+    /// The steward's stop, live or at a checkpoint, holds its quest as the person's does, with its own reason and its sitting
     /// fact, never saying the person stopped it.
     /// </summary>
     [Theory]
@@ -1484,8 +1480,8 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// D209 §5.1a, finding 7: the steward's Try again is written in <c>roleReleases</c>, and releases its own stop only while this run's
-    /// memory holds its operation at <c>released</c>; with no memory (an older build, a restart) or a cancelled one it releases nothing,
+    /// The steward's Try again is written in <c>roleReleases</c>, and releases its own stop only while this run's
+    /// memory holds its operation at <c>released</c>; with no memory (a restart) or a cancelled one it releases nothing,
     /// and the owner's own release beside it stays usable. A role's release names a stop of the steward's, never the person's.
     /// </summary>
     [Fact]
@@ -1534,7 +1530,7 @@ public sealed class PlannerTests
         Assert.Equal(StartVerdict.Stopped, Assert.Single(Planner.Plan(snapshot, Config())).Verdict);
     }
 
-    /// <summary>A stop the sweep or a shutdown made is not the person's (D104): an open quest so stopped is planned as before.</summary>
+    /// <summary>A stop the sweep or a shutdown made is not the person's: an open quest so stopped is planned as usual.</summary>
     [Fact]
     public void An_interrupted_stop_of_an_open_quest_is_planned_as_before_and_never_held()
     {
@@ -1545,7 +1541,7 @@ public sealed class PlannerTests
         Assert.Null(only.HeldBy);
     }
 
-    /// <summary>Released, a taken quest is carried on in the tree its stopped session worked in, as a cut-off is (D80).</summary>
+    /// <summary>Released, a taken quest is carried on in the tree its stopped session worked in, as a cut-off is.</summary>
     [Fact]
     public void A_released_stop_of_a_taken_quest_is_carried_on_in_its_tree()
     {
@@ -1566,8 +1562,8 @@ public sealed class PlannerTests
     };
 
     /// <summary>
-    /// 🔴 MIXAGENT1a-ii (D163 point 1): the stop that handed a quest over is its own release. The store names the session, the planner
-    /// reads that stop as released, so the quest is carried on in its tree with a sentence that says it was handed over, never that the
+    /// The stop that handed a quest over is its own release. The store names the session, the planner
+    /// reads that stop as released, so the quest is carried on in its tree with a sentence that says it is handed over, never that the
     /// person released it; driver.json's <c>released</c> is not written.
     /// </summary>
     [Fact]
@@ -1634,7 +1630,7 @@ public sealed class PlannerTests
         Assert.Contains("session `s2`", only.Reason);
     }
 
-    /// <summary>A stop of a quest that waits on a question is held too; released, the quest waits for its answer as before (D79).</summary>
+    /// <summary>A stop of a quest that waits on a question is held too; released, the quest waits for its answer.</summary>
     [Fact]
     public void A_stopped_quest_that_waits_on_a_question_is_held_and_once_released_waits_for_its_answer()
     {
@@ -1647,8 +1643,8 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// RETRY1's mark still starts a parked quest, and a stop after it holds the quest rather than parking it: a stop is not
-    /// a strike (D58). Released with its strikes unforgiven, the park is what the quest meets next.
+    /// A Try again mark starts a parked quest, and a stop after it holds the quest rather than parking it: a stop is not
+    /// a strike. Released with its strikes unforgiven, the park is what the quest meets next.
     /// </summary>
     [Fact]
     public void Forgiven_strikes_still_work_and_a_stop_after_them_holds_rather_than_parks()
@@ -1668,7 +1664,7 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// D125 §5.2 stands beside the hold: read from the records as the snapshot reads them, a failure an account's limit made
+    /// Read from the records as the snapshot reads them, a failure an account's limit made
     /// is no strike and neither is the person's stop, so with one real failure under a limit of two the stop holds the
     /// quest, and released it is carried on, never parked.
     /// </summary>
@@ -1695,7 +1691,7 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1i path 4 (the foundation design §10 row 1i): a record ended past its transient bound is held by the course's answer for
+    /// A record ended past its transient bound is held by the course's answer for
     /// <see cref="CourseTrigger.TransientPastBound"/>, <c>TransientBound</c> with <i>Try again</i> and a word of the person's as its doors; the
     /// person's release of that end is the course's too, and it holds no more.
     /// </summary>
@@ -1719,7 +1715,7 @@ public sealed class PlannerTests
         Assert.DoesNotContain(decided, course => course is LineCourse.Hold { Why: CourseHoldWhy.TransientBound });
     }
 
-    // ── the pause (PAUSE1b, D132 points 2–4, design §2.3)─────────────────────────────────────────────────────
+    // ── the pause ─────────────────────────────────────────────────────────────────────────────────
     //
     // A pause stops an ask's work, or one quest's, on this machine and keeps everything: the look hands the planner the quests
     // of each paused work, and the planner's `Paused` verdict is the reason each sits, before every other, the person's stop
@@ -1771,7 +1767,7 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// 🔴 The pause comes before every other reason, the person's stop included (design §2.3, amending SESSUX1b's note): while
+    /// The pause comes before every other reason, the person's stop included: while
     /// it holds, a release of a stop starts nothing, and Resume is the one press that moves the quest.
     /// </summary>
     [Fact]
@@ -1788,7 +1784,7 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// SUPERVISOR1a-i (D208; the supervisor design §6.3): while a supervisor's decision on a park is held, the record is held whatever
+    /// While a supervisor's decision on a park is held, the record is held whatever
     /// else waits, a helper's answer and Daoris's own words arriving inside the window included; after the window it is eligible as any
     /// waiting word is; and the owner's own words are never held by it.
     /// </summary>
@@ -1812,7 +1808,7 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// SUPERVISOR1a-i (D208; the supervisor design §6.1): the go-on's sentence follows who answered. With none of the owner's words it
+    /// The go-on's sentence follows who answered. With none of the owner's words it
     /// never says "you answered" nor "you wrote": the supervisor alone, with a helper, an opinion or Daoris, and a record no longer
     /// parked each name their authors in the fixed order, the supervisor's choice by its label.
     /// </summary>
@@ -1852,8 +1848,8 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// What an answer would start, a carry-on or the answered park going on (D131), and a waiting quest's resume once its
-    /// question is answered, each wait for Resume (design §2.1, §2.2).
+    /// What an answer would start, a carry-on or the answered park going on, and a waiting quest's resume once its
+    /// question is answered, each wait for Resume.
     /// </summary>
     [Fact]
     public void An_answered_park_and_an_answered_wait_each_wait_for_Resume()
@@ -1933,7 +1929,7 @@ public sealed class PlannerTests
 
     // ── a step whose source the person reopened (FABRIC-CLOSE1c2, §E5, canary 55) ─────────────────────────────────────────────
     //
-    // The person's reopen of a sealed submission withdraws its untaken step and holds a started one (FABRIC-CLOSE1c), each until they
+    // The person's reopen of a sealed submission withdraws its untaken step and holds a started one, each until they
     // go on with it on the new work or abandon it; Daoris never chooses. The planner reads the service's fact: while it holds, nothing
     // starts the step, carries it on or goes on with words written to its session, and once the person goes on, the session the hold
     // stopped is carried on in its tree.
@@ -2071,7 +2067,7 @@ public sealed class PlannerTests
     /// <summary>
     /// Every other step and record reads as before: the session the reopen stopped (carried on), one ended after the go-on, one running,
     /// one with words or an answer waiting, a cut-off, a stop, a stand-down, a teammate's; a step with a submission, held, open, waiting
-    /// on a question, whose own submission was reopened, grown from no submission, or with no time to compare.
+    /// on a question, whose own submission is reopened, grown from no submission, or with no time to compare.
     /// </summary>
     [Fact]
     public void Every_other_step_and_session_is_not_read_as_gone_on_with()
@@ -2125,9 +2121,9 @@ public sealed class PlannerTests
 
     // ── a step whose session ran across the reopen and the go-on (FABRIC-CLOSE1c16, §E5) ────────────────────────────────────────────
     //
-    // The session was running when the person reopened its source and went on with the step, and ended normally after the go-on: the step
-    // reads unheld as it ends, so it was concluded as a park or a completion, and its record ended after the step's go-on, which neither the
-    // carry-on of a stopped session nor the telling read. Its end now reads the step's source moved under it.
+    // The session runs while the person reopens its source and goes on with the step, and ends normally after the go-on: the step
+    // reads unheld as it ends, so it would conclude as a park or a completion, and its record ends after the step's go-on, which neither the
+    // carry-on of a stopped session nor the telling reads. Its end reads the step's source moved under it.
 
     /// <summary>q2 as its session started, grown from the source's first submission S1, before the reopen.</summary>
     private static QuestView StartedOn() => Quest("q2", status: "Taken") with { Parent = "q1", GrewFrom = S1 };
@@ -2200,7 +2196,7 @@ public sealed class PlannerTests
         Assert.Equal(new QuestSubmissionRef("desk", 41), held.Quests.Single(quest => quest.Id == "q2").SourceReopened);
         Assert.Equal(0, ledger.ClaimsAsked("q3"));
 
-        // CARRY3: the go-on moves `updated` past the session's end, as the service's does; the take, made before the session opened, is
+        // The go-on moves `updated` past the session's end, as the service's does; the take, made before the session opened, is
         // judged by its own time, which the claim says, so q3 is still carried on.
         ledger.TakenAt("q3", DateTimeOffset.Parse(ledger.Session(cut!)["created"]!.GetValue<string>(), System.Globalization.CultureInfo.InvariantCulture));
         ledger.Rebound("q2", "desk", 43, moved: true);

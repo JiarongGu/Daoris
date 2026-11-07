@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WORKFLOWCLEAN1 1b (the workflow clean-up design §3, §13 point 2): the one judge at the one save point. A list of steps, a <c>handed</c> and a
+/// The one judge at the one save point. A list of steps, a <c>handed</c> and a
 /// <c>land</c> with no method are refused when saved, by <see cref="WorkflowNamed.ReadVersion"/> and <see cref="NodeGraphs.Read"/> with
 /// <c>onSave</c>; a stored version of each still reads, shows and binds as it did.
 /// </summary>

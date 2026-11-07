@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PERFORM1b: a unit's node record kept whole across a restart: its statuses with their bindings, scopes and acceptances, its
+/// A unit's node record kept whole across a restart: its statuses with their bindings, scopes and acceptances, its
 /// attempts with their calls, its firings and its history; written BOM-less and LF; and a file that does not read never taken for an empty
 /// record, since an attempt it holds could then be sent twice.
 /// </summary>
@@ -81,8 +81,8 @@ public sealed class NodeRecordFilesTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1a (the cutover design §2.1): an acceptance's subject is kept beside its unit, so a run's binding and reach read back with
-    /// their ids; a record written before names none, and reads as it was, each acceptance observing its unit with its id unchanged.
+    /// An acceptance's subject is kept beside its unit, so a run's binding and reach read back with
+    /// their ids; a record written before names none, and reads unchanged, each acceptance observing its unit with its id unchanged.
     /// </summary>
     [Fact]
     public void A_subject_is_kept_beside_its_unit_and_a_record_written_before_reads_unchanged()
@@ -111,7 +111,7 @@ public sealed class NodeRecordFilesTests : IDisposable
     }
 
     /// <summary>
-    /// DECIDE1a: a decision's outcome is kept on its acceptance and read back with it, written only where set, so a record written before
+    /// A decision's outcome is kept on its acceptance and read back with it, written only where set, so a record written before
     /// reads with none and writes again byte for byte.
     /// </summary>
     [Fact]
@@ -134,8 +134,8 @@ public sealed class NodeRecordFilesTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1c (the cutover design §2.4.1, §3): a run's record keeps its end and each kept observation's subject, each written only where
-    /// set, and an attempt whose call names the subject it was sent for reads on a run's record alone; a unit's own record holding one still does
+    /// A run's record keeps its end and each kept observation's subject, each written only where
+    /// set, and an attempt whose call names its subject reads on a run's record alone; a unit's own record holding one still does
     /// not read, and a record written before reads with no end.
     /// </summary>
     [Fact]
@@ -166,7 +166,7 @@ public sealed class NodeRecordFilesTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1f (the cutover design §3, §5.2): the person's skip and stop of a run's node, kept in a field of their own, written only where
+    /// The person's skip and stop of a run's node, kept in a field of their own, written only where
     /// one waits, so a record written before reads with none and every other record reads as it did; one that does not hold its parts does not read.
     /// </summary>
     [Fact]
@@ -225,8 +225,6 @@ public sealed class NodeRecordFilesTests : IDisposable
         Assert.Equal("i-6", kept[0].Call.Invocation);
         Assert.Equal("i-open", kept[^1].Call.Invocation);
     }
-
-    // ——— FABRIC-PERFORM1h: the review's findings, each seen failing on PERFORM1b first
 
     [Fact]
     public void Trimming_never_drops_an_attempt_the_status_still_needs()
@@ -313,7 +311,7 @@ public sealed class NodeRecordFilesTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-PERFORM1j: a record that does not read is listed for the person, by its file and the unit its text still names under that
+    /// A record that does not read is listed for the person, by its file and the unit its text still names under that
     /// file's key; one that is not JSON names no unit, a record that reads is never listed, and a unit picked lists its own alone. The
     /// terminal's `work held` says each, after the attempts held.
     /// </summary>

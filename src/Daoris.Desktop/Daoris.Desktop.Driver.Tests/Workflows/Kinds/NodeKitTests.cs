@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The node kit is built once from the kinds the driver registers (D247): every id <see cref="NodeKinds"/> names has one unit and every unit one
+/// The node kit is built once from the kinds the driver registers: every id <see cref="NodeKinds"/> names has one unit and every unit one
 /// id, in the editor's groups and the order their marks give; an order the marks cannot make is refused; a plugin's step reads as one adapter,
 /// with Daoris's half where its step name has one; and a kit without a kind refuses a node of it, as an older build's does.
 /// </summary>

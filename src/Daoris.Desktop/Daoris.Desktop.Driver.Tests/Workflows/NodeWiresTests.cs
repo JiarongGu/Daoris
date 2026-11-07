@@ -4,10 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-WIRE1a (the fabric events design §E3): the wires' validation when a graph is saved. The kinds, each with what it may
+/// The wires' validation when a graph is saved. The kinds, each with what it may
 /// connect; <c>allOf</c> and <c>anyOf</c> groups on a node's eligibility wires; every data input mandatory and fed once, at its schema;
-/// and every refusal §E3 names, each with a stable code and words. Pure: nothing evaluated, nothing stored. The refusals are rows of the
-/// shared table the CLI's twin reads too (FABRIC-GRAPH1c, <see cref="GraphProblemsTable"/>).
+/// and every refusal, each with a stable code and words. Pure: nothing evaluated, nothing stored. The refusals are rows of the
+/// shared table the CLI's twin reads too (<see cref="GraphProblemsTable"/>).
 /// </summary>
 public sealed class NodeWiresTests
 {
@@ -63,7 +63,7 @@ public sealed class NodeWiresTests
     public void The_designs_example_with_each_kind_holds()
     {
         Assert.Empty(NodeWires.Problems(Nodes, Wires));
-        // DECIDE1b: a `when` and a `back` need a decision and an earlier node, so the table's own rows hold them, not this example.
+        // A `when` and a `back` need a decision and an earlier node, so the table's own rows hold them, not this example.
         Assert.Equal(WireKinds.All.Except([WireKinds.When, WireKinds.Back]).Order(), Wires.Select(wire => wire.Kind).Distinct().Order());
         Assert.All(Nodes, node => Assert.Null(NodeDeclarations.Problem(node)));
         var read = GraphProblemsTable.Graph(GraphProblemsTable.Row("wires", "the design's example with every kind holds"));
@@ -72,8 +72,8 @@ public sealed class NodeWiresTests
     }
 
     /// <summary>
-    /// FABRIC-GRAPH1c: each row of the table (`graph-problems.json`'s `wires`):
-    /// each refusal §E3 names alone, with its code, its wire and node, and its words; the wires that hold; several problems in a stable
+    /// Each row of the table (`graph-problems.json`'s `wires`):
+    /// each refusal alone, with its code, its wire and node, and its words; the wires that hold; several problems in a stable
     /// order.
     /// </summary>
     [Theory]
@@ -98,7 +98,7 @@ public sealed class NodeWiresTests
     }
 
     /// <summary>
-    /// DECIDE1b: a <c>back</c> wire is no eligibility wire, so no group gathers it and the run takes none, and it closes no cycle: a node it
+    /// A <c>back</c> wire is no eligibility wire, so no group gathers it and the run takes none, and it closes no cycle: a node it
     /// returns to waits on nothing more. The table's rows hold its refusals.
     /// </summary>
     [Fact]
@@ -116,7 +116,7 @@ public sealed class NodeWiresTests
     private static Wire When(string id, string from, string outcome, string to) => new(id, WireKinds.When, new(from), new(to)) { Outcome = outcome };
 
     /// <summary>
-    /// DECIDE1a: a <c>when</c> wire follows one of its source's declared outcomes, grouped like any eligibility wire and counted in a cycle.
+    /// A <c>when</c> wire follows one of its source's declared outcomes, grouped like any eligibility wire and counted in a cycle.
     /// A source declaring none, an outcome it does not declare, a <c>when</c> naming none and another kind naming one are refused; the
     /// names a decision's outcomes keep are <see cref="NodeOutcomes.Problem"/>'s.
     /// </summary>
@@ -196,7 +196,7 @@ public sealed class NodeWiresTests
 
     /// <summary>
     /// A node's eligibility groups combine by all: each declared group once, each ungrouped wire a group of its own, every group's wires
-    /// in wire-id order (an <c>anyOf</c>'s witness order, WIRE1b), and no data or wait wire among them, since inputs stay mandatory.
+    /// in wire-id order (an <c>anyOf</c>'s witness order), and no data or wait wire among them, since inputs stay mandatory.
     /// </summary>
     [Fact]
     public void A_nodes_groups_gather_its_eligibility_wires_in_wire_id_order()

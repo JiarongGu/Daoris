@@ -4,10 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1o part o1 (the integration design §17.3, §17.6): the <c>work.requests</c> kind's subject, its title and the two places a version
+/// The <c>work.requests</c> kind's subject, its title and the two places a version
 /// names kinds apart from the graph rules, which hold it (<c>graph-problems.json</c>, <c>workflow-graph-versions.json</c>). Its authority, the
 /// refusal of a <c>requests</c> option on <c>claimed</c> and the older build's reading are <see cref="NodeLifecycleTests"/>'s, its lowering
-/// <see cref="WorkflowGateTests"/>'s. Nothing observes the kind yet (part o2).
+/// <see cref="WorkflowGateTests"/>'s.
 /// </summary>
 public sealed class WorkRequestsNodeKindTests
 {

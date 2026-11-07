@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-CUTOVER1c (D190 points 2 and 3; the cutover design §2, §3): a run bound to a graph version governed by the runtime on its own record,
+/// A run bound to a graph version governed by the runtime on its own record,
 /// <c>run:&lt;run&gt;</c>, each node observing the subject its kind names; Current kept off its quests and branches; its go-ahead begun on its own
-/// answers; no gate node begun and no performed node started until the doors read the run (CUTOVER1d). Each seen failing first.
+/// answers; no gate node begun and no performed node started until the doors read the run.
 /// </summary>
 public sealed class NodeRuntimeRunTests : NodeRunFixture
 {
@@ -38,8 +38,8 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
     private bool RecordKept(string unit) => File.Exists(NodeRecordFiles.PathOf(_home, unit));
 
     /// <summary>
-    /// A saved graph version no run binds arms nothing, and a home with no runs folder reads no binding (§3); a run bound to a steps version is
-    /// D157's (§1), so it arms nothing either and no run record is written. Each binding is read once, however many looks pass.
+    /// A saved graph version no run binds arms nothing, and a home with no runs folder reads no binding; a run bound to a steps version
+    /// arms nothing either and no run record is written. Each binding is read once, however many looks pass.
     /// </summary>
     [Fact]
     public async Task An_unbound_graph_version_or_a_steps_run_arms_nothing_and_a_binding_is_read_once()
@@ -144,8 +144,8 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
 
     /// <summary>
     /// A node after <c>handed</c> binds the landing's tip from its record, here a squash's commit, and its plugin is told the landed branch at
-    /// that tip under the run's branch unit (§2.4.1). The session's branch tidied after its landing, its tip no longer read, leaves
-    /// <c>handed</c> reached and the node after it bound where it was.
+    /// that tip under the run's branch unit. The session's branch tidied after its landing, its tip no longer read, leaves
+    /// <c>handed</c> reached and the node after it bound where it stood.
     /// </summary>
     [Fact]
     public async Task The_branch_tidied_after_its_landing_leaves_handed_reached_and_a_node_after_it_told_on_the_landings_tip()
@@ -210,7 +210,7 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
     }
 
     /// <summary>
-    /// INTEGRATE1o part o2 (§17.3): a run's <c>work.requests</c> holds the work on the quests a session serving its work published. An open one
+    /// A run's <c>work.requests</c> holds the work on the quests a session serving its work published. An open one
     /// leaves the node active, a declined one holds it active too, never failed, and it is reached once every one is done; a quest another session
     /// published is no part of this run's.
     /// </summary>
@@ -249,7 +249,7 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
     }
 
     /// <summary>
-    /// INTEGRATE1o part o3 (§17.3): a run whose <c>work.requests</c> is active on a declined quest is held for the person, read from the quests the
+    /// A run whose <c>work.requests</c> is active on a declined quest is held for the person, read from the quests the
     /// last look read; a run with an open quest, or none, holds nothing; and the person's pass over the node, kept before the next look applies it,
     /// clears the hold at once.
     /// </summary>
@@ -348,7 +348,7 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
     }
 
     /// <summary>
-    /// A run whose graph version stops reading (its workflow's file removed) is held whole (§3, D157 §5.2): it arms nothing by itself, its record
+    /// A run whose graph version stops reading (its workflow's file removed) is held whole: it arms nothing by itself, its record
     /// is kept as it stands with nothing on it judged, Current still governs none of its quests, and a look armed by something else says so.
     /// </summary>
     [Fact]
@@ -372,7 +372,7 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
         Assert.Empty(_port.Sent);
     }
 
-    /// <summary>The work, the person's review, then the landing (DECIDE1c); with <c>back</c>, the review's changes go back to the work.</summary>
+    /// <summary>The work, the person's review, then the landing; with <c>back</c>, the review's changes go back to the work.</summary>
     private static string Reviewed(bool back) => """
         {"schemaVersion":2,"entries":["work"],"end":"handed",
          "nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},{"id":"review","kind":"review","version":1,"reach":"pressed"},
@@ -380,7 +380,7 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
          "wires":[{"id":"w>r","kind":"after","from":"work","to":"review"},{"id":"r>h","kind":"after","from":"review","to":"handed"}
         """ + (back ? """,{"id":"r<w","kind":"back","from":"review","to":"work","on":"rejected"}""" : "") + "]}";
 
-    /// <summary>What the runtime told the work's sessions (DECIDE1c): the session, the words and their key.</summary>
+    /// <summary>What the runtime told the work's sessions: the session, the words and their key.</summary>
     private readonly List<(string Session, string Text, string Key)> _told = [];
 
     private NodeRuntime Telling()
@@ -402,9 +402,9 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
     ];
 
     /// <summary>
-    /// DECIDE1c: the person's changes on a review need their words, and an agent's terminal and an agent's report never make them. With words, the
+    /// The person's changes on a review need their words, and an agent's terminal and an agent's report never make them. With words, the
     /// next look applies them as the review's rejection, the landing waits, and the work's session is told them as its next turn, under their key,
-    /// even with no way back drawn (D173's note). The session's next commit runs the review again; the next Accept lets the landing go, and it lands.
+    /// even with no way back drawn. The session's next commit runs the review again; the next Accept lets the landing go, and it lands.
     /// </summary>
     [Fact]
     public async Task Changes_with_words_tell_the_work_and_its_next_commit_is_reviewed_and_landed_again()
@@ -454,7 +454,7 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
     }
 
     /// <summary>
-    /// DECIDE1c: a <c>back</c> wire on the review's rejection is taken once, on that rejection's receipt: the work gets a new attempt, what rested on it
+    /// A <c>back</c> wire on the review's rejection is taken once, on that rejection's receipt: the work gets a new attempt, what rested on it
     /// is judged again, the work's session is told the person's words, and the firing is kept, so later passes take nothing again.
     /// </summary>
     [Fact]
@@ -490,7 +490,7 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
         return graph;
     }
 
-    /// <summary>The gates each run's branch is read at, by branch unit and tip, and what they answer (FABRIC-CUTOVER1d).</summary>
+    /// <summary>The gates each run's branch is read at, by branch unit and tip, and what they answer.</summary>
     private readonly List<(string Unit, string? Tip)> _gatesAt = [];
 
     private readonly Dictionary<string, (OpinionGateState? Opinion, ReviewGateState? Review)> _gatesOf = new(StringComparer.Ordinal);
@@ -516,7 +516,7 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
         });
 
     /// <summary>
-    /// FABRIC-CUTOVER1d (the cutover design §2.2, §3): the doors read a run's record, so its opinion and look are begun on its branch at the tip
+    /// The doors read a run's record, so its opinion and look are begun on its branch at the tip
     /// the pass read, their gates read for that branch at that tip (never at a tree's <c>HEAD</c>), and each reached on its gate's answer there;
     /// its plugin's performed node is started on the branch's unit at that tip, and awaited under it. A commit on the branch moves them all: the
     /// gates are read again at the new tip.
@@ -553,8 +553,8 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1d: a run's ready performed node is owed a start at a wake as at the look, and the awaited set tells its plugin of it under
-    /// the run's branch once it is started (§2.4.1).
+    /// A run's ready performed node is owed a start at a wake as at the look, and the awaited set tells its plugin of it under
+    /// the run's branch once it is started.
     /// </summary>
     [Fact]
     public async Task A_runs_performed_node_is_told_under_its_branch_once_started()
@@ -572,7 +572,7 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
     }
 
     /// <summary>
-    /// A performed attempt a run's record keeps was sent for the subject its node observed then (§2.4.1): its reconcile names that subject's unit,
+    /// A performed attempt a run's record keeps belongs to the subject its node observed at its send: its reconcile names that subject's unit,
     /// never <c>run:</c>, and its completion, heard after the run's branch moved to the chain's next session, reaches the run's record, where it
     /// settles the attempt as a stale one's.
     /// </summary>

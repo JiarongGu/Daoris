@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-xv, the Work orders cuts: what they keep. The words the review's doors say and log, the workflow choice's words, what the
+/// What the Work orders cuts keep. The words the review's doors say and log, the workflow choice's words, what the
 /// intake's room tells of a repository that declared nothing, and the work inventory's obligations read from a home with no records, each
 /// through the surface that stood on both sides of the cut. The seams the cuts add are <c>WorkOrdersPortsTests</c>'.
 /// </summary>

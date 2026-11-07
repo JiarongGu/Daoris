@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// G8's conversion (D241 point 4; <see cref="PushedGraphs"/>): a saved graph that landed by a push or a pull request becomes a branch landing, a
+/// The conversion in <see cref="PushedGraphs"/>: a saved graph that landed by a push or a pull request becomes a branch landing, a
 /// <c>push</c> and, where it opened one, the plugin's <c>pull-request</c> step; a graph already in steps is left as it is. The home's migration
 /// step appends it as the next version.
 /// </summary>

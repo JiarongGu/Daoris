@@ -3,11 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AUTONOMY1c (D184 points 2, 3 and 5): intake routing follows the access setup of the repository the intake chooses. Under
-/// <c>person</c>, today's, an intake whose declarations do not settle an ask publishes nothing and asks the person, who accepts a
+/// Intake routing follows the access setup of the repository the intake chooses. Under
+/// <c>person</c>, the default, an intake whose declarations do not settle an ask publishes nothing and asks the person, who accepts a
 /// route; under <c>intake</c>, and so under full access, it publishes to its best choice among the repositories set so, saying in
-/// the body that the route was its own, and the person may route it again. On the install an ask waited for its route to be
-/// accepted before its session started.
+/// the body that the route is its own, and the person may route it again.
 /// </summary>
 public sealed class IntakeRoutingTests
 {

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The intake's instruction rendered whole (DRIFT1c), as the harness reads it: an ask carrying everything
+/// The intake's instruction rendered whole, as the harness reads it: an ask carrying everything
 /// the instruction speaks to, and an ask that is its sentence alone. A sentence added, moved or reworded
 /// shows here as the whole instruction's difference, byte for byte.
 /// </summary>
@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// The golden files under <c>golden/intake-prompt/</c> are the instruction an intake is handed. A change to
 /// what it says changes its golden file in the same commit, so review reads the instruction as the intake
 /// will; the tests beside the golden one, and <see cref="IntakeTests"/>, say why each sentence is there.
-/// This class runs no process, so it is in the fast half (MOD8), where <see cref="IntakeTests"/> is not.
+/// This class runs no process, so it is in the fast half, where <see cref="IntakeTests"/> is not.
 /// </remarks>
 public sealed class IntakePromptGoldenTests
 {
@@ -61,9 +61,9 @@ public sealed class IntakePromptGoldenTests
     }
 
     /// <summary>
-    /// DRIFT1c (D133 §3): the intake names what the person requires in their own words, with the check that
-    /// proves it, and keeps its reading for the body. The drift's intake read the right document and wrote
-    /// a true sentence that kept the word "bridge" and lost what it meant where the work lived, so the
+    /// The intake names what the person requires in their own words, with the check that
+    /// proves it, and keeps its reading for the body. An intake can read the right document and write
+    /// a true sentence that keeps the word "bridge" and loses what it meant where the work lived, so the
     /// instruction says a word means what it means there, and the service refuses a quote not theirs.
     /// </summary>
     [Fact]
@@ -80,8 +80,8 @@ public sealed class IntakePromptGoldenTests
     }
 
     /// <summary>
-    /// EVID1b (D144 §2): the intake names a requirement's evidence, a path, only where the work plainly leaves a file the person
-    /// can name, never one it would guess at; and no gate, which is refused until the landing queue reads gates (EVID1d). Said
+    /// The intake names a requirement's evidence, a path, only where the work plainly leaves a file the person
+    /// can name, never one it would guess at; and no gate, which is refused until the landing queue reads gates. Said
     /// after the requirements it belongs to, and before what an unsettled ask does.
     /// </summary>
     [Fact]

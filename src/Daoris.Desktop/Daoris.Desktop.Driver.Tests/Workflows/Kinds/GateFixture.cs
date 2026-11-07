@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>What the tests of D157's gates as observed nodes (<c>look</c>, <c>go-ahead</c>, <c>opinion</c>) share: a branch unit, its binding and the gates' reads.</summary>
+/// <summary>What the tests of the gates as observed nodes (<c>look</c>, <c>go-ahead</c>, <c>opinion</c>) share: a branch unit, its binding and the gates' reads.</summary>
 internal static class GateFixture
 {
     public const string Unit = "unit-a";

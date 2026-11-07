@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PERFORM1d (the fabric events design §D3, canary 35): a unit retires apart from its branch's removal. A branch removed while an
+/// A unit retires apart from its branch's removal. A branch removed while an
 /// attempt or a resource is unresolved leaves its unit open on every adapter, the traces' pruning skips it whatever its branch's removal
 /// said, and it retires once its last entry is terminal.
 /// </summary>

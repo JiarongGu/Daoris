@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-CUTOVER1d (the cutover design §4): a door that holds on a run's graph for a judgement not made yet asks the loop for a whole pass, and
+/// A door that holds on a run's graph for a judgement not made yet asks the loop for a whole pass, and
 /// the person's press, its answer kept first, waits for that pass within a bound, reads the gate again and lands at the same press where the
 /// pass made <c>handed</c> active; past the bound it is refused as read, its answer kept, and the next press or look lands it. A wait the next
 /// pass may move asks one, and the press does not wait. The loop's asks (<see cref="PassAsks"/>): a pass takes the asks made before it began,

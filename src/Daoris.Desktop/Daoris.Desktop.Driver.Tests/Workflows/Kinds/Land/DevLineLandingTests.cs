@@ -74,7 +74,7 @@ public sealed class DevLineLandingTests : ReviewLandingFixture
                 await File.WriteAllTextAsync(Path.Combine(tree, "bin", "out.dll"), "built\n");
                 break;
             case "moved-on":
-                // The agent moved its tree onto a branch of its own after its first commit, and committed more there (TREEFOLLOW1).
+                // The agent moved its tree onto a branch of its own after its first commit, and committed more there.
                 await GitAsync(tree, "checkout", "--quiet", "-b", "feature/own");
                 await CommitAsync(tree, "own.txt", "more work of s1", "more work of s1");
                 break;
@@ -101,7 +101,7 @@ public sealed class DevLineLandingTests : ReviewLandingFixture
                 break;
         }
 
-        // The loop's turn: the look learns where each tree is (TREEFOLLOW1), the ref watch keeps what the line holds, then a pass judges the runs
+        // The loop's turn: the look learns where each tree is, the ref watch keeps what the line holds, then a pass judges the runs
         // and starts their doors.
         for (var turn = 0; turn < 3; turn++)
         {

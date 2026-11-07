@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>SESSONE1h: the one reader of an entry's key splits at the first slash and tolerates a key without one.</summary>
+/// <summary>The one reader of an entry's key splits at the first slash and tolerates a key without one.</summary>
 public sealed class EntryKeyTests
 {
     [Theory]

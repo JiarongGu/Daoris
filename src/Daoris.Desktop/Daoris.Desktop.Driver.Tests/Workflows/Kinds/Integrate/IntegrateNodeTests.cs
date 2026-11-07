@@ -3,11 +3,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1n part n2 (D215's note; the integration design §17.4): a run bound to a graph holding an <c>integrate</c> node asks row e's one
+/// A run bound to a graph holding an <c>integrate</c> node asks the one
 /// door for its landed branch, keyed by the run's unit and the landing's tip, over a stand-in door. It reads the landing's acceptance
 /// provenance (a landing whose record says neither requests nothing; an automatic landing under <c>owner</c> waits for the card), is found
 /// again by its key after a restart, reconciles before any new start, is asked again when a new landing tip invalidates it, the second waiting
-/// for the first's outcome (F41), and waits queued: nothing here runs the integration. The same over real git is <see cref="IntegrateNodeGitTests"/>.
+/// for the first's outcome, and waits queued: nothing here runs the integration. The same over real git is <see cref="IntegrateNodeGitTests"/>.
 /// </summary>
 public sealed class IntegrateNodeTests : IDisposable
 {
@@ -147,7 +147,7 @@ public sealed class IntegrateNodeTests : IDisposable
             return Task.FromResult(true);
         }
 
-        /// <summary>The line's run ended the request, as row g's will: settled, handed back or dropped.</summary>
+        /// <summary>The line's run ended the request, as it does: settled, handed back or dropped.</summary>
         public void Close(string id, string why)
         {
             var key = Requests.Single(each => each.Value.Id == id).Key;
@@ -186,7 +186,7 @@ public sealed class IntegrateNodeTests : IDisposable
         Assert.Empty(_port.Sent);
     }
 
-    /// <summary>A runtime nobody gave a door starts none and waits ready, as an install with no row g does.</summary>
+    /// <summary>A runtime nobody gave a door starts none and waits ready, as an install with no door does.</summary>
     [Fact]
     public async Task A_runtime_with_no_door_leaves_the_node_ready_and_writes_no_attempt()
     {
@@ -243,7 +243,7 @@ public sealed class IntegrateNodeTests : IDisposable
         _door.Down = false;
         await PassAsync(runtime, Config(), whole: false);
 
-        // Nothing was made for the key, so the door never took it: judged again, a fresh attempt, and now asked once.
+        // Nothing is made for the key, so the door never took it: judged again, a fresh attempt, and asked once.
         Assert.Equal(2, Status().Attempt);
         Assert.Equal(NodeStates.Active, Status().State);
         Assert.Single(_door.Asked);
@@ -251,7 +251,7 @@ public sealed class IntegrateNodeTests : IDisposable
     }
 
     /// <summary>
-    /// A restart finds the request its key made: the door kept it and the answer was lost, so a runtime started again asks what became of the
+    /// A restart finds the request its key made: the door kept it and the answer is lost, so a runtime started again asks what became of the
     /// key before any new start, finds it, and the node is active on the same attempt with no second request.
     /// </summary>
     [Fact]
@@ -272,7 +272,7 @@ public sealed class IntegrateNodeTests : IDisposable
     }
 
     /// <summary>
-    /// F41: a new landing tip invalidates the node, its attempt kept unreconciled, so no new request is asked while the first's outcome is
+    /// A new landing tip invalidates the node, its attempt kept unreconciled, so no new request is asked while the first's outcome is
     /// not in; once the first is settled, the second is asked for the new tip. The run's view shows the first's state meanwhile.
     /// </summary>
     [Fact]
@@ -290,7 +290,7 @@ public sealed class IntegrateNodeTests : IDisposable
         _units = Run(Landed(T2) with { Advances = [advance] });
         await PassAsync(runtime, Config());
 
-        // The first request is still open: its node was judged again on the new tip, and holds the attempt it may still own.
+        // The first request is still open: its node is judged again on the new tip, and holds the attempt it may still own.
         var held = Status();
         Assert.NotEqual(NodeStates.Active, held.State);
         Assert.Equal(1, held.Unreconciled);
@@ -307,7 +307,7 @@ public sealed class IntegrateNodeTests : IDisposable
     }
 
     /// <summary>
-    /// INTEGRATE1n part n3: a wake that names no unit still judges the one owing only an <c>integrate</c> start, a node held ready (here for
+    /// A wake that names no unit still judges the one owing only an <c>integrate</c> start, a node held ready (here for
     /// the owner's card), so a start the look left owing is judged at the wake, never left to the look's deadline.
     /// </summary>
     [Fact]
@@ -327,7 +327,7 @@ public sealed class IntegrateNodeTests : IDisposable
     }
 
     /// <summary>
-    /// F40: the start reads the landing's provenance under the bound version's <c>integrate</c>. A landing whose record says neither requests
+    /// The start reads the landing's provenance under the bound version's <c>integrate</c>. A landing whose record says neither requests
     /// nothing; an automatic landing under <c>owner</c> waits for the owner's card, one under <c>steward</c> for the act; each leaves the node
     /// ready and writes nothing. An automatic landing under <c>done</c>, and a person's Accept under either, is the request.
     /// </summary>
@@ -354,8 +354,8 @@ public sealed class IntegrateNodeTests : IDisposable
     }
 
     /// <summary>
-    /// INTEGRATE1h (§17.4): an automatic landing under <c>owner</c> waits for the owner's card and is named as one, its unit, branch and tip; once
-    /// the card made the landing's request, the node follows that request as its own, asks the door nothing more, and the wait is gone.
+    /// An automatic landing under <c>owner</c> waits for the owner's card and is named as one, its unit, branch and tip; once
+    /// the card makes the landing's request, the node follows that request as its own, asks the door nothing more, and the wait is gone.
     /// </summary>
     [Fact]
     public async Task A_landing_waiting_for_the_owners_card_is_named_until_the_card_makes_its_request_which_the_node_then_follows()
@@ -418,7 +418,7 @@ public sealed class IntegrateNodeTests : IDisposable
 
     /// <summary>
     /// The person's stop before promotion drops the request as <c>--drop</c> does; once the record says promoted it is refused and the node
-    /// reads its record's reach (F50), through the run's own door and the pass that applies a word said earlier.
+    /// reads its record's reach, through the run's own door and the pass that applies a word said earlier.
     /// </summary>
     [Fact]
     public void A_stop_is_refused_once_the_record_says_promoted()

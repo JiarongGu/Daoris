@@ -4,9 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-GRAPH1c: the table of graphs and the problems a save names in them, <c>fixtures/graph-problems.json</c>, which held
-/// <see cref="NodeWires.Problems"/>, <see cref="NodeGraphs.Problems"/> and <see cref="NodeGraphHomes.OfLanding"/> to the CLI's
-/// <c>nodegraphs.ts</c> until it left with the driver family's TypeScript (PUSH1f2b). A row's graph is written as a file holds it and read by
+/// The table of graphs and the problems a save names in them, <c>fixtures/graph-problems.json</c>, which
+/// <see cref="NodeWires.Problems"/>, <see cref="NodeGraphs.Problems"/> and <see cref="NodeGraphHomes.OfLanding"/> are held to. A row's graph is written as a file holds it and read by
 /// <see cref="NodeGraphs.Parts"/>: a base changed by its <c>remove</c>, <c>replace</c>, <c>add</c> and <c>set</c>, or written whole, or made by
 /// <see cref="Chain"/> and <see cref="Dense"/>; its <c>ends</c> are set after reading, where a file cannot say them.
 /// </summary>
@@ -33,8 +32,8 @@ internal static class GraphProblemsTable
         [.. row["problems"]!.AsArray().Select(problem => ((string)problem!["code"]!, (string?)problem["wire"], (string?)problem["node"], (string)problem["words"]!))];
 
     /// <summary>
-    /// Whether a problem is a graph rule's, which the table holds, and not the save's own: a <c>land</c> is saved with its method chosen
-    /// (WORKFLOWCLEAN1 1b), proved by <c>SavesRefusedTests</c> apart from the rows.
+    /// Whether a problem is a graph rule's, which the table holds, and not the save's own: a <c>land</c> is saved with its method chosen,
+    /// proved by <c>SavesRefusedTests</c> apart from the rows.
     /// </summary>
     public static bool IsRule(WireProblem problem) => problem.Code != GraphRefusal.LandMethod;
 

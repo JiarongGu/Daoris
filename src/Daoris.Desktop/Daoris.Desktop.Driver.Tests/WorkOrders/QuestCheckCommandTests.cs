@@ -5,13 +5,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// EVID1b (D144 §3, §5): <c>daoris quest check &lt;id&gt; [--commit &lt;sha&gt;]</c>, the terminal's door to a done's
+/// <c>daoris quest check &lt;id&gt; [--commit &lt;sha&gt;]</c>, the terminal's door to a done's
 /// evidence. It reads the done's commit a driven end on this machine read, or the commit named, which must be the done's or
 /// come after it on the same history; with no driven end on record, the commit must be named, since Daoris never guesses it
-/// from what stands now (D143 §3). It posts what it read as the terminal's, prints the verdict, and exits 0 when all is
-/// found, 1 when anything is missing or unread, and 2 when a store did not answer.
+/// from what stands now. It posts what it read as the terminal's, prints the verdict, and exits 0 when all is
+/// found, 1 when anything is missing or unread, and 2 when a store does not answer.
 /// </summary>
-/// <remarks>A service and git standing in, in process: the fast half (MOD8).</remarks>
+/// <remarks>A service and git standing in, in process: the fast half.</remarks>
 public sealed class QuestCheckCommandTests : IDisposable
 {
     private readonly string _root = Path.Combine(TestHomes.Root, "daoris-quest-check-" + Guid.NewGuid().ToString("N")[..8]);
@@ -121,7 +121,7 @@ public sealed class QuestCheckCommandTests : IDisposable
         Assert.Contains($"does not come after the done's commit `{done[..8]}`", said.ToString());
     }
 
-    /// <summary>🔴 With no driven end on record, the commit must be named: Daoris never guesses it from what stands now (D143 §3).</summary>
+    /// <summary>With no driven end on record, the commit must be named: Daoris never guesses it from what stands now.</summary>
     [Fact]
     public async Task With_no_driven_end_on_record_the_commit_must_be_named()
     {

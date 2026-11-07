@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The pipeline design §4.3: landed work is verified by itself, one run per line at a time. A batch's run is bound in a folder of its own at the
+/// Landed work is verified by itself, one run per line at a time. A batch's run is bound in a folder of its own at the
 /// line's newest tip, its base the tip of the newest run with a verdict, and run to its verdict while the line moves on; an unknown holds the
 /// line for the person, whose <i>Run again</i> is a new attempt at the run's tip and whose <i>Not now</i> lets the next batch take it in; a held
 /// check names its line, its batch and why, which <i>What needs you</i> says.
@@ -39,7 +39,7 @@ public sealed class LineBatchingTests : IDisposable
 
     public void Dispose() => GitSeed.Discard(_home);
 
-    /// <summary>The executor as the performer sees it: what it was sent, and what it answers once it has an answer.</summary>
+    /// <summary>The executor as the performer sees it: what it is sent, and what it answers once it has an answer.</summary>
     private sealed class Checks : ICheckPort
     {
         public HashSet<string> Answers { get; } = [];
@@ -204,7 +204,7 @@ public sealed class LineBatchingTests : IDisposable
         performer.Resolve(Declared);
 
         Assert.Equal(LineVerdicts.NotNow, LineBatching.Settled(Files.Read(RunUnits.IdOf(second.Run)), [Check.Id]));
-        // The tip it was put off at waits for the next landing, whose batch takes it in from the last verdict.
+        // The tip it is put off at waits for the next landing, whose batch takes it in from the last verdict.
         Assert.Null(Owed(Second));
         var third = Owed(Third);
         Assert.NotNull(third);

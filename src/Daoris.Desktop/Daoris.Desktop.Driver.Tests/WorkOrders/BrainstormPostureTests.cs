@@ -5,8 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BRAINSTORM1a2 (D176 points 1 and 2; its amendment of D72): the <c>brainstorm</c> posture a pass is handed, in place of the reviewer's
-/// rules BRAINSTORM1a handed it. Reading in its room and its one result tool are allowed, and nothing else: every write, the shell, the
+/// The <c>brainstorm</c> posture a pass is handed, in place of the reviewer's
+/// rules. Reading in its room and its one result tool are allowed, and nothing else: every write, the shell, the
 /// web and every other tool of the connector are denied, the person's asks and denies stand, and the classifier is told it changes
 /// nothing.
 /// </summary>
@@ -72,7 +72,7 @@ public sealed class BrainstormPostureTests : IDisposable
         Assert.Equal(composed.Ask, Strings(permissions["ask"] ?? new JsonArray()));
         var deny = Strings(permissions["deny"]);
         Assert.Equal(composed.Deny, deny.Take(composed.Deny.Count));
-        // Every session is also denied Daoris's git keys (D241 point 7), by this home's own path.
+        // Every session is also denied Daoris's git keys, by this home's own path.
         Assert.Equal([.. Strings(expected["deny"]), GitSessionHolds.ProfileDeny(_home)], deny.Skip(composed.Deny.Count));
         Assert.Equal(expected["hardDeny"]!.GetValue<string>(), Strings(handed["autoMode"]!["hard_deny"]).Last());
     }
@@ -102,7 +102,7 @@ public sealed class BrainstormPostureTests : IDisposable
         Assert.Equal(handed.Deny.Distinct(StringComparer.Ordinal).Count(), handed.Deny.Count);
     }
 
-    // ——— BRAINSTORM1c: both real doors under the posture. Claude Code takes the rules above on either door; Codex takes none, so its
+    // ——— Both real doors under the posture. Claude Code takes the rules above on either door; Codex takes none, so its
     // ——— posture is its own mode that changes nothing, required. Nothing here starts a process.
 
     private static SessionTarget Pass(string turn = "g1") =>

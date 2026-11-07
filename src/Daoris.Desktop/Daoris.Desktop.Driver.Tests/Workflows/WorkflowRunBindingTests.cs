@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WORKFLOW1e (D157 point 11, the workflow design §4.5, §5.1, §2.6): a run bound at its first start to the workflow that chose it,
+/// A run bound at its first start to the workflow that chose it,
 /// with what chose it, kept once under the home; and a workflow's file keeping every version a kept run names.
 /// </summary>
 public sealed class WorkflowRunBindingTests : IDisposable
@@ -79,7 +79,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-PIPELINE1a (the pipeline design §2.1): a development route naming a workflow marked a verification pipeline (set by hand, or
+    /// A development route naming a workflow marked a verification pipeline (set by hand, or
     /// by a build before the mark) is judged at its bind: the run keeps what chose it, with why it cannot follow it, and follows nothing
     /// else.
     /// </summary>
@@ -101,7 +101,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
     }
 
     /// <summary>
-    /// CHATFLOW1c (the chat-flow design §4.3): a chat run binds with no ask and no task, so the repository's default chooses, never a
+    /// A chat run binds with no ask and no task, so the repository's default chooses, never a
     /// workspace's kind; its line says the workflow and who chose it, once, and a run bound already is read back and said no more.
     /// </summary>
     [Fact]
@@ -133,7 +133,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
     }
 
     /// <summary>
-    /// CHATFLOW1c (§4.3, §4.5): a choice that is a graph version binds as any other does (CHATFLOW1f); a named workflow that cannot
+    /// A choice that is a graph version binds as any other does; a named workflow that cannot
     /// be read is bound with its problem, which holds the press by it; a home that cannot keep the binding fails the bind, saying why.
     /// </summary>
     [Fact]
@@ -286,7 +286,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1g (design §8, *one first binding*): starts run beside one another, so two binds of one run can race. The first
+    /// Starts run beside one another, so two binds of one run can race. The first
     /// binding is moved into place without overwriting: exactly one bind is written, whole, and every other reads it as bound already.
     /// </summary>
     [Fact]
@@ -317,7 +317,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1g (design §8): two starts of one run at once each bind it before their take; one makes the binding and the other
+    /// Two starts of one run at once each bind it before their take; one makes the binding and the other
     /// reads it as bound already, so both take under the one binding.
     /// </summary>
     [Fact]
@@ -364,7 +364,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
     }
 
     /// <summary>
-    /// BINDRACE1: the start that loses the race reads the winner's binding while the move that landed it still holds it
+    /// The start that loses the race reads the winner's binding while the move that landed it still holds it
     /// (<see cref="MoveHold"/>), and takes under it where it read it as unread and held. The version it names stays kept, and another
     /// bind is told the run is bound.
     /// </summary>
@@ -401,7 +401,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
         Assert.Single(world.Said);
     }
 
-    /// <summary>BINDRACE1: arming's read of the runs bound to graph versions finds a run whose binding its move into place still holds.</summary>
+    /// <summary>Arming's read of the runs bound to graph versions finds a run whose binding its move into place still holds.</summary>
     [Fact]
     public void A_graph_run_is_found_while_the_move_into_place_still_holds_its_binding()
     {
@@ -432,7 +432,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
         Assert.Empty(WorkflowRunBindings.KeptVersions(_home, "docs-to-pr"));
     }
 
-    /// <summary>§2.6: a workflow keeps 20 versions, a version a kept run names always among them (WORKFLOW1d's plan, now handed the runs).</summary>
+    /// <summary>A workflow keeps 20 versions, a version a kept run names always among them.</summary>
     [Fact]
     public void A_version_a_kept_run_names_outlives_the_newest_twenty()
     {
@@ -455,7 +455,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
     }
 
     /// <summary>
-    /// LANDNODE1h (the land node design §4): a <c>land</c> the version leaves open is resolved from the derived defaults at the bind, never
+    /// A <c>land</c> the version leaves open is resolved from the derived defaults at the bind, never
     /// from a rule, kept in the run's file, and read from there.
     /// </summary>
     [Fact]
@@ -499,7 +499,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
     private static readonly IReadOnlyList<WorkflowPlugin> Plugins = [new("acme.github", [HookPoints.Perform])];
 
     /// <summary>A pull request whose plugin neither the version nor the rule names is held at the bind with why.</summary>
-    /// <summary>A graph whose work and opinion steps name the role that takes each (ROLESTEP1b).</summary>
+    /// <summary>A graph whose work and opinion steps name the role that takes each.</summary>
     private void SaveStaffed(string work, string opinion) =>
         WorkflowStore.Add(_home, new WorkflowVersionAdded("staffed", "Staffed steps", "terminal", "2026-11-01T09:00:00Z", null, JsonNode.Parse(
             $$$"""
@@ -519,7 +519,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
 
     private static RoleCatalog Roles(params RoleRecord[] roles) => RoleCatalog.Of([.. roles.Select(role => RoleCatalogTests.Stored(role, 4))]);
 
-    /// <summary>ROLESTEP1b: each agent step's role is judged at the bind and kept with its record's revision, through the run's file.</summary>
+    /// <summary>Each agent step's role is judged at the bind and kept with its record's revision, through the run's file.</summary>
     [Fact]
     public void A_bound_step_s_role_is_kept_with_its_revision_and_read_back_from_the_run_s_file()
     {
@@ -542,7 +542,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
         Assert.DoesNotContain("roles", WorkflowRunFiles.ToJson(current), StringComparison.Ordinal);
     }
 
-    /// <summary>ROLESTEP1b: a role that cannot take its step is the binding's problem, said with why; the step still names it, never another.</summary>
+    /// <summary>A role that cannot take its step is the binding's problem, said with why; the step still names it, never another.</summary>
     [Fact]
     public void A_step_s_role_that_cannot_take_it_is_the_binding_s_problem_and_no_other_role_is_put_in_its_place()
     {

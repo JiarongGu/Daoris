@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PARALLEL1b (D181 point 3): a start no longer holds the look past its reservation, so a start of this machine's that has not yet
+/// A start does not hold the look past its reservation, so a start of this machine's that has not yet
 /// opened its record is in no snapshot the service answers. The look hands the planner what it reserved (<see cref="Snapshot.Starting"/>):
 /// its quest is not started again, its place under the cap is taken, the repository whose root is its one tree is held, and so is
 /// the tree it goes back into. A start that has opened since is counted once.

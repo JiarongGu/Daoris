@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PERFORM1c (the fabric events design §C4, §D4, §D6, §E2): a plugin's completion is believed only where §C4's five rules hold for
+/// A plugin's completion is believed only where the five belief rules hold for
 /// the attempt its invocation names, only a plugin's own node is reached on its word, and an input is read only from its producer's current
 /// acceptance.
 /// </summary>
@@ -91,7 +91,7 @@ public sealed class WorkBeliefTests
     {
         Assert.Equal(WorkRefusals.Stale, Judged(Heard(commit: Newer)));
 
-        // The frame is its attempt's, but the work moved past the revision it was dispatched on: its outcome is a stale attempt's.
+        // The frame is its attempt's, but the work has moved past the revision it carried: its outcome is a stale attempt's.
         Assert.False(WorkBelief.Lapsed(Attempt, Unit));
         Assert.True(WorkBelief.Lapsed(Attempt, Unit with { Tip = Newer }));
     }
@@ -140,7 +140,7 @@ public sealed class WorkBeliefTests
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1a (the cutover design §2.2): an input across subjects is judged on its producer's own. A run's quest-side producer and
+    /// An input across subjects is judged on its producer's own. A run's quest-side producer and
     /// its branch-side consumer bind two revisions by design, a quest's moment and a branch's tip, so the check that the two are one applies
     /// between nodes on one subject alone; a producer no longer reached is stale on any subject.
     /// </summary>

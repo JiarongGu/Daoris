@@ -4,7 +4,7 @@ using static Daoris.Desktop.Driver.Tests.HoldFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDNODE1k (D145's and D173's notes of 2026-11-01): what a landing's start judged outside the graph is two steps of it, <c>quest.holds</c> and
+/// What a landing's start judges outside the graph is two steps of it, <c>quest.holds</c> and
 /// <c>content.holds</c>, observed by Daoris at the bound tip, each with its options; an older build reads either as no kind and holds the graph
 /// whole. What the two share is here; each kind's reading is in its own folder.
 /// </summary>
