@@ -55,8 +55,9 @@ public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
             ? rules.Where(rule => rule.Do is SupervisorRules.Hold or SupervisorRules.Refer).MinBy(rule => rule.At)
             : null;
 
-    /// <summary>The failed sessions that park a quest; 0 where no rule holds it.</summary>
-    public static int FailuresAt(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective) => Lowest(effective, SupervisorRules.Failures, SupervisorRules.Hold) ?? 0;
+    /// <summary>The failed sessions that park a quest, by <c>hold</c> or by <c>refer</c>, which parks it alike; 0 where no rule holds it.</summary>
+    public static int FailuresAt(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective) =>
+        Lowest(effective, SupervisorRules.Failures, SupervisorRules.Hold, SupervisorRules.Refer) ?? 0;
 
     /// <summary>The failed sessions that park a quest at the machine's place, for any role: where a line with no narrower rule parks; 0 where none holds.</summary>
     public int MachineFailures => FailuresAt(For(null, null, null));
@@ -74,7 +75,8 @@ public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
     {
         var moves = new Dictionary<string, StaffMove>(StringComparer.Ordinal);
         if (First(effective, SupervisorRules.Tries) is { Do: not SupervisorRules.Hold } tries) moves[StaffConditions.Transient] = new(tries.Do, tries.At);
-        if (First(effective, SupervisorRules.FailuresOnChoice) is { } failed) moves[StaffConditions.Failed] = new(failed.Do, failed.At);
+        // A refer asks as ask does: the quest waits at the part's end, for the person's yes or the supervisor's go-on, both one approval.
+        if (First(effective, SupervisorRules.FailuresOnChoice) is { } failed) moves[StaffConditions.Failed] = new(failed.Do == SupervisorRules.Refer ? StaffActions.Ask : failed.Do, failed.At);
         if (First(effective, SupervisorRules.Quiet) is { } quiet) moves[StaffConditions.Quiet] = new(quiet.Do);
         if (First(effective, SupervisorRules.Limits) is { } limit) moves[StaffConditions.Limit] = new(limit.Do, UpTo: limit.UpTo);
         int? most = First(effective, SupervisorRules.Moves) is { Do: SupervisorRules.Ask } bound ? bound.At : null;
@@ -133,6 +135,6 @@ public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
     private static SupervisorRule? First(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective, string count) =>
         effective.TryGetValue(count, out var rules) ? rules.Where(rule => rule.Do != SupervisorRules.Off).MinBy(rule => rule.At) : null;
 
-    private static int? Lowest(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective, string count, string does) =>
-        effective.TryGetValue(count, out var rules) && rules.Where(rule => rule.Do == does).Select(rule => (int?)rule.At).Min() is { } at ? at : null;
+    private static int? Lowest(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective, string count, params string[] does) =>
+        effective.TryGetValue(count, out var rules) && rules.Where(rule => does.Contains(rule.Do)).Select(rule => (int?)rule.At).Min() is { } at ? at : null;
 }
