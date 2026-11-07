@@ -5,8 +5,8 @@ using static Daoris.Driver.Json;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A record as the say reads it, the session its quest last ran in here (D79's reading), and the conversation it went on in
-/// (HANDWORDS1), each null for none; and the records' answer it was read from, whose words waiting only the queue reads (SAIDBACK1b).
+/// A record as the say reads it, the session its quest last ran in here, and the conversation it went on in,
+/// each null for none; and the records' answer it is read from, whose words waiting only the queue reads.
 /// </summary>
 internal sealed record WordsRead(SessionRecord? Record, string? Last, string? Next, string Json)
 {
@@ -28,7 +28,7 @@ internal sealed record WordsRead(SessionRecord? Record, string? Last, string? Ne
         error is HttpRequestException or DriverException or JsonException or OperationCanceledException or TaskCanceledException;
 
     /// <summary>
-    /// The record as the say judges it (FOUNDATION1d-ii, the design §19.12): with the driver's own walk to the conversation it went on in, where the
+    /// The record as the say judges it: with the driver's own walk to the conversation it went on in, where the
     /// host has no <c>head</c> mark, as today; without it where the host has the mark, whose say door judges the line's head inside its own step.
     /// </summary>
     public async Task<WordsRead> JudgedAsync(DriverLoop loop, CancellationToken ct) =>
@@ -37,7 +37,7 @@ internal sealed record WordsRead(SessionRecord? Record, string? Last, string? Ne
             : this;
 
     /// <summary>
-    /// What never goes on, as the answer says it (D137 §2.2): a conversation that went on in another names that one (HANDWORDS1),
+    /// What never goes on, as the answer says it: a conversation that went on in another names that one,
     /// with the terminal's sentence beside the code. Null where the record can go on with words.
     /// </summary>
     public WordsAnswer? Never(SessionRecord record) =>
@@ -49,7 +49,7 @@ internal sealed record WordsRead(SessionRecord? Record, string? Last, string? Ne
         };
 
     /// <summary>
-    /// The person's words waiting on this record (SAIDBACK1b, D137 §2.4), from the records' answer, in the order said. None on a
+    /// The person's words waiting on this record, from the records' answer, in the order said. None on a
     /// record that runs again (queued, starting, working), whose run is already taking them; and never another agent's words
     /// waiting there, a second opinion's findings (<c>by</c>) or a helper's answer (<c>helper</c>), which are not the person's to
     /// take back or reword. A word without its id or its words is skipped, as the driver's client skips it.
@@ -64,7 +64,7 @@ internal sealed record WordsRead(SessionRecord? Record, string? Last, string? Ne
             if (Text(record, "state") is "queued" or "starting" or "working") return [];
             return
             [
-                // The person's alone: never another agent's (by, helper), nor Daoris's own words (COWORK1b's from).
+                // The person's alone: never another agent's (by, helper), nor Daoris's own words (a word with a from).
                 .. Items(record, "said")
                     .Where(word => NonEmpty(word, "by") is null && NonEmpty(word, "helper") is null && NonEmpty(word, "from") is null)
                     .Select(word => NonEmpty(word, "id") is { } said && Text(word, "text") is { } text

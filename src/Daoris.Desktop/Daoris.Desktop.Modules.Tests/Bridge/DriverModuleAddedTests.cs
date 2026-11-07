@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// DRIFT1a2 (D133 §1): a message the person types into a running session reaches its ask. Once the session takes it (a
+/// A message the person types into a running session reaches its ask. Once the session takes it (a
 /// driven session's inbox holds it, or a conversation is told it), <c>SESSION_INPUT</c> posts its words to the service's
 /// <c>/api/sessions/{id}/added</c> with the session's own id, and the service keeps them on the ask that session's work is
 /// for. Whatever the service answers, the person's message has reached its session: <c>kept: false</c>, a refusal and a
@@ -28,8 +28,8 @@ public sealed class DriverModuleAddedTests : DriverModuleBridge
         Assert.Equal("use the shared report module", inbox.TakeOrClose()?.Text);
         await UntilAsync(() => standIn.Heard.Any(heard => heard.Path == "/api/sessions/s1/added"));
         await Task.Delay(200);
-        // Kept twice over, each once: on the session's record for its run first (COWORK1c, the say door's `running`), and on
-        // the ask its work is for once the session took it (DRIFT1a2's added door).
+        // Kept twice over, each once: on the session's record for its run first (the say door's `running`), and on
+        // the ask its work is for once the session took it (the added door).
         var (_, kept) = Assert.Single(standIn.Heard, heard => heard.Path == "/api/sessions/s1/say");
         using (var keep = JsonDocument.Parse(kept))
         {
@@ -44,8 +44,8 @@ public sealed class DriverModuleAddedTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// Its inbox closes as the session winds up. What the person says then is held for its record to end (MSG1d, D137
-    /// §2.1), no longer refused, and nothing is posted as added: the session never took it during its run, and the record
+    /// Its inbox closes as the session winds up. What the person says then is held for its record to end,
+    /// not refused, and nothing is posted as added: the session never took it during its run, and the record
     /// keeps it on the ask once the session that goes on takes it.
     /// </summary>
     [Fact]
@@ -104,7 +104,7 @@ public sealed class DriverModuleAddedTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// MSG1d (D137 §2.4): words to a session that ended go to its say door and never to the added one. The service keeps
+    /// Words to a session that ended go to its say door and never to the added one. The service keeps
     /// them on the ask once a session takes them (as <c>reopened</c>), so posting them as added would keep them twice.
     /// </summary>
     [Fact]
@@ -127,7 +127,7 @@ public sealed class DriverModuleAddedTests : DriverModuleBridge
 
         Assert.True(sent.GetProperty("sent").GetBoolean());
         await Task.Delay(200);
-        // The say door asks the host's marks first (FOUNDATION1o), and the sessions' change door is read for the record: reads, not words sent.
+        // The say door asks the host's marks first, and the sessions' change door is read for the record: reads, not words sent.
         Assert.Equal(
             ["/api/sessions/s1/say"],
             standIn.Heard.Select(heard => heard.Path).Where(path => path is not "/api/sessions" and not "/api/sessions/changes" and not "/api/protocol"));

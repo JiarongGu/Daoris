@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// MIXAGENT1b-i (D163's note on the press): <c>SESSION_HAND_OVER</c> over the bridge, the page's *Go on with another agent…*.
+/// <c>SESSION_HAND_OVER</c> over the bridge, the page's *Go on with another agent…*.
 /// The route reads <c>id</c>, <c>agent</c>, <c>account</c> and <c>why</c> (default <c>press</c>), asks as the person, and answers
 /// <c>{sessionId, kept, why, message}</c>; a refusal is the answer, never thrown. The judgement is the driver's
 /// <c>HandOverTests</c>'.
@@ -48,7 +48,7 @@ public sealed class DriverModuleHandOverTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// MIXAGENT1b-ii (D163's note on the offer): Daoris's own offer is asked as <c>daoris</c> only with <c>near</c> or
+    /// Daoris's own offer is asked as <c>daoris</c> only with <c>near</c> or
     /// <c>limit</c>; a press, an absent word or any other reason stays the person's, whatever the payload claims.
     /// </summary>
     [Theory]
@@ -65,7 +65,7 @@ public sealed class DriverModuleHandOverTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 HANDOVERSAID1: the person's yes in the window to a conversation's agent's ask, which the take could not go on with: the session's
+    /// The person's yes in the window to a conversation's agent's ask, which the take could not go on with: the session's
     /// record says it was not taken, by the take's own reason in words and what the session does next, never that it was refused.
     /// </summary>
     [Fact]
@@ -98,7 +98,7 @@ public sealed class DriverModuleHandOverTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ONEWAY1j: a conversation's press naming no agent is *Go on with Daoris's brief*, one answer <c>{sessionId, kept, why, message}</c>
+    /// A conversation's press naming no agent is *Go on with Daoris's brief*, one answer <c>{sessionId, kept, why, message}</c>
     /// with a refusal by its code and nothing opened: here no words wait on the record.
     /// </summary>
     [Fact]
@@ -116,7 +116,7 @@ public sealed class DriverModuleHandOverTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ONEWAY1j: the press opens the new part through the runner, and its end reaches the page as a start's does; one that failed at its
+    /// The press opens the new part through the runner, and its end reaches the page as a start's does; one that failed at its
     /// spawn leaves the words on the record they were said to, and the answer says why.
     /// </summary>
     [Fact]
@@ -144,7 +144,7 @@ public sealed class DriverModuleHandOverTests : DriverModuleBridge
         service.Chat("c1", root, words);
         var loop = Loop();
         // Its words already judged unable to go on, as a refused resume leaves them: the line the press stands under. The loop's own
-        // look as it comes up then leaves them waiting, so the press is judged alone (FLAKE2).
+        // look as it comes up then leaves them waiting, so the press is judged alone.
         if (words) new GoOnMarks(loop.Home).Mark("c1", ["w1"], ContinueWhy.Of(ContinueWhy.Refused), DateTimeOffset.UtcNow);
         var adapters = TestDoors.Registry([NoSpawn()]);
         var client = new ServiceClient("http://stand-in", null, new HttpClient(service));

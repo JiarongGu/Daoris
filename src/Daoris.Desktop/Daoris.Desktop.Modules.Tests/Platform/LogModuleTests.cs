@@ -5,8 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The page's report into the machine log (LOG1b, D94): one request, <c>DAORIS.LOG</c> · <c>EVENT</c>,
-/// and the module that takes it is where D94's list of what is never logged is enforced.
+/// The page's report into the machine log: one request, <c>DAORIS.LOG</c> · <c>EVENT</c>,
+/// and the module that takes it is where the list of what is never logged is enforced.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>The page is the one writer that could pass a word through by mistake</b>, so these tests
@@ -44,7 +44,7 @@ public sealed class LogModuleTests : Bridge
             """{"session":"76cdd5db","kind":"chat","length":42,"files":2}"""
         },
         {
-            // MSG1d (D137 §3.3): where the words reach the session, the answer SESSION_INPUT gave.
+            // Where the words reach the session, the answer SESSION_INPUT gave.
             "message.sent", new { session = "76cdd5db", kind = "steer", length = 18, files = 0, reach = "resume" }, "info",
             """{"session":"76cdd5db","kind":"steer","length":18,"files":0,"reach":"resume"}"""
         },
@@ -54,7 +54,7 @@ public sealed class LogModuleTests : Bridge
             """{"where":"window","message":"Cannot read properties of undefined (reading 'id')"}"""
         },
         {
-            // PAGELOOP1 (D217): a render the page's error screen caught, with the view the page showed and its component stack's top.
+            // A render the page's error screen caught, with the view the page showed and its component stack's top.
             "page.error",
             new { where = "render", message = "Minified React error #185; visit https://react.dev/errors/185 for the full message.", view = "sessions", stack = "Ue < $t < div < Xt < Suspense" },
             "error",
@@ -181,7 +181,7 @@ public sealed class LogModuleTests : Bridge
     }
 
     /// <summary>
-    /// 🔴 PAGELOOP1 (D217): a render failure's view is a name, so a view with an address's query or a sentence in it is dropped, and
+    /// A render failure's view is a name, so a view with an address's query or a sentence in it is dropped, and
     /// its stack is a text cut short like the message: the log keeps where the page broke, never what was on it.
     /// </summary>
     [Fact]
@@ -238,7 +238,7 @@ public sealed class LogModuleTests : Bridge
         Assert.Contains("NO_ROUTE", await RefusalAsync(new LogModule(log), "WRITE"));
     }
 
-    // ---- LOG1c: the screen's door to reading the log, and to its folder ----
+    // ---- the screen's door to reading the log, and to its folder ----
 
     private static readonly DateTimeOffset Noon = new(2026, 9, 30, 12, 0, 0, TimeSpan.Zero);
 
@@ -328,7 +328,7 @@ public sealed class LogModuleTests : Bridge
     }
 
     /// <summary>
-    /// AUTOTIDY1a (D88): a workspace's Branches tab reads what the look cleaned up in it, so a request may name any of
+    /// A workspace's Branches tab reads what the look cleaned up in it, so a request may name any of
     /// several events and one workspace, whose name the driver writes trimmed and the page holds without case.
     /// </summary>
     [Fact]

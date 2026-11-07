@@ -6,14 +6,14 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// How an agent's accounts are used, over the bridge (`AccountsRoutes.cs`, TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2,
-/// §9, §16.6): each scope's list and settings, each account's cool-off, what its agent last said and its learned week, and
+/// How an agent's accounts are used, over the bridge (`AccountsRoutes.cs`): each scope's list and settings, each account's cool-off,
+/// what its agent last said and its learned week, and
 /// the edits the Agents place makes — the list, how it is used, *Try now*, and a workspace back on this machine's accounts.
 /// </summary>
 /// <remarks>
-/// The fast half (MOD8): every answer here is a file read under the test's home, and every edit a write to
+/// The fast half: every answer here is a file read under the test's home, and every edit a write to
 /// <c>harnesses.json</c> or <c>cooling.json</c>; nothing is probed and no process starts. No service runs, so no session is
-/// counted and each account's running count is null: absent, never zero (D57).
+/// counted and each account's running count is null: absent, never zero.
 /// </remarks>
 public sealed class DriverModuleAccountsTests : DriverModuleBridge
 {
@@ -61,7 +61,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// D125 §2.4 and D130 §5.2: each account's cool-off as the driver kept it, what its agent last said per window with when,
+    /// Each account's cool-off as the driver keeps it, what its agent last said per window with when,
     /// and the weekly reset a limit taught it. Names, times and numbers only — never the agent's words.
     /// </summary>
     [Fact]
@@ -103,7 +103,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// USAGEPROBE1b: each window of an account's reading carries its projection to now and how it was made, from the same
+    /// Each window of an account's reading carries its projection to now and how it is made, from the same
     /// <see cref="UsageProjection.Of"/> a start reads: the reading alone where Daoris spent nothing since, the reading plus its
     /// own turns by the account's measured ratio, and the reading alone where a turn since cannot be weighed.
     /// </summary>
@@ -164,7 +164,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
                 [new WindowSeen("five_hour", "session", null, 300, Math.Round(used, 2), 0.01, reset, UsageHistory.ResetSaid)], at);
     }
 
-    /// <summary>D125 §3.7: the tool's own sign-in's cool-off is answered beside the accounts, never as one of them.</summary>
+    /// <summary>The tool's own sign-in's cool-off is answered beside the accounts, never as one of them.</summary>
     [Fact]
     public async Task The_own_sign_ins_cool_off_is_answered_beside_the_accounts()
     {
@@ -175,14 +175,14 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         var own = claude.GetProperty("own").GetProperty("cooling");
         Assert.False(own.GetProperty("stated").GetBoolean());
         Assert.Empty(claude.GetProperty("accounts").EnumerateArray());
-        // Nothing said of its windows: absent, never zero (D57).
+        // Nothing said of its windows: absent, never zero.
         Assert.Equal(JsonValueKind.Null, claude.GetProperty("own").GetProperty("said").ValueKind);
-        // Kept in the file: nothing said of a cool-off held in memory alone (LIMITRESUME1d2).
+        // Kept in the file: nothing said of a cool-off held in memory alone.
         Assert.False(own.TryGetProperty("unwritten", out _));
     }
 
     /// <summary>
-    /// LIMITRESUME1d2 (D206 §3.1): a cool-off the file would not take is held in memory, and answered as one, so the band says Daoris
+    /// A cool-off the file would not take is held in memory, and answered as one, so the band says Daoris
     /// could not keep it beside its account.
     /// </summary>
     [Fact]
@@ -199,7 +199,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// CODEXUSE3: what the tool's own sign-in last said of its windows, read at a person's press and kept under its own key, is
+    /// What the tool's own sign-in last said of its windows, read at a person's press and kept under its own key, is
     /// answered beside the accounts as an account's reading is, and is none of them: no account row, and near in no scope.
     /// </summary>
     [Fact]
@@ -223,10 +223,10 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.Empty(Scope(codex, null).GetProperty("near").EnumerateArray());
     }
 
-    // ---------------------------------------------------------------- the verdicts .NET judges for the page (PUSH1e)
+    // ---------------------------------------------------------------- the verdicts .NET judges for the page
 
     /// <summary>
-    /// PUSH1e (D182 point 6): each reading's window answers when it began, the curve's value on it now as a whole percent and whether
+    /// Each reading's window answers when it began, the curve's value on it now as a whole percent and whether
     /// it is over that, measured by the curve of the scope its row is measured by: this machine's where its list holds the account
     /// or no workspace's own list does, else the first workspace's whose own list holds it. The page words these and computes none.
     /// </summary>
@@ -257,8 +257,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         var weekly = Window("account-1", "weekly");
         Assert.Equal((63, true), (weekly.GetProperty("curve").GetInt32(), weekly.GetProperty("over").GetBoolean()));
         Assert.Equal(week.AddDays(-7).ToUnixTimeSeconds(), weekly.GetProperty("from").GetDateTimeOffset().ToUnixTimeSeconds());
-        // Rewritten by POOL1a2 (D197 point 2; the account-pool design §6.1 rule 3): each row was measured by the list holding it, the
-        // workspace's own curve or this machine's. The set has one entry of settings now, the workspace's taken where a start read
+        // The set has one entry of settings, the workspace's taken where a start read
         // it and nothing else set the field, so every account is measured by its 80%, which 85% is over.
         var own = Window("account-2", "session");
         Assert.Equal((80, true), (own.GetProperty("curve").GetInt32(), own.GetProperty("over").GetBoolean()));
@@ -275,7 +274,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// PUSH1e: each scope answers the curve in effect on each window it names (the person's points under <c>curve</c> where set,
+    /// Each scope answers the curve in effect on each window it names (the person's points under <c>curve</c> where set,
     /// else Daoris's), each of its list's accounts' windows measured by it, and each account of its list whose tightest window is
     /// over it, with the curve's value there: what the switch's charts draw and the said line's clause says.
     /// </summary>
@@ -308,8 +307,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
                 $"{each.GetProperty("account").GetString()} {each.GetProperty("window").GetString()} {each.GetProperty("curve").GetInt32()}"),
         ];
 
-        // Rewritten by POOL1a2 (D197 point 2; the account-pool design §6.1 rule 3): this machine's scope and the workspace's each
-        // answered their own curves. The set is one scope now, its settings the workspace's own curve, which a start read and this
+        // The set is one scope, its settings the workspace's own curve, which a start read and this
         // machine's entry did not set, and every account of the set is measured by it.
         var set = Assert.Single(claude.GetProperty("scopes").EnumerateArray().ToList());
         Assert.Equal(JsonValueKind.Null, set.GetProperty("workspace").ValueKind);
@@ -319,7 +317,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SWITCH1e (D165 point 4, the switch design §4): each scope answers the accounts of its list a running session could move to,
+    /// Each scope answers the accounts of its list a running session could move to,
     /// as <see cref="SwitchDecision"/> moves: ready, and at least the margin under the scope's curve on every window it said. Over
     /// its curve, within the margin, cooling or saying no number is no room; it is judged under <c>off</c> too, which the page reads.
     /// </summary>
@@ -342,15 +340,14 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
 
         var claude = Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code");
 
-        // Rewritten by POOL1a2 (D197 point 2): the workspace's own scope under `off` answered its room beside this machine's. Its
-        // switch is the set's now (the account-pool design §6.1 rule 3), and the one scope answers the same room under it.
+        // The one scope has the set's switch, and answers the same room under it.
         var set = Scope(claude, null);
         Assert.Equal("off", set.GetProperty("use").GetProperty("switch").GetString());
         Assert.Equal(["account-2"], Strings(set.GetProperty("room")));
     }
 
     /// <summary>
-    /// The page's verdicts are .NET's on the shared table (PUSH1e): for every <c>tightest</c> row of the CLI's
+    /// The page's verdicts are .NET's on the shared table: for every <c>tightest</c> row of the CLI's
     /// <c>usage-curves.json</c>, a scope with the row's switch and curve and an account saying the row's windows answers each
     /// measured window's curve as the row's value in whole points, and the account among those over the curve exactly where the
     /// row says its line has the clause, with the curve's value the clause names.
@@ -427,9 +424,8 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// D130 §3.1, §6: a scope answers its list, where it begins, how it is used, and which of its accounts are near their limit by
-    /// its own <i>near</i>. Rewritten by POOL1a2 (D197 points 1 and 2; the account-pool design §5.2): a workspace that named a
-    /// default or a list of its own answered a scope of its own, and this machine's its default. The set is the one scope now: the
+    /// A scope answers its list, where it begins, how it is used, and which of its accounts are near their limit by
+    /// its own <i>near</i>. The set is the one scope: the
     /// order whole, begun where this machine's starts began, no default beside it, this machine's settings.
     /// </summary>
     [Fact]
@@ -460,7 +456,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// USAGEREAD3a (the account-switch design §1.3): Claude Code's pace warning is kept as <c>warned</c> and passed through on
+    /// Claude Code's pace warning is kept as <c>warned</c> and passed through on
     /// the account's reading, and never makes it near alone; a <c>near</c> written before is read as <c>warned</c>, since the
     /// warning alone ever wrote it. Near is by a limit reached, credits or the number, so <c>by</c> never names a word.
     /// </summary>
@@ -469,7 +465,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     {
         Accounts("claude-code", "account-1", "account-2", "account-3");
         Wiring("""{ "rotation": { "claude-code": ["account-1", "account-2", "account-3"] } }""");
-        // Two sevenths of each week gone, its smart curve at 49% (SWITCH1b-ii): at 30%, warned; at 40%, warned as the file held
+        // Two sevenths of each week gone, its smart curve at 49%: at 30%, warned; at 40%, warned as the file held
         // it before (`near`); at 99%, warned and near, over its curve.
         static string Stamp(DateTimeOffset at) => at.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture);
         System.Text.Json.Nodes.JsonObject Week(double used, string standing) => new()
@@ -497,7 +493,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SWITCH1b-ii (D165 point 2, the switch design §3): a scope's near list is the walk's, its accounts over its curve now, so
+    /// A scope's near list is the walk's, its accounts over its curve now, so
     /// the page's near pill names the accounts a start passes: the smart curve on a week, a person's on a session, and under
     /// <c>off</c> the smart one, which a start still passes an account by.
     /// </summary>
@@ -527,16 +523,15 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
 
         static string[] Near(JsonElement scope) =>
             [.. scope.GetProperty("near").EnumerateArray().Select(each => $"{each.GetProperty("account").GetString()} {each.GetProperty("window").GetString()} {each.GetProperty("by").GetString()}")];
-        // Rewritten by POOL1a2 (D197 point 2; the account-pool design §6.1 rule 3): each workspace's scope answered its near by its
-        // own switch. The set has one entry now: the two switches disagreed, so neither was kept and the set's is the smart one,
-        // whose week passes account-1; the one curve, `own`'s, was taken.
+        // The set has one entry: the two switches disagree, so neither is kept and the set's is the smart one,
+        // whose week passes account-1; the one curve, `own`'s, is taken.
         var set = Scope(claude, null);
         Assert.Equal("smart", set.GetProperty("use").GetProperty("switch").GetString());
         Assert.Equal(["account-1 weekly number"], Near(set));
     }
 
     /// <summary>
-    /// TOOL6e (D130 §3–§4): each scope answers which account its next start would take, the step that chose it and the
+    /// Each scope answers which account its next start would take, the step that chose it and the
     /// account it was weighed against, and what holds each other account of the agent's — a cool-off until when, an account
     /// the scope does not use — read from the walk's own pieces, with nothing probed.
     /// </summary>
@@ -562,8 +557,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.Equal("account-2", machine.GetProperty("over").GetString());
         Assert.Equal(JsonValueKind.Null, machine.GetProperty("when").ValueKind);
         Assert.All(["window", "unused", "seen"], name => Assert.Equal(JsonValueKind.Null, machine.GetProperty(name).ValueKind));
-        // Rewritten by POOL1a2 (D197 point 1): account-3 was outside this machine's list, and the workspace's own scope answered its
-        // next start apart. Every account is in the set now, in one order (this machine's list, then the workspace's), so account-3
+        // Every account is in the set, in one order (this machine's list, then the workspace's), so account-3
         // is held by its cool-off, and no workspace answers a scope of its own.
         var others = machine.GetProperty("others").EnumerateArray().ToList();
         Assert.Equal(["account-2=ready", "account-3=cooling"], others.Select(each => $"{each.GetProperty("account").GetString()}={each.GetProperty("hold").GetString()}"));
@@ -574,7 +568,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// NEXTLAPSE1 (D165's USAGERESET1 note): a next start ranked by what would lapse carries, beside its reset in <c>when</c>,
+    /// A next start ranked by what would lapse carries, beside its reset in <c>when</c>,
     /// the window that won, the whole percent of it unused and when that reading was made, as the start's line says them.
     /// </summary>
     [Fact]
@@ -599,7 +593,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// OWNSPACE1a (D175 point 2, amending D125 §3.7): a scope that names no account answers the agent's Daoris account, never the
+    /// A scope that names no account answers the agent's Daoris account, never the
     /// tool's own sign-in, whose cool-off holds nothing; with no Daoris account, the next start waits for a sign-in.
     /// </summary>
     [Fact]
@@ -621,9 +615,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// Rewritten by POOL1a2 (D197 point 1; the account-pool design §5.2): a scope naming nothing said <c>inherited</c>
-    /// (OWNSPACE1b-A, D175 settlement 5), since the agent's Daoris accounts were its list, and a workspace naming its own account
-    /// did not. The set's order names every account now, so <c>inherited</c> goes, and an older build's workspace default is read
+    /// The set's order names every account, so no scope answers <c>inherited</c>, and an older build's workspace default is read
     /// into the one order, first.
     /// </summary>
     [Fact]
@@ -642,7 +634,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// TOOL6e: an account whose cool-off ended within the day, which the file still holds, answers when it was offered again,
+    /// An account whose cool-off ended within the day, which the file still holds, answers when it is offered again,
     /// and so does the tool's own sign-in; one still cooling, or never cooled, answers none.
     /// </summary>
     [Fact]
@@ -668,9 +660,9 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// D130 §6: switching before the limit reads the agent's own word, which only some agents' sessions carry; the screen
+    /// Switching before the limit reads the agent's own word, which only some agents' sessions carry; the screen
     /// offers the switch where they do, and says why not where they do not. Codex's door carries none, and its own server is
-    /// asked instead (CODEXUSE1), so it says too; dsh says nothing either way.
+    /// asked instead, so it says too; dsh says nothing either way.
     /// </summary>
     [Fact]
     public async Task Each_agent_says_whether_its_sessions_say_how_near_their_limits_are()
@@ -683,7 +675,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SWITCH1d (D165 point 1; the switch design §5): each window answers where its reading came from, <c>read</c> from the
+    /// Each window answers where its reading came from, <c>read</c> from the
     /// agent's own answer or <c>said</c> by a session's frame, so the screen says which; each scope answers its switch and its
     /// curve as written, the smart switch and no curve where nothing is set, beside the old names an older page reads; and each
     /// agent says whether its accounts' use is read by asking it, which the screen's <i>Read now</i> needs.
@@ -710,8 +702,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.Equal("read", Source("account-1"));
         Assert.Equal("said", Source("account-2"));
 
-        // Rewritten by POOL1a2 (D197 point 2; the account-pool design §6.1 rule 3): this machine's scope answered the smart switch and
-        // no curve, the workspace's its own. The set's one entry takes the workspace's, which a start read and nothing else set.
+        // The set's one entry takes the workspace's, which a start read and nothing else set.
         var own = Assert.Single(claude.GetProperty("scopes").EnumerateArray().ToList()).GetProperty("use");
         Assert.Equal("curve", own.GetProperty("switch").GetString());
         Assert.Equal("[[0,30],[50,70],[100,100]]", own.GetProperty("curve").GetProperty("weekly").GetRawText());
@@ -730,7 +721,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     // ---------------------------------------------------------------- ACCOUNTS_READ: Read now
 
     /// <summary>
-    /// SWITCH1d (the switch design §1.2): the screen's <i>Read now</i>, asked by a press alone, asks each account's agent its use
+    /// The screen's <i>Read now</i>, asked by a press alone, asks each account's agent its use
     /// only where the reading is older than its question's floor, so an account read within it is asked nothing and keeps its
     /// reading. Answered with the door it was asked through.
     /// </summary>
@@ -765,7 +756,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     // ---------------------------------------------------------------- ACCOUNT_USE: the list
 
     /// <summary>
-    /// The set's order (POOL1a, D197; the account-pool design §5.1, §5.2): the accounts named first, the rest after in their order;
+    /// The set's order: the accounts named first, the rest after in their order;
     /// none returns it to the ids' order, written whole; a workspace names nothing and is refused, nothing written.
     /// </summary>
     [Fact]
@@ -776,7 +767,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "order", door = "claude-code", accounts = new[] { "account-3" } });
         Assert.Equal(["account-3", "account-1", "account-2"], HarnessSettings.Load(HarnessSettingsPath).Rotation["claude-code"]);
 
-        // A door's order is its owner's (AGT7).
+        // A door's order is its owner's.
         await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "order", door = "claude-code-acp", accounts = new[] { "account-2", "account-3" } });
         Assert.Equal(["account-2", "account-3", "account-1"], HarnessSettings.Load(HarnessSettingsPath).Rotation["claude-code"]);
 
@@ -791,8 +782,8 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The terminal's refusals, in a code the page translates (REV2): a name that is no account here, and one named twice. Nothing
-    /// is written. An order written whole always holds the kept account and another, and has no default beside it (POOL1a), so
+    /// The terminal's refusals, in a code the page translates: a name that is no account here, and one named twice. Nothing
+    /// is written. An order written whole always holds the kept account and another, and has no default beside it, so
     /// neither is refused at an order since.
     /// </summary>
     [Theory]
@@ -811,8 +802,8 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// <c>inherit</c>, a workspace returned to this machine's accounts, is gone with the workspaces' lists (POOL1a, D197; the
-    /// account-pool design §5.2): refused as an unknown action whose sentence names the rest.
+    /// <c>inherit</c>, a workspace returned to this machine's accounts, is gone with the workspaces' lists:
+    /// refused as an unknown action whose sentence names the rest.
     /// </summary>
     [Fact]
     public async Task Inherit_is_refused_as_an_unknown_action_naming_the_rest()
@@ -828,7 +819,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     // ---------------------------------------------------------------- ACCOUNT_USE: how a list is used
 
     /// <summary>
-    /// D130 §16.6, for the set (POOL1a): each choice written as made, a default included, with no list waited on; a clear returns
+    /// For the set: each choice written as made, a default included, with no list waited on; a clear returns
     /// the set to today's defaults; a workspace names nothing and is refused.
     /// </summary>
     [Fact]
@@ -857,7 +848,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
 
     /// <summary>
     /// <c>profile use</c>'s refusals: a kept account is one of the set and leaves driven work another; a value this build does not
-    /// know is refused rather than written. Nothing is written. No list is waited on since POOL1a: the set's settings are set
+    /// know is refused rather than written. Nothing is written. No list is waited on: the set's settings are set
     /// whatever it holds.
     /// </summary>
     [Theory]
@@ -877,7 +868,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.Equal(before, File.ReadAllText(HarnessSettingsPath));
     }
 
-    /// <summary><i>Near</i> is a whole percent from 50 to 99 (§14); a number outside is refused, naming the range.</summary>
+    /// <summary><i>Near</i> is a whole percent from 50 to 99; a number outside is refused, naming the range.</summary>
     [Theory]
     [InlineData(49)]
     [InlineData(100)]
@@ -893,7 +884,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SWITCH1d (D165 point 2; the switch design §5, §6): the screen's switch and curve, as <c>profile use --switch</c> and
+    /// The screen's switch and curve, as <c>profile use --switch</c> and
     /// <c>--curve</c> write them: the switch as chosen, each window of the curve set keeping the other, and <c>noCurve</c> taking
     /// the curve out with the switch kept, as <c>--no-curve</c> does.
     /// </summary>
@@ -926,7 +917,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SWITCH1d: a curve that breaks a rule is refused in its own code, the rule its <c>context</c> and the window, the point and
+    /// A curve that breaks a rule is refused in its own code, the rule its <c>context</c> and the window, the point and
     /// the numbers its values, so the page says it in the reader's language; its sentence is the terminal's (the shared table's
     /// <c>refusal</c> rows). Nothing is written.
     /// </summary>
@@ -974,7 +965,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     // ---------------------------------------------------------------- ACCOUNT_USE: Try now
 
     /// <summary>
-    /// D125 §2.3, §6: <i>Try now</i> ends that account's cool-off and no other, and says whether it was cooling; the tool's own
+    /// <i>Try now</i> ends that account's cool-off and no other, and says whether it had been cooling; the tool's own
     /// sign-in is named by <c>own</c>, as the terminal's <c>--own</c>.
     /// </summary>
     [Fact]
@@ -1013,10 +1004,10 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.Contains("action=rotate", refused);
     }
 
-    // ---------------------------------------------------------------- the screen's default (TOOL6a's fix)
+    // ---------------------------------------------------------------- the screen's default
 
     /// <summary>
-    /// No default beside the order (POOL1a, D197; the account-pool design §5.2): the screen's <c>profile-default</c> is refused in
+    /// No default beside the order: the screen's <c>profile-default</c> is refused in
     /// its code, naming the order, before anything is written.
     /// </summary>
     [Fact]
@@ -1034,7 +1025,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The fold's receipts on the bridge (POOL1a, the account-pool design §5.2, §6.3): <c>ACCOUNTS</c> carries each unsaid one by
+    /// The fold's receipts on the bridge: <c>ACCOUNTS</c> carries each unsaid one by
     /// its id, its kinds and values, and <c>said</c> with the ids the page showed marks only those.
     /// </summary>
     [Fact]
@@ -1060,13 +1051,10 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.Empty(Agent(await AnswerAsync(Module(), "ACCOUNTS", new { }), "claude-code").GetProperty("pooled").EnumerateArray());
     }
 
-    // The rule the route and Ask Daoris's `default` door asked, a default inside its scope's own list (`DefaultAllowed`), left with
-    // its last caller, the door, in POOL1b (D197 point 6).
-
-    // ---------------------------------------------------------------- the screen's Remove (TOOL4e's fix)
+    // ---------------------------------------------------------------- the screen's Remove
 
     /// <summary>
-    /// TOOL4e's note: the screen's Remove leaves no default, list or kept account naming the account, as the terminal's
+    /// The screen's Remove leaves no default, list or kept account naming the account, as the terminal's
     /// <c>profile remove</c> does through <see cref="HarnessSettings.WithoutAccount"/>: the next account made takes the first
     /// free name, which may be this one's. The rest of each list keeps its place, and a list left naming none goes.
     /// </summary>
@@ -1092,7 +1080,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
 
     // ---------------------------------------------------------------- the cool-off setting
 
-    /// <summary>D125 §2.2, §6: how long an account cools when its agent names no time, which <c>daoris settings cooloff</c> edits.</summary>
+    /// <summary>How long an account cools when its agent names no time, which <c>daoris settings cooloff</c> edits.</summary>
     [Fact]
     public async Task The_default_cool_off_is_answered_with_the_state_and_set_to_whole_minutes_of_at_least_one()
     {
@@ -1106,7 +1094,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.Equal(90, DriverConfig.Load(DriverConfigPath).CoolOffMinutes);
     }
 
-    /// <summary>CAPSET1: the cap of sessions Daoris starts at once, which <c>daoris settings cap</c> edits.</summary>
+    /// <summary>The cap of sessions Daoris starts at once, which <c>daoris settings cap</c> edits.</summary>
     [Fact]
     public async Task The_cap_is_answered_with_the_state_and_set_to_a_whole_number_of_at_least_one()
     {

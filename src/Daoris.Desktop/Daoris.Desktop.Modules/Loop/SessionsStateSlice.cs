@@ -6,13 +6,13 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The session records as every window holds them, the push path's third slice (PUSH1d2, D182): every record the service answers,
+/// The session records as every window holds them, the push path's third slice: every record the service answers,
 /// closed ones and every workspace's included, allow-listed to the fields the page reads, so a tick reads <c>/api/sessions</c> again in
 /// no window, and a record a connector wrote reaches the windows with no desktop dispatch.
 /// </summary>
 /// <remarks>
 /// <para><b>One entry, its variants read from it.</b> The page holds the widest list (every repository, closed included, every
-/// workspace) and each view's list is derived from it; D182's PUSH1d2 note gives the measure that settled it.</para>
+/// workspace) and each view's list is derived from it.</para>
 ///
 /// <para><b>A partition per workspace, keyed by session</b> (<see cref="StateSlice.Keyed"/>): a record's move pushes that record alone,
 /// a delta on the number the window holds, never its workspace's history again; a record deleted is named among the keys gone.</para>
@@ -26,7 +26,7 @@ namespace Daoris.Desktop;
 /// watch tells the loop its moves (<see cref="DriverLoop.HeardMove"/>), which is how a connector's write arrives.</para>
 ///
 /// <para><b>Desktop-only.</b> A record's tree is a machine path and its words waiting are the person's own, which only this machine's
-/// windows read (D47, D182 point 2); the transcript and the rest the page does not read stay the pull's.</para>
+/// windows read; the transcript and the rest the page does not read stay the pull's.</para>
 /// </remarks>
 public static class SessionsStateSlice
 {
@@ -41,24 +41,24 @@ public static class SessionsStateSlice
     [
         "id", "quest", "repository", "door", "state", "kind", "note", "evidence", "created", "updated", "workspace", "doorVersion",
         "profile", "tree", "baseCommit", "ask", "opinion", "serves", "from", "fromWhy", "fromBy", "access", "noteParts", "piece",
-        // ONEWAY1m: the words waiting, each with whose it is, which the page reads a park's answer from.
+        // The words waiting, each with whose it is, which the page reads a park's answer from.
         "said",
-        // An account's limit made its failure: every list words it limited (LIMITRESUME1a, D206 point 1).
+        // An account's limit made its failure: every list words it limited.
         "limit",
-        // D205 §9.3: the machine-local provenance, absent on a mirror and a sync.
+        // The machine-local provenance, absent on a mirror and a sync.
         "actor", "choice", "asked", "override", "ran", "chosen",
-        // FOUNDATION1c (D212): the work its marks read as, judged in .NET and answered on loopback, beside the kind; absent on a record a
+        // The work its marks read as, judged in .NET and answered on loopback, beside the kind; absent on a record a
         // host answers none for, and then the page reads today's predicates.
         "work",
-        // COWORKVIEW1b-i: the quest a chat took through its own connector, which the at-work view reads a chat's wait by.
+        // The quest a chat took through its own connector, which the at-work view reads a chat's wait by.
         "tookQuest",
     ];
 
     /// <summary>
     /// What the service answers of a record that is never pushed: the transcript's path, and what no view reads from the list
     /// (whether its quest was taken by its connector, a stop's cause, its delete, its line of work, its mode, and the downloaded
-    /// versions its starts were handed, which the downloads' rule reads, KEEP1b; and the part its line ends at, which the groups
-    /// slice's entries carry for the page, LINESTOGETHER1a).
+    /// versions its starts were handed, which the downloads' rule reads; and the part its line ends at, which the groups
+    /// slice's entries carry for the page).
     /// </summary>
     public static readonly IReadOnlyList<string> PulledOnly =
         ["transcript", "took", "interrupted", "deletable", "entry", "helpMode", "resolved", "head"];

@@ -6,7 +6,7 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Reading and writing across repositories, the page's `bridge/across.ts` (READ1, D107): how each registered
+/// Reading and writing across repositories, the page's `bridge/across.ts`: how each registered
 /// repository's checkout stands, and the screen's half of `daoris place across` over the same `driver.json`.
 /// </summary>
 public sealed class AcrossRoutes(DriverContext context)
@@ -45,8 +45,8 @@ public sealed class AcrossRoutes(DriverContext context)
     }
 
     // A repository's reading across, or a workspace's, or either cleared with no `read` — the same file
-    // `daoris place across … read` edits: one truth, two doors (D50). The state it answers, and every repository's answer under
-    // the driver's key, move with it (STATEHUB1h, D169).
+    // `daoris place across … read` edits: one truth, two doors. The state it answers, and every repository's answer under
+    // the driver's key, move with it.
     [DriverRoute("SET_READ_ACROSS", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_READ_ACROSS", Repository = "repository", Workspace = "workspace")]
     [GroundScoped("SET_READ_ACROSS", "readAcross", "workspaceReadAcross")]

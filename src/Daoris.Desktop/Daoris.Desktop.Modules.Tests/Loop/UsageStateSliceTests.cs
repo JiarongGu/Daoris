@@ -7,7 +7,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// What sessions consumed, pushed (PUSH1e, D182 points 2-4): one owner in the shell's loop reading the usage file once per wake for
+/// What sessions consumed, pushed: one owner in the shell's loop reading the usage file once per wake for
 /// every window, a keyed slice of two partitions, each measured session under its id and each account's share under its door and
 /// account, written by <c>USAGE</c>'s own builders, so neither a focus nor a mount reads <c>USAGE</c> again in a window that holds it.
 /// </summary>
@@ -102,8 +102,8 @@ public sealed partial class UsageStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// AGENTPROVIDER1 s-vii: an account's share is counted by agent. Before, a conversation moved from <c>claude-code</c> to
-    /// <c>claude-code-acp</c> on one account was two shares, one per door; now it is one, under the agent, each session keeping its door.
+    /// An account's share is counted by agent: a conversation moved from <c>claude-code</c> to
+    /// <c>claude-code-acp</c> on one account is one share, not one per door, under the agent, each session keeping its door.
     /// </summary>
     [Fact]
     public async Task One_account_used_through_both_of_an_agent_s_doors_is_one_share_under_the_agent()
@@ -184,7 +184,7 @@ public sealed partial class UsageStateSliceTests : DriverModuleBridge
 
     /// <summary>
     /// Run as the loop runs it: a driven end, one no conversation's route announced, wakes it as the journal tells it, and what the end
-    /// measured reaches the windows (FOUNDATION1 l-i).
+    /// measured reaches the windows.
     /// </summary>
     [Fact]
     public async Task A_driven_end_reaches_the_windows_by_one_push()
@@ -206,7 +206,7 @@ public sealed partial class UsageStateSliceTests : DriverModuleBridge
 
     /// <summary>
     /// 🔴 Against a host that keeps no journal no <c>part.ended</c> is ever told, so a conversation's end wakes it by the route's
-    /// <c>SESSION_ENDED</c>, its old surface kept as its adapter (the foundation design §19.12's journal row).
+    /// <c>SESSION_ENDED</c>, its old surface kept as its adapter.
     /// </summary>
     [Fact]
     public async Task A_conversation_s_end_reaches_the_windows_by_its_route_while_the_host_keeps_no_journal()

@@ -5,18 +5,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// **Credential profiles, from a screen** (DEPLOY3).
+/// **Credential profiles, from a screen**.
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>There was nowhere to manage credentials.</b> The Machine view could LIST a harness's
-/// profiles and log into one, and there was no way to make, un-point or choose one. Those three
-/// verbs existed only as `daoris agent account add|remove|default` (then `daoris harness`).</para>
-///
-/// <para><b>That is D50 violated in the direction nothing checks.</b> The rule is written "whatever
-/// a screen can set, a terminal can", and the converse had no test anywhere — so a capability
-/// stranded on a terminal was invisible to every gate.</para>
-///
-/// <para><b>A sign-in stays the tool's</b> (the one secret Daoris keeps is an API key, D67 §1, whose
+/// <para><b>A sign-in stays the tool's</b> (the one secret Daoris keeps is an API key, whose
 /// tests are below). Adding a profile makes a
 /// DIRECTORY; what lands inside it is the harness's own login flow's, and nothing here reads it.</para>
 /// </remarks>
@@ -41,7 +33,7 @@ public sealed class HarnessProfileTests : Bridge
         // links against no CLI and the CLI has no .NET — so the only thing keeping them one feature
         // is that both compute this, and a test on each side saying so.
         //
-        // The first version of this asserted the directory was EMPTY, which is not Daoris's to
+        // The directory is not asserted empty, which is not Daoris's to
         // claim: refreshing the roster asks the harness its login state under that home, and the
         // harness writes its own files there. Asserting somebody else's program leaves no trace is
         // a test that fails for being right.
@@ -64,9 +56,8 @@ public sealed class HarnessProfileTests : Bridge
     }
 
     /// <summary>
-    /// Choosing which account starts begin on is the set's order (POOL1b, D197 points 2 and 6): <c>profile-default</c> is refused as
-    /// <c>ACCOUNTS_ONE_SET</c>, nothing is written, and a new account is the order's first, where starts begin. It recorded the press
-    /// as this machine's default before, which D197 retires (the bridge has refused it since POOL1a1).
+    /// Choosing which account starts begin on is the set's order: <c>profile-default</c> is refused as
+    /// <c>ACCOUNTS_ONE_SET</c>, nothing is written, and a new account is the order's first, where starts begin.
     /// </summary>
     [Fact]
     public async Task Choosing_a_default_is_refused_and_the_set_s_first_is_where_starts_begin()
@@ -83,9 +74,8 @@ public sealed class HarnessProfileTests : Bridge
     }
 
     /// <summary>
-    /// A workspace's default, set or cleared, is refused too (POOL1b, D197 point 1): the set serves every workspace, so nothing is
-    /// written and every workspace's starts begin at the order's first. LOOK2c held here that a default's edit answered what sessions
-    /// there ran as, the machine's default for a workspace that cleared its own; there is no such edit now.
+    /// A workspace's default, set or cleared, is refused too: the set serves every workspace, so nothing is
+    /// written and every workspace's starts begin at the order's first.
     /// </summary>
     [Fact]
     public async Task A_workspace_s_default_is_refused_and_every_workspace_begins_at_the_set_s_first()
@@ -133,16 +123,13 @@ public sealed class HarnessProfileTests : Bridge
     }
 
     /// <summary>
-    /// 🔴 <b>Removing an account removes it</b> (D66 §3, amending SES3's "deletes nothing"). The
-    /// owner's report: Forget did not delete the account. The old rule kept a signed-in directory
-    /// and un-pointed it, so the account stayed listed and signed in — the leftover the person
-    /// pressed the button to be rid of. Now the directory goes, credentials included, and the set's
-    /// order no longer names it.
+    /// 🔴 <b>Removing an account removes it</b>: the directory goes, credentials included, and the set's
+    /// order no longer names it, so no account stays listed and signed in after Forget.
     /// </summary>
     /// <remarks>
-    /// POOL1b (D197): the account is put first in the set's order (<c>ACCOUNT_USE</c>'s <c>order</c>), and its removal leaves the order
-    /// to the rest. Before POOL1b it was made the machine's and a workspace's default, each un-pointed by the removal; those presses are
-    /// refused as <c>ACCOUNTS_ONE_SET</c> since POOL1a1, so the order is what can still name it.
+    /// The account is put first in the set's order (<c>ACCOUNT_USE</c>'s <c>order</c>), and its removal leaves the order
+    /// to the rest. The machine's and a workspace's default presses are refused as <c>ACCOUNTS_ONE_SET</c>,
+    /// so the order is what can still name it.
     /// </remarks>
     [Fact]
     public async Task Removing_an_account_deletes_it_signed_in_or_not_and_un_points_it_everywhere()
@@ -169,7 +156,7 @@ public sealed class HarnessProfileTests : Bridge
     }
 
     /// <summary>
-    /// 🔴 <b>An account is made by signing in</b> (D66 §3). One press opens a fresh account, runs the
+    /// 🔴 <b>An account is made by signing in</b>. One press opens a fresh account, runs the
     /// tool's own sign-in into it, and keeps it — under a neutral name, because nobody knows whose it
     /// is until the tool says — and the end names who signed in, by the tool's own answer.
     /// </summary>
@@ -181,7 +168,7 @@ public sealed class HarnessProfileTests : Bridge
             console.log('signed in');
             process.exit(0);
             """);
-        // Someone already has an account: the new one takes a fresh id (ACCT2), answered as the sign-in starts.
+        // Someone already has an account: the new one takes a fresh id, answered as the sign-in starts.
         Directory.CreateDirectory(ProfileAt("stub", "account-1"));
 
         var answer = await AnswerAsync(module, "HARNESS_ACTION", new { door = "stub", action = "login-new" });
@@ -197,9 +184,8 @@ public sealed class HarnessProfileTests : Bridge
         Assert.Equal("someone@example.invalid", ended.GetProperty("Account").GetString());
         Assert.True(ended.GetProperty("Kept").GetBoolean());
         Assert.True(File.Exists(Path.Combine(ProfileAt("stub", made), "credentials.json")));
-        // Rewritten by POOL1a2 (D197 point 4; the account-pool design §4.4, §5.2): the end said where the account ran, `Places`,
-        // none where no list held it (ACCT1). It joins Daoris's accounts now, last in the order, and the end says that; who signed
-        // in is offered, never written (D66 §3).
+        // The account joins Daoris's accounts, last in the order, and the end says that; who signed
+        // in is offered, never written.
         Assert.False(ended.TryGetProperty("Places", out _));
         Assert.Contains(Raised.Select(Line), line => line.Contains($"`{made}` joined Daoris's accounts"));
         Assert.Equal(["account-1", made], HarnessSettings.LoadSet(HarnessSettingsPath).Rotation["stub"]);
@@ -207,9 +193,9 @@ public sealed class HarnessProfileTests : Bridge
     }
 
     /// <summary>
-    /// ACCOUNTID1: a second sign-in of an email another account is already named, in another organisation, is a second
+    /// A second sign-in of an email another account is already named, in another organisation, is a second
     /// account. Its end says the organisation and the plan beside who, and offers the email with the organisation beside it,
-    /// since the email names the first: a name the rename takes. Offered, never written (D66 §3); the roster says each one's.
+    /// since the email names the first: a name the rename takes. Offered, never written; the roster says each one's.
     /// </summary>
     [Fact]
     public async Task A_second_sign_in_of_a_named_email_in_another_organisation_is_offered_a_name_telling_them_apart()
@@ -241,7 +227,7 @@ public sealed class HarnessProfileTests : Bridge
     }
 
     /// <summary>
-    /// CODEXACCT1: *Add an account…* on Agents → Codex runs <c>codex login</c>, its browser first (CODEXLOGIN1) — a stand-in
+    /// *Add an account…* on Agents → Codex runs <c>codex login</c>, its browser first — a stand-in
     /// named for <c>codex</c>, answering in the words <c>codex login status</c> printed on the install — into a new folder
     /// under <c>codex</c>'s accounts, with that folder as its <c>CODEX_HOME</c>, and keeps it once the status reads it signed
     /// in. Codex names nobody, so the end says so, and the page's naming step asks for the name. Its ports are tried by a
@@ -289,7 +275,7 @@ public sealed class HarnessProfileTests : Bridge
     }
 
     /// <summary>
-    /// A sign-in that does not finish leaves nothing behind (D66 §3) — the tool failed, was
+    /// A sign-in that does not finish leaves nothing behind — the tool failed, got
     /// stopped, or ended without signing anyone in. The account existed only for the sign-in, so
     /// the list is exactly what it was before the press.
     /// </summary>
@@ -311,7 +297,7 @@ public sealed class HarnessProfileTests : Bridge
     }
 
     /// <summary>
-    /// 🔴 <b>An account that is an API key</b> (AGT3, D67 §1). The key
+    /// 🔴 <b>An account that is an API key</b>. The key
     /// crosses the bridge once, inward: the answer, the roster and every event name it only by its
     /// last four characters.
     /// </summary>
@@ -324,7 +310,7 @@ public sealed class HarnessProfileTests : Bridge
         var answer = await AnswerAsync(module, "HARNESS_ACTION",
             new { door = "claude-code", action = "key-add", key });
 
-        // A fresh id (ACCT2), never the first free `account-N`.
+        // A fresh id, never the first free `account-N`.
         var account = answer.GetProperty("profile").GetString()!;
         Assert.Matches("^acct-[0-9a-f]{8}$", account);
         Assert.Equal("…wxyz", answer.GetProperty("key").GetString());
@@ -345,7 +331,7 @@ public sealed class HarnessProfileTests : Bridge
     }
 
     /// <summary>
-    /// KEYREPLACE1a: a key its provider refused is written into the same account. The answer names the account and the new
+    /// A key its provider refused is written into the same account. The answer names the account and the new
     /// key's handle only; another account's key, and this account's id and name, stand.
     /// </summary>
     [Fact]
@@ -372,7 +358,7 @@ public sealed class HarnessProfileTests : Bridge
         Assert.DoesNotContain(Raised, m => JsonSerializer.Serialize(m.Payload).Contains(replacement));
     }
 
-    /// <summary>KEYREPLACE1a: an agent with no key, an account that is not here or not a key, and a blank key are refused.</summary>
+    /// <summary>An agent with no key, an account that is not here or not a key, and a blank key are refused.</summary>
     [Fact]
     public async Task Replacing_a_key_is_refused_where_there_is_no_key_account_to_hold_it()
     {
@@ -388,7 +374,7 @@ public sealed class HarnessProfileTests : Bridge
         Assert.Null(HarnessKeys.Of(Home, "claude-code", "signed-in"));
     }
 
-    /// <summary>Removing a key account removes its key with its directory (D66 §3).</summary>
+    /// <summary>Removing a key account removes its key with its directory.</summary>
     [Fact]
     public async Task Removing_a_key_account_removes_its_key()
     {
@@ -405,14 +391,13 @@ public sealed class HarnessProfileTests : Bridge
     }
 
     /// <summary>
-    /// 🔴 A door's accounts are its owner's (AGT7): an account action on `claude-code-acp` lands on
+    /// 🔴 A door's accounts are its owner's: an account action on `claude-code-acp` lands on
     /// `claude-code`'s accounts — its order, its directories, its keys — and makes nothing under
     /// the door's own name.
     /// </summary>
     /// <remarks>
-    /// POOL1b (D197): the door's press that lands on the owner's set is <c>ACCOUNT_USE</c>'s <c>order</c>, putting the account first in
-    /// <c>claude-code</c>'s order. It was <c>profile-default</c> before, writing <c>claude-code</c>'s default, which the bridge refuses as
-    /// <c>ACCOUNTS_ONE_SET</c> since POOL1a1.
+    /// The door's press that lands on the owner's set is <c>ACCOUNT_USE</c>'s <c>order</c>, putting the account first in
+    /// <c>claude-code</c>'s order; <c>profile-default</c> is refused as <c>ACCOUNTS_ONE_SET</c>.
     /// </remarks>
     [Fact]
     public async Task An_account_action_on_a_door_lands_on_the_owner_s_accounts()
@@ -446,7 +431,7 @@ public sealed class HarnessProfileTests : Bridge
     }
 
     /// <summary>
-    /// 🔴 <b>Update does what it says</b> (USE1a). The roster says which Update each door has, so the
+    /// 🔴 <b>Update does what it says</b>. The roster says which Update each door has, so the
     /// page offers the button only where pressing it does something: a pinned door with a package or a
     /// channel moves its pin, an unpinned door with its own updater runs it, and the rest have none.
     /// </summary>
@@ -473,7 +458,7 @@ public sealed class HarnessProfileTests : Bridge
 
     /// <summary>
     /// A door with no Update is refused at the bridge as well as offered nothing on the page — the
-    /// same sentence it always was, for a caller that sends the action anyway.
+    /// same sentence, for a caller that sends the action anyway.
     /// </summary>
     [Fact]
     public async Task Update_on_a_door_with_neither_is_refused_as_before()
@@ -503,7 +488,7 @@ public sealed class HarnessProfileTests : Bridge
 
     /// <summary>
     /// A profile verb with no profile is refused rather than guessing one — under its own code, so the
-    /// page says the name is missing rather than that no such action exists (REV3 modules F9).
+    /// page says the name is missing rather than that no such action exists.
     /// </summary>
     [Fact]
     public async Task A_profile_verb_without_a_name_is_refused()

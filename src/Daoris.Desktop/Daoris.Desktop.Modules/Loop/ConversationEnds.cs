@@ -4,7 +4,7 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The page's <c>SESSION_ENDED</c> told once (FOUNDATION1 l-ii, the foundation design §4.2): a conversation's end, which this process sees by
+/// The page's <c>SESSION_ENDED</c> told once: a conversation's end, which this process sees by
 /// two paths, the route that ran the conversation, at once, and the journal, which also tells the ends another process drove.
 /// </summary>
 /// <remarks>

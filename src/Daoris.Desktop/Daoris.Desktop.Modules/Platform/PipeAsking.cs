@@ -5,7 +5,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A person's press from its reservation to its ending (RPC1c, CONFIRMWAIT1, the confirm-wait design §5.2, §7.1, §15.2): its grounds read,
+/// A person's press from its reservation to its ending: its grounds read,
 /// its record written, its card shown, and once the window answers, run or ended. It reaches the pipe's state (<see cref="PipeState"/>)
 /// under its gate and the waiting records (<see cref="PipeWaitingKeep"/>) under theirs, never both at once.
 /// </summary>
@@ -20,7 +20,7 @@ internal sealed class PipeAsking(InstancePipe pipe)
     private PipeConfirmations Confirmations => pipe.Confirmations;
 
     /// <summary>
-    /// A person's press on its reservation (§5.2, §15.2 item 9): its grounds read outside every lock, bounded, and cancelled where a
+    /// A person's press on its reservation: its grounds read outside every lock, bounded, and cancelled where a
     /// withdrawal or a close ended it meanwhile. Then the reservation is claimed, and one ended meanwhile asks nothing more. One that does
     /// not read, or reads that its setting is already as it asks, lets the place go and is answered so, journaled, nothing asked.
     /// Otherwise its card is shown and it runs once the person confirms it with its grounds still holding.
@@ -61,7 +61,7 @@ internal sealed class PipeAsking(InstancePipe pipe)
             return;
         }
 
-        // CONFIRMWAIT1a-ii (§7.1): its record is written before the window is asked and the terminal told, named by the confirmation's own
+        // Its record is written before the window is asked and the terminal told, named by the confirmation's own
         // id; a press carrying a key keeps no payload and no grounds in it. One that cannot be written is not asked.
         var keyed = PipeCensus.Keyed(request.Module, request.Type);
         var record = new PipeWaitingRecord(
@@ -76,9 +76,9 @@ internal sealed class PipeAsking(InstancePipe pipe)
             return;
         }
 
-        // RPC1c (D156 §4.2): the person's press waits for the window, which shows it naming this terminal, and runs on Confirm alone,
-        // its grounds read again then (§5.2). The id is bound before the window is asked, so the same id sent again meanwhile joins this
-        // one and asks nothing. Its terminal heard its id before the read (§15.2 item 9); a line that ended meanwhile waits on it no more.
+        // The person's press waits for the window, which shows it naming this terminal, and runs on Confirm alone,
+        // its grounds read again then. The id is bound before the window is asked, so the same id sent again meanwhile joins this
+        // one and asks nothing. Its terminal heard its id before the read; a line that ended meanwhile waits on it no more.
         bool waitedOn;
         lock (_state.Gate)
         {
@@ -96,8 +96,8 @@ internal sealed class PipeAsking(InstancePipe pipe)
             _state.Lines[id] = mine;
         }
 
-        // A close that began after the claim keeps it as any press waiting: its record kept and its line answered (§15.2 item 9). The close
-        // alone (DRAINHOLD1): a drain answers no waiting line, and the close it ends in keeps this one when it begins.
+        // A close that began after the claim keeps it as any press waiting: its record kept and its line answered. The close
+        // alone: a drain answers no waiting line, and the close it ends in keeps this one when it begins.
         if (pipe.Stopped) pipe.KeepAtClose(id, shown.Shown.Id, mine);
         await ConfirmThenRunAsync(request, id, binding, mine, shown.Ended, record.Confirmation).ConfigureAwait(false);
     }
@@ -112,7 +112,7 @@ internal sealed class PipeAsking(InstancePipe pipe)
     }
 
     /// <summary>
-    /// A reservation ended before its card (§15.2 item 9): its answer journaled where it can be, so <c>RESULT</c> and the same id sent
+    /// A reservation ended before its card: its answer journaled where it can be, so <c>RESULT</c> and the same id sent
     /// again say it, taken out of what is under way, and its line answered.
     /// </summary>
     public void EndReserved(PipeReserved reserved, IpcResponse answer)
@@ -137,7 +137,7 @@ internal sealed class PipeAsking(InstancePipe pipe)
         reserved.Line.TrySetResult(text);
     }
 
-    /// <summary>The grounds read again at the Confirm, outside every lock, and compared with the ask's (§5.2): a failed read is unread.</summary>
+    /// <summary>The grounds read again at the Confirm, outside every lock, and compared with the ask's: a failed read is unread.</summary>
     public async Task<PipeJudgement> JudgeAsync(PipeGroundRow row, JsonElement? payload, IReadOnlyList<PipeReading> asked, CancellationToken ct)
     {
         IReadOnlyList<PipeReading> now;
@@ -156,9 +156,9 @@ internal sealed class PipeAsking(InstancePipe pipe)
     }
 
     /// <summary>
-    /// A person's press once the window has answered (RPC1c): run, once, where the person confirmed it and the instance is not
+    /// A person's press once the window has answered: run, once, where the person confirmed it and the instance is not
     /// closing; otherwise answered with how it ended and kept as its ending, so <c>RESULT</c> and the same id sent again say it.
-    /// CONFIRMWAIT1a-ii (§7.1): its record says what happened at each step. Confirmed, it is rewritten <c>begun</c>, then the journal's
+    /// Its record says what happened at each step. Confirmed, it is rewritten <c>begun</c>, then the journal's
     /// first line, then it is removed, then the run; ended otherwise, it is rewritten <c>ended</c> with its answer, then the journal's line,
     /// then it is removed, even where that line failed.
     /// </summary>
@@ -174,7 +174,7 @@ internal sealed class PipeAsking(InstancePipe pipe)
             byWithdraw = _state.Withdrawn.Remove(id);
         }
 
-        // Its record already says it began (§15.2 item 8), written before the Confirm was taken. DRAINHOLD1: its hold was judged there for
+        // Its record already says it began, written before the Confirm is taken. Its hold is judged there for
         // the last time, so it runs whatever began since, the update's applying or a close, which is then its to wait for.
         if (ending.End == PipeConfirmationEnd.Confirmed && _keep.Begun(confirmation))
         {
@@ -211,12 +211,12 @@ internal sealed class PipeAsking(InstancePipe pipe)
     }
 
     /// <summary>
-    /// A press's ending written to its record before anyone is told it or it runs (CONFIRMWAIT1, the confirm-wait design §15.2 item 8):
+    /// A press's ending written to its record before anyone is told it or it runs:
     /// <c>begun</c> for a Confirm that runs, <c>ended</c> with the answer its terminal will hear for any other, that answer kept for its
     /// line. Unrecorded where the record could not be written, and the press waits on.
     /// </summary>
     /// <remarks>
-    /// DRAINHOLD1: a Confirm's hold is judged here for the last time, before <c>begun</c> is written: one the drain's hold or the close
+    /// A Confirm's hold is judged here for the last time, before <c>begun</c> is written: one the drain's hold or the close
     /// reached since the window's own check is held, nothing written, and waits on in its record for the restart. One written <c>begun</c>
     /// runs whatever begins after, as the person was told, and a close begun meanwhile is its to wait for (<see cref="ConfirmThenRunAsync"/>,
     /// <see cref="InstancePipe.KeepAtClose"/>): never told confirmed and then ended unrun.
@@ -255,13 +255,13 @@ internal sealed class PipeAsking(InstancePipe pipe)
         {
             { End: PipeConfirmationEnd.Refused } => IpcResponse.CreateError(id, InstancePipe.Refused, null,
                 "The person refused this in Daoris's window. Nothing was done."),
-            // CONFIRMWAIT1a-i (§5): confirmed, and a ground it was asked on had moved; said with its reason's code and values.
+            // Confirmed, and a ground it is asked on has moved; said with its reason's code and values.
             { End: PipeConfirmationEnd.Changed, Change: { } change } => IpcResponse.CreateError(id, InstancePipe.Changed,
                 new Dictionary<string, string>(change.Values) { ["ground"] = change.Reason },
                 $"The person confirmed this in Daoris's window, but {change.Sentence}. Nothing was done."),
             { End: PipeConfirmationEnd.Withdrawn } when byWithdraw => IpcResponse.CreateError(id, InstancePipe.Withdrawn, null,
                 "This terminal took its request back before the person answered it. Nothing was done."),
-            // CONFIRMWAIT1a-ii (§7.1): a press carrying a key keeps no payload to wait on across the close.
+            // A press carrying a key keeps no payload to wait on across the close.
             { End: PipeConfirmationEnd.Lost } => IpcResponse.CreateError(id, InstancePipe.Lost, null,
                 "Daoris closed while this waited, and it carries a key, so it does not wait across a restart; nothing was done. Send it again once Daoris is back."),
             _ when pipe.Holds(request.Module, request.Type) => pipe.RefuseStopping(request),

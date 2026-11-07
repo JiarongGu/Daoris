@@ -9,31 +9,31 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The running Daoris answers on a pipe (RPC1a, D171 point 3, the terminal RPC design): a terminal's verb is the instance's client,
+/// The running Daoris answers on a pipe: a terminal's verb is the instance's client,
 /// and its request runs through the dispatcher every window's page uses, so the route is the window's press: the same handler, the
 /// same middleware (<see cref="RefusalLog"/>, <see cref="UiStallWatch"/>, <see cref="OffTheWindow"/>, <see cref="StatePublisher"/>),
 /// the same answer, under way in every window and heard by every window as it happens.
 /// </summary>
 /// <remarks>
-/// <para><b>The pipe</b> (§4.1): <see cref="PipeName"/>'s name, this Windows user's alone (owned by the current user's SID at either
-/// elevation, PIPEOWNER1, and an ACL granting that SID and denying the network's: <see cref="Security"/>), made as the first
+/// <para><b>The pipe</b>: <see cref="PipeName"/>'s name, this Windows user's alone (owned by the current user's SID at either
+/// elevation, and an ACL granting that SID and denying the network's: <see cref="Security"/>), made as the first
 /// instance of its name, so where the name is already held this instance serves none and says so (<c>pipe.refused</c>) rather
-/// than share it. Windows only: elsewhere nothing is served (§11).</para>
+/// than share it. Windows only: elsewhere nothing is served.</para>
 ///
-/// <para><b>The wire</b> (§6): UTF-8 lines of JSON. The hello first (<c>DAORIS.PIPE</c> <c>HELLO</c>), answered with this home's id,
+/// <para><b>The wire</b>: UTF-8 lines of JSON. The hello first (<c>DAORIS.PIPE</c> <c>HELLO</c>), answered with this home's id,
 /// the build and the process, or refused <see cref="WrongProtocol"/>, <see cref="WrongHome"/> or <see cref="Stopping"/>; anything
 /// before it closes the connection. Then the kit's request envelopes, several at once, each answered with its response envelope
 /// by id, a route's progress forwarded to the connection that sent it as the kit's notification envelope; <c>ROUTES</c> and
 /// <c>RESULT</c> are the pipe's own.</para>
 ///
-/// <para><b>The census decides what runs</b> (§4.2, <see cref="PipeCensus"/>): an open route runs; a person's is shown to the
-/// window (<see cref="Confirmations"/>, RPC1c) and runs only on the person's <b>Confirm</b>, however long it waits (CONFIRMWAIT1a-i),
+/// <para><b>The census decides what runs</b> (<see cref="PipeCensus"/>): an open route runs; a person's is shown to the
+/// window (<see cref="Confirmations"/>) and runs only on the person's <b>Confirm</b>, however long it waits,
 /// the terminal told it waits (<see cref="Confirming"/>) and, refused, changed, withdrawn or lost, how it ended; each waiting press is
-/// kept in a record of its own under <c>data/pipe-waiting/</c> and brought back after a restart (<see cref="Restore"/>,
-/// CONFIRMWAIT1a-ii); a window's is refused
+/// kept in a record of its own under <c>data/pipe-waiting/</c> and brought back after a restart (<see cref="Restore"/>);
+/// a window's is refused
 /// <see cref="WindowOnly"/>; a module the census does not name <see cref="Unclassed"/>. Nothing refused reaches the dispatcher.</para>
 ///
-/// <para><b>A request's id is durable</b> (§6.1, <see cref="PipeJournal"/>): a press runs on the instance's lifetime, not the
+/// <para><b>A request's id is durable</b> (<see cref="PipeJournal"/>): a press runs on the instance's lifetime, not the
 /// connection's, so a lost terminal cancels nothing; an id seen before is answered from its line and never run twice, and
 /// <c>RESULT</c> says <c>running</c>, <c>answered</c> with the answer, or <c>unknown</c>. Each id is bound to its route, its payload
 /// and the <c>key</c> its sender sent beside the envelope (<see cref="PipeBinding"/>): sent again with any of them changed it is
@@ -43,12 +43,12 @@ namespace Daoris.Desktop;
 /// <para><b>Each connection is bounded</b> (<see cref="PipeLimits"/>): presses under way past <see cref="PipeLimits.InFlight"/> are
 /// answered <see cref="Busy"/>, and lines sent past <see cref="PipeLimits.Queued"/> ahead of the instance close it.</para>
 ///
-/// <para><b>Stopping</b> (§6.3): from <see cref="BeginStopping"/>, or once the update applies (<see cref="Applying"/>), every new
+/// <para><b>Stopping</b>: from <see cref="BeginStopping"/>, or once the update applies (<see cref="Applying"/>), every new
 /// hello and every new press is refused <see cref="Stopping"/> and every Confirm takes nothing; from <see cref="BeginStopping"/> a line
-/// waiting on the person's Confirm is answered <see cref="Waiting"/>, the press kept in its record (CONFIRMWAIT1a-ii), and
+/// waiting on the person's Confirm is answered <see cref="Waiting"/>, the press kept in its record, and
 /// <see cref="Drain"/> lets the presses under way answer; the loop then takes its address away and lets the home go.</para>
 ///
-/// <para><b>An update's drain is not yet its close</b> (DRAINHOLD1): while it only drains (<see cref="Draining"/>), which can be hours, a
+/// <para><b>An update's drain is not yet its close</b>: while it only drains (<see cref="Draining"/>), which can be hours, a
 /// hello is answered and a press the census says the drain waits for (<see cref="PipeCensus.WaitsForDrain"/>) is refused
 /// <see cref="Stopping"/>, <c>why: update</c>, or, confirmed, takes nothing and waits; every other press, a read, a stop, a take-back
 /// or an answer, runs as at any time.</para>
@@ -69,7 +69,7 @@ public sealed class InstancePipe : IDisposable
     /// <summary>The pipe's own module on the wire: its hello, its census and how a request ended.</summary>
     public const string Module = "DAORIS.PIPE";
 
-    /// <summary>The kit's request tracker's module, whose <c>CANCEL</c> a terminal's Ctrl+C sends for a press of its own (RPC1h, §6.2).</summary>
+    /// <summary>The kit's request tracker's module, whose <c>CANCEL</c> a terminal's Ctrl+C sends for a press of its own.</summary>
     public const string RequestsModule = "SHENORA.REQUESTS";
 
     /// <summary>The wire's version, which the hello names; another is refused <see cref="WrongProtocol"/>.</summary>
@@ -85,39 +85,39 @@ public sealed class InstancePipe : IDisposable
     public const string Stopping = "stopping";
 
     /// <summary>
-    /// A route the census makes the person's, as an instance from before RPC1c refused it: kept as a word of the wire, which a
+    /// A route the census makes the person's, as an older instance refused it: kept as a word of the wire, which a
     /// client still reads from such an instance. This one asks the window instead.
     /// </summary>
     public const string ConfirmInWindow = "confirm-in-window";
 
-    /// <summary>The notification that tells a terminal its press waits for the person in the window (RPC1c), naming its request.</summary>
+    /// <summary>The notification that tells a terminal its press waits for the person in the window, naming its request.</summary>
     public const string Confirming = "CONFIRMING";
 
     /// <summary>The person refused the press in the window: nothing ran.</summary>
     public const string Refused = "refused";
 
     /// <summary>
-    /// An instance from before CONFIRMWAIT1a-i ended the press by its time: nothing ran. Kept as a word of the wire, as
+    /// An older instance ended the press by its time: nothing ran. Kept as a word of the wire, as
     /// <see cref="ConfirmInWindow"/> is; this one makes it no more, since a terminal's press waits until the person answers.
     /// </summary>
     public const string Expired = "expired";
 
-    /// <summary>The person confirmed it and a ground it was asked on had moved (the confirm-wait design §5): nothing ran.</summary>
+    /// <summary>The person confirmed it and a ground it is asked on has moved: nothing ran.</summary>
     public const string Changed = "changed";
 
-    /// <summary>Its terminal took it back by the pipe's <c>WITHDRAW</c> before the person answered it (§4.3): nothing ran.</summary>
+    /// <summary>Its terminal took it back by the pipe's <c>WITHDRAW</c> before the person answered it: nothing ran.</summary>
     public const string Withdrawn = "withdrawn";
 
-    /// <summary>A setting the press sets is already as it asks (§5.1): nothing was asked, and the world is as asked.</summary>
+    /// <summary>A setting the press sets is already as it asks: nothing is asked, and the world is as asked.</summary>
     public const string Already = "already";
 
-    /// <summary>A person's press whose route names no grounds (§5.1): Daoris cannot wait for the person on it, so nothing was asked.</summary>
+    /// <summary>A person's press whose route names no grounds: Daoris cannot wait for the person on it, so nothing is asked.</summary>
     public const string Ungrounded = "ungrounded";
 
-    /// <summary>A person's press whose grounds could not be read at its ask, or not within their bound (§5.2): nothing was asked.</summary>
+    /// <summary>A person's press whose grounds could not be read at its ask, or not within their bound: nothing is asked.</summary>
     public const string UnreadGrounds = "unread-grounds";
 
-    /// <summary>As many of the person's presses as may wait already do (D156 §5.2's code): this one was not asked.</summary>
+    /// <summary>As many of the person's presses as may wait already do: this one is not asked.</summary>
     public const string Full = "confirmations-full";
 
     /// <summary>A person's press whose values the window could not show whole: not asked.</summary>
@@ -145,13 +145,13 @@ public sealed class InstancePipe : IDisposable
     public const string Busy = "busy";
 
     /// <summary>
-    /// The close's answer to a line waiting on a press (CONFIRMWAIT1a-ii, the confirm-wait design §4.1, §7.2), <c>why: close</c>: the press
+    /// The close's answer to a line waiting on a press, <c>why: close</c>: the press
     /// still waits, kept in its record across the restart.
     /// </summary>
     public const string Waiting = "waiting";
 
     /// <summary>
-    /// A press not kept across a restart (§7.1, §7.2): one carrying a key at the close, or a record the restore could not bring back.
+    /// A press not kept across a restart: one carrying a key at the close, or a record the restore could not bring back.
     /// Nothing ran.
     /// </summary>
     public const string Lost = "lost";
@@ -189,7 +189,7 @@ public sealed class InstancePipe : IDisposable
         Limits = limits ?? new PipeLimits();
         Clock = clock ?? TimeProvider.System;
         Confirmations = new PipeConfirmations(bus, Log, clock, Limits.Waiting);
-        // CONFIRMWAIT1a-ii (§7.1, §7.2): a press's record keeps when it was first shown, and a Confirm while this closes or drains takes nothing.
+        // A press's record keeps when it is first shown, and a Confirm while this closes or drains takes nothing.
         Keep = new PipeWaitingKeep(new PipeWaiting(DaorisHome.Entry(home, HomeEntry.PipeWaiting)));
         Asking = new PipeAsking(this);
         TakeBacks = new PipeTakeBacks(this);
@@ -197,27 +197,27 @@ public sealed class InstancePipe : IDisposable
         _admission = new PipeAdmission(this);
         _restore = new PipeRestore(this);
         Confirmations.ShownFirst = Keep.Shown;
-        // DRAINHOLD1: an update's drain holds only the presses that would add to what it waits on; its close holds all.
+        // An update's drain holds only the presses that would add to what it waits on; its close holds all.
         Confirmations.Holding = (module, route) => Holds(module, route);
-        // CONFIRMWAIT1 (the confirm-wait design §15.2 item 8): each ending is written to the press's record before it is told or run.
+        // Each ending is written to the press's record before it is told or run.
         Confirmations.Persisting = Asking.Persisted;
         StandingConfirmation = standing ?? new StandingConfirmation(home, Log, clock: clock);
         if (StandingConfirmation.Caller is StandingCaller look) look.OwnPipe = () => Name;
     }
 
     /// <summary>
-    /// The roles' judge (D209): the terminals that hold a role this run, the role's acts judged and the steward's record and desk.
+    /// The roles' judge: the terminals that hold a role this run, the role's acts judged and the steward's record and desk.
     /// </summary>
     public StandingConfirmation StandingConfirmation { get; }
 
     /// <summary>
-    /// The person's presses a terminal sent, waiting for the window (RPC1c): the bridge's <c>PERSON_CONFIRMATIONS</c> reads them and
+    /// The person's presses a terminal sent, waiting for the window: the bridge's <c>PERSON_CONFIRMATIONS</c> reads them and
     /// its <c>PERSON_CONFIRM</c> answers one, which a terminal never may.
     /// </summary>
     public PipeConfirmations Confirmations { get; }
 
     /// <summary>
-    /// What a person's press's grounds are read from (CONFIRMWAIT1a-i, the confirm-wait design §5.2): the loop's readers, handed as the
+    /// What a person's press's grounds are read from: the loop's readers, handed as the
     /// standing confirmation's are. None reads nothing, so every press that names a ground is refused <see cref="UnreadGrounds"/>.
     /// </summary>
     public IPipeGroundWorld? Grounds { get; set; }
@@ -230,7 +230,7 @@ public sealed class InstancePipe : IDisposable
 
     internal PipeTakeBacks TakeBacks { get; }
 
-    /// <summary>A terminal's hold of a conversation (RPC1g1, D238): the window's <c>SESSION_HOLDS</c> reads it and <c>SESSION_LET_GO</c> ends one.</summary>
+    /// <summary>A terminal's hold of a conversation: the window's <c>SESSION_HOLDS</c> reads it and <c>SESSION_LET_GO</c> ends one.</summary>
     public PipeHolding Holding { get; }
 
     internal IMessageDispatcher Dispatcher { get; }
@@ -249,11 +249,11 @@ public sealed class InstancePipe : IDisposable
     internal CancellationTokenSource Lifetime { get; } = new();
 
     /// <summary>
-    /// Bring back the presses that waited when Daoris last stopped (CONFIRMWAIT1a-ii, the confirm-wait design §7.2): once, before
+    /// Bring back the presses that waited when Daoris last stopped: once, before
     /// <see cref="Serve"/>, on the home's lease, which makes this instance the one writer of its records.
     /// </summary>
     /// <remarks>
-    /// Each record in <c>asked</c> order (§7.2): a name that is no confirmation's id is removed; a newer Daoris's record is left, said
+    /// Each record in <c>asked</c> order: a name that is no confirmation's id is removed; a newer Daoris's record is left, said
     /// once; one <c>begun</c> answers <c>interrupted</c> and one <c>ended</c> its ending, journaled where the journal lacks it, and is
     /// removed; one carrying a key is lost; one waiting is judged again as <see cref="Accept"/> judges a press, from its module, route and
     /// payload alone (the census's <c>Person</c>, its binding, its shape, a grounds row, an id the journal does not hold, the bound), its
@@ -264,14 +264,14 @@ public sealed class InstancePipe : IDisposable
     public void Restore() => _restore.Run();
 
     /// <summary>
-    /// Whether an update drains this instance (UPDATE1, D139), its applying included: the install's <see cref="InstallUpdater.Draining"/>.
-    /// While it only drains, a press that would add to what it waits on waits for the restart and the rest go on (DRAINHOLD1).
+    /// Whether an update drains this instance, its applying included: the install's <see cref="InstallUpdater.Draining"/>.
+    /// While it only drains, a press that would add to what it waits on waits for the restart and the rest go on.
     /// </summary>
     public Func<bool>? Draining { get; set; }
 
     /// <summary>
-    /// Whether the update is past its drain and the application closes for it (DRAINHOLD1): the install's
-    /// <see cref="InstallUpdater.Applying"/>. A stop's beginning (§6.3), as <see cref="BeginStopping"/> is: every new hello and press refused,
+    /// Whether the update is past its drain and the application closes for it: the install's
+    /// <see cref="InstallUpdater.Applying"/>. A stop's beginning, as <see cref="BeginStopping"/> is: every new hello and press refused,
     /// every Confirm held. A press let through the drain and still under way is the close's to wait for, as any begun press is.
     /// </summary>
     public Func<bool>? Applying { get; set; }
@@ -290,7 +290,7 @@ public sealed class InstancePipe : IDisposable
 
     /// <summary>
     /// Whether a press of <paramref name="module"/>'s <paramref name="route"/>, classed <paramref name="class"/>, waits for the restart rather
-    /// than run (DRAINHOLD1): every one while the stop has begun or the update applies; while it only drains, those the census says the
+    /// than run: every one while the stop has begun or the update applies; while it only drains, those the census says the
     /// drain waits for (<see cref="PipeCensus.WaitsForDrain"/>).
     /// </summary>
     internal bool Holds(string? module, string? route, PipeClass? @class = PipeClass.Person) =>
@@ -321,14 +321,14 @@ public sealed class InstancePipe : IDisposable
             }
             catch (Exception error) when (error is UnauthorizedAccessException or IOException)
             {
-                // The first instance of its name or none (§4.1): a name already held is never shared.
+                // The first instance of its name or none: a name already held is never shared.
                 Log.Warn("pipe.refused", ("why", "held"));
                 return null;
             }
 
             _homeId = id;
-            // The journal's folder is D172's `pipe` entry, asked of the table as every home path is (HOMELAYOUT2).
-            // CONFIRMWAIT1a-ii (§7.2): made by the restore where it ran first, which journals what it brought back or lost.
+            // The journal's folder is the home's `pipe` entry, asked of the table as every home path is.
+            // Made by the restore where it ran first, which journals what it brought back or lost.
             State.Journal ??= new PipeJournal(DaorisHome.Entry(Home, HomeEntry.Pipe), Limits.Kept);
             _listener = new PipeListener(this, name);
             _progress = _bus.Subscribe("*", IpcRequestEvents.Updated, Progressed);
@@ -342,8 +342,8 @@ public sealed class InstancePipe : IDisposable
     }
 
     /// <summary>
-    /// The stop begins (§6.3): every new hello and every new press is refused <see cref="Stopping"/> from here. What waits for the window
-    /// is not ended (CONFIRMWAIT1a-ii, the confirm-wait design §7.2): each line waiting on one is answered <see cref="Waiting"/>,
+    /// The stop begins: every new hello and every new press is refused <see cref="Stopping"/> from here. What waits for the window
+    /// is not ended: each line waiting on one is answered <see cref="Waiting"/>,
     /// <c>why: close</c>, and the press leaves what is under way, so the drain is not spent on it, its record kept for the next start; a
     /// Confirm meanwhile takes nothing. A press carrying a key keeps no payload to wait on, so it ends <see cref="Lost"/>, said to its
     /// terminal and the person. Once: a second call does nothing more.
@@ -360,7 +360,7 @@ public sealed class InstancePipe : IDisposable
             State.Reserved.Clear();
         }
 
-        // CONFIRMWAIT1 (§15.2 item 9): a press whose grounds are still being read was never asked, so the close ends it `stopping` at once,
+        // A press whose grounds are still being read is never asked, so the close ends it `stopping` at once,
         // journaled, and the drain is not spent on its read.
         foreach (var each in reserved)
         {
@@ -373,12 +373,12 @@ public sealed class InstancePipe : IDisposable
     }
 
     /// <summary>
-    /// The close's step for one press waiting for the person (§7.2): its line answered <see cref="Waiting"/>, <c>why: close</c>, and the
+    /// The close's step for one press waiting for the person: its line answered <see cref="Waiting"/>, <c>why: close</c>, and the
     /// press out of what is under way, its record kept; one carrying a key is lost.
     /// </summary>
     internal void KeepAtClose(string id, string confirmation, TaskCompletionSource<string>? line)
     {
-        // DRAINHOLD1: a press confirmed and written `begun` is under way, not waiting: it stays in what the close's drain waits for, and its
+        // A press confirmed and written `begun` is under way, not waiting: it stays in what the close's drain waits for, and its
         // line hears its run. One taken since the close's look at what waits has left the waiting already.
         if (Keep.Begun(confirmation)) return;
         lock (State.Gate)
@@ -413,7 +413,7 @@ public sealed class InstancePipe : IDisposable
         var drained = DrainWithin(within);
         if (!drained)
         {
-            // RPC1i (§6.3): the stop goes on, and the machine log names how many presses it left, so a terminal told `nothing was done`
+            // The stop goes on, and the machine log names how many presses it left, so a terminal told `nothing is done`
             // by a closing Daoris can be read against what the instance knew. Presses not yet answered, not lines not yet written.
             int left;
             lock (State.Gate)
@@ -485,7 +485,7 @@ public sealed class InstancePipe : IDisposable
         Lifetime.Dispose();
     }
 
-    /// <summary>The pipe's security (§4.1, PIPEOWNER1): the driver's rule for this user's pipes, <see cref="UserPipe.Security"/>.</summary>
+    /// <summary>The pipe's security: the driver's rule for this user's pipes, <see cref="UserPipe.Security"/>.</summary>
     [SupportedOSPlatform("windows")]
     public static PipeSecurity Security() => UserPipe.Security();
 
@@ -497,11 +497,11 @@ public sealed class InstancePipe : IDisposable
     }
 
     /// <summary>A request on a connection that said its hello: <see cref="PipeAdmission.Accept"/>.</summary>
-    /// <param name="hold">That it was sent with <c>hold: true</c> beside its envelope (RPC1g1).</param>
+    /// <param name="hold">That it is sent with <c>hold: true</c> beside its envelope.</param>
     internal (string? Now, Task<string>? Later) Accept(IpcRequest request, string? key, PipeConnection connection, bool hold = false) =>
         _admission.Accept(request, key, connection, hold);
 
-    /// <summary>The kit's tracker told a request's progress: forwarded to the connection that sent it, and to nobody else (§6).</summary>
+    /// <summary>The kit's tracker told a request's progress: forwarded to the connection that sent it, and to nobody else.</summary>
     private Task Progressed(EventMessage message)
     {
         if (message.Payload is not IpcRequestStatus status) return Task.CompletedTask;
@@ -539,9 +539,9 @@ public sealed class InstancePipe : IDisposable
         var home = payload is { ValueKind: JsonValueKind.Object } q && q.TryGetProperty("home", out var id)
             && id.ValueKind == JsonValueKind.String ? id.GetString() : null;
         if (home != _homeId) return Refuse(hello, WrongHome, "this Daoris runs on another home.");
-        // DRAINHOLD1: a drain takes a hello, since a take-back or a stop comes after one; the close it ends in does not.
+        // A drain takes a hello, since a take-back or a stop comes after one; the close it ends in does not.
         if (Closing) return RefuseStopping(hello);
-        // SUPERVISOR1a-ii (D208 §2.2): a fresh nonce for this connection alone, which a holder's proof is bound to; an older verb ignores it.
+        // A fresh nonce for this connection alone, which a holder's proof is bound to; an older verb ignores it.
         return IpcResponse.CreateSuccess(hello.Id, new
         {
             protocol = Protocol, home = _homeId, version = _version, pid = Environment.ProcessId, nonce = connection.DrawNonce(),
@@ -550,14 +550,14 @@ public sealed class InstancePipe : IDisposable
 
     /// <summary>
     /// A read of the driver's own, called in process through the dispatcher every window uses, with <paramref name="payload"/> as a
-    /// window would send it (CONFIRMWAIT1a-i, the confirm-wait design §5.2): its answer's data. Only a route the census leaves open runs,
-    /// so a ground's read never presses anything; a read told by event (NOBLOCK1) is asked again until it answers what it read. A refusal
+    /// window would send it: its answer's data. Only a route the census leaves open runs,
+    /// so a ground's read never presses anything; a read told by event is asked again until it answers what it read. A refusal
     /// throws, which the grounds take as a read that failed.
     /// </summary>
     public async Task<JsonElement> ReadAsync(string module, string route, object? payload, CancellationToken cancellationToken)
     {
         var body = JsonSerializer.SerializeToNode(payload ?? new { }, IpcJson.Options) as System.Text.Json.Nodes.JsonObject ?? [];
-        // A read told by event answers what it held, one ask behind (NOBLOCK1); a payload of its own holds nothing, so what it answers is
+        // A read told by event answers what it held, one ask behind; a payload of its own holds nothing, so what it answers is
         // what its work read now.
         if (string.Equals(module, DriverModule.Name, StringComparison.OrdinalIgnoreCase) && DriverModule.ByEventRoutes.Contains(route))
         {
@@ -583,12 +583,12 @@ public sealed class InstancePipe : IDisposable
     }
 
     /// <summary>
-    /// A press, run on the instance's lifetime and never the connection's (§6.1), its lines kept either side. One whose first
+    /// A press, run on the instance's lifetime and never the connection's, its lines kept either side. One whose first
     /// line cannot be written is refused and never dispatched, so no id runs that the journal does not hold.
     /// </summary>
-    /// <param name="role">The role act the judge's role method covered (SUPERVISOR1a-ii): run inside <see cref="PipeDoor.EnterRole"/>.</param>
-    /// <param name="begun">Told once the journal's first line is written or failed, before anything runs (CONFIRMWAIT1a-ii, §7.1).</param>
-    /// <param name="client">The connection's client, which an open route that counts its caller reads (<see cref="PipeDoor.Client"/>; STEWARDROLE1c).</param>
+    /// <param name="role">The role act the judge's role method covered: run inside <see cref="PipeDoor.EnterRole"/>.</param>
+    /// <param name="begun">Told once the journal's first line is written or failed, before anything runs.</param>
+    /// <param name="client">The connection's client, which an open route that counts its caller reads (<see cref="PipeDoor.Client"/>).</param>
     internal async Task RunAsync(
         IpcRequest request, string id, PipeBinding binding, TaskCompletionSource<string> answered,
         RoleJudgement? role = null, Action? begun = null, PipeClientProcess? client = null)
@@ -644,7 +644,7 @@ public sealed class InstancePipe : IDisposable
         Refuse(request, Stopping, "Daoris is closing; run this again once it is back.",
             ("why", Stopped ? "close" : "update"));
 
-    /// <summary>A refusal the pipe answers itself, said in the machine log as the refusal log says one, as the terminal's (§8).</summary>
+    /// <summary>A refusal the pipe answers itself, said in the machine log as the refusal log says one, as the terminal's.</summary>
     internal IpcResponse Refuse(IpcRequest request, string code, string message, params (string Key, string Value)[] parameters)
     {
         Log.Info("refused", ("code", code), ("request", $"{request.Module}.{request.Type}"), ("door", PipeDoor.Terminal));

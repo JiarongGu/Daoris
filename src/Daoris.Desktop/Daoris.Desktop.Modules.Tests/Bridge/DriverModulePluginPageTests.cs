@@ -6,13 +6,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The host's answers to the Plugins view (PLUGUI1e, D119 §4.1): the list's extended <c>PLUGINS</c>, a plugin's page
+/// The host's answers to the Plugins view: the list's extended <c>PLUGINS</c>, a plugin's page
 /// (<c>PLUGIN</c>), its activity (<c>PLUGIN_ACTIVITY</c>), a folder read and installed from (<c>PLUGIN_READ</c>,
 /// <c>PLUGIN_ADD</c>), a folder opened (<c>PLUGIN_OPEN_FOLDER</c>), and the screen's trial in the machine log.
 /// </summary>
 /// <remarks>
 /// Beside <see cref="DriverModulePluginsTests"/>, not in it: that class tries plugins in real processes and runs in the
-/// suite's Process half (MOD8), and nothing here starts one. The trial below is of a plugin the driver refuses, which a
+/// suite's Process half, and nothing here starts one. The trial below is of a plugin the driver refuses, which a
 /// trial answers from its manifest alone.
 /// </remarks>
 public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposable
@@ -59,7 +59,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     };
 
     /// <summary>
-    /// HELPPLUG1a (D170 point 3): the list answers, for each plugin and each offer, the servers it hands Ask Daoris with the
+    /// The list answers, for each plugin and each offer, the servers it hands Ask Daoris with the
     /// tools Ask Daoris may call there, for its page to say; one that hands it none answers an empty list.
     /// </summary>
     [Fact]
@@ -85,7 +85,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
         var help = Assert.Single(Row(answered, "acme.tickets").GetProperty("helpServers").EnumerateArray());
         Assert.Equal("tickets", help.GetProperty("name").GetString());
         Assert.Equal(["search", "get_issue"], Strings(help.GetProperty("allow")));
-        // D170's note: offered, and waiting for the person's approval.
+        // Offered, and waiting for the person's approval.
         Assert.Equal(HelpGrants.Waits, help.GetProperty("state").GetString());
         Assert.Empty(help.GetProperty("writes").EnumerateArray());
         Assert.Equal(["tickets", "docs"], Strings(Row(answered, "acme.tickets").GetProperty("servers")));
@@ -95,7 +95,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     }
 
     /// <summary>
-    /// HELPPLUG1a's tightening (D170's note): <c>PLUGIN_ACTION</c>'s <c>help-approve</c>, <c>help-reads</c> and
+    /// <c>PLUGIN_ACTION</c>'s <c>help-approve</c>, <c>help-reads</c> and
     /// <c>help-withdraw</c> are the person's approval of the exact tools a server offers Ask Daoris, the page's half of
     /// <c>daoris plugin approve|withdraw</c>; a generic execution tool is refused with its reason.
     /// </summary>
@@ -134,7 +134,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     }
 
     /// <summary>
-    /// RPC1e: asked for its words (<c>said: true</c>) by <c>daoris plugin approve|withdraw</c> sent over the pipe,
+    /// Asked for its words (<c>said: true</c>) by <c>daoris plugin approve|withdraw</c> sent over the pipe,
     /// <c>PLUGIN_ACTION</c> answers the lines and the exit code the alone path prints over the same home, and writes the same approvals:
     /// an approval, its reads only, the writes named, a write the server does not declare, a generic execution tool refused, a plugin
     /// not here, and a withdrawal. A refusal is the verb's exit 2 as an answer, never thrown.
@@ -173,7 +173,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
         Assert.StartsWith("plugins: ", routed.Item1, StringComparison.Ordinal);
     }
 
-    /// <summary>RPC1e: a grant asked of a plugin not here is the alone path's words both ways; the page's press refuses it by its code.</summary>
+    /// <summary>A grant asked of a plugin not here is the alone path's words both ways; the page's press refuses it by its code.</summary>
     [Fact]
     public async Task A_grant_of_a_plugin_not_here_is_said_as_alone_and_the_page_s_is_refused()
     {
@@ -190,7 +190,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     }
 
     /// <summary>
-    /// HELPPLUG1c: the page's Approve sends the writes the person ticked, each on its own (<c>writes</c>), and the list says an
+    /// The page's Approve sends the writes the person ticked, each on its own (<c>writes</c>), and the list says an
     /// approval an update has changed since as <c>changed</c>, so the page asks again in so many words. A write the server does
     /// not declare approves nothing.
     /// </summary>
@@ -227,7 +227,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     }
 
     /// <summary>
-    /// HELPPLUG1b (D170 point 4): the list answers each plugin's skills, who each is handed to, and why one is not handed, for
+    /// The list answers each plugin's skills, who each is handed to, and why one is not handed, for
     /// its page to say.
     /// </summary>
     [Fact]
@@ -250,7 +250,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
         Assert.Contains("`skills/missing/SKILL.md`", skills[1].GetProperty("problem").GetString());
     }
 
-    /// <summary>FABRIC-UNIT1e (§D9): the list answers each plugin's steps, by the name its manifest writes, and what they create, for its page to list.</summary>
+    /// <summary>The list answers each plugin's steps, by the name its manifest writes, and what they create, for its page to list.</summary>
     [Fact]
     public async Task The_list_answers_each_plugins_steps_and_what_they_create()
     {
@@ -279,7 +279,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     }
 
     /// <summary>
-    /// P3 (D119 §4.1): the list answers what each plugin hands sessions and speaks on, which points its running process
+    /// P3: the list answers what each plugin hands sessions and speaks on, which points its running process
     /// listens on, its health from the loop's own record, and whether its source declares something new. The list
     /// stays light: names, a command as written, a state, a word.
     /// </summary>
@@ -337,9 +337,9 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     }
 
     /// <summary>
-    /// PLUGUI2b (D140 §5, the catalogue design §3.2): the list hands each plugin and each offer its icon as a data URI that
+    /// The list hands each plugin and each offer its icon as a data URI that
     /// <see cref="PluginIcon.Read"/> built from the bytes it judged, or why a declared icon does not draw. 🔴 Never the
-    /// icon's path, which the page would have to reach for; and an icon's problem never refuses the plugin (§4).
+    /// icon's path, which the page would have to reach for; and an icon's problem never refuses the plugin.
     /// </summary>
     [Fact]
     public async Task The_list_hands_each_plugin_and_offer_its_icon_as_its_bytes_or_why_it_does_not_draw_never_its_path()
@@ -406,7 +406,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     /// <summary>
     /// A plugin's page is the driver's reader's (<see cref="PluginPage.Read"/>), with its health from the loop's own
     /// record. A server's environment is answered by name, never by value; a plugin no longer here is refused by the
-    /// code the page reads as gone (D119 §3.2, D48 §6).
+    /// code the page reads as gone.
     /// </summary>
     [Fact]
     public async Task A_plugins_page_is_the_drivers_reader_with_the_loops_health_and_one_gone_is_refused_by_its_code()
@@ -486,7 +486,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     }
 
     /// <summary>
-    /// P7's host half (D119 §3.4): before the press, what a folder's plugin would run, read as Ask Daoris's judge reads
+    /// P7's host half: before the press, what a folder's plugin would run, read as Ask Daoris's judge reads
     /// a folder; or the refusal, as an ANSWER, since a drawer shows it in place. Reading copies nothing.
     /// </summary>
     [Fact]
@@ -534,7 +534,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     }
 
     /// <summary>
-    /// P7 (D119 §3.4): Install from a folder adds and never replaces, records where it came from, and runs nothing at
+    /// P7: Install from a folder adds and never replaces, records where it came from, and runs nothing at
     /// the press; the loop starts what it runs at its next look.
     /// </summary>
     [Fact]
@@ -567,7 +567,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     }
 
     /// <summary>
-    /// Open folder (D119 §4.1): the module names the folder, never the page, and opens it through the window kit's
+    /// Open folder: the module names the folder, never the page, and opens it through the window kit's
     /// launcher, as the log's folder is. A data folder never made is information, and a launcher's failure is said.
     /// </summary>
     [Fact]
@@ -605,7 +605,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     }
 
     /// <summary>
-    /// The screen's trial of an installed plugin is part of its history (D119 §4.2), written with the screen's door;
+    /// The screen's trial of an installed plugin is part of its history, written with the screen's door;
     /// a folder's trial is shown and never kept, since its id may name an installed plugin it is not.
     /// </summary>
     [Fact]

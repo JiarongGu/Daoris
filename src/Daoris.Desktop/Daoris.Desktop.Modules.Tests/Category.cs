@@ -1,7 +1,7 @@
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The categories a run filters on (MOD8). A class that starts a real process (node, a harness stub,
+/// The categories a run filters on. A class that starts a real process (node, a harness stub,
 /// the host's stand-in, a shell), runs the real loop, or holds a wall-clock bound on one of those
 /// carries <c>[Trait(Category.Name, Category.Process)]</c>.
 /// </summary>
@@ -19,6 +19,6 @@ internal static class Category
 
     public const string Process = "Process";
 
-    /// <summary>A class that reads the project's sources by text: the censuses, run alone by the <c>censuses</c> gate (REVIEW2 T6).</summary>
+    /// <summary>A class that reads the project's sources by text: the censuses, run alone by the <c>censuses</c> gate.</summary>
     public const string Census = "Census";
 }

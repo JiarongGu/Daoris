@@ -7,7 +7,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// CONTEXTDRIVE1h: a held answer carries the rule that held it, read back from the line's decision record: the place whose rule it is, what
+/// A held answer carries the rule that held it, read back from the line's decision record: the place whose rule it is, what
 /// the count stood at and the threshold, so the head, the foot and <i>What needs you</i> say one hold in one sentence; an act of another
 /// count or another act is not its rule.
 /// </summary>

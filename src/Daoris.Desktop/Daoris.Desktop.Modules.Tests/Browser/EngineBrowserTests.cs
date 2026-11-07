@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Daoris's own browser on the engine it ships (D85, CHR3): `daoris-browser`, a process of its own
-/// showing the engine's own window — since CHR8 (D99) the application's own executable started with the
+/// Daoris's own browser on the engine it ships: `daoris-browser`, a process of its own
+/// showing the engine's own window — the application's own executable started with the
 /// browser's argument, on the kit's engine. The process and the window are the engine's; what is here is
 /// every judgement around them — which start is the browser, the arguments the shell writes and the
 /// browser parses, where its profile is, which language it asks for, and which targets are windows.
@@ -15,7 +15,7 @@ public sealed class EngineBrowserTests : Bridge
     private static new readonly string Home = Path.Combine(TestHomes.Root, "daoris-engine-home");
 
     /// <summary>
-    /// Under the home (D63), and apart from the WebView2 window's old `browser/profile`, which a
+    /// Under the home, and apart from the WebView2 window's old `browser/profile`, which a
     /// machine that ran it still holds: another engine's files, never read as this one's.
     /// </summary>
     [Fact]
@@ -41,7 +41,7 @@ public sealed class EngineBrowserTests : Bridge
     }
 
     /// <summary>
-    /// CHR8: the application is the browser only when its first argument says so. First, so an engine
+    /// The application is the browser only when its first argument says so. First, so an engine
     /// process (`--type=`, which Chromium starts from the same executable) is never taken for it, and
     /// the window's own start is never taken for it either.
     /// </summary>
@@ -59,7 +59,7 @@ public sealed class EngineBrowserTests : Bridge
     }
 
     /// <summary>
-    /// CHR8: the browser's command line is Chromium's too, and Chromium takes a switch's value only after
+    /// The browser's command line is Chromium's too, and Chromium takes a switch's value only after
     /// `=`, so a value given as the next word would reach it as a loose argument. Every argument is one
     /// switch, and every one is Daoris's by its prefix, which no Chromium switch has.
     /// </summary>
@@ -75,7 +75,7 @@ public sealed class EngineBrowserTests : Bridge
         Assert.Equal(written, EngineBrowserOptions.Parse(written.ToArguments(), out _));
     }
 
-    /// <summary>With no profile the engine would choose a folder of its own, under the user profile (D63).</summary>
+    /// <summary>With no profile the engine would choose a folder of its own, under the user profile.</summary>
     [Theory]
     [InlineData(new[] { "--daoris-browser", "--daoris-port=9422" }, "--daoris-profile")]
     [InlineData(new[] { "--daoris-browser", "--daoris-profile=relative/engine", "--daoris-port=9422" }, "--daoris-profile")]
@@ -108,7 +108,7 @@ public sealed class EngineBrowserTests : Bridge
         Assert.Equal(locale, EngineBrowser.Locale(culture));
 
     /// <summary>
-    /// CHR8, held on the application's own source because nothing else can hold it: the kit starts
+    /// Held on the application's own source because nothing else can hold it: the kit starts
     /// Chromium as the app is composed and a process runs one Chromium, so the browser is decided before
     /// anything else in <c>Main</c>, and it is started with the kit's <c>ChromiumBrowserProcess.Start</c>,
     /// which hands it none of the app's handles (a <c>Process.Start</c> kept the app from exiting).
@@ -136,7 +136,7 @@ public sealed class EngineBrowserTests : Bridge
     }
 
     /// <summary>
-    /// BROWSERSTART1, held on the host's source because only the shell can run it: what a session is handed is the lazy
+    /// Held on the host's source because only the shell can run it: what a session is handed is the lazy
     /// endpoint, and the engine keeps a port of its own behind it, so a session's start brings up no window.
     /// </summary>
     [Fact]
@@ -150,13 +150,13 @@ public sealed class EngineBrowserTests : Bridge
         Assert.DoesNotContain("BringUp", handed.Replace("BringUpForConnectionAsync", "", StringComparison.Ordinal));
     }
 
-    /// <summary>The retired executable's project is gone with it: one engine in the install (CHR8).</summary>
+    /// <summary>The retired executable's project is gone with it: one engine in the install.</summary>
     [Fact]
     public void There_is_no_second_engine_to_build()
     {
         var desktop = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop");
 
-        // The project file, not the folder: a checkout that built the old project keeps its ignored
+        // The project file, not the folder: a checkout that built a removed project keeps its ignored
         // `bin/` and `obj/` after the pull, and that leftover is not a second engine.
         Assert.False(
             File.Exists(Path.Combine(desktop, "Daoris.Desktop.Browser", "Daoris.Desktop.Browser.csproj")),

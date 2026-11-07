@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Each of the tools' presses both ways (PUSH1f2c, D194 points 4 and 6, the alone-path design §3): <c>daoris tool</c> acting
+/// Each of the tools' presses both ways: <c>daoris tool</c> acting
 /// alone, through the library's operation, and the same words' press sent to the Tools place's route (<c>TOOLS_USE</c>,
 /// <c>TOOLS_DELETE</c>, <c>TOOLS_LOCATION</c>, <c>TOOLS_LOOK</c>), its answer said by the same words function, over one home from the
 /// same files. The bytes written, the versions left, the text, the refusal's line and the exit are equal: red where a route and its

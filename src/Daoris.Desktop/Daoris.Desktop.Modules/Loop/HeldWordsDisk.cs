@@ -5,8 +5,8 @@ using static Daoris.Driver.Json;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The held words' small file under the home (MSG1d4): the words held while a session winds up, each in the order said with its
-/// session, text, file names and door, and, where it had them, its producer's key, level and display choice (FOUNDATION1b),
+/// The held words' small file under the home: the words held while a session winds up, each in the order said with its
+/// session, text, file names and door, and, where it had them, its producer's key, level and display choice,
 /// all additive by name so an older shell reads the text, files and door as before.
 /// </summary>
 internal static class HeldWordsDisk
@@ -49,7 +49,7 @@ internal static class HeldWordsDisk
                 writer.WriteEndArray();
                 writer.WriteEndObject();
             });
-            // The loop's own write: its watch of the file hears it and wakes no look (FABRIC-EVENT4).
+            // The loop's own write: its watch of the file hears it and wakes no look.
             HomeWrites.Mine(path);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)

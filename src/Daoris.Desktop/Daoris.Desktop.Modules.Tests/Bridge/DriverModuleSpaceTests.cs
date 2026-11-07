@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The <i>Disk space</i> card's read over the bridge (`SystemRoutes.cs`, KEEP1c, the cleanup design §4.4): the driver library's one reader
+/// The <i>Disk space</i> card's read over the bridge (`SystemRoutes.cs`): the driver library's one reader
 /// as the window answers it, a null kept as a field, a kind counted only when asked, each kind's end told as <c>wiring</c>, and nothing
 /// removed. The sizes are the process's (<see cref="SpaceSizes.Shared"/>), keyed by each test's own home.
 /// </summary>
@@ -70,7 +70,7 @@ public sealed class DriverModuleSpaceTests : DriverModuleBridge
         return Path.Combine(logs, name);
     }
 
-    /// <summary>KEEP1e (the cleanup design §3.3, §4.4): Free up space's list answers each rule's now and changes nothing; its run is the press.</summary>
+    /// <summary>Free up space's list answers each rule's now and changes nothing; its run is the press.</summary>
     [Fact]
     public async Task The_list_changes_nothing_and_a_press_runs_what_it_names_read_in_the_space()
     {
@@ -102,7 +102,7 @@ public sealed class DriverModuleSpaceTests : DriverModuleBridge
         await UntilAsync(() => Raised.Count(message => message.Type == StatePublisher.Type) >= 2);
     }
 
-    /// <summary>KEEP1e (§3.1): a press while another run holds the home's run lock is refused as data, its holder named, nothing removed.</summary>
+    /// <summary>A press while another run holds the home's run lock is refused as data, its holder named, nothing removed.</summary>
     [Fact]
     public async Task A_press_while_another_holds_the_run_lock_is_refused_naming_it()
     {

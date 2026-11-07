@@ -6,7 +6,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// NOTIFY2f's slice (D196 point 6; the notification design §2.5, §5): <i>Done and failed</i> pushed from this process's read of
+/// The slice of <i>Done and failed</i> pushed from this process's read of
 /// <c>data/notices.json</c>, one partition keyed by notice, its fields allow-listed; the writer pushing its own write; another process's
 /// write read again and its notices said once, none older than the first read; a failed read keeping what was pushed; recording
 /// whatever the notify switch says; the presses <c>NOTICES_READ</c> and <c>NOTICE_DISMISS</c>; and a press's unanswered end kept.
@@ -50,7 +50,7 @@ public sealed class NoticesStateSliceTests : DriverModuleBridge
         File.WriteAllText(path, record.ToJsonString());
     }
 
-    /// <summary>§2.5: one partition, <c>news</c>, keyed by notice, each with the allow-list's fields alone, an absent one left out.</summary>
+    /// <summary>One partition, <c>news</c>, keyed by notice, each with the allow-list's fields alone, an absent one left out.</summary>
     [Fact]
     public async Task Each_notice_is_pushed_under_its_id_with_the_allow_listed_fields()
     {
@@ -89,7 +89,7 @@ public sealed class NoticesStateSliceTests : DriverModuleBridge
         Assert.Equal(NoticesStateSlice.Fields, fields);
     }
 
-    /// <summary>§2.4: a read moves the one notice named, pushed as that key alone; the writer pushes its own write with no watch's wake.</summary>
+    /// <summary>A read moves the one notice named, pushed as that key alone; the writer pushes its own write with no watch's wake.</summary>
     [Fact]
     public async Task A_read_is_pushed_by_its_writer_and_moves_one_notice()
     {
@@ -110,7 +110,7 @@ public sealed class NoticesStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// §5: a notice another process wrote (the headless host's) is said once as it arrives, and none the first read found; a notice this
+    /// A notice another process wrote (the headless host's) is said once as it arrives, and none the first read found; a notice this
     /// process recorded as already said by its own event is not said again; with the switch off, none is said.
     /// </summary>
     [Fact]
@@ -139,7 +139,7 @@ public sealed class NoticesStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// NOTIFY2h (the design §5's table): a look's news, whoever wrote it, is pushed with its code and counted, and never said aloud.
+    /// A look's news, whoever wrote it, is pushed with its code and counted, and never said aloud.
     /// </summary>
     [Fact]
     public async Task A_look_s_news_is_pushed_with_its_code_and_never_said()
@@ -173,7 +173,7 @@ public sealed class NoticesStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FOUNDATION1 m-iv (§4.5): the said-set replaces the first read's baseline. A notice another process wrote while this one was down is said
+    /// The said-set replaces the first read's baseline. A notice another process wrote while this one is down is said
     /// once after the restart, and not again by the next; only the first run on a home takes what stands as said.
     /// </summary>
     [Fact]
@@ -192,7 +192,7 @@ public sealed class NoticesStateSliceTests : DriverModuleBridge
         Assert.Equal(["ended-while-down"], Arrivals().Select(each => each["id"]!.GetValue<string>()));
     }
 
-    /// <summary>§2.5: a read that fails (a file half seen) keeps what was pushed, and sets nothing aside.</summary>
+    /// <summary>A read that fails (a file half seen) keeps what has been pushed, and sets nothing aside.</summary>
     [Fact]
     public async Task A_failed_read_keeps_the_last_snapshot_and_sets_nothing_aside()
     {
@@ -210,7 +210,7 @@ public sealed class NoticesStateSliceTests : DriverModuleBridge
         Assert.Single(Directory.EnumerateFiles(Path.GetDirectoryName(path)!, "notices*.json"));
     }
 
-    /// <summary>§2.5: a session's end is recorded with the notify switch off, as the watch observes either way; it is listed, never said.</summary>
+    /// <summary>A session's end is recorded with the notify switch off, as the watch observes either way; it is listed, never said.</summary>
     [Fact]
     public async Task An_end_is_recorded_with_the_switch_off()
     {
@@ -230,7 +230,7 @@ public sealed class NoticesStateSliceTests : DriverModuleBridge
         Assert.Empty(Arrivals());
     }
 
-    /// <summary>§2.4's scopes: a window's dismissal of all takes its own workspace's notices and every machine-wide one, never another's.</summary>
+    /// <summary>The scopes: a window's dismissal of all takes its own workspace's notices and every machine-wide one, never another's.</summary>
     [Fact]
     public void A_window_s_scope_is_its_workspace_and_the_machine_s()
     {
@@ -244,7 +244,7 @@ public sealed class NoticesStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The presses (§2.5): <c>NOTICES_READ</c> reads the ids it names, <c>NOTICE_DISMISS</c> one id or all of a window's scope, each
+    /// The presses: <c>NOTICES_READ</c> reads the ids it names, <c>NOTICE_DISMISS</c> one id or all of a window's scope, each
     /// answering whether it was written and declaring the notices.
     /// </summary>
     [Fact]
@@ -272,7 +272,7 @@ public sealed class NoticesStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// §2.2, CONFIRMWAIT1a-i (the confirm-wait design §6), CONFIRMWAIT1a-ii (§7.2): a terminal's press its terminal took back after a window
+    /// A terminal's press its terminal took back after a window
     /// showed it, and one lost as Daoris closed (a press carrying a key), are kept as notices, every window's, the route as the page's
     /// catalogue names it, a lost one counting one; one taken back that nobody was shown, and one confirmed or refused, keep nothing. None
     /// ends by its time.
@@ -303,7 +303,7 @@ public sealed class NoticesStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// CONFIRMWAIT1a-ii (the confirm-wait design §7.2 step 7): a restart's restore says one notice for every press it could not bring back,
+    /// A restart's restore says one notice for every press it could not bring back,
     /// naming how many, and one for the records a newer Daoris wrote; a restore with neither keeps nothing.
     /// </summary>
     [Fact]

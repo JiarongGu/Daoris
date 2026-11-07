@@ -1,15 +1,15 @@
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A later launch of the executable, handed to the instance that runs (ONEINSTANCE1, D171 point 2): it opens a new main
-/// window there. The windows of one instance share one driver, one loop and one state hub (D169), so a second process would
+/// A later launch of the executable, handed to the instance that runs: it opens a new main
+/// window there. The windows of one instance share one driver, one loop and one state hub, so a second process would
 /// be a second writer of the same home; the kit's single-instance guard keeps it from starting, and hands its launch here.
 /// </summary>
 /// <remarks>
 /// <para><b>How the launch arrives.</b> The kit's guard (<c>WindowsHostOptions.SingleInstance</c>, on by default) answers a
 /// later launch by bringing this instance's main window forward and then, on the window's thread, calling the app's
 /// <c>OnActivated</c> with that launch's arguments and folder. <see cref="LaterLaunch"/> is that callback: it writes the launch's
-/// arrival and hands it to <see cref="OpenAsync"/>, writing whatever fails on the way (ONEINSTANCE2).</para>
+/// arrival and hands it to <see cref="OpenAsync"/>, writing whatever fails on the way.</para>
 ///
 /// <para><b>Every launch opens a window</b>, whatever it carries: Daoris takes no file or link on its command line, and the
 /// flags a native launcher adds (<c>--app-root</c>, <c>--startup-screen</c>) say nothing about what to open.</para>
@@ -18,14 +18,14 @@ namespace Daoris.Desktop;
 /// "the app is broken" (<c>MainForm</c> waits the same way). Where the service never came up, the main window already says
 /// why, and no window opens.</para>
 ///
-/// <para><b>A put-away first window is the launch's</b> (MAINWINDOWS2): where the person closed the first main window while
+/// <para><b>A put-away first window is the launch's</b>: where the person closed the first main window while
 /// another was open, it was hidden rather than closed (<see cref="MainWindows"/>), and a launch shows that one again rather
 /// than opening another. Its page is already up, so it waits on nothing.</para>
 /// </remarks>
 public sealed class SecondLaunch(ISecondaryWindows windows, PlatformAddress platform, Func<Task<bool>> hostReady,
-    // The shell's machine log (LOG1b, D94): a launch handed over, and the window it opened. Null writes none.
+    // The shell's machine log: a launch handed over, and the window it opened. Null writes none.
     Daoris.Driver.MachineLog? log = null,
-    // Whether the first main window is put away, and what shows it again on its own thread, never blocking (MAINWINDOWS2).
+    // Whether the first main window is put away, and what shows it again on its own thread, never blocking.
     MainWindows? mains = null, Action? showFirst = null)
 {
     /// <summary>

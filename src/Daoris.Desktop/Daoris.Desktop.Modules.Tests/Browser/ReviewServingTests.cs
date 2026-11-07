@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// REVIEWENV1d (D154 point 5; the review environment design §2.3 steps 1–4): the shell's own serving of a set-up step's build to
+/// The shell's own serving of a set-up step's build to
 /// its tab, over its own CDP connection, against a Chromium's endpoint standing in and a real loopback server standing for the
 /// person's own. Served at the rule's address and the build's base only, and on that tab only; every other path passes through to
 /// the person's server; the person's server is never reached for the served paths; it stays served after the session's own
@@ -111,7 +111,7 @@ public sealed class ReviewServingTests : IDisposable
 
     /// <summary>
     /// A service worker of the person's at the address answers the step's tab before any interception sees a request, with
-    /// their own build (measured, the evidence's §1 row 7), so the step's tab bypasses service workers while it is served.
+    /// their own build (measured), so the step's tab bypasses service workers while it is served.
     /// </summary>
     [Fact]
     public async Task The_step_s_tab_bypasses_the_person_s_service_workers_while_it_is_served()

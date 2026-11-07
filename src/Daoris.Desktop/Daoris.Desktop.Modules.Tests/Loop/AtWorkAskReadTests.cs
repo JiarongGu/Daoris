@@ -7,7 +7,7 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// COWORKVIEW1d: an ask's read (the design §3.5, §R11.5), from the <c>groups</c> slice's entries whose origin is the ask, the <c>quests</c> and
+/// An ask's read, from the <c>groups</c> slice's entries whose origin is the ask, the <c>quests</c> and
 /// <c>sessions</c> slices, and the <c>asks</c> slice as an existence dependency: its health, its fence and its wakes. A held ask with nothing
 /// at work, an ask the slice does not hold, and an ask deleted after it was opened are told apart.
 /// </summary>

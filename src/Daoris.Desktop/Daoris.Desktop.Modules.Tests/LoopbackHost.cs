@@ -7,9 +7,9 @@ using System.Text;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A host on this machine for the tools' routes (TOOLS7): it answers each path it is given with its bytes, a 404 for
+/// A host on this machine for the tools' routes: it answers each path it is given with its bytes, a 404 for
 /// any other, and a path marked stalling with one byte and then nothing until the reader goes. A resource list may name
-/// an <c>http://</c> address on this machine (D121 §3.2), so the routes are driven over a real socket, through the
+/// an <c>http://</c> address on this machine, so the routes are driven over a real socket, through the
 /// driver's own client, and never over the network.
 /// </summary>
 internal sealed class LoopbackHost : IDisposable
@@ -82,8 +82,8 @@ internal sealed class LoopbackHost : IDisposable
 
                 var path = request.ToString().Split(' ')[1];
 
-                // A request's own body is read before the answer (PAUSE1b: a record's move is a POST): left unread, closing
-                // the socket resets it, and the client fails before it reads what was answered.
+                // A request's own body is read before the answer (a record's move is a POST): left unread, closing
+                // the socket resets it, and the client fails before it reads the answer.
                 var length = request.ToString().Split("\r\n")
                     .Select(line => line.Split(':', 2))
                     .Where(header => header.Length == 2 && header[0].Trim().Equals("Content-Length", StringComparison.OrdinalIgnoreCase))

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The repository row's *Refresh* over the bridge (`RegistryRoutes.cs`, WSSETUP5, D124 §3.1): the screen's half of
+/// The repository row's *Refresh* over the bridge (`RegistryRoutes.cs`): the screen's half of
 /// <c>daoris repository register --repository</c>, through the loop's own client. A refusal is an answer, saying what the row
 /// says; held here where no git is asked, the line's read being the driver library's (<c>RegistrationFollowTests</c>).
 /// </summary>
@@ -54,7 +54,7 @@ public sealed class DriverModuleRegistryTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 SETUPSTATE1 (the owner's report, 2026-10-23): the look's follow registered a set-up repository from its line, adopted, and
+    /// The look's follow registered a set-up repository from its line, adopted, and
     /// no route's press was behind it, so no window was told and the page read it not adopted until a reload. A follow that sent a
     /// registration tells the windows <c>registry</c>; one that sent nothing (unchanged, not set up, refused) tells nothing.
     /// </summary>

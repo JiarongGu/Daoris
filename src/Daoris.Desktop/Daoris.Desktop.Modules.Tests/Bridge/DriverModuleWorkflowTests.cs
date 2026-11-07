@@ -6,7 +6,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// How work moves, over the bridge (WORKFLOW1b; D157 point 7, the workflow design §2.7, §6.1): `WORKFLOW_CURRENT` answers a
+/// How work moves, over the bridge: `WORKFLOW_CURRENT` answers a
 /// repository's or a workspace's routes from this machine's driver file, its plugins and its registry as `daoris workflow show`
 /// reads them; a repository the registry does not hold read as in no workspace and said so; a workspace's with each of its repositories,
 /// following it or not; and the one refusal.
@@ -59,7 +59,7 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SETUPUX1b: with a `route` the answer also carries the graph that route follows, and the read writes nothing; without one the answer is
+    /// With a `route` the answer also carries the graph that route follows, and the read writes nothing; without one the answer is
     /// as it was, and the effective graph is not in it.
     /// </summary>
     [Fact]
@@ -124,7 +124,7 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
 
     private const string Blob = "3b18e512dba79e4c8300dd08aeb37f8e728b8dad";
 
-    /// <summary>A verification pipeline saved here, made so at a terminal (FABRIC-PIPELINE1a).</summary>
+    /// <summary>A verification pipeline saved here, made so at a terminal.</summary>
     private void Verification(string id = "web-verify") =>
         WorkflowStore.Add(Home, new WorkflowVersionAdded(id, "Verify the line", "terminal", "2026-10-21T09:00:00Z", null, System.Text.Json.Nodes.JsonNode.Parse(
             """{"schemaVersion":2,"entries":["gates"],"end":"gates","nodes":[{"id":"gates","kind":"check","version":1,"reach":"performed"}],"wires":[]}"""))
@@ -133,7 +133,7 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
         }, kept: []);
 
     /// <summary>
-    /// FABRIC-PIPELINE1a (the pipeline design §1.3): a repository's answer carries its start node, drawn first on its Workflow tab: the
+    /// A repository's answer carries its start node, drawn first on its Workflow tab: the
     /// default and each kind with the pipeline it names and what chose it, the landed route with its pipeline, the gates accepted and
     /// where they stand against the line's tip, and the verification pipelines Setup's row offers.
     /// </summary>
@@ -167,7 +167,7 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FABRIC-PIPELINE1a: Setup's route row and the tab's <i>Accept the gates</i> press <c>WORKFLOW_LANDED</c>, the person's door: it sets
+    /// Setup's route row and the tab's <i>Accept the gates</i> press <c>WORKFLOW_LANDED</c>, the person's door: it sets
     /// a repository's or a workspace's landed route, refuses a development pipeline there in the twins' words, and answers the start node
     /// as it now stands with what the change lowers, said.
     /// </summary>
@@ -200,7 +200,7 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// AGENTSPLACE1a0: the landed route's press may name the blob the person read, as <c>INTEGRATION_GATES</c> does. A blob that is no longer
+    /// The landed route's press may name the blob the person read, as <c>INTEGRATION_GATES</c> does. A blob that is no longer
     /// the tip's is refused <c>moved</c> with nothing written, one that is accepts it, and a press naming none (an older caller) accepts the
     /// tip as it stands.
     /// </summary>
@@ -254,7 +254,7 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// WORKFLOWEDIT1a: the step editor's three reads answer from the home alone, with no service up, and declare no change: the saved
+    /// The step editor's three reads answer from the home alone, with no service up, and declare no change: the saved
     /// workflows with the places that choose them and the presets, one version as saved with its line, and the palette with a plugin's step.
     /// </summary>
     [Fact]
@@ -296,8 +296,8 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SETUPUX1a: each default the list carries is the shipped data's, with its purpose, its order, whether the set-up offers it and its
-    /// delivery's land, names and purpose; SETUPUX1c: and the list announces that a choice can be read as a plan.
+    /// Each default the list carries is the shipped data's, with its purpose, its order, whether the set-up offers it and its
+    /// delivery's land, names and purpose, and the list announces that a choice can be read as a plan.
     /// </summary>
     [Fact]
     public async Task The_list_carries_each_defaults_purpose_order_set_up_and_delivery_and_announces_the_plan_of_one()
@@ -336,7 +336,7 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
         return (module, loop);
     }
 
-    // ---- INTEGRATE1d: the integration's own acceptance, the person's door (D215 points 2 and 10, the integration design §4.1, §4.3) ----
+    // ---- the integration's own acceptance, the person's door ----
 
     private const string Declares = """{ "integration": { "scratch": ["out/**"] } }""";
 
@@ -408,7 +408,7 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// <c>WORKFLOW_VERIFY</c>, the page's half of <c>daoris gate verify</c> (FABRIC-PIPELINE1d part 5): a repository with no checkout here is
+    /// <c>WORKFLOW_VERIFY</c>, the page's half of <c>daoris gate verify</c>: a repository with no checkout here is
     /// refused <c>no-checkout</c> in a sentence and binds nothing, and the press names a repository and no more than one of a branch or a commit.
     /// </summary>
     [Fact]

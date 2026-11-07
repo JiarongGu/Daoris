@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// AGENTSPLACE1k: a place's set-up proposal over the bridge. The card carries the ask, the workspace and the plan's changes, judged by the
+/// A place's set-up proposal over the bridge. The card carries the ask, the workspace and the plan's changes, judged by the
 /// place's plan read from the service's registry and quests; its Apply settles as a go to the Agents place's Setup with the ask seeded and
 /// writes nothing, neither the configuration nor the service.
 /// </summary>

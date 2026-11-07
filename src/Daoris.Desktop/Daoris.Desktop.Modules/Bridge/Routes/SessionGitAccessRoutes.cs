@@ -7,7 +7,7 @@ namespace Daoris.Desktop;
 public sealed record TightenSessionGitAccess(string Id, JsonElement? Access);
 
 /// <summary>
-/// A running session's git access, the page's half of <c>daoris git access --session</c> (D241 point 7): what each session holds is in
+/// A running session's git access, the page's half of <c>daoris git access --session</c>: what each session holds is in
 /// the driver's state (<see cref="Wire"/>), and <c>TIGHTEN_SESSION_GIT_ACCESS</c> narrows it. It only narrows, so the route asks no
 /// confirmation; a widening is a change of git access at its level, which the page confirms.
 /// </summary>

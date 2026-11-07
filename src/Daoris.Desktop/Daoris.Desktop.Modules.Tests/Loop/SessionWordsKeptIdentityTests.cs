@@ -6,9 +6,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// FOUNDATION1b (D212's note of 2026-10-25, the foundation design §10): a word keeps its identity wherever it is held. The shell's
+/// A word keeps its identity wherever it is held. The shell's
 /// held word carries its producer's key, level, files and display choice across a restart; the record path and the forward to the
-/// conversation its record went on in pass the key, so a producer's retry keeps one word (D137, D188); and an ordinary display
+/// conversation its record went on in pass the key, so a producer's retry keeps one word; and an ordinary display
 /// choice never reads as the supervisor's, the record path passing no <c>choice</c>.
 /// </summary>
 /// <remarks>
@@ -65,7 +65,7 @@ public sealed class SessionWordsKeptIdentityTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// COMMS1e: a press held across a restart keeps the question it answered in the held file, and the record path says it to a host that
+    /// A press held across a restart keeps the question it answered in the held file, and the record path says it to a host that
     /// checks presses, so a press held across a hand-over is judged against the question then on file.
     /// </summary>
     [Fact]
@@ -92,7 +92,7 @@ public sealed class SessionWordsKeptIdentityTests : DriverModuleBridge
 
     /// <summary>
     /// A producer's retry after a shell restart keeps one word where it kept two: the word held across the restart is kept under the
-    /// key it was said with, so the producer's own retry under that key is answered with it. (D137, D188: the guarantee, kept.)
+    /// key it carried, so the producer's own retry under that key is answered with it.
     /// </summary>
     [Fact]
     public async Task A_producers_retry_after_a_restart_keeps_one_word()
@@ -136,7 +136,7 @@ public sealed class SessionWordsKeptIdentityTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A hold restarted and then forwarded to a live successor keeps its key and level there (X4-1.2): the successor's inbox is handed
+    /// A hold restarted and then forwarded to a live successor keeps its key and level there: the successor's inbox is handed
     /// the word at the level it was said at, and its record keeps it under the producer's key, so a producer's retry said to the successor
     /// while the word waits there keeps one word.
     /// </summary>
@@ -211,8 +211,8 @@ public sealed class SessionWordsKeptIdentityTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A held file written before this row, which holds a word's text, files and door alone, is read as it was: the word is tried
-    /// keyless at the default level, as today (the legacy case the census names). An older shell reads a file this one wrote by the
+    /// A held file that holds a word's text, files and door alone is read as it stands: the word is tried
+    /// keyless at the default level (the legacy case the census names). An older shell reads a file this one wrote by the
     /// same three fields.
     /// </summary>
     [Fact]

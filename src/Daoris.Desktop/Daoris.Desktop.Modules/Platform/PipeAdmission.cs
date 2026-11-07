@@ -5,7 +5,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A request on a connection that said its hello, admitted or refused (the terminal RPC design §4.2, §6): the pipe's own answered
+/// A request on a connection that said its hello, admitted or refused: the pipe's own answered
 /// now, the census's class judged, the id bound to its route, payload and key, and a person's press reserved for its card. It binds the id in the pipe's state (<see cref="PipeState"/>) under its gate.
 /// </summary>
 internal sealed class PipeAdmission(InstancePipe pipe)
@@ -21,12 +21,12 @@ internal sealed class PipeAdmission(InstancePipe pipe)
     /// A request on a connection that said its hello: answered now (the pipe's own, a refusal, an id answered before), or later,
     /// once the press it begins or joins answers. A press is admitted only where the connection has room for one more under way.
     /// </summary>
-    /// <param name="hold">That it was sent with <c>hold: true</c>: a start that holds what it opens, once the person confirms it (RPC1g1).</param>
+    /// <param name="hold">That it is sent with <c>hold: true</c>: a start that holds what it opens, once the person confirms it.</param>
     public (string? Now, Task<string>? Later) Accept(IpcRequest request, string? key, PipeConnection connection, bool hold = false)
     {
         if (string.Equals(request.Module, InstancePipe.Module, StringComparison.OrdinalIgnoreCase))
         {
-            // RPC1g1 (D238 point 2): a hold of a conversation already open waits for the person's Confirm, as a press does.
+            // A hold of a conversation already open waits for the person's Confirm, as a press does.
             if (request.Type == "HOLD") return (null, pipe.Holding.AskAsync(request, connection));
             return (IpcJson.Serialize(request.Type switch
             {
@@ -39,7 +39,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
             }), null);
         }
 
-        // RPC1h (§6.2): a terminal's Ctrl+C, taken for its own press alone. Before the census, which names no kit module, and before
+        // A terminal's Ctrl+C, taken for its own press alone. Before the census, which names no kit module, and before
         // the stop's refusal, which a press under way outlives: a cancel is how a terminal ends one while the instance closes.
         if (string.Equals(request.Module, InstancePipe.RequestsModule, StringComparison.OrdinalIgnoreCase) && request.Type == "CANCEL")
         {
@@ -56,7 +56,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
                 return (IpcJson.Serialize(pipe.Refuse(request, InstancePipe.WindowOnly, "only Daoris's window does this.")), null);
         }
 
-        // DRAINHOLD1: while an update drains, a press that would add to what it waits on, or that its close would cut, is refused as the
+        // While an update drains, a press that would add to what it waits on, or that its close would cut, is refused as the
         // update's; a read, a stop, a take-back or an answer goes on.
         if (pipe.Holds(request.Module, request.Type, @class)) return (IpcJson.Serialize(pipe.RefuseStopping(request)), null);
 
@@ -68,14 +68,14 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         if (!InstancePipe.IsKey(key)) return (IpcJson.Serialize(pipe.Refuse(request, InstancePipe.KeyMissing, "a request carries a key of its own, 16 to 128 characters.")), null);
         if (!connection.HasRoom) return (IpcJson.Serialize(pipe.Refuse(request, InstancePipe.Busy, "this terminal has as much under way as Daoris takes from one; send it again once one answers.")), null);
 
-        // RPC1g1 (D238 point 2): a start sent with `hold: true` holds what it opens, so a connection holding a conversation is refused it.
+        // A start sent with `hold: true` holds what it opens, so a connection holding a conversation is refused it.
         var holding = hold && @class == PipeClass.Person && PipeHolding.Opens(request.Module, request.Type);
         if (holding && pipe.Holding.RefuseStart(request, connection) is { } refused) return (IpcJson.Serialize(refused), null);
         Task<string> Held(Task<string> answered) => holding ? pipe.Holding.AfterOpenedAsync(answered, connection) : answered;
 
-        // SUPERVISOR1a-ii (D208 §2.2, the supervisor design §11 row 1a-ii): a role's act is judged by the judge's own role method, before
+        // A role's act is judged by the judge's own role method, before
         // the open path and before any card, under the same lock and caller look, then by the holder's proof over this connection's
-        // nonce, which this act uses up. Anything it does not cover is refused, logged, never asked, but for STEWARDROLE1d's one case: a
+        // nonce, which this act uses up. Anything it does not cover is refused, logged, never asked, but for one case: a
         // proved holder's act outside the acts the person granted asks the person as its route's own press, the card's alone to admit.
         RoleJudgement? role = null;
         var asked = false;
@@ -93,7 +93,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
             }
             else if (!role.Covered)
             {
-                // STEWARDROLE1a-i (D209 §5.2): a role's act's refusal is `role.refused`; the supervisor's routes keep their own line.
+                // A role's act's refusal is `role.refused`; the supervisor's routes keep their own line.
                 if (request.Type == RoleRoutes.Act) _log.Info("role.refused", ("why", role.Why ?? ""), ("door", PipeDoor.Terminal));
                 else _log.Info("supervisor.refused", ("why", role.Why ?? ""), ("door", PipeDoor.Terminal));
                 return (IpcJson.Serialize(pipe.Refuse(request, role.Why ?? InstancePipe.Unclassed, RoleRefusal(role.Why))), null);
@@ -104,7 +104,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         // no card, so nothing is shaped for one; every other press asks as before.
         var covered = @class == PipeClass.Person && !holding && !asked && pipe.Holding.Covers(connection, request);
 
-        // RPC1c: a person's press is shown to the window with every value it carries, so one the card could not show whole is not asked.
+        // A person's press is shown to the window with every value it carries, so one the card could not show whole is not asked.
         IReadOnlyList<PipeConfirmationField>? fields = null;
         string? placeSaid = null;
         if (@class == PipeClass.Person && !covered)
@@ -113,7 +113,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
             var (shown, unshown) = PipeConfirmations.FieldsOf(request.Payload);
             if (unshown is not null) return (IpcJson.Serialize(pipe.Refuse(request, InstancePipe.Shape, $"{Capitalized(unshown)} Nothing was asked.")), null);
             fields = shown;
-            // CHANNELJOIN1b (D244 point 10): a join from a process in an agents' job is refused before any card.
+            // A join from a process in an agents' job is refused before any card.
             var (inside, said) = PipeOutsideOnly.Judge(request.Module, request.Type, pipe.StandingConfirmation.Caller, connection.Client);
             if (inside is not null) return (IpcJson.Serialize(pipe.Refuse(request, inside, PipeOutsideOnly.InsideSentence)), null);
             placeSaid = said;
@@ -133,7 +133,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
                 // Sent again while it runs, by the key that sent it: the one press's answer, and its progress to this connection.
                 _state.Owners[id] = connection;
                 answer = running.Answer;
-                // CONFIRMWAIT1a-i (§8.1): a terminal waits on its line for it again. The confirmations' lock is only ever taken inside
+                // A terminal waits on its line for it again. The confirmations' lock is only ever taken inside
                 // this one, never around it.
                 if (_state.WaitingFor.TryGetValue(id, out var waiting)) Confirmations.WaitedOn(waiting, true);
             }
@@ -163,7 +163,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
 
         var why = placeSaid;
 
-        // CONFIRMWAIT1a-i (the confirm-wait design §5.2): a person's press whose route names no grounds is refused at once, no read made; then a place among the ten is held, told to no
+        // A person's press whose route names no grounds is refused at once, no read made; then a place among the ten is held, told to no
         // window yet, so one past them is refused before any read. The grounds are read in the press's own task, outside every lock.
         if (_census.Targets.Row(request.Module, request.Type, request.Payload) is not { } row)
         {
@@ -176,7 +176,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
             return (Settled(request, id, mine, pipe.Refuse(request, InstancePipe.Full, FullSentence())), null);
         }
 
-        // CONFIRMWAIT1 (the confirm-wait design §15.2 item 9): from here the press is a reservation, its id said to its terminal before its
+        // From here the press is a reservation, its id said to its terminal before its
         // grounds are read, so a withdrawal, a close or a lost line has a press to end; every ending from here is journaled.
         var reserved = new PipeReserved(request, binding, mine, connection, place, _clock.GetUtcNow(), holding);
         lock (_state.Gate)
@@ -203,7 +203,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         return text;
     }
 
-    /// <summary>The bound's refusal (§9.3), naming how long the oldest has waited, so the asker can withdraw its own or the person answer.</summary>
+    /// <summary>The bound's refusal, naming how long the oldest has waited, so the asker can withdraw its own or the person answer.</summary>
     private string FullSentence()
     {
         var bound = Confirmations.Bound == PipeConfirmations.DefaultBound
@@ -225,12 +225,12 @@ internal sealed class PipeAdmission(InstancePipe pipe)
     private static string Count(int count, string unit) => count == 1 ? $"1 {unit} ago" : $"{count} {unit}s ago";
 
     /// <summary>
-    /// The notification that tells the terminal its press waits for the person in the window (RPC1c), naming its request; no time, since
-    /// none ends it (CONFIRMWAIT1a-i). With <c>standing</c>, why the terminal's place is not told as outside
-    /// (CHANNELJOIN1c), a field an older terminal ignores.
+    /// The notification that tells the terminal its press waits for the person in the window, naming its request; no time, since
+    /// none ends it. With <c>standing</c>, why the terminal's place is not told as outside,
+    /// a field an older terminal ignores.
     /// </summary>
     /// <param name="checking">
-    /// That its grounds are being read before its card (CONFIRMWAIT1, §15.2 item 9): the terminal hears its id then, before any read.
+    /// That its grounds are being read before its card: the terminal hears its id then, before any read.
     /// </param>
     private static string Waits(string id, string? standing, bool checking = false) => (standing, checking) switch
     {
@@ -253,7 +253,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
 
     private static string Capitalized(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
 
-    /// <summary>A role's act refused at the door (SUPERVISOR1a-ii), in the terminal's words, by its code. Nothing was kept.</summary>
+    /// <summary>A role's act refused at the door, in the terminal's words, by its code. Nothing is kept.</summary>
     private static string RoleRefusal(string? why) => why switch
     {
         SupervisorWhy.NotStaffed => "No terminal holds this role: the owner staffs it with the terminal among the roles. Nothing was done.",

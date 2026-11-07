@@ -1,7 +1,7 @@
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// NOTIFY2c (D196 point 6, the notification design §2.4 and §9): with two main windows open, one per workspace, a notification's
+/// With two main windows open, one per workspace, a notification's
 /// click opens the window whose workspace holds what it is about, or the main window last in front where none or several do. Each
 /// main window's page tells the registry its workspace as data; what it is about is found in the records the windows hold. What is
 /// here is that judgement, held apart from the windows, which come forward in the application.
@@ -94,7 +94,7 @@ public sealed class MainWindowScopesTests
     }
 
     /// <summary>
-    /// MAINWINDOWS2: the first main window the person closed while another was open is put away, its page kept, and is no window they
+    /// The first main window the person closed while another is open is put away, its page kept, and is no window they
     /// have open, so it is never picked while it is away; taken back, it is again.
     /// </summary>
     [Fact]
@@ -160,7 +160,7 @@ public sealed class MainWindowScopesTests
 
     /// <summary>
     /// Held on the application's own source, since no window opens without a desktop session (as <see cref="SecondLaunchTests"/> holds
-    /// MAINWINDOWS2's): every main window's focus and close reach the registry, a balloon's click is picked from it and brings that
+    /// the first main window's): every main window's focus and close reach the registry, a balloon's click is picked from it and brings that
     /// window forward, the attend names it, and each main window's count goes to its own frame.
     /// </summary>
     [Fact]

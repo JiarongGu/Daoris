@@ -20,7 +20,7 @@ internal sealed class SessionsMoveDesk(DriverContext context)
         // False is an answer, not an error: the session already finished, and its record says how.
         // 🔴 Unless the record says it still runs and nothing on this machine runs it — a chat
         // left behind by an application that closed, or a crash. Then the person's stop is how
-        // it ends: pressing it used to change nothing and say nothing (2026-09-25).
+        // it ends.
         // Which of the three it was is part of the answer: the page says it, and an orphan's
         // ending is not the person's — its record says nothing ran it.
         // 🔴 And when another Daoris process on this machine runs it — a terminal's chat — this

@@ -7,7 +7,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The machine-path half of managing repositories (D48 §7): the shell picks a folder and says what it
+/// The machine-path half of managing repositories: the shell picks a folder and says what it
 /// found; the page does the registering through the ordinary loopback door.
 /// </summary>
 /// <remarks>
@@ -20,8 +20,7 @@ namespace Daoris.Desktop;
 /// <para><b>It never adopts.</b> Adoption is the repository's own agent's job — `init`, `sync`, the
 /// collision review — and a shell that wrote a first manifest would be doing that work from outside,
 /// badly. It inspects a folder, and the one thing it writes is the declaration of a manifest that
-/// already exists, uncommitted, for that repository's own review (REV3 CLEAN1 corrected "never
-/// writes").</para>
+/// already exists, uncommitted, for that repository's own review.</para>
 /// </remarks>
 [ModuleRoute("PICK_FOLDER", PipeClass.Window)]
 [ModuleRoute("WRITE_DECLARATION", PipeClass.Person, Drain = PipeDrain.Passes)]
@@ -38,14 +37,14 @@ public sealed class RegistryModule(IEventBus events, PickFolder pickFolder) : Mo
         switch (request.Type)
         {
             // Null is the person cancelling the dialog, which is an answer and not an error. The dialog is owned by the window
-            // whose page asked, which it names (MAINWINDOWS2c); a page that names none is the first main window's.
+            // whose page asked, which it names; a page that names none is the first main window's.
             case "PICK_FOLDER":
                 return Task.FromResult<object?>(
                     pickFolder(PayloadHelper.GetOptionalValue<string>(request.Payload, "window")) is { } folder ? Inspect(folder) : null);
 
-            // The person editing their own tracked file through a form instead of a text editor
-            // (D48 §7). The manifest is inert data (D26), not doctrine — and doctrine stays unwritable
-            // from every surface (D31). The diff lands uncommitted, for that repository's own review.
+            // The person editing their own tracked file through a form instead of a text editor.
+            // The manifest is inert data, not doctrine — and doctrine stays unwritable
+            // from every surface. The diff lands uncommitted, for that repository's own review.
             case "WRITE_DECLARATION":
             {
                 var path = PayloadHelper.GetRequiredValue<string>(request.Payload, "path");
@@ -64,7 +63,7 @@ public sealed class RegistryModule(IEventBus events, PickFolder pickFolder) : Mo
     /// </summary>
     /// <remarks>
     /// The git question matters because a repository with no history is one where a driven session's
-    /// work cannot be reviewed as a diff (D46) — worth saying out loud at the moment of adding, not
+    /// work cannot be reviewed as a diff — worth saying out loud at the moment of adding, not
     /// discovering at the moment of driving.
     /// </remarks>
     private static object Inspect(string path)
@@ -86,7 +85,7 @@ public sealed class RegistryModule(IEventBus events, PickFolder pickFolder) : Mo
             Packs = declaration?.Packs ?? [],
             Join = declaration?.Join ?? false,
             ShareKnowledge = declaration?.ShareKnowledge ?? false,
-            // What it says it uses (D91), so the page registers the whole declaration (MANAGE1): the
+            // What it says it uses, so the page registers the whole declaration: the
             // registry replaces a row's `uses` with the declaration's, and an answer without them made
             // the page's add and its save erase them until the next `connect`. Raw, as the file has
             // them; the service reads them by the one rule (`Declared.Uses`).
@@ -123,7 +122,7 @@ public sealed class RegistryModule(IEventBus events, PickFolder pickFolder) : Mo
         }
 
         using var document = JsonDocument.Parse(File.ReadAllText(manifest));
-        // The driver's one JSON file writer (DEDUP3b): atomic, LF, a name of its own beside the file (REV3).
+        // The driver's one JSON file writer: atomic, LF, a name of its own beside the file.
         JsonFile.Write(manifest, writer =>
         {
             writer.WriteStartObject();
@@ -135,15 +134,15 @@ public sealed class RegistryModule(IEventBus events, PickFolder pickFolder) : Mo
             }
 
             // `?? default` would be a JsonElement of kind Undefined, and every reader below throws on
-            // one — a defensive line that defends nothing and fails obscurely. Unreachable today (the
-            // `path` lookup above would have failed first on a null payload), which is exactly why it
-            // was worth removing rather than trusting: nothing would have caught it changing.
+            // one — a defensive line that defends nothing and fails obscurely. Unreachable (the
+            // `path` lookup above fails first on a null payload), which is exactly why it is not
+            // written: nothing would catch it changing.
             var sent = payload is { ValueKind: JsonValueKind.Object } given ? given : EmptyObject;
             writer.WriteStartObject("domain");
             writer.WriteString("summary", NonEmpty(sent, "summary") ?? "");
             WriteStrings(writer, "owns", Strings(sent, "owns"));
             WriteStrings(writer, "accepts", Strings(sent, "accepts"));
-            // 🔴 What the form has no field for stays as it was: `uses` (D91), and anything a later
+            // 🔴 What the form has no field for stays as it is: `uses`, and anything a later
             // version adds to the declaration. Rewriting the block from the form's three fields would
             // delete a dependency the repository declared by hand, and nobody would see it go.
             if (document.RootElement.TryGetProperty("domain", out var held) && held.ValueKind == JsonValueKind.Object)
@@ -201,8 +200,8 @@ public sealed class RegistryModule(IEventBus events, PickFolder pickFolder) : Mo
                 domain is null ? [] : Strings(domain.Value, "accepts"),
                 Strings(root, "packs"),
                 join,
-                // Knowledge feeds only from a joined repository (D47 §4), narrowed wherever a manifest
-                // is read — this one was written by hand as often as by the CLI.
+                // Knowledge feeds only from a joined repository, narrowed wherever a manifest
+                // is read — this one is written by hand as often as by the CLI.
                 join && remote is not null && Flag(remote.Value, "knowledge"),
                 domain is null ? [] : Strings(domain.Value, "uses"));
         }

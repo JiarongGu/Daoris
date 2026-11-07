@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Daoris's own browser (D78), whichever engine shows it: the endpoint a server attaches to, the port
+/// Daoris's own browser, whichever engine shows it: the endpoint a server attaches to, the port
 /// it listens on, the address rule its favorites and history keep, and the page's door onto it. Where
 /// its profile is and how it starts is the engine's (<see cref="EngineBrowserTests"/>).
 /// </summary>
@@ -56,7 +56,7 @@ public sealed class InAppBrowserTests : Bridge
     }
 
     /// <summary>
-    /// BROWSERSTART1: the endpoint is held without the browser. Holding it, and connecting nothing, brings nothing up; the first
+    /// The endpoint is held without the browser. Holding it, and connecting nothing, brings nothing up; the first
     /// connection brings it up and what the client sends reaches the browser and comes back, so a CDP client's first call is
     /// served by a browser that was not running when the endpoint was handed.
     /// </summary>
@@ -119,7 +119,7 @@ public sealed class InAppBrowserTests : Bridge
         await serving;
     }
 
-    // ——— The page's door (D50: a screen door; the browser has no terminal twin, because it IS a window).
+    // ——— The page's door (a screen door; the browser has no terminal twin, because it IS a window).
 
     private sealed class Browser : IInAppBrowser
     {
@@ -155,7 +155,7 @@ public sealed class InAppBrowserTests : Bridge
     }
 
     /// <summary>
-    /// BRW7: a link on the page, opened in Daoris's browser where the person chose that — on the page
+    /// A link on the page, opened in Daoris's browser where the person chose that — on the page
     /// it names, in its parsed form, rather than on the browser's start page.
     /// </summary>
     [Fact]

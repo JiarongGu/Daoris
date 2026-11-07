@@ -5,7 +5,7 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A quest's done and its delete as the person's presses of the pipe (STEWARDROLE1d): the service's own doors for them
+/// A quest's done and its delete as the person's presses of the pipe: the service's own doors for them
 /// (<c>POST /api/quests/{id}/done</c> and <c>DELETE /api/quests/{id}</c>), which the quest drawer and <c>daoris quest done|delete</c>
 /// reach by HTTP, sent as the person's records. The steward's done and delete run these same routes inside its role's door.
 /// </summary>

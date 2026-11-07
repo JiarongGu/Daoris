@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// ASKQUESTS1 (the Ask Daoris design §9 item 12): <c>HELP_PUBLISHED</c>, a conversation's own list of what its Applies published. An
+/// <c>HELP_PUBLISHED</c>, a conversation's own list of what its Applies published. An
 /// ask's Apply publishes an ask and its quest, and the list answers them by the ids the service answered, newest first; a module
 /// over the same home, as after a restart, answers the same. The press's world and the service stand in.
 /// </summary>
@@ -19,8 +19,8 @@ public sealed class HelpPublishedRouteTests : DriverModuleBridge
         var module = await UpAsync();
         Assert.Empty((await AnswerAsync(module, "HELP_PUBLISHED", new { session = "h1a2b3c4" })).GetProperty("published").EnumerateArray());
 
-        // What an applied `ask` keeps with its conversation (`HelpApplying.Settled`): the set-up door that stood here was retired by
-        // WORKFLOWCLEAN1 1f, and a place's Apply publishes through the page's own press, not a helper's card.
+        // What an applied `ask` keeps with its conversation (`HelpApplying.Settled`): a place's Apply publishes
+        // through the page's own press, not a helper's card.
         new HelpPublished(Home).Keep("h1a2b3c4", new HelpPublishedEntry(DateTimeOffset.UtcNow, "p1a2b3c4", "ask", "work") { Ask = "a1b2c3d4", Quest = "q1a2b3c4" });
 
         var listed = await AnswerAsync(module, "HELP_PUBLISHED", new { session = "h1a2b3c4" });

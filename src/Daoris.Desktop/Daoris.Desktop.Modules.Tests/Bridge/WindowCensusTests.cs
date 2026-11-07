@@ -3,14 +3,14 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The census that holds NOBLOCK1 (D56's NOBLOCK1 note): nothing the window asks for waits on work. Every read of the driver's
+/// The census that holds the rule that nothing the window asks for waits on work. Every read of the driver's
 /// module either reads only what is held in memory, named in <see cref="Held"/> with what it reads, or is marked
 /// <c>[ByEvent]</c>, answered from what is held while its work is told as <c>DAORIS.ANSWERED</c>. A read that is neither is
 /// refused, unless it is one of the <see cref="Owed"/> reads that were computed on the window's request when the rule was set,
 /// which this census lets only shrink.
 /// </summary>
 /// <remarks>
-/// A press is not counted: it answers what it did, and it leaves the window's thread at its first wait (D56's UIFREEZE1 note).
+/// A press is not counted: it answers what it did, and it leaves the window's thread at its first wait.
 /// Moving an owed read is its <c>[ByEvent]</c> mark, its page hook through <c>askHeld</c>, its row in
 /// <c>DriverModuleHeldTests.Payloads</c>, and its name taken out of <see cref="Owed"/>.
 /// </remarks>
@@ -30,7 +30,7 @@ public sealed class WindowCensusTests
     };
 
     /// <summary>
-    /// The routes declaring no change that answered from a file, the service, git or a process when NOBLOCK1 set the rule, owed
+    /// The routes declaring no change that answered from a file, the service, git or a process when the rule began, owed
     /// their move to <c>[ByEvent]</c> (or to <see cref="Held"/>, where a look shows they read only memory); not judged one by one
     /// then, so a name here is "not shown held", never "shown slow". None is added: a new read is held or told by event.
     /// </summary>

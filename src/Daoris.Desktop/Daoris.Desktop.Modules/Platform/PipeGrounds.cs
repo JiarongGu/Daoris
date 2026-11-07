@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What a person's press rests on, read at its ask and read again at its Confirm (CONFIRMWAIT1a-i, the confirm-wait design §5.1): a
+/// What a person's press rests on, read at its ask and read again at its Confirm: a
 /// wire's word, told in lower case as a <c>changed</c> refusal's <c>ground</c>, added to and never renamed.
 /// </summary>
 public enum PipeGroundKind
@@ -43,14 +43,14 @@ public enum PipeGroundKind
 public sealed record PipeReading(PipeGroundKind Kind, string Subject, string Value, string? Words = null);
 
 /// <summary>
-/// The ground that moved while a press waited, as the person and the terminal are told it (§5.1, §8.3): <see cref="Reason"/> the
+/// The ground that moved while a press waited, as the person and the terminal are told it: <see cref="Reason"/> the
 /// catalogue's code (<c>session</c>, <c>turn</c>, <c>setting</c>, <c>repository</c>, <c>quest</c>, <c>ask</c>, <c>plan</c>,
 /// <c>branch</c>, <c>wait</c>; the page's <c>person.changed.&lt;reason&gt;</c>), and its values by name (<c>then</c>, <c>now</c>,
 /// <c>repository</c>, <c>branch</c>), codes the instance read.
 /// </summary>
 public sealed record PipeGroundChange(string Reason, IReadOnlyDictionary<string, string> Values)
 {
-    /// <summary>The terminal's sentence for it, the verb's own English (§8.3's last line).</summary>
+    /// <summary>The terminal's sentence for it, the verb's own English.</summary>
     public string Sentence => Reason switch
     {
         "session" => $"the session moved on while this waited: it was {Value("then")}, it is {Value("now")}",
@@ -68,7 +68,7 @@ public sealed record PipeGroundChange(string Reason, IReadOnlyDictionary<string,
 }
 
 /// <summary>
-/// What the grounds are read from (§5.2): the loop's readers, handed to the pipe as the standing confirmation's are. Each answers what
+/// What the grounds are read from: the loop's readers, handed to the pipe as the standing confirmation's are. Each answers what
 /// it read now; a throw, or no answer within the ground's bound, is a read that failed.
 /// </summary>
 public interface IPipeGroundWorld
@@ -77,7 +77,7 @@ public interface IPipeGroundWorld
     Task<(string State, DateTimeOffset Updated)?> SessionAsync(string id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// What a repository's or a workspace's name resolves to on this machine (the confirm-wait design §15.1 item 4): each registry row it
+    /// What a repository's or a workspace's name resolves to on this machine: each registry row it
     /// names, by its repository, workspace, whether it is adopted and its full root, in one text; null where the name has no row.
     /// </summary>
     Task<string?> RegistrationAsync(string name, CancellationToken cancellationToken);
@@ -95,7 +95,7 @@ public interface IPipeGroundWorld
     Task<string?> SessionHeadAsync(string session, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Every branch tip in <paramref name="repository"/>'s checkout, read at once (§15.1 item 1): each local branch by its name, each of
+    /// Every branch tip in <paramref name="repository"/>'s checkout, read at once: each local branch by its name, each of
     /// <c>origin</c>'s as <c>origin/&lt;name&gt;</c>, each a full commit id; null where it has no checkout here.
     /// </summary>
     Task<IReadOnlyDictionary<string, string>?> TipsAsync(string repository, CancellationToken cancellationToken);
@@ -104,7 +104,7 @@ public interface IPipeGroundWorld
     Task<IReadOnlyDictionary<string, string>?> SessionTipsAsync(string session, CancellationToken cancellationToken);
 
     /// <summary>
-    /// A read of <paramref name="module"/>'s own, called in process with <paramref name="payload"/> as a window would send it (§5.2): its
+    /// A read of <paramref name="module"/>'s own, called in process with <paramref name="payload"/> as a window would send it: its
     /// answer's data, or a throw where it refused.
     /// </summary>
     Task<JsonElement> ReadAsync(string module, string route, object? payload, CancellationToken cancellationToken);
@@ -125,7 +125,7 @@ public interface IPipeGroundWorld
 /// <summary>One ground a route names: how it is read from the press's payload, and how long the read may take.</summary>
 public abstract class PipeGround(PipeGroundKind kind, TimeSpan? bound = null)
 {
-    /// <summary>A state's read, and a read of one file (§5.1, §5.2).</summary>
+    /// <summary>A state's read, and a read of one file.</summary>
     public static readonly TimeSpan StateBound = TimeSpan.FromSeconds(5);
 
     /// <summary>The bridge's own bound for a read it passes none for (<c>bridge/call.ts</c>'s 30 seconds), "as the page reads it".</summary>
@@ -143,12 +143,12 @@ public abstract class PipeGround(PipeGroundKind kind, TimeSpan? bound = null)
     public abstract IReadOnlyList<string> Fields { get; }
 
     /// <summary>
-    /// The readings <paramref name="payload"/>'s press yields, by kind and subject, without reading anything (the confirm-wait design
-    /// §15.2 item 7): what the restore holds a record's grounds to.
+    /// The readings <paramref name="payload"/>'s press yields, by kind and subject, without reading anything:
+    /// what the restore holds a record's grounds to.
     /// </summary>
     public virtual IReadOnlyList<(PipeGroundKind Kind, string Subject)> Expected(JsonElement? payload) => [];
 
-    /// <summary>A setting's ground: whether the value it reads is already what the press sets (§5.1's <c>already</c>). Others never.</summary>
+    /// <summary>A setting's ground: whether the value it reads is already what the press sets. Others never.</summary>
     public virtual bool Already(IReadOnlyList<PipeReading> read, JsonElement? payload) => false;
 
     /// <summary>The text of <paramref name="payload"/>'s field <paramref name="name"/>, as the handler reads it (a string), or null.</summary>
@@ -209,7 +209,7 @@ public sealed class SessionGround(string named, bool many = false) : PipeGround(
 }
 
 /// <summary>
-/// A repository or workspace the payload names, registered on this machine, and as what (the confirm-wait design §15.1 item 4): the rows
+/// A repository or workspace the payload names, registered on this machine, and as what: the rows
 /// its name resolves to, so a name registered again at another checkout is moved though it is still registered.
 /// </summary>
 public sealed class RepositoryGround(params string[] named) : PipeGround(PipeGroundKind.Repository)
@@ -304,7 +304,7 @@ public sealed class BranchGround(
 }
 
 /// <summary>
-/// A branch a plan's answer names (the confirm-wait design §15.1 item 1): in a registered <paramref name="Repository"/>'s checkout, or in
+/// A branch a plan's answer names: in a registered <paramref name="Repository"/>'s checkout, or in
 /// <paramref name="Session"/>'s tree, where <c>HEAD</c> is the tree's head.
 /// </summary>
 public sealed record PipeRef(string? Repository, string? Session, string Branch)
@@ -315,7 +315,7 @@ public sealed record PipeRef(string? Repository, string? Session, string Branch)
 }
 
 /// <summary>
-/// A read of the driver's own, projected (§5.1): a <c>plan</c> takes the fingerprint of the fields its row names; a <c>wait</c> whether
+/// A read of the driver's own, projected: a <c>plan</c> takes the fingerprint of the fields its row names; a <c>wait</c> whether
 /// the wait the press answers is still open under the same id; a <c>setting</c> the value it reads where it is kept, compared at the
 /// ask with the value the press sets (<see cref="Sets"/>). <paramref name="ask"/> builds the read's payload from the press's;
 /// <paramref name="take"/> projects its answer, with the press's payload beside it, to the compared text.
@@ -334,7 +334,7 @@ public sealed class ReadGround(
     public Func<JsonElement?, string?>? Sets { get; init; }
 
     /// <summary>
-    /// For a <c>plan</c> whose rows name branches (the confirm-wait design §15.1 item 1): the branches its answer names, each of whose full
+    /// For a <c>plan</c> whose rows name branches: the branches its answer names, each of whose full
     /// tip is read and bound beside the projection, since a count or a short id stays the same while the commits change.
     /// </summary>
     public Func<JsonElement, JsonElement?, IEnumerable<PipeRef>>? Tips { get; init; }
@@ -371,7 +371,7 @@ public sealed class ReadGround(
         var taken = take(answer, payload);
         if (Tips is null) return [new PipeReading(Kind, Route, taken)];
 
-        // Each branch the answer names, by its full tip, read once per checkout or tree (§15.1 item 1).
+        // Each branch the answer names, by its full tip, read once per checkout or tree.
         var bound = new List<string>();
         foreach (var where in Tips(answer, payload).Distinct().GroupBy(each => (each.Repository, each.Session)))
         {
@@ -438,7 +438,7 @@ public sealed class LoopGround(PipeGroundKind kind, string what, IReadOnlyList<s
 }
 
 /// <summary>
-/// A route's row of grounds (§5.1): the grounds it names, or none for a <c>timeless</c> press, which rests on nothing a wait moves; read
+/// A route's row of grounds: the grounds it names, or none for a <c>timeless</c> press, which rests on nothing a wait moves; read
 /// at the ask, read again at the Confirm, and judged by <see cref="Judge"/>.
 /// </summary>
 public sealed class PipeGroundRow(IReadOnlyList<PipeGround> grounds, string? timeless = null)
@@ -472,16 +472,16 @@ public sealed class PipeGroundRow(IReadOnlyList<PipeGround> grounds, string? tim
         return read;
     }
 
-    /// <summary>The readings <paramref name="payload"/>'s press yields across every ground, by kind and subject (§15.2 item 7).</summary>
+    /// <summary>The readings <paramref name="payload"/>'s press yields across every ground, by kind and subject.</summary>
     public IReadOnlyList<(PipeGroundKind Kind, string Subject)> Expected(JsonElement? payload) => [.. Grounds.SelectMany(each => each.Expected(payload))];
 
-    /// <summary>Whether a <c>setting</c> ground already reads what the press sets (§5.1's <c>already</c>).</summary>
+    /// <summary>Whether a <c>setting</c> ground already reads what the press sets.</summary>
     public bool Already(IReadOnlyList<PipeReading> read, JsonElement? payload) =>
         Grounds.OfType<ReadGround>().Any(ground =>
             ground.Already([.. read.Where(each => each.Kind == ground.Kind && each.Subject == ground.Route)], payload));
 
     /// <summary>
-    /// The readings at the ask compared with those now (§5.2): the first ground whose reading moved, as the reason the person and the
+    /// The readings at the ask compared with those now: the first ground whose reading moved, as the reason the person and the
     /// terminal are told, or null where all hold. A change made before the ask is no change: the ask's reading is the baseline.
     /// </summary>
     public static PipeGroundChange? Judge(IReadOnlyList<PipeReading> then, IReadOnlyList<PipeReading> now)
@@ -504,7 +504,7 @@ public sealed class PipeGroundRow(IReadOnlyList<PipeGround> grounds, string? tim
             };
         }
 
-        // A ground read now that the ask's baseline lacks moved too (§15.2 item 7): a baseline missing a ground protects nothing it omitted.
+        // A ground read now that the ask's baseline lacks moved too: a baseline missing a ground protects nothing it omitted.
         foreach (var current in now)
         {
             if (then.Any(each => each.Kind == current.Kind && each.Subject == current.Subject)) continue;

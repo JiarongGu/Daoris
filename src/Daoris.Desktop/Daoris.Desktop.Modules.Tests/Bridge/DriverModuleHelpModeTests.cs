@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Ask Daoris's access mode over the bridge (HELPMODE1a2, D183 point 2): <c>SET_HELP_MODE</c>, the screen's half of
-/// <c>daoris ask-daoris mode</c>, over the same key in the same file (D50); the state answering it as <c>helpMode</c>; a mode the
+/// Ask Daoris's access mode over the bridge: <c>SET_HELP_MODE</c>, the screen's half of
+/// <c>daoris ask-daoris mode</c>, over the same key in the same file; the state answering it as <c>helpMode</c>; a mode the
 /// driver does not know refused with nothing written. Edits to <c>driver.json</c> only, so no service and no process.
 /// </summary>
 public sealed class DriverModuleHelpModeTests : DriverModuleBridge
@@ -44,7 +44,7 @@ public sealed class DriverModuleHelpModeTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 The route and the terminal agree (D50): what one sets the other reads, through the one key. The terminal's full is the
+    /// 🔴 The route and the terminal agree: what one sets the other reads, through the one key. The terminal's full is the
     /// state's full, and the route's restricted is what the terminal says.
     /// </summary>
     [Fact]

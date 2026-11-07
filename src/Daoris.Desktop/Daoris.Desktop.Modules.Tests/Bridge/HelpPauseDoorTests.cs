@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// PAUSE1f-c: a pause proposal's Apply is the work's own doors, the pause <c>WORK_PAUSE</c> makes and the resume
+/// A pause proposal's Apply is the work's own doors, the pause <c>WORK_PAUSE</c> makes and the resume
 /// <c>WORK_RESUME</c> lifts, each judged again as it goes and coming back as its sentence; the facts the judge reads are asked
-/// for only when one is pending. The service is stood in over a loopback socket and nothing starts a process: the fast half (MOD8).
+/// for only when one is pending. The service is stood in over a loopback socket and nothing starts a process: the fast half.
 /// </summary>
 public sealed class HelpPauseDoorTests : DriverModuleBridge
 {

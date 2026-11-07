@@ -17,7 +17,7 @@ public sealed record ChannelMembersAnswer(IReadOnlyList<ChannelMemberView> Membe
 public sealed record ChannelMemberRemoved(bool Removed, string? Code);
 
 /// <summary>
-/// The window's doors on the agents outside Daoris on a channel (CHANNELJOIN1c; the event-channel design §5.8): who is on a line's
+/// The window's doors on the agents outside Daoris on a channel: who is on a line's
 /// channel, for <i>At work</i> (a read, as the channel's own is), and the person's <i>Remove</i>, which is the window's alone: no terminal
 /// ends a membership over the pipe. The member's own doors are the service's.
 /// </summary>

@@ -6,7 +6,7 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The window's landing press, always answered (LANDPRESS1): it runs once per session under the loop's own lifetime, never the asking
+/// The window's landing press, always answered: it runs once per session under the loop's own lifetime, never the asking
 /// window's, and is answered within <see cref="Within"/> with what it came to, or held in words while it goes on. A second press of a
 /// session whose press runs is held in words too, and runs nothing. Every answer is one <see cref="Event"/> line of the machine log, its
 /// outcome <see cref="Landed"/>, <see cref="Accepted"/>, <see cref="Held"/> or <see cref="Refused"/> with its sentence; a press that ends

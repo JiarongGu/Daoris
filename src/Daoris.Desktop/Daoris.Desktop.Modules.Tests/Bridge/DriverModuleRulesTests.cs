@@ -4,13 +4,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// What an agent may do, over the bridge (`RulesRoutes.cs`, MOD5): the rules, a change to them, and
+/// What an agent may do, over the bridge (`RulesRoutes.cs`): the rules, a change to them, and
 /// the answer to an agent's proposal.
 /// </summary>
 public sealed class DriverModuleRulesTests : DriverModuleBridge
 {
     /// <summary>
-    /// What an agent may do (PERM1, D72) as the page reads it: Daoris's defaults, each with its reason and
+    /// What an agent may do as the page reads it: Daoris's defaults, each with its reason and
     /// whether it is on, and every scope the machine's file holds — the file the terminal's
     /// `daoris agent rules` edits.
     /// </summary>
@@ -33,15 +33,15 @@ public sealed class DriverModuleRulesTests : DriverModuleBridge
             ["connector", "commit", "no-push", "no-publish", "tree-guard"],
             defaults.Select(d => d.GetProperty("id").GetString()!).ToArray());
         Assert.True(defaults[0].GetProperty("on").GetBoolean());
-        // ONEWAY1q: no-push is fixed on, its switch git access's Write; no-publish is switched alone.
+        // No-push is fixed on, its switch git access's Write; no-publish is switched alone.
         Assert.True(defaults[2].GetProperty("on").GetBoolean());
         Assert.True(defaults[2].GetProperty("fixed").GetBoolean());
         Assert.False(defaults[3].GetProperty("on").GetBoolean());
         Assert.False(defaults[3].TryGetProperty("fixed", out _));
         Assert.Equal("deny", defaults[3].GetProperty("list").GetString());
-        // The driver's own sentence travels: what the number meant, never the number (POLISH4a).
+        // The driver's own sentence travels: what the number meant, never the number.
         Assert.Contains("stays the person's call", defaults[3].GetProperty("why").GetString());
-        // The tree guard (PERM3) is a hook: no rule, and the tools it judges named instead. The bridge
+        // The tree guard is a hook: no rule, and the tools it judges named instead. The bridge
         // leaves a null out, so a rule default carries no `hook` the page could misread.
         Assert.Empty(defaults[4].GetProperty("rules").EnumerateArray());
         Assert.Equal(TreeGuard.Matcher, defaults[4].GetProperty("hook").GetString());
@@ -56,7 +56,7 @@ public sealed class DriverModuleRulesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The screen's half of `daoris agent rules` (D50): every change is an edit to the same file, and
+    /// The screen's half of `daoris agent rules`: every change is an edit to the same file, and
     /// the answer is the state after it, like every other control here.
     /// </summary>
     [Fact]
@@ -98,7 +98,7 @@ public sealed class DriverModuleRulesTests : DriverModuleBridge
         Assert.False(File.Exists(PermissionRules.PathOf(Home)));
     }
 
-    /// <summary>A proposal exactly as the connector writes it (PERM2) — THE FILE is the contract.</summary>
+    /// <summary>A proposal exactly as the connector writes it — THE FILE is the contract.</summary>
     private void Propose(
         string id, string state, string action, string? list = null, string? rule = null,
         string scope = "machine", string? name = null, string? session = "s1a2b3c4", string? ask = null,
@@ -118,7 +118,7 @@ public sealed class DriverModuleRulesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// What agents proposed about the rules (PERM2, D74) rides the same answer as the rules: the person
+    /// What agents proposed about the rules rides the same answer as the rules: the person
     /// reads a waiting widening beside the rules it would change, and the history of every other.
     /// </summary>
     [Fact]
@@ -149,7 +149,7 @@ public sealed class DriverModuleRulesTests : DriverModuleBridge
         Assert.True(!proposals[1].TryGetProperty("session", out var none) || none.ValueKind is JsonValueKind.Null);
     }
 
-    /// <summary>The screen's half of `daoris agent rules accept|decline` (D50), answered with the rules after it.</summary>
+    /// <summary>The screen's half of `daoris agent rules accept|decline`, answered with the rules after it.</summary>
     [Fact]
     public async Task A_proposal_answered_on_the_screen_lands_as_the_terminal_would_leave_it()
     {

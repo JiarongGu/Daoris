@@ -1,8 +1,7 @@
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A desktop project's sources, found by name wherever they lie under the project's folder (STRUCT5a, D166; the code-structure
-/// design §6): the modules library's files sit in module folders, so a test that reads a source names the file and never
+/// A desktop project's sources, found by name wherever they lie under the project's folder: the modules library's files sit in module folders, so a test that reads a source names the file and never
 /// the folder it is in, and a test that walks the project walks every folder of it. The build's own output (<c>bin/</c>,
 /// <c>obj/</c>) is no source. A copy of the driver tests' reader: the two test projects share no code.
 /// </summary>
@@ -26,7 +25,7 @@ internal static class SourceFiles
     /// <exception cref="InvalidOperationException">No source has the name, or two do.</exception>
     public static string Module(string name) => Find(ModulesProject, name);
 
-    /// <summary>The one driver source of this name, at any depth of the driver's folder (FOUNDATION1 mod-0, D166 point 4).</summary>
+    /// <summary>The one driver source of this name, at any depth of the driver's folder.</summary>
     /// <exception cref="InvalidOperationException">No source has the name, or two do.</exception>
     public static string Driver(string name) => Find(DriverProject, name);
 

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A quest's pause and its resume as the steward's own (STEWARDROLE1d): the person's pause stops each live session as the person's stop, which
+/// A quest's pause and its resume as the steward's own: the person's pause stops each live session as the person's stop, which
 /// this never writes. The sessions it stops say the steward paused the quest in a code of their own, and its resume releases them as the
 /// steward's release (<c>roleReleases</c>), taken or ended with its operation. It resumes only a pause the steward made this run that
 /// nothing of the owner's has touched since; outside the granted acts either asks as the person's <c>WORK_PAUSE</c> or <c>WORK_RESUME</c>.

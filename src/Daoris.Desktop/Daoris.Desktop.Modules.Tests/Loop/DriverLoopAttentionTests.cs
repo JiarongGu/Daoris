@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// NOTIFY1a: a conversation that answered the person is told as the tick's attention is, on <c>SESSION_ATTENTION</c>, in the
+/// A conversation that answered the person is told as the tick's attention is, on <c>SESSION_ATTENTION</c>, in the
 /// same shape (the shell's notifier and the page's toast read it by its fields), while the machine's notifications are on.
 /// </summary>
 public sealed class DriverLoopAttentionTests : DriverModuleBridge
@@ -13,7 +13,7 @@ public sealed class DriverLoopAttentionTests : DriverModuleBridge
         .Where(message => message.Type == "SESSION_ATTENTION")
         .Select(message => JsonSerializer.SerializeToElement(message.Payload))];
 
-    /// <summary>The runner's answer, told with the driver's own sentence (D24) and the conversation a notification opens.</summary>
+    /// <summary>The runner's answer, told with the driver's own sentence and the conversation a notification opens.</summary>
     [Fact]
     public async Task A_conversation_s_answer_is_told_as_attention_in_the_driver_s_sentence()
     {
@@ -47,7 +47,7 @@ public sealed class DriverLoopAttentionTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// NOTIFY2g (the notification design §2.4, §2.5): an answer is kept as an <c>answered</c> notice before the switch's gate, so one heard
+    /// An answer is kept as an <c>answered</c> notice before the switch's gate, so one heard
     /// with the switch off is listed; one notice per conversation, unread again at its next answer, and never said again as a notice's
     /// arrival, its own attention being its voice.
     /// </summary>

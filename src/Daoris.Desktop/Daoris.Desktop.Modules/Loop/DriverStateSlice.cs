@@ -6,7 +6,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The driver's state as every window holds it, the push path's first slice (PUSH1a, D182): its standing choices and holds, what
+/// The driver's state as every window holds it, the push path's first slice: its standing choices and holds, what
 /// runs, and the shell's own standing, judged by the shell's loop from what <c>STATE</c> answers and pushed when it changes, so a
 /// tick reads none of it again in any window.
 /// </summary>
@@ -19,7 +19,7 @@ namespace Daoris.Desktop;
 /// moves it), <c>running</c> (what runs and what waits for review, each look and each start or end moves it) and <c>shell</c>
 /// (whether the service is up, and the home this shell established). A session's start pushes <c>running</c> alone.</para>
 ///
-/// <para><b>Desktop-only.</b> The home is a machine path, which only this machine's windows read (D47, D182 point 2); the file the
+/// <para><b>Desktop-only.</b> The home is a machine path, which only this machine's windows read; the file the
 /// choices are read from, the cap, the agent, the poll and the released stops are the pull's alone, read by no view.</para>
 /// </remarks>
 public static class DriverStateSlice
@@ -38,9 +38,9 @@ public static class DriverStateSlice
             "languages", "workspaceLanguages", "languageTable", "reviews", "workspaceReviews", "opinions", "workspaceOpinions",
             "helpers", "workspaceHelpers", "handOver", "workspaceHandOver", "commits", "workspaceCommits", "access", "workspaceAccess", "machineAccess", "heavyGates",
             "sessionChecks",
-            // TERMTRUST1a (D201): the standing confirmation, as This Daoris's row, Notifications' line and the hold's mark read it.
+            // The standing confirmation, as This Daoris's row, Notifications' line and the hold's mark read it.
             "standingConfirmation",
-            // GITAUTH1f (D198): git access at each level, as Settings → Git and the remote rows read it.
+            // Git access at each level, as Settings → Git and the remote rows read it.
             "gitAccess", "workspaceGitAccess", "machineGitAccess",
         ],
         ["running"] = ["running", "drivingBrowser", "inReview", "helpSwapping", "sessionGitAccess"],

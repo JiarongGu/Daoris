@@ -4,13 +4,13 @@ using System.Net.Sockets;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The endpoint a session's browser server is handed (BROWSERSTART1): a loopback port the shell holds for its life, which
+/// The endpoint a session's browser server is handed: a loopback port the shell holds for its life, which
 /// brings the browser up at the first connection and then relays the connection to it. So the endpoint is handed at a
 /// session's start while the browser stays down until something drives a page.
 /// </summary>
 /// <remarks>
 /// <para><b>Bytes, not requests.</b> The relay copies the stream both ways and reads none of it, so the HTTP door and the
-/// socket of a CDP client pass alike. The browser's own relay (CHR6) names its own port in the sockets it announces, which
+/// socket of a CDP client pass alike. The browser's own relay names its own port in the sockets it announces, which
 /// is the browser's by then.</para>
 ///
 /// <para><b>A failed bring-up closes the connection</b> and the next connection tries again.</para>

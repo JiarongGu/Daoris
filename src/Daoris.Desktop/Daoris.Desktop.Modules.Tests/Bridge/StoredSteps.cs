@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// WORKFLOWCLEAN1 1b: no door saves a list of steps or a <c>handed</c> now, yet a file saved so before still reads and binds. A test that needs
+/// No door saves a list of steps or a <c>handed</c>, yet a file saved so before still reads and binds. A test that needs
 /// one writes the file as an older build left it.
 /// </summary>
 internal static class StoredSteps

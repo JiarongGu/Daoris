@@ -1,7 +1,7 @@
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The second screen (D55 §b, SURF8): a named window the page asks for, opened on its own pump by
+/// The second screen: a named window the page asks for, opened on its own pump by
 /// the shell.
 /// </summary>
 /// <remarks>
@@ -42,13 +42,13 @@ public sealed class WindowsModuleTests : Bridge
 
     private readonly Windows _windows = new();
 
-    /// <summary>What each main window was told to wear on its taskbar button (NOTIFY1b), by its name (NOTIFY2c).</summary>
+    /// <summary>What each main window is told to wear on its taskbar button, by its name.</summary>
     private readonly List<(string Window, int Count, string? Description)> _badges = [];
 
-    /// <summary>The workspace each window was told to wear in its title (MAINWINDOWS3b); a null name is the first main window.</summary>
+    /// <summary>The workspace each window is told to wear in its title; a null name is the first main window.</summary>
     private readonly List<(string? Name, string? Workspace)> _workspaces = [];
 
-    /// <summary>Which workspace each main window holds, as its page told it (NOTIFY2c).</summary>
+    /// <summary>Which workspace each main window holds, as its page told it.</summary>
     private readonly MainWindowScopes _scopes = new();
 
     private WindowsModule Module() => new(Bus, _windows, new PlatformAddress(Service),
@@ -57,7 +57,7 @@ public sealed class WindowsModuleTests : Bridge
         scopes: _scopes);
 
     /// <summary>
-    /// MAINWINDOWS3b: the frame's title is the count, the application's own name, then the workspace the page names. The name is
+    /// The frame's title is the count, the application's own name, then the workspace the page names. The name is
     /// the frame's: only the part after the separator is taken, and only from a page title that starts with that name.
     /// </summary>
     [Theory]
@@ -101,7 +101,7 @@ public sealed class WindowsModuleTests : Bridge
     }
 
     /// <summary>
-    /// NOTIFY2c: the workspace a main window holds reaches the registry a notification's click reads as data, `workspace` beside the
+    /// The workspace a main window holds reaches the registry a notification's click reads as data, `workspace` beside the
     /// title, never read from the title, which is the person's words; none is every workspace.
     /// </summary>
     [Fact]
@@ -134,7 +134,7 @@ public sealed class WindowsModuleTests : Bridge
     {
         var state = await AnswerAsync(Module(), "OPEN", new { name = "monitor" });
 
-        // The same bytes a browser gets, with one parameter — not a second frontend (D55 §b).
+        // The same bytes a browser gets, with one parameter — not a second frontend.
         Assert.Equal(
             ("monitor", "/?window=monitor&host=http%3A%2F%2Flocalhost%3A5177"),
             _windows.Asked.Single());
@@ -153,7 +153,7 @@ public sealed class WindowsModuleTests : Bridge
     }
 
     /// <summary>
-    /// A record fed from another machine is keyed `origin/id` (D47 §6). It has no console here and
+    /// A record fed from another machine is keyed `origin/id`. It has no console here and
     /// never will — but the name still has to survive the trip rather than become a different URL.
     /// </summary>
     [Fact]
@@ -203,7 +203,7 @@ public sealed class WindowsModuleTests : Bridge
     }
 
     /// <summary>
-    /// WINDOW2: a secondary window's page tells its own frame which theme it is in, so its caption
+    /// A secondary window's page tells its own frame which theme it is in, so its caption
     /// follows the viewer's choice rather than the OS. By name, since every window's page talks to
     /// the one module — and a window not open says so rather than failing.
     /// </summary>
@@ -221,7 +221,7 @@ public sealed class WindowsModuleTests : Bridge
     }
 
     /// <summary>
-    /// ONEINSTANCE1: another main window, which a later launch opened, is frameless as the main one is, and the kit's
+    /// Another main window, which a later launch opened, is frameless as the main one is, and the kit's
     /// <c>SET_THEME</c> has no route to it, so its page tells its frame the theme by its name here, as a utility window's does.
     /// </summary>
     [Fact]
@@ -245,7 +245,7 @@ public sealed class WindowsModuleTests : Bridge
     }
 
     /// <summary>
-    /// NOTIFY1b: the main window's page tells its frame how much waits on the person (Overview's *What needs you*), for
+    /// The main window's page tells its frame how much waits on the person (Overview's *What needs you*), for
     /// the taskbar button's overlay and the window's title, with the words a screen reader says in the page's language.
     /// </summary>
     [Fact]
@@ -258,7 +258,7 @@ public sealed class WindowsModuleTests : Bridge
     }
 
     /// <summary>
-    /// NOTIFY2c: every main window's page tells its own workspace's count, by the name its window was opened under as `SET_TITLE`
+    /// Every main window's page tells its own workspace's count, by the name its window is opened under as `SET_TITLE`
     /// does, and its own frame wears it; no name is the first main window's.
     /// </summary>
     [Fact]
@@ -274,7 +274,7 @@ public sealed class WindowsModuleTests : Bridge
     }
 
     /// <summary>
-    /// NOTIFY2c, SESSBADGE1: each page orders the counts it tells by its own clock, so the order is kept per window. One kept for all
+    /// Each page orders the counts it tells by its own clock, so the order is kept per window. One kept for all
     /// refused a second window's count told before the first window's last, though the two say different workspaces.
     /// </summary>
     [Fact]
@@ -309,7 +309,7 @@ public sealed class WindowsModuleTests : Bridge
     }
 
     /// <summary>
-    /// SESSBADGE1: the page tells each count as it changes and waits for no answer, so two told close together may reach the frame in
+    /// The page tells each count as it changes and waits for no answer, so two told close together may reach the frame in
     /// either order. The title once read 5 while the band read 4 from the same value. Each count carries the order the page told it in,
     /// and one told before the count the frame wears is never worn over it; a page that tells no order is worn as it comes.
     /// </summary>
@@ -350,7 +350,7 @@ public sealed class WindowsModuleTests : Bridge
     }
 
     /// <summary>
-    /// NOTIFY2d (the notification design §3.3): a main window's page hands the shell's notifier the notices' words in its language, at
+    /// A main window's page hands the shell's notifier the notices' words in its language, at
     /// its load and at each change of language, as it tells its count's words; the notifier words each balloon from them.
     /// </summary>
     [Fact]

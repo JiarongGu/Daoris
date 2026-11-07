@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// HOMELAYOUT3's move against the machine (the install layout design §7.1, §8.5): what holds a path the move would rename is a
+/// The home's move against the machine: what holds a path the move would rename is a
 /// real process or a real open file, so these start one or hold one, and end it. A process running from under the install holds
 /// the whole move off; a file another holds open keeps its entry where it is while the rest moves; a lease a live process holds
 /// is never moved and moves nothing under it.
@@ -51,7 +51,7 @@ public sealed class HomePlacingProcessTests : IDisposable
 
     private string Home => Path.Combine(_install, InstallHome.Folder);
 
-    /// <summary>An entry's old place in this install's home, where the build before HOMELAYOUT3 kept it, and asked here.</summary>
+    /// <summary>An entry's old place in this install's home, asked here.</summary>
     private string Old(HomeEntry entry) => DaorisHome.Places(Home, entry)[^1];
 
     private HomeEstablished? Start(Func<string, IReadOnlyList<int>>? others = null)
@@ -100,7 +100,7 @@ public sealed class HomePlacingProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The design §8.5: a log file another holds open keeps the logs where they are (Windows refuses the folder's rename), said
+    /// 🔴 A log file another holds open keeps the logs where they are (Windows refuses the folder's rename), said
     /// with why; the rest moves; the next start, the file let go, moves the logs.
     /// </summary>
     [Fact]
@@ -129,8 +129,8 @@ public sealed class HomePlacingProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A held lease is never renamed under itself (D172's HOMELAYOUT3 note): a lease at the old place naming a live process (a
-    /// build from before the switch, here a waiting node) holds the move off and stays where it is; its holder gone, the rest
+    /// 🔴 A held lease is never renamed under itself: a lease at the old place naming a live process (a
+    /// build of the other layout, here a waiting node) holds the move off and stays where it is; its holder gone, the rest
     /// moves and the lease, now stale, is still left where it was.
     /// </summary>
     [Fact]

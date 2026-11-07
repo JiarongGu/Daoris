@@ -50,7 +50,7 @@ public sealed class LinesRoutes(DriverContext context)
             throw new DriverException("a line is set for a `repository` or a `workspace` — name one of them.");
         }
 
-        // WORKFLOWCLEAN1 1a: the line's policy (how it is integrated) is edited here beside its branch, set where the press names an object,
+        // The line's policy (how it is integrated) is edited here beside its branch, set where the press names an object,
         // withdrawn on null; a press that names only a policy leaves the line as it is. Its values are LandingKey's to judge.
         var named = press.Policy is not null;
         LandingIntegrate? policy = null;
@@ -97,8 +97,8 @@ public sealed class LinesRoutes(DriverContext context)
 
     // Every repository's line here and what said so, for the screen. The checkouts are
     // the registry's, so this waits for the driver like the review does. Git is asked each checkout's line, so an ask while
-    // one runs shares it. The lines slice pushes the same answer per repository, judged from the machine's facts
-    //; this pull stays for a page that does not read the slice.
+    // one runs shares it. The lines slice pushes the same answer per repository, judged from the machine's facts;
+    //this pull stays for a page that does not read the slice.
     [DriverRoute("LINES", PipeClass.Open)]
     [OneFlight("LINES")]
     private async Task<object?> LinesAsync(NoPayload _, CancellationToken cancellationToken)
@@ -276,7 +276,7 @@ public sealed class LinesRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// Each unit of work's milestone (FABRIC-MILESTONE1a, the fabric events design §D0, §D3), the page's read of what
+    /// Each unit of work's milestone, the page's read of what
     /// `daoris work state` says: whether its end was reached, the result kept, the cleanup pending (what waits and
     /// why) or completed (what went), and the recovery retained until its date, each with the inventory entries it is read from.
     /// Derived at each read from the records the tree lifecycle keeps, never stored; a look that changes nothing, so it declares
@@ -297,7 +297,7 @@ public sealed class LinesRoutes(DriverContext context)
         var unread = new List<string>();
         // each tree joined to the session that recorded it, from the sessions' look the work slice reads too.
         var looked = _loop.Facts.Current.Value<SessionLook>(HelpFacts.Sessions, HelpFacts.Whole);
-        // LANDRETIRE1 part 2: which quests the landings the line does not hold name are closed, the service's, read once and only where one asks.
+        // Which quests the landings the line does not hold name are closed, the service's, read once and only where one asks.
         var closed = _loop.Service is { } ledger
             ? await LandedStanding.ClosedAsync(new LandedBranches(_loop.Home).Entries(), ledger.EveryQuestAsync, cancellationToken)
             : new HashSet<string>();
@@ -312,19 +312,19 @@ public sealed class LinesRoutes(DriverContext context)
         return new
         {
             Units = units.Select(WorkUnit).ToArray(),
-            // CLEANUP1, additive: Daoris's own recoveries no unit names (a folder moved aside, a recovery ref), each by its rule.
+            // Daoris's own recoveries no unit names (a folder moved aside, a recovery ref), each by its rule.
             Recovery = recovery.Select(WorkEntry).ToArray(),
             Unread = unread.ToArray(),
-            // FABRIC-PERFORM1g, additive: the plugin steps whose attempt is held for the person, of every unit (a quest's too), or of the
+            // The plugin steps whose attempt is held for the person, of every unit (a quest's too), or of the
             // units the name picked. An install no graph naming a plugin's performed node governs keeps no node record, and lists none.
             Held = HeldAnswer(HeldAttempts.Read(new NodeRecordFiles(_loop.Home), quests: _loop.LastQuests)
                 .Where(held => read.Unit is not { } picked || held.Unit == picked || units.Any(unit => unit.Unit == held.Unit))),
-            // FABRIC-PERFORM1j, additive: the node records that do not read, each stopping its unit until a person mends it; with a name,
+            // The node records that do not read, each stopping its unit until a person mends it; with a name,
             // those of the units it picked, by the unit a record names or its file's key.
             Unreadable = UnreadableAnswer(HeldAttempts.Unreadable(new NodeRecordFiles(_loop.Home))
                 .Where(record => read.Unit is not { } picked
                     || units.Select(unit => unit.Unit).Append(picked).Any(unit => HeldAttempts.Picks(record, unit)))),
-            // FABRIC-CLOSE1j, additive: the closure graphs ended by the person's own done, or closed only in part, read from the same records.
+            // The closure graphs ended by the person's own done, or closed only in part, read from the same records.
             Ends = EndsAnswer(GraphEnds.Read(new NodeRecordFiles(_loop.Home))
                 .Where(end => read.Unit is not { } picked || end.Unit == picked || units.Any(unit => unit.Unit == end.Unit))),
         };
@@ -342,7 +342,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// <summary>The node records that do not read (<see cref="WorkWires.UnreadableAnswer"/>).</summary>
     public static object[] UnreadableAnswer(IEnumerable<UnreadableRecord> unreadable) => WorkWires.UnreadableAnswer(unreadable);
 
-    // Open the node records' folder (FABRIC-PERFORM1j): What needs you's press on a record that does not read, which the person mends
+    // Open the node records' folder: What needs you's press on a record that does not read, which the person mends
     // there. The module names the folder, never the page, and opens it through the window kit's launcher, through the start gate, as a
     // session's and a plugin's folder are.
     /// <summary>Open the folder the units' node records are kept in, in the system's file manager.</summary>
@@ -370,12 +370,12 @@ public sealed class LinesRoutes(DriverContext context)
     /// <summary>The closure graphs' ends (<see cref="WorkWires.EndsAnswer"/>).</summary>
     public static object[] EndsAnswer(IEnumerable<GraphEnd> ends) => WorkWires.EndsAnswer(ends);
 
-    // The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g, D173's note): the page's half of `daoris work
+    // The person's word on a plugin step's attempt held for them: the page's half of `daoris work
     // held <unit> <node> <attempt> <word>`. Both doors end in HeldAttempts.Word, which records it under the unit's node record's lock with
     // the lease asked inside it; the loop's runtime applies it under the node's declaration at its next pass, which the nudge wakes.
     /// <summary>
-    /// Record the person's word (`resolution`: `happened`, `did-not` or `stop`; on a held close `record`, `resend` or `stop`, FABRIC-CLOSE1q;
-    /// on a failure kept for them `again`, FABRIC-PERFORM1k) on `attempt` of `node` on `unit`, held for them.
+    /// Record the person's word (`resolution`: `happened`, `did-not` or `stop`; on a held close `record`, `resend` or `stop`;
+    /// on a failure kept for them `again`) on `attempt` of `node` on `unit`, held for them.
     /// </summary>
     /// <remarks>
     /// A refusal is an ANSWER, as a discard's is: `{ done, refused, message }`, the message the terminal's sentence. Only the lease's
@@ -390,7 +390,7 @@ public sealed class LinesRoutes(DriverContext context)
         var (unit, node, attempt, word) = (press.Unit, press.Node, press.Attempt, press.Resolution);
         var service = _loop.Service ?? throw NotReady();
 
-        // FABRIC-PIPELINE1f: *Ask for a fix…* on a failed verification publishes its ask; it moves no node and writes nothing on the record.
+        // *Ask for a fix…* on a failed verification publishes its ask; it moves no node and writes nothing on the record.
         if (word == HeldResolutions.AskFix) return await HeldFixPress.AnswerAsync(service, new NodeRecordFiles(_loop.Home), press, cancellationToken);
 
         var done = HeldAttempts.Word(new NodeRecordFiles(_loop.Home), unit, node, attempt, word);

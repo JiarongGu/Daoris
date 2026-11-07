@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// <b>The wiring panel's route</b> (MAP1b): for each workspace the page names, what a driven start
+/// <b>The wiring panel's route</b>: for each workspace the page names, what a driven start
 /// would run on and where each part came from — the driver's <c>WiringAsync</c>, carried as names.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -56,8 +56,7 @@ public sealed class StartWiringRouteTests : Bridge
         // Once per workspace, in order — a repeated name is one circle.
         Assert.Equal(["aurora", "default"], starts.Select(s => s.GetProperty("workspace").GetString()));
 
-        // Rewritten by POOL1a2 (D197 point 1; the account-pool design §5.2): `aurora`'s own default was its start's account, from
-        // `workspace`. Every workspace reads the set now, begun at the machine's account, and `profileFrom` is never `workspace`.
+        // Every workspace reads the set, begun at the machine's account, and `profileFrom` is never `workspace`.
         var aurora = starts[0];
         Assert.Equal("work", aurora.GetProperty("job").GetString());
         Assert.Equal("stub", aurora.GetProperty("owner").GetString());
@@ -71,7 +70,7 @@ public sealed class StartWiringRouteTests : Bridge
     }
 
     /// <summary>
-    /// The intake is a job too (AGT6, MAP1): with an agent named for it, each workspace also answers
+    /// The intake is a job too: with an agent named for it, each workspace also answers
     /// what an intake there would run on — the resolution the intake itself takes, beside the work's.
     /// </summary>
     [Fact]
@@ -92,7 +91,7 @@ public sealed class StartWiringRouteTests : Bridge
             [("aurora", "work"), ("aurora", "intake"), ("default", "work"), ("default", "intake")],
             starts.Select(s => (s.GetProperty("workspace").GetString(), s.GetProperty("job").GetString())));
 
-        // The set's account, as the work's (POOL1a2): never a workspace's own.
+        // The set's account, as the work's: never a workspace's own.
         var aurora = starts[1];
         Assert.Equal("stub", aurora.GetProperty("adapter").GetString());
         Assert.Equal(("work", "machine"),
@@ -123,7 +122,7 @@ public sealed class StartWiringRouteTests : Bridge
 
     /// <summary>
     /// A start that would be held says so in the driver's own words: here on an account the person's *Read again* read
-    /// signed out, since the panel itself reads no account (ROSTER1).
+    /// signed out, since the panel itself reads no account.
     /// </summary>
     [Fact]
     public async Task A_start_that_would_be_held_carries_the_driver_s_sentence()
@@ -139,7 +138,7 @@ public sealed class StartWiringRouteTests : Bridge
         Assert.Contains("--account stale", start.GetProperty("refusal").GetString());
     }
 
-    /// <summary>🔴 The route carries names only: never a home, a binary path or a key (AGT3).</summary>
+    /// <summary>🔴 The route carries names only: never a home, a binary path or a key.</summary>
     [Fact]
     public async Task The_answer_carries_no_key_and_no_machine_path()
     {

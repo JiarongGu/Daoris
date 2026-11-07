@@ -1,7 +1,7 @@
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// PAGELOOP1 (c, D217): the tray's reload of every open window's page. What is here is the judgement the window forms (WinForms, no
+/// The tray's reload of every open window's page. What is here is the judgement the window forms (WinForms, no
 /// unit tests) cannot hold: which windows a reload reaches, that one still on its splash or trouble label is skipped, that each reload
 /// is said in the machine log by the window's name, and the menu item's words in both languages.
 /// </summary>

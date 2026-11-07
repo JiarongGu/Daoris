@@ -8,10 +8,10 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What a route's press can change, as named families of the page's queries (STATEHUB1b, D169 point 3). A route declares
+/// What a route's press can change, as named families of the page's queries. A route declares
 /// them beside its mark; <see cref="StatePublisher"/> names them on the wire in the page's words, in this order.
 /// </summary>
-/// <remarks>A wire's words: a scope is added, never renamed or renumbered in place (D169 point 3).</remarks>
+/// <remarks>A wire's words: a scope is added, never renamed or renumbered in place.</remarks>
 [Flags]
 public enum StateScopes
 {
@@ -36,7 +36,7 @@ public enum StateScopes
     /// <summary>Each repository's and workspace's rules: its line, how its work lands, and the rest the lines answer.</summary>
     Lines = 1 << 6,
 
-    // STATEHUB1d (D169 point 10): the rest of the routes' families, after the first slice's, which keep their numbers.
+    // The rest of the routes' families, after the first slice's, which keep their numbers.
 
     /// <summary>The quests, and each quest's or ask's work, which sits under their key.</summary>
     Quests = 1 << 7,
@@ -65,8 +65,6 @@ public enum StateScopes
     /// <summary>The agents this machine can run, what each start would run on, and their accounts.</summary>
     Harnesses = 1 << 15,
 
-    // STATEHUB1h (D169's STATEHUB1h note): the remaining presses' families, after STATEHUB1d's, which keep their numbers.
-
     /// <summary>The tools this machine runs, what is downloaded and offered, and where it looks.</summary>
     Tools = 1 << 16,
 
@@ -76,46 +74,36 @@ public enum StateScopes
     /// <summary>Daoris's browser's settings and favorites.</summary>
     Browser = 1 << 18,
 
-    /// <summary>How this Daoris is wired: its sizes, once a walk has counted them (FABRIC-EVENT5b). Told by the driver, declared by no route.</summary>
+    /// <summary>How this Daoris is wired: its sizes, once a walk has counted them. Told by the driver, declared by no route.</summary>
     Wiring = 1 << 19,
-
-    // NOTIFY2f (D196 point 6): after STATEHUB1h's, which keep their numbers.
 
     /// <summary>The notices of Done and failed and whether each is read, which the <c>notices</c> slice pushes.</summary>
     Notices = 1 << 20,
 
-    // FOUNDATION1s part B: after NOTIFY2f's, which keep their numbers.
-
     /// <summary>The repositories the service lists with each one's knowledge index: told by a look while the index feeds. Declared by no route.</summary>
     Repositories = 1 << 21,
-
-    // INTEGRATE1h: after FOUNDATION1s's, which keep their numbers.
 
     /// <summary>A repository's integration: its queue, candidates, hand-backs and history, which the Integration view reads.</summary>
     Integration = 1 << 22,
 
-    // COWORKVIEW1a: after INTEGRATE1h's, which keep their numbers.
-
     /// <summary>Who is at work on a session: told by the read's own judge, naming no session. Declared by no route.</summary>
     AtWork = 1 << 23,
-
-    // GITAPP2h: after COWORKVIEW1a's, which keep their numbers.
 
     /// <summary>A checkout's index, which the Changes tab reads: moved by a person's stage, unstage or Undo.</summary>
     Checkouts = 1 << 24,
 }
 
 /// <summary>
-/// What a route declares a successful answer changed (D169 point 2): its scopes, and the payload field naming the session the
+/// What a route declares a successful answer changed: its scopes, and the payload field naming the session the
 /// change was about, where it is one session's.
 /// </summary>
 /// <param name="Scopes">What a successful answer changed.</param>
 /// <param name="Session">The payload field naming the session the change was about.</param>
-/// <param name="Subject">The payload field naming the entry or ask the press is for, where it is no one session's (ACCEPTALL1e).</param>
+/// <param name="Subject">The payload field naming the entry or ask the press is for, where it is no one session's.</param>
 public sealed record StateChange(StateScopes Scopes, string? Session = null, string? Subject = null);
 
 /// <summary>
-/// <c>STATE_CHANGED</c> on the wire (D169 point 3): what moved, never what it is now; no words, no answer, no machine path.
+/// <c>STATE_CHANGED</c> on the wire: what moved, never what it is now; no words, no answer, no machine path.
 /// </summary>
 /// <param name="Scopes">The scopes' names, in the page's words.</param>
 /// <param name="Sessions">The sessions the change was about, where the route named one; absent is any.</param>
@@ -123,11 +111,11 @@ public sealed record StateChanged(
     IReadOnlyList<string> Scopes,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<string>? Sessions);
 
-/// <summary>One press under way on the wire (STATEHUB1c, D169 point 7): its route, and the session its payload named.</summary>
+/// <summary>One press under way on the wire: its route, and the session its payload named.</summary>
 /// <param name="Route">The route pressed, as the page names it when it sends.</param>
 /// <param name="Session">The session the route's declaration names in the payload; absent where it names none.</param>
-/// <param name="Subject">The entry or ask the route's declaration names in the payload (ACCEPTALL1e); absent where it names none.</param>
-/// <param name="Step">The step its handler says it has reached (PRESSSTEP1, <see cref="PressSteps"/>); absent until it says one.</param>
+/// <param name="Subject">The entry or ask the route's declaration names in the payload; absent where it names none.</param>
+/// <param name="Step">The step its handler says it has reached (<see cref="PressSteps"/>); absent until it says one.</param>
 public sealed record PressUnderWay(
     string Route,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Session,
@@ -135,7 +123,7 @@ public sealed record PressUnderWay(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Step = null);
 
 /// <summary>
-/// <c>UNDER_WAY</c> on the wire (STATEHUB1c, D169 point 7): every declared press dispatched and not yet answered, told whole at
+/// <c>UNDER_WAY</c> on the wire: every declared press dispatched and not yet answered, told whole at
 /// each change, in the order they were dispatched; no words, no payload but the session, no machine path.
 /// </summary>
 /// <param name="Seq">Counts each telling, so a window keeps the newest whatever order the bus delivered them in.</param>
@@ -143,8 +131,8 @@ public sealed record PressUnderWay(
 public sealed record UnderWay(long Seq, IReadOnlyList<PressUnderWay> Presses);
 
 /// <summary>
-/// Every change a route makes, published on the kit's bus as <c>DAORIS.STATE_CHANGED</c> once the route has answered
-/// (STATEHUB1b, D169): the dispatcher's middleware, after <see cref="OffTheWindow"/>, reading what the route declares, on the
+/// Every change a route makes, published on the kit's bus as <c>DAORIS.STATE_CHANGED</c> once the route has answered:
+/// the dispatcher's middleware, after <see cref="OffTheWindow"/>, reading what the route declares, on the
 /// driver's module and the browser's (<see cref="Declared"/>).
 /// </summary>
 /// <remarks>
@@ -152,20 +140,20 @@ public sealed record UnderWay(long Seq, IReadOnlyList<PressUnderWay> Presses);
 /// to append to; the route says what it changes beside its mark (<see cref="DriverModule.Declared"/>), and this is the one place that
 /// publishes it. A route that declares nothing, a read, publishes nothing.</para>
 ///
-/// <para><b>On success, whatever the answer says</b> (D169 point 5). A refusal answered as data is published as an answer is: a
+/// <para><b>On success, whatever the answer says</b>. A refusal answered as data is published as an answer is: a
 /// landing refused for a conflict fetched the line its plan reads against, and a list out of date is read again. A refusal
 /// thrown as an error is not: the driver refused before it acted.</para>
 ///
 /// <para><b>Not awaited.</b> The bus runs its subscribers (each window's pump, and the plugins' observation, <see cref="Observe"/>)
 /// without the press's answer waiting on any of them; a subscriber's failure is the bus's to isolate.</para>
 ///
-/// <para><b>Shell-only</b> (D47): the bus is this machine's, forwarded to its windows and to nothing else.</para>
+/// <para><b>Shell-only</b>: the bus is this machine's, forwarded to its windows and to nothing else.</para>
 ///
-/// <para><b>And what is under way</b> (STATEHUB1c, D169 point 7): a declared press, from its dispatch until it answers or
+/// <para><b>And what is under way</b>: a declared press, from its dispatch until it answers or
 /// throws, told whole as <c>UNDER_WAY</c> at each change, so *落地中…* is shown by every view and window, not only the
-/// component that pressed. Not the kit's request tracker, which names no session (D169's STATEHUB1c note). The list is held where
+/// component that pressed. Not the kit's request tracker, which names no session. The list is held where
 /// the driver's <c>UNDER_WAY</c> route reads it (<see cref="PressesUnderWay"/>, the loop's in the shell), so a window opened or
-/// reloaded mid-press reads it whole as it mounts (STATEHUB1c2).</para>
+/// reloaded mid-press reads it whole as it mounts.</para>
 /// </remarks>
 public static class StatePublisher
 {
@@ -175,15 +163,15 @@ public static class StatePublisher
     /// <summary>The event's type.</summary>
     public const string Type = "STATE_CHANGED";
 
-    /// <summary>The type of the event telling what is under way (STATEHUB1c).</summary>
+    /// <summary>The type of the event telling what is under way.</summary>
     public const string UnderWayType = "UNDER_WAY";
 
-    // Each bus's count of the changes told per scope (FOUNDATION1s), moved before the event is raised, so a window's ask after it
+    // Each bus's count of the changes told per scope, moved before the event is raised, so a window's ask after it
     // always reads it moved: what a held answer's version is made of.
     private static readonly ConditionalWeakTable<IEventBus, long[]> s_told = new();
 
     /// <summary>
-    /// How many changes <paramref name="bus"/> has told naming any of <paramref name="scopes"/> (FOUNDATION1s): a version that moves with
+    /// How many changes <paramref name="bus"/> has told naming any of <paramref name="scopes"/>: a version that moves with
     /// each, read by the held answers (<see cref="HeldAnswers"/>) as their inputs' version.
     /// </summary>
     public static long Version(IEventBus bus, StateScopes scopes)
@@ -214,7 +202,7 @@ public static class StatePublisher
             .Aggregate(StateScopes.None, (all, scope) => all | scope);
 
     /// <summary>
-    /// What a request's route declares it changes: the driver's marks, and the browser module's (BROWSERPUBLISH1). Any other
+    /// What a request's route declares it changes: the driver's marks, and the browser module's. Any other
     /// module's request declares nothing: a module is added here when its presses move what a window reads.
     /// </summary>
     public static StateChange? Declared(IpcRequest request) => DriverModule.Declared(request) ?? BrowserModule.Declared(request);
@@ -270,7 +258,7 @@ public static class StatePublisher
     }
 
     /// <summary>
-    /// The plugins' observation of the pipeline (STATEHUB1g, D169 point 9): each <c>STATE_CHANGED</c> on <paramref name="bus"/>,
+    /// The plugins' observation of the pipeline: each <c>STATE_CHANGED</c> on <paramref name="bus"/>,
     /// handed to <paramref name="tell"/> as the plugins' frame. Beside the pipeline, never in it: the bus does not wait for its
     /// subscribers, the change is published once the press has answered, and <paramref name="tell"/> (the loop's hook set's)
     /// only queues it, so no plugin holds, changes or refuses an answer. Dispose to stop.
@@ -283,7 +271,7 @@ public static class StatePublisher
         });
 
     /// <summary>
-    /// The change a press another process told makes (STATEHUB1e, D169 point 8): what the window's press of its route declares, with
+    /// The change a press another process told makes: what the window's press of its route declares, with
     /// the session where the declaration names one, so a terminal's press reads in a window as the window's does. Null where the
     /// route declares nothing (a read, or a route no mark has).
     /// </summary>
@@ -296,7 +284,7 @@ public static class StatePublisher
             : null;
 
     /// <summary>
-    /// A press another process told, published on <paramref name="bus"/> as a window's press of its route is (STATEHUB1e): what the
+    /// A press another process told, published on <paramref name="bus"/> as a window's press of its route is: what the
     /// shell's loop does with each its request watch hears. Not awaited, as the publisher's own is not.
     /// </summary>
     public static void Publish(IEventBus bus, PressTold press)
@@ -307,7 +295,7 @@ public static class StatePublisher
     }
 
     /// <summary>
-    /// A change the driver makes itself, with no press behind it (FABRIC-EVENT5, D169 point 3): words taken up by a conversation, a
+    /// A change the driver makes itself, with no press behind it: words taken up by a conversation, a
     /// proposal written, a size landed. Published as a press's change is, in the same words, so the page's one hub asks again what
     /// it names; <paramref name="session"/> narrows it to the one session it was about. Not awaited, as the publisher's own is not.
     /// </summary>
@@ -344,12 +332,12 @@ public static class StatePublisher
 
 /// <summary>
 /// The presses under way, in dispatch order, each change numbered under the same lock, so the telling is whole and the newest is
-/// known whatever order the bus delivers it in (STATEHUB1c). <see cref="StatePublisher"/> writes it; the shell's is the loop's
-/// (<see cref="DriverLoop.UnderWay"/>), which the driver's <c>UNDER_WAY</c> route reads for a window opened mid-press (STATEHUB1c2).
+/// known whatever order the bus delivers it in. <see cref="StatePublisher"/> writes it; the shell's is the loop's
+/// (<see cref="DriverLoop.UnderWay"/>), which the driver's <c>UNDER_WAY</c> route reads for a window opened mid-press.
 /// </summary>
 /// <remarks>
-/// A step is what the press's own handler says it has reached (<see cref="PressSteps"/>, PRESSSTEP1), a field beside the route and
-/// the session, never a change to them (D169 point 3).
+/// A step is what the press's own handler says it has reached (<see cref="PressSteps"/>), a field beside the route and
+/// the session, never a change to them.
 /// </remarks>
 public sealed class PressesUnderWay
 {
@@ -368,7 +356,7 @@ public sealed class PressesUnderWay
     }
 
     /// <summary>
-    /// <paramref name="press"/> has reached <paramref name="step"/> (PRESSSTEP1): the telling it makes, or null where it is not under way
+    /// <paramref name="press"/> has reached <paramref name="step"/>: the telling it makes, or null where it is not under way
     /// or already says that step, so the same step told again numbers nothing.
     /// </summary>
     public UnderWay? Reach(object press, string step)
@@ -405,7 +393,7 @@ public sealed class PressesUnderWay
 }
 
 /// <summary>
-/// Where a declared press's handler says which step it has reached (PRESSSTEP1, D169 point 3), for the press it runs in: the
+/// Where a declared press's handler says which step it has reached, for the press it runs in: the
 /// publisher tells every window the press whole with the step beside its route and session. Found by the flow of the call, so a
 /// handler holds no bus and no list; said outside a declared press (a read, a terminal's verb, a test of the handler alone) it is
 /// said to nobody. The steps are the driver's words on the wire, added to and never renamed (the page words them).
@@ -419,13 +407,13 @@ public static class PressSteps
     public const string Landing = "landing";
 
     /// <summary>
-    /// An Accept whose run's <c>land</c> the runtime performs waits for the pass that lands it (LANDHOLD2b), within
+    /// An Accept whose run's <c>land</c> the runtime performs waits for the pass that lands it, within
     /// <see cref="GraphPasses.Bound"/>, which the page words beside the button.
     /// </summary>
     public const string Pass = "pass";
 
     /// <summary>
-    /// A landing waits behind another one's hold (LANDHOLD2, D145 point 2): said before it waits, and the step it was at is said
+    /// A landing waits behind another one's hold: said before it waits, and the step it is at is said
     /// again when it has the hold.
     /// </summary>
     public const string Waiting = "waiting";
@@ -433,7 +421,7 @@ public static class PressSteps
     private static readonly AsyncLocal<Action<string>?> Current = new();
 
     /// <summary>
-    /// For the landing this call makes (LANDHOLD2): where its hold is waited for, the press says <see cref="Waiting"/>, and
+    /// For the landing this call makes: where its hold is waited for, the press says <see cref="Waiting"/>, and
     /// <paramref name="back"/> again once the wait is over. A press that waits for nothing says nothing more.
     /// </summary>
     public static IDisposable WhileWaiting(string back) =>

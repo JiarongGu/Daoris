@@ -1,7 +1,7 @@
 namespace Daoris.Desktop;
 
 /// <summary>
-/// One ask under way per read and its payload (SWEEPFLIGHT1, UIFREEZE1): a caller asking while the same ask runs joins it
+/// One ask under way per read and its payload: a caller asking while the same ask runs joins it
 /// and is answered what it answers, rather than starting another.
 /// </summary>
 /// <remarks>
@@ -28,7 +28,7 @@ public sealed class RouteFlights
     /// Join the flight under way for <paramref name="key"/>, or start one with <paramref name="ask"/>, which runs on this
     /// caller's thread until its first wait, as a route always has. Cancelling <paramref name="ct"/> stops this caller
     /// waiting, and the flight with it only when no other caller waits. <paramref name="joined"/> is told once this caller is
-    /// counted among the flight's waiters (GITAPP1a-iii).
+    /// counted among the flight's waiters.
     /// </summary>
     public async Task<object?> JoinAsync(
         string key, Func<CancellationToken, Task<object?>> ask, CancellationToken ct, Action? joined = null)

@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The engine's profile as <c>daoris-browser</c> edits it before the engine starts (CHR5, CHR7):
+/// The engine's profile as <c>daoris-browser</c> edits it before the engine starts:
 /// Daoris's favorites as a folder on the bookmarks bar, and other software's Chrome extensions
 /// refused or offered again. The person's own bookmarks and their own refusals are never Daoris's.
 /// </summary>

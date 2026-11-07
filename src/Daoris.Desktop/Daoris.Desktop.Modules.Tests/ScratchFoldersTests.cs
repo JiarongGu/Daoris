@@ -2,7 +2,7 @@ using Daoris.Desktop.Driver.Tests;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// HOSTCLEAN1: a test's scratch folder is removed once what holds it lets go, within a bound, and a folder still
+/// A test's scratch folder is removed once what holds it lets go, within a bound, and a folder still
 /// held past the bound is left behind rather than failing the test it served.
 /// </summary>
 public sealed class ScratchFoldersTests : IDisposable

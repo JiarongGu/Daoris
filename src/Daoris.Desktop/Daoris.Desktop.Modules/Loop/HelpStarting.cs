@@ -3,13 +3,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Ask Daoris's conversation between its record and its agent (HELPSTART1, D89's note): <c>START_HELP</c> answers once the record
+/// Ask Daoris's conversation between its record and its agent: <c>START_HELP</c> answers once the record
 /// is open, and the room is read and the agent spawned after, off the request. The person's words said to it meanwhile wait here,
 /// in the order said, as its queue, opening; they go to its door the moment it opens, and where it could not start they are
 /// handed back for its record to keep as theirs.
 /// </summary>
 /// <remarks>
-/// <b>One at a time in each workspace</b> (ASKSCOPE1a, D158's ASKSCOPE1 note point 3), as one conversation runs in each:
+/// <b>One at a time in each workspace</b>, as one conversation runs in each:
 /// <see cref="PlacingIn"/> lets one press place a workspace's while a second press in it waits, then hands that one the conversation
 /// placed rather than placing another; a press in another workspace places its own beside it. A workspace unnamed is
 /// <c>default</c>'s, and a name is one workspace whatever its letters' case. Held in this process only, as a conversation's own
@@ -60,7 +60,7 @@ public sealed class HelpStarting
     }
 
     /// <summary>
-    /// What waits for a conversation starting, as its queue says it (HELP4's <c>opening</c>): nothing taking yet, its words in
+    /// What waits for a conversation starting, as its queue says it (<c>opening</c>): nothing taking yet, its words in
     /// order with their files' names. Null where it is not one starting.
     /// </summary>
     public ChatQueue? Queue(string session)
@@ -101,5 +101,5 @@ public sealed class HelpStarting
     private static bool Same(string? left, string right) => string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
 }
 
-/// <summary>Words said to Ask Daoris's conversation while it starts (HELPSTART1): the text, the files as sent, where the person is.</summary>
+/// <summary>Words said to Ask Daoris's conversation while it starts: the text, the files as sent, where the person is.</summary>
 public sealed record HeldWord(string Text, IReadOnlyList<ChatUpload> Files, string? Preface);

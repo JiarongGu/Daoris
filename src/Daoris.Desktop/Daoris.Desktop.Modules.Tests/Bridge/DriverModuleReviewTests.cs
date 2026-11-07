@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The review rule over the bridge (REVIEWENV1a, D154 point 2, design §1.7): the screens' half of `daoris place review`, over
+/// The review rule over the bridge: the screens' half of `daoris place review`, over
 /// the same file, for a repository or a workspace; each edit judged by the twin's table in its words; an environment's
 /// procedure looked for in the checkouts it reaches; the state answering what is set as rows; and the lines answering what
 /// each repository resolves to and from where, which only the driver resolves.

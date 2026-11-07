@@ -27,18 +27,17 @@ internal sealed class PipeConnection(InstancePipe pipe, NamedPipeServerStream st
     private int _closed;
 
     /// <summary>
-    /// The terminal at the far end, as the system names the pipe's client (RPC1c): what the window's card names as the asker,
+    /// The terminal at the far end, as the system names the pipe's client: what the window's card names as the asker,
     /// read once as the connection is taken, never from what the terminal says of itself.
     /// </summary>
     public PipeAsker Asker { get; } = AskerOf(stream);
 
     /// <summary>
-    /// The terminal's process, held by a handle opened as the connection is taken and kept for its life (TERMTRUST1a, the
-    /// terminal-trust design §3.3 point 3): what the standing confirmation's judge asks the jobs about.
+    /// The terminal's process, held by a handle opened as the connection is taken and kept for its life : what the standing confirmation's judge asks the jobs about.
     /// </summary>
     public PipeClientProcess Client { get; } = PipeClientProcess.Of(stream);
 
-    // SUPERVISOR1a-ii (D208 §2.2): this connection's hello's nonce and when it was drawn, in memory for this connection alone.
+    // This connection's hello's nonce and when it is drawn, in memory for this connection alone.
     private readonly Lock _nonceGate = new();
     private string? _nonce;
     private long _nonceAt;
@@ -80,7 +79,7 @@ internal sealed class PipeConnection(InstancePipe pipe, NamedPipeServerStream st
         try
         {
             _ = ReadAsync();
-            // The hello first, within its bound: anything else closes the connection unanswered (§6).
+            // The hello first, within its bound: anything else closes the connection unanswered.
             if (await NextAsync(pipe.Limits.Hello, waitWhileBusy: false).ConfigureAwait(false) is not { } first
                 || Parse(first) is not ({ } hello, _, _)
                 || !string.Equals(hello.Module, InstancePipe.Module, StringComparison.OrdinalIgnoreCase) || hello.Type != "HELLO")
@@ -200,8 +199,8 @@ internal sealed class PipeConnection(InstancePipe pipe, NamedPipeServerStream st
     }
 
     /// <summary>
-    /// The kit's envelope on a line, the <c>key</c> beside it (its sender's secret, which binds the id, a second agent's review of RPC1a),
-    /// and <c>hold</c> beside it (RPC1g1: a start that holds what it opens); null where the line is no request.
+    /// The kit's envelope on a line, the <c>key</c> beside it (its sender's secret, which binds the id),
+    /// and <c>hold</c> beside it (a start that holds what it opens); null where the line is no request.
     /// </summary>
     private static (IpcRequest Request, string? Key, bool Hold)? Parse(string line)
     {
@@ -241,7 +240,7 @@ internal sealed class PipeConnection(InstancePipe pipe, NamedPipeServerStream st
         }
         catch (Exception error) when (error is IOException or ObjectDisposedException or InvalidOperationException)
         {
-            // The terminal has gone: its press runs on, and RESULT says how it ended (§6.1).
+            // The terminal has gone: its press runs on, and RESULT says how it ended.
         }
     }
 

@@ -9,7 +9,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// D233 point 2 (the supervisor design §2.2, §3.1, §5) over the bridge: the window's start of a role's terminal, for a role the catalogue
+/// Over the bridge: the window's start of a role's terminal, for a role the catalogue
 /// staffs with the terminal, starts the holder's terminal with the key in its environment and answers no key, nor does <c>STATE</c>; a
 /// role the seed holds otherwise starts nothing; the holder's answer is refused on every door but a covered terminal's, and kept as a
 /// held decision on one; the listing names what waits with its generation; and a role's change makes a held decision stale after the
@@ -116,7 +116,7 @@ public sealed class DriverModuleRoleTerminalTests : DriverModuleBridge
             Assert.Single(started);
 
             SupervisorDoor.Starter = _ => Task.FromResult(new HolderOpened(null, null, StandingConfirmation.Unstarted, null));
-            // A holder lives: the next start names a terminal of its own (D209 §2.2).
+            // A holder lives: the next start names a terminal of its own.
             var unchosen = await AnswerAsync(module, "START_ROLE_TERMINAL", new { role = Supervisor });
             Assert.Equal((false, StandingConfirmation.ChooseTerminal), (unchosen.GetProperty("done").GetBoolean(), unchosen.GetProperty("why").GetString()));
             var unstarted = await AnswerAsync(module, "START_ROLE_TERMINAL", new { role = Supervisor, share = "own" });
@@ -135,7 +135,7 @@ public sealed class DriverModuleRoleTerminalTests : DriverModuleBridge
         }
     }
 
-    /// <summary>STEWARDROLE1a-i (D209 §3.3): <c>ROLE_ACT</c>'s own handler, off the role's door, is refused <c>not-holder</c> and runs nothing.</summary>
+    /// <summary><c>ROLE_ACT</c>'s own handler, off the role's door, is refused <c>not-holder</c> and runs nothing.</summary>
     [Fact]
     public async Task A_role_act_off_the_role_s_door_is_refused()
     {
@@ -152,7 +152,7 @@ public sealed class DriverModuleRoleTerminalTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// STEWARDROLE1b (D209 §3.3): <c>STEWARD_ACTS</c>, the steward's verbs' open read, answers from the judge's memory alone; with no
+    /// <c>STEWARD_ACTS</c>, the steward's verbs' open read, answers from the judge's memory alone; with no
     /// steward's terminal started it names no live generation and no act, and with no pipe neither.
     /// </summary>
     [Fact]
@@ -170,7 +170,7 @@ public sealed class DriverModuleRoleTerminalTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// STEWARDROLE1c (D209 §6.2): the desk's routes over the bridge. While no holder holds the steward, a request is refused
+    /// The desk's routes over the bridge. While no holder holds the steward, a request is refused
     /// <c>not-staffed</c> and the desk reads empty; once the catalogue staffs it, a request is kept, read back by <c>STEWARD_DESK</c> and by
     /// <c>STATE</c>'s <c>stewardDesk</c> with its words as the caller wrote them, and never the caller's key.
     /// </summary>
@@ -243,7 +243,7 @@ public sealed class DriverModuleRoleTerminalTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// §3.1: the page's door, or any door the role method did not cover, is refused <c>not-holder</c> and keeps nothing; over the pipe a
+    /// The page's door, or any door the role method did not cover, is refused <c>not-holder</c> and keeps nothing; over the pipe a
     /// covered terminal's answer is kept held, listed no more, and the role's change makes it stale after the judge's step.
     /// </summary>
     [Fact]
@@ -307,7 +307,7 @@ public sealed class DriverModuleRoleTerminalTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SUPERVISOR1b (§3.1, §4.1): a question its agent marked the owner's is not listed for the holder, and a covered terminal's answer to
+    /// A question its agent marked the owner's is not listed for the holder, and a covered terminal's answer to
     /// it is refused <c>owner-question</c>, keeping nothing; the holder's defer on it is kept <c>left</c> over the same door, its bound on
     /// the row the page reads, and the page's own door is refused it as the answer is.
     /// </summary>
@@ -371,7 +371,7 @@ public sealed class DriverModuleRoleTerminalTests : DriverModuleBridge
             var row = Assert.Single(supervised.GetProperty("decisions").EnumerateArray());
             Assert.Equal(("left", "sign-in"), (row.GetProperty("state").GetString(), row.GetProperty("bound").GetString()));
 
-            // The card reads it beside the question it was left on, with the agent's mark (§4.2).
+            // The card reads it beside the question it is left on, with the agent's mark.
             var asked = (await AnswerAsync(module, "SESSION_QUESTION", new { id = "s1" })).GetProperty("question");
             Assert.Equal("sign-in", asked.GetProperty("owner").GetString());
             var leftOn = asked.GetProperty("left");

@@ -4,7 +4,7 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The asks as every window holds them, a pushed slice (PUSH1d3, D182): every ask the service answers, closed and done ones and every
+/// The asks as every window holds them, a pushed slice: every ask the service answers, closed and done ones and every
 /// workspace's included, each as it stands, allow-listed to the fields the page reads, so a tick reads <c>/api/asks</c> again in no
 /// window, and an ask a connector wrote reaches every window by one push.
 /// </summary>

@@ -4,14 +4,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A terminal's press waits until the person answers (CONFIRMWAIT1a-i, D156's CONFIRMWAIT1 notes, the confirm-wait design §2, §5.2, §6,
-/// §9): no clock ends it, shown or not, however long; a Confirm is judged against its grounds while its card stays, checking; a read that
+/// A terminal's press waits until the person answers: no clock ends it, shown or not, however long; a Confirm is judged against its grounds while its card stays, checking; a read that
 /// fails then leaves it waiting; its asker takes back only what still waits; ten wait at once; and the press's own event names it by its
-/// id and its balloon names no route (NOTIFY2a's §3.3).
+/// id and its balloon names no route.
 /// </summary>
 /// <remarks>
-/// The confirmations alone, on a <see cref="HeldClock"/> the test moves (<c>held-clocks.md</c>): before CONFIRMWAIT1a-i a press asked was
-/// ended expired ten minutes after its ask unshown, or two after its showing. The pipe's end of the same, with the terminal's answer and
+/// The confirmations alone, on a <see cref="HeldClock"/> the test moves (<c>held-clocks.md</c>).
+/// The pipe's end of the same, with the terminal's answer and
 /// nothing run, is <c>PipeConfirmTests</c>'.
 /// </remarks>
 public sealed class PipeConfirmationsTests : Bridge
@@ -154,7 +153,7 @@ public sealed class PipeConfirmationsTests : Bridge
     }
 
     /// <summary>
-    /// CONFIRMWAIT1a-ii (the confirm-wait design §7.2): a press carrying a key is lost as Daoris closes, whatever it waits on, and the
+    /// A press carrying a key is lost as Daoris closes, whatever it waits on, and the
     /// person is told; the confirmations no longer end anything themselves as they are disposed.
     /// </summary>
     [Fact]
@@ -180,7 +179,7 @@ public sealed class PipeConfirmationsTests : Bridge
     }
 
     /// <summary>
-    /// CONFIRMWAIT1a-ii (§7.2 step 6, §8.1): a press restored from its record waits again under its record's id, asked and shown as the
+    /// A press restored from its record waits again under its record's id, asked and shown as the
     /// record says, no terminal on its line, said as restored; it raises no balloon of its own, and the restore's one word is one balloon
     /// for every press waiting again and one notice for those lost and those a newer Daoris wrote.
     /// </summary>
@@ -211,7 +210,7 @@ public sealed class PipeConfirmationsTests : Bridge
     }
 
     /// <summary>
-    /// CONFIRMWAIT1a-ii (§7.2): a Confirm while Daoris closes or an update drains it takes nothing, and the press still waits; a
+    /// A Confirm while Daoris closes or an update drains it takes nothing, and the press still waits; a
     /// refusal is still the person's word, and a Confirm once the drain is over runs it.
     /// </summary>
     [Fact]
@@ -232,7 +231,7 @@ public sealed class PipeConfirmationsTests : Bridge
         Assert.Equal(PipeConfirmationEnd.Confirmed, (await asked.Ended).End);
     }
 
-    /// <summary>CONFIRMWAIT1a-ii (§7.2): a drain that begins while a Confirm's grounds are read gives the press its buttons back.</summary>
+    /// <summary>A drain that begins while a Confirm's grounds are read gives the press its buttons back.</summary>
     [Fact]
     public async Task A_drain_begun_while_a_Confirm_is_judged_gives_its_buttons_back()
     {
@@ -254,7 +253,7 @@ public sealed class PipeConfirmationsTests : Bridge
     }
 
     /// <summary>
-    /// DRAINHOLD1: whether a Confirm is held is asked of its own module and route, before its grounds are read and again after, so a drain
+    /// Whether a Confirm is held is asked of its own module and route, before its grounds are read and again after, so a drain
     /// that holds a start lets a take-back's Confirm through, whether it began before the Confirm or while it was judged.
     /// </summary>
     [Fact]
@@ -342,7 +341,7 @@ public sealed class PipeConfirmationsTests : Bridge
         var asked = confirmations.Ask(DriverModule.Name, Land, Values, Asker)!.Value;
 
         var told = Assert.Single(Raised, each => each.Module == StatePublisher.Module && each.Type == PipeConfirmations.AttentionType);
-        // As the page reads it, the field added beside the rest (§3.3): the id the window's cards and toasts key on.
+        // As the page reads it, the field added beside the rest: the id the window's cards and toasts key on.
         var read = JsonSerializer.SerializeToElement(told.Payload, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
         Assert.Equal(PipeConfirmations.AttentionKind, read.GetProperty("kind").GetString());
         Assert.Equal(asked.Shown.Id, read.GetProperty("id").GetString());
@@ -351,7 +350,7 @@ public sealed class PipeConfirmationsTests : Bridge
     }
 
     /// <summary>
-    /// The balloon behind the window names no route's constant (§3.3, the owner's report of 2026-10-21: <c>SESSION_INPUT</c> beside
+    /// The balloon behind the window names no route's constant (<c>SESSION_INPUT</c> beside
     /// its sentence), for every route a terminal's press of which waits for the window, and no value; the terminal as the system
     /// names it stays.
     /// </summary>
@@ -385,7 +384,7 @@ public sealed class PipeConfirmationsTests : Bridge
     }
 
     /// <summary>
-    /// NOTIFY2d (§3.3): as the application's notifier words it from the press's event, in the window's language or with no words handed,
+    /// As the application's notifier words it from the press's event, in the window's language or with no words handed,
     /// the balloon names the press's act by the route's words and never the route's constant, its module or a value it carries.
     /// </summary>
     [Fact]

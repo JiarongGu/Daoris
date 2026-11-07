@@ -20,12 +20,12 @@ internal sealed class TreesTidyDesk(DriverLoop loop)
         var pluginLines = new List<string>();
         var trees = read.Said ? Asking(pluginLines) : new SessionTrees(_loop.Home);
 
-        // LANDRETIRE1 part 2: which quests a landing the line does not hold names are closed, the service's, read once for the list.
+        // Which quests a landing the line does not hold names are closed, the service's, read once for the list.
         var closed = await LandedStanding.ClosedAsync(kept, (_loop.Service ?? throw NotReady()).EveryQuestAsync, cancellationToken);
         var plan = await trees.CleanPlanAsync(repositories, inUse, cancellationToken, closed);
         // The person's look asks the plugins and keeps their answers in the landing record, which no watch hears and
-        // which moves no ref: each repository whose kept answers it wrote has its part of the pushed list judged again now
-        //, rather than at its next ref move or deadline. Asked of no plugin again: the part reads what was kept.
+        // which moves no ref: each repository whose kept answers it wrote has its part of the pushed list judged again now,
+        //rather than at its next ref move or deadline. Asked of no plugin again: the part reads what is kept.
         SweepStateSlice.Asked(_loop.Facts, kept, new LandedBranches(_loop.Home).Entries());
         // the session each kept branch's tree is, so its row says how to land it as that session's page does. The
         // records are read only where a row could offer one, and records that do not read offer none: the list stands.
@@ -65,7 +65,7 @@ internal sealed class TreesTidyDesk(DriverLoop loop)
             // The empty folders trees left where something held them open, each removed or still held.
             Folders = done.Folders ?? [],
             Removed = done.Sessions.Count(result => result.Removed) + done.Landed.Count(result => result.Removed),
-            // what `trees clean --yes` prints, each branch removed or kept with why, and the count (§7.3).
+            // what `trees clean --yes` prints, each branch removed or kept with why, and the count.
             Said = TreesWords.Clean(done).ToWire(),
         };
     }

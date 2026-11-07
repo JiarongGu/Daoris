@@ -4,7 +4,7 @@ using System.Runtime.Versioning;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A fact that runs only on a machine with an HEVC decoder (D234). The engine plays HEVC through the machine's own
+/// A fact that runs only on a machine with an HEVC decoder. The engine plays HEVC through the machine's own
 /// decoder and carries none, so a machine without one cannot show it: the fact is skipped with that reason and never
 /// passes. The decoder is the one Chromium uses on Windows, the graphics adapter's Direct3D 11 video decoder with
 /// HEVC's Main profile, never a Media Foundation transform in the registry: a machine with none of those played the

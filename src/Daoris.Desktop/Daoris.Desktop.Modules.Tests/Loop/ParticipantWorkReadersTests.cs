@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// FOUNDATION1c, census B (D212; the foundation design §10, row c), the shell's modules' half: every line of the modules' sources that reads a
+/// Census B, the shell's modules' half: every line of the modules' sources that reads a
 /// record's <c>Serves</c>, <c>Opinion</c>, <c>Ask</c>, <c>Piece</c>, <c>HelpMode</c> or the Ask Daoris repository to test its presence or
 /// identity is counted per file, each file named in <c>participant-work-readers.json</c> among the service's tests, which the driver's
 /// <c>ParticipantWorkReadersTests</c> and the service's read over their own sources. A new line, or a new file, fails until it is listed.
@@ -29,7 +29,7 @@ public sealed class ParticipantWorkReadersTests
     internal static int Counted(string source) =>
         source.Split('\n').Count(raw => !raw.TrimStart().StartsWith("//", StringComparison.Ordinal) && Reads.Any(read => read.IsMatch(Trailing.Replace(raw, ""))));
 
-    /// <summary>The files, by path, of the sources that read a mark: how many lines each reads is not the rule's (CENSUSRULES1).</summary>
+    /// <summary>The files, by path, of the sources that read a mark: how many lines each reads is not the rule's.</summary>
     internal static SortedSet<string> Reading(IEnumerable<(string File, string Source)> sources) =>
         new(sources.Where(each => Counted(each.Source) > 0).Select(each => each.File), StringComparer.Ordinal);
 
@@ -61,7 +61,7 @@ public sealed class ParticipantWorkReadersTests
         Assert.True(differences.Count == 0, string.Join('\n', differences));
     }
 
-    /// <summary>The census fails on a file it does not list and on a listed file that reads none now, and passes one more read in a listed file (CENSUSRULES1).</summary>
+    /// <summary>The census fails on a file it does not list and on a listed file that reads none now, and passes one more read in a listed file.</summary>
     [Fact]
     public void A_new_reading_file_fails_the_census_and_one_more_read_in_a_listed_file_passes()
     {

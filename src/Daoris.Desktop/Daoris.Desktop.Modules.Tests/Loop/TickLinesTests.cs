@@ -1,14 +1,14 @@
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// What a look's report says, as the loop decides whether to tell the windows (IDLECPU1): a line that only repeats the last
+/// What a look's report says, as the loop decides whether to tell the windows: a line that only repeats the last
 /// look's is no change, so it sends no <c>DRIVER_TICK</c>, and the page asks nothing again for it.
 /// </summary>
 /// <remarks>
 /// A standing condition says its line at every look: a plugin holding a quest (<c>held  #q1 → engine: …</c>), a remote the sync
 /// cannot reach (<c>sync  …</c>), a note the remote gives at each pass (<c>held  …</c>). Forwarded each time, every look made
 /// the page ask its lists again, LINES and SWEEP_PLAN among them, which ask git of every checkout, on a machine whose every
-/// program start costs a quarter of a second or more (DEVDRIVE1). The page already says a repeated line as no news
+/// program start costs a quarter of a second or more. The page already says a repeated line as no news
 /// (<c>newsFrom</c>); the loop now forwards by the same rule: changed since the last look, and a line that stops and comes back is
 /// news again.
 /// </remarks>

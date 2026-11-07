@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// AUTONOMY1b3a (D184 point 3) over the bridge: what this machine's driven sessions hold for the person under their repository's asking
+/// Over the bridge: what this machine's driven sessions hold for the person under their repository's asking
 /// permission prompts, as *What needs you* will read it, and the person's answer to one, an option the agent offered by its id or a
 /// refusal naming none. Never an invented allow: an option not offered and a standing allow are refused by code, and the hold waits on.
 /// </summary>
@@ -38,7 +38,7 @@ public sealed class DriverModuleSessionPermissionsTests : DriverModuleBridge
         Assert.True(wait.TryGetProperty("since", out _));
     }
 
-    /// <summary>PERMUNTIL1: each hold says when its bound releases it, the driver's bound from its start, so the page keeps no copy.</summary>
+    /// <summary>Each hold says when its bound releases it, the driver's bound from its start, so the page keeps no copy.</summary>
     [Fact]
     public async Task Each_hold_says_when_its_bound_releases_it()
     {

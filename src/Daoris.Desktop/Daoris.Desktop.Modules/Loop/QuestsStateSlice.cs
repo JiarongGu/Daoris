@@ -6,12 +6,12 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The quests as every window holds them, a pushed slice (PUSH1d3, D182): every quest the service answers, closed ones and every
+/// The quests as every window holds them, a pushed slice: every quest the service answers, closed ones and every
 /// workspace's included, allow-listed to the fields the page reads, so a tick reads <c>/api/quests</c> again in no window, and a quest a
 /// connector wrote reaches the windows with no desktop dispatch.
 /// </summary>
 /// <remarks>
-/// <para><b>The sessions' shape</b> (<see cref="SessionsStateSlice"/>, D182's PUSH1d2 note): the page holds the widest list and reads
+/// <para><b>The sessions' shape</b> (<see cref="SessionsStateSlice"/>): the page holds the widest list and reads
 /// each view's from it; a partition per workspace, keyed by quest, so a quest's move pushes that quest alone.</para>
 ///
 /// <para><b>A file's path is never pushed.</b> The service answers a kept file's path to a caller on this machine, and the page reads
@@ -21,7 +21,7 @@ namespace Daoris.Desktop;
 /// <c>quests</c> family, and its <c>sessions</c>, since whether an open quest may be deleted reads whether a session named it
 /// (<c>QuestExchange.DeletableAsync</c>), heard where the watch tells the loop its moves (<see cref="DriverLoop.HeardMove"/>).</para>
 ///
-/// <para><b>Desktop-only.</b> A set-up's address and the folder it served are this machine's (D47, D182 point 2).</para>
+/// <para><b>Desktop-only.</b> A set-up's address and the folder it served are this machine's.</para>
 /// </remarks>
 public static class QuestsStateSlice
 {
@@ -38,9 +38,9 @@ public static class QuestsStateSlice
         "parent", "conflicts", "awaits", "publishedBy", "deletable", "lanes", "requirements", "answers", "held", "accepted", "short", "hold",
         "review", "setUpIn", "setUps", "verdicts", "closure", "submission", "grewFrom", "sourceReopened", "settled", "holder", "here",
         "reopened",
-        // WORKFLOW1e2: the person's kind and workflow on a quest no ask published, which the quest's page draws (WORKFLOW1g).
+        // The person's kind and workflow on a quest no ask published, which the quest's page draws.
         "workflowChoices",
-        // INTEGRATE1l, INTEGRATE1p: the globs a quest declared it touches and the key of the workflow request that published it.
+        // The globs a quest declared it touches and the key of the workflow request that published it.
         "paths", "request",
     ];
 

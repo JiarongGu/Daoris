@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// NEW1a (D162): <c>START_CHAT</c> with opening words where a real process holds the conversation (MOD8). Apart from
+/// <c>START_CHAT</c> with opening words where a real process holds the conversation. Apart from
 /// <see cref="DriverModuleStartFromTests"/>, whose adapter spawns nothing, so that class runs in the fast half.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -62,7 +62,7 @@ public sealed class DriverModuleStartWithProcessTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FOUNDATION1a-ii: the page's account picker is the person's pick. <c>START_CHAT</c> with a <c>profile</c>, with opening words or
+    /// The page's account picker is the person's pick. <c>START_CHAT</c> with a <c>profile</c>, with opening words or
     /// without, keeps on the conversation's binding in the desktop store that they picked it; one that names none keeps none, the walk's
     /// account being no pick of theirs.
     /// </summary>

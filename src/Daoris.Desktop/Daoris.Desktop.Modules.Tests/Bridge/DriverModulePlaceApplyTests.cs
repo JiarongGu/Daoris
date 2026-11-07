@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// AGENTSPLACE1b2 (the Agents-place design §4, §7 row 7): <c>PLACE_APPLY</c> over the bridge. The digest the plan answers is the one the apply
+/// <c>PLACE_APPLY</c> over the bridge. The digest the plan answers is the one the apply
 /// names; the configuration it plans is written in one edit and its receipt kept; a digest the plan no longer has is an answer, <c>moved</c>,
 /// with nothing written. The steps' every boundary is the driver's own <c>PlaceApplyTests</c>.
 /// </summary>
@@ -42,7 +42,7 @@ public sealed class DriverModulePlaceApplyTests : DriverModuleBridge
 
         Assert.True(answer.GetProperty("done").GetBoolean(), answer.ToString());
         Assert.Equal(digest, answer.GetProperty("digest").GetString());
-        // A delivery is a saved workflow's now (WORKFLOWCLEAN1 1a): its copy is saved first, then the configuration chooses it.
+        // A delivery is a saved workflow's: its copy is saved first, then the configuration chooses it.
         Assert.Equal("workflow `merge-after-accept` saved; configuration applied.", answer.GetProperty("message").GetString());
         var operations = answer.GetProperty("operations").EnumerateArray().ToList();
         Assert.Equal(2, operations.Count);
@@ -54,7 +54,7 @@ public sealed class DriverModulePlaceApplyTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// AGENTSPLACE1b3 (RPC1e): a terminal's apply, <c>said</c>, plans now and applies that plan in the verb's own lines, the alone path's: the
+    /// A terminal's apply, <c>said</c>, plans now and applies that plan in the verb's own lines, the alone path's: the
     /// plan's lines without the <c>--plan</c> closing line, then the outcome, exit 0; and the configuration is written.
     /// </summary>
     [Fact]
@@ -79,7 +79,7 @@ public sealed class DriverModulePlaceApplyTests : DriverModuleBridge
         return [.. said.GetProperty("out").EnumerateArray().Select(line => line.GetString()).SkipLast(1)];
     }
 
-    /// <summary>REVIEW2 5: the apply names its repositories as `repositories`; a single `repository`, which its owner row and grounds do not read, is refused.</summary>
+    /// <summary>The apply names its repositories as `repositories`; a single `repository`, which its owner row and grounds do not read, is refused.</summary>
     [Fact]
     public async Task An_apply_naming_a_single_repository_is_refused_and_nothing_is_written()
     {

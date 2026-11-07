@@ -11,7 +11,7 @@ public sealed class HelpProposalFacts(DriverContext context)
     private readonly DriverLoop _loop = context.Loop;
 
     /// <summary>
-    /// Whether a pending proposal is judged against every quest and ask: a delete, and since ENTRY1f1 a go naming
+    /// Whether a pending proposal is judged against every quest and ask: a delete, and a go naming
     /// one on Quests, so the service is asked for the records only then.
     /// </summary>
     public static bool JudgedAgainstRecords(IEnumerable<HelpProposal> proposals) =>
@@ -221,8 +221,8 @@ public sealed class HelpProposalFacts(DriverContext context)
             };
         }
 
-        // A clear proposal is judged by what this machine keeps of the work it names, as HISTORY_PLAN reads it (HIST1f-c, design
-        // §6.4). A service that cannot be read throws, and the proposal stays unsettled.
+        // A clear proposal is judged by what this machine keeps of the work it names, as HISTORY_PLAN reads it.
+        // A service that cannot be read throws, and the proposal stays unsettled.
         if (JudgedAgainstHistory(proposals))
         {
             var world = HistoryRoutes.WorldOf(_loop);

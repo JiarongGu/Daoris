@@ -8,10 +8,10 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// <i>Done and failed</i>'s doors on the page, `bridge/notices.ts` (NOTIFY2f, D196 point 6; the notification design §2.3, §2.5): the
+/// <i>Done and failed</i>'s doors on the page, `bridge/notices.ts`: the
 /// person's read and dismissal of the notices the record keeps, each written under the record's keep lock by this process and pushed
 /// by it. The notices themselves are read from the <c>notices</c> slice, never answered here to a page; a terminal's
-/// <c>daoris notices</c> reads them, with what else came to the person, as lines (<c>NOTIFICATIONS</c>, NOTIFY2i).
+/// <c>daoris notices</c> reads them, with what else came to the person, as lines (<c>NOTIFICATIONS</c>).
 /// </summary>
 /// <remarks>
 /// <para><b>The person's own</b>: the pipe's census classes both <c>Person</c>, since a terminal that marked the person's news read
@@ -49,7 +49,7 @@ public sealed class NoticesRoutes(DriverLoop loop)
     }
 
     /// <summary>
-    /// What came to the person, as <c>daoris notices</c> prints it (NOTIFY2i, D196 point 8): the presses waiting for confirmation,
+    /// What came to the person, as <c>daoris notices</c> prints it: the presses waiting for confirmation,
     /// what needs them, their unread messages and the notices, read from what this process holds for its windows and changing nothing.
     /// A terminal's read alone: it answers its lines (<c>said</c>) and nothing a page reads, since the windows hold all of it already.
     /// </summary>

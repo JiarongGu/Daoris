@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// SESSONE2c (D167 points 6 to 8; the co-working design §2.4, D50): the page's door onto an ask's channel, the screen twin of
+/// The page's door onto an ask's channel, the screen twin of
 /// <c>daoris ask channel</c>. <c>CHANNEL_READ</c> answers the channel as the person reads it (their own mark, an open
 /// question marked), <c>CHANNEL_POST</c> posts their words and answers the service's code where it refused, and <c>CHANNEL_MARK</c>
 /// moves their mark. The service is a stand-in reached through the real client; nothing machine-local is on the answer.
@@ -50,7 +50,7 @@ public sealed class DriverModuleChannelTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// COMMS1k: the read carries the messages to one part each apart from the items, each with the part, its channel and its receipt in that
+    /// The read carries the messages to one part each apart from the items, each with the part, its channel and its receipt in that
     /// part's line, as the page reads them; a host from before answers none, read as an empty list.
     /// </summary>
     [Fact]
@@ -72,7 +72,7 @@ public sealed class DriverModuleChannelTests : DriverModuleBridge
         Assert.Empty((await AnswerAsync(older, "CHANNEL_READ", new { ask = "a1" })).GetProperty("addressed").EnumerateArray());
     }
 
-    /// <summary>KEEPSIZE1: <c>SESSION_RECORD</c> passes the service's record of a session's finished tree through, and answers none where the service keeps none.</summary>
+    /// <summary><c>SESSION_RECORD</c> passes the service's record of a session's finished tree through, and answers none where the service keeps none.</summary>
     [Fact]
     public async Task SESSION_RECORD_passes_the_record_through_and_answers_none_where_none_is_kept()
     {
@@ -89,7 +89,7 @@ public sealed class DriverModuleChannelTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SESSONE2h: <c>ASKS_ELSEWHERE</c> answers the asks the mirrored messages name that this machine does not hold, as the service lists
+    /// <c>ASKS_ELSEWHERE</c> answers the asks the mirrored messages name that this machine does not hold, as the service lists
     /// them (circle, origins, latest, count, unread), and an empty list from a host from before the door.
     /// </summary>
     [Fact]
@@ -112,7 +112,7 @@ public sealed class DriverModuleChannelTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// COMMS1k: <c>CHANNEL_LINE</c> answers the channel of a line on no ask as the service reads it for the person, each message to one
+    /// <c>CHANNEL_LINE</c> answers the channel of a line on no ask as the service reads it for the person, each message to one
     /// part with its receipt, and a teammate's message with its machine; no origin where the line has none.
     /// </summary>
     [Fact]
@@ -141,7 +141,7 @@ public sealed class DriverModuleChannelTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// COMMS1k: <c>CHANNEL_LINE_POST</c> is the person's post on a line's own channel, to everyone or one repository; it answers the message
+    /// <c>CHANNEL_LINE_POST</c> is the person's post on a line's own channel, to everyone or one repository; it answers the message
     /// kept as <c>CHANNEL_POST</c> does, and the service's code where it refused.
     /// </summary>
     [Fact]
@@ -167,7 +167,7 @@ public sealed class DriverModuleChannelTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 COWORK1d (the message-urgency design §8.4): each message answers the page its level, and what it reached in each repository it
+    /// Each message answers the page its level, and what it reached in each repository it
     /// addresses, as the service read them for the person; a message from before says neither.
     /// </summary>
     [Fact]
@@ -190,7 +190,7 @@ public sealed class DriverModuleChannelTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 COWORK1d (the design §4.2, §8.4): <c>CHANNEL_FORWARD</c>, the person's <i>Send to its session</i>, sends a message to the newest
+    /// <c>CHANNEL_FORWARD</c>, the person's <i>Send to its session</i>, sends a message to the newest
     /// part here of the line of work it names: kept on an ended part's record as the agent's claim passed on by the person, and the
     /// entry acknowledges it sent. With no part of that line of work here, the answer is its code.
     /// </summary>
@@ -309,7 +309,7 @@ public sealed class DriverModuleChannelTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// RPC1e: asked for its words (<c>said: true</c>) by <c>ask channel &lt;id&gt; "…"</c> sent over the pipe, <c>CHANNEL_POST</c> answers the
+    /// Asked for its words (<c>said: true</c>) by <c>ask channel &lt;id&gt; "…"</c> sent over the pipe, <c>CHANNEL_POST</c> answers the
     /// lines and the exit code the alone path prints over the same service: a post and its level, to a repository answering a message,
     /// and each refusal as its exit 1, never thrown. <c>--ordinary</c> reaches the service as the alone path sends it.
     /// </summary>

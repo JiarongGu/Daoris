@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The kinds of a person's write on a quest's records that make it the owner's for the run (STEWARDROLE1a-ii, D209 §5.4), exactly: a
+/// The kinds of a person's write on a quest's records that make it the owner's for the run, exactly: a
 /// session's move, a word to one of its sessions, a hand-over, a status changed after its publication. A twin
 /// (<c>.claude/knowledge/twins.md</c>): the service's <c>PersonDoors</c> declares, door by door, which kind its effect is and the
 /// evidence it leaves (<c>OwnerMark</c>); <see cref="OwnerRecords"/> reads that evidence; <c>OwnerSetCensusTests</c> holds every
@@ -21,7 +21,7 @@ public static class OwnerRecordKinds
 }
 
 /// <summary>
-/// A quest's records as the owner's mark reads them (§5.4): its moves, with their moments; its note's coded parts and when its status
+/// A quest's records as the owner's mark reads them: its moves, with their moments; its note's coded parts and when its status
 /// last moved; the ask's words that name it; and each of its sessions' note parts, its moment and whether a person's word waits on it.
 /// </summary>
 public sealed record OwnerRecordFacts(
@@ -32,7 +32,7 @@ public sealed record OwnerRecordFacts(
     IReadOnlyList<(IReadOnlyList<string> Note, DateTimeOffset? Updated, bool PersonSaid)> Sessions);
 
 /// <summary>
-/// The owner's mark by the record (STEWARDROLE1a-ii, D209 §5.4): the service's person doors reach records without the instance, so the
+/// The owner's mark by the record: the service's person doors reach records without the instance, so the
 /// <c>owner-set</c> condition also reads the quest's records and finds, after this run's start, the evidence one of those doors leaves.
 /// A quest's publication and its ask's own words (<c>added</c>) are never evidence, so a quest the owner set going this run is not the
 /// owner's from birth.

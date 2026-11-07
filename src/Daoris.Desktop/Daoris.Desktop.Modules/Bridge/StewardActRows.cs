@@ -5,7 +5,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What the steward's acts read and change (STEWARDROLE1b, D209 §3.1 rows 1 to 8): the driver's file, the registry, a session's record,
+/// What the steward's acts read and change: the driver's file, the registry, a session's record,
 /// this instance's processes, the planner's verdicts and the moves of a parked session. The real one is the driver bridge's
 /// (<see cref="DriverStewardWorld"/>); a test hands a stand-in, so no act starts a process, a window or an agent.
 /// </summary>
@@ -35,10 +35,10 @@ public interface IStewardWorld
     /// <summary>Whether a process of the session is alive on this machine, here or in another Daoris process.</summary>
     bool AliveOnThisMachine(string id);
 
-    /// <summary>Whether <paramref name="tree"/> is a tree this home opened (D51).</summary>
+    /// <summary>Whether <paramref name="tree"/> is a tree this home opened.</summary>
     bool OwnTree(string? tree);
 
-    /// <summary>The live session stopped by this instance's own stop, its note handed in at the call (§5.1a): never a request file.</summary>
+    /// <summary>The live session stopped by this instance's own stop, its note handed in at the call: never a request file.</summary>
     bool StopHere(string id, Noted note);
 
     /// <summary>A parked session stopped by the steward, moved by the ledger only from <c>awaiting-person</c>.</summary>
@@ -63,7 +63,7 @@ public interface IStewardWorld
     Task UpdateAsync(string mode, CancellationToken ct);
 }
 
-/// <summary>The steward's acts over the driver bridge's own loop and service (STEWARDROLE1b).</summary>
+/// <summary>The steward's acts over the driver bridge's own loop and service.</summary>
 public sealed class DriverStewardWorld(DriverContext context) : IStewardWorld
 {
     private DriverLoop Loop => context.Loop;
@@ -150,13 +150,13 @@ public sealed class DriverStewardWorld(DriverContext context) : IStewardWorld
     }
 }
 
-/// <summary>The stages of the steward's pending operations (D209 §5.1a): a Try again's release, which the planner's start takes.</summary>
+/// <summary>The stages of the steward's pending operations: a Try again's release, which the planner's start takes.</summary>
 public static class StewardStages
 {
     public const string Released = "released";
 }
 
-/// <summary>Why a steward's act is refused by its conditions (D209 §3.4 step 6), each said by its code.</summary>
+/// <summary>Why a steward's act is refused by its conditions, each said by its code.</summary>
 public static class StewardWhy
 {
     public const string Unregistered = "unregistered";
@@ -178,12 +178,12 @@ public static class StewardWhy
 }
 
 /// <summary>
-/// The steward's acts of D209 §3.1 rows 1 to 8 (STEWARDROLE1b), each one route's exact form, its conditions judged under the gates of its
+/// The steward's acts, each one route's exact form, its conditions judged under the gates of its
 /// target and its dependencies immediately before its handler, and its handler's effect recorded as the steward's.
 /// </summary>
 public static class StewardActRows
 {
-    /// <summary>Every row, in §3.1's order.</summary>
+    /// <summary>Every row, in the table's order.</summary>
     public static IReadOnlyList<IRoleAct> All { get; } =
     [
         new Setting(StewardActNames.Drive, "drivable", true, noTree: true, "SET_DRIVABLE"),
@@ -227,7 +227,7 @@ public static class StewardActRows
     internal static string Text(JsonElement form, string name) =>
         form.EnumerateObject().First(each => string.Equals(each.Name, name, StringComparison.OrdinalIgnoreCase)).Value.GetString()!;
 
-    /// <summary>A quest's own session (§3.1): driven, with a quest, never a conversation's, an intake's, a teammate's, a helper's or a partner's.</summary>
+    /// <summary>A quest's own session: driven, with a quest, never a conversation's, an intake's, a teammate's, a helper's or a partner's.</summary>
     internal static bool QuestSession(PriorSession record) =>
         record is { Kind: not "chat", Quest: not null, Ask: null, Teammate: false, Serves: null, Piece: null };
 
@@ -254,9 +254,9 @@ public static class StewardActRows
             var repository = Target(run.Form);
             if (!await world.RegisteredAsync(repository, ct).ConfigureAwait(false)) return StewardWhy.Unregistered;
             var config = world.Config();
-            // Row 1: trees are opt-in, so a repository whose sessions open none works in the owner's checkout (D51): the owner's to drive.
+            // Row 1: trees are opt-in, so a repository whose sessions open none works in the owner's checkout: the owner's to drive.
             if (noTree && !config.OpensOwnTree(repository)) return StewardWhy.NoTree;
-            // Row 5: only a hold the steward made this run that nothing has touched since (D201's rule, its memory the role's).
+            // Resume: only a hold the steward made this run that nothing has touched since (its memory the role's).
             if (name == StewardActNames.Resume
                 && (!run.Judge.StewardHolds(repository) || !config.Holds.Contains(repository, StringComparer.OrdinalIgnoreCase)))
             {
@@ -280,7 +280,7 @@ public static class StewardActRows
         }
     }
 
-    /// <summary>Row 6: D201's stop form, <c>{ id, said: true }</c>, run in the instance, never through the request folder.</summary>
+    /// <summary>The stop form, <c>{ id, said: true }</c>, run in the instance, never through the request folder.</summary>
     private sealed class StopAct : IRoleAct
     {
         public string Name => StewardActNames.Stop;
@@ -328,7 +328,7 @@ public static class StewardActRows
         }
     }
 
-    /// <summary>Row 7: D201's finish form, <c>{ id, state: "completed", said: true }</c>, moved only from <c>awaiting-person</c>.</summary>
+    /// <summary>The finish form, <c>{ id, state: "completed", said: true }</c>, moved only from <c>awaiting-person</c>.</summary>
     private sealed class FinishAct : IRoleAct
     {
         public string Name => StewardActNames.Finish;
@@ -371,7 +371,7 @@ public static class StewardActRows
 
     /// <summary>
     /// Row 8: <c>{ quest }</c>, releasing only the steward's own stop of this run, written in <c>roleReleases</c> and a pending operation
-    /// the planner's start takes (§5.1a).
+    /// the planner's start takes.
     /// </summary>
     private sealed class RetryAct : IRoleAct
     {
@@ -427,7 +427,7 @@ public static class StewardActRows
 }
 
 /// <summary>
-/// The run's memory of the steward's acts as the driver's starts read it (STEWARDROLE1b, D209 §3.1a, §5.1a): the judge's own, a role's
+/// The run's memory of the steward's acts as the driver's starts read it: the judge's own, a role's
 /// release withdrawn from the driver's file when its operation is taken or ended.
 /// </summary>
 public sealed class RoleStarts(StandingConfirmation judge, string configPath) : IRoleStarts
@@ -457,7 +457,7 @@ public sealed class RoleStarts(StandingConfirmation judge, string configPath) : 
     }
 
     /// <summary>
-    /// A revoke's or a start's sweep of the driver's file (§5.1a): every role's release whose operation this run's memory no longer holds at
+    /// A revoke's or a start's sweep of the driver's file: every role's release whose operation this run's memory no longer holds at
     /// <c>released</c> withdrawn, the owner's own releases kept whole. Answers how many it withdrew, for the log.
     /// </summary>
     public static int Sweep(StandingConfirmation judge, string configPath)

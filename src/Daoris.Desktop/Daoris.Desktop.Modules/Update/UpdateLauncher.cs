@@ -6,11 +6,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The launcher an update closes the application for (UPDATE1, D139 §5): started at the install's root with
+/// The launcher an update closes the application for: started at the install's root with
 /// <c>--update --after &lt;this process&gt;</c>, it waits for this application to close, then swaps <c>app/</c>.
 /// </summary>
 /// <remarks>
-/// <para><b>Through the start gate</b> (<see cref="ProcessStarts"/>, UPDATERELAUNCH1): *Update now*'s <c>SET</c> applies before
+/// <para><b>Through the start gate</b> (<see cref="ProcessStarts"/>): *Update now*'s <c>SET</c> applies before
 /// it answers, and the start it made in the route's synchronous part was a start on the window's thread.</para>
 /// </remarks>
 public static class UpdateLauncher
@@ -26,7 +26,7 @@ public static class UpdateLauncher
 
         // Not the tools' environment (TOOLS5): the launcher is Daoris's own program, and it hands this process's environment,
         // its home included, to the application it starts, which hands every child the tools' environment there.
-        // Through the shell (UPDATE1): a start that does not go through it hands the launcher every inheritable handle this
+        // Through the shell: a start that does not go through it hands the launcher every inheritable handle this
         // process holds, the engine's DevTools socket among them, and the launcher hands them on to the application it starts,
         // so a build started after a swap found its port held by the builds before it. The shell's start inherits none and
         // still hands this process's environment. CreateNoWindow is said as every start says it; the shell's start ignores it,

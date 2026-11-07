@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// HIST1c (D153; the history-clearing design §6.3): clearing finished history over the bridge, the driver's door
+/// Clearing finished history over the bridge, the driver's door
 /// (<c>HistoryRoutes.cs</c>). The first press lists each unit with what it takes and why it would stay, by the
 /// catalogue's codes, and a workspace's reading; the second sends exactly the units the list held. Nothing machine-local
 /// comes back: ids, counts and bytes, never a path or a title.
@@ -113,7 +113,7 @@ public sealed class DriverModuleHistoryTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A workspace's first press: each unit, a kept one with its code, and the reading (§2.4), counts and bytes; a teammate's
+    /// A workspace's first press: each unit, a kept one with its code, and the reading, counts and bytes; a teammate's
     /// failed session listed and kept carries its code too.
     /// </summary>
     [Fact]
@@ -149,7 +149,7 @@ public sealed class DriverModuleHistoryTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// HIST1d (D50; the history-clearing design §6.2): <c>daoris history --workspace --json</c> prints this route's answer
+    /// <c>daoris history --workspace --json</c> prints this route's answer
     /// field for field. Both serialize the driver library's one projection (<see cref="HistoryAnswers"/>): here the route's
     /// answer, as the page receives it, is the terminal's for the same home and service, value for value, and each object's
     /// fields are the lists the terminal's own test holds.
@@ -291,7 +291,7 @@ public sealed class DriverModuleHistoryTests : DriverModuleBridge
         Assert.DoesNotContain(JsonSerializer.Serialize(Home).Trim('"'), answer.GetRawText(), StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>The lines and the exit code a route answered as <c>said</c> (RPC1e), which the terminal prints, joined.</summary>
+    /// <summary>The lines and the exit code a route answered as <c>said</c>, which the terminal prints, joined.</summary>
     private static (string Out, int Code) SaidOf(JsonElement answer)
     {
         var said = answer.GetProperty("said");
@@ -308,7 +308,7 @@ public sealed class DriverModuleHistoryTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// RPC1e: asked for its words (<c>said: true</c>) by <c>history</c>, <c>quest clear</c> and <c>history clear</c> sent over the pipe,
+    /// Asked for its words (<c>said: true</c>) by <c>history</c>, <c>quest clear</c> and <c>history clear</c> sent over the pipe,
     /// <c>HISTORY_PLAN</c> answers the reading and a clear's list, and <c>HISTORY_CLEAR</c> a clear the service keeps, each in the lines
     /// and the exit code the alone path prints over the same service, as an answer and never a refusal. The page asks for no words.
     /// </summary>
@@ -347,7 +347,7 @@ public sealed class DriverModuleHistoryTests : DriverModuleBridge
         Assert.False((await AnswerAsync(module, "HISTORY_PLAN", new { workspace = "aurora" })).TryGetProperty("said", out _));
     }
 
-    /// <summary>RPC1e: a terminal's clear runs here, at the terminal's door, and says what went in the verb's words.</summary>
+    /// <summary>A terminal's clear runs here, at the terminal's door, and says what went in the verb's words.</summary>
     [Fact]
     public async Task A_terminal_s_clear_runs_here_and_says_what_went_in_the_verb_s_words()
     {

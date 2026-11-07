@@ -6,17 +6,17 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// <i>Done and failed</i> as every window holds it (NOTIFY2f, D196 point 6; the notification design §2.2, §2.5): the notices of
+/// <i>Done and failed</i> as every window holds it: the notices of
 /// <c>data/notices.json</c> with whether each is read, pushed from this process's read of the record, and each notice another process
 /// wrote said once as it arrives.
 /// </summary>
 /// <remarks>
 /// <para><b>One partition, keyed by notice</b> (<see cref="News"/>): <c>{ id, kind, at, read, workspace?, session?, quest?, repository?,
 /// state?, route?, act?, code?, count? }</c>, picked to <see cref="Fields"/>. No field says what to announce: an arrival is an event
-/// (<see cref="ArrivedType"/>). A conversation's answer is the kind <c>answered</c> (NOTIFY2g), which the page lists in
+/// (<see cref="ArrivedType"/>). A conversation's answer is the kind <c>answered</c>, which the page lists in
 /// <i>Messages</i>.</para>
 ///
-/// <para><b><i>Messages</i>, keyed by ask</b> (NOTIFY2g, <see cref="Messages"/>, judged by <see cref="AskMessages"/>): every live ask's
+/// <para><b><i>Messages</i>, keyed by ask</b> (<see cref="Messages"/>, judged by <see cref="AskMessages"/>): every live ask's
 /// channel and every teammate's, read through the service as the person reads them, again only where the change stream's channel or
 /// asks moved, a press declared to the asks, or <see cref="ChannelsDeadline"/> passed; an urgent message to everyone said once as
 /// <see cref="AskMessages.ArrivedType"/>, while the switch is on.</para>
@@ -28,14 +28,14 @@ namespace Daoris.Desktop;
 /// <para><b>The writer pushes its own write</b> (<see cref="Record"/>, <see cref="MarkRead"/>, <see cref="Dismiss"/>): a stamp this
 /// process marked wakes nothing on its watch. A write refused is logged (<c>notices.refused</c>) and dropped.</para>
 ///
-/// <para><b>Arrivals</b> (§5): a notice id this host's read has not seen is said once, as <see cref="ArrivedType"/>, while the notify
+/// <para><b>Arrivals</b>: a notice id this host's read has not seen is said once, as <see cref="ArrivedType"/>, while the notify
 /// switch is on; each is claimed in the said-set (<see cref="News"/>), so a restart repeats nothing and says what it missed, and only the first run on
-/// a home takes what stands as said (FOUNDATION1 m-iv). A session's end this process recorded
+/// a home takes what stands as said. A session's end this process recorded
 /// is said already by its own <c>SESSION_ATTENTION</c>, so it is not said again; a press's unanswered end has no other voice, and is. A
-/// look's news (<see cref="Notices.Look"/>, NOTIFY2h) is never said: the design's §5 lists it with a dot and nothing at the window.
+/// look's news (<see cref="Notices.Look"/>) is never said: it is listed with a dot and nothing at the window.
 /// With the headless loop driving, this re-read is the only way its notice reaches the windows.</para>
 ///
-/// <para><b>Desktop-only</b>: machine-local, never on a wire to a shared host (D47, D182 point 2).</para>
+/// <para><b>Desktop-only</b>: machine-local, never on a wire to a shared host.</para>
 /// </remarks>
 public sealed class NoticesStateSlice
 {
@@ -45,11 +45,11 @@ public sealed class NoticesStateSlice
     /// <summary>Its partition of notices, keyed by id.</summary>
     public const string News = "news";
 
-    /// <summary>Its partition of <i>Messages</i>, keyed by ask (NOTIFY2g, <see cref="AskMessages"/>).</summary>
+    /// <summary>Its partition of <i>Messages</i>, keyed by ask (<see cref="AskMessages"/>).</summary>
     public const string Messages = "messages";
 
     /// <summary>
-    /// How long the channels' read stands with nothing heard (NOTIFY2g): a move the slice did not hear (a mark moved at the service's
+    /// How long the channels' read stands with nothing heard: a move the slice did not hear (a mark moved at the service's
     /// door by no press here) is read within it.
     /// </summary>
     public static readonly TimeSpan ChannelsDeadline = TimeSpan.FromSeconds(30);
@@ -91,7 +91,7 @@ public sealed class NoticesStateSlice
     /// <param name="clock">The clock a notice's moment and its week are read by: the system's, or a test's.</param>
     /// <param name="notify">Whether the person is told (the notify switch), read at each arrival; told where none is given.</param>
     /// <param name="channels">
-    /// Every live ask's channel and every teammate's, as the person reads them (NOTIFY2g); null where the service does not answer yet,
+    /// Every live ask's channel and every teammate's, as the person reads them; null where the service does not answer yet,
     /// which keeps what was pushed. None given, the slice has no <see cref="Messages"/> partition.
     /// </param>
     /// <param name="hears">Where the channels are heard moving (<see cref="ChannelsMoved"/>), beside the record's own wakes.</param>
@@ -168,7 +168,7 @@ public sealed class NoticesStateSlice
     }
 
     /// <summary>
-    /// A conversation's answer kept as a notice (NOTIFY2g, §2.4), <paramref name="item"/> an <see cref="AttentionKind.Answered"/>, whatever
+    /// A conversation's answer kept as a notice, <paramref name="item"/> an <see cref="AttentionKind.Answered"/>, whatever
     /// the switch says, renewed unread at each later answer. Said already by its own <c>SESSION_ATTENTION</c> where the switch is on, so
     /// never said again as an arrival.
     /// </summary>
@@ -190,7 +190,7 @@ public sealed class NoticesStateSlice
     public StateSlice Slice { get; }
 
     /// <summary>
-    /// The notices a look's attention items keep, recorded whatever the switch says (§2.5): each session's end, said already by this
+    /// The notices a look's attention items keep, recorded whatever the switch says: each session's end, said already by this
     /// process's own <c>SESSION_ATTENTION</c> where the switch is on, so never said again as an arrival.
     /// </summary>
     public void Keep(IEnumerable<AttentionEvent> items)
@@ -203,9 +203,9 @@ public sealed class NoticesStateSlice
     }
 
     /// <summary>
-    /// A terminal's press whose end the person is told of, kept as a notice (§2.2; CONFIRMWAIT1a-i, the confirm-wait design §6): one its
+    /// A terminal's press whose end the person is told of, kept as a notice: one its
     /// terminal took back after a window showed it (<see cref="Notices.Withdrawn"/>), and one carrying a key lost as Daoris closed
-    /// (<see cref="Notices.Lost"/>, counting one; CONFIRMWAIT1a-ii, §7.2). Every window's, said as it arrives. No press ends by its time any
+    /// (<see cref="Notices.Lost"/>, counting one). Every window's, said as it arrives. No press ends by its time any
     /// more, and a close ends no other; <see cref="Notices.Expired"/> and <see cref="Notices.Closed"/> stay for a notice kept before.
     /// </summary>
     public void Ended(PipeConfirmation press, PipeConfirmationEnd end)
@@ -222,7 +222,7 @@ public sealed class NoticesStateSlice
     }
 
     /// <summary>
-    /// A restart's restore said to the person (CONFIRMWAIT1a-ii, the confirm-wait design §7.2 step 7): one notice for every press from a
+    /// A restart's restore said to the person: one notice for every press from a
     /// terminal it could not bring back, naming how many (<see cref="Notices.Lost"/>), and one where records a newer Daoris wrote wait for
     /// it (<see cref="Notices.Newer"/>). Every window's, said as each arrives.
     /// </summary>
@@ -363,7 +363,7 @@ public sealed class NoticesStateSlice
     }
 
     /// <summary>
-    /// The notices read now that no read before held, claimed in the said-set (FOUNDATION1 m-iv, the foundation design §4.5): one claimed before,
+    /// The notices read now that no read before held, claimed in the said-set: one claimed before,
     /// by this process or another or before a restart, is never said again, and the first run on a home takes what stands as said. Claimed
     /// whatever the switch says, so turning it on later announces nothing that happened while it was off.
     /// </summary>
@@ -376,7 +376,7 @@ public sealed class NoticesStateSlice
             _known = read.Select(notice => notice.Id).ToHashSet(StringComparer.Ordinal);
             foreach (var notice in read)
             {
-                // A look's news is listed and counted, never said aloud (NOTIFY2h, the design §5's table).
+                // A look's news is listed and counted, never said aloud.
                 if ((known?.Contains(notice.Id) ?? false) || _said.Remove(notice.Id) || notice.Kind == Notices.Look) continue;
                 candidates.Add(notice);
             }

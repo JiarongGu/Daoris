@@ -1,13 +1,13 @@
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The waiting presses' records (CONFIRMWAIT1a-ii, §7.1), which the pipe's parts reach (<see cref="InstancePipe"/>): each kept by its
+/// The waiting presses' records, which the pipe's parts reach (<see cref="InstancePipe"/>): each kept by its
 /// confirmation's id, rewritten as it is shown and as it ends, under a lock of its own, never the pipe's
 /// (<see cref="PipeState.Gate"/>), since it writes a file. Neither lock is taken inside the other.
 /// </summary>
 /// <remarks>
-/// It owns the records' folder, each kept record, each ending's answer as its record was rewritten with it (CONFIRMWAIT1 §15.2 item 8,
-/// for its line), and each Confirm whose record says <c>begun</c> until its run begins (DRAINHOLD1: it runs whatever begins after, and a
+/// It owns the records' folder, each kept record, each ending's answer as its record is rewritten with it
+/// (for its line), and each Confirm whose record says <c>begun</c> until its run begins (it runs whatever begins after, and a
 /// close leaves it under way rather than keeping it as a press that waits).
 /// </remarks>
 internal sealed class PipeWaitingKeep(PipeWaiting records)
@@ -43,7 +43,7 @@ internal sealed class PipeWaitingKeep(PipeWaiting records)
         }
     }
 
-    /// <summary>A press's card shown for the first time (§7.1): its record keeps when.</summary>
+    /// <summary>A press's card shown for the first time: its record keeps when.</summary>
     public void Shown(PipeConfirmation card)
     {
         lock (_recording)
@@ -55,8 +55,8 @@ internal sealed class PipeWaitingKeep(PipeWaiting records)
     }
 
     /// <summary>
-    /// A press's record rewritten as it ends (§7.1's order): <c>begun</c>, or <c>ended</c> with its answer. False where it could not be
-    /// written (§15.2 item 8), its record left as it was; true where the press keeps none.
+    /// A press's record rewritten as it ends: <c>begun</c>, or <c>ended</c> with its answer. False where it could not be
+    /// written, its record left as it is; true where the press keeps none.
     /// </summary>
     public bool Rewrite(string confirmation, string state, string? answer = null)
     {
@@ -80,7 +80,7 @@ internal sealed class PipeWaitingKeep(PipeWaiting records)
         }
     }
 
-    /// <summary>Whether a press's record says <c>begun</c> and its run has not begun yet (DRAINHOLD1).</summary>
+    /// <summary>Whether a press's record says <c>begun</c> and its run has not begun yet.</summary>
     public bool Begun(string confirmation)
     {
         lock (_recording) return _begun.Contains(confirmation);

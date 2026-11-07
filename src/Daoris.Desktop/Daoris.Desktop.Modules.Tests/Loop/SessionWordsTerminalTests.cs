@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// MSG1e2 (D137's MSG1e note, design §5.2): the shell's loop answers a terminal's <c>daoris session say</c> with the
+/// The shell's loop answers a terminal's <c>daoris session say</c> with the
 /// screen's judge, <see cref="SessionWords"/>, as the box's words are judged: kept on a parked or ended record and shown at
 /// once as the terminal's, the loop nudged; held at a running session's door; held in the shell while a session winds up,
 /// never asked again; and refused by the one table of what never goes on. A conversation the window runs hearing a
@@ -75,9 +75,9 @@ public sealed class SessionWordsTerminalTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// STEER2c, COWORK1a: a terminal's words at <c>now</c> are carried out by the session's door as the screen's press is, and
+    /// A terminal's words at <c>now</c> are carried out by the session's door as the screen's press is, and
     /// answered whole: where it was not now, why, beside <c>sent</c>. A door that takes words only when its turn ends holds them for
-    /// it and stops nothing (D188 point 3). A request's <c>level</c> reads as the page's: ordinary waits for the turn's end on a
+    /// it and stops nothing. A request's <c>level</c> reads as the page's: ordinary waits for the turn's end on a
     /// door that takes words at its next step.
     /// </summary>
     [Fact]
@@ -105,9 +105,9 @@ public sealed class SessionWordsTerminalTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A driven session running here hears a terminal's words at its door, as the box's (D136): COWORK1c keeps them on its record
+    /// A driven session running here hears a terminal's words at its door, as the box's: they are kept on its record
     /// first, for its run (<c>running</c>), under the request's key, and its inbox holds them under the record's id; the answer says
-    /// when they reach it, they are kept on its ask as the box's are (DRIFT1a2), and once its run took them they leave the record by
+    /// when they reach it, they are kept on its ask as the box's are, and once its run took them they leave the record by
     /// that id.
     /// </summary>
     [Fact]
@@ -141,7 +141,7 @@ public sealed class SessionWordsTerminalTests : DriverModuleBridge
     /// <summary>
     /// What never goes on is refused by the one table the terminal judges by (<see cref="WordsNever"/>), before anything is
     /// posted: a session that stood down, an intake, and a session whose quest went on later. Ask Daoris's own conversation is
-    /// none since ASKHIST1: it goes on in itself.
+    /// none: it goes on in itself.
     /// </summary>
     [Theory]
     [InlineData("""{"id":"s1","repository":"engine","state":"stood-down","quest":"q1","kind":"driven","created":"2026-10-03T08:00:00Z"}""", "stood-down")]
@@ -246,7 +246,7 @@ public sealed class SessionWordsTerminalTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The shell's loop hands its watch the screen's judge (MSG1e2): read from the loop's source, since the watch is built
+    /// The shell's loop hands its watch the screen's judge: read from the loop's source, since the watch is built
     /// only once the loop's host is up. <c>DriverModuleSessionsTests</c> holds the watch's construction itself.
     /// </summary>
     [Fact]

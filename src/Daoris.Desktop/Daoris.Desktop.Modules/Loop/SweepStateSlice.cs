@@ -7,7 +7,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The clean-up's list as every window holds it (PUSH1c4a, D182 points 3-4): what <c>SWEEP_PLAN</c> answers, judged from the machine's
+/// The clean-up's list as every window holds it: what <c>SWEEP_PLAN</c> answers, judged from the machine's
 /// facts' parts of the list (<see cref="HelpFacts.Sweep"/>, each repository's git half by the pull-request answers the landing record
 /// keeps) and the facts' sessions' look, with no git, no service call and no plugin asked, and pushed per repository when one moves, so a
 /// tick reads <c>SWEEP_PLAN</c> in no window and a mounted window asks the pull-request plugin nothing.
@@ -33,7 +33,7 @@ namespace Daoris.Desktop;
 /// (<see cref="Asked"/>), since the landing record is a file no watch hears and the look moves no ref.</para>
 ///
 /// <para><b>Desktop-only.</b> No field is a machine path (a row says whether its tree is here, never where), but a row's detail quotes
-/// git's own words, which may name a tree's files (D182 point 2).</para>
+/// git's own words, which may name a tree's files.</para>
 /// </remarks>
 public static class SweepStateSlice
 {
@@ -56,7 +56,7 @@ public static class SweepStateSlice
         ["landed"] =
         [
             "repository", "workspace", "branch", "kind", "where", "files", "detail", "pullRequest", "commits", "removable",
-            // LANDRETIRE1 part 2: how long the landing has stood and whether its quest is closed, which the Branches tab names beside its door.
+            // How long the landing has stood and whether its quest is closed, which the Branches tab names beside its door.
             "landedAt", "quest", "questClosed",
         ],
     };
@@ -140,7 +140,7 @@ public static class SweepStateSlice
     }
 
     /// <summary>
-    /// The person's look asked (PUSH1c4a, D148 point 2): each repository whose kept pull-request answers it wrote (an answer or a failed
+    /// The person's look asked: each repository whose kept pull-request answers it wrote (an answer or a failed
     /// ask, read from the landing record before and after it) has its part judged again afresh, past the rest, so the pushed list says
     /// what the look heard at once. The record is a file no watch hears and the look moves no ref, so nothing else would tell the part
     /// before its deadline. Only the parts the facts name: a repository with no checkout here has none.
@@ -180,8 +180,7 @@ public static class SweepStateSlice
     }
 
     /// <summary>
-    /// The list's parts asked again where a press declared what may move them with no ref the watch hears as Daoris's own (as the work's,
-    /// PUSH1c2a): a landing's or a sweep's scope, which a clean-up, a discard and a recovery's drop declare, wakes every part afresh, past
+    /// The list's parts asked again where a press declared what may move them with no ref the watch hears as Daoris's own (as the work's): a landing's or a sweep's scope, which a clean-up, a discard and a recovery's drop declare, wakes every part afresh, past
     /// its rest, as the person waits on it; the sessions', told at every record's move, wakes them under it, a burst one judgement each
     /// rest, since afresh it would walk every repository's branches at each record's move. Their landing wakes the slice. Disposed, it
     /// hears no more.

@@ -25,7 +25,7 @@ public sealed record AtWorkFile(string Path, long Size, long Ticks, LineageReadi
 }
 
 /// <summary>
-/// Everything a composition read, with the version it read (the design §4.1, <i>its dependencies</i>): the entry's parts, each part's
+/// Everything a composition read, with the version it read (<i>its dependencies</i>): the entry's parts, each part's
 /// read fields, the rows and quests it looked up, how many quests each session published, each slice's health, and each part's
 /// lineage file with the tokens its generations were read by.
 /// </summary>
@@ -42,12 +42,12 @@ public sealed record AtWorkDependencies(
     public SliceHealth QuestsHealth { get; init; }
 
     /// <summary>
-    /// The routing standing word each repository the hint consulted had when it was read (COWORKVIEW1e-iii): a dependency the driver
+    /// The routing standing word each repository the hint consulted had when it is read: a dependency the driver
     /// slice's pushes and the registry's answers move, nothing else written.
     /// </summary>
     public IReadOnlyDictionary<string, string> Standings { get; init; } = new Dictionary<string, string>();
 
-    /// <summary>The ask this read is of, where it is an ask's (COWORKVIEW1d); <see cref="Session"/> is then empty.</summary>
+    /// <summary>The ask this read is of, where it is an ask's; <see cref="Session"/> is then empty.</summary>
     public string? Ask { get; init; }
 
     /// <summary>The asks slice's health, and whether it held the ask: an existence dependency, the ask deleted after opening moving it.</summary>
@@ -59,19 +59,19 @@ public sealed record AtWorkDependencies(
     public string? AskEntries { get; init; }
 
     /// <summary>
-    /// The quests half as the composition read it (COWORKVIEW1b-ii): the rows, the rows left out and the asker, written out. It reads the
+    /// The quests half as the composition read it: the rows, the rows left out and the asker, written out. It reads the
     /// whole stores, so it is compared as a result, and a write that moves none of it wakes nothing.
     /// </summary>
     public string? Asked { get; init; }
 
-    /// <summary>The home the exchanges half read (COMMS1i), and what it read, written out: compared as a result, as the quests half is.</summary>
+    /// <summary>The home the exchanges half read, and what it read, written out: compared as a result, as the quests half is.</summary>
     public string? Home { get; init; }
 
     public string? Exchanged { get; init; }
 }
 
 /// <summary>
-/// Who is at work on a session, the window's read (COWORKVIEW1a, the design §4.1): its inputs gathered from memory, the <c>groups</c>
+/// Who is at work on a session, the window's read: its inputs gathered from memory, the <c>groups</c>
 /// slice's entries and rows, the <c>sessions</c> slice's records and the <c>quests</c> slice's quests with each one's health, and
 /// composed by the driver's one function (<see cref="AtWork.Compose"/>), which the terminal's verb shares. No service is asked. Its
 /// dependencies go beside the answer.
@@ -81,7 +81,7 @@ public static class AtWorkRead
     /// <param name="lineage">A part's lineage reading, this window's tokens in it.</param>
     /// <param name="pathOf">Where a part's lineage file is, whose stamp is taken before the read; none keeps no file's.</param>
     /// <param name="standing">A repository's routing standing word for the hint; none draws no hint.</param>
-    /// <param name="home">The home whose helper, piece and hand-over files the exchanges half reads (COMMS1i); none reads no exchanges.</param>
+    /// <param name="home">The home whose helper, piece and hand-over files the exchanges half reads; none reads no exchanges.</param>
     public static AtWorkHeld Compose(
         string session, StateSlice? groups, StateSlice? sessions, StateSlice? quests, Func<AtWorkRecord, LineageReading> lineage,
         Func<string, string>? pathOf = null, Func<string, string>? standing = null, string? home = null)
@@ -128,7 +128,7 @@ public static class AtWorkRead
     }
 
     /// <summary>
-    /// The exchanges half (COMMS1i): the home's helper, piece and hand-over files read by the driver's one read, the line walked in the
+    /// The exchanges half: the home's helper, piece and hand-over files read by the driver's one read, the line walked in the
     /// sessions slice's records and its quests the quests slice's. None without a home.
     /// </summary>
     private static AtWorkExchanging? Exchanging(string? home, SliceSnapshot? quests, SliceSnapshot? sessions)
@@ -150,7 +150,7 @@ public static class AtWorkRead
                     continue;
                 }
 
-                // COMMS1i: a reviewer's record names the line it serves, so the line's co-workers list it.
+                // A reviewer's record names the line it serves, so the line's co-workers list it.
                 if (AtWorkExchangeReading.Reviewer(id, Text(record, "opinion"), Text(record, "serves"), Text(record, "door"), Text(record, "state")) is { } reviewer)
                 {
                     reviewers.Add(reviewer);
@@ -168,7 +168,7 @@ public static class AtWorkRead
         read.Exchanged is null || Exchanging(read.Home, quests, sessions) is not { } exchanging || ExchangedKey(exchanging(read.Session)) == read.Exchanged;
 
     /// <summary>
-    /// Who is at work on an ask (COWORKVIEW1d): its lines of work from the groups slice's entries whose origin is the ask, its quests from the
+    /// Who is at work on an ask: its lines of work from the groups slice's entries whose origin is the ask, its quests from the
     /// quests and sessions slices, and the asks slice as an existence dependency. A different branch from a session's answer: no attended part.
     /// </summary>
     public static AtWorkHeld ComposeAsk(

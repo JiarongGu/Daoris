@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// *Ask another agent…* over the bridge (MIXAGENT2b, D163 point 2; the mixed-agents design §3, §5): the person's own ask of a
+/// *Ask another agent…* over the bridge: the person's own ask of a
 /// helper for a session, the file `daoris session helper` writes, judged as that verb judges; the session's asks as its
 /// page lists them, each with where the driver's look left it; and the person's yes to an agent's ask that waits on it under the
 /// `helpers` rule's `ask`, the `approved` state the look reads.
@@ -74,7 +74,7 @@ public sealed class DriverModuleSessionHelpersTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FOUNDATION1q (the foundation design §2.3, §7 row 9): the page's door asks the start layer, held to the five doors' table
+    /// The page's door asks the start layer, held to the five doors' table
     /// (<c>fixtures/helper-askers.json</c> among the service's tests) row for row, Ask Daoris refused by its own code.
     /// </summary>
     [Theory]
@@ -201,7 +201,7 @@ public sealed class DriverModuleSessionHelpersTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// HELPERNO1 (D163 point 3): the person's no. An agent's ask the look holds waiting on their word is refused `declined` at once,
+    /// The person's no. An agent's ask the look holds waiting on their word is refused `declined` at once,
     /// with the coded note the look writes on the asking session's record for every refusal, so the look starts nothing for it; a no
     /// again is the same no and notes nothing more. A person's own ask needs none, one with their yes waits on the look, one the look
     /// has not read yet waits on no word of theirs yet, one past its start is past it, one waiting on a slot or an agent waits on
@@ -256,7 +256,7 @@ public sealed class DriverModuleSessionHelpersTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// MIXAGENT2c (D168, D163 point 3): what of the agents' asks waits on the person's word across this machine's sessions, for
+    /// What of the agents' asks waits on the person's word across this machine's sessions, for
     /// *What needs you*: each the look holds `waiting` with no code, oldest first, with its session, question, agent and when. One
     /// it has not read yet, one waiting on a slot, one with a yes, one past its start and a person's own wait on no word of theirs.
     /// </summary>

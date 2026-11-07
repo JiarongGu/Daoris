@@ -5,8 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// **An account's own model and effort, from a screen** (AGT6, D98) — the bridge's half of
-/// <c>daoris agent settings</c>, over the same file (D50).
+/// **An account's own model and effort, from a screen** — the bridge's half of
+/// <c>daoris agent settings</c>, over the same file.
 /// </summary>
 /// <remarks>
 /// <para>The roster answers, per account, what the tool's own settings file says, and per tool which
@@ -70,7 +70,7 @@ public sealed class AgentSettingsModuleTests : Bridge
         Assert.Equal(JsonValueKind.Null, play.GetProperty("problem").ValueKind);
         Assert.False(File.Exists(Path.Combine(HarnessSettings.ProfileHome(Home, "claude-code", "play"), AgentSettings.FileName)));
 
-        // The protocol door runs as Claude Code's accounts, so it offers the same choices (AGT7).
+        // The protocol door runs as Claude Code's accounts, so it offers the same choices.
         Assert.Equal(JsonValueKind.Object, rows["claude-code-acp"].GetProperty("settingsChoices").ValueKind);
         // A tool whose settings Daoris does not know is offered nothing.
         Assert.Equal(JsonValueKind.Null, rows["dsh"].GetProperty("settingsChoices").ValueKind);
@@ -123,7 +123,7 @@ public sealed class AgentSettingsModuleTests : Bridge
             JsonSerializer.Serialize(JsonDocument.Parse(File.ReadAllText(file)).RootElement));
     }
 
-    /// <summary>A door's accounts are its owner's (AGT7): the protocol door's settings are Claude Code's account's file.</summary>
+    /// <summary>A door's accounts are its owner's: the protocol door's settings are Claude Code's account's file.</summary>
     [Fact]
     public async Task A_door_sets_its_owners_account()
     {

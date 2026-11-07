@@ -3,15 +3,14 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The route table's shape (MOD5): the page's bridge and <see cref="DriverModule"/>'s table are two lists of
+/// The route table's shape: the page's bridge and <see cref="DriverModule"/>'s table are two lists of
 /// one set of names, in two languages, with no compiler between them, so a route can be half-added: called
 /// by the page and answered NO_ROUTE, or answered and called by nothing.
 /// </summary>
 /// <remarks>
 /// <para>Read from the sources, as <see cref="RefusalCatalogueTests"/> reads the throw sites: the page's calls
-/// from <c>src/Daoris.Web/src/bridge/*.ts</c> (and <c>shell.ts</c>, which held them all before the bridge was
-/// split by domain, MOD3), and each route's domain from the <c>[DriverRoute]</c> marks in its handler class,
-/// <c>&lt;Domain&gt;Routes.cs</c> (PART10d; PART10f moved the last three, so the module holds none).</para>
+/// from <c>src/Daoris.Web/src/bridge/*.ts</c> (and <c>shell.ts</c>), and each route's domain from the <c>[DriverRoute]</c> marks in its handler class,
+/// <c>&lt;Domain&gt;Routes.cs</c> (the module holds none).</para>
 ///
 /// <para>A route the page sends is a literal in one of three places: the first argument of <c>call</c>, the
 /// bridge's one call onto this module; the argument of a helper that forwards its own to <c>call</c>
@@ -48,7 +47,7 @@ public sealed partial class DriverModuleRoutesTests
     {
         var web = Path.Combine(RepositoryRoot(), "src", "Daoris.Web", "src");
         var bridge = Path.Combine(web, "bridge");
-        // The barrel is found by its name wherever it lies under the page (STRUCT5c, D166), and read once.
+        // The barrel is found by its name wherever it lies under the page, and read once.
         var files = (Directory.Exists(bridge)
                 ? Directory.EnumerateFiles(bridge, "*.ts", SearchOption.AllDirectories).Where(path => !path.EndsWith(".test.ts", StringComparison.Ordinal))
                 : [])

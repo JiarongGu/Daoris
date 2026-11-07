@@ -7,7 +7,7 @@ public static class SessionsGroupsWires
 {
     /// <summary>
     /// One entry of <c>SESSION_GROUPS</c>, field for field what <c>daoris session list --json</c> prints in <c>entries</c>
-    ///: its key and the key's halves, the group its leading part put it in, and its parts, oldest first, each with
+    ///its key and the key's halves, the group its leading part put it in, and its parts, oldest first, each with
     /// how it began. Ids, words and counts only.
     /// </summary>
     public static object Entry(SessionEntry entry) => new

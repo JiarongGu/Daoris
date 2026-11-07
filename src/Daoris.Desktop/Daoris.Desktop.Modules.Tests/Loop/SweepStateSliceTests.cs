@@ -8,7 +8,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The clean-up's list pushed (PUSH1c4a, D182 points 3-4): one owner in the shell's loop judging, from the machine's facts' parts of the
+/// The clean-up's list pushed: one owner in the shell's loop judging, from the machine's facts' parts of the
 /// list (each repository's git half by the pull-request answers the landing record keeps) and the sessions' look, a partition per
 /// repository with a checkout here carrying what <c>SWEEP_PLAN</c> answers of it, pushed when one moves, so no window's tick reads the
 /// list and none asks a plugin.
@@ -82,14 +82,14 @@ public sealed partial class SweepStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The twin (D182 point 3): every field <c>SWEEP_PLAN</c>'s builders write, each shape filled, is pushed or named the pull's alone, and
+    /// The twin: every field <c>SWEEP_PLAN</c>'s builders write, each shape filled, is pushed or named the pull's alone, and
     /// every field the page's <c>SweepBranch</c> and <c>LandedBranch</c> read (<c>settings/Sweep.tsx</c>) is pushed.
     /// </summary>
     [Fact]
     public void Every_field_the_list_writes_is_classed_and_every_field_the_page_reads_is_pushed()
     {
         var item = new SweepItem("engine", "w1", "daoris/s-1", Tree("engine"), SweepKind.Unlanded, 1, "main", "a1b2c3d the work");
-        // LANDRETIRE1 part 2: its age and its quest's closing are pushed, so the Branches tab names them as the terminal's list does.
+        // Its age and its quest's closing are pushed, so the Branches tab names them as the terminal's list does.
         var landed = new LandedItem("engine", "w1", "feature/x", LandedKind.Differs, "origin/main", ["a.txt"], "git said", "https://example.test/pr/7", 2)
         {
             LandedAt = At, Quest = "q2", QuestClosed = true,
@@ -249,7 +249,7 @@ public sealed partial class SweepStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// What each declared scope asks of the parts (as the work's, PUSH1c2a): a landing's or a sweep's judges every part afresh, past their
+    /// What each declared scope asks of the parts (as the work's): a landing's or a sweep's judges every part afresh, past their
     /// rest, since a discard, a clean-up and a recovery's drop move refs the watch may not hear as Daoris's own; the sessions', told at
     /// every record's move, wakes them under it, so a burst of moves is one judgement each rest; another scope none.
     /// </summary>
@@ -313,7 +313,7 @@ public sealed partial class SweepStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 The person's look asks (D148 point 2) and keeps the answer in the landing record, a file no watch hears, moving no ref: the
+    /// 🔴 The person's look asks and keeps the answer in the landing record, a file no watch hears, moving no ref: the
     /// repositories whose kept answers that look wrote are judged again at once, past the rest, and no other.
     /// </summary>
     [Fact]

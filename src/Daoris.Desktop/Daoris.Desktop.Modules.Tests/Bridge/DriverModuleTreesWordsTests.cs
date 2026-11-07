@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// RPC1b3 (the terminal RPC design §7.3, D171's RPC1b note): the trees presses' routes take what their verbs name and answer the
+/// The trees presses' routes take what their verbs name and answer the
 /// verb's words (<c>said</c>) beside the page's own fields, which keep their names and their values. The routes stay the person's
 /// (<c>PipeCensusTests</c>); these hold what a verb that becomes their client would send and print.
 /// </summary>
@@ -133,7 +133,7 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
         Assert.Equal(answer.GetProperty("done").GetBoolean() ? 0 : 1, Said(answer).Code);
     }
 
-    /// <summary><c>trees remove &lt;landing branch&gt; --why</c> (LANDRETIRE1): the route's answer says what the verb says, a refusal as words, exit 1.</summary>
+    /// <summary><c>trees remove &lt;landing branch&gt; --why</c>: the route's answer says what the verb says, a refusal as words, exit 1.</summary>
     [Fact]
     public async Task A_withdrawn_landing_branch_is_said_in_the_words_of_the_remove_verb()
     {
@@ -146,7 +146,7 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
         Assert.Equal(1, Said(answer).Code);
     }
 
-    /// <summary><c>trees remove &lt;named&gt;</c> (RPC1b4): a session or a branch by one name, with the repository only where it must say.</summary>
+    /// <summary><c>trees remove &lt;named&gt;</c>: a session or a branch by one name, with the repository only where it must say.</summary>
     [Fact]
     public async Task A_branch_discard_naming_a_branch_or_a_session_says_what_the_verb_says()
     {
@@ -173,7 +173,7 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
         Assert.Contains("repository", refusal);
     }
 
-    /// <summary><c>trees land --entry</c> and <c>--ask</c> (RPC1b4): the verbs' words beside the page's fields, a refusal as words.</summary>
+    /// <summary><c>trees land --entry</c> and <c>--ask</c>: the verbs' words beside the page's fields, a refusal as words.</summary>
     [Fact]
     public async Task An_entry_naming_no_work_here_is_said_as_the_verb_says_it()
     {
@@ -197,7 +197,7 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
         Assert.Equal(1, Said(answer).Code);
     }
 
-    /// <summary>RPC1b5: the landing presses answer the lines the registry followed, none where nothing landed or none was asked for.</summary>
+    /// <summary>The landing presses answer the lines the registry followed, none where nothing landed or none asked for.</summary>
     [Fact]
     public async Task The_landing_presses_answer_followed_beside_the_words_and_follow_nothing_where_nothing_landed()
     {
@@ -219,7 +219,7 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
         Assert.Equal(["engine"], RegistryFollowing.Due(Home));
     }
 
-    /// <summary><c>trees land &lt;session&gt;</c> (RPC1b4): the refusals the verb says as words, where the route threw or landed nothing said.</summary>
+    /// <summary><c>trees land &lt;session&gt;</c>: the refusals the verb says as words, where the route threw or landed nothing said.</summary>
     [Fact]
     public async Task A_landing_of_a_session_with_no_tree_is_the_verbs_sentence_exit_1_not_an_error()
     {
@@ -259,7 +259,7 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// TREENAME1: a tree's name given where the doors take a session names the session whose tree it is, at the press, the plan, the
+    /// A tree's name given where the doors take a session names the session whose tree it is, at the press, the plan, the
     /// discard and the review, as the terminal's alone path says it; never that the session names no tree here.
     /// </summary>
     [Fact]

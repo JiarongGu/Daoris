@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Settings → Tools over the bridge (TOOLS7, D121 §4.1; <c>ToolsRoutes.cs</c>): each tool's way, what is
+/// Settings → Tools over the bridge (<c>ToolsRoutes.cs</c>): each tool's way, what is
 /// downloaded and what the lists offer, a download started as an action the page follows and the person stops, a
 /// delete, the resource locations listed, added, removed and looked at, and what a switch of git changes.
 /// </summary>
@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// Nothing here starts a program. A list is a location's copy written by the test, a download is served from a host on
 /// this machine (<see cref="LoopbackHost"/>), and a managed version is laid out by hand as a download leaves one. The
 /// version a program answers and git's own configuration are asked of real programs, so those cases are
-/// <see cref="DriverModuleToolProgramsTests"/>', in the suite's Process half (MOD8).
+/// <see cref="DriverModuleToolProgramsTests"/>', in the suite's Process half.
 /// </remarks>
 public sealed class DriverModuleToolsTests : DriverModuleBridge
 {
@@ -95,7 +95,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
         : null;
 
     /// <summary>
-    /// A home that never opened Settings → Tools runs every tool as the system's (D121 §2.3), and the list says so for
+    /// A home that never opened Settings → Tools runs every tool as the system's, and the list says so for
     /// each declared tool in its declared order, with the file both doors edit and the list built in. It reads files
     /// and starts nothing: a version is asked only when the page asks for it.
     /// </summary>
@@ -122,7 +122,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// What the screen's version choice is made of (§4.1): the versions downloaded, each with its size and whether it is
+    /// What the screen's version choice is made of: the versions downloaded, each with its size and whether it is
     /// the one in use, then what the lists offer for this machine, each with its size and the lists naming it, and the
     /// tool's source and licence. A location is listed with what vouches for it and what it names.
     /// </summary>
@@ -162,7 +162,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
         Assert.Equal(64, location.GetProperty("sha256").GetString()!.Length);
     }
 
-    /// <summary>Two lists that disagree on one download refuse that version and name both (§3.4 rule 3).</summary>
+    /// <summary>Two lists that disagree on one download refuse that version and name both.</summary>
     [Fact]
     public async Task A_version_two_lists_disagree_on_is_listed_as_refused_and_never_started()
     {
@@ -182,7 +182,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
         Assert.Contains("version=99.1.0", refusal);
     }
 
-    /// <summary>The system's way is written as the terminal's `daoris tool use … system` writes it (D50), and logged by tool.</summary>
+    /// <summary>The system's way is written as the terminal's `daoris tool use … system` writes it, and logged by tool.</summary>
     [Fact]
     public async Task Use_the_systems_writes_the_file_the_terminal_edits()
     {
@@ -197,7 +197,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A named file is checked before it is written (§4.1): a path that is not whole, or holds no file, is refused, and so
+    /// A named file is checked before it is written: a path that is not whole, or holds no file, is refused, and so
     /// is a file that does not start and answer a version. Nothing is written for any of them.
     /// </summary>
     [Fact]
@@ -251,7 +251,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A download is an action the page starts and follows (§3.6, WSR7 a): answered once it has started, its lines on the
+    /// A download is an action the page starts and follows: answered once it has started, its lines on the
     /// console under the tool's own key, and its end news after. Nothing switches, and the version is then downloaded.
     /// </summary>
     [Fact]
@@ -283,7 +283,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// One at a time for each tool, and the person's stop ends it (§3.6): a second start is refused while one runs, the
+    /// One at a time for each tool, and the person's stop ends it: a second start is refused while one runs, the
     /// list says what runs, a stop ends it as news leaving nothing, and a stop with nothing running says so.
     /// </summary>
     [Fact]
@@ -314,7 +314,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A delete removes a version nothing uses (§3.6): the one in use is refused, so is one not downloaded, and the
+    /// A delete removes a version nothing uses: the one in use is refused, so is one not downloaded, and the
     /// refusals name the tool and the version.
     /// </summary>
     [Fact]
@@ -339,7 +339,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The resource locations, edited on the screen in the file the terminal's `daoris tool locations` edits (D50): an
+    /// The resource locations, edited on the screen in the file the terminal's `daoris tool locations` edits: an
     /// address that is not one is refused naming it, one already listed adds nothing, and a removal says whether it
     /// removed anything.
     /// </summary>
@@ -363,7 +363,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A git setting set on the screen is the one the terminal's `daoris tool git ssh` sets (GITAUTH1e): the list reads it back, no
+    /// A git setting set on the screen is the one the terminal's `daoris tool git ssh` sets: the list reads it back, no
     /// value clears it, and a key off the allow-list is refused with nothing written.
     /// </summary>
     [Fact]
@@ -386,7 +386,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// Settings → Git's acts (GITAUTH1e): the list answers the identities with what points at them and no secret, an act on an
+    /// Settings → Git's acts: the list answers the identities with what points at them and no secret, an act on an
     /// identity is the terminal's operation, a pointer is written and read back, and a scope the page does not know is refused.
     /// </summary>
     [Fact]
@@ -423,7 +423,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// GITAUTH1f (the git-auth design §6.6): a git go-ahead's row answers through <c>GIT_ANSWER</c>, the door that waits takes it, and an
+    /// A git go-ahead's row answers through <c>GIT_ANSWER</c>, the door that waits takes it, and an
     /// answer that is neither allow nor refuse, or an ask that is not there, is refused.
     /// </summary>
     [Fact]
@@ -441,7 +441,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// Look for updates (§3.7) fetches each location on the person's press, keeps the copy of a list that reads and says
+    /// Look for updates fetches each location on the person's press, keeps the copy of a list that reads and says
     /// what it added, and says a location that could not be fetched rather than failing the look.
     /// </summary>
     [Fact]
@@ -461,7 +461,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// What a switch of git changes is asked of the git it would run (§4.1), so a target that cannot run is refused
+    /// What a switch of git changes is asked of the git it would run, so a target that cannot run is refused
     /// before anything is asked: a managed version nobody downloaded, or a named file that is not there.
     /// </summary>
     [Fact]
@@ -480,7 +480,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// *Browse…* (§4.1) is the system's file picker, which the application hands in: its choice is the answer, the person
+    /// *Browse…* is the system's file picker, which the application hands in: its choice is the answer, the person
     /// cancelling is no file, and a host with no picker says it has none.
     /// </summary>
     [Fact]
@@ -493,7 +493,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
         Assert.Equal(@"C:\Tools\git\cmd\git.exe", picked.GetProperty("file").GetString());
         Assert.True(picked.GetProperty("can").GetBoolean());
         Assert.Equal("Choose Git", asked);
-        // A page that names no window is the first main window's (MAINWINDOWS2c).
+        // A page that names no window is the first main window's.
         Assert.Null(from);
 
         var cancelled = await AnswerAsync(new DriverModule(Bus, Loop(), pickFile: (_, _) => null), "TOOLS_PICK", new { title = "Choose Git" });
@@ -503,7 +503,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
         Assert.False(none.GetProperty("can").GetBoolean());
     }
 
-    /// <summary>MAINWINDOWS2c: the file picker is owned by the window whose page asked, which the page names.</summary>
+    /// <summary>The file picker is owned by the window whose page asked, which the page names.</summary>
     [Theory]
     [InlineData("main:2")]
     [InlineData("monitor")]
@@ -517,7 +517,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
         Assert.Equal(window, from);
     }
 
-    /// <summary>A version is read off whatever the program says, as each declared tool says it (§2.1's version question).</summary>
+    /// <summary>A version is read off whatever the program says, as each declared tool says it.</summary>
     [Theory]
     [InlineData("git version 2.51.0.windows.1\n", "2.51.0")]
     [InlineData("v22.11.0\n", "22.11.0")]
@@ -532,7 +532,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// What makes two gits read one checkout differently (§4.1): the four keys, compared between each git's own
+    /// What makes two gits read one checkout differently: the four keys, compared between each git's own
     /// `config --system --list`; a key one sets and the other leaves unset differs, and every other key is not looked at.
     /// </summary>
     [Fact]

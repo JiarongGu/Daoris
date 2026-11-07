@@ -6,7 +6,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A module whose every route waits until the test lets it, and counts how often it ran (RPC1a): a press the pipe's tests hold
+/// A module whose every route waits until the test lets it, and counts how often it ran: a press the pipe's tests hold
 /// under way. <c>PROGRESS</c> reports half its work first, as a route reports through the kit's tracker.
 /// </summary>
 internal sealed class HeldModule(string name) : ModuleBase
@@ -32,7 +32,7 @@ internal sealed class HeldModule(string name) : ModuleBase
 }
 
 /// <summary>
-/// A clock that stands still until the test moves it (RPC1c): a timer it made fires only once <see cref="Advance"/> passes its
+/// A clock that stands still until the test moves it: a timer it made fires only once <see cref="Advance"/> passes its
 /// time, so a confirmation's two minutes are the test's to spend, never the machine's load.
 /// </summary>
 internal sealed class HeldClock : TimeProvider
@@ -68,8 +68,8 @@ internal sealed class HeldClock : TimeProvider
     }
 
     /// <summary>
-    /// Moves the clock on by <paramref name="by"/> and fires nothing: each timer it reached is held late, as a loaded pool runs one
-    /// (NOTIFY2a), and fires at the next <see cref="Advance"/>.
+    /// Moves the clock on by <paramref name="by"/> and fires nothing: each timer it reached is held late, as a loaded pool runs one,
+    /// and fires at the next <see cref="Advance"/>.
     /// </summary>
     public void Pass(TimeSpan by)
     {
@@ -107,7 +107,7 @@ internal sealed class HeldClock : TimeProvider
 }
 
 /// <summary>
-/// The loop's readers of a press's grounds as a test holds them (CONFIRMWAIT1a-i): each world fact a dictionary the test moves between
+/// The loop's readers of a press's grounds as a test holds them: each world fact a dictionary the test moves between
 /// the ask and the Confirm, a read of a route answered from <see cref="Reads"/> (an empty object where none is set), every read
 /// counted, and the whole of it made to throw (<see cref="Fails"/>) or held open until the test lets it (<see cref="Hold"/>).
 /// </summary>
@@ -119,7 +119,7 @@ internal sealed class StubGrounds : IPipeGroundWorld
 
     public HashSet<string> Registered { get; } = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>What a name resolves to where the test says (CONFIRMWAIT1 §15.1 item 4); a name only <see cref="Registered"/> resolves to itself.</summary>
+    /// <summary>What a name resolves to where the test says; a name only <see cref="Registered"/> resolves to itself.</summary>
     public Dictionary<string, string> Registrations { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     public Dictionary<string, string> Quests { get; } = new(StringComparer.Ordinal);
@@ -131,7 +131,7 @@ internal sealed class StubGrounds : IPipeGroundWorld
 
     public Dictionary<string, string> Heads { get; } = new(StringComparer.Ordinal);
 
-    /// <summary>Tips in a session's tree by <c>session:branch</c>, <c>HEAD</c> its head (CONFIRMWAIT1 §15.1 item 1); <see cref="Heads"/> beside it.</summary>
+    /// <summary>Tips in a session's tree by <c>session:branch</c>, <c>HEAD</c> its head; <see cref="Heads"/> beside it.</summary>
     public Dictionary<string, string> TreeTips { get; } = new(StringComparer.Ordinal);
 
     /// <summary>A read's answer by its route, made from the read's payload.</summary>
@@ -236,7 +236,7 @@ internal sealed class StubGrounds : IPipeGroundWorld
     }
 }
 
-/// <summary>A terminal's end of the running Daoris's pipe (RPC1a), as RPC1b's client will hold it: lines of JSON each way.</summary>
+/// <summary>A terminal's end of the running Daoris's pipe, as a client holds it: lines of JSON each way.</summary>
 internal sealed class PipeClient : IAsyncDisposable
 {
     private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
@@ -254,7 +254,7 @@ internal sealed class PipeClient : IAsyncDisposable
     }
 
     /// <summary>
-    /// Connected as the driver's client connects (PIPEOWNER1): past the ACL, then the pipe's owner held to this user's SIDs, never
+    /// Connected as the driver's client connects: past the ACL, then the pipe's owner held to this user's SIDs, never
     /// <see cref="PipeOptions.CurrentUserOnly"/>, which an elevated run refuses the user's own pipe by.
     /// </summary>
     public static async Task<PipeClient> ConnectAsync(string name)
@@ -284,7 +284,7 @@ internal sealed class PipeClient : IAsyncDisposable
         await AnswerAsync(await SendAsync(InstancePipe.Module, "RESULT", new { id, key = key ?? KeyOf(id) }));
 
     /// <summary>
-    /// One request, as RPC1b's client sends it: the kit's envelope with a fresh id, and beside it the key only its sender holds,
+    /// One request, as a client sends it: the kit's envelope with a fresh id, and beside it the key only its sender holds,
     /// the one an id sent again carries again (this client's for that id, unless one is named).
     /// </summary>
     public async Task<string> SendAsync(string module, string type, object? payload = null, string? id = null, string? key = null)
@@ -359,7 +359,7 @@ internal sealed class PipeClient : IAsyncDisposable
         }
     }
 
-    /// <summary>Every notification kept while an answer was awaited, in the order told (TERMTRUST1a: what a covered press was told).</summary>
+    /// <summary>Every notification kept while an answer is awaited, in the order told.</summary>
     public IReadOnlyList<JsonElement> Told => _notifications;
 
     /// <summary>The first notification told, waiting up to <paramref name="within"/>; null where none came.</summary>

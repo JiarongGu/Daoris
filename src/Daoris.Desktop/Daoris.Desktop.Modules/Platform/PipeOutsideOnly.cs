@@ -3,7 +3,7 @@ using System.Collections.Frozen;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The person's presses only a terminal outside every agents' job may ask (CHANNELJOIN1, D244 point 10): a join of an agent outside
+/// The person's presses only a terminal outside every agents' job may ask: a join of an agent outside
 /// Daoris to a channel. An agent Daoris runs is a part of its line already and speaks on its channel as itself, so its join is refused
 /// <see cref="Inside"/> before any card; a place the system would not tell is said beside the card's ask as <see cref="StandingWhy.Untold"/>.
 /// </summary>

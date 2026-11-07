@@ -7,14 +7,14 @@ namespace Daoris.Desktop;
 /// <summary>The rows of what waits on the person in a session the driver runs: a helper's ask, a hand-over, a quiet session, a held call, an answer, a memory change.</summary>
 internal static class AttentionSessionRows
 {
-    /// <summary>The states in which a session's turn runs: an agent's ask to hand it over holds nothing up until it ends (NOTIFY2e).</summary>
+    /// <summary>The states in which a session's turn runs: an agent's ask to hand it over holds nothing up until it ends.</summary>
     public static readonly HashSet<string> TurnRuns = new(StringComparer.Ordinal) { "queued", "starting", "working" };
 
     /// <summary>The rows, in the order <see cref="NeedsAPerson.Rows"/> judges them; <paramref name="sessionScope"/> is the workspace of a session whose record is in hand.</summary>
     public static IEnumerable<JsonObject> Rows(AttentionFacts facts, Dictionary<string, JsonObject> sessions, Func<string?, string?> sessionScope)
     {
         var rows = new List<JsonObject>();
-        // An agent's ask for a helper that waits on the person's yes (MIXAGENT2c): its question's first line as written, the session that
+        // An agent's ask for a helper that waits on the person's yes: its question's first line as written, the session that
         // asked, and its repository where the session's record is in hand.
         foreach (var wait in facts.Helpers)
         {
@@ -28,7 +28,7 @@ internal static class AttentionSessionRows
             rows.Add(row);
         }
 
-        // An agent's ask to hand its session over that waits on the person's yes or no (NOTIFY2e, MIXAGENT1c): by the ask's own id, its
+        // An agent's ask to hand its session over that waits on the person's yes or no: by the ask's own id, its
         // note's first line as written, the session that asked and the agent it goes to. It stands still on it once that session's turn
         // is no longer running, since the session goes on only by their word; while its turn runs it holds nothing up yet.
         foreach (var wait in facts.HandOvers)
@@ -45,7 +45,7 @@ internal static class AttentionSessionRows
             rows.Add(row);
         }
 
-        // A session the watcher brings to the person (SESSWATCH1a, D200, the session-watch design §2.3, §5.2): keyed by the session, since
+        // A session the watcher brings to the person: keyed by the session, since
         // when it was last heard, its repository, its quest, and the minutes, whether it is busy (then offered no end), whether it is an
         // intake and whether the person's words wait to reach it. Its turn stands still on the person while it is quiet.
         foreach (var wait in facts.Quiet)
@@ -68,8 +68,8 @@ internal static class AttentionSessionRows
             rows.Add(row);
         }
 
-        // A session that waited on its own helper, whose helper ended with no answer and whose move back to the person the service refused
-        // (HELPERWAIT1c; the co-worker design §5 point 4, §12 row 11): it stays `completed`, so no park row says it, and it holds its tree
+        // A session that waited on its own helper, whose helper ended with no answer and whose move back to the person the service refused:
+        // it stays `completed`, so no park row says it, and it holds its tree
         // until the person looks. Keyed by the session, since the first refusal, its repository, its quest and the service's words as
         // said. A record the page holds that has moved on (the move landed, a park's row now) is none; the look lets its file go next.
         foreach (var back in facts.Backs)
@@ -85,7 +85,7 @@ internal static class AttentionSessionRows
             rows.Add(row);
         }
 
-        // A tool call a session holds for the person's answer under asking (AUTONOMY1b3c), keyed by the session and the request, since a
+        // A tool call a session holds for the person's answer under asking, keyed by the session and the request, since a
         // request's id is only its agent's wire's.
         foreach (var wait in facts.Permissions)
         {
@@ -97,8 +97,8 @@ internal static class AttentionSessionRows
             rows.Add(row);
         }
 
-        // A third answer in a row with nobody between, which its session's work waits on the person for (COWORK1e, D188 point 4; the
-        // message-urgency design §8.3): keyed by the session, its wait whole, the agent that answered among it.
+        // A third answer in a row with nobody between, which its session's work waits on the person for:
+        // keyed by the session, its wait whole, the agent that answered among it.
         foreach (var wait in facts.Answers)
         {
             var record = sessions.GetValueOrDefault(Text(wait, "session") ?? "");
@@ -109,7 +109,7 @@ internal static class AttentionSessionRows
             rows.Add(row);
         }
 
-        // A session whose memory changes wait on the person (KNOWCENTRAL2e; the memory coordinator design §4): an end or a replacement for its
+        // A session whose memory changes wait on the person: an end or a replacement for its
         // approver, or a stopped session's staged rows for Keep or Drop. One row by the session, a door to its page's Memory section.
         foreach (var wait in facts.Memory)
         {

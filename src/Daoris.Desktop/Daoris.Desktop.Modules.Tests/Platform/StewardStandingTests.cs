@@ -8,7 +8,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The steward's standing over the real pipe (STEWARDROLE1d; D209 point 2, D201's four presses as the steward's acts): a press its
+/// The steward's standing over the real pipe: a press its
 /// proved holder makes within the acts the person granted runs with no card and is logged; one outside them asks the person as its
 /// route's own press; an act the person takes back asks again at the next press; and a process that does not prove the holder's key
 /// is refused, nothing asked.

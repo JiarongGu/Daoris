@@ -6,8 +6,8 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// WAITSAY1c1: each working session's running call, pushed as it starts and ends (D182's PUSH1d2 note gave keyed slices; D152's
-/// WAITSAY1b line gave the call). Judged from the loop's own record in memory, with no service, one partition keyed by session, and
+/// Each working session's running call, pushed as it starts and ends.
+/// Judged from the loop's own record in memory, with no service, one partition keyed by session, and
 /// woken only where a session's call moved.
 /// </summary>
 /// <remarks>Every call is the test's own event on the loop's record, each with its stamp. Nothing here starts a process or a service.</remarks>
@@ -28,7 +28,7 @@ public sealed class CallsStateSliceTests : DriverModuleBridge
     private IReadOnlyList<SlicePush> Pushes() =>
     [
         .. Raised.Where(each => each.Type == StateSlice.PushType).Select(each => (SlicePush)each.Payload!)
-            // The calls' partition: the watcher's marks beside it are SESSWATCH1a's own test's.
+            // The calls' partition: the watcher's marks beside it are another test's.
             .Where(push => push.Slice == CallsStateSlice.Name && push.Partition == CallsStateSlice.Partition),
     ];
 
@@ -41,7 +41,7 @@ public sealed class CallsStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SESSWATCH1a (D200, the session-watch design §5.1): a session the watcher marks quiet is pushed under its id with when it was last
+    /// A session the watcher marks quiet is pushed under its id with when it has last been
     /// heard, which the rail and the head say as <i>quiet · 14 min</i>; heard again, it is pushed gone. Woken by the watcher's move.
     /// </summary>
     [Fact]
@@ -84,7 +84,7 @@ public sealed class CallsStateSliceTests : DriverModuleBridge
 
         Assert.Null(loop.Service);
         Assert.Equal((CallsStateSlice.Name, StateSlice.Ready), (snapshot.Slice, snapshot.Status));
-        // SESSWATCH1a: the watcher's marks beside the calls, judged empty and pushed so.
+        // The watcher's marks beside the calls, judged empty and pushed so.
         Assert.Equal(
             [CallsStateSlice.Partition, CallsStateSlice.HeardPartition, CallsStateSlice.QuietPartition],
             snapshot.Partitions.Select(each => each.Partition));
@@ -179,7 +179,7 @@ public sealed class CallsStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// AUTONOMY1b3b: a tool request held for the person wakes the slice and pushes its session's call marked waiting, timed from the
+    /// A tool request held for the person wakes the slice and pushes its session's call marked waiting, timed from the
     /// hold, as <c>SESSION_GROUPS</c> writes the same row's <c>calling</c>; the answer pushes it running again. This is the page's wake
     /// to read what is held, in place of asking every few seconds.
     /// </summary>
@@ -215,7 +215,7 @@ public sealed class CallsStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// COWORKVIEW1a rule 18 (the cowork view design §3.7): <i>last heard</i> is the newest line of a session's console and its streams,
+    /// <i>Last heard</i> is the newest line of a session's console and its streams,
     /// pushed as the <c>heard</c> partition from memory; a session that said nothing is no row, and one whose console closed is gone.
     /// </summary>
     [Fact]

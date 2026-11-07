@@ -5,7 +5,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The presses that waited when Daoris last stopped, brought back (CONFIRMWAIT1a-ii, the confirm-wait design §7.2): the pipe's
+/// The presses that waited when Daoris last stopped, brought back: the pipe's
 /// <see cref="InstancePipe.Restore"/>. It reaches the pipe's state (<see cref="PipeState"/>) under its gate and the waiting records
 /// (<see cref="PipeWaitingKeep"/>) under theirs, never both at once.
 /// </summary>
@@ -31,7 +31,7 @@ internal sealed class PipeRestore(InstancePipe pipe)
 
         int waiting = 0, lost = 0, newer = 0;
         var files = _keep.Read().OrderBy(each => each.Record?.Asked ?? DateTimeOffset.MaxValue).ThenBy(each => each.Name, StringComparer.Ordinal).ToList();
-        // CONFIRMWAIT1 (the confirm-wait design §15.2 item 7): each terminal id is reserved across the whole set before any card is told.
+        // Each terminal id is reserved across the whole set before any card is told.
         // Records of one id that are the same press collapse into the first; records that differ are each lost.
         var byRequest = files
             .Where(each => each.Record is { State: PipeWaitingRecord.Waiting } record && record.Confirmation == each.Name && PipeWaiting.IsName(each.Name))
@@ -100,7 +100,7 @@ internal sealed class PipeRestore(InstancePipe pipe)
     }
 
     /// <summary>
-    /// A waiting record judged again as <see cref="PipeAdmission.Accept"/> judges a press (§7.2 step 6), and waiting again where it passes:
+    /// A waiting record judged again as <see cref="PipeAdmission.Accept"/> judges a press, and waiting again where it passes:
     /// its card made from its payload, its grounds the record's, no terminal on its line. False, and nothing asked, where it fails.
     /// </summary>
     private bool Rejudged(PipeWaitingRecord record)
@@ -125,7 +125,7 @@ internal sealed class PipeRestore(InstancePipe pipe)
             return false;
         }
 
-        // CONFIRMWAIT1 (§15.2 item 7): its grounds are what its row reads for its payload, by kind and subject, none missing and none
+        // Its grounds are what its row reads for its payload, by kind and subject, none missing and none
         // added, so a baseline that lacks a ground protects nothing it omitted.
         if (!row.Expected(payload).Select(each => $"{each.Kind}|{each.Subject}").Order(StringComparer.Ordinal)
                 .SequenceEqual(record.Grounds.Select(each => $"{each.Kind}|{each.Subject}").Order(StringComparer.Ordinal), StringComparer.Ordinal))
@@ -166,7 +166,7 @@ internal sealed class PipeRestore(InstancePipe pipe)
 
     /// <summary>
     /// <paramref name="record"/>'s ending journaled as <paramref name="answer"/> where its terminal's id reads and the journal holds no line
-    /// for it (§7.2), so <c>RESULT</c> and the same id sent again say it.
+    /// for it, so <c>RESULT</c> and the same id sent again say it.
     /// </summary>
     private void Journaled(PipeWaitingRecord record, string answer)
     {

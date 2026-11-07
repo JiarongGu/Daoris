@@ -7,20 +7,19 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The session-control surface's host half (D46 §6): the page asks, this answers. A standing choice is
+/// The session-control surface's host half: the page asks, this answers. A standing choice is
 /// an edit to its file under the home (`driver.json`, `harnesses.json`, `permissions.json`,
 /// `plugins.json`) plus a nudge, because the file is the truth and the loop re-reads it every tick —
-/// the same files the terminal's verbs edit (D50). The controls that touch a process or a tree (stop,
+/// the same files the terminal's verbs edit. The controls that touch a process or a tree (stop,
 /// a parked session's answer, a conversation, a merge or a discard) go through the shared registry and
-/// the service's ledger, and the record says whose act it was. (REV3 corrected "every mutation is an
-/// edit to `driver.json`", written when that was true.)
+/// the service's ledger, and the record says whose act it is.
 /// </summary>
 /// <remarks>
-/// <b>A handler class per domain, and a table built from their list</b> (MOD5, PART10d). Every route was a case of one
-/// switch here, so every feature that added a driver door edited this file. A domain's routes live in its handler class,
+/// <b>A handler class per domain, and a table built from their list</b>.
+/// A domain's routes live in its handler class,
 /// named as the page's own bridge file is (`RulesRoutes.cs` beside `bridge/rules.ts`), each handler marked
 /// <see cref="DriverRouteAttribute"/>; the class is one line in <see cref="Domains"/>, and <see cref="RouteAsync"/> looks a
-/// request up in the table the marks make. Every domain has moved (PART10f), so this class holds the dispatch and nothing of a
+/// request up in the table the marks make. Every domain has moved, so this class holds the dispatch and nothing of a
 /// domain's, and is no longer partial.
 /// </remarks>
 public sealed class DriverModule : ModuleBase
@@ -28,8 +27,8 @@ public sealed class DriverModule : ModuleBase
     private readonly DriverContext _context;
 
     /// <summary>
-    /// The folder holding the install's offers — Daoris's own example plugins, none installed until a press
-    /// (PLUG9 d, D103). Null finds them beside the running application, else beside the home; a test names
+    /// The folder holding the install's offers — Daoris's own example plugins, none installed until a press.
+    /// Null finds them beside the running application, else beside the home; a test names
     /// its own, since every test's home shares one parent. Held by the context, which Plugins reads at each request.
     /// </summary>
     public string? Offers
@@ -39,7 +38,7 @@ public sealed class DriverModule : ModuleBase
     }
 
     /// <summary>
-    /// The world a set-up press reads (LAYOUT8): null is the real one; a test names a stand-in, since the real one starts the
+    /// The world a set-up press reads: null is the real one; a test names a stand-in, since the real one starts the
     /// doctrine tool for its version. Held by the context, which the set-up and help routes read at each request.
     /// </summary>
     public Func<ServiceClient, ISetupWorld>? SetupWorlds
@@ -48,14 +47,14 @@ public sealed class DriverModule : ModuleBase
         init => _context.SetupWorlds = value;
     }
 
-    /// <summary>A plugin's tools found and checked (ADOSIGNIN1): null is the real one; a test names a stand-in that starts no process.</summary>
+    /// <summary>A plugin's tools found and checked: null is the real one; a test names a stand-in that starts no process.</summary>
     public Func<string, IReadOnlyList<PluginTool>, CancellationToken, Task<IReadOnlyList<PluginToolFound>>>? ToolChecks
     {
         get => _context.ToolChecks;
         init => _context.ToolChecks = value;
     }
 
-    /// <summary>A plugin tool's fix run in the person's console (ADOSIGNIN1): null is the real one; a test names a stand-in that opens none.</summary>
+    /// <summary>A plugin tool's fix run in the person's console: null is the real one; a test names a stand-in that opens none.</summary>
     public Func<string, IReadOnlyList<PluginTool>, string, int, CancellationToken, Task<ToolSetUp>>? ToolSetUps
     {
         get => _context.ToolSetUps;
@@ -63,7 +62,7 @@ public sealed class DriverModule : ModuleBase
     }
 
     /// <summary>
-    /// What This Daoris's read is handed, changed (WIRING1b): null is the window's own; a test names the account's and the
+    /// What This Daoris's read is handed, changed: null is the window's own; a test names the account's and the
     /// machine's variables and sizes of its own. Held by the context, which the system domain reads at each request.
     /// </summary>
     public Func<WiringWorld, WiringWorld>? WiringWorlds
@@ -72,14 +71,14 @@ public sealed class DriverModule : ModuleBase
         init => _context.WiringWorlds = value;
     }
 
-    /// <summary>The owner's mark's reads (STEWARDROLE1a-ii): null is the loop's service; a test names its own. Held by the context.</summary>
+    /// <summary>The owner's mark's reads: null is the loop's service; a test names its own. Held by the context.</summary>
     public IOwnerScopes? OwnerScopes
     {
         get => _context.OwnerScopes;
         init => _context.OwnerScopes = value;
     }
 
-    /// <summary>What *Free up space…* is handed, changed (KEEP1e): null is the window's own; a test names a browser host and a clock of its own.</summary>
+    /// <summary>What *Free up space…* is handed, changed: null is the window's own; a test names a browser host and a clock of its own.</summary>
     public Func<SpaceFreeWorld, SpaceFreeWorld>? SpaceFreeWorlds
     {
         get => _context.SpaceFreeWorlds;
@@ -89,26 +88,26 @@ public sealed class DriverModule : ModuleBase
     // Each domain's handler, built over the context, in the order of Domains: a route's entry names its domain's place.
     private readonly object[] _handlers;
 
-    // The reads under way that an identical ask joins (SWEEPFLIGHT1), forgotten as a press answers.
+    // The reads under way that an identical ask joins, forgotten as a press answers.
     private readonly RouteFlights _flights = new();
 
-    // The answers of the reads told by event (NOBLOCK1), their works forgotten as a press answers.
+    // The answers of the reads told by event, their works forgotten as a press answers.
     private HeldAnswers _held;
 
     /// <remarks>
-    /// The bus is held as well as handed to the base: this module both ANSWERS requests and, since
-    /// D49 §3, raises one of its own — a conversation ending is news the page wants without asking.
+    /// The bus is held as well as handed to the base: this module both ANSWERS requests and
+    /// raises one of its own — a conversation ending is news the page wants without asking.
     /// </remarks>
     /// <param name="openFolder">
-    /// The file manager, for a plugin's Open folder (PLUGUI1e): the application hands in the window kit's launcher,
+    /// The file manager, for a plugin's Open folder: the application hands in the window kit's launcher,
     /// as it does to the log's module. Null where the host carries none: then nothing opens, and the answer says so.
     /// </param>
     /// <param name="pickFile">
-    /// The system's file picker, for a tool's *Browse…* (TOOLS7): the application hands in its window's dialog. Null
+    /// The system's file picker, for a tool's *Browse…*: the application hands in its window's dialog. Null
     /// where the host carries none, and the answer says so.
     /// </param>
     /// <param name="account">
-    /// The person's account's variables, for This Daoris's set-up presses (WIRING1e): the application hands in the Windows account's.
+    /// The person's account's variables, for This Daoris's set-up presses: the application hands in the Windows account's.
     /// Null where the host keeps none: then those presses are refused as data.
     /// </param>
     public DriverModule(IEventBus events, DriverLoop loop, OpenFolder? openFolder = null, PickFile? pickFile = null, IAccountEnvironment? account = null)
@@ -117,12 +116,12 @@ public sealed class DriverModule : ModuleBase
         _context = new DriverContext(events, loop, openFolder, pickFile, account);
         _held = Registering(new HeldAnswers(events));
         _handlers = [.. Domains.Select(domain => domain.Build(_context))];
-        // Ask Daoris's room as START_HELP writes it, for a conversation going on in it (ASKHIST1). Since PARALLEL1a from the facts the
+        // Ask Daoris's room as START_HELP writes it, for a conversation going on in it, from the facts the
         // judges keep on the loop: their judges registered here, and the room written again as the facts it said not read yet land.
         HelpMachineDesk.KeepFacts(_context);
         loop.DescribeHelp = cancellationToken => HelpMachineDesk.HelpMachineNowAsync(_context, cancellationToken);
         // A change told from elsewhere (the terminal's press, the loop's own) overtakes the reads under way as this module's
-        // presses do (SWEEPFLIGHT1). The bus does not wait for its subscribers, so this is the backstop; a press made here
+        // presses do. The bus does not wait for its subscribers, so this is the backstop; a press made here
         // forgets them before it answers.
         _ = events.Subscribe(StatePublisher.Module, StatePublisher.Type, _ =>
         {
@@ -133,12 +132,12 @@ public sealed class DriverModule : ModuleBase
     }
 
     /// <summary>
-    /// The doors Ask Daoris's Apply goes through (HELP6): each the code a screen's own route runs. The module's one seam to
+    /// The doors Ask Daoris's Apply goes through: each the code a screen's own route runs. The module's one seam to
     /// them, since the tests build doors through a module (<c>DriverModuleBridge.Module()</c>) rather than a context.
     /// </summary>
     public IHelpDoors HelpDoors(ServiceClient? service) => new HelpScreenDoors(_context, service);
 
-    /// <summary>The answers of the reads told by event (NOBLOCK1): the tests' window on a work under way.</summary>
+    /// <summary>The answers of the reads told by event: the tests' window on a work under way.</summary>
     public HeldAnswers Held => _held;
 
     /// <summary>
@@ -158,7 +157,7 @@ public sealed class DriverModule : ModuleBase
         init => _context.Presses.Within = value;
     }
 
-    /// <summary>Each landed composition of who is at work registered with its judge (COWORKVIEW1a), which wakes it once it moved.</summary>
+    /// <summary>Each landed composition of who is at work registered with its judge, which wakes it once it moved.</summary>
     private HeldAnswers Registering(HeldAnswers held)
     {
         held.Landed += (key, answer) =>
@@ -168,7 +167,7 @@ public sealed class DriverModule : ModuleBase
         return held;
     }
 
-    /// <summary>The reads a page may stop (GITAPP1a-iii), and who waits on them: the tests' window on a shared read's callers.</summary>
+    /// <summary>The reads a page may stop, and who waits on them: the tests' window on a shared read's callers.</summary>
     public ReadLeaves Reads => _context.Reads;
 
     /// <summary>The module's name on the bridge, which the page's calls and <see cref="Declared"/> read.</summary>
@@ -181,8 +180,8 @@ public sealed class DriverModule : ModuleBase
     /// </summary>
     /// <remarks>
     /// <b>An unhandled exception becomes a generic `UNKNOWN_ERROR` carrying only its TYPE</b>, so every
-    /// sentence `DriverException` was written to deliver — "unknown adapter 'x' — one of: …", "that
-    /// harness declares no installer" — used to be dropped on the floor and shown as a bare failure.
+    /// sentence `DriverException` carries — "unknown adapter 'x' — one of: …", "that
+    /// harness declares no installer" — reaches the page, not a bare failure.
     /// Mapped once, here, rather than at each throw site: the driver library is where those sentences
     /// live, and a per-site wrapping is a list somebody eventually forgets to append to.
     /// </remarks>
@@ -195,19 +194,19 @@ public sealed class DriverModule : ModuleBase
         }
         catch (ChoiceRefusal coded)
         {
-            // PUSH1f2a: a standing choice's operation refusing by a named check, said in the code the library's table gives it, the
+            // A standing choice's operation refusing by a named check, said in the code the library's table gives it, the
             // code the terminal says it in alone.
             throw Refusals.Declared(ChoiceCodes.Of(coded), coded.Message, [.. coded.Facts]);
         }
         catch (ToolRefusal coded) when (ToolCodes.Coded(coded))
         {
-            // PUSH1f2c: a tool's operation refusing by a check the library's table codes (a file not there or answering no version, a
+            // A tool's operation refusing by a check the library's table codes (a file not there or answering no version, a
             // version not downloaded, in use or held, a location that is no address), the code `daoris tool` says it in alone.
             throw Refusals.Declared(ToolCodes.Of(coded), coded.Message, [.. coded.Facts]);
         }
         catch (PluginRefusal coded) when (PluginCodes.Coded(coded))
         {
-            // PUSH1f2f: a plugin's operation refusing by a check the library's table codes (not installed, its folder held), the code
+            // A plugin's operation refusing by a check the library's table codes (not installed, its folder held), the code
             // `daoris plugin` says it in alone.
             throw Refusals.Declared(PluginCodes.Of(coded), coded.Message, [.. coded.Facts]);
         }
@@ -231,8 +230,8 @@ public sealed class DriverModule : ModuleBase
     /// </summary>
     /// <remarks>
     /// <para>A route that is not in the table answers <c>NO_ROUTE</c> through <c>UnknownType</c>, exactly as the
-    /// switch's default did. The table is case-sensitive, as the switch's labels were (MOD5).</para>
-    /// <para><b>A read marked <see cref="OneFlightAttribute"/></b> joins the identical ask under way (SWEEPFLIGHT1): the same
+    /// switch's default did. The table is case-sensitive, as the switch's labels were.</para>
+    /// <para><b>A read marked <see cref="OneFlightAttribute"/></b> joins the identical ask under way: the same
     /// route with the same payload, answered to every caller that joined it (<see cref="RouteFlights"/>).</para>
     /// <para><b>A press</b> (one whose route declares a change) forgets every read under way once it has answered or thrown,
     /// before the publisher tells the windows, so the page's ask again after it never joins a look begun before it.</para>
@@ -250,7 +249,7 @@ public sealed class DriverModule : ModuleBase
         return HandleAsync(route, handler, type, request, cancellationToken);
     }
 
-    /// <summary>The machine log's event: this module's asks over about a minute (FOUNDATION1s), what the install's bridge reads are read by.</summary>
+    /// <summary>The machine log's event: this module's asks over about a minute, what the install's bridge reads are read by.</summary>
     public const string AskedEvent = "bridge.asked";
 
     // The asks since the last line, and when that minute began.
@@ -280,7 +279,7 @@ public sealed class DriverModule : ModuleBase
     }
 
     /// <summary>
-    /// What an owner's door names (STEWARDROLE1a-ii, D209 §5.4): a person's or a window's route in the form <paramref name="payload"/>
+    /// What an owner's door names: a person's or a window's route in the form <paramref name="payload"/>
     /// gives it, dispatched from the window or a confirmed card (never a role's act, which the router passes by), by its census row
     /// (<see cref="OwnerMarks.Of"/>); null for every other route and form.
     /// </summary>
@@ -291,7 +290,7 @@ public sealed class DriverModule : ModuleBase
     }
 
     /// <summary>
-    /// The owner's step before the handler (§5.4): what the press names resolved, its gates taken beside the owner's other presses, its
+    /// The owner's step before the handler: what the press names resolved, its gates taken beside the owner's other presses, its
     /// targets marked <c>owner-set</c> and every steward act and operation on them cancelled, then the handler inside the gates.
     /// </summary>
     private async Task<object?> OwnedAsync(Handler route, object handler, string type, IpcRequest request, IReadOnlyList<OwnerNamed> named, CancellationToken cancellationToken)
@@ -329,8 +328,7 @@ public sealed class DriverModule : ModuleBase
     }
 
     /// <summary>
-    /// A shared read joined (SWEEPFLIGHT1), its caller waiting under its <c>read</c> id where the page sent one (GITAPP1a-iii, the
-    /// git-app design P1.6): the id's source is linked to the route's own token, the asking window's bridge lifetime, so the page's
+    /// A shared read joined, its caller waiting under its <c>read</c> id where the page sent one: the id's source is linked to the route's own token, the asking window's bridge lifetime, so the page's
     /// <c>READ_LEAVE</c> and the window's destruction each stop this caller alone, and the flight only where no other caller waits.
     /// </summary>
     private async Task<object?> JoinAsync(
@@ -343,7 +341,7 @@ public sealed class DriverModule : ModuleBase
     }
 
     /// <summary>
-    /// A held route's inputs' versions now (FOUNDATION1s): its scopes' told count and each slice's own, or null where a slice it names is
+    /// A held route's inputs' versions now: its scopes' told count and each slice's own, or null where a slice it names is
     /// not this Daoris's, so it works at every ask.
     /// </summary>
     private string? VersionsOf(ByEventAttribute held)
@@ -358,7 +356,7 @@ public sealed class DriverModule : ModuleBase
         return versions;
     }
 
-    /// <summary>The payload's <c>held</c>, the page's query a read told by event names (NOBLOCK1), where the page sent one.</summary>
+    /// <summary>The payload's <c>held</c>, the page's query a read told by event names, where the page sent one.</summary>
     private static string? HeldOf(IpcRequest request) =>
         request.Payload is { ValueKind: System.Text.Json.JsonValueKind.Object } payload
         && payload.TryGetProperty(HeldAnswers.HeldField, out var held) && held.ValueKind == System.Text.Json.JsonValueKind.String
@@ -366,12 +364,12 @@ public sealed class DriverModule : ModuleBase
             : null;
 
     /// <summary>
-    /// The key a request of a read told by event is held under (NOBLOCK1): its route and payload, as a shared read's flight is.
+    /// The key a request of a read told by event is held under: its route and payload, as a shared read's flight is.
     /// What a test waits on when an ask was answered <see cref="HeldAnswers.Pending"/>.
     /// </summary>
     public static string HeldKey(IpcRequest request) => FlightOf(request.Type ?? "", request, null);
 
-    /// <summary>The payload's <c>read</c> id, where the page sent one (GITAPP1a-iii).</summary>
+    /// <summary>The payload's <c>read</c> id, where the page sent one.</summary>
     private static string? ReadOf(IpcRequest request) =>
         request.Payload is { ValueKind: System.Text.Json.JsonValueKind.Object } payload
         && payload.TryGetProperty("read", out var read) && read.ValueKind == System.Text.Json.JsonValueKind.String
@@ -381,7 +379,7 @@ public sealed class DriverModule : ModuleBase
     /// <summary>
     /// What makes two asks identical: the route and its payload as the page sent it, or, for a read shared by one field
     /// (<see cref="OneFlightAttribute.By"/>), the route and that field alone, so a <c>read</c> id each call makes its own never
-    /// keeps two windows on one review apart (GITAPP1a-iii).
+    /// keeps two windows on one review apart.
     /// </summary>
     private static string FlightOf(string type, IpcRequest request, string? by)
     {
@@ -392,7 +390,7 @@ public sealed class DriverModule : ModuleBase
             : $"{type}\n{by}";
     }
 
-    /// <summary>Every route this module answers, by name: what the page's bridge may call (MOD5).</summary>
+    /// <summary>Every route this module answers, by name: what the page's bridge may call.</summary>
     public static IReadOnlyCollection<string> Routes => Table.Keys;
 
     /// <summary>What each route's marks tell the pipe (<see cref="RouteMarks"/>), in the order of <see cref="Domains"/>.</summary>
@@ -401,21 +399,21 @@ public sealed class DriverModule : ModuleBase
     /// <summary>What each route's handler takes and answers, for the page's generated types.</summary>
     public static IReadOnlyList<RouteShape> Shapes => [.. Domains.SelectMany(domain => domain.Shapes)];
 
-    /// <summary>The reads answered from what is held, their work told by event (NOBLOCK1), by name.</summary>
+    /// <summary>The reads answered from what is held, their work told by event, by name.</summary>
     public static IReadOnlyCollection<string> ByEventRoutes => [.. Table.Where(entry => entry.Value.Held is not null).Select(entry => entry.Key)];
 
     /// <summary>
-    /// Each read told by event and what it declares its answer reads (FOUNDATION1s): its scopes and slices, or why none is told.
+    /// Each read told by event and what it declares its answer reads: its scopes and slices, or why none is told.
     /// </summary>
     public static IReadOnlyDictionary<string, (StateScopes Reads, IReadOnlyList<string> Slices, string? Untold)> HeldInputs =>
         Table.Where(entry => entry.Value.Held is not null)
             .ToDictionary(entry => entry.Key, entry => (entry.Value.Held!.Reads, (IReadOnlyList<string>)entry.Value.Held.Slices, entry.Value.Held.Untold), StringComparer.Ordinal);
 
-    /// <summary>The reads whose identical asks share the one under way (SWEEPFLIGHT1), by name.</summary>
+    /// <summary>The reads whose identical asks share the one under way, by name.</summary>
     public static IReadOnlyCollection<string> OneFlightRoutes => [.. Table.Where(entry => entry.Value.Shared is not null).Select(entry => entry.Key)];
 
     /// <summary>
-    /// What a request's route declares a successful answer changed (STATEHUB1b, D169 point 2), read off the
+    /// What a request's route declares a successful answer changed, read off the
     /// <see cref="PublishesAttribute"/> beside its mark: null for a read, a route nobody declared, or a request to another
     /// module. <see cref="StatePublisher"/> publishes it.
     /// </summary>
@@ -423,7 +421,7 @@ public sealed class DriverModule : ModuleBase
         request.Module == Name && request.Type is { } type && Table.TryGetValue(type, out var route) ? route.Change : null;
 
     /// <summary>
-    /// The domains this module answers for, one line each, in alphabetical order (PART10d, D166): a domain's handler class and
+    /// The domains this module answers for, one line each, in alphabetical order: a domain's handler class and
     /// how it is built over the context, each taking only what it uses: the loop, or the <see cref="DriverContext"/> where it
     /// uses more. A new domain is its <c>&lt;Domain&gt;Routes.cs</c> and its line here, and a new door in a domain is a marked
     /// handler in its class: nothing is found by scanning.
@@ -485,8 +483,8 @@ public sealed class DriverModule : ModuleBase
 
     /// <summary>
     /// A route's entry in the table: its domain's place in <see cref="Domains"/>, the handler over that domain's instance, what
-    /// it declares a successful answer changed (D169), null for a read, how its identical asks share one under way, null where they do not,
-    /// and whether it is answered from what is held, its work told by event (NOBLOCK1), with what its answer reads (FOUNDATION1s).
+    /// it declares a successful answer changed, null for a read, how its identical asks share one under way, null where they do not,
+    /// and whether it is answered from what is held, its work told by event, with what its answer reads.
     /// </summary>
     private readonly record struct Handler(
         int Domain, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, OneFlightAttribute? Shared, ByEventAttribute? Held);
@@ -531,20 +529,20 @@ public sealed class DriverModule : ModuleBase
                     throw new InvalidOperationException($"{typeof(T).Name}.{method.Name} declares `{stray}`, and marks no such route.");
                 }
 
-                // Two presses are two acts, each the person's: only a read is ever shared (SWEEPFLIGHT1).
+                // Two presses are two acts, each the person's: only a read is ever shared.
                 if (shared.Keys.FirstOrDefault(publishes.ContainsKey) is { } press)
                 {
                     throw new InvalidOperationException($"{typeof(T).Name}.{method.Name} shares `{press}`, a press: only a read is shared.");
                 }
 
-                // A press answers what it did (NOBLOCK1): only a read is answered from what is held; and a read told by event
+                // A press answers what it did: only a read is answered from what is held; and a read told by event
                 // already shares its work, so it is never a shared read too.
                 if (byEvent.FirstOrDefault(route => publishes.ContainsKey(route) || shared.ContainsKey(route)) is { } both)
                 {
                     throw new InvalidOperationException($"{typeof(T).Name}.{method.Name} tells `{both}` by event, and it is a press or a shared read.");
                 }
 
-                // FOUNDATION1s: a read told by event says what its answer reads, or why no scope or slice tells it; never both, never neither.
+                // A read told by event says what its answer reads, or why no scope or slice tells it; never both, never neither.
                 if (held.Values.FirstOrDefault(each => each.Versioned == each.Untold is not null) is { } undeclared)
                 {
                     throw new InvalidOperationException(
@@ -566,7 +564,7 @@ public sealed class DriverModule : ModuleBase
 }
 
 /// <summary>
-/// Marks a method of a domain's handler class as the handler of one of <see cref="DriverModule"/>'s routes (MOD5, PART10d).
+/// Marks a method of a domain's handler class as the handler of one of <see cref="DriverModule"/>'s routes.
 /// A route is added in its domain's class by marking its handler, so no central switch is edited per route.
 /// </summary>
 /// <param name="type">The route's name, as the page's bridge sends it.</param>
@@ -589,7 +587,7 @@ internal sealed class DriverRouteAttribute(string type, PipeClass @class) : Attr
 }
 
 /// <summary>
-/// What one of a handler's routes changes when it answers successfully (STATEHUB1b, D169 point 2), declared beside its
+/// What one of a handler's routes changes when it answers successfully, declared beside its
 /// <see cref="DriverRouteAttribute"/>: <see cref="StatePublisher"/> publishes it, so no handler emits its own. A read declares
 /// nothing. Named by its route, since a handler may answer a read and a press (a plan and the press it plans), and a route the
 /// method does not mark fails the module's first use.
@@ -610,12 +608,12 @@ internal sealed class PublishesAttribute(string route, StateScopes changes) : At
     /// <summary>The payload's field naming the session the change was about, where it is one session's.</summary>
     public string? Session { get; set; }
 
-    /// <summary>The payload's field naming the entry or ask the press is for, where it is no one session's (ACCEPTALL1e).</summary>
+    /// <summary>The payload's field naming the entry or ask the press is for, where it is no one session's.</summary>
     public string? Subject { get; set; }
 }
 
 /// <summary>
-/// One of a handler's reads whose identical asks share the one under way (SWEEPFLIGHT1): an ask of the same route with the same
+/// One of a handler's reads whose identical asks share the one under way: an ask of the same route with the same
 /// payload, made while one runs, is answered what that one answers rather than starting another (<see cref="RouteFlights"/>).
 /// For a read whose answer is a fan-out over every checkout, which the page asks again at each change it hears and each window
 /// asks for itself. A press is never shared, refused at the module's first use; named by its route, as
@@ -628,7 +626,7 @@ internal sealed class OneFlightAttribute(string route) : Attribute
     public string Route { get; } = route;
 
     /// <summary>
-    /// The payload's field that alone makes two asks identical, where the rest of the payload is the caller's own (GITAPP1a-iii:
+    /// The payload's field that alone makes two asks identical, where the rest of the payload is the caller's own (e.g.
     /// <c>SESSION_DIFF</c> by its <c>id</c>, its <c>read</c> id kept out); null shares by the whole payload.
     /// </summary>
     public string? By { get; set; }
@@ -636,13 +634,13 @@ internal sealed class OneFlightAttribute(string route) : Attribute
 
 /// <summary>
 /// One of a handler's reads answered at once from what is held, its work run on a task of its own and its answer told to the page
-/// as <c>DAORIS.ANSWERED</c> (NOBLOCK1, D56's NOBLOCK1 note; <see cref="HeldAnswers"/>): for a read whose answer is computed from
+/// as <c>DAORIS.ANSWERED</c> (<see cref="HeldAnswers"/>): for a read whose answer is computed from
 /// the disk, git, the trees or the service, which the window would otherwise wait on. A press is never told by event, refused at
 /// the module's first use; named by its route, as <see cref="PublishesAttribute"/> is.
 /// </summary>
 /// <param name="route">The read it tells by event, one this method marks.</param>
 /// <remarks>
-/// Each declares what its answer is made of (FOUNDATION1s, D182's part B note): the scopes a change to it is told by
+/// Each declares what its answer is made of: the scopes a change to it is told by
 /// (<see cref="Reads"/>) and the slices it reads (<see cref="Slices"/>), so an ask while their versions stand is answered with no work;
 /// or, where it reads what neither tells, why (<see cref="Untold"/>), and every ask works. One or the other, checked at the module's first use.
 /// </remarks>
@@ -657,12 +655,12 @@ internal sealed class ByEventAttribute(string route) : Attribute
     /// <summary>The slices the answer reads, by name: each one's version is its own (<see cref="StateSlice.Version"/>).</summary>
     public string[] Slices { get; set; } = [];
 
-    /// <summary>What the answer reads that no scope or slice tells, where it does: every ask works, as before FOUNDATION1s.</summary>
+    /// <summary>What the answer reads that no scope or slice tells, where it does: every ask works.</summary>
     public string? Untold { get; set; }
 
     /// <summary>Whether the route declares inputs, so its versions are read.</summary>
     public bool Versioned => Reads != StateScopes.None || Slices.Length > 0;
 
-    /// <summary>A numbered read (COWORKVIEW1a, <see cref="HeldAnswers.AskAsync"/>): never a refusal, each delivery numbered.</summary>
+    /// <summary>A numbered read (<see cref="HeldAnswers.AskAsync"/>): never a refusal, each delivery numbered.</summary>
     public bool Numbered { get; set; }
 }

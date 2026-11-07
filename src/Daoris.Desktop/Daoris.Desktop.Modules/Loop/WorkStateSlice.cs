@@ -7,8 +7,8 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Where each unit of work has got to as every window holds it (PUSH1c2a, D182 points 3-4): what <c>WORK_STATE</c> answers, judged from
-/// the machine's facts' work parts (FACTSPLIT1a) and the node records' held attempts, never from git or the service, and pushed per
+/// Where each unit of work has got to as every window holds it: what <c>WORK_STATE</c> answers, judged from
+/// the machine's facts' work parts and the node records' held attempts, never from git or the service, and pushed per
 /// repository when one moves, so a tick reads <c>WORK_STATE</c> again in no window.
 /// </summary>
 /// <remarks>
@@ -22,7 +22,7 @@ namespace Daoris.Desktop;
 /// one repository judges its part alone (<see cref="HelpFacts"/>), so it pushes that partition alone. A part never judged is pushed
 /// nothing, never an empty list, which a window would read as nothing to clean up; one the registry no longer names is pushed gone. The
 /// attempts held for the person are a partition of their own, <see cref="Held"/>, read from the node records at each judgement (a file
-/// read: no git, no service), with the node records that do not read beside them (FABRIC-PERFORM1j).</para>
+/// read: no git, no service), with the node records that do not read beside them.</para>
 ///
 /// <para><b>Not judged until the work is.</b> Until the service's answers land, and until every part they name was judged once, the
 /// slice answers <see cref="StateSlice.NotJudged"/>, so a window keeps the pull rather than install the parts judged so far as all
@@ -30,14 +30,14 @@ namespace Daoris.Desktop;
 ///
 /// <para><b>Its wakes.</b> The service's answers and the work's parts landing, by their values' references (<see cref="HearFacts"/>);
 /// and a change a press declared to the landings, the clean-up or the sessions, which also reads the held attempts afresh. A landing
-/// moves its repository's refs as Daoris's own move, which judges its part at once (<c>RefMoves.Mine</c>, OWNMOVES1), but the clean-up,
+/// moves its repository's refs as Daoris's own move, which judges its part at once (<c>RefMoves.Mine</c>), but the clean-up,
 /// a discard, a recovery's drop and a work press tell no own move, and a tree-only removal or a recovery ref's delete may reach the ref
 /// watch not at all: so a landing's or a sweep's declared scope wakes every part afresh, past the rest a burst of refs is held to, and
 /// the sessions' wakes them under it (<see cref="HearPresses"/>). An attempt the runtime holds says nothing: the slice's period reads
 /// it.</para>
 ///
 /// <para><b>Desktop-only.</b> A tree's and a folder moved aside's resource is this machine's path, and an unread line may quote git's
-/// own (D182 point 2).</para>
+/// own.</para>
 /// </remarks>
 public static class WorkStateSlice
 {
@@ -69,7 +69,7 @@ public static class WorkStateSlice
         ],
         // A held check's verification: what the person reads a failed or unknown one by.
         ["verification"] = ["run", "repository", "commit", "level", "line", "base", "branch", "gate", "why"],
-        // FABRIC-PERFORM1j: a node record that does not read, which stops its unit until a person mends it.
+        // A node record that does not read, which stops its unit until a person mends it.
         ["unreadable"] = ["file", "unit", "at", "said"],
         ["graphEnd"] = ["unit", "kind", "at", "nodes", "quest", "node", "attempt", "nodeState", "resolution", "words", "word"],
     };
@@ -112,7 +112,7 @@ public static class WorkStateSlice
 
     /// <summary>
     /// The slice over <paramref name="facts"/>, its held attempts read by <paramref name="held"/>, the node records that do not read by
-    /// <paramref name="unreadable"/> and its graphs' ends by <paramref name="ends"/> (FABRIC-CLOSE1j; each none where it is not given) at
+    /// <paramref name="unreadable"/> and its graphs' ends by <paramref name="ends"/> (each none where it is not given) at
     /// each judgement.
     /// </summary>
     public static StateSlice Of(
@@ -147,8 +147,8 @@ public static class WorkStateSlice
     /// <param name="parts">The facts' parts (<see cref="HelpFacts.WorkParts(MachineFactsSnapshot)"/>), each as last judged or null.</param>
     /// <param name="held">The attempts held for the person, every unit's.</param>
     /// <param name="partly">Whether a part never judged is left out rather than leaving the slice not judged: once one judgement was whole.</param>
-    /// <param name="unreadable">The node records that do not read (FABRIC-PERFORM1j), pushed beside the held attempts; none where null.</param>
-    /// <param name="ends">The closure graphs' ends the milestone tells of (FABRIC-CLOSE1j), every unit's, carried in the held partition.</param>
+    /// <param name="unreadable">The node records that do not read, pushed beside the held attempts; none where null.</param>
+    /// <param name="ends">The closure graphs' ends the milestone tells of, every unit's, carried in the held partition.</param>
     public static IReadOnlyList<SliceJudged>? Judge(
         IReadOnlyList<(string Part, HelpWork? Work)>? parts, IReadOnlyList<HeldAttempt> held, bool partly,
         IReadOnlyList<UnreadableRecord>? unreadable = null, IReadOnlyList<GraphEnd>? ends = null)
@@ -212,7 +212,7 @@ public static class WorkStateSlice
     }
 
     /// <summary>
-    /// The work's parts asked again where a press declared what may move them with no ref the watch hears as Daoris's own (PUSH1c2a): a
+    /// The work's parts asked again where a press declared what may move them with no ref the watch hears as Daoris's own: a
     /// landing's or a sweep's scope wakes every part afresh (<see cref="MachineFacts.Wake"/>'s <c>afresh</c>), past its rest, as the person
     /// waits on it; the sessions', told at every record's move, wakes them under it, a burst one judgement each rest. Every loop on the home
     /// keeps the facts and hears the scopes, a terminal's `trees` press's among them, where only the lease's holder runs the ref watch.

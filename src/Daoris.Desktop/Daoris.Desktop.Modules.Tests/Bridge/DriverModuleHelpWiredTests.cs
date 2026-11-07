@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// HELPWIRED1 over the bridge (D183 point 4, `HelpRoutes.cs`): <c>HELP_WIRED</c> answers what each start of one Ask Daoris
+/// An Ask Daoris conversation's wired record over the bridge (`HelpRoutes.cs`): <c>HELP_WIRED</c> answers what each start of one Ask Daoris
 /// conversation handed its agent, newest first, as the start kept it beside its other files; a conversation from before answers
 /// none recorded. A read, answered from this machine's home alone: no service is asked, and nothing is spawned.
 /// </summary>
