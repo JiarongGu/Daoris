@@ -438,7 +438,8 @@ import {
 } from './ci-background.mjs';
 import { fenced, gluedLabels, records } from './doc-duplicates.mjs';
 import { isMain, renameHeld, spawnGit, stagedTree, writeAtomic } from './fsx.mjs';
-import { indexLockNote, mentionsIndexLock, readIndexLock } from './index-lock.mjs';
+import { removeWorktree } from './worktree-remove.mjs';
+import { indexLockNote,mentionsIndexLock, readIndexLock } from './index-lock.mjs';
 import { admissionLines, createAdmission, lookAt } from './machine-admission.mjs';
 import { censusOf, classesReached, halfOf, reachSettings, repository, withSettings } from './process-reach.mjs';
 import { endOrphans, endStranded, endStrandedUnder, processList } from './processes.mjs';
@@ -3660,11 +3661,11 @@ function removeGateTree(home, entry) {
   if (entry.listed) {
     const bound = treeBinding(entry.path);
     if (bound) return { ...entry, remove: false, why: bound };
-    const removed = git(home, ['worktree', 'remove', entry.path], { allowFail: true });
-    if (removed.status !== 0) {
+    const removed = removeWorktree(home, entry.path);
+    if (!removed.ok) {
       const still = parseWorktrees(git(home, ['worktree', 'list', '--porcelain']).out).some((known) => samePath(known.path, entry.path));
-      if (still) return { ...entry, remove: false, why: `git refused to remove it: ${gitSays(removed.err || removed.out)}` };
-      left = `; git could not delete all of its folder (${gitSays(removed.err || removed.out)}), and what is left is no longer git's`;
+      if (still) return { ...entry, remove: false, why: `git refused to remove it: ${gitSays(removed.why)}` };
+      left = `; git could not delete all of its folder (${gitSays(removed.why)}), and what is left is no longer git's`;
     }
     git(home, ['worktree', 'prune'], { allowFail: true });
   } else {
@@ -3697,17 +3698,17 @@ function removeOne(root, entry) {
       const unlocked = git(root, ['worktree', 'unlock', tree.path], { allowFail: true });
       if (unlocked.status !== 0) return { ...entry, remove: false, why: `git refused to unlock its worktree: ${gitSays(unlocked.err || unlocked.out)}` };
     }
-    const removed = git(root, ['worktree', 'remove', tree.path], { allowFail: true });
-    if (removed.status !== 0) {
+    const removed = removeWorktree(root, tree.path);
+    if (!removed.ok) {
       const still = parseWorktrees(git(root, ['worktree', 'list', '--porcelain']).out).some((known) => samePath(known.path, tree.path));
       if (still) {
         // A worktree that stays keeps the lock it had, so what the harness holds is never left unlocked.
         if (entry.unlock) git(root, ['worktree', 'lock', '--reason', tree.lockReason, tree.path], { allowFail: true });
-        return { ...entry, remove: false, why: `git refused to remove its worktree: ${gitSays(removed.err || removed.out)}` };
+        return { ...entry, remove: false, why: `git refused to remove its worktree: ${gitSays(removed.why)}` };
       }
       // git can let go of a worktree whose folder it could not wholly delete (a file held open): the
       // branch is free, and what is left of the folder is no longer git's.
-      left = `; git could not delete all of its folder (${gitSays(removed.err || removed.out)}), and what is left is no longer git's`;
+      left = `; git could not delete all of its folder (${gitSays(removed.why)}), and what is left is no longer git's`;
     }
   }
   const deleted = git(root, ['branch', '-d', entry.branch], { allowFail: true });
