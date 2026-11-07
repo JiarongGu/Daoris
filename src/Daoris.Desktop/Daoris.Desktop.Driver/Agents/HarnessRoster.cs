@@ -127,10 +127,10 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
         => Cooling.History(owner, account, door, windows, source, reader, now, session, plan);
 
     /// <inheritdoc cref="RosterCooling.CoolingOf"/>
-    public CoolingEntry? CoolingOf(string adapter, string? profile) => Cooling.CoolingOf(adapter, profile);
+    public CoolingEntry? CoolingOf(string adapter, string? profile, string? model = null) => Cooling.CoolingOf(adapter, profile, model);
 
     /// <inheritdoc cref="RosterCooling.CoolingsOf"/>
-    public IReadOnlyList<CoolingEntry> CoolingsOf(string adapter) => Cooling.CoolingsOf(adapter);
+    public IReadOnlyList<CoolingEntry> CoolingsOf(string adapter, string? model = null) => Cooling.CoolingsOf(adapter, model);
 
     /// <inheritdoc cref="RosterCooling.Limited"/>
     public (CoolingEntry Entry, LimitSeen Seen)? Limited(string adapter, string? profile, string? failure, string session, TimeSpan? coolOff = null, LimitSeen? byCode = null)
