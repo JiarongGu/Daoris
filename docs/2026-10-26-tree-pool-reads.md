@@ -14,6 +14,12 @@ design's §24, one row each, and marks each changed passage *(R4-Fn)*, or *(R4)*
 independent Opus reader's are owed before any of it is accepted, and nothing is built until then. Round 4 also moved the design's own superseded
 round text to the end of this file, under *Moved from the design at round 4*.
 
+**Round 5 waits on both makers' reads** (2026-11-07). The independent Opus reader's read of round 4 is below; Codex has not read round 4. On
+the owner's reframing and frame of that day, round 5 puts rooms first, with an optimised fallback, and is written from main at `bfdb82acd6`.
+It answers the read of round 4 in the design's §25, one row each, and writes what it proposes in the design's section R5, with this
+repository's churn measured by class (R5.2). Codex's read and the independent Opus reader's read of round 5 are both owed before any of it
+is accepted, and nothing is built until then.
+
 ## Codex, round 1
 
 Codex's read of round 1 at `3f55eb1e5`: another round. It finds four wrong claims (two blocking: an interrupted move that is no interrupted
