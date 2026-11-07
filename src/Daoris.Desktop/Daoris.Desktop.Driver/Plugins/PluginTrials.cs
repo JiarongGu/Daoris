@@ -10,7 +10,7 @@ public static class PluginTrials
 {
     /// <summary>
     /// Where a trial keeps what it keeps, under the home: never the system's temporary folder, which is
-    /// under the user profile, where nothing of Daoris's lives (D63; the owner's call on D101). A dot-folder,
+    /// under the user profile, where nothing of Daoris's lives. A dot-folder,
     /// which both catalogue readers skip, so a scratch left by a trial cut short is never read as a plugin.
     /// </summary>
     public const string TrialsFolder = ".trials";
@@ -43,7 +43,7 @@ public static class PluginTrials
             var data = Path.Combine(scratch, "data");
             var (manifest, problem) = PluginCatalog.ReadFolder(full, data);
             // The plugin is told a scratch home of its own: one nobody installed is part of no machine yet. Its tools are
-            // the machine's, so they are found by the home's own tools (PLUGTOOL1a).
+            // the machine's, so they are found by the home's own tools.
             var told = Path.Combine(scratch, "home");
             PluginFolders.Make(told);
             return await TryAsync(new PluginEntry(manifest, full, data, Enabled: true, problem), told, home, scratch, options ?? new(), ct)
@@ -82,7 +82,7 @@ public static class PluginTrials
     /// spoken to through <see cref="HookPeer"/>, and sent <see cref="HookFrames"/>' frames, so an answer the
     /// trial accepts is one the driver reads. The trial owns the process itself only to see what the driver
     /// does not need to: an exit code, a line on stdout that is not a frame, whether it left when told. The process is the
-    /// <see cref="PluginTrialProcess"/>'s (STRUCT3a); what each answer means is said here.</para>
+    /// <see cref="PluginTrialProcess"/>'s; what each answer means is said here.</para>
     ///
     /// <para><b>Stricter than the driver in one place</b>: a point the manifest declares and the process
     /// does not listen on fails. The driver tolerates it; a person reading the manifest would not.</para>
@@ -92,7 +92,7 @@ public static class PluginTrials
     /// own answers for the one above it, and a landing plugin that pushes first would push that. With the
     /// person's own frame, the frame is theirs, and so is what it names.</para>
     ///
-    /// <para><b>Its tools first</b> (PLUGTOOL1a): each declared tool, then each of its checks, is a step in its own
+    /// <para><b>Its tools first</b>: each declared tool, then each of its checks, is a step in its own
     /// sentence, found by <paramref name="toolsHome"/>'s tools and checked in the scratch `root`. A problem there fails
     /// that step and never stops the trial.</para>
     /// </remarks>
@@ -139,18 +139,18 @@ public static class PluginTrials
 
         var tried = (options.Point is { } one ? [one] : hooks.Points.Distinct(StringComparer.Ordinal)).Select(name => PluginKit.Find(name)!).ToList();
         // The handshake waits as the driver's does at these points, whatever patience the points' calls are given: given one
-        // second, node's start and the handshake outlasted it under load, and a silent point was never asked (PLUGKIT2).
+        // second, node's start and the handshake can outlast it under load, and a silent point goes unasked.
         var handshake = tried.Max(kit => kit.Patience);
         var patience = options.Patience ?? handshake;
         var root = Path.Combine(scratch, "root");
         PluginFolders.Make(root);
         PluginFolders.Make(entry.Data);
 
-        // FABRIC-PERFORM1e: a plugin that works is told the kit's stand-in world, so an attempt it is sent reaches no platform.
+        // A plugin that works is told the kit's stand-in world, so an attempt it is sent reaches no platform.
         var world = hooks.Points.Any(point => HookPoints.Work.Contains(point, StringComparer.Ordinal)) ? Path.Combine(scratch, "world.json") : null;
         if (world is not null) AtomicFile.WriteText(world, "{}\n");
 
-        // The tools it declares, each said in its own sentence (PLUGTOOL1a); a problem there never stops the trial.
+        // The tools it declares, each said in its own sentence; a problem there never stops the trial.
         steps.AddRange(await ToolStepsAsync(entry.Manifest, toolsHome, root, path: null, PluginToolRuns.RunAsync, ct).ConfigureAwait(false));
 
         PluginTrialProcess process;
@@ -161,7 +161,7 @@ public static class PluginTrials
         }
         catch (DriverException error)
         {
-            // A first word whose tool cannot run as the person chose (TOOLS5): the driver would refuse it the same way.
+            // A first word whose tool cannot run as the person chose: the driver would refuse it the same way.
             steps.Add(new("start", false, $"{error.Message} So the driver would not start it either."));
             return Trial();
         }
@@ -175,7 +175,7 @@ public static class PluginTrials
         {
             var stderr = RelayAsync(process.Error, line => { lock (said) said.Add(line); });
             var noise = new List<string>();
-            // Read under the bound the driver reads it under (FABRIC-PERFORM1a, round 2): read whole, a long answer passed here and was lost there.
+            // Read under the bound the driver reads it under: read whole, a long answer would pass here and be lost there.
             var peer = new HookPeer(process.Output, process.Input, id, line => { lock (noise) noise.Add(line); }, patience, HookProcess.FrameLimit(entry));
 
             // Each call, judged: its sentence when it answered, and when it did not, which of the three
@@ -209,7 +209,7 @@ public static class PluginTrials
 
             var alive = await StepAsync("handshake", "initialize", "the driver would not start it", async () =>
             {
-                // A trial's run is the sample's (the event hook design §5.4): no live consumer takes it for the point's own.
+                // A trial's run is the sample's: no live consumer takes it for the point's own.
                 var events = hooks.Points.Contains(HookPoints.Event, StringComparer.Ordinal)
                     ? new WorkEventHandshake(WorkEventGrammar.Sample, WorkEventGrammar.Version, 0, new string('0', 64))
                     : null;
@@ -229,7 +229,7 @@ public static class PluginTrials
                     continue;
                 }
 
-                // FABRIC-PERFORM1e: an event is the plugin's to send, never asked; and an attempt goes only to a performer that took the world.
+                // An event is the plugin's to send, never asked; and an attempt goes only to a performer that took the world.
                 if (kit.Kind == "event")
                 {
                     steps.Add(new(kit.Name, true, "an event: the plugin sends it and is never asked there; `--cycle` hears what it sends."));
@@ -279,8 +279,8 @@ public static class PluginTrials
 
     /// <summary>
     /// Told to go, and given what the driver gives; a process that died during a step (<paramref name="alive"/> false) is not told.
-    /// A plugin alive after its last step always gets its <c>shutdown</c> step (PLUGINSHUTDOWN1): the process may leave the instant
-    /// it is told, so whether it has exited by the time this looks says nothing about whether it was told.
+    /// A plugin alive after its last step always gets its <c>shutdown</c> step: the process may leave the instant
+    /// it is told, so whether it has exited by the time this looks says nothing about whether it has been told.
     /// </summary>
     internal static async Task EndAsync(bool alive, PluginTrialProcess process, Func<Task> tell, TimeSpan grace, List<TrialStep> steps)
     {
@@ -306,7 +306,7 @@ public static class PluginTrials
     }
 
     /// <summary>
-    /// A sample frame made the plugin's own (FABRIC-PERFORM1e): its step the first performed step it declares (else its first), by kind;
+    /// A sample frame made the plugin's own: its step the first performed step it declares (else its first), by kind;
     /// an awaited unit's root the scratch and its awaited steps the plugin's, by id. A plugin that declares no step keeps the sample's.
     /// </summary>
     internal static void Own(JsonObject frame, PluginManifest manifest, string root)
@@ -321,7 +321,7 @@ public static class PluginTrials
         }
     }
 
-    /// <summary>A `state` answer in words; the commits are cut with <see cref="TextBounds.ShortCommit"/>, so a short id is shown whole (DEDUP7c).</summary>
+    /// <summary>A `state` answer in words; the commits are cut with <see cref="TextBounds.ShortCommit"/>, so a short id is shown whole.</summary>
     internal static string StateWords(PullRequestState state) =>
         state.State
         + (state.PullRequest is { } address ? $", pull request {address}" : "")
@@ -381,8 +381,8 @@ public static class PluginTrials
     }
 
     /// <summary>
-    /// A manifest's tools as a trial's steps (PLUGTOOL1a, D150 point 7): `tools` that is not an array is one step; each
-    /// declared tool is `tool &lt;id&gt;` (by its place where it names none), saying where it was found and its version
+    /// A manifest's tools as a trial's steps: `tools` that is not an array is one step; each
+    /// declared tool is `tool &lt;id&gt;` (by its place where it names none), saying where it is found and its version
     /// against its range or its problem; then each of its checks, `&lt;id&gt; check &lt;n&gt;`. Each fails alone and none
     /// stops the trial: a problem in `tools` is shown, never a refusal.
     /// </summary>

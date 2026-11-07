@@ -4,20 +4,20 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Restricted mode's configured access as the person chose it (HELPMODE1c, D183 point 1; the Ask Daoris modes design §4.1): the
+/// Restricted mode's configured access as the person chose it: the
 /// home's <c>configured-access.json</c>, the operations chosen per grant by the page's codes. Housekeeping is the grant built
-/// first (HELPMODE1c2a), the chosen settings next (HELPMODE1c3); the browser's grant is its plugin's approval
+/// first, the chosen settings next; the browser's grant is its plugin's approval
 /// (<see cref="HelpGrants"/>), never kept here.
 /// </summary>
 /// <remarks>
-/// <para><b>Read at every start and at every call</b> (the design's trap of a grant read once and reused): each start of Ask Daoris
+/// <para><b>Read at every start and at every call</b> (the trap of a grant read once and reused): each start of Ask Daoris
 /// composes its allow-list, its receipt and its room from it, and each housekeeping or settings request is judged by it again
 /// (<see cref="HelpHousekeeping"/>, <see cref="HelpSettings"/>), so a revoke refuses the next call.</para>
 ///
 /// <para><b>Absence is none chosen</b>, each grant on its own: no file, one that does not read, a grant that is no list. A code this
 /// build does not act on (dropping recovery refs, the mode) grants nothing, and is never dropped from the file by a reader.</para>
 ///
-/// <para><b>The checkouts are the one grant on by default</b> (HELPMODE1c4; the design's §4.1 table: on, inherited), D107's readable
+/// <para><b>The checkouts are the one grant on by default</b> (on, inherited), the readable
 /// set within the conversation's workspace. So the file keeps the person's narrowing, the checkouts turned off by repository
 /// (<c>checkouts-off</c>), and absence is every readable checkout on; the set handed is computed at each start from the readable
 /// set, never kept here.</para>
@@ -28,10 +28,10 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
     /// <summary>The grant's name in the file, the page's <c>HelpGrantId</c>.</summary>
     public const string HousekeepingGrant = "housekeeping";
 
-    /// <summary>The chosen settings' grant's name in the file, the page's <c>HelpGrantId</c> (HELPMODE1c3).</summary>
+    /// <summary>The chosen settings' grant's name in the file, the page's <c>HelpGrantId</c>.</summary>
     public const string SettingsGrant = "settings";
 
-    /// <summary>The checkouts' grant, the page's <c>HelpGrantId</c> (HELPMODE1c4): its operations are the repositories, each on or off.</summary>
+    /// <summary>The checkouts' grant, the page's <c>HelpGrantId</c>: its operations are the repositories, each on or off.</summary>
     public const string CheckoutsGrant = "checkouts";
 
     /// <summary>Where the file keeps the checkouts turned off: a list of repository names.</summary>
@@ -39,7 +39,7 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
 
     /// <summary>
     /// The checkouts the person turned off, by repository, sorted without case and once each; none by default, when every checkout
-    /// D107 lets agents outside read is on.
+    /// that agents outside may read is on.
     /// </summary>
     public IReadOnlyList<string> CheckoutsOff { get; init; } = [];
 
@@ -63,7 +63,7 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
 
     /// <summary>
     /// The settings this build changes under the grant, in the page's order: the five ordinary ones, and never the mode, the grants,
-    /// accounts or a safeguard (the design's §4.1 table). The timeout left it with SESSWATCH1a (D200): a grant of it kept in the file
+    /// accounts or a safeguard. The timeout is not among them: a grant of it kept in the file
     /// is read as none.
     /// </summary>
     public static readonly IReadOnlyList<string> SettingsBuilt = [Notify, Language, Cap, CoolOff, Quiet];
@@ -89,7 +89,7 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
         _ => [],
     };
 
-    /// <summary>Whether <paramref name="other"/> chose the same operations of every grant, in the same order (ACCESSSWAP1's comparison).</summary>
+    /// <summary>Whether <paramref name="other"/> chose the same operations of every grant, in the same order.</summary>
     public bool Same(ConfiguredAccess other) =>
         Housekeeping.SequenceEqual(other.Housekeeping, StringComparer.Ordinal) && Settings.SequenceEqual(other.Settings, StringComparer.Ordinal)
         && CheckoutsOff.SequenceEqual(other.CheckoutsOff, StringComparer.OrdinalIgnoreCase);
@@ -124,7 +124,7 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
     private static readonly object Gate = new();
 
     /// <summary>
-    /// The person's choice of one operation (HELPMODE1c2b, <c>SET_HELP_GRANT</c>): that grant's list edited alone, made onto the file
+    /// The person's choice of one operation (<c>SET_HELP_GRANT</c>): that grant's list edited alone, made onto the file
     /// as it reads now, so another grant, a code this build does not act on and a key it does not know stay as written; the list kept
     /// in the page's order. Answers the record after it.
     /// </summary>
@@ -171,7 +171,7 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
     }
 
     /// <summary>
-    /// A checkout turned on again or off by its repository's name (HELPMODE1c4): the list of those turned off edited alone, sorted
+    /// A checkout turned on again or off by its repository's name: the list of those turned off edited alone, sorted
     /// without case, the other grants and keys kept as written. Any name of one word is taken: one no checkout bears narrows nothing.
     /// </summary>
     private static ConfiguredAccess ChooseCheckout(string home, string repository, bool chosen)
@@ -218,7 +218,7 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
             : [];
 
     /// <summary>
-    /// The record as the home holds it now, each grant read on its own (HELPMODE1c3: a housekeeping that is no list no longer hides
+    /// The record as the home holds it now, each grant read on its own (a housekeeping that is no list does not hide
     /// the settings chosen); <see cref="None"/> where it holds none or it does not read.
     /// </summary>
     public static ConfiguredAccess Read(string home)
@@ -251,7 +251,7 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
         return [.. built.Where(named.Contains)];
     }
 
-    /// <summary>The checkouts turned off (HELPMODE1c4), trimmed, once each without case, sorted so; none where the key is no list.</summary>
+    /// <summary>The checkouts turned off, trimmed, once each without case, sorted so; none where the key is no list.</summary>
     private static IReadOnlyList<string> Off(JsonElement root)
     {
         if (!root.TryGetProperty(CheckoutsOffKey, out var off) || off.ValueKind != JsonValueKind.Array) return [];

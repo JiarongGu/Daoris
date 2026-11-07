@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A run's transient failures (AGENTERRORS1a, D210, the agent-errors design §5): a prompt or an open the agent refused with a failure its
+/// A run's transient failures: a prompt or an open the agent refused with a failure its
 /// reader reads transient opens an episode, which waits on the retry's clock and tries again in the same conversation. The session
 /// hands it the retry, the words an episode holds and the try itself through <see cref="ITurnRetryWiring"/>.
 /// </summary>
@@ -12,15 +12,15 @@ internal sealed class AcpEpisodes(ITurnRetryWiring wiring)
     private bool _waitsOnTransient;
 
     /// <summary>
-    /// Whether the run waits between a transient episode's tries (AGENTERRORS1a, the design §5.1): on Daoris's own timer, never on its
+    /// Whether the run waits between a transient episode's tries: on Daoris's own timer, never on its
     /// agent, so the session watch reads it as a wait that is not the agent's, opening no episode of its own and ending nothing.
     /// </summary>
     public bool WaitsOnTransient => Volatile.Read(ref _waitsOnTransient);
 
     /// <summary>
-    /// One of the run's prompts (AGENTERRORS1a, the design §5.1): its stop reason, or, where the run was handed a retry and the agent
-    /// answered it with a failure the reader reads transient, the stop reason of the try that answered. Any other failure is thrown as it
-    /// came, and so is one in a run handed no retry: today's end.
+    /// One of the run's prompts: its stop reason, or, where the run is handed a retry and the agent
+    /// answers it with a failure the reader reads transient, the stop reason of the try that answered. Any other failure is thrown as it
+    /// comes, and so is one in a run handed no retry.
     /// </summary>
     public async Task<string> PromptingAsync(Func<Task<string>> prompt, CancellationToken ct)
     {
@@ -33,7 +33,7 @@ internal sealed class AcpEpisodes(ITurnRetryWiring wiring)
             var read = ReadFailure(refused);
             if (read.Kind != AgentErrorKind.Transient)
             {
-                // No episode opened: today's judgement of the words, TURNFAIL1's included (§5.1).
+                // No episode opened: the words are judged as any failure's.
                 wiring.ForgetUnacknowledged();
                 throw;
             }
@@ -42,7 +42,7 @@ internal sealed class AcpEpisodes(ITurnRetryWiring wiring)
         }
     }
 
-    /// <summary>A prompt's failure read by the handed reader; one the reader could not read is fatal, as today (§3.2).</summary>
+    /// <summary>A prompt's failure read by the handed reader; one the reader could not read is fatal.</summary>
     private AgentError ReadFailure(AcpRefusal refused, string where = DoorWhere.Prompt)
     {
         var retry = wiring.Retry!;
@@ -63,14 +63,14 @@ internal sealed class AcpEpisodes(ITurnRetryWiring wiring)
     }
 
     /// <summary>
-    /// The open's own phase (AGENTERRORS1a2, D210, the agent-errors design §5.6): the raw opening operation (<c>session/new</c>,
-    /// <c>session/resume</c> or <c>session/load</c>), and, where the run was handed a retry and the agent refused it with a failure read
+    /// The open's own phase: the raw opening operation (<c>session/new</c>,
+    /// <c>session/resume</c> or <c>session/load</c>), and, where the run is handed a retry and the agent refuses it with a failure read
     /// transient, the SAME operation again on the episode's schedule. Never the handshake again: it runs once per session. Read after
-    /// D205's choice refusal, which comes later in the open, and the <c>Gone</c> and <c>Elsewhere</c> codes, which pass through as
-    /// they came; anything else not transient is thrown as today.
+    /// the choice refusal, which comes later in the open, and the <c>Gone</c> and <c>Elsewhere</c> codes, which pass through as
+    /// they come; anything else not transient is thrown.
     /// </summary>
     /// <remarks>
-    /// Nothing was asked of the agent yet, so a try sends no go-on: once the operation answers, the run's own first prompt goes once, as
+    /// Nothing is asked of the agent yet, so a try sends no go-on: once the operation answers, the run's own first prompt goes once, as
     /// it would have. Words said meanwhile wait in the inbox, which is not attached until the open is done.
     /// </remarks>
     /// <exception cref="AcpTransientExhausted">Every try failed: the run ends past its bound with nothing prompted.</exception>
@@ -104,7 +104,7 @@ internal sealed class AcpEpisodes(ITurnRetryWiring wiring)
                 }
 
                 await WaitAsync(episode, ct, opening: true).ConfigureAwait(false);
-                // The owner's check (§5.5): no try where no more turn is wanted; nothing was prompted, so the open fails as today.
+                // The owner's check: no try where no more turn is wanted; nothing is prompted, so the open fails.
                 if (!await retry.WantedAsync(ct).ConfigureAwait(false)) throw;
                 episode.Tries++;
                 var next = episode.Tries < retry.Limit ? retry.Clock.GetUtcNow() + TransientRetry.Delays[episode.Tries] : (DateTimeOffset?)null;
@@ -115,7 +115,7 @@ internal sealed class AcpEpisodes(ITurnRetryWiring wiring)
     }
 
     /// <summary>
-    /// The person's words a failed prompt left unacknowledged (§5.1, round 3's read, R3-O2): D188's COWORK1c uncertain words, kept with
+    /// The person's words a failed prompt left unacknowledged, which stay uncertain: kept with
     /// the episode and said by the <c>lost</c> note under their ids. Never sent again.
     /// </summary>
     private void SayUncertain()
@@ -139,27 +139,27 @@ internal sealed class AcpEpisodes(ITurnRetryWiring wiring)
     }
 
     /// <summary>
-    /// A transient episode (AGENTERRORS1a, D210, the design §5.1): the run stays running on the same session, account and choice, and
+    /// A transient episode: the run stays running on the same session, account and choice, and
     /// tries again in the same conversation after 1, 2, 4, 8 and 16 minutes on the handed clock, each try one prompt of the person's
     /// held words and then Daoris's go-on. Answers the stop reason of the try that answered, or of the turn's end where the owner's
     /// check says no more turn is wanted.
     /// </summary>
     /// <remarks>
     /// <para><b>The wire settles first.</b> A word already sent behind the failed turn runs its own turn (<c>promptQueueing</c>): one
-    /// that answers ends the wait, never the episode (round 3's read, R3-O1), since it shows only that the agent answered that word, so
+    /// that answers ends the wait, never the episode, since it shows only that the agent answered that word, so
     /// the go-on follows at once and counts as a try; one that fails transient is that failure and counts as one.</para>
     ///
-    /// <para><b>Through the wake gate</b> (BGWAIT1): a turn its harness wakes during the wait ends the wait, never the episode; nothing is
+    /// <para><b>Through the wake gate</b>: a turn its harness wakes during the wait ends the wait, never the episode; nothing is
     /// prompted into it, and the go-on goes once it has ended.</para>
     ///
     /// <para><b>Only held words are ever sent by a try.</b> A word on the wire is never sent again, on a try or after the episode.</para>
     ///
-    /// <para>🔴 <b>Settling is bounded</b> (Codex's owed read of D210, finding 2): dispatch is held from the episode's first failure and
+    /// <para>🔴 <b>Settling is bounded</b>: dispatch is held from the episode's first failure and
     /// from each try's (<see cref="DrivenInbox.Settling"/>), so the turns it settles are only those already written. Each that fails
     /// transient takes one of the tries left; once they are spent the rest still settle, since they are written, and count none
     /// (<see cref="TransientEpisode.SettledPast"/>), and the run ends past its bound with no try after them.</para>
     ///
-    /// <para>🔴 <b>A hand-over is no recovery</b> (finding 1): a try the adapter answered at a queued word's echo handed its turn to that
+    /// <para>🔴 <b>A hand-over is no recovery</b>: a try the adapter answered at a queued word's echo handed its turn to that
     /// word. The episode and its count are kept through every hand-over, and the try counts as answered only once the turns handed over
     /// have settled with no transient failure; one that fails is the try's failure.</para>
     /// </remarks>
@@ -177,7 +177,7 @@ internal sealed class AcpEpisodes(ITurnRetryWiring wiring)
 
         while (true)
         {
-            // The wire settles first: each word sent behind the failed turn runs its own turn (§5.1's settling turns), and no word joins it.
+            // The wire settles first: each word sent behind the failed turn runs its own turn, and no word joins it.
             wiring.EpisodeWords?.Settling();
             if (await SettleAsync(Spent, ct).ConfigureAwait(false) is { } settled) atOnce = settled;
 
@@ -190,7 +190,7 @@ internal sealed class AcpEpisodes(ITurnRetryWiring wiring)
             if (!atOnce) await WaitAsync(episode, ct).ConfigureAwait(false);
             atOnce = false;
 
-            // The owner's check (§5.5) and the wake gate at the try's admission: no try where no more turn is wanted, and none into a turn
+            // The owner's check and the wake gate at the try's admission: no try where no more turn is wanted, and none into a turn
             // its harness woke; the run closes as at a turn's end.
             if (!await AdmitAsync(retry, ct).ConfigureAwait(false))
             {
@@ -228,7 +228,7 @@ internal sealed class AcpEpisodes(ITurnRetryWiring wiring)
             return answered;
         }
 
-        // A settling turn's failure takes one of the tries left, and once they are spent counts none (finding 2).
+        // A settling turn's failure takes one of the tries left, and once they are spent counts none.
         void Spent()
         {
             if (episode.Tries < retry.Limit)
@@ -243,12 +243,12 @@ internal sealed class AcpEpisodes(ITurnRetryWiring wiring)
     }
 
     /// <summary>
-    /// The turns already on the wire, each awaited in the order sent (§5.1's settling turns): <paramref name="failed"/> told for each that
+    /// The turns already on the wire, each awaited in the order sent: <paramref name="failed"/> told for each that
     /// fails transient, <paramref name="answered"/> for each that answers. Answers whether the last of them answered, or null where none
-    /// was on the wire.
+    /// is on the wire.
     /// </summary>
     /// <remarks>
-    /// 🔴 Bounded by <paramref name="ct"/> (RUNENDS1 after review, finding 1): a word on the wire whose turn never answers was waited on for
+    /// 🔴 Bounded by <paramref name="ct"/>: a word on the wire whose turn never answers would be waited on for
     /// ever, and the cut of a closed quest's silent turn could not end that wait. A word cut short here stays on the wire, open, and is
     /// said at the run's end as any such word is.
     /// </remarks>
@@ -284,12 +284,12 @@ internal sealed class AcpEpisodes(ITurnRetryWiring wiring)
     }
 
     /// <summary>
-    /// A try's admission (§5.1, §5.5): a turn its harness woke ends the wait, never the episode, and nothing goes into it; where work's end
+    /// A try's admission: a turn its harness woke ends the wait, never the episode, and nothing goes into it; where work's end
     /// is owed a wake, the quiet the go-on waits for; then the owner's check. Answers false where no more turn is wanted.
     /// </summary>
     /// <remarks>
-    /// 🔴 <b>Read again after the check</b> (Codex's owed read of D210, finding 7): the check is awaited, and a wake that began meanwhile
-    /// was never read before the prompt went into it, BGWAIT1's unanswered prompt. The wake is read again once the check answers, and
+    /// 🔴 <b>Read again after the check</b>: the check is awaited, and a wake that began meanwhile
+    /// would go unread before the prompt went into it, leaving an unanswered prompt. The wake is read again once the check answers, and
     /// the check asked again after any woken turn has ended.
     /// </remarks>
     /// <exception cref="DriverException">The agent's stream ended while the gate waited.</exception>
@@ -301,7 +301,7 @@ internal sealed class AcpEpisodes(ITurnRetryWiring wiring)
         {
             if (wake.Running)
             {
-                // RUNENDS1, second read (finding 4): the stream's end ends this wait too, as every wait of the session's.
+                // The stream's end ends this wait too, as every wait of the session's.
                 if (!await wake.IdleAsync(wiring.Prompted, wiring.Ended, ct, wiring.WakeQuiet).ConfigureAwait(false))
                 {
                     throw wiring.StreamEnded("the ACP agent's stream ended while the run waited to try again after its provider failed.");
@@ -341,7 +341,7 @@ internal sealed class AcpEpisodes(ITurnRetryWiring wiring)
     }
 
     /// <summary>
-    /// The wait before a try (§5.1), read off the handed clock: the schedule's next delay, ended at once by a word of the person's that
+    /// The wait before a try, read off the handed clock: the schedule's next delay, ended at once by a word of the person's that
     /// makes a turn, or by a turn its harness woke. Every word is held while it runs. Its end stamps the session heard, through the retry.
     /// </summary>
     /// <exception cref="DriverException">The agent's stream ended while it waited.</exception>
@@ -350,7 +350,7 @@ internal sealed class AcpEpisodes(ITurnRetryWiring wiring)
         var retry = wiring.Retry!;
         var started = retry.Clock.GetUtcNow();
         using var cut = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        // At the open (§5.6) no session is there to wake and no word flows yet: only the schedule ends the wait.
+        // At the open no session is there to wake and no word flows yet: only the schedule ends the wait.
         var word = opening ? Task.Delay(Timeout.Infinite, cut.Token) : wiring.EpisodeWords?.Waiting() ?? Task.Delay(Timeout.Infinite, cut.Token);
         var delay = TransientRetry.Delays[Math.Min(episode.Tries, TransientRetry.Bound - 1)];
         Volatile.Write(ref _waitsOnTransient, true);

@@ -8,7 +8,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Where each wired circle stands with its remote, pushed (PUSH1a2, D182 points 2 and 5): one owner in the shell's loop reading what
+/// Where each wired circle stands with its remote, pushed: one owner in the shell's loop reading what
 /// <c>/api/sync</c> answers for each circle the remotes map wires, a partition per circle, woken after each pass, by the change
 /// stream's <c>quests</c> family and by the <c>sync</c> scope, so a tick reads <c>/api/sync</c> again in no window.
 /// </summary>

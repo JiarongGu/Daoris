@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// 🔴 No sign-in of a real agent under a scratch home (LIVELOGIN1): a test, a probe or a transcription of today's words that ran
-/// <c>codex login</c> or <c>claude auth login</c> under a home in <c>_fixtures/</c> opened the person's browser on their real account,
-/// four times in one build and once in a driven session. Every sign-in action asks here before anything is made or started: the
+/// 🔴 No sign-in of a real agent under a scratch home: a test, a probe or a transcription of today's words that runs
+/// <c>codex login</c> or <c>claude auth login</c> under a home in <c>_fixtures/</c> opens the person's browser on their real account.
+/// Every sign-in action asks here before anything is made or started: the
 /// window's (<see cref="HarnessActions.PrepareLogin"/> and the bridge's press) and the terminal's (<c>daoris agent login</c>).
 /// </summary>
 /// <remarks>

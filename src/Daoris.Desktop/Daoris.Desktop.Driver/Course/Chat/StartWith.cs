@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// *Start a conversation on its first words* (NEW1a, D162 point 2): the conversation opens as <c>START_CHAT</c> always opened
+/// *Start a conversation on its first words*: the conversation opens as <c>START_CHAT</c> opens
 /// one, and is handed the person's words as its first message. Files over a message's limit go as the words alone, and there
-/// is no preface: nothing was said anywhere before. "Sent" means the door took the words (queued or taken), as
+/// is no preface: nothing has been said anywhere before. "Sent" means the door took the words (queued or taken), as
 /// <see cref="StartFrom"/>'s does; a conversation that opened without taking them is answered as such and the driver keeps
 /// nothing, since the page keeps the person's draft.
 /// </summary>
@@ -16,7 +16,7 @@ public static class StartWith
         Func<CancellationToken, Task<ChatStart>> start, Func<string, string, IReadOnlyList<ChatUpload>, string?, bool> say,
         string text, IReadOnlyList<ChatUpload> files, CancellationToken ct = default, Action<LineCourse>? decided = null)
     {
-        // FOUNDATION1h branch 8 (the foundation design §3.1): a conversation with no record yet and the person's words as its first is the course's
+        // A conversation with no record yet and the person's words as its first is the course's
         // start for CourseTrigger.StartFrom, no refusal applying to a line that has none; the words are the person's own.
         var course = CourseDecision.Decide(
             new CourseFacts(

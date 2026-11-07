@@ -33,12 +33,12 @@ public sealed class InstanceWorld : IToolTerminal
     /// <summary>The verb, as its sentences begin (<c>trees</c>).</summary>
     public string Verb { get; init; } = "daoris";
 
-    /// <summary>How long the pipe is given to connect and answer the hello (§7.2: five seconds).</summary>
+    /// <summary>How long the pipe is given to connect and answer the hello: five seconds.</summary>
     public TimeSpan Answer { get; init; } = TimeSpan.FromSeconds(5);
 
     /// <summary>
     /// How long a press is waited on before its answer is asked for by <c>RESULT</c>: <c>--wait &lt;minutes&gt;</c>, which the host's
-    /// entry takes (the confirm-wait design §4.1). Zero is <c>--no-wait</c>: the verb returns once the instance says the
+    /// entry takes. Zero is <c>--no-wait</c>: the verb returns once the instance says the
     /// press waits for the window (<c>CONFIRMING</c>), and a press that asks no window, or a read, is waited on as long as by default.
     /// </summary>
     public TimeSpan Wait { get; init; } = InstanceDoor.LongestWait;
@@ -47,19 +47,19 @@ public sealed class InstanceWorld : IToolTerminal
     public TimeSpan Within => Wait > TimeSpan.Zero ? Wait : InstanceDoor.LongestWait;
 
     /// <summary>
-    /// The SIDs whose pipe this terminal takes as its user's: <see cref="InstanceClient.ThisUser"/>'s where null (PIPEOWNER1), or a
+    /// The SIDs whose pipe this terminal takes as its user's: <see cref="InstanceClient.ThisUser"/>'s where null, or a
     /// test's, which needs no second elevation to meet a pipe it does not take.
     /// </summary>
     public IReadOnlySet<string>? Owners { get; init; }
 
     /// <summary>
-    /// A check of the process serving the pipe, read from the pipe itself, made before anything is sent (SUPERVISOR1a-ii, D208 §2.2):
+    /// A check of the process serving the pipe, read from the pipe itself, made before anything is sent:
     /// false refuses it (<see cref="InstanceDoor.NotInstall"/>). Null checks nothing, as every verb but the supervisor's answer.
     /// </summary>
     public Func<int?, bool>? ServedBy { get; init; }
 
     /// <summary>
-    /// Whether this verb runs in a role's terminal (D209 §3.3): the entry's marker, <see cref="TerminalRole.Held"/>, unless a test
+    /// Whether this verb runs in a role's terminal: the entry's marker, <see cref="TerminalRole.Held"/>, unless a test
     /// names its own. Such a verb sends no person's press and acts nothing alone (<see cref="TerminalRole"/>).
     /// </summary>
     public Func<bool> RoleTerminal { get; init; } = () => TerminalRole.Held;

@@ -1,13 +1,13 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The servers Claude Code's native door is handed, as a file in its own <c>.mcp.json</c> layout (D65 §1f): a <c>mcpServers</c> object
+/// The servers Claude Code's native door is handed, as a file in its own <c>.mcp.json</c> layout: a <c>mcpServers</c> object
 /// keyed by name, each with <c>command</c>, <c>args</c> and <c>env</c>, verified against its own documentation. Its protocol door
 /// carries them on <c>session/new</c> instead.
 /// </summary>
 /// <remarks>
 /// <b>Under the home, never in the repository.</b> The whole point of handing them at spawn is that nothing of Daoris's is written into
-/// a tree Daoris does not own (D32, the shape HELP3 measured for <c>--settings</c>); the file goes when the session does.
+/// a tree Daoris does not own, as for <c>--settings</c>; the file goes when the session does.
 /// </remarks>
 public static class ClaudeServers
 {
@@ -21,7 +21,7 @@ public static class ClaudeServers
 
         var path = DaorisHome.Entry(home, HomeEntry.Spawn, $"{plan.SessionId}{FileSuffix}");
 
-        // By name, so a name given twice is refused as it always was (the writer is reflection-free: JsonFile).
+        // By name, so a name given twice is refused (the writer is reflection-free: JsonFile).
         var byName = plan.Servers.ToDictionary(server => server.Name, StringComparer.Ordinal);
         JsonFile.Write(path, writer =>
         {

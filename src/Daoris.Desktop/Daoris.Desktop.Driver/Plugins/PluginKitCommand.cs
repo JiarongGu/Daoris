@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The plugin kit from a terminal (PLUG8, D50): `daoris plugin new|try`. The Plugins place is
+/// The plugin kit from a terminal: `daoris plugin new|try`. The Plugins place is
 /// the other door, onto the same <see cref="PluginKit"/>.
 /// </summary>
 /// <remarks>
@@ -16,7 +16,7 @@ namespace Daoris.Driver;
 ///
 /// <para>The printing lives in the library, not the host, so a test can run the whole door in-process.
 /// Exit codes keep the family contract: 0 clean · 1 the plugin failed a check · 2 the kit could not do
-/// what was asked.</para>
+/// what it is asked.</para>
 /// </remarks>
 public static class PluginKitCommand
 {
@@ -26,8 +26,8 @@ public static class PluginKitCommand
         + "       daoris plugin try <folder> --cycle <fixture.json>";
 
     /// <param name="log">
-    /// The machine log, where a trial of an installed plugin is one <c>plugin.tried</c> line from this door
-    /// (PLUGUI1d). Null writes none.
+    /// The machine log, where a trial of an installed plugin is one <c>plugin.tried</c> line from this door.
+    /// Null writes none.
     /// </param>
     public static async Task<int> RunAsync(string[] args, TextWriter output, string? home, CancellationToken ct = default, MachineLog? log = null)
     {
@@ -101,7 +101,7 @@ public static class PluginKitCommand
 
         if (points.Count > 1) throw new DriverException("`plugins try` sends one point's frame at a time: name one --point, or none for every point.");
 
-        // FABRIC-PERFORM1e: a cycle is a folder's performer driven through its attempts, not a frame at a point.
+        // A cycle is a folder's performer driven through its attempts, not a frame at a point.
         PluginTrial result;
         if (options.TryGetValue("--cycle", out var fixture))
         {
@@ -124,7 +124,7 @@ public static class PluginKitCommand
         // A folder first: after `plugins new acme.x`, `plugins try acme.x` means the folder just made.
         if (PluginFolders.There(positional))
         {
-            // A trial keeps its scratch under the home (D63): with none named, it refuses, as every writer does.
+            // A trial keeps its scratch under the home: with none named, it refuses, as every writer does.
             result = await PluginTrials.TryFolderAsync(
                 home ?? throw new DriverException(
                     $"no Daoris home: a trial keeps what the plugin keeps under it. Set {DaorisHome.Variable}, or run "
@@ -135,7 +135,7 @@ public static class PluginKitCommand
         {
             var took = System.Diagnostics.Stopwatch.StartNew();
             result = await PluginTrials.TryInstalledAsync(home, positional, trial, ct).ConfigureAwait(false);
-            // An installed plugin's trial is part of its history (D119 §4.2). A folder's is printed and never kept: its id
+            // An installed plugin's trial is part of its history. A folder's is printed and never kept: its id
             // may name an installed plugin it is not.
             new PluginLog(log).Tried(result, took.ElapsedMilliseconds, PluginEvents.Terminal);
         }
@@ -201,7 +201,7 @@ public static class PluginKitCommand
             }
             else if (arg == "--harness" && verb == "new")
             {
-                // D101: a harness is a declaration, not code — the kit makes plugins that speak.
+                // A harness is a declaration, not code — the kit makes plugins that speak.
                 throw new DriverException(
                     "the kit makes plugins that speak; a harness is declared in plugin.json by hand, with the fields "
                     + "the plugin design's §3 lists, and `daoris plugin add` checks it.");

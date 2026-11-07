@@ -6,7 +6,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// UPDATERELAUNCH1 (UIFREEZE1, D139 §5): *Update now* relaunches through the start gate, off the caller's thread. The
+/// *Update now* relaunches through the start gate, off the caller's thread. The
 /// update's <c>SET</c> looked, applied and started the launcher synchronously, in the route's synchronous part, which runs
 /// on the window's thread.
 /// </summary>

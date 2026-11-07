@@ -4,7 +4,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// TERMSTART1 (UIFREEZE1, D56's SWEEPFLIGHT1 and PROCSTART2 note): a terminal's shell is started through the start gate, off
+/// A terminal's shell is started through the start gate, off
 /// the caller's thread. <c>OPEN</c> started it with <c>CreateProcessW</c> in the route's synchronous part, which runs on the
 /// window's thread, where an antivirus hook on process creation held the window.
 /// </summary>

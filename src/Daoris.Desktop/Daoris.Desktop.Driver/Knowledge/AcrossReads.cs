@@ -8,14 +8,14 @@ public enum AcrossSource
     Repository,
 }
 
-/// <summary>Whether a repository's checkout may be read by agents outside it, and what said so (D107).</summary>
+/// <summary>Whether a repository's checkout may be read by agents outside it, and what said so.</summary>
 public sealed record AcrossReading(bool Read, AcrossSource Source);
 
 /// <summary>A registered checkout on this machine, by its repository's name and where it is.</summary>
 public sealed record AcrossCheckout(string Repository, string Path);
 
 /// <summary>
-/// Whether a checkout may be read by agents outside it, and where a path lies (READ1, D107; FOUNDATION1 mod-viii, the design §14.3): the
+/// Whether a checkout may be read by agents outside it, and where a path lies: the
 /// reading of the settings for one checkout, the readable checkouts of a registry and a path's place under another. What the room says
 /// of the checkouts it may read, and the checkouts' own judge, ask these, which are the agents' too: <see cref="AcrossRules"/> answers
 /// through them, so every reader of the rules keeps its spelling and the rules those readers are handed are the agents' alone.
@@ -34,7 +34,7 @@ public static class AcrossReads
 
     /// <summary>
     /// The checkouts Ask Daoris may read: each readable one of <paramref name="registry"/>, sorted by name; every workspace's for
-    /// <c>default</c>'s room, one workspace's for its own (ASKSCOPE1c).
+    /// <c>default</c>'s room, one workspace's for its own.
     /// </summary>
     public static IReadOnlyList<AcrossCheckout> Readable(DriverConfig config, IEnumerable<RepoView> registry) =>
         Of(Checkouts(registry).Where(known => Reading(config, known.Repository, known.Workspace).Read));

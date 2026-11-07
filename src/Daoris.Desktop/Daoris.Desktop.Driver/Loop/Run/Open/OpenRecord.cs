@@ -22,14 +22,14 @@ internal sealed class OpenRecord(IRunWiring wiring) : IRunStage
         var (agent, selection, access, chosen) = (state.Agent, state.Selection, state.Access, state.Chosen);
         var (carryingOn, handsOn, workTree) = (state.Tree.CarryingOn, state.Tree.HandsOn, state.WorkTree);
 
-        // A resume that was tried let go of the starting hold when the park held the tree; the carry-on's open needs it again, until
+        // A resume tried let go of the starting hold when the park held the tree; the carry-on's open needs it again, until
         // its own record holds the tree.
         using var restarting = answerKept ? TreeLock.TryStarting(home, start.Root!) : null;
         if (answerKept && restarting is null) return run.Hold(HeldWords.Holding(quest.To, TreeLock.HolderOf(home, start.Root!)).Why);
 
         var before = await WorkingTree.HeadAsync(workTree, ct).ConfigureAwait(false);
 
-        // The session this start continues, why and who asked: the one the quest was handed over from, or one a limit cut off when this
+        // The session this start continues, why and who asked: the one the quest is handed over from, or one a limit cut off when this
         // runs on another account; every other carry-on names its link too, `retry` where its resume fell back.
         var continues = MovedParts.ContinuesFrom(
             state.HandedQuest, carryingOn ? start.Resumes : null, selection.Profile, selection.Steps?.FirstOrDefault()?.Why,

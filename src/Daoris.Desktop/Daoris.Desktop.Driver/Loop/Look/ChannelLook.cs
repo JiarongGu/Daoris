@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The ask's channel (SESSONE2b, D167 point 7; the co-working design §2.3): what is new for each line of work on an ask reaches its
+/// The ask's channel: what is new for each line of work on an ask reaches its
 /// newest part here where it can take it now, and otherwise waits for the entry's next part. One read per such line of work.
 /// </summary>
 [LookPass("channel", LookPhase.Read, "roster")]

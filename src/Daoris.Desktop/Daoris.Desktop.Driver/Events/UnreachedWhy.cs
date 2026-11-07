@@ -6,7 +6,7 @@ public static class UnreachedWhy
     /// <summary>The session ended while they waited.</summary>
     public const string EndedFirst = "ended-first";
 
-    /// <summary>Daoris kept no id for the conversation, so there was nothing to resume.</summary>
+    /// <summary>Daoris kept no id for the conversation, so nothing can resume.</summary>
     public const string Unkept = "unkept";
 
     /// <summary>

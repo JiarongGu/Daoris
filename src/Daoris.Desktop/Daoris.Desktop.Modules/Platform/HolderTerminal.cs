@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The holder's terminal (SUPERVISOR1a-ii, D208 point 2; amended by STEWARDROLE1a-i, D209 §2.2 and §6.1): the one start Daoris builds
+/// The holder's terminal: the one start Daoris builds
 /// that adds the holder key, made by the window itself at the owner's <i>Appoint</i>, so the key never passes through the page, the
 /// clipboard or a shell's history. <b>It is a tab of Daoris's own terminal panel</b> (<see cref="TerminalModule"/>), never a separate
 /// console window of the system's, and <b>its process is Daoris's own pinned harness, started by Daoris</b>: the managed, pinned
@@ -23,7 +23,7 @@ namespace Daoris.Desktop;
 public static class HolderTerminal
 {
     /// <summary>
-    /// The holder's initial prompt (D209 §2.2, Codex's final read, finding 12): the argument vector's last element, the harness's
+    /// The holder's initial prompt: the argument vector's last element, the harness's
     /// positional prompt and so the model's first input. Fixed text, naming no key, no appointment and no particular role.
     /// </summary>
     public const string InitialPrompt = "You hold a role Daoris appointed. Run `daoris role brief` and do as it says.";
@@ -39,7 +39,7 @@ public static class HolderTerminal
     public const string Settings = "{\"disableAllHooks\":true}";
 
     /// <summary>
-    /// The holder's argument vector after the image (D209 §2.2, stated whole there): user settings alone, hooks off again above every
+    /// The holder's argument vector after the image: user settings alone, hooks off again above every
     /// source but managed settings, an empty MCP configuration and only it, every role's verb and the open reads by their exact
     /// prefixes, and the initial prompt last. Each one element; the walk checks the started process's vector against it.
     /// </summary>
@@ -59,7 +59,7 @@ public static class HolderTerminal
     public const string Harness = "claude-code";
 
     /// <summary>
-    /// The shell a role's tab runs where it is still a shell (D209 §6.1): the system's own Windows PowerShell, by its location under
+    /// The shell a role's tab runs where it is still a shell: the system's own Windows PowerShell, by its location under
     /// <c>%SystemRoot%</c>, never the tools file's <c>pwsh</c> nor PATH's.
     /// </summary>
     public static TerminalShell SystemShell(Func<string, string?>? variable = null)
@@ -79,7 +79,7 @@ public static class HolderTerminal
     public static string Config(string home) => DaorisHome.Entry(home, HomeEntry.RoleRooms, "config");
 
     /// <summary>
-    /// A new holder's folder made, and the folders of holders no longer living removed (D209 §2.2): never one in <paramref name="living"/>,
+    /// A new holder's folder made, and the folders of holders no longer living removed: never one in <paramref name="living"/>,
     /// so a live holder's folder is never moved or emptied. The new holder's id is new, so its folder holds nothing an agent wrote.
     /// </summary>
     public static string Started(string home, string holder, IEnumerable<string> living)
@@ -109,7 +109,7 @@ public static class HolderTerminal
     }
 
     /// <summary>
-    /// The configuration directory's owned files written again (§6.1), at each holder's start: <c>settings.json</c> exactly
+    /// The configuration directory's owned files written again, at each holder's start: <c>settings.json</c> exactly
     /// <see cref="Settings"/>, and every <see cref="Absent"/> entry removed. The harness's own state is left alone.
     /// </summary>
     public static string Own(string home)
@@ -152,7 +152,7 @@ public static class HolderTerminal
     ];
 
     /// <summary>
-    /// The environment Daoris composes for the holder's harness (§6.1), whole, inheriting nothing: the system's variables by name, a
+    /// The environment Daoris composes for the holder's harness, whole, inheriting nothing: the system's variables by name, a
     /// <c>PATH</c> of the install's own <paramref name="app"/> folder and the system's folders, the home, <see cref="ConfigVariable"/>, the
     /// harness's updater off, and the key. No loader or runtime variable of Daoris's own environment (<c>NODE_OPTIONS</c> and its kind).
     /// </summary>
@@ -201,11 +201,11 @@ public static class HolderTerminal
         return string.Join("\r\n", lines) + "\r\n\r\n";
     }
 
-    /// <summary>What the tab says when a role is added to its holder (§2.2): the owner's line; the session reads the verbs' answers.</summary>
+    /// <summary>What the tab says when a role is added to its holder: the owner's line; the session reads the verbs' answers.</summary>
     public static string Added(string role, DateTimeOffset at, IReadOnlyList<string> roles) =>
         $"\r\nThe {role} was added to this terminal at {Clock(at)}: {Title(roles)}.\r\n";
 
-    /// <summary>What the tab says when its holder's last role ends (§2.2).</summary>
+    /// <summary>What the tab says when its holder's last role ends.</summary>
     public const string TurnedOff = "\r\nThe roles this terminal held are turned off: its key admits nothing now. Close this tab.\r\n";
 
     private static string Clock(DateTimeOffset at) =>
@@ -213,7 +213,7 @@ public static class HolderTerminal
 }
 
 /// <summary>
-/// The harness a holder's tab runs (STEWARDROLE1a-i, D209 §6.1): Daoris's managed, pinned <c>claude-code</c> in its maker's layout,
+/// The harness a holder's tab runs: Daoris's managed, pinned <c>claude-code</c> in its maker's layout,
 /// <c>&lt;toolchain&gt;/claude-code/&lt;pin&gt;/bin/claude.exe</c>, its bytes the ones its verified install recorded. No pin, no binary at
 /// the pin, no record or other bytes refuse <see cref="Refused"/>; it never falls back to PATH's <c>claude</c>.
 /// </summary>
@@ -245,14 +245,14 @@ public static class HolderHarness
     }
 }
 
-/// <summary>What a holder's tab is opened with (STEWARDROLE1a-i): the holder's id, its key, its roles, the moment, and the holders living now, whose folders stay.</summary>
+/// <summary>What a holder's tab is opened with: the holder's id, its key, its roles, the moment, and the holders living now, whose folders stay.</summary>
 public sealed record HolderOpen(string Holder, string Key, IReadOnlyList<string> Roles, DateTimeOffset At, IReadOnlyList<string> Living);
 
 /// <summary>A holder's tab opened, with its harness's process; or not, with why (<see cref="HolderHarness.Refused"/> or <c>unstarted</c>) and what to say.</summary>
 public sealed record HolderOpened(string? Tab, HolderProcess? Process, string? Why, string? Message);
 
 /// <summary>
-/// The holder's harness process as the terminal module started it (D209 §6.1): its id and creation time, which name it, the image it
+/// The holder's harness process as the terminal module started it: its id and creation time, which name it, the image it
 /// was started from and the configuration directory it was handed. The judge's walk reads the process itself against these.
 /// </summary>
 public sealed record HolderProcess(int Id, DateTime Created, string Image, string Config);

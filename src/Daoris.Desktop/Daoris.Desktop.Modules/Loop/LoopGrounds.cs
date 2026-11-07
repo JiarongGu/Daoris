@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The loop's readers of a person's press's grounds (CONFIRMWAIT1a-i, the confirm-wait design §5.2), handed to the pipe as the standing
+/// The loop's readers of a person's press's grounds, handed to the pipe as the standing
 /// confirmation's are: the service's records of a session, a quest and an ask, its registry, a branch's tip by one <c>git rev-parse</c>
 /// in the repository's checkout, a session's tree's head as the landing reads its tree, the driver's own reads called in process
 /// through the pipe's dispatcher, the waits the loop holds that no read lists by the press's id, and the files a press copies, runs or
@@ -21,7 +21,7 @@ public sealed class LoopGrounds(DriverLoop loop, InstancePipe pipe) : IPipeGroun
 
     public async Task<string?> RegistrationAsync(string name, CancellationToken cancellationToken)
     {
-        // What the name resolves to (the confirm-wait design §15.1 item 4): each row it names, by its repository, workspace, adoption
+        // What the name resolves to: each row it names, by its repository, workspace, adoption
         // and full root, so a name registered again at another checkout reads moved though it is still registered.
         var registry = await Service().RegistryAsync(cancellationToken).ConfigureAwait(false);
         var rows = registry
@@ -116,7 +116,7 @@ public sealed class LoopGrounds(DriverLoop loop, InstancePipe pipe) : IPipeGroun
             }
 
             case "git-ask":
-                // A git go-ahead (GIT_ANSWER, GITAUTH1f): open while its door waits, gone once the door stopped; none once answered or past
+                // A git go-ahead (GIT_ANSWER): open while its door waits, gone once the door stopped; none once answered or past
                 // its bound.
                 return PipeGround.Text(payload, "ask") is { } gitAsk
                     && GitAsks.List(loop.Home, DateTimeOffset.UtcNow).FirstOrDefault(each => each.Id == gitAsk) is { } waiting
@@ -170,7 +170,7 @@ public sealed class LoopGrounds(DriverLoop loop, InstancePipe pipe) : IPipeGroun
 
             case "plugin-update":
             {
-                // Its own preview, and the files of the source it copies from (the confirm-wait design §5.1).
+                // Its own preview, and the files of the source it copies from.
                 var preview = await pipe.ReadAsync(
                     DriverModule.Name, "PLUGIN_UPDATE", new { id = PipeGround.Text(payload, "id"), shipped = Flag(payload, "shipped") }, cancellationToken)
                     .ConfigureAwait(false);
@@ -184,7 +184,7 @@ public sealed class LoopGrounds(DriverLoop loop, InstancePipe pipe) : IPipeGroun
 
             case "tree":
             {
-                // The tree a discard removes, by `id` or by `path` as its handler resolves it (the confirm-wait design §15.1 item 2): its
+                // The tree a discard removes, by `id` or by `path` as its handler resolves it: its
                 // head and its index's staged entries; with `force`, which skips the proof, also each uncommitted path by its bytes.
                 var tree = PipeGround.Text(payload, "path") is { } named
                     ? Rooted(named)
@@ -203,7 +203,7 @@ public sealed class LoopGrounds(DriverLoop loop, InstancePipe pipe) : IPipeGroun
             }
 
             case "attachments":
-                // A terminal's words with files (§15.1 item 5): each path as it was given, and a rooted file's bytes, which the press
+                // A terminal's words with files: each path as it is given, and a rooted file's bytes, which the press
                 // reads only once it is confirmed.
                 return PipeGround.Fingerprint(PipeGround.Texts(payload, "paths")
                     .Select(path => $"{path}={(Rooted(path) is { } file ? Hash(file) : "unrooted")}"));

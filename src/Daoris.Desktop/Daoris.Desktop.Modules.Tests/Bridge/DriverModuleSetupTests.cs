@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Setting This Daoris up from the page (WIRING1e, the this-Daoris design §4): <c>SYSTEM_OPEN_FOLDER</c>, <c>SYSTEM_PATH</c> and
+/// Setting This Daoris up from the page: <c>SYSTEM_OPEN_FOLDER</c>, <c>SYSTEM_PATH</c> and
 /// <c>SYSTEM_SERVICE_ADDRESS</c> as the window answers them. Every press runs against <see cref="AccountStandIn"/> and a recording
 /// launcher, so nothing here reads or changes the machine's account, its <c>PATH</c> or its file manager; each refusal is data, and the
 /// page never names a path.

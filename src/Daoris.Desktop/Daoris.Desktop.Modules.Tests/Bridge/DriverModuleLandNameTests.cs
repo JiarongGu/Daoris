@@ -5,7 +5,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// LANDNAME1a (D145): the <c>LANDING</c> plan and the <c>LAND_SESSION_TREE</c> press read an optional <c>branch</c> the page
+/// The <c>LANDING</c> plan and the <c>LAND_SESSION_TREE</c> press read an optional <c>branch</c> the page
 /// enters, which names the branch in place of the rule's. Blank or absent keeps the rule's name, as the page sent before.
 /// What the landing does with the name is held over real git by the driver's <c>LandingTests</c>.
 /// </summary>

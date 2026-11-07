@@ -7,7 +7,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A choice's identity in a role's policy (D226; the staff policy design §2.2): its agent, model and effort as the staffing writes them,
+/// A choice's identity in a role's policy: its agent, model and effort as the staffing writes them,
 /// compared ordinally, which <see cref="ActorKey.Judge"/> keeps unique in a role. No id is written into a choice.
 /// </summary>
 public readonly record struct StaffKey(string Agent, string? Model, string? Effort)
@@ -46,31 +46,31 @@ public readonly record struct StaffKey(string Agent, string? Model, string? Effo
     }
 }
 
-/// <summary>A choice's daily budget (§2.2): new starts or reported tokens in the machine's local day, one of the two.</summary>
+/// <summary>A choice's daily budget: new starts or reported tokens in the machine's local day, one of the two.</summary>
 public sealed record StaffBudget(long? Starts = null, long? Tokens = null);
 
 /// <summary>
-/// One choice's entry in a policy (§2.2): its weight under <c>weight</c>, 0 to 10; the most of the window's starts it takes, in percent; its
+/// One choice's entry in a policy: its weight under <c>weight</c>, 0 to 10; the most of the window's starts it takes, in percent; its
 /// daily budget; and the works it takes, null for every work of the role.
 /// </summary>
 public sealed record StaffChoice(StaffKey Key, int Weight = 1, int? Share = null, StaffBudget? Budget = null, IReadOnlyList<string>? Takes = null);
 
-/// <summary>What a condition does (§4): an action of <see cref="StaffActions"/>, the tries or strikes before it, and how long a wait holds.</summary>
+/// <summary>What a condition does: an action of <see cref="StaffActions"/>, the tries or strikes before it, and how long a wait holds.</summary>
 public sealed record StaffMove(string Do, int? After = null, int? UpTo = null);
 
-/// <summary>The rules a policy orders a role's choices by (§2.3).</summary>
+/// <summary>The rules a policy orders a role's choices by.</summary>
 public static class StaffRules
 {
-    /// <summary>The stored order, D205 point 4's walk: the rule of every role without a policy.</summary>
+    /// <summary>The stored order: the rule of every role without a policy.</summary>
     public const string Order = "order";
 
-    /// <summary>The deterministic weighted pick over the window (§3.2).</summary>
+    /// <summary>The deterministic weighted pick over the window.</summary>
     public const string Weight = "weight";
 
     public static IReadOnlyList<string> Codes { get; } = [Order, Weight];
 }
 
-/// <summary>The conditions Daoris observes that a policy may move a line on (§4), and the actions each allows.</summary>
+/// <summary>The conditions Daoris observes that a policy may move a line on, and the actions each allows.</summary>
 public static class StaffConditions
 {
     /// <summary>Every account of the choice limited or cooling.</summary>
@@ -82,10 +82,10 @@ public static class StaffConditions
     /// <summary>The choice's model refused.</summary>
     public const string ModelRefused = "model-refused";
 
-    /// <summary>D210's episode: the service does not answer.</summary>
+    /// <summary>The episode: the service does not answer.</summary>
     public const string Transient = "transient";
 
-    /// <summary>D210's fatal error again.</summary>
+    /// <summary>The fatal error again.</summary>
     public const string Failed = "failed";
 
     /// <summary>A run past the inactivity window, stopped by a press or a headless quiet end.</summary>
@@ -97,7 +97,7 @@ public static class StaffConditions
     public static IReadOnlyList<string> Codes { get; } = [Limit, SignedOut, ModelRefused, Transient, Failed, Quiet, Budget];
 }
 
-/// <summary>What a met condition does (§4).</summary>
+/// <summary>What a met condition does.</summary>
 public static class StaffActions
 {
     /// <summary>Walk the stored order from its top, the met choice passed.</summary>
@@ -124,7 +124,7 @@ public static class StaffActions
     public static bool Moves(string action) => action is Next or Weighted;
 }
 
-/// <summary>The presets that fill a policy's draft and never save (§2.4).</summary>
+/// <summary>The presets that fill a policy's draft and never save.</summary>
 public static class StaffPresets
 {
     /// <summary><i>First that can run</i>: the order, nothing else.</summary>
@@ -140,7 +140,7 @@ public static class StaffPresets
 }
 
 /// <summary>
-/// A role's staffing policy (STAFFPOLICY1a, D226; the staff policy design §2): its rule and an entry for each of its choices by tuple in the
+/// A role's staffing policy: its rule and an entry for each of its choices by tuple in the
 /// staffing's order. Kept apart from the choices in <c>role_policy</c>, bound to them by <see cref="Digest"/>; no row is
 /// <see cref="StaffRules.Order"/>. <see cref="Moves"/> and <see cref="Most"/> are never stored: <see cref="SupervisorRuleBook.Course"/> sets
 /// them from a line's effective rules, for the course to read.
@@ -157,21 +157,21 @@ public sealed record StaffPolicy(string Rule, IReadOnlyList<StaffChoice> Choices
     public StaffChoice? Of(StaffKey key) => Choices.FirstOrDefault(choice => choice.Key == key);
 
     /// <summary>
-    /// The digest that binds a policy to the staffing it was set for: the SHA-256 of the choices as the staffing writes them
+    /// The digest that binds a policy to the staffing it is set for: the SHA-256 of the choices as the staffing writes them
     /// (<see cref="RoleStaffing.Write"/>), lowercase hex. Choices written again unchanged keep it; any change to them moves it.
     /// </summary>
     public static string Digest(IReadOnlyList<ActorChoice> choices) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(RoleStaffing.Write(choices)))).ToLowerInvariant();
 
     /// <summary>
-    /// The policy re-keyed to <paramref name="choices"/> (§2.2): each entry whose tuple is still listed kept, in the staffing's order; a new
+    /// The policy re-keyed to <paramref name="choices"/>: each entry whose tuple is still listed kept, in the staffing's order; a new
     /// choice at weight 1 with no limits; a removed choice's entry dropped. The rule stays.
     /// </summary>
     public StaffPolicy Rekeyed(IReadOnlyList<ActorChoice> choices) =>
         this with { Choices = [.. choices.Select(choice => Of(StaffKey.Of(choice)) ?? new StaffChoice(StaffKey.Of(choice)))] };
 
     /// <summary>
-    /// The draft a preset fills (§2.4) for <paramref name="choices"/>: <see cref="StaffPresets.First"/> the order and nothing else; the two
+    /// The draft a preset fills for <paramref name="choices"/>: <see cref="StaffPresets.First"/> the order and nothing else; the two
     /// spreads the weight rule, every weight 1 or the draft's, the draft's limits kept; their limit move and bound are rules
     /// (<see cref="SupervisorRuleBook.PresetRules"/>), not the policy's.
     /// </summary>
@@ -194,7 +194,7 @@ public sealed record StaffPolicy(string Rule, IReadOnlyList<StaffChoice> Choices
     }
 
     /// <summary>
-    /// Whether <paramref name="policy"/> may be the policy of <paramref name="role"/> staffed by <paramref name="choices"/> (§2.5), for every
+    /// Whether <paramref name="policy"/> may be the policy of <paramref name="role"/> staffed by <paramref name="choices"/>, for every
     /// door alike: the refusal, code <see cref="Code"/>, or null where it may.
     /// </summary>
     public static RoleRefusal? Judge(RoleRecord role, IReadOnlyList<ActorChoice>? choices, StaffPolicy policy)

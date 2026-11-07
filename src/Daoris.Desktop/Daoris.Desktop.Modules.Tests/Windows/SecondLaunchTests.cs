@@ -1,7 +1,7 @@
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// ONEINSTANCE1 (D171 point 2): a second launch of the executable is handed to the instance that runs by the kit's
+/// A second launch of the executable is handed to the instance that runs by the kit's
 /// single-instance guard, and that instance opens a new main window rather than a second process starting a second loop on
 /// the same home. What is here is the hand-over's judgement — when a window opens, which name it takes, where it points —
 /// held apart from the window itself, which is WinForms and lives in the application.
@@ -87,7 +87,7 @@ public sealed class SecondLaunchTests
     }
 
     /// <summary>
-    /// MAINWINDOWS2: a launch while the first main window is put away takes that one back rather than opening another, and
+    /// A launch while the first main window is put away takes that one back rather than opening another, and
     /// does not wait on the service, whose page that window already holds. The next launch opens a new one again.
     /// </summary>
     [Fact]
@@ -150,8 +150,7 @@ public sealed class SecondLaunchTests
         Assert.Equal("main%3A2.json", SecondaryWindow.StateFile("main:2"));
 
     /// <summary>
-    /// ONEINSTANCE2: the words of a hand-over in the application's source were all ONEINSTANCE1 held, and the installed hand-over
-    /// opened nothing and said nothing. What is run now is the options themselves (<see cref="LaterLaunchTests"/>: the kit's own
+    /// What is run is the options themselves (<see cref="LaterLaunchTests"/>: the kit's own
     /// guard and channel, a composed container, the window stubbed) and the container's loggers (<see cref="MachineLoggingTests"/>).
     /// The source holds only that the application hands the kit those very options and composes those very loggers, before
     /// anything resolves one.
@@ -170,7 +169,7 @@ public sealed class SecondLaunchTests
     }
 
     /// <summary>
-    /// MAINWINDOWS2, held on the application's own source for the same reason: the first main window puts itself away on the
+    /// Held on the application's own source for the same reason: the first main window puts itself away on the
     /// person's close while another main window is open and closes for good otherwise; every other window's opening and closing
     /// is told; the update and the last main window close it for good; the tray and a launch take it back.
     /// </summary>

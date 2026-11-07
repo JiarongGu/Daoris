@@ -55,7 +55,7 @@ public static class TreesReviewWires
         Behind = source == ReviewSource.Tree && behind is not null ? new { behind.Line, behind.Commits, behind.Ahead } : null,
         // The branch the read tree's HEAD stands on, which the page's head names over the record's guess: the
         // agent may have switched it or deleted its `daoris/` branch and detached. Null where detached, and where the
-        // source is a landed branch, whose tree was not read; a shape added.
+        // source is a landed branch, whose tree is not read.
         TreeBranch = source == ReviewSource.Tree ? treeBranch : null,
         // What the driver would land of the tree: null where it offers none, the
         // work not beyond the line or landed, and on a landed branch's review; a shape added.
@@ -84,7 +84,7 @@ public static class TreesReviewWires
                     At = Moments.Write(landed.Entry.GoneAt),
                 }
                 : null,
-            // LANDRETIRE1 part 2, a shape added: a branch the person withdrew, with when, their reason and the recovery ref its commits stay
+            // A branch the person withdrew, with when, their reason and the recovery ref its commits stay
             // on; `removed` stays the clean-up's alone, and a trace from before the reason was kept says none.
             Withdrawn = landed.Entry is { GoneAs: LandedGone.Withdrawn, GoneAt: { } withdrawnAt }
                 ? new { At = Moments.Write(withdrawnAt), Why = landed.Entry.GoneWhy, landed.Entry.KeptOn }
@@ -95,7 +95,7 @@ public static class TreesReviewWires
 
     /// <summary>
     /// Why a record with no tree here has nothing to diff: what a record looks like when it travelled from the machine that did the work. The
-    /// route says instead which session's tree it is where the id given is a tree's name (TREENAME1, <see cref="TreeNamedRefusals"/>).
+    /// route says instead which session's tree it is where the id given is a tree's name (<see cref="TreeNamedRefusals"/>).
     /// </summary>
     public const string NoTreeToDiff = "this session's record names no working tree on this machine, so there is nothing here to diff. That is "
         + "what a record looks like when it travelled from the machine that did the work.";

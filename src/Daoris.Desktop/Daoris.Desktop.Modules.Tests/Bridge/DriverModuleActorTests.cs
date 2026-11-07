@@ -27,8 +27,8 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FOUNDATION1w-s (the design §19.15): on a home whose staffing the store keeps, the press is the staffing's one write, in the store alone;
-    /// a hand edit of the file is read nowhere (D232).
+    /// On a home whose staffing the store keeps, the press is the staffing's one write, in the store alone;
+    /// a hand edit of the file is read nowhere.
     /// </summary>
     [Fact]
     public async Task On_a_wired_home_the_press_writes_the_store_alone_and_a_hand_edit_is_read_nowhere()
@@ -83,7 +83,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
         }
     }
 
-    /// <summary>ONEWAY1a: off for Intake by an empty order, its default by `default` (what *Clear order* became), and a refused order writing nothing.</summary>
+    /// <summary>Off for Intake by an empty order, its default by `default` (what *Clear order* became), and a refused order writing nothing.</summary>
     [Fact]
     public async Task ONEWAY1a_off_for_intake_its_default_and_a_refused_order_writing_nothing_through_the_role_door()
     {
@@ -95,7 +95,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
             await AnswerAsync(module, "SET_ROLE", Staff("intake", "intake", []));
             Assert.Empty(ActorChoices.Effective("intake", DriverConfig.Load(DriverConfigPath)));
 
-            // ONEWAY1b: the default is the seed's written order, off for Intake, never as before.
+            // The default is the seed's written order, off for Intake, never as before.
             await AnswerAsync(module, "SET_ROLE", new { change = "default", id = "intake" });
             Assert.Empty(DriverConfig.Load(DriverConfigPath).Actors["intake"]);
 
@@ -124,7 +124,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
             row.GetProperty("staffing").GetProperty("id").GetString()));
     }
 
-    /// <summary>ONEWAY1b: the door's wire is Build's first agent's, read from its order rather than the old key; the pipe where it does not resolve.</summary>
+    /// <summary>The door's wire is Build's first agent's, read from its order rather than the old key; the pipe where it does not resolve.</summary>
     [Fact]
     public void ONEWAY1b_the_doors_wire_reads_builds_first_agent_and_refuses_one_this_build_does_not_know()
     {
@@ -141,7 +141,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 The row's proof (design §14 row c, round 3's Codex 8): Chat's agent is read through its actor, so a chat started after Build
+    /// 🔴 Chat's agent is read through its actor, so a chat started after Build
     /// changed agent still opens on the agent it ran before, never on Build's new one.
     /// </summary>
     [Fact]

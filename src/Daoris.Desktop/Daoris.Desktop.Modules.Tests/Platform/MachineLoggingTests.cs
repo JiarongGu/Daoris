@@ -7,10 +7,9 @@ using Shenora.Core.Shell;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// ONEINSTANCE2: the container the application composes hands the kit a logger that writes to the machine log. LOG1a registered
-/// <see cref="MachineLogProvider"/> as a provider, held alone by its own tests, but nothing in the container made loggers of it:
-/// the kit asks for an <c>ILogger&lt;T&gt;</c> and got none, so the single-instance guard's warnings (a channel that would not
-/// open, a running instance that could not be reached), the window registry's and the engine's all went nowhere.
+/// The container the application composes hands the kit a logger that writes to the machine log. The container makes loggers of
+/// <see cref="MachineLogProvider"/>, so the kit's <c>ILogger&lt;T&gt;</c> reaches it and the single-instance guard's warnings (a channel that would not
+/// open, a running instance that could not be reached), the window registry's and the engine's all reach the log.
 /// </summary>
 public sealed class MachineLoggingTests : IDisposable
 {

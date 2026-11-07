@@ -5,14 +5,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// WORKFLOW1h-c: a workflow proposal's modules half (D157, design §8.1-§8.4). The judge is given the named workflows, the bound
+/// A workflow proposal's modules half. The judge is given the named workflows, the bound
 /// runs and the registered repositories only when one is pending; the card's data reaches the page as the page's fields, never
 /// the steps or the choice Apply makes; and Apply saves the version under the home with the <c>ask-daoris:</c> door. The service
-/// is stood in over a loopback socket and nothing starts a process: the fast half (MOD8).
+/// is stood in over a loopback socket and nothing starts a process: the fast half.
 /// </summary>
 public sealed class HelpWorkflowDoorTests : DriverModuleBridge
 {
-    // A list of steps is refused at the save (WORKFLOWCLEAN1 1b), so the proposal carries the shipped graph that merges after the person's accept.
+    // A list of steps is refused at the save, so the proposal carries the shipped graph that merges after the person's accept.
     private static readonly string Merge = WorkflowDefaults.Of("merge-after-accept")!.GraphJson;
 
     [Theory]
@@ -61,12 +61,12 @@ public sealed class HelpWorkflowDoorTests : DriverModuleBridge
         Assert.False(card.TryGetProperty("use", out _));
         Assert.False(card.TryGetProperty("graph", out _));
 
-        // FABRIC-PIPELINE1i: whether it saves a version, the route it chooses for, its pipeline, and what it asks less of the person.
+        // Whether it saves a version, the route it chooses for, its pipeline, and what it asks less of the person.
         Assert.True(card.GetProperty("saves").GetBoolean());
         Assert.Equal("default", card.GetProperty("route").GetString());
         Assert.False(card.GetProperty("verifies").GetBoolean());
         Assert.Equal(0, card.GetProperty("lowers").GetArrayLength());
-        // INTEGRATE1r part r3: the repositories a chosen graph integrates in with no gates, for the page to word.
+        // The repositories a chosen graph integrates in with no gates, for the page to word.
         Assert.Equal(0, card.GetProperty("noGates").GetArrayLength());
     }
 

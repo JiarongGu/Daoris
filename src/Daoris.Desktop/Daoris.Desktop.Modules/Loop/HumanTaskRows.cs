@@ -4,7 +4,7 @@ using static Daoris.Desktop.AttentionJson;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The rows of <i>What needs you</i> a person's task makes (NODEKIT1 HUMAN): one for each run's <c>human</c> node waiting on the person, keyed by
+/// The rows of <i>What needs you</i> a person's task makes: one for each run's <c>human</c> node waiting on the person, keyed by
 /// its run and node (<c>task:&lt;run&gt;/&lt;node&gt;</c>) as the page's obligations are, in the run's workspace, carrying the presses it waits for
 /// and since when it has waited.
 /// Read from the runtime's last look, never stored on the node, so a press kept clears it.

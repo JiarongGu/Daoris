@@ -3,9 +3,9 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Which run a door's driven start is held on (AGENTLYNTAI1d, D248's note): today's transport, unless the driver carries Lyntai's agent layer,
+/// Which run a door's driven start is held on: the transport, unless the driver carries Lyntai's agent layer,
 /// whose provider folders bind their door's driven kind to the layer's run when the driver loads. Asked for a native door's driven start
-/// alone; a conversation and a protocol door stay on today's transport until their own moves.
+/// alone; a conversation and a protocol door stay on the transport.
 /// </summary>
 internal static class DrivenRuns
 {

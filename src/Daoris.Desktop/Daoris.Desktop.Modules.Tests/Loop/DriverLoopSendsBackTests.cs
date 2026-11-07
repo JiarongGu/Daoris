@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// CHATFLOW1e (the chat-flow design §6.1 (b)): the shell's loop hands its chat runner to every look as the seam a chat run's findings reach
+/// The shell's loop hands its chat runner to every look as the seam a chat run's findings reach
 /// their conversation through, <c>SendsBack</c>, as it hands <c>HandsOver</c>; the headless host hands none, and the findings wait. The runner
 /// it hands answers for what it holds and only that: a conversation nothing here holds is <see cref="SendBack.NotHere"/>, never reserved,
 /// and a record that is no conversation never goes on.

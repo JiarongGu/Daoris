@@ -4,7 +4,7 @@ using System.Net.Sockets;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Which of an agent's sign-ins runs (CODEXLOGIN1, D125's note): its own flow, which for Codex opens the system's browser and
+/// Which of an agent's sign-ins runs: its own flow, which for Codex opens the system's browser and
 /// waits for its answer on a local port, offered first; or its device code, a link and a one-time code that need no port.
 /// </summary>
 public enum SignInWay
@@ -17,7 +17,7 @@ public enum SignInWay
 }
 
 /// <summary>
-/// The words a sign-in's way travels as (CODEXLOGIN1): <c>HARNESS_ACTION</c>'s <c>way</c>, absent for the first. The CLI's
+/// The words a sign-in's way travels as: <c>HARNESS_ACTION</c>'s <c>way</c>, absent for the first. The CLI's
 /// <c>--device-code</c> is the second's twin.
 /// </summary>
 public static class SignInWays
@@ -62,10 +62,10 @@ public static class SignInWays
     }
 }
 
-/// <summary>Whether a local port can be taken now, by trying it (CODEXLOGIN1).</summary>
+/// <summary>Whether a local port can be taken now, by trying it.</summary>
 public enum PortHold
 {
-    /// <summary>It was taken and let go at once.</summary>
+    /// <summary>It is taken and let go at once.</summary>
     Free,
 
     /// <summary>Another program holds it (address in use).</summary>
@@ -79,18 +79,17 @@ public enum PortHold
 }
 
 /// <summary>
-/// Whether a sign-in that waits for the browser's answer on a local port can have one (CODEXLOGIN1, D125's note): each port the
+/// Whether a sign-in that waits for the browser's answer on a local port can have one: each port the
 /// tool tries (<see cref="AccountAgent.LoginPorts"/>), taken for a moment on the loopback address and let go, never read
 /// from Windows' table of reserved ranges, since a range is not the only holder and the table is not the bind.
 /// </summary>
 /// <remarks>
 /// <para><b>Measured with Codex 0.160.0</b>: <c>codex login</c> listens on 127.0.0.1:1455; where another program holds it, it
 /// asks that port's <c>/cancel</c>, tries for about two seconds, then takes 1457, and only where 1457 is held too does it end
-/// with <i>Error logging in: Port 127.0.0.1:1457 is already in use</i>, exit 1. Under a reserved range CODEXACCT2 measured
+/// with <i>Error logging in: Port 127.0.0.1:1457 is already in use</i>, exit 1. Under a reserved range it measured
 /// <i>os error 10013</i>, exit 1, when that range covered both. So the sign-in is refused here only where no port can be taken,
 /// once per press: nothing is tried again in a loop.</para>
-/// <para>The terminal's sign-in says it through <c>daoris agent login</c> (PUSH1f2e6), which tries the ports through <see cref="Hold"/>; the
-/// CLI's twin, <c>portsHeld</c>, left with it.</para>
+/// <para>The terminal's sign-in says it through <c>daoris agent login</c>, which tries the ports through <see cref="Hold"/>.</para>
 /// </remarks>
 public static class SignInPorts
 {
@@ -142,7 +141,7 @@ public static class SignInPorts
     }
 
     /// <summary>
-    /// Which ports are held and by what, in plain words: <c>daoris agent login</c> says it too (PUSH1f2e6). The way out after it is
+    /// Which ports are held and by what, in plain words: <c>daoris agent login</c> says it too. The way out after it is
     /// each door's own.
     /// </summary>
     public static string Held(string agent, IReadOnlyList<string> login, IReadOnlyList<(int Port, PortHold Hold)> held)

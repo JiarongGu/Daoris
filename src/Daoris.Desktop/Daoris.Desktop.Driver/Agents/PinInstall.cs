@@ -21,7 +21,7 @@ internal enum PinWay
 internal sealed record PinPlan(PinWay Way, string Where, string? Present, string? Channel, IReadOnlyList<string>? Command);
 
 /// <summary>
-/// The one decision of a pin's install (AGENTPROVIDER1 row f, s-ix f4): from the maker's channel where the program declares one, else the
+/// The one decision of a pin's install: from the maker's channel where the program declares one, else the
 /// package manager's, an install already in place being the proof it verified. The window's actions and the terminal's <c>agent pin</c> and
 /// <c>agent update</c> each ask it, then run what it names their own way: the terminal at its console and under the home's lease, the window
 /// redirected with its home held already, each in its own words.

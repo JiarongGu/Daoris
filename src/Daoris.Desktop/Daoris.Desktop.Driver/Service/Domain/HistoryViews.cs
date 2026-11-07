@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
-/// <summary>A unit as a press names it (HIST1b's door): its kind's word (<c>quest</c>, <c>ask</c> or <c>failed</c>) and its id.</summary>
+/// <summary>A unit as a press names it: its kind's word (<c>quest</c>, <c>ask</c> or <c>failed</c>) and its id.</summary>
 public sealed record HistoryUnitName(string Kind, string Id);
 
 /// <summary>
-/// Why the service keeps a unit, or a piece of one, as its history door says it (HIST1b): its word, which the driver acts on,
+/// Why the service keeps a unit, or a piece of one, as its history door says it: its word, which the driver acts on,
 /// the desk's sentence, which only a terminal prints, and what the word names.
 /// </summary>
 /// <param name="Word"><c>unknown</c>, <c>open</c>, <c>asked</c>, <c>live</c>, <c>needs-you</c>, <c>awaited</c>, <c>unpushed</c> or <c>not-ours</c>.</param>
@@ -22,25 +22,25 @@ public sealed record HistoryRefusalView(string Word, string Message)
     public string? Workspace { get; init; }
 
     /// <summary>
-    /// What waits on the person, beside <c>needs-you</c> only (HIST1l): one of <see cref="HistoryWaits"/>. Null from a host before
-    /// it, which names nothing waiting.
+    /// What waits on the person, beside <c>needs-you</c> only: one of <see cref="HistoryWaits"/>. Null from an older host,
+    /// which names nothing waiting.
     /// </summary>
     public string? Waits { get; init; }
 
     /// <summary>
-    /// How the work in progress stands, beside <c>open</c> only (HIST1m): one of <see cref="HistoryStands"/>. Null from a host
-    /// before it.
+    /// How the work in progress stands, beside <c>open</c> only: one of <see cref="HistoryStands"/>. Null from an older
+    /// host.
     /// </summary>
     public string? Stands { get; init; }
 
     /// <summary>
-    /// The open work that names the unit, beside <c>awaited</c> only (HIST1m): one of <see cref="HistoryAwaitedBy"/>. Null from a
-    /// host before it.
+    /// The open work that names the unit, beside <c>awaited</c> only: one of <see cref="HistoryAwaitedBy"/>. Null from an older
+    /// host.
     /// </summary>
     public string? By { get; init; }
 }
 
-/// <summary>One unit as the service's history door judged it (HIST1b's <c>HistoryDesk</c>, the history-clearing design §6.3).</summary>
+/// <summary>One unit as the service's history door judges it (<c>HistoryDesk</c>).</summary>
 /// <param name="Workspace">Its records' workspace; null for a unit this machine does not hold.</param>
 public sealed record HistoryUnitView(string Kind, string Id, string? Workspace)
 {
@@ -68,12 +68,12 @@ public sealed record HistoryUnitView(string Kind, string Id, string? Workspace)
     public HistoryUnitName Name => new(Kind, Id);
 }
 
-/// <summary>What the service's press did to one unit: the unit as judged where it was cleared, whether it went, and its sentence.</summary>
+/// <summary>What the service's press did to one unit: the unit as judged where it is cleared, whether it went, and its sentence.</summary>
 public sealed record HistoryClearedView(HistoryUnitView Unit, bool Cleared, string Message)
 {
-    /// <summary>The quests whose kept files the service could not remove (HIST1j's <c>failed</c>); none from a host before it.</summary>
+    /// <summary>The quests whose kept files the service could not remove (<c>failed</c>); none from an older host.</summary>
     public IReadOnlyList<string> FailedQuests { get; init; } = [];
 
-    /// <summary>The asks whose kept files the service could not remove; none from a host before it.</summary>
+    /// <summary>The asks whose kept files the service could not remove; none from an older host.</summary>
     public IReadOnlyList<string> FailedAsks { get; init; } = [];
 }

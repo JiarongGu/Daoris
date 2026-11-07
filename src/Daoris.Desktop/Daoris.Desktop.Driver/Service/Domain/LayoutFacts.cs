@@ -47,7 +47,7 @@ public enum InstructionState
     HeldAsText,
 }
 
-/// <summary>One instruction file on the line (D117 §6.2).</summary>
+/// <summary>One instruction file on the line.</summary>
 /// <param name="OwnLines">The lines with words on them outside Daoris's region: the repository's own.</param>
 /// <param name="Region">Whether Daoris's region is in it (the rules in <c>AGENTS.md</c>, the import in <c>CLAUDE.md</c>).</param>
 /// <param name="Imports">Whether it imports <c>AGENTS.md</c> (<c>@AGENTS.md</c> on a line of its own), in the region or out of it.</param>
@@ -61,7 +61,7 @@ public sealed record InstructionFile(
     public bool IsLinkLike => State is InstructionState.Link or InstructionState.HeldAsText;
 }
 
-/// <summary>The layouts the screen names (D117 §6.5).</summary>
+/// <summary>The layouts the screen names.</summary>
 public static class AgentLayout
 {
     /// <summary>Adopted on the agents layout: <c>.agents/</c>, a mirror for the agent that reads <c>.claude/</c>.</summary>
@@ -78,7 +78,7 @@ public static class AgentLayout
 }
 
 /// <summary>
-/// What a repository's LINE holds for agents (LAYOUT7, D117 §6.2 and §6.5): read as git objects at a named
+/// What a repository's LINE holds for agents: read as git objects at a named
 /// commit, never the checkout's working files, since the line is what the next session's tree grows from.
 /// </summary>
 public sealed record LayoutFacts
@@ -86,7 +86,7 @@ public sealed record LayoutFacts
     /// <summary>The branch the line is.</summary>
     public required string Line { get; init; }
 
-    /// <summary>The commit the line names, which every fact here was read at.</summary>
+    /// <summary>The commit the line names, which every fact here is read at.</summary>
     public required string Commit { get; init; }
 
     /// <summary>Whether <c>daoris.json</c> is on the line.</summary>
@@ -98,10 +98,10 @@ public sealed record LayoutFacts
     /// <summary>Whether its <c>domain</c> says anything (<c>connect</c>'s <c>isDeclared</c>).</summary>
     public bool Declares { get; init; }
 
-    /// <summary>The manifest's <c>documents.index</c>, as declared: the README of its index of where things are (D151 point 4).</summary>
+    /// <summary>The manifest's <c>documents.index</c>, as declared: the README of its index of where things are.</summary>
     public string? DeclaredIndex { get; init; }
 
-    /// <summary>The manifest's <c>documents.router</c>, as declared: an index it keeps already (ORIENT2c).</summary>
+    /// <summary>The manifest's <c>documents.router</c>, as declared: an index it keeps already.</summary>
     public string? DeclaredRouter { get; init; }
 
     /// <summary>The files on the line whose name says they are an index (<c>INDEX.md</c>, <c>code-map.json</c>), in order.</summary>
@@ -113,7 +113,7 @@ public sealed record LayoutFacts
     /// <summary>Whether <c>daoris.lock</c> is on the line: <c>sync</c> has run there.</summary>
     public bool Locked { get; init; }
 
-    /// <summary>The layout the lock was written under, when a lock is on the line and names one this build knows.</summary>
+    /// <summary>The layout the lock names, when a lock is on the line and names one this build knows.</summary>
     public string? LockHarness { get; init; }
 
     /// <summary>The layout the manifest names, when it is on the line: <c>claude-code</c> when it names none.</summary>
@@ -166,7 +166,7 @@ public sealed record LayoutFacts
 
     /// <summary>
     /// On the agents layout and finished, as far as the line shows: the lock and the manifest both on it, the region
-    /// in the root <c>AGENTS.md</c>, no instruction file or skills root a link, nothing left in the old knowledge tier,
+    /// in the root <c>AGENTS.md</c>, no instruction file or skills root a link, nothing left in <c>.claude/knowledge/</c>,
     /// and every declared room with its instructions. What else <c>check</c> holds is the tool's to say, in that
     /// repository's own gate.
     /// </summary>
@@ -177,7 +177,7 @@ public sealed record LayoutFacts
 public sealed record LineReading(LayoutFacts? Facts, string? Problem);
 
 /// <summary>
-/// Reads a repository's layout from its line (LAYOUT7, D117 §6.5): the listing of the line's commit, the few
+/// Reads a repository's layout from its line: the listing of the line's commit, the few
 /// texts that say the layout, and this checkout's <c>core.symlinks</c>.
 /// </summary>
 /// <remarks>
@@ -193,7 +193,7 @@ public sealed record LineReading(LayoutFacts? Facts, string? Problem);
 /// </remarks>
 public static class LayoutReader
 {
-    /// <summary>The layout every lock written before the agents layout was written under.</summary>
+    /// <summary>The layout a lock or manifest names when it names none: the <c>.claude</c> one.</summary>
     private const string Older = "claude-code";
 
     /// <summary>The layouts the CLI writes: a copy of its descriptors' names, kept in step by hand.</summary>
@@ -217,7 +217,7 @@ public static class LayoutReader
     ];
 
     /// <summary>The facts, from the listing of <paramref name="commit"/> and the texts <see cref="Wanted"/> named.</summary>
-    /// <param name="texts">Each wanted path's text, as far as it was read; a path missing here is read as empty.</param>
+    /// <param name="texts">Each wanted path's text, as far as it is read; a path missing here is read as empty.</param>
     /// <param name="symlinks">This checkout's <c>core.symlinks</c>, or null where it is unset.</param>
     public static LayoutFacts Read(
         string line, string commit, IReadOnlyList<LineEntry> tree, IReadOnlyDictionary<string, string> texts, bool? symlinks)
@@ -259,7 +259,7 @@ public static class LayoutReader
             .Where(room => !(at.TryGetValue($"{room}/{AgentsFile}", out var file) && file.IsFile))
             .ToList();
 
-        // The lock, then the manifest, then the older layout (D117 §5.1): the lock says where the files ARE.
+        // The lock, then the manifest, then the `.claude` layout: the lock says where the files ARE.
         var harness = lockHarness ?? manifestHarness;
         var ownThings = agents.State != InstructionState.Absent || claude.State != InstructionState.Absent
             || skillsRoot.State != InstructionState.Absent || rules.Count > 0 || claudeSkills.Count > 0
@@ -464,7 +464,7 @@ public static class LayoutReader
             ? value.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!)
             : [];
 
-    /// <summary>A layout this build knows, else <paramref name="fallback"/>: the service reads an unknown manifest harness as the older one.</summary>
+    /// <summary>A layout this build knows, else <paramref name="fallback"/>: the service reads an unknown manifest harness as <c>claude-code</c>.</summary>
     private static string KnownOr(string? harness, string fallback) =>
         harness is not null && Known.Contains(harness, StringComparer.Ordinal) ? harness : fallback;
 

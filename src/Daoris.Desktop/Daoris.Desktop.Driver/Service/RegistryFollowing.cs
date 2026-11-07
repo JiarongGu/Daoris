@@ -6,7 +6,7 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The two machine-local records registration following keeps under the home (WSSETUP5, D124 §3): which repositories'
+/// The two machine-local records registration following keeps under the home: which repositories'
 /// lines Daoris moved, and what following each last came to.
 /// </summary>
 /// <remarks>
@@ -16,9 +16,9 @@ namespace Daoris.Driver;
 /// how one made while no loop runs is followed when one starts.</para>
 ///
 /// <para><b><c>registry-followed.json</c></b> is the follower's: each repository's last outcome, the sentence its row says
-/// and when. A line is due when Daoris moved it after it was last followed.</para>
+/// and when. A line is due when Daoris moved it after the last follow.</para>
 ///
-/// <para><b>Machine-local, under the home (D63), and neither is a reason to fail.</b> A record that does not read is
+/// <para><b>Machine-local, under the home, and neither is a reason to fail.</b> A record that does not read is
 /// none, and a write that fails is dropped: the move has happened, and the next start follows every line anyway. Each
 /// file has one kind of writer, so two processes can only race on the same file kind; the loser's entry is followed
 /// again at the next start.</para>
@@ -46,7 +46,7 @@ public static class RegistryFollowing
                         .Select(pair => KeyValuePair.Create(pair.Key, (JsonNode?)Stamp(pair.Value)))),
                 };
                 JsonFile.Write(DaorisHome.Entry(home, HomeEntry.LinesMoved), file);
-                // The loop's own write, which its watch of the file hears and wakes no look for (FABRIC-EVENT4).
+                // The loop's own write, which its watch of the file hears and wakes no look for.
                 HomeWrites.Mine(DaorisHome.Entry(home, HomeEntry.LinesMoved));
             }
         }
@@ -56,7 +56,7 @@ public static class RegistryFollowing
         }
     }
 
-    /// <summary>The repositories whose line Daoris moved after each was last followed, by name.</summary>
+    /// <summary>The repositories whose line Daoris moved after their last follow, by name.</summary>
     public static IReadOnlyList<string> Due(string home)
     {
         var followed = Read(home);

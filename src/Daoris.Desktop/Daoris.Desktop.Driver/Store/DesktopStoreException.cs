@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>The desktop store could not be read or written, in words a person can act on (FOUNDATION1 z-i, the design §13.3, §13.4).</summary>
+/// <summary>The desktop store could not be read or written, in words a person can act on.</summary>
 public class DesktopStoreException(string message, Exception? inner = null) : DriverException(message)
 {
     /// <summary>The error beneath, where there is one: what the file's own library said.</summary>
@@ -8,8 +8,8 @@ public class DesktopStoreException(string message, Exception? inner = null) : Dr
 }
 
 /// <summary>
-/// The store was written by a newer Daoris: its oldest-writer stamp is past this build's, so this build reads the tables it knows and
-/// writes nothing (§13.3), as the quest store refuses a take's bind (QUESTSTOREVER1).
+/// The store has been written by a newer Daoris: its oldest-writer stamp is past this build's, so this build reads the tables it knows and
+/// writes nothing, as the quest store refuses a take's bind.
 /// </summary>
 public sealed class DesktopStoreNewerException(int stamped, int own)
     : DesktopStoreException(
@@ -24,8 +24,8 @@ public sealed class DesktopStoreNewerException(int stamped, int own)
 }
 
 /// <summary>
-/// The store's write lock stayed held past the wait (§13.4's five seconds): another Daoris process on the home is writing, and this
-/// one's write was refused with nothing written.
+/// The store's write lock stayed held past the wait of five seconds: another Daoris process on the home is writing, and this
+/// one's write is refused with nothing written.
 /// </summary>
 public sealed class DesktopStoreBusyException(Exception inner)
     : DesktopStoreException(

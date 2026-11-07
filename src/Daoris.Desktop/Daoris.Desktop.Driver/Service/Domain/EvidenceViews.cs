@@ -5,15 +5,15 @@ using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What one evidence item was found to be in the commit read (D144 §3, §5): its requirement, what it names, and a code.</summary>
+/// <summary>What one evidence item is found to be in the commit read: its requirement, what it names, and a code.</summary>
 /// <param name="Requirement">The requirement it belongs to: its number, from 1, as the quest lists them.</param>
 /// <param name="Result">One of <see cref="EvidenceCodes.PathResults"/> or <see cref="EvidenceCodes.GateResults"/>.</param>
 public sealed record EvidenceRead(int Requirement, string? Path, string? Gate, string Result)
 {
-    /// <summary>The object id found at the path, where one was.</summary>
+    /// <summary>The object id found at the path, where there is one.</summary>
     public string? Object { get; init; }
 
-    /// <summary>Whether this work changed it, between the tree's base and the commit read; null where that was not read.</summary>
+    /// <summary>Whether this work changed it, between the tree's base and the commit read; null where that is not read.</summary>
     public bool? Changed { get; init; }
 
     /// <summary>For <c>case</c>: the path as the commit spells it, differing only in case. Still missing.</summary>
@@ -24,29 +24,29 @@ public sealed record EvidenceRead(int Requirement, string? Path, string? Gate, s
 }
 
 /// <summary>
-/// What Daoris read of a done's evidence (EVID1a, EVID1b; D144 §3, §5): the commit read and how it was chosen, the session
-/// whose end was read, and each item's code. The body the evidence door takes, and what a quest answers it last kept.
+/// What Daoris read of a done's evidence: the commit read and how it is chosen, the session
+/// whose end is read, and each item's code. The body the evidence door takes, and what a quest answers it last kept.
 /// </summary>
 /// <param name="Commit">The commit read, by its full id (40 or 64 hex characters).</param>
-/// <param name="How">How it was chosen: one of <see cref="EvidenceCodes.How"/>.</param>
+/// <param name="How">How it is chosen: one of <see cref="EvidenceCodes.How"/>.</param>
 public sealed record EvidenceVerdict(string Commit, string How, IReadOnlyList<EvidenceRead> Items)
 {
-    /// <summary>The session whose end was read: at a session's end or by the sweep; null for the terminal's check.</summary>
+    /// <summary>The session whose end is read: at a session's end or by the sweep; null for the terminal's check.</summary>
     public string? Session { get; init; }
 
-    /// <summary>When it was read, as the quest answers it; null on a verdict not yet kept.</summary>
+    /// <summary>When it is read, as the quest answers it; null on a verdict not yet kept.</summary>
     public DateTimeOffset? At { get; init; }
 
     /// <summary>The machine that read it, as the quest answers it; null on a verdict not yet kept.</summary>
     public string? Machine { get; init; }
 
     /// <summary>
-    /// The submission it was read for (FABRIC-CLOSE1e): a submitted quest's verdict names it, so the service applies it to that submission
-    /// alone; a done's names none, and neither does a verdict from before.
+    /// The submission it is read for: a submitted quest's verdict names it, so the service applies it to that submission
+    /// alone; a done's names none, and neither does an older verdict.
     /// </summary>
     public QuestSubmissionRef? Submission { get; init; }
 
-    /// <summary>Whether every item was found: the one verdict that lets what the done held go on.</summary>
+    /// <summary>Whether every item is found: the one verdict that lets what the done holds go on.</summary>
     public bool Found => Items.Count > 0 && Items.All(item => item.Result == EvidenceCodes.Found);
 
     /// <summary>How many items read <paramref name="result"/>.</summary>
@@ -59,8 +59,8 @@ public sealed record EvidenceVerdict(string Commit, string How, IReadOnlyList<Ev
     public override int GetHashCode() => HashCode.Combine(Commit, How, Session, Items.Count);
 
     /// <summary>
-    /// The body <c>POST /api/quests/{id}/evidence</c> takes (EVID1a): the commit, how, the session where there is one, and
-    /// each item with its code, and its object, whether the work changed it and its spelling where each was read.
+    /// The body <c>POST /api/quests/{id}/evidence</c> takes: the commit, how, the session where there is one, and
+    /// each item with its code, and its object, whether the work changed it and its spelling where each is read.
     /// </summary>
     public string Json()
     {
@@ -87,7 +87,7 @@ public sealed record EvidenceVerdict(string Commit, string How, IReadOnlyList<Ev
 
             writer.WriteEndArray();
 
-            // FABRIC-CLOSE1e: the submission it was read for, written only when set, so a done's verdict is the body it always was.
+            // The submission it is read for, written only when set, so a done's verdict is the body it always is.
             if (Submission is { } submission)
             {
                 writer.WriteStartObject("submission");
@@ -150,7 +150,7 @@ public sealed record EvidenceVerdict(string Commit, string How, IReadOnlyList<Ev
         };
     }
 
-    /// <summary>The submission a verdict names (FABRIC-CLOSE1e), or null: a done's, one from before, or one named only in half.</summary>
+    /// <summary>The submission a verdict names, or null: a done's, an older verdict's, or one named only in half.</summary>
     private static QuestSubmissionRef? SubmissionOf(JsonElement verdict) =>
         verdict.TryGetProperty("submission", out var named) && named.ValueKind == JsonValueKind.Object
         && Text(named, "machine") is { Length: > 0 } machine
@@ -160,7 +160,7 @@ public sealed record EvidenceVerdict(string Commit, string How, IReadOnlyList<Ev
 }
 
 /// <summary>
-/// The codes evidence is written in (LANG1a; D144 §5, §6), the service's own (<c>QuestEvidenceCodes</c>): codes, never
+/// The codes evidence is written in, the service's own (<c>QuestEvidenceCodes</c>): codes, never
 /// sentences, so every reader words them itself.
 /// </summary>
 public static class EvidenceCodes
@@ -170,7 +170,7 @@ public static class EvidenceCodes
     public const string Uncommitted = "uncommitted";
     public const string Case = "case";
 
-    /// <summary>A gate read where no landing queue runs it (D144 §4): EVID1d's, answered so until then.</summary>
+    /// <summary>A gate read where no landing queue runs it.</summary>
     public const string NoQueue = "no-queue";
 
     /// <summary>What a path's read may say.</summary>
@@ -183,16 +183,16 @@ public static class EvidenceCodes
     public const string Sweep = "sweep";
     public const string Terminal = "terminal";
 
-    /// <summary>How the commit read was chosen (D144 §3): a session's end, the orphan sweep, or the person at the terminal.</summary>
+    /// <summary>How the commit read is chosen: a session's end, the orphan sweep, or the person at the terminal.</summary>
     public static readonly IReadOnlyList<string> How = [SessionEnd, Sweep, Terminal];
 
-    /// <summary>A hold's codes, as a quest answers <c>hold</c> (D144 §6).</summary>
+    /// <summary>A hold's codes, as a quest answers <c>hold</c>.</summary>
     public const string Departed = "departed";
     public const string Unread = "evidence-unread";
     public const string MissingHold = "evidence-missing";
 
     /// <summary>
-    /// A set-up step's done, waiting for the person's verdict on its review (REVIEWENV1b, D154 point 9): after a departure and
+    /// A set-up step's done, waiting for the person's verdict on its review: after a departure and
     /// evidence, and lifted by their <c>reviewed</c> or skip alone, never by a yes.
     /// </summary>
     public const string Unreviewed = "unreviewed";
@@ -202,7 +202,7 @@ public static class EvidenceCodes
 }
 
 /// <summary>
-/// What the evidence door said of a verdict (EVID1a's <c>POST /api/quests/{id}/evidence</c>), or why nothing was posted: an
+/// What the evidence door said of a verdict (<c>POST /api/quests/{id}/evidence</c>), or why nothing is posted: an
 /// outcome's code and the service's words, or this side's where it said none.
 /// </summary>
 /// <param name="Outcome">One of the codes below.</param>
@@ -224,6 +224,6 @@ public sealed record EvidencePosted(string Outcome, string Message)
     /// <summary>The host did not answer.</summary>
     public const string Unanswered = "unanswered";
 
-    /// <summary>Nothing was read, so nothing was posted (<see cref="EvidenceReading.Unread"/> says why).</summary>
+    /// <summary>Nothing is read, so nothing is posted (<see cref="EvidenceReading.Unread"/> says why).</summary>
     public const string Unread = "unread";
 }

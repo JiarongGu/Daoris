@@ -1,23 +1,23 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's <c>delete</c> proposal (HELP6): a quest or an ask made by mistake — its door <c>quest</c> or
-/// <c>ask</c>, its target the record's id — judged by the service's own reading of whether the record may go
-/// (D95), the one the drawer's and the record's Delete are shown by. The card says what goes. Since SESSUX1h2b a
-/// <c>session</c> door too (D126 §5.4): a conversation that served no quest, judged by both halves as Sessions' *Delete…* is.
+/// Ask Daoris's <c>delete</c> proposal: a quest or an ask made by mistake — its door <c>quest</c> or
+/// <c>ask</c>, its target the record's id — judged by the service's own reading of whether the record may go,
+/// the one the drawer's and the record's Delete are shown by. The card says what goes. A
+/// <c>session</c> door too: a conversation that served no quest, judged by both halves as Sessions' *Delete…* is.
 /// </summary>
 /// <remarks>
-/// Not D95's rejected <i>delete over MCP</i>: the tool only proposes, and the delete is the person's press,
+/// Not <i>delete over MCP</i>: the tool only proposes, and the delete is the person's press,
 /// applied through the local host's <c>DELETE /api/quests/{id}</c> and <c>DELETE /api/asks/{id}</c>, and a session's
 /// through Sessions' own delete.
 /// </remarks>
 public sealed class HelpDeleteProposals : IHelpProposalKind
 {
     /// <summary>
-    /// The records a delete is judged against (HELP6): every quest and ask, closed ones included, each
+    /// The records a delete is judged against: every quest and ask, closed ones included, each
     /// with the service's own reading of whether it may go — the answer the drawer's Delete is shown by.
     /// </summary>
-    /// <remarks>PART4: here, with the kind that reads it, rather than in a second part of <see cref="HelpProposals"/>; the class is public for the Modules' bridge.</remarks>
+    /// <remarks>Here, with the kind that reads it, rather than in a second part of <see cref="HelpProposals"/>; the class is public for the Modules' bridge.</remarks>
     public static async Task<(IReadOnlyList<HelpQuestFacts> Quests, IReadOnlyList<HelpAskFacts> Asks)> RecordsAsync(
         ServiceClient service, CancellationToken ct)
     {
@@ -32,10 +32,10 @@ public sealed class HelpDeleteProposals : IHelpProposalKind
 
     public string Tool => "delete_propose";
 
-    // SESSUX1h2b: a session's delete, which D126 §7.3 gave this kind rather than the `session` kind.
+    // A session's delete belongs to this kind, not the `session` kind.
     public IReadOnlyList<string> Doors { get; } = ["quest", "ask", "session"];
 
-    /// <summary>ASKSCOPE1c2: the quest, the ask or the session it names by id, filed under the workspace its record says.</summary>
+    /// <summary>The quest, the ask or the session it names by id, filed under the workspace its record says.</summary>
     HelpNames IHelpProposalKind.Named(HelpProposal proposal, HelpMachineFacts facts)
     {
         var id = proposal.Target?.Trim().TrimStart('#') ?? "";
@@ -118,16 +118,16 @@ public sealed class HelpDeleteProposals : IHelpProposalKind
         {
             "quest" => await applying.Doors.DeleteQuestAsync(target, ct).ConfigureAwait(false),
             "ask" => await applying.Doors.DeleteAskAsync(target, ct).ConfigureAwait(false),
-            // SESSUX1h2b: the record's own spelling, as the plan resolved it.
+            // The record's own spelling, as the plan resolved it.
             _ => await applying.Doors.DeleteSessionAsync(applying.Plan.Sessions![0], ct).ConfigureAwait(false),
         };
         return applying.Settled(ok, $"{(ok ? "Applied" : "Not applied")}: `#{applying.Id}` (`{applying.Plan.Terminal}`) — {message}", message);
     }
 
     /// <summary>
-    /// SESSUX1h2b (D126 §5.4): a session's delete, judged in the order <see cref="SessionDeletion.DeleteAsync"/> judges it and
+    /// A session's delete, judged in the order <see cref="SessionDeletion.DeleteAsync"/> judges it and
     /// in its words — no such session here, a teammate's, then the record's half as the ledger answers it, then the machine's
-    /// half — with Ask Daoris's own conversation refused before either, since its History deletes it (ASKHIST1).
+    /// half — with Ask Daoris's own conversation refused before either, since its History deletes it.
     /// </summary>
     private static HelpPlan Session(string id, HelpMachineFacts facts)
     {
@@ -153,7 +153,7 @@ public sealed class HelpDeleteProposals : IHelpProposalKind
 
         if (record.Live) return Refused($"Session `{id}` is still running; stop it first.");
 
-        // The ledger's own sentence where it was asked for this one; else what its record's answer says.
+        // The ledger's own sentence where it is asked for this one; else what its record's answer says.
         if (facts.SessionDeletes.GetValueOrDefault(id) is { Taken: false } judged) return Refused(judged.Message);
         if (!facts.SessionDeletes.ContainsKey(id) && !record.Deletable)
         {
@@ -178,7 +178,7 @@ public sealed class HelpDeleteProposals : IHelpProposalKind
         };
     }
 
-    /// <summary>Why a quest's record stays, with what to do instead — said as the service's refusal says it (D95).</summary>
+    /// <summary>Why a quest's record stays, with what to do instead — said as the service's refusal says it.</summary>
     private static string Kept(HelpQuestFacts quest)
     {
         const string Decline = "Decline it instead, with the reason, and the asker hears why.";
@@ -195,15 +195,15 @@ public sealed class HelpDeleteProposals : IHelpProposalKind
     private static string Spoken(HelpQuestFacts quest) => quest.Status.ToLowerInvariant();
 }
 
-/// <summary>A quest as the service answered it, with its own reading of whether it may be deleted (D95).</summary>
+/// <summary>A quest as the service answered it, with its own reading of whether it may be deleted.</summary>
 /// <param name="Status">`Open`, `Taken`, `Done` or `Declined`, as the service spells it.</param>
 /// <param name="Workspace">
-/// The circle it is held in (D48), as the service answered it, the default where a host answers none: what a conversation bound to
-/// one workspace judges a proposal naming it by (ASKSCOPE1c2).
+/// The circle it is held in, as the service answered it, the default where a host answers none: what a conversation bound to
+/// one workspace judges a proposal naming it by.
 /// </param>
 public sealed record HelpQuestFacts(string Id, string Title, string To, string Status, bool Deletable, string Workspace = RemoteTarget.DefaultWorkspace);
 
-/// <summary>An ask as the service answered it, with the quests it became and whether it may be deleted (D95).</summary>
+/// <summary>An ask as the service answered it, with the quests it became and whether it may be deleted.</summary>
 public sealed record HelpAskFacts(string Id, string Sentence, string Workspace, string State, IReadOnlyList<string> Quests, bool Deletable);
 
 public interface IHelpDeleteDoors
@@ -215,7 +215,7 @@ public interface IHelpDeleteDoors
     Task<(bool Ok, string Message)> DeleteAskAsync(string id, CancellationToken ct);
 
     /// <summary>
-    /// Sessions' own *Delete…* (SESSUX1f, D126 §5.4): <see cref="SessionDeletion.DeleteAsync"/>, which judges both halves again
+    /// Sessions' own *Delete…*: <see cref="SessionDeletion.DeleteAsync"/>, which judges both halves again
     /// and removes what this machine kept after the ledger's yes. Its answer comes back as its sentence, a refusal included.
     /// </summary>
     Task<(bool Ok, string Message)> DeleteSessionAsync(string id, CancellationToken ct);

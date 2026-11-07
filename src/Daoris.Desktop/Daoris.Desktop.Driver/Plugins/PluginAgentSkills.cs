@@ -5,7 +5,7 @@ internal static class PluginAgentSkills
 {
     /// <summary>
     /// Each contributing plugin with a sound skill for <paramref name="to"/>, in catalogue order: a skill whose file is missing, or that
-    /// allows itself tools (D170 point 3, <see cref="SkillFiles.Judge"/>), is handed to neither destination.
+    /// allows itself tools (<see cref="SkillFiles.Judge"/>), is handed to neither destination.
     /// </summary>
     public static IReadOnlyList<SkillSource> Sources(PluginCatalog catalog, string to) =>
     [

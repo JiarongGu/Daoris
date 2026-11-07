@@ -7,8 +7,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The person's own shells, for the page's terminal view (CONSOLE4a, D96,
-/// <c>docs/2026-09-30-terminal-design.md</c> §3): each a real shell under a pseudo-console, typed at and read
+/// The person's own shells, for the page's terminal view: each a real shell under a pseudo-console, typed at and read
 /// over this bridge.
 /// </summary>
 /// <remarks>
@@ -23,16 +22,16 @@ namespace Daoris.Desktop;
 /// did open, so the tab never claims a place it is not.</para>
 ///
 /// <para><b>Its environment is this process's plus the home</b> (<c>DAORIS_HOME</c>), so the <c>daoris</c> CLI
-/// typed in it answers for this machine (D63).</para>
+/// typed in it answers for this machine.</para>
 ///
-/// <para><b>Desktop-only</b> (D47 §4): the keystrokes and the output ride the bridge and never HTTP. And
-/// 🔴 <b>nothing here writes to the machine log</b> (D94): what is typed and printed is the person's own,
+/// <para><b>Desktop-only</b>: the keystrokes and the output ride the bridge and never HTTP. And
+/// 🔴 <b>nothing here writes to the machine log</b>: what is typed and printed is the person's own,
 /// and a refusal is logged by its code alone, by the dispatcher's middleware, as every module's is.</para>
 ///
 /// <para><b>Every terminal ends when the application does</b>: the container that made this disposes it,
 /// and each shell's job object ends with this process besides.</para>
 ///
-/// <para><b>A shell starts through the start gate</b> (<see cref="ProcessStarts"/>, TERMSTART1), never on the window's
+/// <para><b>A shell starts through the start gate</b> (<see cref="ProcessStarts"/>), never on the window's
 /// thread; one whose terminal was ended while it waited there is ended as it starts.</para>
 /// </remarks>
 [WindowModule]
@@ -75,7 +74,7 @@ public sealed class TerminalModule : ModuleBase, IDisposable
 
         public string Id { get; } = id;
 
-        /// <summary>That this is a role holder's tab (STEWARDROLE1a-i), whose every end the judge is told of once.</summary>
+        /// <summary>That this is a role holder's tab, whose every end the judge is told of once.</summary>
         public bool Holder { get; } = holder;
 
         /// <summary>True the first time it is asked: the holder's end is told once, whichever path ends it first.</summary>
@@ -87,8 +86,8 @@ public sealed class TerminalModule : ModuleBase, IDisposable
         public void Say(string data) => Sink?.Invoke(Id, data);
 
         /// <summary>
-        /// The shell, once started: ended at once where the terminal was ended while its start waited at the gate
-        /// (TERMSTART1), so a shell never runs on with no tab and no module to close it. Each side writes with a full fence
+        /// The shell, once started: ended at once where the terminal is ended while its start waited at the gate,
+        /// so a shell never runs on with no tab and no module to close it. Each side writes with a full fence
         /// before it reads the other's, so one of them always sees the other.
         /// </summary>
         public void Hold(ITerminal terminal)
@@ -156,7 +155,7 @@ public sealed class TerminalModule : ModuleBase, IDisposable
             {
                 var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
                 // Out of the table first: the closed shell's own end is then nobody's news. A holder's end is the judge's news, told
-                // before the tab goes, since its own end then emits nothing (STEWARDROLE1a-i, D209 §2.2).
+                // before the tab goes, since its own end then emits nothing.
                 var closed = _open.TryRemove(id, out var open);
                 if (open is not null) TellHolderEnded(open);
                 open?.Dispose();
@@ -211,7 +210,7 @@ public sealed class TerminalModule : ModuleBase, IDisposable
         var launch = new TerminalLaunch(shell, directory, environment, columns > 0 ? columns : 80, rows > 0 ? rows : 24);
         try
         {
-            // 🔴 TERMSTART1: through the start gate, on the thread pool. The pseudo-console's CreateProcessW ran in this route's
+            // Through the start gate, on the thread pool. The pseudo-console's CreateProcessW ran in this route's
             // synchronous part, on the window's thread, where an antivirus hook on process creation held the window.
             ITerminal? started = null;
             await ProcessStarts.Shared.RunAsync(() => started = _terminals.Start(launch, open.Say, code => Ended(open, code)), ct)
@@ -239,8 +238,8 @@ public sealed class TerminalModule : ModuleBase, IDisposable
     }
 
     /// <summary>
-    /// Told the id of a role holder's tab once it ends, by whichever path ends it first (STEWARDROLE1a-i, D209 §2.2's
-    /// <c>HolderEnded</c>): the page's <c>CLOSE</c>, the harness's own exit, this module's disposal at Daoris's close, and an exit
+    /// Told the id of a role holder's tab once it ends, by whichever path ends it first (<c>HolderEnded</c>):
+    /// the page's <c>CLOSE</c>, the harness's own exit, this module's disposal at Daoris's close, and an exit
     /// while its appointment is still opening it. Handed by the application as it composes the window; the page's
     /// <c>TERMINAL_EXITED</c> stays the page's.
     /// </summary>
@@ -256,7 +255,7 @@ public sealed class TerminalModule : ModuleBase, IDisposable
     public ProviderReach HolderReaching { get; set; } = new(ProviderRegistry.Built());
 
     /// <summary>
-    /// A role holder's tab (SUPERVISOR1a-ii, D208 §2.2; STEWARDROLE1a-i, D209 §2.2 and §6.1): a tab of this panel, never a console window
+    /// A role holder's tab: a tab of this panel, never a console window
     /// of the system's, <b>whose process is Daoris's own pinned harness</b>, by its absolute path, its hash checked immediately before
     /// the start, with <see cref="HolderTerminal.SessionArguments"/> as its argument vector and the environment Daoris composes, whole;
     /// in the holder's own new folder, the configuration directory's owned files written again first. Its first lines are written to
@@ -322,7 +321,7 @@ public sealed class TerminalModule : ModuleBase, IDisposable
     }
 
     /// <summary>
-    /// A line written to a holder's tab, and its title said again where one is named (STEWARDROLE1a-i, D209 §2.2): a role added to it,
+    /// A line written to a holder's tab, and its title said again where one is named: a role added to it,
     /// or its last role turned off. The owner's to read; the session reads its verbs' answers. False where the tab is gone.
     /// </summary>
     public bool TellHolder(string tab, string line, string? title = null)

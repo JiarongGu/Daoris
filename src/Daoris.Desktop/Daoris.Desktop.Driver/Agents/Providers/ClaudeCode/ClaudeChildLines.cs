@@ -3,12 +3,12 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One record's lineage lines in Claude Code's words (row l): its root is the hook's session, and a connector call is joined to its agent
+/// One record's lineage lines in Claude Code's words: its root is the hook's session, and a connector call is joined to its agent
 /// by the hook's line beside it naming the same <c>toolUse</c>; an agent the hook could not read leaves its calls unknown.
 /// </summary>
 internal sealed class ClaudeChildLines : IChildLines
 {
-    /// <summary>An agent id the hook was sent and could not read; no id's shape, so no real id equals it.</summary>
+    /// <summary>An agent id the hook sent and Daoris could not read; no id's shape, so no real id equals it.</summary>
     private const string UnreadableAgent = "\0unreadable";
 
     private readonly Dictionary<string, string?> _agentOf = new(StringComparer.Ordinal);

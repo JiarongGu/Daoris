@@ -10,7 +10,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The steward's desk (STEWARDROLE1c, D209 §6.2; the design §10 row 1c's <c>StewardDeskTests</c>): any caller files a request; nothing is
+/// The steward's desk: any caller files a request; nothing is
 /// granted; a request never admits an act nor reaches a handler; the per-caller bound, filed from many verb processes of one agent job and
 /// from many children of one long-lived ancestor, binds at ten, and the whole bound at a hundred; and a request is closed by the act that
 /// names it, or by the holder's decline with its reason.
@@ -140,7 +140,7 @@ public sealed class StewardDeskTests : IDisposable
         if (OperatingSystem.IsWindows()) Assert.True(keyed.SawClient, "the desk's caller look is handed the pipe's client");
     }
 
-    // ——— The bounds (§6.2, finding 11): per caller, keyed by its agent job or its long-lived ancestor, and in all.
+    // ——— The bounds: per caller, keyed by its agent job or its long-lived ancestor, and in all.
 
     /// <summary>
     /// Many verb processes of one agent job, each a new process with its own parents, bind at ten: the job is the caller. A caller
@@ -298,7 +298,7 @@ public sealed class StewardDeskTests : IDisposable
         Assert.Equal(0, probe.Ran);
     }
 
-    // ——— COMMS1l (the comms design §10 row l, §13 point 12): the desk's history kept across a restart, no grant revived.
+    // ——— The desk's history kept across a restart, no grant revived.
 
     /// <summary>
     /// A restart reads every request still open <c>interrupted</c>, at the restart's moment, and those closed as they closed; an

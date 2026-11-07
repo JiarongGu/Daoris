@@ -20,7 +20,7 @@ public sealed record RoleUseRow(string Role, int Starts, IReadOnlyList<RoleUseCh
 public sealed record RoleUseRead(int Days, IReadOnlyList<RoleUseRow> Roles);
 
 /// <summary>
-/// Each role's use over the last seven days (MODELROLE1f, D205), summed from the machine log's <c>actor.chose</c> lines, which a counted
+/// Each role's use over the last seven days, summed from the machine log's <c>actor.chose</c> lines, which a counted
 /// start writes with the choice it took and the passes before it as <c>choice:agent:code</c>. Names and counts only. A role with no start in the
 /// week has no row: absent is never zero.
 /// </summary>

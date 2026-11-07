@@ -8,8 +8,8 @@ using static Daoris.Driver.WiringRemotes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The one reader This Daoris and <c>daoris wiring</c> share (WIRING1b, the this-Daoris design §6): every wire of this
-/// Daoris and where it came from, in the route's shape, every field added and never renamed.
+/// The one reader This Daoris and <c>daoris wiring</c> share: every wire of this
+/// Daoris and where it comes from, in the route's shape, every field added and never renamed.
 /// </summary>
 /// <remarks>
 /// <para><b>A fact not read is its field's <c>null</c> with a sibling <c>…Why</c> code</b>, never an absent field; a code the
@@ -19,7 +19,7 @@ namespace Daoris.Driver;
 /// key's prefix at most, an address loses what may carry a credential, a notice is cut, and a last sweep takes every secret
 /// the reader saw out of every string. No file's contents are answered, only whether it reads.</para>
 ///
-/// <para><b>The layout as it runs</b> (the second opinion's point 4): each entry of D172's table where it is found, its old
+/// <para><b>The layout as it runs</b>: each entry of the layout table where it is found, its old
 /// place said with why it stays; the planned folders are named with whether they are there, never as installed fact.</para>
 ///
 /// <para><b>Nothing slow on the opening path</b>: no git, no program started, no download, and no folder walked. Sizes are the
@@ -32,10 +32,10 @@ public static class SystemWiring
     /// <summary>The machine log's days (<see cref="MachineLog.KeptDays"/>).</summary>
     private const int LogDays = MachineLog.KeptDays;
 
-    /// <summary>Each launcher an install's <c>app/bin/</c> carries (D124 §1.2, <c>desktop-publish</c>'s <c>CLI_LAUNCHERS</c> and <c>DRIVER_LAUNCHERS</c>).</summary>
+    /// <summary>Each launcher an install's <c>app/bin/</c> carries (<c>desktop-publish</c>'s <c>CLI_LAUNCHERS</c> and <c>DRIVER_LAUNCHERS</c>).</summary>
     public static IReadOnlyList<string> Launchers { get; } = ["daoris", "daoris.cmd"];
 
-    /// <summary>Why an entry stays at its old place (D172 point 6): what names it by path, or that it moves at a start after an update.</summary>
+    /// <summary>Why an entry stays at its old place: what names it by path, or that it moves at a start after an update.</summary>
     private static string Stays(HomeEntry entry) => entry.Name switch
     {
         "agent-homes" or "trees" or "help-room" or "help-rooms" or "intake" => "resumes",
@@ -154,7 +154,7 @@ public static class SystemWiring
     }
 
     /// <summary>
-    /// Each entry's place as it runs: each of its places that is there (D172 point 5), new before old; an entry known by the
+    /// Each entry's place as it runs: each of its places that is there, new before old; an entry known by the
     /// names it holds, where it holds one, as <c>DaorisHome</c> reads it.
     /// </summary>
     private static IReadOnlyList<string> Found(string home, HomeEntry entry) =>
@@ -174,7 +174,7 @@ public static class SystemWiring
                 : category is null && install is null ? null
                 : Path.Combine(root, id);
             Fact(row, "path", path, root is null ? "no-home" : "development");
-            // A category's folder is made where an entry of it is first asked at its new place (HOMELAYOUT3), for its writer: one
+            // A category's folder is made where an entry of it is first asked at its new place, for its writer: one
             // that holds nothing yet is no folder the person has.
             row["present"] = path is not null && Directory.Exists(path) && Directory.EnumerateFileSystemEntries(path).Any();
 
@@ -219,7 +219,7 @@ public static class SystemWiring
     {
         var rows = new JsonArray();
         if (world.Home is not { } home || !Directory.Exists(home)) return rows;
-        // Each as the folder lists it: a name the table does not hold is no entry to ask for by name (HOMELAYOUT2's census).
+        // Each as the folder lists it: a name the table does not hold is no entry to ask for by name.
         IEnumerable<(string Name, string Path)> found;
         try
         {
@@ -244,7 +244,7 @@ public static class SystemWiring
         return rows;
     }
 
-    /// <summary>The address file read as a terminal reads it (D171, FINDDAORIS1): its entry, and the status that judged it.</summary>
+    /// <summary>The address file read as a terminal reads it: its entry, and the status that judges it.</summary>
     private static (JsonObject Address, ServiceProbe? Status) Address(WiringWorld world)
     {
         var address = new JsonObject();
@@ -261,7 +261,7 @@ public static class SystemWiring
         else
         {
             status = world.Window is { } window && SameAddress(window.ServiceUrl, entry.Url) ? window.Status : world.AskStatus?.Invoke(entry.Url);
-            // HOMEID1, as RunningService.Find judges it: only a host naming this home's id is taken, and none where it has no id.
+            // As RunningService.Find judges it: only a host naming this home's id is taken, and none where it has no id.
             why = status is null ? "not-asked"
                 : !status.Answers ? "not-answering"
                 : HomeIdentity.Read(world.Home!) is not { } mine || status.Home != mine ? "another-home"
@@ -360,7 +360,7 @@ public static class SystemWiring
     private static JsonObject Loop(WiringWorld world)
     {
         var loop = new JsonObject();
-        // Who holds the home's lease (HOMELEASE1): an instance for its life, or a verb, a migration or a swap for its act.
+        // Who holds the home's lease: an instance for its life, or a verb, a migration or a swap for its act.
         var holder = world.Home is { } home ? HomeLease.HeldBy(home) : null;
         loop["holder"] = holder is null ? null : new JsonObject
         {
@@ -405,7 +405,7 @@ public static class SystemWiring
         return loop;
     }
 
-    /// <summary>The person's choices as the one resolution finds them (CONFIGSEAM1): the override where set, else this home's file.</summary>
+    /// <summary>The person's choices as the one resolution finds them: the override where set, else this home's file.</summary>
     internal static string? ConfigPath(WiringWorld world) =>
         DriverConfig.FindPath(name => name == DaorisHome.Variable ? world.Home : world.Process(name));
 
@@ -425,7 +425,7 @@ public static class SystemWiring
             string from;
             if (variable.ServiceOnly && world.Window is not { Held: WindowWiring.Hosted })
             {
-                // 🔴 The second opinion's point 2: an adopted service's environment is its own, and a terminal knows no service's.
+                // 🔴 An adopted service's environment is its own, and a terminal knows no service's.
                 (value, valueWhy, from) = (null, world.Window is null ? "window" : world.Window.Held == WindowWiring.Adopted ? "adopted" : "no-service", "unknown");
             }
             else
@@ -456,7 +456,7 @@ public static class SystemWiring
 
     private static string? Trimmed(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    /// <summary>A variable's value as it may be shown (design §5): a key never, an address cut, and why not where it is not.</summary>
+    /// <summary>A variable's value as it may be shown: a key never, an address cut, and why not where it is not.</summary>
     private static (string? Value, string? Why) Shown(WiringVariable variable, string? value) => value is null ? (null, "not-set") : variable.Value switch
     {
         WiringValue.Key => (null, "secret"),
@@ -482,7 +482,7 @@ public static class SystemWiring
         Fact(versions, "connector", connector is null ? null : FileVersion(connector), connector is null ? "not-found" : "unsaid");
         versions["dotnet"] = Environment.Version.ToString();
         versions["dotnetWhy"] = null;
-        // Node as Tools resolves it would start it to ask: Settings → Tools says it (design §3.6's door).
+        // Node as Tools resolves it would start it to ask: Settings → Tools says it.
         Fact(versions, "node", null, "tools");
         return versions;
     }
@@ -533,7 +533,7 @@ public static class SystemWiring
         Fact(terminal, "onMachinePath", bin is null || world.Machine is null ? null : machinePath.Any(folder => SamePath(folder, bin)),
             bin is null ? "development" : "no-machine");
 
-        // What a new terminal runs (design §3.7): Windows hands a new process the machine's PATH, then the account's.
+        // What a new terminal runs: Windows hands a new process the machine's PATH, then the account's.
         var extensions = (world.Account?.Invoke("PATHEXT") ?? world.Machine?.Invoke("PATHEXT") ?? world.Process("PATHEXT") ?? ".COM;.EXE;.BAT;.CMD")
             .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         var order = machinePath.Concat(accountPath).ToArray();
@@ -622,7 +622,7 @@ public static class SystemWiring
     }
 
     /// <summary>
-    /// What Daoris's sessions left in the person's own tool home (OWNSPACE2, D175 point 3): the project folders its own working
+    /// What Daoris's sessions leave in the person's own tool home: the project folders its own working
     /// roots made, by name, each with its size and its newest file's time once measured. Never read inside a folder beyond that.
     /// </summary>
     private static JsonObject ToolHome(WiringWorld world, SizeReading? reading)
@@ -649,7 +649,7 @@ public static class SystemWiring
         Fact(tool, "path", path, pathWhy ?? "no-tool-home");
         tool["from"] = from;
         tool["present"] = ToolHomeLeftovers.ProjectsOf(world) is { } projects && Directory.Exists(projects);
-        // Why nothing is listed where nothing can be (a link on the way, a home that is not the person's), and what was left out.
+        // Why nothing is listed where nothing can be (a link on the way, a home that is not the person's), and what is left out.
         tool["why"] = listing.Why;
         tool["caseInsensitive"] = listing.CaseInsensitive;
         tool["ambiguous"] = listing.Ambiguous;

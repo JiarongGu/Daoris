@@ -5,14 +5,14 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a session on the native door runs beside itself (CONSOLE3c): the twin of <see cref="AcpStreams"/>
+/// What a session on the native door runs beside itself: the twin of <see cref="AcpStreams"/>
 /// for Claude Code's <c>stream-json</c>, each subagent and each piece of background work a console
 /// stream of its own.
 /// </summary>
 /// <remarks>
 /// <para><b>Read off the wire, never inferred</b> (docs/2026-09-30-console3-native-streams-evidence.md).
-/// Each subagent's and each command's start and end is the reading the capture said of it (AGENTPROVIDER1l:
-/// <see cref="WireReading.ChildSeen"/> and <see cref="WireReading.ChildEnded"/>, <see cref="WireReading.TaskStarted"/>
+/// Each subagent's and each command's start and end is the reading the capture said of it
+/// (<see cref="WireReading.ChildSeen"/> and <see cref="WireReading.ChildEnded"/>, <see cref="WireReading.TaskStarted"/>
 /// and <see cref="WireReading.TaskEnded"/>), in the wire's word. A subagent's lines ride the session's stdout
 /// marked with the <c>parent_tool_use_id</c> of the call that spawned it, its reading's call. A command's output
 /// is a file whose path the harness gives only in its result's words, and at its end.</para>

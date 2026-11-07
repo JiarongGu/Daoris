@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Each kind of pass's own authority as the check its retry is handed (AGENTERRORS1d, the agent-errors design §5.5): another try is wanted
+/// Each kind of pass's own authority as the check its retry is handed: another try is wanted
 /// only while the person has not stopped the run and the thing the pass exists to produce is not already there: a helper's stored answer, an
-/// intake's ask settled, an opinion recorded, a partner's piece ending. A check that cannot be read answers yes (§5.1), so a read that failed
+/// intake's ask settled, an opinion recorded, a partner's piece ending. A check that cannot be read answers yes, so a read that failed
 /// costs a try, never a missed one.
 /// </summary>
 internal static class TransientOwners

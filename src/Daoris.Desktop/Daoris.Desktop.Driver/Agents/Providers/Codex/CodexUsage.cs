@@ -7,28 +7,28 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Codex's windows, asked of its own app server (CODEXUSE1; the Codex usage evidence): <c>codex app-server</c> speaks
+/// Codex's windows, asked of its own app server: <c>codex app-server</c> speaks
 /// JSON-RPC 2.0 over stdio, one object per line, and <c>account/rateLimits/read</c> answers the account's windows and spends
 /// no model usage. Read into the same <see cref="WindowReading"/> Claude Code's frames fill, so near, pace, the roster and the
 /// page read a Codex account as they read a Claude Code one.
 /// </summary>
 /// <remarks>
 /// <para><b>Asked, because no door carries it</b>: <c>codex-acp</c> keeps <c>account/rateLimits/updated</c> for its own
-/// <c>/status</c> text and forwards none of it (limit-signals evidence §4), and <c>codex exec --json</c> carries only a turn's
-/// tokens (usage evidence §3). The question is the agent's own binary's, under the account's own sign-in: Daoris holds no
-/// credential and calls no provider, as with the status question it already asks there (D49 §4).</para>
-/// <para><b>Absent is never zero</b> (D57): a binary not there, a refused read, a server that ends or is silent past
+/// <c>/status</c> text and forwards none of it, and <c>codex exec --json</c> carries only a turn's
+/// tokens. The question is the agent's own binary's, under the account's own sign-in: Daoris holds no
+/// credential and calls no provider, as with the status question it already asks there.</para>
+/// <para><b>Absent is never zero</b>: a binary not there, a refused read, a server that ends or is silent past
 /// <see cref="Patience"/>, and an answer with no window read whole all leave the account unknown, and nothing is kept.</para>
 /// <para><b>Never the agent's words, an account's id or a credit</b>: the answer's account id, plan, credits and reset credits
 /// are not read, and no reset credit is ever redeemed. A limit's own id (<c>limitId</c>) is read as its windows' scope for the
-/// usage history (USAGECAP1a1).</para>
+/// usage history.</para>
 /// </remarks>
 public static class CodexUsage
 {
-    /// <summary>The request that reads an account's windows (usage evidence §1).</summary>
+    /// <summary>The request that reads an account's windows .</summary>
     public const string Method = "account/rateLimits/read";
 
-    /// <summary>The two window lengths the evidence recorded, in minutes: five hours, and a week.</summary>
+    /// <summary>The two window lengths, in minutes: five hours, and a week.</summary>
     public const int SessionMinutes = 300, WeekMinutes = 10080;
 
     /// <summary>
@@ -38,13 +38,13 @@ public static class CodexUsage
     public static readonly TimeSpan Patience = TimeSpan.FromSeconds(15);
 
     /// <summary>
-    /// How long a reading stands before a start asks the account again, and how long one that could not be had waits: a
-    /// floor as of when it was said, as a door's frame is, so asked at most once in this long per account, never at every
+    /// How long a reading stands before a start asks the account again, and how long one that could not be taken waits: a
+    /// floor as of when it is said, as a door's frame is, so asked at most once in this long per account, never at every
     /// start.
     /// </summary>
     public static readonly TimeSpan Fresh = TimeSpan.FromMinutes(5);
 
-    /// <summary>The question Codex's door declares for its owner: Codex's own app server (usage evidence §1, §2).</summary>
+    /// <summary>The question Codex's door declares for its owner: Codex's own app server.</summary>
     public static UsageQuestion Question { get; } = new CodexUsageQuestion(
         "codex",
         ["codex", "app-server"],
@@ -58,7 +58,7 @@ public static class CodexUsage
 
     /// <summary>
     /// Daoris's name for a window of <paramref name="minutes"/>: <c>session</c> for five hours and <c>weekly</c> for a week,
-    /// the two the evidence recorded; any other length by its minutes (<c>1440-minute</c>), never guessed to be either.
+    /// the two known; any other length by its minutes (<c>1440-minute</c>), never guessed to be either.
     /// </summary>
     public static string WindowOf(int minutes) => minutes switch
     {
@@ -68,17 +68,17 @@ public static class CodexUsage
     };
 
     /// <summary>
-    /// What the read's answer says (usage evidence §2): its <c>rateLimits</c>' <c>primary</c> and <c>secondary</c> windows,
+    /// What the read's answer says: its <c>rateLimits</c>' <c>primary</c> and <c>secondary</c> windows,
     /// each named by its length, its use (<c>usedPercent</c>, a percent) as a fraction, and its reset (<c>resetsAt</c>, Unix
     /// seconds). A window not said whole (its length, its use and its reset) says nothing. No standing and no credits: the
-    /// answer's words for those were not recorded with any value but none.
+    /// answer's words for those are recorded with no value.
     /// </summary>
     /// <remarks>
     /// <para>Only <c>rateLimits</c>, the account's own limit (<c>limitId: codex</c>): <c>rateLimitsByLimitId</c> repeats it, and
     /// any other limit there would name windows of the same lengths.</para>
-    /// <para>Beside the walk's, what the usage history keeps (USAGECAP1a1, D179 point 8): each window said in part or whole,
+    /// <para>Beside the walk's, what the usage history keeps: each window said in part or whole,
     /// named by its length and its limit's scope (<c>limitId</c>), never its slot, the other limits of <c>rateLimitsByLimitId</c>
-    /// among them. The plan (<c>planType</c>) is still not read.</para>
+    /// among them. The plan (<c>planType</c>) is not read.</para>
     /// </remarks>
     public static UsageAnswer Read(JsonElement answer)
     {
@@ -137,11 +137,11 @@ public static class CodexUsage
         }
     }
 
-    /// <summary>The version of <see cref="Read"/>'s history parse, which each reading it keeps carries (USAGECAP1a1).</summary>
+    /// <summary>The version of <see cref="Read"/>'s history parse, which each reading it keeps carries.</summary>
     public const int HistoryReader = 1;
 
     /// <summary>
-    /// The read over a server's lines (usage evidence §1): <c>initialize</c>, its answer, <c>initialized</c>, then the read,
+    /// The read over a server's lines: <c>initialize</c>, its answer, <c>initialized</c>, then the read,
     /// whose answer is read past whatever the server pushes first. Unknown (null) where the server refuses either, ends, or
     /// is silent past <paramref name="patience"/>; <paramref name="ct"/> is the caller's own stop, and throws.
     /// </summary>
@@ -220,8 +220,8 @@ public static class CodexUsage
     }
 
     /// <summary>
-    /// Start <paramref name="command"/> as a harness's reporting command starts (D49 §4): on the PATH a session would get
-    /// (TOOLS5), its account's home in the toolchain's variable, the pin's binary where one is managed, through the one seam
+    /// Start <paramref name="command"/> as a harness's reporting command starts: on the PATH a session would get,
+    /// its account's home in the toolchain's variable, the pin's binary where one is managed, through the one seam
     /// both doors take (<see cref="Shell.Equip"/>); its three streams redirected as UTF-8 with no mark, and no window.
     /// </summary>
     /// <param name="profileHome">The account's configuration home, or null for the tool's own, the variable then unset.</param>
@@ -251,11 +251,11 @@ public static class CodexUsage
     }
 
     /// <summary>
-    /// Start the server, read, and stop it (CODEXUSE1): the readings, or null where none could be had. The server does not
+    /// Start the server, read, and stop it: the readings, or null where none could be had. The server does not
     /// end by itself, so it is stopped, its whole tree, once the answer or the patience is spent.
     /// </summary>
     /// <param name="ask">
-    /// The protocol over the process's streams (USAGEREAD2a); null is Codex's own, <see cref="AskWithinAsync"/>.
+    /// The protocol over the process's streams; null is Codex's own, <see cref="AskWithinAsync"/>.
     /// </param>
     internal static async Task<IReadOnlyList<WindowReading>?> ReadAsync(
         ProcessStartInfo info, TimeSpan patience, CancellationToken ct,
@@ -264,8 +264,8 @@ public static class CodexUsage
         Process? process;
         try
         {
-            // Through the start gate (PROCSTART2): the usage page's read reaches here. A probe, so the background's
-            // (PARALLEL1d); its caller's token ends its wait for a place as it ends the question (PARALLEL1e).
+            // Through the start gate: the usage page's read reaches here. A probe, so the background's;
+            // its caller's token ends its wait for a place as it ends the question.
             process = await ProcessStarts.Shared.StartAsync(info, ProcessPurpose.Read, StartClass.Background, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is Win32Exception or IOException or InvalidOperationException)

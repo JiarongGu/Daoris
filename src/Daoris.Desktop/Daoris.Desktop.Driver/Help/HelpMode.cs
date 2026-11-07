@@ -1,20 +1,20 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's access mode (HELPMODE1a1, D183 point 1), the person's choice, machine-wide for now: <see cref="Restricted"/>, what
-/// D89 made it, reading and proposing with the person applying; or <see cref="Full"/>, its harness's own mode that asks nothing.
+/// Ask Daoris's access mode, the person's choice, machine-wide for now: <see cref="Restricted"/>, reading and
+/// proposing with the person applying; or <see cref="Full"/>, its harness's own mode that asks nothing.
 /// </summary>
 /// <remarks>
 /// <para><b>Kept in the driver's file</b> as <c>helpMode</c> (<see cref="DriverConfig.HelpMode"/>), written only while full; the
-/// CLI read it by the same table until PUSH1f2b. Set at a terminal with <c>daoris ask-daoris mode</c>, and never by Ask
-/// Daoris itself: no proposal names it (D183 point 2, full access is never chosen for the person).</para>
+/// CLI reads it by the same table. Set at a terminal with <c>daoris ask-daoris mode</c>, and never by Ask
+/// Daoris itself: no proposal names it (full access is never chosen for the person).</para>
 /// </remarks>
 public static class HelpModes
 {
-    /// <summary>It reads, advises and proposes, and the person applies (D89): the default.</summary>
+    /// <summary>It reads, advises and proposes, and the person applies: the default.</summary>
     public const string Restricted = HelpModeNames.Restricted;
 
-    /// <summary>It acts on this machine itself, in its harness's mode that asks nothing (D183 point 1).</summary>
+    /// <summary>It acts on this machine itself, in its harness's mode that asks nothing.</summary>
     public const string Full = HelpModeNames.Full;
 
     /// <summary>The modes, in the order a person is offered them.</summary>
@@ -24,7 +24,7 @@ public static class HelpModes
     public static string? Named(string? value) => HelpModeNames.Named(value);
 
     /// <summary>
-    /// A record's mode as read (HELPMODE1a2, D183 point 3): full where it says full, in any case; restricted for none, a record from
+    /// A record's mode as read: full where it says full, in any case; restricted for none, a record from
     /// before the modes, and for one this build does not know, as the driver's file reads it.
     /// </summary>
     public static string Recorded(string? kept) => HelpModeNames.Recorded(kept);
@@ -33,8 +33,8 @@ public static class HelpModes
     private static string Runs(string mode) => Recorded(mode) == Full ? "with full access" : "restricted";
 
     /// <summary>
-    /// What a conversation going on says first where it goes on under another mode than it last ran under (HELPMODE1a2, D183 point
-    /// 3), before what it runs under now; null where the mode is the same.
+    /// What a conversation going on says first where it goes on under another mode than it last ran under,
+    /// before what it runs under now; null where the mode is the same.
     /// </summary>
     /// <param name="ran">The mode its record says it last ran under.</param>
     /// <param name="now">The mode it goes on under.</param>
@@ -44,14 +44,14 @@ public static class HelpModes
 }
 
 /// <summary>
-/// What a start of Ask Daoris gets on its harness under the person's mode (HELPMODE1a1, D183 points 1, 3): the posture its protocol
+/// What a start of Ask Daoris gets on its harness under the person's mode: the posture its protocol
 /// door asks, or the permission mode its native door names; or why it cannot start in that mode. Read at each start, a
 /// conversation going on among them, from the mode chosen then.
 /// </summary>
 /// <param name="Mode">The mode it runs in, one of <see cref="HelpModes"/>.</param>
 /// <param name="Said">
-/// What its conversation is told first (D183 point 3): the mode, and the harness's own word for it. The mode chosen is the file's;
-/// this is the one the start got, kept apart from it, and its record keeps <paramref name="Mode"/> (HELPMODE1a2).
+/// What its conversation is told first: the mode, and the harness's own word for it. The mode chosen is the file's;
+/// this is the one the start got, kept apart from it, and its record keeps <paramref name="Mode"/>.
 /// </param>
 public sealed record HelpAccess(string Mode, string Said)
 {

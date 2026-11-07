@@ -4,14 +4,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// This machine's agents over the bridge (`AgentsRoutes.cs`, MOD5): the roster, a harness's
+/// This machine's agents over the bridge (`AgentsRoutes.cs`): the roster, a harness's
 /// actions and their console, and usage.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class DriverModuleAgentsTests : DriverModuleBridge
 {
     /// <summary>
-    /// What sessions consumed (TOOL3/D57 §4), over the bridge and nowhere else. A machine that has
+    /// What sessions consumed, over the bridge and nowhere else. A machine that has
     /// measured nothing answers empty lists — <b>never a zero</b>, because "nothing was measured" and
     /// "it used nothing" are different claims and only one of them is true.
     /// </summary>
@@ -43,7 +43,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         Assert.Equal(2, account.GetProperty("sessions").GetInt32());
     }
 
-    /// <summary>A declared harness is on the roster with the plugin it came from beside it (D64).</summary>
+    /// <summary>A declared harness is on the roster with the plugin it came from beside it.</summary>
     [Fact]
     public async Task A_declared_harness_is_on_the_roster_naming_the_plugin_it_came_from()
     {
@@ -67,10 +67,10 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// Whether a door carries a conversation's STRUCTURE (D76 §1) is the adapter's to say, and the page's
+    /// Whether a door carries a conversation's STRUCTURE is the adapter's to say, and the page's
     /// to read: an empty record on a structured door is nothing said yet, and on a text door it is a
     /// conversation that lives in the console. Guessed from emptiness, the page told a fresh chat on a
-    /// structured door that its door carries only text (CONV3b).
+    /// structured door that its door carries only text.
     /// </summary>
     [Fact]
     public async Task The_roster_says_which_doors_carry_a_conversations_structure()
@@ -78,12 +78,12 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         var rows = (await AnswerAsync(Module(), "HARNESSES")).GetProperty("harnesses").EnumerateArray()
             .ToDictionary(h => h.GetProperty("door").GetString()!, h => h.GetProperty("structured").GetBoolean());
 
-        Assert.True(rows["claude-code"]);      // stream-json, read by its adapter (CONV3a)
+        Assert.True(rows["claude-code"]);      // stream-json, read by its adapter
         Assert.True(rows["claude-code-acp"]);  // the protocol door
     }
 
     /// <summary>
-    /// UX6e (D150 §5.1): an agent's page has *What it may do* only where Daoris hands its agent the rules file at spawn,
+    /// An agent's page has *What it may do* only where Daoris hands its agent the rules file at spawn,
     /// which is the adapter's to say: Claude Code's two doors take it, and an agent the rules mean nothing to does not.
     /// </summary>
     [Fact]
@@ -100,7 +100,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// AGENTMARK1 (D152): each door says its declared strip mark and whether Daoris has an installer for it, so the page
+    /// Each door says its declared strip mark and whether Daoris has an installer for it, so the page
     /// offers Install only where it can run and How to install elsewhere. A declared agent with no `install` and no mark
     /// answers false and null.
     /// </summary>
@@ -127,7 +127,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// COAGENT1e (the agent-provider design §6): the roster answers each agent once with its account acts and its doors' sheets, the door
+    /// The roster answers each agent once with its account acts and its doors' sheets, the door
     /// named for it first, so the page reads an agent's facts from it and never a door standing for its agent; each door's word is its
     /// sheet's, and a measured row names its evidence.
     /// </summary>
@@ -156,7 +156,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
             door => Assert.Contains(door.GetProperty("transport").GetString(), new[] { "protocol", "native" }));
     }
 
-    /// <summary>Detection is free and read-only (D49 §4) — the roster answers with no service at all.</summary>
+    /// <summary>Detection is free and read-only — the roster answers with no service at all.</summary>
     [Fact]
     public async Task The_harness_roster_answers_this_machine_s_toolchains()
     {
@@ -173,7 +173,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
             Assert.True(harness.TryGetProperty("profiles", out _));
         }
 
-        // AGT1: what a person calls the tool, and whose it is — `dsh` meant nothing to the owner
+        // What a person calls the tool, and whose it is — `dsh` meant nothing to the owner
         // until it said. Answered by the toolchain's own declaration, not a table on the page.
         var claude = harnesses.Single(h => h.GetProperty("door").GetString() == "claude-code");
         Assert.Equal("Claude Code", claude.GetProperty("product").GetString());
@@ -184,7 +184,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
 
     /// <summary>
     /// A profile's HOME is a machine path, and this bridge is the one surface allowed to carry one
-    /// (D47 §4) — the page renders it so a person can find the directory Daoris owns for them.
+    ///  — the page renders it so a person can find the directory Daoris owns for them.
     /// </summary>
     [Fact]
     public async Task A_profile_is_answered_with_the_directory_it_actually_is()
@@ -207,14 +207,14 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         // Nothing ran, so nothing can be claimed about the login — unknown, never a guess.
         Assert.Equal("unknown", profile.GetProperty("login").GetString());
         // The tool's own home is answered the same way, beside the profiles rather than instead of
-        // them: the account a person actually has, which the roster used to call "No accounts".
+        // them: the account a person actually has.
         Assert.Equal("unknown", stub.GetProperty("ownLogin").GetString());
     }
 
     /// <summary>
-    /// UX6e (D150 §5.3): each account and the tool's own sign-in say when they were last read. Nothing has answered for the
+    /// Each account and the tool's own sign-in say when they were last read. Nothing has answered for the
     /// stub's account, so it was never read; one agent's *Read again* asks its accounts, and each then says when. 🔴 It never
-    /// asks the tool's own sign-in (POOL1a3, D197 point 3; Fable's F2), and neither does the roster's whole refresh, so the own
+    /// asks the tool's own sign-in, and neither does the roster's whole refresh, so the own
     /// sign-in stays never read.
     /// </summary>
     [Fact]
@@ -291,7 +291,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         stub.GetProperty("profiles").EnumerateArray().Single(p => p.GetProperty("name").GetString() == name);
 
     /// <summary>
-    /// 🔴 ROSTER1 (D150 §5.3): the roster asks no account when it is read, the first read after a start included (a cold
+    /// The roster asks no account when it is read, the first read after a start included (a cold
     /// cache), where it asked every named account; an account's own *Read again* asks that account alone and says when; and a
     /// module started afresh, as after a restart, starts from what was read, asking nothing.
     /// </summary>
@@ -333,9 +333,9 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ROSTER1: an account's edit asks no account — the set's order written or cleared, an account made — where each asked every
+    /// An account's edit asks no account — the set's order written or cleared, an account made — where each asked every
     /// account again; a removed account's reading goes with it, so one made later under its name starts never read. The order is
-    /// the set's edit since POOL1a1 (D197 point 2), where a default, refused now, was.
+    /// the set's edit.
     /// </summary>
     [Fact]
     public async Task An_accounts_edit_asks_no_account_and_a_removal_forgets_its_reading()
@@ -357,10 +357,8 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A workspace's default, set or cleared, and the machine's, are refused over the bridge (POOL1a1, D197 points 1, 2 and 6; the
-    /// account-pool design §5.2): every account signed in for Daoris serves every workspace and the order says where starts begin,
-    /// so <c>profile-default</c> names nothing, and nothing is written. It was D49 §4's work account for the work circle, set from
-    /// the screen as from the terminal (D50); D197 retires the default, and the terminal's own refusal is POOL1b's.
+    /// A workspace's default, set or cleared, and the machine's, are refused over the bridge: every account signed in for Daoris serves every workspace and the order says where starts begin,
+    /// so <c>profile-default</c> names nothing, and nothing is written.
     /// </summary>
     [Fact]
     public async Task A_workspace_s_default_account_is_refused_over_the_bridge_set_or_cleared_and_nothing_is_written()
@@ -393,7 +391,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
 
     /// <summary>
     /// The driver's own refusal, reaching the person intact — it names the adapter asked for AND the
-    /// ones that exist (D23), which is the part a generic failure throws away.
+    /// ones that exist, which is the part a generic failure throws away.
     /// </summary>
     [Fact]
     public async Task An_action_on_a_harness_daoris_manages_nothing_for_carries_the_driver_s_own_sentence()
@@ -403,7 +401,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
 
         Assert.Contains(Refusals.DriverRefused, refusal);
         Assert.Contains("not-a-harness", refusal);
-        // What exists, named — the whole reason this sentence was worth writing.
+        // What exists, named — the whole point of this sentence.
         Assert.Contains("claude-code", refusal);
     }
 
@@ -431,7 +429,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         File.WriteAllText(DriverConfigPath, $$"""
             { "drivable": [], "holds": [], "commands": { "claude-code": ["node", {{JsonSerializer.Serialize(fake)}}] } }
             """);
-        // A sign-in into an account reaches one that is here, never a new folder (ACCT1).
+        // A sign-in into an account reaches one that is here, never a new folder.
         Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "claude-code", "work"));
         var module = Module();
 
@@ -458,7 +456,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 REV3: one at a time. A second *Sign in* while the first still waited on a browser took the
+    /// One at a time. A second *Sign in* while the first still waited on a browser took the
     /// first's place in the running map — the first could no longer be answered or stopped, and its end
     /// removed the second's entry. The second is refused naming what runs; the first is still answerable;
     /// and once it ends, the slot is free again.
@@ -479,7 +477,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         File.WriteAllText(DriverConfigPath, $$"""
             { "drivable": [], "holds": [], "commands": { "claude-code": ["node", {{JsonSerializer.Serialize(fake)}}] } }
             """);
-        // A sign-in into an account reaches one that is here, never a new folder (ACCT1).
+        // A sign-in into an account reaches one that is here, never a new folder.
         Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "claude-code", "work"));
         Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "claude-code", "home"));
         var module = Module();

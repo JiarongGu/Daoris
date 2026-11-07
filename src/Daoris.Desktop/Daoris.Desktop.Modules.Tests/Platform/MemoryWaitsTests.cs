@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// KNOWCENTRAL2e: the memory changes that wait on the person are read from the service on the driver's poll and held in memory; a change
+/// The memory changes that wait on the person are read from the service on the driver's poll and held in memory; a change
 /// in what waits is told once, an unchanged or failed read tells nothing, and the last answer stands through a failure.
 /// </summary>
 public sealed class MemoryWaitsTests : Bridge

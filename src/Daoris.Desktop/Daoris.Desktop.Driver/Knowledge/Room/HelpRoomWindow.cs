@@ -3,33 +3,32 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// How the window is laid out (HELP2): asked what the panel held, the helper guessed at a menu that does not
-/// exist. Said by the names the window's own labels use (DOCK1b), keys as its menus show them, where a file's
-/// preview opens (HELP10, D111), and that the helper cannot see the window and asks rather than guesses.
+/// How the window is laid out: asked what the panel held, the helper guessed at a menu that does not
+/// exist. Said by the names the window's own labels use, keys as its menus show them, where a file's
+/// preview opens, and that the helper cannot see the window and asks rather than guesses.
 /// </summary>
 internal sealed class HelpRoomWindow : IHelpRoomSection
 {
     public string Render(HelpMachine machine)
     {
         var text = new StringBuilder();
-        // How the window is laid out (HELP2): asked what the panel held, the helper guessed at a menu that
-        // does not exist. Said by the names the window's own labels use (DOCK1b), keys as its menus show them.
+        // How the window is laid out: asked what the panel held, the helper guessed at a menu that
+        // does not exist. Said by the names the window's own labels use, keys as its menus show them.
         text.Append("## The window\n\n");
-        // UX6i2a (D150 §2): the bar holds the eight places Go opens, Knowledge where Convergence and Search were (UX6i) and
-        // Plugins after Agents, and Settings at its foot (UX6j).
+        // The bar holds the eight places Go opens, with Settings at its foot.
         text.Append("The desktop is laid out as VS Code is. The activity bar at the left holds the places: Overview,\n");
         text.Append("Sessions, Quests, Repositories, Map, Knowledge, Agents and Plugins, with Settings at its foot;\n");
         text.Append("Knowledge's list switches between Search and Convergence. `Ctrl+K` opens\n");
-        // UX7a (D152 §1): the menu bar holds the verbs and places, and Help lists every key.
+        // The menu bar holds the verbs and places, and Help lists every key.
         text.Append("the command palette. The menu bar across the top holds Workspace, Edit, View, Go, Run, Terminal and Help, as\n");
         text.Append("VS Code's does: Go opens the places (`Ctrl+1` to `Ctrl+8`), Run acts on the session or the quest in front, and\n");
         text.Append("Help → Keyboard shortcuts lists every key. Every view sits in one frame: the view in the centre, the panel beneath it,\n");
         text.Append("and the right side bar beside it; on Sessions the session list is at the left and the centre is the\n");
-        // WORKFLOW1c4: the session's Workflow view (WORKFLOW1c, the workflow design §7) stands beside the timeline and the
+        // The session's Workflow view stands beside the timeline and the
         // review and moves as they do; the doors say what it draws.
-        // NOTIFY2b (D196 point 3, the notification design §2.1, §4): Notifications joined the views, on the right by default, shown
+        // Notifications is a view, on the right by default, shown
         // by the title bar's bell; it holds the presses waiting for the person's confirmation and What needs you.
-        // COWORKVIEW1a: At work, after the workflow, says who works on the attended session from Daoris's records.
+        // At work, after the workflow, says who works on the attended session from Daoris's records.
         text.Append("attended session. Eight views stand in the two regions and move between them:\n");
         text.Append("Notifications, the timeline, the review, the workflow, At work and the console of the session attended on Sessions, Ask Daoris, and the\n");
         text.Append("terminal: the person's own shell (PowerShell unless they choose another), in the panel beside the\n");
@@ -45,14 +44,14 @@ internal sealed class HelpRoomWindow : IHelpRoomSection
         text.Append("its tab, or by dragging its tab to the other region; View → Reset view locations puts every view\n");
         text.Append("back. The toggles beside the window controls, and the View menu, show or hide the panel (`Ctrl+J`)\n");
         text.Append("and the right side bar (`Ctrl+Alt+B`) on every view.\n");
-        // FRAME1i-b (D118 point 4): the list is every view's but Overview's and Map's, with four doors.
+        // The list is every view's but Overview's and Map's, with four doors.
         text.Append("Every view but Overview and Map has a list beside its centre: Sessions, Quests, Repositories, Knowledge,\n");
         text.Append("Agents, Plugins and Settings. The list shows or hides by four doors: its strip, the View menu, `Ctrl+B`,\n");
         text.Append("and a press on the current place in the activity bar. Hidden, it leaves a narrow strip.\n");
         text.Append("You open on `F1` or `Ctrl+Alt+I`, and Quick Ask, a box where the palette opens, on\n");
         text.Append("`Ctrl+Shift+Alt+L`.\n\n");
-        // HELP10: PREVIEW1's file preview (D111), so asked how to read a file an agent touched, the helper points
-        // at it rather than at an editor there is none of (D55). Its doors are a session's; Ask Daoris has none.
+        // The file preview, so asked how to read a file an agent touched, the helper points
+        // at it rather than at an editor there is none of. Its doors are a session's; Ask Daoris has none.
         text.Append("A file path in a session's tool card, or a file's button in the review's list, opens a preview of that\n");
         text.Append("file as a tab of the right side bar: the file in the session's tree as it is on disk now, read-only,\n");
         text.Append("the lines a read named marked, and its changes one press away where the review holds them. One preview\n");

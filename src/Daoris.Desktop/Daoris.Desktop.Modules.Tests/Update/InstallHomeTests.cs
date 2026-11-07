@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The installed application's own home (D63): `data/` beside the executable, made the Daoris home
+/// The installed application's own home: `data/` beside the executable, made the Daoris home
 /// for this process and everything it spawns, offered to the user's environment so a terminal meets
-/// the same machine — and a `~/.daoris` from before the decision moved in, once.
+/// the same machine — and an existing `~/.daoris` moves in, once.
 /// </summary>
 /// <remarks>
 /// Every effect is injected — the process variable, the user variable, the legacy directory — so
@@ -63,7 +63,7 @@ public sealed class InstallHomeTests : IDisposable
             .Select(file => Path.GetRelativePath(install, file).Replace('\\', '/'))
             .Order(StringComparer.Ordinal)];
 
-    /// <summary>An install as a build from before HOMELAYOUT3 left it: every entry in its <c>data/</c>.</summary>
+    /// <summary>An install with every entry in its <c>data/</c>.</summary>
     private static readonly string[] OldLayout =
     [
         "data/driver.json", "data/keys.json", "data/remotes.json", "data/logs/2026-10-19.desktop.jsonl",
@@ -79,8 +79,8 @@ public sealed class InstallHomeTests : IDisposable
     ];
 
     /// <summary>
-    /// 🔴 HOMELAYOUT3 (the install layout design §7, D172 point 6): at a start with the swap at rest and nothing else of the folder
-    /// running, each entry D172 moves is renamed once from its old place into its new, nothing else: the logs, the downloaded
+    /// At a start with the swap at rest and nothing else of the folder
+    /// running, each entry the move covers is renamed once from its old place into its new, nothing else: the logs, the downloaded
     /// versions, the keys, the browsers' profiles, the window's memory as one, what a run holds. The person's records stay in
     /// <c>data/</c>; an account home, a tree, a room, a kept file and <c>bin/</c> are never moved; a pid stays with the sessions'
     /// folder it is read in. Nothing is deleted, and the account's <c>data/</c> spelling of the home moves it as well.
@@ -125,7 +125,7 @@ public sealed class InstallHomeTests : IDisposable
                 .Replace("data/chromium/", "profiles/window/chromium/")
                 .Replace("data/config/", "profiles/window/config/"))
             .Append(InstallHome.Marker)
-            // The lease the move held records the home's id, minted where it had none (HOMEID1).
+            // The lease the move held records the home's id, minted where it had none.
             .Append("data/home.json")
             .Order(StringComparer.Ordinal);
         Assert.Equal(expected, Files(install));
@@ -139,7 +139,7 @@ public sealed class InstallHomeTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The first start after a swap moves nothing (D139): until the new build confirmed and <c>update/previous/</c> is gone, a
+    /// 🔴 The first start after a swap moves nothing: until the new build confirmed and <c>update/previous/</c> is gone, a
     /// roll-back may still put the build before back, which reads only the old places. A swap under way is the same.
     /// </summary>
     [Theory]
@@ -161,7 +161,7 @@ public sealed class InstallHomeTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Nothing moves while another process of the folder runs (the design §7.1): a host adopted from an earlier start, a
+    /// 🔴 Nothing moves while another process of the folder runs: a host adopted from an earlier start, a
     /// browser, a connector from <c>bin/</c> may hold a path it took once; the next start tries again. Nor does a home named for
     /// this start alone move: it is not this install's.
     /// </summary>
@@ -227,7 +227,7 @@ public sealed class InstallHomeTests : IDisposable
     }
 
     /// <summary>
-    /// A held lease is never renamed under itself, and a live act holding the home moves nothing this start (HOMELEASE1): an older
+    /// A held lease is never renamed under itself, and a live act holding the home moves nothing this start: an older
     /// build's lease at the old place stays where it is, and the next start, the act ended, moves the rest.
     /// </summary>
     [Fact]
@@ -259,7 +259,7 @@ public sealed class InstallHomeTests : IDisposable
     }
 
     /// <summary>
-    /// The window's memory, the kit's data area (D172 point 4): an install's <c>data/</c> while its engine's profile or its
+    /// The window's memory, the kit's data area: an install's <c>data/</c> while its engine's profile or its
     /// geometry is still there, <c>profiles/window/</c> once moved or for a new install, and the kit's own for a root that is no
     /// install.
     /// </summary>
@@ -280,7 +280,7 @@ public sealed class InstallHomeTests : IDisposable
     }
 
     /// <summary>
-    /// A development run's window memory (HOMELAYOUT4, the design §6.1): the run is told its one root with <c>--app-root</c>, a
+    /// A development run's window memory: the run is told its one root with <c>--app-root</c>, a
     /// folder that is no install, and its window's memory is that root's <c>profiles/window/</c> all the same, never the kit's
     /// own <c>data/</c> beneath it.
     /// </summary>
@@ -307,8 +307,8 @@ public sealed class InstallHomeTests : IDisposable
     }
 
     /// <summary>
-    /// An entry whose new place is there too is not moved: both places hold it, which its readers refuse naming both (D172 point
-    /// 5), and the notice says so; an empty folder at the new place is no entry, and the move takes its place.
+    /// An entry whose new place is there too is not moved: both places hold it, which its readers refuse naming both,
+    /// and the notice says so; an empty folder at the new place is no entry, and the move takes its place.
     /// </summary>
     [Fact]
     public void An_entry_in_both_places_stays_and_is_said_and_an_empty_new_folder_is_taken()
@@ -339,7 +339,7 @@ public sealed class InstallHomeTests : IDisposable
 
     /// <summary>
     /// A home named for this start alone is respected — a gate's scratch home above all. It is not the
-    /// account's (HOME1, D105): the account has none, or names another folder.
+    /// account's: the account has none, or names another folder.
     /// </summary>
     [Fact]
     public void A_home_named_for_this_start_alone_is_respected_and_nothing_is_set()
@@ -355,7 +355,7 @@ public sealed class InstallHomeTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HOME1 (D105): a second install started with the account's variable in its environment — the
+    /// A second install started with the account's variable in its environment — the
     /// variable the first install set — runs on its OWN `data/`, and says so. The account's variable
     /// is left exactly as it was: it is the person's, and a start that rewrote it would move every
     /// terminal to whichever install was opened last.
@@ -467,7 +467,7 @@ public sealed class InstallHomeTests : IDisposable
     }
 
     /// <summary>
-    /// A `~/.daoris` from before D63 moves in on the first start with an empty home — the state, and
+    /// An existing `~/.daoris` moves in on the first start with an empty home — the state, and
     /// only the state: `bin/` is the CLI's own install and stays where the CLI put it.
     /// </summary>
     [Fact]
@@ -499,7 +499,7 @@ public sealed class InstallHomeTests : IDisposable
     }
 
     /// <summary>
-    /// D93: the shell runs from the install's <c>app/</c>, where the launcher at the root starts it, and
+    /// The shell runs from the install's <c>app/</c>, where the launcher at the root starts it, and
     /// the home is still the install's <c>data/</c> — never a <c>data/</c> inside <c>app/</c>.
     /// </summary>
     [Fact]
@@ -528,7 +528,7 @@ public sealed class InstallHomeTests : IDisposable
     }
 
     /// <summary>
-    /// APPCWD1 (D139 §5): a shell standing in its install's <c>app/</c>, or below it, stands in the install's root instead, so a
+    /// A shell standing in its install's <c>app/</c>, or below it, stands in the install's root instead, so a
     /// child that names no working folder does not hold <c>app/</c>; a working folder elsewhere is left as it was.
     /// </summary>
     [Fact]
@@ -546,7 +546,7 @@ public sealed class InstallHomeTests : IDisposable
         Assert.Null(InstallHome.WorkingFolder(app, app + "-other"));
     }
 
-    /// <summary>APPCWD1: a workspace build, an install's root or an unmarked <c>app</c>, is no install's <c>app/</c>, and is left where it stands.</summary>
+    /// <summary>A workspace build, an install's root or an unmarked <c>app</c>, is no install's <c>app/</c>, and is left where it stands.</summary>
     [Fact]
     public void A_shell_outside_an_install_s_app_folder_is_left_where_it_stands()
     {
@@ -559,7 +559,7 @@ public sealed class InstallHomeTests : IDisposable
     }
 
     /// <summary>
-    /// APPCWD1, held on the sources because nothing else can hold them: the application moves out of <c>app/</c> before it starts
+    /// Held on the sources because nothing else can hold them: the application moves out of <c>app/</c> before it starts
     /// anything, and the launcher starts it in the install's root.
     /// </summary>
     [Fact]
@@ -600,7 +600,7 @@ public sealed class InstallHomeTests : IDisposable
     }
 
     /// <summary>
-    /// HOMELEASE1: a verb the install carries may have run before the first start, minting the home's id or leaving a lease of
+    /// A verb the install carries may have run before the first start, minting the home's id or leaving a lease of
     /// its own; neither is state, and neither stops the move. The move leaves no lease behind.
     /// </summary>
     [Fact]
@@ -621,7 +621,7 @@ public sealed class InstallHomeTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HOMELEASE1: the launcher's swap of <c>app/</c> holds the install's home's lease (the terminal RPC design §5, D139 §5): it
+    /// The launcher's swap of <c>app/</c> holds the install's home's lease: it
     /// compiles the lease and the home's id in, as it does the swap, and takes the lease as a swap before the swap's first move,
     /// replacing nothing while an act holds it. Read off its source, as <c>TaskbarIdentityTests</c> reads its names: the
     /// launcher's <c>Main</c> starts processes.
@@ -636,7 +636,7 @@ public sealed class InstallHomeTests : IDisposable
         var project = File.ReadAllText(Path.Combine(launcher, "Daoris.Desktop.Launcher.csproj"));
         Assert.Contains(@"Include=""..\Daoris.Desktop.Driver\Platform\HomeLease.cs""", project);
         Assert.Contains(@"Include=""..\Daoris.Desktop.Driver\Platform\HomeIdentity.cs""", project);
-        // The home's table names the lease's place and the id's (HOMELAYOUT2), so the launcher compiles it too.
+        // The home's table names the lease's place and the id's, so the launcher compiles it too.
         Assert.Contains(@"Include=""..\Daoris.Desktop.Driver\Platform\DaorisHome.cs""", project);
 
         var program = File.ReadAllText(Path.Combine(launcher, "Program.cs"));
@@ -647,7 +647,7 @@ public sealed class InstallHomeTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SWAPLEASE2: a crashed swap's roll-back holds the same lease as the swap (the terminal RPC design §5). Both of the
+    /// A crashed swap's roll-back holds the same lease as the swap. Both of the
     /// launcher's swaps that put a journal right, the one at its start and the one after an error, name the install's home as
     /// the lease's before they recover, and start nothing on <c>app/</c> when an act held it for the whole of the wait. Read off
     /// its source, as the row above is.
@@ -676,7 +676,7 @@ public sealed class InstallHomeTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HOMELEASE1: the first-start move holds the home's lease while it moves, so it never moves files under a verb acting
+    /// The first-start move holds the home's lease while it moves, so it never moves files under a verb acting
     /// alone. A verb holding the home for the whole of its wait: nothing moves, the older home stays where it was, and the notice
     /// says which act held it; the next start moves it.
     /// </summary>
@@ -712,8 +712,8 @@ public sealed class InstallHomeTests : IDisposable
     }
 
     /// <summary>
-    /// How the home stands to the account's DAORIS_HOME (LEFT2), which is the folder a terminal's daoris reads: the
-    /// page's hint says a terminal reads this folder only when it is the same. Each start D105 names, judged after it
+    /// How the home stands to the account's DAORIS_HOME, which is the folder a terminal's daoris reads: the
+    /// page's hint says a terminal reads this folder only when it is the same. Each start, judged after it
     /// established, with the account's variable as it then stands.
     /// </summary>
     [Fact]
@@ -734,7 +734,7 @@ public sealed class InstallHomeTests : IDisposable
         var overrode = Inherited(install, Path.Combine(_root, "first", "data"));
         Assert.Equal(HomeAccount.Overridden, InstallHome.AccountOf(_process[DaorisHome.Variable], overrode, _user));
 
-        // 🔴 Named for this start alone: D105 respects it and writes no notice, and a terminal reads the account's.
+        // 🔴 Named for this start alone: the install respects it and writes no notice, and a terminal reads the account's.
         _process.Clear();
         Assert.Null(Establish(install, already: Path.Combine(_root, "scratch-home")));
         Assert.Equal(HomeAccount.ThisStart, InstallHome.AccountOf(_process[DaorisHome.Variable], null, _user));

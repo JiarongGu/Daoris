@@ -5,9 +5,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The person's door over the bridge (`PersonRoutes.cs`, PERSONDOOR1f and RPC1c, D156 points 2 and 4): the window reads what a
+/// The person's door over the bridge (`PersonRoutes.cs`): the window reads what a
 /// terminal asked it to confirm and answers one, and reads the person key the shell holds for its host, which none holds before
-/// PERSONDOOR1g. Each route is the window's alone: the pipe's census refuses all three to a terminal (<c>PipeCensusTests</c>).
+/// the shell mints one. Each route is the window's alone: the pipe's census refuses all three to a terminal (<c>PipeCensusTests</c>).
 /// </summary>
 public sealed class DriverModulePersonTests : DriverModuleBridge
 {
@@ -47,7 +47,7 @@ public sealed class DriverModulePersonTests : DriverModuleBridge
         Assert.Equal("boolean", shown[0].GetProperty("fields")[1].GetProperty("type").GetString());
         Assert.Equal("daoris-driver", shown[0].GetProperty("asker").GetProperty("process").GetString());
         Assert.Equal(4242, shown[0].GetProperty("asker").GetProperty("pid").GetInt32());
-        // CONFIRMWAIT1a-i: a terminal's press has no time, and its card says whether a terminal waits on it.
+        // A terminal's press has no time, and its card says whether a terminal waits on it.
         Assert.True(!shown[0].TryGetProperty("expires", out var expires) || expires.ValueKind == System.Text.Json.JsonValueKind.Null);
         Assert.True(shown[0].GetProperty("waitedOn").GetBoolean());
 
@@ -69,7 +69,7 @@ public sealed class DriverModulePersonTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// CONFIRMWAIT1a-ii (the confirm-wait design §7.2, §8.1): a Confirm while an update drains Daoris is answered as data, <c>draining</c>,
+    /// A Confirm while an update drains Daoris is answered as data, <c>draining</c>,
     /// for the card to say, and the press still waits; a press restored after a restart says so and names its asker as its record's, and
     /// one carrying a key says it does not wait across a restart.
     /// </summary>
@@ -99,7 +99,7 @@ public sealed class DriverModulePersonTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// NOTIFY2j: the window reads what waits at the service's door as the loop was last told it, the service's own shape whole and
+    /// The window reads what waits at the service's door as the loop is last told it, the service's own shape whole and
     /// numbered; none before the first telling.
     /// </summary>
     [Fact]
@@ -124,7 +124,7 @@ public sealed class DriverModulePersonTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ONEWAY1n-i (the oneway design §4 M4): the window answers a confirmation at the service's door through <c>PERSON_CONFIRM</c>,
+    /// The window answers a confirmation at the service's door through <c>PERSON_CONFIRM</c>,
     /// by its source, as it answers a terminal's: made is answered; a request its door refused at the Confirm is said by the host's
     /// sentence and code; one no longer waiting is <c>gone</c>; and a service not come up is said, nothing taken. A press on the pipe
     /// with the same id is left alone.
@@ -199,7 +199,7 @@ public sealed class DriverModulePersonTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// CONFIRMSEEN1: the window says a card is in front of the person, kept once; it moves no clock (CONFIRMWAIT1a-i). One no longer
+    /// The window says a card is in front of the person, kept once; it moves no clock. One no longer
     /// waiting is said as data, by its code.
     /// </summary>
     [Fact]
@@ -241,8 +241,8 @@ public sealed class DriverModulePersonTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The page asks the shell for the person key as it loads, and keeps it in memory (D156 point 2). The shell mints none until
-    /// PERSONDOOR1g, so it answers none, and the page sends its writes as it did.
+    /// The page asks the shell for the person key as it loads, and keeps it in memory. The shell mints none yet,
+    /// so it answers none, and the page sends its writes without it.
     /// </summary>
     [Fact]
     public async Task The_key_the_shell_holds_for_its_host_is_none_until_the_shell_mints_one()

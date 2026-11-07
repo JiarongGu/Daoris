@@ -7,37 +7,35 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Who needs the person, as every window holds it (PUSH1d4, D182 points 2-4 and 6): <i>What needs you</i>'s rows and the Sessions
+/// Who needs the person, as every window holds it: <i>What needs you</i>'s rows and the Sessions
 /// badge's count, judged once per wake in .NET (<see cref="NeedsAPerson"/>) from what the other slices and the driver's look already
 /// hold in memory, and pushed by row, so no window judges them and no tick reads the band's inputs again.
 /// </summary>
 /// <remarks>
 /// <para><b>Three keyed partitions.</b> <see cref="Rows"/>, each row under its kind and id as the band keys it, its wait and the values
-/// the page words it from, which the bell and each place of the activity bar count (BADGEUX1); <see cref="Sessions"/>, each session parked
+/// the page words it from, which the bell and each place of the activity bar count; <see cref="Sessions"/>, each session parked
 /// on the person and each quest parked on its failures; and <see cref="Working"/>, each session the driver runs, which the status bar
-/// counts (SESSBADGE1) and, less the parks, lights Sessions' running mark (BADGEUX1). A row's move pushes that
-/// row alone. A row holds no place in the list: the page orders by group, then by wait, then by kind (D182's PUSH1d4 note, its PUSH1c3a
-/// rule).</para>
+/// counts and, less the parks, lights Sessions' running mark. A row's move pushes that
+/// row alone. A row holds no place in the list: the page orders by group, then by wait, then by kind.</para>
 ///
 /// <para><b>Its inputs, from memory.</b> The sessions, the quests, the asks, the groups and the work as their slices last judged them
 /// (<see cref="StateSlice.Snapshot"/>); the registry as the machine's facts hold it; and what the driver's look kept: the trust holds,
 /// the considerations and the account waits as the tick hands them, the second opinions judged, the rule proposals, the helpers' asks,
-/// the moves back to the person the service refused (HELPERWAIT1c), the agents' asks to hand over (NOTIFY2e), the held tool calls and the answers the answers-alone bound holds (COWORK1e, off the home's marks); and for the accounts' rows, the roster's last readings as <c>HARNESSES</c> answers them (asking no account,
-/// ROSTER1) and how each agent's accounts are used as the accounts slice holds it. Not judged until every slice it reads has judged and
-/// the registry has landed (PUSHUX1): a band drawn from half its inputs would say nothing waits where something does. The look's own
-/// lists are empty before its first look, as the page's were.</para>
+/// the moves back to the person the service refused, the agents' asks to hand over, the held tool calls and the answers the answers-alone bound holds (off the home's marks); and for the accounts' rows, the roster's last readings as <c>HARNESSES</c> answers them (asking no account)
+/// and how each agent's accounts are used as the accounts slice holds it. Not judged until every slice it reads has judged and
+/// the registry has landed: a band drawn from half its inputs would say nothing waits where something does. The look's own
+/// lists are empty before its first look.</para>
 ///
 /// <para><b>Its wakes</b>, each only asking. Each input slice's push (<see cref="StateSlice.Pushed"/>), the accounts' among them, the
 /// sessions' only where what the judge reads of them moved (<see cref="SessionsRead"/>), so a working session's every word judges nothing
 /// here; each look of the driver (the loop wakes it beside the driver's state); a held tool call's start and end
-/// (<see cref="HeldPermissions.Changed"/>); a stretch below the free-space floor said or ended (<see cref="SpaceFloors.Changed"/>,
-/// KEEP1f); the registry landing in the machine's facts; a press declared to the rules, the sessions, the
+/// (<see cref="HeldPermissions.Changed"/>); a stretch below the free-space floor said or ended (<see cref="SpaceFloors.Changed"/>); the registry landing in the machine's facts; a press declared to the rules, the sessions, the
 /// driver or the roster (a proposal answered, a helper's yes or no, a reading); a harness action's end; the service coming up; a
-/// terminal's press for the window asked, shown or ended (<see cref="PipeConfirmations.Event"/>, CONFIRMSEEN1); and the
+/// terminal's press for the window asked, shown or ended (<see cref="PipeConfirmations.Event"/>); and the
 /// 15 s period, which reads a helper's or a hand-over's ask a terminal's driver wrote and an account a terminal signed in.</para>
 ///
 /// <para><b>Desktop-only.</b> A trust hold names a folder and the agent's own file, machine paths this machine's windows alone read
-/// (D47, D182 point 2).</para>
+/// </para>
 /// </remarks>
 public static class AttentionStateSlice
 {
@@ -48,14 +46,14 @@ public static class AttentionStateSlice
     public const string Rows = "rows";
 
     /// <summary>
-    /// Each session parked to ask and each quest parked on its failed sessions, by a key of its own (UX5 U20's set): the page keeps the
-    /// parks out of Sessions' running mark by their keys (BADGEUX1); what a place counts is the rows.
+    /// Each session parked to ask and each quest parked on its failed sessions, by a key of its own: the page keeps the
+    /// parks out of Sessions' running mark by their keys; what a place counts is the rows.
     /// </summary>
     public const string Sessions = "sessions";
 
     /// <summary>
-    /// The sessions the driver runs (SESSBADGE1, D76's note), each by its key, the cap's own count (<see cref="NeedsAPerson.Working"/>):
-    /// what the status bar says, and, less the parks of <see cref="Sessions"/>, Sessions' running mark (BADGEUX1).
+    /// The sessions the driver runs, each by its key, the cap's own count (<see cref="NeedsAPerson.Working"/>):
+    /// what the status bar says, and, less the parks of <see cref="Sessions"/>, Sessions' running mark.
     /// </summary>
     public const string Working = "working";
 
@@ -81,7 +79,7 @@ public static class AttentionStateSlice
         ["working"] = ["workspace"],
         ["note"] = ["note", "parts"],
         ["goAhead"] = ["kind", "on", "act"],
-        // GOAHEADSTALE1: a go-ahead nothing on its ask could still use, since the last thing on its ask moved.
+        // A go-ahead nothing on its ask could still use, since the last thing on its ask moved.
         ["stale"] = ["since"],
         ["departed"] = ["count", "number", "reason"],
         ["setUp"] = ["machine", "sequence"],
@@ -96,7 +94,7 @@ public static class AttentionStateSlice
         ["pausedBy"] = ["scope", "id"],
         ["wordsHeld"] = ["why", "reason", "repository", "until", "account", "accountName"],
         ["sitting"] = ["quest", "repository", "verdict", "reason", "strikes", "since"],
-        // POOL1c: `own`, a hold on the own sign-in's file, which the page draws with no grant (D197 point 3).
+        // `own`, a hold on the own sign-in's file, which the page draws with no grant.
         ["trust"] = ["folder", "trustFile", "own"],
         ["proposal"] =
         [
@@ -117,24 +115,24 @@ public static class AttentionStateSlice
         ["named"] = ["id", "name", "state", "read", "until"],
         ["confirmation"] = ["module", "route", "asker", "expires", "shownAt"],
         ["asker"] = ["process", "pid"],
-        // KEEP1f: a volume still below its free-space floor once the floor's acts ran.
+        // A volume still below its free-space floor once the floor's acts ran.
         ["space"] = ["root", "free", "total", "floor", "freed", "could"],
-        // ONEWAY1ae: the old records every part's kept census holds, and their count by part.
+        // The old records every part's kept census holds, and their count by part.
         ["convert"] = ["records", "parts"],
-        // GITAUTH1a: a held group of git remotes that cannot authenticate. GITAUTH1e: its way and what serves it (§7.4); the move's row
+        // A held group of git remotes that cannot authenticate. Its way and what serves it; the move's row
         // (`no-identity`) names every host and lists apart the repositories whose own configuration names authentication.
         ["git"] = ["host", "class", "holds", "remote", "repositories", "words", "way", "served", "identity", "identityId", "keyPage", "hosts", "ownInput"],
-        // GITAUTH1f: a git go-ahead a door holds while its act waits.
+        // A git go-ahead a door holds while its act waits.
         ["gitAsk"] = ["repository", "remote", "host", "class", "session", "gone"],
-        // SESSWATCH1a: a quiet session brought to the person, or a busy one nothing is heard from.
+        // A quiet session brought to the person, or a busy one nothing is heard from.
         ["quiet"] = ["minutes", "busy", "intake", "words", "heavy"],
-        // INTEGRATE1o part o3: a run held at a declined request, its node and the quest declined.
+        // A run held at a declined request, its node and the quest declined.
         ["declined"] = ["node", "quest", "to", "work", "request"],
-        // NODEKIT1 HUMAN: a run waiting on a person's task, its node and the presses it waits for.
+        // A run waiting on a person's task, its node and the presses it waits for.
         ["task"] = ["run", "node", "acts", "work"],
-        // KNOWCENTRAL2e: what memory waits on the person for one session: ends and replacements to approve, a stopped session's staged rows.
+        // What memory waits on the person for one session: ends and replacements to approve, a stopped session's staged rows.
         ["memory"] = ["ends", "replacements", "staged"],
-        // INTEGRATE1h: an integration's wait on the owner: which (decide, superseded, card, declaration), its line and what it names; a
+        // An integration's wait on the owner: which (decide, superseded, card, declaration), its line and what it names; a
         // declaration's `tip` is its blob and its `state` unaccepted or changed.
         ["integration"] = ["wait", "repository", "line", "branch", "branches", "candidate", "request", "commit", "subject", "unit", "tip", "why", "state"],
     };
@@ -192,15 +190,15 @@ public static class AttentionStateSlice
         // A harness action's end: a sign-in makes an account and moves its reading.
         new("HARNESS_ENDED"),
         new("DRIVER_READY"),
-        // CONFIRMSEEN1: a terminal's press asked, shown or ended, as every window is told it.
+        // A terminal's press asked, shown or ended, as every window is told it.
         new(PipeConfirmations.Event),
-        // KNOWCENTRAL2e: what memory waits on the person, as the service was last read.
+        // What memory waits on the person, as the service is last read.
         new(MemoryWaits.Event),
     ];
 
     /// <summary>
     /// The slice the shell's loop owns, judged from what <paramref name="loop"/> holds in memory; a held tool call's row first seen is
-    /// announced while the loop's notify switch is on (NOTIFY2d).
+    /// announced while the loop's notify switch is on.
     /// </summary>
     public static StateSlice Of(DriverLoop loop, IEventBus bus) =>
         Of(ct => FactsAsync(loop, ct), bus,
@@ -219,7 +217,7 @@ public static class AttentionStateSlice
 
     /// <summary>
     /// The slice over what <paramref name="facts"/> reads at each judgement; <paramref name="held"/>, where named, told each judgement, so
-    /// a held tool call is announced where its row is first seen (NOTIFY2d).
+    /// a held tool call is announced where its row is first seen.
     /// </summary>
     public static StateSlice Of(
         Func<CancellationToken, Task<AttentionFacts?>> facts, IEventBus bus, IReadOnlyList<Func<Action, IDisposable>> hears, MachineLog? log = null,
@@ -285,7 +283,7 @@ public static class AttentionStateSlice
     /// <summary>
     /// Everything the judge reads, from <paramref name="loop"/>'s memory and the home's files the routes read; null until every input
     /// slice has judged and the registry has landed. The roster is its last readings, as <c>HARNESSES</c> answers them, asking no
-    /// account (ROSTER1).
+    /// account.
     /// </summary>
     public static async Task<AttentionFacts?> FactsAsync(DriverLoop loop, CancellationToken ct)
     {
@@ -303,35 +301,35 @@ public static class AttentionStateSlice
             Opinions = Written(TreesRoutes.OpinionWaits(loop.Judged.Latest)),
             Helpers = Written(HelperWaits(loop.Home)),
             HandOvers = Written(HandOverWaits(loop.Home)),
-            // HELPERWAIT1c: each move back to the person the service refused, from the home's helpers folder.
+            // Each move back to the person the service refused, from the home's helpers folder.
             Backs = Written(BackWaits(loop.Home)),
             Permissions = Written(PermissionWaits(HeldPermissions.Of(loop.Events))),
             Answers = Written(AnswerWaits(loop.Home)),
-            // KNOWCENTRAL2e: each session whose memory changes wait on the person, as the service was last read.
+            // Each session whose memory changes wait on the person, as the service is last read.
             Memory = [.. loop.MemoryWaits.Now().Select(each => JsonNode.Parse(each.GetRawText())!.AsObject())],
             Doors = Written(AgentsRoutes.Doors(loop.Harnesses, roster)),
             Use = Use(loop.Slices),
             Waits = Written(loop.Look.Waits.Select(DriverLoop.TickWait)),
-            // CONFIRMSEEN1: what a terminal sent that waits for the window, from the pipe's memory; none where this shell serves no pipe.
+            // What a terminal sent that waits for the window, from the pipe's memory; none where this shell serves no pipe.
             Confirmations = Written(ConfirmationWaits(loop.Pipe?.Confirmations)),
-            // KEEP1f: each volume the look's floor pass said is still below its floor, from the process's memory.
+            // Each volume the look's floor pass said is still below its floor, from the process's memory.
             Space = Written(SpaceWaits(SpaceFloors.Shared, loop.Home)),
-            // GITAUTH1a: each remote held since it could not authenticate, from the home's run/git/held.json.
+            // Each remote held since it could not authenticate, from the home's run/git/held.json.
             Git = Written(GitWaits(loop.Home)),
-            // GITAUTH1f: each git go-ahead a door holds, from the home's run/git/asks/.
+            // Each git go-ahead a door holds, from the home's run/git/asks/.
             GitAsks = Written(GitAskWaits(loop.Home)),
-            // INTEGRATE1o part o3: each run held at a declined request, from the node runtime's last look and its node records.
+            // Each run held at a declined request, from the node runtime's last look and its node records.
             Requests = Written(loop.RequestHolds.Select(hold => new
             {
                 hold.Run, hold.Node, hold.Repository, hold.Workspace, hold.Quest, hold.To, hold.Work, hold.Request, Since = Moments.Write(hold.Since),
             })),
-            // NODEKIT1 HUMAN: each run waiting on a person's task, from the node runtime's last look and its node records.
+            // Each run waiting on a person's task, from the node runtime's last look and its node records.
             Tasks = Written(loop.HumanTasks),
-            // INTEGRATE1h: the integration's waits on the owner, from the home's integration record and the node runtime's last look.
+            // The integration's waits on the owner, from the home's integration record and the node runtime's last look.
             Integration = Written(IntegrationWaits(loop.Home, loop.CardWaits, loop.DeclarationsOwed)),
-            // SESSWATCH1a: each session the watcher brings to the person, from its memory.
+            // Each session the watcher brings to the person, from its memory.
             Quiet = Written(QuietWaits(SessionWatch.Of(loop.Events), loop.Processes)),
-            // SUPERVISOR1a-i: the parks a supervisor's held or released decision answers for, from the decisions' memory.
+            // The parks a supervisor's held or released decision answers for, from the decisions' memory.
             Supervised = loop.Supervisor.Answering(),
         };
     }
@@ -384,7 +382,7 @@ public static class AttentionStateSlice
         };
     }
 
-    /// <summary>A registry row as the page's <c>Registration</c> reads it: the host's own judgement of who can be asked (D70).</summary>
+    /// <summary>A registry row as the page's <c>Registration</c> reads it: the host's own judgement of who can be asked.</summary>
     private static JsonObject Registration(RepoView view) => new()
     {
         ["repository"] = view.Repository,
@@ -415,9 +413,9 @@ public static class AttentionStateSlice
     public static IReadOnlyList<object> AnswerWaits(string home) => AttentionWaits.AnswerWaits(home);
 
     /// <summary>
-    /// What the judge reads of the session records, as one string (PUSH1d4): each record's id, state, the person's words waiting (its
-    /// keyed <c>said</c>, ONEWAY1m), repository and workspace,
-    /// its kind and the marks the cap's count reads (SESSBADGE1), and, where it is not busy working, when it moved and its note. A working
+    /// What the judge reads of the session records, as one string: each record's id, state, the person's words waiting (its
+    /// keyed <c>said</c>), repository and workspace,
+    /// its kind and the marks the cap's count reads, and, where it is not busy working, when it moved and its note. A working
     /// session's record is written at each word and moves its time alone, which no row reads; its park moves its state.
     /// </summary>
     public static string SessionsRead(IEnumerable<JsonObject> records) =>
@@ -476,7 +474,7 @@ public static class AttentionStateSlice
     public static IReadOnlyList<object> IntegrationWaits(string home, IReadOnlyList<IntegrationCardWait> cards, IReadOnlyList<DeclarationOwed>? declarations = null) =>
         AttentionWaits.IntegrationWaits(home, cards, declarations);
 
-    /// <summary>Wake the slice where a hold on a git remote of <paramref name="home"/>'s is kept or lifted (GITAUTH1a, <see cref="GitHolds.Changed"/>).</summary>
+    /// <summary>Wake the slice where a hold on a git remote of <paramref name="home"/>'s is kept or lifted (<see cref="GitHolds.Changed"/>).</summary>
     public static IDisposable HearGitHolds(string home, Action wake)
     {
         void Heard(string changed)
@@ -492,7 +490,7 @@ public static class AttentionStateSlice
     public static IReadOnlyList<object> GitAskWaits(string home) => AttentionWaits.GitAskWaits(home);
 
     /// <summary>
-    /// Wake the slice where a door raises, or a person answers, a git go-ahead (GITAUTH1f): the doors are other processes, so the home's
+    /// Wake the slice where a door raises, or a person answers, a git go-ahead: the doors are other processes, so the home's
     /// <c>run/git/asks/</c> is watched, made where it is not there yet.
     /// </summary>
     public static IDisposable HearGitAsks(string home, Action wake)
@@ -508,7 +506,7 @@ public static class AttentionStateSlice
         return watcher;
     }
 
-    /// <summary>Wake the slice where a stretch below the free-space floor is said or ends (KEEP1f, <see cref="SpaceFloors.Changed"/>).</summary>
+    /// <summary>Wake the slice where a stretch below the free-space floor is said or ends (<see cref="SpaceFloors.Changed"/>).</summary>
     public static IDisposable HearFloors(SpaceFloors floors, Action wake)
     {
         void Heard(string _) => wake();

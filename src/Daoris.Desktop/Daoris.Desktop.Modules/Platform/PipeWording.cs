@@ -1,7 +1,7 @@
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The part a value plays in the sentence a terminal's press is shown by (NOTIFY2b, the notification design §3.2). A wire's word,
+/// The part a value plays in the sentence a terminal's press is shown by. A wire's word,
 /// told in lower case as <see cref="PipeNamed.Role"/>: added to, never renamed.
 /// </summary>
 public enum PipeRole
@@ -15,7 +15,7 @@ public enum PipeRole
     /// <summary>Words the press carries, quoted as written, apart from Daoris's sentence.</summary>
     Words,
 
-    /// <summary>D188's level, in the composer's words: when the words reach a working session.</summary>
+    /// <summary>The level, in the composer's words: when the words reach a working session.</summary>
     Level,
 
     /// <summary>Files, each by its path as sent, whole: two files share a name.</summary>
@@ -41,7 +41,7 @@ public enum PipeRole
 public sealed record PipeWord(string Field, PipeRole Role);
 
 /// <summary>
-/// One value a press's sentence names (NOTIFY2b): its role in lower case, its JSON pointer as <see cref="PipeConfirmationField.Name"/>
+/// One value a press's sentence names: its role in lower case, its JSON pointer as <see cref="PipeConfirmationField.Name"/>
 /// gives it, and its value as the card shows it. Every value stays in <c>fields</c> besides, so none leaves the card's view.
 /// </summary>
 public sealed record PipeNamed(string Role, string Name, string Value);

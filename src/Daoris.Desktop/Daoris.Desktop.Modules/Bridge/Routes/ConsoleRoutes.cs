@@ -5,19 +5,19 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A session's live console, the page's `bridge/console.ts` (MOD5): its backlog (D49 §2), the streams it
-/// runs beside itself (CONSOLE2c), and a task stopped from its tab (CONSOLE3a).
+/// A session's live console, the page's `bridge/console.ts`: its backlog, the streams it
+/// runs beside itself, and a task stopped from its tab.
 /// </summary>
 public sealed class ConsoleRoutes(DriverLoop loop, AgentActions actions)
 {
     private readonly DriverLoop _loop = loop;
     private readonly AgentActions _actions = actions;
 
-    // The console's backlog (D49 §2): what this session has said, or what it has said since
+    // The console's backlog: what this session has said, or what it has said since
     // the page last heard. Live lines arrive as `SESSION_OUTPUT` events; this is how a page
     // that just opened catches up, and how one that missed a batch closes the gap — the
     // sequence numbers are the driver's, so neither side has to remember the other. A harness
-    // action's relay (`harness:action`) is no session's, and answers its latest run (SIGNIN1),
+    // action's relay (`harness:action`) is no session's, and answers its latest run,
     // so a sign-in's panel mounted after its link or its phases began reads them.
     [DriverRoute("TAIL_SESSION", PipeClass.Open)]
     private object? TailSession(TailSession read)
@@ -38,7 +38,7 @@ public sealed class ConsoleRoutes(DriverLoop loop, AgentActions actions)
         };
     }
 
-    // What a session runs beside itself (CONSOLE2c): each subagent and background task, with
+    // What a session runs beside itself: each subagent and background task, with
     // the key its console is tailed by over `TAIL_SESSION`. Asked on open and again when a
     // `SESSION_STREAMS` event names the session.
     [DriverRoute("SESSION_STREAMS", PipeClass.Open)]
@@ -54,7 +54,7 @@ public sealed class ConsoleRoutes(DriverLoop loop, AgentActions actions)
         };
     }
 
-    // Stopping one task a session runs, from its tab (CONSOLE3a): the harness's own stop, sent by
+    // Stopping one task a session runs, from its tab: the harness's own stop, sent by
     // the session that runs it. Its stream ends when the wire says how. False is an answer — no
     // session here runs it, or its harness stopped nothing — and a key that is not one of this
     // session's tasks is refused in the driver's words, because the page never sends one.
@@ -72,7 +72,7 @@ public sealed class ConsoleRoutes(DriverLoop loop, AgentActions actions)
             throw new DriverException($"`{key}` is not background work of session {id}: only a task can be stopped from its tab.");
         }
 
-        // PARALLEL1e (D181 point 4): the stop is a question asked of the agent, which may never answer; the page's own wait
+        // The stop is a question asked of the agent, which may never answer; the page's own wait
         // ends it, where none did and the route waited on the agent for ever.
         var stopped = await _loop.Processes.StopTaskAsync(id, key[prefix.Length..], cancellationToken)
             .ConfigureAwait(false);

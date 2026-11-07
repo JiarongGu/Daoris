@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The standing block's facts as a start reads them (CONTEXTONE1c, D230 point 3): the tree's, this machine's for the repository and
+/// The standing block's facts as a start reads them: the tree's, this machine's for the repository and
 /// its workspace, the harness's, and the file the block goes through where the whole first prompt cannot carry it.
 /// </summary>
 public static class StandingBlocks
@@ -46,7 +46,7 @@ public static class StandingBlocks
     }
 
     /// <summary>
-    /// <paramref name="facts"/> on <paramref name="adapter"/>: whether it takes none of the person's denies (D233 choice 3), and, for a kind
+    /// <paramref name="facts"/> on <paramref name="adapter"/>: whether it takes none of the person's denies, and, for a kind
     /// with a repository, the tree's skill folders where it loads none itself and the repository's rules where its instruction file is
     /// longer than the harness reads.
     /// </summary>

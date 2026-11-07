@@ -63,13 +63,13 @@ internal sealed class SessionsGroupsDesk(DriverContext context)
     {
         var ids = Ids(press.Ids);
         var (look, grouped) = await GroupsAsync(ids, cancellationToken).ConfigureAwait(false);
-        // the entries beside the rows, which the page reads until SESSONE1c draws entries.
+        // The entries beside the rows.
         var sessions = grouped.Select(SessionsGroupsWires.Grouped).ToArray();
         var entries = SessionGroups.ReadEntries(look, ids).Select(SessionsGroupsWires.Entry).ToArray();
         if (!press.Said) return new { Sessions = sessions, Entries = entries };
 
         // `daoris session list` asks for its own lines from this look (the group, the repository and `--json` it was given),
-        // which the alone path prints from a look of its own through the same function (§7.3); the page asks for none.
+        // which the alone path prints from a look of its own through the same function; the page asks for none.
         var ask = new SessionsAsk("list") { Group = press.Group, Repository = press.Repository, Json = press.Json };
         return new
         {
@@ -120,7 +120,7 @@ internal sealed class SessionsGroupsDesk(DriverContext context)
         IReadOnlyCollection<string>? only, CancellationToken cancellationToken, bool walked = false)
     {
         var service = _loop.Service ?? throw NotReady();
-        // the one look, in the groups slice's builder (PUSH1c1: no tree judged here unless walked; the waits, the calls and
+        // the one look, in the groups slice's builder (no tree judged here unless walked; the waits, the calls and
         // the kept look are laid there), so the route and the pushed slice cannot drift.
         var look = await GroupsStateSlice.LookAsync(_loop, service, cancellationToken, only, walked).ConfigureAwait(false);
 

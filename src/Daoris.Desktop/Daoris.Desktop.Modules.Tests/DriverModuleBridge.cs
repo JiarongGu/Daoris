@@ -5,7 +5,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The bridge onto <see cref="DriverModule"/> that every domain's test class shares (MOD5), as the
+/// The bridge onto <see cref="DriverModule"/> that every domain's test class shares, as the
 /// partials share the module.
 /// </summary>
 /// <remarks>
@@ -22,7 +22,7 @@ public abstract class DriverModuleBridge : Bridge
     protected DriverModule Module() => new(Bus, Loop());
 
     /// <summary>
-    /// The person's Apply on the card as drawn now (HELPAPPLY1): the page sends the revision its card showed, so a test that
+    /// The person's Apply on the card as drawn now: the page sends the revision its card showed, so a test that
     /// is not about the binding draws the card and presses what it shows.
     /// </summary>
     protected static async Task<JsonElement> ApplyShownAsync(IIpcModule module, string session, string id)

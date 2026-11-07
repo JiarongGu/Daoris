@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A model family's cool-off over the bridge (MODELROLE1k, `AccountsRoutes.cs`): the account's cooling names its family, which the
+/// A model family's cool-off over the bridge (`AccountsRoutes.cs`): the account's cooling names its family, which the
 /// Agents place words, and the whole account's names none. A file read under the test's home; nothing is probed.
 /// </summary>
 public sealed class AccountsModelCoolingTests : DriverModuleBridge

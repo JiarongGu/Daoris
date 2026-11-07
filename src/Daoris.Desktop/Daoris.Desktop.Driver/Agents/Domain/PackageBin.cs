@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The script a package's program is, read from its <c>package.json</c> as npm's <c>exec</c> picks it (LAUNCHCHAIN1): the program
+/// The script a package's program is, read from its <c>package.json</c> as npm's <c>exec</c> picks it: the program
 /// named, where one is; else the one script every name points at; else the program named for the package without its scope. What
 /// starts it is node, with the script as its first argument, never the shim npm wrote beside it.
 /// </summary>

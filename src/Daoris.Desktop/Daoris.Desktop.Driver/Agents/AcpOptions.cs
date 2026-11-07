@@ -3,8 +3,8 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A session's config options (AGT6b, D98): as the agent last said them, the list its open began with, the person's change of one, and
-/// the actor's choice carried onto the open session (D205 §3.2). The session hands it a line for its console, the one request door and
+/// A session's config options: as the agent last said them, the list its open began with, the person's change of one, and
+/// the actor's choice carried onto the open session. The session hands it a line for its console, the one request door and
 /// the id the agent gave it.
 /// </summary>
 internal sealed class AcpOptions(
@@ -16,25 +16,25 @@ internal sealed class AcpOptions(
     private readonly object _gate = new();
     private IReadOnlyList<AcpConfigOption> _options = [];
 
-    /// <summary>What this start's actor asked (D205 §3.2, MODELROLE1c): set on the open session by category; null sets nothing.</summary>
+    /// <summary>What this start's actor asked: set on the open session by category; null sets nothing.</summary>
     public ActorAsked? Carry { get; set; }
 
-    /// <summary>Told what was carried where it differs from <see cref="Carry"/>, so the record never says a choice was taken that was not.</summary>
+    /// <summary>Told what is carried where it differs from <see cref="Carry"/>, so the record never says a choice is taken that is not.</summary>
     public Action<ActorAsked>? Carried { get; set; }
 
     /// <summary>Asked where the agent does not offer, or refuses, the model at the open: the re-ask, or null to end the open.</summary>
     public IChoiceReask? ModelRefused { get; set; }
 
-    /// <summary>Told the options the open listed, before the posture or any set (D205 §9.2).</summary>
+    /// <summary>Told the options the open listed, before the posture or any set.</summary>
     public Action<IReadOnlyList<AcpConfigOption>>? OffersRead { get; set; }
 
     /// <summary>The options as the open listed them, never overwritten: what a refused attempt's categories are set back to.</summary>
     public IReadOnlyList<AcpConfigOption> OpeningOptions { get; private set; } = [];
 
-    /// <summary>The refusal that ended the open before any prompt (D205 §3.3), or null.</summary>
+    /// <summary>The refusal that ended the open before any prompt, or null.</summary>
     public ModelRefusal? NotOffered { get; private set; }
 
-    /// <summary>D205: only the list the last setter actually returned; null when it returned none.</summary>
+    /// <summary>Only the list the last setter actually returned; null when it returned none.</summary>
     public IReadOnlyList<AcpConfigOption>? LastAcknowledged { get; private set; }
 
     /// <summary>The options as the agent last said them, the mode included; empty before the open or where it offers none.</summary>
@@ -80,7 +80,7 @@ internal sealed class AcpOptions(
         return after;
     }
 
-    /// <summary>The opening's snapshot, kept once, and told as the agent's offer reading (D205 §9.2).</summary>
+    /// <summary>The opening's snapshot, kept once, and told as the agent's offer reading.</summary>
     public void KeepOpening()
     {
         OpeningOptions = Current;
@@ -95,18 +95,18 @@ internal sealed class AcpOptions(
     }
 
     /// <summary>
-    /// <see cref="Carry"/> set on the session (D205 §3.2): the model first, then the effort, whose levels follow the model, each found by
-    /// its category (MODELROLE1a: Codex's effort id is <c>reasoning_effort</c>, Claude's <c>effort</c>). Whether anything was set, so the
-    /// posture is set again after it: a model change can move the mode (MODELROLE1a's <c>haiku</c> moved <c>auto</c> to
+    /// <see cref="Carry"/> set on the session: the model first, then the effort, whose levels follow the model, each found by
+    /// its category (Codex's effort id is <c>reasoning_effort</c>, Claude's <c>effort</c>). Whether anything is set, so the
+    /// posture is set again after it: a model change can move the mode (<c>haiku</c> moves <c>auto</c> to
     /// <c>acceptEdits</c>).
     /// </summary>
     /// <remarks>
     /// Where <see cref="ModelRefused"/> is given, a model the open's list does not offer, a set the agent refuses, or one answered with another
-    /// value it offers is a refusal of that choice on this account (§3.3): the re-ask answers a later choice to set on this session, each
+    /// value it offers is a refusal of that choice on this account: the re-ask answers a later choice to set on this session, each
     /// category the refused attempt touched and the later choice leaves at account default first set back to its opening value; or the
     /// open ends before its prompt. An effort not offered runs at account default effort, said as not carried, never a refusal.
     /// </remarks>
-    /// <exception cref="AcpChoiceNotOffered">The choice was refused and nothing else may run on this session: no prompt was sent.</exception>
+    /// <exception cref="AcpChoiceNotOffered">The choice is refused and nothing else may run on this session: no prompt is sent.</exception>
     public async Task<bool> CarryAsync(CancellationToken ct)
     {
         var asked = Carry;
@@ -122,7 +122,7 @@ internal sealed class AcpOptions(
                 var later = await ModelRefused!.ReaskAsync(refused).ConfigureAwait(false);
                 if (later is null) throw new AcpChoiceNotOffered(refused);
 
-                // The same agent on the same account (§3.3's first path): what the refused attempt moved is set back where the later
+                // The same agent on the same account: what the refused attempt moved is set back where the later
                 // choice leaves it at account default, then the later choice is carried on this same session, no respawn.
                 foreach (var category in touched)
                 {
@@ -160,9 +160,9 @@ internal sealed class AcpOptions(
                 if (value is not { Source: "entry" or "override", Value: { } wanted, Carried: true }) return value;
                 if (Current.FirstOrDefault(option => option.Category == category) is not { } option) return value with { Carried = false };
                 if (option.Current == wanted) return value;
-                // Always asked, never judged by the list alone (MODELROLE1a): Claude's door lists aliases and takes a full id it does not list,
+                // Always asked, never judged by the list alone: Claude's door lists aliases and takes a full id it does not list,
                 // and refuses a model it does not offer at the set, before any prompt. A refusal of a value the list named is `refused`; of
-                // one it did not, `not-offered` (D205 §3.3).
+                // one it did not, `not-offered`.
                 var listed = option.Choices.Any(choice => choice.Value == wanted);
                 try
                 {
@@ -179,7 +179,7 @@ internal sealed class AcpOptions(
                 }
 
                 // A returned value other than the one asked is a refusal only where it is another value the list offers: an asked id the agent
-                // answers with its own alias is taken (round 3, Opus N5; MODELROLE1a: `claude-sonnet-5-5` asked, `sonnet` returned).
+                // answers with its own alias is taken (`claude-sonnet-5-5` asked, `sonnet` returned).
                 var now = LastAcknowledged?.FirstOrDefault(each => each.Category == category);
                 if (now is not null && now.Current != wanted && now.Choices.Any(choice => choice.Value == wanted))
                 {

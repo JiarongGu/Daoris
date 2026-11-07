@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The one thing a browser genuinely cannot do: name a directory on this machine (D48 §7).
+/// The one thing a browser genuinely cannot do: name a directory on this machine.
 /// </summary>
 /// <remarks>
 /// Everything else about managing a repository is an ordinary loopback call, deliberately — so this
@@ -21,7 +21,7 @@ public sealed class RegistryModuleTests : Bridge
         return _picked;
     });
 
-    /// <summary>MAINWINDOWS2c: the folder dialog is owned by the window whose page asked, which the page names.</summary>
+    /// <summary>The folder dialog is owned by the window whose page asked, which the page names.</summary>
     [Theory]
     [InlineData(null)]
     [InlineData("main:2")]
@@ -109,7 +109,7 @@ public sealed class RegistryModuleTests : Bridge
     }
 
     /// <summary>
-    /// Knowledge feeds only from a joined repository (D47 §4), narrowed wherever a manifest is READ —
+    /// Knowledge feeds only from a joined repository, narrowed wherever a manifest is READ —
     /// because this file is written by hand as often as by the CLI, and a hand-written
     /// `knowledge: true` without `join` must not read as sharing.
     /// </summary>
@@ -169,7 +169,7 @@ public sealed class RegistryModuleTests : Bridge
     }
 
     /// <summary>
-    /// D91: what a repository says it uses sits in the same block the form writes, and the form has no
+    /// What a repository says it uses sits in the same block the form writes, and the form has no
     /// field for it. Rewriting the block from its three fields deleted it, and nobody saw it go.
     /// </summary>
     [Fact]
@@ -196,8 +196,8 @@ public sealed class RegistryModuleTests : Bridge
     }
 
     /// <summary>
-    /// MANAGE1: the page re-registers from what this write answers, and the registry replaces a row's
-    /// `uses` with the declaration's (D91), where saying none is saying nothing. The answer left `uses`
+    /// The page re-registers from what this write answers, and the registry replaces a row's
+    /// `uses` with the declaration's, where saying none is saying nothing. The answer left `uses`
     /// out, so saving a declaration erased the repository's dependencies from the registry until its next
     /// `connect`, while the file the form had just written still held them.
     /// </summary>
@@ -224,7 +224,7 @@ public sealed class RegistryModuleTests : Bridge
     }
 
     /// <summary>
-    /// The add reads the same answer (MANAGE1): a folder whose manifest uses nothing answers an empty
+    /// The add reads the same answer: a folder whose manifest uses nothing answers an empty
     /// list, which is what its file says, and one that never adopted has nothing to say.
     /// </summary>
     [Fact]

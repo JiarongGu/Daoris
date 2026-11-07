@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// UPDATE1 (D139 §2–§4, §6): the application's half of an update. A staged build drains the loop by default, is installed
+/// The application's half of an update. A staged build drains the loop by default, is installed
 /// once no driven session runs and no turn is in flight, or at once on *Update now*, and waits on *Not now*; it is checked
 /// before the application closes for it; and the next start says once how the swap ended, in the window and the log.
 /// </summary>
@@ -28,10 +28,10 @@ public sealed class InstallUpdaterTests : Bridge
     private bool _launches = true;
     private string? _closingBuild;
 
-    // The updater's clock, which a test moves (DRAINHOLD1); the machine log's stays at Now.
+    // The updater's clock, which a test moves; the machine log's stays at Now.
     private DateTimeOffset _now = Now;
 
-    // Each read of the work, where a test answers them in turn (DRAINHOLD1); none answers _work.
+    // Each read of the work, where a test answers them in turn; none answers _work.
     private Func<UpdateWork>? _reads;
 
     public InstallUpdaterTests()
@@ -115,7 +115,7 @@ public sealed class InstallUpdaterTests : Bridge
     }
 
     /// <summary>
-    /// DRAINHOLD1: the drain says since when it waits, from its first look on, so the page can say how long it has held; and it is told
+    /// The drain says since when it waits, from its first look on, so the page can say how long it has held; and it is told
     /// apart from the close it ends in (<see cref="InstallUpdater.Applying"/>), which the pipe holds every press for, where the drain lets
     /// through what starts nothing it waits on. The loop's starts are held through both.
     /// </summary>
@@ -148,7 +148,7 @@ public sealed class InstallUpdaterTests : Bridge
     }
 
     /// <summary>
-    /// DRAINHOLD1, a review's finding: once the look reads no work, the presses are held and the build checked, and only then is the work
+    /// Once the look reads no work, the presses are held and the build checked, and only then is the work
     /// read again. Work begun since the first read (a turn a press let through opened, a helper the look started, a conversation the window
     /// began) is seen: the update drains on, nothing closes, and the presses are let through again.
     /// </summary>
@@ -178,7 +178,7 @@ public sealed class InstallUpdaterTests : Bridge
         Assert.Empty(Logged("update.applying"));
     }
 
-    /// <summary>DRAINHOLD1: *Not now* ends the drain, and with it its since; *Update now* closes with no drain to have waited.</summary>
+    /// <summary>*Not now* ends the drain, and with it its since; *Update now* closes with no drain to have waited.</summary>
     [Fact]
     public async Task Not_now_ends_the_drain_s_since_and_update_now_applies_with_none()
     {
@@ -339,7 +339,7 @@ public sealed class InstallUpdaterTests : Bridge
     }
 
     /// <summary>
-    /// SWAP2: the launcher writes no log, so the holds its swap journalled reach the machine log here, as a count and the
+    /// The launcher writes no log, so the holds its swap journalled reach the machine log here, as a count and the
     /// longest in milliseconds, on the line that says how the swap ended; a swap that met none says nothing of them.
     /// </summary>
     [Fact]
@@ -375,7 +375,7 @@ public sealed class InstallUpdaterTests : Bridge
     }
 
     /// <summary>
-    /// DEPLOYBUSY1: the longest hold's entry and the processes found holding it reach the line too, the entry by its name
+    /// The longest hold's entry and the processes found holding it reach the line too, the entry by its name
     /// alone, never a path: the rehearsal's <c>busy</c> said a hold of two minutes and nothing of what held it.
     /// </summary>
     [Fact]
@@ -397,7 +397,7 @@ public sealed class InstallUpdaterTests : Bridge
     }
 
     /// <summary>
-    /// UPDATE1d (D139's UPDATE1b note, D50): the last swap is the journal's record, told or not, on every state, apart from
+    /// The last swap is the journal's record, told or not, on every state, apart from
     /// the outcome the banner says once. It outlives the banner's *Dismiss* and a later start that says nothing, as the
     /// terminal's plain <c>daoris update</c> still says it from the same journal.
     /// </summary>
@@ -425,7 +425,7 @@ public sealed class InstallUpdaterTests : Bridge
     }
 
     /// <summary>
-    /// UPDATE1d: a swap this start confirmed is the last swap, installed, as the start says it, and stays so once the
+    /// A swap this start confirmed is the last swap, installed, as the start says it, and stays so once the
     /// launcher finishes; a journal still under way names no ending, so it is no last swap yet.
     /// </summary>
     [Fact]
@@ -449,7 +449,7 @@ public sealed class InstallUpdaterTests : Bridge
 
     /// <summary>
     /// The launcher finishes a swap with its own running launcher inside <c>update/previous/</c>, which Windows will not
-    /// delete, so a whole build was left there until the next update. The application clears it once the swap is done.
+    /// delete, so a whole build would stay there until the next update. The application clears it once the swap is done.
     /// </summary>
     [Fact]
     public async Task A_build_left_in_previous_after_a_finished_swap_is_cleared_by_a_look_and_never_during_one()

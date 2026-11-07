@@ -5,14 +5,14 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A tool call a session holds for the person's answer, announced as a park is (NOTIFY2d, D196, the notification design §5, §9): on
+/// A tool call a session holds for the person's answer, announced as a park is: on
 /// <c>SESSION_ATTENTION</c>, in the shape the shell's notifier and the page's toast read, once, where the attention slice first sees
 /// its row, while the notify switch is on.
 /// </summary>
 /// <remarks>
-/// <para><b>Why here.</b> Its bound refuses a held call by itself (PERMUNTIL1), so it waits on the person with a clock, as a park waits
-/// on them; until NOTIFY2d it was counted and drawn, and said nowhere, so a call held while the person was in another program ran out
-/// unseen. Its row is judged in .NET once for every window (<see cref="NeedsAPerson"/>, D182), so its arrival is judged there too: a
+/// <para><b>Why here.</b> Its bound refuses a held call by itself, so it waits on the person with a clock, as a park waits
+/// on them; without this a call is counted and drawn, and said nowhere, so one held while the person is in another program runs out
+/// unseen. Its row is judged in .NET once for every window (<see cref="NeedsAPerson"/>), so its arrival is judged there too: a
 /// row's key the last judgement did not hold.</para>
 ///
 /// <para><b>Seen either way, said under the switch.</b> Every row is seen whatever the switch says, so a call held while the switch

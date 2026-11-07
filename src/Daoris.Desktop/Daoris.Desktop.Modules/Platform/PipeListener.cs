@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The pipe's listening instances (the terminal RPC design §4.1): each connection taken into the pipe's state
+/// The pipe's listening instances: each connection taken into the pipe's state
 /// (<see cref="PipeState.Connections"/>, under its gate) and its place freed as it ends, at most <see cref="PipeLimits.Connections"/> at once.
 /// It owns the places, one taken by the instance listening now.
 /// </summary>
@@ -14,7 +14,7 @@ internal sealed class PipeListener(InstancePipe pipe, string name)
     private readonly PipeState _state = pipe.State;
     private readonly SemaphoreSlim _slots = new(pipe.Limits.Connections - 1, pipe.Limits.Connections);
 
-    /// <summary>One listening instance, made by the driver's rule for this user's pipes (§4.1, PIPEOWNER1; <see cref="UserPipe.Security"/>).</summary>
+    /// <summary>One listening instance, made by the driver's rule for this user's pipes (<see cref="UserPipe.Security"/>).</summary>
     [SupportedOSPlatform("windows")]
     public static NamedPipeServerStream Create(string name, int connections, bool first) =>
         NamedPipeServerStreamAcl.Create(
@@ -94,7 +94,7 @@ internal sealed class PipeListener(InstancePipe pipe, string name)
         lock (_state.Gate)
         {
             if (!_state.Connections.Remove(connection)) return;
-            // CONFIRMWAIT1a-i (§8.1): a press whose terminal's line ended waits on, and its card says no terminal waits on it now.
+            // A press whose terminal's line ended waits on, and its card says no terminal waits on it now.
             unwaited = [.. _state.WaitingFor.Where(each => _state.Owners.GetValueOrDefault(each.Key) == connection).Select(each => each.Value)];
         }
 

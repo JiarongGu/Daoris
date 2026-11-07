@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The second opinions owed on this machine, looked at beside the look (XAGENT1f, PART10m, D166): what <see cref="OpinionLook"/>
+/// The second opinions owed on this machine, looked at beside the look: what <see cref="OpinionLook"/>
 /// made owed is closed, asked, delivered and sat here, over the loop's context. The gate delivers, so it holds the delivery, and
 /// the delivery passes.
 /// </summary>
@@ -23,15 +23,15 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     private DriverConfig Config => _context.Config;
 
     /// <summary>
-    /// The second opinions owed on this machine, at a look (XAGENT1f; the second-agent design §2.1, §7, §8.1): each closed once
-    /// past, each asked where nothing was yet and the chain's last step here is done and not held, asked again once a cool-off
-    /// resets, the person's asks started, and each delivered (XAGENT1e) until answered; each pass and delivery beside the look, one
+    /// The second opinions owed on this machine, at a look: each closed once
+    /// past, each asked where nothing is yet and the chain's last step here is done and not held, asked again once a cool-off
+    /// resets, the person's asks started, and each delivered until answered; each pass and delivery beside the look, one
     /// per chain's work at a time. Returns the quests the opinions sit, and how many passes this look starts, which take slots
-    /// before any quest's first start (D130 point 10). A service that does not answer is said, and everything is looked at again
+    /// before any quest's first start. A service that does not answer is said, and everything is looked at again
     /// at the next look.
     /// </summary>
     /// <param name="judged">
-    /// Where each owed landing opinion's gate is kept, as the attention band's route reads it (XAGENT1g3): oldest first, one per
+    /// Where each owed landing opinion's gate is kept, as the attention band's route reads it: oldest first, one per
     /// session, the review's own answer read with it as every landing door reads it. A look that could not read leaves none.
     /// </param>
     internal async Task<(IReadOnlyDictionary<string, OpinionSit> Sits, int Passes)> OpinionsAsync(
@@ -73,18 +73,18 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         return (sits, passes);
     }
 
-    /// <summary>How many owed opinions are judged at once beside the looks (PARALLEL1g; a topic bounded, the events design §A3).</summary>
+    /// <summary>How many owed opinions are judged at once beside the looks; a topic bounded.</summary>
     internal const int OpinionsAtOnce = 2;
 
     /// <summary>
-    /// The second opinions owed, at a look under the watch (PARALLEL1g, D181 point 3): each judged as the <c>opinion</c> topic's judge
+    /// The second opinions owed, at a look under the watch: each judged as the <c>opinion</c> topic's judge
     /// beside the look, one judgement per owed opinion and <see cref="OpinionsAtOnce"/> at a time, and the look plans over what each last
     /// found, so a gate, a review or a chain slow to read holds its own chain alone. One no judgment has answered for yet holds what it
     /// could sit (<see cref="NotJudged"/>), never started early. A pass a judgment found owed is begun here, before the plan, so it takes
-    /// its slot as it did; begun before the next judgment is asked, so that one reads its claim held and owes no second. Nothing here
+    /// its slot; begun before the next judgment is asked, so that one reads its claim held and owes no second. Nothing here
     /// waits on the service, git or a reviewer.
     /// </summary>
-    /// <param name="judged">Where each owed landing opinion's gate is kept, as its last judgment read it (XAGENT1g3).</param>
+    /// <param name="judged">Where each owed landing opinion's gate is kept, as its last judgment read it.</param>
     internal (IReadOnlyDictionary<string, OpinionSit> Sits, int Passes) OpinionsBeside(
         Snapshot snapshot, List<OpinionJudged> judged, LookStages stages, CancellationToken ct, List<string>? events = null)
     {
@@ -96,7 +96,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         foreach (var due in open)
         {
             var subject = Subject(due);
-            // DRAINHOLD1: a draining look leaves the act the judgment found where it is kept, never taken, so the first look that does not
+            // A draining look leaves the act the judgment found where it is kept, never taken, so the first look that does not
             // drain begins it; what is said of it is said once.
             if (Config.Draining && facts.PeekAct(subject) is OpinionAct held) HeldByDrain(held, events);
             else if (facts.TakeAct(subject) is OpinionAct act && Begin(act, ct)) passes++;
@@ -118,7 +118,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     }
 
     /// <summary>
-    /// Whether an update's drain holds the pass <paramref name="act"/> found owed (DRAINHOLD1), said once to <paramref name="events"/> where
+    /// Whether an update's drain holds the pass <paramref name="act"/> found owed, said once to <paramref name="events"/> where
     /// the caller has them: a reviewer's session in a copy is work the drain waits on. The opinion stays owed and its quests stay sat.
     /// </summary>
     private bool HeldByDrain(OpinionAct act, List<string>? events)
@@ -139,7 +139,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     private static readonly OpinionFact Settled = new(new Dictionary<string, OpinionSit>(), null, null);
 
     /// <summary>
-    /// One owed opinion judged as the <c>opinion</c> topic's judge beside the look (PARALLEL1g): kept, and the plan woken where what it
+    /// One owed opinion judged as the <c>opinion</c> topic's judge beside the look: kept, and the plan woken where what it
     /// found moves what the plan reads. A judgment that fails leaves the last one standing, or the opinion not judged yet, and is said.
     /// </summary>
     private void Judging(OpinionDue due, string subject, LookStages stages, CancellationToken ct) =>
@@ -169,12 +169,12 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         }, ct);
 
     /// <summary>
-    /// What an owed opinion no judgment has answered for yet holds (PARALLEL1g), read from the look's open quests as the planner holds a
+    /// What an owed opinion no judgment has answered for yet holds, read from the look's open quests as the planner holds a
     /// start still opening: under <c>steps</c>, the chain's next steps; under <c>landing</c>, every open set-up step of its repository,
     /// since which chain each is in is what the judgment reads. A wait of one judgment, never a start before the opinion.
     /// </summary>
     internal static IEnumerable<(string Quest, OpinionSit Why)> NotJudged(OpinionDue due, Snapshot snapshot) =>
-        // CHATFLOW1d: a chat run's opinion holds no quest; its gate is the person's press alone.
+        // A chat run's opinion holds no quest; its gate is the person's press alone.
         due.OnRun ? []
         : due.Occasion == OpinionRules.Landing
             ? snapshot.Quests.Where(each => each.SetUpIn is not null && each.Status == "Open" && Same(each.To, due.Repository))
@@ -187,12 +187,12 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
                     new SittingFact(SittingFact.Steps) { Quest = due.Quest })));
 
     /// <summary>
-    /// One owed opinion judged as it stands now (XAGENT1f, §2.1, §7, §8.1): null where it is closed, and closed on file; otherwise the quests
+    /// One owed opinion judged as it stands now: null where it is closed, and closed on file; otherwise the quests
     /// it sits, its landing gate where <paramref name="keep"/> asks for it, and the pass it finds owed, which the caller begins. A delivery
     /// it finds owed takes no slot, so it is begun here, beside.
     /// </summary>
     /// <param name="beside">
-    /// Judged beside the look (PARALLEL1g): a pass in flight on the chain's claim owes no other, since the gate it read may predate that
+    /// Judged beside the look: a pass in flight on the chain's claim owes no other, since the gate it read may predate that
     /// pass's opening; the next judgment reads where it came to.
     /// </param>
     private async Task<OpinionFact?> JudgeAsync(
@@ -200,11 +200,11 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         bool beside, CancellationToken ct)
     {
         var now = DateTimeOffset.UtcNow;
-        // CHATFLOW1d (the chat-flow design §7): a due naming a chat run reads the run's process and gate, keyed by the run, and no chain.
+        // A due naming a chat run reads the run's process and gate, keyed by the run, and no chain.
         var run = due.OnRun ? due.Run : null;
         var chain = run is null ? ReviewGate.ChainOf(quests, due.Quest) : [];
         var quest = chain.FirstOrDefault(each => Same(each.Id, due.Quest));
-        // WORKFLOW1f: the run's process, read once for this due and handed to each part below, so a named workflow's opinion
+        // The run's process, read once for this due and handed to each part below, so a named workflow's opinion
         // step decides whether it is owed, who reads it and what holds.
         var process = WorkflowProcesses.Read(Home, Config, due.Repository, due.Workspace,
             run ?? WorkflowRunBindings.RunOf(chain, due.Repository) ?? due.Quest);
@@ -220,7 +220,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         var key = run ?? TreeGates.OpinionChain(chain, due.Quest);
         var claim = $"{key}/{due.Repository}/{due.Occasion}";
         var inFlight = beside && _context.Runs.OpinionHeld(claim);
-        // The landing's gate reads D154's review beside it, as every landing door does (XAGENT1g3): a review that answered what
+        // The landing's gate reads the review beside it, as every landing door does: a review that answered what
         // the opinion showed settles it. It moves no ask below, which read states the review never changes.
         var review = keep && due.Occasion == OpinionRules.Landing
             ? await ReviewGate.ReadAsync(world, Config, Path.GetFullPath(due.Tree), due.Repository, due.Workspace, run is null ? due.Quest : null, ct,
@@ -230,13 +230,13 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         var gate = await _context.Trees.OpinionAsync(due.Tree, due.Repository, due.Workspace, run is null ? due.Quest : null, due.Session, world, review,
                 due.Occasion, ct, process, run: run)
             .ConfigureAwait(false);
-        // A chat's work never lands by itself (the chat-flow design §8): its kept gate says so to the attention band.
+        // A chat's work never lands by itself: its kept gate says so to the attention band.
         var kept = review is null
             ? null
             : new OpinionJudged(due.Session, due.Quest, due.Repository, due.Workspace, due.At,
                 run is null && process.Landing?.AutoAccept == true, gate);
 
-        // The person's asks first (§8.5): Ask now, Try again, Ask again, Ask the same agent, fresh. Not capped (§8.3).
+        // The person's asks first: Ask now, Try again, Ask again, Ask the same agent, fresh. Not capped.
         OpinionAct? act = null;
         var asked = new OpinionGates(Home).Read(key, due.Repository).Requests.Where(request => Same(request.Session, due.Session)).ToList();
         if (asked.Count > 0)
@@ -245,15 +245,15 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         }
         else if (((gate.State == OpinionGateStates.NotAsked && !gate.Held)
                   || (gate is { State: OpinionGateStates.Unavailable, Code: ReviewerUnavailable.Cooling, Until: { } reset } && reset <= now))
-                 // One opinion reads a chain's whole work here (§8.1): an earlier step's is its last step's to ask.
+                 // One opinion reads a chain's whole work here: an earlier step's is its last step's to ask.
                  && (due.Occasion == OpinionRules.Steps || !OpinionGate.HasLaterWork(chain, due.Quest, due.Repository))
-                 // FABRIC-CUTOVER1d (the cutover design §4): a run bound to a graph version is asked its opinion only once its record has begun
+                 // A run bound to a graph version is asked its opinion only once its record has begun
                  // the node, so what its graph places before the opinion comes first. The person's own ask above is theirs, and goes.
                  && GraphGate.Begun(Home, process, NodeKinds.Opinion))
         {
             act = new OpinionAct(due, key, claim, chain, due.Occasion, Person: false, process);
         }
-        // DRAINHOLD1: a delivery goes a session on in a turn, which the drain does not count; it waits for a look that does not drain.
+        // A delivery goes a session on in a turn, which the drain does not count; it waits for a look that does not drain.
         else if (gate is { State: OpinionGateStates.WithSession or OpinionGateStates.ReadAgain, Opinion: { } first } && !Config.Draining
                  && _context.Runs.TryOpinion(claim))
         {
@@ -291,7 +291,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     }
 
     /// <summary>
-    /// A chat run's pass, once it came to an end, is news (CHATFLOW1d, the chat-flow design §5.2 point 6): the person was asked to press Accept
+    /// A chat run's pass, once it comes to an end, is news: the person is asked to press Accept
     /// again once it settles, so a notice naming the conversation says it did. One held to try again is no settling; a quest's pass is none.
     /// </summary>
     private static Func<string, LookClassed?>? SettledNews(OpinionDue due) => due.OnRun
@@ -301,7 +301,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
                 Session: due.Session, Workspace: due.Workspace))
         : null;
 
-    /// <summary>The kept gates oldest first, one per session, as the attention band's route reads them (XAGENT1g3).</summary>
+    /// <summary>The kept gates oldest first, one per session, as the attention band's route reads them.</summary>
     private static void Order(List<OpinionJudged> judged)
     {
         var ordered = judged.OrderBy(each => each.Since).DistinctBy(each => each.Session, StringComparer.OrdinalIgnoreCase).ToList();
@@ -310,7 +310,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     }
 
     /// <summary>
-    /// The quests an opinion owed sits (§7, §8.1): under <c>landing</c>, the chain's set-up step here while an agent is still at work
+    /// The quests an opinion owed sits: under <c>landing</c>, the chain's set-up step here while an agent is still at work
     /// on the opinion of the work it shows (a dispute does not sit it: the person is about to look); under <c>steps</c>, the chain's
     /// next step while the opinion on the step before is unsettled.
     /// </summary>
@@ -340,7 +340,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     }
 
     /// <summary>
-    /// A pass or a delivery beside the look (XAGENT1f), as a start runs: told opened at once, so the look never waits on it, its
+    /// A pass or a delivery beside the look, as a start runs: told opened at once, so the look never waits on it, its
     /// line joining a later look's report, and the chain's claim let go however it ended.
     /// </summary>
     private void OpinionBeside(string claim, Func<CancellationToken, Task<string>> work, CancellationToken ct, Func<string, LookClassed?>? classed = null) =>
@@ -365,9 +365,8 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         });
 
     /// <summary>
-    /// Who a first pass's walk may ask (§3.2): the person's named reviewer, the rule's, or at the person's same-agent press the agent the work
-    /// ran on. A record that names no agent it ran on goes on as a continuation does (the foundation design §2.4's fourth row, FOUNDATION1j
-    /// part ii): the agent its choice was asked of, else its role's first entry, never the machine's <c>adapter</c> key.
+    /// Who a first pass's walk may ask: the person's named reviewer, the rule's, or at the person's same-agent press the agent the work
+    /// ran on. A record that names no agent it ran on goes on as a continuation does: the agent its choice asked for, else its role's first entry, never the machine's <c>adapter</c> key.
     /// </summary>
     /// <exception cref="DriverException">The record's role's stored entry does not read, or the role is off.</exception>
     internal static IReadOnlyList<string> Reviewers(OpinionRequest? request, PriorSession? record, OpinionRule rule, DriverConfig config) => request switch
@@ -378,12 +377,12 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     };
 
     /// <summary>
-    /// Ask one first pass on an owed opinion's work (§2.1, §3, §4): the reviewer chosen from the rule's, or the person's named one,
+    /// Ask one first pass on an owed opinion's work: the reviewer chosen from the rule's, or the person's named one,
     /// or the working agent fresh at their press; the candidate from where the work leaves the line (or, for a step, where its
     /// session began) to its tree's tip; the chain's quests here and the ask's words. Kept at the gate the moment the host opens it,
     /// or kept as unavailable with its code; logged either way.
     /// </summary>
-    /// <param name="process">The run's process (WORKFLOW1f): a named workflow's opinion step names which declared reviewers read it.</param>
+    /// <param name="process">The run's process: a named workflow's opinion step names which declared reviewers read it.</param>
     private async Task<string> AskPassAsync(
         OpinionDue due, string key, IReadOnlyList<QuestView> chain, string occasion, OpinionRequest? request,
         WorkflowProcess process, CancellationToken ct)
@@ -392,7 +391,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         var named = $"`{due.Repository}` for session {due.Session}";
         var at = DateTimeOffset.UtcNow;
         var by = request is null ? OpinionAskers.Look : OpinionAskers.Person;
-        // A step that cannot start is never asked: its gate says why, and the person's own answers are the floor (WORKFLOW1f).
+        // A step that cannot start is never asked: its gate says why, and the person's own answers are the floor.
         if ((process.OpinionCannot ?? process.Problem ?? process.Unread) is { } cannot)
         {
             return $"opinion  no second opinion on {named}: its workflow cannot start one: {cannot}";
@@ -403,8 +402,8 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
             return $"opinion  no second opinion on {named}: no rule here names a reviewer for `{due.Repository}`.";
         }
 
-        // CHATFLOW1d (the chat-flow design §7): a chat run's pass reads the tip the person's press captured, never the tree's HEAD at the look,
-        // which a turn finished since may have moved.
+        // A chat run's pass reads the tip the person's press captured, never the tree's HEAD at the look,
+        // which a turn finished meanwhile may have moved.
         var tip = due is { OnRun: true, Tip: { } pressed } ? pressed : await ReviewGit.HeadAsync(due.Tree, ct).ConfigureAwait(false);
         var root = await TreeGates.CheckoutOfTreeAsync(due.Tree, ct).ConfigureAwait(false);
         if (tip is null || root is null) return $"held  second opinion on {named}: git could not read its tree, and the next look tries again.";
@@ -416,12 +415,12 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         var record = records.GetValueOrDefault(due.Session);
         var part = chain.Where(quest => Same(quest.To, due.Repository)).ToList();
 
-        // The families that wrote the work (§3.1): every agent the line ran on, each part of each of the chain's quests here, so a
-        // line carried on across makers at a limit counts both (LIMITRESUME1j, the limit-resume design §3.6).
+        // The families that wrote the work: every agent the line ran on, each part of each of the chain's quests here, so a
+        // line carried on across makers at a limit counts both.
         var wrote = OpinionWriters.Agents(records, due.Session, part.Select(quest => quest.Id));
         var reviewers = Reviewers(request, record, rule, Config);
-        // D205 §4.4 and §3.5(f): the rule decides who, the opinion actor each agent's model; a refusal at the open is asked again here.
-        // ROLESTEP1b: the role the run's opinion step names, kept at its bind, gives the models in place of the opinion actor's.
+        // The rule decides who, the opinion actor each agent's model; a refusal at the open is asked again here.
+        // The role the run's opinion step names, kept at its bind, gives the models in place of the opinion actor's.
         var stepRole = process.Binding?.RoleOf(NodeKinds.Opinion)?.Role;
         Task<ReviewerChoice> Walk(IReadOnlyList<ReviewerPassed>? passed) =>
             ReviewerChoice.ChooseAsync(_context.Harnesses, rule with { Reviewers = reviewers }, wrote, Config, due.Workspace, ct, passed: passed,
@@ -451,7 +450,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
 
         if (run.Opinion is null)
         {
-            // No reviewer could read it, or its pass did not open (§3.3, §8.4): said, never downgraded silently.
+            // No reviewer could read it, or its pass did not open: said, never downgraded silently.
             var code = run.Code ?? reading.Code ?? ReviewerUnavailable.Refused;
             gates.Asked(key, due.Repository, new OpinionAskKept(at, occasion, due.Session, tip) { Code = code, Until = reading.Cooling?.Until, By = by });
             Service.LandingSaid(OpinionLines.Unavailable(due.Session, occasion, code));
@@ -465,7 +464,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     }
 
     /// <summary>
-    /// Deliver an owed opinion as far as the facts let it go (XAGENT1e's <see cref="OpinionDeliverer.DeliverAsync"/>): its findings handed to the
+    /// Deliver an owed opinion as far as the facts let it go (<see cref="OpinionDeliverer.DeliverAsync"/>): its findings handed to the
     /// working session at its turn's end, its answers read, its one recheck asked; asked with what the first pass read.
     /// </summary>
     private async Task<string> DeliverBesideAsync(
@@ -482,7 +481,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
             Workspace = due.Workspace,
             Quests = [.. chain.Where(quest => Same(quest.To, due.Repository))],
             Words = due.OnRun ? null : await AskWords.ReadOfSessionAsync(Service, due.Session, ct).ConfigureAwait(false),
-            // CHATFLOW1e (the chat-flow design §6): a chat run's findings go back into its conversation, compared with the press's turn count.
+            // A chat run's findings go back into its conversation, compared with the press's turn count.
             Opening = due.OnRun ? ChatRuns.OpeningOf(_context.Events, due.Run!) : null,
             Run = due.OnRun ? due.Run : null,
             Turns = due.OnRun ? due.Turns : null,

@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// LINESTOGETHER1b (the review-flow design §2): <c>SESSION_QUEUE_MOVE</c> moves a word held on a part's record to the head through the
+/// <c>SESSION_QUEUE_MOVE</c> moves a word held on a part's record to the head through the
 /// service's move door, answering <c>moved</c>, a retry's <c>again</c>, a refusal as data with its code, and <c>not-known</c> where the
 /// service's answer never came.
 /// </summary>

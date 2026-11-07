@@ -5,9 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// RPC1b2 and RPCOPEN1 (the terminal RPC design §7.3): the trees reads' routes answer the verb's words (<c>said</c>) beside or in place
-/// of the page's fields where the verb asks for them (<c>said: true</c>), and the page, which asks for none, is answered as it always
-/// was. The routes stay open reads (<c>PipeCensusTests</c>); these hold what a verb that is their client would send and print.
+/// The trees reads' routes answer the verb's words (<c>said</c>) beside or in place
+/// of the page's fields where the verb asks for them (<c>said: true</c>), and the page, which asks for none, is answered by its fields alone.
+/// The routes stay open reads (<c>PipeCensusTests</c>); these hold what a verb that is their client would send and print.
 /// </summary>
 public sealed class DriverModuleTreesReadsTests : DriverModuleBridge
 {
@@ -74,7 +74,7 @@ public sealed class DriverModuleTreesReadsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 COAGENT1b (D199 point 3; the co-agent design §2.4): a partner's record lands nothing at the press, the plan or the verb; each
+    /// A partner's record lands nothing at the press, the plan or the verb; each
     /// refuses it in the words that name its lead's merge of the frozen ref.
     /// </summary>
     [Fact]
@@ -130,7 +130,7 @@ public sealed class DriverModuleTreesReadsTests : DriverModuleBridge
         Assert.Equal(1, Said(ask).Code);
     }
 
-    /// <summary><c>sessions</c> (RPCOPEN1, RPC1e): the list's lines from the instance's own look, where the verb asks, beside the page's fields.</summary>
+    /// <summary><c>sessions</c>: the list's lines from the instance's own look, where the verb asks, beside the page's fields.</summary>
     [Fact]
     public async Task The_sessions_list_says_its_lines_where_asked_and_the_page_is_answered_as_before()
     {

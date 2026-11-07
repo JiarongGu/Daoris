@@ -3,9 +3,9 @@ using Lyntai.Agents;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The account a layer-run door is handed (the agent-lyntai design §4.2): the one the plan's walk picked, never a pool the layer walks.
+/// The account a layer-run door is handed: the one the plan's walk picked, never a pool the layer walks.
 /// It is handed under the registration's account key, its agent where one is set and else the door's own id, so the layer's refusal of
-/// another provider's account never fires under either of D234's answers, and Daoris's records keep their own keys.
+/// another provider's account never fires under either of its answers, and Daoris's records keep their own keys.
 /// </summary>
 internal static class LayerAccounts
 {

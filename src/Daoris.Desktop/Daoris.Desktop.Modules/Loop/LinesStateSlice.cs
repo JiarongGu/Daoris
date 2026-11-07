@@ -4,7 +4,7 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Each repository's line and its rules as every window holds them, the push path's second slice (PUSH1b1, D182): judged from the
+/// Each repository's line and its rules as every window holds them, the push path's second slice: judged from the
 /// machine's facts and the driver's file, never from git or the service, and pushed per repository when one moves, so a tick reads
 /// <c>LINES</c> again in no window.
 /// </summary>

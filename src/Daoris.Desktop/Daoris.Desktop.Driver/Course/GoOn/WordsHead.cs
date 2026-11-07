@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The records one word has been said to on its way to its line's head (FOUNDATION1d-ii, the foundation design §3.4 rule 2): a host with the
+/// The records one word has been said to on its way to its line's head: a host with the
 /// <c>head</c> mark refuses a word said to a record that is not its line's head as <c>continued</c>, naming the head, and the caller says the same
 /// word there. A second <c>continued</c> follows the next head, which only a line that moved between the two says names; a walk that comes back
 /// to a record it asked, a planted cycle, ends, as does one past <see cref="Most"/>, so no answer of a host's makes a caller say a word without end.
@@ -13,7 +13,7 @@ public sealed class HeadWalk
 
     private readonly HashSet<string> _asked;
 
-    /// <summary>A walk from the record the word was first said to.</summary>
+    /// <summary>A walk from the record the word is first said to.</summary>
     public HeadWalk(string first)
     {
         First = first;
@@ -21,7 +21,7 @@ public sealed class HeadWalk
         _asked = new HashSet<string>(StringComparer.Ordinal) { first };
     }
 
-    /// <summary>The record the word was first said to.</summary>
+    /// <summary>The record the word is first said to.</summary>
     public string First { get; }
 
     /// <summary>The record it is said to now.</summary>
@@ -45,11 +45,11 @@ public sealed class HeadWalk
 }
 
 /// <summary>
-/// The say door's callers' walk to the line's head (FOUNDATION1d-ii, the foundation design §3.4 rules 1 and 2): the word said where it was meant,
+/// The say door's callers' walk to the line's head: the word said where it is meant,
 /// and wherever a host with the <c>head</c> mark refuses it <c>continued</c>, the same say again at the head the answer names, whole: the say is
-/// the caller's own, so the word goes with its producer's key, its level, its author and its files' names exactly as it went first. A caller whose
+/// the caller's own, so the word goes with its producer's key, its level, its author and its files' names exactly as it goes first. A caller whose
 /// word carries files carries them to each head's folder before it is said there, so the head's go-on finds them. A host without the mark never
-/// answers so, and the say is today's one call.
+/// answers so, and the say is the one call.
 /// </summary>
 /// <remarks>
 /// The callers that reach a dispatcher of this machine's for the head (the shell's <c>SessionWords</c>, the headless <see cref="LoopWords"/>) walk
@@ -58,7 +58,7 @@ public sealed class HeadWalk
 public static class WordsHead
 {
     /// <summary>
-    /// Say a word at <paramref name="id"/>, and at its line's head where the answer is <c>continued</c>: the last answer, and the record it was
+    /// Say a word at <paramref name="id"/>, and at its line's head where the answer is <c>continued</c>: the last answer, and the record it is
     /// said to. A walk that ends answers a refusal of its own, <c>continued</c> with no head and the driver's sentence, never kept.
     /// </summary>
     /// <param name="say">The caller's say, of the word as it is, to the record it is handed.</param>

@@ -7,21 +7,21 @@ namespace Daoris.Driver;
 /// <param name="registry">The registry as the look's snapshot answered it: what the session may reach across.</param>
 /// <param name="untrusted">The trees this look found their harness does not trust; the lock guards its adds.</param>
 /// <param name="onOpened">Called once the session's record is open.</param>
-/// <param name="movedOffModel">The agent and model the first run of this start was refused for.</param>
+/// <param name="movedOffModel">The agent and model the first run of this start is refused for.</param>
 /// <param name="movedFrom">The agent the first run ran on before its sign-in moved it off.</param>
-/// <param name="movedOff">The account the first run of this start was refused for its sign-in; a walk that gives it again holds.</param>
+/// <param name="movedOff">The account the first run of this start is refused for its sign-in; a walk that gives it again holds.</param>
 /// <param name="fresh">The tree this start opens, let go on each way out that starts nothing.</param>
 internal sealed class RunRound(
     Consideration start, IReadOnlyList<RepoView> registry, List<TrustHold> untrusted, Action onOpened, string? movedOff,
     (string Agent, string Model)? movedOffModel, string? movedFrom, FreshTree fresh, RunState state)
 {
-    /// <summary>The agent and model the first run of this start was refused for, which a walk that gives them again holds.</summary>
+    /// <summary>The agent and model the first run of this start is refused for, which a walk that gives them again holds.</summary>
     public (string Agent, string Model)? MovedOffModel { get; } = movedOffModel;
 
     /// <summary>The agent the first run of this start ran on before its sign-in moved it off.</summary>
     public string? MovedFrom { get; } = movedFrom;
 
-    /// <summary>Called once the session's record is open, and never for a start that held or was refused.</summary>
+    /// <summary>Called once the session's record is open, and never for a start that held or is refused.</summary>
     public Action OnOpened { get; } = onOpened;
 
     /// <summary>The trees this look found their harness does not trust, which a start held for it adds to.</summary>

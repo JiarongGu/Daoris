@@ -4,29 +4,29 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The person's harness wiring: which named profile each harness runs as, per machine and optionally
-/// per workspace (D49 §4). <b>Machine-local and tracked by nothing</b>, exactly like the remotes map.
+/// per workspace. <b>Machine-local and tracked by nothing</b>, exactly like the remotes map.
 /// </summary>
 /// <remarks>
 /// <para><b>The FILE is the contract</b> (`harnesses.json` under the Daoris home), and so is the directory layout
 /// beside it — the CLI's `daoris agent` and this class share no code, because the driver links
 /// against no CLI and the CLI has no .NET. The twins move together, the same rule the remotes map's
-/// three copies established (WSP3). The file is read and written by <see cref="HarnessSettingsFile"/>, changed under its lock by
+/// three copies established. The file is read and written by <see cref="HarnessSettingsFile"/>, changed under its lock by
 /// <see cref="HarnessSettingsChange"/>, and the folders it names are <see cref="HarnessAccountFolders"/>'.</para>
 ///
-/// <para><b>Each writer keeps the other's sections</b> (TOOL4e): the four here, the orders (<see cref="Rotation"/>,
-/// <see cref="WorkspaceRotation"/>), how each is used (<see cref="Uses"/>, <see cref="WorkspaceUses"/>, TOOL6a), and
+/// <para><b>Each writer keeps the other's sections</b>: the four here, the orders (<see cref="Rotation"/>,
+/// <see cref="WorkspaceRotation"/>), how each is used (<see cref="Uses"/>, <see cref="WorkspaceUses"/>), and
 /// whatever a newer build wrote (<see cref="Kept"/>), which <c>RotationOrderTests</c> holds.</para>
 ///
 /// <para><b>Silence means the harness's own home.</b> A machine that has never named a profile spawns
 /// exactly as it did before this existed — the environment seam is not set at all, and the harness
-/// uses the configuration home it always has. That is what keeps "Daoris works alone" (D48 §2a) true
+/// uses the configuration home it always has. That is what keeps "Daoris works alone" true
 /// through a feature about accounts: pointing someone who never asked for profiles at a fresh
 /// configuration directory would log them out of their own tool.</para>
 /// </remarks>
 /// <param name="Defaults">Harness → profile, for this machine.</param>
 /// <param name="Workspaces">Workspace → harness → profile. The natural cut: a work account for the work circle.</param>
 /// <param name="Versions">
-/// Harness → pinned version, for this machine (TOOL2/D57) — which binary a session spawns when
+/// Harness → pinned version, for this machine — which binary a session spawns when
 /// Daoris manages it. Absent means <c>PATH</c>.
 /// </param>
 /// <param name="WorkspaceVersions">Workspace → harness → pinned version. The same cut as the profiles.</param>
@@ -50,7 +50,7 @@ public sealed record HarnessSettings(
     public IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> WorkspaceVersions { get; init; } =
         WorkspaceVersions ?? new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Agent → the accounts rotation may use on this machine, in order (TOOL4e, D125 §3.1). See <see cref="ResolveRotationFrom"/>.</summary>
+    /// <summary>Agent → the accounts rotation may use on this machine, in order. See <see cref="ResolveRotationFrom"/>.</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<string>> Rotation { get; init; } =
         new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
 
@@ -59,28 +59,28 @@ public sealed record HarnessSettings(
         new Dictionary<string, IReadOnlyDictionary<string, IReadOnlyList<string>>>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// What the file held that this build has no field for, in the order written (TOOL4e): an editor keeps what it has
+    /// What the file held that this build has no field for, in the order written: an editor keeps what it has
     /// no field for, as the CLI's writer keeps its <c>rest</c>, so a section a newer build writes outlives this one's save.
     /// </summary>
     public IReadOnlyList<KeyValuePair<string, JsonElement>> Kept { get; init; } = [];
 
     /// <summary>
-    /// Why the file could not be read — null when it could, or when there was none. Carried through
-    /// every <c>With…</c> so an edit made over the empty read is refused at <see cref="Save"/> (REV3).
+    /// Why the file could not be read — null when it could, or when there is none. Carried through
+    /// every <c>With…</c> so an edit made over the empty read is refused at <see cref="Save"/>.
     /// </summary>
     public string? Problem { get; init; }
 
     /// <summary>
     /// The file as <see cref="Load"/> understood it, written (each settings entry as the file holds it), or null for
-    /// wiring built in memory (KEEPALL1b): what <see cref="Save"/>'s edit is measured from.
+    /// wiring built in memory: what <see cref="Save"/>'s edit is measured from.
     /// </summary>
     internal string? Understood { get; init; }
 
-    /// <summary>Whether a file was there at <see cref="Load"/>, for <see cref="JsonKeeping.Save"/>.</summary>
+    /// <summary>Whether a file is there at <see cref="Load"/>, for <see cref="JsonKeeping.Save"/>.</summary>
     internal bool Found { get; init; }
 
     /// <summary>
-    /// Agent → what each fold of its accounts into one set changed (POOL1a, D197; the account-pool design §6.3), oldest first, each
+    /// Agent → what each fold of its accounts into one set changed, oldest first, each
     /// kept until the person presses <i>Got it</i>. An older build keeps the section as one it does not know.
     /// </summary>
     public IReadOnlyDictionary<string, IReadOnlyList<PoolReceipt>> Pooled { get; init; } =
@@ -90,7 +90,7 @@ public sealed record HarnessSettings(
 
     /// <summary>
     /// The conventional home, beside the driver's own config and the remotes map — under the Daoris
-    /// home (D63). A machine with no home and no override is refused, naming what to set.
+    /// home. A machine with no home and no override is refused, naming what to set.
     /// </summary>
     public static string DefaultPath => DaorisHome.Require(HomeEntry.Harnesses);
 
@@ -105,8 +105,8 @@ public sealed record HarnessSettings(
     public static string ResolvePath(string home) => HarnessWiringFile.ResolvePath(home);
 
     /// <summary>
-    /// The Daoris home (D63) the wiring file is in, which the profile tree is under: the home whose <see cref="HomeEntry.Harnesses"/>
-    /// it is, at its new place or its old (HOMELAYOUT3).
+    /// The Daoris home the wiring file is in, which the profile tree is under: the home whose <see cref="HomeEntry.Harnesses"/>
+    /// it is, at either place of the layout.
     /// </summary>
     public static string HomeOf(string settingsPath) => DaorisHome.HomeOf(settingsPath, HomeEntry.Harnesses);
 
@@ -115,10 +115,10 @@ public sealed record HarnessSettings(
 
     /// <summary>
     /// Write the wiring back — atomically, beside-then-rename, like every write in this family — keeping what a newer build, the
-    /// person or another writer put there: the edit from what was read made onto the file as it stands (KEEPALL1b, D173's note;
-    /// <see cref="JsonKeeping.Save"/>), so a key this build has no field for stays where it is at every level, a change another writer
-    /// made since the read stays, and no edit writes nothing. Each settings entry was understood as the file holds it, so a save writes
-    /// an old or retired name as the new (D165 §6). Wiring built in memory is written whole.
+    /// person or another writer put there: the edit from what it read made onto the file as it stands
+    /// (<see cref="JsonKeeping.Save"/>), so a key this build has no field for stays where it is at every level, a change another writer
+    /// made since the read stays, and no edit writes nothing. Each settings entry is understood as the file holds it, so a save writes
+    /// an old or retired name as the new. Wiring built in memory is written whole.
     /// </summary>
     /// <exception cref="DriverException">
     /// The file could not be read when these settings were loaded: what they hold is the empty default,
@@ -168,7 +168,7 @@ public sealed record HarnessSettings(
     public static IReadOnlyList<string> StrayAgents(string home, IReadOnlyCollection<string> agents) => HarnessAccountFolders.StrayAgents(home, agents);
 
     /// <summary>
-    /// The receipts named by <paramref name="ids"/> marked said (<i>Got it</i>, the account-pool design §6.3; Fable's F13): a receipt
+    /// The receipts named by <paramref name="ids"/> marked said (<i>Got it</i>): a receipt
     /// appended after the page drew is not among them and stays unsaid; an id no receipt holds is passed over.
     /// </summary>
     public HarnessSettings WithSaid(string agent, IReadOnlyCollection<string> ids) =>
@@ -177,7 +177,7 @@ public sealed record HarnessSettings(
             : this;
 
     /// <summary>
-    /// An agent Daoris does not know taken out of what a fold writes (POOLSTRAY1): its <c>rotation</c> order and its <c>pooled</c>
+    /// An agent Daoris does not know taken out of what a fold writes: its <c>rotation</c> order and its <c>pooled</c>
     /// receipts, which a fold that read a stray folder as an agent wrote. Its other sections were written by a person or another build,
     /// and stay.
     /// </summary>
@@ -199,7 +199,7 @@ public sealed record HarnessSettings(
         return this with { Pooled = next };
     }
 
-    /// <summary>Said receipts beyond the last <see cref="AccountSet.SaidKept"/> dropped, each unsaid one kept (design §6.3).</summary>
+    /// <summary>Said receipts beyond the last <see cref="AccountSet.SaidKept"/> dropped, each unsaid one kept.</summary>
     internal HarnessSettings WithSaidKept()
     {
         var settings = this;
@@ -215,7 +215,7 @@ public sealed record HarnessSettings(
     }
 
     /// <summary>
-    /// An agent's scopes taken out (the account-pool design §6.1 rule 4): its default, and its entries in every workspace's defaults,
+    /// An agent's scopes taken out: its default, and its entries in every workspace's defaults,
     /// lists and settings; a workspace left with nothing is dropped. Its pinned versions are untouched.
     /// </summary>
     internal HarnessSettings WithoutScopes(string agent)
@@ -247,7 +247,7 @@ public sealed record HarnessSettings(
         ResolveFrom(harness, workspace, chosen).Value;
 
     /// <summary>
-    /// <see cref="Resolve"/>, saying which rung answered (MAP1b) — the one function both the spawn and
+    /// <see cref="Resolve"/>, saying which rung answered — the one function both the spawn and
     /// the wiring panel read, so the panel cannot show an account a start would not take.
     /// </summary>
     public (string? Value, ChoiceFrom From) ResolveFrom(string harness, string? workspace, string? chosen) =>
@@ -304,12 +304,12 @@ public sealed record HarnessSettings(
 
     /// <summary>
     /// Which version a spawn runs at: the person's pick, the workspace's pin, the machine's, or
-    /// <b>none at all</b> — and none means whatever the machine has on <c>PATH</c> (TOOL2/D57).
+    /// <b>none at all</b> — and none means whatever the machine has on <c>PATH</c>.
     /// </summary>
     /// <remarks>
     /// 🔴 The exact twin of <see cref="Resolve"/>, including what absence means. A machine that
     /// installed the harness itself, and a contributor who never ran Daoris, both keep working
-    /// (D48 §2a) — which is why nothing pinned may ever come to mean an empty managed directory.
+    /// — which is why nothing pinned may ever come to mean an empty managed directory.
     /// </remarks>
     public string? ResolveVersion(string harness, string? workspace, string? chosen) =>
         ResolveVersionFrom(harness, workspace, chosen).Value;
@@ -348,16 +348,16 @@ public sealed record HarnessSettings(
 
     /// <summary>
     /// Which accounts a start may rotate to, per agent, in the person's order: <c>rotation</c> for the machine and
-    /// <c>workspaceRotation</c> for one workspace (TOOL4e, D125 §3.1). Resolved as a default is: the workspace's order
+    /// <c>workspaceRotation</c> for one workspace. Resolved as a default is: the workspace's order
     /// for the agent, else the machine's, else none — and none is no rotation at all.
     /// </summary>
     /// <remarks>
     /// <para>🔴 <b>The terminal writes these too</b> (<c>daoris agent account order</c>), so <see cref="Save"/> writes them,
     /// or a screen edit would delete the person's order. <c>RotationOrderTests</c> holds the reading, the edits, the refusals
     /// and the file written.</para>
-    /// <para>An account the order does not list is never rotated into (§3.1): one list, not a list and a mark. A start
-    /// reads its one scope instead (<see cref="Set"/>, TOOL6b, D130 §3.1), where a workspace that names a default
-    /// and no list takes no list at all; this is D125's reading of the file, held by its twin.</para>
+    /// <para>An account the order does not list is never rotated into: one list, not a list and a mark. A start
+    /// reads its one scope instead (<see cref="Set"/>), where a workspace that names a default
+    /// and no list takes no list at all; this is the file's own reading, held by its twin.</para>
     /// </remarks>
     public (IReadOnlyList<string> Order, ChoiceFrom From) ResolveRotationFrom(string agent, string? workspace)
     {
@@ -379,9 +379,9 @@ public sealed record HarnessSettings(
     /// <see cref="OrderProblem"/>'s question, which a door asks first.
     /// </summary>
     /// <remarks>
-    /// The set's settings are the agent's and no list's (POOL1a, the account-pool design §2.3): clearing the machine's order clears none
-    /// of them, and <see cref="Change"/> writes the order whole again, by id. A workspace's list cleared still takes its settings with it
-    /// (TOOL6a, D130 §2); since POOL1b (D197) no door writes one, and the next change folds one an older build wrote.
+    /// The set's settings are the agent's and no list's: clearing the machine's order clears none
+    /// of them, and <see cref="Change"/> writes the order whole again, by id. A workspace's list cleared still takes its settings with it;
+    /// no door writes one, and the next change folds one an older build wrote.
     /// </remarks>
     public HarnessSettings WithRotation(string agent, IReadOnlyList<string>? order, string? workspace = null)
     {
@@ -398,7 +398,7 @@ public sealed record HarnessSettings(
     }
 
     /// <summary>
-    /// Why an order cannot be written, or null when it can (D125 §3.1): the first name that is no account here — the
+    /// Why an order cannot be written, or null when it can: the first name that is no account here — the
     /// directories that exist, compared exactly, as a default's name is — or the first named twice, in any case.
     /// </summary>
     /// <param name="accounts">The agent's accounts on this machine: <see cref="Profiles"/>.</param>
@@ -416,8 +416,8 @@ public sealed record HarnessSettings(
     }
 
     /// <summary>
-    /// The wiring with an account removed gone from it (D66 §3): no default names it, the machine's or a workspace's,
-    /// no order does, and no scope keeps it (TOOL6a). The rest of each order keeps its place, and an order or a workspace
+    /// The wiring with an account removed gone from it: no default names it, the machine's or a workspace's,
+    /// no order does, and no scope keeps it. The rest of each order keeps its place, and an order or a workspace
     /// left naming none goes, its settings with it.
     /// </summary>
     public HarnessSettings WithoutAccount(string agent, string profile)
@@ -440,7 +440,7 @@ public sealed record HarnessSettings(
 
         bool Keeps(UseEntry? entry) =>
             entry?["keep"] is { ValueKind: JsonValueKind.String } keep && keep.GetString()!.Trim() == profile;
-        // A keep left alone in a set of one is dropped too (the account-pool design §2.3): driven work would have none.
+        // A keep left alone in a set of one is dropped too: driven work would have none.
         var alone = Rotation.ContainsKey(agent) && (settings.Rotation.GetValueOrDefault(agent)?.Count ?? 0) < 2
             && settings.Uses.GetValueOrDefault(agent)?["keep"] is not null;
         if (Keeps(settings.Uses.GetValueOrDefault(agent)) || alone) settings = settings.WithUse(agent, new UseChange(NoKeep: true));
@@ -489,19 +489,17 @@ public sealed record HarnessSettings(
     /// <inheritdoc cref="HarnessAccountFolders.RemoveProfile"/>
     public static bool RemoveProfile(string home, string harness, string profile) => HarnessAccountFolders.RemoveProfile(home, harness, profile);
 
-    // How a scope's list is used (TOOL6a; D130 §2, §3.1, §4.6, §14 as §16.6 amends them; D165 point 2 and
-    // docs/2026-10-02-account-use-design.md, docs/2026-10-12-account-switch-design.md §2 and §6, SWITCH1a): `rotationUse` for
-    // the machine and `workspaceRotationUse` for one workspace, per agent, beside the lists, which `daoris agent account use` writes
-    // through this program (PUSH1f2e3; the CLI's rotation.ts, its twin, left with PUSH1f2e); RotationUseTwinTests reads one table,
+    // How a scope's list is used: `rotationUse` for the machine and `workspaceRotationUse` for one workspace, per agent, beside
+    // the lists, which `daoris agent account use` writes through this program; RotationUseTwinTests reads one table,
     // fixtures/rotation-use.json among the driver's tests, row for row. The rules it keeps:
-    //  - Read: an entry is an object, kept whole. Each field is a value this build knows, or one it does not, which reads as today's
+    //  - Read: an entry is an object, kept whole. Each field is a value this build knows, or one it does not, which reads as the
     //    default and is said (RotationScope.Unknown); a field this build has no name for is kept and said too, so a newer build's
     //    setting outlives this one's save. The old names (`early`, `near`, `prefer`, `parallel`) are the migration's (HarnessesStep).
-    //  - Written as chosen: a choice equal to today's default is still written, so a later default never overturns a person's
+    //  - Written as chosen: a choice equal to the default is still written, so a later default never overturns a person's
     //    choice; absence alone means RotationUse.Default.
-    //  - HarnessRoster.SelectAsync reads them through Set on the projection (POOL1a2, the account-pool design §2.4), the agent's one
+    //  - HarnessRoster.SelectAsync reads them through Set on the projection, the agent's one
     //    entry: `use` and `keep` choose a start's account, and the switch and the curve pass an account whose use is over the curve
-    //    now (SWITCH1b-ii). The per-workspace reading left with the terminal's last callers (POOL1b), so every reader reads Set.
+    //    now. Every reader reads Set.
 
     /// <summary>Agent → how this machine's list is used, as the file holds it. See <see cref="Set"/>.</summary>
     public IReadOnlyDictionary<string, UseEntry> Uses { get; init; } =
@@ -512,12 +510,12 @@ public sealed record HarnessSettings(
         new Dictionary<string, IReadOnlyDictionary<string, UseEntry>>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// The agent's one set as a start reads it (POOL1a2, the account-pool design §2.4): its whole order, begun at the order's first,
+    /// The agent's one set as a start reads it: its whole order, begun at the order's first,
     /// and its one entry of settings. Read on the projection (<see cref="LoadSet"/>), which holds no default and no workspace's scope,
     /// so every workspace reads this one; on a raw file it is the machine's scope.
     /// </summary>
     /// <remarks>
-    /// This reads no per-workspace scope (D130 §2 rule 1: a workspace's scope where it named a default or a list of its own, else the
+    /// This reads no per-workspace scope (a workspace's scope where it names a default or a list of its own, else the
     /// machine's); an older build's reading of a file is the tests' own rule (<c>AccountSetTests</c>).
     /// </remarks>
     public RotationScope Set(string agent)
@@ -527,14 +525,14 @@ public sealed record HarnessSettings(
     }
 
     /// <summary>
-    /// Where the set's starts begin (the account-pool design §2.2): the order's first, which every reader of the machine's default
+    /// Where the set's starts begin: the order's first, which every reader of the machine's default
     /// reads now; none where the agent has no account.
     /// </summary>
     public string? FirstOf(string agent) => Set(agent).Begins;
 
     /// <summary>
-    /// This machine's scope for <paramref name="agent"/> with <paramref name="accounts"/> as its list (OWNSPACE1a, D175's
-    /// OWNSPACE1a note): what a start walks where neither the machine nor the workspace names an account, the agent's Daoris
+    /// This machine's scope for <paramref name="agent"/> with <paramref name="accounts"/> as its list: what a start walks
+    /// where neither the machine nor the workspace names an account, the agent's Daoris
     /// accounts on this machine, begun at the first and used as the machine's use for the agent says.
     /// </summary>
     public RotationScope Over(string agent, IReadOnlyList<string> accounts) =>

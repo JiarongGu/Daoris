@@ -12,11 +12,11 @@ internal static class SessionWaits
     /// <summary>How many times a went-on run is carried on: the person's words were its turn, so one more.</summary>
     public const int WentOnCarryBound = 1;
 
-    /// <summary>Where a run's capture failed once the run was ended before awaiting it: the machine log's <c>where</c>.</summary>
+    /// <summary>Where a run's capture failed once the run is ended before awaiting it: the machine log's <c>where</c>.</summary>
     public const string AbandonedRun = "a session's run, ended as its record would not move to working";
 
     /// <summary>
-    /// How long a given-up run's capture is waited for before it is left to finish on its own, still observed: its process was just
+    /// How long a given-up run's capture is waited for before it is left to finish on its own, still observed: its process is just
     /// ended, so its output closes at once, and a capture still open after this is stuck, not slow.
     /// </summary>
     public static readonly TimeSpan AbandonedWait = TimeSpan.FromSeconds(10);
@@ -29,7 +29,7 @@ internal static class SessionWaits
 
     /// <summary>
     /// The judgement a turn that ends on the session's own background work is asked, one for a start and a resumed run: the quest read
-    /// again, by the conclusion's own rule. Null for a resumed run whose quest was closed as the look planned it, which never waits. A
+    /// again, by the conclusion's own rule. Null for a resumed run whose quest is closed as the look planned it, which never waits. A
     /// start asks the ledger whether it took its quest; a resumed run carried on a take of this machine's, so it asks nothing.
     /// </summary>
     public static Func<CancellationToken, Task<bool>>? OnBackground(ServiceClient service, QuestView planned, string sessionId, bool resumed)
@@ -51,7 +51,7 @@ internal static class SessionWaits
     /// <summary>
     /// The look a turn's end takes of a quest that may have closed with uncommitted work in its tree: the quest read again, and, where
     /// it is done or submitted and the person has not stopped the session, its tree (<see cref="TurnCarries"/>). A resumed run whose
-    /// quest was closed as the look planned it (a went-on run) is carried on once, not <see cref="TurnCarry.Bound"/> times, and not at
+    /// quest is closed as the look planned it (a went-on run) is carried on once, not <see cref="TurnCarry.Bound"/> times, and not at
     /// all where it is an Accept's own carry-on (null: the Accept's count bounds it). A parked quest, an ask-and-wait, a stand-down and
     /// a failed exit are none of them done or submitted, so none is carried on.
     /// </summary>
@@ -76,8 +76,8 @@ internal static class SessionWaits
     /// <summary>
     /// A run's capture once the run gave up before awaiting it, as when its record will not move to working: the process ended, then
     /// the capture observed, and a failure there written with its reason, to the machine log as an <c>error</c> naming its place and to
-    /// the session's console. Left alone it reached the finalizer, an unobserved task's AggregateException whose only place was <i>an
-    /// unobserved task</i>, beside each session the double move failed.
+    /// the session's console. Left alone it reaches the finalizer, an unobserved task's AggregateException whose only place is <i>an
+    /// unobserved task</i>, beside each session the double move fails.
     /// </summary>
     /// <remarks>
     /// Waited for within <see cref="AbandonedWait"/>, as the ordinary path awaits a capture once its process exited; past it the run
@@ -166,7 +166,7 @@ internal static class SessionWaits
 
     /// <summary>
     /// Wait up to <paramref name="bound"/> for an agent to exit; past it, end its process tree, saying so to the run first. True where
-    /// its tree was ended here.
+    /// its tree is ended here.
     /// </summary>
     public static async Task<bool> EndedLingeringAsync(Process process, TimeSpan bound, AcpEnding? ending)
     {

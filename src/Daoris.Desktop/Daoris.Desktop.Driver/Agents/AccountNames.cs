@@ -6,7 +6,7 @@ using static Daoris.Driver.AccountFileNodes;
 
 namespace Daoris.Driver;
 
-/// <summary>Why a name cannot be given to an account (ACCT2).</summary>
+/// <summary>Why a name cannot be given to an account.</summary>
 public enum AccountNameProblemKind
 {
     /// <summary>The account is not on this machine.</summary>
@@ -28,37 +28,37 @@ public enum AccountNameProblemKind
     Unreadable,
 }
 
-/// <summary>Why a name was refused, and the other account it collides with where it is <see cref="AccountNameProblemKind.Taken"/>.</summary>
+/// <summary>Why a name is refused, and the other account it collides with where it is <see cref="AccountNameProblemKind.Taken"/>.</summary>
 public sealed record AccountNameProblem(AccountNameProblemKind Kind, string? Other = null);
 
-/// <summary>A name refused (ACCT2): the driver's sentence, and the problem a twin table reads.</summary>
+/// <summary>A name refused: the driver's sentence, and the problem a twin table reads.</summary>
 public sealed class AccountNameException(AccountNameProblem problem, string message) : DriverException(message)
 {
     public AccountNameProblem Problem { get; } = problem;
 }
 
 /// <summary>
-/// Which account a sign-in reaches (ACCT1): <see cref="Account"/> when it is one here; else the name that is no account here
-/// (<see cref="Missing"/>), or neither where none was named and the machine names no default.
+/// Which account a sign-in reaches: <see cref="Account"/> when it is one here; else the name that is no account here
+/// (<see cref="Missing"/>), or neither where none is named and the machine names no default.
 /// </summary>
 public sealed record AccountTarget(string? Account, string? Missing);
 
 /// <summary>
-/// An account's name and its stable id (ACCT2, D125's ACCT2 note): <c>accounts.json</c> under the home holds the name the
-/// person gave each account, by agent (the accounts' owner, AGT7) and id. <b>The id is the folder's name</b>, so an
-/// <c>account-N</c> made before this keeps its name as its id, and an account made now takes a fresh one
+/// An account's name and its stable id: <c>accounts.json</c> under the home holds the name the
+/// person gave each account, by agent (the accounts' owner) and id. <b>The id is the folder's name</b>, so an
+/// <c>account-N</c> keeps its name as its id, and a new account takes a fresh one
 /// (<see cref="NewId"/>). Everything else is keyed by the id: the wiring's defaults and lists, <c>reads.json</c>,
 /// <c>cooling.json</c>, <c>windows.json</c>, <c>keys.json</c>, the probe locks, session records and the usage ledger, so a
 /// rename touches this file alone and every one of them keeps working.
 /// </summary>
 /// <remarks>
-/// <para><b>Beside the account, never inside it</b>: the folder is the tool's (D49 §4), and moving it would move a home a
-/// harness may have keyed its credential to (D66 §3's rejected rename). <b>Written only by a person's rename</b>: who signed
-/// in is offered as the name at a sign-in's end and written only where the person keeps it (D66 §3); a read writes nothing.</para>
+/// <para><b>Beside the account, never inside it</b>: the folder is the tool's, and moving it would move a home a
+/// harness may have keyed its credential to. <b>Written only by a person's rename</b>: who signed
+/// in is offered as the name at a sign-in's end and written only where the person keeps it; a read writes nothing.</para>
 /// <para><b>A twin</b> of the CLI's <c>accountnames.ts</c>, over the same file; <c>AccountNamesTwinTests</c> and the CLI's
 /// <c>accountnames.test.ts</c> hold the same tables, row for row. The file's shape:
 /// <c>{ "&lt;agent&gt;": { "&lt;id&gt;": { "name": "…" } } }</c>; each writer keeps what it has no field for, LF, with a final
-/// newline. Agents and ids compare without case, as <c>reads.json</c> compares them. No HTTP route reaches it (D47 §4).</para>
+/// newline. Agents and ids compare without case, as <c>reads.json</c> compares them. No HTTP route reaches it.</para>
 /// </remarks>
 public static class AccountNames
 {
@@ -87,7 +87,7 @@ public static class AccountNames
     public static string Shown(string home, string agent, string account) => NameOf(home, agent, account) ?? account;
 
     /// <summary>
-    /// An account as a sentence a person reads says it (ACCT2b): the name the person gave it, from <paramref name="names"/>
+    /// An account as a sentence a person reads says it: the name the person gave it, from <paramref name="names"/>
     /// read when the sentence is said, else its id. A record, a note and the log keep the id, and a command in a sentence takes
     /// the id, which never moves; this is for the words around them.
     /// </summary>
@@ -95,7 +95,7 @@ public static class AccountNames
     public static string Said(IReadOnlyDictionary<string, string>? names, string account) =>
         names is not null && names.TryGetValue(account, out var name) ? name : account;
 
-    /// <summary>Every name one agent's accounts were given, by id, compared without case; none where nothing was.</summary>
+    /// <summary>Every name one agent's accounts have been given, by id, compared without case; none where there is none.</summary>
     public static IReadOnlyDictionary<string, string> Of(string home, string agent) => Of(Load(home).Root, agent);
 
     /// <summary>
@@ -112,13 +112,13 @@ public static class AccountNames
     }
 
     /// <summary>
-    /// Which account a sign-in into an account that is here reaches (ACCT1): the one named, by its id or its name, else the
+    /// Which account a sign-in into an account that is here reaches: the one named, by its id or its name, else the
     /// machine's default. Never one that is not here: a sign-in into an existing account never makes a folder.
     /// </summary>
     /// <remarks>
-    /// The window reads the set (POOL1a2, the account-pool design §2.4), which holds no default, so a sign-in there that names no
-    /// account is refused before anything starts. The terminal's <c>login</c> with none named hands the order's first here (POOL1b,
-    /// §5.1), so neither door reaches a default through this.
+    /// The window reads the set, which holds no default, so a sign-in there that names no
+    /// account is refused before anything starts. The terminal's <c>login</c> with none named hands the order's first here,
+    /// so neither door reaches a default through this.
     /// </remarks>
     public static AccountTarget SignInTarget(
         IReadOnlyCollection<string> accounts, IReadOnlyDictionary<string, string> names, HarnessSettings settings, string agent,
@@ -132,7 +132,7 @@ public static class AccountNames
     }
 
     /// <summary>
-    /// The refusal a sign-in into an account that is not here says (ACCT1): which name is none, the accounts there by name, and
+    /// The refusal a sign-in into an account that is not here says: which name is none, the accounts there by name, and
     /// the two ways on — a new account, or an account named first.
     /// </summary>
     public static string SignInRefusal(
@@ -144,7 +144,7 @@ public static class AccountNames
         + $" — accounts there: {Listed(accounts, names)}. `daoris agent login {agent} --new` signs in to a new account.";
 
     /// <summary>
-    /// Why <paramref name="name"/> cannot name <paramref name="account"/>, or null when it can (ACCT2). Null, or the account's
+    /// Why <paramref name="name"/> cannot name <paramref name="account"/>, or null when it can. Null, or the account's
     /// own id, clears its name and is never refused but for an account that is not here.
     /// </summary>
     public static AccountNameProblem? Problem(
@@ -179,10 +179,10 @@ public static class AccountNames
     public const string Apart = "·";
 
     /// <summary>
-    /// The name a sign-in's end offers an account (ACCOUNTID1, D66 §3): who signed in, where no other account has it as its id
+    /// The name a sign-in's end offers an account: who signed in, where no other account has it as its id
     /// or its name; else who with the organisation beside it (<see cref="Apart"/>), else with the plan, the first of them
     /// <see cref="Problem"/> takes, so accepting the offer names it; else none, and the person names it. One email signed in to
-    /// two organisations is two accounts, and the second's email was refused as taken. Offered, never written: the person's
+    /// two organisations is two accounts, and the second's email is refused as taken. Offered, never written: the person's
     /// rename writes it. The CLI's twin is <c>accountnames.ts</c>' <c>offeredName</c>, which holds this table's rows.
     /// </summary>
     /// <param name="accounts">The agent's accounts on this machine, <see cref="HarnessSettings.Profiles"/>.</param>
@@ -220,7 +220,7 @@ public static class AccountNames
     }
 
     /// <summary>
-    /// What a sign-in's end says after the email where another account already has it as its id or name (ACCOUNTID1c): the
+    /// What a sign-in's end says after the email where another account already has it as its id or name: the
     /// organisation, else the plan, the one <see cref="Offered"/> puts beside the email, trimmed; null where the email is
     /// said alone — no other account has it, or neither tells them apart. The CLI's twin is <c>apartWords</c>.
     /// </summary>
@@ -234,7 +234,7 @@ public static class AccountNames
     }
 
     /// <summary>
-    /// Give an account its name, or clear it with null or the account's own id (ACCT2): the person's word, both doors'. Asked
+    /// Give an account its name, or clear it with null or the account's own id: the person's word, both doors'. Asked
     /// <see cref="Problem"/> first, and refused with its sentence, writing nothing.
     /// </summary>
     /// <param name="accounts">The agent's accounts on this machine, <see cref="HarnessSettings.Profiles"/>.</param>
@@ -242,8 +242,8 @@ public static class AccountNames
     /// <exception cref="AccountNameException">The name is refused, or the file does not read.</exception>
     /// <param name="read">Called once the file is read, before the edit is written: a test's other writer, held off by the keep lock.</param>
     /// <remarks>
-    /// 🔴 <b>The file's <see cref="KeepLock"/> is held from the read to the write</b> (PUSH1f2e, the alone-path design §1.4): the file is
-    /// written whole, so another process's name written after this read was lost at this write.
+    /// 🔴 <b>The file's <see cref="KeepLock"/> is held from the read to the write</b>: the file is
+    /// written whole, so another process's name written after this read would be lost at this write.
     /// </remarks>
     public static string? Rename(
         string home, string agent, IReadOnlyCollection<string> accounts, string account, string? name, Action? read = null)
@@ -294,7 +294,7 @@ public static class AccountNames
         }
     }
 
-    /// <summary>An account removed from this machine (D66 §3): its name goes with it. Nothing to forget writes nothing.</summary>
+    /// <summary>An account removed from this machine: its name goes with it. Nothing to forget writes nothing.</summary>
     public static void Forget(string home, string agent, string account)
     {
         lock (Gate)
@@ -309,8 +309,8 @@ public static class AccountNames
     }
 
     /// <summary>
-    /// A new account's id (ACCT2): <see cref="IdPrefix"/> and eight lowercase hex characters, drawn again while an account of
-    /// the agent already has it. Never reused, unlike the first free <c>account-N</c> it replaces, so a reading, a cool-off
+    /// A new account's id: <see cref="IdPrefix"/> and eight lowercase hex characters, drawn again while an account of
+    /// the agent already has it. Never reused, unlike the first free <c>account-N</c>, so a reading, a cool-off
     /// or a usage total kept under one id never lands on another account. The person reads its name, never this.
     /// </summary>
     /// <param name="draw">Eight hex characters; the system's random source unless a test holds its own.</param>
@@ -348,9 +348,9 @@ public static class AccountNames
     };
 
     /// <summary>
-    /// The sign-in's end sentence (ACCTNAME1): the email offered as the name is said once; where the email is another sign-in's, the
-    /// organisation (else the plan) is said after it (ACCOUNTID1c), and a name that is the email with it beside is "that name". The window's
-    /// sign-in and <c>daoris agent login</c> both say it (PUSH1f2e6).
+    /// The sign-in's end sentence: the email offered as the name is said once; where the email is another sign-in's, the
+    /// organisation (else the plan) is said after it, and a name that is the email with it beside is "that name". The window's
+    /// sign-in and <c>daoris agent login</c> both say it.
     /// </summary>
     public static string SignedInSentence(string? account, string owner, string? called, string fresh, string? apart = null)
     {
@@ -363,7 +363,7 @@ public static class AccountNames
     }
 
     /// <summary>
-    /// The way out of a name another account has (ACCOUNTID1c): an email is another sign-in's, so the organisation beside it
+    /// The way out of a name another account has: an email is another sign-in's, so the organisation beside it
     /// tells them apart; any other name, one of the person's own. The CLI's twin is <c>takenWayOut</c>.
     /// </summary>
     public static string TakenWayOut(string wanted) =>
@@ -393,6 +393,6 @@ public static class AccountNames
         JsonFile.Write(PathOf(home), root);
     }
 
-    /// <summary>The file's root, and whether it was there and did not read; a missing file is an empty root.</summary>
+    /// <summary>The file's root, and whether it is there and does not read; a missing file is an empty root.</summary>
     private static (JsonObject Root, bool Unreadable) Load(string home) => AccountFileNodes.Read(PathOf(home));
 }

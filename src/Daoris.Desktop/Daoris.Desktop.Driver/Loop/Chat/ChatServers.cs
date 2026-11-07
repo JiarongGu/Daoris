@@ -39,7 +39,7 @@ internal sealed class ChatServers(ChatContext context)
     /// </summary>
     /// <remarks>
     /// The catalogue is read as the driver loop reads it, reserving the build's names. Never the roster's live set: that holds the plugins'
-    /// own agents, so a plugin declaring an agent and a server was refused as one this build carries, and its servers were withheld from every
+    /// own agents, so a plugin declaring an agent and a server would be refused as one this build carries, and its servers withheld from every
     /// conversation.
     /// </remarks>
     /// <param name="to">Whose servers: those declared for sessions, or for Ask Daoris.</param>

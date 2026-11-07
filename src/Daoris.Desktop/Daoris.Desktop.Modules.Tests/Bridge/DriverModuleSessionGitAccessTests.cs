@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A running session's git access over the bridge (D241 point 7): the driver's state answers each session's record as it holds now,
+/// A running session's git access over the bridge: the driver's state answers each session's record as it holds now,
 /// its repository's access narrowed by what the person tightened, and the route that narrows it is a marked person's press on a session.
 /// </summary>
 public sealed class DriverModuleSessionGitAccessTests : DriverModuleBridge

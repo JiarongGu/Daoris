@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The brainstorms on file (BRAINSTORM1a, D176): each request frozen into its packet for the person to read, and each one the person
+/// The brainstorms on file: each request frozen into its packet for the person to read, and each one the person
 /// sent run beside the look, taking a slot under the cap as a pass does.
 /// </summary>
 [LookPass("brainstorms", LookPhase.Read, "partners")]

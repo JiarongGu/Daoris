@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The rules' acts the plan made, said on their lines once (the context counters design §4.7): a quest parked by its failed sessions, held
+/// The rules' acts the plan made, said on their lines once: a quest parked by its failed sessions, held
 /// on a transient episode or by the bound of moves, and a line a rule moved to another choice. Each is kept through
 /// <see cref="SupervisorRuleActs"/> the first look that reads it, and not again for the same session, rule and point.
 /// </summary>

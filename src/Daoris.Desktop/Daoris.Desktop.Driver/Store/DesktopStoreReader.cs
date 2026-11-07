@@ -3,9 +3,9 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The desktop store opened read-only (FOUNDATION1 z-i, the design §13.4's GitDoor, §19.10): a connection that creates nothing, migrates
+/// The desktop store opened read-only: a connection that creates nothing, migrates
 /// nothing and writes nothing, so a process that only reads a family's table (the git door, once its families move and its start passes
-/// z-i's limit) never waits on a writer, which write-ahead logging promises, and never changes the file's stamp.
+/// the limit) never waits on a writer, which write-ahead logging promises, and never changes the file's stamp.
 /// </summary>
 /// <remarks>
 /// <para><b>Compiled in as the door's other files are</b>, so it uses the base library and <c>Microsoft.Data.Sqlite</c> alone, and names

@@ -166,7 +166,7 @@ public static class NoteCodes
         new(UnreachedWhy.Unmarked, [], "note.words.why.unmarked"),
     ]);
 
-    /// <summary>Why a conversation was handed to another agent (<see cref="HandOverWhy"/>): the page's <c>note.handed.why.*</c>.</summary>
+    /// <summary>Why a conversation is handed to another agent (<see cref="HandOverWhy"/>): the page's <c>note.handed.why.*</c>.</summary>
     public static readonly NoteReasons Handed = new(
     [
         new(HandOverWhy.Press, [], "note.handed.why.press"),
@@ -210,7 +210,7 @@ public static class NoteCodes
         new(HelperWhy.NoneSetUp, [], "note.helper.why.none-set-up"),
     ]);
 
-    /// <summary>Why a piece was refused, held or uncertain (<see cref="PartnerWhy"/>): the page's <c>note.partner.why.*</c>.</summary>
+    /// <summary>Why a piece is refused, held or uncertain (<see cref="PartnerWhy"/>): the page's <c>note.partner.why.*</c>.</summary>
     public static readonly NoteReasons Partner = new(
     [
         new(PartnerWhy.AskerUnfit, [], "note.partner.why.asker-unfit"),

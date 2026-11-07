@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A driven session's keeps on its record, one at a time under <see cref="InboxState.Keeping"/> (<see cref="DrivenInbox"/>, COWORK1c): a
+/// A driven session's keeps on its record, one at a time under <see cref="InboxState.Keeping"/> (<see cref="DrivenInbox"/>): a
 /// word kept before it is held, or held here alone where the record cannot keep it, and a held word taken back, reworded or raised. The
 /// record's calls run with the gate released; what they found is applied under it. A word the record cannot keep is held here alone
 /// by <see cref="DrivenInbox.KeepOrHoldAsync"/>, over this and the holds.
@@ -9,13 +9,13 @@ namespace Daoris.Driver;
 internal sealed class InboxKeeps(InboxState state)
 {
     /// <summary>
-    /// Take back, reword, or change the level of one held word (QUEUEEDIT1a, COWORK1a): with neither <paramref name="text"/> nor
+    /// Take back, reword, or change the level of one held word: with neither <paramref name="text"/> nor
     /// <paramref name="level"/> it is removed; with words, they replace its words where it is held, its place and its files kept,
     /// under a new id the record is told as said; with a level, it asks to reach the session then, under the same id, told again
     /// with where it reaches now. Raised where the door takes words at its next step, it goes there at once, and at <c>now</c> where
-    /// the agent steers, steered past what waits (the design §8.2). Only a word still held (<see cref="QueueEdit.Taken"/>
+    /// the agent steers, steered past what waits. Only a word still held (<see cref="QueueEdit.Taken"/>
     /// otherwise): one sent to the turn on the wire, or taken for the next, is the session's. The record, which showed it waiting
-    /// once the door was known, settles a reworded or removed word's old id as withdrawn.
+    /// once the door is known, settles a reworded or removed word's old id as withdrawn.
     /// </summary>
     public QueueEdit Edit(string id, string? text, MessageLevel? level = null)
     {
@@ -28,8 +28,8 @@ internal sealed class InboxKeeps(InboxState state)
     }
 
     /// <summary>
-    /// <see cref="Edit"/>, and a word kept on the record reworded as a word said is kept (COWORK1c): the new words on the record first,
-    /// under their own id, then in the old one's place, which leaves the record. One taken while the new words were kept is the
+    /// <see cref="Edit"/>, and a word kept on the record reworded as a word said is kept: the new words on the record first,
+    /// under their own id, then in the old one's place, which leaves the record. One taken while the new words are kept is the
     /// session's, and the new words leave the record again. Where the record will not keep them, they are held in this process alone.
     /// </summary>
     public async Task<QueueEdit> EditAsync(string id, string? text, MessageLevel? level = null, CancellationToken ct = default)
@@ -65,8 +65,8 @@ internal sealed class InboxKeeps(InboxState state)
                 said = new SayAnswer(false, error.Message);
             }
 
-            // FOUNDATION1d-ii: the record went on in its line's head meanwhile, so nothing is reworded or held here; the word kept stays as
-            // it was, on the record the open moves its words from.
+            // The record went on in its line's head meanwhile, so nothing is reworded or held here; the word kept stays as
+            // it is, on the record the open moves its words from.
             if (said.Head is not null) return QueueEdit.Taken;
 
             lock (state.Gate)
@@ -91,12 +91,12 @@ internal sealed class InboxKeeps(InboxState state)
 
     /// <summary>
     /// The held word at <paramref name="at"/> taken back, reworded under <paramref name="newId"/>, or at a new level. A kept word
-    /// taken back or reworded leaves the record (COWORK1c), so a restart never brings back what the person changed. Called under the gate.
+    /// taken back or reworded leaves the record, so a restart never brings back what the person changed. Called under the gate.
     /// </summary>
     private QueueEdit Edited(int at, string? text, MessageLevel? level, string? newId, bool kept)
     {
         var old = state.Held[at];
-        // A word said before the door was known was never told: the record has nothing of it to settle.
+        // A word said before the door is known is not yet told: the record has nothing of it to settle.
         var told = state.Reach is not null;
         ChatMessage? word = text is null && level is null
             ? null
@@ -144,8 +144,8 @@ internal sealed class InboxKeeps(InboxState state)
 
     /// <summary>
     /// Keep a word for the run on the session's record first, then take it as <see cref="Hold"/> or, at <c>now</c>,
-    /// <see cref="HoldNowAsync"/> takes it, under the record's id (COWORK1c, D188 point 6; the message-urgency design §6). One keep
-    /// at a time: two said at once are held in the order the record kept them, whichever write answered first (trap 20). A keep on
+    /// <see cref="HoldNowAsync"/> takes it, under the record's id. One keep
+    /// at a time: two said at once are held in the order the record kept them, whichever write answered first. A keep on
     /// its way holds the inbox open, so a word said as the turn ends is taken by this run. A word the record answers by a key it
     /// already holds is held once.
     /// </summary>
@@ -153,9 +153,8 @@ internal sealed class InboxKeeps(InboxState state)
     /// <para><b>Kept before told.</b> The record keeps the word, then the inbox tells it with where it reaches the session; a word the
     /// record refused is never held, and its caller says so.</para>
     ///
-    /// <para><b>Closed</b> (<see cref="InboxKeep.Closed"/>), before the keep or while it was on its way: the run takes no more words,
-    /// so nothing stays on the record, which is ending, and the caller holds the word as words said while a session winds up are held
-    /// (the design §6, HANDWORDS1).</para>
+    /// <para><b>Closed</b> (<see cref="InboxKeep.Closed"/>), before the keep or while it is on its way: the run takes no more words,
+    /// so nothing stays on the record, which is ending, and the caller holds the word as words said while a session winds up are held.</para>
     /// </remarks>
     /// <exception cref="HttpRequestException">The record did not answer: nothing holds the word.</exception>
     public async Task<InboxKept> KeepAsync(ISaidDoor door, ChatMessage message, CancellationToken ct)
@@ -177,10 +176,10 @@ internal sealed class InboxKeeps(InboxState state)
                 }
 
                 var said = await door.KeepAsync(message, ct).ConfigureAwait(false);
-                // FOUNDATION1 row p (the design §3.4 rule 5): the record answered the retry settled, so its word is held or went already:
+                // The record answered the retry settled, so its word is held or went already:
                 // answered as a retry of a word held, with nothing held, sent, steered, attempted or taken, and no word to read an id from.
                 if (said.Settled is not null) return new InboxKept(InboxKeep.Held, said);
-                // FOUNDATION1d-ii (the design §3.4 rule 2): the record is no longer its line's head, which the answer names. Nothing is held,
+                // The record is no longer its line's head, which the answer names. Nothing is held,
                 // sent, steered, attempted or taken here, and KeepOrHoldAsync never holds it here instead: its caller says it at the head.
                 if (said.Head is not null) return new InboxKept(InboxKeep.Continued, said);
                 if (!said.Kept || said.Word?.Id is not { } id) return new InboxKept(InboxKeep.Refused, said);
@@ -191,14 +190,14 @@ internal sealed class InboxKeeps(InboxState state)
                     var kept = message with { Id = id, Kept = true };
                     if (state.Closed)
                     {
-                        // 🔴 Never left on a record that is ending (the design §6): off it again, and its caller holds it as words said
+                        // 🔴 Never left on a record that is ending: off it again, and its caller holds it as words said
                         // while a session winds up are held, until the record ends.
                         state.TakeOff([kept]);
                         return InboxKept.Closed;
                     }
 
                     var reach = state.Reach is null ? (DrivenReach?)null : state.ReachOf(kept.Level);
-                    // A producer's retry under the key of a word held already (trap 19): held once.
+                    // A producer's retry under the key of a word held already: held once.
                     if (!state.Known.Add(id)) return new InboxKept(InboxKeep.Held, said) { Reach = reach };
                     if (kept.Level == MessageLevel.Now) return new InboxKept(InboxKeep.Held, said) { Reach = state.Reach, Now = state.NowHeld(kept) };
 

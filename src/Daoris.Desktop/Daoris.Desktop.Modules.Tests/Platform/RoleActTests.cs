@@ -10,7 +10,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The steward's immediate acts (STEWARDROLE1b, D209 §3.1 rows 1 to 8; the design §10 row 1b's <c>RoleActTests</c>): each admitted in its
+/// The steward's immediate acts: each admitted in its
 /// exact form and nothing else, every act of the owner's refused <c>not-role</c>, each condition refused by its code with nothing written,
 /// each effect recorded as the steward's, and the steward's Try again a release only this run's memory honours, consumed once by its start.
 /// </summary>
@@ -37,7 +37,7 @@ public sealed class RoleActTests : IDisposable
     // A log still held by a pipe that closes after us is waited for, then left: the scratch is the checkout's, and its parent is ignored.
     public void Dispose() => GitSeed.Discard(_home);
 
-    // ——— The forms (§3.1, §3.3).
+    // ——— The forms.
 
     public static TheoryData<string, string> Forms() => new()
     {
@@ -74,7 +74,7 @@ public sealed class RoleActTests : IDisposable
         Assert.True(judged.Covered, judged.Why);
     }
 
-    /// <summary>Another field or value is refused <c>form</c>; a field name's casing is read as D201's; a name given twice is refused.</summary>
+    /// <summary>Another field or value is refused <c>form</c>; a field name's casing is read as a press's is; a name given twice is refused.</summary>
     [Theory]
     [InlineData("drive", """{"repository":"engine","drivable":true,"why":"x"}""", "form")]
     [InlineData("drive", """{"repository":"engine","drivable":"true"}""", "form")]
@@ -94,7 +94,7 @@ public sealed class RoleActTests : IDisposable
         Assert.Equal((why is null, why), (judged.Covered, judged.Why));
     }
 
-    /// <summary>§3.2: what is the owner's is never the steward's, whatever its form: closing a quest as done and a decline among them.</summary>
+    /// <summary>What is the owner's is never the steward's, whatever its form: closing a quest as done and a decline among them.</summary>
     [Theory]
     [InlineData("QUEST_DONE")]
     [InlineData("decline")]
@@ -115,7 +115,7 @@ public sealed class RoleActTests : IDisposable
         Assert.Equal(RoleWhy.NotRole, Act(judge, key, act, """{"repository":"engine"}""").Why);
     }
 
-    // ——— The conditions, under the gates (§3.4 step 6), each refusing with nothing written.
+    // ——— The conditions, under the gates, each refusing with nothing written.
 
     [Fact]
     public async Task An_unregistered_repository_is_refused_and_nothing_is_written()
@@ -130,7 +130,7 @@ public sealed class RoleActTests : IDisposable
     }
 
     /// <summary>
-    /// Row 1, finding 2: a repository whose sessions open no trees of their own is the owner's to drive, refused <c>no-tree</c> with nothing
+    /// A repository whose sessions open no trees of their own is the owner's to drive, refused <c>no-tree</c> with nothing
     /// written; the steward gives it trees first, and then its drive is admitted, each recorded as the steward's.
     /// </summary>
     [Fact]
@@ -176,7 +176,7 @@ public sealed class RoleActTests : IDisposable
     }
 
     /// <summary>
-    /// Row 7, finding 14: the finish moves the parked record alone, as the steward's, and neither accepts nor closes its quest.
+    /// The finish moves the parked record alone, as the steward's, and neither accepts nor closes its quest.
     /// </summary>
     [Fact]
     public async Task A_finish_moves_the_park_alone_as_the_steward_s()
@@ -194,7 +194,7 @@ public sealed class RoleActTests : IDisposable
     }
 
     /// <summary>
-    /// Row 6, §5.1a: a live stop is the instance's own stop with the steward's note handed in at the call, never a request file; a stop of
+    /// A live stop is the instance's own stop with the steward's note handed in at the call, never a request file; a stop of
     /// a session another Daoris process of this machine runs is refused <c>running-elsewhere</c>, nothing written.
     /// </summary>
     [Fact]
@@ -232,7 +232,7 @@ public sealed class RoleActTests : IDisposable
         Assert.Equal((false, StewardWhy.NotOwn), Done(await served.ActAsync("resume", """{"repository":"engine","held":false}""")));
     }
 
-    // ——— Try again and its deferred authority (row 8, §5.1a, findings 7 and 8).
+    // ——— Try again and its deferred authority.
 
     /// <summary>A retry of the owner's stop, of a quest no stop holds, and of a quest the strikes park (<c>Marked</c>) are refused <c>not-own</c>.</summary>
     [Theory]
@@ -340,7 +340,7 @@ public sealed class RoleActTests : IDisposable
     }
 
     /// <summary>
-    /// §3.1a: a start of a repository the steward drove this run is a start a steward's act caused, until the owner acts on the repository;
+    /// A start of a repository the steward drove this run is a start a steward's act caused, until the owner acts on the repository;
     /// one the checkout would take is held for the owner and ends the steward's operations on its quest.
     /// </summary>
     [Fact]

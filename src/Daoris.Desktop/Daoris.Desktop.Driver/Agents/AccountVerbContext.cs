@@ -17,8 +17,8 @@ internal sealed record AccountVerbContext(
         Operand(index) ?? throw new AgentWords($"`agent {Verb}` needs {shape} — e.g. `daoris agent {Verb} claude-code`");
 
     /// <summary>
-    /// The agent whose accounts this verb touches (AGT7): a door's are its owner's, and the verb says so rather than quietly landing
-    /// somewhere else than was typed.
+    /// The agent whose accounts this verb touches: a door's are its owner's, and the verb says so rather than quietly landing
+    /// somewhere else than typed.
     /// </summary>
     public string Owner()
     {
@@ -31,12 +31,12 @@ internal sealed record AccountVerbContext(
         return owner;
     }
 
-    /// <summary>An account by its id or its name (ACCT2): its id, or what was given where it names none, for the verb to refuse.</summary>
+    /// <summary>An account by its id or its name: its id, or what is given where it names none, for the verb to refuse.</summary>
     public string Account(string owner, string given) => AgentsCommand.AccountNamed(Home, owner, given);
 
     /// <summary>The set's order as written now: every account of the agent's, read again after a write on either path.</summary>
     public IReadOnlyList<string> Order(string owner) => HarnessSettings.LoadSet(Path, [owner]).Rotation.GetValueOrDefault(owner) ?? [];
 
-    /// <summary>The agents this terminal's set knows, which every write here hands the wiring's change (POOLSTRAY1).</summary>
+    /// <summary>The agents this terminal's set knows, which every write here hands the wiring's change.</summary>
     public IReadOnlyList<string> Agents => AgentsCommand.Agents(World, Path);
 }

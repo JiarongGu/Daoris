@@ -6,7 +6,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The loop's readers of what a press's files say (CONFIRMWAIT1a-i, the confirm-wait design §5.1, §10's plugin row): a plugin's
+/// The loop's readers of what a press's files say: a plugin's
 /// folder by every file under it, so one file changed while the manifest stayed is a moved ground; a file by its bytes; a folder or
 /// file that is absent by <c>none</c>; and a held wait no read lists, a help proposal by its record. Every path is under the test's
 /// own scratch home.
@@ -69,7 +69,7 @@ public sealed class LoopGroundsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// CONFIRMWAIT1 (the confirm-wait design §15.1 item 5): a terminal's attachments are read by their bytes, so a file replaced at the
+    /// A terminal's attachments are read by their bytes, so a file replaced at the
     /// same path moves the press; a path that is no rooted file is bound as it was given.
     /// </summary>
     [Fact]

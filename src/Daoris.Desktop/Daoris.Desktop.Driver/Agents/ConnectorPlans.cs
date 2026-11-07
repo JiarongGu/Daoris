@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The one place a start's connectors become a <see cref="ConnectorPlan"/> (CONNECTORS1, the design §4.4): once per workspace's start, with
+/// The one place a start's connectors become a <see cref="ConnectorPlan"/>: once per workspace's start, with
 /// the sources that workspace permits and the servers it requires, read by the protocol door's open and by a file door's handing alike.
 /// </summary>
 internal static class ConnectorPlans
@@ -20,7 +20,7 @@ internal static class ConnectorPlans
 
     /// <summary>
     /// The plan of one start in <paramref name="workspace"/>: its servers, each from a permitted source, and Daoris's connector among those it
-    /// requires where it was found. A server from a source the start does not permit is refused, naming it.
+    /// requires where it is found. A server from a source the start does not permit is refused, naming it.
     /// </summary>
     /// <param name="permitted">The sources the start draws from; the session's by default.</param>
     public static ConnectorPlan For(

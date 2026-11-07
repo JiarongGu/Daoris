@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// What the participants ask of the workflows for a conversation's chat run: whether a run is bound, which chat run a record is one of, the
 /// run bound with what the conversation is told of it, and a run's process. Workflows keeps each and implements this, installed when the
-/// driver loads (<c>Workflows/ParticipantsWorkflowsWiring.cs</c>); each operation does exactly what its caller did before it was a port, over
+/// driver loads (<c>Workflows/ParticipantsWorkflowsWiring.cs</c>); each operation works over
 /// the workplace's own facets (<see cref="IWorkplaceProcess"/>, <see cref="IWorkplacePluginCatalog"/>).
 /// </summary>
 internal interface IParticipantsWorkflows
@@ -28,13 +28,13 @@ internal interface IParticipantsWorkflows
 /// <summary>What a chat run's bind came to, and what the conversation is told of it.</summary>
 internal interface IParticipantsChatBound
 {
-    /// <summary>Why the home could not keep the binding; null where it was kept, read back, or a graph choice bound nothing.</summary>
+    /// <summary>Why the home could not keep the binding; null where it is kept, read back, or a graph choice bound nothing.</summary>
     string? Failed { get; }
 
     /// <summary>Whether this bind wrote the binding.</summary>
     bool Wrote { get; }
 
-    /// <summary>What the conversation's first line says of the binding it wrote under a named workflow; null under Current or where none was written.</summary>
+    /// <summary>What the conversation's first line says of the binding it wrote under a named workflow; null under Current or where none is written.</summary>
     Noted? Told();
 
     /// <summary>What the conversation is told once of a bind the home could not keep, for <paramref name="problem"/>.</summary>

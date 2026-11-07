@@ -2,7 +2,7 @@ using Daoris.Desktop.Driver.Tests;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// D92: on the Chromium the shell ships, each window's page is a path on the engine's app origin, told
+/// On the Chromium the shell ships, each window's page is a path on the engine's app origin, told
 /// where its host is — the address the page's <c>host.ts</c> accepts only when it is loopback.
 /// </summary>
 public sealed class DesktopPageTests

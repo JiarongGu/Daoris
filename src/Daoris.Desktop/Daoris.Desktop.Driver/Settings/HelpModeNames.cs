@@ -1,16 +1,16 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The names of Ask Daoris's access mode as <c>driver.json</c>'s <c>helpMode</c> keeps them (HELPMODE1a1, D183 point 1): the settings'
+/// The names of Ask Daoris's access mode as <c>driver.json</c>'s <c>helpMode</c> keeps them: the settings'
 /// own reading of the key, which Help's <see cref="HelpModes"/> answers through, so the key reads and is spelled the same wherever a
 /// mode is named.
 /// </summary>
 public static class HelpModeNames
 {
-    /// <summary>It reads, advises and proposes, and the person applies (D89): the default.</summary>
+    /// <summary>It reads, advises and proposes, and the person applies: the default.</summary>
     public const string Restricted = "restricted";
 
-    /// <summary>It acts on this machine itself, in its harness's mode that asks nothing (D183 point 1).</summary>
+    /// <summary>It acts on this machine itself, in its harness's mode that asks nothing.</summary>
     public const string Full = "full";
 
     /// <summary>The modes, in the order a person is offered them.</summary>
@@ -21,7 +21,7 @@ public static class HelpModeNames
         All.FirstOrDefault(mode => string.Equals(mode, value?.Trim(), StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
-    /// A record's mode as read (HELPMODE1a2, D183 point 3): full where it says full, in any case; restricted for none, a record from
+    /// A record's mode as read: full where it says full, in any case; restricted for none, a record from
     /// before the modes, and for one this build does not know, as the driver's file reads it.
     /// </summary>
     public static string Recorded(string? kept) => Named(kept) == Full ? Full : Restricted;

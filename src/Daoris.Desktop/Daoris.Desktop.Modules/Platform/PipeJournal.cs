@@ -6,7 +6,7 @@ using System.Text.Json;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What a request's id is bound to (a second agent's review of RPC1a): its module and route, a fingerprint of its payload and one
+/// What a request's id is bound to: its module and route, a fingerprint of its payload and one
 /// of the key its sender sent beside it. An id sent again with any of them changed is another request, refused, never
 /// answered with this one's answer; <c>RESULT</c> answers only the key's holder.
 /// </summary>
@@ -20,7 +20,7 @@ internal sealed record PipeBinding(string Request, string Payload, string Key)
 }
 
 /// <summary>
-/// What the pipe was asked, by each request's id (RPC1a, the terminal RPC design §6.1): a line when a press begins and a line when
+/// What the pipe is asked, by each request's id: a line when a press begins and a line when
 /// it ends, with its answer, kept 24 hours under <c>&lt;home&gt;/pipe/</c>, one file per UTC day. So an id seen before is answered
 /// from its line and never run twice, and <c>RESULT</c> says how a press ended whether or not its client was still there.
 /// </summary>
@@ -32,7 +32,7 @@ internal sealed record PipeBinding(string Request, string Payload, string Key)
 /// <para><b>Each line appended whole</b>, BOM-less UTF-8 and LF, under one lock: a reader never meets half a line it wrote. A
 /// press whose first line cannot be written is not run (<see cref="Begin"/> says so), so an id the journal does not hold was never
 /// dispatched. Each line carries the id's <see cref="PipeBinding"/>. The answer is the response envelope as it went on the wire,
-/// which carries this machine's paths only to this machine (D46).</para>
+/// which carries this machine's paths only to this machine.</para>
 /// </remarks>
 internal sealed class PipeJournal
 {

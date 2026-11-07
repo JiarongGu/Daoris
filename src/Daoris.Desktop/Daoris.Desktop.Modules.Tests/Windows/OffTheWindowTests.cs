@@ -8,7 +8,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A Daoris route never resumes on the window's thread (UIFREEZE1): the bridge dispatches each page request there, and the
+/// A Daoris route never resumes on the window's thread: the bridge dispatches each page request there, and the
 /// kit's pipeline keeps the caller's context, so every await in a route came back to the window. A sweep's git fan-out, once
 /// back, started its processes there, and the window froze for minutes on .NET's one process-start lock.
 /// </summary>

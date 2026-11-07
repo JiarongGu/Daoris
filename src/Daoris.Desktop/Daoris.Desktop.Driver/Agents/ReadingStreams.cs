@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The streams a run's agent runs beside itself (CONSOLE3c), written as readings to the run's sink (row l): what the protocol session and the
+/// The streams a run's agent runs beside itself, written as readings to the run's sink: what the protocol session and the
 /// native mapper are handed where they keep a subagent's or a task's lines apart, so neither names the console that shows them.
 /// </summary>
 internal sealed class ReadingStreams(IReadingSink sink) : ISessionStreams

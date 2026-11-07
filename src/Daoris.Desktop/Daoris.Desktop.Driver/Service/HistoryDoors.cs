@@ -4,7 +4,7 @@ using static Daoris.Driver.RefusalWords;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The service's history doors (the service's history routes), a local host's only (HIST1b, D153; the history-clearing design §6.3): what a
+/// The service's history doors (the service's history routes), a local host's only: what a
 /// clear of finished history would take, and the clear itself. A class over the client, reached as its <see cref="ServiceClient.History"/> and
 /// by the client's own doors of the same names. The driver's <c>HistoryClearing</c> calls them, judging this machine's half before and removing
 /// the home's files after.
@@ -36,7 +36,7 @@ public sealed class HistoryDoors
         [
             .. cleared.Units.Select(each => new HistoryClearedView(ReadUnit(each.Unit), each.Cleared, each.Message)
             {
-                // Additive (HIST1j): absent where every removal was made, and from a host before it.
+                // Additive: absent where every removal is made, and from an older host.
                 FailedQuests = each.Failed?.Quests ?? [],
                 FailedAsks = each.Failed?.Asks ?? [],
             }),
@@ -74,7 +74,7 @@ public sealed class HistoryDoors
         Session = refusal.Session,
         Origin = refusal.Origin,
         Workspace = refusal.Workspace,
-        // Additive (HIST1l, HIST1m): each absent beside every other word, and from a host before it.
+        // Additive: each absent beside every other word, and from an older host.
         Waits = refusal.Waits,
         Stands = refusal.Stands,
         By = refusal.By,

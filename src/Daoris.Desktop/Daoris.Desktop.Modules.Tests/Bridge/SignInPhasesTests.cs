@@ -5,16 +5,16 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// SIGNIN1: a sign-in says where it is (the UI/UX design §3.2, R2). The driver writes each phase it performs or observes, with
+/// A sign-in says where it is. The driver writes each phase it performs or observes, with
 /// its start, into the relay the tool's output takes (<c>Starting</c>, <c>Waiting on your browser</c>, <c>Checking who signed
 /// in</c>, <c>Joining the lists</c>), keeps the run's lines so a panel mounted late reads them, and tells the action's life to
 /// the machine log by its phases' times, never a link, a code, an email or an account.
 /// </summary>
 /// <remarks>
-/// Codex's is a faithful stand-in for <c>codex login --device-auth</c> 0.160.0 as D125's CODEXACCT2 note measured it: one
+/// Codex's is a faithful stand-in for <c>codex login --device-auth</c> 0.160.0 behaves: one
 /// write with the version, the link and the code in colour, then a wait in which it reads nothing on its input and polls until
 /// the person has entered the code on the maker's page (here, a file the test writes), then <i>Successfully logged in</i> on
-/// its error stream and exit 0. Real processes, so the <c>Process</c> half (MOD8).
+/// its error stream and exit 0. Real processes, so the <c>Process</c> half.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class SignInPhasesTests : Bridge
@@ -29,7 +29,7 @@ public sealed class SignInPhasesTests : Bridge
 
     public SignInPhasesTests() => _log = new MachineLog(Home, "desktop");
 
-    // The browser's ports are tried by a stand-in that finds them free (CODEXLOGIN1), never this machine's 1455 and 1457.
+    // The browser's ports are tried by a stand-in that finds them free, never this machine's 1455 and 1457.
     private DriverModule Module()
     {
         var loop = new DriverLoop(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0", log: _log);
@@ -162,7 +162,7 @@ public sealed class SignInPhasesTests : Bridge
     }
 
     /// <summary>
-    /// A sign-in back in to an account that is here (ACCT1) checks who signed in before it joins the lists, so the phases run in
+    /// A sign-in back in to an account that is here checks who signed in before it joins the lists, so the phases run in
     /// the design's order; and a sign-in the tool fails ends at its second phase, said to the log as failed by its exit code.
     /// </summary>
     [Fact]
@@ -227,14 +227,14 @@ public sealed class SignInPhasesTests : Bridge
 
         var end = LogLines().Single(line => line.GetProperty("event").GetString() == "harness.ended").GetProperty("data");
         Assert.Equal("cancelled", end.GetProperty("outcome").GetString());
-        // The end's news says so too, so the page closes the panel saying nothing: the person pressed it (§3.2).
+        // The end's news says so too, so the page closes the panel saying nothing: the person pressed it.
         var ended = JsonSerializer.SerializeToElement(Raised.Single(m => m.Type == "HARNESS_ENDED").Payload);
         Assert.True(ended.GetProperty("Cancelled").GetBoolean());
         Assert.False(ended.GetProperty("Switched").GetBoolean());
     }
 
     /// <summary>
-    /// CODEXLOGIN1, the browser with its port free: *Add an account…* on Codex runs <c>codex login</c> first, the page to open
+    /// *Add an account…* on Codex runs <c>codex login</c> first, the page to open
     /// reaches the relay while the tool waits on its port, and once the browser comes back there the sign-in finishes and keeps
     /// the account, its four phases written in order.
     /// </summary>
@@ -263,7 +263,7 @@ public sealed class SignInPhasesTests : Bridge
     }
 
     /// <summary>
-    /// CODEXLOGIN1, the switch mid-sign-in: a device code waits, as one a workspace refused waits out its fifteen minutes with
+    /// A device code waits, as one a workspace refused waits out its fifteen minutes with
     /// the refusal only on the maker's page, and the person switches to the browser. The device code's process, Daoris's own
     /// child, is stopped, its end told as switched with nothing kept; the browser's runs in the same relay after its own start,
     /// and finishes. The log says the first cancelled and the second done.
@@ -378,7 +378,7 @@ public sealed class SignInPhasesTests : Bridge
         ];
     }
 
-    /// <summary>The machine log holds no link, no code, no email and no account: the design's §5.</summary>
+    /// <summary>The machine log holds no link, no code, no email and no account.</summary>
     private void NothingOfThePersonIn(string account)
     {
         var raw = string.Join("\n", LogLines().Select(line => line.GetRawText()));

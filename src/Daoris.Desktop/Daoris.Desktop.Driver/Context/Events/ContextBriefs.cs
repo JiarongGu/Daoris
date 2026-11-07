@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
-/// <summary>One part of a line as its record says it (SESSCTX1b): its id, why it continued the part before it, and its record.</summary>
+/// <summary>One part of a line as its record says it: its id, why it continued the part before it, and its record.</summary>
 /// <param name="Why">Its <c>fromWhy</c>, one of <see cref="HandOverWhy"/>; null where it continues none.</param>
 public sealed record LinePart(string Session, string? Why, PriorSession Record);
 
 /// <summary>
-/// What a brief is composed from, read on this machine (SESSCTX1b, D189 point 4; the session-context design §3): the line a new part
+/// What a brief is composed from, read on this machine: the line a new part
 /// continues, one chain back by each record's <c>from</c>, each part's events as its record keeps them, the tree as it stands now,
 /// the gates that make a call a check, the entry's other parts and what is still asked. <see cref="ContextBrief.Compose"/> is the
 /// pure half; this reads what it is handed, and nothing here writes.
@@ -43,17 +43,17 @@ internal static class ContextBriefs
 
     /// <summary>
     /// The brief of the line <paramref name="session"/> ends, for the new part that goes on from it now because of
-    /// <paramref name="why"/> (SESSCTX1b). Read from the service's records, this machine's event files and the tree.
+    /// <paramref name="why"/>. Read from the service's records, this machine's event files and the tree.
     /// </summary>
     /// <param name="conversation">A conversation's line, whose request is its first word; a driven line's is its quest.</param>
     /// <param name="note">
-    /// The outgoing agent's own note (the design §3.1 item 6), as its claim: the seam MIXAGENT1c's <c>handover_propose</c> and SESSCTX1c's
-    /// closing note hand in. Null where none was written.
+    /// The outgoing agent's own note, as its claim: the seam <c>handover_propose</c> and the
+    /// closing note hand in. Null where none is written.
     /// </param>
     /// <param name="tree">The tree the new part works in, read now; null for the one the part moved from ran in.</param>
-    /// <param name="noteAsked">Whether the outgoing agent was asked for its closing note (SESSCTX1c part B): none written is said absent.</param>
+    /// <param name="noteAsked">Whether the outgoing agent is asked for its closing note: none written is said absent.</param>
     /// <param name="before">
-    /// How many of the part moved from's events stood before its closing note was asked (SESSCTX1c part B): the brief reads those alone,
+    /// How many of the part moved from's events stood before its closing note is asked: the brief reads those alone,
     /// so the closing turn is told once, as the note. Null reads them all.
     /// </param>
     internal static async Task<ComposedBrief> ComposeAsync(
@@ -97,7 +97,7 @@ internal static class ContextBriefs
         });
     }
 
-    /// <summary>What the line read of memory, as the service rechecks it now (KNOWCENTRAL2f); none where it could not be had.</summary>
+    /// <summary>What the line read of memory, as the service rechecks it now; none where it could not be had.</summary>
     private static async Task<IReadOnlyList<string>> MemoryAsync(ServiceClient service, string session, CancellationToken ct)
     {
         try
@@ -111,7 +111,7 @@ internal static class ContextBriefs
         }
     }
 
-    /// <summary>The ids of the parts a new part's line continues, for the reads its rules allow (design §3.1 item 5); none read, none.</summary>
+    /// <summary>The ids of the parts a new part's line continues, for the reads its rules allow; none read, none.</summary>
     internal static async Task<IReadOnlyList<string>> LineIdsAsync(ServiceClient service, string session, CancellationToken ct) =>
         [.. LineOf(ServiceClient.ReadRecords(await RecordsAsync(service, ct).ConfigureAwait(false) ?? "[]"), session).Select(part => part.Session)];
 
@@ -134,7 +134,7 @@ internal static class ContextBriefs
     /// <summary>
     /// A part's events, oldest first, as its record keeps them; none for an id that names no file here, or one that does not read.
     /// A record that kept none of the agent's words has its transcript's last plain lines as its last message, as a parked session's
-    /// card reads them (<see cref="SessionLastWords.ParkedWords"/>), so a carry-on keeps the last words it was handed before the brief.
+    /// card reads them (<see cref="SessionLastWords.ParkedWords"/>), so a carry-on keeps the last words it is handed before the brief.
     /// </summary>
     private static IReadOnlyList<SessionEvent> Events(SessionEvents events, string home, string session)
     {
@@ -160,7 +160,7 @@ internal static class ContextBriefs
         SessionEventText.IsLocalId(session) && SessionAttachments.Folder(home, session) is var folder && Directory.Exists(folder) ? folder : null;
 
     /// <summary>
-    /// The tree as it stands now (design §3.1 item 5), since a part's end commit is not recorded: its head, what it holds uncommitted,
+    /// The tree as it stands now, since a part's end commit is not recorded: its head, what it holds uncommitted,
     /// and the commits on it since the line's first part began. Null for the head where git cannot say.
     /// </summary>
     private static async Task<BriefTree> TreeAsync(string tree, string? since, CancellationToken ct)
@@ -186,7 +186,7 @@ internal static class ContextBriefs
         }
     }
 
-    /// <summary>What the tree holds uncommitted, as git says it, at most <paramref name="limit"/>; none where git cannot say (STRUCT3h).</summary>
+    /// <summary>What the tree holds uncommitted, as git says it, at most <paramref name="limit"/>; none where git cannot say.</summary>
     private static async Task<IReadOnlyList<string>> UncommittedAsync(string tree, int limit, CancellationToken ct)
     {
         try
@@ -200,7 +200,7 @@ internal static class ContextBriefs
     }
 
     /// <summary>
-    /// What makes a call a check (design §3.1 item 4): the gates the tree's <c>daoris.gates.json</c> declares, as the review's
+    /// What makes a call a check: the gates the tree's <c>daoris.gates.json</c> declares, as the review's
     /// <see cref="IContextReview.DeclaredGates"/> reads them, and this machine's heavy-gate mapping for the repository. A file that
     /// does not read declares none here.
     /// </summary>
@@ -236,7 +236,7 @@ internal static class ContextBriefs
     }
 
     /// <summary>
-    /// The entry's other parts (design §3.1 item 7), beside the line: each record of its line of work that is not on it, oldest first,
+    /// The entry's other parts, beside the line: each record of its line of work that is not on it, oldest first,
     /// with its quest, how it began and how it stands.
     /// </summary>
     private static IReadOnlyList<string> Others(string json, IReadOnlyList<LinePart> line)
@@ -255,7 +255,7 @@ internal static class ContextBriefs
         ];
     }
 
-    /// <summary>What the line waits on (COMMS1f), as the work orders' read of its exchanges gives it; none where it could not be had.</summary>
+    /// <summary>What the line waits on, as the work orders' read of its exchanges gives it; none where it could not be had.</summary>
     private static async Task<IReadOnlyList<BriefWait>> WaitsAsync(
         ServiceClient service, string home, string json, string session, CancellationToken ct)
     {

@@ -4,8 +4,8 @@ namespace Daoris.Driver;
 public sealed record WalkChoice(WalkStep Step, WalkStep? Rest = null)
 {
     /// <summary>
-    /// The account <see cref="Step"/> weighed the one the start ran on against, where it is near or pace (TOOL6c): near names
-    /// the account passed, pace the one it was ahead of, so the start's first line can say what that account said.
+    /// The account <see cref="Step"/> weighed the one the start ran on against, where it is near or pace: near names
+    /// the account passed, pace the one it is ahead of, so the start's first line can say what that account said.
     /// </summary>
     public string? Over { get; init; }
 

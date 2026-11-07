@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// What a look declares to the windows beside its tick (FOUNDATION1s, D182 point 7): the page's tick no longer asks the rules, the
+/// What a look declares to the windows beside its tick: the page's tick no longer asks the rules, the
 /// repositories and the registry again, so what a look moved of them is told as a change of its own scope, and only what moved.
 /// </summary>
 public sealed class TickScopesTests : DriverModuleBridge
@@ -19,7 +19,7 @@ public sealed class TickScopesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FOUNDATION1s part B: the rules' scope is told where their reading moved, never at every look that says a line about them (the
+    /// The rules' scope is told where their reading moved, never at every look that says a line about them (the
     /// "could not be settled" retry said again each look). The first reading is the page's own first read.
     /// </summary>
     [Fact]
@@ -37,7 +37,7 @@ public sealed class TickScopesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FOUNDATION1s part B: the knowledge index's size as the service lists it moves while it feeds and is quiet once it has fed, so the
+    /// The knowledge index's size as the service lists it moves while it feeds and is quiet once it has fed, so the
     /// look tells the repositories' scope and the status bar reads its size again: 555 entries mid-feed, then 1,050 once fed.
     /// </summary>
     [Fact]

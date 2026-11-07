@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// MAINWINDOWS2 (D171 point 2): the application ends with its last main window, not its first. The first main window holds
+/// The application ends with its last main window, not its first. The first main window holds
 /// the kit's message loop, and its services (the pickers, the taskbar's count, the tray) are resolved as that one window, so a
 /// person's close of it while another main window is open puts it away (hidden, its page and services kept) rather than ending
 /// the loop; the last of the others closing then ends the application, and a later launch, or the tray, takes the first back.
@@ -143,7 +143,7 @@ public sealed class MainWindowsTests : IDisposable
         Assert.False(windows.TakeBackFirst());
     }
 
-    /// <summary>NOTIFY2c: a main window is the first or one a later launch opened; a utility window is none.</summary>
+    /// <summary>A main window is the first or one a later launch opened; a utility window is none.</summary>
     [Fact]
     public void A_main_window_is_the_first_or_another_a_later_launch_opened()
     {

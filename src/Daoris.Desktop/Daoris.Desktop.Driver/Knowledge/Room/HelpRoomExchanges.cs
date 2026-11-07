@@ -3,7 +3,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What waits on what (COMMS1i, the comms design §7: Ask Daoris reads the exchanges as a fact): each line's requests of others that it
+/// What waits on what (Ask Daoris reads the exchanges as a fact): each line's requests of others that it
 /// still waits on, as the exchanges' one read finds them over this machine's records and the terminal's <c>daoris session at-work</c> says
 /// them, so the helper answers from the records and proposes only acts that exist.
 /// </summary>
@@ -49,10 +49,10 @@ internal sealed class HelpRoomExchanges : IHelpRoomSection
     }
 }
 
-/// <summary>One request a line waits on, as the room lists it (COMMS1i): the line's head, its repository and workspace, and the request in the verb's words.</summary>
+/// <summary>One request a line waits on, as the room lists it: the line's head, its repository and workspace, and the request in the verb's words.</summary>
 public sealed record HelpWait(string Session, string Repository, string Workspace, string Line);
 
-/// <summary>What waits on what across this machine's lines (COMMS1i), and the sources that could not be read: said, never drawn as none.</summary>
+/// <summary>What waits on what across this machine's lines, and the sources that could not be read: said, never drawn as none.</summary>
 public sealed record HelpWaits(IReadOnlyList<HelpWait> Waits, IReadOnlyList<string> Unread)
 {
     public static HelpWaits None { get; } = new([], []);

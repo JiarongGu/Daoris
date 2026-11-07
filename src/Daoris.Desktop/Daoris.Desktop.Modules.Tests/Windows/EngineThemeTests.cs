@@ -7,14 +7,13 @@ using Shenora.Modules.Platform;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// THEMESCHEME1: the engine every window renders on follows the viewer's chosen theme, so Chromium's own UI and the
+/// The engine every window renders on follows the viewer's chosen theme, so Chromium's own UI and the
 /// page's <c>prefers-color-scheme</c> agree with the page on a desktop set the other way.
 /// </summary>
 /// <remarks>
 /// The kit's setting, through the kit's route: <c>UseWindows</c> registers the app's <see cref="IColorScheme"/>, the
 /// engine applies it to the Chromium every window shares, and each window's page sets it to the viewer's choice over
-/// <c>SHENORA.COLOR_SCHEME</c>, which <c>AddShenoraColorScheme</c> mounts. Why the choice and not <c>SET_THEME</c>'s
-/// flag: D22's THEMESCHEME1 note.
+/// <c>SHENORA.COLOR_SCHEME</c>, which <c>AddShenoraColorScheme</c> mounts.
 /// </remarks>
 public sealed class EngineThemeTests : Bridge
 {
@@ -42,7 +41,7 @@ public sealed class EngineThemeTests : Bridge
     }
 
     /// <summary>
-    /// Held on the application's own source, as the browser's start is (CHR8), because the window's composition has no
+    /// Held on the application's own source, as the browser's start is, because the window's composition has no
     /// test project: the route is mounted, and the handshake advertises it, as the kit asks of an app that mounts it.
     /// </summary>
     [Fact]

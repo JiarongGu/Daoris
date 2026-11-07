@@ -7,7 +7,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The asks, a pushed slice (PUSH1d3, D182 points 2 to 4): one owner in the shell's loop reading what the service answers of every ask,
+/// The asks, a pushed slice: one owner in the shell's loop reading what the service answers of every ask,
 /// closed and done ones and every workspace's included, allow-listed to the page's fields, a partition per workspace keyed by ask, so an
 /// ask a connector wrote reaches every window by one push, and neither the person's words nor a file's path is pushed.
 /// </summary>

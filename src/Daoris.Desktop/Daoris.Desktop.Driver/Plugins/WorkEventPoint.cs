@@ -3,17 +3,17 @@ using System.Threading.Channels;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The point <c>work/event</c>'s teller (EVENTHOOK1b; the event hook design §4.1, §4.4, §4.5): one <see cref="Run"/>, one count of every
+/// The point <c>work/event</c>'s teller: one <see cref="Run"/>, one count of every
 /// event minted, under one lock, and a queue and a teller for each plugin that listens, made only once one does.
 /// </summary>
 /// <remarks>
 /// <para><b>Every <c>seq</c> is minted, told or not.</b> <see cref="Tell"/> counts each event whether or not the set holds the lease and
-/// whether or not a plugin listens, so a relay sees anything not told as a gap, and a plugin's handshake counts what it was not told.</para>
+/// whether or not a plugin listens, so a relay sees anything not told as a gap, and a plugin's handshake counts what it is not told.</para>
 /// <para><b>One order per plugin, and nobody waits.</b> The event is stamped and written to each listening plugin's queue under the lock; a
 /// queue's write never waits (a full one drops its oldest, which the next frame told says as <c>missed</c>), and each plugin's teller awaits
 /// each answer before the next, so a slow plugin holds only itself.</para>
 /// <para><b>Three late answers in a row stop that plugin.</b> Its queue goes and the set is told, which stops its process and counts the stop
-/// as an exit of its own (§4.4).</para>
+/// as an exit of its own.</para>
 /// </remarks>
 /// <param name="adapters">This build's adapter names, the only ones an ending may carry.</param>
 /// <param name="unsent">Said once for an event whose required field failed: its kind and that field, never the value.</param>
@@ -100,7 +100,7 @@ public sealed class WorkEventPoint(
         }
     }
 
-    /// <summary>A plugin's queue and teller gone: what it was not told is counted by its next handshake's <c>seq</c>.</summary>
+    /// <summary>A plugin's queue and teller gone: what it is not told is counted by its next handshake's <c>seq</c>.</summary>
     public async Task LeaveAsync(string plugin)
     {
         Listener? listener;

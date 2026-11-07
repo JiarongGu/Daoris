@@ -7,7 +7,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The session list's groups as every window holds them (PUSH1c3a, D182 points 2 to 4): what <c>SESSION_GROUPS</c> answers, each
+/// The session list's groups as every window holds them: what <c>SESSION_GROUPS</c> answers, each
 /// session's row and each line of work's entry, judged once per wake for every window and pushed when it moves, so a tick reads
 /// <c>SESSION_GROUPS</c> again in no window.
 /// </summary>
@@ -32,11 +32,11 @@ namespace Daoris.Desktop;
 /// which is how a connector's write arrives; a change declared to the sessions (an archive, a delete, a stop, the driver's own record
 /// moves), a conversation's end and the service coming up; the loop's look told to the windows (<c>DRIVER_TICK</c>), where its verdicts
 /// or its waits moved, which is when every window pulled the groups before; a conversation's turns moving (<c>SESSION_QUEUED</c>), whose
-/// end offers its tree's work to land (ACCEPTFOOT1b); and a tree's part landing (<see cref="HearTrees"/>). Never a
+/// end offers its tree's work to land; and a tree's part landing (<see cref="HearTrees"/>). Never a
 /// running call's move: <c>calling</c> is the pull's, and the <c>calls</c> slice pushes it.</para>
 ///
 /// <para><b>Desktop-only.</b> No field is a machine path (an offer names its tree, never its path), but a discard's sentences may name
-/// a tree's own files, and the rows are this machine's (D47, D182 point 2).</para>
+/// a tree's own files, and the rows are this machine's.</para>
 /// </remarks>
 public static class GroupsStateSlice
 {
@@ -83,7 +83,7 @@ public static class GroupsStateSlice
 
     /// <summary>
     /// What <c>SESSION_GROUPS</c> answers that is never pushed, as <c>shape.field</c>: a row's running call, whose title is the agent's
-    /// words and moves at every call, which the <c>calls</c> slice pushes and the page lays over the rows (WAITSAY1c2).
+    /// words and moves at every call, which the <c>calls</c> slice pushes and the page lays over the rows.
     /// </summary>
     public static readonly IReadOnlyList<string> PulledOnly = ["row.calling"];
 
@@ -101,7 +101,7 @@ public static class GroupsStateSlice
         new(DriverLoop.EndedType),
         new("DRIVER_READY"),
         new("DRIVER_TICK"),
-        // ACCEPTFOOT1b: a conversation's turns moving, told as the queue is: its turn's end offers its tree's work to land, and its next
+        // A conversation's turns moving, told as the queue is: its turn's end offers its tree's work to land, and its next
         // turn takes the offer back. Human-paced: a word said, a turn begun or ended.
         new("SESSION_QUEUED"),
     ];
@@ -118,19 +118,19 @@ public static class GroupsStateSlice
         };
 
     /// <summary>
-    /// The look <c>SESSION_GROUPS</c> takes of every session (PUSH1c1): read now without trees, the loop's waits and calls laid on it,
+    /// The look <c>SESSION_GROUPS</c> takes of every session: read now without trees, the loop's waits and calls laid on it,
     /// kept for Ask Daoris's room as the route's whole look is, then each tree as the facts' parts judged it.
     /// <param name="only">The sessions asked (null for every one); only a look at every session is kept for Ask Daoris's room.</param>
     /// <param name="walked">
     /// Whether the asked sessions' trees are walked with git now, as an archive's judgement walks them (it never hides work a tree
-    /// gained since), instead of read as the facts judged them. The route and this slice take the one look here (PUSH1c3c).
+    /// gained since), instead of read as the facts judged them. The route and this slice take the one look here.
     /// </param>
     public static async Task<SessionLook> LookAsync(
         DriverLoop loop, ServiceClient service, CancellationToken ct, IReadOnlyCollection<string>? only = null, bool walked = false)
     {
         var config = DriverConfig.Load(loop.ConfigPath);
         var at = DateTimeOffset.UtcNow;
-        // ACCEPTFOOT1b: an open conversation's turns by the word of the runner that holds it, as the page's foot reads them.
+        // An open conversation's turns by the word of the runner that holds it, as the page's foot reads them.
         var chat = loop.Chat;
         var look = await SessionGroups.LookAsync(
                 service, config, DriverContext.UnadoptedOf(loop, config), loop.Look.Latest, loop.Home, walked ? only : [], ct,
@@ -180,7 +180,7 @@ public static class GroupsStateSlice
     }
 
     /// <summary>
-    /// The sort inputs a row of <paramref name="group"/> carries, as <c>SessionGroups.Ordered</c> orders the group (D126 §2.1): waiting
+    /// The sort inputs a row of <paramref name="group"/> carries, as <c>SessionGroups.Ordered</c> orders the group: waiting
     /// and resuming oldest first by when the record last moved; to review and working by repository without case, then when it began;
     /// ended and archived newest first by when it last moved. The session's id breaks every tie.
     /// </summary>

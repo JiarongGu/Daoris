@@ -5,7 +5,7 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The memory changes that wait on the person (KNOWCENTRAL2e; the memory coordinator design §4), read from the service on the driver's
+/// The memory changes that wait on the person, read from the service on the driver's
 /// poll and held in memory, so <i>What needs you</i> judges them without a read of its own. An end or a replacement awaiting its approver,
 /// and a stopped session's staged rows, each session once; it raises <see cref="Event"/> when what waits changes, so the band judges again.
 /// </summary>

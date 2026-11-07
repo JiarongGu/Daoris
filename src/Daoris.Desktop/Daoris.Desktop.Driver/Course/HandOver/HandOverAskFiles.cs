@@ -4,7 +4,7 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// An agent's ask to hand its session over, two files per session under the home's sessions folder (MIXAGENT1c):
+/// An agent's ask to hand its session over, two files per session under the home's sessions folder:
 /// <c>&lt;session&gt;.hand-over-ask.json</c>, read as the connector's <c>handover_propose</c> writes it, and
 /// <c>&lt;session&gt;.hand-over-state.json</c>, the driver's alone, written as the service's <c>HandOverAskBox</c> reads it. The file
 /// is the contract; the two share no code, and each side's tests hold the same shapes.

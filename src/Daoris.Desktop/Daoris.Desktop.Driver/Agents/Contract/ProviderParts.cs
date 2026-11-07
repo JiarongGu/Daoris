@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
-// The parts of the provider contract (AGENTPROVIDER1 row a; the agent-provider design §2.3), each a plain record of declared data. A
-// part stated absent reads as today's behaviour for an agent that says nothing (D53).
+// The parts of the provider contract, each a plain record of declared data. A
+// part stated absent reads as the behaviour for an agent that says nothing.
 
-/// <summary>Whether an agent may be asked to work in any repository, or only those opened to it (the design §2.3, OPENROUTER1's).</summary>
+/// <summary>Whether an agent may be asked to work in any repository, or only those opened to it.</summary>
 public enum Reach
 {
     Everywhere,
@@ -49,7 +49,7 @@ public sealed record AccountsPart(AccountKey Key, DoorId? References, PoolFacts 
 
 /// <summary>
 /// The words an agent says things in, each standing on a recorded sentence: its limit, window, sign-in and refused words, and its
-/// error words (kinds, statuses, transient sentences). A table not declared is null and reads as today's fallback (D210).
+/// error words (kinds, statuses, transient sentences). A table not declared is null and reads as the fallback.
 /// </summary>
 public sealed record TablesPart(LimitWords? Limits, WindowWords? Windows, SignInWords? SignIn, string? Refused, ErrorWords? ErrorWords)
 {
@@ -84,12 +84,12 @@ public sealed record DoorHome(string? Variable, bool OwnHome, string? TrustFile)
 }
 
 /// <summary>
-/// The postures a door speaks in its agent's own words: ordinary, asking and full (D183, D184), and the reading posture a door that
+/// The postures a door speaks in its agent's own words: ordinary, asking and full, and the reading posture a door that
 /// takes no rules confines a read-only session with. Null maps none.
 /// </summary>
 public sealed record PosturesPart(string? Ordinary, string? Asking, string? Full, string? Reading);
 
-/// <summary>What a door declares it can do, a <see cref="Known{T}"/> each (the design §2.3).</summary>
+/// <summary>What a door declares it can do, a <see cref="Known{T}"/> each.</summary>
 public sealed record AbilitiesPart(
     Known<bool> Interactive,
     Known<bool> Resumes,
@@ -97,7 +97,7 @@ public sealed record AbilitiesPart(
     Known<bool> ServersInherit = default);
 
 /// <summary>
-/// A door's own words, beside its provider's <see cref="TablesPart"/>: its error words, its turn report's meaning (D179 point 8) and
+/// A door's own words, beside its provider's <see cref="TablesPart"/>: its error words, its turn report's meaning and
 /// the limit, window, sign-in and refused words it says its accounts in where it is not keyed by its provider's name. What it
 /// declares here it reads itself; <see cref="LentPart"/> is what a harness naming it reads.
 /// </summary>
@@ -110,7 +110,7 @@ public sealed record DoorTablesPart(
 }
 
 /// <summary>
-/// The variables, files and wire keys an agent names of its own, which the censuses read through <see cref="ProviderVocabulary"/> (the
-/// design §9). A variable here is one its program reads, so it is kept in its own spawns and stripped from every other provider's (s-vi).
+/// The variables, files and wire keys an agent names of its own, which the censuses read through <see cref="ProviderVocabulary"/>.
+/// A variable here is one its program reads, so it is kept in its own spawns and stripped from every other provider's.
 /// </summary>
 public sealed record VocabularyPart(IReadOnlyList<string> Variables, IReadOnlyList<string> Files, IReadOnlyList<string> WireKeys);

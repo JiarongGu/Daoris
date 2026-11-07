@@ -22,7 +22,7 @@ internal sealed class GoOnRecord(IRunWiring wiring) : IRunStage
         var answerKept = false;
 
         // The person's words, where a go-on carries any, are already on a limited record, so theirs go first and Daoris's last. A word
-        // the door would not keep leaves the start the carry-on it was planned.
+        // the door would not keep leaves the start as the carry-on planned.
         var planned = start;
         string? limitWord = null;
         if (limitResume && await wiring.GoOns.KeepLimitWordAsync(start.Resumes!, ct).ConfigureAwait(false) is { } keptWord)
@@ -60,7 +60,7 @@ internal sealed class GoOnRecord(IRunWiring wiring) : IRunStage
             }
 
             // Its own conversation refused, Daoris's word comes off by its id and the line goes on in this same start as the carry-on
-            // that was planned, said with the refusal's own code. Another client holding the conversation keeps the word, so the line
+            // planned, said with the refusal's own code. Another client holding the conversation keeps the word, so the line
             // is held for the person and never spins.
             if (limitWord is not null && !fellBack!.Holds)
             {

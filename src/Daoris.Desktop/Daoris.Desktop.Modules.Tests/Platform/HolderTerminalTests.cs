@@ -4,7 +4,7 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// SUPERVISOR1a-ii (D208 point 2), amended by STEWARDROLE1a-i (D209 §2.2, §6.1 and §10 row 1a-i's <c>HolderTerminalTests</c>): a role
+/// A role
 /// holder's terminal is a tab of Daoris's own terminal panel, never a console window of the system's, whose process is Daoris's own
 /// pinned harness with <see cref="HolderTerminal.SessionArguments"/> as its argument vector, stated whole; in the holder's own folder by
 /// its id, never moved or emptied while it lives, two holders of one role in two folders; on the holders' configuration directory, its
@@ -92,7 +92,7 @@ public sealed class HolderTerminalTests : Bridge
             ],
             HolderTerminal.SessionArguments);
         Assert.Equal(HolderTerminal.InitialPrompt, HolderTerminal.SessionArguments[^1]);
-        // ONEWAY1ai-ii: as narrow as before, in the tree's words: no whole group, and each allowed form one the tree runs as the role's.
+        // As narrow as the tree's own words: no whole group, and each allowed form one the tree runs as the role's.
         Assert.DoesNotContain(HolderTerminal.SessionArguments, each => each.StartsWith("Bash(daoris session:", StringComparison.Ordinal)
             || each.Contains("daoris-driver", StringComparison.Ordinal));
         foreach (var allowed in HolderTerminal.SessionArguments.Where(each => each.StartsWith("Bash(daoris ", StringComparison.Ordinal)))
@@ -214,7 +214,7 @@ public sealed class HolderTerminalTests : Bridge
         Assert.False(module.TellHolder("t-gone", "x"));
     }
 
-    /// <summary>D209 §2.2: the tab's end reaches the judge by one callback on every path, once each: the page's close, the harness's exit, the module's disposal, and an exit while it opens.</summary>
+    /// <summary>The tab's end reaches the judge by one callback on every path, once each: the page's close, the harness's exit, the module's disposal, and an exit while it opens.</summary>
     [Fact]
     public async Task Every_path_a_holder_s_tab_ends_by_is_told_once()
     {

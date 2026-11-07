@@ -7,7 +7,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// How each agent's accounts are used, as every window holds it (PUSH1e, D182 points 2-4 and 6): <c>ACCOUNTS</c>' answer judged once
+/// How each agent's accounts are used, as every window holds it: <c>ACCOUNTS</c>' answer judged once
 /// per wake for every window, its verdicts beside each reading (the curve now, whether a window is over it, each scope's curves and
 /// measures), pushed when it moves, so a tick and a focus read <c>ACCOUNTS</c> again in no window, and a probe's result moves every
 /// window by one push.
@@ -28,7 +28,7 @@ namespace Daoris.Desktop;
 /// a moved running count (<see cref="HearRunning"/>). A terminal's edit of the files, a door's frame written mid-session, and the curve
 /// moving with the clock are read at the period, 15 s, and pushed only where a whole percent or a verdict moved.</para>
 ///
-/// <para><b>Desktop-only.</b> Account names ride the bridge only (D47 §4); nothing here is a credential, a key or who signed in.</para>
+/// <para><b>Desktop-only.</b> Account names ride the bridge only; nothing here is a credential, a key or who signed in.</para>
 /// </remarks>
 public static class AccountsStateSlice
 {
@@ -37,7 +37,7 @@ public static class AccountsStateSlice
 
     /// <summary>
     /// What an agent's partition carries: the fields of the route's agent, as the page's <c>AgentAccounts</c> reads them; <c>pooled</c>,
-    /// the fold's unsaid receipts (POOL1a1, the account-pool design §5.2, §6.3), so the page that shows them reads them from the push.
+    /// the fold's unsaid receipts, so the page that shows them reads them from the push.
     /// </summary>
     public static readonly IReadOnlyList<string> AgentFields = ["agent", "speaks", "reads", "own", "accounts", "scopes", "pooled"];
 

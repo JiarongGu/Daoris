@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// EVENTHOOK1d-ii (D244 point 3 and its note, the event channel design §3.3): a press no terminal waits on its line for is told to
+/// A press no terminal waits on its line for is told to
 /// <see cref="PipeConfirmations.Settled"/> once, as it settles, after its record says how it ended, with its own id and its end, whichever
 /// of the five. An ending its record could not take, a Confirm the drain holds, and a press a terminal still waits on are told nothing.
 /// </summary>

@@ -6,7 +6,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Every refusal the bridge answers, into the machine log as the <c>refused</c> event (LOG1b, D94): by its
+/// Every refusal the bridge answers, into the machine log as the <c>refused</c> event: by its
 /// code and the request it answered, never by its sentence.
 /// </summary>
 /// <remarks>
@@ -17,8 +17,8 @@ namespace Daoris.Desktop;
 ///
 /// <para><b>The code and the request, and nothing more.</b> A refusal's parameters and fallback message
 /// name what the person asked about (a folder, a quest, a window's name), and <c>DRIVER_REFUSED</c>
-/// carries the driver's whole sentence (REFUSE1); the catalogue code says which refusal it was. A harness
-/// action's says which action on which agent beside them (SIGNIN1), each a word of a fixed list.</para>
+/// carries the driver's whole sentence; the catalogue code says which refusal it is. A harness
+/// action's says which action on which agent beside them, each a word of a fixed list.</para>
 ///
 /// <para><b>Two levels.</b> A Daoris refusal (<see cref="Refusals"/>) is a decision the person met, and
 /// is <c>info</c>. The kit's own codes (an exception a module did not expect, a type or a module this shell
@@ -46,7 +46,7 @@ public static class RefusalLog
         if (code is null || code == IpcErrorCodes.OperationCancelled) return;
 
         List<(string, object?)> said = [("code", code), ("request", $"{request.Module}.{request.Type}")];
-        // A harness action's refusal says which action on which agent (SIGNIN1), so a refused sign-in is told from a refused
+        // A harness action's refusal says which action on which agent, so a refused sign-in is told from a refused
         // install: each a word of a fixed list read from the request, never its other fields (a name, a key, a pasted code).
         if (request.Module == "DAORIS.DRIVER" && request.Type is "HARNESS_ACTION" or "HARNESS_INPUT" or "HARNESS_CANCEL")
         {
@@ -54,7 +54,7 @@ public static class RefusalLog
             said.Add(("door", Word(request, "door", Agent.IsMatch)));
         }
 
-        // A request that came over the pipe is said as the terminal's (RPC1a, the terminal RPC design §8); the page's own stay unmarked.
+        // A request that came over the pipe is said as the terminal's; the page's own stay unmarked.
         if (PipeDoor.Now is { } door) said.Add(("door", door));
         log.Write(Ours.Contains(code) ? "info" : "warn", "refused", said);
     }
@@ -71,7 +71,7 @@ public static class RefusalLog
 }
 
 /// <summary>
-/// Which door a request the dispatcher runs came in by (RPC1a, the terminal RPC design §8): <see cref="Terminal"/> for one the
+/// Which door a request the dispatcher runs came in by: <see cref="Terminal"/> for one the
 /// pipe hands it, nothing for the page's own. Found by the flow of the call, as <see cref="PressSteps"/> finds its press, so the
 /// pipeline's middleware reads it without the request carrying it.
 /// </summary>
@@ -88,7 +88,7 @@ public static class PipeDoor
     private static readonly AsyncLocal<RoleJudgement?> Appointed = new();
 
     /// <summary>
-    /// The role act the request this call runs for was covered as (SUPERVISOR1a-ii, D208; the supervisor design §11 row 1a-ii): the
+    /// The role act the request this call runs for is covered as: the
     /// appointment the judge's role method found it under, read by a role's handler, which refuses every door but a covered terminal's;
     /// null for every other request.
     /// </summary>
@@ -97,7 +97,7 @@ public static class PipeDoor
     private static readonly AsyncLocal<PipeClientProcess?> Connected = new();
 
     /// <summary>
-    /// The pipe's client the request this call runs for came from, held by the connection (STEWARDROLE1c: the desk counts a request against
+    /// The pipe's client the request this call runs for came from, held by the connection (the desk counts a request against
     /// the caller it is keyed by); null for the page's own.
     /// </summary>
     public static PipeClientProcess? Client => Current.Value == Terminal ? Connected.Value : null;

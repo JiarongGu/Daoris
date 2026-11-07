@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
-/// <summary>What the person's ask of a helper did: its id where it was written, else the code of why not, and a sentence.</summary>
+/// <summary>What the person's ask of a helper did: its id where it is written, else the code of why not, and a sentence.</summary>
 public sealed record HelperPersonAsked(string? Asked, string? Why, string Message);
 
 /// <summary>
-/// The person's own ask of a helper, written for both doors (the page's <c>SESSION_HELPER_ASK</c> and the terminal's <c>sessions helper</c>;
-/// COWORKUX1d, the co-worker design §4.3, §7). It judges what the file alone carries: an <i>Ask again…</i> follows an answered ask of the same
+/// The person's own ask of a helper, written for both doors (the page's <c>SESSION_HELPER_ASK</c> and the terminal's <c>sessions helper</c>).
+/// It judges what the file alone carries: an <i>Ask again…</i> follows an answered ask of the same
 /// session; and where the answer goes to the session, it keeps <c>helper.person-asked</c> on it at the ask, the person's word on the line,
 /// so the answers-alone count reads the answer that follows as the first alone. An answer kept for the person keeps no note: it counts
 /// nowhere, since it never reaches the session by itself.

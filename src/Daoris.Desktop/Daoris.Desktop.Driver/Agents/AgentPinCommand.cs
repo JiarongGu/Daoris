@@ -1,13 +1,13 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris agent pin</c> and <c>update</c> (PUSH1f2e, D194, the alone-path design §1.4): the managed toolchain (TOOL2, D57) from a
-/// terminal, the words <c>daoris agent pin|update …</c> hands this program. No route takes either (§2): each acts on the terminal's word,
-/// refused from a session's terminal (D194 point 5), and holds no lease at its top. A pin from a maker's channel (AGT2b) is staged under
-/// its process's name while it downloads and published under the home's lease, the one folder move and the pin's write (§1.4); a pin
+/// <c>daoris agent pin</c> and <c>update</c>: the managed toolchain from a
+/// terminal, the words <c>daoris agent pin|update …</c> hands this program. No route takes either: each acts on the terminal's word,
+/// refused from a session's terminal, and holds no lease at its top. A pin from a maker's channel is staged under
+/// its process's name while it downloads and published under the home's lease, the one folder move and the pin's write; a pin
 /// through npm installs in place under the version's folder at this terminal, which nothing resolves until the pin, published the same
-/// way, names it. A pinned <c>update</c> moves the pin to the newest release (USE1a), published as a pin; an unpinned one runs the
-/// agent's own updater at this terminal, which writes the machine and not the home. Today's text is kept (<c>fixtures/agents-text.json</c>).
+/// way, names it. A pinned <c>update</c> moves the pin to the newest release, published as a pin; an unpinned one runs the
+/// agent's own updater at this terminal, which writes the machine and not the home. Its text is kept (<c>fixtures/agents-text.json</c>).
 /// </summary>
 /// <remarks>
 /// Exit codes are the CLI's: 0 done, or nothing to move · 1 a session's terminal · 2 a refusal of the words, the channel or npm, an
@@ -21,7 +21,7 @@ internal static class AgentPinCommand
         "  Nothing was pinned: a pin naming a version that is not there would run a different tool than the one you asked for.";
 
     /// <summary>
-    /// <c>pin &lt;agent&gt; &lt;version&gt; [--workspace &lt;name&gt;]</c> (TOOL2, D57): that version installed where Daoris keeps it, then
+    /// <c>pin &lt;agent&gt; &lt;version&gt; [--workspace &lt;name&gt;]</c>: that version installed where Daoris keeps it, then
     /// pinned, the machine's or one workspace's. From the maker's own channel, verified, where the agent declares one; else npm's own
     /// <c>--prefix</c>. A version the channel cannot verify is refused before a byte is fetched, and never handed to npm instead.
     /// </summary>
@@ -44,7 +44,7 @@ internal static class AgentPinCommand
         {
             try
             {
-                // Refused HERE, before a single byte is fetched (AGT2b).
+                // Refused HERE, before a single byte is fetched.
                 ReleaseChannels.RefuseVersion(channel, version);
             }
             catch (DriverException refused)
@@ -69,7 +69,7 @@ internal static class AgentPinCommand
         try
         {
             // The one decision both surfaces ask (PinInstall): a channel's version is refused unverifiable before a byte is fetched, a
-            // package's npm is the tools' (TOOLS5, D121 §2.7), its prefix named so what it installs runs on the tools' node.
+            // package's npm is the tools', its prefix named so what it installs runs on the tools' node.
             plan = PinInstall.Plan(toolchain, home, name, version, world.Npm);
         }
         catch (DriverException refused) when (toolchain.Program.Channel is { Length: > 0 })
@@ -129,7 +129,7 @@ internal static class AgentPinCommand
     }
 
     /// <summary>
-    /// The pin published under the home's lease (the alone-path design §1.4), waited for and never refused: a channel's staging made the
+    /// The pin published under the home's lease, waited for and never refused: a channel's staging made the
     /// version by one move, then the pin written. A Ctrl+C while it waits removes the staging and writes nothing.
     /// </summary>
     private static async Task<int> PublishAsync(
@@ -168,7 +168,7 @@ internal static class AgentPinCommand
         }
         catch (IOException held)
         {
-            // The file's edit lock, held by another writer for the whole of its wait: nothing was written.
+            // The file's edit lock, held by another writer for the whole of its wait: nothing is written.
             await error.WriteLineAsync($"{Prefix}: {held.Message}").ConfigureAwait(false);
             return 2;
         }
@@ -186,9 +186,9 @@ internal static class AgentPinCommand
     }
 
     /// <summary>
-    /// <c>update &lt;agent&gt; [--workspace &lt;name&gt;]</c> (USE1a): update does what it says. A pinned agent with a package or a channel
+    /// <c>update &lt;agent&gt; [--workspace &lt;name&gt;]</c>: update does what it says. A pinned agent with a package or a channel
     /// moves its pin to the newest release, since running its updater would change a different copy than the one sessions run; unpinned,
-    /// the agent's own updater runs at this terminal, as it always did.
+    /// the agent's own updater runs at this terminal.
     /// </summary>
     internal static async Task<int> UpdateAsync(IReadOnlyList<string> args, AgentsWorld world, CancellationToken ct)
     {
@@ -227,7 +227,7 @@ internal static class AgentPinCommand
     }
 
     /// <summary>
-    /// Move a pin to the newest release (USE1a): resolve the newest to one exact version, then pin it exactly as <c>pin</c> does. The pin
+    /// Move a pin to the newest release: resolve the newest to one exact version, then pin it exactly as <c>pin</c> does. The pin
     /// never names a pointer, and never moves backwards.
     /// </summary>
     private static async Task<int> MovePinAsync(

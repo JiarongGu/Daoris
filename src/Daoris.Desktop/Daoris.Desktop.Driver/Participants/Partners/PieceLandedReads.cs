@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A piece read where its lead's tree is gone (COAGENT1b2, D199; the co-agent design §2.4): its lead's work landed and the tree was
-/// tidied, or it was discarded. The piece's ref lives in the repository itself, so the repository's own checkout is what is read, named
+/// A piece read where its lead's tree is gone: its lead's work landed and the tree is
+/// tidied, or it is discarded. The piece's ref lives in the repository itself, so the repository's own checkout is what is read, named
 /// by the registry since the tree's checkout can no longer be asked; and the lead's landing record names the commit its work landed at,
 /// against which the frozen commit is read taken in or not.
 /// </summary>

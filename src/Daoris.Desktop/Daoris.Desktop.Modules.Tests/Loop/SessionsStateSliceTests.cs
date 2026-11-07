@@ -8,7 +8,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The session records, the push path's third slice (PUSH1d2, D182 points 2 to 4): one owner in the shell's loop reading what the
+/// The session records, the push path's third slice: one owner in the shell's loop reading what the
 /// service answers of every session, closed ones and every workspace's included, allow-listed to the page's fields, a partition per
 /// workspace keyed by session, so a record's move pushes that record alone, whoever wrote it.
 /// </summary>
@@ -31,9 +31,9 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
         ["actor"] = "build", ["choice"] = "before", ["asked"] = new JsonObject { ["agent"] = "claude-code" },
         ["override"] = null, ["ran"] = new JsonObject { ["models"] = new JsonArray("reported-model"), ["more"] = 0, ["entries"] = new JsonArray(), ["entriesMore"] = 0 },
         ["chosen"] = new JsonObject { ["rule"] = "weight", ["by"] = "weight" },
-        // FOUNDATION1c: the work its marks read as, beside the kind, which stays driven or chat.
+        // The work its marks read as, beside the kind, which stays driven or chat.
         ["work"] = "build",
-        // COWORKVIEW1b-i: the quest a chat took, pushed for the at-work view.
+        // The quest a chat took, pushed for the at-work view.
         ["tookQuest"] = null,
     };
 
@@ -119,7 +119,7 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ONEWAY1m (the oneway design §4 M3): the page reads a park's answer from the keyed <c>said</c> words, pushed as the service answers
+    /// The page reads a park's answer from the keyed <c>said</c> words, pushed as the service answers
     /// them, each with whose it is; no joined <c>answer</c> is pushed or answered.
     /// </summary>
     [Fact]
@@ -143,7 +143,7 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FOUNDATION1c (D212; the foundation design §2.1): the allow-list gains <c>work</c> beside <c>kind</c>, an additive field the page
+    /// The allow-list gains <c>work</c> beside <c>kind</c>, an additive field the page
     /// draws a record by where the host sends it. The kind stays driven or chat; a record answered no <c>work</c> (an older service, a
     /// teammate's mirror) is pushed with none, so the page reads today's predicates for it.
     /// </summary>
@@ -173,7 +173,7 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
         Assert.Equal("driven", pushed["s3"]!["kind"]!.GetValue<string>());
     }
 
-    /// <summary>COWORKVIEW1b-i: the quest a chat took is pushed, so the at-work view words a chat's wait by it with no pull.</summary>
+    /// <summary>The quest a chat took is pushed, so the at-work view words a chat's wait by it with no pull.</summary>
     [Fact]
     public async Task The_quest_a_chat_took_is_pushed_and_a_record_that_took_none_is_pushed_with_none()
     {
@@ -216,7 +216,7 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// An install-sized history (D182's PUSH1d2 note: about 2 KiB a record) is pushed once; a record's move then pushes that record
+    /// An install-sized history (about 2 KiB a record) is pushed once; a record's move then pushes that record
     /// alone, a delta on the number held, never its workspace's history again.
     /// </summary>
     [Fact]

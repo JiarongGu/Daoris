@@ -8,7 +8,7 @@ using static Daoris.Desktop.Modules.Tests.AttentionTestRows;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Who needs the person, judged in .NET and pushed (PUSH1d4, D182 points 2-4 and 6): the judge the page ran as <c>needsAPerson</c>
+/// Who needs the person, judged in .NET and pushed: the judge the page ran as <c>needsAPerson</c>
 /// and <c>waitingInSessions</c>, ported cell for cell from <c>attention.test.ts</c>, <c>attention.review.test.ts</c> and
 /// <c>WorkMilestone.test.tsx</c>. What a row says (its title, its detail's words) and the order the band draws stay the page's, held by
 /// its own tests over the rows pushed here; each row's membership, its identity and the values it carries are held here.
@@ -20,7 +20,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         """{"id":"7a82cc","from":"platform","to":"engine","title":"Expose a streaming budget on the chunk API","body":"World streaming needs a per-frame cap.","status":"Open","filed":"2026-09-14T09:00:00Z","updated":"2026-09-14T09:00:00Z"}""",
         over);
 
-    /// <summary>An ask the declarations tier proposed and nobody has settled (INT4a).</summary>
+    /// <summary>An ask the declarations tier proposed and nobody has settled.</summary>
     private static JsonObject Ask(string over = "{}") => With(
         """
         {"id":"7c1e9a04b2d5","workspace":"aurora","sentence":"The chunk streamer stalls on a cold cache.\n\nThe trace is attached.","state":"Proposed",
@@ -29,7 +29,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         """,
         over);
 
-    /// <summary>The session an intake opened for the ask above (D65 §1b): a chat, in the ask's name.</summary>
+    /// <summary>The session an intake opened for the ask above: a chat, in the ask's name.</summary>
     private static JsonObject Intake(string over = "{}") => With(
         Session("""{"id":"i9n8t7k6","repository":"ask #7c1e9a04b2d5","kind":"chat","door":"stub","ask":"7c1e9a04b2d5"}"""), over);
 
@@ -56,7 +56,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SUPERVISOR1a-i (D208; the supervisor design §4.2): a park a supervisor's held or released decision answers for is no wait on the
+    /// A park a supervisor's held or released decision answers for is no wait on the
     /// person, since its overrule is optional and said as a notice.
     /// </summary>
     [Fact]
@@ -73,7 +73,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.DoesNotContain(rows, row => row["kind"]?.GetValue<string>() == "parked");
     }
 
-    /// <summary>LANG1b: the record's note travels whole, its parts beside its English, for the row to word in the reader's language.</summary>
+    /// <summary>The record's note travels whole, its parts beside its English, for the row to word in the reader's language.</summary>
     [Fact]
     public void Hands_the_row_a_parked_session_s_note_with_its_parts_never_a_sentence_made_of_them()
     {
@@ -132,7 +132,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Equal("2026-09-01T00:00:00Z", rows.Single(row => row["id"]!.GetValue<string>() == "q-old")["since"]!.GetValue<string>());
     }
 
-    // ---- an ask that waits on a person (INT4d) ----
+    // ---- an ask that waits on a person ----
 
     [Fact]
     public void An_ask_is_a_proposal_while_nothing_serves_it_with_its_circle_since_it_was_asked_and_what_was_proposed()
@@ -204,7 +204,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             Asks = [Ask("""{"state":"Published","quests":["9a8b7c6d5e4f"]}"""), Ask("""{"id":"closed","state":"Closed","note":"Answered elsewhere."}""")],
         }));
 
-    /// <summary>UX6c: an ask waits for the person's word beside a quest nobody can take; each says since when, which the page orders by.</summary>
+    /// <summary>An ask waits for the person's word beside a quest nobody can take; each says since when, which the page orders by.</summary>
     [Fact]
     public void Asks_and_a_parked_session_and_a_quest_nobody_can_take_are_each_a_row()
     {
@@ -223,7 +223,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Equal(["intake:7c1e9a04b2d5", "parked:parked", "proposal:later", "unanswerable:sitting"], Keys(rows));
     }
 
-    /// <summary>UX6c: a proposal publishes where its declarations named receivers, and chooses among whoever its workspace can ask.</summary>
+    /// <summary>A proposal publishes where its declarations named receivers, and chooses among whoever its workspace can ask.</summary>
     [Fact]
     public void A_proposal_names_whom_its_publish_goes_to_and_whom_it_could_choose_from_the_ask_and_the_registry()
     {
@@ -241,7 +241,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Equal("""["engine"]""", nobody["choices"]!.ToJsonString());
     }
 
-    /// <summary>D70: the host's own judgement of who can be asked, where it answers one; adoption where it answers none.</summary>
+    /// <summary>The host's own judgement of who can be asked, where it answers one; adoption where it answers none.</summary>
     [Fact]
     public void A_proposal_chooses_among_what_the_host_says_can_be_asked()
     {
@@ -258,7 +258,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Equal("""["rooted"]""", item["choices"]!.ToJsonString());
     }
 
-    // ---- a folder waiting on the person's trust (D73) ----
+    // ---- a folder waiting on the person's trust ----
 
     private const string Hold = """{"folder":"C:/somewhere/engine","trustFile":"C:/somewhere/data/harnesses/claude-code/work/.claude.json"}""";
 
@@ -279,7 +279,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
            """, Assert.Single(rows));
     }
 
-    /// <summary>REV3 web-work F12: one folder held in two accounts' files is two grants, and two rows, each with an id of its own.</summary>
+    /// <summary>One folder held in two accounts' files is two grants, and two rows, each with an id of its own.</summary>
     [Fact]
     public void One_folder_held_in_two_files_is_two_rows_with_ids_of_their_own()
     {
@@ -292,7 +292,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// POOL1a3 (D197 point 3; the account-pool design §3 point 4): a hold whose file is the own sign-in's carries <c>own</c> on its
+    /// A hold whose file is the own sign-in's carries <c>own</c> on its
     /// row's trust, so the page draws its sentence with no press; any other hold carries none.
     /// </summary>
     [Fact]
@@ -306,7 +306,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         var ownRow = rows.Single(row => row["trust"]!["trustFile"]!.GetValue<string>() == "X:/person/.claude.json");
         Assert.True(ownRow["trust"]!["own"]!.GetValue<bool>());
         Assert.False(rows.Single(row => row["trust"]!["trustFile"]!.GetValue<string>() != "X:/person/.claude.json")["trust"]!.AsObject().ContainsKey("own"));
-        // POOL1c: and pushed so, the allow-list naming it, or the page would offer the grant the bridge refuses as TRUST_OWN_HOME.
+        // And pushed so, the allow-list naming it, or the page would offer the grant the bridge refuses as TRUST_OWN_HOME.
         Assert.True(AttentionStateSlice.Picked(ownRow)["trust"]!["own"]!.GetValue<bool>());
     }
 
@@ -349,7 +349,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     public void Nothing_held_for_trust_adds_nothing() =>
         Assert.Empty(Rows(new() { Quests = [Quest()], Registry = [Registration("engine")], Untrusted = [] }));
 
-    // ---- a proposal to widen the rules (PERM2, D74) ----
+    // ---- a proposal to widen the rules ----
 
     private static JsonObject Proposal(string over = "{}") => With(
         """
@@ -376,7 +376,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             Proposals = [.. new[] { "applied", "proposed", "accepted", "declined", "refused", "unchanged" }.Select(state => Proposal($$"""{"id":"{{state}}","state":"{{state}}"}"""))],
         }));
 
-    // ---- a quest parked on its failed sessions (SESSUX1i, D126 §4.6) ----
+    // ---- a quest parked on its failed sessions ----
 
     private static JsonObject Parked(string over = "{}") => With(
         """
@@ -395,7 +395,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// STEWARDROLE1b (D209 §5.3): a quest the steward's stop holds is <i>Stopped by the steward</i>, waiting on a Try again, with its
+    /// A quest the steward's stop holds is <i>Stopped by the steward</i>, waiting on a Try again, with its
     /// session and its verdict; the owner's own stop of a quest is no row, since it waits on nobody but them by their own act.
     /// </summary>
     [Fact]
@@ -414,7 +414,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// STAFFPOLICY1e2 (D226, design §11 point 7): a quest its role's policy holds, for an ask or for the bound of moves, is a row waiting on the
+    /// A quest its role's policy holds, for an ask or for the bound of moves, is a row waiting on the
     /// person's Try again, read from the planner's typed verdict; and it is counted with the quests the person answers.
     /// </summary>
     [Fact]
@@ -430,13 +430,13 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Equal(("policy:7a82cc", "policy-hold"), (counted.Key, counted.Value["kind"]!.GetValue<string>()));
     }
 
-    /// <summary>A run the node runtime holds at a declined request, as <see cref="AttentionStateSlice.FactsAsync"/> writes one (INTEGRATE1o part o3).</summary>
+    /// <summary>A run the node runtime holds at a declined request, as <see cref="AttentionStateSlice.FactsAsync"/> writes one.</summary>
     private static JsonObject Declined(string over = "{}") => With(
         """{"run":"r7","node":"requests","repository":"engine","workspace":"aurora","quest":"q9","to":"web","work":"7a82cc","since":"2026-10-30T11:00:00.0000000+00:00"}""",
         over);
 
     /// <summary>
-    /// INTEGRATE1o part o3 (§17.3): a run held at a declined request is one row keyed by the run, since the decline, in the run's workspace,
+    /// A run held at a declined request is one row keyed by the run, since the decline, in the run's workspace,
     /// carrying its node, the declined quest and where it went; a run with no decline, or whose hold the person passed over, is none.
     /// </summary>
     [Fact]
@@ -453,12 +453,12 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Empty(Rows(new() { Requests = [] }));
     }
 
-    /// <summary>An integration's wait on the owner, as <see cref="AttentionStateSlice.IntegrationWaits"/> writes one (INTEGRATE1h).</summary>
+    /// <summary>An integration's wait on the owner, as <see cref="AttentionStateSlice.IntegrationWaits"/> writes one.</summary>
     private static JsonObject Integrating(string over) => With(
         """{"repository":"engine","workspace":"aurora","line":"main","since":"2026-10-31T09:00:00.0000000+00:00"}""", over);
 
     /// <summary>
-    /// 🔴 INTEGRATE1h (§5.8, §17.4): a candidate held for the owner's decide, a superseded commit awaiting its answer and a landing waiting for the
+    /// A candidate held for the owner's decide, a superseded commit awaiting its answer and a landing waiting for the
     /// owner's card are each one row of kind <c>integration</c>, in the repository's workspace, naming its wait; the decide's and the card's hold work.
     /// </summary>
     [Fact]
@@ -487,7 +487,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Empty(Rows(new() { Integration = [] }));
     }
 
-    /// <summary>INTEGRATE1h: the waits are read off the home's integration record and the runtime's card waits; a home with no record has none.</summary>
+    /// <summary>The waits are read off the home's integration record and the runtime's card waits; a home with no record has none.</summary>
     [Fact]
     public void The_integration_waits_are_the_home_s_record_and_the_runtime_s_card_waits()
     {
@@ -511,7 +511,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 INTEGRATE1h (§5.8): a declaration owed acceptance is one row of kind <c>integration</c> per repository, in its repository's workspace,
+    /// A declaration owed acceptance is one row of kind <c>integration</c> per repository, in its repository's workspace,
     /// naming its state (<c>unaccepted</c> or <c>changed</c>) and the blob at the tip; it holds no work, since nothing running waits on it.
     /// </summary>
     [Fact]
@@ -537,7 +537,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.All(rows, row => Assert.Null(row["stands"]));
     }
 
-    /// <summary>INTEGRATE1h: the slice writes each declaration the look found owed, with its workspace, line, blob, state and since; none owed writes none.</summary>
+    /// <summary>The slice writes each declaration the look found owed, with its workspace, line, blob, state and since; none owed writes none.</summary>
     [Fact]
     public void The_integration_waits_carry_each_declaration_the_look_found_owed()
     {
@@ -553,7 +553,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Empty(AttentionStateSlice.IntegrationWaits(Home, [], []));
     }
 
-    /// <summary>INTEGRATE1p (C33): a run's own declined request is the same row, its `declined` saying it is a request, so its acts are the page's two.</summary>
+    /// <summary>A run's own declined request is the same row, its `declined` saying it is a request, so its acts are the page's two.</summary>
     [Fact]
     public void A_run_held_at_its_own_declined_request_says_so_in_its_declined()
     {
@@ -602,7 +602,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Null(unnamed["since"]);
     }
 
-    // ---- what parked on the person (UX5 U20's set, D126 §2.5), kept out of Sessions' running mark (BADGEUX1) ----
+    // ---- what parked on the person, kept out of Sessions' running mark ----
 
     private static int InSessions(AttentionFacts facts) => NeedsAPerson.WaitingInSessions(facts).Count;
 
@@ -637,13 +637,13 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Equal(1, InSessions(new() { Sessions = sessions }));
     }
 
-    /// <summary>A teammate's session parked to ask waits on them (SESSUX1a): not the person's to count.</summary>
+    /// <summary>A teammate's session parked to ask waits on them: not the person's to count.</summary>
     [Fact]
     public void The_sessions_badge_leaves_a_teammate_s_parked_session_to_its_own_machine() =>
         Assert.Equal(0, InSessions(new() { Sessions = [Session("""{"id":"laptop/c4a7c4a7","kind":"chat","state":"awaiting-person"}""")] }));
 
     /// <summary>
-    /// ANSWER1c (D131): a park the person answered goes on at the driver's next look: neither the badge nor the band counts it. ONEWAY1m:
+    /// A park the person answered goes on at the driver's next look: neither the badge nor the band counts it.
     /// the answer is read from the keyed <c>said</c> words alone, the person's by the one sender rule, so a park holding only Daoris's
     /// own word still waits on them.
     /// </summary>
@@ -662,7 +662,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ASKRAIL1: Ask Daoris's conversations (<c>daoris:help</c>) are reached from its own panel and history, never from Sessions: a
+    /// Ask Daoris's conversations (<c>daoris:help</c>) are reached from its own panel and history, never from Sessions: a
     /// parked one and one placed to review are no session rows here, and the Sessions badge counts none, beside a session's that is.
     /// </summary>
     [Fact]
@@ -686,7 +686,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
 
     /// <summary>
     /// The badge's partition says each counted thing's workspace where the window's scope filters it: a session's, and a parked quest's
-    /// where its record is in hand (NEEDSSCOPE1); one whose quest is not in hand says none, and every window counts it.
+    /// where its record is in hand; one whose quest is not in hand says none, and every window counts it.
     /// </summary>
     [Fact]
     public void The_sessions_badge_says_a_session_s_workspace_for_the_window_s_scope()
@@ -706,10 +706,10 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             counted.Select(each => $"{each.Key}={each.Value.ToJsonString()}").Order(StringComparer.Ordinal));
     }
 
-    // ---- the sessions the driver runs, which the status bar counts (SESSBADGE1, D76's note) and Sessions' mark reads (BADGEUX1) ----
+    // ---- the sessions the driver runs, which the status bar counts and Sessions' mark reads ----
 
     /// <summary>
-    /// One count, the cap's (CAPCOUNT1, <see cref="ActiveSessions.HoldsSlot(SessionView)"/>): this machine's active sessions the driver
+    /// One count, the cap's (<see cref="ActiveSessions.HoldsSlot(SessionView)"/>): this machine's active sessions the driver
     /// started, a driven quest's, an intake's, a helper's and a reviewer's, a parked one and one whose host answers no kind among them;
     /// never a conversation the person holds (Ask Daoris's, a chat), a teammate's or one that ended. The records are the ones
     /// <c>CapCountTests</c> reads as the planner does, and the count is the slots the planner holds for them.
@@ -785,7 +785,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.NotEqual(AttentionStateSlice.SessionsRead([working]), AttentionStateSlice.SessionsRead([With(working, moved)]));
     }
 
-    // ---- a go-ahead asked on an ask (KNOWUSE1a) ----
+    // ---- a go-ahead asked on an ask ----
 
     private static JsonObject GoAhead(string over = "{}") => With(
         """
@@ -797,7 +797,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     [Fact]
     public void A_go_ahead_is_a_row_per_waiting_one_with_its_act_its_ask_since_first_asked_and_why_in_the_session_s_words()
     {
-        // Its asker still at work, so it is no stale one (GOAHEADSTALE1).
+        // Its asker still at work, so it is no stale one.
         var rows = Rows(new() { Sessions = [Session()], Asks = [Ask($$"""{"state":"Published","goAheads":[{{GoAhead().ToJsonString()}}]}""")] });
 
         Is("""
@@ -807,10 +807,10 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
            """, Assert.Single(rows));
     }
 
-    // ---- COMMS1j: one row per obligation (the comms design §4.1 clause 3, §7) ----
+    // ---- one row per obligation ----
 
     /// <summary>
-    /// COMMS1j: a session parked on the go-ahead it asked waits on one decision of the person's, so it is one row: the go-ahead's, keyed by
+    /// A session parked on the go-ahead it asked waits on one decision of the person's, so it is one row: the go-ahead's, keyed by
     /// its exchange's id, holding work; its park is no second row, and the bell counts the wait once. A park on nothing else stays its own.
     /// </summary>
     [Fact]
@@ -824,7 +824,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Single(Rows(new() { Sessions = [parked] }), each => each["kind"]!.GetValue<string>() == "parked");
     }
 
-    /// <summary>COMMS1j: a session parked on its agent's ask to hand it over is that ask's one row, which stands for the work it holds.</summary>
+    /// <summary>A session parked on its agent's ask to hand it over is that ask's one row, which stands for the work it holds.</summary>
     [Fact]
     public void COMMS1j_a_park_on_its_own_hand_over_ask_is_one_row_that_holds_work()
     {
@@ -840,7 +840,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// COMMS1j: a supervisor's held decision answers for the park, so it is no wait of the person's; a deferral, which leaves the park to
+    /// A supervisor's held decision answers for the park, so it is no wait of the person's; a deferral, which leaves the park to
     /// them, is no decision answering for it, and the park is theirs again.
     /// </summary>
     [Fact]
@@ -852,15 +852,15 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Single(Rows(facts), row => row["kind"]!.GetValue<string>() == "parked");
     }
 
-    // ---- a go-ahead nothing on its ask waits for any more (GOAHEADSTALE1) ----
+    // ---- a go-ahead nothing on its ask waits for any more ----
 
-    /// <summary>The ask's quest, as the service files one an ask asked (D65 §4): its sender names the ask.</summary>
+    /// <summary>The ask's quest, as the service files one an ask asked: its sender names the ask.</summary>
     private static JsonObject AskedQuest(string over = "{}") => With(Quest("""{"from":"ask #7c1e9a04b2d5","workspace":"aurora"}"""), over);
 
     /// <summary>
     /// 🔴 The owner's case (2026-10-21): go-aheads to write production configuration sat in What needs you for days after their asks'
     /// work was done another way. Its asker ended and its ask's one quest is done, so nothing on the ask can use its answer: the row says
-    /// it is stale, since the last thing on its ask moved, and keeps its workspace (NEEDSSCOPE1).
+    /// it is stale, since the last thing on its ask moved, and keeps its workspace.
     /// </summary>
     [Fact]
     public void A_go_ahead_nothing_on_its_ask_waits_for_is_stale_since_the_last_thing_on_its_ask_moved()
@@ -986,7 +986,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
                 Asks = [Ask("""{"id":"proposed","asked":"2026-09-20T09:00:00Z"}"""), Ask($$"""{"state":"Published","goAheads":[{{GoAhead().ToJsonString()}}]}""")],
             })));
 
-    // ---- a departure that waits for your yes (DRIFT1d2) ----
+    // ---- a departure that waits for your yes ----
 
     private static JsonObject Held(string over = "{}") => With(
         Quest("""
@@ -1029,7 +1029,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     public void A_departure_is_gone_once_accepted_and_absent_for_a_quest_no_departure_holds() =>
         Assert.Empty(Rows(new() { Quests = [Held("""{"accepted":"2026-09-22T10:00:00Z"}"""), Quest("""{"status":"Done"}""")], Registry = [Registration("engine")] }));
 
-    // ---- work to review (D126) ----
+    // ---- work to review ----
 
     private static JsonObject Placed(string over = "{}") => With(
         """{"session":"r3v13w00","group":"review","shown":"completed","archived":false,"teammate":false,"work":{"commits":3,"uncommitted":0}}""", over);
@@ -1050,7 +1050,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
 
     /// <summary>
     /// A session whose record is not in hand still says what waits: no repository, and no known wait; and no workspace, so every window
-    /// shows it rather than none (NEEDSSCOPE1).
+    /// shows it rather than none.
     /// </summary>
     [Fact]
     public void Work_to_review_whose_record_is_not_in_hand_still_says_what_waits()
@@ -1084,7 +1084,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         over);
 
     /// <summary>
-    /// FABRIC-MILESTONE1b, OVERVIEWNOISE1b: a unit is a row only where the person has an act: a tree its session recorded and no branch
+    /// A unit is a row only where the person has an act: a tree its session recorded and no branch
     /// record follows waits on the clean-up's press, named by that session and its tree's folder, never its path. A guard the tidy keeps
     /// a branch by, coded or not, is said on its session's page and its branch's line, not here; a wait that ends by itself is no row.
     /// </summary>
@@ -1123,7 +1123,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// LANDRETIRE1 part 2: a landing's branch whose quest is closed and which the line has not held for a day (the inventory's
+    /// A landing's branch whose quest is closed and which the line has not held for a day (the inventory's
     /// <c>landing-stale</c>) is a row for the person, who withdraws it from the Branches tab, titled by the landing's branch and standing
     /// since the day passed; the same unit's other waits that end by themselves, or a landing that has not stood a day, are none.
     /// </summary>
@@ -1153,7 +1153,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
            """, Assert.Single(rows));
     }
 
-    /// <summary>OVERVIEWNOISE1b: a tree no record and no session names is titled by its folder's name, never the unit id its path makes.</summary>
+    /// <summary>A tree no record and no session names is titled by its folder's name, never the unit id its path makes.</summary>
     [Fact]
     public void An_unknown_owner_s_tree_is_titled_by_its_folder_s_name_with_its_code()
     {
@@ -1179,7 +1179,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
            """, item["blocked"]!.AsObject());
     }
 
-    /// <summary>FABRIC-UNKNOWN1: a daoris/* branch no record names is a unit with an unknown owner, its blocked entry and no session.</summary>
+    /// <summary>A daoris/* branch no record names is a unit with an unknown owner, its blocked entry and no session.</summary>
     [Fact]
     public void An_unrecorded_daoris_branch_is_an_unknown_owner_with_its_reason_and_no_session()
     {
@@ -1220,7 +1220,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Null(item["since"]);
     }
 
-    /// <summary>MIXAGENT2c (D168): an agent's ask for a helper waiting on the person's yes: its question's first line, the session that asked.</summary>
+    /// <summary>An agent's ask for a helper waiting on the person's yes: its question's first line, the session that asked.</summary>
     [Fact]
     public void An_agent_s_ask_for_a_helper_is_a_row_with_its_question_s_first_line_and_the_session_that_asked()
     {
@@ -1243,7 +1243,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// NOTIFY2e: an agent's ask to hand its session over waiting on the person's yes or no is a row by the ask's own id: its note's first
+    /// An agent's ask to hand its session over waiting on the person's yes or no is a row by the ask's own id: its note's first
     /// line, the session that asked and the agent it goes to; it stands still on it once that session's turn no longer runs.
     /// </summary>
     [Fact]
@@ -1277,7 +1277,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 HELPERWAIT1c (the co-worker design §5 point 4, §12 row 11): a session that waited on its own helper, whose helper ended with no
+    /// A session that waited on its own helper, whose helper ended with no
     /// answer and whose move back to the person the service refused, is a row by the session: its repository, its quest and the service's
     /// refusal as said, waiting since the first refusal. A record that has moved on meanwhile (the move landed: it is a park's row now)
     /// is none; one the page does not hold guesses no repository.
@@ -1311,7 +1311,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 KNOWCENTRAL2e (the memory coordinator design §4): a session whose memory changes wait on the person, an end or a replacement for its
+    /// A session whose memory changes wait on the person, an end or a replacement for its
     /// approver or a stopped session's staged rows for Keep or Drop, is one row by the session, since the oldest, with what waits; a
     /// session the page does not hold guesses no repository.
     /// </summary>
@@ -1337,7 +1337,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             rows.Single(row => row["id"]!.GetValue<string>() == "g0n3"));
     }
 
-    /// <summary>HELPERWAIT1c: the refused moves back are read off the home's helpers folder, oldest first, as the driver's look kept them.</summary>
+    /// <summary>The refused moves back are read off the home's helpers folder, oldest first, as the driver's look kept them.</summary>
     [Fact]
     public void The_refused_moves_back_are_the_records_the_look_kept()
     {
@@ -1356,7 +1356,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// NOTIFY2e: the hand-over waits are read off the home's sessions folder: an ask the look holds <c>waiting</c>, by its own id, with its
+    /// The hand-over waits are read off the home's sessions folder: an ask the look holds <c>waiting</c>, by its own id, with its
     /// session, note and agent; one not read yet, approved, taken or refused, and a state naming an earlier ask, wait on nothing of theirs.
     /// </summary>
     [Fact]
@@ -1378,7 +1378,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Ask("s5", "h5", "2026-10-21T08:00:00Z", HandOverAskStates.Taken);
         Ask("s6", "h6", "2026-10-21T08:00:00Z", HandOverAskStates.Refused, HandOverAskWhy.Declined);
         Ask("s7", "h7", "2026-10-21T08:00:00Z", HandOverAskStates.Waiting, stateId: "h0");
-        // HANDOVERSAID1: refused at the ask for its closed quest, and let go but not taken: neither asks the person anything.
+        // Refused at the ask for its closed quest, and let go but not taken: neither asks the person anything.
         Ask("s8", "h8", "2026-10-21T08:00:00Z", HandOverAskStates.Refused, HandOverAskWhy.QuestClosed);
         Ask("s9", "h9", "2026-10-21T08:00:00Z", HandOverAskStates.Refused, HandOverAskWhy.SameAgent);
 
@@ -1391,7 +1391,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// CONFIRMSEEN1: a terminal's press waiting for the window is a row of <i>What needs you</i>, which the badge counts: by its route and
+    /// A terminal's press waiting for the window is a row of <i>What needs you</i>, which the badge counts: by its route and
     /// the terminal as the system names it, since it was asked, never a value it carries; and it is gone once it no longer waits.
     /// </summary>
     [Fact]
@@ -1413,7 +1413,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.DoesNotContain("s1a2b3c4", JsonSerializer.Serialize(AttentionStateSlice.Judge(new() { Confirmations = Waits(confirmations) })!
             .Select(each => each.Data), IpcJson.Options));
 
-        // Shown, it says so and still has no time (CONFIRMWAIT1a-i); answered, it is no row.
+        // Shown, it says so and still has no time; answered, it is no row.
         clock.Advance(TimeSpan.FromMinutes(1));
         Assert.True(confirmations.Show(asked.Shown.Id));
         var shown = Assert.Single(Rows(new() { Confirmations = Waits(confirmations) }))["confirmation"]!;
@@ -1428,7 +1428,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         [.. AttentionStateSlice.ConfirmationWaits(confirmations).Select(each => JsonSerializer.SerializeToNode(each, IpcJson.Options)).OfType<JsonObject>()];
 
     /// <summary>
-    /// KEEP1f (the cleanup design §3.2): a volume still below its free-space floor once the floor's acts ran is a row of <i>What needs
+    /// A volume still below its free-space floor once the floor's acts ran is a row of <i>What needs
     /// you</i>, by its volume since it was said, with its free space, size and floor, what the floor freed and what the press could; the
     /// slice is woken as it is said and as it ends, and the row is gone once the volume is above its floor by the margin. A stand-in read.
     /// </summary>
@@ -1477,7 +1477,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.True(woken >= 2);
     }
 
-    /// <summary>AUTONOMY1b3c (D184 point 3): a tool call a session holds for the person holds work: its wait whole, the session that holds it.</summary>
+    /// <summary>A tool call a session holds for the person holds work: its wait whole, the session that holds it.</summary>
     [Fact]
     public void A_tool_call_a_session_holds_for_the_person_is_a_row_with_the_wait_whole()
     {
@@ -1504,7 +1504,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// COWORK1e (D188 point 4; the message-urgency design §8.3): a third answer in a row with nobody between holds its session's work for
+    /// A third answer in a row with nobody between holds its session's work for
     /// the person: a row by its session, its wait whole (the agent that answered, the answers' ids, since when), its repository where the
     /// record is in hand.
     /// </summary>
@@ -1526,7 +1526,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// COWORK1e: the answers-alone waits are read off the home's marks: each held for the person with the agent, the answers and since
+    /// The answers-alone waits are read off the home's marks: each held for the person with the agent, the answers and since
     /// when, oldest first; a mark of any other reason, and answers the person kept with *Not now*, wait on nothing of theirs.
     /// </summary>
     [Fact]
@@ -1557,7 +1557,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         }
     }
 
-    /// <summary>XAGENT1g: a second opinion that waits on the person, its wait whole, which the page says and offers by.</summary>
+    /// <summary>A second opinion that waits on the person, its wait whole, which the page says and offers by.</summary>
     [Fact]
     public void A_second_opinion_that_waits_on_the_person_is_a_row_with_its_wait_whole()
     {
@@ -1580,7 +1580,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Is($$"""{"kind":"opinion","id":"s42","since":"2026-09-21T09:00:00Z","where":"engine","opinion":{{disputed}}}""", rows.Single(row => row["id"]!.GetValue<string>() == "s42"));
     }
 
-    // ---- a set-up in what needs you (REVIEWENV1g, D154 point 8) ----
+    // ---- a set-up in what needs you ----
 
     private const string Work = """
         {"id":"q1","from":"ask:a1","to":"reports","title":"Add the compare setting to the report","body":"Add the compare setting.",
@@ -1648,7 +1648,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.False(Assert.Single(Rows(new() { Quests = [deployed] }))["local"]!.GetValue<bool>());
     }
 
-    // ---- an attempt held for the person (FABRIC-PERFORM1g, FABRIC-CLOSE1q) ----
+    // ---- an attempt held for the person ----
 
     private static JsonObject HeldAttempt(string over = "{}") => With(
         """
@@ -1683,7 +1683,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     [Fact]
     public void Nothing_is_held_where_the_driver_lists_none() => Assert.Empty(Rows(new() { Held = [] }));
 
-    // ---- a node record that does not read (FABRIC-PERFORM1j) ----
+    // ---- a node record that does not read ----
 
     private static JsonObject Unreadable(string over = "{}") => With(
         """
@@ -1710,7 +1710,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Empty(Rows(new() { Unreadable = [] }));
     }
 
-    // ---- a closure graph's end (FABRIC-CLOSE1j) ----
+    // ---- a closure graph's end ----
 
     private static JsonObject Ended(string over = "{}") => With(
         """
@@ -1731,10 +1731,10 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Empty(Rows(new() { Ends = [Ended("""{"kind":"overridden","nodes":["qa","close"],"words":[]}""")] }));
     }
 
-    // ---- the scope a window reads (NEEDSSCOPE1) ----
+    // ---- the scope a window reads ----
 
     /// <summary>
-    /// NEEDSSCOPE1: two windows on one home, each on its own workspace, and one counted three sessions the other's list placed to review.
+    /// Two windows on one home, each on its own workspace, and one counted three sessions the other's list placed to review.
     /// Every row that is a session's, a quest's or an ask's carries that record's workspace, however its wait reached the judge (the
     /// service's records or the driver's own lists), so a window on another workspace neither counts nor lists it.
     /// </summary>
@@ -1805,7 +1805,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// NEEDSSCOPE1: what is the machine's carries no workspace, so every window counts and lists it: a terminal's press (the pipe is this
+    /// What is the machine's carries no workspace, so every window counts and lists it: a terminal's press (the pipe is this
     /// machine's), a rule for the whole machine, a folder whose holds span two workspaces, starts held on an account across workspaces, a
     /// unit no record owns. A row whose record is not in hand carries none either, so no window loses it.
     /// </summary>
@@ -1877,7 +1877,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             Sessions =
             [
                 Session("""{"id":"parked","state":"awaiting-person","note":"why","noteParts":[]}"""),
-                // COMMS1j: "parked" waits on its hand-over ask's one row; this park waits on nothing else, so it is a row of its own.
+                // "parked" waits on its hand-over ask's one row; this park waits on nothing else, so it is a row of its own.
                 Session("""{"id":"alone","state":"awaiting-person","note":"why","noteParts":[]}"""),
                 Intake("""{"state":"awaiting-person"}"""),
                 Session("""{"id":"r3v13w00","state":"completed"}"""),
@@ -1890,31 +1890,31 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             Groups = [Placed("""{"pausedBy":{"scope":"ask","id":"a1"},"holds":{"why":"cap","reason":"r","repository":"engine","until":"2026-10-20T10:00:00Z","account":"work","accountName":"Work"},"strikes":2,"awaits":"q","awaitsOf":"engine","holdsQuest":true}""")],
             Opinions = [JsonNode.Parse("""{"session":"s42","quest":"q1","repository":"engine","workspace":"aurora","since":"2026-09-21T09:00:00Z","auto":false,"opinion":{"state":"disputed","holds":true,"required":true,"opinion":"o1","reviewer":"codex","product":"Codex","maker":"OpenAI","label":"Codex","reviewing":"s42","findings":2,"disputes":2,"since":"2026-09-21T09:00:00Z","code":"c","until":"2026-09-22T09:00:00Z","later":1,"person":"p","answers":"o1","says":"s"}}""")!.AsObject()],
             Helpers = [JsonNode.Parse("""{"id":"a1","session":"parked","question":"Which?","agent":null,"at":"2026-09-21T09:30:00Z"}""")!.AsObject()],
-            // NOTIFY2e: an agent's ask to hand its session over, waiting on the person.
+            // An agent's ask to hand its session over, waiting on the person.
             HandOvers = [JsonNode.Parse("""{"id":"h1","session":"parked","note":"Near my limit.","agent":"codex-acp","at":"2026-09-21T09:30:00Z"}""")!.AsObject()],
             Permissions = [JsonNode.Parse("""{"session":"parked","request":"9","call":"c","title":"t","kind":"edit","since":"2026-09-21T09:10:00Z","until":"2026-09-21T09:25:00Z","choices":[{"id":"a","name":"A","kind":"allow_once"}]}""")!.AsObject()],
-            // COWORK1e: a third answer alone held for the person.
+            // A third answer alone held for the person.
             Answers = [JsonNode.Parse("""{"session":"parked","agent":"codex-acp","words":["w1"],"since":"2026-09-21T09:20:00Z"}""")!.AsObject()],
-            // OVERVIEWNOISE1b: a unit's row, its blocked entry with its code and facts.
+            // A unit's row, its blocked entry with its code and facts.
             Works = [Unit($$$"""{"cleanup":{"state":"pending","waits":[{{{Entry("""{"code":"unfollowed","facts":{"branch":"daoris/s1a2b3c4"}}""").ToJsonString()}}}],"gone":[]}}""")],
             Held = [HeldAttempt("""{"outcome":"reached","revision":"r","resolution":"stop","resolvedAt":"2026-10-17T10:00:00Z","words":["stop"]}""")],
-            // FABRIC-PERFORM1j: a node record that does not read.
+            // A node record that does not read.
             Unreadable = [Unreadable()],
-            // FABRIC-CLOSE1j: a close found closed only in part, every field set.
+            // A close found closed only in part, every field set.
             Ends = [Ended("""{"nodes":["qa"],"resolution":"stop"}""")],
-            // CONFIRMSEEN1: a terminal's press waiting for the window, shown.
+            // A terminal's press waiting for the window, shown.
             Confirmations =
             [
                 JsonNode.Parse("""{"id":"c1","module":"DAORIS.DRIVER","route":"SESSION_ARCHIVE","asker":{"process":"daoris-driver","pid":4242},"asked":"2026-10-20T09:00:00Z","expires":"2026-10-20T09:03:00Z","shownAt":"2026-10-20T09:01:00Z"}""")!.AsObject(),
             ],
-            // KEEP1f: a volume still below its floor, every field set.
+            // A volume still below its floor, every field set.
             Space =
             [
                 JsonNode.Parse("""{"volume":"v1","said":"2026-10-22T09:00:00Z","root":"C:\\","free":4,"total":100,"floor":10,"freed":2,"could":3}""")!.AsObject(),
             ],
-            // GITAUTH1a: a held git remote, every field set.
+            // A held git remote, every field set.
             Git = [GitHeld()],
-            // GITAUTH1f: a git go-ahead, every field set.
+            // A git go-ahead, every field set.
             GitAsks =
             [
                 JsonNode.Parse("""
@@ -1922,7 +1922,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
                      "class":"write","session":"s1","at":"2026-11-02T09:00:00Z","gone":true}
                     """)!.AsObject(),
             ],
-            // INTEGRATE1h: an integration's wait on the owner, every field set.
+            // An integration's wait on the owner, every field set.
             Integration =
             [
                 Integrating("""
@@ -1953,18 +1953,18 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
 
         Assert.Equal(AttentionStateSlice.Fields["row"].Order(StringComparer.Ordinal), TypeFields(attention, "PushedAttention").Order(StringComparer.Ordinal));
         Assert.Equal(AttentionStateSlice.Fields["account"].Order(StringComparer.Ordinal), TypeFields(accounts, "AccountRowFacts").Order(StringComparer.Ordinal));
-        // CONFIRMWAIT1a-i (the confirm-wait design §8.2): a terminal's press's fields, so its `expires`, null now, stays one field both sides.
+        // A terminal's press's fields, so its `expires`, null now, stays one field both sides.
         Assert.Equal(AttentionStateSlice.Fields["confirmation"].Order(StringComparer.Ordinal), TypeFields(attention, "PushedConfirmation").Order(StringComparer.Ordinal));
     }
 
-    /// <summary>A remote held since it could not authenticate, as <see cref="AttentionStateSlice.GitWaits"/> reads one (GITAUTH1a).</summary>
+    /// <summary>A remote held since it could not authenticate, as <see cref="AttentionStateSlice.GitWaits"/> reads one.</summary>
     private static JsonObject GitHeld(string over = "{}") => With(JsonNode.Parse("""
         {"repository":"engine","workspace":"aurora","remote":"origin","host":"ssh.dev.azure.com","class":"refused","holds":"all",
          "words":"git@ssh.dev.azure.com: Permission denied (password,publickey).","since":"2026-10-22T09:00:00Z"}
         """)!.AsObject(), over);
 
     /// <summary>
-    /// GITAUTH1a (the git-auth design §5.2, §7.4): one row per held group, its workspace, host, class and what it holds, the repositories
+    /// One row per held group, its workspace, host, class and what it holds, the repositories
     /// in it named once each, from the oldest hold's time and words; a group of another class, host or workspace is a row of its own.
     /// </summary>
     [Fact]
@@ -1994,7 +1994,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// GITAUTH1e (the git-auth design §6.8, §7.4): a refusal names the identity that serves its group, and a group served by another is a
+    /// A refusal names the identity that serves its group, and a group served by another is a
     /// row of its own; the move is one row for a workspace however many hosts its remotes nothing serves are on, naming each host and the
     /// repositories, listing apart those whose own configuration names authentication; a row holds work where a session of one of its
     /// repositories runs or waits on the person, and none where every one has ended.
@@ -2036,7 +2036,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// GITAUTH1f (the git-auth design §6.6, §7.4): each git go-ahead a door holds is a row of its own, holding work, scoped as its
+    /// Each git go-ahead a door holds is a row of its own, holding work, scoped as its
     /// repository's workspace, naming its session where its marker named one, and saying whether its door has gone.
     /// </summary>
     [Fact]
@@ -2059,7 +2059,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             """, Assert.Single(rows));
     }
 
-    /// <summary>GITAUTH1f: the slice reads the home's git go-aheads, and hears one raised.</summary>
+    /// <summary>The slice reads the home's git go-aheads, and hears one raised.</summary>
     [Fact]
     public void The_slice_reads_the_homes_git_go_aheads_and_hears_one_raised()
     {
@@ -2082,7 +2082,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         }
     }
 
-    /// <summary>GITAUTH1a: the slice reads the home's holds with no machine path, and hears a hold kept or lifted.</summary>
+    /// <summary>The slice reads the home's holds with no machine path, and hears a hold kept or lifted.</summary>
     [Fact]
     public void The_slice_reads_the_homes_holds_and_hears_them_move()
     {
@@ -2148,8 +2148,8 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
 
     /// <summary>
     /// Three partitions, each keyed: <c>rows</c>, each row under its kind and id as the band keys it; <c>sessions</c>, what parked on the
-    /// person; and <c>working</c>, the sessions the driver runs, which the status bar counts (SESSBADGE1) and, less the parks, Sessions'
-    /// running mark reads (BADGEUX1). Judged empty, each is pushed empty, never gone. Not judged before every input it reads was judged (PUSHUX1).
+    /// person; and <c>working</c>, the sessions the driver runs, which the status bar counts and, less the parks, Sessions'
+    /// running mark reads. Judged empty, each is pushed empty, never gone. Not judged before every input it reads has been judged.
     /// </summary>
     [Fact]
     public void The_slice_is_three_keyed_partitions_judged_empty_as_empty_and_not_judged_before_its_inputs()
@@ -2186,7 +2186,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         var asks = new StateSlice(AsksStateSlice.Name, Bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>(AsksStateSlice.Judge("[]"))) { Keyed = true };
         var groups = new StateSlice(GroupsStateSlice.Name, Bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>(
             [new SliceJudged(GroupsStateSlice.Rows, new JsonObject { ["r3v13w00"] = Placed() }), new SliceJudged(GroupsStateSlice.Entries, new JsonObject())])) { Keyed = true };
-        // OVERVIEWNOISE1b: a unit with an act of the person's, a tree its session recorded that no branch record follows.
+        // A unit with an act of the person's, a tree its session recorded that no branch record follows.
         var unfollowed = Entry("""{"code":"unfollowed","facts":{"branch":"daoris/s1a2b3c4"}}""").ToJsonString();
         var unit = Unit($$$"""{"cleanup":{"state":"pending","waits":[{{{unfollowed}}}],"gone":[]}}""");
         var work = new StateSlice(WorkStateSlice.Name, Bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>(
@@ -2267,7 +2267,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Equal(read, AttentionStateSlice.SessionsRead([With(working, """{"updated":"2026-09-21T10:05:00Z"}""")]));
         Assert.NotEqual(read, AttentionStateSlice.SessionsRead([With(working, """{"state":"awaiting-person"}""")]));
         var parked = Session("""{"state":"awaiting-person"}""");
-        // ONEWAY1m: the person's answer is read from the keyed `said` words.
+        // The person's answer is read from the keyed `said` words.
         Assert.NotEqual(AttentionStateSlice.SessionsRead([parked]), AttentionStateSlice.SessionsRead([With(parked, """{"said":[{"id":"w1","text":"go","at":"2026-09-21T10:06:00Z","files":[]}]}""")]));
     }
 

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The context-one design §3 B (D230 point 2): <c>RECONCILE_PLAN</c> and <c>RECONCILE_APPLY</c> over the bridge. The plan says what the doctrine
+/// <c>RECONCILE_PLAN</c> and <c>RECONCILE_APPLY</c> over the bridge. The plan says what the doctrine
 /// tool's status said of an adopted repository's checkout and whether that offers a reconcile; the apply is the set-up press's reconcile case,
 /// its refusals an answer with nothing published. The status read over a real checkout is <c>ReconcileStatusProcessTests</c>'.
 /// </summary>

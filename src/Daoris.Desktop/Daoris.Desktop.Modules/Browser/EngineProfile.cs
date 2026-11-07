@@ -13,12 +13,12 @@ namespace Daoris.Desktop;
 public sealed record EngineRecord(IReadOnlyList<string> Refused, bool BarShown);
 
 /// <summary>
-/// The engine's profile files, as <c>daoris-browser</c> edits them before the engine starts (CHR5,
-/// CHR7): Daoris's favorites as a folder on the bookmarks bar, and other software's Chrome extensions
+/// The engine's profile files, as <c>daoris-browser</c> edits them before the engine starts:
+/// Daoris's favorites as a folder on the bookmarks bar, and other software's Chrome extensions
 /// refused or offered. Pure, so every rule is tested without an engine.
 /// </summary>
 /// <remarks>
-/// <para><b>Measured before written</b> (`docs/2026-09-28-chromium-embedding-evidence.md` §20–§21):
+/// <para><b>Measured before written</b> (`docs/2026-09-28-chromium-embedding-evidence.md`):
 /// the engine takes a bookmarks file written without its checksum and shows its folder, and it keeps
 /// an extension id seeded into <c>extensions.external_uninstalls</c> and stops offering it.</para>
 ///

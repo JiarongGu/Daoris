@@ -3,9 +3,9 @@ using System.Runtime.CompilerServices;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The agents' answer to where the <see cref="ChangeTopics.Accounts"/> topic's files are (FOUNDATION1 mod-vii, the design §14.3): what a held
-/// conversation's wait is computed from, the cool-offs and the harnesses' wiring, so an account freed early wakes the look's limits stage
-/// (LIMITRESUME1c). Installed when the driver's assembly loads, before any watch is built.
+/// The agents' answer to where the <see cref="ChangeTopics.Accounts"/> topic's files are: what a held
+/// conversation's wait is computed from, the cool-offs and the harnesses' wiring, so an account freed early wakes the look's limits stage.
+/// Installed when the driver's assembly loads, before any watch is built.
 /// </summary>
 internal static class AccountsHomeTopic
 {

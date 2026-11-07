@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The desktop's loop takes the same home lease a terminal's does (DRV8a, D104; HOMELEASE1). A stray headless loop took
+/// The desktop's loop takes the same home lease a terminal's does. A stray headless loop took
 /// a quest two seconds before the desktop's own; one live driver per home is the rule for both doors, and one writer per home
 /// is the lease's: a terminal's verb acting alone holds it for its act, and the desktop's start waits on that hold.
 /// </summary>
@@ -77,7 +77,7 @@ public sealed class DriverLoopLockTests : Bridge
     }
 
     /// <summary>
-    /// 🔴 HOMELEASE1: the desktop starting while a terminal's verb holds the home for its act waits on that hold. It says nothing
+    /// The desktop starting while a terminal's verb holds the home for its act waits on that hold. It says nothing
     /// for a hold as long as a press, and once the hold has lasted its wait, says so once, naming the verb; it takes the home the
     /// moment the verb lets go.
     /// </summary>

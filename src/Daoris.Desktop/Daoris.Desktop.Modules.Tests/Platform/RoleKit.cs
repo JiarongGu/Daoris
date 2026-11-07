@@ -5,7 +5,7 @@ using CatalogueScope = Daoris.Driver.RoleScope;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// What the role door's tests share (STEWARDROLE1a-i, D233 point 2): a stand-in act for the steward's table; the supervisor and the
+/// What the role door's tests share: a stand-in act for the steward's table; the supervisor and the
 /// steward as the catalogue records them, staffed in the judge's reading of the catalogue; a role's terminal started; and a
 /// <c>ROLE_ACT</c> payload proved as the holder's verb proves it.
 /// </summary>

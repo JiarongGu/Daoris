@@ -3,8 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Which workspace each main window holds, by its name, and which main window a notification's click opens (NOTIFY2c, D196 point 6,
-/// the notification design §2.4 and §9): the one whose workspace holds what the notification is about, or the main window last in
+/// Which workspace each main window holds, by its name, and which main window a notification's click opens: the one whose workspace holds what the notification is about, or the main window last in
 /// front where none or several do. Kept here, in plain <c>net10.0</c>, so that is tested; the application brings the window forward.
 /// </summary>
 /// <remarks>
@@ -12,16 +11,16 @@ namespace Daoris.Desktop;
 /// for every workspace; it is never read from the title, which is the person's words for it.</para>
 ///
 /// <para><b>What a window holds.</b> A window on one workspace holds that workspace's records, and one on every workspace holds every
-/// record, as each window's lists show them (MAINWINDOWS3). A workspace is compared as the service names it (its
+/// record, as each window's lists show them. A workspace is compared as the service names it (its
 /// <c>Workspaces.Normalize</c>, the page's <c>circle</c>): trimmed, none the default's, its ASCII letters folded. What is the machine's (a
 /// terminal's press, an account's wait) names no workspace and is every window's.</para>
 ///
 /// <para><b>Several holding it</b> (a window on every workspace beside one on its own, or two on one): the one of them last in front,
-/// since that is where the person last looked at it. <b>None holding it</b>: the main window last in front, as a press's balloon opens
-/// (§3.3).</para>
+/// since that is where the person last looked at it. <b>None holding it</b>: the main window last in front, as a press's balloon opens.
+/// </para>
 ///
 /// <para><b>Never a window the person has not open.</b> A window closed is forgotten, and the first main window put away while another
-/// is open (MAINWINDOWS2) is never picked while it is away; with nothing else known, the first is the answer, which the click takes
+/// is open is never picked while it is away; with nothing else known, the first is the answer, which the click takes
 /// back as it does today. A utility window (the monitor, a detached session) holds nothing here.</para>
 ///
 /// <para>Told from any thread: each window's page over the bridge, each window's focus on its own; one lock holds the state.</para>

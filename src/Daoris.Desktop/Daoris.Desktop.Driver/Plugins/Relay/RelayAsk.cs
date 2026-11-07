@@ -3,7 +3,7 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The words after <c>events relay</c> (EVENTHOOK1c; the event hook design §6.1): <c>--where</c> alone, which lays the copy out and prints
+/// The words after <c>events relay</c>: <c>--where</c> alone, which lays the copy out and prints
 /// its command, or <c>--once</c> with the home it is told, the watermark of the last batch read, the kinds it prints and the session it ends
 /// with. Words it does not take are refused whole, by a fixed sentence.
 /// </summary>
@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// <param name="Since">The watermark <c>--since</c> gave, checked, or null.</param>
 /// <param name="Kinds">The kinds printed: <c>--kinds</c>'s, else the first build's four.</param>
 /// <param name="SessionPid">The process whose exit ends the relay, printing nothing, or null.</param>
-/// <param name="NotBy">The poster whose own <c>channel.posted</c> frames are never printed (<c>--not-by</c>, CHANNELJOIN1d), or null.</param>
+/// <param name="NotBy">The poster whose own <c>channel.posted</c> frames are never printed (<c>--not-by</c>), or null.</param>
 public sealed record RelayAsk(bool Where, string? Home, (string Run, long Seq)? Since, IReadOnlySet<string> Kinds, int? SessionPid, string? NotBy = null)
 {
     /// <summary>The words read, or null with the sentence that refuses them.</summary>

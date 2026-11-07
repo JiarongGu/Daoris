@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 public sealed record AcpConfigChoice(string Value, string Name, string? Description = null);
 
 /// <summary>
-/// One of a session's config options as the agent offers it (AGT6b, D98): what it is called, what kind
+/// One of a session's config options as the agent offers it: what it is called, what kind
 /// it is, what it is set to, and what it may be set to. Only a choice among values is kept.
 /// </summary>
 /// <param name="Id">What <c>session/set_config_option</c> names it by.</param>
@@ -22,9 +22,9 @@ public sealed record AcpConfigOption(
     string? Description = null)
 {
     /// <summary>
-    /// Whether this is one the person may set from Daoris (D98): the model, and the effort the protocol
-    /// calls a thought level. 🔴 Never the mode — that is the posture Daoris runs a session under
-    /// (D37, D81), and a person widening it from a menu is what D52 refuses. An option with no category
+    /// Whether this is one the person may set from Daoris: the model, and the effort the protocol
+    /// calls a thought level. 🔴 Never the mode — that is the posture Daoris runs a session under,
+    /// and a person widening it from a menu is refused. An option with no category
     /// is not offered: nothing says what it is.
     /// </summary>
     public bool ThePersons => Category is "model" or "thought_level";

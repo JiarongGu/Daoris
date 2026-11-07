@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One transient episode as the conclusion of a run past its bound reads it (FOUNDATION1 mod-vii, the design §14.3): the tries made, the
+/// One transient episode as the conclusion of a run past its bound reads it: the tries made, the
 /// time actually waited between them and the provider's own sentence as the first failure said it. The agents' episode answers this port, so
 /// <see cref="Observation.Transient"/> names no type above the events.
 /// </summary>

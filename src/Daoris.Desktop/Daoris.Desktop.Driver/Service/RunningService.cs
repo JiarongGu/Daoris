@@ -5,23 +5,23 @@ namespace Daoris.Driver;
 
 /// <summary>What a Daoris host's status door answers that discovery reads: its search tier, and the home it serves.</summary>
 /// <param name="Tier">The search tier it names, as every version has.</param>
-/// <param name="Home">The id of the home it was started with (HOMEID1, <see cref="HomeIdentity"/>), or null for a shared host or one from before.</param>
+/// <param name="Home">The id of the home it started with (<see cref="HomeIdentity"/>), or null for a shared host or an older one.</param>
 public sealed record ServiceStatus(string Tier, string? Home);
 
 /// <summary>
-/// The service a program the install carries reaches when nobody named one (FINDDAORIS1, D171 point 1): the address the
+/// The service a program the install carries reaches when nobody named one: the address the
 /// running desktop left in the home (<see cref="RunningAddress"/>), taken only while the process it names lives and the
 /// address answers, on this machine, as this home's Daoris host. <see cref="ServiceHttp.FromEnvironment()"/> asks it after the
 /// variable.
 /// </summary>
 /// <remarks>
 /// <para><b>Only on this machine.</b> A terminal's verbs send a checkout's path and read this machine's records, which go only
-/// to a local host (D46), so a file naming another machine is not followed: the variable is how another is reached.</para>
+/// to a local host, so a file naming another machine is not followed: the variable is how another is reached.</para>
 ///
-/// <para><b>Only this home's host</b> (HOMEID1, the terminal RPC design §3.2). The status door names its search tier, as every
-/// version has, and a local host now also its home's id. A tier alone was taken before, so another install's service at the
-/// address, or a process id the system gave to another process since, passed; the id makes the process check a courtesy. A
-/// status naming another home, or none (a host from before, or a shared one), is not taken, and nor is any where this home has
+/// <para><b>Only this home's host.</b> The status door names its search tier, as every
+/// version has, and a local host also its home's id. A tier alone would pass another install's service at the
+/// address, or a process id the system gave to another process since; the id makes the process check a courtesy. A
+/// status naming another home, or none (an older host, or a shared one), is not taken, and nor is any where this home has
 /// no id. Asked with redirects off: where an address sends its asker is no answer.</para>
 ///
 /// <para>Discovery writes nothing: it reads the home's id and never mints one (the desktop and the hosts do at their start).</para>
@@ -31,10 +31,10 @@ public static class RunningService
     /// <summary>How long the status door is given to answer.</summary>
     public static readonly TimeSpan Within = TimeSpan.FromSeconds(2);
 
-    /// <summary>The wait before a status door that did not answer is asked a second time (SERVICESTALL1).</summary>
+    /// <summary>The wait before a status door that did not answer is asked a second time.</summary>
     public static readonly TimeSpan RetryAfter = TimeSpan.FromSeconds(1);
 
-    /// <summary>How long a service whose process runs is waited for in all, once the first ask went unanswered (SERVICEPROBE1).</summary>
+    /// <summary>How long a service whose process runs is waited for in all, once the first ask goes unanswered.</summary>
     public static readonly TimeSpan WaitFor = TimeSpan.FromSeconds(30);
 
     /// <summary>The bound of each ask after the first, so a service slow for seconds still answers one.</summary>
@@ -42,14 +42,14 @@ public static class RunningService
 
     /// <summary>
     /// The address the running desktop holds for <paramref name="home"/>, or null with the sentence that says why there is none:
-    /// that Daoris is not running there and how to start it, or what was found and why it was not taken. Where its process runs
-    /// and the status door does not answer, it is asked again for <paramref name="total"/> (SERVICEPROBE1).
+    /// that Daoris is not running there and how to start it, or what is found and why it is not taken. Where its process runs
+    /// and the status door does not answer, it is asked again for <paramref name="total"/>.
     /// </summary>
     /// <param name="install">The install the asking program runs from, whose launcher starts Daoris.</param>
     /// <param name="status">What an address's status door answers as a Daoris host within the bound it is given, or null: <see cref="Status"/>, or a test's.</param>
-    /// <param name="unanswered">Whether the address came from the home's record and nothing answered there, which the refusal does not blame on the variable (SERVICESTALL1).</param>
+    /// <param name="unanswered">Whether the address came from the home's record and nothing answered there, which the refusal does not blame on the variable.</param>
     /// <param name="retryAfter">The wait between asks, so a service busy for a moment is not taken for a missing one.</param>
-    /// <param name="waiting">Told once, when the first ask went unanswered and the process runs.</param>
+    /// <param name="waiting">Told once, when the first ask goes unanswered and the process runs.</param>
     /// <param name="total">How long to wait in all; null is <see cref="WaitFor"/>.</param>
     public static string? Find(
         string home, string install, Func<string, TimeSpan, ServiceStatus?> status, out string why, out bool unanswered,
@@ -153,7 +153,7 @@ public static class RunningService
     /// <param name="handler">A test's host; null asks over the network.</param>
     public static ServiceStatus? Status(string url, HttpMessageHandler? handler = null, TimeSpan? timeout = null)
     {
-        // 🔴 HOMEID1: redirects off. An address on this machine that sends its asker elsewhere has not answered.
+        // 🔴 Redirects off. An address on this machine that sends its asker elsewhere has not answered.
         using var http = handler is null
             ? new HttpClient(new SocketsHttpHandler { AllowAutoRedirect = false })
             : new HttpClient(handler, disposeHandler: false);

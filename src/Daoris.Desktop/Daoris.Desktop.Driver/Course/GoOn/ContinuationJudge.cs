@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Whether a record resumes, judged against this machine's disk (ANSWER1a, MSG1b), under the name its callers use (STRUCT3h,
-/// D166's note): <c>Continuations.Judge</c> for the loop's look, the runner's going-on and the tests, with the tree's step asked
+/// Whether a record resumes, judged against this machine's disk, under the name its callers use:
+/// <c>Continuations.Judge</c> for the loop's look, the runner's going-on and the tests, with the tree's step asked
 /// of <see cref="ConversationTrees"/>. The judgement is <see cref="Continuations"/>'s, pure, in the Domain.
 /// </summary>
 public static class ContinuationJudge

@@ -2,8 +2,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What a plugin's manifest asks of the workflows' node table, which owns the authority by kind: whether a step it declares is a sound node
-/// (FABRIC-UNIT1d, §D4's <i>validated before saved</i>). Workflows installs it when the driver loads and answers exactly as the table did
-/// before it was a port, so a step refused is refused by the same code.
+/// (<i>validated before saved</i>). Workflows installs it when the driver loads and answers exactly as the table does,
+/// so a step refused is refused by the same code.
 /// </summary>
 internal interface IPluginStepRules
 {

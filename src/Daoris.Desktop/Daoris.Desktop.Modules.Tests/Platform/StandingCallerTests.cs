@@ -6,7 +6,7 @@ using Microsoft.Win32.SafeHandles;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// TERMTRUST1a part (ii) (D201 point 4, the terminal-trust design §3.3 point 3 and §8 case 3): where a terminal's process stands, read
+/// Where a terminal's process stands, read
 /// from the system. A process in a job of the agents' prefix asks <c>in-agent-job</c>; one outside every such job, each found and read,
 /// is covered; anything the look cannot tell (an <c>-open</c> event, a job that will not answer, a namespace not read, an instance whose
 /// server holds no job of the prefix, this process's own agents not contained, a client gone or created after the connection) is
@@ -17,8 +17,8 @@ namespace Daoris.Desktop.Modules.Tests;
 /// id no Daoris holds, and the stand-in in it is <c>ping</c>, never an agent's binary. The instance pipes this session serves are not
 /// opened here (the person's own Daoris may serve one): <see cref="StandingCaller.Servers"/> is a stand-in, its rule held by its own case.</para>
 /// <para><b>Elevation is not measured here</b>: a test cannot start an elevated stand-in without the person's consent prompt, so whether a
-/// judge that is not elevated opens an elevated Daoris's job (the design's §3.4 says it cannot, which answers untold) is the parent's
-/// look on the install (case 14), and stays said in D201's note.</para>
+/// judge that is not elevated opens an elevated Daoris's job (it cannot, which answers untold) is the parent's
+/// look on the install, and stays a known limit.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class StandingCallerTests : IDisposable
@@ -142,7 +142,7 @@ public sealed class StandingCallerTests : IDisposable
         Assert.Equal(StandingPlace.Untold, new StandingCaller { OwnContained = _ => true, Servers = _ => [], List = () => null }.Place(me));
         // This process's own agents not contained: until part (i) lands, it holds no job of the prefix.
         Assert.Equal(StandingPlace.Untold, new StandingCaller { Servers = _ => [], List = Own }.Place(me));
-        // An instance pipe whose server holds no job of the prefix, a Daoris from before TERMTRUST1a; and the pipes not read.
+        // An instance pipe whose server holds no job of the prefix, a Daoris of another build; and the pipes not read.
         Assert.Equal(StandingPlace.Untold, new StandingCaller { OwnContained = _ => true, Servers = _ => [424242], List = Own }.Place(me));
         Assert.Equal(StandingPlace.Untold, new StandingCaller { OwnContained = _ => true, Servers = _ => null, List = Own }.Place(me));
         // One whose server holds one is a Daoris of this build, and takes nothing.

@@ -3,7 +3,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where each unit of work has got to (FABRIC-MILESTONE1b, the fabric events design §D0): whether its end was reached, the result
+/// Where each unit of work has got to: whether its end is reached, the result
 /// kept, its cleanup (pending, with what waits and why, or completed, with what went) and the recovery retained, in the words
 /// `daoris work state` says (<see cref="WorkWords"/>), so the helper answers from the records and never judges an end itself.
 /// </summary>
@@ -12,7 +12,7 @@ internal sealed class HelpRoomWork : IHelpRoomSection
     /// <summary>The most units the room lists: those whose cleanup waits or whose recovery is kept come first, and the count says the rest.</summary>
     internal const int Listed = 10;
 
-    /// <summary>The most recoveries no unit names that the room lists, the rest counted (RECOVERYASK1).</summary>
+    /// <summary>The most recoveries no unit names that the room lists, the rest counted.</summary>
     internal const int RecoveriesListed = 5;
 
     public HelpMachine Describe(HelpMachine machine, IHelpMachineSources sources) => sources.Describe(this, machine);
@@ -27,7 +27,7 @@ internal sealed class HelpRoomWork : IHelpRoomSection
         text.Append("## Where work has got to\n\n");
         if (machine.Work is not { } units)
         {
-            // PARALLEL1a: not judged yet by the facts, which write the room again once they are.
+            // Not judged yet by the facts, which write the room again once they are.
             text.Append(machine.NotReadYet.Work ? "The milestones are not read yet" : "The milestones were not read");
             text.Append(", so do not say where any work stands: the person may ask in the terminal, `daoris work state`.\n\n");
             return text.ToString();
@@ -35,7 +35,7 @@ internal sealed class HelpRoomWork : IHelpRoomSection
 
         if (units.Count == 0)
         {
-            // ASKSCOPE1b: a workspace's room lists its own units alone.
+            // A workspace's room lists its own units alone.
             text.Append(machine.Workspace is { } workspace
                 ? $"No unit of workspace `{workspace}`'s work is recorded on this machine.\n\n"
                 : "No unit of work is recorded on this machine.\n\n");
@@ -72,7 +72,7 @@ internal sealed class HelpRoomWork : IHelpRoomSection
     }
 
     /// <summary>
-    /// The recoveries no unit names (RECOVERYASK1, CLEANUP1): each says what keeps it, and a recovery ref nothing holds says its
+    /// The recoveries no unit names: each says what keeps it, and a recovery ref nothing holds says its
     /// `git update-ref -d` line, which only the person can run. Those come first; at most <see cref="RecoveriesListed"/> are listed.
     /// </summary>
     private static void Recoveries(StringBuilder text, IReadOnlyList<InventoryEntry> recoveries)

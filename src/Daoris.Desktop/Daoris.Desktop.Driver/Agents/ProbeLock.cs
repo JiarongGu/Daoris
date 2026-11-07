@@ -6,7 +6,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One status question per configuration home at a time (TOOL6g): an agent asked whether an account is signed in may
+/// One status question per configuration home at a time: an agent asked whether an account is signed in may
 /// refresh that account's token to answer, and two asked at once on one account spend one single-use refresh token twice.
 /// The second is refused, and the agent signs the account out, the first one's new tokens with it.
 /// </summary>
@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 /// A taker that cannot have it within its patience does not ask: the account is then said to be unknown, never asked twice
 /// at once.</para>
 /// <para><b>Where.</b> Beside the accounts, under the home's <c>harnesses/.probing/</c>, never inside an account's
-/// directory, which is the agent's (D66 §3): <c>&lt;agent&gt;/&lt;account&gt;.lock</c> for an account, and
+/// directory, which is the agent's: <c>&lt;agent&gt;/&lt;account&gt;.lock</c> for an account, and
 /// <c>&lt;agent&gt;.lock</c> for the tool's own sign-in; and <c>&lt;agent&gt;/&lt;account&gt;.signed-in</c>, the mark a
 /// sign-in or a key into the account leaves. The CLI's <c>probelock.ts</c> is the twin, and the two tables
 /// (<c>ProbeLockTests</c>, <c>probelock.test.ts</c>) hold the same rows.</para>
@@ -36,12 +36,12 @@ public static class ProbeLock
     // One gate per lock file in this process, so two of its callers wait on each other before either touches the file.
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> Gates = new(StringComparer.OrdinalIgnoreCase);
 
-    // How many takes each lock file was asked for in this process, beside its gate: one entry per lock file, as the gates keep.
+    // How many takes each lock file is asked for in this process, beside its gate: one entry per lock file, as the gates keep.
     private static readonly ConcurrentDictionary<string, int> Asked = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// How many takes the lock at <paramref name="path"/> was asked for in this process: what tells one wait from two by count,
-    /// where a loaded machine's clock cannot (FLAKE1, 2026-10-29).
+    /// How many takes the lock at <paramref name="path"/> is asked for in this process: what tells one wait from two by count,
+    /// where a loaded machine's clock cannot.
     /// </summary>
     internal static int AskedOf(string path) => Asked.TryGetValue(Path.GetFullPath(path), out var count) ? count : 0;
 
@@ -51,14 +51,14 @@ public static class ProbeLock
         : DaorisHome.Entry(home, HomeEntry.Probing, owner, profile + ".lock");
 
     /// <summary>
-    /// Where a sign-in or a key into an account is marked (TOOL6g), beside its lock: the walk believes the agent's word that
+    /// Where a sign-in or a key into an account is marked, beside its lock: the walk believes the agent's word that
     /// an account is signed out until a mark is newer than it, so a start held on it asks that account once per sign-out,
     /// never at every look, and a sign-in at the terminal is seen at the next look.
     /// </summary>
     public static string SignedInPathOf(string home, string owner, string profile) =>
         DaorisHome.Entry(home, HomeEntry.Probing, owner, profile + ".signed-in");
 
-    /// <summary>When an account was last marked signed in, by the mark's last write; null where it never was.</summary>
+    /// <summary>When an account last marked signed in, by the mark's last write; null where it never did.</summary>
     public static DateTimeOffset? SignedIn(string home, string owner, string profile)
     {
         var path = SignedInPathOf(home, owner, profile);
@@ -73,9 +73,9 @@ public static class ProbeLock
     }
 
     /// <summary>
-    /// Mark a sign-in or a key into the account at <paramref name="profileHome"/> (TOOL6g): a home outside the accounts'
-    /// layout (<see cref="HomeEntry.AgentHomes"/>: <c>&lt;home&gt;/harnesses/&lt;agent&gt;/&lt;account&gt;</c> where it was, or
-    /// <c>&lt;Daoris folder&gt;/profiles/agents/&lt;agent&gt;/&lt;account&gt;</c> since HOMELAYOUT3) marks nothing. A mark not
+    /// Mark a sign-in or a key into the account at <paramref name="profileHome"/>: a home outside the accounts'
+    /// layout (<see cref="HomeEntry.AgentHomes"/>:
+    /// <c>&lt;Daoris folder&gt;/profiles/agents/&lt;agent&gt;/&lt;account&gt;</c>) marks nothing. A mark not
     /// written costs the walk one sign-out's wait for its backstop, never the sign-in.
     /// </summary>
     public static void MarkSignedIn(string profileHome, DateTimeOffset now)
@@ -133,7 +133,7 @@ public static class ProbeLock
         }
     }
 
-    /// <summary>Whether a lock file was last written longer than <see cref="Stale"/> before <paramref name="now"/>; a missing one is not.</summary>
+    /// <summary>Whether a lock file's last write is longer than <see cref="Stale"/> before <paramref name="now"/>; a missing one is not.</summary>
     internal static bool IsStale(string path, DateTime now)
     {
         try

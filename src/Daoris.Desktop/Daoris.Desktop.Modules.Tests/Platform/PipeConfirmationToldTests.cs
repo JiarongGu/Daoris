@@ -8,7 +8,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// EVENTHOOK1d's last proof (the event channel design §3.3, §7): a press made over the shell's pipe and left by its terminal is told to
+/// A press made over the shell's pipe and left by its terminal is told to
 /// the lease's plugin at <c>work/event</c> as <c>confirmation.ended</c> with the pipe's own id and its end, once the person answers; a
 /// press its terminal waits on is told nothing. The pipe is served as <see cref="PipeConfirmTests"/> serves it and the sink is the
 /// loop's own (<see cref="SettledTelling"/>); the plugin is a held channel, so no process starts.

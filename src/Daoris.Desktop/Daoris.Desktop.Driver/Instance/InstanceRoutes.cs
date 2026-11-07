@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The open routes the host's verbs send over the pipe (RPCOPEN1, RPC1e, the terminal RPC design §7.1): the reads, which go through the
+/// The open routes the host's verbs send over the pipe: the reads, which go through the
 /// instance where one answers and alone otherwise, and the two presses the census leaves open, <c>SYNC_NOW</c> and
 /// <c>REGISTRY_REFRESH</c>. Held to the census route by route by <c>PipeCensusTests</c>, which also names each verb left off the pipe
 /// with its reason (<see cref="Verbs"/>).
@@ -34,7 +34,7 @@ public static class OpenRoutes
     /// <summary><c>sessions at-work</c>: who is at work on a session.</summary>
     public static InstanceRoute AtWork { get; } = Open("SESSION_AT_WORK");
 
-    /// <summary><c>notices</c>: what came to the person, as the windows hold it (NOTIFY2i).</summary>
+    /// <summary><c>notices</c>: what came to the person, as the windows hold it.</summary>
     public static InstanceRoute Notifications { get; } = Open("NOTIFICATIONS");
 
     /// <summary><c>sync</c>: the tick's own pass for one circle.</summary>
@@ -43,26 +43,26 @@ public static class OpenRoutes
     /// <summary><c>register</c>: one repository followed from its line.</summary>
     public static InstanceRoute RegistryRefresh { get; } = Open("REGISTRY_REFRESH");
 
-    /// <summary><c>space free --yes</c>'s follow (KEEP1e): the disk space read each second, its <c>run</c> until it ends.</summary>
+    /// <summary><c>space free --yes</c>'s follow: the disk space read each second, its <c>run</c> until it ends.</summary>
     public static InstanceRoute SystemSpace { get; } = Open("SYSTEM_SPACE");
 
-    /// <summary><c>ask --abandon &lt;id&gt;</c> and <c>quest abandon &lt;id&gt;</c> without <c>--yes</c> (RPC1e): what an abandon would take and keep.</summary>
+    /// <summary><c>ask --abandon &lt;id&gt;</c> and <c>quest abandon &lt;id&gt;</c> without <c>--yes</c>: what an abandon would take and keep.</summary>
     public static InstanceRoute WorkPlan { get; } = Open("WORK_PLAN");
 
-    /// <summary><c>history</c>'s reading, and a clear's list without <c>--yes</c> (RPC1e): what a clear would take and keep.</summary>
+    /// <summary><c>history</c>'s reading, and a clear's list without <c>--yes</c>: what a clear would take and keep.</summary>
     public static InstanceRoute HistoryPlan { get; } = Open("HISTORY_PLAN");
 
-    /// <summary><c>help list</c> (RPC1e): a page of Ask Daoris's conversations, a search's among them.</summary>
+    /// <summary><c>help list</c>: a page of Ask Daoris's conversations, a search's among them.</summary>
     public static InstanceRoute HelpConversations { get; } = Open("HELP_CONVERSATIONS");
 
-    /// <summary><c>opinion show &lt;session|opinion&gt;</c> (RPC1e): where a work's second opinion stands, its findings and their answers.</summary>
+    /// <summary><c>opinion show &lt;session|opinion&gt;</c>: where a work's second opinion stands, its findings and their answers.</summary>
     public static InstanceRoute OpinionGate { get; } = Open("OPINION_GATE");
 
-    /// <summary><c>place &lt;repository&gt;… --plan</c> (AGENTSPLACE1a2): a quick set-up's plan, read and never written.</summary>
+    /// <summary><c>place &lt;repository&gt;… --plan</c>: a quick set-up's plan, read and never written.</summary>
     public static InstanceRoute PlacePlan { get; } = Open("PLACE_PLAN");
 
     /// <summary>
-    /// Each verb of RPCOPEN1's and RPC1e's scope, the host's verbs with a window twin (the terminal RPC design §1.2), in the verb's words:
+    /// Each verb of the open routes' scope, the host's verbs with a window twin, in the verb's words:
     /// the open route it reads where the instance answers, or null with the reason it stays off the pipe. A person's press is
     /// <see cref="PersonPresses"/>'; <c>PipeCensusTests</c> holds which verbs stay off, so one that leaves the list or joins it is said.
     /// </summary>
@@ -94,8 +94,8 @@ public static class OpenRoutes
         ("ask channel <id>", null,
             "alone: the read moves the person's own mark (CHANNEL_MARK, the person's), a door of the service, which writes it once whoever "
             + "asks; with words the person's press (CHANNEL_POST)"),
-        // The open reads left alone beside an instance, with the same words (RPCOPEN1, RPC1e): a verb whose words name this machine's
-        // folders or quote its trees' files stays alone, since no answer carries a machine path (the terminal RPC design §4.3) and what
+        // The open reads left alone beside an instance, with the same words: a verb whose words name this machine's
+        // folders or quote its trees' files stays alone, since no answer carries a machine path and what
         // may travel over the local pipe is a decision first; the rest until their route answers them as `said`.
         ("trace", null, "alone: its words are built from the sources the host reads itself; TRACE answers the page's shape only"),
         ("git branches", null, "alone: its words are built from the registry's checkouts the host reads itself; GIT_BRANCHES answers the page's shape only"),
@@ -110,7 +110,7 @@ public static class OpenRoutes
         ("plugins new <id>", null, "alone: it writes a plugin's folder where the terminal stands, never under the home"),
         ("logs", null, "alone: a read of the machine log this process reads itself, whose words name its folder"),
         ("sessions partner <id> --list", null, "alone: a read of the pieces' box under the home, which says the same with or without the instance"),
-        // What stays off the pipe by design (§7.1, §11): a conversation the terminal runs, a loop, the updater's request, and the
+        // What stays off the pipe by design: a conversation the terminal runs, a loop, the updater's request, and the
         // service's own doors, which the service writes once whoever asks.
         ("drive", null, "alone: it is a loop, the home's lease's holder, refused where the desktop holds the home unless `--share` (DRV8a)"),
         ("update", null, "alone: a request file under the home the desktop's updater watches (D139); its window twin is the update banner, no route"),
@@ -121,15 +121,14 @@ public static class OpenRoutes
 }
 
 /// <summary>
-/// The person's presses the host's verbs send over the pipe (RPC1c, D156 §4.2, the terminal RPC design §4.2 and §7.2): each goes to
+/// The person's presses the host's verbs send over the pipe: each goes to
 /// the instance that answers, which shows it in its window naming this terminal, and runs on the person's Confirm alone; the verb says
 /// it waits, then says the confirmed press's answer in its own words, or the person's refusal or the two minutes' end, exit 1. Where
-/// no instance runs, the verb acts alone, as it did. Held to the census route by route by <c>PipeCensusTests</c>.
+/// no instance runs, the verb acts alone. Held to the census route by route by <c>PipeCensusTests</c>.
 /// </summary>
 /// <remarks>
-/// The first, <c>sessions archive</c> and <c>unarchive</c>, prove the door; the other sessions verbs (RPC1d, built the same way), the
-/// host's presses (RPC1e) and the CLI's edits (RPC1f) follow it, each with its words from its route's answer (<c>said</c>), held to
-/// the alone path's.
+/// <c>sessions archive</c> and <c>unarchive</c> prove the door; the other sessions verbs, the host's presses and the CLI's
+/// edits go the same way, each with its words from its route's answer (<c>said</c>), held to the alone path's.
 /// </remarks>
 public static class PersonPresses
 {
@@ -141,7 +140,7 @@ public static class PersonPresses
     /// <summary><c>sessions stop &lt;id&gt;</c>: a session stopped.</summary>
     public static InstanceRoute SessionStop { get; } = Person("STOP_SESSION");
 
-    /// <summary><c>sessions stop &lt;id&gt; --turn</c>: the keeping stop, a session's turn stopped so what waits goes next (COWORK1a).</summary>
+    /// <summary><c>sessions stop &lt;id&gt; --turn</c>: the keeping stop, a session's turn stopped so what waits goes next.</summary>
     public static InstanceRoute SessionStopTurn { get; } = Person("CANCEL_TURN");
 
     /// <summary><c>sessions finish</c> and <c>decline</c>: a parked session's resolution.</summary>
@@ -174,119 +173,119 @@ public static class PersonPresses
     /// <summary><c>sessions pass &lt;ask&gt;</c>: a helper's answer kept for the person, passed to the session that asked.</summary>
     public static InstanceRoute SessionHelperPass { get; } = Person("SESSION_HELPER_PASS");
 
-    /// <summary><c>sessions partner &lt;id&gt; "…" --agent &lt;name&gt;</c>: the person's ask of a piece (COAGENT1b).</summary>
+    /// <summary><c>sessions partner &lt;id&gt; "…" --agent &lt;name&gt;</c>: the person's ask of a piece.</summary>
     public static InstanceRoute SessionPartnerAsk { get; } = Person("SESSION_PARTNER_ASK");
 
-    /// <summary><c>sessions hand-over &lt;id&gt; --approve</c>: the yes to an agent's ask to hand its session over (MIXAGENT1c).</summary>
+    /// <summary><c>sessions hand-over &lt;id&gt; --approve</c>: the yes to an agent's ask to hand its session over.</summary>
     public static InstanceRoute SessionHandOverApprove { get; } = Person("SESSION_HAND_OVER_APPROVE");
 
-    /// <summary><c>sessions hand-over &lt;id&gt; --decline</c>: the no to an agent's ask to hand its session over (MIXAGENT1c).</summary>
+    /// <summary><c>sessions hand-over &lt;id&gt; --decline</c>: the no to an agent's ask to hand its session over.</summary>
     public static InstanceRoute SessionHandOverDecline { get; } = Person("SESSION_HAND_OVER_DECLINE");
 
     /// <summary>
-    /// <c>space free --yes</c> (KEEP1e, the cleanup design §3.3): a run removing what the person's list showed, their delete. The list is
+    /// <c>space free --yes</c>: a run removing what the person's list showed, their delete. The list is
     /// the same route's <c>plan</c> form, open (a <c>PipeRule</c> in the census), which the verb reads alone since a list runs anywhere.
     /// </summary>
     public static InstanceRoute SpaceFree { get; } = Person("SYSTEM_SPACE_FREE");
 
-    /// <summary><c>git branch|tag &lt;repository&gt; &lt;name&gt; --yes</c> (GITAPP2c, D204): a branch or a lightweight tag created, the person's yes.</summary>
+    /// <summary><c>git branch|tag &lt;repository&gt; &lt;name&gt; --yes</c>: a branch or a lightweight tag created, the person's yes.</summary>
     public static InstanceRoute GitRefCreate { get; } = Person("GIT_REF_CREATE");
 
-    /// <summary><c>git branch|tag &lt;repository&gt; &lt;name&gt; --delete --yes</c> (GITAPP2d, D204): a branch or a lightweight tag deleted, the person's yes.</summary>
+    /// <summary><c>git branch|tag &lt;repository&gt; &lt;name&gt; --delete --yes</c>: a branch or a lightweight tag deleted, the person's yes.</summary>
     public static InstanceRoute GitRefDelete { get; } = Person("GIT_REF_DELETE");
 
-    /// <summary><c>git branch|tag &lt;repository&gt; &lt;name&gt; --rename &lt;new-name&gt; --yes</c> (GITAPP2e, D204): a branch or a lightweight tag renamed, the person's yes.</summary>
+    /// <summary><c>git branch|tag &lt;repository&gt; &lt;name&gt; --rename &lt;new-name&gt; --yes</c>: a branch or a lightweight tag renamed, the person's yes.</summary>
     public static InstanceRoute GitRefRename { get; } = Person("GIT_REF_RENAME");
 
-    /// <summary><c>git fetch &lt;repository&gt; --yes</c> (GITAPP2f, D204): origin's branches fetched into <c>refs/remotes/origin/*</c> alone, the person's yes.</summary>
+    /// <summary><c>git fetch &lt;repository&gt; --yes</c>: origin's branches fetched into <c>refs/remotes/origin/*</c> alone, the person's yes.</summary>
     public static InstanceRoute GitFetch { get; } = Person("GIT_FETCH");
 
-    /// <summary><c>git stash drop &lt;repository&gt; &lt;commit&gt; --yes</c> (GITAPP2, D204): one stash of Daoris's own Save dropped by its commit id, the person's yes.</summary>
+    /// <summary><c>git stash drop &lt;repository&gt; &lt;commit&gt; --yes</c>: one stash of Daoris's own Save dropped by its commit id, the person's yes.</summary>
     public static InstanceRoute GitStashDrop { get; } = Person("GIT_STASH_DROP");
 
-    /// <summary><c>git push &lt;repository&gt; branch|tag &lt;name&gt; --yes</c> (GITAPP2g, n; D241 point 2): one ref pushed to origin under its grant, the person's yes.</summary>
+    /// <summary><c>git push &lt;repository&gt; branch|tag &lt;name&gt; --yes</c>: one ref pushed to origin under its grant, the person's yes.</summary>
     public static InstanceRoute GitPush { get; } = Person("GIT_PUSH");
 
     /// <summary>
-    /// <c>git pick|revert|rebase &lt;repository&gt; &lt;branch&gt; … --yes</c> (GITAPP2m, D204): a branch's history edited from objects, the person's
+    /// <c>git pick|revert|rebase &lt;repository&gt; &lt;branch&gt; … --yes</c>: a branch's history edited from objects, the person's
     /// yes, carrying the ids its plan pinned. The plan is the same route's <c>plan</c> form, open (a <c>PipeRule</c> in the census), which the
     /// verb reads alone.
     /// </summary>
     public static InstanceRoute GitHistoryEdit { get; } = Person("GIT_HISTORY_EDIT");
 
     /// <summary>
-    /// <c>git identity add-ssh … --import</c>, <c>test … --trust-host</c>, <c>read-only … off</c> and <c>remove</c> (GITAUTH1e, the git-auth
-    /// design §8): a git identity's widening, as Settings → Git presses it.
+    /// <c>git identity add-ssh … --import</c>, <c>test … --trust-host</c>, <c>read-only … off</c> and <c>remove</c>:
+    /// a git identity's widening, as Settings → Git presses it.
     /// </summary>
     public static InstanceRoute GitIdentity { get; } = Person("GIT_IDENTITY");
 
-    /// <summary><c>git use … own</c> (GITAUTH1e): the person's own git sign-ins chosen for a remote, a workspace's host or this machine's.</summary>
+    /// <summary><c>git use … own</c>: the person's own git sign-ins chosen for a remote, a workspace's host or this machine's.</summary>
     public static InstanceRoute GitUse { get; } = Person("GIT_USE");
 
-    /// <summary><c>git access …</c> where it loosens a class (GITAUTH1f): a level's git access widened.</summary>
+    /// <summary><c>git access …</c> where it loosens a class: a level's git access widened.</summary>
     public static InstanceRoute SetGitAccess { get; } = Person("SET_GIT_ACCESS");
-    /// <summary><c>git answer &lt;ask&gt; allow|refuse</c> (GITAUTH1f, §6.6): a git go-ahead answered, as its row in What needs you answers it.</summary>
+    /// <summary><c>git answer &lt;ask&gt; allow|refuse</c>: a git go-ahead answered, as its row in What needs you answers it.</summary>
     public static InstanceRoute GitAnswer { get; } = Person("GIT_ANSWER");
 
-    /// <summary><c>ask --pause &lt;id&gt;</c> and <c>quest pause &lt;id&gt;</c> (RPC1e): a work paused on this machine, what of it runs stopped.</summary>
+    /// <summary><c>ask --pause &lt;id&gt;</c> and <c>quest pause &lt;id&gt;</c>: a work paused on this machine, what of it runs stopped.</summary>
     public static InstanceRoute WorkPause { get; } = Person("WORK_PAUSE");
 
-    /// <summary><c>ask --resume &lt;id&gt;</c> and <c>quest resume &lt;id&gt;</c> (RPC1e): a pause taken away, each stop it made released.</summary>
+    /// <summary><c>ask --resume &lt;id&gt;</c> and <c>quest resume &lt;id&gt;</c>: a pause taken away, each stop it made released.</summary>
     public static InstanceRoute WorkResume { get; } = Person("WORK_RESUME");
 
-    /// <summary><c>ask --abandon &lt;id&gt; --reason "…" --yes</c> and <c>quest abandon …</c> (RPC1e): what the list holds now abandoned.</summary>
+    /// <summary><c>ask --abandon &lt;id&gt; --reason "…" --yes</c> and <c>quest abandon …</c>: what the list holds now abandoned.</summary>
     public static InstanceRoute WorkAbandon { get; } = Person("WORK_ABANDON");
 
-    /// <summary><c>history clear --workspace &lt;name&gt; --yes</c>, <c>quest clear &lt;id&gt; --yes</c> and <c>ask --clear &lt;id&gt; --yes</c> (RPC1e): a clear.</summary>
+    /// <summary><c>history clear --workspace &lt;name&gt; --yes</c>, <c>quest clear &lt;id&gt; --yes</c> and <c>ask --clear &lt;id&gt; --yes</c>: a clear.</summary>
     public static InstanceRoute HistoryClear { get; } = Person("HISTORY_CLEAR");
 
-    /// <summary><c>help rename &lt;id&gt; "…"</c> and <c>--clear</c> (RPC1e): an Ask Daoris conversation's name, or its first question again.</summary>
+    /// <summary><c>help rename &lt;id&gt; "…"</c> and <c>--clear</c>: an Ask Daoris conversation's name, or its first question again.</summary>
     public static InstanceRoute HelpRename { get; } = Person("HELP_RENAME");
 
-    /// <summary><c>help pin &lt;id&gt;</c> and <c>unpin</c> (RPC1e): an Ask Daoris conversation kept at the top of its history, or not.</summary>
+    /// <summary><c>help pin &lt;id&gt;</c> and <c>unpin</c>: an Ask Daoris conversation kept at the top of its history, or not.</summary>
     public static InstanceRoute HelpPin { get; } = Person("HELP_PIN");
 
-    /// <summary><c>opinion ask &lt;session&gt;</c> (RPC1e): a second opinion asked, spending an account at the person's choice.</summary>
+    /// <summary><c>opinion ask &lt;session&gt;</c>: a second opinion asked, spending an account at the person's choice.</summary>
     public static InstanceRoute AskOpinion { get; } = Person("ASK_OPINION");
 
-    /// <summary><c>opinion stop &lt;opinion&gt;</c> (RPC1e): a reviewer's reading stopped.</summary>
+    /// <summary><c>opinion stop &lt;opinion&gt;</c>: a reviewer's reading stopped.</summary>
     public static InstanceRoute StopOpinion { get; } = Person("STOP_OPINION");
 
-    /// <summary><c>opinion anyway &lt;session&gt;</c> (RPC1e): going on without a settled opinion, the person's answer kept.</summary>
+    /// <summary><c>opinion anyway &lt;session&gt;</c>: going on without a settled opinion, the person's answer kept.</summary>
     public static InstanceRoute OpinionAnyway { get; } = Person("OPINION_ANYWAY");
 
-    /// <summary><c>opinion myself &lt;session&gt;</c> (RPC1e): the person's own reading in the opinion's place.</summary>
+    /// <summary><c>opinion myself &lt;session&gt;</c>: the person's own reading in the opinion's place.</summary>
     public static InstanceRoute OpinionMyself { get; } = Person("OPINION_MYSELF");
 
-    /// <summary><c>ask channel &lt;id&gt; "…"</c> (RPC1e): the person's words on an ask's channel, which every session on the ask reads.</summary>
+    /// <summary><c>ask channel &lt;id&gt; "…"</c>: the person's words on an ask's channel, which every session on the ask reads.</summary>
     public static InstanceRoute ChannelPost { get; } = Person("CHANNEL_POST");
 
     /// <summary>
-    /// <c>ask channel join &lt;ask&gt;</c> or <c>--line &lt;session&gt;</c> (CHANNELJOIN1b): an agent outside Daoris admitted to a channel as a
+    /// <c>ask channel join &lt;ask&gt;</c> or <c>--line &lt;session&gt;</c>: an agent outside Daoris admitted to a channel as a
     /// member of its own, on the person's Confirm; refused before any card from a process in an agents' job.
     /// </summary>
     public static InstanceRoute ChannelJoin { get; } = Person("CHANNEL_JOIN");
 
     /// <summary>
-    /// <c>place &lt;repository&gt;… --preset &lt;id&gt; … --apply [--accept …]</c> (AGENTSPLACE1b3): a place's plan applied, the configuration's changes and the
+    /// <c>place &lt;repository&gt;… --preset &lt;id&gt; … --apply [--accept …]</c>: a place's plan applied, the configuration's changes and the
     /// acceptances chosen, and each adoption quest. The plan is the same ask's <c>PLACE_PLAN</c>, open, which the verb reads alone.
     /// </summary>
     public static InstanceRoute PlaceApply { get; } = Person("PLACE_APPLY");
 
     /// <summary>
-    /// <c>plugins approve &lt;id&gt; &lt;server&gt;</c> and <c>withdraw</c> (RPC1e): the tools a plugin's server offers Ask Daoris approved,
+    /// <c>plugins approve &lt;id&gt; &lt;server&gt;</c> and <c>withdraw</c>: the tools a plugin's server offers Ask Daoris approved,
     /// its reads only or the writes named, or the approval withdrawn.
     /// </summary>
     public static InstanceRoute PluginAction { get; } = Person("PLUGIN_ACTION");
 
     /// <summary>
-    /// <c>workflow skip &lt;run&gt; &lt;node&gt; "…"</c>, <c>workflow stop &lt;run&gt; &lt;node&gt;</c> (FABRIC-CUTOVER1f) and <c>workflow changes &lt;run&gt; &lt;node&gt; "…"</c>
-    /// (DECIDE1c): the person's word on a node of a run bound to a graph version, kept on the run's record for Daoris's next look.
+    /// <c>workflow skip &lt;run&gt; &lt;node&gt; "…"</c>, <c>workflow stop &lt;run&gt; &lt;node&gt;</c> and <c>workflow changes &lt;run&gt; &lt;node&gt; "…"</c>:
+    /// the person's word on a node of a run bound to a graph version, kept on the run's record for Daoris's next look.
     /// </summary>
     public static InstanceRoute WorkflowNode { get; } = Person("WORKFLOW_NODE");
 
     /// <summary>
-    /// <c>workflow fix &lt;run&gt; [&lt;node&gt;]</c> (FABRIC-PIPELINE1): the window's <i>Ask for a fix…</i> on a failed verification, the person's
+    /// <c>workflow fix &lt;run&gt; [&lt;node&gt;]</c>: the window's <i>Ask for a fix…</i> on a failed verification, the person's
     /// word <c>ask-fix</c> on its held attempt, which publishes an ask and writes nothing on the record.
     /// </summary>
     public static InstanceRoute WorkHeld { get; } = Person("WORK_HELD");
@@ -361,7 +360,7 @@ public static class PersonPresses
 }
 
 /// <summary>
-/// The marks of the window's routes the <c>trees</c> verbs' presses are twins of (RPC1b, STATEHUB1e; FOUNDATION1 mod-vi): the names the shell's
+/// The marks of the window's routes the <c>trees</c> verbs' presses are twins of: the names the shell's
 /// modules declare each route by, which <see cref="TreesRoutes"/> sends and which a terminal that has acted tells (<see cref="PressesTold"/>,
 /// whose constants are these, and the modules hold each to a route that declares what it changes). The text is the wire's: a mark changes
 /// nowhere but with the modules'.
@@ -374,10 +373,10 @@ public static class TreesMarks
     /// <summary><c>trees remove &lt;path&gt;</c>: a tree by its path.</summary>
     public const string DiscardTree = "DISCARD_SESSION_TREE";
 
-    /// <summary><c>trees remove &lt;session|branch&gt;</c>: a session's branch, its tree with it (LAND3).</summary>
+    /// <summary><c>trees remove &lt;session|branch&gt;</c>: a session's branch, its tree with it.</summary>
     public const string DiscardBranch = "DISCARD_SESSION_BRANCH";
 
-    /// <summary><c>trees remove &lt;landing branch&gt; --why "…"</c>: a landing's branch the line will never hold, withdrawn (LANDRETIRE1).</summary>
+    /// <summary><c>trees remove &lt;landing branch&gt; --why "…"</c>: a landing's branch the line will never hold, withdrawn.</summary>
     public const string WithdrawLanding = "WITHDRAW_LANDING_BRANCH";
 
     /// <summary><c>trees clean --yes</c>: the clean-up's press.</summary>
@@ -386,25 +385,24 @@ public static class TreesMarks
     /// <summary><c>trees sync --yes</c>: bringing the repositories up to date.</summary>
     public const string TreesSync = "TREES_SYNC";
 
-    /// <summary><c>trees land --entry &lt;id&gt;</c>: a line of work's one Accept (ACCEPTALL1e).</summary>
+    /// <summary><c>trees land --entry &lt;id&gt;</c>: a line of work's one Accept.</summary>
     public const string LandEntry = "LAND_ENTRY";
 
-    /// <summary><c>trees land --ask &lt;id&gt;</c>: an ask's one Accept (ACCEPTALL1e).</summary>
+    /// <summary><c>trees land --ask &lt;id&gt;</c>: an ask's one Accept.</summary>
     public const string LandAsk = "LAND_ASK";
 }
 
 /// <summary>
-/// The routes the <c>trees</c> verbs' presses are twins of (RPC1b, the terminal RPC design §1.2 and §7.2): each verb acts alone, as it
-/// does today, until its client path is built.
+/// The routes the <c>trees</c> verbs' presses are twins of: each verb acts alone until its client path is built.
 /// </summary>
 /// <remarks>
-/// 🔴 Every one is the person's (D171's RPC1a note: a landing is the person's yes, a discard and a sweep their deletes, and
-/// <c>TREES_SYNC</c> moves their lines and branches). RPC1c built the window's confirmation of a person's press, which
-/// <see cref="PersonPresses"/>' verbs use; a trees verb that becomes a client sends its route through
-/// <see cref="InstanceDoor.PressAsync"/> as they do, and the three land presses send <c>follow: true</c> (RPC1b5), so the lines they
-/// move are followed as the alone path follows them. Its words come from the route's answer, held to the alone path's case for case
-/// (§7.3): each route answers them as <c>said</c>, which <see cref="TreesSaid.Words"/> prints and <see cref="TreesWords"/> builds for
-/// the alone path and the route alike (RPC1b3).
+/// 🔴 Every one is the person's (a landing is the person's yes, a discard and a sweep their deletes, and
+/// <c>TREES_SYNC</c> moves their lines and branches). The window's confirmation of a person's press, which
+/// <see cref="PersonPresses"/>' verbs use, applies to them too: a trees verb that becomes a client sends its route through
+/// <see cref="InstanceDoor.PressAsync"/> as they do, and the three land presses send <c>follow: true</c>, so the lines they
+/// move are followed as the alone path follows them. Its words come from the route's answer, held to the alone path's case for case:
+/// each route answers them as <c>said</c>, which <see cref="TreesSaid.Words"/> prints and <see cref="TreesWords"/> builds for
+/// the alone path and the route alike.
 /// </remarks>
 public static class TreesRoutes
 {
@@ -423,10 +421,10 @@ public static class TreesRoutes
     /// <summary><c>trees remove &lt;path&gt;</c>: a tree discarded.</summary>
     public static InstanceRoute DiscardTree { get; } = new(DriverModule, TreesMarks.DiscardTree, RouteClass.Person);
 
-    /// <summary><c>trees remove &lt;session|branch&gt;</c>: a failed or superseded attempt's branch discarded (LAND3).</summary>
+    /// <summary><c>trees remove &lt;session|branch&gt;</c>: a failed or superseded attempt's branch discarded.</summary>
     public static InstanceRoute DiscardBranch { get; } = new(DriverModule, TreesMarks.DiscardBranch, RouteClass.Person);
 
-    /// <summary><c>trees remove &lt;landing branch&gt; --why "…"</c>: a landing's branch the line will never hold, withdrawn (LANDRETIRE1).</summary>
+    /// <summary><c>trees remove &lt;landing branch&gt; --why "…"</c>: a landing's branch the line will never hold, withdrawn.</summary>
     public static InstanceRoute Withdraw { get; } = new(DriverModule, TreesMarks.WithdrawLanding, RouteClass.Person);
 
     /// <summary><c>trees clean --yes</c>: the clean-up's press.</summary>

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Ask Daoris's doors that start nothing (HELP10): each is the code the screen's own route runs, tested here without a
+/// Ask Daoris's doors that start nothing: each is the code the screen's own route runs, tested here without a
 /// process, so a worktree's fast half holds them. <c>HelpDoorsTests</c> holds the doors that start one, or ask the
 /// roster again.
 /// </summary>
@@ -11,13 +11,10 @@ public sealed class HelpFileDoorsTests : Bridge
 {
     private DriverModule Module() => new(Bus, new DriverLoop(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0"));
 
-    // HELP10's default door, written as the stub's owner's (AGT7, TOOL4j), left with POOL1b (D197 point 6): no door writes a default.
-
     /// <summary>
-    /// TOOL4l-b: an order is <c>ACCOUNT_USE</c>'s own <c>order</c> — the set's order written whole as its owner's (AGT7; POOL1a1, D197
-    /// point 2: the accounts named first, the rest after), refused in the screen's words where an account is none, and cleared back to
-    /// the ids' order with no setting cleared (POOL1b, §5.3). Before POOL1b this also wrote a workspace's list and sent a workspace back
-    /// to the machine's accounts (<c>inherit</c>); the door takes no workspace now.
+    /// An order is <c>ACCOUNT_USE</c>'s own <c>order</c> — the set's order written whole as its owner's
+    /// (the accounts named first, the rest after), refused in the screen's words where an account is none, and cleared back to
+    /// the ids' order with no setting cleared. The door takes no workspace.
     /// </summary>
     [Fact]
     public async Task An_order_is_written_and_refused_as_the_accounts_screens_route_writes_and_refuses_it()
@@ -43,8 +40,8 @@ public sealed class HelpFileDoorsTests : Bridge
     }
 
     /// <summary>
-    /// TOOL4l-b: a ready is <c>ACCOUNT_USE</c>'s own <c>ready</c> — <i>Try now</i>, an account's cool-off ended as its owner's
-    /// (AGT7), the tool's own sign-in's where none is named; one that was not cooling is told so and nothing changes.
+    /// A ready is <c>ACCOUNT_USE</c>'s own <c>ready</c> — <i>Try now</i>, an account's cool-off ended as its owner's,
+    /// the tool's own sign-in's where none is named; one that is not cooling is told so and nothing changes.
     /// </summary>
     [Fact]
     public async Task A_ready_ends_the_cool_off_as_the_accounts_screens_try_now_does()
@@ -62,7 +59,7 @@ public sealed class HelpFileDoorsTests : Bridge
     }
 
     /// <summary>
-    /// HELP10: the browser's settings are <c>BrowserModule</c>'s own edits, written to the files the Browser screen and
+    /// The browser's settings are <c>BrowserModule</c>'s own edits, written to the files the Browser screen and
     /// <c>daoris browser</c> write, and read by <c>daoris-browser</c> at its next start.
     /// </summary>
     [Fact]
@@ -99,7 +96,7 @@ public sealed class HelpFileDoorsTests : Bridge
     }
 
     /// <summary>
-    /// HELP10: bringing up to date is <c>TREES_SYNC_PLAN</c>'s list and <c>TREES_SYNC</c>'s press (WSR6), which read the
+    /// Bringing up to date is <c>TREES_SYNC_PLAN</c>'s list and <c>TREES_SYNC</c>'s press, which read the
     /// registry and the running sessions, so before the driver is up both are the cold-start sentence and nothing is fetched.
     /// </summary>
     [Fact]
@@ -112,7 +109,7 @@ public sealed class HelpFileDoorsTests : Bridge
             (await Assert.ThrowsAnyAsync<Exception>(() => doors.SyncAsync("engine", null, new HashSet<string> { "engine:main" }, CancellationToken.None))).Message);
     }
 
-    /// <summary>HELP10: what a browser proposal is judged against is the files as the Browser screen reads them.</summary>
+    /// <summary>What a browser proposal is judged against is the files as the Browser screen reads them.</summary>
     [Fact]
     public void The_browsers_facts_are_its_files_as_the_screen_reads_them()
     {

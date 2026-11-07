@@ -8,7 +8,7 @@ internal sealed class PartnerPassRunner(LoopContext context, Driver driver)
     private readonly Driver _driver = driver;
 
     /// <summary>
-    /// The partner's pass (the design §2.3 steps 5 and 6): the copy at the ask's exact base, the strict job, the record, its one turn
+    /// The partner's pass: the copy at the ask's exact base, the strict job, the record, its one turn
     /// through the launcher under the partner's bound, then the job ended and waited empty. A copy or a job that cannot be made, or a
     /// record the host refuses, starts nothing.
     /// </summary>
@@ -16,8 +16,8 @@ internal sealed class PartnerPassRunner(LoopContext context, Driver driver)
     {
         var reask = ask.Reask is { } walk ? new OneTurnReask(choice, walk) : null;
         var run = await PartnerAttemptAsync(ask, choice, reask, makeCopy: true, ct).ConfigureAwait(false);
-        // D205 §3.5(f): its agent refused the entry's model at the open, so the refused record has ended `choice-not-offered` and this call
-        // asks its walk again before it publishes an outcome. Named by its ask (D199), the walk is the named agent's other accounts, then
+        // Its agent refused the entry's model at the open, so the refused record has ended `choice-not-offered` and this call
+        // asks its walk again before it publishes an outcome. Named by its ask, the walk is the named agent's other accounts, then
         // its other entries; never another agent. Its job has ended and waited empty, its copy untouched, and the replacement opens in both.
         while (run is { NotOffered: true } && reask is not null && !ct.IsCancellationRequested)
         {
@@ -53,7 +53,7 @@ internal sealed class PartnerPassRunner(LoopContext context, Driver driver)
             return new PartnerPassRun(null, $"held  partner for piece `{piece}`: {error.Message}") { Code = PartnerWhy.NotMeasured };
         }
 
-        // Admission at the start (D199 point 4): the whole effective configuration this start would hand, held to a measured row, before
+        // Admission at the start: the whole effective configuration this start would hand, held to a measured row, before
         // anything of the partner's is made. A production start reads no stand-in's row.
         var (rules, hardDeny, guarded) = _driver.PartnerHanded(ask.Lead.Workspace, ask.Lead.Repository ?? "");
         var configuration = PartnerConfigurations.Of(adapter, selection.Version, ask.Copy, rules, hardDeny, guarded, ThisSystem());
@@ -122,9 +122,9 @@ internal sealed class PartnerPassRunner(LoopContext context, Driver driver)
                 Piece = piece,
                 Session = sessionId,
                 Prompt = PartnerInstruction.Compose(packet),
-                // CONTEXTONE1c: its standing block, its copy's facts and the person's choices for its repository.
+                // Its standing block, its copy's facts and the person's choices for its repository.
                 Block = StandingBlocks.OnMachine(StandingBlocks.OfTree(repository, ask.Copy), ParticipantWork.Partner, _context.Config, [], null),
-                // MODELROLE1e (D205 §3.2, §4.4): the entry's model and effort, carried on either door, and the choice its record keeps.
+                // The entry's model and effort, carried on either door, and the choice its record keeps.
                 Asked = choice.Effective?.Asked,
                 Choice = choice.Effective?.From,
             };
@@ -146,7 +146,7 @@ internal sealed class PartnerPassRunner(LoopContext context, Driver driver)
             // What it may do: the person's composition for its repository under the partner's rules (`PartnerPermissions`), held to its
             // copy by the tree guard; the connector's host refuses the same tools by the record's role whatever rules its agent takes.
             var handedRules = _driver.HandRules(adapter, info, sessionId, ask.Lead.Workspace, repository, tree: ask.Copy, kept: null, partner: true);
-            // The effective configuration it was handed (§3.3), admitted by a measured row before the copy was made: what M2 measures in.
+            // The effective configuration it is handed, admitted by a measured row before the copy is made.
             _driver.Log?.Info(
                 "partner.started", ("session", sessionId), ("piece", piece), ("agent", configuration.Agent),
                 ("version", configuration.DoorVersion ?? ""), ("posture", configuration.Posture ?? ""), ("roots", configuration.WritableRoots),
@@ -157,7 +157,7 @@ internal sealed class PartnerPassRunner(LoopContext context, Driver driver)
                 "partner", adapter, info, target, sessionId, transcript, ask.Copy, Driver.JoinNotices(harnessNotice, opening), handedRules, handed,
                 refusesInput: PartnerPass.TakesNoWords(piece),
                 ct: ct,
-                // 🔴 The start made the launcher's at the start itself (D199's note on the strict start, TERMTRUST1a): it joins this
+                // 🔴 The start is the launcher's own at the start itself: it joins this
                 // process's agents' job, then the piece's beneath it, before the harness runs, and is never started outside the piece's.
                 piece: PieceJobs.NameOf(piece),
                 preamble: Driver.JoinNotices(preamble, opening),
@@ -167,7 +167,7 @@ internal sealed class PartnerPassRunner(LoopContext context, Driver driver)
                 transientWanted: TransientOwners.Partner(_context.Processes, sessionId, new PartnerFiles(home), piece),
                 noConnector: PartnerPass.NoConnector,
                 stopMade: stop => stoppedFirst = stop,
-                // D205 §3.5(f): its agent's refusal of the entry's model at the open is kept as the account's reading and asked again in
+                // Its agent's refusal of the entry's model at the open is kept as the account's reading and asked again in
                 // this call: a later entry of the same agent on the same account is set on this session, anything else ends the record.
                 offers: new OpenOffers(selection.Version, selection.Profile, reask is null ? null : _ => reask.SameAccountAsync()),
                 conclude: async (exitCode, used, turnFailed, ended) =>
@@ -220,7 +220,7 @@ internal sealed class PartnerPassRunner(LoopContext context, Driver driver)
         }
         catch (Exception) when (stoppedFirst is not null)
         {
-            // A wire that broke after a stop is that stop's end, not a failure (STOPRACE1), as a quest's session reads it.
+            // A wire that broke after a stop is that stop's end, not a failure, as a quest's session reads it.
             var stopped = await _driver.EndStoppedAsync(sessionId, stoppedFirst).ConfigureAwait(false);
             return Ended(stopped.State, PartnerEnds.Stopped, stopped.Note);
         }

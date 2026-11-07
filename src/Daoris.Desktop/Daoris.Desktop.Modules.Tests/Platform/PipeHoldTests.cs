@@ -9,8 +9,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A terminal holds a conversation over the pipe (RPC1g1, D238 points 2 and 3, the terminal-conversation design §3.1, §3.2, §5's modules
-/// row): the person's Confirm, once, binds one connection to one conversation; that connection's words in the verb's form, its turn stops
+/// A terminal holds a conversation over the pipe: the person's Confirm, once, binds one connection to one conversation; that connection's words in the verb's form, its turn stops
 /// and its finish run with no further card; the conversation's lines, events and end are forwarded to it alone, bounded, with a gap; and
 /// the hold ends by the terminal's <c>LET_GO</c>, the window's <c>SESSION_LET_GO</c>, the conversation's end or the connection closing,
 /// each told and logged.
@@ -70,7 +69,7 @@ public sealed class PipeHoldTests : Bridge
             Assert.Empty(pipe.Confirmations.Now().Waiting);
         }
 
-        // Words in the window's form ask as before: the terminal is told the press waits for the person, and nothing ran.
+        // Words in the window's form ask: the terminal is told the press waits for the person, and nothing ran.
         var asked = await client.SendAsync(DriverModule.Name, "SESSION_INPUT", new { id = Session, text = "a choice", said = true, question = "q1" });
         string? waits;
         do

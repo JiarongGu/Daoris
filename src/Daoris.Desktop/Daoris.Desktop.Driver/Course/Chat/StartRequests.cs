@@ -6,7 +6,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The starts a request id has answered (NEW1a): a retry while the first start runs shares its result; a finished start that
+/// The starts a request id has answered: a retry while the first start runs shares its result; a finished start that
 /// opened a conversation is kept a day under <c>&lt;home&gt;/starts/&lt;id&gt;.json</c>, so the same id answers the original
 /// whatever its words or repository. A start that opened nothing is not kept: a retry tries again.
 /// </summary>
@@ -23,7 +23,7 @@ public sealed class StartRequests(string home)
 
     private string PathOf(string id) => DaorisHome.Entry(home, HomeEntry.Starts, id + ".json");
 
-    /// <summary>Answer the id from what ran or was kept, or run the start and keep what it opened.</summary>
+    /// <summary>Answer the id from what ran or got kept, or run the start and keep what it opened.</summary>
     /// <param name="at">When a finished start counts as having happened; tests set it, the clock otherwise.</param>
     /// <exception cref="DriverException">The id is not one.</exception>
     public async Task<StartedFrom> RunAsync(string id, Func<Task<StartedFrom>> run, DateTimeOffset? at = null)

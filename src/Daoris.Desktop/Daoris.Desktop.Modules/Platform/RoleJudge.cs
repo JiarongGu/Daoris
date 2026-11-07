@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The judge's role method and the decisions' admission (SUPERVISOR1a-ii; STEWARDROLE1a-i, D209 §3.4): a role's act judged against its
+/// The judge's role method and the decisions' admission: a role's act judged against its
 /// hold, its holder's proof and the catalogue as it stands, and the effective supervisor's hold answered. It reaches the standing
 /// confirmation's memory (<see cref="StandingState"/>) under its one lock, the same lock and caller look a person's press is judged under;
 /// a misconfigured holder's tab is closed and its generations told after the step.
@@ -14,7 +14,7 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
     private readonly MachineLog _log = owner.Log;
 
     /// <summary>
-    /// The decisions' admission (SUPERVISOR1a-ii; §2.3, §3.4): the effective supervisor's hold for <paramref name="repository"/>, its
+    /// The decisions' admission: the effective supervisor's hold for <paramref name="repository"/>, its
     /// generation and its role's window, read under the lock for this synchronous answer alone; refused <c>not-staffed</c> where the
     /// supervisor there is held by the person's rules alone, or <c>not-started</c> where its terminal is not started this run.
     /// </summary>
@@ -54,15 +54,15 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
         }
     }
 
-    // The supervisor that acts for a repository now (§5): the most specific scope's that covers it; null where none.
+    // The supervisor that acts for a repository now: the most specific scope's that covers it; null where none.
     private RoleRecord? Supervising(string repository) => owner.Staffed(AppointedRoles.Supervisor, new RolePlace(owner.WorkspaceOf(repository), repository));
 
     /// <summary>
-    /// The judge's role method (SUPERVISOR1a-ii; amended by STEWARDROLE1a-i, D209 §3.4), for every route of the census's <c>Role</c>
-    /// class: D201's caller look, the first denial, so a contained agent is refused before its proof is read; the form; the hold its
+    /// The judge's role method, for every route of the census's <c>Role</c>
+    /// class: the caller look, the first denial, so a contained agent is refused before its proof is read; the form; the hold its
     /// generation names, live, its role still held by the terminal as the catalogue says now; the holder's proof over this connection's
     /// unused <paramref name="nonce"/> and the form, against the holder's hash in memory; then <b>the configuration walk</b>, one guard for
-    /// the whole class (finding 13), which ends a holder it finds started on another configuration; and for <c>ROLE_ACT</c>, the act in
+    /// the whole class, which ends a holder it finds started on another configuration; and for <c>ROLE_ACT</c>, the act in
     /// its role's table and the role's <c>authority</c>, its own form exact, and the act admitted once, its id drawn here. Anything
     /// uncovered is refused, never asked.
     /// </summary>
@@ -87,7 +87,7 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
 
         if (misconfigured is not null)
         {
-            // §6.1: a holder that started on another configuration may have run what it loaded: it is ended, its tab closed.
+            // A holder that started on another configuration may have run what it loaded: it is ended, its tab closed.
             _log.Warn(StandingConfirmation.RoleLogEvent, ("state", RoleWhy.HolderConfig), ("count", StandingState.Count(ended.Count)));
             if (cancelled > 0) _log.Info("role.cancelled", ("count", StandingState.Count(cancelled)));
             if (tab is not null) owner.Close?.Invoke(tab);
@@ -98,7 +98,7 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
         return judged;
     }
 
-    // Under the lock: §3.4's order, steps 1 to 7.
+    // Under the lock, in the judge's order.
     private RoleJudgement Judged(
         string module, string route, JsonElement? payload, PipeClientProcess? client, string? nonce, IReadOnlyList<RoleRecord> staffed,
         out StandingState.Holding? misconfigured)
@@ -117,7 +117,7 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
         if (place == StandingPlace.InAgentJob) return RoleJudgement.Refused(StandingWhy.InAgentJob);
         if (place != StandingPlace.Outside) return RoleJudgement.Refused(StandingWhy.Untold);
 
-        // The supervisor's answer or defer (SUPERVISOR1b), each proved over its own route's canonical bytes; or ROLE_ACT's form.
+        // The supervisor's answer or defer, each proved over its own route's canonical bytes; or ROLE_ACT's form.
         RoleActForm? act = null;
         string generation, proof;
         byte[] canonical;
@@ -150,7 +150,7 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
 
         if (nonce is null || !SupervisorProof.Verify(holding.Hash, nonce, canonical, proof)) return RoleJudgement.Refused(SupervisorWhy.NotHolder);
 
-        // §6.1, finding 13: one guard for every route of the class, never a list of routes.
+        // One guard for every route of the class, never a list of routes.
         if (owner.Walk.Check(client, holding.Process) is not null)
         {
             misconfigured = holding;
@@ -166,17 +166,17 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
         }
 
         if (!owner.TableOf(role).TryGetValue(act.Act, out var row)) return RoleJudgement.Refused(RoleWhy.NotRole);
-        // STEWARDROLE1c (§6.2): the desk's decline changes nothing of Daoris's controls, so every steward may make it.
+        // The desk's decline changes nothing of Daoris's controls, so every steward may make it.
         var desk = role == AppointedRoles.Steward && StewardActs.Desk.Contains(act.Act, StringComparer.Ordinal);
         if (!desk && !grant.Acts.Contains(act.Act, StringComparer.Ordinal)) return StewardAsk.Outside(row, act, holding.Id, roles);
 
         if (!row.IsForm(act.Form)) return RoleJudgement.Refused(SupervisorWhy.Form);
 
-        // Step 6's `owner-set` (STEWARDROLE1a-ii, §5.4): what the owner acted on this run is theirs until Daoris restarts.
+        // `owner-set`: what the owner acted on this run is theirs until Daoris restarts.
         var target = new RoleScope(row.TargetKind, row.Target(act.Form));
         if (state.OwnerHolds(target)) return RoleJudgement.Refused(RoleWhy.OwnerSet);
 
-        // Step 7: admitted once, its id drawn here and registered as admitted; the lock is released as this returns.
+        // Admitted once, its id drawn here and registered as admitted; the lock is released as this returns.
         var admitted = state.Acts.Admit(role, act.Act, held.Generation, holding.Id, target.Name, target.Kind);
         state.Answers[held.Generation] = state.Answers.GetValueOrDefault(held.Generation) + 1;
         return new RoleJudgement(true, null, role, repository, held.Generation, holding.Id, act.Act, admitted, roles);

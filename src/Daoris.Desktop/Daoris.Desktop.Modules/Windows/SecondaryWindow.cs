@@ -6,13 +6,13 @@ namespace Daoris.Desktop;
 /// The shell's half of opening a window: the one thing a page genuinely cannot do for itself.
 /// </summary>
 /// <remarks>
-/// The same seam shape the folder picker uses (D48 §7) and for the same reason — the judgement is
+/// The same seam shape the folder picker uses and for the same reason — the judgement is
 /// here in plain <c>net10.0</c> where it is tested, and only the WinForms act is in the window.
 /// </remarks>
 public interface ISecondaryWindows
 {
     /// <summary>
-    /// Open the named window at this page (a path on the engine's app origin, D92), or bring it forward when it is already open.
+    /// Open the named window at this page (a path on the engine's app origin), or bring it forward when it is already open.
     /// </summary>
     /// <returns>True when a window was created; false when an existing one was activated.</returns>
     bool Open(string name, string address);
@@ -21,7 +21,7 @@ public interface ISecondaryWindows
     IReadOnlyList<string> Opened { get; }
 
     /// <summary>
-    /// Tell the named window which theme its page is in, for the caption its frame paints (WINDOW2).
+    /// Tell the named window which theme its page is in, for the caption its frame paints.
     /// Shenora's window commands route a second window's <c>SET_THEME</c> nowhere (0.17: NO_ROUTE), so
     /// the page says it here, by the name it was opened with.
     /// </summary>
@@ -40,7 +40,7 @@ public interface ISecondaryWindows
 public sealed record PlatformAddress(string Url);
 
 /// <summary>
-/// The windows this build opens, and what each name becomes (D55 §b, SURF8).
+/// The windows this build opens, and what each name becomes.
 /// </summary>
 /// <remarks>
 /// <para>One name, three readers: the page parses it out of its own URL (<c>work/window.ts</c>), the
@@ -66,7 +66,7 @@ public static class SecondaryWindow
 
     /// <summary>
     /// Which session ids may be named — the alphabet the ledger mints, plus the `origin/id` a
-    /// mirrored record wears (D47 §6). Narrow on purpose: a separator, a query character or `..` is
+    /// mirrored record wears. Narrow on purpose: a separator, a query character or `..` is
     /// not a session id, so none of them needs an answer.
     /// </summary>
     private static readonly Regex SessionId =
@@ -79,7 +79,7 @@ public static class SecondaryWindow
     public static string ForSession(string id) => SessionPrefix + id;
 
     /// <summary>
-    /// Another main window of the instance that runs (ONEINSTANCE1, D171 point 2): the whole platform, as the application's
+    /// Another main window of the instance that runs: the whole platform, as the application's
     /// own window carries it, opened for a later launch of the executable. Numbered from two.
     /// </summary>
     public static string ForMain(int number) => MainPrefix + number.ToString(System.Globalization.CultureInfo.InvariantCulture);

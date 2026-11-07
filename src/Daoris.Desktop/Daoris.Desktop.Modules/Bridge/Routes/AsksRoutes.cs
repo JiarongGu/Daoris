@@ -5,17 +5,17 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// An ask's own doors on the page, `bridge/asks.ts` (SESSONE2c, D167 points 6 to 8; the co-working design §2.4, D50): its
+/// An ask's own doors on the page, `bridge/asks.ts`: its
 /// channel, where its sessions and the person talk, read, posted to and marked read. The screen twin of
-/// <c>daoris ask channel</c>; the service's three doors (SESSONE2a) are the same ones, through the driver library's
+/// <c>daoris ask channel</c>; the service's three doors are the same ones, through the driver library's
 /// <see cref="ServiceClient"/>.
 /// </summary>
 /// <remarks>
 /// <para><b>The person's own read</b>: no <c>entry</c> is the person's mark (the service's <c>person</c>), which is what the ask's
-/// page and the rail's unread count read; a session's entry is the driver's to move (SESSONE2b), never the page's.</para>
+/// page and the rail's unread count read; a session's entry is the driver's to move, never the page's.</para>
 ///
 /// <para><b>A refusal of the post is an answer</b> (<see cref="ChannelAnswers.Posted"/>), the service's code, which the page words
-/// in the reader's language (D142); a service that did not answer in a code is the driver's refusal. An ask the host holds no
+/// in the reader's language; a service that did not answer in a code is the driver's refusal. An ask the host holds no
 /// channel for reads as one with nothing on it, so a host from before the channel shows an empty section.</para>
 /// </remarks>
 public sealed class AsksRoutes(DriverLoop loop)
@@ -38,8 +38,8 @@ public sealed class AsksRoutes(DriverLoop loop)
 
     /// <summary>
     /// The person's post: their words, to everyone or one of the ask's repositories (<c>to</c>), answering a message (<c>re</c>)
-    /// or not. Their words, so every session on the ask reads them (D167 point 7). Answers <c>posted</c> with the message kept, or
-    /// the service's code where it refused. The channel sits under the asks' key, which it declares (STATEHUB1h, D169).
+    /// or not. Their words, so every session on the ask reads them. Answers <c>posted</c> with the message kept, or
+    /// the service's code where it refused. The channel sits under the asks' key, which it declares.
     /// </summary>
     [DriverRoute("CHANNEL_POST", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("CHANNEL_POST", Ask = "ask")]
@@ -50,7 +50,7 @@ public sealed class AsksRoutes(DriverLoop loop)
     {
         var ask = Asked(press.Ask);
         var service = _loop.Service ?? throw NotReady();
-        // RPC1e: `ask channel <id> "…"` sent over the pipe asks for the verb's own words, its level as the verb sends it.
+        // `ask channel <id> "…"` sent over the pipe asks for the verb's own words, its level as the verb sends it.
         if (press.Said)
         {
             var asked = new ChannelAsk(ask, press.To, press.Re, press.Text ?? "", press.Ordinary);
@@ -64,7 +64,7 @@ public sealed class AsksRoutes(DriverLoop loop)
 
     /// <summary>
     /// The person's mark moved through a moment (<c>through</c>), or the newest item: what the page has shown them. A mark never
-    /// moves back. Answers the channel as it then reads, and declares the asks (STATEHUB1h, D169): every window's unread count
+    /// moves back. Answers the channel as it then reads, and declares the asks: every window's unread count
     /// falls with it.
     /// </summary>
     [DriverRoute("CHANNEL_MARK", PipeClass.Person, Drain = PipeDrain.Passes)]
@@ -81,7 +81,7 @@ public sealed class AsksRoutes(DriverLoop loop)
     }
 
     /// <summary>
-    /// The person's <i>Send to its session</i> (COWORK1d, the message-urgency design §4.2, §8.4): a message of the ask's channel
+    /// The person's <i>Send to its session</i>: a message of the ask's channel
     /// (<c>message</c>) sent on to the newest part here of a line of work it addresses (<c>repository</c>), which takes it as the agent's
     /// claim passed on by the person, never their words, and which it may reopen, since the person pressed. Answers <c>sent</c> and the
     /// session, or the code that says why not (<c>no-part</c>, <c>gone</c>, <c>held</c>, or the say door's own). It moves the asks' key,
@@ -107,7 +107,7 @@ public sealed class AsksRoutes(DriverLoop loop)
     }
 
     /// <summary>
-    /// The asks the mirrored channel messages name that this machine does not hold (SESSONE2h): the Asks list's <i>Teammates' asks</i>.
+    /// The asks the mirrored channel messages name that this machine does not hold: the Asks list's <i>Teammates' asks</i>.
     /// Each is read at <c>CHANNEL_READ</c> by its id; the service holds no record of it, so it has no title.
     /// </summary>
     [DriverRoute("ASKS_ELSEWHERE", PipeClass.Open)]
@@ -118,7 +118,7 @@ public sealed class AsksRoutes(DriverLoop loop)
     }
 
     /// <summary>
-    /// The channel of the line a session is a part of, where that line is on no ask held here (COMMS1k; a chat's, a quest session's, a
+    /// The channel of the line a session is a part of, where that line is on no ask held here (a chat's, a quest session's, a
     /// teammate's ask's): every message on it oldest first, each to one part with what it reached in that part's line. Moves nothing.
     /// No origin where the line has none, or the host has no such door: the page then draws no channel for it.
     /// </summary>
@@ -132,7 +132,7 @@ public sealed class AsksRoutes(DriverLoop loop)
     }
 
     /// <summary>
-    /// The person's post on a line's own channel (COMMS1k): their words to everyone on it or one of its repositories (<c>to</c>), which a
+    /// The person's post on a line's own channel: their words to everyone on it or one of its repositories (<c>to</c>), which a
     /// part of the line takes at its look as it takes their words. Answers <c>posted</c> with the message kept, or the service's code
     /// where it refused. It moves the asks' key, which holds each line's channel.
     /// </summary>

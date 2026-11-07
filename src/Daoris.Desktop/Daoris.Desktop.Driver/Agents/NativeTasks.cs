@@ -3,9 +3,9 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The background tasks a native door's stream says (AGENTPROVIDER1l; BGWAIT1c, CONSOLE3c): Claude Code's <c>stream-json</c> announces a command
+/// The background tasks a native door's stream says: Claude Code's <c>stream-json</c> announces a command
 /// it backgrounded with a <c>system</c> <c>task_started</c> of any type but a subagent's, and ends it with the last of its two ending lines, its
-/// <c>task_notification</c>, in that line's word or else its <c>task_updated</c>'s (docs/2026-09-30-console3-native-streams-evidence.md). Each
+/// <c>task_notification</c>, in that line's word or else its <c>task_updated</c>'s. Each
 /// is read from the line's one <see cref="NativeFrame"/> into one <see cref="WireReading.TaskStarted"/> or <see cref="WireReading.TaskEnded"/>,
 /// once per task however the wire repeats it, the end marked where it came after the turn's <c>result</c>; a subagent's task is a child
 /// (<see cref="NativeChildren"/>), and every other line says none. At the stream's close (<see cref="Close"/>), a task whose update gave its
@@ -22,7 +22,7 @@ internal sealed class NativeTasks
     private bool _turnEnded;
 
     /// <summary>
-    /// The ends the stream's close says (BGWAIT1c): each task whose update gave its ending word, a kill or a completion, and whose notification
+    /// The ends the stream's close says: each task whose update gave its ending word, a kill or a completion, and whose notification
     /// never came, as where Daoris ended the process at its turn's end before the harness wrote it, ended in that word and marked where that
     /// update came after the turn's result. A task with no ending word says none: its end is unsaid.
     /// </summary>

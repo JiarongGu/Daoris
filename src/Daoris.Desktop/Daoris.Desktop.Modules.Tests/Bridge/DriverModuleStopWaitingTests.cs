@@ -5,9 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// LIMITRESUME1d (D206 §3.7, N27): *Stop waiting* over the bridge, <c>SESSION_STOP_WAITING</c>, the person's press on an ended conversation
+/// *Stop waiting* over the bridge, <c>SESSION_STOP_WAITING</c>, the person's press on an ended conversation
 /// its account's limit holds. The route hands the loop's chat runner the session and answers <c>{stopped, message}</c>, a refusal in the
-/// runner's sentence as data. What the press does to the record is the driver's <c>LimitWaitsProcessTests</c>' (LIMITRESUME1c).
+/// runner's sentence as data. What the press does to the record is the driver's <c>LimitWaitsProcessTests</c>'.
 /// </summary>
 public sealed class DriverModuleStopWaitingTests : DriverModuleBridge
 {

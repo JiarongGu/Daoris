@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// An effect link of the loop's chain held while an update drains (DRAINHOLD1, D139 §2): the tidy of a ref move removes a branch and its
+/// An effect link of the loop's chain held while an update drains: the tidy of a ref move removes a branch and its
 /// tree, which the drain does not wait on and the close would cut. While <paramref name="draining"/> answers true, a try is refused with no
 /// git, so its units stay pending, read from the persisted facts, and the first wake or deadline after the drain tries them again. Its
 /// pending units are read as they are, so nothing is lost.

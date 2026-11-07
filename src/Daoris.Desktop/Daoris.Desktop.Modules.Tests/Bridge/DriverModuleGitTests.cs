@@ -7,10 +7,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// GIT1d-a (D147 §2, D150): the Git reads' routes for Repositories' Branches and History tabs. <c>GIT_BRANCHES</c> is the
+/// The Git reads' routes for Repositories' Branches and History tabs. <c>GIT_BRANCHES</c> is the
 /// driver's list and <c>GIT_GRAPH</c>, <c>GIT_COMMIT</c>, <c>GIT_HISTORY</c>, <c>GIT_BLAME</c> and <c>GIT_COMPARE</c> its reads,
 /// each of the repository's <i>name</i>, whose root the registry gives. A read the driver does not answer is an answer with a
-/// <c>refusal</c> code the page words (D147), and no answer carries a machine path (D47 §4): a branch's tree by its folder's
+/// <c>refusal</c> code the page words, and no answer carries a machine path: a branch's tree by its folder's
 /// name, and a sentence that named the root says the repository instead.
 /// </summary>
 /// <remarks>The service is a stand-in reached through the real client; the cases that run git are <c>Process</c>.</remarks>
@@ -81,7 +81,7 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.Contains(Refusals.GitNoCheckout, await RefusalAsync(module, "CHECKOUT_BRANCH", new { repository = "engine" }));
     }
 
-    /// <summary>The checkout's head: its branch's short name, or null where detached; no path in the answer (D47 §4).</summary>
+    /// <summary>The checkout's head: its branch's short name, or null where detached; no path in the answer.</summary>
     [Fact]
     [Trait(Category.Name, Category.Process)]
     public async Task The_checkouts_branch_is_its_name_or_null_where_detached()
@@ -98,7 +98,7 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.Equal(JsonValueKind.Null, detached.GetProperty("branch").ValueKind);
     }
 
-    /// <summary>GITAPP2b: the Changes read answers a staged-and-removed file in both lists, `readAt` saying when, and no path.</summary>
+    /// <summary>The Changes read answers a staged-and-removed file in both lists, `readAt` saying when, and no path.</summary>
     [Fact]
     [Trait(Category.Name, Category.Process)]
     public async Task The_changes_read_answers_a_staged_and_removed_file_twice_and_says_when()
@@ -118,7 +118,7 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.DoesNotContain("checkouts", answer.GetRawText());
     }
 
-    /// <summary>GITAPP2h: a file's hunks come with the ids a press sends back, and a stage with the switch off is refused as data, with no path.</summary>
+    /// <summary>A file's hunks come with the ids a press sends back, and a stage with the switch off is refused as data, with no path.</summary>
     [Fact]
     [Trait(Category.Name, Category.Process)]
     public async Task The_hunks_read_names_the_ids_and_a_stage_with_the_switch_off_is_refused_in_words()
@@ -143,7 +143,7 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.Equal("changed\n", await File.ReadAllTextAsync(Path.Combine(root, "README.md")));
     }
 
-    /// <summary>GITAPP2i: the commit's plan names the tip, the tree and who commits; a commit with the switch off is refused as data, with no path, and HEAD stays.</summary>
+    /// <summary>The commit's plan names the tip, the tree and who commits; a commit with the switch off is refused as data, with no path, and HEAD stays.</summary>
     [Fact]
     [Trait(Category.Name, Category.Process)]
     public async Task The_commit_plan_names_the_tree_and_a_commit_with_the_switch_off_is_refused_in_words()
@@ -169,7 +169,7 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.Equal(before, (await GitAsync(root, "rev-parse", "HEAD")).Trim());
     }
 
-    /// <summary>GITAPP2j: a file not in conflict is read with its reason, and a resolve and a mark with the switch off are refused as data, with no path.</summary>
+    /// <summary>A file not in conflict is read with its reason, and a resolve and a mark with the switch off are refused as data, with no path.</summary>
     [Fact]
     [Trait(Category.Name, Category.Process)]
     public async Task The_conflict_read_says_why_a_file_has_none_and_a_resolve_with_the_switch_off_is_refused_in_words()
@@ -190,7 +190,7 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.DoesNotContain(root, resolve.GetRawText().Replace("\\\\", "\\"));
     }
 
-    /// <summary>GITAPP2k: the switch's and the stash's plans read, and with the switch off each press is refused as data, with no path, and nothing moves.</summary>
+    /// <summary>The switch's and the stash's plans read, and with the switch off each press is refused as data, with no path, and nothing moves.</summary>
     [Fact]
     [Trait(Category.Name, Category.Process)]
     public async Task The_switch_and_stash_plans_read_and_a_press_with_the_switch_off_is_refused_in_words()
@@ -250,7 +250,7 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
             new { repository = "engine", tips = Enumerable.Range(0, GitReads.GraphTips + 1).Select(n => n.ToString("x40")).ToArray() })).GetProperty("refusal").GetString());
     }
 
-    /// <summary>🔴 A root that is not a repository's top is refused, and the sentence never names the machine's path (D47 §4).</summary>
+    /// <summary>🔴 A root that is not a repository's top is refused, and the sentence never names the machine's path.</summary>
     [Fact]
     public async Task A_folder_that_is_not_a_repositorys_top_is_refused_without_its_path()
     {
@@ -292,7 +292,7 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.DoesNotContain("checkouts", answer.GetRawText());
     }
 
-    /// <summary>One <c>GitReads</c> lives with the module, so a second ask of a commit is answered from its memory (D147 §4.2).</summary>
+    /// <summary>One <c>GitReads</c> lives with the module, so a second ask of a commit is answered from its memory.</summary>
     [Fact]
     [Trait(Category.Name, Category.Process)]
     public async Task A_second_ask_is_remembered_by_the_module()
@@ -311,7 +311,7 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.NotEmpty(second.GetProperty("commands").EnumerateArray());
     }
 
-    /// <summary>GITAPP2c: before the driver is up, and for a repository with no checkout here, each ref act is the cold start or a coded answer.</summary>
+    /// <summary>Before the driver is up, and for a repository with no checkout here, each ref act is the cold start or a coded answer.</summary>
     [Theory]
     [InlineData("GIT_REF_CREATE")]
     [InlineData("GIT_REF_UNDO")]
@@ -375,7 +375,7 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// GITAPP2d: the page's delete runs the act in the journal and answers it, the line it reads refusing the line itself and a commit that is
+    /// The page's delete runs the act in the journal and answers it, the line it reads refusing the line itself and a commit that is
     /// not the one shown; the undo makes the branch again.
     /// </summary>
     [Fact]
@@ -406,7 +406,7 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// GITAPP2e: the page's rename runs the act in the journal and answers it, refusing the line and a taken name as data; the undo moves the branch
+    /// The page's rename runs the act in the journal and answers it, refusing the line and a taken name as data; the undo moves the branch
     /// back, and Finish is refused for an act that did not stop partway.
     /// </summary>
     [Fact]
@@ -439,7 +439,7 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.Equal("", (await GitAsync(root, "branch", "--list", "work")).Trim());
     }
 
-    /// <summary>GITAPP2f: where Daoris's git doors are not installed the fetch is not offered, its plan says so in a word, and its press is refused as data, no act made.</summary>
+    /// <summary>Where Daoris's git doors are not installed the fetch is not offered, its plan says so in a word, and its press is refused as data, no act made.</summary>
     [Fact]
     [Trait(Category.Name, Category.Process)]
     public async Task A_fetch_is_not_offered_without_the_git_doors_and_its_press_is_refused_as_data()
@@ -475,7 +475,7 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.Equal(1, refused.GetProperty("said").GetProperty("code").GetInt32());
     }
 
-    /// <summary>GITAPP2m: before the driver is up a history edit is the cold start; with no checkout here it is refused as data with its code.</summary>
+    /// <summary>Before the driver is up a history edit is the cold start; with no checkout here it is refused as data with its code.</summary>
     [Fact]
     public async Task A_history_edit_before_the_driver_is_up_or_with_no_checkout_is_the_cold_start_or_a_coded_answer()
     {
@@ -498,7 +498,7 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.Contains(Refusals.DriverRefused, await RefusalAsync(module, "GIT_HISTORY_EDIT", new { repository = "engine", edit = "pick", branch = "topic" }));
     }
 
-    /// <summary>REVIEW2 1: a payload asking for the plan and for the terminal's words at once is refused, so no reading order turns a look into a run.</summary>
+    /// <summary>A payload asking for the plan and for the terminal's words at once is refused, so no reading order turns a look into a run.</summary>
     [Fact]
     public async Task A_history_edit_asking_for_its_plan_and_its_words_at_once_is_refused()
     {
@@ -508,7 +508,7 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// GITAPP2m: the plan form answers what the edit would take and writes nothing; the press with the plan's ids runs the act and answers it
+    /// The plan form answers what the edit would take and writes nothing; the press with the plan's ids runs the act and answers it
     /// done, the branch's new tip and its old one's recovery ref, no machine path; the line is refused as data.
     /// </summary>
     [Fact]

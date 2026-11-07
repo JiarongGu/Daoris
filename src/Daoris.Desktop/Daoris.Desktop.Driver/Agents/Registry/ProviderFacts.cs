@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The agents' facts from each provider's registration (the agent-provider design §6; COAGENT1e): who each agent is, its account acts,
+/// The agents' facts from each provider's registration: who each agent is, its account acts,
 /// and each door's sheet read by <see cref="Sheet.Of"/> over the measurements table. Nothing is negotiated here: an opening's answers
 /// describe that opening alone.
 /// </summary>

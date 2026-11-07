@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The reservation of a piece in the common admission, in one step (COAGENT1b, D199 point 4; the co-agent design §2.3 step 4, §5): the
+/// The reservation of a piece in the common admission, in one step: the
 /// boxes read, the lead's allowance and the cap judged, and <see cref="PartnerStates.Approved"/> written, all under one lock of this
 /// process's, so two looks, or a look and the person's press, never both take the last slot or the lead's second place. The approved
 /// state is the reservation itself: every starter counts it through <see cref="Snapshot.SlotsHeld"/> until the partner's record opens,
@@ -14,7 +14,7 @@ public static class PartnerReservations
     /// <summary>Reserve <paramref name="id"/>'s slot and place, or say why not; <see cref="PieceAdmitted.Reserved"/> wrote its state.</summary>
     /// <param name="active">The active records as this look read them: what holds a slot beside the reservations.</param>
     /// <param name="fromOf">Each record's <c>from</c> by id, for the lead's chain (<see cref="PartnerAdmission.Chain"/>).</param>
-    /// <param name="taken">The slots this look's other starters took since <paramref name="active"/> was read.</param>
+    /// <param name="taken">The slots this look's other starters took since <paramref name="active"/> is read.</param>
     public static PieceAdmitted TryReserve(
         PartnerFiles files, string id, IReadOnlyList<SessionView> active, IReadOnlyDictionary<string, string?> fromOf, int cap, int taken,
         DateTimeOffset now)

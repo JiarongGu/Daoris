@@ -6,6 +6,6 @@ public sealed record LineageHook(string Script, string File)
     /// <summary>The connector's tools, in the harness's own matcher shape.</summary>
     public const string Matcher = "mcp__" + KnowledgeConnector.ServerName + "__.*";
 
-    /// <summary>The node the harness starts the script with: the file Tools resolves (TOOLS5), as the tree guard's.</summary>
+    /// <summary>The node the harness starts the script with: the file Tools resolves, as the tree guard's.</summary>
     public string Node { get; init; } = "node";
 }

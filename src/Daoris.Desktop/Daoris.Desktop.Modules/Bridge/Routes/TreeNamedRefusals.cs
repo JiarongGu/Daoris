@@ -4,7 +4,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A tree door asked with a tree's name where it takes a session (TREENAME1): the session whose tree carries that name is said, as the
+/// A tree door asked with a tree's name where it takes a session: the session whose tree carries that name is said, as the
 /// terminal's alone path says it (<see cref="TreesWords.TreeNamedForSession"/>), in place of the door's sentence that the session names no
 /// tree here. Records that cannot be read name nobody, and the door's own sentence stands.
 /// </summary>

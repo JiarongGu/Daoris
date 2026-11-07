@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The asks this machine answers with a session (D65 §1b): only where a harness is named for it, and only in the slots the quests
-/// left, since work somebody already asked for goes first. PARALLEL1b: a start still opening holds its slot, and an ask whose intake
+/// The asks this machine answers with a session: only where a harness is named for it, and only in the slots the quests
+/// left, since work somebody already asked for goes first. A start still opening holds its slot, and an ask whose intake
 /// is still opening is not begun again. A start a plugin will hold still counts here, since each start asks its plugins on its own:
 /// the intakes may wait a look for a slot a hold left, never overrun the cap.
 /// </summary>

@@ -4,7 +4,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// What an agent Daoris starts may do, a pushed slice (FOUNDATION1s part B, D182): the rules as <c>RULES</c> answers them, judged in the
+/// What an agent Daoris starts may do, a pushed slice: the rules as <c>RULES</c> answers them, judged in the
 /// shell's loop and pushed only when they move, so a window reads them from memory and no tick or focus asks the route.
 /// </summary>
 public sealed class RulesStateSliceTests : DriverModuleBridge

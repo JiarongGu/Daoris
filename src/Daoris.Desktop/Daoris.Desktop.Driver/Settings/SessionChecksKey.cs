@@ -3,8 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Which checks a development pipeline's sessions run, as <c>driver.json</c> keeps them, <c>sessionChecks</c> (FABRIC-PIPELINE1b, D192
-/// point 4; FOUNDATION1 mod-iii): the key, the choices and the reading and writing of the map, by the settings' own parser. What a
+/// Which checks a development pipeline's sessions run, as <c>driver.json</c> keeps them, <c>sessionChecks</c>: the key, the choices and the reading and writing of the map, by the settings' own parser. What a
 /// choice means, its edit, its holding for a session and where a run reads it, stays with the checks (<see cref="SessionChecks"/>),
 /// which answers through this for what it shares.
 /// </summary>

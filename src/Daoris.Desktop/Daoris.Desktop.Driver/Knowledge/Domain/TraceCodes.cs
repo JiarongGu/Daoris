@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>The stores a trace reads (TRACE1, D143), each a code the screen words and the terminal names in its sentence.</summary>
+/// <summary>The stores a trace reads, each a code the screen words and the terminal names in its sentence.</summary>
 public static class TraceStores
 {
     /// <summary>The service's session records.</summary>
@@ -12,20 +12,20 @@ public static class TraceStores
     /// <summary>The service's ask record.</summary>
     public const string Asks = "asks";
 
-    /// <summary>This machine's record of a session (D76).</summary>
+    /// <summary>This machine's record of a session.</summary>
     public const string Events = "events";
 
-    /// <summary>The rules file the driver wrote under the home for a session (PERM1).</summary>
+    /// <summary>The rules file the driver wrote under the home for a session.</summary>
     public const string Rules = "rules";
 
-    /// <summary>This machine's <c>landings.json</c> (WSR5).</summary>
+    /// <summary>This machine's <c>landings.json</c>.</summary>
     public const string Landings = "landings";
 
-    /// <summary>This machine's <c>driver.json</c>, for the standing answers (D135 §3).</summary>
+    /// <summary>This machine's <c>driver.json</c>, for the standing answers.</summary>
     public const string Config = "config";
 }
 
-// Why a link is missing (D143 point 3), one family per kind of link, each a code the screen words where the link would
+// Why a link is missing, one family per kind of link, each a code the screen words where the link would
 // have been. A family each, so each is a catalogue family of its own that a test holds to it (`work/trace.test.ts`).
 
 /// <summary>Why an ask or a quest the chain names is missing.</summary>
@@ -39,7 +39,7 @@ public static class TraceLinkGaps
 }
 
 /// <summary>
-/// Why a quest link carries no moves (FLOWCHART1a2): codes of the moves' own, apart from a link's, since the moves are a part of
+/// Why a quest link carries no moves: codes of the moves' own, apart from a link's, since the moves are a part of
 /// the quest's link and the page draws them from the service's door, not from the trace.
 /// </summary>
 public static class TraceMovesGaps
@@ -51,7 +51,7 @@ public static class TraceMovesGaps
     public const string Unread = "unread";
 }
 
-/// <summary>Why this machine's record of a session is missing (D76).</summary>
+/// <summary>Why this machine's record of a session is missing.</summary>
 public static class TraceEventGaps
 {
     /// <summary>A session's id names no record on this machine.</summary>
@@ -64,10 +64,10 @@ public static class TraceEventGaps
     public const string Unread = "unread";
 }
 
-/// <summary>Why the rules a session was handed are missing (PERM1).</summary>
+/// <summary>Why the rules a session is handed are missing.</summary>
 public static class TraceRuleGaps
 {
-    /// <summary>A running session: no file, since its agent takes none (every Claude session is handed one, CONTEXTONE1e).</summary>
+    /// <summary>A running session: no file, since its agent takes none (every Claude session is handed one).</summary>
     public const string NoneWhileRunning = "none-while-running";
 
     /// <summary>The file goes when its session ends, and a parked session's when its run does.</summary>
@@ -77,7 +77,7 @@ public static class TraceRuleGaps
     public const string Unread = "unread";
 }
 
-/// <summary>Why no branch landing is named for a session (WSR5).</summary>
+/// <summary>Why no branch landing is named for a session.</summary>
 public static class TraceLandingGaps
 {
     /// <summary><c>landings.json</c> does not read.</summary>
@@ -86,7 +86,7 @@ public static class TraceLandingGaps
     /// <summary>No branch landing names it, and its record keeps no acceptance of its work.</summary>
     public const string None = "none";
 
-    /// <summary>No branch landing names it, and no record of it here could say whether its work was accepted.</summary>
+    /// <summary>No branch landing names it, and no record of it here could say whether its work is accepted.</summary>
     public const string Unknown = "unknown";
 
     /// <summary>A landing into the line: its record keeps the person's acceptance, and the merge's own commit is not kept.</summary>
@@ -119,7 +119,7 @@ public static class TraceNamers
     public const string Trace = "trace";
 }
 
-/// <summary>How a quest's done answered one requirement (DRIFT1d, D133 §4), as a trace reads it.</summary>
+/// <summary>How a quest's done answered one requirement, as a trace reads it.</summary>
 public static class TraceAnswers
 {
     public const string Met = "met";
@@ -132,7 +132,7 @@ public static class TraceAnswers
     public const string NotYet = "not-yet";
 }
 
-/// <summary>Whether a standing answer stood when a session started (D135 §3), by the moments kept and nothing else.</summary>
+/// <summary>Whether a standing answer stood when a session started, by the moments kept and nothing else.</summary>
 public static class TraceStandings
 {
     /// <summary>None set now, and one cleared since is not kept.</summary>
@@ -147,7 +147,7 @@ public static class TraceStandings
     public const string After = "after";
 }
 
-/// <summary>Where a go-ahead stood when a session started (D135 §2), by the moments kept and nothing else.</summary>
+/// <summary>Where a go-ahead stood when a session started, by the moments kept and nothing else.</summary>
 public static class TraceGoAheadStands
 {
     public const string AskedAfter = "asked-after";

@@ -9,7 +9,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// CONSOLE4a (D96): <c>DAORIS.TERMINAL</c>, the page's door onto the person's own shells. The module's logic
+/// <c>DAORIS.TERMINAL</c>, the page's door onto the person's own shells. The module's logic
 /// is held over a fake factory, so every case is reachable without a shell; one round trip runs a real one.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -280,7 +280,7 @@ public sealed class TerminalModuleTests : Bridge
     }
 
     /// <summary>
-    /// 🔴 D94: a terminal's words are the person's own. Through the real dispatcher with the machine log's
+    /// A terminal's words are the person's own. Through the real dispatcher with the machine log's
     /// middleware, what is typed, what the shell writes and what a refusal names never reach the log; a
     /// refusal is logged by its code, as every module's is.
     /// </summary>

@@ -27,8 +27,8 @@ public sealed class RefusalCatalogueTests
     }
 
     /// <summary>
-    /// A language's whole catalogue. Since MOD2 it is one file per area under `locales/<language>/`, merged
-    /// at load, and read here the same way; a single `<language>.json` no longer exists.
+    /// A language's whole catalogue: one file per area under `locales/<language>/`, merged
+    /// at load, and read here the same way.
     /// </summary>
     private static JsonElement Catalogue(string language)
     {
@@ -65,8 +65,8 @@ public sealed class RefusalCatalogueTests
     }
 
     /// <summary>
-    /// REFUSE1: every code declared is one the catalogue test walks. `All` was a list kept by hand, so a
-    /// code left out of it escaped the translation check; it is read off the declarations now.
+    /// Every code declared is one the catalogue test walks. `All` is read off the declarations, not kept by hand,
+    /// so no code can be left out of the translation check.
     /// </summary>
     [Fact]
     public void Every_declared_code_is_one_the_catalogue_walks()
@@ -82,7 +82,7 @@ public sealed class RefusalCatalogueTests
     }
 
     /// <summary>
-    /// REFUSE1: a module refuses through the catalogue and nowhere else. A code typed at a throw site,
+    /// A module refuses through the catalogue and nowhere else. A code typed at a throw site,
     /// or an exception built by hand, is a refusal no translation check can see.
     /// </summary>
     [Fact]
@@ -145,9 +145,9 @@ public sealed class RefusalCatalogueTests
     }
 
     /// <summary>
-    /// REFAC1: a code the driver library chose (its <c>HistoryCodes</c>, which this class declares as its own) is raised only
+    /// A code the driver library chose (its <c>HistoryCodes</c>, which this class declares as its own) is raised only
     /// where it is declared here; any other is the driver's verbatim refusal, its sentence kept, so none reaches the page as a
-    /// bare code. What REFUSE1's scan holds at a throw site naming a code, this holds at the one door that is handed one.
+    /// bare code. What the refusal scan holds at a throw site naming a code, this holds at the one door that is handed one.
     /// </summary>
     [Fact]
     public void A_code_the_driver_library_chose_is_raised_only_where_it_is_declared_here()
@@ -161,7 +161,7 @@ public sealed class RefusalCatalogueTests
     }
 
     /// <summary>
-    /// REFAC1 (the second-opinion review of 2026-10-07): which code a history word is said in is the driver library's
+    /// Which code a history word is said in is the driver library's
     /// <c>HistoryCodes.Of</c>, read through its projection (<c>HistoryAnswers.Reason</c>); the shell's routes add only the
     /// exception, and map no word themselves, where <c>HistoryKept</c> once repeated the mapping.
     /// </summary>

@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Why a person's ask of a helper, or their yes or no to an agent's, did nothing: the codes the page words (MIXAGENT2b, HELPERNO1).</summary>
+/// <summary>Why a person's ask of a helper, or their yes or no to an agent's, did nothing: the codes the page words.</summary>
 public static class HelperAskWhy
 {
     public const string Blank = "blank";
@@ -11,7 +11,7 @@ public static class HelperAskWhy
     public const string Reviewer = "reviewer";
     public const string Intake = "intake";
 
-    /// <summary>Ask Daoris's conversation asks for no helper (FOUNDATION1q; D203 point 6).</summary>
+    /// <summary>Ask Daoris's conversation asks for no helper.</summary>
     public const string AskDaoris = "ask-daoris";
 
     public const string Gone = "gone";
@@ -19,19 +19,19 @@ public static class HelperAskWhy
     public const string Waits = "waits";
     public const string Past = "past";
 
-    /// <summary>A no to an ask that has the person's yes already (HELPERNO1).</summary>
+    /// <summary>A no to an ask that has the person's yes already.</summary>
     public const string Approved = "approved";
 
-    /// <summary>A no to an ask the driver's look has not read yet (HELPERNO1).</summary>
+    /// <summary>A no to an ask the driver's look has not read yet.</summary>
     public const string Unread = "unread";
 
-    /// <summary><i>Ask again…</i> after an ask that is not the session's (COWORKUX1d).</summary>
+    /// <summary><i>Ask again…</i> after an ask that is not the session's.</summary>
     public const string After = "after";
 
-    /// <summary><i>Ask again…</i> or <i>Pass to the lead</i> on an ask with no answer yet (COWORKUX1d).</summary>
+    /// <summary><i>Ask again…</i> or <i>Pass to the lead</i> on an ask with no answer yet.</summary>
     public const string Unanswered = "unanswered";
 
-    /// <summary><i>Pass to the lead</i> on an answer that goes to the lead already (COWORKUX1d).</summary>
+    /// <summary><i>Pass to the lead</i> on an answer that goes to the lead already.</summary>
     public const string Lead = "lead";
 }
 
@@ -39,8 +39,8 @@ public static class HelperAskWhy
 public sealed record HelperWordAnswer(bool Stands, string? Why, string Message, bool Wrote);
 
 /// <summary>
-/// The person's yes and no to an agent's ask for a helper under the <c>helpers</c> rule's <c>ask</c> (MIXAGENT2b and HELPERNO1,
-/// D163 point 3; HELPERTERM1): one judge for the page's <c>SESSION_HELPER_APPROVE</c> and <c>SESSION_HELPER_DECLINE</c> and the
+/// The person's yes and no to an agent's ask for a helper under the <c>helpers</c> rule's <c>ask</c>:
+/// one judge for the page's <c>SESSION_HELPER_APPROVE</c> and <c>SESSION_HELPER_DECLINE</c> and the
 /// terminal's <c>sessions helper --approve|--decline</c>, in the library because the terminal host cannot reference Modules.
 /// </summary>
 /// <remarks>

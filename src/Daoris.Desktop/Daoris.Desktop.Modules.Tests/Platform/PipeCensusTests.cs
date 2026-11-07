@@ -36,7 +36,7 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
-    /// The driver's twin of the census's classes (RPC1b, <c>RouteClass</c>) names each as the census does, so a verb reading its
+    /// The driver's twin of the census's classes (<c>RouteClass</c>) names each as the census does, so a verb reading its
     /// route's class before it looks for the instance reads the census's word.
     /// </summary>
     [Fact]
@@ -44,9 +44,9 @@ public sealed class PipeCensusTests
         Assert.Equal(Enum.GetNames<PipeClass>(), Enum.GetNames<Daoris.Driver.RouteClass>());
 
     /// <summary>
-    /// Each press of the <c>trees</c> verbs names its route and the class the census gives it (RPC1b, the terminal RPC design §7.2):
+    /// Each press of the <c>trees</c> verbs names its route and the class the census gives it:
     /// a verb whose route the census opens becomes the instance's client, so a route opened here fails until its verb's client
-    /// path is built, its words from the route's answer held to the alone path's (§7.3), and the table says so.
+    /// path is built, its words from the route's answer held to the alone path's, and the table says so.
     /// </summary>
     [Fact]
     public void Each_trees_press_names_its_route_as_the_census_classes_it()
@@ -62,8 +62,8 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
-    /// SUPERVISOR1a-ii (D208 §3.1): the supervisor's verb sends its answer as the role's act the census classes it, and reads what waits
-    /// as an open read; the appointment is the window's alone, never a verb's. Its defer (SUPERVISOR1b) is the role's second act, and the
+    /// The supervisor's verb sends its answer as the role's act the census classes it, and reads what waits
+    /// as an open read; the appointment is the window's alone, never a verb's. Its defer is the role's second act, and the
     /// role's acts are the only <c>Role</c> routes.
     /// </summary>
     [Fact]
@@ -76,14 +76,14 @@ public sealed class PipeCensusTests
         Assert.Equal((DriverModule.Name, PipeClass.Role, Daoris.Driver.RouteClass.Role), (defer.Module, PipeCensus.Daoris.Of(defer.Module, defer.Route), defer.Class));
         Assert.Equal((PipeClass.Open, Daoris.Driver.RouteClass.Open), (PipeCensus.Daoris.Of(waiting.Module, waiting.Route), waiting.Class));
         Assert.Equal(PipeClass.Window, PipeCensus.Daoris.Of(DriverModule.Name, Daoris.Driver.RoleRoutes.StartTerminal));
-        // STEWARDROLE1a-i (D209 §3.3): the steward's one route beside the supervisor's two, and nothing else of the class.
+        // The steward's one route beside the supervisor's two, and nothing else of the class.
         Assert.Equal(
             Daoris.Driver.SupervisorRoutes.Acts.Append(Daoris.Driver.RoleRoutes.Act).Order(),
             PipeCensus.Daoris.Routes.Where(route => route.Class == PipeClass.Role).Select(route => route.Route).Order());
     }
 
     /// <summary>
-    /// RPC1c: the terminal's door reads the pipe's words for a confirmation as the pipe says them, a twin the driver library cannot
+    /// The terminal's door reads the pipe's words for a confirmation as the pipe says them, a twin the driver library cannot
     /// see from its side: the notification that says a press waits, and the two endings that are the person's word (exit 1).
     /// </summary>
     [Fact]
@@ -96,7 +96,7 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
-    /// The person's presses the host's verbs send over the pipe (RPC1c): each names a route of the driver's module that the census
+    /// The person's presses the host's verbs send over the pipe: each names a route of the driver's module that the census
     /// makes the person's, so the instance shows it in the window and runs it on the person's Confirm alone. A route the census opened
     /// would run unconfirmed, and one it made the window's would be refused: either fails here, naming the verb.
     /// </summary>
@@ -115,7 +115,7 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
-    /// The standing choices <c>daoris place</c> and <c>settings</c> send (PUSH1f2a, D194 point 5): each a route of the driver's module the census
+    /// The standing choices <c>daoris place</c> and <c>settings</c> send: each a route of the driver's module the census
     /// makes the person's, so the window confirms it, and each verb no route takes says why it acts alone.
     /// </summary>
     [Fact]
@@ -141,7 +141,7 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
-    /// The tools' presses <c>daoris tool</c> sends (PUSH1f2c, D194 point 5): each a route of the driver's module the census classes
+    /// The tools' presses <c>daoris tool</c> sends: each a route of the driver's module the census classes
     /// as the verb reads it, the person's changes the person's and the look open, and each verb no route takes says why it acts alone.
     /// </summary>
     [Fact]
@@ -169,7 +169,7 @@ public sealed class PipeCensusTests
         Assert.Equal(Daoris.Driver.RouteClass.Open, Daoris.Driver.ToolRoutes.Look.Class);
     }
 
-    /// <summary>The route <c>daoris integrate</c>'s acts press (INTEGRATE1h) is a driver route the census classes as the person's.</summary>
+    /// <summary>The route <c>daoris integrate</c>'s acts press is a driver route the census classes as the person's.</summary>
     [Fact]
     public void The_integrate_verbs_route_is_the_persons_in_the_census()
     {
@@ -181,7 +181,7 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
-    /// The agents' presses <c>daoris agent</c> sends (PUSH1f2d, D194 point 5): each a route of the driver's module the census
+    /// The agents' presses <c>daoris agent</c> sends: each a route of the driver's module the census
     /// classes as the person's, and each verb no route takes says why it acts alone.
     /// </summary>
     [Fact]
@@ -207,7 +207,7 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
-    /// The plugins' presses <c>daoris plugin</c> sends (PUSH1f2f, D194 point 5): each a route of the driver's module the census
+    /// The plugins' presses <c>daoris plugin</c> sends: each a route of the driver's module the census
     /// classes as the person's in the form the command sends it (<c>PLUGIN_UPDATE</c> with <c>apply: true</c>), and the replace no route
     /// takes says why it acts alone.
     /// </summary>
@@ -237,7 +237,7 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
-    /// The open reads and presses the host's verbs send (RPCOPEN1, RPC1e): each names a route of the driver's module that the census
+    /// The open reads and presses the host's verbs send: each names a route of the driver's module that the census
     /// opens, and each verb of the scope left off the pipe says why. A route the census closes fails here, naming the verb that
     /// would send a press the instance refuses.
     /// </summary>
@@ -257,16 +257,16 @@ public sealed class PipeCensusTests
                 $"`{verb}` sends {route.Route}, which the census classes {PipeCensus.Daoris.Of(route.Module, route.Route)}");
         }
 
-        // The verbs left off are exactly those with no route, and each is a read: no press of the person's waits on RPC1c here.
+        // The verbs left off are exactly those with no route, and each is a read: no press of the person's waits here.
         Assert.All(
             Daoris.Driver.OpenRoutes.Verbs.Where(each => each.Route is null),
             each => Assert.StartsWith("alone:", each.Reason, StringComparison.Ordinal));
     }
 
     /// <summary>
-    /// RPC1e's proof (the terminal RPC design §1.2, §7.1): of the host's verbs with a window twin, only these stay off the pipe, each with
+    /// Of the host's verbs with a window twin, only these stay off the pipe, each with
     /// its reason. By design, a loop (<c>drive</c>), the updater's request (<c>update</c>) and the service's own doors; and, until a decision lets this machine's paths travel over the
-    /// local pipe (§4.3), the reads whose words name this machine's folders or quote its trees, with the few no route answers. A verb
+    /// local pipe, the reads whose words name this machine's folders or quote its trees, with the few no route answers. A verb
     /// that becomes a client leaves this list in the change that sends its route, and one that joins it says why here.
     /// </summary>
     [Fact]
@@ -277,11 +277,11 @@ public sealed class PipeCensusTests
             "drive", "update",
             "quest delete|accept|done|reopen|go-on|check|review", "ask \"…\"", "sync status", "ask channel <id>",
             "trace", "git branches", "workflow", "logs",
-            // GITAPP1a-i: the bench's verb times the git its own process starts.
+            // The bench's verb times the git its own process starts.
             "git review <session>",
             "plugins show <id>", "plugins activity <id>", "plugins try <folder|id>", "plugins install <file>", "plugins new <id>",
             "help delete <id>", "place --workspace <name> --adoption",
-            // COAGENT1b: a session's pieces, read off the box under the home, which says the same with or without the instance.
+            // A session's pieces, read off the box under the home, which says the same with or without the instance.
             "sessions partner <id> --list",
         ];
 
@@ -289,7 +289,7 @@ public sealed class PipeCensusTests
 
         Assert.Equal(off.Order(StringComparer.Ordinal), left.Select(each => each.Verb).Order(StringComparer.Ordinal));
         Assert.All(left, each => Assert.True(each.Reason.Length > "alone: ".Length, $"`{each.Verb}` says no reason"));
-        // Every family of §1.2 the row names sends at least one route: work, history, help, opinion, setup, register, sync, plugins
+        // Every family the row names sends at least one route: work, history, help, opinion, setup, register, sync, plugins
         // and the channel.
         var sent = Daoris.Driver.OpenRoutes.Verbs.Where(each => each.Route is not null).Select(each => each.Verb)
             .Concat(Daoris.Driver.PersonPresses.Presses.Select(each => each.Verb)).ToList();
@@ -318,9 +318,9 @@ public sealed class PipeCensusTests
     }
 
     [Theory]
-    // Reads, and what D156 §3 leaves to the driver: run as asked.
+    // Reads, and what is left to the driver: run as asked.
     [InlineData("DAORIS.DRIVER", "SESSION_GROUPS", PipeClass.Open)]
-    // NOTIFY2i: what came to the person, read by a terminal, a press by its act alone; the presses' own read stays the window's.
+    // What came to the person, read by a terminal, a press by its act alone; the presses' own read stays the window's.
     [InlineData("DAORIS.DRIVER", "NOTIFICATIONS", PipeClass.Open)]
     [InlineData("DAORIS.DRIVER", "UNDER_WAY", PipeClass.Open)]
     [InlineData("DAORIS.DRIVER", "SYNC_NOW", PipeClass.Open)]
@@ -333,7 +333,7 @@ public sealed class PipeCensusTests
     // The person's alone: a yes, a delete, a clear, their words, a standing choice.
     [InlineData("DAORIS.DRIVER", "LAND_SESSION_TREE", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "DISCARD_SESSION_TREE", PipeClass.Person)]
-    // GITAPP2c: a ref made in a repository and its undo write the person's repository through git.
+    // A ref made in a repository and its undo write the person's repository through git.
     [InlineData("DAORIS.DRIVER", "GIT_REF_CREATE", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "GIT_REF_UNDO", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "GIT_REF_DELETE", PipeClass.Person)]
@@ -341,12 +341,12 @@ public sealed class PipeCensusTests
     [InlineData("DAORIS.DRIVER", "GIT_REF_FINISH", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "GIT_FETCH", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "GIT_FETCH_PLAN", PipeClass.Open)]
-    // GITAPP2g, n: one ref pushed to origin moves origin under the person's grant; its plan is a read.
+    // One ref pushed to origin moves origin under the person's grant; its plan is a read.
     [InlineData("DAORIS.DRIVER", "GIT_PUSH", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "GIT_PUSH_PLAN", PipeClass.Open)]
-    // GITAPP2: a stash of Daoris's own Save dropped removes an entry of the shared stash.
+    // A stash of Daoris's own Save dropped removes an entry of the shared stash.
     [InlineData("DAORIS.DRIVER", "GIT_STASH_DROP", PipeClass.Person)]
-    // GITAPP2m: a branch's history edited moves the person's branch; its plan form is open (a rule on `plan`).
+    // A branch's history edited moves the person's branch; its plan form is open (a rule on `plan`).
     [InlineData("DAORIS.DRIVER", "GIT_HISTORY_EDIT", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "SWEEP", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "RECOVERY_DROP", PipeClass.Person)]
@@ -355,10 +355,10 @@ public sealed class PipeCensusTests
     [InlineData("DAORIS.DRIVER", "SESSION_INPUT", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "OPINION_MYSELF", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "SET_REVIEW", PipeClass.Person)]
-    // HEAVYRUN1b2b: the commands this machine runs for a repository's heavy gates are the person's to write.
+    // The commands this machine runs for a repository's heavy gates are the person's to write.
     [InlineData("DAORIS.DRIVER", "SET_HEAVY_GATES", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "SET_KEEP", PipeClass.Person)]
-    // FABRIC-PIPELINE1b: which checks a repository's sessions run is the person's standing choice, and light lowers their part.
+    // Which checks a repository's sessions run is the person's standing choice, and light lowers their part.
     [InlineData("DAORIS.DRIVER", "SET_SESSION_CHECKS", PipeClass.Person)]
     // What only a window does: the pickers, the file manager, Daoris's browser, its frame, its shells.
     [InlineData("DAORIS.DRIVER", "TOOLS_PICK", PipeClass.Window)]
@@ -367,15 +367,15 @@ public sealed class PipeCensusTests
     [InlineData("DAORIS.DRIVER", "SYSTEM_PATH", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "SYSTEM_SERVICE_ADDRESS", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "WORK_RECORDS_FOLDER", PipeClass.Window)]
-    // RPC1c, PERSONDOOR1f: a terminal never reads or answers what waits for the window, and never reads the person key (D156 point 2).
+    // A terminal never reads or answers what waits for the window, and never reads the person key.
     [InlineData("DAORIS.DRIVER", "PERSON_CONFIRMATIONS", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "PERSON_CONFIRM", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "PERSON_CONFIRM_SHOWN", PipeClass.Window)]
-    // RPC1g1 (D238 point 2): the window is never a holder; a terminal lets go of its own hold by the pipe's LET_GO.
+    // The window is never a holder; a terminal lets go of its own hold by the pipe's LET_GO.
     [InlineData("DAORIS.DRIVER", "SESSION_HOLDS", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "SESSION_LET_GO", PipeClass.Window)]
     [InlineData("DAORIS.DRIVER", "PERSON_KEY", PipeClass.Window)]
-    // NOTIFY2j: nor what waits at the service's door as the window is told it; the service's own list stays its own door's.
+    // Nor what waits at the service's door as the window is told it; the service's own list stays its own door's.
     [InlineData("DAORIS.DRIVER", "SERVICE_CONFIRMATIONS", PipeClass.Window)]
     [InlineData("DAORIS.WINDOWS", "OPEN", PipeClass.Window)]
     [InlineData("DAORIS.TERMINAL", "INPUT", PipeClass.Window)]
@@ -411,16 +411,16 @@ public sealed class PipeCensusTests
     [InlineData("PLUGIN_UPDATE", """{"id":"acme.watch","apply":false}""", PipeClass.Open)]
     [InlineData("PLUGIN_UPDATE", """{"id":"acme.watch","apply":true}""", PipeClass.Person)]
     [InlineData("PLUGIN_UPDATE", """{"id":"acme.watch","apply":false,"Apply":true}""", PipeClass.Person)]
-    // KEEP1e: Free up space's list is open; every other form starts a run removing what it names, the person's delete.
+    // Free up space's list is open; every other form starts a run removing what it names, the person's delete.
     [InlineData("SYSTEM_SPACE_FREE", """{"plan":true}""", PipeClass.Open)]
     [InlineData("SYSTEM_SPACE_FREE", """{"plan":false,"units":[]}""", PipeClass.Person)]
     [InlineData("SYSTEM_SPACE_FREE", """{"units":[{"kind":"logs","id":"2026-09-01.driver.jsonl"}]}""", PipeClass.Person)]
     [InlineData("SYSTEM_SPACE_FREE", """{"plan":true,"Plan":"yes"}""", PipeClass.Person)]
-    // GITAPP2m: a history edit's plan is a look; its press, pinned or not, moves the branch.
+    // A history edit's plan is a look; its press, pinned or not, moves the branch.
     [InlineData("GIT_HISTORY_EDIT", """{"repository":"engine","edit":"rebase","branch":"topic","target":"main","plan":true}""", PipeClass.Open)]
     [InlineData("GIT_HISTORY_EDIT", """{"repository":"engine","edit":"rebase","branch":"topic","target":"main"}""", PipeClass.Person)]
     [InlineData("GIT_HISTORY_EDIT", """{"edit":"pick","plan":false,"said":true}""", PipeClass.Person)]
-    // REVIEW2 1-2: another casing, a name said twice, or `said` beside `plan` opens nothing the handler would read as the press.
+    // Another casing, a name said twice, or `said` beside `plan` opens nothing the handler would read as the press.
     [InlineData("GIT_HISTORY_EDIT", """{"repository":"engine","edit":"rebase","branch":"topic","target":"main","Plan":true}""", PipeClass.Person)]
     [InlineData("GIT_HISTORY_EDIT", """{"repository":"engine","edit":"rebase","branch":"topic","target":"main","plan":true,"said":true}""", PipeClass.Person)]
     [InlineData("GIT_HISTORY_EDIT", """{"edit":"pick","plan":true,"plan":true}""", PipeClass.Person)]
@@ -479,7 +479,7 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
-    /// DRAINHOLD1: while an update drains, a press waits for the restart only where it starts work the drain waits on, starts a process of
+    /// While an update drains, a press waits for the restart only where it starts work the drain waits on, starts a process of
     /// its own that runs on past its answer, or changes a repository through git; a stop, a take-back, an answer to a session under way and
     /// a word whose resume is the loop's, which the drain holds, go on. A conversation's go-on after an answer alone is the chat runner's at
     /// once, so that press waits too. A role's act waits until each act is classed.
@@ -503,7 +503,7 @@ public sealed class PipeCensusTests
     [InlineData("SET_HELPERS", PipeDrain.Waits)]
     [InlineData("SESSION_ANSWER_ALONE", PipeDrain.Waits)]
     [InlineData("SESSION_INPUT", PipeDrain.Waits)]
-    // LINESTOGETHER1b: a word moved to an ended head goes on with it at once, as one said there does.
+    // A word moved to an ended head goes on with it at once, as one said there does.
     [InlineData("SESSION_QUEUE_MOVE", PipeDrain.Waits)]
     [InlineData("START_CHAT", PipeDrain.Waits)]
     [InlineData("SESSION_HELPER_ASK", PipeDrain.Waits)]
@@ -535,7 +535,7 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
-    /// DRAINHOLD1, a review's finding: every setting writes the driver's file and asks the look at once, and a draining look holds only
+    /// Every setting writes the driver's file and asks the look at once, and a draining look holds only
     /// quests, answered parks and intakes (<c>InstallUpdate.Drained</c>). So a press that can let the look start anything else waits:
     /// - helpers, which no repository's hold reaches: their rule, the cap's slot, the actor they run on, an account ready again;
     /// - a hand-over, a second opinion, a landing (its rule, its review, its line, the opinion's answer over the gate);
@@ -558,7 +558,7 @@ public sealed class PipeCensusTests
             "SET_HOLD", "SET_DRIVABLE", "SET_TREES", "SET_STANDING", "SET_COMMITS", "SET_ACCESS", "SET_READ_ACROSS",
             "SET_WRITE_ACROSS", "SET_HEAVY_GATES", "SET_SESSION_CHECKS", "SET_SESSION_OPTION", "SET_AGENT_SETTINGS", "SET_HELP_MODE",
             "SET_HELP_GRANT", "SET_NOTIFY", "SET_QUIET", "SET_LANGUAGE", "RULE_ACTION", "RULE_PROPOSAL", "TOOLS_LOCATION", "TOOLS_DELETE", "TOOLS_GIT",
-            // INTEGRATE1d: an acceptance of a repository's integration declaration, a standing choice that starts nothing.
+            // An acceptance of a repository's integration declaration, a standing choice that starts nothing.
             "INTEGRATION_GATES",
         ];
 
@@ -567,7 +567,7 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
-    /// DRAINHOLD1: a read waits for no drain, whatever its route; the other modules' presses go on; a person's route the drain does not
+    /// A read waits for no drain, whatever its route; the other modules' presses go on; a person's route the drain does not
     /// class waits, the strictest, as an unclassed press is the person's.
     /// </summary>
     [Fact]
@@ -582,11 +582,11 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
-    /// CONFIRMWAIT1a-ii (the confirm-wait design §7.1): the person's routes whose payload carries a key D172 point 3 keeps in
+    /// The person's routes whose payload carries a key kept in
     /// <c>profiles/</c> alone are keyed, kept in no record across a restart: today <c>DAORIS.REMOTES</c> <c>SET</c> alone, whose
     /// <c>key</c> is the workspace's deployment key (<c>remotes</c>, a <c>profiles</c> entry); each keyed route is a person's.
     /// </summary>
-    /// <summary>REVIEW2: a pasted token over the pipe would be kept in the waiting record and shown on the card, so the route refuses it.</summary>
+    /// <summary>A pasted token over the pipe would be kept in the waiting record and shown on the card, so the route refuses it.</summary>
     [Fact]
     public void A_git_identity_press_carrying_a_token_is_refused_whole()
     {

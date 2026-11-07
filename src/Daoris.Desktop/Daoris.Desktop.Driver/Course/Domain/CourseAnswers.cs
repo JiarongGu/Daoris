@@ -1,31 +1,31 @@
 namespace Daoris.Driver;
 
-// FOUNDATION1e part 1 (the foundation design §3.1's answer table): what the course answers, read by nothing. The six answers carry
+// What the course answers, read by nothing. The six answers carry
 // their preconditions; a move's `why` and `by` are the closed enums at the end, today's nine reasons and three authors one to one.
-// Part 2's decision, CourseDecision.Decide, is in LineCourse.Decide.cs beside this file, a class of its own (partial is for generated
-// code, tools/partials.mjs), with the members it needed added here; no method here decides.
+// The decision, CourseDecision.Decide, is in LineCourse.Decide.cs beside this file, a class of its own (partial is for generated
+// code, tools/partials.mjs); no method here decides.
 
-/// <summary>When a move opens its new part: at once, or when the running turn ends (the move's first axis, §3.1).</summary>
+/// <summary>When a move opens its new part: at once, or when the running turn ends (the move's first axis).</summary>
 public enum CourseWhen
 {
-    /// <summary>Now: the person's press on a quest's session, which stops it as a stop (D163 point 1, D188 point 1).</summary>
+    /// <summary>Now: the person's press on a quest's session, which stops it as a stop.</summary>
     Now,
 
     /// <summary>At the turn's end: an agent's ask, the curve, and the person's press on a conversation with a closing turn asked.</summary>
     TurnEnd,
 }
 
-/// <summary>How a move carries the line's context to its new part (the move's third axis, §3.1).</summary>
+/// <summary>How a move carries the line's context to its new part (the move's third axis).</summary>
 public enum CourseHow
 {
     /// <summary>Daoris's brief of the whole line, the one composer.</summary>
     Brief,
 
-    /// <summary>The conversation's own files carried across, once SWITCHCTX1 lands (path M); no code writes it yet.</summary>
+    /// <summary>The conversation's own files carried across; no code writes it.</summary>
     Carry,
 }
 
-/// <summary>Which account a new part takes (the move's second axis, §3.2 step 6).</summary>
+/// <summary>Which account a new part takes (the move's second axis).</summary>
 public enum CourseAccountSource
 {
     /// <summary>The line's own account: a resume keeps it, and a fresh part the person pressed for takes it where ready.</summary>
@@ -46,7 +46,7 @@ public enum CourseAccountSource
 
 /// <summary>Where a new part runs: a role and choice, and the account by <see cref="CourseAccountSource"/>.</summary>
 /// <param name="Agent">The agent the new part opens on: a hand-over's, a later choice's on another agent; null for the line's own.</param>
-/// <param name="Kept">The account is kept on the new part's binding as the person's pick, which its later go-ons wait for (FOUNDATION1a-ii).</param>
+/// <param name="Kept">The account is kept on the new part's binding as the person's pick, which its later go-ons wait for.</param>
 public sealed record CourseWhere(
     CourseAccountSource Source, string? Role = null, string? Choice = null, string? Account = null, string? Agent = null, bool Kept = false);
 
@@ -62,7 +62,7 @@ public enum CourseDaorisWord
     /// <summary>The transient retry's instruction, keyed by the episode (<c>TransientRetry</c>).</summary>
     TransientRetry,
 
-    /// <summary>The restart's word after an update closed the record, keyed by the build (<c>Restart</c>, LIMITRESUME1i).</summary>
+    /// <summary>The restart's word after an update closed the record, keyed by the build (<c>Restart</c>).</summary>
     Restart,
 }
 
@@ -82,23 +82,23 @@ public enum CourseWaitWhy
     /// <summary>A transient retry's next try.</summary>
     TransientRetry,
 
-    /// <summary>A role's policy waits for the met choice's earliest moment back, at most its <c>upTo</c> (STAFFPOLICY1e).</summary>
+    /// <summary>A role's policy waits for the met choice's earliest moment back, at most its <c>upTo</c>.</summary>
     PolicyWait,
 }
 
 /// <summary>Why a line holds for the person (<see cref="LineCourse.Hold"/>), by reason code.</summary>
 public enum CourseHoldWhy
 {
-    /// <summary>The answers-alone bound: the next solicited answer waits for the person (COWORK1e).</summary>
+    /// <summary>The answers-alone bound: the next solicited answer waits for the person.</summary>
     AnswersAlone,
 
     /// <summary>No account carries the words and none resets: <see cref="LineAccount"/>'s hold, naming its repair.</summary>
     Account,
 
-    /// <summary>A transient end past its bound: it waits for the person's word or *Try again* (path N).</summary>
+    /// <summary>A transient end past its bound: it waits for the person's word or *Try again*.</summary>
     TransientBound,
 
-    /// <summary>A conversation's words with nothing to carry them on by itself: *cannot go on* (path B).</summary>
+    /// <summary>A conversation's words with nothing to carry them on by itself: *cannot go on*.</summary>
     CannotGoOn,
 
     /// <summary>The hand-over rule does not admit an agent's ask, so it goes to the person.</summary>
@@ -107,7 +107,7 @@ public enum CourseHoldWhy
     /// <summary>The scope's switch does not admit Daoris's own curve move.</summary>
     SwitchOff,
 
-    /// <summary>A move held for the person stands on the line until it closes <c>resolved</c> (§3.3).</summary>
+    /// <summary>A move held for the person stands on the line until it closes <c>resolved</c>.</summary>
     MoveHeld,
 
     /// <summary>
@@ -119,10 +119,10 @@ public enum CourseHoldWhy
     /// <summary>The person's press does not apply to this line: refused by its code, nothing kept (<see cref="LineCourse.Hold.Code"/>).</summary>
     Refused,
 
-    /// <summary>A role's policy asks the person before it moves the line to another choice (<c>ask</c>, STAFFPOLICY1e); the code is the condition met.</summary>
+    /// <summary>A role's policy asks the person before it moves the line to another choice (<c>ask</c>); the code is the condition met.</summary>
     PolicyAsk,
 
-    /// <summary>The line made its policy's bound of moves to another choice in 24 hours: the next waits for the person (<c>held.moves-bound</c>).</summary>
+    /// <summary>The line has made its policy's bound of moves to another choice in 24 hours: the next waits for the person (<c>held.moves-bound</c>).</summary>
     MovesBound,
 }
 
@@ -147,7 +147,7 @@ public enum CourseDoor
     /// <summary>*Not now*.</summary>
     NotNow,
 
-    /// <summary>*Go on with Daoris's brief*: a new part of the line, briefed, for a conversation that cannot go on in itself (D189).</summary>
+    /// <summary>*Go on with Daoris's brief*: a new part of the line, briefed, for a conversation that cannot go on in itself.</summary>
     GoOnBrief,
 
     /// <summary>A hand-over to another agent, for a driven record whose agent this machine no longer has.</summary>
@@ -156,7 +156,7 @@ public enum CourseDoor
     /// <summary>The person's yes to an agent's ask to hand its session over, which the hand-over rule asks them (<c>ask</c>).</summary>
     LetAskGo,
 
-    /// <summary>The person's yes to a policy's ask: <i>Go on now with {next}</i>, one move (STAFFPOLICY1e).</summary>
+    /// <summary>The person's yes to a policy's ask: <i>Go on now with {next}</i>, one move.</summary>
     GoOnNow,
 }
 
@@ -175,12 +175,12 @@ public enum CourseNeverWhy
     /// <summary>A record a later part supersedes.</summary>
     Superseded,
 
-    /// <summary>The old part of a standing move, whose words are the move's (O-2).</summary>
+    /// <summary>The old part of a standing move, whose words are the move's.</summary>
     StandingMove,
 }
 
 /// <summary>
-/// What the answer was read on, which the executor checks before it acts and asks again where one moved (§3.1): the record's revision, the
+/// What the answer is read on, which the executor checks before it acts and asks again where one moved: the record's revision, the
 /// words' state (their ids waiting), the quest's status, the account's cooling entry and the move record's phase.
 /// </summary>
 public sealed record CoursePreconditions(
@@ -189,7 +189,7 @@ public sealed record CoursePreconditions(
 
 /// <summary>
 /// How a line goes on: <see cref="Resume"/>, <see cref="Move"/>, <see cref="Start"/>, <see cref="Wait"/>, <see cref="Hold"/> or
-/// <see cref="Never"/> (the foundation design §3.1). Every answer but <see cref="Never"/> carries its <see cref="CoursePreconditions"/>.
+/// <see cref="Never"/>. Every answer but <see cref="Never"/> carries its <see cref="CoursePreconditions"/>.
 /// </summary>
 public abstract record LineCourse
 {
@@ -229,18 +229,18 @@ public abstract record LineCourse
 }
 
 /// <summary>
-/// Why a new part continues another, closed (the foundation design §3.1, <c>from_why</c>): <see cref="HandOverWhy"/>'s nine reasons one to
-/// one. <c>ContinueWhy.Account</c> is a box reason a closed quest's hand-over carries and is never a <c>from_why</c> (O3-13).
+/// Why a new part continues another, closed (<c>from_why</c>): <see cref="HandOverWhy"/>'s nine reasons one to
+/// one. <c>ContinueWhy.Account</c> is a box reason a closed quest's hand-over carries and is never a <c>from_why</c>.
 /// </summary>
 public enum CourseFromWhy
 {
     /// <summary>The person pressed it.</summary>
     Press,
 
-    /// <summary>The account was near its limit.</summary>
+    /// <summary>The account is near its limit.</summary>
     Near,
 
-    /// <summary>The account reached its limit.</summary>
+    /// <summary>The account has reached its limit.</summary>
     Limit,
 
     /// <summary>The agent asked for it.</summary>
@@ -249,19 +249,19 @@ public enum CourseFromWhy
     /// <summary>Daoris moved it by the person's switching setting.</summary>
     Curve,
 
-    /// <summary>Its own conversation was proven lost, so it went on in a new part.</summary>
+    /// <summary>Its own conversation is proven lost, so it goes on in a new part.</summary>
     Resume,
 
     /// <summary>A carry-on on the same account after a cut-off, a time-out, a crash or a refused turn.</summary>
     CarryOn,
 
-    /// <summary>A driven record's fallback: its resume was refused.</summary>
+    /// <summary>A driven record's fallback: its resume is refused.</summary>
     Retry,
 
-    /// <summary>A replacement: the agent did not offer the model asked, so the record never began.</summary>
+    /// <summary>A replacement: the agent does not offer the model asked, so the record never begins.</summary>
     NotOffered,
 
-    /// <summary>A role's policy moved the line off a choice whose service did not answer (STAFFPOLICY1e).</summary>
+    /// <summary>A role's policy moved the line off a choice whose service did not answer.</summary>
     Transient,
 
     /// <summary>A role's policy moved the line off a choice that failed again and again.</summary>
@@ -274,7 +274,7 @@ public enum CourseFromWhy
     Budget,
 }
 
-/// <summary>Who asked for a new part (the foundation design §3.1, <c>from_by</c>): <see cref="HandOverBy"/>'s three authors one to one.</summary>
+/// <summary>Who asked for a new part (<c>from_by</c>): <see cref="HandOverBy"/>'s three authors one to one.</summary>
 public enum CourseFromBy
 {
     /// <summary>The person, by a press or the terminal verb.</summary>

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The one registration list (AGENTPROVIDER1 rows b and d; the agent-provider design §10, §11): the providers this build carries,
+/// The one registration list: the providers this build carries,
 /// written on the contract, each a line naming its registration and nothing else. A provider added later is one line here and its own
 /// folder under <c>Agents/Providers/</c>; the census holds this file to naming registrations and never an id, a type's vocabulary or a
 /// branch on either (<c>ProviderCensusTests</c>).
@@ -17,7 +17,7 @@ internal static class Providers
         AltStubProvider.Registration(),
     ]);
 
-    /// <summary>Every provider registered, each with its doors; the shim presents their doors to today's readers.</summary>
+    /// <summary>Every provider registered, each with its doors.</summary>
     public static IReadOnlyList<Provider> Built() => Registered.Value;
 
     /// <summary>

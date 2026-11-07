@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The refusal of a door id this build does not know (AGENTPROVIDER1 s-i; the agent-provider design §7 row 1): asking whether a
+/// The refusal of a door id this build does not know: asking whether a
 /// repository that has not adopted Daoris may be driven names a door, and a name no registration answers to is no door, so no answer
-/// is given where it once read as the pipe. It carries the id, so a surface says which one and a caller tells it from any other
+/// is given rather than reading it as the pipe. It carries the id, so a surface says which one and a caller tells it from any other
 /// refusal.
 /// </summary>
 public sealed class UnknownDoorException(string door) : DriverException(Words(door))

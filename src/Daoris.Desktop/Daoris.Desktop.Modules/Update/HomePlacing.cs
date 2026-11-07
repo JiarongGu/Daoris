@@ -5,11 +5,11 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop;
 
-/// <summary>An entry renamed at a start (HOMELAYOUT3): its name, where it was, where it went, and why it did not where it did not.</summary>
+/// <summary>An entry renamed at a start: its name, where it came from, where it went, and why it did not where it did not.</summary>
 public sealed record HomeMove(string Entry, string From, string? To, string? Reason = null);
 
 /// <summary>
-/// What a start's move into D172's places did: what moved, what could not and why, what a start that stopped mid-move left and
+/// What a start's move into the home's places did: what moved, what could not and why, what a start that stopped mid-move left and
 /// this one put back, and why nothing was tried this start where nothing was.
 /// </summary>
 public sealed record HomePlaced(
@@ -23,19 +23,19 @@ public sealed record HomePlaced(
 }
 
 /// <summary>
-/// An install's home moved once into D172's places (HOMELAYOUT3, the install layout design §7, D172 point 6): at the desktop's
+/// An install's home moved once into the home's places: at the desktop's
 /// start, before anything resolves a path, each entry only Daoris names, by a path it derives at each use, renamed from its old
 /// place under the install's <c>data/</c> to its new one. What anything else names by path (an account home, a tree, a room, a
 /// kept file, <c>bin/</c>) never moves, and the person's records stay in <c>data/</c>, where they are the same place.
 /// </summary>
 /// <remarks>
-/// <para><b>When.</b> Only with the last update at rest (no <c>update/previous/</c>, no swap under way: D139's roll-back reads
+/// <para><b>When.</b> Only with the last update at rest (no <c>update/previous/</c>, no swap under way: the roll-back reads
 /// only old places, so the first start after a swap moves nothing), with no other process of the folder running (a host adopted
 /// from an earlier start, a browser, a connector from <c>bin/</c> may hold a path it took once), and under the home's lease, taken
 /// without waiting: a start that finds any of these moves nothing and the next start tries again.</para>
 ///
-/// <para><b>How.</b> A rename on the one volume, never a copy; one that fails leaves its entry where it was, read there by D172
-/// point 5, and is tried again at the next start. Nothing is deleted but an empty folder at a new place, which holds no entry. An
+/// <para><b>How.</b> A rename on the one volume, never a copy; one that fails leaves its entry where it is, read there by
+/// its readers, and is tried again at the next start. Nothing is deleted but an empty folder at a new place, which holds no entry. An
 /// entry whose new place holds it too is left in both and said: its readers refuse it naming both. A held lease is never moved:
 /// <c>home-lease</c> and <c>driver-lock</c> are no entries of the move.</para>
 ///
@@ -47,8 +47,8 @@ public sealed record HomePlaced(
 public static class HomePlacing
 {
     /// <summary>
-    /// The entries D172 moves (the design §3's <i>moves</i>), by name. Not the lease and the older lock (held, never renamed under
-    /// their holder), not a session's pid (read in one folder, the sessions' own, which stays), and nothing D172 keeps where it is.
+    /// The entries the move relocates, by name. Not the lease and the older lock (held, never renamed under
+    /// their holder), not a session's pid (read in one folder, the sessions' own, which stays), and nothing the move keeps where it is.
     /// </summary>
     public static IReadOnlyList<string> Moves { get; } =
     [
@@ -151,7 +151,7 @@ public static class HomePlacing
         return found;
     }
 
-    /// <summary>The last update at rest (D139): nothing of the build before kept, and no swap moving, started or confirmed.</summary>
+    /// <summary>The last update at rest: nothing of the build before kept, and no swap moving, started or confirmed.</summary>
     private static bool AtRest(string install) =>
         !Directory.Exists(Path.Combine(install, StagedBuild.Folder, StagedBuild.Previous)) && !StagedBuild.UnderWay(install);
 
@@ -159,7 +159,7 @@ public static class HomePlacing
     private static string JournalOf(string home) => DaorisHome.Places(home, HomeEntry.HomeMove)[0];
 
     /// <summary>
-    /// Each rename this start would make, in the table's order: an entry D172 moves whose old place is there and whose new place
+    /// Each rename this start would make, in the table's order: an entry the move relocates whose old place is there and whose new place
     /// is not (an empty folder there holds no entry). One in both is said in <paramref name="failed"/> and left.
     /// </summary>
     private static List<HomeMove> Plan(string home, List<HomeMove> failed)
@@ -227,7 +227,7 @@ public static class HomePlacing
     }
 
     /// <summary>
-    /// The window's memory, as one (the design §7.3): each of its folders into the staging folder, which then takes the new
+    /// The window's memory, as one: each of its folders into the staging folder, which then takes the new
     /// place's name; a refusal on the way puts back what went in, so the window reads its memory where it was.
     /// </summary>
     private static void MoveWindow(IReadOnlyList<HomeMove> steps, string staging, string final, List<HomeMove> moved, List<HomeMove> failed)

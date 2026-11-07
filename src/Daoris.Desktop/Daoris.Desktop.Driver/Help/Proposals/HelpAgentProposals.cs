@@ -4,7 +4,7 @@ using static Daoris.Driver.HelpProposals;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's <c>agent</c> proposal (HELP6): an agent's Update or a pin — its door <c>update</c> or <c>pin</c>,
+/// Ask Daoris's <c>agent</c> proposal: an agent's Update or a pin — its door <c>update</c> or <c>pin</c>,
 /// its target the agent, its value a pin's version — judged by what the Agents screen offers and what
 /// <c>HARNESS_ACTION</c> refuses: Update where the roster's <c>updates</c> names one and the agent is
 /// installed, a pin where the door declares a package or a channel, of one exact release.
@@ -13,29 +13,29 @@ namespace Daoris.Driver;
 /// <para>Applied as <c>HARNESS_ACTION</c>'s own start, one at a time; its end is said into the conversation after
 /// what the Apply did (<see cref="HelpProposals.ApplyAsync"/>).</para>
 ///
-/// <para>Since TOOL4g the <c>use</c> door's judge (D130 §9, §16.6): how a scope's list is used — <c>use</c> (<c>goal</c> or
-/// <c>order</c>), <c>keep</c> (an account of the list, or JSON null for none), since SWITCH1d <c>switch</c> and <c>curve</c>
-/// (each window's points, or JSON null for none), and the old <c>early</c> and <c>near</c>, still read, each a field of
+/// <para>The <c>use</c> door's judge: how a scope's list is used — <c>use</c> (<c>goal</c> or
+/// <c>order</c>), <c>keep</c> (an account of the list, or JSON null for none), <c>switch</c> and <c>curve</c>
+/// (each window's points, or JSON null for none), and <c>early</c> and <c>near</c>, still read, each a field of
 /// the proposal's file beside its target and workspace — judged as <c>daoris agent account use</c> judges it and applied as
-/// the screen's <c>ACCOUNT_USE</c>. Since TOOL4l-b it is listed in <see cref="Doors"/>, with <c>order</c> (a scope's list written
+/// the screen's <c>ACCOUNT_USE</c>. It is listed in <see cref="Doors"/>, with <c>order</c> (a scope's list written
 /// whole, or a workspace sent back to the machine's accounts) and <c>ready</c> (<i>Try now</i>, an account's cool-off ended),
-/// since the service's <c>agent_propose</c> writes all three (TOOL4l-a).</para>
+/// since the service's <c>agent_propose</c> writes all three.</para>
 ///
-/// <para>Since POOL1b (D197 point 6, the account-pool design §5.3) an agent's accounts are one set: <c>use</c> and <c>order</c> act on
+/// <para>An agent's accounts are one set: <c>use</c> and <c>order</c> act on
 /// it.</para>
 /// </remarks>
 internal sealed partial class HelpAgentProposals : IHelpProposalKind
 {
     public string Kind => "agent";
 
-    // HELP6: every door built since HELP1c, each a card the person applies the same way.
+    // Every door, each a card the person applies the same way.
     public string Tool => "agent_propose";
 
     public IReadOnlyList<string> Doors { get; } = ["update", "pin", "use", "order", "ready"];
 
     /// <summary>
     /// The <c>use</c> door's four fields, read from any file that carries one: a field left out is no change. And, from an
-    /// agent's own file, the <c>order</c> door's list or clear and the <c>ready</c> door's account (TOOL4l-b).
+    /// agent's own file, the <c>order</c> door's list or clear and the <c>ready</c> door's account.
     /// </summary>
     public HelpProposal Read(HelpProposal proposal, JsonElement file)
     {
@@ -65,7 +65,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         int? near = file.TryGetProperty("near", out var number) && number.ValueKind == JsonValueKind.Number && number.TryGetInt32(out var whole)
             ? whole
             : null;
-        // SWITCH1d: the switch and the person's curve, a curve of JSON null taking it out; one that breaks a rule is kept as the
+        // The switch and the person's curve, a curve of JSON null taking it out; one that breaks a rule is kept as the
         // twins' sentence, which the plan refuses with.
         var switched = Json.Text(file, "switch");
         var curves = file.TryGetProperty("curve", out var curve);
@@ -110,7 +110,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         {
             if (!door.Present)
             {
-                // UX6e2: an agent's ways in, Install among them, are on its page in the Agents place since UX6e.
+                // An agent's ways in, Install among them, are on its page in the Agents place.
                 return Refused($"`{name}` is not installed on this machine, so there is nothing to update — install it under "
                     + $"Agents → the agent's page → Ways in → Install, or with `daoris agent install {name}`.");
             }
@@ -137,7 +137,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         if (door.Channel is { Length: > 0 } channel)
         {
             // The channel's own refusals, in its words: the one channel this build installs from, and a version
-            // it can verify (AGT2b).
+            // it can verify.
             if (channel != ClaudeReleases.Channel)
             {
                 return Refused($"this build installs from no `{channel}` channel, so nothing would be fetched or pinned. "
@@ -155,7 +155,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         }
         else if (!ExactRelease().IsMatch(version))
         {
-            // npm would take a pointer, and a pin naming one would change under a running arrangement (USE1a).
+            // npm would take a pointer, and a pin naming one would change under a running arrangement.
             return Refused($"`{version}` is not one exact release — a pin names one, like 1.2.3, never a pointer such as latest.");
         }
 
@@ -165,14 +165,14 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
             terminal, null);
     }
 
-    /// <summary>The set's order as the facts read it (the projection, POOL1a2): every account of the owner's; none where nothing was read.</summary>
+    /// <summary>The set's order as the facts read it (the projection): every account of the owner's; none where nothing is read.</summary>
     private static IReadOnlyList<string> SetOf(HarnessSettings? wiring, string owner) => wiring?.Set(owner).List ?? [];
 
     /// <summary>
-    /// <c>use</c> (TOOL4g, D130 §16.6; POOL1b, §5.3): how the set is used, its one entry of settings, as <c>daoris agent account use</c>
-    /// takes it — an agent with an account of Daoris's, a way to use accounts and a switch this build knows, a curve that keeps its rules
-    /// (SWITCH1d), a near from 50 to 99, and a kept account of the set that leaves driven work another — said in its words, the switch and
-    /// the curve in the curve's terms. A door's accounts are its owner's (AGT7), so the command and the sentence name the owner.
+    /// <c>use</c>: how the set is used, its one entry of settings, as <c>daoris agent account use</c>
+    /// takes it — an agent with an account of Daoris's, a way to use accounts and a switch this build knows, a curve that keeps its rules,
+    /// a near from 50 to 99, and a kept account of the set that leaves driven work another — said in its words, the switch and
+    /// the curve in the curve's terms. A door's accounts are its owner's, so the command and the sentence name the owner.
     /// </summary>
     private static HelpPlan Use(HelpProposal proposal, HelpMachineFacts facts)
     {
@@ -184,7 +184,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
 
         var owner = door.AccountsOf;
         var change = proposal.AccountUse ?? new UseChange();
-        // The person's curve as the terminal spells it, a `--curve <window>=<elapsed>:<used>,…` a window (SWITCH1d).
+        // The person's curve as the terminal spells it, a `--curve <window>=<elapsed>:<used>,…` a window.
         var curve = change.Curve is { } set
             ? string.Concat(UseCurve.Windows.Where(window => set[window] is not null).Select(window => $" --curve {window}={Spelled(set[window]!, ",")}"))
             : "";
@@ -246,7 +246,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         if (change.Use is { } chosen) said.Add(chosen == "order" ? "uses its accounts one by one, in order" : "makes the most of its accounts");
         if (change.Keep?.Trim() is { Length: > 0 } held) said.Add($"keeps `{held}` for conversations");
         else if (change.NoKeep) said.Add("keeps no account for conversations");
-        // SWITCH1d: in the curve's terms, the old names too, as the file reads them on (D165 §6).
+        // In the curve's terms, the old names too, as the file reads them on.
         if (change.Switch is { } chosenSwitch) said.Add(Switching(chosenSwitch));
         else if (change.Early is { } switches) said.Add(Switching(switches ? "smart" : "off"));
         if (change.Near is { } at) said.Add($"holds its own curve's five-hour window at {at}%");
@@ -277,9 +277,9 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         string.Join(by, points.Select(point => $"{point.Elapsed}:{point.Used}"));
 
     /// <summary>
-    /// <c>order</c> (TOOL4l-b, D130 §9; POOL1b, §5.3): the set's order, as <c>daoris agent account order</c> takes it — the accounts named
+    /// <c>order</c>: the set's order, as <c>daoris agent account order</c> takes it — the accounts named
     /// first, in that order, each an account here and once, and the rest after in their order — or <c>clear</c>, the ids' order again,
-    /// clearing no setting; said in its words. A door's accounts are its owner's (AGT7).
+    /// clearing no setting; said in its words. A door's accounts are its owner's.
     /// </summary>
     private static HelpPlan Order(HelpProposal proposal, HelpMachineFacts facts)
     {
@@ -325,8 +325,8 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// <c>ready</c> (TOOL4l-b, D125 §2.3): <i>Try now</i>, an account's cool-off ended early as <c>daoris agent account ready</c>
-    /// ends it, since the person may know the limit was raised. An account of the door's owner (AGT7) that is cooling, or
+    /// <c>ready</c>: <i>Try now</i>, an account's cool-off ended early as <c>daoris agent account ready</c>
+    /// ends it, since the person may know the limit is raised. An account of the door's owner that is cooling, or
     /// <c>own</c>, the tool's own sign-in, when that is; one not cooling has nothing to end, as the terminal says.
     /// </summary>
     private static HelpPlan Ready(HelpProposal proposal, HelpMachineFacts facts)
@@ -364,7 +364,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
                     : $"no account of `{owner}` is cooling."));
         }
 
-        // The tool's own sign-in is read-only (D175): only an old cool-off of it ends, and no start runs on it.
+        // The tool's own sign-in is read-only: only an old cool-off of it ends, and no start runs on it.
         return new HelpPlan(null,
             own
                 ? $"End the old cool-off of `{owner}`'s own sign-in. Daoris starts no session in it; this only clears what was recorded."
@@ -393,7 +393,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
                 return applying.Settled(false, $"Not applied: `#{id}` (`{plan.Terminal}`) — {error.Message}", error.Message);
             }
 
-            // Cooling at the judge and not at the press: the file moved between, so nothing was changed (as the terminal says).
+            // Cooling at the judge and not at the press: the file moved between, so nothing is changed (as the terminal says).
             if (!ended)
             {
                 const string passed = "it is not cooling any more, so nothing changed.";
@@ -463,25 +463,25 @@ public interface IHelpAgentDoors
     Task StartAgentActionAsync(string harness, string action, string? version, Action<int, string?> ended, CancellationToken ct);
 
     /// <summary>
-    /// <c>ACCOUNT_USE</c>'s own <c>use</c> (TOOL4g; POOL1b): how a door's owner's set is used, refused as the screen refuses it and
+    /// <c>ACCOUNT_USE</c>'s own <c>use</c>: how a door's owner's set is used, refused as the screen refuses it and
     /// written as it writes it.
     /// </summary>
     Task SetAccountUseAsync(string harness, UseChange change, CancellationToken ct);
 
     /// <summary>
-    /// <c>ACCOUNT_USE</c>'s own <c>order</c> (TOOL4l-b; POOL1b): a door's owner's set ordered, the accounts named first and the rest after,
+    /// <c>ACCOUNT_USE</c>'s own <c>order</c>: a door's owner's set ordered, the accounts named first and the rest after,
     /// or, with <paramref name="clear"/>, returned to the ids' order; refused as the screen refuses it and written as it writes it.
     /// </summary>
     Task SetAccountOrderAsync(string harness, IReadOnlyList<string> accounts, bool clear, CancellationToken ct);
 
     /// <summary>
-    /// <c>ACCOUNT_USE</c>'s own <c>ready</c> (TOOL4l-b): <i>Try now</i>, an account's cool-off ended, or the tool's own sign-in's
-    /// where <paramref name="account"/> is null; true when it was cooling, then the loop asked to look.
+    /// <c>ACCOUNT_USE</c>'s own <c>ready</c>: <i>Try now</i>, an account's cool-off ended, or the tool's own sign-in's
+    /// where <paramref name="account"/> is null; true when it is cooling, then the loop asks to look.
     /// </summary>
     Task<bool> ReadyAccountAsync(string harness, string? account, CancellationToken ct);
 }
 
-/// <summary>The <c>order</c> door's fields (TOOL4l-b): the list in walk order, or a workspace's list cleared.</summary>
+/// <summary>The <c>order</c> door's fields: the list in walk order, or a workspace's list cleared.</summary>
 public sealed record AccountOrder(IReadOnlyList<string> Accounts, bool Clear);
 
 

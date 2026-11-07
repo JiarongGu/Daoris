@@ -4,7 +4,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop;
 
-/// <summary>Why the desk refuses a request or a decline (STEWARDROLE1c, D209 §6.2), each said as data with nothing kept.</summary>
+/// <summary>Why the desk refuses a request or a decline, each said as data with nothing kept.</summary>
 public static class DeskWhy
 {
     /// <summary>The caller's ten open requests, or the desk's hundred, are filed: the per-caller bound is judged first.</summary>
@@ -34,12 +34,12 @@ public static class DeskStates
     /// <summary>Closed by the holder's decline, with its reason.</summary>
     public const string Declined = "declined";
 
-    /// <summary>Open when Daoris stopped (COMMS1l): its caller's run and the steward's appointment ended with it, so nothing answers it.</summary>
+    /// <summary>Open when Daoris stopped: its caller's run and the steward's appointment ended with it, so nothing answers it.</summary>
     public const string Interrupted = "interrupted";
 }
 
 /// <summary>
-/// One request on the desk as the holder's verb and the owner's line read it (STEWARDROLE1c, D209 §6.2): what the caller asked the steward
+/// One request on the desk as the holder's verb and the owner's line read it: what the caller asked the steward
 /// to do, to what and why, all three the caller's claims; when; where it stands; the act that answered it or the holder's reason for its
 /// decline. Never the caller's key.
 /// </summary>
@@ -49,7 +49,7 @@ public sealed record DeskRequestNow(
 /// <summary>A filing's answer: filed with its id, or refused with why (<see cref="DeskWhy"/>), keeping nothing.</summary>
 public sealed record DeskFiled(bool Filed, string? Id, string? Why);
 
-/// <summary>Who a desk request is counted against (D209 §6.2): a key the per-caller bound is kept by, never shown.</summary>
+/// <summary>Who a desk request is counted against: a key the per-caller bound is kept by, never shown.</summary>
 public interface IDeskCaller
 {
     /// <summary>The caller's key: the agent job the pipe's client is in, else its nearest long-lived ancestor; <see cref="DeskCaller.Untold"/> where neither is known.</summary>
@@ -57,9 +57,9 @@ public interface IDeskCaller
 }
 
 /// <summary>
-/// The desk's caller look (STEWARDROLE1c, D209 §6.2, Codex's round-3 finding 11). The pipe's client is the verb's own process, new at every
+/// The desk's caller look. The pipe's client is the verb's own process, new at every
 /// request, so the bound is never keyed by it: it is keyed by <b>the agent job the caller look places the verb in</b> (every session Daoris
-/// runs, D201 part (i)), where it places it in one, else by <b>the nearest long-lived ancestor</b> the walk up the verb's parents finds,
+/// runs), where it places it in one, else by <b>the nearest long-lived ancestor</b> the walk up the verb's parents finds,
 /// the working session's harness or a terminal's shell. One agent running the verb a hundred times so fills its own ten alone.
 /// </summary>
 /// <remarks>
@@ -107,7 +107,7 @@ public sealed class DeskCaller(Func<PipeClientProcess?, string?> jobOf, IProcess
 }
 
 /// <summary>
-/// The steward's desk (STEWARDROLE1c, D209 §6.2): what any caller asks the steward to do, read by the holder as claims.
+/// The steward's desk: what any caller asks the steward to do, read by the holder as claims.
 /// <c>STEWARD_REQUEST { act, target, why }</c> files one, an <c>Open</c> route any caller may use; at most
 /// <see cref="PerCaller"/> open per caller (<see cref="IDeskCaller"/>) and <see cref="InAll"/> open in all, the per-caller bound judged
 /// first, another refused <c>desk-full</c>. <b>It grants nothing and never admits an act</b>: an act it asks for is judged by
@@ -116,7 +116,7 @@ public sealed class DeskCaller(Func<PipeClientProcess?, string?> jobOf, IProcess
 /// </summary>
 /// <remarks>
 /// <para>Its own lock, never taken around the judge's: the judge calls in under its own, and nothing here calls out.</para>
-/// <para><b>Its history</b> (COMMS1l, the comms design §10 row l): every change is written to <paramref name="path"/>, and a desk read back
+/// <para><b>Its history</b>: every change is written to <paramref name="path"/>, and a desk read back
 /// at a restart reads each request still open <see cref="DeskStates.Interrupted"/>. The callers and the appointment were the run's, so
 /// none is revived: the file keeps no caller's key and no grant, and an interrupted request counts toward no caller's bound.</para>
 /// </remarks>
@@ -157,7 +157,7 @@ public sealed class StewardDesk(TimeProvider clock, string? path = null)
     private readonly Lock _gate = new();
     private readonly List<Held> _requests = Restarted(path, clock);
 
-    /// <summary>Where the desk's history is kept (COMMS1l); null where the run's memory alone holds it.</summary>
+    /// <summary>Where the desk's history is kept; null where the run's memory alone holds it.</summary>
     public string? Path => path;
 
     /// <summary>
@@ -180,7 +180,7 @@ public sealed class StewardDesk(TimeProvider clock, string? path = null)
     }
 
     /// <summary>
-    /// The steward's act that ran (D209 §5.1): every open request for that act on what it acted on (its repository, quest or session, as
+    /// The steward's act that ran: every open request for that act on what it acted on (its repository, quest or session, as
     /// the act names them, without case or a quest's <c>#</c>) closed as answered by it.
     /// </summary>
     public void Answered(string actId, string act, params string?[] targets)
@@ -279,7 +279,7 @@ public sealed class StewardDesk(TimeProvider clock, string? path = null)
     }
 
     /// <summary>
-    /// The history a restart reads (COMMS1l): each request as it was kept, one still open read <see cref="DeskStates.Interrupted"/> at
+    /// The history a restart reads: each request as it is kept, one still open read <see cref="DeskStates.Interrupted"/> at
     /// this moment and written so. A file that does not read is an empty desk; a request in another shape is passed over.
     /// </summary>
     private static List<Held> Restarted(string? path, TimeProvider clock)
@@ -362,8 +362,8 @@ public sealed class StewardDesk(TimeProvider clock, string? path = null)
 }
 
 /// <summary>
-/// The holder's decline of a desk request (STEWARDROLE1c, D209 §6.2): <c>ROLE_ACT</c>'s <c>desk-decline</c>, <c>{ request, reason }</c>,
-/// judged as every act is, from the holder alone. Not one of §3.1's acts: it changes nothing of Daoris's controls, so it is in no
+/// The holder's decline of a desk request: <c>ROLE_ACT</c>'s <c>desk-decline</c>, <c>{ request, reason }</c>,
+/// judged as every act is, from the holder alone. Not one of the steward's table acts: it changes nothing of Daoris's controls, so it is in no
 /// appointment's <c>acts</c> and every steward's appointment may make it; its target is the request, which no owner's mark or gate names.
 /// </summary>
 public sealed class DeskDecline : IRoleAct

@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The person's Edge as Daoris's browser (BRW12, D84): Edge on a profile under the home, started with a
+/// The person's Edge as Daoris's browser: Edge on a profile under the home, started with a
 /// debug port the plugins' servers attach to, as `${browser}`. Pure, so where it is looked for, what it
 /// is started with and how a running one is found again are tested without an Edge.
 /// </summary>
@@ -13,7 +13,7 @@ namespace Daoris.Desktop;
 /// <para><b>A profile of Daoris's, never the person's default.</b> Chromium refuses a debug port on
 /// the default profile, so the person's everyday Edge cannot be driven at all. Edge signs a profile
 /// in to the Windows account's Microsoft account on its own, which is what this option is for, and
-/// its sync is the person's to turn on (`docs/2026-09-28-managed-edge-evidence.md` §5).</para>
+/// its sync is the person's to turn on (`docs/2026-09-28-managed-edge-evidence.md`).</para>
 ///
 /// <para><b>Found again, not started twice.</b> A second Edge started on the same profile hands over
 /// to the one already running and exits, and that one listens on the port it was started with. So the

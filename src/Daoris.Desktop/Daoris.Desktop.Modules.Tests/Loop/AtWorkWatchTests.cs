@@ -7,7 +7,7 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// COWORKVIEW1a's one judge (the design §4.1, rules 11 to 13): each landed composition registers what it read, and the judge wakes a
+/// The one judge: each landed composition registers what it read, and the judge wakes a
 /// read once where any of it moved, its dependencies then leaving the union until it is asked again and lands.
 /// </summary>
 public sealed class AtWorkWatchTests : IDisposable

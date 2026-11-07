@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <summary>
 /// The application a test starts as Daoris's browser: the one this project's reference to Daoris.Desktop.App builds,
 /// in this test's own configuration, beside its engine. Never the newest of every build in the application's folder: a
-/// release layout a rehearsal left there, from before the codecs engine, was the one started, on the standard CEF.
+/// release layout a rehearsal left there, from before the codecs engine, would be the one started, on the standard CEF.
 /// </summary>
 internal static class BuiltApplication
 {

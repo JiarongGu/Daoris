@@ -14,7 +14,7 @@ public sealed class GitRoutes(DriverContext context)
 {
     private readonly DriverLoop _loop = context.Loop;
 
-    // One reader for the module's life, so its answers, kept by whole commit ids (D147 §4.2), outlive a call: a page asking the
+    // One reader for the module's life, so its answers, kept by whole commit ids, outlive a call: a page asking the
     // same commit twice starts no second git.
     private readonly GitReads _gitReads = new();
 
@@ -50,7 +50,7 @@ public sealed class GitRoutes(DriverContext context)
             .Where(row => string.Equals(row.Repository, each.Repository, StringComparison.Ordinal)
                 && string.Equals(RemoteTarget.Workspace(row.Workspace), each.Workspace, StringComparison.Ordinal))
             .Select(row => row.Root)];
-        // GITAUTH1e: a repository's Setup asks for its remotes with what serves each (the git-auth design §7.3), beside the list.
+        // A repository's Setup asks for its remotes with what serves each, beside the list.
         var remotes = new Dictionary<(string, string), IReadOnlyList<GitRemoteRow>>();
         if (read.Remotes && (named is not null || read.Workspace is not null))
         {
@@ -83,9 +83,9 @@ public sealed class GitRoutes(DriverContext context)
         };
     }
 
-    // The checkout's current branch, for the composer's tree chip (NEW1e-a): `{ branch }`, null where HEAD is detached. Its own
+    // The checkout's current branch, for the composer's tree chip: `{ branch }`, null where HEAD is detached. Its own
     // route, since the list costs every branch. The checkout is found as GitAnsweredAsync finds it; 🔴 no path in any answer or
-    // sentence (D47 §4), and the git failure's words name none either.
+    // sentence, and the git failure's words name none either.
     [DriverRoute("CHECKOUT_BRANCH", PipeClass.Open)]
     private async Task<object?> CheckoutBranchAsync(GitCheckoutRead read, CancellationToken cancellationToken)
     {
@@ -134,7 +134,7 @@ public sealed class GitRoutes(DriverContext context)
         await GitAnsweredAsync(read.Repository, read.Workspace, cancellationToken, (root, token) =>
             _gitReads.BlameAsync(root, read.Commit ?? "", read.Path ?? "", token));
 
-    // Two commits compared: the commits only one side holds, bounded (D147 §2.6: not paged), and the changes.
+    // Two commits compared: the commits only one side holds, bounded (not paged), and the changes.
     [DriverRoute("GIT_COMPARE", PipeClass.Open)]
     private async Task<object?> GitCompareAsync(GitCompareRead read, CancellationToken cancellationToken) =>
         await GitAnsweredAsync(read.Repository, read.Workspace, cancellationToken, (root, token) =>
@@ -192,7 +192,7 @@ public sealed class GitRoutes(DriverContext context)
         if (context is null) return refused;
         var journal = new ActJournal(_loop.Home);
         var undone = target.Act ?? "";
-        // GITAPP2j: a resolve and a mark are undone by Resolve's own rules, which stand in a merge or a rebase.
+        // A resolve and a mark are undone by Resolve's own rules, which stand in a merge or a rebase.
         return Staged(
             journal.Act(undone)?.Kind is ResolveVerbs.Resolve or ResolveVerbs.Mark
                 ? await new ResolveActs(journal).UndoAsync(context, undone, cancellationToken).ConfigureAwait(false)
@@ -288,7 +288,7 @@ public sealed class GitRoutes(DriverContext context)
         await GitAnsweredAsync(read.Repository, read.Workspace, cancellationToken, (root, token) =>
             new StashActs(new ActJournal(_loop.Home)).PlanAsync(root, token, read.Repository));
 
-    // The repository's deletes as the journal holds them, each with whether its Undo (`GIT_REF_UNDO`) is open (ONEWAY1r). Told by event.
+    // The repository's deletes as the journal holds them, each with whether its Undo (`GIT_REF_UNDO`) is open. Told by event.
     [DriverRoute("GIT_DELETES", PipeClass.Open)]
     [ByEvent("GIT_DELETES", Untold = "the journal's ref acts and the repository's refs, which no scope tells")]
     private async Task<object?> GitDeletesAsync(GitCheckoutRead read, CancellationToken cancellationToken) =>
@@ -395,7 +395,7 @@ public sealed class GitRoutes(DriverContext context)
     [Publishes("GIT_REF_RENAME", StateScopes.Driver)]
     private Task<object?> GitRefRenameAsync(GitRefRenameAct act, CancellationToken cancellationToken) => _refs.GitRefRenameAsync(act, cancellationToken);
 
-    // GITAPP2e: the Finish beside a stopped rename's answer, the section moved alone where the ref and the section stand as the act journaled them.
+    // The Finish beside a stopped rename's answer, the section moved alone where the ref and the section stand as the act journaled them.
     [DriverRoute("GIT_REF_FINISH", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("GIT_REF_FINISH", Repository = "repository", Workspace = "workspace")]
     [GroundRepository("GIT_REF_FINISH", "repository", "workspace")]
@@ -403,8 +403,8 @@ public sealed class GitRoutes(DriverContext context)
     [Publishes("GIT_REF_FINISH", StateScopes.Driver)]
     private Task<object?> GitRefFinishAsync(GitActTarget target, CancellationToken cancellationToken) => _refs.GitRefFinishAsync(target, cancellationToken);
 
-    // GITAPP2c: the Undo beside a create's answer, the act's ref deleted only at the id the act made it at; refused as data where it moved.
-    // GITAPP2d: and beside a delete's, the ref made again where the name is free and its section put back.
+    // The Undo beside a create's answer, the act's ref deleted only at the id the act made it at; refused as data where it moved.
+    // And beside a delete's, the ref made again where the name is free and its section put back.
     [DriverRoute("GIT_REF_UNDO", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("GIT_REF_UNDO", Repository = "repository", Workspace = "workspace")]
     [GroundRepository("GIT_REF_UNDO", "repository", "workspace")]

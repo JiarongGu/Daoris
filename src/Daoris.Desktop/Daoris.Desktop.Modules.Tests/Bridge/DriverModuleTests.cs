@@ -4,11 +4,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The session-control surface's host half (D46 §6, D49) — the largest thing the page talks to, and
+/// The session-control surface's host half — the largest thing the page talks to, and
 /// the one with the most to get wrong.
 /// </summary>
 /// <remarks>
-/// What stays here is the dispatcher's own contract (MOD5): a malformed call and an unknown route. Each
+/// What stays here is the dispatcher's own contract: a malformed call and an unknown route. Each
 /// domain's routes are tested beside it, in the class named for its handler class (`DriverModuleTreesTests` for
 /// `TreesRoutes.cs`), and the table's shape in `DriverModuleRoutesTests`.
 /// </remarks>
@@ -30,7 +30,7 @@ public sealed class DriverModuleTests : DriverModuleBridge
 
     /// <summary>
     /// A route is its exact name, as the switch's labels were: the table is ordinal, so a name in another
-    /// case is a route nobody declared (MOD5).
+    /// case is a route nobody declared.
     /// </summary>
     [Fact]
     public async Task A_route_in_another_case_is_one_nobody_declared()

@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The facts Ask Daoris's room is written from (PARALLEL1a, D181 points 1-2): their topics on <see cref="MachineFacts"/>, the rules
-/// each is judged by, which of the loop's wakes moves each, and the room's reading of them, where what was never judged is said
+/// The facts Ask Daoris's room is written from: their topics on <see cref="MachineFacts"/>, the rules
+/// each is judged by, which of the loop's wakes moves each, and the room's reading of them, where what is never judged is said
 /// <i>not read yet</i>. A start reads them as last judged and writes its room at once; it never reads the machine itself.
 /// </summary>
 /// <remarks>
@@ -14,16 +14,16 @@ namespace Daoris.Driver;
 /// repository on its <c>refs</c> wake, so a ref moved re-judges that repository alone. What the person set is read from the
 /// configuration as the room is written, and needs no judgement.</para>
 ///
-/// <para><b>Per repository, the work</b> (FACTSPLIT1a, D181 points 2-3). Each repository with a checkout here has its part of the
+/// <para><b>Per repository, the work</b>. Each repository with a checkout here has its part of the
 /// work inventory, its trees, its records and its checkout's refs alone, judged on its <c>refs</c> wake; one more part holds every
 /// repository the trees or the records name with no checkout here (<see cref="NoCheckout"/>). The room reads them merged.</para>
 ///
-/// <para><b>Per repository, the sessions' trees</b> (FACTSPLIT1b). What each ended session's tree holds is judged with git by the
+/// <para><b>Per repository, the sessions' trees</b>. What each ended session's tree holds is judged with git by the
 /// same parts, each its own repository's sessions' trees, on its <c>refs</c> wake and as the look lands with its trees moved; the
-/// look without them is one subject, which no ref moves. The room reads the look with every part's trees merged in, and since
-/// PUSH1c1 the Sessions list's door reads them beside a look of its own (<see cref="WithTreesAsync"/>), so no window's tick walks git.</para>
+/// look without them is one subject, which no ref moves. The room reads the look with every part's trees merged in, and
+/// the Sessions list's door reads them beside a look of its own (<see cref="WithTreesAsync"/>), so no window's tick walks git.</para>
 ///
-/// <para><b>Per repository, the clean-up's list</b> (PUSH1c4a, D182). Each repository with a checkout here has its part of the list's
+/// <para><b>Per repository, the clean-up's list</b>. Each repository with a checkout here has its part of the list's
 /// git half, judged on its <c>refs</c> wake by the pull-request answers the landing record keeps, never by asking a plugin: the
 /// person's look still asks, and its kept answer is read at the part's next judgement. The room reads none of it; a slice pushes it.</para>
 ///
@@ -40,13 +40,13 @@ public static class HelpFacts
     public const string Lines = "help.lines";
 
     /// <summary>
-    /// The sessions as the Sessions list looks at them (<see cref="IKnowledgeSessionLook"/>), one subject, without their trees' judgement since
-    /// FACTSPLIT1b: the records, the quests, the verdicts and the marks, which hold no git.
+    /// The sessions as the Sessions list looks at them (<see cref="IKnowledgeSessionLook"/>), one subject, without their trees' judgement:
+    /// the records, the quests, the verdicts and the marks, which hold no git.
     /// </summary>
     public const string Sessions = "help.sessions";
 
     /// <summary>
-    /// What each ended session's tree holds (<see cref="HelpTrees"/>, FACTSPLIT1b), a part by repository with a checkout here, and one
+    /// What each ended session's tree holds (<see cref="HelpTrees"/>), a part by repository with a checkout here, and one
     /// for those with none (<see cref="NoCheckout"/>), as the work's parts.
     /// </summary>
     public const string Trees = "help.trees";
@@ -61,8 +61,8 @@ public static class HelpFacts
     public const string Work = "help.work";
 
     /// <summary>
-    /// The clean-up's list, its git half (<see cref="SweepPlan"/>, PUSH1c4a, D182): a part by repository with a checkout here, each judged
-    /// by the pull-request answers the landing record keeps and asking no plugin (D148 point 2). None for the repositories with none,
+    /// The clean-up's list, its git half (<see cref="SweepPlan"/>): a part by repository with a checkout here, each judged
+    /// by the pull-request answers the landing record keeps and asking no plugin. None for the repositories with none,
     /// which the list never judges. A second topic beside the work's, so the work's judge stays as it is.
     /// </summary>
     public const string Sweep = "help.sweep";
@@ -83,7 +83,7 @@ public static class HelpFacts
     };
 
     /// <summary>
-    /// The work's part of the repositories the trees or the records name with no checkout in the registry (FACTSPLIT1a). No
+    /// The work's part of the repositories the trees or the records name with no checkout in the registry. No
     /// repository is called it: a repository's trees are kept in a folder of its name, which cannot hold <c>&lt;</c>.
     /// </summary>
     public const string NoCheckout = "<no checkout>";
@@ -94,11 +94,11 @@ public static class HelpFacts
     /// <summary>The service's answers: a minute behind at most, as the asks and the registry move no ledger family.</summary>
     public static readonly FactRules MachineRules = new(Deadline: TimeSpan.FromMinutes(1), Bound: TimeSpan.FromSeconds(30), AtOnce: 1);
 
-    /// <summary>A line per repository: two repositories asked at once, as the ref watch asks (§A3).</summary>
+    /// <summary>A line per repository: two repositories asked at once, as the ref watch asks.</summary>
     public static readonly FactRules LinesRules = new(Deadline: TimeSpan.FromMinutes(5), Bound: TimeSpan.FromSeconds(30), AtOnce: 2);
 
     /// <summary>
-    /// A reading across the home: a look at every tree took 24.9 s on a loaded machine (HELPSTART1), so it is bounded at minutes and
+    /// A reading across the home: a look at every tree took 24.9 s on a loaded machine, so it is bounded at minutes and
     /// rests half a minute between the judgements its wakes ask for.
     /// </summary>
     public static readonly FactRules WholeRules = new(Deadline: TimeSpan.FromMinutes(5), Bound: TimeSpan.FromMinutes(2), AtOnce: 1)
@@ -107,8 +107,8 @@ public static class HelpFacts
     };
 
     /// <summary>
-    /// A repository's part of the work (FACTSPLIT1a): a git start for each of its trees and one for its checkout's refs, so two
-    /// repositories at once, as the lines, bounded at minutes as the whole was. It keeps the whole's rest, now one repository's: a
+    /// A repository's part of the work: a git start for each of its trees and one for its checkout's refs, so two
+    /// repositories at once, as the lines, bounded at minutes as the whole is. It keeps the whole's rest, now one repository's: a
     /// session committing moves its repository's refs at each commit, and a burst of them is one judgement each half minute, while
     /// another repository's refs are judged at once.
     /// </summary>
@@ -118,7 +118,7 @@ public static class HelpFacts
     };
 
     /// <summary>
-    /// A repository's part of the trees (FACTSPLIT1b): about five git starts for each of its ended sessions' trees, so two repositories
+    /// A repository's part of the trees: about five git starts for each of its ended sessions' trees, so two repositories
     /// at once and bounded at minutes, as the work's; a burst of one repository's refs while a session commits is one judgement each
     /// half minute, while another repository's are judged at once.
     /// </summary>
@@ -128,9 +128,9 @@ public static class HelpFacts
     };
 
     /// <summary>
-    /// A repository's part of the clean-up's list (PUSH1c4a): its refs read once, its trees listed once, and a few git starts for each
-    /// session branch and each landing's branch, so the work's rules, which it is modelled on until the install measures it (D182 point
-    /// 8): two repositories at once, bounded at minutes, a committing session's burst of refs one judgement each half minute.
+    /// A repository's part of the clean-up's list: its refs read once, its trees listed once, and a few git starts for each
+    /// session branch and each landing's branch, so the work's rules, which it is modelled on until the install measures it:
+    /// two repositories at once, bounded at minutes, a committing session's burst of refs one judgement each half minute.
     /// </summary>
     public static readonly FactRules SweepRules = new(Deadline: TimeSpan.FromMinutes(5), Bound: TimeSpan.FromMinutes(2), AtOnce: 2)
     {
@@ -140,14 +140,14 @@ public static class HelpFacts
     private static readonly IReadOnlyList<(string Topic, string Subject)> None = [];
 
     /// <summary>
-    /// The facts a loop's wake moves (D181 point 2): a ref of one repository its line, its part of the work, its part of the trees and
+    /// The facts a loop's wake moves: a ref of one repository its line, its part of the work, its part of the trees and
     /// its part of the clean-up's list, never the sessions' look, which holds no git; a ledger family the service's answers, and the
     /// sessions' look, the history and every part of the work and of the list it records, as <paramref name="facts"/>' answers name
     /// them; the configuration the service's answers, the sessions' verdicts and every part of the trees and of the list, whose line it
     /// may set. A press, a word or the window's focus moves none.
     /// </summary>
     /// <remarks>
-    /// The trees' parts are not woken with the ledger (FACTSPLIT1b): which trees a part judges is read from the look, so a part woken
+    /// The trees' parts are not woken with the ledger: which trees a part judges is read from the look, so a part woken
     /// with it would judge the look the wake is about to replace. They are judged as that look lands, each whose trees moved in it
     /// (<see cref="Keep"/>).
     /// </remarks>
@@ -158,7 +158,7 @@ public static class HelpFacts
             case ChangeTopics.Refs:
                 return [(Lines, subject), (Trees, subject), (Work, subject), (Sweep, subject)];
             case ChangeTopics.Config:
-                // A line set moves what holds a tree's commits by their content, so every part of the trees, as the whole look was,
+                // A line set moves what holds a tree's commits by their content, so every part of the trees, as the whole look is,
                 // and every part of the clean-up's list, which judges each branch against the line.
                 return facts.Value<HelpMachineWhole>(Machine, Whole) is { } named
                     ? [(Machine, Whole), (Sessions, Whole), .. Parts(named).Select(part => (Trees, part)), .. SweepSubjects(named).Select(part => (Sweep, part))]
@@ -170,11 +170,11 @@ public static class HelpFacts
                 if (Moved("sessions") || Moved("quests")) woken.AddRange([(Sessions, Whole), (History, Whole)]);
                 else
                 {
-                    // PUSH1d1b: a word kept without a note changes what the sessions' look reads, and nothing the history counts.
+                    // A word kept without a note changes what the sessions' look reads, and nothing the history counts.
                     if (Moved("words")) woken.Add((Sessions, Whole));
                     if (Moved("asks")) woken.Add((History, Whole));
                 }
-                // Which repository's records moved is not said, so every part, as the whole was. Before the answers there is none:
+                // Which repository's records moved is not said, so every part, as the whole is. Before the answers there is none:
                 // each is judged as they land.
                 if (Moved("sessions") && facts.Value<HelpMachineWhole>(Machine, Whole) is { } whole)
                 {
@@ -192,9 +192,9 @@ public static class HelpFacts
 
     /// <summary>Wake the facts <paramref name="topic"/>'s <paramref name="subject"/> moves (<see cref="Woken"/>).</summary>
     /// <param name="mine">
-    /// A ref this process moved itself, a landing or an <i>Accept</i> (OWNMOVES1): that repository's parts of the trees, of the work and
-    /// of the clean-up's list (PUSH1c4a) are judged at once, past the rest a burst of a committing session's refs is held to, so a landed
-    /// tree's offer leaves within one judgement. Its line has no rest, and any other topic's wake is as it was.
+    /// A ref this process moved itself, a landing or an <i>Accept</i>: that repository's parts of the trees, of the work and
+    /// of the clean-up's list are judged at once, past the rest a burst of a committing session's refs is held to, so a landed
+    /// tree's offer leaves within one judgement. Its line has no rest, and any other topic's wake is as it is.
     /// </param>
     public static void Wake(MachineFacts facts, string topic, string subject, bool mine = false)
     {
@@ -209,7 +209,7 @@ public static class HelpFacts
     /// Keep the room's facts on <paramref name="facts"/>: each topic registered with its judge, and the whole ones known, so they are
     /// judged once the facts start. The service's answers make each repository with a checkout here a subject of the lines and of
     /// the work, and the rest one part of the work, and drop the line and the part of one no longer registered; with the sessions'
-    /// look they make the trees' parts alike (FACTSPLIT1b).
+    /// look they make the trees' parts alike.
     /// </summary>
     public static void Keep(MachineFacts facts, HelpFactJudges judges)
     {
@@ -248,7 +248,7 @@ public static class HelpFacts
     }
 
     /// <summary>
-    /// The trees' parts the service's answers name (FACTSPLIT1b), as the work's: one with nothing judged yet is judged now, one whose
+    /// The trees' parts the service's answers name, as the work's: one with nothing judged yet is judged now, one whose
     /// trees moved in the look or the answers is judged again at once, and one no longer named is dropped.
     /// </summary>
     /// <remarks>
@@ -270,7 +270,7 @@ public static class HelpFacts
     }
 
     /// <summary>
-    /// The parts of the work whose sessions' recorded trees moved in the look (OVERVIEWNOISE1b), each judged again, so a tree joins the
+    /// The parts of the work whose sessions' recorded trees moved in the look, each judged again, so a tree joins the
     /// session that recorded it once the look names it: the ledger's wake may judge a part before the look it woke lands.
     /// </summary>
     private static void RecordedKnown(MachineFacts facts, HelpMachineWhole whole, IKnowledgeSessionLook? lookedBefore, IKnowledgeSessionLook look)
@@ -326,13 +326,13 @@ public static class HelpFacts
         .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// The parts the service's answers name, of the work (FACTSPLIT1a) and of the trees (FACTSPLIT1b): each repository with a checkout
+    /// The parts the service's answers name, of the work and of the trees: each repository with a checkout
     /// here by name, then the rest's.
     /// </summary>
     internal static IReadOnlyList<string> Parts(HelpMachineWhole whole) => [.. Checkouts(whole).Order(StringComparer.Ordinal), NoCheckout];
 
     /// <summary>
-    /// The parts of the clean-up's list the service's answers name (PUSH1c4a): each repository with a checkout here by name, and no
+    /// The parts of the clean-up's list the service's answers name: each repository with a checkout here by name, and no
     /// rest's, since the list judges no repository without one.
     /// </summary>
     internal static IReadOnlyList<string> SweepSubjects(HelpMachineWhole whole) => [.. Checkouts(whole).Order(StringComparer.Ordinal)];
@@ -401,7 +401,7 @@ public static class HelpFacts
     /// <summary>
     /// The room's reading of the facts as they stand: null where the service's answers were never judged, since without them the
     /// room cannot name a repository; else every repository's line as far as it is judged, the rest of the facts as last judged, and
-    /// what was not read yet. Reads nothing outside the facts and <paramref name="config"/>.
+    /// what is not read yet. Reads nothing outside the facts and <paramref name="config"/>.
     /// </summary>
     public static HelpFactsRead? Read(MachineFactsSnapshot facts, DriverConfig config)
     {
@@ -411,7 +411,7 @@ public static class HelpFacts
         var unread = new List<string>();
         foreach (var known in whole.Snapshot.Repositories.OrderBy(known => known.Repository, StringComparer.Ordinal))
         {
-            // What is set first, the checkout's guess as judged only where nothing is: the lines slice reads it alike (PUSH1b1).
+            // What is set first, the checkout's guess as judged only where nothing is: the lines slice reads it alike.
             if (KnowledgeWorkplace.Current.JudgedLine(config, known.Repository, known.Workspace, known.Root, facts.Value<HelpLineGuess>(Lines, known.Repository))
                 is not { } line)
             {
@@ -439,9 +439,9 @@ public static class HelpFacts
     }
 
     /// <summary>
-    /// The sessions as the room reads them (FACTSPLIT1b), the look as the Sessions list takes it: the look without trees, with each
+    /// The sessions as the room reads them, the look as the Sessions list takes it: the look without trees, with each
     /// part's trees merged in by their path (<see cref="KnowledgeWorkOrders.Current.Normal"/>). Null while the look or any part the service's
-    /// answers name was never judged, which the room says not read yet, as it said the whole: a tree not judged would read as
+    /// answers name is never judged, which the room says not read yet, as it said the whole: a tree not judged would read as
     /// holding nothing to review.
     /// </summary>
     internal static IKnowledgeSessionLook? SessionsOf(MachineFactsSnapshot facts, HelpMachineWhole whole)
@@ -459,7 +459,7 @@ public static class HelpFacts
 
     /// <summary>
     /// The room's reading as the facts stand: at once where the service's answers were judged; where they never were, once they
-    /// first are (HELPSTUCK1's backstop, which the start bounds).
+    /// first are (a backstop the start bounds).
     /// </summary>
     public static async Task<HelpFactsRead?> ReadAsync(MachineFacts facts, DriverConfig config, CancellationToken ct) =>
         Read(facts.Current, config)

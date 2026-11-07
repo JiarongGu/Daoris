@@ -1,14 +1,14 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the look and the cards read of the live decisions (§6.1, §6.3, §4.2): the attribution of a word, the hold, the sessions answering,
+/// What the look and the cards read of the live decisions: the attribution of a word, the hold, the sessions answering,
 /// and a session's decisions live and as history. Reads memory alone, through the <see cref="SupervisorBook"/>; changes nothing.
 /// </summary>
 internal sealed class SupervisorReads(SupervisorBook book)
 {
     /// <summary>
-    /// Whether <paramref name="question"/> of <paramref name="session"/> has a decision, live or closed as the owner's (§3.1's
-    /// <c>answered</c> and <c>overruled</c>): what <c>SUPERVISOR_WAITING</c> leaves out.
+    /// Whether <paramref name="question"/> of <paramref name="session"/> has a decision, live or closed as the owner's (<c>answered</c>
+    /// and <c>overruled</c>): what <c>SUPERVISOR_WAITING</c> leaves out.
     /// </summary>
     public bool Decided(string session, string question) =>
         book.Closed.ContainsKey((session, question)) || book.Live.Values.Any(each => each.Session == session && each.Question.Id == question);
@@ -31,22 +31,22 @@ internal sealed class SupervisorReads(SupervisorBook book)
                 || (each.State == SupervisorState.Admitted && ticket is not null && ticket.Decision == each.Id && ticket.Word == word)));
 
     /// <summary>
-    /// The hold (§6.3): the moment a held decision of <paramref name="session"/> goes on, or null where none is held. While it is held
+    /// The hold: the moment a held decision of <paramref name="session"/> goes on, or null where none is held. While it is held
     /// and no word of the owner's waits, the record is held whatever else waits.
     /// </summary>
     public DateTimeOffset? HeldUntil(string session) =>
         book.Live.Values.Where(each => each.Session == session && each.State == SupervisorState.Held)
             .Select(each => (DateTimeOffset?)each.GoesOnAt).Min();
 
-    /// <summary>The soonest moment a held decision goes on, across every session, for the loop's nudge (§3.4); null where none is held.</summary>
+    /// <summary>The soonest moment a held decision goes on, across every session, for the loop's nudge; null where none is held.</summary>
     public DateTimeOffset? NextGoesOn() =>
         book.Live.Values.Where(each => each.State == SupervisorState.Held).Select(each => (DateTimeOffset?)each.GoesOnAt).Min();
 
-    /// <summary>The sessions a held decision holds now (§6.3), for a look that reads no snapshot of the driver's.</summary>
+    /// <summary>The sessions a held decision holds now, for a look that reads no snapshot of the driver's.</summary>
     public IReadOnlySet<string> HeldSessions() =>
         new HashSet<string>(book.Live.Values.Where(each => each.State == SupervisorState.Held).Select(each => each.Session), StringComparer.Ordinal);
 
-    /// <summary>The sessions a held or released decision answers for now (§4.2): their parks are not a wait on the owner.</summary>
+    /// <summary>The sessions a held or released decision answers for now: their parks are not a wait on the owner.</summary>
     public IReadOnlySet<string> Answering() => new HashSet<string>(
         book.Live.Values.Where(each => each.State is SupervisorState.Held or SupervisorState.Released).Select(each => each.Session),
         StringComparer.Ordinal);
@@ -59,7 +59,7 @@ internal sealed class SupervisorReads(SupervisorBook book)
         [.. book.Live.Values.Where(each => each.Session == session).OrderBy(each => each.KeptAt).Select(View)];
 
     /// <summary>
-    /// <paramref name="session"/>'s decisions for its history (§6.1): those live here from memory, every other read from its files as
+    /// <paramref name="session"/>'s decisions for its history: those live here from memory, every other read from its files as
     /// history, marked <see cref="SupervisorDecisionView.Earlier"/>, granting nothing.
     /// </summary>
     public IReadOnlyList<SupervisorDecisionView> History(string session)

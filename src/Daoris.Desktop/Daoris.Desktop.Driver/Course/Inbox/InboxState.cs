@@ -30,16 +30,16 @@ internal sealed class InboxState(Action<ChatQueue> changed)
     internal readonly object Gate = new();
     internal readonly List<ChatMessage> Held = [];
     internal readonly Queue<Task<string>> Answers = new();
-    // The steers *Send now* sent (STEER2a), each until the agent answered it: where it answered `injected` the words were taken.
+    // The steers *Send now* sent, each until the agent answers it: where it answers `injected` the words are taken.
     internal readonly Queue<Task<string>> Steers = new();
-    // Each turn the run takes a held word for, counted (STEER2a): a turn is asked to stop once, and the run takes no held word
+    // Each turn the run takes a held word for, counted: a turn is asked to stop once, and the run takes no held word
     // while a stop decided for the turn before is still on its way, which landing late would cut that word's own turn.
     internal int Turn;
     internal int StoppedTurn = -1;
     internal Task Stopping = Task.CompletedTask;
     internal bool Closed;
     internal bool Flowing;
-    // COWORK1d (the message-urgency design §2.3): the answer to the last prompt open was read, so the turn is over and a claim written
+    // The answer to the last prompt open is read, so the turn is over and a claim written
     // now would start one of its own. A prompt sent again opens it.
     internal bool Quiet;
     internal int IdsGiven;
@@ -51,7 +51,7 @@ internal sealed class InboxState(Action<ChatQueue> changed)
     internal Action? Closing;
     internal Action<ChatMessage>? Withdrawn;
 
-    // COWORK1c (the message-urgency design §6): the session's one dispatcher. Words are kept on the record one at a time, so the order
+    // The session's one dispatcher. Words are kept on the record one at a time, so the order
     // they are held in is the record's; each keep on its way holds the inbox open, and each kept word leaves the record by its id, in
     // order, once on its way to the wire, before the inbox closes.
     internal readonly SemaphoreSlim Keeping = new(1, 1);
@@ -67,7 +67,7 @@ internal sealed class InboxState(Action<ChatQueue> changed)
     internal Func<bool>? PersonStoppedAsk;
     internal Action<IReadOnlyList<ChatMessage>>? Left;
 
-    // AGENTERRORS1a (the agent-errors design §5.1): while a transient episode waits, every word is held, none goes alone, and one that
+    // While a transient episode waits, every word is held, none goes alone, and one that
     // makes a turn ends the wait at once.
     internal bool Waiting;
     internal TaskCompletionSource Woke = Landed();
@@ -78,7 +78,7 @@ internal sealed class InboxState(Action<ChatQueue> changed)
         lock (Gate) return Closed || Reach is null ? null : ReachOf(level);
     }
 
-    /// <summary>Where a word of the person's is held, by its id; -1 once closed. Daoris's own words are no word of theirs to edit (COWORK1b).</summary>
+    /// <summary>Where a word of the person's is held, by its id; -1 once closed. Daoris's own words are no word of theirs to edit.</summary>
     internal int HeldAt(string id) => Closed ? -1 : Held.FindIndex(message => message.Id == id && message.Daoris is null && !IsClaim(message));
 
     /// <summary>Told with where it reaches, then sent at the next step or held for the turn's end, under its own id. Called under the gate.</summary>
@@ -87,7 +87,7 @@ internal sealed class InboxState(Action<ChatQueue> changed)
         if (Reach is not null) Tell(said, ReachOf(said.Level));
         if (GoesAtNextStep(said)) Send(said);
         else Held.Add(said);
-        // AGENTERRORS1a: a word that makes a turn ends a transient episode's wait.
+        // A word that makes a turn ends a transient episode's wait.
         if (Waiting && !said.Rides) Woke.TrySetResult();
         Publish();
     }
@@ -126,8 +126,8 @@ internal sealed class InboxState(Action<ChatQueue> changed)
     }
 
     /// <summary>
-    /// Kept words on their way to the wire, or taken back (COWORK1c): off the record by their ids, after every take-off before them,
-    /// awaited in order and never fired and forgotten (the design §6). One that fails is tried again with the next, and once more
+    /// Kept words on their way to the wire, or taken back: off the record by their ids, after every take-off before them,
+    /// awaited in order and never fired and forgotten. One that fails is tried again with the next, and once more
     /// before the inbox closes. Called under the gate.
     /// </summary>
     internal void TakeOff(IReadOnlyList<ChatMessage> words)
@@ -182,21 +182,21 @@ internal sealed class InboxState(Action<ChatQueue> changed)
     }
 
     /// <summary>
-    /// Where it stands for the page: the person's words held, never Daoris's own (COWORK1b), which the record shows as Daoris's, nor
-    /// another agent's claim (COWORK1d), which is never the person's.
+    /// Where it stands for the page: the person's words held, never Daoris's own, which the record shows as Daoris's, nor
+    /// another agent's claim, which is never the person's.
     /// </summary>
     internal ChatQueue Now() => Closed
         ? ChatQueue.Idle
         : new ChatQueue(Taking: true, [.. Held.Where(message => message.Daoris is null && message.Helped is null && !IsClaim(message))]);
 
-    /// <summary>Another agent's claim on the ask's channel, as this inbox carries it (COWORK1d).</summary>
+    /// <summary>Another agent's claim on the ask's channel, as this inbox carries it.</summary>
     internal static bool IsClaim(ChatMessage message) => message.Channel is { ByThisPerson: false };
 
-    /// <summary>Whether a word held makes a turn of its own: any but a claim held only to ride (COWORK1d). Called under the gate.</summary>
+    /// <summary>Whether a word held makes a turn of its own: any but a claim held only to ride. Called under the gate.</summary>
     internal bool Turns() => Held.Any(word => !word.Rides);
 
     /// <summary>
-    /// The claims held to ride go with what the run sends anyway (COWORK1d, the design §4.2): each in its place, told now as reaching at
+    /// The claims held to ride go with what the run sends anyway: each in its place, told now as reaching at
     /// the turn's end, a rider no longer. Called under the gate, once a word that makes a turn is taken.
     /// </summary>
     internal void Ride()
@@ -217,7 +217,7 @@ internal sealed class InboxState(Action<ChatQueue> changed)
         return riders;
     }
 
-    /// <summary>Each claim let go told so (COWORK1d): its entry's next part is handed it. Called outside the gate; a listener's failure is its own.</summary>
+    /// <summary>Each claim let go told so: its entry's next part is handed it. Called outside the gate; a listener's failure is its own.</summary>
     internal static void Released(IReadOnlyList<ChatMessage> claims)
     {
         foreach (var claim in claims)
@@ -234,7 +234,7 @@ internal sealed class InboxState(Action<ChatQueue> changed)
     }
 
     /// <summary>
-    /// When a word reaches the session on the door known, by its level (COWORK1a, the design §3.0): an ordinary word at the turn's
+    /// When a word reaches the session on the door known, by its level: an ordinary word at the turn's
     /// end on every door; any other at the door's own reach. Called under the gate, once the door is known.
     /// </summary>
     internal DrivenReach ReachOf(MessageLevel level) =>
@@ -250,7 +250,7 @@ internal sealed class InboxState(Action<ChatQueue> changed)
         Task<string> answer;
         try
         {
-            // COWORK1c: its door marks its attempt before the wire and tells it went once written, when it leaves the record.
+            // Its door marks its attempt before the wire and tells it went once written, when it leaves the record.
             answer = Deliver!(Dispatched(message));
         }
         catch (Exception error) when (error is not OperationCanceledException)
@@ -261,13 +261,13 @@ internal sealed class InboxState(Action<ChatQueue> changed)
         // Observed here as well as by the run, which may have ended before it reads this one.
         _ = answer.ContinueWith(static sent => sent.Exception, TaskScheduler.Default);
         Answers.Enqueue(answer);
-        // COWORK1d: a prompt is open again, so the turn goes on and may take a claim.
+        // A prompt is open again, so the turn goes on and may take a claim.
         Quiet = false;
-        // COWORK1b: Daoris's word at the next step went now, as the look that held it judged it.
+        // Daoris's word at the next step goes now, as the look that held it judged it.
         DaorisWords.Delivered(message);
     }
 
-    /// <summary>Steer one word into the running turn now (STEER2a), under the gate as <see cref="Send"/> sends; the run waits for its answer.</summary>
+    /// <summary>Steer one word into the running turn now, under the gate as <see cref="Send"/> sends; the run waits for its answer.</summary>
     internal void Steer(Func<ChatMessage, Task<string>> steer, ChatMessage message)
     {
         Task<string> answer;
@@ -285,14 +285,14 @@ internal sealed class InboxState(Action<ChatQueue> changed)
         Quiet = false;
     }
 
-    /// <summary>A word as this inbox hands it to its door (COWORK1c): a kept one to be attempted before the wire and taken off once written.</summary>
+    /// <summary>A word as this inbox hands it to its door: a kept one to be attempted before the wire and taken off once written.</summary>
     internal ChatMessage Dispatched(ChatMessage message) =>
         SaidDoor.Dispatched(message, Door, word =>
         {
             lock (Gate) TakeOff([word]);
         });
 
-    /// <summary>Tell the record what was said. Called under the gate, so told in order; a listener's failure is its own.</summary>
+    /// <summary>Tell the record what is said. Called under the gate, so told in order; a listener's failure is its own.</summary>
     internal void Tell(ChatMessage message, DrivenReach reach)
     {
         try

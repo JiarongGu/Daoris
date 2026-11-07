@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The word on a staged update, said as the steward's (STEWARDROLE1d): <i>now</i> installs it and <i>cancel</i> keeps it staged for that
+/// The word on a staged update, said as the steward's: <i>now</i> installs it and <i>cancel</i> keeps it staged for that
 /// build, the install's own word (<see cref="InstallUpdater.SayAsync"/>, logged <c>update.requested</c> with the door <c>steward</c>). The
 /// form is empty: nothing is named, the staged build is the one. The pipe has no person's route for an update (the screen's is a window's
 /// and the terminal's is the install's request file), so outside the granted acts it is refused <c>not-granted</c>, never asked.

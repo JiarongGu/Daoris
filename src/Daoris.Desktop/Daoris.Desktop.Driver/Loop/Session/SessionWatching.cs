@@ -19,7 +19,7 @@ internal sealed class SessionWatching(string home, DriverConfig config, LoopCont
     /// still observed. Never a cut-off: the caller concludes by the exit, so a session that finished its turn and left a dev server
     /// holding its pipe ends as it finished.
     /// </summary>
-    /// <returns>Whether the capture finished, so what it read may be awaited; false where it was abandoned.</returns>
+    /// <returns>Whether the capture finished, so what it read may be awaited; false where it is abandoned.</returns>
     public async Task<bool> CaptureWithinAsync(Task capture, string sessionId)
     {
         if (await Task.WhenAny(capture, Task.Delay(CaptureBound)).ConfigureAwait(false) == capture)

@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What This Daoris may show of a value (WIRING1b, the this-Daoris design §5 and its second opinion's point 1): done at the
+/// What This Daoris may show of a value: done at the
 /// reader, before anything is serialized, so neither the window's answer nor the terminal's JSON ever holds a secret.
 /// </summary>
 /// <remarks>
@@ -12,14 +12,14 @@ namespace Daoris.Driver;
 /// in the shape a deployment mints (<c>ApiKeyStore</c>: <c>dk_</c> and 48 hex) shows no part of itself.</para>
 ///
 /// <para><b>An address loses its credentials, its query and its fragment</b>, where a token is carried; one that does not parse
-/// is not shown at all, and nothing of why it did not parse is passed on, since a parser's sentence may quote it.</para>
+/// is not shown at all, and nothing of why it does not parse is passed on, because a parser's sentence may quote it.</para>
 ///
-/// <para><b>A sentence passed through verbatim</b> (a notice) has every address in it so cut, and every secret the reader was
+/// <para><b>A sentence passed through verbatim</b> (a notice) has every address in it so cut, and every secret the reader is
 /// handed taken out, wherever it appears.</para>
 /// </remarks>
 public static partial class WiringRedact
 {
-    /// <summary>What stands where a secret was cut out of a sentence.</summary>
+    /// <summary>What stands where a secret is cut out of a sentence.</summary>
     public const string Cut = "[key]";
 
     /// <summary>A deployment's minted key: the service's <c>ApiKeyStore</c>'s marker and 24 random bytes in lower-case hex.</summary>
@@ -63,7 +63,7 @@ public static partial class WiringRedact
 
     /// <summary>
     /// The last pass over a whole answer: every string in it scrubbed of the secrets the reader saw. Belt and braces, since
-    /// each field was already cut where it was read; a field a later change adds is cut here even where it was not.
+    /// each field is cut where it is read; a field a later change adds is cut here even where it is not.
     /// </summary>
     public static void Sweep(JsonNode? node, IReadOnlyCollection<string> secrets)
     {

@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Which read answers each agent's usage question (AGENTLYNTAI1c, D248's note): the question itself, today's reader, unless the driver
+/// Which read answers each agent's usage question: the question itself, today's reader, unless the driver
 /// carries Lyntai's agent layer, whose provider folders bind their agent's question to the layer's read when the driver loads. The provider
 /// that declares a question declares <see cref="Of"/> it, so the registry, the roster and a door lent the question all hold the one read.
 /// </summary>

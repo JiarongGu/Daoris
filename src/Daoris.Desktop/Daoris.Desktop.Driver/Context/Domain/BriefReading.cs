@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>The line's records read into the turns a brief is composed from (SESSCTX1b, §3.1): the words taken, the calls made and the checks run.</summary>
+/// <summary>The line's records read into the turns a brief is composed from: the words taken, the calls made and the checks run.</summary>
 internal static class BriefReading
 {
     internal sealed class Word(string lead, string text, int part)
@@ -61,8 +61,8 @@ internal static class BriefReading
         {
             var events = line.Parts[p].Events;
 
-            // One word is one id, as its latest event says (§3.1 item 3): shown, told again for its level and taken, it counts once,
-            // where it was taken; one taken back, or still waiting, was never taken, and follows the brief from `said` if it waits.
+            // One word is one id, as its latest event says: shown, told again for its level and taken, it counts once,
+            // where it is taken; one taken back, or still waiting, is never taken, and follows the brief from `said` if it waits.
             var latest = new Dictionary<string, int>(StringComparer.Ordinal);
             var withdrawn = new HashSet<string>(StringComparer.Ordinal);
             for (var i = 0; i < events.Count; i++)
@@ -132,7 +132,7 @@ internal static class BriefReading
             }
         }
 
-        // A conversation's request is its first word (§3.1 item 2), never told again among the words.
+        // A conversation's request is its first word, never told again among the words.
         Word? request = null;
         if (line.Conversation && turns.FirstOrDefault(turn => turn.Part == 0) is { } first
             && first.Words.FirstOrDefault() is { Person: true } asked && !asked.Lead.Contains("channel", StringComparison.Ordinal))
@@ -158,7 +158,7 @@ internal static class BriefReading
         }
 
         // Daoris's own words and every target it composed (an instruction, an earlier brief) are not repeated: the new part's
-        // instruction is composed afresh (§3.1 item 3).
+        // instruction is composed afresh.
         if (e.From == SaidFrom.Daoris) return null;
         if (e.Opinion is { Length: > 0 } opinion) return new Word($"Another agent's findings (opinion `{opinion}`), as its claim:", e.Text ?? "", part);
         if (e.Channel is not null || (e.Text ?? "").StartsWith(ContextBrief.ChannelClaimOpening, StringComparison.Ordinal))
@@ -203,7 +203,7 @@ internal static class BriefReading
     }
 
     /// <summary>
-    /// The declared gate a command runs, by its command line as the repository declares it, never a guess from a title (§3.1 item 4);
+    /// The declared gate a command runs, by its command line as the repository declares it, never a guess from a title;
     /// <c>run-heavy</c> runs the heavy gates through the slot (HEAVYRUN1b1). Null for every other command.
     /// </summary>
     private static string? GateOf(string? command, IReadOnlyList<HeavyGate> gates)

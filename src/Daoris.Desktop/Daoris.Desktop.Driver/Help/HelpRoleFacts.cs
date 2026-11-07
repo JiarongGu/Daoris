@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The roles' facts for Ask Daoris's room (STAFFPOLICY1g, D226): read from the home as the room is written, beside the access, because
+/// The roles' facts for Ask Daoris's room: read from the home as the room is written, beside the access, because
 /// the room's section (<see cref="HelpRoomRoles"/>) sits below the roles and names none of their types.
 /// </summary>
 internal static class HelpRoleFacts

@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// SESSWATCH1a (D200, the session-watch design §2.3, §5.2) over the bridge: a quiet session the watcher brings to the person is a row of
+/// Over the bridge: a quiet session the watcher brings to the person is a row of
 /// *What needs you*, quiet or busy, and its presses are the person's. *Leave it running* stands the watcher down until it is heard again;
 /// *End and carry on* is their stop, released in the same press, refused for a busy row, an intake, and a run already gone. Daoris ends
 /// nothing quiet by itself.

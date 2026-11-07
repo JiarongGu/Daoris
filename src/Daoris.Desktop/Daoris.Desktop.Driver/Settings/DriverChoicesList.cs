@@ -17,7 +17,7 @@ internal static class DriverChoicesList
         foreach (var (quest, mark) in choices.Forgiven) Say($"  retried    #{quest}  (counting from {mark} failure(s))");
         foreach (var (quest, session) in choices.Released) Say($"  released   #{quest}  (your stop of session {session})");
 
-        // PAUSE1a (D132 §2.5): each pause this machine keeps, said as paused, never held, with the door that resumes it.
+        // Each pause this machine keeps, said as paused, never held, with the door that resumes it.
         foreach (var (scope, pauses) in new[] { ("ask", choices.PausedAsks), ("quest", choices.PausedQuests) })
         {
             foreach (var (id, pause) in pauses)

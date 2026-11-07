@@ -33,7 +33,7 @@ internal sealed class SessionsAskDesk(DriverContext context)
         return new { asked.Asked, asked.Why, asked.Message };
     }
 
-    /// <summary><i>Pass to the lead</i> (COWORKUX1d): the library's judge, which marks the state for the look to hand.</summary>
+    /// <summary><i>Pass to the lead</i>: the library's judge, which marks the state for the look to hand.</summary>
     public async Task<object?> HelperPassAsync(SessionHelperPass press, CancellationToken cancellationToken)
     {
         // `sessions pass` names the ask beside the session it found, and asks for the verb's own words.
@@ -64,7 +64,7 @@ internal sealed class SessionsAskDesk(DriverContext context)
                 StartedOn = each.State?.Agent,
                 // a cooling ask's account's reset, which its row says.
                 Until = each.State?.Until is { } until ? Moments.Write(until) : null,
-                // COWORKUX1d: the ask it follows, where its answer goes, and whether the person's answer waits on their pass or was passed.
+                // The ask it follows, where its answer goes, and whether the person's answer waits on their pass or is passed.
                 each.Ask.After,
                 each.Ask.To,
                 Kept = each.State is { State: HelperStates.Answered, Handed: HelperState.KeptForPerson, Passed: null },

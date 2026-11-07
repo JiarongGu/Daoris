@@ -3,14 +3,14 @@ using System.Drawing;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The few colours the NATIVE chrome paints with, once the window is frameless (SURF7 / D56).
+/// The few colours the NATIVE chrome paints with, once the window is frameless.
 /// </summary>
 /// <remarks>
 /// <para><b>These are copies of <c>tokens.css</c>, and the copy is the price of a frameless
 /// window.</b> The DWM border, the form fill behind the splash and the caption buttons are painted
 /// by Windows and by the framework, neither of which can read a stylesheet. So the values are
 /// duplicated — and because a duplicated palette marked "keep in sync" is exactly the drift shape
-/// this family removes elsewhere (frontend architecture §2), <c>ChromePaletteTests</c> parses
+/// this family removes elsewhere, <c>ChromePaletteTests</c> parses
 /// <c>tokens.css</c> and fails when the two disagree. The copy is kept to the values actually
 /// painted rather than the whole palette, so there is less of it to drift.</para>
 ///
@@ -44,7 +44,7 @@ public sealed record ChromePalette(
         Hover: Rgb("#e3e0d8"),
         Pressed: Rgb("#cfcabe"),
         // Close goes red on hover, which is platform convention and not ours to reinvent. The hue is
-        // D41's validated `--st-declined`, so even the OS gesture speaks the palette.
+        // the validated `--st-declined`, so even the OS gesture speaks the palette.
         CloseHover: Rgb("#9e2f24"),
         ClosePressed: Rgb("#7e251c"),
         CloseGlyphHot: Rgb("#faf9f6"));

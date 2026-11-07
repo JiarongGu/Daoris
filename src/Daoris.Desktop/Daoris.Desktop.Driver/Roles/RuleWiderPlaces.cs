@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A repository's workspace as its wider place for the supervisor's rules (the context counters design §4.4): a line of
+/// A repository's workspace as its wider place for the supervisor's rules: a line of
 /// <c>repository:engine</c> reads <c>workspace:main</c>'s rules where its repository holds none on a count, so the judge weighs a write
 /// on the same chain the executors read. The map is the registry's as the store keeps it (<see cref="RuleWiderPlaceStore"/>).
 /// </summary>

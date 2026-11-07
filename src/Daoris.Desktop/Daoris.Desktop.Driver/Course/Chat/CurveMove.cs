@@ -3,13 +3,12 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A conversation over its account's usage curve moves on its own as its turn ends (SWITCH1c-ii; D165 point 3; the switch design
-/// §1.2, §2 and §4): to another account of the same agent in its scope that has room, as a hand-over with its agent unchanged, why
-/// <c>curve</c>, asked by <c>daoris</c>. <see cref="SwitchDecision"/> reads the account and <see cref="CourseDecision"/> decides whether and where the line moves (FOUNDATION1h
-/// branch 1; the scope's switch is its consent); this class asks the first, reads the others where it says so, asks
-/// again, asks the course, decides the move in the store (<see cref="Moves"/>, FOUNDATION1f-iii part a; no hand-over box is written beside it), and takes it
+/// A conversation over its account's usage curve moves on its own as its turn ends: to another account of the same agent in its scope that has room, as a hand-over with its agent unchanged, why
+/// <c>curve</c>, asked by <c>daoris</c>. <see cref="SwitchDecision"/> reads the account and <see cref="CourseDecision"/> decides whether and where the line moves
+/// (the scope's switch is its consent); this class asks the first, reads the others where it says so, asks
+/// again, asks the course, decides the move in the store (<see cref="Moves"/>; no hand-over box is written beside it), and takes it
 /// (<see cref="ChatHandOver"/>'s take of a move), which ends the old conversation and starts the new one, its record continuing the old.
-/// Over the runner's context (PART10g, D166).
+/// Over the runner's context.
 /// </summary>
 /// <remarks>
 /// <para><b>Never mid-turn, never during a take.</b> A conversation is judged once per turn's end, as its turns tell it with
@@ -18,8 +17,8 @@ namespace Daoris.Driver;
 /// (<see cref="ChatTurns.Hold"/>), so a word said as it begins either runs its turn first, the move then closed and the next turn's end
 /// judging again, or takes nothing.</para>
 /// <para><b>Never across agents, never outside the scope's list.</b> The candidates are the other accounts of the scope's list of
-/// the conversation's own agent; another agent is the <c>handOver</c> rule's (MIXAGENT1c). Where none has room it stays and says
-/// nothing: the person's offer (MIXAGENT1b) is the fallback. <c>switch: off</c> moves nothing.</para>
+/// the conversation's own agent; another agent is the <c>handOver</c> rule's. Where none has room it stays and says
+/// nothing: the person's offer is the fallback. <c>switch: off</c> moves nothing.</para>
 /// </remarks>
 [Executor("curve-move", ExecutorPhase.Move)]
 internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
@@ -30,7 +29,7 @@ internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
     private ChatHandOver _handOver => wiring.Of<ChatHandOver>();
 
     /// <summary>
-    /// The conversations' move record (FOUNDATION1f-iii part a): the curve's move is decided there, as the live limit move's is since f-ii, over
+    /// The conversations' move record: the curve's move is decided there, as the live limit move's is, over
     /// the home's one store file, so the shell's come-up takes a dead shell's curve move up through either holder. A test hands one over a store
     /// of its own run.
     /// </summary>
@@ -39,14 +38,14 @@ internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
     /// <summary>What each judged turn's end came to, by session: a test hears it; no person reads it.</summary>
     public event Action<string, SwitchChoice>? Judged;
 
-    /// <summary>What the course answered each judged turn's end, by session (FOUNDATION1h branch 1): a test hears it; no person reads it.</summary>
+    /// <summary>What the course answered each judged turn's end, by session: a test hears it; no person reads it.</summary>
     internal event Action<string, LineCourse>? Decided;
 
     /// <summary>
-    /// Whether the turns, as just told, are a turn's end not yet judged (SWITCH1c-ii): nothing running, the door not opening, none
+    /// Whether the turns, as just told, are a turn's end not yet judged: nothing running, the door not opening, none
     /// of the person's words waiting, and a turn ended since <paramref name="judged"/>. A change for any other reason judges nothing.
     /// </summary>
-    /// <param name="judged">The turn's end the conversation was last judged at, or null before any.</param>
+    /// <param name="judged">The turn's end the conversation is last judged at, or null before any.</param>
     public static bool TurnJustEnded(ChatQueue queue, DateTimeOffset? judged) =>
         !queue.Taking && !queue.Opening && queue.Queued.Count == 0 && queue.LastTurnEnded is { } ended && ended != judged;
 
@@ -68,22 +67,22 @@ internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// Judge a conversation by its account's usage curve and, where the decision says so, move it (SWITCH1c-ii). Its account, agent
+    /// Judge a conversation by its account's usage curve and, where the decision says so, move it. Its account, agent
     /// and workspace are its record's; the scope's switch and curve, the scope's list and what each account said are this machine's.
     /// </summary>
-    /// <returns>What the decision said; null where nothing was judged (a hand-over waits or is taken, or it is no conversation of
+    /// <returns>What the decision says; null where nothing is judged (a hand-over waits or is taken, or it is no conversation of
     /// an account of an agent whose accounts the roster holds).</returns>
     public async Task<SwitchChoice?> MoveAsync(
         string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct = default)
     {
-        // A hand-over's box an older build left, or its move the store carries and has not begun (FOUNDATION1f-v part a), holds the record from a move.
+        // A hand-over's box an older build left, or its move the store carries and has not begun, holds the record from a move.
         if (_context.Closing || _context.GoingOn.ContainsKey(sessionId) || _handOver.Holds(sessionId))
         {
             return null;
         }
 
-        // Ask Daoris's own conversations and intakes never go on elsewhere (D137 §2.2), and one on the tool's own home has no account.
-        // The one exception is a limit with no account of its agent left (LIMITGOON2, D205 §3.5(e), LimitMove), never the curve.
+        // Ask Daoris's own conversations and intakes never go on elsewhere, and one on the tool's own home has no account.
+        // The one exception is a limit with no account of its agent left (LimitMove), never the curve.
         var prior = await _context.Service.RecordAsync(sessionId, ct).ConfigureAwait(false);
         if (prior is not { Kind: "chat", Teammate: false, Ask: null, Profile: { Length: > 0 } account, Adapter: { Length: > 0 } adapter }
             || string.Equals(prior.Repository, KnowledgeRoomIdentity.Repository, StringComparison.Ordinal))
@@ -106,10 +105,10 @@ internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
             return null;
         }
 
-        // Its last move by the curve is when its record was made, where it continues another by the curve (§2's hold).
+        // Its last move by the curve is when its record began, where it continues another by the curve.
         var lastMove = prior.FromWhy == HandOverWhy.Curve ? prior.Created : null;
 
-        // MODELROLE1d2 (D205 §3.5(a)): each candidate judged by its offer reading for the model the record asks, the composer's kept
+        // Each candidate judged by its offer reading for the model the record asks, the composer's kept
         // change's where one is, so the move never takes an account that does not offer the conversation's model.
         var model = prior.ModelOn(agent);
         (string, string?, string)? offer = model is null
@@ -124,10 +123,10 @@ internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
 
         Judged?.Invoke(sessionId, choice);
 
-        // FOUNDATION1h branch 1 (the foundation design §3.1): whether this line may move, and where, is the course's one decision. The account
+        // Whether this line may move, and where, is the course's one decision. The account
         // reading above is the adapter's to read (the others' windows are read only where it says so); the scope's switch is the course's
         // consent (`SwitchAdmits`), so a hold, the switch's or a stay, is no move, and the account moved to is the course's answer. Ask Daoris's
-        // own conversation was passed over above (it has no account to move), so the head is never one.
+        // own conversation is passed over above (it has no account to move), so the head is never one.
         var course = CourseDecision.Decide(
             new CourseFacts(
                 new CourseHead(
@@ -144,7 +143,7 @@ internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
         var (refused, _) = await HandOver.JudgeAsync(_context.Service, _handOver.AccountsOf, sessionId, agent, to, ct).ConfigureAwait(false);
         if (refused is not null) return choice;
 
-        // FOUNDATION1f-iii part a (the foundation design §3.3, §13.4 step 1): the move is decided in the store, and no box is written beside it.
+        // The move is decided in the store, and no box is written beside it.
         // A record a move still stands for, the one it left or the one whose open made it, takes no move now; a store that will not take the
         // decision moves nothing, and the next turn's end judges again.
         var begun = await Moves.BeginAsync(Decision(sessionId, to), ct).ConfigureAwait(false);
@@ -171,7 +170,7 @@ internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
     private static bool Admits(RotationUse use) => use.Switch != "off";
 
     /// <summary>
-    /// The move as the course decided it (FOUNDATION1f-iii part a, §3.3): a conversation's, by the brief, for the curve, asked by Daoris, on the
+    /// The move as the course decided it: a conversation's, by the brief, for the curve, asked by Daoris, on the
     /// account the decision named; the agent is the conversation's own, so none is named.
     /// </summary>
     private static MoveDecision Decision(string sessionId, string account) =>

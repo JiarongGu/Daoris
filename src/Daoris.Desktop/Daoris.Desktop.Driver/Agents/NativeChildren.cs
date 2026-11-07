@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The children a native door's stream says (AGENTPROVIDER1l, COWORKVIEW1a): Claude Code's <c>stream-json</c> announces a subagent with a
+/// The children a native door's stream says: Claude Code's <c>stream-json</c> announces a subagent with a
 /// <c>system</c> <c>task_started</c> of <c>local_agent</c>, the call that started it, its parent, depth, type and task's description beside it,
 /// and ends it with its <c>task_notification</c> in the wire's word. Each is read from the line's one <see cref="NativeFrame"/> into one
 /// <see cref="WireReading.ChildSeen"/> or <see cref="WireReading.ChildEnded"/>, once per child however the wire repeats it; a background

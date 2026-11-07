@@ -4,14 +4,14 @@ using static Daoris.Driver.HelpProposals;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>retry</c> (HELP10, D110), as <c>daoris quest retry</c> reads it: a quest by id, <c>#</c> or not, which the
+/// <c>retry</c>, as <c>daoris quest retry</c> reads it: a quest by id, <c>#</c> or not, which the
 /// loop's last look parked by its strikes, marked forgiven at its failures as that look counted them, as
-/// <c>RETRY_QUEST</c> marks it (RETRY1b); or one the person's stop holds (SESSUX1b, D126 §3.4), released from the
+/// <c>RETRY_QUEST</c> marks it; or one the person's stop holds, released from the
 /// session the look named, as <c>RETRY_QUEST</c> releases it. Either is said in the terminal's words.
 /// </summary>
 /// <remarks>
 /// The quest must be on one of the look's two lists, since a helper can invent an id, and forgiving a quest that is not
-/// parked lets it run past its strikes (D110). The mark is the look's count; the number said is the one its line's
+/// parked lets it run past its strikes. The mark is the look's count; the number said is the one its line's
 /// failures rule parked it at, as that look read the rules.
 /// </remarks>
 internal static class HelpRetrySetting
@@ -48,7 +48,7 @@ internal static class HelpRetrySetting
                 "", terminal, null);
         }
 
-        // RETRY_QUEST's own mark (RETRY1b): the quest's failures as the last look counted them, not the rule's number, which left a
+        // RETRY_QUEST's own mark: the quest's failures as the last look counted them, not the rule's number, which left a
         // quest parked a second time parked. A park carrying no count is marked at the number its failures rule parked it at.
         var strikes = parkedQuest.ParksAt ?? 0;
         int Mark(DriverConfig at) => parkedQuest.Failures ?? at.ForgivenAt(quest) + strikes;

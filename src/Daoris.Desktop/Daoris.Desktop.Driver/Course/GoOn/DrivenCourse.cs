@@ -1,8 +1,7 @@
 namespace Daoris.Driver;
 
-// FOUNDATION1i (the foundation design §10 row 1i, D212): the driven lines' paths decide through CourseDecision.Decide, one path a commit, as
-// row 1h's do for conversations. The executors (the driver's start, the planner, the hand-over door) keep the readings they have always made
-// and put them in as facts; this reads them into CourseFacts and says the course's answer, which the executor then acts on in its own words.
+// The driven lines' paths decide through CourseDecision.Decide, as the conversations' do. The executors (the driver's start, the planner,
+// the hand-over door) keep their readings and put them in as facts; this reads them into CourseFacts and says the course's answer, which the executor then acts on in its own words.
 
 /// <summary>The facts a driven line's paths hand the course, and the answers it gives them.</summary>
 internal static class DrivenCourse
@@ -35,8 +34,8 @@ internal static class DrivenCourse
             Waiting: WordsOf(record), Session: record.Session, QuestStatus: questStatus);
 
     /// <summary>
-    /// A move record's standing as the course reads the line's destination (§3.1): the move that still stands for the record, as
-    /// <see cref="MoveResolve.StandingAsync"/> answers after it has closed a held one whose words were taken back (round 8, O7-F11).
+    /// A move record's standing as the course reads the line's destination: the move that still stands for the record, as
+    /// <see cref="MoveResolve.StandingAsync"/> answers after it has closed a held one whose words were taken back.
     /// </summary>
     internal static async Task<CourseStanding?> StandingAsync(MoveResolve resolve, string session, CancellationToken ct = default)
     {
@@ -64,7 +63,7 @@ internal static class DrivenCourse
             CourseTrigger.WordsKept);
 
     /// <summary>
-    /// The link a driven carry-on's new part names (path K, MIXAGENT1a-iii, SESSCTX1b): the course's move over the readings the start made. A
+    /// The link a driven carry-on's new part names: the course's move over the readings the start made. A
     /// quest handed over from the record is the hand-over's press; a fall-back is the go-on's refused resume, which names `retry` unless the
     /// limit's or the curve's move says more; every other carry-on is the planner's, the person's where their press released or brought it
     /// forward. The new part carries the person's words, so the one the course reads is a stand-in for them.
@@ -102,7 +101,7 @@ internal static class DrivenCourse
     }
 
     /// <summary>
-    /// A second opinion's findings sent back to the working session (path L, D155 point 7): a solicited answer, which no teammate's record,
+    /// A second opinion's findings sent back to the working session: a solicited answer, which no teammate's record,
     /// intake or stood-down take is ever handed, and which a record that takes them goes on with.
     /// </summary>
     internal static LineCourse SendBack(PriorSession record, Action<LineCourse>? decided)
@@ -117,8 +116,8 @@ internal static class DrivenCourse
     }
 
     /// <summary>
-    /// What follows a record's end past its transient bound (path N, AGENTERRORS1a): it waits for a word of the person's said after the end or
-    /// for <i>Try again</i>, whose release is the press, which goes on by the limit resume's step 1.
+    /// What follows a record's end past its transient bound: it waits for a word of the person's said after the end or
+    /// for <i>Try again</i>, whose release is the press, which goes on by the limit resume's first step.
     /// </summary>
     internal static LineCourse PastBound(PriorSession record, string questStatus, bool released, CoursePolicy? policy = null) =>
         CourseDecision.Decide(
@@ -128,14 +127,14 @@ internal static class DrivenCourse
             CourseTrigger.TransientPastBound);
 
     /// <summary>
-    /// What follows a record that ended failed or quiet, once a role's policy has met the condition (STAFFPOLICY1e2): the carry-on's decision with
+    /// What follows a record that ended failed or quiet, once a role's policy has met the condition: the carry-on's decision with
     /// the policy's fact. Today's answer (a plain carry-on) comes back as anything but a move or a policy hold, and the caller leaves it to the planner.
     /// </summary>
     internal static LineCourse PolicyEnd(PriorSession record, string questStatus, CoursePolicy policy) =>
         CourseDecision.Decide(new CourseFacts(HeadOf(record, questStatus), CourseBoundary.ProcessExited, Policy: policy), CourseTrigger.CarryOn);
 
     /// <summary>
-    /// The limit resume's step 1 (path F, LIMITRESUME1b): a record an account's limit, an update or a released transient end cut off, on a
+    /// The limit resume's first step: a record an account's limit, an update or a released transient end cut off, on a
     /// door known to fail closed and a judge that passed. Its own account ready is the resume; another the move to it, held while a move
     /// still stands to this record as its destination.
     /// </summary>

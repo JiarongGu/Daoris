@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A plugin's manifest converted to the doors it declares (the agent-provider design §4.8, row q). It reads the harness's named fields
+/// A plugin's manifest converted to the doors it declares. It reads the harness's named fields
 /// alone, so a manifest naming one the declaration has no place for (<c>steering</c>, <c>resumes</c>, <c>limits</c>, <c>rules</c>,
-/// <c>dialect</c>) reaches nothing, as it never did; Agents' factory makes the door.
+/// <c>dialect</c>) reaches nothing; Agents' factory makes the door.
 /// </summary>
 public static class PluginDoors
 {

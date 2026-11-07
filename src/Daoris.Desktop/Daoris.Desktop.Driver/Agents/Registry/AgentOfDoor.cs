@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Which agent a door is (AGENTPROVIDER1 s-vii; the agent-provider design §7 row 10): its provider, so a move between one agent's two
+/// Which agent a door is: its provider, so a move between one agent's two
 /// doors, <c>claude-code</c> and <c>claude-code-acp</c>, is one agent. Never its account key (<see cref="ProviderRegistry.OwnerOf"/>), which
 /// two providers sharing a pool hold alike. A door the registry does not know, a removed plugin's, is its own agent.
 /// </summary>

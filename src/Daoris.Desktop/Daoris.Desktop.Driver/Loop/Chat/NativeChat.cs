@@ -24,7 +24,7 @@ internal sealed class NativeChat : ITurnedChat
     /// </summary>
     public Func<ChatMessage, IReadOnlyList<SessionEvent>?>? Shown { get; init; }
 
-    /// <param name="input">The run's one queue of words, which writes them and keeps them until the harness names the conversation (D243).</param>
+    /// <param name="input">The run's one queue of words, which writes them and keeps them until the harness names the conversation.</param>
     /// <param name="wentOn">Told once the words it goes on with are on stdin.</param>
     public NativeChat(
         ChatAgent agent, DoorInput input, Action<SessionEvent> record,
@@ -59,7 +59,7 @@ internal sealed class NativeChat : ITurnedChat
                 }
 
                 // The run's input writes it, and keeps it until the harness names the conversation it went to, so a run that tries the same
-                // resume once more hands the next process the words the first never opened (D243). Written, or held for that process.
+                // resume once more hands the next process the words the first never opened. Written, or held for that process.
                 var delivery = await input.SayAsync(new DoorWord(ids, line, Written: () =>
                 {
                     sent();
@@ -110,7 +110,7 @@ internal sealed class NativeChat : ITurnedChat
     }
 
     /// <summary>The harness has gone: nothing waiting is sent, and a turn waiting on its end stops waiting.</summary>
-    /// <param name="personStopped">The person stopped it: what was kept for its turns leaves its record with it.</param>
+    /// <param name="personStopped">The person stopped it: what is kept for its turns leaves its record with it.</param>
     public void Gone(bool personStopped = false)
     {
         Turns.Gone(personStopped);

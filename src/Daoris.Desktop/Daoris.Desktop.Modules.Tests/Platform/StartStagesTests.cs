@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// STARTFAST1: the desktop's start writes one <c>start.stages</c> line, each stage in ms from the process's start, every stage
+/// The desktop's start writes one <c>start.stages</c> line, each stage in ms from the process's start, every stage
 /// once and in the line's order whatever order they came in, so a slow start says where its seconds went.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
@@ -110,7 +110,7 @@ public sealed class StartStagesTests : IDisposable
     }
 
     /// <summary>
-    /// STARTFAST1b (the start-path design §5c): what waits for the first screen's data is let go by the page's word through the
+    /// What waits for the first screen's data is let go by the page's word through the
     /// splash's lift, at once where the word came before it was asked, and by its own bound where the word never comes.
     /// </summary>
     [Fact]
@@ -154,7 +154,7 @@ public sealed class StartStagesTests : IDisposable
         Assert.True(main.IndexOf("StartStages.Begin()", StringComparison.Ordinal)
             < main.IndexOf("InstallHome.Establish(", StringComparison.Ordinal), "the timer begins after the home");
         Assert.Contains("stages.Write();", main);
-        // STARTFAST1b: the host begun before the kit's runner starts Chromium, by the launch holding the claim alone.
+        // The host begun before the kit's runner starts Chromium, by the launch holding the claim alone.
         var begun = main.IndexOf("supervisor.Begin()", StringComparison.Ordinal);
         Assert.True(begun > 0 && begun < main.IndexOf("app.Run()", StringComparison.Ordinal), "the host is begun after the runner");
         Assert.Contains("if (hostClaim.Held) supervisor.Begin();", main);

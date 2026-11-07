@@ -7,7 +7,7 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// COWORKVIEW1e-iii: the hint's standing is a dependency of the read (the design §6.4 point 3, §R11.5): the registry's readiness is told
+/// The hint's standing is a dependency of the read: the registry's readiness is told
 /// apart from an answered empty lane list, the first registry answer wakes the read, and the hint moves when <c>driver.json</c> undrives the
 /// repository or a lanes-only registration lands, with nothing else written.
 /// </summary>

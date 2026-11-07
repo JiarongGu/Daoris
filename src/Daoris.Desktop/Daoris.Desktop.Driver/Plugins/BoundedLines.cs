@@ -5,28 +5,27 @@ namespace Daoris.Driver;
 /// <summary>One line read, or one dropped unread for its length (<see cref="Text"/> null), with what passing over it saw.</summary>
 /// <param name="Id">A dropped frame's top-level integer <c>id</c>, where it had one: the request it answers, failed at once rather than left to wait.</param>
 /// <param name="Method">Whether a dropped frame had a top-level <c>method</c>: a request or a notification, never an answer.</param>
-/// <param name="Clipped">Read by a clipping reader, whether <see cref="Text"/> is only the line's start, the rest passed over (PLUGSTDERR1).</param>
+/// <param name="Clipped">Read by a clipping reader, whether <see cref="Text"/> is only the line's start, the rest passed over.</param>
 public readonly record struct BoundedLine(string? Text, int? Id = null, bool Method = false, bool Clipped = false)
 {
     public bool Dropped => Text is null;
 }
 
 /// <summary>
-/// Lines from a plugin's stdout with a bound (FABRIC-PERFORM1a, the fabric events design §C4): a line longer than the limit, in UTF-8 bytes, is
+/// Lines from a plugin's stdout with a bound: a line longer than the limit, in UTF-8 bytes, is
 /// dropped unread, its characters passed over to its end without being kept, so no frame a plugin writes can grow the driver's memory past it.
 /// </summary>
 /// <remarks>
 /// <para>It reads characters in blocks (<see cref="TextReader.ReadAsync(Memory{char}, CancellationToken)"/>), so the reader must give them: a process's
 /// stdout does, and a test's stand-in that answers only <see cref="TextReader.ReadLineAsync()"/> is read by the peer without this bound.</para>
 ///
-/// <para><b>A line ends as <see cref="TextReader.ReadLineAsync()"/> ends one</b> (FABRIC-PERFORM1a, round 2): at LF, CRLF or a bare CR. The wire
-/// was read with it before the bound, so a plugin that answers <c>JSON\r</c> was answered, and still is.</para>
+/// <para><b>A line ends as <see cref="TextReader.ReadLineAsync()"/> ends one</b>: at LF, CRLF or a bare CR, so a plugin that answers <c>JSON\r</c> is answered.</para>
 ///
-/// <para><b>Passing over a dropped line keeps two facts of it</b> (round 2): its top-level integer <c>id</c> and whether it names a top-level
+/// <para><b>Passing over a dropped line keeps two facts of it</b>: its top-level integer <c>id</c> and whether it names a top-level
 /// <c>method</c>, read by a scan that holds a few fields whatever the line's length. An answer too long to read is then failed at once, as the
 /// plugin's unreadable answer, rather than left to wait out its patience as a late one.</para>
 ///
-/// <para><b>Words are clipped, never dropped</b> (PLUGSTDERR1, <paramref name="clip"/>): a plugin's stderr is read for a person, so a line over the
+/// <para><b>Words are clipped, never dropped</b> (<paramref name="clip"/>): a plugin's stderr is read for a person, so a line over the
 /// limit keeps its start, as many whole characters as the limit holds, and the rest is passed over unscanned.</para>
 /// </remarks>
 public sealed class BoundedLines(TextReader reader, int limit, bool clip = false)
@@ -38,7 +37,7 @@ public sealed class BoundedLines(TextReader reader, int limit, bool clip = false
     private int _end;
     private bool _ended;
 
-    // A line ended by a CR that was the last of its block: an LF opening the next block ends that same line, not another.
+    // A line ended by a CR that is the last of its block: an LF opening the next block ends that same line, not another.
     private bool _afterCr;
 
     /// <summary>The next line, without its LF, CRLF or CR; a dropped one for a line over the limit; null at the stream's end.</summary>
@@ -91,7 +90,7 @@ public sealed class BoundedLines(TextReader reader, int limit, bool clip = false
                 }
                 else if (bytes > limit)
                 {
-                    // Over: what was kept is scanned once and let go, and the rest of the line is scanned as it passes.
+                    // Over: what is kept is scanned once and let go, and the rest of the line is scanned as it passes.
                     over = true;
                     _scan.Reset();
                     foreach (var kept in _line.GetChunks()) _scan.Feed(kept.Span);

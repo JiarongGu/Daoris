@@ -5,14 +5,14 @@ using Shenora.Core.Shell;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The viewer's colour scheme, kept by the shell across starts (THEMESTART1, D22's THEMESCHEME1 note), so the window's
+/// The viewer's colour scheme, kept by the shell across starts, so the window's
 /// first frame and the engine wear the choice before the page has said it.
 /// </summary>
 /// <remarks>
 /// <para><b>The kit keeps the scheme in memory only</b>: <c>UseWindows</c> registers <see cref="IColorScheme"/> at what
 /// its host options say, and asks the app to pass the saved choice there and to save each change on
-/// <see cref="IColorScheme.Changed"/>. The page is still the choice's owner (its own store, D66): it sets the scheme on
-/// arrival and on every change (THEMESCHEME1), and this keeps what it set, so a copy that went stale is put right a
+/// <see cref="IColorScheme.Changed"/>. The page is still the choice's owner (its own store): it sets the scheme on
+/// arrival and on every change, and this keeps what it set, so a copy that went stale is put right a
 /// round trip into the next start.</para>
 ///
 /// <para>Beside the window's geometry, in the kit's data area: both are the window's own memory, and the dev loop's

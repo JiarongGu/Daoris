@@ -1,26 +1,26 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The answers-alone bound (COWORK1e, D188 point 4; the message-urgency design §2.3, trap 11): a line of work goes on by solicited
+/// The answers-alone bound: a line of work goes on by solicited
 /// answers alone, a helper's answer or a second opinion's findings with no word of the person's or Daoris's beside them, at most
-/// <see cref="Bound"/> times in a row, and the next such answer waits for the person (§8.3). Pure: what the line's events say to the
-/// count, oldest first, as its parts keep them; the count itself is kept in the line's admission (COMMS1g, <c>ContinuationAdmissions</c>),
+/// <see cref="Bound"/> times in a row, and the next such answer waits for the person. Pure: what the line's events say to the
+/// count, oldest first, as its parts keep them; the count itself is kept in the line's admission (<c>ContinuationAdmissions</c>),
 /// so a trimmed or lost event resets nothing.
 /// </summary>
 /// <remarks>
 /// <para><b>A go-on is a turn whose prompt took only solicited answers.</b> A turn's prompt is the words a record took before its agent
 /// acted on them, between one turn's end and the next agent's step; an answer taken at a step of a running turn is no go-on and counts
-/// nothing, since no run went on past its own turn (§2.3). A prompt the agent never acted on (a resume it would not take) is no turn.</para>
+/// nothing, since no run goes on past its own turn. A prompt the agent never acted on (a resume it would not take) is no turn.</para>
 ///
-/// <para><b>Only the person's or Daoris's word resets it</b>, wherever on the line it was taken, and the person's *Go on with this
-/// answer* is their word (the steward's choice 1). A hand-over's brief, a retry's instruction and a claim the person passed on neither
-/// count nor reset, so the count runs across the line's parts. A word shown while it waited is not yet taken, and is read where it is.</para>
+/// <para><b>Only the person's or Daoris's word resets it</b>, wherever on the line it is taken, and the person's *Go on with this
+/// answer* is their word. A hand-over's brief, a retry's instruction and a claim the person passed on neither
+/// count nor reset, so the count runs across the line's parts. A word shown while it waits is not yet taken, and is read where it is.</para>
 /// </remarks>
 internal static class AnswersAlone
 {
     /// <summary>
     /// Whether a word is an answer the line goes on by with nobody between: a helper's, a second opinion's findings, or the supervisor's
-    /// (SUPERVISOR1a-i, the supervisor design §4.3: one count, D188's, so a mixed prompt evades neither). The look hands only an
+    /// (one count, so a mixed prompt evades neither). The look hands only an
     /// attributed supervisor's word, so one reaching here is one.
     /// </summary>
     public static bool Solicited(SaidWordView word) => word.Helper is not null || word.By is not null || word.Supervisors;
@@ -34,7 +34,7 @@ internal static class AnswersAlone
             .Aggregate(0, (count, step) => step.Kind switch { AloneStep.GoOn => count + 1, AloneStep.Reset => 0, _ => count });
 
     /// <summary>
-    /// What the line's events say to its count, read on from where a reading stopped (COMMS1g): each go-on by answers alone at the event
+    /// What the line's events say to its count, read on from where a reading stopped: each go-on by answers alone at the event
     /// its agent acted on, each word of the person's or Daoris's at that word, and each prompt whose answers went beside such a word. A
     /// turn's prompt runs from a turn's end to the agent's first act; a reset in it takes its answers with it, and one taken while the
     /// agent acts resets at once. A prompt not yet acted on is no go-on: it is carried in the scan to the next reading.
@@ -95,9 +95,9 @@ internal static class AnswersAlone
         kind is SessionEventKind.Message or SessionEventKind.Thought or SessionEventKind.Tool or SessionEventKind.Plan;
 
     /// <summary>
-    /// A word of the person's (a word with no origin, from a record kept before it was written, is theirs) or of Daoris's, taken; or the
+    /// A word of the person's (a word with no origin, from a record kept before origins existed, is theirs) or of Daoris's, taken; or the
     /// person's press that let an answer go on (<see cref="HeldNoteCodes.AnswersPassed"/>), or their own ask of a helper for the line
-    /// (<see cref="PeerNoteCodes.HelperPersonAsked"/>, COWORKUX1d). Never the watcher's word to a quiet session
+    /// (<see cref="PeerNoteCodes.HelperPersonAsked"/>). Never the watcher's word to a quiet session
     /// (<see cref="SessionEvent.Watcher"/>): on a door where it is a prompt of its own it would otherwise give a line going on by answers
     /// alone two more answers after every quiet.
     /// </summary>
@@ -112,23 +112,23 @@ internal static class AnswersAlone
         e.Kind == SessionEventKind.Note && e.Parts?.Any(part => part.Code == PeerNoteCodes.HelperPersonAsked.Code) == true;
 
     /// <summary>
-    /// A solicited answer, taken: a helper's answer by its mark, the turn a second opinion's findings were handed in, or the supervisor's
-    /// answer by its event's <c>from</c> (SUPERVISOR1a-i). The log is a home file (D156 point 7), so a forged supervisor's event only adds
+    /// A solicited answer, taken: a helper's answer by its mark, the turn a second opinion's findings are handed in, or the supervisor's
+    /// answer by its event's <c>from</c>. The log is a home file, so a forged supervisor's event only adds
     /// to the count, which holds the line sooner: the conservative side, read across a restart as every event is.
     /// </summary>
     private static bool Answers(SessionEvent e) =>
         e.Kind == SessionEventKind.User && e.Reaches is null
         && (e.Helper is not null || e.Opinion is not null || e.From == SupervisorHanded.From);
 
-    /// <summary>Who a solicited answer is from, by the same marks (CONTEXTDRIVE1i): a helper, a second opinion or the supervisor; null for any other word.</summary>
+    /// <summary>Who a solicited answer is from, by the same marks: a helper, a second opinion or the supervisor; null for any other word.</summary>
     public static string? AnsweredBy(SessionEvent e) =>
         !Answers(e) ? null : e.Helper is not null ? GoOnBy.Helper : e.Opinion is not null ? GoOnBy.Opinion : GoOnBy.Supervisor;
 }
 
-/// <summary>Where a reading of a line's events stopped (COMMS1g): whether a turn's prompt is open, whether a reset was taken in it, and its answers.</summary>
+/// <summary>Where a reading of a line's events stopped: whether a turn's prompt is open, whether a reset is taken in it, and its answers.</summary>
 /// <param name="Prompting">The events read last are a turn's prompt, its agent not yet acting.</param>
-/// <param name="Said">A word of the person's or Daoris's was taken in that prompt.</param>
-/// <param name="Answers">A solicited answer was taken in it.</param>
+/// <param name="Said">A word of the person's or Daoris's is taken in that prompt.</param>
+/// <param name="Answers">A solicited answer is taken in it.</param>
 /// <param name="Answered">The ids of the answers it took.</param>
 public sealed record AloneScan(bool Prompting, bool Said, bool Answers, IReadOnlyList<string> Answered)
 {
@@ -152,12 +152,12 @@ public sealed record AloneStep(string Kind, string Part, long Seq, DateTimeOffse
     /// <summary>A word of the person's or Daoris's, or the person's press that let an answer go on.</summary>
     public const string Reset = "reset";
 
-    /// <summary>A prompt's answers went on beside a resetting word: no go-on by answers alone.</summary>
+    /// <summary>A prompt's answers go on beside a resetting word: no go-on by answers alone.</summary>
     public const string Beside = "beside";
 }
 
 /// <summary>
-/// The notes the answers-alone bound keeps in a session's conversation (COWORK1e), each by its code: the hold, the person's press that
+/// The notes the answers-alone bound keeps in a session's conversation, each by its code: the hold, the person's press that
 /// lets the answer go on, which the count reads as their word, and their *Not now*. Each names the words it speaks of by their ids.
 /// </summary>
 internal static class AnswersAloneNotes

@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 public sealed record HostTokenHand(string? Token, string? Refusal);
 
 /// <summary>
-/// The API token of the identity serving a place's origin, handed to one plugin process (D241 point 5): <c>DAORIS_HOST_TOKEN</c>, set by
+/// The API token of the identity serving a place's origin, handed to one plugin process: <c>DAORIS_HOST_TOKEN</c>, set by
 /// <see cref="HookProcess"/> around that one start and never in any other process's environment. The plugin starts only where an
 /// identity serves origin, that identity is not read only on its host, the person's git access does not deny Write, and the identity
 /// holds an API token. The value is never said in a refusal.

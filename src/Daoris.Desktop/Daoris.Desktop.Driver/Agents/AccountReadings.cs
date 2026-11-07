@@ -3,42 +3,42 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One frame an agent was seen sending about its windows (TOOL6c, D130 §5.2): the evidence an entry in
+/// One frame an agent has sent about its windows: the evidence an entry in
 /// <see cref="WindowWords"/> stands on, as <see cref="RecordedLimit"/> is for a limit's words.
 /// </summary>
 /// <param name="Frame">
-/// The object both doors carry, as recorded: each moment written relative to when it was seen (<c>&lt;+2.0 h&gt;</c>, about
-/// two hours after), never a machine's clock; an id the record held written <c>…</c>.
+/// The object both doors carry, as recorded: each moment written relative to when it is seen (<c>&lt;+2.0 h&gt;</c>, about
+/// two hours after), never a machine's clock; an id the record holds written <c>…</c>.
 /// </param>
-/// <param name="Seen">The day it was recorded, <c>yyyy-MM-dd</c>.</param>
-/// <param name="Channel">Where it arrived, or where it was read when it was declared and not seen.</param>
-/// <param name="Version">The harness's version when it was seen, where known.</param>
+/// <param name="Seen">The day it is recorded, <c>yyyy-MM-dd</c>.</param>
+/// <param name="Channel">Where it arrived, or where it is read when declared and not seen.</param>
+/// <param name="Version">The harness's version at the sighting, where known.</param>
 public sealed record RecordedFrame(string Frame, string Seen, string Channel, string? Version = null);
 
 /// <summary>
-/// How one agent says an account's windows (TOOL6c, D130 §5.2): its entry in the readings table, declared on its toolchain as
+/// How one agent says an account's windows: its entry in the readings table, declared on its toolchain as
 /// <see cref="AccountAgent.Windows"/>, beside <see cref="AccountAgent.Limits"/>.
 /// </summary>
 /// <remarks>
-/// <para><b>An entry grows only with a recorded frame</b> (§5.2): every window it names, every status word and the credits
+/// <para><b>An entry grows only with a recorded frame</b>: every window it names, every status word and the credits
 /// field appear in one of <see cref="Recorded"/>, which <c>AccountReadingsTests</c> holds. The frame's shape is Claude Code's
-/// <c>rate_limit_info</c>, the one shape recorded (limit-signals evidence §1.2), so the table holds its words, not a second
-/// grammar for another agent's: Codex's door forwards none of Codex's limits (§4), so its windows are asked of its own
-/// server instead (<see cref="CodexUsage"/>, CODEXUSE1) and read into the same <see cref="WindowReading"/>.</para>
-/// <para><b>How a clear word with no number ranks</b> (§5.2's last question) does not arise: the evidence found the number
-/// on every frame (§1.1), so a reading is ranked by its numbers and its word together (<see cref="AccountReadings.Near"/>).</para>
+/// <c>rate_limit_info</c>, the one shape recorded, so the table holds its words, not a second
+/// grammar for another agent's: Codex's door forwards none of Codex's limits, so its windows are asked of its own
+/// server instead (<see cref="CodexUsage"/>) and read into the same <see cref="WindowReading"/>.</para>
+/// <para><b>How a clear word with no number ranks</b> does not arise: every frame carries the number,
+/// so a reading is ranked by its numbers and its word together (<see cref="AccountReadings.Near"/>).</para>
 /// </remarks>
 /// <param name="Windows">The agent's name for each window it reads → Daoris's: <c>session</c> (five hours) or <c>weekly</c>.</param>
 /// <param name="Clear">The status words that mean the account may run.</param>
 /// <param name="Warned">
-/// The status words of the agent's own warning, kept as <c>warned</c> (USAGEREAD3a, the account-switch design §1.3): Claude
+/// The status words of the agent's own warning, kept as <c>warned</c>: Claude
 /// Code's says a window's use is ahead of the time gone in it, by thresholds of its own, not that it is near its limit, so it
 /// never makes an account near alone.
 /// </param>
-/// <param name="Refused">The status words that mean a limit was reached.</param>
+/// <param name="Refused">The status words that mean a limit is reached.</param>
 /// <param name="Scale">What a full window reads as on this agent's scale: 1 for a fraction.</param>
-/// <param name="Credits">The field that says the request drew on usage credits, which are billed (C5, C6).</param>
-/// <param name="Recorded">The frames the entry was written against.</param>
+/// <param name="Credits">The field that says the request drew on usage credits, which are billed.</param>
+/// <param name="Recorded">The frames the entry stands on.</param>
 /// <param name="Shape">A window's length in minutes and scope as the agent's key names it, for the usage history; null reads neither.</param>
 /// <param name="Models">
 /// The model families a scope may name, each with a limit of its own (<see cref="ModelLimits"/>): a scoped week at its limit, or a
@@ -55,17 +55,17 @@ public sealed record WindowWords(
     Func<string, (int? Minutes, string? Scope)>? Shape = null,
     IReadOnlyList<string>? Models = null);
 
-/// <summary>One window as an agent said it in one frame (TOOL6c): never the agent's words, only Daoris's.</summary>
+/// <summary>One window as an agent says it in one frame: never the agent's words, only Daoris's.</summary>
 /// <param name="Window">Daoris's name for it: <c>session</c> or <c>weekly</c>.</param>
-/// <param name="Used">How much of it is used, from 0 to 1, or null where the frame gave no number.</param>
+/// <param name="Used">How much of it is used, from 0 to 1, or null where the frame gives no number.</param>
 /// <param name="Reset">When it turns over, which is when this reading is dropped.</param>
 /// <param name="Standing"><c>clear</c>, <c>warned</c> or <c>refused</c>, on the window the frame names; else null.</param>
-/// <param name="Credits">Whether the frame said the request drew on usage credits, on the window it names.</param>
+/// <param name="Credits">Whether the frame says the request drew on usage credits, on the window it names.</param>
 public sealed record WindowReading(string Window, double? Used, DateTimeOffset Reset, string? Standing = null, bool Credits = false);
 
 /// <summary>
-/// One window as <c>windows.json</c> keeps it: its reading, when it was seen, and on which session. <paramref name="Source"/>
-/// is <c>read</c> for a window asked of its agent's own server (USAGEREAD2a) and <c>said</c> for a session's frame, the
+/// One window as <c>windows.json</c> keeps it: its reading, when it is seen, and on which session. <paramref name="Source"/>
+/// is <c>read</c> for a window asked of its agent's own server and <c>said</c> for a session's frame, the
 /// kept form where none is written.
 /// </summary>
 public sealed record WindowSaid(
@@ -73,29 +73,29 @@ public sealed record WindowSaid(
     string Source = AccountWindows.SourceSaid);
 
 /// <summary>
-/// What an account's agent last said about its windows, as of a moment (TOOL6c, D130 §5.2): each window whose reset has not
-/// passed. A floor, as of when each was seen: within a window use only grows, and the person may have added to it since.
+/// What an account's agent last said about its windows, as of a moment: each window whose reset has not
+/// passed. A floor, as of when each is seen: within a window use only grows, and the person may have added to it since.
 /// </summary>
 public sealed record AccountSaid(IReadOnlyList<WindowSaid> Windows)
 {
-    /// <summary>The window by Daoris's name, or null where it was not said.</summary>
+    /// <summary>The window by Daoris's name, or null where it is not said.</summary>
     public WindowSaid? Of(string window) =>
         Windows.FirstOrDefault(each => string.Equals(each.Window, window, StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>When the newest of its windows was said.</summary>
+    /// <summary>When the newest of its windows is said.</summary>
     public DateTimeOffset Seen => Windows.Max(each => each.Seen);
 }
 
 /// <summary>
-/// The one reader of what an agent says about an account's windows (TOOL6c, D130 §5.2, §6, §16.3), and the two judgements
-/// the walk makes of it: near, by its curve (SWITCH1b-ii), and how far behind its week's pace, which <c>switch: off</c> still
+/// The one reader of what an agent says about an account's windows, and the two judgements
+/// the walk makes of it: near, by its curve, and how far behind its week's pace, which <c>switch: off</c> still
 /// ranks by. Pure: the frame, the table, the scope's settings and the moment are arguments.
 /// </summary>
 /// <remarks>
 /// <para><b>It reads the frame the door carried apart from the agent's words</b>, as the limit reader reads the door's
-/// failure (D125 §1.4): Claude Code's <c>rate_limit_event</c> on the native door, and the same object forwarded on its
-/// protocol door (limit-signals evidence §1, §3). Never the transcript.</para>
-/// <para><b>Absent is never zero, and never full</b> (D57): a window the frame does not name, or names without a reset, says
+/// failure: Claude Code's <c>rate_limit_event</c> on the native door, and the same object forwarded on its
+/// protocol door. Never the transcript.</para>
+/// <para><b>Absent is never zero, and never full</b>: a window the frame does not name, or names without a reset, says
 /// nothing, and an account that said nothing is neither near nor behind.</para>
 /// </remarks>
 public static class AccountReadings
@@ -152,10 +152,10 @@ public static class AccountReadings
     public const int HistoryReader = 1;
 
     /// <summary>
-    /// What the usage history keeps of a frame (USAGECAP1a1, D179 point 2): a parse beside <see cref="Read"/>, which it leaves
+    /// What the usage history keeps of a frame: a parse beside <see cref="Read"/>, which it leaves
     /// unchanged. Every window the frame says a use or a reset of, the named window (<c>rateLimitType</c>) from the frame's own
     /// where its windows leave it out, each by the agent's key with its length and scope (<see cref="WindowWords.Shape"/>),
-    /// Daoris's name where the walk reads it, and the precision its number was written to. Never a standing or a credit: the
+    /// Daoris's name where the walk reads it, and the precision its number is written to. Never a standing or a credit: the
     /// history keeps numbers and times.
     /// </summary>
     public static IReadOnlyList<WindowSeen> Seen(JsonElement info, WindowWords words)
@@ -190,19 +190,18 @@ public static class AccountReadings
     }
 
     /// <summary>
-    /// Whether an account is near a limit, which a start passes (D130 §6 as the evidence corrects it, D165 point 2): its
-    /// agent's word that a limit was reached, its word that it is drawing on usage credits, or a window's use over the
-    /// scope's curve now (<see cref="UsageCurves"/>, SWITCH1b-ii). Nothing said is never near, and its agent's pace warning
+    /// Whether an account is near a limit, which a start passes: its
+    /// agent's word that a limit is reached, its word that it is drawing on usage credits, or a window's use over the
+    /// scope's curve now (<see cref="UsageCurves"/>). Nothing said is never near, and its agent's pace warning
     /// (<c>warned</c>) is never near alone.
     /// </summary>
     /// <remarks>
-    /// <para>§6 had the agent's word win over the number, where Claude Code's word was thought to come without one. The
-    /// evidence found a number on every frame, and the word still <c>allowed</c> at 88% with two hours left (§1.3): read
-    /// alone, the word would pass nothing the person's curve says. So either passes.</para>
-    /// <para>Its <c>allowed_warning</c> passes nothing alone (USAGEREAD3a, D165 point 2, the account-switch design §1.3): it
+    /// <para>The agent's word does not win over the number: every frame carries a number, and the word is still <c>allowed</c> at
+    /// 88% with two hours left, so read alone it would pass nothing the person's curve says. So either passes.</para>
+    /// <para>Its <c>allowed_warning</c> passes nothing alone: it
     /// says a window's use is ahead of the time gone in it, not that the window is near its limit.</para>
     /// <para>The curve is read under every switch: <c>off</c> reads the smart curve, since a start still passes an account
-    /// over it (the switch design §3). A window this build has no curve for is not measured, so its number passes nothing.</para>
+    /// over it. A window this build has no curve for is not measured, so its number passes nothing.</para>
     /// </remarks>
     public static bool Near(AccountSaid? said, RotationUse use, DateTimeOffset now) => NearWindow(said, use, now) is not null;
 
@@ -218,13 +217,13 @@ public static class AccountReadings
         return UsageCurves.TightestSaid(use, said, now) is { Room: < 0 } over ? (over.Window, NearBy.Number) : null;
     }
 
-    /// <summary>The share of its limit used in the window it said the most of, as a fraction; null where it said no number (ACCTWALK3).</summary>
+    /// <summary>The share of its limit used in the window it said the most of, as a fraction; null where it said no number.</summary>
     public static double? MostUsed(AccountSaid? said) => said?.Windows.Max(each => each.Used);
 
     /// <summary>
-    /// An account's standing for the log (D94 §4's names only): <c>refused</c> by its word, <c>near</c> as
-    /// <see cref="Near"/> reads it (over its curve among them, SWITCH1b-ii), <c>warned</c> where its agent's pace warning
-    /// stands and it is not near (USAGEREAD3a), <c>clear</c> where it said and is none of those, and null where it said nothing.
+    /// An account's standing for the log (names only): <c>refused</c> by its word, <c>near</c> as
+    /// <see cref="Near"/> reads it (over its curve among them), <c>warned</c> where its agent's pace warning
+    /// stands and it is not near, <c>clear</c> where it said and is none of those, and null where it said nothing.
     /// </summary>
     public static string? Standing(AccountSaid? said, RotationUse use, DateTimeOffset now) => NearWindow(said, use, now) switch
     {
@@ -235,10 +234,10 @@ public static class AccountReadings
     };
 
     /// <summary>
-    /// How far an account is behind its week's pace (D130 §16.3 step 5): the share of its week already gone, less the share of
-    /// its weekly limit it said is used. Positive is behind, negative ahead; null where its week's use was not said.
+    /// How far an account is behind its week's pace: the share of its week already gone, less the share of
+    /// its weekly limit it said is used. Positive is behind, negative ahead; null where its week's use is not said.
     /// </summary>
-    /// <remarks>The week is the seven days before its reset (C1); a reset further off than that reads as a week just begun.</remarks>
+    /// <remarks>The week is the seven days before its reset; a reset further off than that reads as a week just begun.</remarks>
     public static double? Behind(AccountSaid? said, DateTimeOffset now)
     {
         if (said?.Of(AccountWindows.Weekly) is not { Used: { } used } week) return null;
@@ -246,7 +245,7 @@ public static class AccountReadings
         return Math.Clamp(gone, 0, 1) - used;
     }
 
-    /// <summary>The share of its week gone at <paramref name="now"/>, for a sentence; null where its week was not said.</summary>
+    /// <summary>The share of its week gone at <paramref name="now"/>, for a sentence; null where its week is not said.</summary>
     public static double? Gone(AccountSaid? said, DateTimeOffset now) =>
         said?.Of(AccountWindows.Weekly) is { } week ? Math.Clamp(1 - (week.Reset - now).Ticks / (double)AccountWindows.Week.Ticks, 0, 1) : null;
 
@@ -284,17 +283,17 @@ public static class AccountReadings
 }
 
 /// <summary>
-/// Why an account is near (TOOL6c, D130 §6): what a start's first line says of it. Never its agent's pace warning, which is
-/// not near (USAGEREAD3a); the page reads these names as <c>near[].by</c>.
+/// Why an account is near: what a start's first line says of it. Never its agent's pace warning, which is
+/// not near; the page reads these names as <c>near[].by</c>.
 /// </summary>
 public enum NearBy
 {
-    /// <summary>Its agent said a limit was reached.</summary>
+    /// <summary>Its agent said a limit is reached.</summary>
     Refused,
 
     /// <summary>Its agent said it is drawing on usage credits.</summary>
     Credits,
 
-    /// <summary>A window's use over the scope's curve now (SWITCH1b-ii; the scope's <i>near</i> before it).</summary>
+    /// <summary>A window's use over the scope's curve now.</summary>
     Number,
 }

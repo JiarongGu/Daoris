@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// <c>WORK_HELD</c>'s word <c>ask-fix</c> (FABRIC-PIPELINE1f): the window's <i>Ask for a fix…</i> and <c>daoris workflow fix</c> are this one
+/// <c>WORK_HELD</c>'s word <c>ask-fix</c>: the window's <i>Ask for a fix…</i> and <c>daoris workflow fix</c> are this one
 /// press. It publishes the ask and moves no node; the terminal, which asks for <c>said</c>, is answered the verb's own line.
 /// </summary>
 internal static class HeldFixPress

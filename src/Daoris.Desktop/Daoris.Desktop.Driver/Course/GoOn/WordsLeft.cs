@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The person's words a driven session held when its door failed (TURNFAIL1, USERSHOWN1; D137 §2.2): sent behind a turn that
+/// The person's words a driven session held when its door failed: sent behind a turn that
 /// failed, or held for its end, they never reached the agent, and its run ends with them. They are kept on its ended record
-/// through the say door (MSG1a), to go again with the next run that goes on, as words said to it once it ended are. So are the
-/// words a run held when Daoris ended it at its turn's end for a changed setup (ACCESSSWAP1b), which go on under the new one.
+/// through the say door, to go again with the next run that goes on, as words said to it once it ended are. So are the
+/// words a run held when Daoris ended it at its turn's end for a changed setup, which go on under the new one.
 /// </summary>
 /// <remarks>
 /// <para><b>After the conclusion.</b> The say door refuses a running record, so the words are kept once the run moved it;
@@ -12,18 +12,18 @@ namespace Daoris.Driver;
 ///
 /// <para><b>The conversation says why, then shows them waiting.</b> A note naming the ids they were shown under settles them
 /// there, saying they wait to go again; each is then shown at the record's foot under the id the record gave it, which the
-/// run that goes on says again where it takes it (D137 §3.1). Words the record would not keep are said never to have
-/// reached it, as before.</para>
+/// run that goes on says again where it takes it. Words the record would not keep are said never to have
+/// reached it.</para>
 /// </remarks>
 public static class WordsLeft
 {
     /// <param name="why">
     /// The line that says why they wait: a failed turn's, to go again (<see cref="WordsAfter.Wait"/>), where null; or a run's that ended for
-    /// a changed setup, which go on under it (ACCESSSWAP1b, <see cref="Observation.WordsUnderNewSetup"/>).
+    /// a changed setup, which go on under it (<see cref="Observation.WordsUnderNewSetup"/>).
     /// </param>
     /// <returns>How many the record kept.</returns>
     /// <param name="home">
-    /// The home the words' files are kept under, which a word said at its line's head is carried to (FOUNDATION1d-ii); null carries none.
+    /// The home the words' files are kept under, which a word said at its line's head is carried to; null carries none.
     /// </param>
     public static async Task<int> KeepAsync(
         ServiceClient service, SessionEvents events, string session, IReadOnlyList<ChatMessage> left, CancellationToken ct, Noted? why = null,
@@ -39,9 +39,9 @@ public static class WordsLeft
         {
             try
             {
-                // COWORK1b: Daoris's own word is kept as Daoris's, under its fact's key, never as the person's. COWORK1c: a word kept on
+                // Daoris's own word is kept as Daoris's, under its fact's key, never as the person's. A word kept on
                 // the record for the run, and still there, is answered as itself under its press's key, never kept a second time.
-                // FOUNDATION1d-ii: kept at the head of the record's line where it went on, whole, its files carried to the head's folder.
+                // Kept at the head of the record's line where it went on, whole, its files carried to the head's folder.
                 IReadOnlyList<string> names = [.. word.Files.Select(file => file.Name)];
                 var (said, at) = await WordsHead.FollowAsync(
                         session, record => service.SayAsync(
@@ -67,7 +67,7 @@ public static class WordsLeft
             {
                 Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts, Words = named.Count > 0 ? named : null,
             }, say: null);
-            // Each shown in the conversation of the record that kept it: the head of its line, where the say was passed on.
+            // Each shown in the conversation of the record that kept it: the head of its line, where the say is passed on.
             foreach (var (_, view, at) in kept)
             {
                 if (view is not null) events.Keep(at, LoopWords.Shown(view, door ?? "") with { Door = door }, say: null);

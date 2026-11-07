@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a start or a resume makes of the choice a session was asked to run with (<see cref="ActorAsked"/>, whose shape is the service's):
+/// What a start or a resume makes of the choice a session is asked to run with (<see cref="ActorAsked"/>, whose shape is the service's):
 /// the opening's default, the composer's change laid over it, the spawn's command line and the native arguments. The roles' own members of
 /// it, so every caller keeps `ActorAsked.Before`, `asked.Overlaid`, `ActorAsked.ForSpawn` and `asked.NativeArguments` as spelled.
 /// </summary>
@@ -14,7 +14,7 @@ public static class ActorAskedChoices
         public static ActorAsked Before(string agent) => new(agent, new("account-default", null, false), new("account-default", null, false));
 
         /// <summary>
-        /// The choice a start asked (D205 §3.2), read from its whole <see cref="SpawnRequest"/>: the request's asked choice, else the record's
+        /// The choice a start asked, read from its whole <see cref="SpawnRequest"/>: the request's asked choice, else the record's
         /// <paramref name="kept"/>, else the opening's default; a model or effort the machine's command names, the command's own; and, where
         /// nothing named it, what the door's program reads from the <paramref name="environment"/> it starts with, by its spawn's
         /// <paramref name="variables"/>. What the door's recipe carries of it, what the agent acknowledges and what its turns report are each
@@ -50,7 +50,7 @@ public static class ActorAskedChoices
     extension(PriorSession prior)
     {
         /// <summary>
-        /// The model its next start on <paramref name="agent"/> asks (MODELROLE1k2): its choice's, the composer's kept change laid over it; null
+        /// The model its next start on <paramref name="agent"/> asks: its choice's, the composer's kept change laid over it; null
         /// for account default. A model family's cool-off holds a start of that family alone, so this is what every reader of a line's cool-off asks.
         /// </summary>
         public string? ModelOn(string agent) => (prior.Asked ?? ActorAsked.Before(agent)).Overlaid(ActorOverride.Read(prior.Override)).NamedModel;
@@ -59,7 +59,7 @@ public static class ActorAskedChoices
     extension(ActorAsked asked)
     {
         /// <summary>
-        /// This asked choice with the composer's <paramref name="change"/> laid over it (D205 §4.2, MODELROLE1d): what a resume and a briefed
+        /// This asked choice with the composer's <paramref name="change"/> laid over it: what a resume and a briefed
         /// continuation set, the person's last change after the opening's. An override's model drops the asked effort unless the override
         /// names one, since a model change resets the effort the agent gives. Each value it names is carried, its source <c>override</c>.
         /// </summary>
@@ -84,7 +84,7 @@ public static class ActorAskedChoices
 }
 
 /// <summary>
-/// The composer's last change on a conversation, kept as values (D205 §4.2, §9.3's <c>override</c>, MODELROLE1d): the model's and the
+/// The composer's last change on a conversation, kept as values (the <c>override</c>): the model's and the
 /// effort's value ids as the agent returned them, never their display names, which need not be unique or reversible.
 /// </summary>
 public sealed record ActorOverride(string? Model, string? Effort)
@@ -101,8 +101,8 @@ public sealed record ActorOverride(string? Model, string? Effort)
 
     /// <summary>
     /// <paramref name="before"/> after one change of <paramref name="category"/>, reconciled from the configuration the agent
-    /// <paramref name="returned"/> (round 3, Codex 5), never merged blindly: an effort-only change keeps the model; a model change sets
-    /// the model and clears the effort, leaving it to what the new model gives. With no returned list nothing was acknowledged, and
+    /// <paramref name="returned"/>, never merged blindly: an effort-only change keeps the model; a model change sets
+    /// the model and clears the effort, leaving it to what the new model gives. With no returned list nothing is acknowledged, and
     /// nothing changes.
     /// </summary>
     public static ActorOverride? Reconciled(ActorOverride? before, string category, IReadOnlyList<AcpConfigOption>? returned)
@@ -132,9 +132,9 @@ public sealed record ActorOverride(string? Model, string? Effort)
 }
 
 /// <summary>
-/// What a protocol open keeps and asks about its agent's offers (D205 §3.3, §9.2, MODELROLE1c2): the version and account its reading is
+/// What a protocol open keeps and asks about its agent's offers: the version and account its reading is
 /// keyed by, and the start's re-ask where a choice is refused at the open, answering a later choice and its <c>choice</c> to set on the
-/// same session, or null where the record ends <c>choice-not-offered</c>. A null re-ask keeps MODELROLE1c's not-carried reading.
+/// same session, or null where the record ends <c>choice-not-offered</c>. A null re-ask keeps the not-carried reading.
 /// </summary>
 public sealed record OpenOffers(string? Version, string? Account, Func<ModelRefusal, Task<(ActorAsked Asked, string Choice)?>>? Refused);
 

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// SPLASHDATA1: the window's splash lifts once the page's first screen has its data, which the page says over the kit's
+/// The window's splash lifts once the page's first screen has its data, which the page says over the kit's
 /// <c>CLOSE_SPLASH</c> (Shenora 0.21's <c>WindowCommandOptions.CloseSplash</c>), not as the page's browser is made, which
 /// lifted it onto an empty screen. A page that never says is lifted at a bound, and the log says which lifted it.
 /// </summary>
@@ -97,7 +97,7 @@ public sealed class SplashLiftTests : IDisposable
     }
 
     /// <summary>
-    /// Held on the application's own source, as the colour scheme's route is (THEMESCHEME1), because the window has no
+    /// Held on the application's own source, as the colour scheme's route is, because the window has no
     /// test project: the kit's route is answered by the lift, and the splash comes down after the lift's wait, not as
     /// the page's browser is made.
     /// </summary>

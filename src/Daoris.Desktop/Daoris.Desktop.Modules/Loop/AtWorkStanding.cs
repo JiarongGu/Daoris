@@ -6,7 +6,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A repository's routing standing for the at-work view's hint (COWORKVIEW1e-iii, the design §6.4 point 3): <see cref="RoutingStanding.Of"/>
+/// A repository's routing standing for the at-work view's hint: <see cref="RoutingStanding.Of"/>
 /// over the drive and trees the driver slice holds and the lanes the tick last read from the registry. The registry's readiness is told
 /// apart from an answered empty lane list: before the first answer a repository's word is <see cref="AtWorkRouting.Unheard"/>, never
 /// <c>no-lanes</c>, and the first answer moves it.

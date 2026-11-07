@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// This machine's heavy gates for a repository over the bridge (HEAVYRUN1b2b, D180's HEAVYRUN1b2a note): <c>SET_HEAVY_GATES</c>, the
-/// setup page's half of <c>daoris place heavy</c>, over the same key in the same file (D50), a repository's whole list at once; the
+/// This machine's heavy gates for a repository over the bridge: <c>SET_HEAVY_GATES</c>, the
+/// setup page's half of <c>daoris place heavy</c>, over the same key in the same file, a repository's whole list at once; the
 /// state answering each repository's list as rows, in its order, so no key policy on the bridge respells a repository's name; a list
 /// the mapping does not read refused in <see cref="HeavyMapping"/>'s words with nothing written. Edits to <c>driver.json</c> only.
 /// </summary>
@@ -91,7 +91,7 @@ public sealed class DriverModuleHeavyGatesTests : DriverModuleBridge
         Assert.Equal(before, File.ReadAllText(DriverConfigPath));
     }
 
-    /// <summary>🔴 The route and the terminal agree (D50): what one sets the other reads, through the same key.</summary>
+    /// <summary>🔴 The route and the terminal agree: what one sets the other reads, through the same key.</summary>
     [Fact]
     public async Task The_route_and_the_terminal_set_the_same_key()
     {
@@ -114,7 +114,7 @@ public sealed class DriverModuleHeavyGatesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// HEAVYRUN1b2c: <c>HEAVY_MARKS</c> reads the repository's checkout file and says whether its own gates win (marks some, with their
+    /// <c>HEAVY_MARKS</c> reads the repository's checkout file and says whether its own gates win (marks some, with their
     /// names), marks none or has no file (this machine's list is used), or does not read (null, with the driver's words: never "marks
     /// none"). A read of one file, never <c>Resolve</c>, which throws with no file and no mapping.
     /// </summary>
@@ -144,7 +144,7 @@ public sealed class DriverModuleHeavyGatesTests : DriverModuleBridge
         var marks = await AnswerAsync(module, "HEAVY_MARKS", new { repository = "marks" });
         Assert.True(marks.GetProperty("marks").GetBoolean());
         Assert.Equal(["web"], marks.GetProperty("names").EnumerateArray().Select(name => name.GetString()));
-        // FABRIC-PIPELINE1b: and the gates it declares and does not mark heavy, its light gates, which Setup's sessions' checks name.
+        // And the gates it declares and does not mark heavy, its light gates, which Setup's sessions' checks name.
         Assert.Equal(["build"], marks.GetProperty("light").EnumerateArray().Select(name => name.GetString()));
 
         var none = await AnswerAsync(module, "HEAVY_MARKS", new { repository = "NONE" });
@@ -165,7 +165,7 @@ public sealed class DriverModuleHeavyGatesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// HEAVYSLOT1 (the UI/UX design §3.5): <c>HEAVY_SLOT</c> answers who holds the repository's slot, at which gate, and who waits, from
+    /// <c>HEAVY_SLOT</c> answers who holds the repository's slot, at which gate, and who waits, from
     /// the records beside it, a run's process read live: a holder whose process runs, with its gate; a waiter with no session (a run from
     /// a terminal) answered with none; a waiter whose process is gone left out. A repository with no checkout here is refused in words.
     /// </summary>
@@ -192,7 +192,7 @@ public sealed class DriverModuleHeavyGatesTests : DriverModuleBridge
         File.WriteAllText(Path.Combine(waits, "a.json"), Waiter(otherStarted, "2026-10-20T09:05:00Z", null));
         File.WriteAllText(Path.Combine(waits, "b.json"), Waiter(otherStarted + 1, "2026-10-20T09:00:00Z", "s-gone"));
 
-        // HEAVYQUEUE1: the machine's admission beside the slot: the merge queue's gate holds a place, a session's run asks for one.
+        // The machine's admission beside the slot: the merge queue's gate holds a place, a session's run asks for one.
         var now = DateTimeOffset.UtcNow;
         var admission = MachineAdmission.PathOf(Home);
         Directory.CreateDirectory(Path.GetDirectoryName(admission)!);

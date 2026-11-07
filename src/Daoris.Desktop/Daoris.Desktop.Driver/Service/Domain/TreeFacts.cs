@@ -10,7 +10,7 @@ public sealed record TreeProvenance(string Commit, DateTimeOffset CommittedAt, s
     public string ShortCommit => TextBounds.ShortCommit(Commit, 8);
 }
 
-/// <summary>How this checkout's commit stands to one a deployment holds, as git answered (SYNC5a).</summary>
+/// <summary>How this checkout's commit stands to one a deployment holds, as git answered.</summary>
 public enum TreeRelation
 {
     /// <summary>This checkout's commit has the held one in its history: a fast-forward.</summary>

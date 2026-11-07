@@ -1,21 +1,21 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the driver reads of a role's policy to hand the course its met condition (STAFFPOLICY1e, D226; the staff policy design §3.3, §4): the
+/// What the driver reads of a role's policy to hand the course its met condition: the
 /// facts are read once at the look, the course decides, and a move the course made is written down (<see cref="StaffMoves"/>) before anything
-/// acts on it, so the planner, the start and a restart all read the one decision. With no policy that applies every answer is today's.
+/// acts on it, so the planner, the start and a restart all read the one decision. With no policy that applies every answer is the plain one.
 /// What a look reads of the planner's snapshot is <see cref="StaffSnapshotCourse"/>'s.
 /// </summary>
 internal static class StaffCourse
 {
-    /// <summary>The tries a driven run's transient episode makes: the lowest <c>at</c> of the line's effective tries rules (CONTEXTDRIVE1e), else D210's five.</summary>
+    /// <summary>The tries a driven run's transient episode makes: the lowest <c>at</c> of the line's effective tries rules, else five.</summary>
     internal static int Tries(StaffLedger? staff, string? role, StaffPlace? place = null) =>
         staff is null || role is null
             ? TransientRetry.Bound
             : SupervisorRuleBook.TriesLimit(staff.Rules().For(role, place?.Repository, place?.Workspace));
 
     /// <summary>
-    /// The policy the course reads for <paramref name="role"/>'s line at <paramref name="place"/> (CONTEXTDRIVE1e; the context counters design §4.5):
+    /// The policy the course reads for <paramref name="role"/>'s line at <paramref name="place"/>:
     /// the applied policy's moves and bound are the line's effective rules'.
     /// </summary>
     internal static StaffPolicy? CourseOf(StaffLedger staff, string role, StaffPlace place) =>
@@ -39,7 +39,7 @@ internal static class StaffCourse
         }
     }
 
-    /// <summary>The policy a part's move was made under and the opening note's sentence for it, in the rule's words.</summary>
+    /// <summary>The policy a part's move is made under and the opening note's sentence for it, in the rule's words.</summary>
     internal static (StaffPolicy? Policy, string Said) MoveSaid(StaffLedger staff, string role, string line, PriorSession left, string condition, int moves)
     {
         var policy = CourseOf(staff, role, new StaffPlace(left.Repository, left.Workspace));
@@ -51,7 +51,7 @@ internal static class StaffCourse
         policy is not null && policy.Moves.TryGetValue(condition, out var move) ? move.Do : ActorMoves.Next;
 
     /// <summary>
-    /// Why a part moved, as the opening note says it (design §5): the condition, and the role's moves in 24 hours against its bound.
+    /// Why a part moved, as the opening note says it: the condition, and the role's moves in 24 hours against its bound.
     /// </summary>
     internal static string MovedSaid(string condition, StaffPolicy? policy, int moves, string roleName)
     {
@@ -80,8 +80,8 @@ internal static class StaffCourse
 
     /// <summary>
     /// Whether a driven line an account's limit cut off waits for the choice's own reset rather than walking the role's choices: its role's
-    /// policy says <c>wait</c> for a limit, and the <c>upTo</c> minutes after the cut-off it names have not passed. D206's own resume is
-    /// asked first either way, and the accounts of the choice's agent are still walked inside the choice (D197).
+    /// policy says <c>wait</c> for a limit, and the <c>upTo</c> minutes after the cut-off it names have not passed. The own account's resume is
+    /// asked first either way, and the accounts of the choice's agent are still walked inside the choice.
     /// </summary>
     internal static LineCourse? LimitWait(StaffLedger? staff, string role, PriorSession cut, DateTimeOffset now, StaffPlace? place = null)
     {
@@ -107,5 +107,5 @@ internal static class StaffCourse
     }
 }
 
-/// <summary>A line as the supervisor's rules place it (CONTEXTDRIVE1e): its repository and its workspace where known.</summary>
+/// <summary>A line as the supervisor's rules place it: its repository and its workspace where known.</summary>
 internal sealed record StaffPlace(string? Repository, string? Workspace);

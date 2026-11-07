@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// **Ask Daoris's Apply goes through the screen's own door** (HELP6): each door the module hands the
+/// **Ask Daoris's Apply goes through the screen's own door**: each door the module hands the
 /// driver's <see cref="HelpProposals.ApplyAsync"/> is the code the screen's route runs — the driver's file
 /// as <c>SET_*</c> edits it, an account's settings as <c>SET_AGENT_SETTINGS</c> writes them, an update as
 /// <c>HARNESS_ACTION</c> starts it, and a delete through the local host's own route — never a second path.
@@ -37,7 +37,7 @@ public sealed class HelpDoorsTests : Bridge
         File.WriteAllText(file, """{"theme":"dark","effortLevel":"high"}""");
         var doors = Module().HelpDoors(null);
 
-        // A door's accounts are its owner's (AGT7), and clearing removes the key.
+        // A door's accounts are its owner's, and clearing removes the key.
         doors.SetAgentSettings("claude-code-acp", "work", new AgentSettingEdit("sonnet"), new AgentSettingEdit(null));
 
         Assert.Equal("""{"theme":"dark","model":"sonnet"}""", JsonSerializer.Serialize(JsonDocument.Parse(File.ReadAllText(file)).RootElement));
@@ -76,8 +76,7 @@ public sealed class HelpDoorsTests : Bridge
             && JsonSerializer.Serialize(message.Payload).Contains("updated to 9.9.10"));
     }
 
-    // HELP10's default door, HARNESS_ACTION's own `profile-default` for the machine or a workspace, left with POOL1b (D197 point 6):
-    // a stored `default` proposal is refused at its Apply (`HelpAgentProposalsTests`), so no door writes one.
+    // No door writes a default: a stored `default` proposal is refused at its Apply (`HelpAgentProposalsTests`).
 
     /// <summary>A door with no Update is refused in the words <c>HARNESS_ACTION</c> refuses it with.</summary>
     [Fact]
@@ -114,7 +113,7 @@ public sealed class HelpDoorsTests : Bridge
     }
 
     /// <summary>
-    /// PLUG9: an add is <c>daoris plugin add</c>'s copy (the driver's twin): the folder copied into the home
+    /// An add is <c>daoris plugin add</c>'s copy (the driver's twin): the folder copied into the home
     /// under its id, the catalogue reading it there. 🔴 Nothing it declares runs at the press — its hook
     /// would leave a mark, and there is none; the loop starts it at its next look.
     /// </summary>
@@ -149,7 +148,7 @@ public sealed class HelpDoorsTests : Bridge
         }
     }
 
-    /// <summary>PLUG9: a switch is <c>PLUGIN_ACTION</c>'s own — the same row, and the same refusal for an id not installed.</summary>
+    /// <summary>A switch is <c>PLUGIN_ACTION</c>'s own — the same row, and the same refusal for an id not installed.</summary>
     [Fact]
     public void A_plugin_is_switched_as_the_plugins_screens_route_switches_it()
     {
@@ -168,7 +167,7 @@ public sealed class HelpDoorsTests : Bridge
     }
 
     /// <summary>
-    /// PLUG9 (d): an offer is <c>PLUGIN_INSTALL</c>'s own copy, by its id, the offer recorded; (c): an update is
+    /// An offer is <c>PLUGIN_INSTALL</c>'s own copy, by its id, the offer recorded; (c): an update is
     /// <c>PLUGIN_UPDATE</c>'s own apply, the folder swapped and what the plugin kept untouched.
     /// </summary>
     [Fact]
@@ -206,7 +205,7 @@ public sealed class HelpDoorsTests : Bridge
         }
     }
 
-    /// <summary>The local host's delete routes and its accept route (DRIFT1d2), standing in: each answers the service's sentence.</summary>
+    /// <summary>The local host's delete routes and its accept route, standing in: each answers the service's sentence.</summary>
     private sealed class StandInHost : HttpMessageHandler
     {
         public List<string> Asked { get; } = [];

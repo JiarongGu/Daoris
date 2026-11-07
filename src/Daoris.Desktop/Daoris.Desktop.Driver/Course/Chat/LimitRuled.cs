@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A conversation's limit as its line's rules read it (CONTEXTDRIVE1n; the context counters design §4.2, §4.5): read by
+/// A conversation's limit as its line's rules read it: read by
 /// <see cref="LimitMove"/> before its walk. The limits rule's <c>wait</c> keeps it on its own account until that account is back, where that
 /// is within the rule's <c>upTo</c>; its <c>ask</c>, and the moves rule's bound, keep it there for the person, whose hand-over or next word
 /// goes on. A move to another choice the walk then makes is counted in <c>moves</c>.

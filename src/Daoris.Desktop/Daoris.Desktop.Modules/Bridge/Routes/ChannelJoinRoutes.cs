@@ -9,7 +9,7 @@ namespace Daoris.Desktop;
 public sealed record ChannelJoinPress(string? Ask, string? Line, string? Agent, string? Repository, bool Said = false);
 
 /// <summary>
-/// The join of an agent outside Daoris to a channel (CHANNELJOIN1b, D244 point 10; the event-channel design §5.3): the agent's own press,
+/// The join of an agent outside Daoris to a channel: the agent's own press,
 /// <c>daoris ask channel join</c>, which the person confirms on a card naming the channel, the asking process, the agent and the
 /// repository it claims. A process in an agents' job is refused before any card (<see cref="PipeOutsideOnly"/>). On the Confirm the
 /// service's <c>POST /api/channel/members</c> admits it, the person's door, and the terminal hears the member's id.

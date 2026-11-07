@@ -44,7 +44,7 @@ internal sealed class SessionEquipment(string home, DriverConfig config)
         SpawnRequests.Of(target, config.Commands.GetValueOrDefault(adapter.Id.Value));
 
     /// <summary>
-    /// Whether the rules this session would be handed let it call the connector's <paramref name="tool"/> unasked (D73): the same
+    /// Whether the rules this session would be handed let it call the connector's <paramref name="tool"/> unasked: the same
     /// composition <see cref="SessionRules.Hand"/> hands over. False for a harness that takes no rules, which then depends on the repository's own list.
     /// </summary>
     public bool HandedConnector(AgentDoor adapter, string? workspace, string? repository, string tool) =>

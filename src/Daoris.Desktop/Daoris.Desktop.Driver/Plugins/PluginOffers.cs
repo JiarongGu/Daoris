@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Daoris's own example plugins, carried by the install as offers (PLUG9 d, D103): folders in the install's
+/// Daoris's own example plugins, carried by the install as offers: folders in the install's
 /// <c>app/plugin-offers/</c>, which the publish lays out, never under the home's <c>plugins/</c>, so none
 /// runs until a person installs it with the same copy <c>daoris plugin add</c> makes.
 /// </summary>
@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 ///
 /// <para><c>daoris plugin list</c> reads the offers here.</para>
 ///
-/// <para>The use case (STRUCT3a): the folders are read through <see cref="PluginFolders"/>, each manifest by the
+/// <para>The use case: the folders are read through <see cref="PluginFolders"/>, each manifest by the
 /// catalogue's own rules, and a README's needs by <see cref="PluginOffer.NeedsIn"/>.</para>
 /// </remarks>
 public static class PluginOffers
@@ -24,7 +24,7 @@ public static class PluginOffers
     /// <summary>The heading in an offer's README whose bullets say what it needs. Twin: the CLI's <c>NEEDS_HEADING</c>.</summary>
     public const string NeedsHeading = PluginOffer.NeedsHeading;
 
-    /// <summary>The offers in the home's Daoris folder (<see cref="DaorisHome.FolderOf"/>, HOMELAYOUT4): its <c>app/plugin-offers/</c>.</summary>
+    /// <summary>The offers in the home's Daoris folder (<see cref="DaorisHome.FolderOf"/>): its <c>app/plugin-offers/</c>.</summary>
     public static string BesideHome(string home) =>
         Path.Combine([DaorisHome.FolderOf(PluginFolders.WholePath(home)).Folder, .. Layout]);
 
@@ -55,9 +55,9 @@ public static class PluginOffers
     }
 
     /// <summary>
-    /// What an installed plugin is against the offer of its own id (LANDPIN3): <see cref="PluginShipped"/> where it is older than the
+    /// What an installed plugin is against the offer of its own id: <see cref="PluginShipped"/> where it is older than the
     /// one this install ships, or has files that differ (from the shipped ones at its version, from those its install copied at an
-    /// older one, LANDPIN3b); null where it needs no word, and where there is no sound offer of its id.
+    /// older one); null where it needs no word, and where there is no sound offer of its id.
     /// </summary>
     public static PluginShipped? ShippedOf(string installFolder, PluginManifest installed, PluginOffer? offer) =>
         offer is { Problem: null } && string.Equals(offer.Id, installed.Id, StringComparison.OrdinalIgnoreCase)
@@ -70,7 +70,7 @@ public static class PluginOffers
             : null;
 
     /// <summary>
-    /// Whether an installed copy's files are those its record says its install copied (LANDPIN3b): null where the record holds no
+    /// Whether an installed copy's files are those its record says its install copied: null where the record holds no
     /// digest, a copy from before it, one with no record or one that does not read.
     /// </summary>
     public static bool? AsInstalled(string installFolder) =>

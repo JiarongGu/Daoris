@@ -8,12 +8,12 @@ public sealed record StopSession(string Id, bool Said = false);
 public sealed record ResolveSession(string Id, string State, string? Note, bool Said = false);
 
 /// <summary>
-/// <c>After</c> names the ask an <i>Ask again…</i> follows, and <c>ToPerson</c> keeps its answer for the person (COWORKUX1d); both absent
+/// <c>After</c> names the ask an <i>Ask again…</i> follows, and <c>ToPerson</c> keeps its answer for the person; both absent
 /// is a first ask whose answer goes to the session.
 /// </summary>
 public sealed record SessionHelperAsk(string Id, string? Question, string? Agent, bool Said = false, string? After = null, bool ToPerson = false);
 
-/// <summary><i>Pass to the lead</i> on an answer kept for the person (COWORKUX1d): the ask, and the session the page names.</summary>
+/// <summary><i>Pass to the lead</i> on an answer kept for the person: the ask, and the session the page names.</summary>
 public sealed record SessionHelperPass(string Ask, string Session, bool Said = false);
 
 public sealed record SessionHelpers(string Id);

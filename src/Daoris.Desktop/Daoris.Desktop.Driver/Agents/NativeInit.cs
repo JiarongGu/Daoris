@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The native door's init frame read once (HELPWIRED1b): <c>system</c> of subtype <c>init</c>, whose <c>tools</c>, <c>mcp_servers</c>,
+/// The native door's init frame read once: <c>system</c> of subtype <c>init</c>, whose <c>tools</c>, <c>mcp_servers</c>,
 /// <c>skills</c> and <c>plugins</c> are what the harness says it loaded. Read from the frame the capture already parsed
 /// (<see cref="NativeFrame"/>), tolerant of a field a harness version leaves out, and never from the settings Daoris handed.
 /// </summary>

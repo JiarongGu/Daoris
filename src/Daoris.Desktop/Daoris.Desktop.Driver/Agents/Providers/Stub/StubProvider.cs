@@ -1,20 +1,20 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The stand-ins written on the contract (AGENTPROVIDER1 row b; the agent-provider design §3.3, §11): provider <c>stub</c> with its two
+/// The stand-ins written on the contract: provider <c>stub</c> with its two
 /// doors, <c>stub</c> on the pipe and <c>acp-stub</c> on the protocol, which run whatever command the machine's configuration names
-/// and no model (D46 §8).
+/// and no model.
 /// </summary>
 /// <remarks>
-/// <para>The words are Claude Code's by reference, named exactly (O1-F5): its limit, window and sign-in words and its error
+/// <para>The words are Claude Code's by reference, named exactly: its limit, window and sign-in words and its error
 /// <b>codes</b>, never its <c>Words</c>, so a stand-in's <i>529 Overloaded</i> still ends rather than reading transient. Its refused
 /// sentence, login question and home variable are the stand-in's own. <c>stub</c> states no native dialect (it maps no
-/// <c>stream-json</c> and is read by the plain capture, as today), and neither door states one yet: <c>acp-stub</c>'s protocol dialects
-/// are row i's, and it takes no <c>AuthRequiredCode</c>. A protocol door's resume is eligibility to negotiate, never a resume known.</para>
+/// <c>stream-json</c> and is read by the plain capture), and neither door states one: <c>acp-stub</c> takes no
+/// <c>AuthRequiredCode</c>. A protocol door's resume is eligibility to negotiate, never a resume known.</para>
 /// </remarks>
 internal static class StubProvider
 {
-    /// <summary>The stand-in's configuration-home variable: its own, and its protocol door's, which runs as its accounts (TOOL4j).</summary>
+    /// <summary>The stand-in's configuration-home variable: its own, and its protocol door's, which runs as its accounts.</summary>
     public const string ConfigVariable = "DAORIS_STUB_CONFIG_DIR";
 
     private const string Evidence = "the stand-in's declaration";
@@ -24,33 +24,33 @@ internal static class StubProvider
         var program = new ToolSpec([], ["--version"], null, null, null, null, null, ProbeByPresence: false);
         var pool = new PoolFacts(
             KeyVariable: null,
-            // A login flow too, so signing in to another account (D66 §3) can be gated with no account: whatever the configured
+            // A login flow too, so signing in to another account can be gated with no account: whatever the configured
             // command does with `--login` is the stand-in's sign-in.
             Login: new LoginQuestion(
                 ["--login-state"], LoggedIn: @"logged-in", LoggedOut: @"logged-out",
                 Account: @"logged-in as (\S+)",
-                // And its way to say an organisation and a plan (ACCOUNTID1), each on a line of its own after who.
+                // And its way to say an organisation and a plan, each on a line of its own after who.
                 Org: @"(?m)^org:[ \t]*(.+)$",
                 Plan: @"(?m)^plan:[ \t]*(.+)$"),
             LoginArguments: ["--login"],
             DeviceLoginArguments: null,
             LoginPorts: null,
             SettingsFile: null,
-            // Claude Code's weekly reset fixed per account (TOOL6b), mirrored so a rehearsal can gate a week carried on.
+            // Claude Code's weekly reset fixed per account, mirrored so a rehearsal can gate a week carried on.
             WeekFixed: true);
         var tables = new TablesPart(
             Limits: ClaudeLimits.Words,
             Windows: ClaudeWindows.Words,
             SignIn: ClaudeSignIn.Words,
-            // Claude Code's own words for a refused credential (AGT3b), mirrored so a refused account can be gated with none.
+            // Claude Code's own words for a refused credential, mirrored so a refused account can be gated with none.
             Refused: "API Error: 401",
-            // The kind words and statuses alone, so a stand-in's failure that names no code keeps today's end (AGENTERRORS1a).
+            // The kind words and statuses alone, so a stand-in's failure that names no code ends the same way.
             ErrorWords: ClaudeErrors.Codes);
         var lent = new LentPart(pool, tables with { ErrorWords = null }, UsagePart.None);
         var stub = new AgentDoor(
             new DoorId("stub"), Transport.Native, new DoorIdentity(null, null, null),
             Known<ToolSpec>.Absent,
-            // Its own home is nobody's, so a start that names no account still runs there (OWNSPACE1a).
+            // Its own home is nobody's, so a start that names no account still runs there.
             new DoorHome(ConfigVariable, OwnHome: true, TrustFile: null),
             LentPart.None, Known<IDoorOffers>.Absent, new PosturesPart(null, null, null, null),
             Known<ISpawn>.Declared(new StandInSpawn("stub", "agent.mjs", protocol: false), Evidence),
@@ -66,7 +66,7 @@ internal static class StubProvider
             // Present by a file look: the agent a rehearsal names waits on its stdin for frames, so asking it a version would stall.
             Known<ToolSpec>.Declared(new ToolSpec([], [], null, null, null, null, null, ProbeByPresence: true), Evidence),
             new DoorHome(ConfigVariable, OwnHome: true, TrustFile: null),
-            // A door onto the stand-in's accounts (TOOL4j): the sign-in, the login question and the limit words are the stub's.
+            // A door onto the stand-in's accounts: the sign-in, the login question and the limit words are the stub's.
             new LentPart(PoolFacts.None, TablesPart.None, UsagePart.None),
             Known<IDoorOffers>.Absent, new PosturesPart(null, null, null, null),
             Known<ISpawn>.Declared(new StandInSpawn("acp-stub", "acp-agent.mjs", protocol: true), Evidence),

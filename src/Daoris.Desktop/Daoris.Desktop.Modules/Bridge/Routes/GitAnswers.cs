@@ -11,7 +11,7 @@ internal static class GitAnswers
         Refused = true, Code = Refusals.GitNoCheckout, Said = $"{repository} has no checkout on this machine, so nothing was changed.",
     };
 
-    /// <summary>An act's run as the page reads it: the record, its outcome, and the words with the checkout's path said as the repository (D47 §4).</summary>
+    /// <summary>An act's run as the page reads it: the record, its outcome, and the words with the checkout's path said as the repository.</summary>
     public static object Answered(ActRun run, string checkout, string repository) => new
     {
         run.Act, run.Outcome, run.Refused, Said = WithoutRoots(run.Said, [checkout], repository) ?? "",
@@ -57,7 +57,7 @@ internal static class GitAnswers
         };
     }
 
-    /// <summary>The code the page words for a refusal the driver gave, or null where it answered (D147).</summary>
+    /// <summary>The code the page words for a refusal the driver gave, or null where it answered.</summary>
     private static string? GitRefusalCode(GitReadRefusal refusal) => refusal switch
     {
         GitReadRefusal.None => null,
@@ -70,7 +70,7 @@ internal static class GitAnswers
     };
 
     /// <summary>
-    /// 🔴 A sentence with the checkout's path said as the repository (D47 §4): the driver's sentences name the root they were
+    /// 🔴 A sentence with the checkout's path said as the repository: the driver's sentences name the root they were
     /// asked of, in either slash, and the machine's path is the desktop's alone.
     /// </summary>
     public static string? WithoutRoots(string? problem, IEnumerable<string?> roots, string repository)

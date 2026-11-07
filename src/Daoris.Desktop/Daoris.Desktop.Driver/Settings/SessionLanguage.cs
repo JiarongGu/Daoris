@@ -1,13 +1,13 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A session language (LANG1c, D142 point 7, the language design §7): the language a session is asked to write to the
-/// person in, as the closed table names it for the agent, and where it was set. The work's, never the window's: the window's
-/// language is its viewer's (D142 point 8), and neither sets the other.
+/// A session language: the language a session is asked to write to the
+/// person in, as the closed table names it for the agent, and where it is set. The work's, never the window's: the window's
+/// language is its viewer's, and neither sets the other.
 /// </summary>
 /// <param name="Code">The table's code, <c>en</c> or <c>zh</c>.</param>
 /// <param name="Name">What the line calls it for the agent.</param>
-/// <param name="Source">Where it was set: <see cref="LanguageSource.Repository"/> or <see cref="LanguageSource.Workspace"/>.</param>
+/// <param name="Source">Where it is set: <see cref="LanguageSource.Repository"/> or <see cref="LanguageSource.Workspace"/>.</param>
 public sealed record SessionLanguage(string Code, string Name, string Source);
 
 /// <summary>Where a repository's session language came from, for the screen and the terminal.</summary>
@@ -18,12 +18,11 @@ public static class LanguageSource
 }
 
 /// <summary>
-/// The closed table of session languages and the one resolution every door reads (LANG1c): what the person set for the
+/// The closed table of session languages and the one resolution every door reads: what the person set for the
 /// repository, else for its workspace, else none. No machine-wide value, and nothing taken from the window.
 /// </summary>
 /// <remarks>
-/// <c>SessionLanguageTests</c> holds the table and the reading row for row; the CLI's twin, <c>driverconfig.ts</c>, left with the
-/// driver family's TypeScript (PUSH1f2b, D194 point 7). Adding a language is a row in the table and needs no window catalogue, since
+/// <c>SessionLanguageTests</c> holds the table and the reading row for row. Adding a language is a row in the table and needs no window catalogue, since
 /// a session may write in a language the window does not speak.
 /// </remarks>
 public static class SessionLanguages
@@ -52,7 +51,7 @@ public static class SessionLanguages
 
     /// <summary>
     /// The language a session in <paramref name="repository"/> is asked to write in: the repository's own, else its
-    /// workspace's, else null. A repository in no workspace is in the <c>default</c> one (D48 §2), as its line is found.
+    /// workspace's, else null. A repository in no workspace is in the <c>default</c> one, as its line is found.
     /// </summary>
     public static SessionLanguage? Resolve(DriverConfig config, string repository, string? workspace) =>
         config.Languages.TryGetValue(repository.Trim(), out var own)
@@ -67,16 +66,16 @@ public static class SessionLanguages
 }
 
 /// <summary>
-/// The one line naming the session language (LANG1c, the language design §7), handed beside the close instruction it
-/// governs, and only where a language is set: unset, every instruction reads byte for byte as it did.
+/// The one line naming the session language, handed beside the close instruction it
+/// governs, and only where a language is set: unset, every instruction reads byte for byte unchanged.
 /// </summary>
 /// <remarks>
-/// The instructions stay one copy, in English (D142 point 6). The driver's checks read the exit code, the quest and the
+/// The instructions stay one copy, in English. The driver's checks read the exit code, the quest and the
 /// harness's own output, never the agent's prose, so the line changes none of them.
 /// </remarks>
 public static class SessionLanguageText
 {
-    /// <summary>The line, in the design's words.</summary>
+    /// <summary>The line.</summary>
     public static string Line(SessionLanguage language) =>
         $"Write what you say to a person in {language.Name}: a question to them, a quest's closing note or a decline's "
         + "reason, and your last words when you stop. Keep code, commands, identifiers, file names and anything you quote "
@@ -86,8 +85,8 @@ public static class SessionLanguageText
     internal static string AfterClose(SessionLanguage? language) => language is null ? "" : "\n\n" + Line(language);
 
     /// <summary>
-    /// A resumed conversation's appendix (ANSWER1a, MSG1b) with the line after it, since the setting may have changed since
-    /// that conversation was handed it; the appendix as it was where no language is set.
+    /// A resumed conversation's appendix with the line after it, since the setting may have changed after
+    /// the conversation began; the appendix alone where no language is set.
     /// </summary>
     internal static string Resumed(string appendix, SessionLanguage? language) =>
         language is null ? appendix

@@ -3,10 +3,10 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The executor's steps around each process of a held <see cref="LayerRun"/> (AGENTLYNTAI1d), today's driven run's through the same host
-/// (<see cref="ITransportHost"/>): the downloads the start is handed kept on its record (KEEP1b), each process's lineage token issued and set on
-/// its environment before the layer starts it and handed the process it started (COWORKVIEW1a), the process tracked and reaped (REV3, ORPHAN1),
-/// each raw line stamped for the watch (SESSWATCH1a), and the wait to its exit under the start's bound and the watch's quiet.
+/// The executor's steps around each process of a held <see cref="LayerRun"/>, the same as a driven run's through the same host
+/// (<see cref="ITransportHost"/>): the downloads the start is handed kept on its record, each process's lineage token issued and set on
+/// its environment before the layer starts it and handed the process it started, the process tracked and reaped,
+/// each raw line stamped for the watch, and the wait to its exit under the start's bound and the watch's quiet.
 /// </summary>
 internal sealed class LayerHold(ITransportHost host, TransportStart start) : IDisposable
 {
@@ -36,7 +36,7 @@ internal sealed class LayerHold(ITransportHost host, TransportStart start) : IDi
         }
     }
 
-    /// <summary>Whether a stop was made of the session through its registry: the end that follows is the stop's.</summary>
+    /// <summary>Whether a stop is made of the session through its registry: the end that follows is the stop's.</summary>
     public bool StopAsked => Start.Session is { } session && host.Processes.WasStopRequested(session);
 
     public void Hand(TransportStart completed)
@@ -61,7 +61,7 @@ internal sealed class LayerHold(ITransportHost host, TransportStart start) : IDi
         lock (_gate) _bracketed = host.Bracketed(sessionId, Start.Info, Start.Moved);
     }
 
-    /// <summary>A process's token: the first's, bracketed before the open where it was, or a later process's, a retry's or a go-on's, issued now.</summary>
+    /// <summary>A process's token: the first's, bracketed before the open where it is, or a later process's, a retry's or a go-on's, issued now.</summary>
     public async Task<string> TokenAsync(bool first, CancellationToken ct)
     {
         if (first && _bracketed is null) await BracketAsync(Session, ct).ConfigureAwait(false);
@@ -74,7 +74,7 @@ internal sealed class LayerHold(ITransportHost host, TransportStart start) : IDi
         }
     }
 
-    /// <summary>The process the token was issued for, handed it once the layer started it, or the token let go where none started.</summary>
+    /// <summary>The process the token is issued for, handed it once the layer starts it, or the token let go where none started.</summary>
     public Task<Process?> SpawnedAsync(string proc, Task<Process?> started) => host.SpawnedAsync(proc, () => started);
 
     /// <summary>The process the launcher answered: tracked under the session and reaped with the run.</summary>

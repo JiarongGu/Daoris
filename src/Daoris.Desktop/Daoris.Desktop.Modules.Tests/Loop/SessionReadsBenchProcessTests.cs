@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// PERF1: what the shell asks of the service's session records on a home of a working machine's size (<see cref="BenchHome"/>, 3,000
+/// What the shell asks of the service's session records on a home of a working machine's size (<see cref="BenchHome"/>, 3,000
 /// records), each held to its budget: a slice's push after one record moved, and a landing's plan and press. Each reads every record at
 /// most once, and only as its change since the kept list's mark, never the whole list with its closed records again.
 /// </summary>

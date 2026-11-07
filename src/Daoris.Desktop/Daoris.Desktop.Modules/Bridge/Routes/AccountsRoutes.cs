@@ -6,20 +6,19 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// How each agent's accounts are used, the page's `bridge/accounts.ts` (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9,
-/// §16.6; one set since POOL1a2, D197): the set's order and how it is used, which account its next start would take and why
-/// (TOOL6e), each account's cool-off or when it was offered again, what its agent last said and its learned week, and Daoris's
-/// sessions running on it (<c>ACCOUNTS</c>); each account's use read again, <i>Read now</i> (<c>ACCOUNTS_READ</c>, SWITCH1d);
+/// How each agent's accounts are used, the page's `bridge/accounts.ts` (one set per agent): the set's order and how it is used, which account its next start would take and why,
+/// each account's cool-off or when it is offered again, what its agent last said and its learned week, and Daoris's
+/// sessions running on it (<c>ACCOUNTS</c>); each account's use read again, <i>Read now</i> (<c>ACCOUNTS_READ</c>);
 /// and the edits the Agents place makes (<c>ACCOUNT_USE</c>), an account's row being on its agent's page (Agents → agent) —
 /// the order written whole, how it is used, and <i>Try now</i>.
 /// </summary>
 /// <remarks>
-/// <para><b>The files are the terminal's</b> (D50): <c>harnesses.json</c>'s lists and settings, which
+/// <para><b>The files are the terminal's</b>: <c>harnesses.json</c>'s lists and settings, which
 /// <c>daoris agent account order|use</c> write, and <c>cooling.json</c>, which <c>profile ready</c> ends. Each edit asks
 /// the terminal's own rules first (<see cref="HarnessSettings.OrderProblem"/>, <see cref="ScopeProblem.Of"/>), refuses in
 /// a code the page translates, and writes nothing then.</para>
 /// <para><b>Read, never probed</b>: <c>ACCOUNTS</c> starts no process, so the page may ask at every tick; only
-/// <c>ACCOUNTS_READ</c> asks an agent, and only for a reading older than its floor. Nothing reaches an HTTP route (D47 §4):
+/// <c>ACCOUNTS_READ</c> asks an agent, and only for a reading older than its floor. Nothing reaches an HTTP route:
 /// profile names ride this bridge only.</para>
 /// </remarks>
 public sealed class AccountsRoutes(DriverLoop loop)
@@ -34,16 +33,16 @@ public sealed class AccountsRoutes(DriverLoop loop)
     }
 
     /// <summary>
-    /// Every agent with accounts this build knows, by its accounts' owner (AGT7): whether its sessions say how near their
-    /// limits are, the tool's own sign-in's cool-off and what it last said of its windows (CODEXUSE3), each account's facts,
-    /// and its one set (POOL1a2, D197): the order, how it is used and its next start, every workspace's.
+    /// Every agent with accounts this build knows, by its accounts' owner: whether its sessions say how near their
+    /// limits are, the tool's own sign-in's cool-off and what it last said of its windows, each account's facts,
+    /// and its one set: the order, how it is used and its next start, every workspace's.
     /// </summary>
     /// <param name="running">Daoris's sessions running now per <c>owner/account</c>, lower case; null where none were read.</param>
     public static object AccountsAnswer(HarnessRoster roster, IReadOnlyDictionary<string, int>? running, DateTimeOffset now)
     {
         var settings = roster.Settings;
         var cooling = AccountCooling.Read(roster.Home, now);
-        // When an account was offered again (TOOL6e): a cool-off that ended within the day, while the file still holds it.
+        // When an account is offered again: a cool-off that ended within the day, while the file still holds it.
         var offered = Safe(() => AccountCooling.Offered(roster.Home, now)) ?? [];
         var doors = new List<(string Owner, string Door, AccountAgent Toolchain)>();
         foreach (var name in roster.Adapters.Names)
@@ -63,24 +62,24 @@ public sealed class AccountsRoutes(DriverLoop loop)
                     var said = new Dictionary<string, AccountSaid?>(StringComparer.OrdinalIgnoreCase);
                     var accounts = Accounts(roster.Home, agent);
                     foreach (var account in accounts) said[account] = Safe(() => AccountWindows.SaidOf(roster.Home, agent, account, now));
-                    // The person's name for each account (ACCT2), by its id; the lists below name ids.
+                    // The person's name for each account, by its id; the lists below name ids.
                     var names = Safe(() => AccountNames.Of(roster.Home, agent)) ?? new Dictionary<string, string>();
                     var scope = SetOf(settings, agent);
                     return new
                     {
                         Agent = agent,
-                        // D130 §6: switching before the limit reads the agent's own word, which a door carries only where its
-                        // table reads it (TOOL6c), or the agent's own server answers where it does not (CODEXUSE1). A door's
+                        // Switching before the limit reads the agent's own word, which a door carries only where its
+                        // table reads it, or the agent's own server answers where it does not. A door's
                         // readings are its owner's.
                         Speaks = owner.Any(door => roster.Speaks(door.Door)),
-                        // Whether its accounts' use is read by asking its agent (USAGEREAD2a, CODEXUSE1), which the screen's
-                        // *Read now* needs (SWITCH1d).
+                        // Whether its accounts' use is read by asking its agent, which the screen's
+                        // *Read now* needs.
                         Reads = owner.Any(door => roster.UsageOf(door.Door) is not null),
                         Own = new
                         {
                             Cooling = CoolingShown(cooling.FirstOrDefault(entry => Same(entry.Agent, agent) && entry.Account is null), roster.Home),
                             Offered = offered.FirstOrDefault(entry => Same(entry.Agent, agent) && entry.Account is null)?.Until,
-                            // What its agent last said of its windows (CODEXUSE3), read at a person's press and kept under its
+                            // What its agent last said of its windows, read at a person's press and kept under its
                             // own key: beside the accounts, never one of them, so no scope's near reads it.
                             Said = SaidShown(Safe(() => AccountWindows.SaidOf(roster.Home, agent, AccountWindows.Own, now)), now),
                         },
@@ -90,18 +89,18 @@ public sealed class AccountsRoutes(DriverLoop loop)
                             DisplayName = names.GetValueOrDefault(account),
                             Cooling = CoolingShown(cooling.FirstOrDefault(entry => Same(entry.Agent, agent) && Same(entry.Account, account)), roster.Home),
                             Offered = offered.FirstOrDefault(entry => Same(entry.Agent, agent) && Same(entry.Account, account))?.Until,
-                            // Each window's projection beside its reading (USAGEPROBE1b): the roster's own, over its ledger held in
+                            // Each window's projection beside its reading: the roster's own, over its ledger held in
                             // memory and read on as the history grows, so a tick re-parses no month.
-                            // Each window against the set's curve (PUSH1e, POOL1a2): judged here, worded on the page.
+                            // Each window against the set's curve: judged here, worded on the page.
                             Said = SaidShown(said[account], now, Safe(() => roster.ProjectionOf(agent, account, said[account], now)), scope.Scope.Use),
-                            // The weekly reset known for it: told by a limit, or by the agent's own word (TOOL6b, TOOL6c).
+                            // The weekly reset known for it: told by a limit, or by the agent's own word.
                             Week = Safe(() => AccountWindows.WeekOf(roster.Home, agent, account, now, fixedWeek)),
                             Running = running is null ? (int?)null : running.GetValueOrDefault(Key(agent, account)),
                         }).ToArray(),
-                        // What the fold into one set changed (POOL1a, the account-pool design §6.3), each receipt unsaid by its id, its
-                        // lines' kinds and values; the page words them (POOL1c).
+                        // What the fold into one set changed, each receipt unsaid by its id, its
+                        // lines' kinds and values; the page words them.
                         Pooled = PooledShown(settings, agent),
-                        // The set's one scope (POOL1a2, the account-pool design §5.2), in the list the page reads: every workspace's.
+                        // The set's one scope, in the list the page reads: every workspace's.
                         Scopes = new[]
                         {
                             ScopeShown(scope.Scope, scope.Keep, said, NextOf(roster, agent), now, RoomOf(roster, agent, scope.Scope, now)),
@@ -113,14 +112,14 @@ public sealed class AccountsRoutes(DriverLoop loop)
     }
 
     /// <summary>
-    /// The agent's one set (POOL1a2, the account-pool design §2.4), read from the projection the roster answers: its order, its first
+    /// The agent's one set, read from the projection the roster answers: its order, its first
     /// and its settings, with the <c>keep</c> as its entry names it, which the scope's own drops where its order lacks the account.
     /// </summary>
     private static (RotationScope Scope, string? Keep) SetOf(HarnessSettings settings, string agent) =>
         (settings.Set(agent), RotationUse.Read(settings.Uses.GetValueOrDefault(agent)).Use.Keep);
 
     /// <summary>
-    /// Which account the set's next driven start would take, in any workspace, why, and what holds the others (TOOL6e): the roster's
+    /// Which account the set's next driven start would take, in any workspace, why, and what holds the others: the roster's
     /// own walk, asked without probing or counting (<see cref="HarnessRoster.Next"/>). A file that cannot be read says nothing.
     /// </summary>
     private static object? NextOf(HarnessRoster roster, string agent)
@@ -132,7 +131,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
             Reason = Code(next.Reason.ToString()),
             next.Over,
             next.When,
-            // NEXTLAPSE1: where it is lapsing, what would lapse, as the start's line says it; new fields beside the old.
+            // Where it is lapsing, what would lapse, as the start's line says it; new fields beside the old.
             next.Window,
             next.Unused,
             next.Seen,
@@ -145,7 +144,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
     }
 
     /// <summary>
-    /// The accounts of a scope's list a running session could move to at its turn's end (SWITCH1e; the switch design §2 and §4):
+    /// The accounts of a scope's list a running session could move to at its turn's end:
     /// ready by the walk's own judgements (<see cref="HarnessRoster.SwitchCandidates"/>) and at least
     /// <see cref="UsageCurves.SwitchMargin"/> under the scope's curve on every window it said, as <see cref="SwitchDecision"/> moves
     /// to them. An account that said no number has no room, as the decision weighs it. Judged under every switch: the page reads it
@@ -161,32 +160,32 @@ public sealed class AccountsRoutes(DriverLoop loop)
     private static object ScopeShown(
         RotationScope scope, string? keep, IReadOnlyDictionary<string, AccountSaid?> said, object? next, DateTimeOffset now, string[] room) => new
     {
-        // The set's, every workspace's: no workspace of its own, and no `inherited` (POOL1a2, the account-pool design §5.2), since
+        // The set's, every workspace's: no workspace of its own, and no `inherited`, since
         // the order names every account of Daoris's.
         Workspace = (string?)null,
         scope.Default,
         scope.List,
         scope.Begins,
-        // The switch and the person's curve (SWITCH1d, D165 point 2), which the screen draws and edits; the old names kept beside
+        // The switch and the person's curve, which the screen draws and edits; the old names kept beside
         // them, derived, for a page that still reads them (a wire answer is never changed in place).
         Use = new { scope.Use.Use, scope.Use.Keep, scope.Use.Switch, Curve = CurveShown(scope.Use.Curve), scope.Use.Early, scope.Use.Near },
         scope.Unknown,
-        // A file edited by hand that breaks the rule is read with the list winning (D130 §3.1), and the screen names it.
+        // A file edited by hand that breaks the rule is read with the list winning, and the screen names it.
         Problem = ScopeProblem.Of(scope.Default, scope.List, keep) is { } problem
             ? new { Kind = JsonNamingPolicy.CamelCase.ConvertName(problem.Kind.ToString()), problem.Account }
             : null,
-        // Near as the walk reads it (D130 §6 as TOOL6c reads it, D165 point 2): its agent's word that a limit was reached,
-        // credits, or a window over the scope's curve now, `off` reading the smart one (SWITCH1b-ii), so the page's near pill
+        // Near as the walk reads it: its agent's word that a limit has been reached,
+        // credits, or a window over the scope's curve now, `off` reading the smart one, so the page's near pill
         // names the accounts a start passes; `by` is `refused`, `credits` or `number`. Its agent's pace warning is never near
-        // alone, and rides on the account's reading as its standing, `warned` (USAGEREAD3a).
+        // alone, and rides on the account's reading as its standing, `warned`.
         Near = scope.List
             .Select(account => (Account: account, Near: AccountReadings.NearWindow(said.GetValueOrDefault(account), scope.Use, now)))
             .Where(each => each.Near is not null)
             .Select(each => new { each.Account, each.Near!.Value.Window.Window, By = JsonNamingPolicy.CamelCase.ConvertName(each.Near.Value.By.ToString()) })
             .ToArray(),
-        // Which account its next start would take, and why (TOOL6e, D130 §3–§4).
+        // Which account its next start would take, and why.
         Next = next,
-        // The verdicts the page words and no longer judges (PUSH1e, D182 point 6), added beside the reading: the curve in effect on each
+        // The verdicts the page words and no longer judges, added beside the reading: the curve in effect on each
         // window it names, the person's points under `curve` where set, else Daoris's, as the switch's charts draw it.
         Curves = UseCurve.Windows.ToDictionary(
             window => window, window => (UsageCurves.For(scope.Use, window) ?? []).Select(point => new[] { point.Elapsed, point.Used }).ToArray()),
@@ -210,13 +209,13 @@ public sealed class AccountsRoutes(DriverLoop loop)
             .Where(each => each.Tightest is { Room: < 0 })
             .Select(each => new { each.Account, each.Tightest!.Value.Window.Window, Curve = UsageCurves.Points(each.Tightest.Value.Curve) })
             .ToArray(),
-        // The accounts a running session could move to (SWITCH1e): where one has room, the switch moves the session and the page's
-        // hand-over offer, the fallback (D165 point 4), stays down.
+        // The accounts a running session could move to: where one has room, the switch moves the session and the page's
+        // hand-over offer, the fallback, stays down.
         Room = room,
     };
 
     /// <remarks>
-    /// <c>Unwritten</c> (LIMITRESUME1d2, D206 §3.1) is said only where the cool-off is held in memory, the file not having taken it
+    /// <c>Unwritten</c> is said only where the cool-off is held in memory, the file not having taken it
     /// (<see cref="AccountCooling.Unwritten(string, string, string?)"/>): the band says Daoris could not keep it.
     /// </remarks>
     private static object? CoolingShown(CoolingEntry? entry, string home) => entry is null ? null
@@ -234,13 +233,13 @@ public sealed class AccountsRoutes(DriverLoop loop)
                 var curve = use is null || window.Used is null ? null : UsageCurves.Value(use, window.Window, window.Reset, now);
                 return new
                 {
-                    // Where its reading came from (SWITCH1d, USAGEREAD2a): `read` from the agent's own answer, `said` by a session's frame.
+                    // Where its reading came from: `read` from the agent's own answer, `said` by a session's frame.
                     window.Window, window.Used, window.Reset, window.Standing, window.Credits, window.Seen, window.Source,
-                    // Its use projected to now, 0 to 1, and how (`reading`, `measured`, `unweighed`), null where it said no number
-                    // (USAGEPROBE1b): added beside the reading, which stays as written.
+                    // Its use projected to now, 0 to 1, and how (`reading`, `measured`, `unweighed`), null where it said no number:
+                    // added beside the reading, which stays as written.
                     Projected = projection?.Of(window.Window)?.Projected,
                     ProjectedBy = projection?.Of(window.Window)?.How,
-                    // PUSH1e, added beside the reading: when the window began, null for one this build has no length for, which the
+                    // When the window began, null for one this build has no length for, which the
                     // page places it on a chart by; and against its row's scope's curve now, the curve's value in whole points and
                     // whether the share is over it (its room below zero), null where it is not measured.
                     From = UsageCurves.From(window.Window, window.Reset),
@@ -251,7 +250,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
         };
 
     /// <summary>
-    /// A scope's curve as <c>harnesses.json</c> holds it (SWITCH1d; the switch design §6): each window the person set, by name,
+    /// A scope's curve as <c>harnesses.json</c> holds it: each window the person set, by name,
     /// its points <c>[elapsed, used]</c>; none where every window is the smart curve's.
     /// </summary>
     private static Dictionary<string, int[][]> CurveShown(UseCurve curve) =>
@@ -273,8 +272,8 @@ public sealed class AccountsRoutes(DriverLoop loop)
     }
 
     /// <summary>
-    /// Daoris's sessions running now on each account (D130 §4.2): the live records on this machine that name the account,
-    /// conversations and Ask Daoris included, a door's counted for its owner (AGT7). A teammate's record is another
+    /// Daoris's sessions running now on each account: the live records on this machine that name the account,
+    /// conversations and Ask Daoris included, a door's counted for its owner. A teammate's record is another
     /// machine's. Null where the loop's service is not up or did not answer: unknown, never zero.
     /// </summary>
     private async Task<IReadOnlyDictionary<string, int>?> RunningAsync(CancellationToken cancellationToken)
@@ -306,9 +305,9 @@ public sealed class AccountsRoutes(DriverLoop loop)
     }
 
     /// <summary>
-    /// The live records' count per <c>owner/account</c>, lower case (D130 §4.2): a record with no id, door or account is none, a
+    /// The live records' count per <c>owner/account</c>, lower case: a record with no id, door or account is none, a
     /// teammate's is another machine's, and one ended counts nothing. The one rule the route's read and the pushed slice's
-    /// (PUSH1e, the records the loop's sessions slice holds) both count by.
+    /// (the records the loop's sessions slice holds) both count by.
     /// </summary>
     public static IReadOnlyDictionary<string, int> Counted(
         IEnumerable<(string? Id, string? Adapter, string? Profile, string? State)> records, Func<string, string> ownerOf)
@@ -326,7 +325,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
         return counted;
     }
 
-    /// <summary>Each door's account owner (AGT7), the door itself where this build knows no toolchain for it.</summary>
+    /// <summary>Each door's account owner, the door itself where this build knows no toolchain for it.</summary>
     public static Func<string, string> Owners(HarnessRoster roster) => adapter => Known(roster, adapter) is null ? adapter : roster.Adapters.OwnerOfAgent(adapter).Value;
 
     private static string Key(string agent, string account) => $"{agent}/{account}".ToLowerInvariant();
@@ -345,7 +344,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
         }
     }
 
-    /// <summary>A file read that may fail: nothing read is nothing known, as the driver reads these files (D21).</summary>
+    /// <summary>A file read that may fail: nothing read is nothing known, as the driver reads these files.</summary>
     private static T? Safe<T>(Func<T?> read)
     {
         try
@@ -361,9 +360,9 @@ public sealed class AccountsRoutes(DriverLoop loop)
     // ---------------------------------------------------------------- Read now
 
     /// <summary>
-    /// The screen's <i>Read now</i>, which only a press asks, never the page's open (SWITCH1d; the switch design §1.2): each of the agent's accounts
+    /// The screen's <i>Read now</i>, which only a press asks, never the page's open: each of the agent's accounts
     /// whose reading is older than its question's floor (a minute for Claude Code, five for Codex) is asked its use by its agent
-    /// under its own home, with no prompt and no model request (D165 point 1), as a start's walk freshens its list
+    /// under its own home, with no prompt and no model request, as a start's walk freshens its list
     /// (<see cref="HarnessRoster.ReadUsageAsync"/>): never one cooling, refused, read signed out or a key, nor one a session of
     /// Daoris's runs on. What it answers lands in <c>windows.json</c>, which <c>ACCOUNTS</c> answers under the roster's key.
     /// </summary>
@@ -383,16 +382,16 @@ public sealed class AccountsRoutes(DriverLoop loop)
     // ---------------------------------------------------------------- the edits
 
     /// <summary>
-    /// The screen's edits to how an agent's accounts are used (TOOL4g), each the terminal's door's twin: <c>order</c> a list
+    /// The screen's edits to how an agent's accounts are used, each the terminal's door's twin: <c>order</c> a list
     /// written whole (<c>daoris agent account order</c>, none clearing it), <c>use</c> how it is used (<c>profile use</c>),
     /// <c>ready</c> a cool-off ended early (<c>profile ready</c>, <i>Try now</i>), and <c>inherit</c> a workspace returned
-    /// to this machine's accounts: its default, list and settings cleared at once (D130 §3.2); <c>said</c> the fold's receipts the
-    /// page showed, by id (POOL1a).
+    /// to this machine's accounts: its default, list and settings cleared at once; <c>said</c> the fold's receipts the
+    /// page showed, by id.
     /// </summary>
     /// <remarks>
     /// The loop is asked to look after each, since each changes what the next start runs on: an account offered again
     /// should take a waiting start now, not at the next poll. The accounts' lists and what each start runs on sit under the
-    /// roster's key, which it declares (STATEHUB1h, D169).
+    /// roster's key, which it declares.
     /// </remarks>
     [DriverRoute("ACCOUNT_USE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("ACCOUNT_USE", None = OwnerNone.MachineSetting)]
@@ -404,7 +403,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
     {
         var (action, harness, workspace) = (press.Action, press.Door, press.Workspace);
         var owner = OwnerOf(_loop.Harnesses, harness);
-        // One set of Daoris's accounts serves every workspace (POOL1a, D197; the account-pool design §5.2): a workspace names nothing.
+        // One set of Daoris's accounts serves every workspace: a workspace names nothing.
         if (workspace is not null && action is "order" or "use") throw OneSet(owner, "a workspace");
 
         switch (action)
@@ -420,7 +419,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
                 HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => UseEdited(read, owner, use, workspace), agents: _loop.Harnesses.Agents);
                 break;
             case "said":
-                // Got it (POOL1a, the account-pool design §6.3; Fable's F13): the receipts the page showed, by id, marked said; one
+                // Got it: the receipts the page showed, by id, marked said; one
                 // appended after it drew is not among them, and stays.
                 IReadOnlyList<string> ids = press.Ids ?? [];
                 HarnessSettings.Change(_loop.Harnesses.SettingsPath, read => read.WithSaid(owner, ids), agents: _loop.Harnesses.Agents);
@@ -441,7 +440,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
         return new { Door = harness, Action = action, Workspace = workspace };
     }
 
-    /// <summary>The refusal of what one set leaves nothing to name (POOL1a, D197): <paramref name="what"/> is said in the English.</summary>
+    /// <summary>The refusal of what one set leaves nothing to name: <paramref name="what"/> is said in the English.</summary>
     internal static ShenoraException OneSet(string owner, string what) =>
         Refusals.Because(
             Refusals.AccountsOneSet,
@@ -449,7 +448,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
             + $"starts begin: `daoris agent account order {owner} <account>` puts one first.",
             ("agent", owner));
 
-    /// <summary>An agent's unsaid receipts (POOL1a, the account-pool design §5.2): ids, kinds and values, never words.</summary>
+    /// <summary>An agent's unsaid receipts: ids, kinds and values, never words.</summary>
     internal static object[] PooledShown(HarnessSettings settings, string agent) =>
         [.. (settings.Pooled.GetValueOrDefault(agent) ?? []).Where(receipt => !receipt.Said).Select(receipt => new
         {
@@ -465,7 +464,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
         })];
 
     /// <summary>
-    /// A door's accounts are its owner's (AGT7); a door with no toolchain has no accounts to edit. Ask Daoris's account cards
+    /// A door's accounts are its owner's; a door with no toolchain has no accounts to edit. Ask Daoris's account cards
     /// ask it too, as the screen's own door.
     /// </summary>
     internal static string OwnerOf(HarnessRoster harnesses, string harness)
@@ -475,7 +474,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
     }
 
     /// <summary>
-    /// A scope's list written whole (D125 §3.1, D130 §3.1, §4.6), as <c>daoris agent account order</c> writes it: each name an
+    /// A scope's list written whole, as <c>daoris agent account order</c> writes it: each name an
     /// account here, once; and the list holding the scope's default and its kept account, with another beside the kept one.
     /// None clears the list, its settings with it.
     /// </summary>
@@ -493,22 +492,22 @@ public sealed class AccountsRoutes(DriverLoop loop)
                     ("agent", owner), ("account", problem.Account), ("accounts", accounts.Count > 0 ? string.Join(", ", accounts) : "—"));
         }
 
-        // The order is written whole (POOL1a, the account-pool design §5.1): the accounts named first, the rest after in their order,
+        // The order is written whole: the accounts named first, the rest after in their order,
         // so it always holds the kept account and another; there is no default beside it.
         return workspace is null ? settings.WithRotation(owner, list) : settings.WithRotation(owner, list, workspace);
     }
 
     /// <summary>
-    /// How a scope's list is used (D130 §16.6), as <c>daoris agent account use</c> writes it: each choice as made, refused where
+    /// How a scope's list is used, as <c>daoris agent account use</c> writes it: each choice as made, refused where
     /// the scope has no list of its own, a value this build does not know (a way to use accounts, when to switch, a near), or a
-    /// kept account outside the list or alone in it. A curve that breaks a rule is refused as it is read (SWITCH1d). Null clears
+    /// kept account outside the list or alone in it. A curve that breaks a rule is refused as it is read. Null clears
     /// the scope back to today's defaults.
     /// </summary>
     public static HarnessSettings UseEdited(HarnessSettings settings, string owner, UseChange? change, string? workspace)
     {
         if (change is null) return settings.WithUse(owner, null, workspace);
 
-        // The set's settings are set whatever it holds (POOL1a, the account-pool design §2.3): no list is waited on. The set is the
+        // The set's settings are set whatever it holds: no list is waited on. The set is the
         // order the change folded, read under the lock.
         var list = OwnList(settings, owner, workspace);
 
@@ -547,7 +546,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
 
     /// <summary>
     /// What binds the set's kept account, refused in a code the page translates; the sentence is the fallback. No default is asked
-    /// of (POOL1c, D197 point 2: the order has none beside it), so a problem is the kept account's alone, outside the order or
+    /// of (the order has none beside it), so a problem is the kept account's alone, outside the order or
     /// alone in it.
     /// </summary>
     private static ShenoraException ScopeRefusal(ScopeProblem problem) =>
@@ -563,7 +562,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
 
     /// <summary>
     /// The settings a <c>use</c> names: a field left out is no change; <c>noKeep</c> keeps none; <c>switch</c> and <c>curve</c>
-    /// as <c>profile use --switch</c> and <c>--curve</c> take them (SWITCH1d), each window of the curve set keeping the other, and
+    /// as <c>profile use --switch</c> and <c>--curve</c> take them, each window of the curve set keeping the other, and
     /// <c>noCurve</c> taking it out, as <c>--no-curve</c> does. A curve that breaks a rule is refused here, with the rule.
     /// </summary>
     private static UseChange UseChangeOf(AccountUsePress press) =>
@@ -579,7 +578,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
 
     /// <summary>
     /// The curve a <c>use</c> names, or null where it names none (or names it null); one that breaks a rule is refused in its own
-    /// code, the rule its <c>context</c> and what it names its values, so the page says it in the reader's language (SWITCH1d).
+    /// code, the rule its <c>context</c> and what it names its values, so the page says it in the reader's language.
     /// </summary>
     private static UseCurve? CurveOf(JsonElement? sent)
     {

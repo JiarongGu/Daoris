@@ -17,7 +17,7 @@ internal static class LinesWires
         var gitLevels = GitLevelsOf(config);
         return new
         {
-            // The policy that reaches each line (the Line row, WORKFLOWCLEAN1h): its own, else its workspace's; left out where none is set.
+            // The policy that reaches each line (the Line row): its own, else its workspace's; left out where none is set.
             Lines = lines.Select(line => line with { Policy = IntegrateWire(config.LinePolicyOf(line.Repository, line.Workspace)) }).ToArray(),
             // What each one's sessions are asked to write to the person in, and where that was set: the driver's
             // resolution, read rather than recomputed by the page. None leaves the language and its source out.
@@ -53,8 +53,8 @@ internal static class LinesWires
                     pair.opinion?.Source,
                 })
                 .ToArray(),
-            // What a helper each one's agent asks for does, and how its work is committed, each with where it was set (DOORS1b,
-            // D163 point 3, D164's amendment point 3): the driver's resolution, never null, `default` where nothing is set.
+            // What a helper each one's agent asks for does, and how its work is committed, each with where it is set:
+            // the driver's resolution, never null, `default` where nothing is set.
             Helpers = lines.Select(line => (line, helpers: HelperRules.Resolve(config, line.Repository, line.Workspace)))
                 .Select(pair => new { pair.line.Repository, pair.line.Workspace, Rule = HelperWire(pair.helpers.Rule), pair.helpers.Source })
                 .ToArray(),
@@ -66,8 +66,8 @@ internal static class LinesWires
             Commits = lines.Select(line => (line, commits: CommitRules.Resolve(config, line.Repository, line.Workspace)))
                 .Select(pair => new { pair.line.Repository, pair.line.Workspace, Rule = CommitWire(pair.commits.Rule), pair.commits.Source })
                 .ToArray(),
-            // The access setup each one's sessions start under, every pause with its value and where it was set (AUTONOMY1a, D184
-            // point 1): the driver's resolution, never null, `default` where nothing is set, so the page shows where each came from.
+            // The access setup each one's sessions start under, every pause with its value and where it is set:
+            // the driver's resolution, never null, `default` where nothing is set, so the page shows where each came from.
             Access = lines.Select(line => (line, access: AccessRules.Resolve(config, line.Repository, line.Workspace)))
                 .Select(pair => new
                 {

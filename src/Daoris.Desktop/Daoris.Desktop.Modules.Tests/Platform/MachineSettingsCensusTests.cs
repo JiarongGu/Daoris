@@ -6,7 +6,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The settings census (D228): every machine setting is declared once, in <see cref="MachineSettings.All"/>, and has one key, which
+/// The settings census: every machine setting is declared once, in <see cref="MachineSettings.All"/>, and has one key, which
 /// each of its doors spells. The terminal's verb is the key, in the <c>settings</c> group; its route is <c>SET_&lt;KEY&gt;</c>, a
 /// machine's setting that says the driver's state changed; the terminal sends that route from that verb alone; and Ask Daoris's
 /// <c>setting</c> door is the key. A setting listed twice, two keys on one field of <c>driver.json</c>, or a second verb on one

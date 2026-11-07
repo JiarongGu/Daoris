@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// HELPPLUG1c (D170's note): Ask Daoris's proposal of the person's approval of what a plugin's server offers it, the modules'
+/// Ask Daoris's proposal of the person's approval of what a plugin's server offers it, the modules'
 /// half. The card carries every tool, reads and writes apart, and the writes it accepts; the person's Apply writes the approval
 /// through the page's own code (<see cref="HelpGrants"/>), and the same door withdraws it.
 /// </summary>
@@ -47,7 +47,7 @@ public sealed class HelpPluginApprovalDoorTests : DriverModuleBridge
         Assert.Empty(HelpGrants.Read(Home, PluginCatalog.Load(Home)).Servers);
     }
 
-    /// <summary>A server naming a generic execution tool is never drawn, whoever proposes it (HELP4): settled refused, with why.</summary>
+    /// <summary>A server naming a generic execution tool is never drawn, whoever proposes it: settled refused, with why.</summary>
     [Fact]
     public async Task An_approval_of_a_generic_execution_server_is_never_drawn()
     {

@@ -3,7 +3,7 @@ using Daoris.Desktop;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The flights a read route's identical asks share (SWEEPFLIGHT1): one ask under way per key, answered to every caller that
+/// The flights a read route's identical asks share: one ask under way per key, answered to every caller that
 /// joined it, kept past its end for no one, stopped only when no caller waits for it, and joined no more once forgotten.
 /// </summary>
 public sealed class RouteFlightsTests

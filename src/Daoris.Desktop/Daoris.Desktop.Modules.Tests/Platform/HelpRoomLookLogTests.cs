@@ -3,7 +3,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
 
-/// <summary>The room's session look timed into the machine log (SESSUX1h3b, D161's note, LOG1a/D94): a duration, never words.</summary>
+/// <summary>The room's session look timed into the machine log: a duration, never words.</summary>
 public sealed class HelpRoomLookLogTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-roomlook-" + Guid.NewGuid().ToString("N")[..8]);
@@ -41,7 +41,7 @@ public sealed class HelpRoomLookLogTests : IDisposable
         Assert.Contains("\"kept\":false", line);
     }
 
-    /// <summary>HELPSTART1: a room that read the look kept from the last half-minute says so, so its milliseconds read as no look.</summary>
+    /// <summary>A room that read the look kept from the last half-minute says so, so its milliseconds read as no look.</summary>
     [Fact]
     public void A_look_kept_from_a_moment_ago_says_kept()
     {
@@ -53,7 +53,7 @@ public sealed class HelpRoomLookLogTests : IDisposable
         Assert.Contains("\"read\":true", line);
     }
 
-    /// <summary>HELPROOM1: the line names each step's milliseconds and how many trees the git check was asked about.</summary>
+    /// <summary>The line names each step's milliseconds and how many trees the git check is asked about.</summary>
     [Fact]
     public async Task A_look_says_the_time_of_each_of_its_steps()
     {

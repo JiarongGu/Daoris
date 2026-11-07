@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Keeps a browser server's memory bounded (MCPMEM1): the server a session drives Daoris's browser with is started under a small
+/// Keeps a browser server's memory bounded: the server a session drives Daoris's browser with is started under a small
 /// node script that starts it afresh once its working set passes <see cref="CeilingMb"/> and no call is in flight. The tabs are
 /// Daoris's browser's, so the new server finds them where the old left them; only the snapshot references it had handed out are gone.
 /// </summary>
@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// browser it launched itself, which this one never does.</para>
 ///
 /// <para><b>Only where the state is the browser's.</b> A server that attaches to Daoris's browser holds nothing the chat needs after
-/// a restart; any other server may, and is started as it was declared.</para>
+/// a restart; any other server may, and is started as declared.</para>
 /// </remarks>
 public static class ServerKeeper
 {

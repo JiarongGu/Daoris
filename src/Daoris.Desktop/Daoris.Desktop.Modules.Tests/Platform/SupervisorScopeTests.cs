@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// SUPERVISOR1e under D233 point 2: the supervisor is a catalogue role, and the one that acts for a repository is the most specific
+/// The supervisor is a catalogue role, and the one that acts for a repository is the most specific
 /// scope's that covers it, as a work's role is found: the repository's own, else its workspace's, else the machine's. Its window is the
 /// role's, 1 to 60 minutes, five where none is kept; a role's change ends its terminal's hold, and a decision kept under a workspace's
 /// supervisor goes stale once a repository's own acts there.
@@ -133,7 +133,7 @@ public sealed class SupervisorScopeTests : IDisposable
         Assert.Equal(SupervisorWhy.NotStaffed, standing.Admit(Engine).Why);
     }
 
-    /// <summary>§6.3, §12: the window is the role's, 1 to 60 minutes, five where none is kept, read at each admission.</summary>
+    /// <summary>The window is the role's, 1 to 60 minutes, five where none is kept, read at each admission.</summary>
     [Fact]
     public void The_overrule_window_is_the_supervisor_roles_and_a_change_of_it_reaches_the_next_admission()
     {
@@ -156,7 +156,7 @@ public sealed class SupervisorScopeTests : IDisposable
         Assert.Equal(SupervisorWhy.NotStarted, next.Admit(Engine).Why);
     }
 
-    /// <summary>§5: the repository's own supervisor wins over its workspace's; the workspace's stands for its other repositories.</summary>
+    /// <summary>The repository's own supervisor wins over its workspace's; the workspace's stands for its other repositories.</summary>
     [Fact]
     public void A_repositorys_own_supervisor_wins_over_its_workspaces_and_turning_either_off_ends_only_its_own()
     {
@@ -194,7 +194,7 @@ public sealed class SupervisorScopeTests : IDisposable
     }
 
     /// <summary>
-    /// §5: a terminal started again is a new hold with a new key, so the old holder's late answer is refused <c>role-changed</c>, and so is
+    /// A terminal started again is a new hold with a new key, so the old holder's late answer is refused <c>role-changed</c>, and so is
     /// a workspace holder's answer for a repository whose own supervisor acts there now.
     /// </summary>
     [Fact]
@@ -224,7 +224,7 @@ public sealed class SupervisorScopeTests : IDisposable
     }
 
     /// <summary>
-    /// §5: a repository's own supervisor started while a decision under its workspace's is held makes that decision <c>stale</c> at its
+    /// A repository's own supervisor started while a decision under its workspace's is held makes that decision <c>stale</c> at its
     /// release, which asks the admission again; a held decision of the workspace's other repository goes on at its window.
     /// </summary>
     [Fact]

@@ -38,7 +38,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             var movedBy = MovedWords.Moving(keyed) ? keyed : null;
             IReadOnlyList<SaidWordView>? movedOn = null;
             // The record's delivery is written where each door's write of the first prompt returns, the moved words' `sent` first and
-            // their take after it, so it goes with the take only where the fence was written; where the store refused it, the moved
+            // their take after it, so it goes with the take only where the fence is written; where the store refused it, the moved
             // words are not taken here and wait on the new session.
             var delivering = fenced is null ? carry : null;
             if (fenced is not null && movedBy is not null)
@@ -58,8 +58,8 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                     .ConfigureAwait(false);
             }
 
-            // The record that was not fenced is ended by its phase here, not at the end of a run that lasts as long as its session does.
-            // One that was fenced goes on to its door's write, which is where it delivers; a run that never writes ends it as it is let go.
+            // The record that is not fenced is ended by its phase here, not at the end of a run that lasts as long as its session does.
+            // One that is fenced goes on to its door's write, which is where it delivers; a run that never writes ends it as it is let go.
             if (carry is not null && delivering is null) await carry.EndAsync().ConfigureAwait(false);
 
             var adapter = context.Adapters.Door(agent);
@@ -78,7 +78,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             // A start with no brief carries its line's course where any count is not zero, a quest that failed here before among them.
             var course = brief is null ? ContextBrief.Counted((await LineCountsRead.FactsAsync(service, home, sessionId, ct).ConfigureAwait(false)).Counts) : null;
             var elsewhere = prior is not null && AccountIdentity.OnAnotherAccount(prior, selection.Profile, limitWalks ? agent : null);
-            // The servers the plugins hand this session, handed before its instruction is composed, which tells it the browser it was
+            // The servers the plugins hand this session, handed before its instruction is composed, which tells it the browser it is
             // handed. With Daoris's own browser brought up for a server that drives it, or that server left out and the transcript told why.
             var (servers, browserNoted, drivesBrowser, browserDrivers) =
                 await SessionServers.HandNotedAsync(home, context.Servers, context.Browser, context.Log, ct).ConfigureAwait(false);
@@ -200,19 +200,19 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 Handed = handsOn is not null
                     ? [.. (movedOn ?? handsOn.Waiting).Where(DriverContinuations.HandedToResume)]
                     : switched ? [.. (movedOn ?? written!.Waiting).Where(word => word.Daoris && DaorisWords.NewPartCarries(word))] : [],
-                // The person's stop, which they released with Try again: told so, never that it was cut off.
+                // The person's stop, which they released with Try again: told so, never that it is cut off.
                 Released = carryingOn && start.Resumes!.PersonStopped && !handedFrom,
-                // The quest was handed over from that session: told so, with the agent it ran on.
+                // The quest is handed over from that session: told so, with the agent it ran on.
                 BroughtForward = carryingOn && quest.Status != "Open" && start.BroughtForward is not null,
                 HandedOver = carryingOn && handedFrom ? start.Resumes!.Adapter ?? "another agent" : null,
                 Brief = brief,
                 Course = course,
                 // The note its agent left where it asked to hand over, told as that agent's claim; the brief carries it.
                 HandedNote = handedNote,
-                // Another agent's accounts are not this agent's: a hand-over says no account was cooling for it to be told of.
+                // Another agent's accounts are not this agent's: a hand-over says no account is cooling for it to be told of.
                 AccountChanged = elsewhere && !handedFrom && prior!.Limit
                     && LineAccount.OwnHold(context.Harnesses.CoolingOf(agent, prior.Profile, prior.ModelOn(agent))) == NextHold.Cooling,
-                // A set-up step is told its environment as the rule declares it now, and its account says where that rule was set.
+                // A set-up step is told its environment as the rule declares it now, and its account says where that rule is set.
                 SetUp = setUp,
                 SetUpFrom = setUp is null ? null : ReviewRules.Resolve(config, quest.To, start.Workspace)?.Source,
             };
@@ -229,7 +229,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             await service.AdvanceAsync(sessionId, "starting", note: startingNote?.Note, ct: ct, parts: startingNote?.Parts).ConfigureAwait(false);
 
             // The answer beneath the question it answers: the session that asked ends with the person's words in its own record, where
-            // they read the question. A resume that was tried already put them there; words to a session that had ended are in its
+            // they read the question. A resume tried already put them there; words to a session that had ended are in its
             // conversation already, where the person wrote them.
             if (carryingOn && !answerKept && SaidWordView.PersonsJoined(start.Resumes!.Waiting) is { Length: > 0 } answeredWith && written is { Parked: true })
             {
@@ -264,7 +264,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 "build", adapter, info, target, sessionId, transcript, workTree, Driver.JoinNotices(harnessNotice, browserNotice), rules, handed,
                 // `actor` stays the seeded id; the role the start took and its revision go on the binding. A continuation keeps its record's.
                 taken: start.Resumes is null ? wiring.RoleTaken(start, stepRole) : null,
-                // A driven session takes no person's line, on either door: it was handed its whole quest at once, the pipe door gives it
+                // A driven session takes no person's line, on either door: it is handed its whole quest at once, the pipe door gives it
                 // no stdin, and the protocol door's stdin carries the driver's own frames.
                 refusesInput: Driver.TakesNoMessages(quest),
                 ct: ct,
@@ -275,7 +275,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 // A native run holds what the person says while it works, and goes on with it in its own conversation.
                 goesOnAs: selection,
                 stopMade: stop => endings.StoppedFirst = stop,
-                // The part works: what it was handed from the ask's channel is acknowledged by its id.
+                // The part works: what it is handed from the ask's channel is acknowledged by its id.
                 working: channelHeld is null ? null : () => _ = ChannelReach.HandedAsync(channelDoors, channelHeld, CancellationToken.None),
                 // A turn that ends on the session's own background work, holding its quest as a park would, is not a question. Read from
                 // the quest as the conclusion reads it, by the conclusion's own rule.
@@ -296,7 +296,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                             ? refusal => wiring.ReaskHandedAsync(start, agent, selection, refusal, refusedHanded, ct, stepRole)
                             : _ => Task.FromResult<(ActorAsked Asked, string Choice)?>(null)),
                 // A driven quest session is tried again in the same conversation on a transient failure, asking before each try whether
-                // its quest still wants a turn, against the quest as this start was planned.
+                // its quest still wants a turn, against the quest as this start is planned.
                 transientWanted: retryCt => TransientRetries.WantedAsync(service, quest.Id, sessionId, quest.Status, quest.Awaits, retryCt),
                 conclude: (exitCode, used, turnFailed, ended) => conclusion.ConcludeAsync(exitCode, used, turnFailed, ended, ct)).ConfigureAwait(false);
         }

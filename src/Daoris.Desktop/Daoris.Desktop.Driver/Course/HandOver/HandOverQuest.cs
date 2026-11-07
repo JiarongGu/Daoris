@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The quests held on another agent (MIXAGENT1a-ii, D163): <c>&lt;home&gt;/handed/&lt;quest&gt;.json</c>, written atomically. It is the quest's
+/// The quests held on another agent: <c>&lt;home&gt;/handed/&lt;quest&gt;.json</c>, written atomically. It is the quest's
 /// own override of the machine's adapter, held until the quest leaves this machine (done, declined, taken elsewhere, cleared or
 /// abandoned), never for one start; and it is the release of the stop that handed it over: the planner reads a stop whose session it
 /// names as released, so no strike counts and driver.json's <c>released</c> is never written.
@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>This machine's, never the record's.</b> A file that does not read is no override: the quest runs on the machine's agent.</para>
 ///
-/// <para>What is kept is this store's; the files and their format are <see cref="HandOverFiles"/>' (STRUCT3h, D166's note).</para>
+/// <para>What is kept is this store's; the files and their format are <see cref="HandOverFiles"/>'.</para>
 /// </remarks>
 public sealed class HandedQuests(string home) : IWorkplaceHandedQuests
 {
@@ -19,7 +19,7 @@ public sealed class HandedQuests(string home) : IWorkplaceHandedQuests
     public string? PathOf(string quest) => Named(quest) ? DaorisHome.Entry(home, HomeEntry.Handed, quest + ".json") : null;
 
     /// <summary>Keep the quest as handed, replacing any before. An id that is no quest's name keeps nothing.</summary>
-    /// <exception cref="IOException">It could not be written: the asker is told, rather than told it was kept.</exception>
+    /// <exception cref="IOException">It could not be written: the asker is told, rather than told it is kept.</exception>
     public void Write(string quest, HandedQuest handed)
     {
         if (PathOf(quest) is not { } path) return;
@@ -46,7 +46,7 @@ public sealed class HandedQuests(string home) : IWorkplaceHandedQuests
 
     IEnumerable<string> IWorkplaceHandedQuests.Readable() => All().Keys;
 
-    /// <summary>Let the quest go back to the machine's agent: it left this machine, or was cleared. Nothing to clear is no failure.</summary>
+    /// <summary>Let the quest go back to the machine's agent: it left this machine, or got cleared. Nothing to clear is no failure.</summary>
     public void Clear(string quest)
     {
         // A file left behind is dropped at the next look, which reads the quest's state again.
@@ -57,10 +57,10 @@ public sealed class HandedQuests(string home) : IWorkplaceHandedQuests
 }
 
 /// <summary>
-/// *Hand a quest's session over* (MIXAGENT1a-ii, D163 point 1; the mixed-agents design §2): the quest's own session goes on with
+/// *Hand a quest's session over*: the quest's own session goes on with
 /// another agent when its account's allowance runs low. This is the ask's judge for a driven session with a quest, beside
 /// <see cref="HandOver"/>'s for a conversation: it refuses what cannot be handed over by a code before anything is kept, and decides the
-/// driven move the driver's next look takes (FOUNDATION1f-v part c).
+/// driven move the driver's next look takes.
 /// </summary>
 /// <remarks>
 /// <b>A driven session works its quest in one turn</b>, so there is no turn's end to wait for: the look stops it, as the person's stop,
@@ -93,7 +93,7 @@ public static class QuestHandOver
         record is { Kind: not "chat", Quest: not null, Ask: null, Teammate: false };
 
     /// <summary>
-    /// Judge and decide the move for a quest's session of this machine's (FOUNDATION1f-v part c, §3.3, §13.4 step 1): the hand-over is kept as a
+    /// Judge and decide the move for a quest's session of this machine's: the hand-over is kept as a
     /// driven move record in the store, decided as it is asked and claimed by the run that asks, and no <c>&lt;s&gt;.hand-over.json</c> is written.
     /// The driver's look takes it, stops the session and holds the quest on the agent named, and the carry-on it starts goes on from the same move.
     /// A record a move still stands for, a hand-over waiting or another move under way, takes no second ask, read from the store.
@@ -132,12 +132,12 @@ public static class QuestHandOver
     /// ledger holds it. Judged again as the look takes the move, since the quest, its take or the roster may have changed meanwhile.
     /// </summary>
     /// <param name="agentAsk">
-    /// The session's own agent asked (MIXAGENT1c): a park it ended its turn on is that ask's, not a question for the person, so it is
+    /// The session's own agent asked: a park it ended its turn on is that ask's, not a question for the person, so it is
     /// handed over rather than refused <see cref="HandOver.Parked"/>.
     /// </param>
     /// <param name="askedWhy">The ask's reason, one of <see cref="HandOverWhy"/>.</param>
     /// <param name="consent">
-    /// The hand-over rule's consent for an agent's ask, as the door that judged it says it (<see cref="HandOver.ConsentOf"/>, FOUNDATION1i):
+    /// The hand-over rule's consent for an agent's ask, as the door that judged it says it (<see cref="HandOver.ConsentOf"/>):
     /// the course admits an agent's ask only where <c>on</c> let it go, puts it to the person under <c>ask</c> and refuses it otherwise.
     /// </param>
     /// <param name="decided">Told the course's answer for what the executor let through: a test's, no person's.</param>
@@ -163,7 +163,7 @@ public static class QuestHandOver
                 return (HandOver.Refused(HandOver.NotLastRun, $"#{quest} went on in a later session here, {last}: hand that one over."), null);
         }
 
-        // SESSCTX1c (D189's amendment): a park whose own agent is no longer here is never answered in its own conversation, so it waits
+        // A park whose own agent is no longer here is never answered in its own conversation, so it waits
         // with this hand-over's offer, the person choosing the agent it goes on with.
         if (record.State == "awaiting-person" && !agentAsk && !AgentGone(ServiceClient.ReadRecord(json, id)?.Adapter, drives))
         {
@@ -199,7 +199,7 @@ public static class QuestHandOver
                 taken: new Dictionary<string, DateTimeOffset?> { [quest] = at })[quest];
             if (QuestTakes.TakenAway(found, prior, take))
             {
-                // FABRIC-CLOSE1c20: a take lost to the person's reopen is said as that, never as another machine's.
+                // A take lost to the person's reopen is said as that, never as another machine's.
                 if (take.Reopened)
                 {
                     return (HandOver.Refused(HandOver.QuestReopened,
@@ -221,7 +221,7 @@ public static class QuestHandOver
                   + "a session there would have no connector to take the quest with."), null);
         }
 
-        // FOUNDATION1i path 2: what the executor alone knows is refused above; whether the session goes is the course's, over the consent
+        // What the executor alone knows is refused above; whether the session goes is the course's, over the consent
         // the door that judged an agent's ask handed in.
         // A move now for the person's press, which stops it as their stop, and at the turn's end for the agent's ask of a session that runs.
         var course = CourseDecision.Decide(
@@ -244,6 +244,6 @@ public static class QuestHandOver
         };
     }
 
-    /// <summary>Whether the agent a record ran on is one this machine no longer drives: named, and not in the roster.</summary>
+    /// <summary>Whether the agent a record ran on is one this machine does not drive any more: named, and not in the roster.</summary>
     private static bool AgentGone(string? ranOn, Func<string, HandOverAgent?> drives) => ranOn is { Length: > 0 } && drives(ranOn) is null;
 }

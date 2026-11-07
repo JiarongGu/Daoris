@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// An agent's ask to hand its session over, over the bridge (MIXAGENT1c, D163 point 3; the mixed-agents design §2, §5): the session's
+/// An agent's ask to hand its session over, over the bridge: the session's
 /// page reads the ask with where the driver's look left it (its note the agent's claim, the agent it would go to), and the person's
 /// yes and no to one that waits on them under the `handOver` rule's `ask`, by the judge the terminal's verb shares.
 /// </summary>

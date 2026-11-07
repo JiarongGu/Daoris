@@ -21,7 +21,7 @@ internal static class WorkflowAnswers
             limits[code] = WorkflowLimits.Says(code);
         }
 
-        // only a caller that asked for a route is answered `effective`; an older one is answered as it was.
+        // only a caller that asked for a route is answered `effective`; an older one is answered without it.
         if (effective is not null)
         {
             return new

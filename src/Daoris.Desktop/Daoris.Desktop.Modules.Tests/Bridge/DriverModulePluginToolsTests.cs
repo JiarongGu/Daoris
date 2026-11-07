@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A plugin's tools over the bridge (ADOSIGNIN1): the page's read declares them, the person's Check finds and reads them, and the
+/// A plugin's tools over the bridge: the page's read declares them, the person's Check finds and reads them, and the
 /// person's press of a check's fix opens a console and reads the tool again. A stand-in answers for every program and every window.
 /// </summary>
 public sealed class DriverModulePluginToolsTests : DriverModuleBridge

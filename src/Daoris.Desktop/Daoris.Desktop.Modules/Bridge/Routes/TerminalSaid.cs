@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A host verb run in this Daoris for the terminal that sent its route over the pipe (RPC1d, RPC1e, the terminal RPC design §7.3): a
+/// A host verb run in this Daoris for the terminal that sent its route over the pipe: a
 /// route asked for its words (<c>said: true</c>) runs the verb's own path with this Daoris's world, never looking for an instance, and
 /// answers the lines it prints and its exit code beside nothing else, so the terminal says what it says alone, case for case.
 /// </summary>

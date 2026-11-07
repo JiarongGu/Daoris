@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Why the person's yes or no to an agent's ask to hand over did nothing: the codes the page words (MIXAGENT1c).</summary>
+/// <summary>Why the person's yes or no to an agent's ask to hand over did nothing: the codes the page words.</summary>
 public static class HandOverWordWhy
 {
     /// <summary>The session holds no such ask.</summary>
@@ -24,9 +24,9 @@ public sealed record HandOverWordAnswer(bool Stands, string? Why, string Message
 }
 
 /// <summary>
-/// The person's yes and no to an agent's ask to hand its session over under the <c>handOver</c> rule's <c>ask</c> (MIXAGENT1c, D163
-/// point 3): one judge for the page's <c>SESSION_HAND_OVER_APPROVE</c> and <c>SESSION_HAND_OVER_DECLINE</c> and the terminal's
-/// <c>sessions hand-over --approve|--decline</c>, in the library because the terminal host cannot reference Modules (HELPERTERM1's way).
+/// The person's yes and no to an agent's ask to hand its session over under the <c>handOver</c> rule's <c>ask</c>:
+/// one judge for the page's <c>SESSION_HAND_OVER_APPROVE</c> and <c>SESSION_HAND_OVER_DECLINE</c> and the terminal's
+/// <c>sessions hand-over --approve|--decline</c>, in the library because the terminal host cannot reference Modules.
 /// </summary>
 /// <remarks>
 /// A yes is written where the ask waits on it: no state yet, or <c>waiting</c>; it is <c>approved</c> with the agent the look named,

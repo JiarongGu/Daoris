@@ -8,17 +8,17 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The programs Daoris runs beside its agents, the page's `bridge/tools.ts` (TOOLS7, D121 §4.1): how each is run — the
+/// The programs Daoris runs beside its agents, the page's `bridge/tools.ts`: how each is run — the
 /// system's, a managed version, or a file the person names — what is downloaded and what the lists offer for this
 /// machine, a download started as an action the page follows and the person stops, a delete, the resource locations
 /// listed, added, removed and looked at, and what a switch of git changes before it applies. The same
-/// `$DAORIS_HOME/tools.json` the terminal's `daoris tool` edits (D50), which every start reads (TOOLS5).
+/// `$DAORIS_HOME/tools.json` the terminal's `daoris tool` edits, which every start reads.
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>A download is followed, never waited on</b> (§3.6, WSR7 a): <c>TOOLS_DOWNLOAD</c> and a managed
+/// <para>🔴 <b>A download is followed, never waited on</b>: <c>TOOLS_DOWNLOAD</c> and a managed
 /// <c>TOOLS_USE</c> answer once the action has started, its lines are the console's under <c>tools:&lt;tool&gt;</c>, and
 /// its end is the <c>TOOLS_ENDED</c> news. The bridge gives up after thirty seconds, and a download outlives that.</para>
-/// <para>The SSH command Daoris's git carries (§2.5) is TOOLS6's, and joins <c>TOOLS_GIT</c> with it.</para>
+/// <para>The SSH command Daoris's git carries joins <c>TOOLS_GIT</c> with it.</para>
 /// </remarks>
 public sealed class ToolsRoutes(DriverContext context)
 {
@@ -26,7 +26,7 @@ public sealed class ToolsRoutes(DriverContext context)
     private readonly IEventBus _events = context.Events;
     private readonly PickFile? _pickFile = context.PickFile;
 
-    // One download, use or update at a time for each tool (§3.6), shared by every route that starts or stops one, so a
+    // One download, use or update at a time for each tool, shared by every route that starts or stops one, so a
     // second press is refused by the driver's own claim and a stop reaches the action the first press started.
     private ToolActions? _toolActions;
 
@@ -43,7 +43,7 @@ public sealed class ToolsRoutes(DriverContext context)
 
     // Every tool, as it is run and what could run it: the way and its file, the versions downloaded and offered, the
     // locations and the list built in. Reads files only; `ask` asks each resolved file its version, which starts it. Told by
-    // event (NOBLOCK1): its files and the system's path held the window up to 1.4 s, so an ask is answered from what is held.
+    // event: its files and the system's path held the window up to 1.4 s, so an ask is answered from what is held.
     [DriverRoute("TOOLS_LIST", PipeClass.Open)]
     [ByEvent("TOOLS_LIST", Untold = "the system's path and an action's end, which TOOLS_ENDED tells")]
     private async Task<object?> ToolsListAsync(ToolsListRead press, CancellationToken cancellationToken)
@@ -113,12 +113,12 @@ public sealed class ToolsRoutes(DriverContext context)
             read.Problem,
             read.Notes,
             Platform = platform,
-            // The settings Daoris's git carries (TOOLS6): the page's git card and the press's grounds read them here.
+            // The settings Daoris's git carries: the page's git card and the press's grounds read them here.
             Git = read.Git,
-            // Settings → Git (GITAUTH1e): the identities and what points at them, from the files alone.
+            // Settings → Git: the identities and what points at them, from the files alone.
             Identities = GitIdentityPage.Read(home),
             Tools = rows,
-            // The person's locations in order, then the list built in, always last (§3.3).
+            // The person's locations in order, then the list built in, always last.
             Locations = read.Locations.Select((_, at) => ListRow(lists[at], platform)).ToArray(),
             BuiltIn = ListRow(lists[^1], platform),
         };
@@ -126,7 +126,7 @@ public sealed class ToolsRoutes(DriverContext context)
 
     // A way chosen on the screen, written to the file the terminal's `daoris tool use` writes. The system's and a named
     // file answer at once; managed starts the driver's use, which downloads a version that is not here first. Each press that
-    // writes what the list reads declares the tools (STATEHUB1h, D169); an action's end is `TOOLS_ENDED`, as before.
+    // writes what the list reads declares the tools; an action's end is `TOOLS_ENDED`, as before.
     [DriverRoute("TOOLS_USE", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("TOOLS_USE", None = OwnerNone.MachineSetting)]
     [GroundRead("TOOLS_USE", nameof(PipeReads.ToolChoice))]
@@ -147,8 +147,8 @@ public sealed class ToolsRoutes(DriverContext context)
 
             case "file":
             {
-                // Checked before it is written (§4.1): a file that is there, by its whole path, that starts and answers a
-                // version. The library's operation (PUSH1f2c), which `daoris tool use … file` calls alone; its coded
+                // Checked before it is written: a file that is there, by its whole path, that starts and answers a
+                // version. The library's operation, which `daoris tool use … file` calls alone; its coded
                 // refusals are the module's one mapping's (ToolCodes).
                 var file = press.File ?? "";
                 var version = await ToolChoices.UseFileAsync(home, declared.Id, file, VersionOfAsync, cancellationToken);
@@ -164,7 +164,7 @@ public sealed class ToolsRoutes(DriverContext context)
         }
     }
 
-    // Fetch and verify one version, nothing switching (§4.1 *Download*): answered once it has started.
+    // Fetch and verify one version, nothing switching: answered once it has started.
     [DriverRoute("TOOLS_DOWNLOAD", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("TOOLS_DOWNLOAD", None = OwnerNone.MachineSetting)]
     [GroundRead("TOOLS_DOWNLOAD", nameof(PipeReads.ToolVersions))]
@@ -183,9 +183,9 @@ public sealed class ToolsRoutes(DriverContext context)
         return new { Tool = tool, Stopped = ToolRuns.Cancel(tool) };
     }
 
-    // A downloaded version nothing uses, removed (§3.6): the one in use refuses, and so does one the system holds. Its coded refusals
-    // (missing, in use, held) are the module's one mapping's (ToolCodes, PUSH1f2c), the codes `daoris tool delete` says alone.
-    // KEEP1b (D195 point 6): through the downloads' one act, judged under the use files' locks against the running sessions, moved aside
+    // A downloaded version nothing uses, removed: the one in use refuses, and so does one the system holds. Its coded refusals
+    // (missing, in use, held) are the module's one mapping's (ToolCodes), the codes `daoris tool delete` says alone.
+    // Through the downloads' one act, judged under the use files' locks against the running sessions, moved aside
     // first; off the window's thread, since it asks the service and walks the version.
     [DriverRoute("TOOLS_DELETE", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("TOOLS_DELETE", None = OwnerNone.MachineSetting)]
@@ -202,7 +202,7 @@ public sealed class ToolsRoutes(DriverContext context)
         return new { Tool = declared.Id, Version = version, Folder = folder };
     }
 
-    // *Look for updates* (§3.7): each location fetched on the person's press, each bounded, its copy kept only when it
+    // *Look for updates*: each location fetched on the person's press, each bounded, its copy kept only when it
     // reads. The page waits by `hostBounds`, as long as the look may take. Unlike a look that only fetches, the copy it keeps is
     // what the list offers, so it declares the tools.
     [DriverRoute("TOOLS_LOOK", PipeClass.Open)]
@@ -216,7 +216,7 @@ public sealed class ToolsRoutes(DriverContext context)
         };
     }
 
-    // A resource location added at the end of the person's, or removed (§3.3): the file the terminal's
+    // A resource location added at the end of the person's, or removed: the file the terminal's
     // `daoris tool locations add|remove` edits. Removing one leaves every version already downloaded.
     [DriverRoute("TOOLS_LOCATION", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("TOOLS_LOCATION", None = OwnerNone.MachineSetting)]
@@ -230,7 +230,7 @@ public sealed class ToolsRoutes(DriverContext context)
         switch (action)
         {
             case "add":
-                // An address that is no resource location is the operation's refusal (PUSH1f2c), said in its code by the module.
+                // An address that is no resource location is the operation's refusal, said in its code by the module.
                 return new { Address = address, Added = ToolChoices.AddLocation(_loop.Home, address) };
 
             case "remove":
@@ -241,7 +241,7 @@ public sealed class ToolsRoutes(DriverContext context)
         }
     }
 
-    // A setting Daoris's git carries, set or cleared (TOOLS6, D121 §2.5; GITAUTH1e): the key on the allow-list, and a value only on a git
+    // A setting Daoris's git carries, set or cleared: the key on the allow-list, and a value only on a git
     // that reads it, else `TOOL_GIT_TOO_OLD` naming both versions. No value clears it. The file it travels in is written at the next start.
     [DriverRoute("TOOLS_GIT_SET", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("TOOLS_GIT_SET", None = OwnerNone.MachineSetting)]
@@ -255,10 +255,10 @@ public sealed class ToolsRoutes(DriverContext context)
         return new { Key = key, Value = string.IsNullOrWhiteSpace(value) ? null : value.Trim(), Version = version?.ToString() };
     }
 
-    // Settings → Git (GITAUTH1e, the git-auth design §7.1-§7.2): one act on an identity — add (ssh or https), test, rename, commits-as,
+    // Settings → Git: one act on an identity — add (ssh or https), test, rename, commits-as,
     // read-only, remove, default — the screen's half of `daoris git identity` and `git default`, over the same typed operations.
     // The page is the person's own press, so a widening is confirmed in place before it is sent. A change lifts every hold, so each
-    // remote is tried once with what now serves it (§5.2).
+    // remote is tried once with what now serves it.
     [DriverRoute("GIT_IDENTITY", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("GIT_IDENTITY", None = OwnerNone.MachineSetting)]
     [GroundRead("GIT_IDENTITY", nameof(PipeReads.GitIdentity))]
@@ -359,7 +359,7 @@ public sealed class ToolsRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The choice <c>GIT_USE</c> makes, shared with Ask Daoris's <c>git-use</c> door (GITAUTH1e): a repository's remote, a workspace's
+    /// The choice <c>GIT_USE</c> makes, shared with Ask Daoris's <c>git-use</c> door: a repository's remote, a workspace's
     /// host or this machine's host pointed at an identity, at the person's own sign-ins or cleared.
     /// </summary>
     internal static async Task UseGitAsync(
@@ -399,7 +399,7 @@ public sealed class ToolsRoutes(DriverContext context)
         GitHolds.LiftAll(home, "pointer");
     }
 
-    // A git go-ahead answered (GITAUTH1f, the git-auth design §6.6): its row's Allow or Refuse in What needs you and on its session's head,
+    // A git go-ahead answered: its row's Allow or Refuse in What needs you and on its session's head,
     // and `daoris git answer` through the window. A door that waits takes the answer; for one that has gone an Allow is kept as a grant for
     // the identical retry. `{ ask, answer, waiting }`, waiting whether the door was still there. The row goes as the slice hears the file.
     [DriverRoute("GIT_ANSWER", PipeClass.Person, Drain = PipeDrain.Passes)]
@@ -426,7 +426,7 @@ public sealed class ToolsRoutes(DriverContext context)
 
     private static object GitShown(GitIdentity identity) => new { Identity = identity.Id, identity.Label };
 
-    // What a switch of git changes, said before it applies (§4.1): the checkout keys the git that runs now and the git
+    // What a switch of git changes, said before it applies: the checkout keys the git that runs now and the git
     // the switch would run read differently, from each one's own `config --system --list`. Asked of both programs, so
     // a target that cannot run is refused before anything is asked.
     [DriverRoute("TOOLS_GIT", PipeClass.Person, Drain = PipeDrain.Passes)]
@@ -497,7 +497,7 @@ public sealed class ToolsRoutes(DriverContext context)
         };
     }
 
-    // *Browse…* (§4.1): the system's file picker, which the application hands in. Null is the person cancelling.
+    // *Browse…*: the system's file picker, which the application hands in. Null is the person cancelling.
     [DriverRoute("TOOLS_PICK", PipeClass.Window)]
     [Owner("TOOLS_PICK", None = OwnerNone.NamesNothing)]
     private object? ToolsPick(ToolsPickRead press) =>
@@ -506,7 +506,7 @@ public sealed class ToolsRoutes(DriverContext context)
             : new { Can = true, File = _pickFile(press.Title, press.Window) };
 
     /// <summary>
-    /// A download or a use, started through the driver's actions (§3.6) and answered once it has started; a version
+    /// A download or a use, started through the driver's actions and answered once it has started; a version
     /// already here switches in the answer itself. A plan's refusal is a code the page translates.
     /// </summary>
     private object StartTool(ToolDeclaration declared, string action, string? version)
@@ -573,7 +573,7 @@ public sealed class ToolsRoutes(DriverContext context)
         end.Nothing,
     };
 
-    /// <summary>A tool's way changed, in the machine log (§3.6): the tool and the way, never a path the person named.</summary>
+    /// <summary>A tool's way changed, in the machine log: the tool and the way, never a path the person named.</summary>
     private void Used(string tool, string way, string? version) =>
         _loop.Log?.Info("tool.used", ("tool", tool), ("way", way), ("version", version));
 
@@ -644,7 +644,7 @@ public sealed class ToolsRoutes(DriverContext context)
         }
     }
 
-    /// <summary>One list as the screen shows it (§3.3): what vouches for it, when it was fetched, what it names here.</summary>
+    /// <summary>One list as the screen shows it: what vouches for it, when it is fetched, what it names here.</summary>
     private static object ListRow(ResourceList list, string? platform)
     {
         var builtIn = list.Origin == ToolResources.BuiltIn;

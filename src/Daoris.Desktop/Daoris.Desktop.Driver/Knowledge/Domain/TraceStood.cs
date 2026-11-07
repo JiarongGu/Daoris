@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What stood when a driven session on a quest started, by the moments the stores keep (D143 point 3).</summary>
+/// <summary>What stood when a driven session on a quest started, by the moments the stores keep.</summary>
 public sealed record TraceStood
 {
     /// <summary><see cref="TraceStoodGaps.NoMoment"/> where its record says no moment it opened.</summary>
@@ -15,7 +15,7 @@ public sealed record TraceStood
     public TraceWordsBefore? Words { get; init; }
 }
 
-/// <summary>A repository's standing answer at a start: one of <see cref="TraceStandings"/>, when it was set, and its words.</summary>
+/// <summary>A repository's standing answer at a start: one of <see cref="TraceStandings"/>, when it is set, and its words.</summary>
 public sealed record TraceStanding(string Repository, string State)
 {
     /// <summary>Its store: <see cref="TraceStores.Config"/>.</summary>

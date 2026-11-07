@@ -4,13 +4,13 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a trace prints (TRACE1, D143): the ask, its quests and their sessions, each section naming the store it was read
+/// What a trace prints: the ask, its quests and their sessions, each section naming the store it is read
 /// from, and every link nothing keeps said missing where it would have been. The driver's own sentences, in English, as the
 /// headless host's every line is.
 /// </summary>
 /// <remarks>
-/// <para><b>It words the chain, and reads nothing itself</b> (TRACE1b): <see cref="TraceChains"/> reads every store and
-/// compares every moment, and the screen words the same chain from its codes (D50). What a failed read said is the
+/// <para><b>It words the chain, and reads nothing itself</b>: <see cref="TraceChains"/> reads every store and
+/// compares every moment, and the screen words the same chain from its codes. What a failed read said is the
 /// terminal's alone, since it may name a file under the home.</para>
 ///
 /// <para><b>Facts, and moments compared.</b> What stood when a session started is read by comparing the moments each store
@@ -18,9 +18,9 @@ namespace Daoris.Driver;
 /// stood before is not kept, since <c>driver.json</c> keeps the latest; a go-ahead answered after says the same, since an
 /// answer replaces the one before.</para>
 ///
-/// <para><b>An instruction by its event and size, never its words</b>: what a session was handed is transcript-class and stays
-/// in its record (D76, D47 §4), where the session's page shows it. Its sections are read from the account kept beside it
-/// (CONTEXT1): sizes, sources and what each bound left out, in the driver's words.</para>
+/// <para><b>An instruction by its event and size, never its words</b>: what a session is handed is transcript-class and stays
+/// in its record, where the session's page shows it. Its sections are read from the account kept beside it:
+/// sizes, sources and what each bound left out, in the driver's words.</para>
 /// </remarks>
 internal static class TraceWords
 {
@@ -35,7 +35,7 @@ internal static class TraceWords
         }),
     ];
 
-    /// <summary>The chain, whole: the heading and how the id was found, then each ask, its quests and their sessions.</summary>
+    /// <summary>The chain, whole: the heading and how the id is found, then each ask, its quests and their sessions.</summary>
     internal static string Say(TraceChain chain)
     {
         var text = new StringBuilder();
@@ -65,7 +65,7 @@ internal static class TraceWords
         _ => $"found as the commit a plugin pushed of branch {by.Branch}, which session {by.Session}'s landing made",
     };
 
-    /// <summary>The ask, from its door: the person's words verbatim with how and when each was given, and its go-aheads.</summary>
+    /// <summary>The ask, from its door: the person's words verbatim with how and when each is given, and its go-aheads.</summary>
     private static void Ask(StringBuilder text, TraceAskLink ask)
     {
         if (ask.Missing == TraceLinkGaps.Unread)
@@ -153,7 +153,7 @@ internal static class TraceWords
         if (quest.PublishedBy is { } by) text.Append($"  published by session {by}\n");
         if (quest.Awaits is { } awaits) text.Append($"  waits on quest #{awaits}, asked of the repository that knows\n");
         if (quest.Held) text.Append(Held(quest));
-        // A commit read alone is the submission's own, read with no evidence (FABRIC-CLOSE1c6).
+        // A commit read alone is the submission's own, read with no evidence.
         if (quest.Evidence is { Items: 0 } alone)
         {
             text.Append($"  its submission's commit, read at `{Short(alone.Commit)}` ")
@@ -202,9 +202,9 @@ internal static class TraceWords
     }
 
     /// <summary>
-    /// Why a held done waits, and its doors (DRIFT1d; EVID1b, D144 §6): a departure waits for the person's yes; evidence nobody
+    /// Why a held done waits, and its doors: a departure waits for the person's yes; evidence nobody
     /// read waits for the session's end or the terminal's check; evidence read and not found waits for a later commit or the
-    /// yes. A host before evidence names no cause, and its one hold was a departure.
+    /// yes. A host before evidence names no cause, and its one hold is a departure.
     /// </summary>
     private static string Held(TraceQuestLink quest) => quest.Hold switch
     {
@@ -214,7 +214,7 @@ internal static class TraceWords
         EvidenceCodes.MissingHold =>
             $"  held: its evidence was not found in the commit read, and waits for you: a later commit that holds it "
             + $"(`daoris quest check {quest.Id} --commit <sha>`), or your yes to the done as it stands (`daoris quest accept {quest.Id}`)\n",
-        // A set-up step's review (REVIEWENV1c, D154 point 9): the person's look lets it go, which a yes to a departure does not.
+        // A set-up step's review: the person's look lets it go, which a yes to a departure does not.
         EvidenceCodes.Unreviewed =>
             $"  held: it waits for your review of what it showed (`daoris quest review {quest.Id} reviewed`, or "
             + $"`daoris quest review {quest.Id} not-yet \"…\"`), or your skip of it (`daoris quest review {quest.Id} skip`); "
@@ -222,7 +222,7 @@ internal static class TraceWords
         _ => $"  held: its done departed from what you required, and waits for your yes (`daoris quest accept {quest.Id}`)\n",
     };
 
-    /// <summary>One evidence item and what was last read of it, as the record's bundle says it; or that it is not read yet.</summary>
+    /// <summary>One evidence item and what is last read of it, as the record's bundle says it; or that it is not read yet.</summary>
     private static string EvidenceItem(TraceEvidenceItem item)
     {
         var named = item.Kind == "gate" ? $"gate `{item.Named}`" : $"`{item.Named}`";
@@ -303,8 +303,8 @@ internal static class TraceWords
     }
 
     /// <summary>
-    /// This machine's record of it (D76): the driver's notes before its instruction, which name the account a start chose and
-    /// why; each instruction it was handed, by its event and size; and each acceptance of its work a landing's press kept.
+    /// This machine's record of it: the driver's notes before its instruction, which name the account a start chose and
+    /// why; each instruction it is handed, by its event and size; and each acceptance of its work a landing's press kept.
     /// </summary>
     private static void Events(StringBuilder text, TraceSessionLink session, TraceEvents events)
     {
@@ -340,9 +340,9 @@ internal static class TraceWords
     }
 
     /// <summary>
-    /// What an instruction was composed of (CONTEXT1, D143 point 1), from the account kept beside it on its event: each section
-    /// in the driver's words with what its bound left out, what was handed beside it, then what could have been handed and was
-    /// not. An instruction from before the account was kept says so (point 3), and nothing is rebuilt from what stands now.
+    /// What an instruction is composed of, from the account kept beside it on its event: each section
+    /// in the driver's words with what its bound left out, what is handed beside it, then what could have been handed and is
+    /// not. An instruction from before the account is kept says so (point 3), and nothing is rebuilt from what stands now.
     /// </summary>
     private static void Sections(StringBuilder text, TraceInstruction instruction)
     {
@@ -372,7 +372,7 @@ internal static class TraceWords
         : $"event {instruction.Seq}, {Count(instruction.Chars)} characters";
 
     /// <summary>
-    /// The rules it was handed (PERM1, D72), from the file the driver wrote under the home for it, while that file stands: it is
+    /// The rules it is handed, from the file the driver wrote under the home for it, while that file stands: it is
     /// the session's own and goes when its run ends.
     /// </summary>
     private static void Rules(StringBuilder text, TraceSessionLink session, TraceRules rules)
@@ -398,7 +398,7 @@ internal static class TraceWords
     }
 
     /// <summary>
-    /// Where its work landed, from <c>landings.json</c> (WSR5): each branch a landing made of it, standing or gone. A landing
+    /// Where its work landed, from <c>landings.json</c>: each branch a landing made of it, standing or gone. A landing
     /// into the line records no branch, so where none is, the acceptance its record keeps is pointed to, or said absent.
     /// </summary>
     private static void Landing(StringBuilder text, TraceLanding landing)
@@ -433,7 +433,7 @@ internal static class TraceWords
             if (landing.PullRequest is { } pull) said.Append($", pull request {pull}");
         }
 
-        // What its plugin last answered about its pull request, read as kept and never asked (PLUGHOOK1c, D148 point 6).
+        // What its plugin last answered about its pull request, read as kept and never asked.
         said.Append(KnowledgeWorkplace.Current.PullRequestRow(landing.PullRequestState, landing.PullRequestAskFailed));
 
         if (landing.Gone is { } gone)
@@ -442,7 +442,7 @@ internal static class TraceWords
             if (landing.RemovedAs is { } kind) said.Append($", removed as {kind}{(landing.RemovedOn is { } on ? $" on {on}" : "")}");
         }
 
-        // Who accepted it, and the rule it was made under (LAND2b, D145 point 6): kept since then, and said missing before (D143).
+        // Who accepted it, and the rule it is made under: kept since then, and said missing before.
         said.Append(landing.AcceptedBy switch
         {
             AcceptedBy.Auto => "; accepted automatically when its quest was done",
@@ -453,13 +453,13 @@ internal static class TraceWords
         {
             said.Append($"; under the {rule.Source}'s rule, ")
                 .Append(rule.Plugin is { } named ? $"naming plugin {named}" : "naming no plugin")
-                // The record keeps the level on a person's press under the setup too: only the setup's own acceptance is credited to it (ACCESSWORDS1c).
+                // The record keeps the level on a person's press under the setup too: only the setup's own acceptance is credited to it.
                 .Append(landing.AcceptedBy == AcceptedBy.Auto && rule.Access is { } access ?$", accepted by the access setup ({access})"
                     : rule.AutoAccept ? ", accepting automatically" : ", accepting at a press");
         }
 
-        // The review that let it go (REVIEWENV1c, design §3.5): the person's reviewed, with its environment and set-up's commit, or
-        // their skip. Nothing for a landing no review was asked of, and for one recorded before.
+        // The review that let it go: the person's reviewed, with its environment and set-up's commit, or
+        // their skip. Nothing for a landing no review is asked of, and for one recorded before.
         said.Append(landing.Review switch
         {
             { Said: ReviewVerdicts.Reviewed } review =>
@@ -473,15 +473,15 @@ internal static class TraceWords
             _ => "",
         });
 
-        // The second opinion that let it go (XAGENT1f, design §8.6), before the review it came before: who read it and how it was
-        // settled, or the person's answer, or why it landed with none. Nothing where none was asked.
+        // The second opinion that let it go, before the review it came before: who read it and how it is
+        // settled, or the person's answer, or why it landed with none. Nothing where none is asked.
         said.Append(OpinionSaid(landing.Opinion));
 
-        // The named workflow that decided (WORKFLOW1f, the workflow design §5.5): its version and the level that chose it. Nothing
+        // The named workflow that decided: its version and the level that chose it. Nothing
         // under Current, whose rules the line above names.
         said.Append(WorkflowSaid(landing.Workflow));
 
-        // A landing carries several sessions' work (FLOWCHART1c): the session it was made for, each done that moved it on with its
+        // A landing carries several sessions' work: the session it is made for, each done that moved it on with its
         // session and who accepted it, and the units whose work it carries, so a session that only moved it on reads it whole.
         if (landing.Session is { } made) said.Append($"; made for session {made}");
         foreach (var advance in landing.Advances)
@@ -500,7 +500,7 @@ internal static class TraceWords
         return said.ToString();
     }
 
-    /// <summary>A landing's named workflow as the trace says it, with the level of §4.1 that chose it; empty under Current and from before.</summary>
+    /// <summary>A landing's named workflow as the trace says it, with the level that chose it; empty under Current and from before.</summary>
     internal static string WorkflowSaid(LandingWorkflow? workflow) => workflow is null
         ? ""
         : $"; as workflow `{workflow.Workflow}` v{workflow.Version} says, " + (workflow.Level switch
@@ -514,7 +514,7 @@ internal static class TraceWords
             var level => $"chosen at `{level}`",
         });
 
-    /// <summary>A landing's second opinion as the trace says it; empty where none was kept.</summary>
+    /// <summary>A landing's second opinion as the trace says it; empty where none is kept.</summary>
     internal static string OpinionSaid(LandingOpinion? opinion)
     {
         if (opinion is null) return "";
@@ -609,7 +609,7 @@ internal static class TraceWords
         return said + (agent.Account is { } account ? $" · account {account}" : " · account none named: the tool's own sign-in");
     }
 
-    /// <summary>How a word was given (DRIFT1a's kinds), and to which session on which quest.</summary>
+    /// <summary>How a word is given, and to which session on which quest.</summary>
     private static string Given(AskWordView word)
     {
         var on = word.Quest is { Length: > 0 } quest ? $", on quest #{quest}" : "";
@@ -620,11 +620,11 @@ internal static class TraceWords
             AskWordView.Answered => $"answered session {to}{on}",
             AskWordView.Added => $"added while session {to} ran{on}",
             AskWordView.Reopened => $"said to session {to} after it ended{on}",
-            // A review's verdict (REVIEWENV1c): said to no session, and worded as the verdict it came with.
+            // A review's verdict: said to no session, and worded as the verdict it came with.
             AskWordView.Reviewed => $"reviewed what a set-up step showed{on}",
             AskWordView.NotYet => $"said not yet to what a set-up step showed{on}",
             AskWordView.Skipped => $"skipped the review of the work{on}",
-            // Their message on the ask's channel (SESSONE2b): said to no session, to whichever of the ask's repositories.
+            // Their message on the ask's channel: said to no session, to whichever of the ask's repositories.
             AskWordView.Channel => "wrote on the ask's channel",
             var kind => $"{kind}, to session {to}{on}",
         };

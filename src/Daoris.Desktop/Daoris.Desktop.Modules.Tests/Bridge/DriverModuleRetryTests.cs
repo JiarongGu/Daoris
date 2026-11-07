@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// *Try again* over the bridge (`RETRY_QUEST`, RETRY1 as SESSUX1b extends it, D126 §3.4): one act that does whichever applies
+/// *Try again* over the bridge (`RETRY_QUEST`): one act that does whichever applies
 /// to the quest the loop's last look considered, and says which. A quest parked on its failed sessions is marked at its
-/// failures as the records count them (RETRY1b), as `daoris quest retry` marks it; a quest the person's stop holds is
+/// failures as the records count them, as `daoris quest retry` marks it; a quest the person's stop holds is
 /// released from the session that look named, with no mark, since a stop is not a strike; any other is refused, and nothing
 /// is written.
 /// </summary>
@@ -23,7 +23,7 @@ public sealed class DriverModuleRetryTests : DriverModuleBridge
         return new DriverModule(Bus, loop);
     }
 
-    /// <summary>On a first park its failures are the limit, so the mark is what RETRY1 always wrote.</summary>
+    /// <summary>On a first park its failures are the limit, so the mark is what `daoris quest retry` writes.</summary>
     [Fact]
     public async Task A_parked_quest_is_marked_at_its_failures_and_the_answer_says_so()
     {
@@ -35,13 +35,13 @@ public sealed class DriverModuleRetryTests : DriverModuleBridge
         Assert.Null(DriverConfig.Load(DriverConfigPath).ReleasedFor("q1"));
         Assert.Equal("marked", answer.GetProperty("retried").GetProperty("did").GetString());
         Assert.Equal("q1", answer.GetProperty("retried").GetProperty("quest").GetString());
-        // Still the driver's state, which the page's toast reads the strikes from (RETRY1).
+        // Still the driver's state, which the page's toast reads the strikes from.
         Assert.Equal(3, answer.GetProperty("strikes").GetInt32());
         Assert.Equal(3, answer.GetProperty("forgiven").GetProperty("q1").GetInt32());
     }
 
     /// <summary>
-    /// RETRY1b: a quest retried once and parked again is marked at its failures as the records count them, so the planner
+    /// A quest retried once and parked again is marked at its failures as the records count them, so the planner
     /// starts it. Marked at the limit, as the route did, six failures less a mark of three still parked it (the install,
     /// 2026-10-04). The look is the real planner's, over records holding six failures.
     /// </summary>
@@ -97,7 +97,7 @@ public sealed class DriverModuleRetryTests : DriverModuleBridge
 
     /// <summary>
     /// Anything the look did not park or hold is refused in the catalogue's words, naming the quest: forgiving a quest that is
-    /// not parked lets it run past its strikes (D110), and a quest the look never saw has nothing to start again.
+    /// not parked lets it run past its strikes, and a quest the look never saw has nothing to start again.
     /// </summary>
     [Theory]
     [InlineData(StartVerdict.Start)]
@@ -115,7 +115,7 @@ public sealed class DriverModuleRetryTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// PAUSE1b (D132 §6.1): a pause is the reason before a stop and the strikes, so *Try again* on a paused quest is refused
+    /// A pause is the reason before a stop and the strikes, so *Try again* on a paused quest is refused
     /// naming the pause, Resume being the one press that moves it, and nothing is written. A quest's own pause says so by
     /// the catalogue's context.
     /// </summary>
@@ -159,7 +159,7 @@ public sealed class DriverModuleRetryTests : DriverModuleBridge
         return reader is null ? [] : reader.Query("SELECT role FROM role_moves WHERE line = $line AND kind = 'approved' ORDER BY id", row => row.GetString(0), ("$line", quest));
     }
 
-    /// <summary>REVIEW2 T2: the yes to a role policy's ask is written by this route, one approval for the quest and the role that took it.</summary>
+    /// <summary>The yes to a role policy's ask is written by this route, one approval for the quest and the role that took it.</summary>
     [Fact]
     public async Task A_quest_a_policy_holds_is_approved_once_for_its_role_and_the_next_look_may_move_it_once()
     {

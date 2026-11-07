@@ -17,7 +17,7 @@ internal static class HarnessSettingsFile
 
     /// <summary>
     /// A missing file is a machine that named no profiles — not an error. Neither is an unreadable
-    /// one: this is wiring, and absent wiring is the documented default (D21), so a hand-mangled file
+    /// one: this is wiring, and absent wiring is the documented default, so a hand-mangled file
     /// must never be what stops a driver coming up.
     /// </summary>
     public static HarnessSettings Load(string path)
@@ -91,7 +91,7 @@ internal static class HarnessSettingsFile
     {
         writer.WriteStartObject();
 
-        // What this build has no field for goes first, as the CLI's writer puts its `rest` first (TOOL4e).
+        // What this build has no field for goes first, as the CLI's writer puts its `rest` first.
         foreach (var (name, value) in settings.Kept)
         {
             writer.WritePropertyName(name);
@@ -110,7 +110,7 @@ internal static class HarnessSettingsFile
 
         // 🔴 The pins go out too, or this write DELETES what `daoris agent pin` put there.
         // Both artefacts write this one file, and a save that knew only about profiles would
-        // compile, pass every profile test, and silently lose somebody's toolchain (TOOL2).
+        // compile, pass every profile test, and silently lose somebody's toolchain.
         writer.WriteStartObject("versions");
         foreach (var (harness, version) in settings.Versions.OrderBy(e => e.Key, StringComparer.Ordinal))
         {
@@ -120,8 +120,8 @@ internal static class HarnessSettingsFile
         writer.WriteEndObject();
         WriteCircles(writer, "workspaceVersions", settings.WorkspaceVersions);
 
-        // 🔴 The orders go out too (TOOL4e), or a screen edit DELETES what `daoris agent account order` wrote, the
-        // way a save that knew only profiles once would have deleted the pins. Written only when set: absent is no
+        // 🔴 The orders go out too, or a screen edit DELETES what `daoris agent account order` wrote, the
+        // way a save that knew only profiles would delete the pins. Written only when set: absent is no
         // rotation, and a file that never chose an order should not start carrying an empty one.
         if (settings.Rotation.Any(order => order.Value.Count > 0))
         {
@@ -130,7 +130,7 @@ internal static class HarnessSettingsFile
             writer.WriteEndObject();
         }
 
-        // TOOL6a: how each list is used goes out beside it, for the same reason the orders do.
+        // How each list is used goes out beside it, for the same reason the orders do.
         WriteUses(writer, "rotationUse", settings.Uses, asRead);
 
         if (settings.WorkspaceRotation.Any(circle => circle.Value.Any(order => order.Value.Count > 0)))
@@ -194,7 +194,7 @@ internal static class HarnessSettingsFile
     }
 
     /// <summary>
-    /// One agent → order map (TOOL4e): each list's names trimmed, a blank or a name that is not text skipped, a name
+    /// One agent → order map: each list's names trimmed, a blank or a name that is not text skipped, a name
     /// written twice in any case read once where first written; a list that is not one, or names nobody, is none.
     /// </summary>
     private static IReadOnlyDictionary<string, IReadOnlyList<string>> ReadOrders(JsonElement parent, string? property)
@@ -343,7 +343,7 @@ internal static class HarnessSettingsFile
 
     /// <summary>
     /// Each agent's entry as written (<see cref="UseEntry.Written"/>), or as the file held it where <paramref name="asRead"/> says, its old
-    /// and retired names included (KEEPALL1b): in order of name, one written as nothing left out.
+    /// and retired names included: in order of name, one written as nothing left out.
     /// </summary>
     private static List<(string Agent, UseEntry Entry)> Written(IReadOnlyDictionary<string, UseEntry> uses, bool asRead) =>
         [.. uses.OrderBy(e => e.Key, StringComparer.Ordinal)

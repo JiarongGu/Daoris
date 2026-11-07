@@ -14,8 +14,8 @@ namespace Daoris.Desktop.Modules.Tests;
 public sealed class DriverModuleSessionsTests : DriverModuleBridge
 {
     /// <summary>
-    /// RAIL1: what a person first said in each session, and a search of what sessions said, answered from
-    /// this machine's own record — no service is asked, because none holds it (D47 §4), so both answer on
+    /// What a person first said in each session, and a search of what sessions said, answered from
+    /// this machine's own record — no service is asked, because none holds it, so both answer on
     /// a cold start too.
     /// </summary>
     [Fact]
@@ -43,7 +43,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SESSCTX1d (the session-context design §7): what each part spent, from this machine's own record, for the *Parts* strip's
+    /// What each part spent, from this machine's own record, for the *Parts* strip's
     /// rows: its turns, those that said what they consumed, the counts summed, a count none said null; an id with no turn left out.
     /// </summary>
     [Fact]
@@ -67,7 +67,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.False(spent.TryGetProperty("none1", out _));
     }
 
-    /// <summary>RAILPAGE1a: the rail's search takes <c>offset</c> and <c>limit</c> in sessions and answers the total and the next.</summary>
+    /// <summary>The rail's search takes <c>offset</c> and <c>limit</c> in sessions and answers the total and the next.</summary>
     [Fact]
     public async Task A_search_is_read_a_page_of_sessions_at_a_time()
     {
@@ -89,9 +89,8 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// LOOK2b: the rail said *in s-2394e5d9* of a session whose landing had tidied that tree away and whose branch was
-    /// gone. Where each session's work is now is answered for the whole rail in one ask, from this machine's own files:
-    /// whether the tree it opened is still here, and its landing, standing or a trace (D113). No service is asked and no
+    /// Where each session's work is now is answered for the whole rail in one ask, from this machine's own files:
+    /// whether the tree it opened is still here, and its landing, standing or a trace. No service is asked and no
     /// git is run, so it answers on a cold start, and a folder Daoris did not open is never looked at.
     /// </summary>
     [Fact]
@@ -133,7 +132,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.Equal("standing", rows["landed1"].GetProperty("landed").GetProperty("state").GetString());
         // Its tree tidied and its branch gone since: a trace.
         Assert.Equal("gone", rows["gone1"].GetProperty("landed").GetProperty("state").GetString());
-        // A tree still here after its branch went: the session carried on in it, as its review reads (D113 §1).
+        // A tree still here after its branch went: the session carried on in it, as its review reads.
         Assert.False(rows["carried1"].GetProperty("treeGone").GetBoolean());
         Assert.Equal("gone", rows["carried1"].GetProperty("landed").GetProperty("state").GetString());
         // No landing: its tree, still here.
@@ -157,12 +156,12 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.False(state.GetProperty("stopped").GetBoolean());
         // Nor an orphan: with no service up there is no record to have ended.
         Assert.False(state.GetProperty("orphan").GetBoolean());
-        // Nor run by another process here: nothing marked it (REV3 chat F8).
+        // Nor run by another process here: nothing marked it.
         Assert.False(state.GetProperty("elsewhere").GetBoolean());
     }
 
     /// <summary>
-    /// The person's three moves on a parked session (design §4) — and the fourth the ledger allows
+    /// The person's three moves on a parked session — and the fourth the ledger allows
     /// is NOT one of them. Narrowed on this side because it is a surface rule: `awaiting-person` →
     /// `working` is the driver's observation of a session that carried on, which a person causes by
     /// answering it, not by pressing anything.
@@ -210,7 +209,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// LANG1a (D142 point 2): a resolution carries the note's parts beside it, as the driver's own moves do. The person's
+    /// A resolution carries the note's parts beside it, as the driver's own moves do. The person's
     /// words are a part of their own, never a code, and a move with no words is the checkpoint's line by its code.
     /// </summary>
     [Theory]
@@ -259,7 +258,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SESSUX1a: where each session is listed reads the service's records and quests, so before the driver's service is up
+    /// Where each session is listed reads the service's records and quests, so before the driver's service is up
     /// it is the cold-start sentence, and so is an archive, which is judged by the same reading.
     /// </summary>
     [Fact]
@@ -272,7 +271,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SESSUX1a (D126 §2.4): each session's group and the word its row shows, from the records, the quests and the
+    /// Each session's group and the word its row shows, from the records, the quests and the
     /// planner's verdict, which with no look yet is a plan over a fresh snapshot: a quest its three failed sessions park
     /// shows its last session parked, waiting on you. Nothing machine-local comes back.
     /// </summary>
@@ -307,7 +306,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SESSONE1b (D167, the design §1.6): the answer carries <c>entries</c> beside the rows the page reads until SESSONE1c: each
+    /// The answer carries <c>entries</c> beside the rows the page reads: each
     /// session's line of work, its group, its leading part and its parts with how each began, in the terminal's fields.
     /// </summary>
     [Fact]
@@ -348,12 +347,12 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         // The loop parked q4 and said nothing of q1, whatever a fresh plan would say of either.
         Assert.Equal("parked", rows["done1"].GetProperty("shown").GetString());
         Assert.Equal("ended", rows["failed3"].GetProperty("group").GetString());
-        // SESSUX1b: whether a row's stop holds its quest rides each row; no stop holds one here.
+        // Whether a row's stop holds its quest rides each row; no stop holds one here.
         Assert.False(rows["failed3"].GetProperty("holdsQuest").GetBoolean());
     }
 
     /// <summary>
-    /// MSG1f2 (D137 §3.2): an ended record the person's words wait on, whose start the loop's last look held on a cooling
+    /// An ended record the person's words wait on, whose start the loop's last look held on a cooling
     /// account, resumes later, and its row carries what holds the words with the cool-off's reset, read from the waits that
     /// look kept beside its verdicts.
     /// </summary>
@@ -375,15 +374,15 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         var holds = row.GetProperty("holds");
         Assert.Equal(WordsHold.Cooling, holds.GetProperty("why").GetString());
         Assert.Equal(until, holds.GetProperty("until").GetDateTimeOffset());
-        // LIMITSWITCH1: the account that resets first, by its id and the name the person gave it, which the page says the wait on.
+        // The account that resets first, by its id and the name the person gave it, which the page says the wait on.
         Assert.Equal(("work", "Work"), (holds.GetProperty("account").GetString(), holds.GetProperty("accountName").GetString()));
         Assert.Equal("its account is cooling until 12:00.", holds.GetProperty("reason").GetString());
     }
 
     /// <summary>
-    /// LIMITSWITCH3 (D137's note of 2026-10-26): a closed quest's record holding Daoris's own rebase word, held by the loop's look for the
+    /// A closed quest's record holding Daoris's own rebase word, held by the loop's look for the
     /// earliest reset of any account, resumes later and says that wait on the wire as it does the person's words': the account that resets
-    /// first, by its id and name, and its time, which the page's row, head and Attention say in D206 §3.7's words.
+    /// first, by its id and name, and its time, which the page's row, head and Attention say in the same words.
     /// </summary>
     [Fact]
     public async Task Daoris_s_rebase_word_a_limit_holds_resumes_later_saying_the_earliest_reset_of_any_account()
@@ -409,9 +408,9 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SESSUX1a (D126 §5.2): an ended session is archived on this machine, its mark in the home's
+    /// An ended session is archived on this machine, its mark in the home's
     /// <c>sessions/archived.json</c>, and listed as archived; unarchived, it is back in its group, and one that was not
-    /// archived is said, never refused (D48 §6).
+    /// archived is said, never refused.
     /// </summary>
     [Fact]
     public async Task An_ended_session_is_archived_and_unarchived_and_the_marks_come_back_as_they_stand()
@@ -460,7 +459,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// RPC1c: asked with <c>said: true</c>, as <c>sessions archive</c> and <c>unarchive</c> ask it over the pipe, the archive answers
+    /// Asked with <c>said: true</c>, as <c>sessions archive</c> and <c>unarchive</c> ask it over the pipe, the archive answers
     /// the terminal's words beside its fields, the alone path's own (<see cref="SessionArchive.ArchiveSaid"/>), and one session kept
     /// is said with its exit code rather than thrown, so the terminal prints what it prints alone.
     /// </summary>
@@ -494,7 +493,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// RPC1c end to end: <c>daoris session archive</c> sent over the real pipe to the running Daoris, shown to the window,
+    /// End to end: <c>daoris session archive</c> sent over the real pipe to the running Daoris, shown to the window,
     /// archived once on the person's Confirm through the window's own route, and said by the terminal in the alone path's words.
     /// </summary>
     [Fact]
@@ -512,7 +511,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         services.AddSingleton<IIpcModule>(module);
         services.UseMessageDispatcher((_, dispatcher) => dispatcher.Use(RefusalLog.Middleware(log)));
         using var provider = services.BuildServiceProvider();
-        // CONFIRMWAIT1a-i: the grounds read from the loop's readers' stand-in, the world unmoved between the ask and the Confirm.
+        // The grounds read from the loop's readers' stand-in, the world unmoved between the ask and the Confirm.
         using var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home, log) { Grounds = new StubGrounds() };
         loop.Pipe = pipe;
         var name = pipe.Serve()!;
@@ -520,7 +519,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         var error = new StringWriter();
         var world = new SessionsWorld(new ServiceClient(ledger.Address, null), Home, DriverConfig.Load(DriverConfigPath), false, null)
         {
-            // The pipe the dev loop names, as a rehearsal names it (the terminal RPC design §7.4): a workspace build reads no address file.
+            // The pipe the dev loop names, as a rehearsal names it: a workspace build reads no address file.
             Instance = new InstanceWorld
             {
                 Home = Home, Environment = variable => variable == InstanceDoor.Variable ? name : null, Out = output, Error = error, Verb = "sessions",
@@ -541,7 +540,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
 
         Assert.Equal(0, await verb.WaitAsync(Poll.Patience));
         Assert.Equal("sessions: archived done1." + Environment.NewLine, output.ToString());
-        // CONFIRMWAIT1b (the confirm-wait design §4.1): the request's id and the two verbs that read and take it back, said at once.
+        // The request's id and the two verbs that read and take it back, said at once.
         Assert.Matches(
             @"\Asessions: waiting for you to confirm this in Daoris's window \(request (?<id>[0-9a-f-]{36})\); `daoris press result \k<id>` "
             + @"says how it ended, and `daoris press withdraw \k<id>` takes it back…\r?\n\z",
@@ -551,7 +550,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// RPC1d end to end: <c>daoris session stop</c> and <c>delete</c> sent over the real pipe wait on the window, run once on the
+    /// End to end: <c>daoris session stop</c> and <c>delete</c> sent over the real pipe wait on the window, run once on the
     /// person's Confirm through the route asked for its words, and are said by the terminal in the alone path's.
     /// </summary>
     [Fact]
@@ -569,7 +568,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         services.AddSingleton<IIpcModule>(module);
         services.UseMessageDispatcher((_, dispatcher) => dispatcher.Use(RefusalLog.Middleware(log)));
         using var provider = services.BuildServiceProvider();
-        // CONFIRMWAIT1a-i: the grounds read from the loop's readers' stand-in, the world unmoved between the ask and the Confirm.
+        // The grounds read from the loop's readers' stand-in, the world unmoved between the ask and the Confirm.
         using var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home, log) { Grounds = new StubGrounds() };
         loop.Pipe = pipe;
         var name = pipe.Serve()!;
@@ -635,7 +634,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SESSUX1d (D126 §3.5): *Open folder* opens the folder a session worked in, its own tree or its repository's checkout,
+    /// *Open folder* opens the folder a session worked in, its own tree or its repository's checkout,
     /// through the window kit's launcher, as the log's folder opens. The module names the folder from the session's record,
     /// never the page, and nothing machine-local comes back. A tree a tidy took is refused in the catalogue's words, so is
     /// a folder this home did not open and that is no checkout, a teammate's record, and an id no record has.
@@ -690,7 +689,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SESSUX1f (D126 §5.4): a conversation that served no quest is listed deletable, and its delete removes its record
+    /// A conversation that served no quest is listed deletable, and its delete removes its record
     /// through the ledger and what this machine kept of it, its words included; the answer says what went and names no
     /// path. A row the ledger keeps is not deletable.
     /// </summary>
@@ -720,8 +719,8 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SESSDEL1 (D126 §5.4): a file the disk will not let go of stays, and the answer names it beside what went, by name and never
-    /// by path. A real file held open without delete sharing, so Windows only, as HIST1j's route test holds one.
+    /// A file the disk will not let go of stays, and the answer names it beside what went, by name and never
+    /// by path. A real file held open without delete sharing, so Windows only.
     /// </summary>
     [Fact]
     public async Task A_delete_whose_file_the_disk_keeps_answers_which_stayed()
@@ -806,9 +805,9 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 PUSH1c1 (D182 points 1 and 4): the list's trees are the machine's facts', each judged by its repository's part, so a window's
-    /// tick asking the groups, and a second window's, starts no git where each walked every ended session's tree before; its rows are
-    /// the ones it answered then.
+    /// 🔴 The list's trees are the machine's facts', each judged by its repository's part, so a window's
+    /// tick asking the groups, and a second window's, starts no git; its rows are
+    /// the facts' as last judged.
     /// </summary>
     [Fact]
     public async Task The_groups_take_each_trees_judgement_from_the_facts_and_no_window_starts_git()
@@ -844,7 +843,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SESSUX1g (D126 §7.1): <c>daoris session list --json</c> prints this route's answer, field for field, so the screen
+    /// <c>daoris session list --json</c> prints this route's answer, field for field, so the screen
     /// and the terminal cannot disagree about a session's place.
     /// </summary>
     [Fact]
@@ -859,7 +858,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// WAITSAY1b (D152's UX7c amendment): a working session's row carries the call its agent is inside, its title and when it
+    /// A working session's row carries the call its agent is inside, its title and when it
     /// began, as the loop heard it from the events its sessions write, a call begun before any window asked among them; and null
     /// once the call ends. Held in memory: the record keeps the events and nothing more.
     /// </summary>
@@ -887,7 +886,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// AUTONOMY1b3b: a working session whose tool request is held for the person says its call waits, timed from the hold, until the
+    /// A working session whose tool request is held for the person says its call waits, timed from the hold, until the
     /// person answers it; a call that runs says it does not wait.
     /// </summary>
     [Fact]
@@ -916,7 +915,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// LAND4: a row carries what its session's own tree offers to land, whatever group it rests in, as the reader said it: the
+    /// A row carries what its session's own tree offers to land, whatever group it rests in, as the reader said it: the
     /// branch, the tree's name (never its path), the commits and the uncommitted paths; and null where it offers none. The page
     /// offers Accept beside it, and <c>sessions --json</c> prints the same field.
     /// </summary>
@@ -937,7 +936,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SQUASHTIDY1b: a row whose tree's commits the line holds by content carries its discard, not its landing: the branch, the
+    /// A row whose tree's commits the line holds by content carries its discard, not its landing: the branch, the
     /// tree's name, the sentence the page shows where <i>Accept…</i> would be, the ref an unforced discard keeps its commits at
     /// and the ask's sentence naming it; and null where it offers none. <c>sessions --json</c> prints the same field.
     /// </summary>
@@ -964,7 +963,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// TREEFOLLOWWEB2 (D164's TREEFOLLOW1 note): a row's <c>work</c> names the branch a moved tree is on, so the head names it once
+    /// A row's <c>work</c> names the branch a moved tree is on, so the head names it once
     /// the tree offers nothing and the clean-up's <c>daoris/</c> branch is gone; null where the tree is on its session branch.
     /// </summary>
     [Fact]
@@ -980,7 +979,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.Equal(JsonValueKind.Null, own.GetProperty("work").GetProperty("branch").ValueKind);
     }
 
-    /// <summary>SESSUX1g (D126 §7.4): an archive from the screen is counted in the machine log as the screen's, with no session named.</summary>
+    /// <summary>An archive from the screen is counted in the machine log as the screen's, with no session named.</summary>
     [Fact]
     public async Task An_archive_from_the_screen_is_counted_in_the_log_as_the_screens()
     {
@@ -1001,7 +1000,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SESSUX1g (D126 §7.1): every loop on the home watches the requests, the desktop's as the headless host's does, with the
+    /// Every loop on the home watches the requests, the desktop's as the headless host's does, with the
     /// registry its conversations and driven sessions share and the service it comes up with.
     /// </summary>
     [Fact]
@@ -1059,7 +1058,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// MSG1g (D137 §2.2), ONEWAY1j: *Go on in a new session* over the bridge, <c>SESSION_HAND_OVER</c> naming no agent. Words a resume
+    /// *Go on in a new session* over the bridge, <c>SESSION_HAND_OVER</c> naming no agent. Words a resume
     /// holds while the account their session ran on cools are chosen to go on in a new session, the choice kept for the loop's next
     /// look; what cannot is <c>kept: false</c> with its code and the driver's sentence. Before the service answers, the cold-start
     /// sentence.
@@ -1096,7 +1095,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>The loop with its service up over a ledger on this machine, and `engine` drivable, so its strikes can park a quest.</summary>
-    /// <summary>The lines and the exit code a route answered as <c>said</c> (RPC1d), which the terminal prints.</summary>
+    /// <summary>The lines and the exit code a route answered as <c>said</c>, which the terminal prints.</summary>
     private static (string[] Out, int Code) SaidOf(JsonElement answer)
     {
         var said = answer.GetProperty("said");
@@ -1104,7 +1103,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// RPC1d: asked for its words (<c>said: true</c>) by <c>sessions stop</c>, <c>finish</c>, <c>decline</c>, <c>say</c> and <c>delete</c>
+    /// Asked for its words (<c>said: true</c>) by <c>sessions stop</c>, <c>finish</c>, <c>decline</c>, <c>say</c> and <c>delete</c>
     /// sent over the pipe, each route answers the lines and exit code the alone path prints, as an answer and never a refusal.
     /// </summary>
     [Fact]
@@ -1134,7 +1133,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.Empty(loop.Events.Openings(["chat1"]));
     }
 
-    /// <summary>RPC1d: a finish or a decline asked of the route still needs what the page's press needs, refused as it refuses it.</summary>
+    /// <summary>A finish or a decline asked of the route still needs what the page's press needs, refused as it refuses it.</summary>
     [Fact]
     public async Task A_decline_with_no_reason_is_refused_whatever_words_are_asked_for()
     {
@@ -1143,7 +1142,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// RPC1d: the helper, take-back, start-from and hand-over presses answer their verbs' lines when asked, and the ask's
+    /// The helper, take-back, start-from and hand-over presses answer their verbs' lines when asked, and the ask's
     /// approve and decline need no session named, as the verb names only the ask.
     /// </summary>
     [Fact]
@@ -1174,7 +1173,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
             Assert.StartsWith("sessions: ", Assert.Single(said.Out));
         }
 
-        // A terminal holds a conversation the window's runner opens (RPC1g3): no verb's words for one, so with none up it is the page's refusal.
+        // A terminal holds a conversation the window's runner opens: no verb's words for one, so with none up it is the page's refusal.
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(module, "SESSION_START_FROM", new { id = "nobody1", said = true }));
         Assert.Equal(2, SaidOf(await AnswerAsync(module, "SESSION_HAND_OVER", new { id = "nobody1", agent = "codex", said = true })).Code);
     }

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The desktop's start, timed stage by stage (STARTFAST1): one <c>start.stages</c> line in the machine log per start, each
+/// The desktop's start, timed stage by stage: one <c>start.stages</c> line in the machine log per start, each
 /// stage in ms from the process's start, so a slow start says where its seconds went rather than an <c>app.started</c> eleven
 /// seconds in with nothing between. A <see cref="Stopwatch"/> and the process's start time, read once: no extra process.
 /// </summary>
@@ -20,13 +20,13 @@ public sealed class StartStages
     /// <summary>The process up to <c>Main</c>: the runtime's own start, read from the process's start time.</summary>
     public const string Main = "main";
 
-    /// <summary>The home established, an install's older layout moved into D172's places (HOMELAYOUT3).</summary>
+    /// <summary>The home established, an install's older layout moved into the home's places.</summary>
     public const string Home = "home";
 
     /// <summary>The driver loop started, as the application starts (<c>app.started</c>).</summary>
     public const string Driver = "driver";
 
-    /// <summary>The terminal's pipe served (RPC1a), once the loop holds the home.</summary>
+    /// <summary>The terminal's pipe served, once the loop holds the home.</summary>
     public const string Pipe = "pipe";
 
     /// <summary>The local service host answering, started or adopted.</summary>
@@ -35,10 +35,10 @@ public sealed class StartStages
     /// <summary>The main window shown.</summary>
     public const string Shown = "shown";
 
-    /// <summary>The page's browser made: the engine ready to load the page (Chromium since D92).</summary>
+    /// <summary>The page's browser made: the engine ready to load the page (Chromium).</summary>
     public const string Browser = "browser";
 
-    /// <summary>The page's word that its first screen has its data (the kit's <c>CLOSE_SPLASH</c>, SPLASHDATA1).</summary>
+    /// <summary>The page's word that its first screen has its data (the kit's <c>CLOSE_SPLASH</c>).</summary>
     public const string Page = "page";
 
     /// <summary>The splash lifted, by the page or by its bound (<see cref="SplashLift"/>).</summary>
@@ -100,8 +100,7 @@ public sealed class StartStages
     private readonly TaskCompletionSource _paged = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     /// <summary>
-    /// The page's word that its first screen has its data, or <paramref name="bound"/> from this call, whichever is first (STARTFAST1b,
-    /// the start-path design §5c): what the work the first screen does not need waits for, so the page's own pulls are not queued
+    /// The page's word that its first screen has its data, or <paramref name="bound"/> from this call, whichever is first: what the work the first screen does not need waits for, so the page's own pulls are not queued
     /// behind it. Never faults; its bound is the window's own, since a page that never says holds nothing past it.
     /// </summary>
     public Task FirstScreenAsync(TimeSpan bound) =>

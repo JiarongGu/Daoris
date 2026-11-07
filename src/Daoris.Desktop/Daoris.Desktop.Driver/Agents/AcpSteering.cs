@@ -15,7 +15,7 @@ internal sealed class AcpSteering(ITurnPromptWiring wiring, AcpPrompting prompti
     /// taken there, told through the listener on the reader's thread before anything after the answer is read, and the calls still open
     /// are marked as cut.
     /// </summary>
-    /// <returns>The adapter's outcome: <c>injected</c>, or <c>promptRequired</c> where no turn was running after all.</returns>
+    /// <returns>The adapter's outcome: <c>injected</c>, or <c>promptRequired</c> where no turn is running after all.</returns>
     /// <exception cref="AcpRefusal">The agent refused the steer, in its words.</exception>
     /// <exception cref="DriverException">The agent never said it steers, or the session is not open: nothing is sent.</exception>
     public async Task<string> SteerAsync(IAgentWord words, CancellationToken ct)
@@ -59,7 +59,7 @@ internal sealed class AcpSteering(ITurnPromptWiring wiring, AcpPrompting prompti
     /// <param name="who">What the English calls the one that refused: a conversation's runner says "conversation".</param>
     /// <returns>The adapter's outcome, or <c>refused</c> or <c>unreached</c>: never a stop reason, and never thrown.</returns>
     /// <param name="handBack">
-    /// Where the steer was answered <c>promptRequired</c> (the turn ended between the press and the steer) the adapter left the words to
+    /// Where the steer is answered <c>promptRequired</c> (the turn ended between the press and the steer) the adapter leaves the words to
     /// the client: this takes them back to be prompted next, and says whether it did. Said once, taken once where they are finally taken,
     /// so nothing is noted when it did.
     /// </param>
@@ -75,7 +75,7 @@ internal sealed class AcpSteering(ITurnPromptWiring wiring, AcpPrompting prompti
         }
         catch (AcpTurnedAway)
         {
-            // The run ended before the steer was written, and its words went back with the run's: nothing more is said here.
+            // The run ended before the steer is written, and its words go back with the run's: nothing more is said here.
             return "unreached";
         }
         catch (AcpRefusal refused)

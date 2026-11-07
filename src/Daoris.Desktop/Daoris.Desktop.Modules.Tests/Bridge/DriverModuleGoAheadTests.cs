@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// KNOWUSE1a2 and GOAHEAD2b (D135 §2, D131, D137): a go-ahead a parked session asked, answered on the session's own page
+/// A go-ahead a parked session asked, answered on the session's own page
 /// (<c>SESSION_GO_AHEAD</c>, <c>ConversationRoutes.cs</c>), goes through the ask's own door with <c>goesOn</c>, so
 /// the park is answered only where none of the go-aheads the session asked is still open: the service's decision, the same
 /// as the ask's page and the terminal's door, read here off the record and never judged again.
@@ -54,8 +54,8 @@ public sealed class DriverModuleGoAheadTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 PARKVIEW1 (the park's ask design §4): where the page answers the park itself, with the answer to the question it also
-    /// asked, its go-ahead goes through the ask's door saying <c>goesOn: false</c> (GOAHEAD2's provision for such a caller): even the
+    /// Where the page answers the park itself, with the answer to the question it also
+    /// asked, its go-ahead goes through the ask's door saying <c>goesOn: false</c>: even the
     /// last one open keeps the park, which waits on the person for that answer, and nothing is nudged.
     /// </summary>
     [Fact]
@@ -109,7 +109,7 @@ public sealed class DriverModuleGoAheadTests : DriverModuleBridge
     /// <summary>
     /// The person's words beside a go-ahead are that go-ahead's, kept on its answer as at the ask's page, and never said to
     /// the park: said there, they would send it on with a go-ahead still open, or join a <i>carry on.</i> that was never
-    /// theirs. The resumed session is handed them quoted as theirs, beneath the park's answer (GOAHEAD2).
+    /// theirs. The resumed session is handed them quoted as theirs, beneath the park's answer.
     /// </summary>
     [Theory]
     [InlineData(true)]
@@ -199,7 +199,7 @@ public sealed class DriverModuleGoAheadTests : DriverModuleBridge
         Assert.Equal(0, loop.Nudges);
     }
 
-    /// <summary>What never goes on is said by its code, as the box's words are (MSG1d), and the go-ahead stays answered.</summary>
+    /// <summary>What never goes on is said by its code, as the box's words are, and the go-ahead stays answered.</summary>
     [Fact]
     public async Task A_park_that_never_goes_on_is_said_by_its_code()
     {
@@ -256,7 +256,7 @@ public sealed class DriverModuleGoAheadTests : DriverModuleBridge
 
     private static string Records(params string[] records) => $"[{string.Join(",", records)}]";
 
-    /// <summary>A record as the service answers it to this machine; <paramref name="said"/> the park's answer, kept as a keyed word (ONEWAY1m).</summary>
+    /// <summary>A record as the service answers it to this machine; <paramref name="said"/> the park's answer, kept as a keyed word.</summary>
     private static string Record(string id, string state, string? said = null, string created = "2026-10-03T08:00:00Z") =>
         $$"""{"id":"{{id}}","repository":"engine","state":"{{state}}","quest":"q1","kind":"driven","created":"{{created}}"{{(said is null ? "" : $$""","said":[{"id":"w1","text":"{{said}}","at":"2026-10-03T08:05:00Z","files":[],"reopens":false}]""")}}}""";
 
@@ -308,7 +308,7 @@ public sealed class DriverModuleGoAheadTests : DriverModuleBridge
         }
 
         /// <summary>
-        /// The go-ahead door as the service answers it (GOAHEAD2): the answer kept, and, unless the caller answers the park
+        /// The go-ahead door as the service answers it: the answer kept, and, unless the caller answers the park
         /// itself, the park's blank answer where this was the last one open, its sentence saying which.
         /// </summary>
         private (HttpStatusCode, string) Decided(string ask, int number, string body)

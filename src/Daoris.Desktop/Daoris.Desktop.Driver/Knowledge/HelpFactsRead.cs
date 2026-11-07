@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What was not read yet when the room was written (PARALLEL1a): the repositories whose line was not judged, and whether the
+/// What is not read yet when the room is written: the repositories whose line is not judged, and whether the
 /// sessions, the history, the work and the waits were not. Said <i>not read yet</i> where each is said, never a guess and never a wait.
 /// </summary>
 public sealed record HelpNotReadYet(IReadOnlyList<string> Repositories)
@@ -13,13 +13,13 @@ public sealed record HelpNotReadYet(IReadOnlyList<string> Repositories)
 
     public bool History { get; init; }
 
-    /// <summary>Whether any part of the work was never judged (FACTSPLIT1a): the work is then read as none, as the whole was.</summary>
+    /// <summary>Whether any part of the work is never judged: the work is then read as none, as the whole is.</summary>
     public bool Work { get; init; }
 
-    /// <summary>Whether what each line waits on was never judged.</summary>
+    /// <summary>Whether what each line waits on is never judged.</summary>
     public bool Waits { get; init; }
 
-    /// <summary>Whether anything was not read yet.</summary>
+    /// <summary>Whether anything is not read yet.</summary>
     public bool Any => Repositories.Count > 0 || Sessions || History || Work || Waits;
 }
 
@@ -33,8 +33,8 @@ public sealed record HelpFactsRead(
 }
 
 /// <summary>
-/// What reads each of the room's facts, handed by the module that holds the service and the loop (PARALLEL1a): each reads afresh
-/// and answers its value, or null where it could not. The work's reads one part (FACTSPLIT1a, <see cref="HelpFacts.ReadWorkAsync"/>).
+/// What reads each of the room's facts, handed by the module that holds the service and the loop: each reads afresh
+/// and answers its value, or null where it could not. The work's reads one part (<see cref="HelpFacts.ReadWorkAsync"/>).
 /// </summary>
 public sealed record HelpFactJudges(
     Func<CancellationToken, Task<HelpMachineWhole?>> Machine,
@@ -46,13 +46,13 @@ public sealed record HelpFactJudges(
     public Func<string, CancellationToken, Task<string?>> Guess { get; init; } = KnowledgeWorkplace.Current.GuessAsync;
 
     /// <summary>
-    /// One part of the sessions' trees (FACTSPLIT1b): the module hands git's judgement of its home's trees
+    /// One part of the sessions' trees: the module hands git's judgement of its home's trees
     /// (<see cref="HelpFacts.ReadTreesAsync"/>); none judged where a test standing in for the look hands none.
     /// </summary>
     public Func<HelpTreesPart, CancellationToken, Task<HelpTrees?>> Trees { get; init; } = (_, _) => Task.FromResult<HelpTrees?>(HelpTrees.None);
 
     /// <summary>
-    /// One part of the clean-up's list (PUSH1c4a): the module hands git's judgement of its home's branches by the kept answers
+    /// One part of the clean-up's list: the module hands git's judgement of its home's branches by the kept answers
     /// (<see cref="HelpFacts.ReadSweepAsync"/>). None kept where a test hands none, so a slice over it stays not judged rather than
     /// say there is nothing to clean up.
     /// </summary>

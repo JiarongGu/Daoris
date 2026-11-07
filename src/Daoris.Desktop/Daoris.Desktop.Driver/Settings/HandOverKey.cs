@@ -3,10 +3,10 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What an agent's ask to hand its session over to another agent does (MIXAGENT1c, D163 point 3; the mixed agents design §5):
+/// What an agent's ask to hand its session over to another agent does:
 /// <c>ask</c> (the default) waits for the person's yes or no, <c>on</c> takes it when the agent's turn ends, to the next agent in
 /// the person's order, <c>off</c> refuses it. Daoris's own offer when an account is near or cut is not this rule's: an agent's ask
-/// is judged by the rule alone (D191's settling of the design).
+/// is judged by the rule alone.
 /// </summary>
 /// <remarks>An object of one field, so a later field is added beside the mode, never in its place.</remarks>
 public sealed record HandOverRule(string Mode)
@@ -16,7 +16,7 @@ public sealed record HandOverRule(string Mode)
 }
 
 /// <summary>
-/// The hand-over rule as <c>driver.json</c> keeps it, <c>handOver</c> and <c>workspaceHandOver</c> (FOUNDATION1 mod-iii): the key's shape,
+/// The hand-over rule as <c>driver.json</c> keeps it, <c>handOver</c> and <c>workspaceHandOver</c>: the key's shape,
 /// read and written by the settings' own parser. What the rule means, its resolution, edit and words, stays with the rule
 /// (<see cref="HandOverRules"/>), which answers through this for what it shares.
 /// </summary>

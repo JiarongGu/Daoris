@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// LINESTOGETHER1d (the review-flow design §4): the page's doors onto an operation bringing sessions together. <c>TOGETHER</c> answers
+/// The page's doors onto an operation bringing sessions together. <c>TOGETHER</c> answers
 /// it for the head and for each member, with no tree on the wire; <c>TOGETHER_LET_GO</c> ends it before the landing, and
 /// <c>TOGETHER_ASK_AGAIN</c> is refused where no check failed. A refusal is data, never thrown.
 /// </summary>

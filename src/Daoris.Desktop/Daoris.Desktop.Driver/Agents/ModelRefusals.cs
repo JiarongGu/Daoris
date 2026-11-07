@@ -1,20 +1,20 @@
 namespace Daoris.Driver;
 
-/// <summary>Where a refused model goes, by door and phase (the agent-lyntai design §5.3's round-5 paragraph).</summary>
+/// <summary>Where a refused model goes, by door and phase.</summary>
 public enum ModelRefusalPath
 {
-    /// <summary>Read as today's tables read the same failure.</summary>
+    /// <summary>Read as the tables read the same failure.</summary>
     AsToday,
 
-    /// <summary>The native door after a prompt: the ending's refused model, its offers record written as today.</summary>
+    /// <summary>The native door after a prompt: the ending's refused model, its offers record written.</summary>
     Ending,
 
-    /// <summary>A protocol open: D205's re-ask on the same session with the offers write, never the ending's flag.</summary>
+    /// <summary>A protocol open: a re-ask on the same session with the offers write, never the ending's flag.</summary>
     ReAsk,
 }
 
 /// <summary>
-/// A refused model told by its whole outcome and mapped by door and phase (the agent-lyntai design §5.3, round 5): a subject alone is not a
+/// A refused model told by its whole outcome and mapped by door and phase: a subject alone is not a
 /// refusal, since a per-model limit and a model at capacity are scoped to the model too.
 /// </summary>
 public static class ModelRefusals
@@ -29,12 +29,12 @@ public static class ModelRefusals
         && doorEntries.Contains(by);
 
     /// <summary>
-    /// Where a refused model goes: on the native door's failed result, under today's guard (a turn not stopped that ran nothing of the
-    /// session's own), the ending's flag; at a protocol open, D205's re-ask; anywhere else as today's tables read it.
+    /// Where a refused model goes: on the native door's failed result, under its guard (a turn not stopped that ran nothing of the
+    /// session's own), the ending's flag; at a protocol open, the re-ask; anywhere else as the tables read it.
     /// </summary>
     /// <param name="where">The phase (<see cref="DoorWhere"/>).</param>
     /// <param name="ranNothing">Whether the turn showed no words, thinking or tool call of the session's own.</param>
-    /// <param name="stopped">Whether a stop was asked before the turn ended.</param>
+    /// <param name="stopped">Whether a stop is asked before the turn ends.</param>
     public static ModelRefusalPath Path(Transport door, string where, bool ranNothing, bool stopped) => door switch
     {
         Transport.Native when where == DoorWhere.Result && ranNothing && !stopped => ModelRefusalPath.Ending,

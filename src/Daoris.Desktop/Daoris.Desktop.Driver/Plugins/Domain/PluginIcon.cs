@@ -15,13 +15,12 @@ public sealed record PluginIconRead(string? Type, string? DataUri, string? Probl
 }
 
 /// <summary>
-/// A plugin's icon (PLUGUI2, D140; the catalogue design §3): the manifest's <c>icon</c>, a path inside the plugin's folder to
+/// A plugin's icon: the manifest's <c>icon</c>, a path inside the plugin's folder to
 /// an SVG or a PNG. The catalogue reads the path (<see cref="Declared"/>), and whoever draws or lists the icon judges its
 /// file (<c>PluginIcon.Read</c>).
 /// </summary>
 /// <remarks>
-/// <para><b>One table holds the rules</b> (<c>PluginIconTests</c>), in order and in their sentences; the CLI's <c>plugins.ts</c>
-/// held its twin (<c>readIcon</c>) to it until it left with <c>daoris plugin</c>'s TypeScript (PUSH1f2f).</para>
+/// <para><b>One table holds the rules</b> (<c>PluginIconTests</c>), in order and in their sentences.</para>
 ///
 /// <para>🔴 <b>An icon's problem never refuses the plugin.</b> An icon is how a plugin is recognised, never what it does.</para>
 ///
@@ -29,7 +28,7 @@ public sealed record PluginIconRead(string? Type, string? DataUri, string? Probl
 /// scripts run, nothing outside it loads, none of its styles reach the page. So an SVG is checked only for being one and
 /// for not expanding (an entity declaration), and a PNG for its pixels, which a small file can inflate into many.</para>
 ///
-/// <para><b>The rules are pure, the file goes through <see cref="PluginFolders"/></b> (STRUCT3a, FLAT1b-i): <c>Read</c> reads
+/// <para><b>The rules are pure, the file goes through <see cref="PluginFolders"/></b>: <c>Read</c> reads
 /// the file through that helper, which does the I/O; what the bytes are is judged here (<see cref="Judge"/>).</para>
 /// </remarks>
 public static class PluginIcon

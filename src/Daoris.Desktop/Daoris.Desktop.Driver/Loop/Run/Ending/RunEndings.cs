@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// How a handed session's run ends when it does not conclude: the driver closing, a wire that broke after a stop, any other failure,
-/// and what every end lets go of. The record must say what the driver saw, even when what it saw was its own failure: an abandoned
+/// and what every end lets go of. The record must say what the driver saw, even when what it saw is its own failure: an abandoned
 /// <c>starting</c> row reads as a session that never ends.
 /// </summary>
 internal sealed class RunEndings(IRunWiring wiring, RunRound run, string sessionId, string agent, string workTree, bool locksTree)
@@ -90,7 +90,7 @@ internal sealed class RunEndings(IRunWiring wiring, RunRound run, string session
     }
 
     /// <summary>
-    /// However this ended, the stream is over. The buffer stays readable so whoever was watching can see how it finished, and the
+    /// However this ended, the stream is over. The buffer stays readable so whoever is watching can see how it finished, and the
     /// session lets go of its tree before any clean-up of Daoris's removes it; on no token, since a close is one of the ways.
     /// </summary>
     public async Task LetGoAsync()

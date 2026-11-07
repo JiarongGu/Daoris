@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One kind of Ask Daoris's proposal (MOD6): the fields only it carries, its judge — the route's own code,
+/// One kind of Ask Daoris's proposal: the fields only it carries, its judge — the route's own code,
 /// run against the machine as it stands — and its Apply, through the door the screen's own route uses.
 /// </summary>
 /// <remarks>
@@ -20,7 +20,7 @@ internal interface IHelpProposalKind
     /// <summary>The kind the file names, as the service's box writes it.</summary>
     string Kind { get; }
 
-    /// <summary>The connector's tool that proposes it, which the room allows (HELP1c).</summary>
+    /// <summary>The connector's tool that proposes it, which the room allows.</summary>
     string Tool { get; }
 
     /// <summary>
@@ -28,7 +28,7 @@ internal interface IHelpProposalKind
     /// </summary>
     /// <remarks>
     /// What the service's writer of the same kind spells, which the kinds' structural test reads, and what the room's doors table
-    /// names where a row proposes (D233 point 1: a door only where one is wanted).
+    /// names where a row proposes (a door only where one is wanted).
     /// </remarks>
     IReadOnlyList<string> Doors { get; }
 
@@ -36,10 +36,10 @@ internal interface IHelpProposalKind
     HelpProposal Read(HelpProposal proposal, JsonElement file) => proposal;
 
     /// <summary>
-    /// The workspaces and repositories it names (ASKSCOPE1c): what a conversation bound to one workspace may name only of its own,
+    /// The workspaces and repositories it names: what a conversation bound to one workspace may name only of its own,
     /// judged before <see cref="Plan"/> (<see cref="HelpProposalScope"/>). By default the file's <c>workspace</c> and
     /// <c>repository</c>; a kind whose target or value names one says so in its file, and one naming a quest, an ask or a session
-    /// by id names that record with its workspace, as the facts its judge reads hold it (ASKSCOPE1c2).
+    /// by id names that record with its workspace, as the facts its judge reads hold it.
     /// </summary>
     HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) => new([proposal.Workspace], [proposal.Repository]);
 
@@ -47,13 +47,13 @@ internal interface IHelpProposalKind
     HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts);
 
     /// <summary>
-    /// What the person's Apply of <paramref name="proposal"/> acts on, which it marks the owner's for the run before its edit
-    /// (STEWARDROLE1a-ii, D209 §5.4): by default nothing; a kind whose doors act on a repository, a workspace or a quest says which.
+    /// What the person's Apply of <paramref name="proposal"/> acts on, which it marks the owner's for the run before its edit:
+    /// by default nothing; a kind whose doors act on a repository, a workspace or a quest says which.
     /// </summary>
     HelpOwned Owned(HelpProposal proposal) => HelpOwned.Nothing;
 
     /// <summary>
-    /// Its card drawn for the person, judged as <paramref name="plan"/> (HIST1f-b): a kind whose Apply sends exactly what its
+    /// Its card drawn for the person, judged as <paramref name="plan"/>: a kind whose Apply sends exactly what its
     /// card listed keeps that now, in the proposal's file, for <see cref="Read"/> to hand its next judge. Nothing for every other.
     /// </summary>
     void Drawn(string home, HelpProposal proposal, HelpPlan plan)
@@ -65,10 +65,10 @@ internal interface IHelpProposalKind
     Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct);
 }
 
-/// <summary>What a kind's Apply is handed (MOD6): the proposal, its plan, the doors, and the conversation for what comes after.</summary>
+/// <summary>What a kind's Apply is handed: the proposal, its plan, the doors, and the conversation for what comes after.</summary>
 internal sealed class HelpApplying(string home, HelpProposal proposal, HelpPlan plan, IHelpDoors doors, Action<string> later)
 {
-    /// <summary>The Daoris home the proposal's file is under, for a kind that keeps what its first press found (HELP10).</summary>
+    /// <summary>The Daoris home the proposal's file is under, for a kind that keeps what its first press found.</summary>
     public string Home => home;
 
     public HelpProposal Proposal => proposal;
@@ -84,7 +84,7 @@ internal sealed class HelpApplying(string home, HelpProposal proposal, HelpPlan 
 
     /// <summary>Settle the proposal — `applied`, or `refused` with the door's words as its note — and answer what the press did.</summary>
     /// <param name="published">
-    /// What an applied press published (ASKQUESTS1): the ask and the quest the service's answer named, kept with the conversation
+    /// What an applied press published: the ask and the quest the service's answer named, kept with the conversation
     /// (<see cref="HelpPublished"/>) before the proposal settles, so a card settled applied never stands without its entry.
     /// </param>
     public HelpApplied Settled(bool applied, string told, string? note, HelpPublishing? published = null)
@@ -96,7 +96,7 @@ internal sealed class HelpApplying(string home, HelpProposal proposal, HelpPlan 
 }
 
 /// <summary>
-/// The kinds Ask Daoris proposes (MOD6), one line each, in the order the room allows their tools. A new kind
+/// The kinds Ask Daoris proposes, one line each, in the order the room allows their tools. A new kind
 /// is a file under <c>Help/Proposals/</c> and a line here.
 /// </summary>
 internal static class HelpProposalKinds
@@ -125,12 +125,12 @@ internal static class HelpProposalKinds
     public static IHelpProposalKind? Find(string kind) =>
         All.FirstOrDefault(each => string.Equals(each.Kind, kind, StringComparison.Ordinal));
 
-    /// <summary>What an Apply of <paramref name="proposal"/> acts on (STEWARDROLE1a-ii): its kind's answer, nothing for a kind none judges.</summary>
+    /// <summary>What an Apply of <paramref name="proposal"/> acts on: its kind's answer, nothing for a kind none judges.</summary>
     public static HelpOwned Owned(HelpProposal proposal) => Find(proposal.Kind)?.Owned(proposal) ?? HelpOwned.Nothing;
 }
 
 /// <summary>
-/// What an Ask Daoris Apply acts on (STEWARDROLE1a-ii, D209 §5.4): the repositories, workspaces and quests its plan names, which the
+/// What an Ask Daoris Apply acts on: the repositories, workspaces and quests its plan names, which the
 /// Apply marks the owner's for the run before its edit; a workspace's plan marks every repository of it.
 /// </summary>
 public sealed record HelpOwned(IReadOnlyList<string> Repositories, IReadOnlyList<string> Workspaces, IReadOnlyList<string> Quests)

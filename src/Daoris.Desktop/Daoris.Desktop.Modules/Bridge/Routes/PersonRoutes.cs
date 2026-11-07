@@ -4,8 +4,8 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The person's door in the window, the page's `bridge/person.ts` (PERSONDOOR1f, RPC1c; D156 points 2 and 4, the person-door
-/// design §2.2 and §4.2): the person key the shell holds for its host, which the page keeps in memory, and the presses a terminal
+/// The person's door in the window, the page's `bridge/person.ts`:
+/// the person key the shell holds for its host, which the page keeps in memory, and the presses a terminal
 /// sent over the pipe that wait for the person's <b>Confirm</b>. Every route here is the window's alone: the pipe's census refuses
 /// each to a terminal, which can ask and never answer.
 /// </summary>
@@ -13,40 +13,38 @@ public sealed class PersonRoutes(DriverLoop loop)
 {
     private readonly DriverLoop _loop = loop;
 
-    // D156 point 2: the key the shell minted for the host it started, answered to the page alone (the census classes it the window's,
-    // so the pipe never answers it), which keeps it in memory and sends it on every write. This shell mints no key (minting it and
-    // proving its host holds it are PERSONDOOR1g's) and holds none for a host it adopted, so it answers none and the page writes as
-    // it did.
+    // The key the shell minted for the host it started, answered to the page alone (the census classes it the window's,
+    // so the pipe never answers it), which keeps it in memory and sends it on every write. This shell mints no key
+    // and holds none for a host it adopted, so it answers none and the page writes without one.
     [DriverRoute("PERSON_KEY", PipeClass.Window)]
     [Owner("PERSON_KEY", None = OwnerNone.NamesNothing)]
     private Task<object?> PersonKeyAsync(NoPayload _, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(new PersonKey(null));
 
-    // RPC1c: what waits for the window, read whole as the `CONFIRMATIONS` event tells it, for a window that opens or reloads while one
+    // What waits for the window, read whole as the `CONFIRMATIONS` event tells it, for a window that opens or reloads while one
     // waits. None where this shell serves no pipe.
     [DriverRoute("PERSON_CONFIRMATIONS", PipeClass.Window)]
     [Owner("PERSON_CONFIRMATIONS", None = OwnerNone.NamesNothing)]
     private Task<object?> PersonConfirmationsAsync(NoPayload _, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(_loop.Pipe?.Confirmations.Now() ?? new PipeConfirmationsNow(0, []));
 
-    // NOTIFY2j (D196 point 4): what waits at the service's own door, read whole as the `SERVICE_CONFIRMATIONS` event tells it, for a
+    // What waits at the service's own door, read whole as the `SERVICE_CONFIRMATIONS` event tells it, for a
     // window that opens or reloads while one waits; the person answers each at the service's door with the key, as before.
     [DriverRoute("SERVICE_CONFIRMATIONS", PipeClass.Window)]
     [Owner("SERVICE_CONFIRMATIONS", None = OwnerNone.NamesNothing)]
     private Task<object?> ServiceConfirmationsAsync(NoPayload _, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(_loop.ServiceConfirmations.Now());
 
-    // RPC1c: the person's Confirm or Refuse on a terminal's press, each once. One no longer waiting (answered in another window, taken
+    // The person's Confirm or Refuse on a terminal's press, each once. One no longer waiting (answered in another window, taken
     // back by its terminal or by the close), or whose Confirm is already being judged, is answered as data, `gone`, for the card to say
-    // where it was pressed (the UI/UX design's R3), or a toast where its card has gone with it. CONFIRMWAIT1a-i (the confirm-wait design
-    // §5.2): a Confirm is answered once its grounds are judged, the card kept `checking` meanwhile: `{ answered: true }` where they held
+    // where it is pressed, or a toast where its card has gone with it. A Confirm is answered once its grounds are judged, the card kept `checking` meanwhile: `{ answered: true }` where they held
     // and it runs; `{ answered: false, why: "changed", reason, values }` where one moved and nothing ran; `{ answered: false, why:
-    // "unread" }` where they could not be read just now and it still waits; CONFIRMWAIT1a-ii (§7.2): `{ answered: false, why: "draining" }`
-    // while Daoris closes or an update drains it, nothing taken and the press kept across the restart; CONFIRMWAIT1 (§15.2 item 8):
+    // "unread" }` where they could not be read just now and it still waits; `{ answered: false, why: "draining" }`
+    // while Daoris closes or an update drains it, nothing taken and the press kept across the restart;
     // `{ answered: false, why: "unrecorded" }` where its record could not say the answer, nothing taken. The page waits for it as long as
     // the press's `checkWithin`.
     // The confirmed press runs on the pipe, in its terminal's name, and publishes what it changes as it runs.
-    // ONEWAY1n-i (the oneway design §4 M4): `source: "service"` answers one waiting at the service's door instead, where the host makes
+    // `source: "service"` answers one waiting at the service's door instead, where the host makes
     // the request at the Confirm: `{ answered: true }` where its door took it, else the host's code as `why` (`not-made` with the door's
     // own sentence, `restarted`), `gone` where none, and `unreachable` where the service did not answer, nothing taken.
     [DriverRoute("PERSON_CONFIRM", PipeClass.Window)]
@@ -74,10 +72,10 @@ public sealed class PersonRoutes(DriverLoop loop)
                 false, "changed", $"Not done: {change.Sentence}.", change.Reason, change.Values),
             { Outcome: PipeAnswered.Unread } => new PersonConfirmRefused(
                 false, "unread", "Daoris could not read what this rests on just now; it still waits."),
-            // CONFIRMWAIT1a-ii (§7.2): an update drains Daoris, or it closes; the press is kept across the restart, and nothing was taken.
+            // An update drains Daoris, or it closes; the press is kept across the restart, and nothing is taken.
             { Outcome: PipeAnswered.Draining } => new PersonConfirmRefused(
                 false, "draining", "Daoris is about to restart; this still waits."),
-            // CONFIRMWAIT1 (§15.2 item 8): the answer could not be written to the press's record, so nothing was taken or run.
+            // The answer could not be written to the press's record, so nothing is taken or run.
             { Outcome: PipeAnswered.Unrecorded } => new PersonConfirmRefused(
                 false, "unrecorded", "Daoris could not keep your answer just now; nothing was done, and it still waits."),
             _ => Gone(),
@@ -109,8 +107,8 @@ public sealed class PersonRoutes(DriverLoop loop)
             : new PersonConfirmRefused(false, answered.Code ?? "gone", answered.Message);
     }
 
-    // CONFIRMSEEN1: the window's word that a terminal's press is drawn in front of the person, in a window that is in front: kept once as
-    // when it was shown, which every window is told by `CONFIRMATIONS`, and it moves no clock (CONFIRMWAIT1a-i). One no longer waiting is
+    // The window's word that a terminal's press is drawn in front of the person, in a window that is in front: kept once as
+    // when it is shown, which every window is told by `CONFIRMATIONS`, and it moves no clock. One no longer waiting is
     // answered as data, `gone`. It runs nothing and moves no record, so it declares no change.
     [DriverRoute("PERSON_CONFIRM_SHOWN", PipeClass.Window)]
     [Owner("PERSON_CONFIRM_SHOWN", None = OwnerNone.ActsOnNothing)]
@@ -128,7 +126,7 @@ public sealed class PersonRoutes(DriverLoop loop)
                 "This no longer waits: it was answered in another window, or its terminal took it back."));
     }
 
-    // D233 point 2: the start of the terminal that holds a role the role door staffed with the terminal, in the window alone, since the
+    // The start of the terminal that holds a role the role door staffed with the terminal, in the window alone, since the
     // key passes from the window to the tab. `{ role, share? }`, `role` the role's catalogue id, `share` the choice while a holder lives
     // (`own`, or a living holder's id). A new holder's tab is started first, Daoris's own pinned harness with the key in its environment,
     // and nothing is kept where it could not start; the key is never answered. Answered `{ done, why?, message? }`, a refusal as data

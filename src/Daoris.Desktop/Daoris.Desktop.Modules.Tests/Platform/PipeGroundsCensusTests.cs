@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The grounds census beside the pipe's (CONFIRMWAIT1a-i, the confirm-wait design §5.1, §10): every route the census makes the person's,
+/// The grounds census beside the pipe's: every route the census makes the person's,
 /// in every form its rule gives, names its grounds or is timeless with its reason; a timeless route is none that deletes, closes or moves
 /// anything; each field a ground names is one the route's handler reads; and each plan read's fingerprint takes what its row names and
 /// none of the words, times and versions beside them, so two reads of an unchanged world across a moved clock and a new day give one
@@ -31,7 +31,7 @@ public sealed class PipeGroundsCensusTests
     /// <summary>
     /// Each field a ground names is one its route's handler reads, as the handler's own source spells it: in the body of the method its
     /// <c>[DriverRoute]</c> marks (or the <c>case</c> a module's switch gives it), and the bodies of that file's own methods the body hands
-    /// its request to, never anywhere else in its file (CONFIRMWAIT1, the confirm-wait design §15.3 item 14).
+    /// its request to, never anywhere else in its file.
     /// </summary>
     [Fact]
     public void Each_field_a_ground_names_is_one_its_route_s_handler_reads()
@@ -219,7 +219,7 @@ public sealed class PipeGroundsCensusTests
     }
 
     /// <summary>
-    /// One pair per plan read (§10's next-morning row): the same world read again after a night, an update and a commit on the line, its
+    /// One pair per plan read: the same world read again after a night, an update and a commit on the line, its
     /// words and times all moved, gives one fingerprint; one moved item gives another.
     /// </summary>
     [Theory]

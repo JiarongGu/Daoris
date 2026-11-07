@@ -6,8 +6,8 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// How late the window's own thread answers, and what held it, into the machine log as <c>ui.stalled</c> (FREEZE1, D56's
-/// note): the frameless window's caption is the page's strip, and a press there is handed to this thread to move, maximise
+/// How late the window's own thread answers, and what held it, into the machine log as <c>ui.stalled</c>:
+/// the frameless window's caption is the page's strip, and a press there is handed to this thread to move, maximise
 /// or close the window. A thread that answers late is a frozen bar while the page, on its own thread, goes on working.
 /// </summary>
 /// <remarks>
@@ -17,13 +17,13 @@ namespace Daoris.Desktop;
 /// not end is written once every <see cref="Longest"/>, so a thread that never recovers still says so.</para>
 ///
 /// <para><b>What held it.</b> The bridge dispatches each page request on this thread, and a route runs there until its
-/// first wait (<see cref="Middleware"/>), and a Daoris route not after it (<see cref="OffTheWindow"/>, UIFREEZE1). The route on the thread whenever the timer found a probe waiting is named
+/// first wait (<see cref="Middleware"/>), and a Daoris route not after it (<see cref="OffTheWindow"/>). The route on the thread whenever the timer found a probe waiting is named
 /// (<c>during</c>), and so is the slowest route's synchronous part (<c>slowest</c>, <c>slowestMs</c>), with how many routes
 /// ran (<c>requests</c>). Beside them, what else the thread does that no route shows: the bus events the kit's flush
 /// serializes on it (<c>events</c>) and the full collections that stop every thread (<c>gc2</c>), each since the thread last
 /// answered in time. A stall with no route is then the flush, a collection or the engine, and the counts say which.</para>
 ///
-/// <para><b>Names and counts only</b> (D94): a route is <c>MODULE.TYPE</c> as the page sent it, written only where it is
+/// <para><b>Names and counts only</b>: a route is <c>MODULE.TYPE</c> as the page sent it, written only where it is
 /// an identifier, so a page that put a path or a sentence there writes nothing. Never a payload.</para>
 ///
 /// <para>Every effect is handed in, the clock, the post and the collections, so the tests drive a minute's stall with no
@@ -31,7 +31,7 @@ namespace Daoris.Desktop;
 /// </remarks>
 public sealed partial class UiStallWatch : IDisposable
 {
-    /// <summary>The machine log's event (the machine log design §4).</summary>
+    /// <summary>The machine log's event.</summary>
     public const string Event = "ui.stalled";
 
     private readonly MachineLog _log;
@@ -104,7 +104,7 @@ public sealed partial class UiStallWatch : IDisposable
     /// <summary>How long a probe may wait before the thread counts as late: a press on the bar waits as long.</summary>
     public TimeSpan Late { get; init; } = Bound;
 
-    /// <summary>The window's bound, <see cref="Late"/>'s own: what a route told by event answers within (NOBLOCK1).</summary>
+    /// <summary>The window's bound, <see cref="Late"/>'s own: what a route told by event answers within.</summary>
     public static readonly TimeSpan Bound = TimeSpan.FromMilliseconds(250);
 
     /// <summary>The longest a stall goes unwritten while it lasts.</summary>

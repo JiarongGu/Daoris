@@ -11,13 +11,13 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A terminal's connect to the running Daoris's pipe: <paramref name="Client"/> where it connected; else <paramref name="Refused"/>
-/// where the pipe refused this terminal as another account's or elevation's (PIPEOWNER1), and otherwise nothing took it in time.
+/// where the pipe refused this terminal as another account's or elevation's, and otherwise nothing took it in time.
 /// </summary>
 public readonly record struct PipeConnect(InstanceClient? Client, bool Refused);
 
 /// <summary>
-/// A terminal's connection to the running Daoris's pipe (RPC1b, D171 point 3, the terminal RPC design §6): the wire RPC1a's
-/// <c>InstancePipe</c> serves, as one verb speaks it, one request at a time.
+/// A terminal's connection to the running Daoris's pipe: the wire <c>InstancePipe</c>
+/// serves, as one verb speaks it, one request at a time.
 /// </summary>
 /// <remarks>
 /// <para><b>The wire</b>: UTF-8 lines of JSON, LF. The hello first (<c>DAORIS.PIPE</c> <c>HELLO</c>, this home's id and the wire's
@@ -25,11 +25,11 @@ public readonly record struct PipeConnect(InstanceClient? Client, bool Refused);
 /// connection's verb holds, which <c>RESULT</c> asks with again; answers are the kit's <c>{ category: "ipc", id, success, data?,
 /// error? }</c>, and a route's progress the kit's notification envelope naming the request's id.</para>
 ///
-/// <para><b>This user's pipe only</b> (§4.1): a pipe whose owner is not one of <see cref="ThisUser"/>'s SIDs is refused before a
+/// <para><b>This user's pipe only</b>: a pipe whose owner is not one of <see cref="ThisUser"/>'s SIDs is refused before a
 /// line crosses, as one whose ACL refuses this user is, and said as a refusal (<see cref="PipeConnect.Refused"/>), never as a pipe
 /// that did not answer. On Windows the owner is read here rather than through <see cref="PipeOptions.CurrentUserOnly"/>, which takes
 /// only the token's default owner: an elevated token's is the Administrators group, so a terminal and a Daoris of one user at two
-/// elevations refused each other (PIPEOWNER1). The process serving the pipe is read, for the finder to hold to the address
+/// elevations refused each other. The process serving the pipe is read, for the finder to hold to the address
 /// file's.</para>
 /// </remarks>
 public sealed class InstanceClient : IAsyncDisposable
@@ -66,7 +66,7 @@ public sealed class InstanceClient : IAsyncDisposable
     public static async Task<PipeConnect> ConnectAsync(
         string pipe, TimeSpan within, IReadOnlySet<string>? owners = null, CancellationToken ct = default)
     {
-        // Elsewhere the kit's own check stands: a socket's peer is read there, not an owner (§11).
+        // Elsewhere the kit's own check stands: a socket's peer is read there, not an owner.
         var options = PipeOptions.Asynchronous | (OperatingSystem.IsWindows() ? PipeOptions.None : PipeOptions.CurrentUserOnly);
         var stream = new NamedPipeClientStream(".", pipe, PipeDirection.InOut, options);
         try
@@ -93,7 +93,7 @@ public sealed class InstanceClient : IAsyncDisposable
     }
 
     /// <summary>
-    /// The SIDs a pipe of this user's is owned by (PIPEOWNER1): the user's, which a Daoris at either elevation makes its pipe's owner
+    /// The SIDs a pipe of this user's is owned by: the user's, which a Daoris at either elevation makes its pipe's owner
     /// (<c>InstancePipe.Security</c>), and this token's default owner, the only one <see cref="PipeOptions.CurrentUserOnly"/> took and
     /// the one an older Daoris left its pipe's, so an elevated terminal still reaches an older elevated Daoris, whose pipe the
     /// Administrators group owns. A terminal that is not elevated has one: its default owner is the user.
@@ -129,14 +129,14 @@ public sealed class InstanceClient : IAsyncDisposable
         RequestAsync(Guid.NewGuid().ToString(), PipeModule, "RESULT", new { id, key }, key: null, told: null, within, ct);
 
     /// <summary>
-    /// <c>WITHDRAW { id, key }</c> (CONFIRMWAIT1b, the confirm-wait design §4.3): takes back the press <paramref name="id"/> while it
+    /// <c>WITHDRAW { id, key }</c>: takes back the press <paramref name="id"/> while it
     /// still waits for the person, the whole envelope, or null where none came. Never the kit's cancel, which reaches a confirmed press.
     /// </summary>
     public Task<JsonElement?> WithdrawAsync(string id, string key, TimeSpan within, CancellationToken ct = default) =>
         RequestAsync(Guid.NewGuid().ToString(), PipeModule, "WITHDRAW", new { id, key }, key: null, told: null, within, ct);
 
     /// <summary>
-    /// One request, and its answer's whole envelope; null where the connection was lost or nothing answered within
+    /// One request, and its answer's whole envelope; null where the connection is lost or nothing answers within
     /// <paramref name="within"/>. Each notification naming it on the way is handed to <paramref name="told"/>.
     /// </summary>
     public async Task<JsonElement?> RequestAsync(
@@ -190,7 +190,7 @@ public sealed class InstanceClient : IAsyncDisposable
         await _stream.FlushAsync(ct).ConfigureAwait(false);
     }
 
-    /// <summary>The next envelope on the wire, or null where the connection ended or the read was cancelled; a line that is no envelope is passed over.</summary>
+    /// <summary>The next envelope on the wire, or null where the connection ends or the read is cancelled; a line that is no envelope is passed over.</summary>
     internal async Task<JsonElement?> ReadAsync(CancellationToken ct)
     {
         try

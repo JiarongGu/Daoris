@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A tool call a session holds for the person's answer is announced as a park is (NOTIFY2d, D196, the notification design §5, §9):
+/// A tool call a session holds for the person's answer is announced as a park is:
 /// once, where the attention slice first sees its row, on <c>SESSION_ATTENTION</c> in the shape the shell's notifier and the page's
 /// toast read, and only while the notify switch is on. Seen with the switch off, it is seen: turned back on, it is not said late.
 /// </summary>

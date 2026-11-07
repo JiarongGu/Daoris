@@ -4,22 +4,22 @@ using Lyntai.Agents;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <see cref="AgentRun"/> over the layer, one turn per process (the agent-lyntai design §4.1, §5.4, §5.5). Each process, the first's, the
+/// <see cref="AgentRun"/> over the layer, one turn per process. Each process, the first's, the
 /// native resume's one retry's and each go-on's, is a turn of its own over its own spawn's container and <see cref="LauncherRunner"/>, which
 /// this run owns and disposes at its close. Each event the layer yields is translated once (<see cref="LayerReadings"/>) and handed to the
-/// run's sink as today's transports hand theirs, each line written to the transcript as it is shown; the lines the harness says outside a
+/// run's sink as the other transports hand theirs, each line written to the transcript as it is shown; the lines the harness says outside a
 /// frame and on stderr are the runner's, kept as its own words with what its events say of its background work (<see cref="HarnessWords"/>).
 /// Where someone watches its console, what its agent runs beside itself is the door's streams beside (<see cref="LayerStreams"/>).
 /// The end is read as the conclusion reads it, its exit off the runner or the host's wait since the layer's terminal carries none; a stop
 /// Daoris asked before the terminal is a stop. An operation the layer's members do not carry is refused before anything is written.
 /// </summary>
 /// <remarks>
-/// <para><b>Its words are the native door's</b> (D243): a turn's prompt is composed of the lines its <see cref="Input"/> hands the next
+/// <para><b>Its words are the native door's</b>: a turn's prompt is composed of the lines its <see cref="Input"/> hands the next
 /// process (the start's, those a go-on holds, those the ended process never acknowledged) and the layer writes it whole on stdin; the words are
 /// written as that write returns and acknowledged once the agent names its conversation.</para>
-/// <para><b>Held by an executor</b> (<see cref="LayerHold"/>, AGENTLYNTAI1d), it takes today's driven run's steps around each process: the
+/// <para><b>Held by an executor</b> (<see cref="LayerHold"/>), it takes the driven run's steps around each process: the
 /// downloads kept, the lineage token on its environment, the process tracked and reaped, each raw line stamped for the watch, the wait under
-/// the start's bound and the watch's quiet, whose kill its readings say nothing of, as today's capture says nothing of a stream cut off.</para>
+/// the start's bound and the watch's quiet, whose kill its readings say nothing of, as the capture says nothing of a stream cut off.</para>
 /// </remarks>
 internal sealed class LayerRun(
     LayerRegistration registration, LayerStart start, LauncherSeat seat, Func<string, bool> exists, LayerHold? hold = null) : HeldRun
@@ -81,7 +81,7 @@ internal sealed class LayerRun(
     /// <summary>The carriers handed for the start, kept for the run's go-ons.</summary>
     internal RunCarriers? Carriers { get; private set; }
 
-    /// <summary>The latest turn's failure as Daoris's outcome, through the ingress; null where it did not fail or was stopped.</summary>
+    /// <summary>The latest turn's failure as Daoris's outcome, through the ingress; null where it did not fail or stopped.</summary>
     public NormalizedFailure? Failure => _leg?.Readings.Failure;
 
     /// <summary>Whether Daoris stopped the latest turn before its terminal.</summary>
@@ -153,7 +153,7 @@ internal sealed class LayerRun(
         var end = await EndedAsync(_leg ?? throw new InvalidOperationException("the layer run was never started."), bounded: !_goneOn, ct)
             .ConfigureAwait(false);
 
-        // The native resume's one retry (design §2.6, D243): a resume whose harness ended on a failed exit before it named its conversation is
+        // The native resume's one retry: a resume whose harness ended on a failed exit before it named its conversation is
         // tried once more as the same resume, handed every word the ended process never acknowledged. Never after a clean exit, a fresh start,
         // a refusal or a stop.
         if (_resume is { Named: false, Refused: false, Retried: false } resume && end.Exit is int early && early != 0 && !_killed
@@ -296,7 +296,7 @@ internal sealed class LayerRun(
 
     /// <summary>
     /// A turn's readings handed in order, its process told once the conversation it named is kept; a child's or a background task's start
-    /// or end read too by the harness's ending for its own background work (BGWAIT1c) and by the streams beside, as today's capture tells them.
+    /// or end read too by the harness's ending for its own background work and by the streams beside, as the capture tells them.
     /// </summary>
     private void Handed(Leg leg, IReadOnlyList<WireReading> readings)
     {
@@ -370,7 +370,7 @@ internal sealed class LayerRun(
         Hand(new WireReading.Shown(line));
     }
 
-    /// <summary>A line the run says itself, as today's driver says its own: observed, on the transcript and the console.</summary>
+    /// <summary>A line the run says itself, as the driver says its own: observed, on the transcript and the console.</summary>
     private void Say(string text) => Hand(new WireReading.Shown(text) { By = ReadingBy.Observed });
 
     private void Line(string text) => Hand(new WireReading.Shown(text));

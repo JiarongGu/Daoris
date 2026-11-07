@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a session was handed, section by section (CONTEXT1, D143 point 1): the composer's account of the instruction it
+/// What a session is handed, section by section: the composer's account of the instruction it
 /// composed, kept beside the instruction on the session's record. Not the words again: each section's size, where it came
 /// from, and what its bound left out and why.
 /// </summary>
 /// <remarks>
-/// <para><b>Codes where a screen words it, the driver's sentence where a terminal reads it</b> (D143 point 1, LANG1a): every
+/// <para><b>Codes where a screen words it, the driver's sentence where a terminal reads it</b>: every
 /// section, source, absence and cut is a code the page words in the reader's language, and each carries the driver's own
 /// English (<see cref="HandedSection.Said"/>), which <c>daoris trace</c> prints and a page shows, marked, for a code it
 /// does not know.</para>
@@ -18,16 +18,16 @@ namespace Daoris.Driver;
 /// <para><b>Values are facts, never a machine path</b>: an id, a repository's name, a repository-relative file, a branch, a
 /// language's code, a count, a moment.</para>
 /// </remarks>
-/// <param name="Chars">The instruction's length in characters, as it was handed.</param>
+/// <param name="Chars">The instruction's length in characters, as it is handed.</param>
 /// <param name="Sections">
-/// The sections handed, in the instruction's order; then what was handed beside it; then the sections that could have been
-/// handed and were not, each saying why (D143 point 3: a fact not kept is said missing, and an absence is said too).
+/// The sections handed, in the instruction's order; then what is handed beside it; then the sections that could have been
+/// handed and are not, each saying why (a fact not kept is said missing, and an absence is said too).
 /// </param>
 public sealed record InstructionAccount(int Chars, IReadOnlyList<HandedSection> Sections)
 {
     /// <summary>
-    /// This account with what was handed beside the instruction (the permission rules), after the sections handed and before
-    /// those that were not.
+    /// This account with what is handed beside the instruction (the permission rules), after the sections handed and before
+    /// those that are not.
     /// </summary>
     public InstructionAccount Beside(HandedSection beside)
     {
@@ -36,7 +36,7 @@ public sealed record InstructionAccount(int Chars, IReadOnlyList<HandedSection> 
     }
 }
 
-/// <summary>One section of what a session was handed (CONTEXT1): its size, its source, and what its bound left out.</summary>
+/// <summary>One section of what a session is handed: its size, its source, and what its bound left out.</summary>
 /// <param name="Name">What part it is, one of <see cref="HandedSections"/>.</param>
 /// <param name="Source">Where it came from, one of <see cref="HandedSources"/>.</param>
 /// <param name="Said">The driver's English for it, as a terminal prints it.</param>
@@ -54,17 +54,17 @@ public sealed record HandedSection(string Name, string Source, string Said)
     /// <summary>How many there were to hand.</summary>
     public int? Of { get; init; }
 
-    /// <summary>When its source was set, where the source keeps it (a standing answer).</summary>
+    /// <summary>When its source is set, where the source keeps it (a standing answer).</summary>
     public DateTimeOffset? At { get; init; }
 
-    /// <summary>Why nothing of it was handed, one of <see cref="HandedNones"/>; null for a section that was.</summary>
+    /// <summary>Why nothing of it is handed, one of <see cref="HandedNones"/>; null for a section that is.</summary>
     public string? None { get; init; }
 
-    /// <summary>What was left out of it, each with why; null where nothing was.</summary>
+    /// <summary>What is left out of it, each with why; null where nothing is.</summary>
     public IReadOnlyList<HandedCut>? Cuts { get; init; }
 }
 
-/// <summary>What a section's bound, or a fact about its source, left out (CONTEXT1).</summary>
+/// <summary>What a section's bound, or a fact about its source, leaves out.</summary>
 /// <param name="Code">Why, one of <see cref="HandedCuts"/>.</param>
 /// <param name="Said">The driver's English for it, as a terminal prints it.</param>
 public sealed record HandedCut(string Code, string Said)
@@ -75,9 +75,9 @@ public sealed record HandedCut(string Code, string Said)
     /// <summary>The bound that left them out, in characters or items.</summary>
     public int? Limit { get; init; }
 
-    /// <summary>For words left out, when the first of them was said; for words not kept, from when they are.</summary>
+    /// <summary>For words left out, when the first of them is said; for words not kept, from when they are.</summary>
     public DateTimeOffset? From { get; init; }
 
-    /// <summary>For words left out, when the last of them was said.</summary>
+    /// <summary>For words left out, when the last of them is said.</summary>
     public DateTimeOffset? To { get; init; }
 }

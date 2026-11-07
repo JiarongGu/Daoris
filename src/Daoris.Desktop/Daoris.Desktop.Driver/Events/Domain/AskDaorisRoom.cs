@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's room as the events say it (FOUNDATION1 mod-xii, the design §14.2's round 4): the attention headline tells its answer
+/// Ask Daoris's room as the events say it: the attention headline tells its answer
 /// apart, and the participant-work rule tells its sessions by the same spelling. Events is the lowest subdomain that reads it, so the
 /// spelling is declared here and the rule, which sits above, aliases it.
 /// </summary>

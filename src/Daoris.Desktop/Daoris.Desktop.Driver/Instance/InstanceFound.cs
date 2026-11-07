@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What a verb finds when it looks for the running Daoris (the terminal RPC design §7.2's rows).</summary>
+/// <summary>What a verb finds when it looks for the running Daoris.</summary>
 public enum InstanceFound
 {
     /// <summary>No instance on this home, or a workspace build, which reads no address file: the verb acts alone.</summary>
@@ -16,7 +16,7 @@ public enum InstanceFound
     Silent,
 
     /// <summary>
-    /// The hello was refused (<c>protocol</c>, <c>home</c>, <c>stopping</c>), or the pipe refused this terminal as another account's
+    /// The hello is refused (<c>protocol</c>, <c>home</c>, <c>stopping</c>), or the pipe refused this terminal as another account's
     /// or elevation's: a press is refused, saying which.
     /// </summary>
     Refused,

@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What held a reviewer read-only (XAGENT1d, D155 point 5; design §5.2), as the opinion's record says it: the posture is the
-/// adapter's, in its own words, and only where measured (D53). A mode's name is never relied on: one called <c>read-only</c>
-/// runs a workspace-write sandbox (ACP3's reading of <c>codex-acp</c>).
+/// What held a reviewer read-only, as the opinion's record says it: the posture is the
+/// adapter's, in its own words, and only where measured. A mode's name is never relied on: one called <c>read-only</c>
+/// runs a workspace-write sandbox (as <c>codex-acp</c> does).
 /// </summary>
 public static class OpinionPosture
 {
@@ -16,7 +16,7 @@ public static class OpinionPosture
     /// <summary>What held a reviewer on <paramref name="adapter"/>: its rules where it takes them, else its copy alone.</summary>
     public static string Of(AgentDoor adapter) => adapter.Can.TakesSettings ? RulesAndCopy : CopyAlone;
 
-    /// <summary>The posture as the record says it (design §5.2).</summary>
+    /// <summary>The posture as the record says it.</summary>
     public static string Said(string posture) => posture == RulesAndCopy
         ? "read-only by its agent's rules and its copy"
         : "read-only by its copy alone";

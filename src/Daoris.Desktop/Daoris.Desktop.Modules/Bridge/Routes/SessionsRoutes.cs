@@ -51,7 +51,7 @@ public sealed class SessionsRoutes(DriverContext context)
     [Publishes("SESSION_HELPER_ASK", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private Task<object?> SessionHelperAskAsync(SessionHelperAsk press, CancellationToken cancellationToken) => _asks.HelperAskAsync(press, cancellationToken);
 
-    // *Pass to the lead* (COWORKUX1d): an answer kept for the person, handed by the look with `answers.passed` beside it; else
+    // *Pass to the lead*: an answer kept for the person, handed by the look with `answers.passed` beside it; else
     // `passed: false` with its code.
     [DriverRoute("SESSION_HELPER_PASS", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SESSION_HELPER_PASS", Session = "session")]
@@ -136,9 +136,9 @@ public sealed class SessionsRoutes(DriverContext context)
     // A parked session's question to the person, as its agent asked it through `question_ask`
     // and the driver kept it for the park its last turn ended in: its words, the answers it offers with what it does on each, the one
     // it recommends with why and by when, and its mark that the question is the owner's alone, each the
-    // agent's own; beside them the supervisor's defer on it (`left`: its bound and sourced reasons, SUPERVISOR1b), Daoris's record of
+    // agent's own; beside them the supervisor's defer on it (`left`: its bound and sourced reasons), Daoris's record of
     // the holder's act; null where none is kept, and for a record that is not
-    // parked (Fable's read, Q7), whatever a file says. A read off the home's sessions folder, the files leaving the window's thread
+    // parked, whatever a file says. A read off the home's sessions folder, the files leaving the window's thread
     // first: it declares nothing, and the page asks it only of a park of this machine's.
     [DriverRoute("SESSION_QUESTION", PipeClass.Open)]
     private Task<object?> SessionQuestionAsync(SessionQuestion press, CancellationToken cancellationToken) => _asks.QuestionAsync(press, cancellationToken);
@@ -189,9 +189,8 @@ public sealed class SessionsRoutes(DriverContext context)
     [Publishes("SESSION_QUIET_CARRY_ON", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private Task<object?> SessionQuietCarryOnAsync(SessionQuietCarryOn press, CancellationToken cancellationToken) => _wait.QuietCarryOnAsync(press);
 
-    // What this machine's driven sessions hold for the person under their repository's asking permission prompts (AUTONOMY1b3a, D184
-    // point 3), oldest first: each request with its session, its call as the agent named it, and what the person may choose (never a
-    // standing allow), and when its bound releases it (`until`, PERMUNTIL1: the page's one source for the bound). A read off the
+    // What this machine's driven sessions hold for the person under their repository's asking permission prompts, oldest first: each request with its session, its call as the agent named it, and what the person may choose (never a
+    // standing allow), and when its bound releases it (`until`: the page's one source for the bound). A read off the
     // driver's memory (`HeldPermissions`), which a restart empties with the agents that asked; the attention slice's own projection,
     // so the pushed rows and the route say each hold alike.
     [DriverRoute("PERMISSION_WAITS", PipeClass.Open)]
@@ -208,8 +207,7 @@ public sealed class SessionsRoutes(DriverContext context)
     [Says("SESSION_PERMISSION_ANSWER", "session:session")]
     private Task<object?> SessionPermissionAnswerAsync(SessionPermissionAnswer press, CancellationToken cancellationToken) => _wait.PermissionAnswerAsync(press);
 
-    // What the answers-alone bound holds for the person across this machine's sessions (COWORK1e, D188 point 4; the message-urgency
-    // design §8.3), oldest first: each session whose answers would take its line on a third time in a row with nobody between, the agent
+    // What the answers-alone bound holds for the person across this machine's sessions, oldest first: each session whose answers would take its line on a third time in a row with nobody between, the agent
     // that answered, the answers' ids and since when. A read off the home's marks (`GoOnMarks`), which the look and the conversations
     // write; it declares nothing, and sits under the sessions' key on the page, which every tick asks again.
     [DriverRoute("ANSWER_WAITS", PipeClass.Open)]
@@ -261,7 +259,7 @@ public sealed class SessionsRoutes(DriverContext context)
 
     // A role's act: `{ role, act, generation, form, proof }`, `Role` in the pipe's census, judged by the
     // judge's role method as SUPERVISOR_ANSWER is, then admitted once with an id Daoris draws. Its handler checks the act once more
-    // under the judge's lock (§3.4 step 8: still admitted, its holder's hash present, its appointment live) and runs its role's table's
+    // under the judge's lock (still admitted, its holder's hash present, its appointment live) and runs its role's table's
     // handler; the steward's table is empty in this build, so every act is refused `not-role` at the judge. `{ done, why?, answer?,
     // roles, brief }`, refused as data.
     [DriverRoute("ROLE_ACT", PipeClass.Role, Drain = PipeDrain.Waits)]
@@ -391,7 +389,7 @@ public sealed class SessionsRoutes(DriverContext context)
     /// a moment.</para>
     ///
     /// <para><b>Unarchive needs no service</b>: it takes marks away, and one that was not archived is said, never refused
-    ///.</para>
+    ///</para>
     /// </remarks>
     [DriverRoute("SESSION_ARCHIVE", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SESSION_ARCHIVE", Sessions = "ids")]
@@ -411,7 +409,7 @@ public sealed class SessionsRoutes(DriverContext context)
     /// the act only where <c>SESSION_GROUPS</c> says <c>deletable</c>, so a refusal answers a race.</para>
     ///
     /// <para><b>Nothing machine-local comes back</b>: the id, the names of what went and the names of what the disk would not let
-    /// go of (<c>stayed</c>, SESSDEL1, empty when everything went), never a path. <c>session.deleted</c> is written to the machine
+    /// go of (<c>stayed</c>, empty when everything went), never a path. <c>session.deleted</c> is written to the machine
     /// log with no word of it.</para>
     /// </remarks>
     [DriverRoute("SESSION_DELETE", PipeClass.Person, Drain = PipeDrain.Waits)]

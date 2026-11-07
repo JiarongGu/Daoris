@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What reserving a conversation for the person's press came to (CHATFLOW1d, <c>ChatTurns.PressAsync</c>).</summary>
+/// <summary>What reserving a conversation for the person's press came to (<c>ChatTurns.PressAsync</c>).</summary>
 public enum PressHold
 {
     /// <summary>Reserved: no turn starts until the press answers.</summary>

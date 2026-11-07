@@ -4,8 +4,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// A stand-in for a command a test wants held: a node that waits for the test to write a file, then runs the real command with the
-/// arguments it was given (the review-leave tests' git). PROCLEAK1: it never waits for ever. A stand-in that polled for its file
-/// with no end outlived its killed test by 51 hours, polling every 50 ms; this one takes the pid of the process that owns it and
+/// arguments it is given (the review-leave tests' git). It never waits for ever: it takes the pid of the process that owns it and
 /// gives up when that process is gone, and gives up at a bound of its own besides.
 /// </summary>
 internal static class ReleaseStandIn
@@ -52,7 +51,7 @@ internal static class ReleaseStandIn
 }
 
 /// <summary>
-/// PROCLEAK1: a stand-in that waits on a file ends with the test that started it. The merge tool's owner found one still polling
+/// A stand-in that waits on a file ends with the test that started it. The merge tool's owner found one still polling
 /// 51 hours after its test was killed, its file never written.
 /// </summary>
 [Trait(Category.Name, Category.Process)]

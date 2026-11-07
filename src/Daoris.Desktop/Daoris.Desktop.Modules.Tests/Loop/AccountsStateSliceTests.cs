@@ -7,7 +7,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// How each agent's accounts are used, pushed (PUSH1e, D182 points 2-4 and 6): one owner in the shell's loop judging what
+/// How each agent's accounts are used, pushed: one owner in the shell's loop judging what
 /// <c>ACCOUNTS</c> answers, its verdicts beside each reading, once per wake for every window, a partition per agent, so a tick and a
 /// focus read <c>ACCOUNTS</c> again in no window, and a probe's result moves every window by one push.
 /// </summary>

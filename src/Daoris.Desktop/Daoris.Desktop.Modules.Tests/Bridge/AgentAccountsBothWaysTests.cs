@@ -6,12 +6,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A pin taken back and an account's change both ways (PUSH1f2e2, D194 points 4 and 6, the alone-path design §3): <c>daoris agent
+/// A pin taken back and an account's change both ways: <c>daoris agent
 /// unpin|profile …</c> acting alone, and the same words' press sent to the window's route (<c>HARNESS_ACTION</c>'s <c>unpin</c> and
 /// <c>profile-*</c>, <c>ACCOUNT_USE</c>'s <c>order</c> and <c>ready</c>), its answer said by the same words function, over one home from the
 /// same files. The wiring, the accounts' names, the cool-offs, the accounts' folders, the text and the exit are equal: red where a route
 /// and its operation disagree, or where the payload the command writes does not read back through the route as the command meant it.
-/// Both fold the laid home's scopes into one set before their edit (POOL1a1, D197 §6), so a receipt's id and moment, each run's own,
+/// Both fold the laid home's scopes into one set before their edit, so a receipt's id and moment, each run's own,
 /// are spelled.
 /// </summary>
 public sealed class AgentAccountsBothWaysTests : DriverModuleBridge
@@ -45,7 +45,7 @@ public sealed class AgentAccountsBothWaysTests : DriverModuleBridge
     /// <summary>
     /// The home as each case starts it: three accounts, one with a file in it and one named; the machine's default, list and pin, a
     /// workspace's default, list and pin; and an account's cool-off, with the tool's own sign-in's where the words ask for it: the window's
-    /// every change refreshes its roster, which ends that one (D125 §3.7), so it is laid only where both paths end it.
+    /// every change refreshes its roster, which ends that one, so it is laid only where both paths end it.
     /// </summary>
     private void Laid(bool own)
     {
@@ -86,7 +86,7 @@ public sealed class AgentAccountsBothWaysTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The wiring with each fold receipt's id spelled <c>&lt;id&gt;</c> and its moment <c>&lt;at&gt;</c> (POOL1a1, D197 §6.3): both
+    /// The wiring with each fold receipt's id spelled <c>&lt;id&gt;</c> and its moment <c>&lt;at&gt;</c>: both
     /// paths fold the home as laid, and a receipt's id is drawn at random and its moment read from the clock, so they differ there alone.
     /// </summary>
     private static string? Spelled(string? wiring)

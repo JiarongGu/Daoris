@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Why an agent's ask to hand its session over came to nothing, by code (MIXAGENT1c): the state file's <c>code</c> and the note's
+/// Why an agent's ask to hand its session over came to nothing, by code: the state file's <c>code</c> and the note's
 /// <c>why</c>. The page words each as <c>note.handover.why.*</c>; <see cref="Said"/> is the terminal's one English.
 /// </summary>
 public static class HandOverAskWhy
@@ -12,7 +12,7 @@ public static class HandOverAskWhy
     /// <summary>The person said no to it.</summary>
     public const string Declined = "declined";
 
-    /// <summary>The session is a part a hand-over started, and its first turn had not ended: no second hand-over without a turn between.</summary>
+    /// <summary>The session is a part a hand-over started, and its first turn has not ended: no second hand-over without a turn between.</summary>
     public const string JustHanded = "just-handed";
 
     /// <summary>No other agent in the person's order can take the session.</summary>
@@ -23,14 +23,14 @@ public static class HandOverAskWhy
 
     /// <summary>
     /// The session is a helper, a reviewer, an intake or Ask Daoris's own conversation (the files may be old). Ask Daoris's goes on with
-    /// another agent only where its turn met a limit with no account of its agent left (LIMITGOON2, D205 §3.5(e)), never on an ask.
+    /// another agent only where its turn met a limit with no account of its agent left, never on an ask.
     /// </summary>
     public const string AskerUnfit = "asker-unfit";
 
     /// <summary>The hand-over could not be taken for a reason none of the codes below names.</summary>
     public const string Cannot = "cannot";
 
-    // HANDOVERSAID1: the take's own refusals, each said in its words rather than as `cannot`. They are the codes of the take's
+    // The take's own refusals, each said in its words rather than as `cannot`. They are the codes of the take's
     // refusals as well, which <c>HandOver</c> takes from here, since the note's vocabulary is the lower of the two.
 
     /// <summary>The session's quest is closed: no work is left to hand over.</summary>
@@ -45,7 +45,7 @@ public static class HandOverAskWhy
     /// <summary>A later session here carries the quest on.</summary>
     public const string NotLastRun = "not-last-run";
 
-    /// <summary>The agent it was to go to is not one this machine has.</summary>
+    /// <summary>The agent it is to go to is not one this machine has.</summary>
     public const string UnknownAgent = "unknown-agent";
 
     /// <summary>It already runs on that agent.</summary>
@@ -73,7 +73,7 @@ public static class HandOverAskWhy
     public static string Of(string? code) => code is not null && All.Contains(code) ? code : Cannot;
 
     /// <summary>
-    /// Whether a hand-over not taken for this reason leaves nothing to go on with (HANDOVERSAID1): its quest closed or carried elsewhere,
+    /// Whether a hand-over not taken for this reason leaves nothing to go on with: its quest closed or carried elsewhere,
     /// or its tree gone. Otherwise the session goes on with its own agent.
     /// </summary>
     public static bool Ends(string why) => why is QuestClosed or QuestElsewhere or QuestReopened or NotLastRun or TreeGone;

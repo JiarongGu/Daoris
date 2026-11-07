@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The set-ups waiting for the person here, and each set-up step's tab let go once they answered it (REVIEWENV1d, design §2.3): kept
+/// The set-ups waiting for the person here, and each set-up step's tab let go once they answer it: kept
 /// served from look to look until then. A miss is said and tried again at the next look.
 /// </summary>
 [LookPass("reviews", LookPhase.Read, "reopens")]

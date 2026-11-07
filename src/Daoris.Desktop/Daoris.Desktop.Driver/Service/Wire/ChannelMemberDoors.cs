@@ -21,9 +21,9 @@ public sealed record ChannelMemberAnswer(ChannelMemberView? Member, string? Code
 public sealed record ChannelMemberRead(IReadOnlyList<ChannelItemView> Items, int Unread, string? Code);
 
 /// <summary>
-/// The doors of an agent outside Daoris on a channel (CHANNELJOIN1; the event-channel design §5.3, §5.4): the person's admission, which
+/// The doors of an agent outside Daoris on a channel: the person's admission, which
 /// the shell presses on their Confirm, and the member's read, post and leave, which carry no key and are judged as the member's. A
-/// refusal is an answer carrying the service's code; a host from before the members answers none, which is said.
+/// refusal is an answer carrying the service's code; a host without the members' doors answers none, which is said.
 /// </summary>
 public static class ChannelMemberDoors
 {

@@ -6,9 +6,8 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// `daoris plugins`, the host's one door for plugins (D50): the kit's <c>new</c> and <c>try</c>
-/// (<see cref="PluginKitCommand"/>), and a plugin's page and activity, <c>show</c> and <c>activity</c> (PLUGUI1d,
-/// D119 §4.4), the terminal twins of the Plugins view's page and its Activity.
+/// `daoris plugins`, the host's one door for plugins: the kit's <c>new</c> and <c>try</c>
+/// (<see cref="PluginKitCommand"/>), and a plugin's page and activity, <c>show</c> and <c>activity</c>, the terminal twins of the Plugins view's page and its Activity.
 /// </summary>
 /// <remarks>
 /// <para><b>Why the driver's.</b> <c>show</c> reads what only the driver knows (health, whether a process listens,
@@ -17,10 +16,10 @@ namespace Daoris.Driver;
 /// <see cref="PluginActivity.Read"/>.</para>
 ///
 /// <para><b>A terminal is another process</b>, so a plugin's health here is the machine log's last word, and
-/// <c>show</c> says so and when (D119 §2).</para>
+/// <c>show</c> says so and when.</para>
 ///
 /// <para>The printing lives in the library so a test runs the whole door in-process. Exit codes keep the family
-/// contract: 0 shown · 1 the plugin failed a check (<c>try</c>) · 2 it could not do what was asked.</para>
+/// contract: 0 shown · 1 the plugin failed a check (<c>try</c>) · 2 it could not do what it is asked.</para>
 /// </remarks>
 public static class PluginsCommand
 {
@@ -41,10 +40,10 @@ public static class PluginsCommand
 
     /// <param name="log">This host's machine log, where the kit's trial of an installed plugin is written.</param>
     /// <param name="instance">
-    /// Where the terminal's verb looks for the running Daoris (RPC1e, the terminal RPC design §7.2): <c>approve</c> and <c>withdraw</c>
+    /// Where the terminal's verb looks for the running Daoris: <c>approve</c> and <c>withdraw</c>
     /// are the person's presses, sent as <c>PLUGIN_ACTION</c> and confirmed in its window, its route asked for this verb's own lines.
     /// <c>new</c>, <c>try</c>, <c>show</c> and <c>activity</c> stay this terminal's: their words name this machine's folders, which no
-    /// answer carries (§4.3). Null acts alone.
+    /// answer carries. Null acts alone.
     /// </param>
     public static async Task<int> RunAsync(
         string[] args, TextWriter output, string? home, MachineLog? log = null, CancellationToken ct = default, InstanceWorld? instance = null) =>
@@ -69,7 +68,7 @@ public static class PluginsCommand
     };
 
     /// <summary>
-    /// The words <c>PLUGIN_ACTION</c>'s payload stands for, when a terminal sent it asking for its words (RPC1e): the verb's own, so the
+    /// The words <c>PLUGIN_ACTION</c>'s payload stands for, when a terminal sent it asking for its words: the verb's own, so the
     /// route runs <see cref="RunAsync"/> as the terminal would alone; null for an action no verb of this family sends.
     /// </summary>
     public static string[]? GrantWords(string action, string id, string server, IReadOnlyList<string>? writes) => action switch
@@ -93,8 +92,8 @@ public static class PluginsCommand
                     return ShowVerb(rest, output, home);
                 case ["activity", .. var rest]:
                     return ActivityVerb(rest, output, home);
-                // HELPPLUG1a's tightening (D170's note): the page's Approve and Withdraw, at a terminal (D50).
-                // HELPPLUG1c: `--writes` names the writes accepted, each on its own, as the page's choice does.
+                // The page's Approve and Withdraw, at a terminal.
+                // `--writes` names the writes accepted, each on its own, as the page's choice does.
                 case ["approve", var id, var server, .. var flags] when flags is [] or ["--reads-only"] or ["--writes", _]:
                 {
                     IReadOnlyList<string>? writes = flags switch
@@ -218,7 +217,7 @@ public static class PluginsCommand
             var handed = new List<string>();
             if (server.DrivesBrowser) handed.Add("drives Daoris's browser, and is withheld where no shell answers");
             else if (server.To.Contains(PluginServerTo.Sessions, StringComparer.Ordinal)) handed.Add("handed to every session beside Daoris's own knowledge host");
-            // HELPPLUG1a (D170 point 3 and its note): what it offers Ask Daoris, and the person's approval of its tools.
+            // What it offers Ask Daoris, and the person's approval of its tools.
             if (server.Help is { } state)
             {
                 var tools = new List<string>();
@@ -238,7 +237,7 @@ public static class PluginsCommand
             Field(text, index == 0 ? "servers" : "", $"{server.Name}{taken}  `{string.Join(" ", server.Command)}`{environment}; {string.Join("; ", handed)}");
         }
 
-        // FABRIC-UNIT1e (§D9): each step and resource in the words an update's change says them (PluginSteps.Said).
+        // Each step and resource in the words an update's change says them (PluginSteps.Said).
         foreach (var (step, index) in page.Steps.Select((step, index) => (step, index)))
         {
             Field(text, index == 0 ? "steps" : "", PluginSteps.Said(step) + taken);
@@ -300,7 +299,7 @@ public static class PluginsCommand
         return text.ToString();
     }
 
-    /// <summary>The health line: the state and since when, and what it costs while it fails (D119 §2).</summary>
+    /// <summary>The health line: the state and since when, and what it costs while it fails.</summary>
     private static string HealthLine(PluginPageRead page)
     {
         var health = page.Health;
@@ -314,7 +313,7 @@ public static class PluginsCommand
             PluginHealthRules.Off => $"off: the driver asks it nothing, and hands sessions nothing it declares. `daoris plugin enable {page.Id}` turns it on.",
             _ => points.Any(point => HookPoints.Loop.Contains(point, StringComparer.Ordinal))
                 ? "ready: on and sound, and no process of it is up now; the driver loop starts it"
-                // FABRIC-PERFORM1a: the work wire's process is the lease's loop's, kept while its steps are awaited.
+                // The work wire's process is the lease's loop's, kept while its steps are awaited.
                 : points.Any(point => HookPoints.Work.Contains(point, StringComparer.Ordinal))
                     ? "ready: the loop that holds this home starts it while a unit awaits one of its steps"
                 : points.Contains(HookPoints.Event, StringComparer.Ordinal)
@@ -325,13 +324,13 @@ public static class PluginsCommand
         };
     }
 
-    /// <summary>What a failure costs, by where it failed (D119 §2): a decision fails closed, an observation is contained.</summary>
+    /// <summary>What a failure costs, by where it failed: a decision fails closed, an observation is contained.</summary>
     private static string Cost(string where, IReadOnlyList<string> points)
     {
         var at = where is PluginEvents.AtStart or PluginEvents.AtProcess
             ? points.Contains(HookPoints.QuestConsider, StringComparer.Ordinal) ? HookPoints.QuestConsider
               : points.Contains(HookPoints.SessionEnded, StringComparer.Ordinal) ? HookPoints.SessionEnded
-              // STATEHUB1g: an observation too, so a plugin that only watches the state costs nothing when it fails.
+              // An observation too, so a plugin that only watches the state costs nothing when it fails.
               : points.Contains(HookPoints.StateChanged, StringComparer.Ordinal) ? HookPoints.StateChanged
               : points.Contains(HookPoints.Event, StringComparer.Ordinal) ? HookPoints.Event
               : points.Any(point => HookPoints.Work.Contains(point, StringComparer.Ordinal)) ? HookPoints.Watch
@@ -340,9 +339,9 @@ public static class PluginsCommand
         return at switch
         {
             HookPoints.QuestConsider => "Every quest it is asked about sits until it answers, or until you turn it off.",
-            // PLUGHOOK1a (design §2.4): a query fails toward keeping.
+            // A query fails toward keeping.
             HookPoints.State => "Nothing is removed on its word until it answers.",
-            // FABRIC-PERFORM1a: a step is reached only on its word, so its steps wait; nothing else does.
+            // A step is reached only on its word, so its steps wait; nothing else does.
             HookPoints.Watch or HookPoints.Step or HookPoints.Perform => "The steps it reports or performs wait until it is back.",
             _ => "Nothing waits on it; the driver goes on.",
         };
