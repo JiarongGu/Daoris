@@ -103,12 +103,17 @@ internal static partial class FileAnalysis
             if (hit.Row.Manifest is { } manifestName && await FileGit.ShowAsync(root, commit, hit.Folder + manifestName, ct).ConfigureAwait(false) is { } manifest)
             {
                 var (members, scripts) = Manifest(manifest);
-                if (hit.Row.Workspaces && members.Count > 0) rule = rule with { Paths = [.. rule.Paths, .. members.Select(member => $"{hit.Folder}{member.TrimEnd('/')}/node_modules/")] };
+                if (hit.Row.Workspaces) rule = WithMembers(rule, hit.Folder, members);
                 if (hit.Folder.Length == 0) lifecycle = string.Join('\n', scripts.Values);
                 if (scripts.Keys.FirstOrDefault() is { } script)
                 {
                     rule = rule with { Key = [], Evidence = [.. rule.Evidence, $"its install runs `{script}`, so the commit's tree keys it"] };
                 }
+            }
+
+            if (hit.Row.WorkspaceFile is { } workspaceFile && await FileGit.ShowAsync(root, commit, hit.Folder + workspaceFile, ct).ConfigureAwait(false) is { } workspace)
+            {
+                rule = WithMembers(rule, hit.Folder, WorkspaceMembers.OfPnpm(workspace));
             }
 
             if (rule.Key is not { Count: 0 } && await FileGit.ShowAsync(root, commit, hit.File, ct).ConfigureAwait(false) is { } lockfile
@@ -182,9 +187,7 @@ internal static partial class FileAnalysis
             using var document = JsonDocument.Parse(text);
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object) return ([], new Dictionary<string, string>());
-            var members = root.TryGetProperty("workspaces", out var listed)
-                ? Json.Strings(listed.ValueKind == JsonValueKind.Object ? listed : root, listed.ValueKind == JsonValueKind.Object ? "packages" : "workspaces")
-                : [];
+            var members = WorkspaceMembers.OfManifest(root);
             var scripts = new Dictionary<string, string>(StringComparer.Ordinal);
             if (root.TryGetProperty("scripts", out var named) && named.ValueKind == JsonValueKind.Object)
             {
@@ -198,6 +201,9 @@ internal static partial class FileAnalysis
             return ([], new Dictionary<string, string>());
         }
     }
+
+    private static FileRule WithMembers(FileRule rule, string folder, IReadOnlyList<string> members) =>
+        members.Count == 0 ? rule : rule with { Paths = [.. rule.Paths.Concat(WorkspaceMembers.Modules(folder, members)).Distinct(StringComparer.Ordinal)] };
 
     /// <summary>The first package a lockfile marks as running its own install script, but those its signature lists as reading nothing.</summary>
     private static string? InstallScript(string lockfile, IReadOnlyList<string> readsNothing)

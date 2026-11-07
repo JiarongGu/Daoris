@@ -3,8 +3,8 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>One reading of a repository: the commit read, when, and the rules found.</summary>
-internal sealed record FoundReading(string Commit, DateTimeOffset At, IReadOnlyList<FileRule> Rules);
+/// <summary>One reading of a repository: the commit read, when, the rules found, and a digest of its toolchain commands' answers.</summary>
+internal sealed record FoundReading(string Commit, DateTimeOffset At, IReadOnlyList<FileRule> Rules, string? Toolchain = null);
 
 /// <summary>A repository's last reading in the found layer, or none, and why the file or a rule of it does not read.</summary>
 internal sealed record FoundFilesRead(FoundReading? Reading, IReadOnlyList<string> Problems);
@@ -36,7 +36,8 @@ internal static class FoundFiles
             var commit = read.ValueKind == JsonValueKind.Object ? Json.Text(read, "commit") ?? "" : "";
             var moment = read.ValueKind == JsonValueKind.Object && DateTimeOffset.TryParse(Json.Text(read, "at"), out var parsed) ? parsed : DateTimeOffset.MinValue;
             var rules = FileRuleFile.Rules(entry.Value, "", problems);
-            return new(new FoundReading(commit, moment, rules), problems);
+            var toolchain = read.ValueKind == JsonValueKind.Object ? Json.Text(read, "toolchain") : null;
+            return new(new FoundReading(commit, moment, rules, toolchain), problems);
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
         {
@@ -66,7 +67,7 @@ internal static class FoundFiles
 
         repositories[repository] = new JsonObject
         {
-            ["read"] = new JsonObject { ["commit"] = reading.Commit, ["at"] = reading.At.ToString("O") },
+            ["read"] = new JsonObject { ["commit"] = reading.Commit, ["at"] = reading.At.ToString("O"), ["toolchain"] = reading.Toolchain },
             ["rules"] = new JsonArray([.. reading.Rules.Select(rule => (JsonNode)FileRuleFile.Written(rule))]),
         };
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);

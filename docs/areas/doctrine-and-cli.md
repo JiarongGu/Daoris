@@ -85,7 +85,7 @@ as a pack.
     with no text is refused, `--force` included. (from D19, D71, D230)
 16. `--force` discards an edit and nothing else. It never passes a link, a move that would leave the repository's own
     documents unlisted, a room with no text, a declared document behind a link, an absent kept core file, or a move
-    carrying a kept file (`syncapply.ts:47-100`). (from D117, D230)
+    carrying a kept file (`refuseWhatForceCannot`). (from D117, D230)
 17. Files are written as BOM-less UTF-8 with LF, beside the target and renamed over it. Comparisons normalise line
     endings on read. `init` pins `* text=auto eol=lf` where the repository says nothing. (from D25)
 18. Each written file opens with a provenance header, and each span with a provenance comment. The hash, not the header,
@@ -181,7 +181,7 @@ as a pack.
     found. (from D117, D124, D151, D230)
 47. The whole set-up runs `init --harness agents`, `analyze`, `sync`, then writes the domain, the knowledge a neighbour
     needs, the brief, the documents, the safe work and the checks, and, where the repository declares none, proposes its
-    rooms and the classes of its ignored files by the canon's `rooms-and-classes`; a move proposes them too. It never
+    rooms and the rules for its files git does not manage by the canon's `rooms-and-classes`; a move proposes them too. It never
     pushes, publishes, runs `connect` or `upstream`, or changes code. (from D124, D214)
 48. The rule is exact `daoris` verbs as `Bash(…)`, never a runner: `--version`, `init --harness agents`, `analyze --json`,
     `sync` (plain, `--dry-run`, `--force`), `check`, `status --json`, `doctor`. A reconcile adds `reconcile` and
@@ -240,35 +240,35 @@ as a pack.
 
 ## Contradictions
 
-1. D59 (rejects naming rules instead of carrying them) and D128 point 4 (every rule in full) vs `tierrender.ts:17,202`
-   (five rules are linked rows read on demand): the code reads right.
+1. D59 (rejects naming rules instead of carrying them) and D128 point 4 (every rule in full) vs `tierrender.ts` (its header's
+   point 4 and the on-demand loop: five rules are linked rows read on demand): the code reads right.
 2. D128 point 4 and its KNOW2 note (`doc-loader` reads `INDEX.md`) vs `canon/core/skills/` (no `doc-loader`; `change` step 1
    reads the area): the code reads right.
-3. D230 point 2 (the lock's canon digest orders the canons) vs `canon.ts:141-145` and `commands.ts:168-172` (the digest
+3. D230 point 2 (the lock's canon digest orders the canons) vs `canonDigest` and `commandStatus`' `update` (the digest
    tells two canons apart and never orders them): the code reads right.
-4. D35 (`connect` is the CLI's one online command) vs `dogfood.test.ts:662` (no CLI module touches the network) and
+4. D35 (`connect` is the CLI's one online command) vs `dogfood.test.ts`' "no module of the CLI touches the network" and
    `Service/RegistryWords.cs`' mark (`connect` is the driver's `repository connect`): the code reads right.
 5. D194 point 1 (a `driver` family beside `agent`, `plugin` and `tool`) vs its own 2026-11-03 note and the `[CommandGroup]` marks (one
    tree of groups, no `driver` group): the note and the code read right.
 6. D117 point 7 and D124 point 5 (`daoris-driver setup [--workspace]`) vs `Setup/PlaceCommand.cs`' mark and
-   `WorkspaceSetupCommand.cs:24` (`daoris place … --adoption`): the code reads right.
+   `WorkspaceSetupCommand.Forms` (`daoris place … --adoption`): the code reads right.
 7. `CommandWords.cs` (one name, `daoris`) vs the older `CHANGELOG.md` entries that still spell the retired `driver` group (no such
    group): the code reads right. No comment, guide line or area sentence spells it (`RetiredDriverGroupCensusTests`), and no taught
    word spells `daoris-driver`; it stays only as the program's file and folder (`app/daoris-driver/`), the ACP and instance hello's
    client name, and the process an asker is named by. `DaorisDriverWordsTests` holds that, the page's catalogues and the canon's
    skills among its files.
-8. D27 (the devkit verifies itself against the hash) vs `src/Daoris.Devkit/README.md:255` (deliberately not built; the
+8. D27 (the devkit verifies itself against the hash) vs `src/Daoris.Devkit/README.md`' "What is deliberately NOT implemented" (the
    installer verifies): the README reads right.
-9. `src/Daoris.Devkit/README.md:263` (the CLI's service client) and `AGENTS.md:23` (a service seam) vs `dogfood.test.ts:662`
-   (no network in the CLI): the test reads right.
-10. D9 (`upstream` promotes into the canon) vs `upstream.ts:256-264` (writes only inside the canon's checkout): D230 and the
+9. `src/Daoris.Devkit/README.md`' "Nothing is downloaded implicitly" (the CLI's service client) vs `dogfood.test.ts`' "no module
+   of the CLI touches the network": the test reads right.
+10. D9 (`upstream` promotes into the canon) vs `commandUpstream` (writes only inside the canon's checkout): D230 and the
     code read right.
-11. D23 (one harness is supported) vs `layout/harness.ts:28-118` (two descriptors, `agents` serving several harnesses): D117
+11. D23 (one harness is supported) vs `HARNESSES` in `layout/harness.ts` (two descriptors, `agents` serving several harnesses): D117
     and the code read right.
-12. D28's amendment (Daoris declares no packs) vs `daoris.json:3` (`co-working`, `localized-ui`): the manifest reads right.
-13. D122 point 1 (twelve roles) vs `canon/core/knowledge/development-documents.md:46-59` (adds `areas` and `index`): the
+12. D28's amendment (Daoris declares no packs) vs `daoris.json`' `packs` (`co-working`, `localized-ui`): the manifest reads right.
+13. D122 point 1 (twelve roles) vs `canon/core/knowledge/development-documents.md`' roles table (adds `areas` and `index`): the
     canon reads right.
-14. D194's ONEWAY1ai-i note (the CLI starts on the node `PATH` finds) vs `DoctrineConsole.cs:72-85` (the tools' resolved node
+14. D194's ONEWAY1ai-i note (the CLI starts on the node `PATH` finds) vs `DoctrineConsole.Node` (the tools' resolved node
     where a home exists, `PATH` only without one): the code reads right.
 
 ## Open
@@ -276,9 +276,9 @@ as a pack.
 No backlog row holds any of these; each is named only in the decision shown.
 
 - **LAYOUT5** and **LAYOUT6** (D117, D122): move this repository to the `agents` layout, then the brief and rooms. It is
-  still `claude-code` at `.claude` (`daoris.json:4`).
+  still `claude-code` at `.claude` (`daoris.json`' `target`).
 - **LAYOUT2** (D117 point 8): measure the layout's unmeasured cells.
 - **DOCSHOME1** (D117's note of 2026-10-27): managed documents and skills in two portable homes, with the round trip through both.
 - A `PowerShell(…)` rule for a set-up waits on the canary that a driven Windows session uses that tool, and codex and dsh
-  get no safe-work rules until measured (`SetupPress.cs:17`; D122 point 6).
-- The newer-lock refusal cannot fire until a release moves the canon version past 0.0.1 (`lockversion.ts:30-31`).
+  get no safe-work rules until measured (`SetupPress`' summary; D122 point 6).
+- The newer-lock refusal cannot fire until a release moves the canon version past 0.0.1 (`newerLock` in `lockversion.ts`).

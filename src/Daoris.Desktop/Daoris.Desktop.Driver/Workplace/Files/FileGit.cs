@@ -18,6 +18,13 @@ internal static class FileGit
         return code == 0 ? stdout : null;
     }
 
+    /// <summary>The paths that differ between two commits, by name alone; null where git cannot say (a commit it no longer holds).</summary>
+    internal static async Task<IReadOnlyList<string>?> ChangedAsync(string root, string from, string to, CancellationToken ct)
+    {
+        var (code, stdout, _) = await WorkingTree.GitAsync(root, ["--no-optional-locks", "diff", "--name-only", "-z", "--no-renames", from, to, "--"], ct).ConfigureAwait(false);
+        return code == 0 ? Split(stdout) : null;
+    }
+
     /// <summary>The paths the working tree ignores, at their tops and never descending, a folder ending in <c>/</c>.</summary>
     internal static async Task<IReadOnlyList<string>> IgnoredTopsAsync(string root, CancellationToken ct) =>
         Split(await Ask(root, ["ls-files", "--others", "--ignored", "--exclude-standard", "--directory", "-z"], ct).ConfigureAwait(false));

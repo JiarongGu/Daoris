@@ -1,5 +1,5 @@
 {
-  "_why": "The toolchains' signatures the file analysis reads (docs/2026-10-26-tree-pool-design.md §28.4, source 4): a row per toolchain, its signature files, and the rules of the folders beside each, in the rule file's own format, paths and keys relative to the signature's folder and a dependency's caches relative to it. Data, so no code names a stack. `local` lists the local signatures (source 2), a pattern with no '/' matched against a name at any depth; `scripts` the tracked files source 5 searches; `readsNothing` the packages whose own install script reads nothing of the tree.",
+  "_why": "The toolchains' signatures the file analysis reads (docs/2026-10-26-tree-pool-design.md §28.4, source 4): a row per toolchain, its signature files, and the rules of the folders beside each, in the rule file's own format, paths and keys relative to the signature's folder and a dependency's caches relative to it. Data, so no code names a stack. `local` lists the local signatures (source 2), a pattern with no '/' matched against a name at any depth; `scripts` the tracked files source 5 searches; `readsNothing` the packages whose own install script reads nothing of the tree; `workspaceFile` the tracked file beside the manifest that names a workspace's members.",
   "local": [
     "local/", ".env", ".env.*", "*.local.json", "local.settings.json", "appsettings.*.local.json", "*.pem", "*.key", "*.pfx",
     ".claude/settings.local.json", ".vscode/settings.local.json"
@@ -18,7 +18,7 @@
       ]
     },
     {
-      "toolchain": "pnpm", "signature": ["pnpm-lock.yaml"], "manifest": "package.json",
+      "toolchain": "pnpm", "signature": ["pnpm-lock.yaml"], "manifest": "package.json", "workspaceFile": "pnpm-workspace.yaml",
       "rules": [
         { "kind": "dependency", "paths": ["node_modules/"], "install": "pnpm install --frozen-lockfile",
           "key": ["pnpm-lock.yaml", "package.json", "pnpm-workspace.yaml", ".npmrc", "patches/**"],
