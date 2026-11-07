@@ -63,8 +63,6 @@ public static class DriverStateSlice
             && changed.Scopes.Any(scope => scope is "driver" or "sessions" or "harnesses")),
         new(DriverLoop.EndedType),
         new("DRIVER_READY"),
-        // TERMTRUST1a: a press the standing confirmation covered moves its count.
-        new(StandingConfirmation.UsedEvent),
     ];
 
     /// <summary>The slice the shell's loop owns, judging <paramref name="loop"/>'s state.</summary>

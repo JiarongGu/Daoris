@@ -41,12 +41,11 @@ public sealed class SupervisorScopeTests : IDisposable
 
     private StandingConfirmation Judge(params RoleRecord[] staffed)
     {
-        var standing = new StandingConfirmation(_home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), offered: true,
+        var standing = new StandingConfirmation(_home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside),
             walk: new StandingConfirmationTests.Walked())
         {
             WorkspaceOf = repository => _placed.GetValueOrDefault(repository),
         };
-        standing.Load();
         return standing.Staff(staffed);
     }
 

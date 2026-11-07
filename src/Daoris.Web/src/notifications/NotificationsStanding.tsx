@@ -1,26 +1,21 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  retryNotice, standingOf, useDriver, useRetryQuest, useSetDrivable, useSetHold, useSetStandingConfirmation, useSetTrees,
+  retryNotice, standingOf, useDriver, useRetryQuest, useSetDrivable, useSetHold, useSetTrees,
 } from '../bridge/shell';
 import { failure, type Notify } from '../design/ui';
-import { standingSaid, type StewardActNow, stewardReverse } from '../person/standing';
-import { StandingLine } from './StandingLine';
+import { type StewardActNow, stewardReverse } from '../person/standing';
 import { StewardLine } from './StewardLine';
 
 /**
- * The standing confirmation's line as *Notifications* holds it (TERMTRUST1a, D201 point 7): the driver's state read, and its **Turn
- * off**, which sends no presses and asks nothing (the terminal-trust design §4.3); a refusal said under the line (R3). Beside it the
- * steward's line (STEWARDROLE1b, D209 §5.3, §5.4): each act's reverse press sent as the window sends the owner's ordinary press today:
- * `SET_DRIVABLE`, `SET_TREES`, `SET_HOLD`, or `RETRY_QUEST` with what it did said as *Try again* says it. Who holds the supervisor and
- * the steward is their roles' (D233 point 2). The view draws it in its slot (`NotificationsView`'s `standing`), so the view presses no
- * hook itself.
+ * The steward's line as *Notifications* holds it (STEWARDROLE1b, D209 §5.3, §5.4): each act's reverse press sent as the window sends
+ * the owner's ordinary press today: `SET_DRIVABLE`, `SET_TREES`, `SET_HOLD`, or `RETRY_QUEST` with what it did said as *Try again* says
+ * it. Who holds the supervisor and the steward is their roles' (D233 point 2). The view draws it in its slot (`NotificationsView`'s
+ * `standing`), so the view presses no hook itself.
  */
-export function NotificationsStanding({ notify, onOpen }: { notify: Notify; onOpen: () => void }) {
+export function NotificationsStanding({ notify }: { notify: Notify }) {
   const { t } = useTranslation();
   const standing = standingOf(useDriver().data?.standingConfirmation);
-  const setStanding = useSetStandingConfirmation();
-  const [refused, setRefused] = useState<string | null>(null);
   const setDrivable = useSetDrivable();
   const setTrees = useSetTrees();
   const setHold = useSetHold();
@@ -42,19 +37,6 @@ export function NotificationsStanding({ notify, onOpen }: { notify: Notify; onOp
   };
   return (
     <>
-      <StandingLine
-        standing={standing}
-        busy={setStanding.isPending}
-        refused={refused}
-        onTurnOff={() => {
-          setRefused(null);
-          setStanding.mutate([], {
-            onSuccess: (answer) => { if (!answer.done) setRefused(standingSaid(t, answer.why, answer.message)); },
-            onError: failure(notify),
-          });
-        }}
-        onOpen={onOpen}
-      />
       <StewardLine
         standing={standing}
         refused={stewardRefused}

@@ -41,11 +41,7 @@ internal static class SessionsEnding
         return came == KeepingStops.Stopped ? 0 : 1;
     }
 
-    /// <param name="standing">
-    /// That the pipe admitted this stop under the person's standing confirmation: every record it ends, by whichever path, keeps its
-    /// own note and gains <see cref="EndNoteCodes.StandingTerminal"/> after it.
-    /// </param>
-    internal static async Task<int> StopAsync(SessionsWorld world, string id, TextWriter output, CancellationToken ct, bool standing = false)
+    internal static async Task<int> StopAsync(SessionsWorld world, string id, TextWriter output, CancellationToken ct)
     {
         var record = await RecordAsync(world, id, output, ct).ConfigureAwait(false);
         if (record is null) return 1;
@@ -59,7 +55,7 @@ internal static class SessionsEnding
         if (world.Processes.AliveOnThisMachine(id))
         {
             return await AskAsync(
-                    world, record, new SessionRequest(id, SessionMove.Stop, DateTimeOffset.UtcNow) { Parked = parked, Standing = standing }, "stopped",
+                    world, record, new SessionRequest(id, SessionMove.Stop, DateTimeOffset.UtcNow) { Parked = parked }, "stopped",
                     output, ct)
                 .ConfigureAwait(false);
         }
@@ -69,8 +65,7 @@ internal static class SessionsEnding
             try
             {
                 await SessionMoves.ResolveAsync(
-                        _ => false, world.Service, id, "stopped",
-                        noted: standing ? SessionMoves.Standing(SessionMoves.ByThePersonNoted("stopped")) : null, ct)
+                        _ => false, world.Service, id, "stopped", note: null, ct)
                     .ConfigureAwait(false);
             }
             catch (DriverException refused)
@@ -84,7 +79,7 @@ internal static class SessionsEnding
             return 0;
         }
 
-        var answer = await SessionMoves.StopAsync(world.Processes, world.Service, id, ct, standing: standing).ConfigureAwait(false);
+        var answer = await SessionMoves.StopAsync(world.Processes, world.Service, id, ct).ConfigureAwait(false);
         if (answer.Orphan)
         {
             output.WriteLine($"sessions: stopped {id}: nothing on this machine ran it any more, so its record is ended as your stop.");
@@ -119,30 +114,7 @@ internal static class SessionsEnding
             ? (SessionMove.Finish, "completed", "finished")
             : (SessionMove.Decline, "declined", "declined");
         int exit;
-        if (ask.Standing && move == SessionMove.Finish)
-        {
-            // A finish under the standing confirmation never takes the request folder, whose path ends the process before the
-            // ledger moves; one that finds a process for the session here asks again.
-            if (world.Processes.AliveOnThisMachine(id))
-            {
-                output.WriteLine(
-                    $"sessions: {id} runs here now, so it was not finished under your standing confirmation; ask again, or confirm it in Daoris's window. ({SessionsAsk.RunningHere})");
-                return 1;
-            }
-
-            try
-            {
-                var said = await SessionMoves.FinishStandingAsync(world.Service, id, ct).ConfigureAwait(false);
-                output.WriteLine($"sessions: {past} {id}: {said}");
-                exit = 0;
-            }
-            catch (DriverException refused)
-            {
-                output.WriteLine($"sessions: {refused.Message}");
-                return 1;
-            }
-        }
-        else if (world.Processes.AliveOnThisMachine(id))
+        if (world.Processes.AliveOnThisMachine(id))
         {
             exit = await AskAsync(world, record, new SessionRequest(id, move, DateTimeOffset.UtcNow) { Note = ask.Note, Parked = true }, past, output, ct)
                 .ConfigureAwait(false);

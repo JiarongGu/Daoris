@@ -15,8 +15,7 @@ internal sealed class SessionsMoveDesk(DriverContext context)
     {
         var id = press.Id;
         // `sessions stop` sent over the pipe asks for the verb's own words; the page asks for none and its answer keeps its shape.
-        // a stop the standing confirmation admitted says so on each record it ends.
-        if (press.Said) return await SessionsVerbs.SaidAsync(context, new SessionsAsk("stop") { Ids = [id], Standing = PipeDoor.Standing }, cancellationToken).ConfigureAwait(false);
+        if (press.Said) return await SessionsVerbs.SaidAsync(context, new SessionsAsk("stop") { Ids = [id] }, cancellationToken).ConfigureAwait(false);
 
         // False is an answer, not an error: the session already finished, and its record says how.
         // 🔴 Unless the record says it still runs and nothing on this machine runs it — a chat
@@ -60,9 +59,8 @@ internal sealed class SessionsMoveDesk(DriverContext context)
         // `sessions finish` and `decline` sent over the pipe ask for the verb's own words (`stopped` is the page's alone).
         if (said && state != "stopped")
         {
-            // a finish the standing confirmation admitted never takes the request folder, and is moved only from awaiting-person.
             return await SessionsVerbs.SaidAsync(
-                    context, new SessionsAsk(state == "completed" ? "finish" : "decline") { Ids = [id], Note = note, Standing = PipeDoor.Standing }, cancellationToken)
+                    context, new SessionsAsk(state == "completed" ? "finish" : "decline") { Ids = [id], Note = note }, cancellationToken)
                 .ConfigureAwait(false);
         }
 

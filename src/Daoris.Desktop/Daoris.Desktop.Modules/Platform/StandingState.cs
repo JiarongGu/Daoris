@@ -3,43 +3,23 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What the person's standing confirmation holds in memory, which its parts reach (<see cref="StandingConfirmation"/>): every member is
-/// read and written under <see cref="Gate"/> alone, and every helper here runs under it.
+/// What the roles' judge holds in memory, which its parts reach (<see cref="StandingConfirmation"/>): every member is read and written
+/// under <see cref="Gate"/> alone, and every helper here runs under it.
 /// </summary>
 /// <remarks>
-/// <para><b>Who writes what.</b> The grant (<see cref="StandingGrant"/>) owns <see cref="Presses"/>, <see cref="Since"/>,
-/// <see cref="Unread"/>, <see cref="Unwritten"/>, <see cref="Newer"/>, <see cref="Used"/>, <see cref="Seq"/> and the hold's memory
-/// <see cref="Held"/>, which the owner's mark also forgets. The roles' terminals (<see cref="RoleTerminals"/>) own <see cref="Holds"/>,
-/// <see cref="Holders"/> and <see cref="EndedTabs"/>, which the judge (<see cref="RoleJudge"/>) reads and, for a holder started on another
-/// configuration, ends; the judge counts <see cref="Answers"/> and admits into <see cref="Acts"/>. The acts' ledger
-/// (<see cref="RoleActsLedger"/>) owns <see cref="OwnerSet"/> and <see cref="OwnerUnresolved"/> and moves <see cref="Acts"/> on; the
-/// steward's record (<see cref="StewardRecord"/>) owns <see cref="StewardDone"/>. A start's <see cref="StandingGrant.Load"/> clears the
-/// grant's memory, the holds, the holders and the answers in one step.</para>
-/// <para><b>One lock, one mutation step</b> (§2.3, §3.3 point 5, §4.3): a press is judged and admitted under <see cref="Gate"/>, and every
-/// read-modify-write of the record and the memory it installs runs whole under it. It is never held across an await, nor while a
-/// decision's lock is taken, nor while a tab is told or closed: those run after the step.</para>
+/// <para><b>Who writes what.</b> The roles' terminals (<see cref="RoleTerminals"/>) own <see cref="Holds"/>, <see cref="Holders"/> and
+/// <see cref="EndedTabs"/>, which the judge (<see cref="RoleJudge"/>) reads and, for a holder started on another configuration, ends; the
+/// judge counts <see cref="Answers"/> and admits into <see cref="Acts"/>. The acts' ledger (<see cref="RoleActsLedger"/>) owns
+/// <see cref="OwnerSet"/> and <see cref="OwnerUnresolved"/> and moves <see cref="Acts"/> on; the steward's record
+/// (<see cref="StewardRecord"/>) owns <see cref="StewardDone"/>.</para>
+/// <para><b>One lock, one mutation step</b> (§2.3, §3.3 point 5): an act is judged and admitted under <see cref="Gate"/>, and every
+/// read-modify-write of the memory runs whole under it. It is never held across an await, nor while a decision's lock is taken, nor while
+/// a tab is told or closed: those run after the step.</para>
 /// </remarks>
 internal sealed class StandingState
 {
     /// <summary>The one lock every member here is read and written under.</summary>
     public Lock Gate { get; } = new();
-
-    /// <summary>The repositories a covered hold held this run, with its moment.</summary>
-    public Dictionary<string, DateTimeOffset> Held { get; } = new(StringComparer.OrdinalIgnoreCase);
-
-    public IReadOnlyList<string> Presses { get; set; } = [];
-
-    public DateTimeOffset? Since { get; set; }
-
-    public string? Unread { get; set; }
-
-    public bool Unwritten { get; set; }
-
-    public bool Newer { get; set; }
-
-    public int Used { get; set; }
-
-    public long Seq { get; set; }
 
     // The roles a terminal holds this run, each with the generation every act under it carries; the holders living this run by their id,
     // each with its key's hash, its tab, its harness's process and the roles ended in it, in memory alone.

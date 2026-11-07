@@ -206,8 +206,7 @@ public static class StewardActRows
     ];
 
     /// <summary>
-    /// Whether <paramref name="form"/> is exactly <paramref name="fields"/>: every name read as D201's <c>IsForm</c> reads it (ignoring case,
-    /// each once), one the form names, its value the one allowed, and every name there.
+    /// Whether <paramref name="form"/> is exactly <paramref name="fields"/>: every name read ignoring case, each once, one the form names, its value the one allowed, and every name there.
     /// </summary>
     internal static bool Exact(JsonElement form, IReadOnlyDictionary<string, Func<JsonElement, bool>> fields)
     {
@@ -290,7 +289,10 @@ public static class StewardActRows
 
         public string TargetKind => OwnerKinds.Session;
 
-        public bool IsForm(JsonElement form) => StandingConfirmation.IsForm(StandingPresses.Stop, form);
+        public bool IsForm(JsonElement form) => Exact(form, new Dictionary<string, Func<JsonElement, bool>>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["id"] = Named, ["said"] = each => each.ValueKind == JsonValueKind.True,
+        });
 
         public string Target(JsonElement form) => Text(form, "id");
 
@@ -335,7 +337,12 @@ public static class StewardActRows
 
         public string TargetKind => OwnerKinds.Session;
 
-        public bool IsForm(JsonElement form) => StandingConfirmation.IsForm(StandingPresses.Finish, form);
+        public bool IsForm(JsonElement form) => Exact(form, new Dictionary<string, Func<JsonElement, bool>>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["id"] = Named,
+            ["state"] = each => each.ValueKind == JsonValueKind.String && each.GetString() == "completed",
+            ["said"] = each => each.ValueKind == JsonValueKind.True,
+        });
 
         public string Target(JsonElement form) => Text(form, "id");
 

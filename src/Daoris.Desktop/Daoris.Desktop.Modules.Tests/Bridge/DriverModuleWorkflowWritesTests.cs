@@ -365,10 +365,9 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
     [InlineData("WORKFLOW_SAVE")]
     [InlineData("WORKFLOW_USE")]
     [InlineData("WORKFLOW_KIND")]
-    public void The_workflow_writes_are_the_persons_alone_with_no_standing_cover_and_no_role_act(string route)
+    public void The_workflow_writes_are_the_persons_alone_with_no_role_act(string route)
     {
         Assert.Equal(PipeClass.Person, PipeCensus.Daoris.Of(DriverModule.Name, route));
-        Assert.DoesNotContain(route, StandingPresses.Built, StringComparer.OrdinalIgnoreCase);
         Assert.DoesNotContain(route, StewardActs.Table.Keys, StringComparer.OrdinalIgnoreCase);
         Assert.NotNull(PipeTargets.Daoris.Mark(DriverModule.Name, route));
         Assert.Contains(route, DriverModule.Routes);

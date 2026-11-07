@@ -127,8 +127,6 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
       onHold: (next) => setHold.mutate({ repository: name, held: next }, { onError: onDriverError }),
       onTrees: (next) => setTrees.mutate({ repository: name, ownTree: next }, { onError: onDriverError }),
       note: !registration.adopted && door === 'native' ? t('projects.outside.directDoor') : undefined,
-      // TERMTRUST1a: a hold a terminal made under the person's standing confirmation, as this run remembers it.
-      heldStanding: named(standingOf(state.standingConfirmation)?.held, name),
       // STEWARDROLE1b (D209 §5.1): what the steward set here, from this run's memory.
       stewardSet: stewardSetOf(),
     };

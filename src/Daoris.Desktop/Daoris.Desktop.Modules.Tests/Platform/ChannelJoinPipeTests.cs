@@ -36,7 +36,7 @@ public sealed class ChannelJoinPipeTests : Bridge
         driver.Let.SetResult();
         var (dispatcher, services) = Compose(log, driver);
         var caller = new StandingConfirmationTests.Placed(place);
-        var standing = new StandingConfirmation(Home, log, caller, offered: true);
+        var standing = new StandingConfirmation(Home, log, caller);
         var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", standing: standing) { Grounds = new StubGrounds() };
         Assert.NotNull(pipe.Serve());
         var client = await PipeClient.ConnectAsync(pipe.Name!);

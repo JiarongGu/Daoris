@@ -22,7 +22,7 @@ internal static class AskAtWorkConsole
             var config = DriverConfig.Load(configPath);
             var home = DriverConfig.HomeOf(configPath);
             using var service = ServiceClient.FromEnvironment();
-            var world = new SessionsWorld(service, home, config, SessionsConsole.Unadopted(config), null) { Instance = InstanceHost.World(home, "ask") };
+            var world = new SessionsWorld(service, home, config, SetupWorld.Unadopted(config, home), null) { Instance = InstanceHost.World(home, "ask") };
             return await AskAtWorkVerb.RunAsync(world, ask, Console.Out, CancellationToken.None).ConfigureAwait(false);
         }
         catch (DriverException error)

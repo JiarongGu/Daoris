@@ -37,10 +37,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `SupervisorRuleStore`, `SupervisorRuleBook`, `RuledPolicy` | `Roles/SupervisorRule*.cs`, `Roles/RuledPolicy.cs` | `supervisor_rules`; the fresh seed; what each executor reads; a preset's rules |
 | `SupervisorRuleActs`, `SupervisorRuleHold`, `RuleWiderPlaces`, `RuleWiderPlaceStore` | `Roles/SupervisorRuleActs.cs`, `Roles/SupervisorRuleHold.cs`, `Roles/RuleWiderPlaces.cs`, `Roles/RuleWiderPlaceStore.cs` | A rule's act said, kept and read back; `rule-holds`; a repository's workspace as its wider place, kept in the store from the look's registry. A Planned look pass (`RuleActsLook`, `PlannedRuleActs`) records a park, a transient hold, a rule's move and the moves bound once per session; the supervisor's print lists them (`LineFacts.Acts`) |
 | `QuestionSupervisorDecisions`, `SupervisorWhy`, `SupervisorBounds` | `Roles/QuestionSupervisorDecisions.cs`, `Roles/SupervisorDecision.cs` | The agent supervisor's decisions in memory, its lifecycle, refusals and bounds; the class keeps one-line doors |
-| `SupervisorCourses`, `ReferredPoints`, `SupervisorCourseForm` | `Roles/SupervisorCourses.cs`, `Roles/ReferredPoints.cs`, `Roles/SupervisorCourseForm.cs`, `Modules/Bridge/SupervisorCourseDoor.cs`, `Modules/Bridge/Routes/SupervisorCourseRoutes.cs` | A `refer` point's course decision kept, held, released or overruled; the open point and its release door; the act's form; its route and its listing |
+| `SupervisorCourses`, `ReferredPoints`, `SupervisorCourseForm` | `Roles/SupervisorCourses.cs`, `Roles/ReferredPoints.cs`, `Roles/SupervisorCourseForm.cs`, `Modules/Bridge/SupervisorCourseDoor.cs`, `Modules/Bridge/Routes/SupervisorCourseRoutes.cs` | A `refer` point's course decision kept, held, released or overruled; the open point (answers alone's mark, or a quest's parked or asking verdict) and its release door; the act's form; its route and its listing. A quest's go-on is released by `CourseReleaseLook` (`Loop/Look/`) |
 | `SupervisorBook`, `SupervisorDecisionFiles`, `SupervisorKeeping`, `SupervisorReleasing`, `SupervisorSweeps`, `SupervisorTickets`, `SupervisorReads` | `Roles/Supervisor*.cs` | The decisions' shared memory (live decisions, session locks, closed questions) and its one move in the book; the files, keeping, releasing, sweeps, tickets and reads each reach it and keep no state |
 | `SessionsSuperviseCommand`, `SupervisorQuarantine`, `HolderKey` | `Roles/SessionsSuperviseCommand.cs`, `Roles/SupervisorQuarantine.cs`, `Roles/SupervisorProof.cs` | The holder's verb; unattributed words taken back; the key, its proof and the role terminal's verbs |
-| `StandingConfirmation` | `Modules/Platform/StandingConfirmation.cs` | The roles' terminals this run: holds, generations, holders; the act judge over the catalogue. The doors; the memory is `StandingState`'s under its one lock, which `StandingGrant` (the grant and a press's judgement), `RoleTerminals` (starts, catalogue changes, a holder's end), `RoleJudge` (the role method, the decisions' admission), `RoleActsLedger` (acts, operations, the owner's marks) and `StewardRecord` (the steward's acts this run) reach |
+| `StandingConfirmation` | `Modules/Platform/StandingConfirmation.cs` | The roles' terminals this run: holds, generations, holders; the act judge over the catalogue. The doors; the memory is `StandingState`'s under its one lock, which `RoleTerminals` (starts, catalogue changes, a holder's end), `RoleJudge` (the role method, the decisions' admission), `RoleActsLedger` (acts, operations, the owner's marks) and `StewardRecord` (the steward's acts this run) reach |
 | Steward | `Roles/StewardCommand.cs`, `Roles/StewardAsked.cs`, `Modules/Bridge/StewardActRows.cs`, `Modules/Bridge/StewardRouteAct.cs`, `Modules/Bridge/StewardPauseAct.cs`, `Modules/Bridge/StewardUpdateAct.cs`, `Modules/Bridge/StewardTargets.cs`, `Modules/Bridge/Routes/QuestEndRoutes.cs`, `Modules/Platform/RoleActs.cs`, `Modules/Platform/StewardAsk.cs` | `steward <act>` over `ROLE_ACT`, and its words when an act asks the owner; the seventeen acts, the route acts among them; pending operations; an act outside the granted ones sent on as its person's press |
 | `StartAdmission`, `CallTable` | `Participants/Domain/StartAdmission.cs`, `Service/Daoris.Service.Mcp/CallTable.cs` | Who may ask for a co-worker; which tools each work is served |
 | `HelpProposals`, `HelpProposalKinds` | `Help/HelpProposals.cs`, `Help/HelpProposalKinds.cs`, `Help/Proposals/` | Ask Daoris's 16 proposal kinds, each judged by its route's code and applied by the person |
@@ -128,8 +128,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 31. A rule is *when this count reaches n here, do this*. The counts are answers alone in a row, failed sessions since
     *Try again*, failures in a row on one choice, transient tries, a quiet end, a limited end, and moves in 24 hours. (from D229)
 32. The actions are hold, ask, wait (5 to 600 minutes), next, weighted, refer and off, each count allowing its own set.
-    `refer` (ask the agent supervisor) is answers alone's alone, the one count whose release the supervisor's course act
-    makes; on any other count the judge refuses it `do`. No flag offers it. (from D229)
+    `refer` (ask the agent supervisor) is offered on three counts: answers alone, and the two only a driven quest has, failed
+    sessions since *Try again* (it parks as `hold` does) and failures in a row on one choice (it asks as `ask` does). Each is a
+    count whose hold sits between sessions and whose own door the supervisor's course act can go through: answers alone's mark,
+    and for the quest's two its *Try again*. On any other count the judge refuses it `do`, and no flag offers it: tries, limits and
+    moves are a conversation's counts too, and a conversation's hold is released by its person's word, which no course act may
+    speak; a quiet end has no hold to release, and its session is never ended. (from D229)
 33. A place is the machine, `workspace:<id>` or `repository:<id>`; a line has no place of its own, so the judge refuses
     `line:<key>` (`place`) and the chain has no line step. A failure is one thing for the quest's count and its run on
     one choice: a failed end or a cut-off, never a limit, a refused account, a choice not offered, a transient end, an
@@ -215,7 +219,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     `answers.supervised` kept, which resets the count as the person's press does. No course act stops, ends or moves a
     session. With no started terminal for the place the point waits for the person and says so (`supervisor.unreferred`). The
     decision is kept beside the questions' with no `question`; a restart empties memory and leaves the point the person's.
-    (`SupervisorCourses`, `ReferredPoints`, `Modules/Bridge/SupervisorCourseDoor.cs`; from D229)
+    A quest's point is its rule's act on the quest's last session while the planner's verdicts hold it there, parked (`failures`)
+    or asking (`failures-on-choice`); its release is the look after the plan (`CourseReleaseLook`), which reads the same verdicts and
+    makes the quest's own *Try again* (`QuestRetry.Decide`: a park's mark, or a policy's one approval, the same writes the person's press
+    makes), never while its session runs, and the plan, the rules and the admission read again first. The count's judge reads the
+    same hold: a supervisor's answer is refused `rule-holds` where a refer parks. (`SupervisorCourses`, `ReferredPoints`,
+    `Modules/Bridge/SupervisorCourseDoor.cs`; from D229)
 49. A decision is held whole in memory for the supervisor role's window (1 to 60 minutes, 5 by default), then released in
     one conditional step that asks the admission again. Its word is `From: supervisor`, never the person's; an
     unattributable one is quarantined. (from D208, D233)
@@ -291,7 +300,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 holder key, steward), `Install/HomeMigrationTests`, `Course/LineCourseTests`, `Course/StaffCourseLookTests`,
 `Loop/StaffPolicy*TickTests`, `Help/HelpProposalKindsTests`, `Help/Proposals/*Tests`, and
 `Knowledge/HelpRoom*Tests` with the room goldens. Modules: `Bridge/DriverModuleRoleTests`, `DriverModuleAppointmentTests`,
-`Platform/StandingConfirmationTests`, `RoleActTests`, `Holder*Tests`, `SupervisorScopeTests`. Service:
+`Platform/RoleTerminalTests`, `RoleActTests`, `Holder*Tests`, `SupervisorScopeTests`. Service:
 `Help/HelpRoleProposalTests`, `Help/HelpProposalBoxKindsTests`, `Mcp/McpRoleFilterTests`, `Sessions/SupervisorWordTests`.
 Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 
@@ -327,9 +336,8 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 
 ## Open
 
-- **CONTEXTDRIVE1j (rest):** `refer` on the counts past answers alone (failures, tries and the condition counts), each once its
-  release door has a supervisor's form; a course decision on *Details* and the page's card; `sessions supervise <id>`'s print of a
-  referred point.
+- **CONTEXTDRIVE1j (rest):** a course decision on *Details* and the page's card; `sessions supervise <id>`'s print of a referred
+  point; a note on the quest's line when the supervisor's go-on makes its *Try again*; the installed proof of a parked quest gone on.
 - **CONTEXTDRIVE1l, m:** the installed proof. The hooks' coverage rows owed at CONTEXTDRIVE1g are not written: the every-door
   census that would hold them was retired with the door-only-where-wanted rule (D233 point 1), so no test names a hook.
 - **STAFFPOLICY1h/i:** selection by measurement; the installed proof.
@@ -341,8 +349,7 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 - **SUPERVISOR1a-iii:** the installed proof of the activation: a place's supervisor held by a started terminal on the install's
   `app/Daoris.Desktop.exe`, a referred point decided and gone on, and the look in the window.
 - **QUESTIONUI1b, SUPERVISOR1d, SUPERVISOR1c, SUPERVISOR1f:** the pick on the card; the bench; the `actor` holder; words.
-- **STEWARDROLE1d (rest):** D201's grant of its own deleted (`SET_STANDING_CONFIRMATION`, its record, This Daoris's row,
-  `PipeDoor.Standing`, `standing.terminal`), the four presses it covered being the steward's acts; the installed look.
+- **STEWARDROLE1d (rest):** the steward's further acts; the installed look.
 - **STEWARDROLE1e to 1h:** the steward's hand-over, go-on, set-up, and free words.
 - **ROLEPERM1, PERSONDOOR1c-i:** permission answers through appointed actors; the role's boundary at every door.
 - **SETUPUX1y:** the places tree lit by default, retiring the Roles sections under Setup.

@@ -62,11 +62,7 @@ export function setupRows({ driving, drivingLine, t, repository, busy, i18n, lin
               label={t('projects.driver.hold')}
               hint={t('projects.setup.twin.hold', { repository })}
               control={<CheckField checked={driving.held} disabled={busy} onChange={driving.onHold} label={t('projects.driver.hold')} hideLabel />}
-            >
-              {driving.held && driving.heldStanding && (
-                <p className="m-0 text-small text-ink-soft">{t('projects.setup.heldStanding')}</p>
-              )}
-            </SettingRow>
+            />
           )}
           {/* Session trees (D51): its sessions open their own worktree, so the person's uncommitted work in the
               checkout stops holding the driver. */}
