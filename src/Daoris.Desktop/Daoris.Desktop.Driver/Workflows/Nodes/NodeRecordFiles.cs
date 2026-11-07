@@ -22,6 +22,12 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
 
     public const string NotHeld = "not-held";
 
+    /// <summary>How old a record file is before a read of it is kept while its stamp stands: a younger file could be written again within the clock's grain, to the same stamp and length.</summary>
+    public static readonly TimeSpan Settled = TimeSpan.FromSeconds(2);
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (DateTime Written, long Length, NodeRecord Record)> Kept =
+        new(StringComparer.OrdinalIgnoreCase);
+
     private readonly Func<bool> _holdsLease = holdsLease ?? (() => HomeLease.HeldHere(home));
 
     /// <summary>The home the records are under: where a closure graph a quest is bound to is kept beside them.</summary>
@@ -42,10 +48,15 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
     public NodeRecord? Read(string unit)
     {
         var path = PathOf(home, unit);
-        if (!File.Exists(path)) return new NodeRecord(unit);
+        var file = new FileInfo(path);
+        if (!file.Exists) return new NodeRecord(unit);
+        var (written, length) = (file.LastWriteTimeUtc, file.Length);
+        if (Kept.TryGetValue(path, out var kept) && kept.Written == written && kept.Length == length) return kept.Record;
         try
         {
-            return Parse(AtomicFile.ReadText(path)) is { } record && string.Equals(record.Unit, unit, StringComparison.Ordinal) ? record : null;
+            if (Parse(AtomicFile.ReadText(path)) is not { } record || !string.Equals(record.Unit, unit, StringComparison.Ordinal)) return null;
+            if (DateTime.UtcNow - written > Settled) Kept[path] = (written, length, record);
+            return record;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -131,6 +142,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             if (!string.Equals(next.Unit, unit, StringComparison.Ordinal)) throw new InvalidOperationException($"a change of unit `{unit}`'s record named another unit");
             Directory.CreateDirectory(FolderOf(home));
             AtomicFile.WriteText(path, ToJson(Trimmed(next)));
+            Kept.TryRemove(path, out _);
             HomeWrites.Mine(path);
             return (null, result);
         }
