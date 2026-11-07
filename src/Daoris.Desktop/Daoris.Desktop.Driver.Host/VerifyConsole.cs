@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// A person's verification from a terminal (FABRIC-PIPELINE1d): <c>daoris gate verify &lt;repository&gt; [--branch &lt;name&gt; | --commit &lt;sha&gt;]</c>,
+/// A person's verification from a terminal:<c>daoris gate verify &lt;repository&gt; [--branch &lt;name&gt; | --commit &lt;sha&gt;]</c>,
 /// run in a checkout of that repository. The words and the binding are the library's (<see cref="VerifyCommand"/>); this hands it the home,
 /// the checkout this process runs in and the repository's landed route from the driver's file.
 /// </summary>

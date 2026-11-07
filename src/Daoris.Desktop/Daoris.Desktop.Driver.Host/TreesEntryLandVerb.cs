@@ -6,13 +6,13 @@ namespace Daoris.Driver.Host;
 internal static class TreesEntryLandVerb
 {
     /// <summary>
-    /// A line of work's one Accept, or an ask's (ACCEPTALL1e, D167's amendment, D50): the page's `LAND_ENTRY` and `LAND_ASK` from a
+    /// A line of work's one Accept, or an ask's: the page's `LAND_ENTRY` and `LAND_ASK` from a
     /// terminal, over the library's one code (`EntryAccepts`); --plan says where the parts would land and does nothing.
     /// </summary>
     public static async Task<int> RunAsync(string[] args, string home, string configPath, MachineLog? log)
     {
         if (TreesCommand.ReadEntryLand(args, out var problem) is not { } ask) return Usage(problem);
-        // RPCOPEN1: the plan is the running Daoris's where one answers (ENTRY_LANDING, ASK_LANDING), in the alone path's words.
+        // The plan is the running Daoris's where one answers (ENTRY_LANDING, ASK_LANDING), in the alone path's words.
         if (ask.Plan && await InstanceDoor.TryReadAsync(
                 ask.IsAsk ? OpenRoutes.AskLanding : OpenRoutes.EntryLanding,
                 ask.IsAsk ? new { ask = ask.Id, said = true } : (object)new { entry = ask.Id, said = true },

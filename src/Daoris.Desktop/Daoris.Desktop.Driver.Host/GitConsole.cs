@@ -1,8 +1,8 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// The branch list from a terminal (GIT1c, D147 §3.3, D50): <c>daoris git branches</c>, and Review's read,
-/// <c>git review</c> (GITAPP1a-i), whose <c>--time</c> appends one log line. The words are the library's
+/// The branch list from a terminal:<c>daoris git branches</c>, and Review's read,
+/// <c>git review</c>, whose <c>--time</c> appends one log line. The words are the library's
 /// (<see cref="GitBranchesCommand"/>, <see cref="GitReviewCommand"/>); this wires the real world: the registry's checkouts, the
 /// session records, the home and the person's choices. Beyond that line it writes nothing: the host routes it before the machine
 /// log opens, since that open prunes old files.
@@ -15,7 +15,7 @@ internal static class GitConsole
 
     public static async Task<int> RunAsync(string[] args)
     {
-        // Git access and the git go-aheads (GITAUTH1f): the library's words, a widening or an answer pressed through the running window.
+        // Git access and the git go-aheads: the library's words, a widening or an answer pressed through the running window.
         if (GitAccessCommand.Answers(args))
         {
             try
@@ -41,8 +41,8 @@ internal static class GitConsole
             }
         }
 
-        // The identities, the defaults and the pointers (GITAUTH1c): the library's words, with the home, the registry asked only by
-        // `git use` of a repository, and a widening pressed through the running window (GITAUTH1e).
+        // The identities, the defaults and the pointers: the library's words, with the home, the registry asked only by
+        // `git use` of a repository, and a widening pressed through the running window.
         if (GitIdentityCommand.Answers(args))
         {
             try
@@ -69,7 +69,7 @@ internal static class GitConsole
             }
         }
 
-        // A branch or a lightweight tag made (GITAPP2c): planned alone, pressed through the running Daoris's window or, with none, run here as the journal's act.
+        // A branch or a lightweight tag made: planned alone, pressed through the running Daoris's window or, with none, run here as the journal's act.
         if (GitRefCommand.Answers(args))
         {
             try
@@ -95,7 +95,7 @@ internal static class GitConsole
             }
         }
 
-        // Origin's branches fetched (GITAPP2f), or one ref pushed to origin (GITAPP2g, n): planned alone, pressed through the running Daoris's
+        // Origin's branches fetched, or one ref pushed to origin: planned alone, pressed through the running Daoris's
         // window or, with none, run here as the journal's act.
         if (GitFetchCommand.Answers(args) || GitPushCommand.Answers(args))
         {
@@ -123,7 +123,7 @@ internal static class GitConsole
             }
         }
 
-        // A stash of Daoris's own Save dropped (GITAPP2): planned alone, pressed through the running Daoris's window or, with none, run here as the journal's act.
+        // A stash of Daoris's own Save dropped: planned alone, pressed through the running Daoris's window or, with none, run here as the journal's act.
         if (GitStashDropCommand.Answers(args))
         {
             try
@@ -149,7 +149,7 @@ internal static class GitConsole
             }
         }
 
-        // A branch's history edited (GITAPP2m): planned alone, pressed through the running Daoris's window with the plan's ids or, with none, run here as the journal's act.
+        // A branch's history edited: planned alone, pressed through the running Daoris's window with the plan's ids or, with none, run here as the journal's act.
         if (GitHistoryCommand.Answers(args))
         {
             try
@@ -180,7 +180,7 @@ internal static class GitConsole
             }
         }
 
-        // Review's read from a terminal and the bench's verb (GITAPP1a-i): the route's own code, each start counted and timed.
+        // Review's read from a terminal and the bench's verb: the route's own code, each start counted and timed.
         if (GitReviewCommand.Answers(args))
         {
             if (GitReviewCommand.Read(args, out var wrong) is not { } review)

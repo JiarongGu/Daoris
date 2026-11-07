@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// Following a line from a terminal (WSSETUP5, D124 §3.1, D50): <c>daoris repository register [--repository &lt;name&gt;]</c>. The
+/// Following a line from a terminal:<c>daoris repository register [--repository &lt;name&gt;]</c>. The
 /// words are the library's (<see cref="RegisterCommand"/>); this wires the real world: the service, the home's choices,
 /// each repository's line, and this host's machine log, where each outcome is a <c>registry.followed</c> line.
 /// </summary>
@@ -23,7 +23,7 @@ internal static class RegisterConsole
         using var service = ServiceClient.FromEnvironment();
         service.RegistryFollowed += followed => SessionLog.WriteFollowed(log, followed);
 
-        // RPCOPEN1: through the running Daoris where one answers (each repository a REGISTRY_REFRESH), alone otherwise.
+        // Through the running Daoris where one answers (each repository a REGISTRY_REFRESH), alone otherwise.
         return await RegisterCommand.RunAsync(args, Console.Out, new RegistrationWorld(service, home, config), InstanceHost.World(home, "register"))
             .ConfigureAwait(false);
     }

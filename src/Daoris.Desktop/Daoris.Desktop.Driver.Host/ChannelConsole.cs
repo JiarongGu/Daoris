@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// An ask's channel from a terminal (SESSONE2c, D167, D50): <c>daoris ask channel &lt;id&gt; [--to &lt;repository&gt;] [--re
+/// An ask's channel from a terminal:<c>daoris ask channel &lt;id&gt; [--to &lt;repository&gt;] [--re
 /// &lt;message&gt;] [--ordinary] ["…"]</c>. The words and the doors are the library's (<see cref="ChannelCommand"/>); this wires the local host's
 /// service and the exit codes. The ask page's <i>Channel</i> is the other door.
 /// </summary>
@@ -9,7 +9,7 @@ internal static class ChannelConsole
 {
     public static async Task<int> RunAsync(string[] args)
     {
-        // CHANNELJOIN1b: an agent outside Daoris joins, posts, reads and leaves as the member it was admitted as.
+        // An agent outside Daoris joins, posts, reads and leaves as the member it is admitted as.
         if (ChannelMemberVerb.Asks(args)) return await MemberAsync(args).ConfigureAwait(false);
 
         // The usage before the service is asked for: a mistyped line needs no service to be told so.
@@ -23,7 +23,7 @@ internal static class ChannelConsole
         try
         {
             using var service = ServiceClient.FromEnvironment();
-            // RPC1e: a post goes through the running Daoris where one answers, confirmed in its window.
+            // A post goes through the running Daoris where one answers, confirmed in its window.
             return await ChannelCommand.RunAsync(ask, service, Console.Out, InstanceHost.World("ask")).ConfigureAwait(false);
         }
         catch (DriverException error)

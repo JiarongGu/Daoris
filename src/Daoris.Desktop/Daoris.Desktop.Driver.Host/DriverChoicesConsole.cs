@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// The driver's standing choices from a terminal (PUSH1f2a, D194, D50): <c>daoris place …</c> and <c>daoris settings …</c>
+/// The driver's standing choices from a terminal:<c>daoris place …</c> and <c>daoris settings …</c>
 /// hand this program. The grammar, the switch and the words are the library's (<see cref="DriverChoicesCommand"/>); this hands it the
 /// process's terminal, the <c>driver.json</c> the host resolves, and the two facts a choice judges by when it acts alone: the service's
 /// registry, for a review's procedure, and the planner's verdicts over the service's snapshot, for *Try again*.

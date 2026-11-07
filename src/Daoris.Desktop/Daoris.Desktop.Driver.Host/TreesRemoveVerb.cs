@@ -6,15 +6,15 @@ namespace Daoris.Driver.Host;
 internal static class TreesRemoveVerb
 {
     /// <summary>
-    /// A tree by its path, as it always was; or a session's branch by the session or the branch (LAND3): a failed or superseded attempt's,
+    /// A tree by its path; or a session's branch by the session or the branch: a failed or superseded attempt's,
     /// which no landing's tidy and no clean-up takes since its commits are on no branch of the person's. Its tree goes with it where it
     /// is still here. --force means it, except over a tree a session still running or waiting holds, which the driver's one discard
-    /// keeps for both doors (LAND3c).
+    /// keeps for both doors.
     /// </summary>
     public static async Task<int> RunAsync(string[] args, string named, string home, SessionTrees trees)
     {
         var force = args.Contains("--force");
-        // LANDRETIRE1: a branch a landing recorded (`quest/…` holds a separator, so this is asked before the path is) is withdrawn on a
+        // A branch a landing recorded (`quest/…` holds a separator, so this is asked before the path is) is withdrawn on a
         // reason, never removed as a session's is: the driver's one withdrawal, the call the screen's WITHDRAW_LANDING_BRANCH ends in.
         if (new LandedBranchWithdrawal(trees, home).Owners(named, Option(args, "--repository")).Count > 0)
         {
@@ -28,22 +28,22 @@ internal static class TreesRemoveVerb
                 .ConfigureAwait(false);
         }
 
-        // TREELOCK2: the ledger is asked where a service is there to ask; alone, the removal judges from the files, as before.
+        // The ledger is asked where a service is there to ask; alone, the removal judges from the files.
         using var service = ServiceOrNone();
         var removal = LooksLikePath(named)
             ? await trees.RemoveAsync(named, force, service: service).ConfigureAwait(false)
             : await RemoveSessionBranchAsync(trees, named, Option(args, "--repository"), force).ConfigureAwait(false);
         Told(home, LooksLikePath(named) ? PressesTold.DiscardTree : PressesTold.DiscardBranch);
-        // A refusal that preserves work is policy doing its job, not a tool error. The words are the routes' too (RPC1b3).
+        // A refusal that preserves work is policy doing its job, not a tool error. The words are the routes' too.
         var said = TreesWords.Remove(removal);
         said.Print(Console.Out, Console.Error);
         return said.Code;
     }
 
     /// <summary>
-    /// A session branch the person removes by its door (LAND3): named by the branch (<c>daoris/s-…</c> or <c>s-…</c>) or by the
+    /// A session branch the person removes by its door: named by the branch (<c>daoris/s-…</c> or <c>s-…</c>) or by the
     /// session, its tree with it while it is here. The driver's one discard, the call the screen's <c>DISCARD_SESSION_BRANCH</c>
-    /// ends in (LAND3c), so a branch a live session's tree holds is kept here as there. The service answers the sessions in use
+    /// ends in, so a branch a live session's tree holds is kept here as there. The service answers the sessions in use
     /// and the registry's checkout.
     /// </summary>
     private static async Task<TreeRemoval> RemoveSessionBranchAsync(SessionTrees trees, string named, string? repository, bool force)
@@ -53,7 +53,7 @@ internal static class TreesRemoveVerb
     }
 
     /// <summary>
-    /// A landing's branch the line will never hold, withdrawn on the person's reason (LANDRETIRE1): its commits kept on a recovery ref and its
+    /// A landing's branch the line will never hold, withdrawn on the person's reason: its commits kept on a recovery ref and its
     /// record saying why. The driver's one withdrawal, which the screen's <c>WITHDRAW_LANDING_BRANCH</c> ends in as well; <paramref name="plan"/>
     /// says what it would do and changes nothing. Told to the open windows once it has acted, whatever it answered.
     /// </summary>

@@ -6,8 +6,8 @@ namespace Daoris.Driver.Host;
 internal static class TreesCleanVerb
 {
     /// <summary>
-    /// The list first, and with --yes the press — a workspace's Branches tab is the other door (D50), and --workspace takes that
-    /// workspace's checkouts alone, as the tab does (BRSCOPE1a). The checkouts and the sessions in use are the service's, so this one
+    /// The list first, and with --yes the press — a workspace's Branches tab is the other door, and --workspace takes that
+    /// workspace's checkouts alone, as the tab does. The checkouts and the sessions in use are the service's, so this one
     /// asks it, once its words read.
     /// </summary>
     public static async Task<int> RunAsync(string[] args, string home, SessionTrees trees, SessionTrees asking)
@@ -22,13 +22,13 @@ internal static class TreesCleanVerb
         }
 
         var repositories = taken.Repositories;
-        // TREEKEEPRETRY1: every session of a quest judges its tree, a retry waiting on a limit among them.
+        // Every session of a quest judges its tree, a retry waiting on a limit among them.
         var inUse = await BranchTidying.HeldTreesAsync(service, CancellationToken.None).ConfigureAwait(false);
 
         if (!ask.Yes)
         {
-            // RPCOPEN1: the list is the running Daoris's where one answers (SWEEP_PLAN: its git fan-out is asked once for every
-            // terminal and window, which ask the pull-request plugins as the person's occasion, D148, here as ever: this verb
+            // The list is the running Daoris's where one answers (SWEEP_PLAN: its git fan-out is asked once for every
+            // terminal and window, which ask the pull-request plugins as the person's occasion, here as ever: this verb
             // is still that person's look), in the words the alone path prints from the same function.
             if (await InstanceDoor.TryReadAsync(OpenRoutes.SweepPlan, new { workspace = ask.Workspace, said = true },
                     TreesSaid.ReadWords(Console.Out, Console.Error), InstanceHost.World(home, "trees")).ConfigureAwait(false) is { } listed)
@@ -36,10 +36,10 @@ internal static class TreesCleanVerb
                 return listed;
             }
 
-            // LANDRETIRE1 part 2: the quests the landings name that the service says are closed, read once for the list.
+            // The quests the landings name that the service says are closed, read once for the list.
             var closed = await LandedStanding.ClosedAsync(new LandedBranches(home).Entries(), service.EveryQuestAsync, CancellationToken.None).ConfigureAwait(false);
             var plan = await asking.CleanPlanAsync(repositories, inUse, closedQuests: closed).ConfigureAwait(false);
-            // LAND4: the session each kept branch's tree is, so its landing is offered beside the discard, as on its page.
+            // The session each kept branch's tree is, so its landing is offered beside the discard, as on its page.
             var records = plan.Sessions.Any(item => item.Kind == SweepKind.Unlanded && item.Tree is not null)
                 ? await SessionBranchDoors.RecordsOrNoneAsync(service).ConfigureAwait(false)
                 : [];

@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// Asks, from a terminal (D65 §1a, D50): a sentence entered at a WORKSPACE rather than at a repository.
+/// Asks, from a terminal: a sentence entered at a WORKSPACE rather than at a repository.
 /// </summary>
 /// <remarks>
 /// <code>
@@ -17,17 +17,17 @@ namespace Daoris.Driver.Host;
 /// daoris ask workflow &lt;id&gt; [--kind &lt;kind&gt;] [--workflow &lt;id&gt;|current]|--clear ["…"]
 /// </code>
 /// <para><c>--delete</c> removes an ask made by mistake with every quest asked by it, or refuses whole
-/// when one of them must stay (D95) — the ask's record's <i>Delete</i> is the other door.</para>
-/// <para><c>--go-ahead</c> answers a go-ahead a session asked on the ask, with the person's words if any (KNOWUSE1a):
+/// when one of them must stay — the ask's record's <i>Delete</i> is the other door.</para>
+/// <para><c>--go-ahead</c> answers a go-ahead a session asked on the ask, with the person's words if any:
 /// every session on the ask is handed the answer, and a parked session none of whose go-aheads waits any more goes on with
-/// them (GOAHEAD2). The ask's page's <i>Go-aheads</i> is the other door.</para>
+/// them. The ask's page's <i>Go-aheads</i> is the other door.</para>
 /// <para><c>--review</c> chooses whether a new ask's work is reviewed before it lands, and where, as the composer does, <c>rule</c>
 /// (its default) sending none; <c>--set-review</c> changes an ask's choice, or applies its intake's proposal, as its page's
-/// <i>Set</i> and <i>Apply</i> do (REVIEWENV1j). The judgement is the library's (<see cref="AskReviewCommand"/>).</para>
+/// <i>Set</i> and <i>Apply</i> do. The judgement is the library's (<see cref="AskReviewCommand"/>).</para>
 /// <para><c>--kind</c> and <c>--workflow</c> say what kind of task a new ask is and which workflow its work follows, as the composer
-/// will; <c>--set-workflow</c> changes an ask's, or clears it with <c>--clear</c> (WORKFLOW1e). The person's door: the window confirms a
+/// will; <c>--set-workflow</c> changes an ask's, or clears it with <c>--clear</c>. The person's door: the window confirms a
 /// keyless call. The judgement is the library's (<see cref="AskWorkflowCommand"/>).</para>
-/// <para><c>--short</c> names a new ask in a list by a short title, as the composer's field does (HEAD2e2). It is sent as typed: the
+/// <para><c>--short</c> names a new ask in a list by a short title, as the composer's field does. It is sent as typed: the
 /// service judges it, and its sentence is printed, so the driver holds no second judge.</para>
 /// <para>The service answers with the tier that answered — by declarations only, with no intake
 /// harness, which proposes and publishes nothing; or the receiver named with <c>--to</c>, published
@@ -65,13 +65,13 @@ internal static class AskConsole
                 case "--delete": delete = Value(); break;
                 case "--go-ahead": goAhead = Value(); break;
                 case "--reason": reason = Value(); break;
-                // HEAD2e2: the composer's short title.
+                // The composer's short title.
                 case "--short": shortTitle = Value(); break;
-                // REVIEWENV1j: the composer's review choice, and the ask page's.
+                // The composer's review choice, and the ask page's.
                 case "--review": review = Value(); break;
                 case "--review-words": reviewWords = Value(); break;
                 case "--set-review": setReview = Value(); break;
-                // WORKFLOW1e: the composer's kind and workflow, and the ask's.
+                // The composer's kind and workflow, and the ask's.
                 case "--kind": kind = Value(); break;
                 case "--workflow": workflow = Value(); break;
                 case "--workflow-words": workflowWords = Value(); break;
@@ -119,14 +119,13 @@ internal static class AskConsole
                     return Usage(workflowProblem!);
                 }
 
-                // The ask page's twin (D50), once WORKFLOW1g gives the page its choice.
                 return await AskWorkflowCommand.RunAsync(set, workflows, Console.Out).ConfigureAwait(false);
             }
 
             if (setReview is not null)
             {
                 if (AskReviewCommand.Read(setReview, words, out var setProblem) is not { } chosen) return Usage(setProblem!);
-                // The ask page's twin (D50): its *Set*, and *Apply* on an intake's proposal.
+                // The ask page's twin: its *Set*, and *Apply* on an intake's proposal.
                 return await AskReviewCommand.RunAsync(chosen, reviews, Console.Out).ConfigureAwait(false);
             }
 
@@ -151,7 +150,7 @@ internal static class AskConsole
             if (goAhead is not null)
             {
                 if (GoAheadCommand.Read(words, out var problem) is not { } answer) return Usage(problem!);
-                // The ask page's twin (D50): the answer that leaves none of a parked session's go-aheads waiting sends it on (GOAHEAD2).
+                // The ask page's twin: the answer that leaves none of a parked session's go-aheads waiting sends it on.
                 var (ok, message) = await service.AnswerGoAheadAsync(goAhead, answer.Number, answer.Approved, answer.Words, goesOn: true)
                     .ConfigureAwait(false);
                 Console.WriteLine(message);
@@ -161,7 +160,7 @@ internal static class AskConsole
             var sentence = string.Join(' ', words).Trim();
             if (sentence.Length == 0) return Usage("an ask needs its words");
 
-            // The composer's twin (D50): `rule` sends none, and a named environment is one the workspace declares, as it offers.
+            // The composer's twin: `rule` sends none, and a named environment is one the workspace declares, as it offers.
             if (AskReviewCommand.Compose(review, reviewWords, out var reviewProblem) is not { } composed) return Usage(reviewProblem!);
             if (composed.Choice is { } choice
                 && await AskReviewCommand.UndeclaredAsync(choice, workspace ?? "default", reviews).ConfigureAwait(false) is { } undeclared)
@@ -170,7 +169,7 @@ internal static class AskConsole
                 return 1;
             }
 
-            // The composer's kind and workflow (WORKFLOW1e): a kind the workspace declares, a workflow saved here that reads.
+            // The composer's kind and workflow: a kind the workspace declares, a workflow saved here that reads.
             if (AskWorkflowCommand.Compose(kind, workflow, workflowWords, out var workflowComposeProblem) is not { } chosenWorkflow)
             {
                 return Usage(workflowComposeProblem!);
@@ -183,7 +182,7 @@ internal static class AskConsole
             }
 
             // Files are read HERE, on the machine that has them, and travel whole to the local host —
-            // which keeps them under this machine's home (D65 §2).
+            // which keeps them under this machine's home.
             var read = new List<(string Name, byte[] Content)>();
             foreach (var path in files)
             {

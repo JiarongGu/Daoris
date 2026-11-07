@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// A conversation of the running Daoris held from a terminal (RPC1g2 and RPC1g3, D238): <c>daoris chat --repository</c> starts one and
+/// A conversation of the running Daoris held from a terminal:<c>daoris chat --repository</c> starts one and
 /// <c>--session</c> holds one already open; <c>session start-from</c> and <c>session hand-over</c> hold what they open. This is the
 /// console's half: the process's own streams and Ctrl+C, handed to <see cref="HeldVerbs"/>, which holds the conversation. With no
 /// Daoris running on the home, nothing runs.

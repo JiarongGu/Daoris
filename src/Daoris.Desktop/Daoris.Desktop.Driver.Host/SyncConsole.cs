@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// The sync, from a terminal (SYNC6a, D50): `daoris remote sync [status | dismiss &lt;quest&gt;] [--workspace &lt;name&gt;]`.
+/// The sync, from a terminal:`daoris remote sync [status | dismiss &lt;quest&gt;] [--workspace &lt;name&gt;]`.
 /// </summary>
 /// <remarks>
 /// <para><b>`sync` runs the pass the tick runs</b> — the registrations, knowledge and code map up by
@@ -65,7 +65,7 @@ internal static class SyncConsole
             using var service = ServiceClient.FromEnvironment();
             if (status) return await StatusAsync(service, workspace).ConfigureAwait(false);
 
-            // A person's dismissal (SYNC6c): committed on this machine, and carried by the next pass —
+            // A person's dismissal: committed on this machine, and carried by the next pass —
             // the tick's, or `sync` run straight after.
             if (dismiss is not null)
             {
@@ -81,7 +81,7 @@ internal static class SyncConsole
                 return 0;
             }
 
-            // RPCOPEN1: the running Daoris's own set runs each circle's pass (SYNC_NOW) where one answers; this process's, alone.
+            // The running Daoris's own set runs each circle's pass (SYNC_NOW) where one answers; this process's, alone.
             var report = await SyncPass.RunAsync(workspace, sync.Workspaces, name => sync.RunOnceAsync(name), InstanceHost.World("sync"))
                 .ConfigureAwait(false);
             if (report is null) return 2;

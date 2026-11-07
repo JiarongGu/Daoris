@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// A repository's session access setup from a terminal (AUTONOMY1a, D184 point 1, D50): <c>daoris place access</c>. The words and the
+/// A repository's session access setup from a terminal: <c>daoris place access</c>. The words and the
 /// edit are the library's (<see cref="AccessCommand"/>), on the driver's file alone; this asks the service's registry only for the
 /// workspace a repository's setup is resolved through, and says so where the service did not answer.
 /// </summary>

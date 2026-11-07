@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// The second opinion's gate from a terminal (XAGENT1f, D155 point 10, D50): <c>daoris session opinion ask|show|stop|anyway|myself</c>.
+/// The second opinion's gate from a terminal:<c>daoris session opinion ask|show|stop|anyway|myself</c>.
 /// The words are the library's (<see cref="OpinionCommand"/>), and every press the driver's own (<see cref="OpinionPresses"/>);
 /// this wires the real world: the service, this home's gate and its sessions' processes.
 /// </summary>
@@ -19,7 +19,7 @@ internal static class OpinionConsole
 
         var home = DriverConfig.HomeOf(DriverConfig.ResolvePath());
         using var service = ServiceClient.FromEnvironment();
-        // RPC1e: the running Daoris's client where one answers, each press confirmed in its window.
+        // The running Daoris's client where one answers, each press confirmed in its window.
         return await OpinionCommand.RunAsync(
             ask, new OpinionPresses(home, service), service, new SessionProcesses(DaorisHome.Entry(home, HomeEntry.SessionPids)), Console.Out,
             InstanceHost.World(home, "opinion")).ConfigureAwait(false);
