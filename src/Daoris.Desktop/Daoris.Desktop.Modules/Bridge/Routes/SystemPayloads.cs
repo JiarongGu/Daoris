@@ -1,12 +1,12 @@
 namespace Daoris.Desktop;
 
-/// <summary>*Open* in This Daoris (WIRING1e): the id of a folder row or a file row the read gave, never a path.</summary>
+/// <summary>*Open* in This Daoris: the id of a folder row or a file row the read gave, never a path.</summary>
 public sealed record OpenFolderPress(string? Folder);
 
-/// <summary>*Put on my PATH* (<c>On</c> true) or *Take off my PATH* (false), on the account's alone (WIRING1e).</summary>
+/// <summary>*Put on my PATH* (<c>On</c> true) or *Take off my PATH* (false), on the account's alone.</summary>
 public sealed record PathPress(bool? On);
 
-/// <summary>*Change the service's address* (WIRING1e): an address of this machine for the account's variable, or none for the default again.</summary>
+/// <summary>*Change the service's address*: an address of this machine for the account's variable, or none for the default again.</summary>
 public sealed record ServiceAddressPress(string? Url);
 
 /// <summary>The wiring card;<c>Measure</c> starts the walk of each kind's size.</summary>

@@ -5,14 +5,14 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What an agent Daoris starts may do, the page's `bridge/rules.ts` (MOD5): the rules (PERM1, D72), a
-/// change to them, and the person's answer to an agent's proposal (PERM2, D74).
+/// What an agent Daoris starts may do, the page's `bridge/rules.ts`: the rules, a
+/// change to them, and the person's answer to an agent's proposal.
 /// </summary>
 public sealed class RulesRoutes(DriverLoop loop)
 {
     private readonly DriverLoop _loop = loop;
 
-    // What an agent Daoris starts may do (PERM1, D72): the defaults with their reasons, and
+    // What an agent Daoris starts may do: the defaults with their reasons, and
     // every scope the machine's file holds — the file `daoris agent rules` edits. A path
     // under the home rides this bridge like every path here.
     [DriverRoute("RULES", PipeClass.Open)]
@@ -22,7 +22,7 @@ public sealed class RulesRoutes(DriverLoop loop)
         return Rules(PermissionRules.Load(_loop.Home));
     }
 
-    // The screen's half of `daoris agent rules allow|ask|deny|remove|default` (D50): an edit to
+    // The screen's half of `daoris agent rules allow|ask|deny|remove|default`: an edit to
     // the same file, answered with the state after it. A refusal is the driver's own sentence.
     [DriverRoute("RULE_ACTION", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("RULE_ACTION", None = OwnerNone.ActsOnNothing)]
@@ -58,7 +58,7 @@ public sealed class RulesRoutes(DriverLoop loop)
         return Rules(file);
     }
 
-    // The screen's half of `daoris agent rules accept|decline` (PERM2, D74): the person's answer
+    // The screen's half of `daoris agent rules accept|decline`: the person's answer
     // to an agent's proposal. 🔴 The only way a widening an agent proposed ever applies.
     [DriverRoute("RULE_PROPOSAL", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("RULE_PROPOSAL", None = OwnerNone.ActsOnNothing)]
@@ -78,11 +78,11 @@ public sealed class RulesRoutes(DriverLoop loop)
 
     private object Rules(PermissionFile file) => Answer(_loop.Home, file);
 
-    /// <summary>The rules as <c>RULES</c> answers them now, what the rules' slice pushes (FOUNDATION1s part B).</summary>
+    /// <summary>The rules as <c>RULES</c> answers them now, what the rules' slice pushes.</summary>
     public static object Answer(string home) => Answer(home, PermissionRules.Load(home));
 
     /// <summary>
-    /// The rules as the page reads them (PERM1). 🔴 No null on the wire where the page tells anything
+    /// The rules as the page reads them. 🔴 No null on the wire where the page tells anything
     /// by it: the bridge leaves a null out, so the machine's scope simply carries no <c>name</c>, and
     /// a file read cleanly carries no <c>problem</c>.
     /// </summary>
@@ -96,7 +96,7 @@ public sealed class RulesRoutes(DriverLoop loop)
             List = shipped.List.ToString().ToLowerInvariant(),
             shipped.Rules,
             shipped.Why,
-            // The tools a hook default judges (PERM3) — null for a rule default, which the bridge omits.
+            // The tools a hook default judges — null for a rule default, which the bridge omits.
             shipped.Hook,
             On = PermissionRules.IsOn(file, shipped),
             // A fixed default (no-push) has no switch on the page: git access composes it. False is left out as the bridge leaves null.
@@ -111,8 +111,8 @@ public sealed class RulesRoutes(DriverLoop loop)
     };
 
     /// <summary>
-    /// What agents proposed about these rules (PERM2, D74), newest first, as <c>RULES</c> answers them and <i>What needs you</i>'s judge
-    /// reads them (PUSH1d4). Structured rather than a sentence, so the page says it in the person's language. 🔴 Not the folder the
+    /// What agents proposed about these rules, newest first, as <c>RULES</c> answers them and <i>What needs you</i>'s judge
+    /// reads them. Structured rather than a sentence, so the page says it in the person's language. 🔴 Not the folder the
     /// session ran in: it is a machine path, and the page is told who proposed, never where they stood.
     /// </summary>
     public static object[] Proposals(string home) =>

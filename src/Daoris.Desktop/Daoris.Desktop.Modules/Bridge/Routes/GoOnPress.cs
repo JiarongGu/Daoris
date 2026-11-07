@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The hand-over's press naming no agent (MSG1g, D137 §2.2; D189 point 3, ONEWAY1j): the session goes on where it can, the walk's choice
+/// The hand-over's press naming no agent: the session goes on where it can, the walk's choice
 /// taking the words. The driver's <see cref="GoOnNew"/> judges first: words a resume holds while the account their session ran on cools go
 /// on in a new session at the driver's next look, handed them, without that conversation, the same judge
 /// <c>daoris session hand-over &lt;id&gt;</c> calls. Where that judge says the session is a conversation, a closed quest's, or Ask Daoris's,

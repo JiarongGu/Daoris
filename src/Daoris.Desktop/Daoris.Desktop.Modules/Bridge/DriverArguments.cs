@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What the page may leave out of a payload, read one way (REV3 CLEAN1) by <see cref="RoutePayload"/> and by the readers of a field
+/// What the page may leave out of a payload, read one way by <see cref="RoutePayload"/> and by the readers of a field
 /// sent as free JSON, and what a route says before the loop's service answers. Every domain's handler class imports it with
 /// <c>using static</c>.
 /// </summary>
@@ -46,7 +46,7 @@ public static class DriverArguments
                 "that action needs an account name.",
                 ("action", "profile"));
 
-    /// <summary>What every route that needs the loop's service says before it answers (REV3 CLEAN1: five wrote it).</summary>
+    /// <summary>What every route that needs the loop's service says before it answers.</summary>
     internal static Exception NotReady() => Refusals.Because(
         Refusals.DriverNotReady, "the driver is still coming up — its service is not answering yet. A moment.");
 }

@@ -5,22 +5,22 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// How this Daoris is wired, the page's `bridge/system.ts` (WIRING1b, the this-Daoris design §6): Settings → This Daoris's
-/// read, through the driver library's <see cref="SystemWiring"/>, the reader `daoris wiring` calls too (D50). A machine
-/// domain: the desktop's alone, answering this machine's paths and never a key (D47 §4, design §5).
+/// How this Daoris is wired, the page's `bridge/system.ts`: Settings → This Daoris's
+/// read, through the driver library's <see cref="SystemWiring"/>, the reader `daoris wiring` calls too. A machine
+/// domain: the desktop's alone, answering this machine's paths and never a key.
 /// </summary>
 public sealed class SystemRoutes(DriverContext context)
 {
     private readonly DriverContext _context = context;
 
-    // WIRING1b (design §6): the wiring, every fact with its source and a fact not read null with its why. A read: it declares
+    // The wiring, every fact with its source and a fact not read null with its why. A read: it declares
     // nothing. `{ measure: true }` starts the folders' sizes in the background, one walk at a time, and the answer says
     // `measuring`; the open asks no network, starts no program and walks no folder (the second opinion's point 3). Off the
-    // window's thread, since the read looks at files (UIFREEZE1). The reader's own JSON is answered whole, so a null stays a
+    // window's thread, since the read looks at files. The reader's own JSON is answered whole, so a null stays a
     // field: the bridge leaves a null out of an object it serializes.
     //
-    // OWNSPACE2 (D175 point 3): its `toolHome` lists what Daoris's sessions left in the person's own tool home, read-only. There
-    // is no press: removing them is OWNSPACE2e's, hardened, and until then a person removes a folder by hand.
+    // Its `toolHome` lists what Daoris's sessions left in the person's own tool home, read-only. There
+    // is no press: a person removes a folder by hand.
     [DriverRoute("SYSTEM_WIRING", PipeClass.Open)]
     private async Task<object?> WiringAsync(WiringRead press, CancellationToken cancellationToken)
     {
@@ -31,7 +31,7 @@ public sealed class SystemRoutes(DriverContext context)
             if (measure && world.Home is { } home
                 && world.Sizes.Start(home, SystemWiring.RootOf(home), WiringBudget.Default, ToolHomeLeftovers.List(world).Folders))
             {
-                // FABRIC-EVENT5b: the windows are told a walk is under way, and again once its sizes have landed, in place of the
+                // The windows are told a walk is under way, and again once its sizes have landed, in place of the
                 // page reading this every 2 s. The walk keeps one reading, as it ends (`WiringSizes.MeasureNow`), and leaves the home's
                 // walks after it, which `Finished` waits for, so the read this tells is no longer measuring.
                 StatePublisher.Publish(_context.Events, StateScopes.Wiring);
@@ -45,7 +45,7 @@ public sealed class SystemRoutes(DriverContext context)
         }, cancellationToken).ConfigureAwait(false);
     }
 
-    // WIRING1e (the this-Daoris design §4): *Open* on a folder or file row. The page sends the id the read gave it and this resolves
+    // *Open* on a folder or file row. The page sends the id the read gave it and this resolves
     // the folder (`WiringFolderPaths`), so no path comes from the page; the launcher runs through the start gate, off the window's
     // thread. A window's act: refused on the pipe. It changes nothing, so it declares nothing; an id with no place, or a folder the
     // file manager could not open, is answered as data, `{ done: false, why, message }`.
@@ -73,7 +73,7 @@ public sealed class SystemRoutes(DriverContext context)
         return Said(SetupResult.Did(changed: false));
     }
 
-    // WIRING1e: *Put on my PATH* / *Take off my PATH* (`AccountPath`): the install's launchers' folder added to, or removed from,
+    // *Put on my PATH* / *Take off my PATH* (`AccountPath`): the install's launchers' folder added to, or removed from,
     // the account's PATH, never the machine's; running programs are told the environment changed. The person's press, said first on the
     // page and undone by the next; a window's act, refused on the pipe. A refusal is data and changed nothing.
     [DriverRoute("SYSTEM_PATH", PipeClass.Window)]
@@ -90,7 +90,7 @@ public sealed class SystemRoutes(DriverContext context)
         }, cancellationToken);
     }
 
-    // WIRING1e: *Change the service's address* (`AccountServiceAddress`): the account's DAORIS_SERVICE_URL set to an address of this
+    // *Change the service's address* (`AccountServiceAddress`): the account's DAORIS_SERVICE_URL set to an address of this
     // machine, or cleared for the default (`url` null or absent). It takes effect when Daoris starts again, and a terminal reads it too.
     [DriverRoute("SYSTEM_SERVICE_ADDRESS", PipeClass.Window)]
     [Owner("SYSTEM_SERVICE_ADDRESS", None = OwnerNone.MachineSetting)]
@@ -100,11 +100,11 @@ public sealed class SystemRoutes(DriverContext context)
 
     private static object? Said(SetupResult result) => new { result.Done, result.Changed, result.Why, result.Message };
 
-    // KEEP1c (D195 point 5, the cleanup design §4.4): the Disk space card's read through the driver library's `SystemSpace`, the reader
+    // The Disk space card's read through the driver library's `SystemSpace`, the reader
     // `daoris space` calls too: the free space, and each kind's size with when it was counted, its rule, its next and last clean,
     // and the run lock's holder. A read: it declares nothing and removes nothing. `{ measure: true }` counts every kind, `{ measure: [ids] }`
     // those, each a bounded walk in the background, one kind after another; each kind's end tells `wiring`, so the card fills in kind by
-    // kind (WIRING-SIZES-LIVE1's need). The open walks nothing. Off the window's thread; the reader's own JSON whole, so a null stays a field.
+    // kind. The open walks nothing. Off the window's thread; the reader's own JSON whole, so a null stays a field.
     [DriverRoute("SYSTEM_SPACE", PipeClass.Open)]
     private Task<object?> SpaceAsync(SpaceRead read, CancellationToken cancellationToken)
     {
@@ -126,7 +126,7 @@ public sealed class SystemRoutes(DriverContext context)
         }, cancellationToken);
     }
 
-    // KEEP1e (D195 point 4, the cleanup design §3.3, §4.4): *Free up space…*, listed first, then pressed, through the driver library's
+    // *Free up space…*, listed first, then pressed, through the driver library's
     // `SpaceFree`, which `daoris space free` calls too. `{ plan: true }` answers the list and changes nothing (open on the pipe, a
     // `PipeRule`): per kind what its rule takes now, what could go early in groups, and the doors of the kinds with presses of their own.
     // `{ units, early }` starts a run removing exactly those, each judged again right before it goes, under the home's run lock, and answers
@@ -170,7 +170,7 @@ public sealed class SystemRoutes(DriverContext context)
     {
         var loop = _context.Loop;
         var world = new SpaceFreeWorld(loop.Home) { Judge = Judge, Caches = loop.BrowserCaches, Log = loop.Log };
-        // KEEPSIZE1b (the keep-size design §5): the press's run resumes the finished trees' steps and posts a record due before it removes.
+        // The press's run resumes the finished trees' steps and posts a record due before it removes.
         if (loop.Service is { } service)
         {
             world = world.WithService(service);
@@ -192,9 +192,9 @@ public sealed class SystemRoutes(DriverContext context)
         };
     }
 
-    // CACHECLEAR1: the Downloads row's list, the agents' and tools' downloaded versions with what keeps each, sized as they are
+    // The Downloads row's list, the agents' and tools' downloaded versions with what keeps each, sized as they are
     // listed (a walk of each version's folder, off the window's thread). A read: it declares nothing and removes nothing.
-    // KEEP1b: with the rule's days (`days`, null under `never`), and for each version nothing uses when its current unused stretch began
+    // With the rule's days (`days`, null under `never`), and for each version nothing uses when its current unused stretch began
     // (`unusedSince`) and when the rule takes it (`goes`), from `keeping.json`; both absent where no pass has found it unused yet.
     [DriverRoute("SYSTEM_DOWNLOADS", PipeClass.Open)]
     private Task<object?> DownloadsAsync(NoPayload _, CancellationToken cancellationToken) =>
@@ -205,10 +205,10 @@ public sealed class SystemRoutes(DriverContext context)
                 DownloadClearing.List(home, Judge().Uses(), DateTimeOffset.UtcNow, cancellationToken), KeepingRecord.Read(home), KeepPolicy.Of(home).Downloads);
         }, cancellationToken);
 
-    // CACHECLEAR1 (D88's shape): the press after the list. `versions` names the rows the page showed, `{ kind, name, version, unfinished }`;
+    // The press after the list. `versions` names the rows the page showed, `{ kind, name, version, unfinished }`;
     // each is judged again from the files as they stand right before it goes, and one kept, held by a program or gone since is said in
     // the answer. What it moves: This Daoris's sizes, and the Tools' and agents' pages that say which versions are downloaded.
-    // KEEP1b (D195 point 6): the downloads' one act, each version judged under the use files' locks, held to its rename, and kept while a
+    // The downloads' one act, each version judged under the use files' locks, held to its rename, and kept while a
     // running session was handed it.
     [DriverRoute("SYSTEM_DOWNLOADS_CLEAR", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SYSTEM_DOWNLOADS_CLEAR", None = OwnerNone.MachineSetting)]
@@ -237,7 +237,7 @@ public sealed class SystemRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// How the downloads are judged here (KEEP1b): the agents' wiring as the roster reads it, this home's tools and the loop's choices, each
+    /// How the downloads are judged here: the agents' wiring as the roster reads it, this home's tools and the loop's choices, each
     /// read as it stands and locked at a version's judgement, and the home's running sessions.
     /// </summary>
     private DownloadJudge Judge()
@@ -269,7 +269,7 @@ public sealed class SystemRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// This window's world with the working directories Daoris's session records show a session ran in (OWNSPACE2): the
+    /// This window's world with the working directories Daoris's session records show a session ran in: the
     /// service's records read now. A service that does not answer is records unread, and with no record of use nothing is
     /// claimed. A test's world that already names its origins is left as it is.
     /// </summary>

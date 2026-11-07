@@ -17,7 +17,7 @@ public sealed class HelpRoutes(DriverContext context)
     /// <summary>
     /// What an Apply may change, every door it holds: the page's hook asked each of these again by hand before.
     /// </summary>
-    /// <remarks>LAYOUT8: a set-up's Apply adds a rule to the repository's scope, so the rules are among them.</remarks>
+    /// <remarks>A set-up's Apply adds a rule to the repository's scope, so the rules are among them.</remarks>
     private const StateScopes Applies = StateScopes.Sessions | StateScopes.Quests | StateScopes.Asks | StateScopes.Driver
         | StateScopes.Rules | StateScopes.History | StateScopes.Registry | StateScopes.Plugins | StateScopes.Harnesses
         | StateScopes.Help | StateScopes.Browser;
@@ -283,8 +283,8 @@ public sealed class HelpRoutes(DriverContext context)
 
     // The person's Apply: made through the door the screen's own route uses, judged again
     // first, since the machine may have moved since the card was drawn. The result goes back into
-    // the conversation as a turn, so the agent knows, told as Daoris's word, never the person's (ASKQUESTS1, D188's COWORK1b
-    // mark); what it published is kept with the conversation by `HelpProposals.ApplyAsync`. It acts through the doors directly, not through
+    // the conversation as a turn, so the agent knows, told as Daoris's word, never the person's;
+    // what it published is kept with the conversation by `HelpProposals.ApplyAsync`. It acts through the doors directly, not through
     // their routes, so it declares every family a door it holds may move: the driver's file and what reads
     // it, an ask, a quest or a session it made, paused or deleted, an agent's settings or pin, a plugin, the browser's settings,
     // a repository moved, finished history cleared, and the proposal itself.
@@ -400,8 +400,8 @@ public sealed class HelpRoutes(DriverContext context)
     /// steps Apply saves and the choice it makes stay with the driver, which sends exactly those when the person presses it.
     /// Null for every other kind.
     /// </summary>
-    /// <remarks>FABRIC-PIPELINE1i: the route it chooses for, whether it saves a version, whether it is a verification pipeline, and what it
-    /// asks less of the person. FLOWCHART2e: a draft card's fingerprint, its changes with what each needs, what a save would refuse and its
+    /// <remarks>The route it chooses for, whether it saves a version, whether it is a verification pipeline, and what it
+    /// asks less of the person. A draft card's fingerprint, its changes with what each needs, what a save would refuse and its
     /// candidate graph whole, which the editor takes changes from and nothing saves; null and empty on every other card.</remarks>
     public static object? WorkflowShown(HelpWorkflowCard? card) => card is null ? null : new
     {
@@ -423,7 +423,7 @@ public sealed class HelpRoutes(DriverContext context)
 
     /// <summary>
     /// A sentence said into Ask Daoris's conversation: plain words, since a turn's words render verbatim and a sentence full
-    /// of backticks read as noise on the window. The person's Not now, and since ASKQUESTS1 Daoris's word of what an Apply did.
+    /// of backticks read as noise on the window. The person's Not now, and Daoris's word of what an Apply did.
     /// </summary>
     private static string InPersonsWords(string told) => told.Replace("`", "", StringComparison.Ordinal);
 
@@ -462,7 +462,7 @@ public sealed class HelpRoutes(DriverContext context)
     // where. `offset` and `limit` are the terminal's `--offset` and `--limit`: every record is ordered and searched
     // before the page is taken, and the answer says how many there are and where the next page starts. `workspace` is the
     // terminal's `--workspace`: that workspace's conversations, searched and counted
-    // before the page; none named is every workspace's, as the list was and as `--all` says, each row naming its own.
+    // before the page; none named is every workspace's, as `--all` says, each row naming its own.
     [DriverRoute("HELP_CONVERSATIONS", PipeClass.Open)]
     private async Task<object?> HelpConversationsAsync(HelpConversationsRead press, CancellationToken cancellationToken)
     {
@@ -499,7 +499,7 @@ public sealed class HelpRoutes(DriverContext context)
     {
         Conversations = listing.Conversations.Select(row => new
         {
-            // the mode it ran under, its record's, after whether it runs; ASKSCOPE1d: the workspace it started in after it.
+            // the mode it ran under, its record's, after whether it runs, then the workspace it started in.
             row.Session, row.Title, row.Name, row.Opening, row.About, row.Created, row.Last, row.Pinned, row.Live, row.Mode, row.Workspace,
             row.Resumable, row.From, row.Handed, row.Found, row.FoundLine, row.Parts,
         }).ToArray(),

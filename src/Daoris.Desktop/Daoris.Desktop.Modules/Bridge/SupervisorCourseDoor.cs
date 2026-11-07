@@ -3,8 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The holder's course on a point a person's <c>refer</c> rule holds a line at (CONTEXTDRIVE1j; the context counters design §4.6 point 3,
-/// §5): listed beside the questions that wait, and decided on the role's door alone as an answer is, the line's repository the effective
+/// The holder's course on a point a person's <c>refer</c> rule holds a line at: listed beside the questions that wait, and decided on the role's door alone as an answer is, the line's repository the effective
 /// supervisor's, the point and its counts read again at the keeping.
 /// </summary>
 public static class SupervisorCourseDoor

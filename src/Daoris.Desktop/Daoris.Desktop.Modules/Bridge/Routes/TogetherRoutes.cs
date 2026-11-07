@@ -5,13 +5,13 @@ using static Daoris.Desktop.DriverArguments;
 
 namespace Daoris.Desktop;
 
-/// <summary>Bringing sessions together, the page's `bridge/sessions/together.ts` (LINESTOGETHER1d): the operation a session is in, and the presses on it.</summary>
+/// <summary>Bringing sessions together, the page's `bridge/sessions/together.ts`: the operation a session is in, and the presses on it.</summary>
 public sealed class TogetherRoutes(DriverContext context)
 {
     private readonly DriverLoop _loop = context.Loop;
 
     /// <summary>
-    /// The operation bringing sessions together a session is in (LINESTOGETHER1d, the review-flow design §4), its open one first, else
+    /// The operation bringing sessions together a session is in, its open one first, else
     /// its newest: the phase on its head's page and each member's, and where it was brought into. None where it is in none.
     /// </summary>
     [DriverRoute("TOGETHER", PipeClass.Open)]
@@ -32,7 +32,7 @@ public sealed class TogetherRoutes(DriverContext context)
         }
     }
 
-    // LINESTOGETHER1d: Bring them together… on a head, with the sessions the person ticked; the press judges each again under the
+    // Bring them together… on a head, with the sessions the person ticked; the press judges each again under the
     // door's locks and says the fixed words to the head. A refusal is answered as data, with its sentence.
     [DriverRoute("TOGETHER_PRESS", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("TOGETHER_PRESS", Session = "session")]
@@ -61,7 +61,7 @@ public sealed class TogetherRoutes(DriverContext context)
         return new { Operation = pressed.Operation?.Id, Refused = pressed.Refused };
     }
 
-    // LINESTOGETHER1d: Ask again after a failed check, the words said once more under a key of their own.
+    // Ask again after a failed check, the words said once more under a key of their own.
     [DriverRoute("TOGETHER_ASK_AGAIN", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("TOGETHER_ASK_AGAIN", Session = "session")]
     [GroundSession("TOGETHER_ASK_AGAIN", "session")]
@@ -76,7 +76,7 @@ public sealed class TogetherRoutes(DriverContext context)
         return new { Done = refused is null, Refused = refused };
     }
 
-    // LINESTOGETHER1d: Let them go before the landing; what the head made stays.
+    // Let them go before the landing; what the head made stays.
     [DriverRoute("TOGETHER_LET_GO", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("TOGETHER_LET_GO", Session = "session")]
     [GroundSession("TOGETHER_LET_GO", "session")]

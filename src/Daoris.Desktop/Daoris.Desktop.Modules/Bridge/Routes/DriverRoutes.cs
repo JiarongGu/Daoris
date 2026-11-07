@@ -149,7 +149,7 @@ public sealed class DriverRoutes(DriverContext context)
             };
         }
 
-        // FABRIC-PIPELINE1b: and its light gates, those it declares and does not mark heavy, which Setup's sessions' checks name.
+        // And its light gates, those it declares and does not mark heavy, which Setup's sessions' checks name.
         var marks = HeavyGates.Marks(root);
         return new { repository, marks = marks.Marks, names = marks.Names, light = marks.Light, refusal = marks.Refusal };
     }
@@ -165,7 +165,7 @@ public sealed class DriverRoutes(DriverContext context)
         var repository = (press.Repository ?? "").Trim();
         var service = _loop.Service ?? throw NotReady();
         var registry = await service.RegistryAsync(cancellationToken);
-        // Files and processes, off the window's thread (UIFREEZE1).
+        // Files and processes, off the window's thread.
         return await Task.Run(() => HeavySlotOf(_loop.Home, repository, LinesRoutes.Checkouts(registry, repository, null).Select(row => row.Root)), cancellationToken);
     }
 
@@ -188,7 +188,7 @@ public sealed class DriverRoutes(DriverContext context)
             ? new
             {
                 session = held.Session,
-                // FABRIC-PIPELINE1d: the verification run holding it, where the heavy executor does.
+                // The verification run holding it, where the heavy executor does.
                 run = held.Run,
                 gates = held.Gates,
                 since = held.Since,
@@ -206,7 +206,7 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The machine's heavy-run admission beside the repository's slot (HEAVYQUEUE1): <c>{ capacity, holds, waits }</c>, each run
+    /// The machine's heavy-run admission beside the repository's slot: <c>{ capacity, holds, waits }</c>, each run
     /// <c>{ kind, session?, what, since }</c>, the longest asking first, read from its file and never from a run's output. A session waiting
     /// for a place in it is told so on its page; the merge queue's heavy gates are in it too, as <c>queue</c>.
     /// </summary>
@@ -237,8 +237,8 @@ public sealed class DriverRoutes(DriverContext context)
         return [.. gates.EnumerateArray().Select(gate => new HeavyGate(Text(gate, "name") ?? "", Text(gate, "run") ?? "", Text(gate, "cwd"), Heavy: true))];
     }
 
-    // Whether this machine interrupts the person at all (SURF5b). The same file
-    // `daoris settings notify on|off` edits — one truth, two doors (D50).
+    // Whether this machine interrupts the person at all. The same file
+    // `daoris settings notify on|off` edits — one truth, two doors.
     [DriverRoute("SET_NOTIFY", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_NOTIFY", None = OwnerNone.MachineSetting)]
     [GroundRead("SET_NOTIFY", nameof(PipeReads.Notify))]
@@ -250,7 +250,7 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     // How long an account cools when its agent names no time: whole minutes, at least one, the same
-    // `cooloff` `daoris settings cooloff <minutes>` edits — one truth, two doors (D50). Less than one is the driver's refusal.
+    // `cooloff` `daoris settings cooloff <minutes>` edits — one truth, two doors. Less than one is the driver's refusal.
     [DriverRoute("SET_COOLOFF", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SET_COOLOFF", None = OwnerNone.MachineSetting)]
     [GroundRead("SET_COOLOFF", nameof(PipeReads.CoolOff))]
@@ -275,7 +275,7 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    // One kind's keep rule (KEEP1d, D195 point 2; the cleanup design §2.2, §4.4): the set-aside folders' days, `whole` or not, the
+    // One kind's keep rule: the set-aside folders' days, `whole` or not, the
     // downloads' days or `never`, the logs' days, or a kind's default again; the same `keep` `daoris settings keep` edits, judged by the
     // one judgement (`KeepRules.Apply`) before anything is written, a value out of its bounds refused as KEEP_OUT_OF_RANGE. What the
     // Disk space card shows moves with it, so it declares the wiring with the state.
@@ -294,8 +294,8 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    // How many sessions Daoris starts at once on this machine (CAPSET1, D130's CAPCOUNT1 note): the person's dial, the same
-    // `cap` `daoris settings cap <n>` edits — one truth, two doors (D50). Less than one is the driver's refusal.
+    // How many sessions Daoris starts at once on this machine: the person's dial, the same
+    // `cap` `daoris settings cap <n>` edits — one truth, two doors. Less than one is the driver's refusal.
     [DriverRoute("SET_CAP", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SET_CAP", None = OwnerNone.MachineSetting)]
     [GroundRead("SET_CAP", nameof(PipeReads.Cap))]
@@ -307,7 +307,7 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    // The role catalogue (FOUNDATION1y-i, the foundation design §2.7): every role, the seed's and the person's, with its work, scope and
+    // The role catalogue: every role, the seed's and the person's, with its work, scope and
     // stored choices, and the work codes a role may take; a read, the same `daoris role` says. Beside them, the roles Daoris
     // suggests adding (the Designer while no role takes design), each the person's press alone.
     [DriverRoute("ROLES", PipeClass.Open)]
@@ -336,10 +336,10 @@ public sealed class DriverRoutes(DriverContext context)
         });
     }
 
-    // The roles' structure (COMPANYVIEW1c, the company-view design §4): for each place asked (none is this machine) and each work asked
+    // The roles' structure: for each place asked (none is this machine) and each work asked
     // (none is every work, one this build does not know left out), the role a start finds there, the work's rule with where it was set,
     // and each choice's state by the last readings alone. A read: it walks no account and asks no account or binary, so a view opening
-    // probes nothing (D150 point 5); names only.
+    // probes nothing; names only.
     [DriverRoute("ROLE_STRUCTURE", PipeClass.Open)]
     [ByEvent("ROLE_STRUCTURE", Untold = "the store's roles, driver.json, and the accounts' readings, cool-offs and offers under the home")]
     private Task<object?> RoleStructureAsync(RoleStructureRead read, CancellationToken cancellationToken)
@@ -352,7 +352,7 @@ public sealed class DriverRoutes(DriverContext context)
             if (!places.Contains(each)) places.Add(each);
         }
 
-        // AGENTSPLACE1a: the chosen place's chain alone (the place, its workspace, this machine), where the page reads one place.
+        // The chosen place's chain alone (the place, its workspace, this machine), where the page reads one place.
         if (read.Chain is { ValueKind: JsonValueKind.Object } chosen)
         {
             foreach (var each in PlaceProjection.ChainOf(new RolePlace(Plain(chosen, "workspace"), Plain(chosen, "repository"))).Where(each => !places.Contains(each)))
@@ -408,12 +408,12 @@ public sealed class DriverRoutes(DriverContext context)
     /// <summary>The text with its edges trimmed, or null where nothing is left.</summary>
     private static string? Trimmed(string? text) => text?.Trim() is { Length: > 0 } trimmed ? trimmed : null;
 
-    // The places (AGENTSPLACE1a, the Agents-place design §2 and §3): this machine, each workspace and a page of the driven repositories,
+    // The places: this machine, each workspace and a page of the driven repositories,
     // each with its driving, its works' roles and rules, the values of its head's line with where each was set, and why it needs a look,
     // by the readers a start uses. The not-driven repositories are counts, and a page of one workspace's when its fold is asked. A read of
     // driver.json, the role store and the service's registry and quests (a set-up quest still open is an adoption running): it asks no git,
-    // process or account, so opening a place probes nothing (D150 point 5). `detail` answers one place whole, driven or not, and `members` a
-    // workspace's whole list (SETUPUX1d).
+    // process or account, so opening a place probes nothing. `detail` answers one place whole, driven or not, and `members` a
+    // workspace's whole list.
     [DriverRoute("PLACES", PipeClass.Open)]
     [ByEvent("PLACES", Untold = "the service's registry and quests, driver.json and the role store")]
     private async Task<object?> PlacesAsync(PlacesPageRead read, CancellationToken cancellationToken)
@@ -496,8 +496,8 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     // Ask Daoris's access mode: `restricted` or `full`, the person's press alone, over the same key
-    // `daoris ask-daoris mode` sets: one truth, two doors (D50). Each start reads it, and a conversation running under another ends
-    // at its turn's end, its next words resuming it under the mode chosen (ACCESSSWAP1): nothing it runs with changes while it runs.
+    // `daoris ask-daoris mode` sets: one truth, two doors. Each start reads it, and a conversation running under another ends
+    // at its turn's end, its next words resuming it under the mode chosen: nothing it runs with changes while it runs.
     // A mode it does not know, or none, is the driver's refusal, with nothing written.
     [DriverRoute("SET_HELP_MODE", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_HELP_MODE", None = OwnerNone.MachineSetting)]
@@ -512,11 +512,11 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    // Restricted mode's configured access (HELPMODE1c2b, D183's note): the person's choice of one housekeeping operation, or since
-    // HELPMODE1c3 one chosen setting, or since HELPMODE1c4 one checkout turned off or on by its repository, set on Ask Daoris's screen,
+    // Restricted mode's configured access: the person's choice of one housekeeping operation, or
+    // one chosen setting, or one checkout turned off or on by its repository, set on Ask Daoris's screen,
     // written to the home's own file. Each start reads it onto its allow-list, receipt and room, and each tool call
     // is judged by it then, so a revoke refuses the next call; a conversation running with another choice ends at its turn's end, its
-    // next words resuming it with this one (ACCESSSWAP1). No proposal names it: a helper never widens its own access. A grant or an
+    // next words resuming it with this one. No proposal names it: a helper never widens its own access. A grant or an
     // operation this build does not act on is the driver's refusal, with nothing written.
     [DriverRoute("SET_HELP_GRANT", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_HELP_GRANT", None = OwnerNone.MachineSetting)]
@@ -531,7 +531,7 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    // The person's grant of a folder the driver is holding for the harness's trust (D73) — the
+    // The person's grant of a folder the driver is holding for the harness's trust — the
     // screen's half of `daoris agent trust`. Only a pair this machine's last tick held is
     // granted, in the file that tick read; the terminal is the door that names any folder. The holds themselves are the tick's
     // to tell again, as it looks at once.
@@ -548,7 +548,7 @@ public sealed class DriverRoutes(DriverContext context)
                 + "here to confirm — only a folder it is holding can be trusted from this screen. "
                 + "`daoris agent trust claude-code <folder> --yes` names any folder.");
 
-        // 🔴 Never the own sign-in's file (POOL1a3, D197 point 3; Fable's F3): its hold offers no press, and one sent anyway is
+        // 🔴 Never the own sign-in's file: its hold offers no press, and one sent anyway is
         // refused before anything is written. The person trusts the folder with the tool itself, at their terminal.
         if (hold.Own)
         {
@@ -560,7 +560,7 @@ public sealed class DriverRoutes(DriverContext context)
         }
 
         var grant = ClaudeTrust.Grant(hold.TrustFile, hold.Folder);
-        // The hold is off the slice the windows read now, not a look from now (FOUNDATION1s): the grant is what the person just did,
+        // The hold is off the slice the windows read now, not a look from now: the grant is what the person just did,
         // and a look that still held it would put it back and push it again.
         if (grant.Verified)
         {
@@ -600,11 +600,11 @@ public sealed class DriverRoutes(DriverContext context)
         var considered = _loop.Look.Latest
             ?? await SessionGroups.VerdictsAsync(_loop.Service ?? throw NotReady(), config, _context.Unadopted(config), lastLook: null, cancellationToken, _loop.Home)
                 .ConfigureAwait(false);
-        // PUSH1f2a: the verdict's switch is the library's operation, which `daoris quest retry` acting alone calls too; a
+        // The verdict's switch is the library's operation, which `daoris quest retry` acting alone calls too; a
         // pause or a quest neither parked nor held is its coded refusal (ChoiceCodes), raised here by the module's one mapping.
         var decision = QuestRetry.Decide(quest, considered);
         _context.Change(decision.Change);
-        // STAFFPOLICY1e: the yes to a role policy's ask or bound is one approval beside the line's moves, which the next look reads.
+        // The yes to a role policy's ask or bound is one approval beside the line's moves, which the next look reads.
         if (decision.Approve is { } role && !new StaffMoves(_loop.Home).Approve(quest, role))
         {
             throw new DriverException("this machine's store would not take your yes, so nothing was approved; try again.");
@@ -642,10 +642,10 @@ public sealed class DriverRoutes(DriverContext context)
         return null;
     }
 
-    // *Sync now* (SYNC6b): the tick's own pass for one circle, through the loop's own set —
-    // `daoris remote sync` is the other door to the same pass (D50). What it says comes back
+    // *Sync now*: the tick's own pass for one circle, through the loop's own set —
+    // `daoris remote sync` is the other door to the same pass. What it says comes back
     // in the driver's words; a circle with no remote is its refusal, mapped above. A pass can move where each circle stands,
-    // the quests and sessions it fed, and the registry, and a wall it hit is answered as its report (STATEHUB1d, D169).
+    // the quests and sessions it fed, and the registry, and a wall it hit is answered as its report.
     [DriverRoute("SYNC_NOW", PipeClass.Open)]
     [Publishes("SYNC_NOW", StateScopes.Sessions | StateScopes.Quests | StateScopes.Sync | StateScopes.Registry)]
     private async Task<object?> SyncNowAsync(SyncNowPress press, CancellationToken cancellationToken)

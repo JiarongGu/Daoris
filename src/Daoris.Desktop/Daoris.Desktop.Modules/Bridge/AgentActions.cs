@@ -9,7 +9,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A sign-in's phases as the driver writes them into its relay (SIGNIN1, the UI/UX design §3.2): each a step the driver
+/// A sign-in's phases as the driver writes them into its relay: each a step the driver
 /// performs or observes itself, never one guessed from the tool's words.
 /// </summary>
 internal static class SignInPhase
@@ -28,9 +28,9 @@ internal static class SignInPhase
 }
 
 /// <summary>
-/// The one harness action running on this machine, and the path that starts it (PART10f, D166): Agents' <c>HARNESS_ACTION</c>,
+/// The one harness action running on this machine, and the path that starts it: Agents' <c>HARNESS_ACTION</c>,
 /// <c>HARNESS_INPUT</c> and <c>HARNESS_CANCEL</c> and Ask Daoris's Apply of an update or a pin start, answer and stop through
-/// this one instance, held by <see cref="DriverContext.Actions"/>, so the two doors share the one slot and cannot differ (HELP6).
+/// this one instance, held by <see cref="DriverContext.Actions"/>, so the two doors share the one slot and cannot differ.
 /// No handler class holds another's state. (Named for what it holds: the Driver library's static
 /// <see cref="HarnessActions"/> is the processes themselves.)
 /// </summary>
@@ -43,19 +43,19 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     // two things a screen may do to it while it runs: answer the prompt it printed, or stop it.
     private readonly ConcurrentDictionary<string, HarnessRun> _actions = new();
 
-    // Which `harness:action` holds the one slot, from its start until `RunActionAsync` ends it (REV3).
+    // Which `harness:action` holds the one slot, from its start until `RunActionAsync` ends it.
     private string? _acting;
 
-    // What each `harness:action` said in its latest run, and the life of the one running (SIGNIN1).
+    // What each `harness:action` said in its latest run, and the life of the one running.
     private readonly ConcurrentDictionary<string, Said> _said = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, Life> _lives = new(StringComparer.Ordinal);
 
-    // Each `harness:action`'s latest run to its end, its news included: what a sign-in's switch waits for (CODEXLOGIN1).
+    // Each `harness:action`'s latest run to its end, its news included: what a sign-in's switch waits for.
     private readonly ConcurrentDictionary<string, Task> _works = new(StringComparer.Ordinal);
 
     /// <summary>
     /// Every action <c>HARNESS_ACTION</c> takes, in the order its unknown-action refusal names them: the words a refused one is
-    /// logged by (SIGNIN1), so the log never holds a word the page sent that is not one of them.
+    /// logged by, so the log never holds a word the page sent that is not one of them.
     /// </summary>
     internal static readonly IReadOnlyList<string> Words =
     [
@@ -65,7 +65,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
 
     /// <summary>
     /// A harness action's output, relayed as it happens — the same console the session drawer already
-    /// renders (D49 §2), because an install that printed nothing until it finished is indistinguishable
+    /// renders, because an install that printed nothing until it finished is indistinguishable
     /// from one that hung.
     /// </summary>
     /// <remarks>
@@ -76,7 +76,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     /// <para>The sequence still counts, because the page's merge rule is "drop anything already
     /// seen" — every line arriving as number 0 would render as one line repeatedly overwritten.</para>
     ///
-    /// <para><b>The latest run's lines are kept</b> (SIGNIN1), bounded as a session's are, and answered over
+    /// <para><b>The latest run's lines are kept</b>, bounded as a session's are, and answered over
     /// <c>TAIL_SESSION</c> (<see cref="Tail"/>): a sign-in's panel mounted after its link was printed, as one is on coming
     /// back to its page, read nothing, and its phases are lines too. The number goes on across runs of one action, so a panel
     /// that stayed up through a *Try again* merges the second run's lines after the first's rather than dropping them as seen.</para>
@@ -109,7 +109,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
 
     /// <summary>
     /// What <paramref name="key"/>'s latest run has said since <paramref name="after"/>, and whether it still runs; null where
-    /// no action of that key has said anything here (SIGNIN1). <c>TAIL_SESSION</c> answers it for a key no session holds.
+    /// no action of that key has said anything here. <c>TAIL_SESSION</c> answers it for a key no session holds.
     /// </summary>
     internal ConsoleTail? Tail(string key, long after)
     {
@@ -121,7 +121,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     }
 
     /// <summary>
-    /// The line a sign-in's phase is written as, with its start (SIGNIN1, the UI/UX design §3.2): the record separator, which
+    /// The line a sign-in's phase is written as, with its start: the record separator, which
     /// begins no line a tool prints (<see cref="HarnessActions.Clean"/> drops it), then the phase and when it began, in UTC.
     /// </summary>
     internal static string PhaseLine(string phase, DateTimeOffset at) =>
@@ -135,22 +135,22 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
 
     /// <summary>
     /// A process action on a harness, answered once it has started — <c>HARNESS_ACTION</c>'s own start,
-    /// and the one Ask Daoris's Apply of an update or a pin calls too (HELP6), so the two cannot differ.
+    /// and the one Ask Daoris's Apply of an update or a pin calls too, so the two cannot differ.
     /// </summary>
     /// <remarks>
     /// 🔴 A process action is answered when the process has STARTED, and its end is news
-    /// (HARNESS_ENDED) — the same way a conversation's ending is (D49 §3). It waits on a network, or on
+    /// (HARNESS_ENDED) — the same way a conversation's ending is. It waits on a network, or on
     /// a person in a browser, and a request that waited with it timed out on the bridge at thirty seconds
     /// while the login ran on: the page closed its panel, the row said nothing had changed, and the
     /// process kept waiting for a browser nobody was told about (measured on the installed shell,
     /// 2026-09-23). While it runs the page may answer it or stop it (HARNESS_INPUT, HARNESS_CANCEL).
     /// </remarks>
     /// <param name="ended">Told the exit code and any problem once the process ends, after the news goes out.</param>
-    /// <param name="joins">The lists a sign-in names (ACCT1), refused where it names any since POOL1a (D197): the account joins Daoris's accounts.</param>
-    /// <param name="name">A new account's name, the person's, given as it is made (ACCT2).</param>
-    /// <param name="way">A sign-in's way (CODEXLOGIN1): the agent's own sign-in, its browser first, or its device code.</param>
+    /// <param name="joins">The lists a sign-in names, refused where it names any: the account joins Daoris's accounts by itself.</param>
+    /// <param name="name">A new account's name, the person's, given as it is made.</param>
+    /// <param name="way">A sign-in's way: the agent's own sign-in, its browser first, or its device code.</param>
     /// <param name="switching">
-    /// Whether this sign-in takes the place of the same one running another way (CODEXLOGIN1): that one is stopped, its end
+    /// Whether this sign-in takes the place of the same one running another way: that one is stopped, its end
     /// told as switched, before this one starts.
     /// </param>
     /// <returns>The account a sign-in reaches: the one named, or a new account's fresh id; null for any other action.</returns>
@@ -163,12 +163,12 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         var key = $"{harness}:{action}";
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var signsIn = action is "login" or "login-new";
-        // Its life from the press (SIGNIN1): each phase's start, for its panel and the machine log.
+        // Its life from the press: each phase's start, for its panel and the machine log.
         var life = new Life(key, harness, action);
         Action<HarnessRun> track = run =>
         {
             _actions[key] = run;
-            // Stopped for a switch before its process was up (CODEXLOGIN1): it stops as soon as there is one to stop.
+            // Stopped for a switch before its process is up: it stops as soon as there is one to stop.
             if (life.Cancelled) run.Cancel();
             if (life.Up is null)
             {
@@ -183,11 +183,11 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         var home = _loop.Harnesses.Home;
         var accounts = HarnessSettings.Profiles(home, owner);
         var names = AccountNames.Of(home, owner);
-        // 🔴 Signing in to a NEW account (D66 §3): the account is made by the sign-in, not named before it. It opens under
-        // a fresh id (ACCT2) — nobody knows whose it is yet — and the tool's own answer names who once it ends, offered to
+        // 🔴 Signing in to a NEW account: the account is made by the sign-in, not named before it. It opens under
+        // a fresh id — nobody knows whose it is yet — and the tool's own answer names who once it ends, offered to
         // the person as its name.
         var fresh = action == "login-new" ? AccountNames.NewId(home, owner) : null;
-        // 🔴 Signing back in to an account that is here (ACCT1): the one named, by its id or its name, else the machine's
+        // 🔴 Signing back in to an account that is here: the one named, by its id or its name, else the machine's
         // default — never a new folder. The install's owner signed in to bring a signed-out account back and got a new
         // account no list held.
         string? target = null;
@@ -210,24 +210,24 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         }
 
         var profileHome = HarnessSettings.ProfileHome(home, owner, fresh ?? target ?? profile ?? "default");
-        // 🔴 A sign-in is its accounts' agent's (AGT7, CODEXACCT1): a door onto another agent runs that agent's own flow, on the
-        // binary its status question asks: the command named for it, its pin, else PATH's (D57 rule 4). `codex-acp` has no flow
-        // of its own and runs `codex login`, its browser first, or `codex login --device-auth` asked for (CODEXLOGIN1); refused
-        // as a door with none, Agents → Codex offered no account while `daoris agent login codex --new` made one (D50), and
+        // 🔴 A sign-in is its accounts' agent's: a door onto another agent runs that agent's own flow, on the
+        // binary its status question asks: the command named for it, its pin, else PATH's. `codex-acp` has no flow
+        // of its own and runs `codex login`, its browser first, or `codex login --device-auth` asked for; refused
+        // as a door with none, Agents → Codex offered no account while `daoris agent login codex --new` made one, and
         // the install's only `codex` is its pin.
         var signing = action is "login" or "login-new" ? _loop.Harnesses.AccountAgentOf(harness) : null;
         var signingToolchain = signing ?? toolchain;
         var signingRun = signing is null ? null : _loop.Harnesses.SignInCommand(harness, config);
         if (signsIn)
         {
-            // The way asked is one the agent has (CODEXLOGIN1), refused before anything starts where it is not.
+            // The way asked is one the agent has, refused before anything starts where it is not.
             SignInWays.Arguments(owner, signingToolchain, way);
-            // 🔴 LIVELOGIN1: never the real agent under a scratch home, refused as the press is (HarnessActions.PrepareLogin's backstop).
+            // Never the real agent under a scratch home, refused as the press is (HarnessActions.PrepareLogin's backstop).
             if (signingRun is not null && ScratchSignIns.Refusal(signingToolchain, signingRun, profileHome) is { } scratch)
             {
                 throw new DriverException(scratch);
             }
-            // 🔴 Its browser's answer needs a port of this machine (CODEXLOGIN1): each it tries is taken for a moment, once per
+            // 🔴 Its browser's answer needs a port of this machine: each it tries is taken for a moment, once per
             // press, and where none can be the sign-in is refused in plain words, the device code offered, nothing made and the
             // running one left as it is. Never read from Windows' table alone: a range is not the only holder.
             if (way == SignInWay.Browser && SignInPorts.Refusal(owner, signingToolchain, _loop.Harnesses.Ports) is { } held)
@@ -244,18 +244,18 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
                 harness, owner, target!, signingToolchain, signingRun!, profileHome, stream, config, track, life, way),
             "login-new" => () => SignInAsync(
                 harness, owner, fresh!, signingToolchain, signingRun!, profileHome, stream, config, track, name, life, way),
-            // The managed toolchain (TOOL2/D57) — the desktop's half of `daoris agent pin|unpin`, over
+            // The managed toolchain — the desktop's half of `daoris agent pin|unpin`, over
             // the same file.
             _ => () => PinAsync(harness, toolchain, stream, version!, CancellationToken.None, track),
         };
 
-        // 🔴 A switch stops the same sign-in running another way, and waits for its end before this one claims the slot
-        // (CODEXLOGIN1): the person may change ways at any time, since a device code a workspace refuses may say so only on
+        // 🔴 A switch stops the same sign-in running another way, and waits for its end before this one claims the slot:
+        // the person may change ways at any time, since a device code a workspace refuses may say so only on
         // the maker's page while the tool waits out its fifteen minutes. The child is Daoris's own, stopped as *Cancel* stops it.
         if (switching && signsIn) await StopForSwitchAsync(key);
 
         // 🔴 One at a time on this machine, claimed as the action starts and released by
-        // `RunActionAsync` however it ends (REV3). The page re-enabled its buttons once the request
+        // `RunActionAsync` however it ends. The page re-enabled its buttons once the request
         // answered `started`, and a second login under the same name took the first's place in
         // `_actions`: the first could no longer be answered or stopped, and its end removed the second's
         // entry. Claimed last, so nothing above can throw with it held.
@@ -267,7 +267,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
                 ("running", busy));
         }
 
-        // The run's lines are its own from here, and a sign-in says its first phase (SIGNIN1): a panel mounted later reads them.
+        // The run's lines are its own from here, and a sign-in says its first phase: a panel mounted later reads them.
         var said = _said.GetOrAdd(key, _ => new Said());
         lock (said)
         {
@@ -290,7 +290,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     }
 
     /// <summary>
-    /// Stop the sign-in running under <paramref name="key"/> for one by another way (CODEXLOGIN1), and wait for its end, its
+    /// Stop the sign-in running under <paramref name="key"/> for one by another way, and wait for its end, its
     /// news told as switched so the page keeps its panel. Nothing running there is nothing to stop: the switch starts as a
     /// press would.
     /// </summary>
@@ -348,7 +348,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         Ended(life, life.Cancelled ? "cancelled" : code != 0 ? "failed" : life.Nobody ? "nobody" : "done", code);
         Tell(code, null);
 
-        // Whoever asked to hear the end (HELP6: Ask Daoris's conversation) hears it after the news; a
+        // Whoever asked to hear the end (Ask Daoris's conversation) hears it after the news; a
         // listener that fails costs its own view, never the end the screen was told.
         void Tell(int exit, string? problem)
         {
@@ -364,7 +364,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     }
 
     /// <summary>
-    /// An action's end in the machine log (SIGNIN1, the machine-log design §4): how it ended by a word, its exit code, and each
+    /// An action's end in the machine log: how it ended by a word, its exit code, and each
     /// phase's milliseconds, null for one it never reached. Never the tool's output, a link, a code or who signed in.
     /// </summary>
     private void Ended(Life life, string outcome, int? code)
@@ -379,9 +379,9 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     private async Task AnnounceAsync(
         string harness, string action, string? profile, int code, string? problem, DriverConfig config, Life? life = null)
     {
-        // What the act changed is read again before the news, and nothing else (ROSTER1): a sign-in's end reads its
+        // What the act changed is read again before the news, and nothing else: a sign-in's end reads its
         // account, the binary an install, an update or a pin changed; a sign-in to another account read its own already, and
-        // a sign-in back in to one read who before it joined the lists (SIGNIN1).
+        // a sign-in back in to one read who before it joined the lists.
         HarnessReport? report = null;
         var signingIn = action is "login" or "login-new" && profile is not null;
         try
@@ -401,15 +401,15 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         await _events.EmitAsync("DAORIS", "HARNESS_ENDED", new
         {
             Door = harness, Action = action, Profile = profile, ExitCode = code, Problem = problem,
-            // Who signed in (D66 §3) — the tool's own answer, from the reading the sign-in's end made, so
+            // Who signed in — the tool's own answer, from the reading the sign-in's end made, so
             // the sentence a person hears names the account the way they know it.
             Account = signedIn?.Account,
-            // The organisation and the plan beside who (ACCOUNTID1), from the same reading, written nowhere.
+            // The organisation and the plan beside who, from the same reading, written nowhere.
             signedIn?.Org,
             signedIn?.Plan,
-            // The name offered for it (ACCOUNTID1, AccountNames.Offered): who signed in, or with the organisation beside it
+            // The name offered for it (AccountNames.Offered): who signed in, or with the organisation beside it
             // where another account already has the email, so accepting it names the account; null where none tells them
-            // apart, and the person names it. Offered, never written (D66 §3).
+            // apart, and the person names it. Offered, never written.
             Offered = signedIn is { Account: { } who }
                 ? Offer(owner, signedIn.Name, who, signedIn.Org, signedIn.Plan)
                 : null,
@@ -418,15 +418,15 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
                 ? Directory.Exists(HarnessSettings.ProfileHome(
                     _loop.Harnesses.Home, _loop.Harnesses.Adapters.OwnerOfAgent(harness).Value, profile))
                 : (bool?)null,
-            // Whether the person's *Cancel* stopped it (SIGNIN1), so its end is no failure to say: the page closes its panel.
+            // Whether the person's *Cancel* stopped it, so its end is no failure to say: the page closes its panel.
             Cancelled = life?.Cancelled ?? false,
-            // Whether it was stopped for the same sign-in by another way (CODEXLOGIN1), which runs on in the same panel: the page
+            // Whether it is stopped for the same sign-in by another way, which runs on in the same panel: the page
             // says nothing of this end and keeps the panel. Absent from an older shell.
             Switched = life?.Switched ?? false,
         });
     }
 
-    /// <summary>The name a sign-in's end offers an account (ACCOUNTID1), or null where the names do not read.</summary>
+    /// <summary>The name a sign-in's end offers an account, or null where the names do not read.</summary>
     private string? Offer(string owner, string account, string who, string? org, string? plan)
     {
         var home = _loop.Harnesses.Home;
@@ -442,21 +442,21 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     }
 
     /// <summary>
-    /// Sign in to another account (D66 §3): the tool's own login flow into a fresh directory, kept
+    /// Sign in to another account: the tool's own login flow into a fresh directory, kept
     /// only when the sign-in finished.
     /// </summary>
     /// <remarks>
     /// "Finished" is the tool's exit code and then the tool's own word, asked of that one home: a
     /// zero exit whose home still reports signed OUT signed nobody in. An answer it cannot give is
-    /// kept, by the rule every unknown login state follows (SES3) — the person watched the sign-in
+    /// kept, by the rule every unknown login state follows — the person watched the sign-in
     /// and can remove it. Otherwise the directory existed only for this sign-in, and goes: the list
     /// is exactly what it was before the press, whether the tool failed, was stopped, or never
     /// started.
     /// </remarks>
     /// <param name="harness">The door pressed, whose account agent's end question reads the new account.</param>
-    /// <param name="owner">Whose accounts the door runs as (AGT7): the new account's folder is under it.</param>
-    /// <param name="toolchain">The account agent's toolchain, whose own flow signs in (CODEXACCT1).</param>
-    /// <param name="run">What the account agent runs as: its named command, its pin, else PATH's (D57 rule 4).</param>
+    /// <param name="owner">Whose accounts the door runs as: the new account's folder is under it.</param>
+    /// <param name="toolchain">The account agent's toolchain, whose own flow signs in.</param>
+    /// <param name="run">What the account agent runs as: its named command, its pin, else PATH's.</param>
     private async Task<int> SignInAsync(
         string harness, string owner, string fresh, AccountAgent toolchain, HarnessCommand run,
         string profileHome, Action<string> stream, DriverConfig config, Action<HarnessRun> track,
@@ -472,7 +472,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         finally
         {
             life.Exited ??= life.Now;
-            // The tool has exited: what the driver does now are phases of its own (SIGNIN1), who signed in, then the lists.
+            // The tool has exited: what the driver does now are phases of its own, who signed in, then the lists.
             if (code == 0)
             {
                 life.Who = life.Now;
@@ -502,7 +502,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
             }
             else
             {
-                // Named where the person named it (ACCT2); who signed in is offered on the page, never written here (D66 §3).
+                // Named where the person named it; who signed in is offered on the page, never written here.
                 var called = Kept(() => AccountNames.Rename(
                     _loop.Harnesses.Home, owner, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), fresh, name), name is not null, stream);
                 var accounts = HarnessSettings.Profiles(_loop.Harnesses.Home, owner);
@@ -519,12 +519,12 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     }
 
     /// <summary>
-    /// Sign back in to an account that is here (ACCT1): the tool's own login flow into its folder, never a new one, and at
-    /// its end its place in the order kept (POOL1a2).
+    /// Sign back in to an account that is here: the tool's own login flow into its folder, never a new one, and at
+    /// its end its place in the order kept.
     /// </summary>
     /// <remarks>
-    /// Who signed in is read before the lists are joined (SIGNIN1, the UI/UX design §3.2's phases), and the end's news says it
-    /// from that one reading rather than asking the tool again; where the reading failed, the end reads as before.
+    /// Who signed in is read before the lists are joined, and the end's news says it
+    /// from that one reading rather than asking the tool again; where the reading failed, the end omits it.
     /// </remarks>
     private async Task<int> SignInToAsync(
         string harness, string owner, string account, AccountAgent toolchain, HarnessCommand run, string profileHome,
@@ -549,7 +549,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         life.WhoDone = life.Now;
         life.Lists = life.Now;
         Phase(life, SignInPhase.Lists);
-        // An account signed back in keeps its place in the order and joins nothing (POOL1a2); a stored order an older build wrote
+        // An account signed back in keeps its place in the order and joins nothing; a stored order an older build wrote
         // without it places it last.
         HarnessSettings.Placed(_loop.Harnesses.SettingsPath, owner, account, _loop.Harnesses.Agents);
         life.Joined = life.Now;
@@ -557,20 +557,20 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     }
 
     /// <summary>
-    /// A sign-in's end beside who signed in (POOL1a2, D197 point 4; the account-pool design §4.4): the account placed last in its
-    /// agent's order (§2.2), and one sentence, that it joined Daoris's accounts. Nothing is asked of where it runs, since every
+    /// A sign-in's end beside who signed in: the account placed last in its
+    /// agent's order, and one sentence, that it joined Daoris's accounts. Nothing is asked of where it runs, since every
     /// account serves every workspace; an order that could not be written now is placed by the next change of the file.
     /// </summary>
     private void Placed(string owner, string account, Action<string> stream)
     {
-        // A new account goes last in the order, whatever its id (POOL1a, the account-pool design §2.2).
+        // A new account goes last in the order, whatever its id.
         HarnessSettings.Placed(_loop.Harnesses.SettingsPath, owner, account, _loop.Harnesses.Agents);
         stream(JoinedSaid(AccountNames.Shown(_loop.Harnesses.Home, owner, account)));
     }
 
     /// <summary>
-    /// What a sign-in's end says of a new account (the account-pool design §4.4, <c>agents.add.joined</c>'s English), the terminal's
-    /// <c>login</c>'s words too (POOL1b).
+    /// What a sign-in's end says of a new account (<c>agents.add.joined</c>'s English), the terminal's
+    /// <c>login</c>'s words too.
     /// </summary>
     public static string JoinedSaid(string shown) => OneSetWords.Joined(shown);
 
@@ -590,10 +590,10 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     }
 
     /// <summary>
-    /// Each list a sign-in named, refused before anything starts where it cannot be joined (ACCT1): a workspace that takes
+    /// Each list a sign-in named, refused before anything starts where it cannot be joined: a workspace that takes
     /// this machine's list, naming none of its own, is refused naming both, so a refusal costs nothing.
     /// </summary>
-    /// <remarks>Since POOL1a (D197; the account-pool design §5.2) a sign-in's <c>join</c> naming anything is refused: the account joins
+    /// <remarks>A sign-in's <c>join</c> naming anything is refused: the account joins
     /// Daoris's accounts by itself.</remarks>
     private static void RefuseJoins(DriverLoop loop, string owner, IReadOnlyList<string?> joins)
     {
@@ -611,7 +611,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
                 ("door", harness), ("action", action));
     }
 
-    /// <summary>Stop the action running under `harness:action`, its end then told to the log as cancelled (SIGNIN1).</summary>
+    /// <summary>Stop the action running under `harness:action`, its end then told to the log as cancelled.</summary>
     internal void Cancel(string harness, string action)
     {
         var run = Running(harness, action);
@@ -620,7 +620,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         run.Cancel();
     }
 
-    /// <summary>What one `harness:action` said in its latest run, bounded as a session's console is (SIGNIN1).</summary>
+    /// <summary>What one `harness:action` said in its latest run, bounded as a session's console is.</summary>
     private sealed class Said
     {
         public readonly Queue<ConsoleLine> Lines = new();
@@ -629,7 +629,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     }
 
     /// <summary>
-    /// A process action's life (SIGNIN1): when each of its phases began, in milliseconds from the press by the driver's own
+    /// A process action's life: when each of its phases began, in milliseconds from the press by the driver's own
     /// clock, how it ended, and a sign-in back in's reading of who, which its end's news says rather than reading again.
     /// </summary>
     private sealed class Life(string key, string harness, string action)
@@ -659,7 +659,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
 
         public bool Cancelled { get; set; }
 
-        /// <summary>Stopped for the same sign-in by another way (CODEXLOGIN1); <see cref="Cancelled"/> with it.</summary>
+        /// <summary>Stopped for the same sign-in by another way; <see cref="Cancelled"/> with it.</summary>
         public bool Switched { get; set; }
 
         public bool Nobody { get; set; }
@@ -680,8 +680,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     }
 
     /// <summary>
-    /// Install a version into the directory Daoris owns, and pin to it — <b>in that order</b>
-    /// (TOOL2/D57).
+    /// Install a version into the directory Daoris owns, and pin to it — <b>in that order</b>.
     /// </summary>
     /// <remarks>
     /// 🔴 The pin is written only after the install succeeded. A pin naming a version that is not
@@ -695,13 +694,13 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         var code = await HarnessActions.PinAsync(
             toolchain, _loop.Harnesses.Home, harness, version, stream, ct, started);
 
-        // KEEP1b: written once the version is found installed again under the file's lock, which the downloads' rule holds to its rename.
+        // Written once the version is found installed again under the file's lock, which the downloads' rule holds to its rename.
         if (code == 0) HarnessSettings.Pin(_loop.Harnesses.SettingsPath, _loop.Harnesses.Home, harness, version, agents: _loop.Harnesses.Agents);
         return code;
     }
 
     /// <summary>
-    /// Update a door (USE1a): a pinned one moves its pin to the newest release, written the way
+    /// Update a door: a pinned one moves its pin to the newest release, written the way
     /// <see cref="PinAsync"/> writes one — only after that version is installed — and an unpinned one
     /// runs its own updater. The machine's pin, the one the roster shows.
     /// </summary>

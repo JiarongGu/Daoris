@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The wait of a press that was the review's word for a run whose <c>land</c> the runtime performs (WORKFLOWCLEAN1 1c; the cleanup design §2.2):
+/// The wait of a press that is the review's word for a run whose <c>land</c> the runtime performs:
 /// it forgets a refusal nothing changed since (the press is the person's try again), asks a whole pass, and reads what the landing came to within
 /// <see cref="GraphPasses.Bound"/>. It lands nothing and builds no plugin wire.
 /// </summary>

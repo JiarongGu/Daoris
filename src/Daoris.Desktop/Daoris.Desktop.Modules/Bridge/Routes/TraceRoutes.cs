@@ -5,7 +5,7 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// How a change came to be, the page's `bridge/trace.ts` (TRACE1b, D143, D50): the screen's door to `daoris trace`,
+/// How a change came to be, the page's `bridge/trace.ts`: the screen's door to `daoris trace`,
 /// one read from a session or a quest back to its ask through the stores that keep each link.
 /// </summary>
 public sealed class TraceRoutes(DriverLoop loop)
@@ -14,7 +14,7 @@ public sealed class TraceRoutes(DriverLoop loop)
 
     // The driver's own read, over the stores the terminal reads (the service, the home, `driver.json`): the chain as data,
     // each link with its store and a missing one with why. It writes nothing. What a failed read said, and a tree's path,
-    // are the terminal's alone (D47 §4): the chain's records keep them off the wire.
+    // are the terminal's alone: the chain's records keep them off the wire.
     [DriverRoute("TRACE", PipeClass.Open)]
     private async Task<object?> TraceAsync(TraceRead asked, CancellationToken cancellationToken)
     {

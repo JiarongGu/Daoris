@@ -33,7 +33,7 @@ internal sealed class HelpMachineDesk(DriverContext context)
     }
 
     /// <summary>
-    /// The room's reading for a start or a conversation going on: since PARALLEL1a the facts the judges keep, as last
+    /// The room's reading for a start or a conversation going on: the facts the judges keep, as last
     /// judged, at once, and this machine's file as it is now. Where the service's answers were never judged it waits for their first
     /// judgement, which the start bounds and does not wait for at all where a room was written before.
     /// </summary>
@@ -49,7 +49,7 @@ internal sealed class HelpMachineDesk(DriverContext context)
     /// <summary>
     /// The machine as Ask Daoris's room says it, from the facts the judges keep (<see cref="HelpFacts"/>) and the
     /// driver's own files: its file, the registry and each repository's line, the roster, the asks, the plugins and offers, the
-    /// landings, what the loop parked and held, and the browser's files. What every open writes the room from, and since ASKHIST1 a
+    /// landings, what the loop parked and held, and the browser's files. What every open writes the room from, and a
     /// conversation going on too. Reads no git and asks the service nothing: what the facts have not judged yet is said so.
     /// </summary>
     private HelpMachine HelpMachineOf(DriverConfig config, HelpFactsRead read)
@@ -99,7 +99,7 @@ internal sealed class HelpMachineDesk(DriverContext context)
 
     /// <summary>
     /// The sessions' topic's judge: this machine's sessions as the Sessions list places them, so an archive
-    /// or a delete names one it was shown, without their trees since FACTSPLIT1b, which each repository's part judges
+    /// or a delete names one it is shown, without their trees, which each repository's part judges
     /// (<see cref="TreesAsync"/>): the records, the quests, the verdicts and the marks, with no git. The look this shell took last is
     /// read where it is recent. Null where the look cannot be taken, and the room says so.
     /// </summary>
@@ -179,8 +179,8 @@ internal sealed class HelpMachineDesk(DriverContext context)
     }
 
     /// <summary>
-    /// The work's topic's judge, one part at a time since FACTSPLIT1a: where each unit's work has got to
-    /// (FABRIC-MILESTONE1b), the inventory's read-only derivation as `work state` and the WORK_STATE route read it, with Daoris's own
+    /// The work's topic's judge, one part at a time: where each unit's work has got to,
+    /// the inventory's read-only derivation as `work state` and the WORK_STATE route read it, with Daoris's own
     /// recoveries no unit names, of the part's repositories alone. Its checkout and the trees in use are the
     /// service's answers the facts hold (<see cref="HelpFacts.PartOf"/>), so a part asks the service nothing but, where a landing the line
     /// does not hold names a quest, which of those are closed (<see cref="ClosedQuestsAsync"/>).

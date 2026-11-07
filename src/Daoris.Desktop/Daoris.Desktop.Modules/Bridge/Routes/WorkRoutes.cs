@@ -5,18 +5,18 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The work of an ask or a quest, the page's <c>bridge/work.ts</c> (PAUSE1b, PAUSE1d, D132 §7.3): what it holds and what a
+/// The work of an ask or a quest, the page's <c>bridge/work.ts</c>: what it holds and what a
 /// pause and an abandon would do with each piece, a pause, a resume and an abandon. The driver library's
 /// <see cref="WorkPausing"/> and <see cref="WorkAbandoning"/> are the one implementation, which <c>daoris ask
-/// --pause|--resume|--abandon</c> and <c>quest pause|resume|abandon</c> call too (D50).
+/// --pause|--resume|--abandon</c> and <c>quest pause|resume|abandon</c> call too.
 /// </summary>
 /// <remarks>
 /// <para><b>Nothing machine-local comes back.</b> A tree is named by its repository and branch, never its path, as the
-/// platform language says of every page (§4); the ids and the words are the record's.</para>
+/// platform language says of every page; the ids and the words are the record's.</para>
 ///
 /// <para><b>Each answer is facts and words from fixed lists</b> (<see cref="PauseAct"/>, <c>why</c>), so the page says them in
 /// the reader's language; a still-held quest carries the planner's verdict beside its sentence, which the page translates by
-/// the verdict, as it does a tick's (UX5 U27).</para>
+/// the verdict, as it does a tick's.</para>
 /// </remarks>
 public sealed class WorkRoutes(DriverContext context)
 {
@@ -24,21 +24,21 @@ public sealed class WorkRoutes(DriverContext context)
     private readonly DriverLoop _loop = context.Loop;
 
     /// <summary>
-    /// What a move on a work changes (STATEHUB1d, D169): its quests, the plan of the work among them, its ask, the sessions it
+    /// What a move on a work changes: its quests, the plan of the work among them, its ask, the sessions it
     /// stopped, released or archived, and the driver's state its loop, nudged, reads again. About no one session.
     /// </summary>
     private const StateScopes Moves = StateScopes.Sessions | StateScopes.Quests | StateScopes.Asks | StateScopes.Driver;
 
     /// <summary>
     /// The work and what a pause and an abandon would do with each piece, why an abandon keeps what it keeps, and its own pause
-    /// and last abandon here (design §1, §2.1, §3.2, §4.2). The abandon's half is the first press: <c>abandon.pieces</c> is
+    /// and last abandon here. The abandon's half is the first press: <c>abandon.pieces</c> is
     /// what the second press sends back.
     /// </summary>
     [DriverRoute("WORK_PLAN", PipeClass.Open)]
     private async Task<object?> WorkPlanAsync(WorkPlanRead press, CancellationToken cancellationToken)
     {
         var (scope, id) = WorkNamed(press.Ask, press.Quest);
-        // RPC1e: `ask --abandon <id>` and `quest abandon <id>`, the abandon's list in the verb's words.
+        // `ask --abandon <id>` and `quest abandon <id>`, the abandon's list in the verb's words.
         if (press.Said) return await SaidAsync(new WorkAsk(scope, "abandon", id), cancellationToken).ConfigureAwait(false);
         var abandon = await WorkAbandoning.PlanAsync(WorldOf(_context), scope, id, cancellationToken).ConfigureAwait(false)
                       ?? throw WorkUnknown(scope, id);
@@ -121,9 +121,9 @@ public sealed class WorkRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// Abandon the work (design §3.4): exactly the pieces the first press listed, each judged again, with the person's reason.
+    /// Abandon the work: exactly the pieces the first press listed, each judged again, with the person's reason.
     /// What went, what stayed, how many changed since the list and each shared decline's answer come back as facts and words
-    /// from fixed lists; an abandon with nothing listed is said, never refused (D48 §6).
+    /// from fixed lists; an abandon with nothing listed is said, never refused.
     /// </summary>
     [DriverRoute("WORK_ABANDON", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("WORK_ABANDON", Ask = "ask", Quest = "quest")]
@@ -135,7 +135,7 @@ public sealed class WorkRoutes(DriverContext context)
     {
         var (scope, id) = WorkNamed(press.Ask, press.Quest);
         var reason = press.Reason;
-        // RPC1e: the terminal's `--yes`, which abandons what the list holds now, as the verb does alone; its words say a missing reason.
+        // The terminal's `--yes`, which abandons what the list holds now, as the verb does alone; its words say a missing reason.
         if (press.Said)
         {
             return await SaidAsync(new WorkAsk(scope, "abandon", id) { Reason = reason, Yes = true }, cancellationToken).ConfigureAwait(false);
@@ -191,7 +191,7 @@ public sealed class WorkRoutes(DriverContext context)
     private static object Tree(AbandonedTree tree) =>
         new { tree.Repository, tree.Branch, tree.Tip, tree.Commits, tree.Uncommitted, tree.Sessions, tree.Alone };
 
-    /// <summary>The last abandon here, for the page's *What went* and *What stayed* (design §4.2).</summary>
+    /// <summary>The last abandon here, for the page's *What went* and *What stayed*.</summary>
     private static object Entry(AbandonEntry entry) => new
     {
         entry.At,
@@ -207,9 +207,9 @@ public sealed class WorkRoutes(DriverContext context)
     };
 
     /// <summary>
-    /// Pause the work on this machine (design §2.1): what of it ran here stopped as the person's stop, nothing of it started
+    /// Pause the work on this machine: what of it ran here stopped as the person's stop, nothing of it started
     /// until *Resume*. What it stopped and what it could not reach come back; a pause with nothing to hold is said, never
-    /// refused (D48 §6).
+    /// refused.
     /// </summary>
     [DriverRoute("WORK_PAUSE", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("WORK_PAUSE", Ask = "ask", Quest = "quest")]
@@ -236,8 +236,8 @@ public sealed class WorkRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// Resume the work (design §2.4): the pause gone, each stop it made released, and what still holds each quest named by the
-    /// planner's verdict. A resume of what is not paused is said, never refused (D48 §6).
+    /// Resume the work: the pause gone, each stop it made released, and what still holds each quest named by the
+    /// planner's verdict. A resume of what is not paused is said, never refused.
     /// </summary>
     [DriverRoute("WORK_RESUME", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("WORK_RESUME", Ask = "ask", Quest = "quest")]
@@ -264,8 +264,8 @@ public sealed class WorkRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// One quest a resume leaves held, as the page receives it (design §2.4): the quest, the verdict and the driver's sentence,
-    /// and beside them the facts the page says that sentence from in the reader's language (CARRY2d), by the tick's own names
+    /// One quest a resume leaves held, as the page receives it: the quest, the verdict and the driver's sentence,
+    /// and beside them the facts the page says that sentence from in the reader's language, by the tick's own names
     /// and shapes (<see cref="DriverLoop.TickConsideration"/>), so <c>sittingSentence</c> words a hold as it words a sitting
     /// quest. Each is null for every verdict but its own, which the bridge leaves out; the sentence stays, unchanged, for an
     /// older page. Public for the fast half's table.
@@ -275,21 +275,21 @@ public sealed class WorkRoutes(DriverContext context)
         hold.Quest,
         Verdict = hold.Verdict.ToString(),
         hold.Reason,
-        // The person's stop by its session (SESSUX1d); its tree stays here.
+        // The person's stop by its session; its tree stays here.
         hold.HeldBy,
-        // Another pause, an ask's or the quest's own (PAUSE1b).
+        // Another pause, an ask's or the quest's own.
         PausedBy = hold.PausedBy is { } pause ? new { Scope = pause.Word, pause.Id } : null,
-        // A park by the count its sentence says (SESSUX1i).
+        // A park by the count its sentence says.
         hold.Strikes,
-        // A take that is not this machine's (CARRY2c): the machine and its session, a take made here, the session not carried on.
+        // A take that is not this machine's: the machine and its session, a take made here, the session not carried on.
         TakenBy = hold.TakenBy is { } taken ? new { taken.Machine, taken.Session, taken.Here, taken.Last } : null,
         CannotShow = hold.CannotShow is { } sat ? new { sat.Code, sat.Environment, sat.Address } : null,
-        // Which of its sentences, by code and facts (OVERVIEWNOISE1c).
+        // Which of its sentences, by code and facts.
         Said = DriverLoop.SaidShown(hold.Said),
     };
 
     /// <summary>
-    /// The verb's own lines and exit code for a work route a terminal sent (RPC1e): <see cref="WorkCommand.RunAsync"/> with this Daoris's
+    /// The verb's own lines and exit code for a work route a terminal sent: <see cref="WorkCommand.RunAsync"/> with this Daoris's
     /// world, whose registry stops what this loop runs, at the terminal's door. A move nudges the loop, as the page's press does.
     /// </summary>
     private async Task<object> SaidAsync(WorkAsk ask, CancellationToken cancellationToken)
@@ -311,7 +311,7 @@ public sealed class WorkRoutes(DriverContext context)
 
     /// <summary>
     /// The loop's world for a pause or an abandon: its service, its home, its file and its own registry, which stops what it
-    /// runs; and for an abandon's pass, the loop's own sync (SYNC6b), where the workspace has a remote in the map its passes read.
+    /// runs; and for an abandon's pass, the loop's own sync, where the workspace has a remote in the map its passes read.
     /// Ask Daoris's pause cards and its pause proposals' judging go through it too, as the screen's own door.
     /// </summary>
     internal static WorkWorld WorldOf(DriverContext context)

@@ -6,9 +6,9 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// This machine's plugins, the page's `bridge/plugins.ts` (MOD5; D64): the catalogue and the install's
-/// offers, enable, disable and remove, an update, an offer installed (PLUG9), and the kit's New and Try
-/// (PLUG8). Since PLUGUI1e (D119 §4.1), what the Plugins view reads besides: a plugin's page and its activity,
+/// This machine's plugins, the page's `bridge/plugins.ts`: the catalogue and the install's
+/// offers, enable, disable and remove, an update, an offer installed, and the kit's New and Try.
+/// What the Plugins view reads besides: a plugin's page and its activity,
 /// a folder read and installed from, and a folder opened.
 /// </summary>
 public sealed class PluginsRoutes(DriverContext context)
@@ -18,23 +18,23 @@ public sealed class PluginsRoutes(DriverContext context)
     private readonly OpenFolder? _openFolder = context.OpenFolder;
 
     // The offers' folder is read through the context at each request: a test names its own by an initializer on the module,
-    // which runs after the constructor built this class (PART10e).
+    // which runs after the constructor built this class.
     private string OffersFolder => _context.OffersFolder;
 
     /// <summary>
-    /// What a plugin added, switched, updated or removed changes (STATEHUB1d, D169): the catalogue, and the agents' roster, since
+    /// What a plugin added, switched, updated or removed changes: the catalogue, and the agents' roster, since
     /// a harness a plugin declares comes and goes with it. Making a plugin's folder and trying one install nothing, and declare nothing.
     /// </summary>
-    // HELPMODE1c3: the driver's too, whose helpGrants draws Ask Daoris's browser grant from the plugin's approval, read only.
+    // The driver's too, whose helpGrants draws Ask Daoris's browser grant from the plugin's approval, read only.
     private const StateScopes Installs = StateScopes.Plugins | StateScopes.Harnesses | StateScopes.Driver;
 
-    // This machine's plugins (D64): the catalogue as the driver reads it, each with what it
+    // This machine's plugins: the catalogue as the driver reads it, each with what it
     // declares, what it speaks on, whether it is running, and why it contributes nothing when
     // it does not. Machine paths ride this bridge like every path here.
-    // The Plugins view's list (PLUGUI1e, D119 §4.1) adds what each hands sessions and speaks on, the points its running
+    // The Plugins view's list adds what each hands sessions and speaks on, the points its running
     // process listens on, its health from the loop's own record, and whether an update waits. It stays light: the
     // page asks PLUGIN for the rest.
-    // Each plugin and offer carries its icon (PLUGUI2b, D140 §5): the bytes PluginIcon.Read judged, as a data URI, and
+    // Each plugin and offer carries its icon: the bytes PluginIcon.Read judged, as a data URI, and
     // never the icon's path, so the page draws what it was handed and reaches for nothing; 32 KiB a plugin bounds it.
     [DriverRoute("PLUGINS", PipeClass.Open)]
     private async Task<object?> PluginsAsync(NoPayload _, CancellationToken cancellationToken)
@@ -43,13 +43,13 @@ public sealed class PluginsRoutes(DriverContext context)
         var reserved = ProviderRegistry.Built().Names;
         var catalog = PluginCatalog.Load(_loop.Home, reserved);
         var running = new HashSet<string>(_loop.RunningPlugins, StringComparer.Ordinal);
-        // HELPPLUG1a's tightening: the person's approvals of what each plugin offers Ask Daoris.
+        // The person's approvals of what each plugin offers Ask Daoris.
         var grants = HelpGrants.Read(_loop.Home, catalog);
         var offered = PluginOffers.Load(OffersFolder, _loop.Home, reserved);
         return new
         {
             Folder = DaorisHome.Entry(_loop.Home, HomeEntry.Plugins),
-            // Where a new plugin may speak (PLUG8): the kit's points, which are the driver's.
+            // Where a new plugin may speak: the kit's points, which are the driver's.
             Kit = new { Points = PluginKit.Points.Select(point => new { point.Name, point.Kind }).ToArray() },
             Plugins = catalog.Plugins.Select(plugin =>
             {
@@ -63,37 +63,37 @@ public sealed class PluginsRoutes(DriverContext context)
                     plugin.Manifest.Description,
                     plugin.Enabled,
                     plugin.Problem,
-                    // An icon's problem is said beside the plugin's, never as it: a refused plugin keeps its icon (D140 §4).
+                    // An icon's problem is said beside the plugin's, never as it: a refused plugin keeps its icon.
                     Icon = icon.DataUri,
                     IconProblem = icon.Problem,
                     Harnesses = plugin.Manifest.Harnesses.Select(h => h.Name).ToArray(),
                     Points = plugin.Manifest.Hooks?.Points ?? [],
                     // What the catalogue takes, as the rows above: a refused plugin hands nothing and speaks nowhere.
                     Servers = plugin.Manifest.Servers.Select(s => s.Name).ToArray(),
-                    // HELPPLUG1a (D170 point 3): what it hands Ask Daoris, and the tools it may call there, which its page says.
+                    // What it hands Ask Daoris, and the tools it may call there, which its page says.
                     HelpServers = HelpServersOf(plugin.Manifest, grants),
-                    // HELPPLUG1b (D170 point 4): the skills it hands, who to, and why one is not handed.
+                    // The skills it hands, who to, and why one is not handed.
                     Skills = SkillsOf(plugin.Manifest, plugin.Folder),
-                    // FABRIC-UNIT1e (§D9): the steps it declares and what they create, which its page lists.
+                    // The steps it declares and what they create, which its page lists.
                     Steps = StepsOf(plugin.Manifest),
                     Resources = ResourcesOf(plugin.Manifest),
-                    // ADOSIGNIN1: its tools as written; nothing is found or run by this read, the person's Check does.
+                    // Its tools as written; nothing is found or run by this read, the person's Check does.
                     Tools = plugin.Manifest.Tools.Select(tool => ToolStanding.Declared(tool, plugin.Manifest.Tools)).ToArray(),
                     Hook = HookOf(plugin),
                     Listening = health.Listening,
-                    // The loop's own record (D119 §2): the state, since when, and its failure while failing.
+                    // The loop's own record: the state, since when, and its failure while failing.
                     Health = new { health.State, health.Since, health.Failure },
                     Running = running.Contains(plugin.Manifest.Id),
                     plugin.Folder,
                     plugin.Data,
-                    // Where it came from (PLUG9 c): what an Update re-reads, or why there is none.
+                    // Where it came from: what an Update re-reads, or why there is none.
                     Source = SourceOf(plugin.Folder),
                     Update = UpdateOf(plugin, reserved),
-                    // LANDPIN3: a copy of one of the install's own plugins that is older than the one it ships, or changed from it.
+                    // A copy of one of the install's own plugins that is older than the one it ships, or changed from it.
                     Shipped = ShippedOf(plugin, offered),
                 };
             }).ToArray(),
-            // Daoris's own plugins the install carries (PLUG9 d), installed only by a press.
+            // Daoris's own plugins the install carries, installed only by a press.
             OffersFolder,
             Offers = offered.Select(offer =>
             {
@@ -121,9 +121,9 @@ public sealed class PluginsRoutes(DriverContext context)
         };
     }
 
-    // A plugin's page (PLUGUI1e, D119 §3.2 and §4.1): the reader `daoris plugin show` prints, with its health
+    // A plugin's page: the reader `daoris plugin show` prints, with its health
     // from the loop's own record, since this process runs the loop. A plugin no longer here is PLUGIN_UNKNOWN, which
-    // the page reads as gone by the code (D48 §6).
+    // the page reads as gone by the code.
     [DriverRoute("PLUGIN", PipeClass.Open)]
     private async Task<object?> PluginAsync(PluginIdRead press, CancellationToken cancellationToken)
     {
@@ -133,7 +133,7 @@ public sealed class PluginsRoutes(DriverContext context)
             () => PluginPage.Read(_loop.Home, entry.Manifest.Id, _loop.Health, OffersFolder), cancellationToken).ConfigureAwait(false);
     }
 
-    // What a plugin did over a period (PLUGUI1e, D119 §4.1): the reader `daoris plugin activity` prints, over
+    // What a plugin did over a period: the reader `daoris plugin activity` prints, over
     // the machine log under the home. `since` is the span the page chose (`1d`, `7d`, `30d`), the log's own spans;
     // absent, the page's opening period. Its words this run are the console's ring, read apart (`TAIL_SESSION`).
     [DriverRoute("PLUGIN_ACTIVITY", PipeClass.Open)]
@@ -154,7 +154,7 @@ public sealed class PluginsRoutes(DriverContext context)
             () => PluginActivity.Read(_loop.Home, entry.Manifest.Id, DateTimeOffset.UtcNow - period), cancellationToken).ConfigureAwait(false);
     }
 
-    // Install from a folder's first step (PLUGUI1e, D119 §3.4): what the folder's plugin would run, shown before the
+    // Install from a folder's first step: what the folder's plugin would run, shown before the
     // press, read as Ask Daoris's judge reads a folder. A refusal is an ANSWER here, since the drawer shows it in place
     // of the plugin; nothing is copied.
     [DriverRoute("PLUGIN_READ", PipeClass.Open)]
@@ -175,7 +175,7 @@ public sealed class PluginsRoutes(DriverContext context)
                 // As its manifest writes it: `${plugin}` and `${data}` left as written.
                 Hook = manifest.Hooks is { } hooks ? new { hooks.Command, hooks.Points } : null,
                 Agents = manifest.Harnesses.Select(harness => new { harness.Name, harness.Command }).ToArray(),
-                // An environment variable by name only: a value may be a key (D119 §4.1).
+                // An environment variable by name only: a value may be a key.
                 Servers = manifest.Servers.Select(server => new
                 {
                     server.Name,
@@ -186,8 +186,8 @@ public sealed class PluginsRoutes(DriverContext context)
         };
     }
 
-    // Install from a folder (PLUGUI1e, D119 §3.4): `daoris plugin add <folder>`'s copy, the driver's twin, judged as
-    // PLUGIN_READ judged it. It adds and never replaces; the terminal's add is the one that replaces (§4.4).
+    // Install from a folder: `daoris plugin add <folder>`'s copy, the driver's twin, judged as
+    // PLUGIN_READ judged it. It adds and never replaces; the terminal's add is the one that replaces.
     // 🔴 Nothing starts at the press; the loop starts what it runs at its next look.
     [DriverRoute("PLUGIN_ADD", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("PLUGIN_ADD", None = OwnerNone.MachineSetting)]
@@ -203,10 +203,10 @@ public sealed class PluginsRoutes(DriverContext context)
         return new { added.Id, added.Name, added.Version };
     }
 
-    // Open folder and Open the plugins folder (PLUGUI1e, D119 §4.1): the module names the folder, never the page, and
-    // opens it through the window kit's launcher, as the log's module opens the log's (LOG1c). `which` is a plugin's
+    // Open folder and Open the plugins folder: the module names the folder, never the page, and
+    // opens it through the window kit's launcher, as the log's module opens the log's. `which` is a plugin's
     // install folder, its data folder, or the plugins folder. The launcher starts the file manager, so it is opened through the
-    // start gate, off the window's thread (PROCSTART2).
+    // start gate, off the window's thread.
     [DriverRoute("PLUGIN_OPEN_FOLDER", PipeClass.Window)]
     [Owner("PLUGIN_OPEN_FOLDER", None = OwnerNone.ActsOnNothing)]
     private async Task<object?> PluginOpenFolderAsync(PluginOpenFolderPress press, CancellationToken cancellationToken)
@@ -256,9 +256,9 @@ public sealed class PluginsRoutes(DriverContext context)
         return new { Opened = true, Folder = folder, Which = which };
     }
 
-    // The screen's half of `daoris plugin update <id>` (PLUG9 c, D50): without `apply`, what an update
+    // The screen's half of `daoris plugin update <id>`: without `apply`, what an update
     // would change, or why it cannot, for the row to show before the press; with it, the update. One route for the plan and
-    // its press, so the plan publishes too (STATEHUB1d, D169): the catalogue and the roster read again for a press the person
+    // its press, so the plan publishes too: the catalogue and the roster read again for a press the person
     // made, which splitting the route would spare.
     [DriverRoute("PLUGIN_UPDATE", PipeClass.Open, Drain = PipeDrain.Waits)]
     [ClassedBy("PLUGIN_UPDATE", "apply", PipeClass.Person, "true")]
@@ -268,7 +268,7 @@ public sealed class PluginsRoutes(DriverContext context)
     private async Task<object?> PluginUpdateAsync(PluginUpdatePress press, CancellationToken cancellationToken)
     {
         var id = press.Id;
-        // LANDPIN3: `shipped` asks for the install's own copy of an example, whatever record the installed one has; it is the
+        // `shipped` asks for the install's own copy of an example, whatever record the installed one has; it is the
         // person's press, and a copy they changed is refused (PluginInstall.PlanUpdate).
         var shipped = press.Shipped;
         if (press.Apply)
@@ -289,7 +289,7 @@ public sealed class PluginsRoutes(DriverContext context)
         };
     }
 
-    // The screen's Install beside one of the install's offers (PLUG9 d): `daoris plugin add --offer <id>`'s
+    // The screen's Install beside one of the install's offers: `daoris plugin add --offer <id>`'s
     // copy, the offer recorded. 🔴 Nothing starts at the press; the loop starts it at its next look.
     [DriverRoute("PLUGIN_INSTALL", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("PLUGIN_INSTALL", None = OwnerNone.MachineSetting)]
@@ -304,7 +304,7 @@ public sealed class PluginsRoutes(DriverContext context)
         return new { added.Id, added.Name, added.Version };
     }
 
-    // The screen's half of `daoris plugin enable|disable|remove` (D50): a row in
+    // The screen's half of `daoris plugin enable|disable|remove`: a row in
     // `plugins.json`, or the install folder gone with the data folder named and kept.
     [DriverRoute("PLUGIN_ACTION", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("PLUGIN_ACTION", None = OwnerNone.MachineSetting)]
@@ -313,7 +313,7 @@ public sealed class PluginsRoutes(DriverContext context)
     private async Task<object?> PluginActionAsync(PluginActionPress press, CancellationToken cancellationToken)
     {
         var (action, id) = (press.Action, press.Id);
-        // RPC1e: `daoris plugin approve|withdraw` sent over the pipe asks for the verb's own words, a refusal among them as its
+        // `daoris plugin approve|withdraw` sent over the pipe asks for the verb's own words, a refusal among them as its
         // exit 2, the approvals written by the verb's own path under this Daoris's home.
         if (press.Said && PluginsCommand.GrantWords(
                 action, id, press.Server ?? "", press.Writes) is { } words)
@@ -335,17 +335,17 @@ public sealed class PluginsRoutes(DriverContext context)
             {
                 // The install folder goes; what the plugin kept is NAMED and stays — it is
                 // the person's to throw away, the same judgement Forget makes for an account.
-                // 🔴 Its hook process first (the live process's coordination stays here, the alone-path design §1.3), then the
-                // library's remove (PUSH1f2f), which `daoris plugin remove` calls alone: the folder moved aside WHOLE, a
+                // 🔴 Its hook process first (the live process's coordination stays here), then the
+                // library's remove, which `daoris plugin remove` calls alone: the folder moved aside WHOLE, a
                 // held one refused as PLUGIN_BUSY with nothing taken.
                 await _loop.StopPluginAsync(entry.Manifest.Id).ConfigureAwait(false);
                 PluginInstall.Remove(_loop.Home, entry.Manifest.Id);
                 break;
             }
-            // HELPPLUG1a's tightening (D170's note): the person's approval of the exact tools a plugin's server offers Ask Daoris,
+            // The person's approval of the exact tools a plugin's server offers Ask Daoris,
             // its writes too or its reads only, or its withdrawal; `daoris plugin approve|withdraw` is the terminal's half.
             // A server that names a generic execution tool is refused with the reason, which the page says.
-            // HELPPLUG1c: `writes`, beside `help-approve`, names the writes the person ticked, each on its own; absent, every one.
+            // `writes`, beside `help-approve`, names the writes the person ticked, each on its own; absent, every one.
             case "help-approve" or "help-reads":
             {
                 IReadOnlyList<string>? writes = action == "help-reads" ? [] : press.Writes;
@@ -375,7 +375,7 @@ public sealed class PluginsRoutes(DriverContext context)
         };
     }
 
-    // The plugin kit's screen half (PLUG8, D101): `daoris plugin new` from a form. It writes
+    // The plugin kit's screen half: `daoris plugin new` from a form. It writes
     // a plugin's folder into the one the person named, a plugins repository's typically, and
     // installs nothing: making a plugin is work, reviewed before `daoris plugin add`.
     [DriverRoute("PLUGIN_NEW", PipeClass.Person, Drain = PipeDrain.Passes)]
@@ -403,7 +403,7 @@ public sealed class PluginsRoutes(DriverContext context)
         {
             var took = System.Diagnostics.Stopwatch.StartNew();
             trial = await PluginTrials.TryInstalledAsync(_loop.Home, id, options, cancellationToken);
-            // An installed plugin's trial is part of its history, from the screen's door (PLUGUI1e, D119 §4.2), as the
+            // An installed plugin's trial is part of its history, from the screen's door, as the
             // terminal's is from its own. A folder's is shown and never kept: its id may name an installed plugin it is not.
             new PluginLog(_loop.Log).Tried(trial, took.ElapsedMilliseconds, PluginEvents.Screen);
         }
@@ -426,7 +426,7 @@ public sealed class PluginsRoutes(DriverContext context)
         };
     }
 
-    // The person's Check of a plugin's tools (ADOSIGNIN1, D150 point 7): each declared tool found, its version and its readiness
+    // The person's Check of a plugin's tools: each declared tool found, its version and its readiness
     // checks read. Started only by this press, never at a look, since a check may reach the platform or read another tool's sign-in.
     // It changes nothing Daoris keeps; it declares the plugins scope so the page's own read of the plugin is asked again with it.
     [DriverRoute("PLUGIN_TOOLS", PipeClass.Person, Drain = PipeDrain.Waits)]
@@ -442,7 +442,7 @@ public sealed class PluginsRoutes(DriverContext context)
         return new { Id = entry.Manifest.Id, Tools = found.Select(each => ToolStanding.Of(each, tools)).ToArray() };
     }
 
-    // A tool's set-up or sign-in, the person's press of a check's `fix` (ADOSIGNIN1): a console the person sees, running exactly
+    // A tool's set-up or sign-in, the person's press of a check's `fix`: a console the person sees, running exactly
     // the manifest's command of one of the plugin's own tools, then the tool's checks read again. Daoris never signs in itself; a
     // fix naming another command, a tool not found (its install words said) and a console that did not start are answered as data.
     // The answer comes when the console ends, which is as long as the person takes.
@@ -485,7 +485,7 @@ public sealed class PluginsRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// What an installed plugin is against the offer of its own id (LANDPIN3), as its row says it: null where it needs no word.
+    /// What an installed plugin is against the offer of its own id, as its row says it: null where it needs no word.
     /// The manifest is read as written, as the page's own is, so a placeholder is compared as the offer writes it.
     /// </summary>
     private static object? ShippedOf(PluginEntry plugin, IReadOnlyList<PluginOffer> offers)
@@ -504,7 +504,7 @@ public sealed class PluginsRoutes(DriverContext context)
         [.. changes.Select(change => (object)new { change.What, change.Was, change.Now })];
 
     /// <summary>
-    /// The servers a plugin hands Ask Daoris (HELPPLUG1a, D170 point 3), each with the tools it may call there, as the manifest
+    /// The servers a plugin hands Ask Daoris, each with the tools it may call there, as the manifest
     /// declares them, for its page to say. Empty for one that hands it none, and for a refused plugin, which hands nothing.
     /// </summary>
     /// <param name="grants">The person's approvals (<see cref="HelpGrants"/>); null for an offer, which nothing here has approved.</param>
@@ -524,14 +524,14 @@ public sealed class PluginsRoutes(DriverContext context)
                 State = grant?.State ?? (refusal is null ? HelpGrants.Waits : HelpGrants.Refused),
                 Accepted = grant?.Accepted ?? [],
                 Refusal = refusal,
-                // HELPPLUG1c: approved once, and an update has changed its tools since, so the page asks again in so many words.
+                // Approved once, and an update has changed its tools since, so the page asks again in so many words.
                 Changed = grant?.Changed ?? false,
             };
         }),
     ];
 
     /// <summary>
-    /// The skills a plugin hands (HELPPLUG1b, D170 point 4), each with who it is handed to and, where it is not handed, why
+    /// The skills a plugin hands, each with who it is handed to and, where it is not handed, why
     /// (<see cref="SpawnSkills.Judge"/>), for its page to say. Empty for a refused plugin, which hands nothing.
     /// </summary>
     private static object[] SkillsOf(PluginManifest manifest, string folder) =>
@@ -540,7 +540,7 @@ public sealed class PluginsRoutes(DriverContext context)
     ];
 
     /// <summary>
-    /// The steps a plugin declares for its page (FABRIC-UNIT1e, §D9): each by its name as the manifest writes it, its reach and
+    /// The steps a plugin declares for its page: each by its name as the manifest writes it, its reach and
     /// version, its ports by name with each one's schema, and the schema it is reached on. None for a refused plugin.
     /// </summary>
     private static object[] StepsOf(PluginManifest manifest) =>
@@ -551,12 +551,12 @@ public sealed class PluginsRoutes(DriverContext context)
         }),
     ];
 
-    /// <summary>What a plugin's steps create, for its page (FABRIC-UNIT1e, §D3): each schema and its role.</summary>
+    /// <summary>What a plugin's steps create, for its page: each schema and its role.</summary>
     private static object[] ResourcesOf(PluginManifest manifest) =>
         [.. manifest.Resources.Select(resource => new { resource.Schema, resource.Role })];
 
     /// <summary>
-    /// A taken plugin's hook for its row (PLUGUI1e): its command as its manifest writes it, the page's way, so `${plugin}`
+    /// A taken plugin's hook for its row: its command as its manifest writes it, the page's way, so `${plugin}`
     /// reads as written and never as the install folder; and its points. Null where it speaks nowhere, or is refused.
     /// </summary>
     private static object? HookOf(PluginEntry plugin)
@@ -567,8 +567,8 @@ public sealed class PluginsRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// Whether an update waits for its row (PLUGUI1e, D119 §2): <c>waits</c> when its source declares something different
-    /// in the rows D103 compares, <c>current</c> when it declares the same, and null with no record that reads, or a
+    /// Whether an update waits for its row: <c>waits</c> when its source declares something different
+    /// in the rows it compares, <c>current</c> when it declares the same, and null with no record that reads, or a
     /// source an update would refuse. A plugin with no record is not asked, so the list reads one file for it.
     /// </summary>
     private string? UpdateOf(PluginEntry plugin, IEnumerable<string> reserved)
@@ -579,7 +579,7 @@ public sealed class PluginsRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// A folder judged for Install from a folder (PLUGUI1e, D119 §3.4), in Ask Daoris's judge's order and words where it
+    /// A folder judged for Install from a folder, in Ask Daoris's judge's order and words where it
     /// has them: named whole, not Daoris's own nor holding it, there, read as the catalogue reads it with nothing this
     /// build refuses, and not an id already installed. The manifest as written, or why nothing would be copied.
     /// </summary>
@@ -606,7 +606,7 @@ public sealed class PluginsRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// An update, as <c>PLUGIN_UPDATE</c> and Ask Daoris's update door make it (PLUG9 c): judged, the plugin's
+    /// An update, as <c>PLUGIN_UPDATE</c> and Ask Daoris's update door make it: judged, the plugin's
     /// hook stopped first (on Windows a running process holds its folder), the install folder swapped, and
     /// the loop asked to look, which starts the new one as it does any plugin.
     /// </summary>
@@ -622,7 +622,7 @@ public sealed class PluginsRoutes(DriverContext context)
         return updated;
     }
 
-    /// <summary>An installed plugin by its id, or the Plugins screen's refusal (<c>PLUGIN_ACTION</c>, PLUG9's door).</summary>
+    /// <summary>An installed plugin by its id, or the Plugins screen's refusal (<c>PLUGIN_ACTION</c>).</summary>
     internal static PluginEntry InstalledPlugin(DriverLoop loop, string id) =>
         PluginCatalog.Load(loop.Home).Plugins
             .FirstOrDefault(p => string.Equals(p.Manifest.Id, id, StringComparison.OrdinalIgnoreCase))
@@ -630,7 +630,7 @@ public sealed class PluginsRoutes(DriverContext context)
 
     /// <summary>
     /// A plugin switched on or off: a row in <c>plugins.json</c>. <c>PLUGIN_ACTION</c> and Ask Daoris's plugin
-    /// door (PLUG9) both call this, so the screen and the card cannot drift.
+    /// door both call this, so the screen and the card cannot drift.
     /// </summary>
     internal static void SwitchPlugin(DriverLoop loop, PluginEntry entry, bool on)
     {

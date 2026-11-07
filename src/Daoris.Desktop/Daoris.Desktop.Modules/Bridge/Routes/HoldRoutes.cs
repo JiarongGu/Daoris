@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The window's half of a terminal's hold of a conversation (RPC1g1, D238 point 2, the terminal-conversation design §3.1), the page's
+/// The window's half of a terminal's hold of a conversation, the page's
 /// `bridge/hold.ts`: which conversations a terminal holds, and the person taking one back. Both are the window's alone: a terminal lets
 /// go of its own hold by the pipe's <c>LET_GO</c>, and the window is never a holder.
 /// </summary>

@@ -6,14 +6,14 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What a line of work (an entry, D167) and its ask do as one, the page's `bridge/entries.ts`: an entry's one Accept and an ask's
-/// (ACCEPTALL1, D167's 2026-10-15 amendment points 1 and 4), the plan before the press and the press, over the driver's
+/// What a line of work (an entry) and its ask do as one, the page's `bridge/entries.ts`: an entry's one Accept and an ask's,
+/// the plan before the press and the press, over the driver's
 /// <see cref="SessionTrees.PlanEntryAsync"/>. Each part lands by its own landing, its
 /// gate read as its review's Accept reads it.
 /// </summary>
 /// <remarks>
-/// <para><b>Which parts.</b> An entry's parts whose tree offers work to land (<see cref="SessionGrouping.Lands"/>, after SQUASHTIDY1f's
-/// proof), oldest first, as the Parts strip shows them; an ask's entries are its own, one per repository, never its intake.</para>
+/// <para><b>Which parts.</b> An entry's parts whose tree offers work to land (<see cref="SessionGrouping.Lands"/>),
+/// oldest first, as the Parts strip shows them; an ask's entries are its own, one per repository, never its intake.</para>
 ///
 /// <para><b>Nothing machine-local comes back</b>: ids, names of branches and files, and the landing's sentences, as
 /// <c>LAND_SESSION_TREE</c>'s.</para>
@@ -23,7 +23,7 @@ public sealed class EntriesRoutes(DriverContext context)
     private readonly DriverContext _context = context;
     private readonly DriverLoop _loop = context.Loop;
 
-    /// <summary>What an entry's landing changes: what each of its parts' landings does (STATEHUB1b, D169), for every session it names.</summary>
+    /// <summary>What an entry's landing changes: what each of its parts' landings does, for every session it names.</summary>
     private const StateScopes Lands = StateScopes.Sessions | StateScopes.Landing | StateScopes.Diff
         | StateScopes.Sweep | StateScopes.TreesSync;
 
@@ -36,7 +36,7 @@ public sealed class EntriesRoutes(DriverContext context)
     {
         var key = press.Entry;
         var (service, entries, rows, entry) = await EntryLookAsync(key, cancellationToken).ConfigureAwait(false);
-        // RPCOPEN1: `trees land --entry --plan` asks for the verb's words (`said`) where the page asks for the plan's fields.
+        // `trees land --entry --plan` asks for the verb's words (`said`) where the page asks for the plan's fields.
         return press.Said
             ? await PlanSaidAsync(service, entries.Take(1).ToList(), rows, isAsk: false, key, cancellationToken).ConfigureAwait(false)
             : await PlanAsync(service, entry, rows, cancellationToken).ConfigureAwait(false);
@@ -59,11 +59,11 @@ public sealed class EntriesRoutes(DriverContext context)
         var key = press.Entry;
         var (service, entries, rows, entry) = await EntryLookAsync(key, cancellationToken).ConfigureAwait(false);
 
-        // RPC1b4: what `trees land --entry` prints rides beside the page's fields; a refusal the driver throws is its sentence, as there.
+        // What `trees land --entry` prints rides beside the page's fields; a refusal the driver throws is its sentence, as there.
         var plugins = new List<string>();
         var landed = await LandingAsync(Accepts(service, plugins), entry, rows, LeaveOut(press.LeaveOut), cancellationToken).ConfigureAwait(false);
         _loop.Nudge();
-        // RPC1b5: the lines it moved are registered at once where the verb asks (`follow`), said after its words; none where nothing landed.
+        // The lines it moved are registered at once where the verb asks (`follow`), said after its words; none where nothing landed.
         var followed = entries.Count > 0 ? await FollowAsync(press.Follow, service, cancellationToken).ConfigureAwait(false) : null;
         var said = entries.Count == 0 ? TreesWords.EntryNone(isAsk: false, key) : TreesWords.EntryLand([(entry.Repository, landed)], plugins).Followed(followed);
         return LandedSaid(entry.Key, entry.Repository, landed, said, followed);
@@ -137,13 +137,13 @@ public sealed class EntriesRoutes(DriverContext context)
         }
 
         _loop.Nudge();
-        // RPC1b4: what `trees land --ask` prints beside the page's fields, or its sentence where no entry of the ask has work to land.
+        // What `trees land --ask` prints beside the page's fields, or its sentence where no entry of the ask has work to land.
         var followed = landings.Count > 0 ? await FollowAsync(press.Follow, service, cancellationToken).ConfigureAwait(false) : null;
         var said = landings.Count == 0 ? TreesWords.EntryNone(isAsk: true, ask) : TreesWords.EntryLand(landings, plugins).Followed(followed);
         return new { Ask = ask, Done = done && answers.Count > 0, Repositories = answers, Said = said.ToWire(), Followed = followed?.Out ?? [] };
     }
 
-    /// <summary>The lines a landing moved, registered from the line at once where the verb asks (<c>follow</c>), as the page's next look would (RPC1b5).</summary>
+    /// <summary>The lines a landing moved, registered from the line at once where the verb asks (<c>follow</c>), as the page's next look would.</summary>
     private async Task<FollowedSaid?> FollowAsync(bool follow, ServiceClient service, CancellationToken cancellationToken) =>
         follow
             ? await TreesWords.FollowMovedAsync(service, _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, cancellationToken).ConfigureAwait(false)
@@ -199,7 +199,7 @@ public sealed class EntriesRoutes(DriverContext context)
         Parts = Parts(landed),
     };
 
-    /// <summary><c>LAND_ENTRY</c>'s answer: <see cref="Landed"/>'s fields, and the words <c>trees land --entry</c> prints beside them (RPC1b4).</summary>
+    /// <summary><c>LAND_ENTRY</c>'s answer: <see cref="Landed"/>'s fields, and the words <c>trees land --entry</c> prints beside them.</summary>
     public static object LandedSaid(string entry, string repository, EntryLanding landed, TreesSaid said, FollowedSaid? followed = null) => new
     {
         Entry = entry,
@@ -233,10 +233,10 @@ public sealed class EntriesRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The library's entry Accept over this loop's surface (ACCEPTALL1e), which the terminal's <c>trees land --entry</c> builds over its
-    /// own: a plugin says its lines on the console under its name, as a landing's do (D64 §4, D100).
+    /// The library's entry Accept over this loop's surface, which the terminal's <c>trees land --entry</c> builds over its
+    /// own: a plugin says its lines on the console under its name, as a landing's do.
     /// </summary>
-    /// <param name="plugins">Where a plugin's lines are also kept, for the answer's words (RPC1b4); null keeps none.</param>
+    /// <param name="plugins">Where a plugin's lines are also kept, for the answer's words; null keeps none.</param>
     private EntryAccepts Accepts(ServiceClient service, List<string>? plugins = null) => new(
         service, _loop.Home,
         new SessionTrees(_loop.Home, new LandingPlugins(_loop.Home, say: SayTo(plugins), log: _loop.Log, health: _loop.Health)),
@@ -259,7 +259,7 @@ public sealed class EntriesRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// What <c>trees land --entry</c> and <c>--ask</c> print for <c>--plan</c> (RPCOPEN1): each entry's plan in the verb's lines, or its
+    /// What <c>trees land --entry</c> and <c>--ask</c> print for <c>--plan</c>: each entry's plan in the verb's lines, or its
     /// sentence where none has work to land here, beside nothing of the page's fields. The page does not ask for it.
     /// </summary>
     private async Task<object> PlanSaidAsync(
@@ -277,7 +277,7 @@ public sealed class EntriesRoutes(DriverContext context)
         return new { Said = TreesPlanWords.EntryPlan(lines).ToWire() };
     }
 
-    /// <summary>The press on one entry, which the terminal's lands too (<see cref="EntryAccepts.LandAsync"/>, ACCEPTALL1e).</summary>
+    /// <summary>The press on one entry, which the terminal's lands too (<see cref="EntryAccepts.LandAsync"/>).</summary>
     private static async Task<EntryLanding> LandingAsync(
         EntryAccepts accepts, SessionEntry entry, IReadOnlyList<SessionGrouping> rows, IReadOnlySet<string> leaveOut, CancellationToken cancellationToken)
     {

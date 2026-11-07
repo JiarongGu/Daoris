@@ -17,7 +17,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
 
     /// <summary>
     /// What a landing changes: the session, every plan and gate (the line it merged into is what each
-    /// session's plan judges against, LANDSYNC1, so `landing` is never only its own), its review, the clean-up's
+    /// session's plan judges against, so `landing` is never only its own), its review, the clean-up's
     /// list, and which repositories hold Daoris's branches.
     /// </summary>
     private const StateScopes Lands = StateScopes.Sessions | StateScopes.Landing | StateScopes.Diff
@@ -46,8 +46,8 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
         var (tree, baseCommit) = await service.SessionGroundAsync(id, cancellationToken);
         // a git of this read that outlived its kill is said in the machine log as `git.unended`.
         using var unended = GitUnended.SaidTo(_loop.Log);
-        // The reads, their order and their fallbacks are the driver's, so the terminal's `git review` reads through the same code
-        //, each start counted and the read said as `review.read`.
+        // The reads, their order and their fallbacks are the driver's, so the terminal's `git review` reads through the same code,
+        //each start counted and the read said as `review.read`.
         var review = await SessionReviews.ReadAsync(
             id, tree, baseCommit, new SessionTrees(_loop.Home), (repository, ct) => CheckoutOfAsync(service, repository, ct), _loop.Log,
             cancellationToken);
@@ -148,8 +148,8 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
         return new { Session = id, files.Files, files.Unlisted };
     }
 
-    // A file the conversation or the review named, read for the person to look at in the side bar
-    //. Desktop-only for the diff's reason, and read-only: there is no editor.
+    // A file the conversation or the review named, read for the person to look at in the side bar.
+    //Desktop-only for the diff's reason, and read-only: there is no editor.
     /// <summary>
     /// One file in a session's tree, for its preview: the tree the record names, which for a
     /// conversation in the repository's checkout is the checkout.
@@ -210,7 +210,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
     private async Task<object?> DiscardTreeAsync(DiscardSessionTree press, CancellationToken cancellationToken)
     {
         // `trees remove <path>` names a tree by its path, where the page names its session. A tree by its path is removed as
-        // the verb removes it, and its session, where the records name one, is answered; the page's `id` is read as it always was.
+        // the verb removes it, and its session, where the records name one, is answered; the page's `id` is read as its session.
         var path = press.Path;
         var id = path is null ? press.Id ?? throw new DriverException("a tree is discarded by its session `id`, or by its `path` — name one.") : null;
         var force = press.Force;
@@ -288,7 +288,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
         // what it left out, and the conflict that refused it with the words the review offers to say to the session.
         LeftOut = LeftOut(landed.LeftOut),
         Conflict = Conflict(landed.Conflict),
-        // what `trees land` prints, the plugin's lines first, and its exit code (§7.3).
+        // what `trees land` prints, the plugin's lines first, and its exit code.
         Said = said.ToWire(),
         Followed = followed,
         // what refused a chat run's press, which the page words in the reader's language; null for every other.
@@ -322,7 +322,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
         LeftOut = LeftOut(plan.LeftOut), Lands = plan.Lands?.Select(commit => new { Commit = Short(commit.Sha), commit.Subject }).ToArray(),
         Conflict = Conflict(plan.Conflict),
         LeftOutOf = leftOutOf,
-        // LANDBACK1 part 1: the person's Accept is kept on the session, which was carried on to clear its tree and lands when it is clean
+        // The person's Accept is kept on the session, which is carried on to clear its tree and lands when it is clean
         // (`carries` of the Accept's two, `awaiting` while the carry-on's turn runs); null where none is kept. Review shows it as carried on.
         Carried = carried is null ? null : new { carried.Carries, carried.Awaiting },
     };
@@ -386,7 +386,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
     /// reviewer reading.
     /// </summary>
     /// <remarks>
-    /// Never Ask Daoris's (§9, D110): asking spends an account at the person's choice, and going on, or reading it themselves, is a
+    /// Never Ask Daoris's: asking spends an account at the person's choice, and going on, or reading it themselves, is a
     /// judgement no agent has made. Each answers the gate as it then stands, in <see cref="Opinion"/>'s shape.
     /// </remarks>
     [DriverRoute("OPINION_GATE", PipeClass.Open)]
@@ -475,9 +475,9 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
     /// the person's answer at the gate. Null where the level asks no opinion.
     /// </summary>
     /// <remarks>
-    /// Read from the gate the driver judged, never from the host again: the findings are the reviewer's claims (§6.6), and what
+    /// Read from the gate the driver judged, never from the host again: the findings are the reviewer's claims, and what
     /// counts of an answer (a fix's commit checked, an unanswered finding) is the driver's reading. The tier is <c>person</c> where
-    /// the person read it themselves, <c>none</c> where no agent could read it, and <c>agent</c> otherwise (§10).
+    /// the person read it themselves, <c>none</c> where no agent could read it, and <c>agent</c> otherwise.
     /// </remarks>
     public static object? OpinionDetail(OpinionGateState gate, Func<string, UsageEntry?>? usageOf = null)
     {
@@ -491,7 +491,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
         return new
         {
             Tier = gate.State == OpinionGateStates.Myself ? "person" : first is null ? "none" : "agent",
-            // Whether what was read covers what would land (§8.2): commits since it was read say it does not.
+            // Whether what is read covers what would land: commits since it is read say it does not.
             Covers = gate.Since is null ? (bool?)null : gate.Since == 0,
             gate.Passes,
             gate.ToPerson,
@@ -504,7 +504,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
                 Answer = first.AnswerTo(finding.Number) is { } answer
                     ? new { answer.Said, answer.Commit, answer.Evidence, answer.Why }
                     : null,
-                // How the driver read the answer as the turn ended (§6.4): what counts, and why it does not count as said.
+                // How the driver read the answer as the turn ended: what counts, and why it does not count as said.
                 Counts = gate.Answers?.Findings.FirstOrDefault(row => row.Finding == finding.Number) is { } row
                     ? new { row.Counts, row.Why, row.Fix }
                     : null,
@@ -570,7 +570,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
     ];
 
     /// <summary>
-    /// Whether the second opinion's gate waits on the person's answer (the second-agent design §9's *What needs you*): a dispute, a
+    /// Whether the second opinion's gate waits on the person's answer (*What needs you*): a dispute, a
     /// required opinion none could be had for, or commits nobody read where the work lands by itself (<paramref name="auto"/>).
     /// </summary>
     public static bool WaitsOnPerson(OpinionGateState gate, bool auto) => gate.State switch

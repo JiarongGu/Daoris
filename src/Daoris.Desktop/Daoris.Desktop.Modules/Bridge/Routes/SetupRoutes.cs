@@ -6,11 +6,11 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A place's quick set-up (AGENTSPLACE1a2, AGENTSPLACE1b2), the one door that adopts a repository (WORKFLOWCLEAN1 1f): <c>PLACE_PLAN</c> reads,
+/// A place's quick set-up, the one door that adopts a repository: <c>PLACE_PLAN</c> reads,
 /// <c>PLACE_APPLY</c> writes, and its adoption part is <see cref="SetupPress"/>'s one publisher.
 /// </summary>
 /// <remarks>
-/// <para><b>Never Daoris writing into the repository</b> (D32): the press asks its own session, and writes a rule in Daoris's
+/// <para><b>Never Daoris writing into the repository</b>: the press asks its own session, and writes a rule in Daoris's
 /// own file.</para>
 /// </remarks>
 public sealed class SetupRoutes(DriverContext context)
@@ -18,7 +18,7 @@ public sealed class SetupRoutes(DriverContext context)
     private readonly DriverContext _context = context;
     private readonly DriverLoop _loop = context.Loop;
 
-    // A place's quick set-up (AGENTSPLACE1a2, the Agents-place design §4), `daoris place … --plan`'s twin: {repositories, preset,
+    // A place's quick set-up, `daoris place … --plan`'s twin: {repositories, preset,
     // opinion, look, adoption, builds, drive}. The parts are applied to a copy of driver.json through the doors' own edits and read before and
     // after through the start's resolvers; every refusal at once, what lowers the person's part, the reach, the work driving releases and each
     // declaration with its acceptances. It reads the registry, the quests and each line's tip as git objects, and writes and probes nothing.
@@ -40,7 +40,7 @@ public sealed class SetupRoutes(DriverContext context)
         return await PlacePlans.PlanAsync(world, config, _loop.Home, plugins, _context.Unadopted(config), ask, cancellationToken).ConfigureAwait(false);
     }
 
-    // A place's apply (AGENTSPLACE1b2, the Agents-place design §4), the plan's press: the plan's payload and its `digest`, and `accept`, the
+    // A place's apply, the plan's press: the plan's payload and its `digest`, and `accept`, the
     // acceptances chosen, each `{repository, purpose}`. It plans again and refuses `moved` where the digest differs, reads the tips against the
     // chosen blobs, writes every change and acceptance in one edit of driver.json, and asks each adoption quest last, keyed by the digest, its
     // receipt written before the first effect (`PlaceApplies`). A press of a digest that holds a receipt goes on from it. Answers `{ done, refused,
@@ -66,7 +66,7 @@ public sealed class SetupRoutes(DriverContext context)
         var doors = new PlaceApplyDoors(
             new PlaceWorld(service), _context.SetupWorldOf(service), _loop.Home, PluginCatalog.Load(_loop.Home, ProviderRegistry.Built().Names), _context.Unadopted(config),
             () => DriverConfig.Load(_loop.ConfigPath), _context.Change, DateOnly.FromDateTime(DateTime.Now));
-        // AGENTSPLACE1b3: `daoris place … --apply` in the verb's own words, which plans now and applies that plan; the person's Confirm
+        // `daoris place … --apply` in the verb's own words, which plans now and applies that plan; the person's Confirm
         // on the window's card has already pinned the plan between the terminal's ask and here (`PipeGrounds`).
         if (press.Said)
         {
@@ -90,7 +90,7 @@ public sealed class SetupRoutes(DriverContext context)
         };
     }
 
-    // A repository's reconcile with the shared doctrine (the context-one design §3 B, D230 point 2), the set-up press's own case, planned:
+    // A repository's reconcile with the shared doctrine, the set-up press's own case, planned:
     // {repository} answers {repository, offered, status, refusals, pressable, title}. `status` is what the doctrine tool's `status --json` said of
     // its checkout (`synced`, `update` `behind` or `differs`, `carried` and `locked`, the files a sync would `changed`, `added` and `retired`, the
     // keeps `reopened`, a `newerLock`), absent where it was not asked or printed none; `offered` is where it says the canon moved or a keep
@@ -113,7 +113,7 @@ public sealed class SetupRoutes(DriverContext context)
         };
     }
 
-    // The reconcile's press (D230 point 2: the person's own), {repository}: it plans again and presses that plan as the set-up press presses one, the
+    // The reconcile's press (the person's own), {repository}: it plans again and presses that plan as the set-up press presses one, the
     // rule into the repository's scope, then one ask to it as the person's, its quest admitted alone where the repository is not driven here. It
     // answers {done, refused, message, quest, ask}; a plan that is refused is an answer by its first refusal's code, nothing published or allowed.
     [DriverRoute("RECONCILE_APPLY", PipeClass.Person, Drain = PipeDrain.Waits)]

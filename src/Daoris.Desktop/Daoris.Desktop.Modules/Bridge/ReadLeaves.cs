@@ -1,7 +1,7 @@
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The page's door to stop a read it sent (GITAPP1a-iii, D202's round-4 point 3, the git-app design P1.6): each call that carries a
+/// The page's door to stop a read it sent: each call that carries a
 /// <c>read</c> id waits under a source of its own, linked to the token the route was handed, and <c>READ_LEAVE { read }</c> cancels
 /// that source. The bridge's call carries no cancellation of its own (`bridge/call.ts`), so this is how a page that left is heard.
 /// </summary>

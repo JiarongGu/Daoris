@@ -4,7 +4,7 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The sessions verbs a terminal sends over the pipe (RPC1d, the terminal RPC design §7.3): a person's route asked for its words
+/// The sessions verbs a terminal sends over the pipe: a person's route asked for its words
 /// (<c>said: true</c>) runs the verb's own path (<see cref="SessionsCommand.RunAsync"/>) with this Daoris's service, home and
 /// conversation runner, and answers the lines it prints and its exit code, so the terminal says what it says alone, case for case.
 /// </summary>
@@ -26,11 +26,11 @@ internal static class SessionsVerbs
         var world = new SessionsWorld(service, loop.Home, config, DriverContext.UnadoptedOf(loop, config), loop.Log)
         {
             CoolingOf = (adapter, profile, model) => loop.Harnesses.CoolingOf(adapter ?? "", profile, model),
-            // COAGENT1b: `sessions partner`'s read of the lead's tree, the loop's, as the page's press reads it.
+            // `sessions partner`'s read of the lead's tree, the loop's, as the page's press reads it.
             PieceBase = loop.PieceBases,
-            // COWORK1a: `sessions stop <id> --turn`, the keeping stop, on the turns this Daoris's loop holds.
+            // `sessions stop <id> --turn`, the keeping stop, on the turns this Daoris's loop holds.
             StopTurn = (id, _) => ConversationRoutes.KeepingStopAsync(loop, id),
-            // HANDOVERSAID1: a verb's line on a session's record is the loop's, so one writer numbers it.
+            // A verb's line on a session's record is the loop's, so one writer numbers it.
             Notes = (id, note) => HandOverAskNotes.Say(loop.Events, loop.Output, id, note),
         };
 
@@ -42,7 +42,7 @@ internal static class SessionsVerbs
     }
 
     /// <summary>
-    /// <c>daoris help</c>'s lines and exit code for a route a terminal sent (RPC1e): <see cref="HelpCommand.RunAsync"/> with this
+    /// <c>daoris help</c>'s lines and exit code for a route a terminal sent: <see cref="HelpCommand.RunAsync"/> with this
     /// Daoris's service, home and agents, so a rename, a pin, a delete and a list say what they say alone. A press nudges the loop.
     /// </summary>
     public static async Task<object> HelpSaidAsync(DriverContext context, HelpVerbAsk ask, CancellationToken ct)
