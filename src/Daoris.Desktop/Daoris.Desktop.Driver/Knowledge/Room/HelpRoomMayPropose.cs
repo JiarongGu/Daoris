@@ -15,7 +15,7 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // HELP6: every door built since HELP1c, each with the rule its route judges it by, said so the
         // helper proposes what the route takes rather than learning it from a refusal.
         text.Append("## What you may propose\n\n");
-        // HELP9: every `daoris driver` verb; across (D107) said form by form, and a write-to as the say-so the canon
+        // HELP9: every setting verb (`daoris place`, `settings`, `quest`, `git`); across (D107) said form by form, and a write-to as the say-so the canon
         // asks for, which its card says too. HELP10: `retry` too, of a quest the driver parked, named from the list;
         // SESSUX1b: or one the person's stop holds, released from that stop.
         text.Append("- `setting_propose`: every setting door below.\n");

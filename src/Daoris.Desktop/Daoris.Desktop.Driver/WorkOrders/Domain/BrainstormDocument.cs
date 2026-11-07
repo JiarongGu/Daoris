@@ -248,7 +248,7 @@ public static class BrainstormDocuments
 
         foreach (var pass in document.Passes)
         {
-            text.Append("\nPass `").Append(pass.By.Pass).Append("`: actor ").Append(pass.Actor ?? "not reported")
+            text.Append("\nPass `").Append(pass.By.Pass).Append("`: role ").Append(pass.Actor ?? "not reported")
                 .Append(", choice ").Append(pass.Choice ?? "not reported").Append(", model ")
                 .Append(pass.Ran is { Models.Count: > 0 } ran ? string.Join(", ", ran.Models) : "not reported");
             if (pass.Ran is { More: > 0 } more) text.Append(" and ").Append(more.More).Append(" more");

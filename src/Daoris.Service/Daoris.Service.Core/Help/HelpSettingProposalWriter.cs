@@ -15,7 +15,7 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
 {
     /// <summary>
     /// The doors a setting may name, as the CLI's verbs spell them, in the order the driver's <c>HelpSettingProposals</c>
-    /// lists them — every <c>daoris driver</c> verb but <c>list</c> (HELP9, D110; <c>retry</c> since HELP10; <c>standing</c>
+    /// lists them — every <c>daoris place</c>, <c>settings</c>, <c>quest</c> and <c>git</c> setting verb but <c>list</c> (HELP9, D110; <c>retry</c> since HELP10; <c>standing</c>
     /// since KNOWUSE1b; <c>language</c> since LANG1c2; <c>review</c> since REVIEWENV1a; <c>opinion</c> since XAGENT1a; <c>cooloff</c> since TOOL4l-b;
     /// <c>helpers</c> and <c>commits</c> since DOORS1a; <c>keep</c> since KEEP1d; <c>git-use</c> since GITAUTH1e).
     /// </summary>

@@ -7,7 +7,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The driver's own state and standing choices, the page's `bridge/driver.ts`. Each standing choice is an edit to `driver.json`
-/// and a nudge, the file the terminal's `daoris driver` edits, and declares the driver's state; a nudge declares nothing.
+/// and a nudge, the file the terminal's setting verbs edit, and declares the driver's state; a nudge declares nothing.
 /// </summary>
 public sealed class DriverRoutes(DriverContext context)
 {

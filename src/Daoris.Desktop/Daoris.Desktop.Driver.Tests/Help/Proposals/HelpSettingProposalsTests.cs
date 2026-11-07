@@ -3,7 +3,7 @@ using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
 
-/// <summary>Ask Daoris's <c>setting</c> proposal (HELP1c): one of the `daoris driver` verbs, judged by the config's own edits.</summary>
+/// <summary>Ask Daoris's <c>setting</c> proposal (HELP1c): one of the setting verbs, judged by the config's own edits.</summary>
 public sealed class HelpSettingProposalsTests : HelpProposalsFixture
 {
     [Theory]

@@ -82,7 +82,7 @@ describe('This Daoris → set up from the page', () => {
     const ask = within(card.getByRole('group', { name: 'Put this install on your PATH?' }));
     expect(ask.getByText(/Your account's PATH only, never the machine's/)).toBeTruthy();
     expect(ask.getByText(BIN)).toBeTruthy();
-    expect(ask.getByText('Terminals opened after it find daoris and daoris-driver.')).toBeTruthy();
+    expect(ask.getByText('Terminals opened after it find daoris.')).toBeTruthy();
     expect(ask.getByText(/Another daoris comes first and still will/)).toBeTruthy();
     expect(sent('SYSTEM_PATH')).toEqual([]);
 
