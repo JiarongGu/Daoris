@@ -160,7 +160,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     `content.holds` reads the tree at its bound commit and its merge is the one `landing` and `line` read. Where the
     branch's tip no longer reads (its tree tidied), a step bound there keeps its binding's revision and one not bound yet takes the commit
     its session branch records the line holding, so work merged outside the run reads its holds, landing and line reached and the run
-    ends. The plan of a merge whose tree is gone names the line the settings set, else the one its session branch grew from, else says it
+    ends. Its `work` (`claimed`) is reached at the first whole look that reads its quest done, whichever session said it: the one that
+    took it, or one that carried it on in its tree after an update cut it; a drain runs no pass, so a done said during one is read after it.
+    The plan of a merge whose tree is gone names the line the settings set, else the one its session branch grew from, else says it
     names none. (from D227)
 29. A `land`'s open options are resolved once at the bind and kept: the pattern `feature/{quest}-{slug}` and the default key where the
     pattern says `{ticket}`. A `land` names no plugin. A written option stands; no landing rule

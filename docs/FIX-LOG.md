@@ -16,13 +16,18 @@ repository.
   at the bound commit found the tree elsewhere (`HoldReads`: "not read at the bound commit"), and it held for good; with all the work on its
   own branch, the session branch stood on the line, its held fact ended the run as landed and the work never reached the line. The landing
   rules followed the moved tree until 50f1fb9056 (NOCOMPAT1b2) deleted them, between the install's builds f3ebcb986 and 778dfe5d29, with
-  the own-branch test (dc6bba0768). The two Lyntai records kept show a second hold: their `work` (`claimed`) was active and never reached
-  from the quest's update until the hand merge, so `content` was first bound after it: the quest read as not done, or done with a step
-  still to come here, until then; that hold is not found here.
+  the own-branch test (dc6bba0768). The two Lyntai records kept show no hold of `work` (`claimed`): each bound its quest's stamp three
+  times, twice within its first minute (02:03:54 and 02:04:48; 03:02:41 and 03:03:47) and then at its last move (03:01:09; 04:38:54), and
+  was reached in the pass after that move (48 and 10 seconds), as the run that landed was after its done (two minutes). The stamp moves at
+  every move of the quest, a done, a wait, a submission, an evidence verdict and a yes, and a whole look reads it afresh, so for the hour
+  between no pass read the quest done: its done was that last move, or came while no pass ran (a drain holds every pass, DRAINHOLD1).
+  `content`'s first binding read the session branch's recorded merge with the tree gone, so each was merged by hand and its tree tidied
+  before that pass.
 - **Fix:** a run watches the branch its work stands on, the one the look learned its tree moved onto (`GrownBranch.Now`) else its session
   branch (`NodeGoverning`), and binds its branch-side steps at that tip (`NodeRuntime`); the end keeper judges the same branch's tip.
 - **Verify:** `DevLineLandingTests`' `moved-on` shape failed first at `content active`, its `own-branch` shape with every step reached and
-  the line lacking the work; both land with no press now, beside the five shapes before.
+  the line lacking the work; both land with no press now, beside the five shapes before. Its `carried-on` shape (published, taken, the
+  session cut and carried on in the same tree by a new one, which commits more and says done, a pass at each move) passes at the tip.
 ## 2026-11-07 - A door present by a file look was never said present after a report, and CI 11's other reds
 
 - **Symptom:** CI run 11's fast half on 75a4b694be: `RoleStructureTests` read a presence-probed agent's `Installed` as unknown after
