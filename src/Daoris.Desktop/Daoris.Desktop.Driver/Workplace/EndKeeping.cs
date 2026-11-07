@@ -195,7 +195,7 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
                 : string.Equals(at, kept.OnAt, StringComparison.Ordinal) || await DescendsAsync(kept.OnAt, at).ConfigureAwait(false) is true);
         }
 
-        // The commit of where an end held, when it was judged.
+        // The commit of where an end held, when it is judged.
         async Task<string?> OnAtAsync(EndVerdict verdict) =>
             verdict is { Ended: true, Where: { } where } ? await TreeRefs.CommitOfAsync(root, RefOf(where), ct, refs).ConfigureAwait(false) : null;
 
@@ -222,7 +222,7 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
     /// removed is ended by its removal: neither is judged here. One <c>merge-base --is-ancestor</c> for each form of the line, once a landing;
     /// where none holds it, the content proof's reads (<see cref="LandedProofs.ProveAsync"/>: two diffs and a merge base for each form).
     /// </remarks>
-    /// <returns>Whether its end was kept and the entry retired with it; false writes nothing, and the caller reads where it went.</returns>
+    /// <returns>Whether its end is kept and the entry retired with it; false writes nothing, and the caller reads where it went.</returns>
     internal async Task<bool> KeepGoneAsync(string root, string repository, LandedBranch entry, string? line, CancellationToken ct, RefSnapshot? refs = null)
     {
         if (entry.Held is not null || entry.RemovedAs is not null || !HomeLease.HeldHere(context.Home)) return false;
@@ -255,7 +255,7 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
 
     /// <summary>
     /// The fact a judgement leaves, given the one kept: an end held with its evidence, <c>Since</c> kept where the tip, the line and
-    /// the repository are the ones it was first held at; null where the verdict is not an end, or its evidence could not be read.
+    /// the repository are the ones it is first held at; null where the verdict is not an end, or its evidence could not be read.
     /// </summary>
     internal static HeldFact? Next(HeldFact? kept, EndVerdict verdict, string? onAt, string repository, DateTimeOffset now)
     {

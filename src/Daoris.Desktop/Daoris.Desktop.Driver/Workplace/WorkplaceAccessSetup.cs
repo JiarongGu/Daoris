@@ -9,7 +9,7 @@ internal interface IWorkplaceResolvedAccess
     /// <summary>The value <paramref name="pause"/> resolves to.</summary>
     string Value(string pause);
 
-    /// <summary>Where <paramref name="pause"/>'s value was set.</summary>
+    /// <summary>Where <paramref name="pause"/>'s value is set.</summary>
     string Source(string pause);
 }
 
@@ -23,7 +23,7 @@ internal interface IWorkplaceAccessSetup
     /// <summary>A repository's setup as it resolves from <paramref name="config"/>: its own, its workspace's and this machine's.</summary>
     IWorkplaceResolvedAccess Resolve(DriverConfig config, string repository, string? workspace);
 
-    /// <summary>Where a value was set, in a sentence.</summary>
+    /// <summary>Where a value is set, in a sentence.</summary>
     string Whose(string source);
 
     /// <summary>The source a pause nothing set resolves from: today's behaviour.</summary>

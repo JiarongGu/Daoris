@@ -19,7 +19,7 @@ internal sealed class TreeMerges(TreeContext context)
     /// <para>🔴 <b>This is the one place Daoris writes into a checkout it did not create</b>, so every
     /// guard `reaching-in` names is here and each refuses rather than repairing. The tree must be
     /// under the trees home (a checkout is never ours to merge FROM); the root must be <b>clean</b>,
-    /// because somebody's work in flight is exactly what that document was written from; the root must
+    /// because somebody's work in flight is exactly what that document is written from; the root must
     /// already be <b>on</b> the canonical line, because switching a branch in a checkout we do not own
     /// is the same trespass in a smaller form; and every check is made <b>immediately before</b> the
     /// merge in this one call, because a look at the root expires the moment you look away.
@@ -117,7 +117,7 @@ internal sealed class TreeMerges(TreeContext context)
         var merging = pinned ?? branch;
 
         // 🔴 Compared where git has the line, and a comparison git could not make is not "nothing to
-        // merge": a line only origin has made `log` fail, and its empty output said the work was there.
+        // merge": a line only origin has made `log` fail, and its empty output would say the work is there.
         var against = await ComparableAsync(root, canonical, ct).ConfigureAwait(false) ?? canonical;
         var (aheadCode, ahead, aheadErr) = await WorkingTree.GitAsync(
             root, ["log", "--oneline", $"{against}..{merging}"], ct).ConfigureAwait(false);
@@ -179,7 +179,7 @@ internal sealed class TreeMerges(TreeContext context)
     }
 
     /// <summary>
-    /// How many paths <c>git status</c> names in the session's tree: the dirty check's own read where the landing was told nothing. A
+    /// How many paths <c>git status</c> names in the session's tree: the dirty check's own read where the landing is told nothing. A
     /// status git could not give names none, as the check always read it.
     /// </summary>
     internal static async Task<int> DirtyAsync(string full, CancellationToken ct)

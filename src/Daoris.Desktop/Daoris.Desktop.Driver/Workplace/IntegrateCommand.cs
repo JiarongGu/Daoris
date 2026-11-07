@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris integrate</c> was asked: a repository to show, and an act on it where one is named.</summary>
+/// <summary>What <c>daoris integrate</c> is asked: a repository to show, and an act on it where one is named.</summary>
 public sealed record IntegrateAsk(string Repository)
 {
     /// <summary>One of <see cref="IntegrateCommand.Acts"/>; null shows the repository's integration.</summary>
@@ -79,7 +79,7 @@ public static class IntegrateCommand
         return new IntegrateAsk(args[0].Trim()) { Act = args[1][2..], Target = args.Count > 2 ? string.Join(' ', args.Skip(2)) : null };
     }
 
-    /// <summary>The lines that show <paramref name="look"/>: the queue, each candidate with its steps, what was handed back, what awaits a disposition, the history.</summary>
+    /// <summary>The lines that show <paramref name="look"/>: the queue, each candidate with its steps, what is handed back, what awaits a disposition, the history.</summary>
     public static IReadOnlyList<string> Said(IntegrationLook look)
     {
         var said = new List<string>();

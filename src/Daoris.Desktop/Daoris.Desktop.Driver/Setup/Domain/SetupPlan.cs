@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Why a set-up was refused: a code a screen can key on, and the sentence a person reads, naming the door that answers it.</summary>
+/// <summary>Why a set-up is refused: a code a screen can key on, and the sentence a person reads, naming the door that answers it.</summary>
 public sealed record SetupRefusal(string Code, string Sentence);
 
 /// <summary>The codes of <see cref="SetupRefusal"/>, in the order the press asks.</summary>
@@ -35,8 +35,8 @@ public static class SetupRefusals
 /// <c>node</c>, which the doctrine tool runs on, and <c>daoris</c>, with what each answered for its
 /// version. The files are this machine's and are never put in the quest.
 /// </summary>
-/// <param name="NodeProblem">Why no <c>node</c> could be named, in Tools' words, where none was.</param>
-/// <param name="DaorisProblem">What was found in place of an answer, where <c>daoris</c> did not give one.</param>
+/// <param name="NodeProblem">Why no <c>node</c> could be named, in Tools' words, where none is.</param>
+/// <param name="DaorisProblem">What is found in place of an answer, where <c>daoris</c> did not give one.</param>
 public sealed record SetupTools(
     string? Node, string? NodeVersion, string? NodeProblem, string? Daoris, string? DaorisVersion, string? DaorisProblem);
 
@@ -52,7 +52,7 @@ public sealed record SetupPlan(string Repository)
     /// <summary>The programs its session needs, as found.</summary>
     public SetupTools? Tools { get; init; }
 
-    /// <summary>A reconcile's: what the doctrine tool's <c>status --json</c> said of the checkout, where it was asked and answered.</summary>
+    /// <summary>A reconcile's: what the doctrine tool's <c>status --json</c> said of the checkout, where it is asked and answered.</summary>
     public DoctrineStatus? Doctrine { get; init; }
 
     /// <summary>Which set-up the line calls for, where it could be read.</summary>
@@ -73,7 +73,7 @@ public sealed record SetupPlan(string Repository)
     /// <summary>The agent this machine's driven sessions start on, which would carry it.</summary>
     public string? Adapter { get; init; }
 
-    /// <summary>What it builds (<see cref="SetupBuilds"/>), which shaped the body's safe work; null where none was said.</summary>
+    /// <summary>What it builds (<see cref="SetupBuilds"/>), which shapes the body's safe work; null where none is said.</summary>
     public string? Builds { get; init; }
 
     /// <summary>
@@ -90,6 +90,6 @@ public sealed record SetupPlan(string Repository)
 }
 
 /// <summary>What a press came to.</summary>
-/// <param name="Message">The service's sentence, verbatim, or why nothing was asked.</param>
+/// <param name="Message">The service's sentence, verbatim, or why nothing is asked.</param>
 /// <param name="Added">The rules this press added to the repository's scope, and kept.</param>
 public sealed record SetupOutcome(bool Published, string Message, string? AskId, string? QuestId, IReadOnlyList<string> Added);

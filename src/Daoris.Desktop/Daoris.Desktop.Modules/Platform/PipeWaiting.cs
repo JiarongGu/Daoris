@@ -5,7 +5,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// One terminal's press waiting for the person, as its record keeps it across a restart: the confirmation's own id, which names the file; the terminal's id and the binding it is sent under; the module, route and
-/// payload as sent; the grounds read at the ask; the asker as the system named it; when it was asked and first shown; whether it carries
+/// payload as sent; the grounds read at the ask; the asker as the system named it; when it is asked and first shown; whether it carries
 /// a key; and how it stands (<see cref="Waiting"/>, <see cref="Begun"/>, or <see cref="Ended"/> with its answer). No card's fields and
 /// no named values: those are made again from the payload, so a record cannot show one thing and run another.
 /// </summary>
@@ -26,7 +26,7 @@ internal sealed record PipeWaitingRecord(
     /// <summary>Confirmed, its grounds holding, and about to run: never asked again.</summary>
     public const string Begun = "begun";
 
-    /// <summary>Ended otherwise, with its answer, before its journal line was written.</summary>
+    /// <summary>Ended otherwise, with its answer, before its journal line is written.</summary>
     public const string Ended = "ended";
 }
 

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LIMITGOON1 (the limit-goes-on design §2 item 2): what a conversation whose last turn its account's limit refused holds, read from its
+/// What a conversation whose last turn its account's limit refused holds, read from its
 /// record's events alone. The person's words of the refused turns since the last turn that ended otherwise, oldest first; never Daoris's
 /// own words, another agent's, or a brief; nothing where the last turn ended otherwise.
 /// </summary>
@@ -49,7 +49,7 @@ public sealed class LimitHeldTests
         Assert.Null(LimitHeld.Of([.. Refused("Make the port configurable."), Person("Again."), Agent("Done."), Turn("end_turn")]));
         // A turn refused otherwise, its account not cooling, is no limit.
         Assert.Null(LimitHeld.Of([Person("Hello."), NotTaken(), Turn("error")]));
-        // The person's stop ends a turn that was not refused.
+        // The person's stop ends a turn that is not refused.
         Assert.Null(LimitHeld.Of([Person("Hello."), Turn("cancelled")]));
         Assert.Null(LimitHeld.Of([]));
 
@@ -81,7 +81,7 @@ public sealed class LimitHeldTests
     private static SessionEvent Try(int number) => new() { Kind = SessionEventKind.Transient, Try = number };
 
     /// <summary>
-    /// 🔴 AGENTERRORS1b (the agent-errors design §6.1, round 3's R2-C2 and R3-O6): a limit that ends a transient episode holds only the
+    /// 🔴 A limit that ends a transient episode holds only the
     /// words no try carried. The failed turn's own words went on the wire with the prompt the provider's failure answered, and so did the
     /// words each try carried; none is held to be sent again at the wake or the move, however the episode ended. The episode's quiet events
     /// part them from the words asked after.
@@ -165,7 +165,7 @@ public sealed class LimitHeldTests
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1g part c (the foundation design §3.5): a conversation's end writes its limit as the ledger's <c>limited</c> flag, and the
+    /// 🔴 A conversation's end writes its limit as the ledger's <c>limited</c> flag, and the
     /// flag decides: a record carrying it is limited whatever its events still hold, which give only the words and where they stand. A record
     /// with no flag, as an older build ended it, is read from its events as before.
     /// </summary>

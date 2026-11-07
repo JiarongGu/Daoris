@@ -201,5 +201,5 @@ public static class SpaceLimits
     }
 }
 
-/// <summary>What one pass of the size limits did (<see cref="SpaceLimits.PassAsync"/>): each kind run, and whether a kind was not counted yet, so a later pass judges it.</summary>
+/// <summary>What one pass of the size limits did (<see cref="SpaceLimits.PassAsync"/>): each kind run, and whether a kind is not counted yet, so a later pass judges it.</summary>
 public sealed record SpaceLimitsPass(IReadOnlyList<SpaceRunKind> Kinds, bool Uncounted);

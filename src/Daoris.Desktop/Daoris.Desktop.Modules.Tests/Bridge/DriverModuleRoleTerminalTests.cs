@@ -121,7 +121,7 @@ public sealed class DriverModuleRoleTerminalTests : DriverModuleBridge
             Assert.Equal((false, StandingConfirmation.ChooseTerminal), (unchosen.GetProperty("done").GetBoolean(), unchosen.GetProperty("why").GetString()));
             var unstarted = await AnswerAsync(module, "START_ROLE_TERMINAL", new { role = Supervisor, share = "own" });
             Assert.Equal((false, "unstarted"), (unstarted.GetProperty("done").GetBoolean(), unstarted.GetProperty("why").GetString()));
-            // The hold in force is the one before: nothing was installed.
+            // The hold in force is the one before: nothing is installed.
             Assert.Null(pipe.StandingConfirmation.Admit("engine").Why);
 
             // The role door's change ends it: your rules alone hold the repository's supervisor.

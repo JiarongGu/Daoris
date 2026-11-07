@@ -10,7 +10,7 @@ public sealed class SecondLaunchTests
 {
     private const string Service = "http://localhost:5177";
 
-    /// <summary>The shell's half, stubbed: what was asked for, without a message pump, and a person's close.</summary>
+    /// <summary>The shell's half, stubbed: what is asked for, without a message pump, and a person's close.</summary>
     private sealed class Windows : ISecondaryWindows
     {
         public readonly List<(string Name, string Address)> Asked = [];

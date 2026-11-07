@@ -34,7 +34,7 @@ public sealed record HistoryAsk(HistoryScope Scope, string? Id)
 /// it, it lists again and sends what may go, each unit judged again by both halves, at the door <c>terminal</c>, as
 /// <c>trees clean --yes</c> does. Nothing to clear is information, never a refusal.</para>
 ///
-/// <para>Exit codes are the family's: 0 done, listed or nothing to do · 1 a unit named was kept: one quest, one ask or one
+/// <para>Exit codes are the family's: 0 done, listed or nothing to do · 1 a unit named is kept: one quest, one ask or one
 /// quest's failed sessions, on its list or at its press, or no such quest or ask here; a workspace's units are not named one by
 /// one, so one it keeps is information · 2 could not: a file the disk would not let go of, the usage, or a service that did not
 /// answer (the host says its sentence).</para>

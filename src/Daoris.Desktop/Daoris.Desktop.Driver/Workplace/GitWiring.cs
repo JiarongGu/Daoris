@@ -55,7 +55,7 @@ public static class GitWiring
     /// <summary>The remote helper's file in the install's <c>app/bin/</c>, which git runs for a <c>daoris::</c> address.</summary>
     public const string RemoteHelper = "git-remote-daoris.exe";
 
-    /// <summary>How the ssh door was named for a start: <c>command</c> (<c>GIT_SSH_COMMAND</c>), <c>git-ssh</c>, or null for none.</summary>
+    /// <summary>How the ssh door is named for a start: <c>command</c> (<c>GIT_SSH_COMMAND</c>), <c>git-ssh</c>, or null for none.</summary>
     public static string? SshForm(string? home)
     {
         if (DoorPath(home, SshDoor) is not { } door) return null;

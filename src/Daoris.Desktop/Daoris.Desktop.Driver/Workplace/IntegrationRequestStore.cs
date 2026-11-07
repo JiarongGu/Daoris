@@ -33,7 +33,7 @@ public interface IIntegrationRequestStore
 
     /// <summary>
     /// The request made for a unit at the tip it froze, open or closed (the <c>integrate</c> node's key), the newest
-    /// where more than one was; null where none was. Reads closed requests too, so a node finds what became of its request whenever it asks.
+    /// where more than one stands; null where none does. Reads closed requests too, so a node finds what became of its request whenever it asks.
     /// </summary>
     IntegrationRequest? FindByKey(string unit, string tip);
 

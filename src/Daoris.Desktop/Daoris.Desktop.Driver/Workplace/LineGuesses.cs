@@ -15,7 +15,7 @@ namespace Daoris.Driver;
 ///
 /// <para><b>What the files cannot tell is asked every time</b>, as before: a checkout whose <c>.git</c> is a file (a linked
 /// worktree's or a submodule's), and a reftable store. A guess that failed is never kept, and one whose files moved while git
-/// was asked is not kept either.</para>
+/// answers is not kept either.</para>
 /// </remarks>
 public sealed class LineGuesses(Func<string, CancellationToken, Task<string?>> guess)
 {

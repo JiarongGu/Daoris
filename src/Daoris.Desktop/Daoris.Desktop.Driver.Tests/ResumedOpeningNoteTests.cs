@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONVNOTE2a (D152's CONVNOTE2a note, D142 points 2–4): the line a resumed conversation opens with carries its lines by code
+/// The line a resumed conversation opens with carries its lines by code
 /// beside its English, so the page words it in the reader's language. The English stays byte for byte what the terminal, the
 /// trace and an older page read; who spoke is a reason of its own family and the version that moved a fact, never a sentence.
 /// </summary>

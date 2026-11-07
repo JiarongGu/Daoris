@@ -4,7 +4,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// One repository's line as the bridge carries it: which, in which circle, and what said so. The lines slice adds
-/// <see cref="NotReadYet"/> where the checkout's guess was not judged yet: the branch is none and the page says the line
+/// <see cref="NotReadYet"/> where the checkout's guess is not judged yet: the branch is none and the page says the line
 /// not read yet, never what none would mean. The pull, which asks git, never answers it.
 /// </summary>
 internal sealed record LineRow(string Repository, string Workspace, string? Branch, string Source)

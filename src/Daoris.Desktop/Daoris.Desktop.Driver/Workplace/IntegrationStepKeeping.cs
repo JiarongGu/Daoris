@@ -19,7 +19,7 @@ internal sealed class IntegrationStepKeeping(IntegrationStore store)
     /// <summary>
     /// Take up a candidate whose claim's run is dead by the lease's test (as the move record's take), in one guarded update that writes
     /// this store's run and raises the generation: refused, nothing written, where the candidate is gone or ended, where its claim is this
-    /// run's own, where the generation moved since <paramref name="generation"/> was read, or where its run lives or cannot be told dead.
+    /// run's own, where the generation moved past <paramref name="generation"/>, or where its run lives or cannot be told dead.
     /// </summary>
     public IntegrationTaken Take(string candidate, long generation)
     {

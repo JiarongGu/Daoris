@@ -138,7 +138,7 @@ public static class ToolChoices
     /// never refused. The file it travels in is written at the next start (<see cref="GitGlobalFile"/>).
     /// </summary>
     /// <param name="ask">A git's answer to <c>--version</c>: <see cref="GitVersions.AskAsync"/>, or a test's.</param>
-    /// <returns>The git's version where it was asked, else null.</returns>
+    /// <returns>The git's version where it is asked, else null.</returns>
     /// <exception cref="ToolRefusal"><see cref="ToolRefusal.GitTooOld"/>, naming the version and its floor; nothing is written.</exception>
     /// <exception cref="DriverException">A key off the allow-list, or a <c>tools.json</c> this build cannot write.</exception>
     public static async Task<Version?> SetGitAsync(

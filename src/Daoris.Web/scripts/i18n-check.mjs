@@ -2,15 +2,15 @@
 // The parity gate — the bilingual sibling's proven check, adopted here. The build fails when the catalogs' key sets diverge,
 // because a missing translation otherwise "works" in English and is discovered by the first reader it fails — silently, in the other
 // language.
-// And since REV3, when their PLACEHOLDERS diverge: a placeholder is part of the contract
+// And when their PLACEHOLDERS diverge: a placeholder is part of the contract
 // (`translation-parity`), and a key present in both with `{{nmae}}` in one, or with the `{{name}}`
 // the sentence exists to say dropped from the other, passed the key check and failed the reader.
-// And since MOD2, per AREA: each language is `src/locales/<language>/<area>.json`, merged at load
+// And per AREA: each language is `src/locales/<language>/<area>.json`, merged at load
 // (`src/locales/index.ts`). A key lives in the file named by its longest dotted prefix that has a
 // file, so a new key has one home, found by its prefix. The gate holds that every language has the
 // same areas, that each area's files hold the same keys (both directions), that no key is in two
 // files — the merge would keep only the last — and that every key is in its home.
-// And since I18NOPEN1, across EVERY catalogue present: a language is a folder under `src/locales`, `en` the source the rest
+// And across EVERY catalogue present: a language is a folder under `src/locales`, `en` the source the rest
 // are held to, so adding a language is adding a catalogue and the gate holds it the moment it exists.
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -61,7 +61,7 @@ const family = (catalogue, key) => {
 };
 
 // Keys whose English IS the driver's own sentence, passed through as the only copy, which the other
-// language says in its own words (the defaults' reasons; why a quest is sitting, UX5 U27).
+// language says in its own words (the defaults' reasons; why a quest is sitting).
 // Named here, so adding one is noticed.
 const PASSED_THROUGH = [/^settings\.rules\.defaultWhy\./, /^work\.sitting\./];
 

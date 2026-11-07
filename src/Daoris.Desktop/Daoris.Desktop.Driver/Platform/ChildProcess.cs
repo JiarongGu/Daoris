@@ -7,8 +7,8 @@ namespace Daoris.Driver;
 /// What a child run to its end, or past its patience, left: the exit code and both streams, or why there is none.
 /// </summary>
 /// <param name="Started">Whether the program started at all; when not, <see cref="Error"/> says why, if the runtime did.</param>
-/// <param name="ExitCode">The exit code; null when the program did not start or was ended for taking too long.</param>
-/// <param name="TimedOut">Whether the program was still running when its patience ran out, and its tree was ended.</param>
+/// <param name="ExitCode">The exit code; null when the program did not start or had to be ended for taking too long.</param>
+/// <param name="TimedOut">Whether the program is still running when its patience runs out, and its tree is ended.</param>
 public sealed record ChildRun(bool Started, int? ExitCode, string Stdout, string Stderr, bool TimedOut)
 {
     /// <summary>The runtime's failure to start the program, for a caller to put in its own words.</summary>
@@ -136,13 +136,13 @@ public static class ChildProcess
     /// dispose the process only after.
     /// </summary>
     /// <exception cref="ProcessUnendedException">
-    /// Its exit was not seen within the bound, its kill refused or not: told to this flow's listener (<see cref="Telling"/>) and
+    /// Its exit is not seen within the bound, its kill refused or not: told to this flow's listener (<see cref="Telling"/>) and
     /// thrown as the cancellation of <paramref name="ct"/> with the pid and the reason attached.
     /// </exception>
     internal static async Task EndAsync(Process process, CancellationToken ct)
     {
         var pid = PidOf(process);
-        // Read by the exit wait: a process that ended as it was stopped refuses its kill and has exited.
+        // Read by the exit wait: a process that ended when stopped refuses its kill and has exited.
         var refused = OwnedProcesses.End(process);
 
         using var bound = new CancellationTokenSource(ExitBound);
@@ -198,7 +198,7 @@ public static class ChildProcess
 
 /// <summary>
 /// A runner's cancellation whose process outlived its kill: the pid and why, so the
-/// owner hears the process was not ended rather than a cancellation that reads as one that worked.
+/// owner hears the process is not ended rather than a cancellation that reads as one that worked.
 /// </summary>
 public sealed class ProcessUnendedException(int pid, string reason, CancellationToken token)
     : OperationCanceledException($"process {pid} did not end: {reason}", token)

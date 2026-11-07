@@ -91,7 +91,7 @@ public sealed class LastLines
         }
         catch (Exception error) when (error is IOException or ObjectDisposedException)
         {
-            // A pipe whose writer died with its process breaks rather than ends: what was read is what it said.
+            // A pipe whose writer died with its process breaks rather than ends: what is read is what it says.
         }
         finally
         {

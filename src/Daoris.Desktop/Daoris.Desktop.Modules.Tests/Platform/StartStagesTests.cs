@@ -111,7 +111,7 @@ public sealed class StartStagesTests : IDisposable
 
     /// <summary>
     /// What waits for the first screen's data is let go by the page's word through the
-    /// splash's lift, at once where the word came before it was asked, and by its own bound where the word never comes.
+    /// splash's lift, at once where the word comes before it is asked, and by its own bound where the word never comes.
     /// </summary>
     [Fact]
     public async Task The_first_screen_s_wait_ends_at_the_page_s_word_or_its_bound()

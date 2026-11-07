@@ -24,7 +24,7 @@ public static class LandedState
 /// <see cref="LandedKind.OnLine"/>, <see cref="LandedKind.Merged"/>, <see cref="LandedKind.Differs"/> or
 /// <see cref="LandedKind.Unknown"/> as the proof found it, or <see cref="CommitsGone"/>.
 /// </param>
-/// <param name="Where">On the line or merged: the form of the line it was proven on. Differs: the form compared with.</param>
+/// <param name="Where">On the line or merged: the form of the line it is proven on. Differs: the form compared with.</param>
 /// <param name="Files">Differs: the files it changed that read otherwise on the line.</param>
 /// <param name="Detail">Unknown: git's own words.</param>
 public sealed record LandedReads(string Kind, string? Where, IReadOnlyList<string> Files, string? Detail)

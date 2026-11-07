@@ -32,7 +32,7 @@ public sealed record TogetherCandidate(string Session, string Repository, string
     public bool StepsOn { get; init; }
 }
 
-/// <summary>What a press came to: the operation recorded and told, or the sentence it was refused with.</summary>
+/// <summary>What a press came to: the operation recorded and told, or the sentence it is refused with.</summary>
 public sealed record TogetherPressed(TogetherOperation? Operation, string? Refused);
 
 /// <summary>

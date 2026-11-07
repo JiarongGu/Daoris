@@ -8,8 +8,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ROSTER1: <c>reads.json</c> under the home keeps what was last read of each account's sign-in, and of the tool's
-/// own, with when, so a restart starts from what was last read rather than from a probe. Nothing here starts a process.
+/// <c>reads.json</c> under the home keeps the last reading of each account's sign-in, and of the tool's
+/// own, with when, so a restart starts from that reading rather than from a probe. Nothing here starts a process.
 /// </summary>
 /// <remarks>
 /// Held, row for row, to one table, <c>fixtures/account-reads.json</c> (reading, keeping, forgetting). The

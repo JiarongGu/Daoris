@@ -92,7 +92,7 @@ internal sealed class TreeSync(
             new Checkout(each.Repository, each.Workspace, each.Root!, new SyncRepository(each.Repository, RemoteTarget.Workspace(each.Workspace), held)))];
     }
 
-    /// <summary>A checkout's line, and how its fetch went: why it failed, when origin was last heard from here, and how it is reached.</summary>
+    /// <summary>A checkout's line, and how its fetch went: why it failed, when origin is last heard from here, and how it is reached.</summary>
     private sealed record Fetched(string? Line, string? Failed = null, DateTimeOffset? LastFetch = null, string? Reach = null, string? Host = null)
     {
         /// <summary>The pull as judged, carrying what a failed fetch leaves it judged against.</summary>
@@ -149,10 +149,10 @@ internal sealed class TreeSync(
     /// <para>🔴 <b>This writes into repositories the person owns</b>, so every guard of <see cref="SessionTrees.MergeAsync"/> and
     /// of the clean-up is here, and each refuses rather than repairs. The line moves only forward and only where
     /// nothing is lost: in the repository's own checkout only while it is clean and on the line, checked again
-    /// immediately before; elsewhere by moving the ref, and only from the commit it was judged at. No merge
+    /// immediately before; elsewhere by moving the ref, and only from the commit it is judged at. No merge
     /// commit, no force, no push. A replay happens in a tree of Daoris's own — the session's, or one made for
     /// it under the trees home and removed after — never the person's checkout; a conflict aborts it and names the
-    /// files, leaving the branch as it was, and a replay is kept only once its own work is proven intact. A branch
+    /// files, leaving the branch untouched, and a replay is kept only once its own work is proven intact. A branch
     /// on its remote is left, since replaying it would need a force push.</para>
     ///
     /// <para><b>Replays before deletions.</b> A session branch that grew from a landed branch shares its commits,
@@ -178,7 +178,7 @@ internal sealed class TreeSync(
     /// </param>
     /// <param name="scope">
     /// Which repositories to take; null for the default, those holding a branch of Daoris's. Each repository
-    /// a row in <paramref name="only"/> names is taken too: the press acts on what the person was shown.
+    /// a row in <paramref name="only"/> names is taken too: the press acts on what the person is shown.
     /// </param>
     /// <param name="beside">
     /// The ledger's sessions and their trees (<see cref="BranchTidying.HoldersAsync"/>), asked inside the checkout's hold, so a pull waits for

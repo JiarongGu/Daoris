@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL4f through a look: when every account of the person's order is cooling, a carry-on is held at spawn
+/// Through a look: when every account of the person's order is cooling, a carry-on is held at spawn
 /// with nothing spawned and no record, waiting for the first reset, never parked, and the wait is said once.
 /// </summary>
 /// <remarks>

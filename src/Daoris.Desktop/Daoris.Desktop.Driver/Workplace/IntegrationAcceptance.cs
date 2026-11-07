@@ -43,7 +43,7 @@ public static class IntegrationAcceptance
 
     /// <summary>
     /// Where an acceptance stands against the line's tip, in the shape of the landed route's: <see cref="Unread"/> where the tip's
-    /// blob could not be read (null), whatever was accepted; <see cref="Unaccepted"/> where nothing was; <see cref="Accepted"/> where
+    /// blob could not be read (null), whatever is accepted; <see cref="Unaccepted"/> where nothing is; <see cref="Accepted"/> where
     /// the accepted blob is the tip's (<c>none</c> for a line that holds no declaration, accepted as such); else <see cref="Changed"/>.
     /// </summary>
     public static string StateOf(string? accepted, string? tip)

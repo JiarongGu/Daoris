@@ -3,10 +3,10 @@ namespace Daoris.Driver;
 /// <summary>A recovery ref the person asked to delete, with the commit they were shown it at; null where the terminal named it alone.</summary>
 public sealed record RecoveryDrop(string Ref, string? Commit);
 
-/// <summary>A recovery ref that was deleted, and the commit it named.</summary>
+/// <summary>A recovery ref deleted, and the commit it named.</summary>
 public sealed record RecoveryDropped(string Ref, string Commit);
 
-/// <summary>A recovery ref that was kept, and why, in a sentence both doors say.</summary>
+/// <summary>A recovery ref kept, and why, in a sentence both doors say.</summary>
 public sealed record RecoverySkipped(string Ref, string Why);
 
 /// <summary>What a press deleted and what it skipped.</summary>
@@ -26,8 +26,8 @@ public sealed record RecoveryDrops(IReadOnlyList<RecoveryDropped> Dropped, IRead
 /// never taken from the page's list: a ref a branch or a tag of the person's holds by then is the look's tidy's, which removes it past
 /// its retention with that holder verified, so this press never takes what a holder keeps. A ref whose holders git did not read is kept.</para>
 ///
-/// <para><b>Each delete verifies what the person was shown</b>: one <c>update-ref --stdin</c> transaction deleting the ref at the
-/// commit it was shown (<see cref="ContentHolds.DropKeptVerifiedAsync"/>'s form), so a ref that moved in between is refused by git and
+/// <para><b>Each delete verifies what the person is shown</b>: one <c>update-ref --stdin</c> transaction deleting the ref at the
+/// commit it is shown (<see cref="ContentHolds.DropKeptVerifiedAsync"/>'s form), so a ref that moved in between is refused by git and
 /// kept. A holder appearing in the instant between the read and the delete is the one case nothing can verify (git cannot assert a ref's
 /// absence); the commit then stays reachable from that holder, and what the delete removed is the recovery ref alone.</para>
 ///
@@ -47,7 +47,7 @@ public static class RecoveryDropping
 
     /// <summary>
     /// Delete each asked ref that nothing of the person's holds at this moment, each in one <c>update-ref --stdin</c> transaction that
-    /// verifies the ref still names the commit it was shown at. A ref that moved, one a branch or a tag now holds, one whose holders
+    /// verifies the ref still names the commit it is shown at. A ref that moved, one a branch or a tag now holds, one whose holders
     /// were not read, one gone already and one outside <c>refs/daoris/discarded/</c> is skipped and said.
     /// </summary>
     public static async Task<RecoveryDrops> DropAsync(
@@ -178,7 +178,7 @@ public static class RecoveryDropping
         return lines;
     }
 
-    /// <summary>The words of an answer, a line each: what was deleted and what was skipped and why.</summary>
+    /// <summary>The words of an answer, a line each: what is deleted and what is skipped and why.</summary>
     public static IEnumerable<string> Words(string repository, RecoveryDrops drops)
     {
         if (drops.Refused is { } refused)

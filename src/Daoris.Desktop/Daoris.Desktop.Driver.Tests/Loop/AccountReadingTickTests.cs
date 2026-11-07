@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL6c (§6, §16.3 step 2, §16.4) through REAL ticks: the protocol stub, running as stub account 1, replays the
+/// Through REAL ticks: the protocol stub, running as stub account 1, replays the
 /// frame the limit-signals evidence recorded (§1.1: 88% of the session window, 14% of the week) as Claude Code's adapter
 /// forwards it, a <c>usage_update</c> whose <c>_meta["_claude/rateLimit"]</c> is the frame (§3). The driver keeps it in
 /// <c>windows.json</c> for stub account 1, by the stub's table, which mirrors Claude Code's. With the scope's <i>near</i> at
@@ -14,7 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// <para>Real node processes in a real git checkout, against the in-process ledger (<see cref="StandInLedger"/>), as
 /// <c>AccountGoalTickTests</c> runs them. Each session ends its turn at once, so each look settles before the next.</para>
-/// <para>Written by TOOL6c and run by the parent at the merge.</para>
+/// <para>Run by the parent at the merge.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class AccountReadingTickTests : IDisposable
@@ -81,7 +81,7 @@ public sealed class AccountReadingTickTests : IDisposable
         var first = Assert.Single(_ledger.Sessions);
         Assert.Equal("account-1", first["profile"]!.GetValue<string>());
 
-        // Kept for stub account 1, by its owner's table, as of when it was said, on the session that said it.
+        // Kept for stub account 1, by its owner's table, as of when it is said, on the session that says it.
         var kept = AccountWindows.SaidOf(_home, "stub", "account-1", Now)!;
         var id = first["id"]!.GetValue<string>();
         Assert.Equal(new WindowSaid("session", 0.88, kept.Of("session")!.Reset, "clear", false, Now, id), kept.Of("session"));

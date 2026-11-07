@@ -187,7 +187,7 @@ internal sealed class TreeOpening(TreeContext context)
             // every tick. And a cancel as the app closes cuts an open off inside the add,
             // leaving a half-checked-out tree, locked, and its branch. Whatever cut it off, the branch
             // and the tree are this call's own, made a moment ago under a name nothing else uses and handed to nobody, so they
-            // go, and the repository is left as it was found. A kill leaves them for the look (TreeStrays).
+            // go, and the repository is left as found. A kill leaves them for the look (TreeStrays).
             await TreeOpenings.UndoAsync(root, path, branch, ours, unused: refusedBound).ConfigureAwait(false);
             throw;
         }
@@ -211,8 +211,8 @@ internal sealed class TreeOpening(TreeContext context)
     /// <param name="basedOn">What it grew from, spelled for a person.</param>
     /// <param name="startedAt">The branch it started at, or <c>HEAD</c>: the fact the page says.</param>
     /// <param name="unrecorded">Why where its branch started is not recorded, in the program's words; null where it is.</param>
-    /// <param name="dependencies">What was copied of the checkout's dependencies, and why not the rest; none by default.</param>
-    /// <param name="inputs">What was copied of the machine-local inputs the checkout's gates file declares, and why not the rest; none by default.</param>
+    /// <param name="dependencies">What is copied of the checkout's dependencies, and why not the rest; none by default.</param>
+    /// <param name="inputs">What is copied of the machine-local inputs the checkout's gates file declares, and why not the rest; none by default.</param>
     internal static Noted OpeningOf(
         string path, string branch, string basedOn, string startedAt, string? unrecorded, DependencyCopy? dependencies = null,
         LocalCopy? inputs = null)

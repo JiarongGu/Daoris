@@ -7,10 +7,10 @@ namespace Daoris.Desktop.Modules.Tests;
 /// launcher starts the file manager's process, and the plugins' and the log's Open folder called it in the route's
 /// synchronous part, which runs on the window's thread.
 /// </summary>
-/// <remarks>The launcher is a stand-in that notes the thread it was called on: no process starts.</remarks>
+/// <remarks>The launcher is a stand-in that notes the thread it is called on: no process starts.</remarks>
 public sealed class OpenFolderGateTests : DriverModuleBridge
 {
-    // True on the thread making the request, while it makes it: an open seen there was made on the caller's thread.
+    // True on the thread making the request, while it makes it: an open seen there is made on the caller's thread.
     [ThreadStatic]
     private static bool t_calling;
 

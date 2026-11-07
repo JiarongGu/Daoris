@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The second stand-in's program (AGENTPROVIDER1 row c; the agent-provider design §10, §11 row c): one Node module serving both doors of
+ * The second stand-in's program: one Node module serving both doors of
  * provider `alt-stub`, chosen by the arguments its `provider.json` states for each (`--door native`, `--door protocol`). No model, no
  * account and no credential anywhere in it. The driver's project carries it beside the driver by one glob
  * (`Agents/Providers/*\/Program/**`), so the conformance suite runs it from its build output and the family rehearsal from its own.
@@ -8,8 +8,8 @@
  * It answers the same scenario contract as the first stand-in, so a check reads what it says whichever spoke, but in a grammar of its
  * own where an agent says what is its own: its sign-in (`session: active as <who>`, `workspace:`, `tier:`), its limit
  * (`quota spent (<window>) · refills <when>`), its refused credential (`credential rejected (401)`) and its sign-in refusal
- * (`login needed`). `--scenario <name>` picks a case, `open` where none is named, and `--seen <file>` keeps each protocol method it was
- * sent, a line each.
+ * (`login needed`). `--scenario <name>` picks a case, `open` where none is named, and `--seen <file>` keeps each protocol method it
+ * is sent, a line each.
  *
  * - The probes first, whatever the case: `--version`, `--login-state` (signed in) and `--login`.
  * - `open`, on the native door: a start (a quest in its environment) says where it started, then takes and closes its quest through the

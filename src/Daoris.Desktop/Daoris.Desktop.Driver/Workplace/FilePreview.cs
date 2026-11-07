@@ -31,7 +31,7 @@ public enum FilePreviewRefusal
 }
 
 /// <summary>A file as its preview shows it.</summary>
-/// <param name="Path">Relative to the tree, with forward slashes, as it was asked for — never the machine's path.</param>
+/// <param name="Path">Relative to the tree, with forward slashes, as it is asked for — never the machine's path.</param>
 /// <param name="Size">The whole file's size in bytes, however much of it <paramref name="Text"/> holds.</param>
 /// <param name="Binary">Whether git would call it binary; then <paramref name="Text"/> is null.</param>
 /// <param name="Text">The file's text, or its first <see cref="FilePreview.Budget"/> bytes cut at a line's end.</param>

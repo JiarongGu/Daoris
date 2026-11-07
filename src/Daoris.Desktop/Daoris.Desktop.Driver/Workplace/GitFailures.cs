@@ -61,7 +61,7 @@ public static class GitFailures
 
     private static readonly string[] Refused =
     [
-        "Permission denied (", // ssh: every method the host offered was refused, `(publickey)`, `(password,publickey)`
+        "Permission denied (", // ssh: every method the host offers is refused, `(publickey)`, `(password,publickey)`
         "Authentication failed for", // git over HTTP: a credential answered and the host refused it
         "terminal prompts disabled", // git over HTTP: none answered, and git may ask nobody
         "Cannot prompt because user interactivity has been disabled", // a credential manager of the person's own, under `own`, that has no sign-in and may ask nobody

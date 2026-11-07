@@ -286,7 +286,7 @@ public sealed class StewardStandingTests : Bridge
         await Until(() => pipe.Confirmations.Now().Waiting.Count == 1, () => "the press after the take-back was not asked");
         Assert.Equal(1, probe.Ran);
 
-        // The person declines it: nothing of the steward's runs, and the terminal hears it was asked.
+        // The person declines it: nothing of the steward's runs, and the terminal hears it is asked.
         Assert.Equal(PipeAnswered.Answered, (await pipe.Confirmations.AnswerAsync(pipe.Confirmations.Now().Waiting[0].Id, confirm: false)).Outcome);
         Assert.False((await next.AnswerAsync(nextId)).GetProperty("success").GetBoolean());
         Assert.True(Confirming(next));
@@ -532,7 +532,7 @@ public sealed class StewardStandingTests : Bridge
         using var served = pipe;
         driver.Pipe = pipe;
 
-        // Resuming is the steward's own pause's alone: the act that was granted is another's, so take a pause as made, then none granted.
+        // Resuming is the steward's own pause's alone: the act that is granted is another's, so take a pause as made, then none granted.
         var earlier = act == StewardActNames.Unpause ? StewardActNames.Pause : act;
         judge.Staff(RoleKit.Steward([earlier]));
         var (_, first, firstId) = await ActAsync(pipe, key, generation, earlier, form);

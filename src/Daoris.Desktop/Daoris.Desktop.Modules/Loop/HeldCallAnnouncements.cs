@@ -16,11 +16,11 @@ namespace Daoris.Desktop;
 /// row's key the last judgement did not hold.</para>
 ///
 /// <para><b>Seen either way, said under the switch.</b> Every row is seen whatever the switch says, so a call held while the switch
-/// was off is not said when it is turned on: the switch is about being told, as the tick's attention is (<c>DriverLoop</c>). What is
+/// is off is not said when it is turned on: the switch is about being told, as the tick's attention is (<c>DriverLoop</c>). What is
 /// kept is the rows held now, so it is bounded by what is held, and a call answered or released is forgotten with its row.</para>
 ///
 /// <para><b>Nothing older than this run.</b> What a session holds is the driver's memory of this process (<c>HeldPermissions</c>), so a
-/// row seen at the first judgement was held in this run, and a restart holds none to say again.</para>
+/// row seen at the first judgement is held in this run, and a restart holds none to say again.
 /// </remarks>
 public sealed class HeldCallAnnouncements(IEventBus bus, Func<bool> notifying)
 {

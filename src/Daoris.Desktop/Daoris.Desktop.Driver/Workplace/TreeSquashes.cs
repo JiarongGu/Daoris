@@ -53,7 +53,7 @@ internal sealed class TreeSquashes(TreeContext context)
 
     /// <summary>
     /// The standing landing whose squash holds <paramref name="tip"/>: its recorded session tip is that commit or one
-    /// that grew from it, and its branch still stands holding the commit it was recorded at. Null where none does, or git could
+    /// that grew from it, and its branch still stands holding the commit it is recorded at. Null where none does, or git could
     /// not say. The record is Daoris's own word of what it squashed, so it vouches as a branch the landing made would by ancestry,
     /// and only while that branch is the landing's; the content proof is left as it is for the rest.
     /// </summary>
@@ -98,7 +98,7 @@ internal sealed class TreeSquashes(TreeContext context)
     /// </summary>
     /// <param name="standsAt">The commit the branch stands at, which the new commit grows from.</param>
     /// <param name="head">The session's tip, judged to grow from <paramref name="grewFrom"/> with something new.</param>
-    /// <param name="grewFrom">The session tip the record says was squashed last, or the branch's own tip where it says none.</param>
+    /// <param name="grewFrom">The session tip the record names as squashed last, or the branch's own tip where it says none.</param>
     /// <param name="against">The line's form, from which a plugin is told every commit the branch holds now.</param>
     /// <param name="delivering">The delivery it performs, whose transaction moves the branch in its phase; null moves it as before.</param>
     internal static async Task<Branched> AdvanceSquashedAsync(

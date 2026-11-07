@@ -50,7 +50,7 @@ internal sealed class LoopState
         set => _placed = value;
     }
 
-    /// <summary>Whether this process's journal reader was last answered by a host that keeps the journal.</summary>
+    /// <summary>Whether the last answer to this process's journal reader came from a host that keeps the journal.</summary>
     public bool HearsJournal
     {
         get => Volatile.Read(ref _hearsJournal);

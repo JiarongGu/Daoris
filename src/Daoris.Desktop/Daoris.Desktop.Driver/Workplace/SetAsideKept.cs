@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// <summary>Why a folder moved aside outlives its wait: the machine log's <c>tidied.kept</c> codes.</summary>
 public static class SetAsideKept
 {
-    /// <summary>Something in it was written after it was moved aside: a late write it was moved to keep.</summary>
+    /// <summary>Something in it is written after it moved aside: a late write the folder is kept for.</summary>
     public const string Written = "written";
 
     /// <summary>

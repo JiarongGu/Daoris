@@ -21,7 +21,7 @@ internal sealed record VerdictMember(string Branch, string Tip)
 /// </summary>
 /// <param name="Candidate">The candidate, whose tip is set and whose <see cref="IntegrationCandidate.Job"/> every process runs in.</param>
 /// <param name="Tree">The integration tree, standing at the candidate's tip.</param>
-/// <param name="Base">The line's commit the candidate was formed on.</param>
+/// <param name="Base">The line's commit the candidate is formed on.</param>
 /// <param name="Declaration">The accepted declaration's text, from which alone the gates and the commands are read.</param>
 /// <param name="DeclarationId">The accepted blob's id, which every runner answer must name.</param>
 /// <param name="Home">The Daoris home whose admission the runs take their places in.</param>
@@ -62,7 +62,7 @@ internal sealed record VerdictKept(string Gate, string Why, string? Commit, stri
 /// <summary>What the machine's admission showed of a confirm run: whether it held the whole machine and nothing else did, what doubts say otherwise, how long it waited, and the places.</summary>
 internal sealed record VerdictAdmission(bool Conclusive, IReadOnlyList<string> Doubts, long? WaitedMs, IReadOnlyList<string> Ids);
 
-/// <summary>A failure's reading by its gate's confirm run: <c>confirmed</c>, <c>unconfirmed</c>, <c>inconclusive</c> or <c>dropped</c>, with why, its admission evidence and the composition it was repeated as.</summary>
+/// <summary>A failure's reading by its gate's confirm run: <c>confirmed</c>, <c>unconfirmed</c>, <c>inconclusive</c> or <c>dropped</c>, with why, its admission evidence and the composition it is repeated as.</summary>
 internal sealed record VerdictConfirm(string Result, string? Why)
 {
     public VerdictAdmission? Admission { get; init; }
@@ -126,10 +126,10 @@ internal sealed record IntegrationVerdict(string Action)
     /// <summary>The failure that stops the line (<see cref="VerdictActions.Stop"/>).</summary>
     public VerdictFailure? Failure { get; init; }
 
-    /// <summary>The gates whose only pass was the confirm run (<see cref="VerdictActions.Land"/>).</summary>
+    /// <summary>The gates whose only pass is the confirm run (<see cref="VerdictActions.Land"/>).</summary>
     public IReadOnlyList<string> PassedOnConfirm { get; init; } = [];
 
-    /// <summary>The gates whose pass was a flake, read as a pass and said.</summary>
+    /// <summary>The gates whose pass is a flake, read as a pass and said.</summary>
     public IReadOnlyList<string> Flaked { get; init; } = [];
 
     public IReadOnlyList<VerdictJudgement> Judgements { get; init; } = [];

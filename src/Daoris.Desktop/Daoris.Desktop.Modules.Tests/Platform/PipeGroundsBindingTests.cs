@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// The grounds bind what a press acts on, not a count or a name that stays the same while it changes: a branch rewritten to as many commits reads moved; a discard binds its tree by
-/// <c>id</c> or <c>path</c>; a Resume binds the pause it was asked on; a repository binds what its name resolves to; a terminal's
+/// <c>id</c> or <c>path</c>; a Resume binds the pause it is asked on; a repository binds what its name resolves to; a terminal's
 /// attachments bind their bytes; a baseline that lacks a ground holds nothing; and a setting assigned whole is answered <c>already</c>
 /// unless it is a named exception. Read through the stand-in for the loop's readers (<see cref="StubGrounds"/>).
 /// </summary>
@@ -101,7 +101,7 @@ public sealed class PipeGroundsBindingTests
         Assert.DoesNotContain(row.Grounds.OfType<LoopGround>(), each => each.What == "tree-uncommitted");
     }
 
-    /// <summary>Finding 3: a Resume binds the pause it was asked on, so a pause removed and made again while the ask stays open moves it.</summary>
+    /// <summary>Finding 3: a Resume binds the pause it is asked on, so a pause removed and made again while the ask stays open moves it.</summary>
     [Fact]
     public async Task An_old_Resume_does_not_release_a_newer_pause()
     {

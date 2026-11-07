@@ -34,7 +34,7 @@ internal static class TreeGit
 
     /// <summary>
     /// What <see cref="CommonDirAndBranchAsync"/> read of a tree: git's exit code and words for the common dir, the common dir as
-    /// git printed it, <c>rev-parse --abbrev-ref HEAD</c>'s answer (<c>HEAD</c> where it is detached; empty where it was not
+    /// git printed it, <c>rev-parse --abbrev-ref HEAD</c>'s answer (<c>HEAD</c> where it is detached; empty where it is not
     /// asked), and whether one start gave both, which says the branch's ask succeeded too.
     /// </summary>
     internal sealed record CommonDirAndBranch(int Code, string CommonDir, string Err, string Branch, bool Once)
@@ -74,15 +74,15 @@ internal static class TreeGit
 
     /// <summary>
     /// One git start of the open and undo boundary, as it answered: its answer and what ran. A git that exits non-zero
-    /// with nothing on its error stream has no reason to quote, so the sentence says what was seen of the run instead.
+    /// with nothing on its error stream has no reason to quote, so the sentence says what is seen of the run instead.
     /// </summary>
     /// <param name="Elapsed">From the call to the answer, the gate's wait for a place included.</param>
     /// <param name="Root">The folder git ran in.</param>
-    /// <param name="Arguments">What git was asked, as the caller spelled it: no <c>-c</c> the runner adds.</param>
+    /// <param name="Arguments">What git is asked, as the caller spells it: no <c>-c</c> the runner adds.</param>
     internal sealed record GitSaid(int Code, string Stdout, string Stderr, TimeSpan Elapsed, string Root, IReadOnlyList<string> Arguments)
     {
         /// <summary>
-        /// What was seen where git failed and said nothing: its code (with the status a code git never returns spells), how long it
+        /// What is seen where git failed and said nothing: its code (with the status a code git never returns spells), how long it
         /// ran, the arguments and the folder it ran in, and whether that folder, read now, is gone, or stands with or without a
         /// <c>.git</c>. Null where git succeeded or gave words of its own.
         /// </summary>
@@ -105,10 +105,10 @@ internal static class TreeGit
             }
         }
 
-        /// <summary>git's reason (<see cref="TreeGit.Failure"/>), or what was seen where it gave none.</summary>
+        /// <summary>git's reason (<see cref="TreeGit.Failure"/>), or what is seen where it gives none.</summary>
         internal string Failure() => Unsaid ?? TreeGit.Failure(Stderr);
 
-        /// <summary>The first line git said, or what was seen where it said nothing.</summary>
+        /// <summary>The first line git said, or what is seen where it said nothing.</summary>
         internal string FirstWords() => Unsaid ?? FirstLine(Stderr);
     }
 

@@ -18,7 +18,7 @@ public static class StandingWhy
 
 /// <summary>What the window reads of the roles' judge (<c>STATE</c>'s <c>standingConfirmation</c>): the terminals that hold a role, the steward's acts and its desk.</summary>
 /// <param name="Holds">The roles a terminal holds this run, each by its catalogue id; a role staffed by the terminal and not here is not started.</param>
-/// <param name="Holders">The holders living this run, each with its roles and when its tab was opened, which a later start may add a role to.</param>
+/// <param name="Holders">The holders living this run, each with its roles and when its tab is opened, which a later start may add a role to.</param>
 public sealed record StandingNow(IReadOnlyList<RoleHoldNow> Holds, IReadOnlyList<HolderNow> Holders)
 {
     /// <summary>The steward's acts this run, newest first, from memory alone: the line's entries.</summary>
@@ -103,7 +103,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
     /// <summary>A start of a role the terminal does not hold: its record names another holder, or none.</summary>
     public const string NotTerminal = "not-terminal";
 
-    /// <summary>A role's terminal that could not be started: nothing was kept.</summary>
+    /// <summary>A role's terminal that could not be started: nothing is kept.</summary>
     public const string Unstarted = "unstarted";
 
     /// <summary>
@@ -273,7 +273,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
     public string? Covers(string generation, string repository) => _judge.Covers(generation, repository);
 
     /// <summary>The judge's role method, for every route of the census's <c>Role</c> class: <see cref="RoleJudge.JudgeRole"/>.</summary>
-    /// <param name="nonce">The connection's hello's nonce, taken for this act (each is used once), or null where it was used or expired.</param>
+    /// <param name="nonce">The connection's hello's nonce, taken for this act (each is used once), or null where it is used or expired.</param>
     public RoleJudgement JudgeRole(string module, string route, JsonElement? payload, PipeClientProcess? client, string? nonce) =>
         _judge.JudgeRole(module, route, payload, client, nonce);
 

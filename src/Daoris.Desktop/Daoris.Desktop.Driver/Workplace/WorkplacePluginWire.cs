@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// </summary>
 public interface IWorkplacePluginWire
 {
-    /// <summary>The moment an occasion reckons by: whether an entry was asked in the last minute, and when an answer was asked.</summary>
+    /// <summary>The moment an occasion reckons by: whether an entry is asked in the last minute, and when an answer is asked.</summary>
     DateTimeOffset Now { get; }
 
     /// <summary>Why <paramref name="plugin"/> cannot land work here now, or null (<see cref="LandingPlugins.ProblemOf"/>).</summary>

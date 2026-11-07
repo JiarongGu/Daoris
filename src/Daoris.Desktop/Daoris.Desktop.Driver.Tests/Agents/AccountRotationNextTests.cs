@@ -4,14 +4,14 @@ using static Daoris.Desktop.Driver.Tests.AccountRotationWalkTests;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL6e (D130 §3–§4 as §16.3 amends them): which account the next start of a scope would take, the step of
+/// Which account the next start of a scope would take, the step of
 /// the walk that chose it, and what holds each other account, read without starting anything. Pure: the walk's order with
 /// each account's state as the roster finds it before any probe, the agent's accounts on this machine, and what Daoris
 /// knows of each, written as <see cref="AccountRotationWalkTests"/> writes them.
 /// </summary>
 /// <remarks>
 /// <para>The reason is the step of the walk that chose the account, weighed as <see cref="AccountRotation.Chose"/> weighs it:
-/// against where the list begins, when the start was moved off that account while it was ready; otherwise against the
+/// against where the list begins, when the start is moved off that account while it is ready; otherwise against the
 /// next account that is also ready. An account not ready is a hold, said beside it, never the reason. A scope that names
 /// one account, or none, is that account, or the tool's own sign-in, and no step chose it.</para>
 /// <para>Holds are written <c>name=hold</c>, <c>own</c> for the tool's own sign-in, in the order the walk tried them, then
@@ -223,7 +223,7 @@ public sealed class AccountRotationNextTests
     }
 
     // ——— One judgement: the reason is the step the start's own first line names (`Chose`), where the account it moved
-    // off was ready, or its step among the rest where that account was held; a hold is never the reason.
+    // off is ready, or its step among the rest where that account is held; a hold is never the reason.
 
     [Theory]
     [MemberData(nameof(AccountRotationWalkTests.Choices), MemberType = typeof(AccountRotationWalkTests))]

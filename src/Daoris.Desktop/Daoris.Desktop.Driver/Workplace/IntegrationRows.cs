@@ -97,7 +97,7 @@ internal static class IntegrationRows
         return Encoding.UTF8.GetString(stream.ToArray());
     }
 
-    /// <summary>The gate proof as <see cref="ProofText"/> wrote it, read by the landing record's own readers; null where none was kept or it does not read.</summary>
+    /// <summary>The gate proof as <see cref="ProofText"/> writes it, read by the landing record's own readers; null where none is kept or it does not read.</summary>
     internal static IntegrationProof? ProofOf(string? text)
     {
         if (text is null) return null;

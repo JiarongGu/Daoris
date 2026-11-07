@@ -188,7 +188,7 @@ public sealed class StaffPolicyLimitTickTests : IDisposable
         Assert.Equal((RetryDecision.Approved, "build"), (QuestRetry.Decide("q1", verdicts).Did, QuestRetry.Decide("q1", verdicts).Approve));
         Assert.Empty(Moves());
 
-        // The yes through the terminal's door (REVIEW2 T2), which writes the one approval; the window's route is held by DriverModuleRetryTests.
+        // The yes through the terminal's door, which writes the one approval; the window's route is held by DriverModuleRetryTests.
         var said = new StringWriter();
         var world = new DriverChoicesWorld
         {

@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// <param name="Route">One of <see cref="IntegrationRoutes"/>.</param>
 /// <param name="Line">The line by name it integrates into: the rule's own, or the repository's.</param>
 /// <param name="Policy">The rule's <c>integrate</c> as it stood, every absent key read through the design's <i>Absent</i> column.</param>
-/// <param name="At">When it was admitted.</param>
+/// <param name="At">When it is admitted.</param>
 public sealed record IntegrationRequest(
     string Id, string Repository, string Workspace, string Branch, string Tip, string Route, string Line, IntegrationRequester Requester,
     LandingIntegrate Policy, DateTimeOffset At)
@@ -25,7 +25,7 @@ public sealed record IntegrationRequest(
     /// <summary>The quest that session served, or the one the landing is named for; null for a records branch.</summary>
     public string? Quest { get; init; }
 
-    /// <summary>When the landing it was taken from was made, its identity in the record with its branch and session; null for a records branch.</summary>
+    /// <summary>When the landing it comes from took place, its identity in the record with its branch and session; null for a records branch.</summary>
     public DateTimeOffset? LandedAt { get; init; }
 
     /// <summary>The landing's gate proof as its record keeps it for the tip, never judged again; null for a records branch, which carries no workflow gate.</summary>
@@ -79,7 +79,7 @@ public sealed record IntegrationRequester(string Kind, string Door)
     /// <summary>The steward's act that asked; null for every other requester.</summary>
     public string? Act { get; init; }
 
-    /// <summary>The generation of the steward's appointment the act was made under; null for every other requester.</summary>
+    /// <summary>The generation of the steward's appointment the act is made under; null for every other requester.</summary>
     public long? Generation { get; init; }
 
     /// <summary>The owner's card, a Person route: a landing named by its branch, or a records branch.</summary>

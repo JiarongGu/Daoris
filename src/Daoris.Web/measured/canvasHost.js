@@ -1,9 +1,9 @@
-// CANVAS1a's check in the installed window, for the steward:
+// The check in the installed window, for the steward:
 //  node tools/desktop.mjs eval --file src/Daoris.Web/measured/canvasHost.js
 // with a workflow's chart in its canvas on screen (a repository's Workflow, its editor at 80rem). It reads, in the host itself, what the
-// browser checks cannot: the reader's one stop and list, a Ctrl+wheel taken by the canvas and the window's zoom left where it was, a plain
+// browser checks cannot: the reader's one stop and list, a Ctrl+wheel taken by the canvas and the window's zoom left where it stands, a plain
 // wheel at the top edge left to the page, and a focus walked to the last step with every scroll at 0 and the step revealed. The host's own
-// wheel, pinch and Narrator are still a person's: see D224's note of 2026-11-02.
+// wheel, pinch and Narrator are still a person's.
 (async () => {
   const region = document.querySelector('[role="region"][data-flow-pane]');
   if (!region || !region.querySelector('[data-canvas-world]')) return { ok: false, why: 'no workflow chart in its canvas on screen' };

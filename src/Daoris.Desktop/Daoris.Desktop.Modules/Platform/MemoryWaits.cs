@@ -9,7 +9,7 @@ namespace Daoris.Desktop;
 /// poll and held in memory, so <i>What needs you</i> judges them without a read of its own. An end or a replacement awaiting its approver,
 /// and a stopped session's staged rows, each session once; it raises <see cref="Event"/> when what waits changes, so the band judges again.
 /// </summary>
-/// <remarks>A refused or dropped read keeps what was last read: the service going away takes its rows with it, and the next answer says so.</remarks>
+/// <remarks>A refused or dropped read keeps what the last read held: the service going away takes its rows with it, and the next answer says so.</remarks>
 public sealed class MemoryWaits(IEventBus? bus, MachineLog? log = null)
 {
     /// <summary>The event raised when what waits changes.</summary>
@@ -28,7 +28,7 @@ public sealed class MemoryWaits(IEventBus? bus, MachineLog? log = null)
         lock (_gate) return _waiting;
     }
 
-    /// <summary>Take <paramref name="waiting"/> as what waits now; true, and told, where it differs from what was held.</summary>
+    /// <summary>Take <paramref name="waiting"/> as what waits now; true, and told, where it differs from what is held.</summary>
     public bool Tell(IReadOnlyList<JsonElement> waiting)
     {
         lock (_gate)

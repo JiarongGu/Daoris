@@ -60,7 +60,7 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
 
     /// <summary>
     /// With a `route` the answer also carries the graph that route follows, and the read writes nothing; without one the answer is
-    /// as it was, and the effective graph is not in it.
+    /// unchanged, and the effective graph is not in it.
     /// </summary>
     [Fact]
     public async Task A_route_asks_for_its_effective_graph_and_a_caller_without_one_is_answered_as_before()

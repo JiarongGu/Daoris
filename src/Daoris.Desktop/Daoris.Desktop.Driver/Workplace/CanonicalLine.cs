@@ -39,7 +39,7 @@ public static class CanonicalLine
     }
 
     /// <summary>
-    /// The line, with the checkout asked only when nothing is set, and git only when what it reads moved since it was last asked
+    /// The line, with the checkout asked only when nothing is set, and git only when what it reads moved since the last ask
     /// (<see cref="LineGuesses"/>).
     /// </summary>
     public static Task<Line> ResolveAsync(

@@ -411,7 +411,7 @@ public sealed class StewardDeskTests : IDisposable
     /// <summary>The steward's acts as the catalogue keeps them.</summary>
     private static IReadOnlyList<string> Acts(StandingConfirmation judge) => judge.Appointed().Single(each => each.Id == AppointedRoles.Steward).Hold!.Acts;
 
-    /// <summary>A stand-in caller look: every request the caller <see cref="Key"/> names; and whether it was handed a client.</summary>
+    /// <summary>A stand-in caller look: every request the caller <see cref="Key"/> names; and whether it is handed a client.</summary>
     private sealed class Keyed(string key) : IDeskCaller
     {
         public string Key { get; set; } = key;

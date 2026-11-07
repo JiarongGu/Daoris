@@ -211,7 +211,7 @@ internal sealed class HeldWordsQueue(SessionWords owner, DriverLoop loop, WordsS
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
-                // Held open or gone since it was kept: the words still go.
+                // Held open or gone since being kept: the words still go.
             }
         }
 

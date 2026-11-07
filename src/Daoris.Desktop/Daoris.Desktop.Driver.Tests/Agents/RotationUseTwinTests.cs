@@ -16,11 +16,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// <para>A scope's settings are said in one word each, today's defaults left out, then <c>?name</c> for each value or
 /// setting this build does not know (<see cref="Said"/>). A change is JSON, where <c>"keep": null</c> keeps none,
-/// <c>"curve": null</c> takes the curve out, a field absent is left as it was, and <c>null</c> clears the scope's
+/// <c>"curve": null</c> takes the curve out, a field absent is left as it is, and <c>null</c> clears the scope's
 /// settings. Nothing here counts accounts (§2 rule 6).</para>
 /// <para>These tables hold the file; how a start uses what it reads is <c>AccountRotationWalkTests</c>' and
 /// <c>AccountRotationGoalTests</c>', which read <see cref="RotationUse.Early"/> and <see cref="RotationUse.Near"/>
-/// until SWITCH1b moves the walk to the curve.</para>
+/// until the walk moves to the curve.</para>
 /// </remarks>
 public sealed class RotationUseTwinTests : IDisposable
 {
@@ -206,7 +206,7 @@ public sealed class RotationUseTwinTests : IDisposable
     }
 
     /// <summary>
-    /// SWITCH1d: a curve's problem names its rule and the window, point and numbers it weighs, so the modules refuse it in a
+    /// A curve's problem names its rule and the window, point and numbers it weighs, so the modules refuse it in a
     /// code the page words in the reader's language; its sentence is the twins'.
     /// </summary>
     [Theory]

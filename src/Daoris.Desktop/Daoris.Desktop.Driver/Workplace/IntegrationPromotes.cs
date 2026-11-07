@@ -41,7 +41,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
     /// </summary>
     /// <exception cref="IntegrationClaimLostException">The claim no longer holds the candidate.</exception>
     /// <param name="formedHere">
-    /// The claim's candidate was formed and replayed by this very run, with no step open and nothing promoted, so there is no cut attempt for
+    /// The claim's candidate is formed and replayed by this very run, with no step open and nothing promoted, so there is no cut attempt for
     /// the resume to find and its ancestry read of the line is spared.
     /// </param>
     public async Task<IntegrationPromoteRun> RunAsync(IntegrationClaim claim, IntegrationPromoteAsk ask, CancellationToken ct = default, bool formedHere = false)

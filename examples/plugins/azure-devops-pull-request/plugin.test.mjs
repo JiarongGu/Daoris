@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 const folder = dirname(fileURLToPath(import.meta.url));
 const manifest = JSON.parse(readFileSync(join(folder, 'plugin.json'), 'utf8'));
 
-/** The hook wire this file was written for. */
+/** The hook wire this file is written for. */
 const PROTOCOL = 1;
 
 /** How long the driver waits for a plugin to leave once it is told `shutdown`, in milliseconds. */
@@ -209,7 +209,7 @@ const ANSWERS = {
   'work/event': () => null,
   // An observation's answer is not read: any result will do, and {} is the one to send.
   'state/changed': () => null,
-  // The awaited set's answer is not read either (FABRIC-PERFORM1e).
+  // The awaited set's answer is not read either.
   'work/watch': () => null,
   // An attempt is acknowledged by its invocation, and nothing more: the outcome comes later at `work/step`.
   'work/perform': (answer, frame) => (answer !== null && typeof answer === 'object' && !Array.isArray(answer) && answer.invocation === frame.invocation

@@ -425,7 +425,7 @@ public static class ToolsCommand
         return 0;
     }
 
-    /// <summary>What a look found, each location's sentence, then what each tool runs and the newest the lists name: exit 1 where one was not fetched.</summary>
+    /// <summary>What a look found, each location's sentence, then what each tool runs and the newest the lists name: exit 1 where one is not fetched.</summary>
     private static int Looked(ToolsWorld world, string home, IReadOnlyList<LocationLook> looks)
     {
         void Say(string line) => world.Instance.Out.WriteLine(line);
@@ -506,7 +506,7 @@ public static class ToolsCommand
                 return 1;
             }
 
-            // Published meanwhile, between the plan and the stage: nothing was fetched.
+            // Published meanwhile, between the plan and the stage: nothing is fetched.
             if (staged is null) return await FinishAsync(world, home, tool, plan, fetched: null, published: false, ct).ConfigureAwait(false);
 
             HomeLease lease;
@@ -610,7 +610,7 @@ public static class ToolsCommand
             }
             catch (IOException held)
             {
-                // The file's edit lock, held by another writer for the whole of its wait: nothing was written.
+                // The file's edit lock, held by another writer for the whole of its wait: nothing is written.
                 await error.WriteLineAsync($"{Prefix}: {held.Message}").ConfigureAwait(false);
                 return 2;
             }

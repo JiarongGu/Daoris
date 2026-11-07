@@ -30,7 +30,7 @@ public static class ContainedWhy
 
     /// <summary>
     /// The start could not be handed to the launcher whole: its program not found by a full path, which the launcher would refuse, not
-    /// there at all, or its words one string. Made as it was, so it starts, or fails, as it did before the launcher.
+    /// there at all, or its words one string. Made unchanged, so it starts, or fails, as it would without the launcher.
     /// </summary>
     public const string NotHanded = "not-handed";
 }
@@ -44,7 +44,7 @@ public static class ContainedWhy
 /// </summary>
 /// <remarks>
 /// <para><b>Best effort for the start, published for every judge</b>: a start that cannot be contained (no launcher laid out,
-/// a job the system refuses, a name already held) is made as it was, and while any such start of this process lives, the process holds a
+/// a job the system refuses, a name already held) is made unchanged, and while any such start of this process lives, the process holds a
 /// second named object of the prefix, an event <c>Local\daoris-agents-&lt;process id&gt;-open</c>, which part (ii)'s judge reads as
 /// <c>untold</c>. A name lives only while a handle to it is open, so a reused process id meets no stale one.</para>
 /// <para>A test makes its own (<see cref="AgentJobs(int, Func{string, ValueTuple{ProcessJob, bool}})"/>), under a process id that is not its own,
@@ -79,7 +79,7 @@ public sealed class AgentJobs : IDisposable
     /// <summary>The name of the event a Daoris process holds while an agent of its runs uncontained.</summary>
     public static string OpenNameOf(int processId) => NameOf(processId) + "-open";
 
-    /// <summary>The jobs this flow's starts are made under: a test's, where one was handed in, else this process's.</summary>
+    /// <summary>The jobs this flow's starts are made under: a test's, where one is handed in, else this process's.</summary>
     public static AgentJobs Current => s_within.Value ?? Shared;
 
     /// <summary>This one's job's name.</summary>
@@ -99,7 +99,7 @@ public sealed class AgentJobs : IDisposable
 
     /// <summary>
     /// Make <paramref name="info"/>'s start the launcher's in place, joining this process's agents' job first and
-    /// <paramref name="piece"/>'s beneath it, where it can be; otherwise leave it as it was and say why. The answer holds this process's
+    /// <paramref name="piece"/>'s beneath it, where it can be; otherwise leave it unchanged and say why. The answer holds this process's
     /// open event for an uncontained start until <see cref="AgentStart.Lives"/> sees its process end, or it is disposed unstarted.
     /// </summary>
     /// <param name="launcher">The launcher laid out beside the home (<see cref="PieceStarts.LauncherPath"/>), or null for none.</param>
@@ -250,7 +250,7 @@ public sealed class AgentStart : IDisposable
     /// <summary>Whether its harness is born in this process's agents' job.</summary>
     public bool Contained => Why is null;
 
-    /// <summary>Why not (<see cref="ContainedWhy"/>), or null where it was.</summary>
+    /// <summary>Why not (<see cref="ContainedWhy"/>), or null where it is.</summary>
     public string? Why { get; }
 
     /// <summary>

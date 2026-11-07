@@ -42,7 +42,7 @@ public sealed class HelpStarting
         lock (_gate) return _starting.TryGetValue(RemoteTarget.Workspace(workspace), out var starting) ? starting.Session : null;
     }
 
-    /// <summary>A workspace's conversation was placed: words said to it wait from now until its start is <see cref="Over"/>.</summary>
+    /// <summary>A workspace's conversation is placed: words said to it wait from now until its start is <see cref="Over"/>.</summary>
     public void Placed(string? workspace, string session)
     {
         lock (_gate) _starting[RemoteTarget.Workspace(workspace)] = (session, []);

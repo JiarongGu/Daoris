@@ -58,7 +58,7 @@ public sealed class InAppBrowserTests : Bridge
     /// <summary>
     /// The endpoint is held without the browser. Holding it, and connecting nothing, brings nothing up; the first
     /// connection brings it up and what the client sends reaches the browser and comes back, so a CDP client's first call is
-    /// served by a browser that was not running when the endpoint was handed.
+    /// served by a browser that is not running when the endpoint is handed.
     /// </summary>
     [Fact]
     public async Task The_endpoint_brings_the_browser_up_at_its_first_connection_and_relays_it()

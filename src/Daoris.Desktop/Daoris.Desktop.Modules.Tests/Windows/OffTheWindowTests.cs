@@ -29,7 +29,7 @@ public sealed class OffTheWindowTests
 
         public override SynchronizationContext CreateCopy() => this;
 
-        /// <summary>Run what was posted, on this thread, as the window's pump does.</summary>
+        /// <summary>Run what is posted, on this thread, as the window's pump does.</summary>
         public void Pump()
         {
             while (_posted.TryDequeue(out var each))
@@ -93,7 +93,7 @@ public sealed class OffTheWindowTests
         }
     }
 
-    /// <summary>The window's thread takes up what was posted to it until <paramref name="done"/> is.</summary>
+    /// <summary>The window's thread takes up what is posted to it until <paramref name="done"/> is.</summary>
     private static async Task PumpUntil(WindowContext window, Task done)
     {
         var until = DateTime.UtcNow + Poll.Patience;

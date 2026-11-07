@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <summary>
 /// The presses waiting at the service's door, told to the windows: the
 /// desktop's host holds one wait on the service and tells every window what waits at each change, beside the pipe's, so no window
-/// polls. An answer that holds what was told tells nothing; an older service, with no held door, has its list read here.
+/// polls. An answer that holds what is told tells nothing; an older service, with no held door, has its list read here.
 /// </summary>
 public sealed class ServiceConfirmationsTests : Bridge
 {

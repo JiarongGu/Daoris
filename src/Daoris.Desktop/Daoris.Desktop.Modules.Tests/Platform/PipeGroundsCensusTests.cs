@@ -310,7 +310,7 @@ public sealed class PipeGroundsCensusTests
     };
 
     /// <summary>
-    /// The read's answer made as it was asked (<paramref name="later"/> false: the evening before) or the next morning, a newer Daoris
+    /// The read's answer made as it is asked (<paramref name="later"/> false: the evening before) or the next morning, a newer Daoris
     /// after an update, sizes and words all moved and nothing it acts on, and its fingerprint.
     /// </summary>
     private static async Task<string> Fingerprint(ReadGround ground, string answer, JsonElement press, bool later)

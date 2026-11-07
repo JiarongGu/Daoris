@@ -25,7 +25,7 @@ public static class AfterLandingDispositions
     public const string Contained = "contained";
 
     /// <summary>
-    /// Its replay conflicts, and in every conflicted hunk the line's side was changed after the frozen base by a commit outside the unit's work:
+    /// Its replay conflicts, and in every conflicted hunk the line's side is changed after the frozen base by a commit outside the unit's work:
     /// kept on a recovery ref and offered as superseded or rebase it, visible until one is answered.
     /// </summary>
     public const string Superseded = "superseded";
@@ -43,7 +43,7 @@ public static class AfterLandingDispositions
 /// <remarks>
 /// <para><b>Superseded, hunk by hunk.</b> A conflicted file's hunks are where the commit's change and the line's change since the commit's
 /// parent meet, touching lines included, as git's merge counts a conflict. The line's side of each is read by <c>git blame</c> on the
-/// promoted line: the hunk is superseded where a line of it was last changed by a commit after the frozen base that is not the unit's own
+/// promoted line: the hunk is superseded where a line of it is last changed by a commit after the frozen base that is not the unit's own
 /// landed work. The commit is superseded only where every such hunk is, by the first such commit found. A hunk whose line's side is a
 /// removal, which blame cannot read, and a file git cannot diff as text, are read by the file: some commit outside the unit's work after the
 /// base changed it.</para>
@@ -61,7 +61,7 @@ public static class IntegrationAfterLanding
     /// <paramref name="promoted"/>; null where git could not say for one of them, which is asked again rather than guessed.
     /// </summary>
     /// <param name="line">The line's name, for the judgement by content.</param>
-    /// <param name="frozenBase">The line's commit the unit's request was judged on: what the line changed after it is the line's side.</param>
+    /// <param name="frozenBase">The line's commit the unit's request is judged on: what the line changed after it is the line's side.</param>
     /// <param name="own">The line's commits that are the unit's own landed work (its replayed commits and its merge), which supersede nothing.</param>
     public static async Task<IReadOnlyList<AfterLandingCommit>?> JudgeAsync(
         string root, string line, string promoted, string frozenBase, string frozenTip, string branchTip, IReadOnlyCollection<string> own,

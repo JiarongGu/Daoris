@@ -184,7 +184,7 @@ public sealed class TreeLock : IDisposable
         HeldWords.ReplayingWhy(repository);
 
     /// <summary>
-    /// What a replay says of each branch it left because the repository was held: a session starting in it, or, where <paramref name="by"/>
+    /// What a replay says of each branch it left because the repository is held: a session starting in it, or, where <paramref name="by"/>
     /// names the writer that held it alone (<see cref="HolderOf"/>), that writer.
     /// </summary>
     public static string Starting(string repository, string? by = null) => by is null
@@ -192,7 +192,7 @@ public sealed class TreeLock : IDisposable
         : $"{Held(repository, by)}, so its branches were left as they were for another look";
 
     /// <summary>
-    /// What a writer of the checkout says of what held the repository when it was refused: its holder alone, by what it said, or else a
+    /// What a writer of the checkout says of what held the repository when it is refused: its holder alone, by what it said, or else a
     /// start, which says nothing.
     /// </summary>
     public static string Held(string repository, string? by) => by switch

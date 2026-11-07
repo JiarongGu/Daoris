@@ -7,8 +7,7 @@
  *
  * ## Why
  *
- * A merge used to block on the cheap checks alone, in the main checkout, and the CI beside gated main's tip after it. A merge now
- * waits on a scoped run of what it reaches, on a candidate commit in a tree of its own (`local/scope-tree`), so no dispatch waits
+ * A merge waits on a scoped run of what it reaches, on a candidate commit in a tree of its own (`local/scope-tree`), so no dispatch waits
  * on the main checkout and main moves only by a fast-forward onto a candidate that passed. The full set stays the background
  * run's, which the install waits for.
  *
@@ -177,9 +176,9 @@ export const messageOf = (entry) => Buffer.from(entry.message ?? '', 'base64').t
  * Queued branches taken off the queue; a candidate's branches end it and are handed back (`--drop-batch`). Answers the queue, the
  * branches dropped and, when a candidate ended, `ended`: that candidate, whose runner is the one to end its run.
  *
- * QUEUEWAITEND1: every request a drop takes off is handed back as `dropped`, a queued one and one forming as a candidate's, so
- * its waiter reads an outcome; one taken off the queue with no record had a waiter that never ended. A drop of some of the requests
- * forming leaves the rest forming (the runner forms them again, never writing the candidate it was making).
+ * Every request a drop takes off is handed back as `dropped`, a queued one and one forming as a candidate's, so
+ * its waiter reads an outcome; a request taken off with no record would leave a waiter that never ends. A drop of some of the requests
+ * forming leaves the rest forming (the runner forms them again, never writing the candidate it is making).
  */
 export function dropQueued(queue, branches, at = new Date().toISOString()) {
   const drop = (branch) => branches.length === 0 || branches.includes(branch);
@@ -326,7 +325,7 @@ export function nextMembers(queued, { max = CANDIDATE_MAX, oneAtATime = false } 
 /**
  * What holds a contained member (C4), its `containedIn`: the line (`IN_THE_LINE`, `{ line: true }`), needing no earlier
  * member to promote, or an earlier member (`{ branch, request }`). The two are fields apart, so no branch's name reads as the line:
- * the marker was once the word `line`, and a container whose branch was named `line` settled what it held as the line's.
+ * a marker that is the word `line` would let a container whose branch is named `line` settle what it held as the line's.
  */
 export const IN_THE_LINE = Object.freeze({ line: true });
 
@@ -372,7 +371,7 @@ export async function formCandidate({ base, members, merge, at, reforms = 0, rec
   return { candidate, setAside, contained };
 }
 
-/** A contained member as its own request again: the frozen request it was queued with, without what the candidate added. */
+/** A contained member as its own request again: the frozen request it carried when queued, without what the candidate added. */
 const requestOf = ({ containedIn, containedAt, ...request }) => request;
 
 /**
@@ -421,7 +420,7 @@ export function recordsOnly(paths, ruleOf) {
 
 /**
  * What the runner does with a candidate before anything is judged, after a start or a crash (§4.1, *Durable state*): `promoted`
- * when it was `promoting` or `green` and main holds its tip (`isAncestor(tip, mainTip)`); `reform` when main left its base;
+ * `promoted` when it is `promoting` or `green` and main holds its tip (`isAncestor(tip, mainTip)`); `reform` when main left its base;
  * `promote` when it is green on its base; `run` when its run's process is gone; else `wait`. A candidate held for a decide
  * waits: no decide door exists yet (§8), so a drop or a commit on main is what moves it.
  */
@@ -446,7 +445,7 @@ export function promotion(candidate, { mainTip, clean }) {
   return { action: 'promote' };
 }
 
-/** A candidate re-formed on a moved main: its re-forms counted, and whether the move was records only (§4.1 point 3). */
+/** A candidate re-formed on a moved main: its re-forms counted, and whether the move is records only. */
 export function reformCount(candidate, { recordsOnlyMove }) {
   const reforms = (candidate?.reforms ?? 0) + 1;
   return { reforms, recordsOnly: recordsOnlyMove, heldByDirect: reforms >= HELD_REFORMS };
@@ -552,7 +551,7 @@ export async function judgeFailure(failure, { members, run, alone = null, known 
 
 /**
  * A death of memory, the machine's (§4.1 point 4): never run on the base or over the prefixes, never a stop or a hand-back. Given
- * the gate's attempts so far (`{ died, peakGb? }` each, oldest first), whether the hold was released by an admission
+ * the gate's attempts so far (`{ died, peakGb? }` each, oldest first), whether an admission released the hold
  * (`afterHold`), and its reserved need, answers what happens next: `again` (run it once more, whole and alone, once its memory is
  * free), `pass` (a pass after a death, FLAKE of memory, counted as the gate's pass), `hold` (held as memory until the admission
  * reserves its need), or `judge` (on the run after the hold, its own job's peak past its need: the gate's failure, judged as one
@@ -583,7 +582,7 @@ export function memoryStep(attempts, { afterHold = false, needGb = null } = {}) 
  * - `inconclusive` reads as an unresolved failure whatever the policy says, never `land`, and is listed apart (`inconclusive`).
  * - `unconfirmed` is a sighting (`sightings`, each `{ failure, confirm }`), never a flake and never a pass, so no candidate it
  * touches is `green`. Under `split` it is an unresolved failure: several members run one at a time, one of one is handed back
- * unresolved. Where nothing splits the candidate and a member was handed back, the rest are formed again and judged on their own
+ * unresolved. Where nothing splits the candidate and a member is handed back, the rest are formed again and judged on their own
  * tree. Otherwise, under `hold`, the candidate waits for a decide (`hold`, `on: 'decide'`); under `land`, the confirm run's pass
  * is the gate's verdict on that tip alone (`land`, `passedOnConfirm` naming the gates), and the candidate goes on to promotion.
  */
@@ -705,7 +704,7 @@ export async function confirmStep({ take, run, halted = () => false, what = 'a c
   if (failures.length && failures.every((failure) => failure?.signature)) {
     return { result: 'confirmed', why: 'it failed again, holding the whole admission', evidence, composition, failures };
   }
-  // INTEGRATE1b part 2: a run that answers neither (a death of memory, the machine's) says why in its own words.
+  // A run that answers neither (a death of memory, the machine's) says why in its own words.
   return { result: 'inconclusive', why: typeof outcome?.why === 'string' && outcome.why ? outcome.why : "the confirm run's answer is neither a pass nor failures with their signatures", evidence, composition };
 }
 
@@ -983,7 +982,7 @@ export function overdueWaits(record, now = Date.now()) {
 // ---------------------------------------------------------------------------------------------------
 // What `--queue` says
 
-/** The queue as lines: the stop, the candidate with its members and state, what is queued and whether its tip still is the branch's, what was handed back. */
+/** The queue as lines: the stop, the candidate with its members and state, what is queued and whether its tip still is the branch's, what is handed back. */
 export function queueLines(queue, { branchTip = () => null, now = Date.now() } = {}) {
   const out = [];
   if (queue.stop) {

@@ -1,4 +1,4 @@
-// The kit's half of a plugin that works (FABRIC-PERFORM1e; the fabric events design §D3, §D6, §D9): what Daoris's plugin kit
+// The kit's half of a plugin that works: what Daoris's plugin kit
 // promises every plugin at the work points, so its author writes only the external calls, in plugin.mjs.
 // Daoris's plugin kit wrote this file, and `daoris plugin new` writes it again for a newer build: change plugin.mjs, not
 // this. README.md says what each part promises; `node --test` here checks it (plugin.test.mjs, plugin.contract.test.mjs).
@@ -32,7 +32,7 @@ const manifest = JSON.parse(readFileSync(join(folder, 'plugin.json'), 'utf8'));
 export function work({ data, send, say, act, check, remove, observe }) {
   const world = process.env.DAORIS_PLUGIN_WORLD ? standIn(process.env.DAORIS_PLUGIN_WORLD) : null;
   const calls = world ?? { act, check, remove, observe };
-  // This process's life: an attempt begun under another was begun by a process that has since gone.
+  // This process's life: an attempt begun under another is one begun by a process that has since gone.
   const life = `${process.pid}-${Date.now()}`;
 
   mkdirSync(data, { recursive: true });

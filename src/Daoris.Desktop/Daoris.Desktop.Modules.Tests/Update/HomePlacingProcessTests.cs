@@ -131,7 +131,7 @@ public sealed class HomePlacingProcessTests : IDisposable
     /// <summary>
     /// 🔴 A held lease is never renamed under itself: a lease at the old place naming a live process (a
     /// build of the other layout, here a waiting node) holds the move off and stays where it is; its holder gone, the rest
-    /// moves and the lease, now stale, is still left where it was.
+    /// moves and the lease, now stale, is still left in place.
     /// </summary>
     [Fact]
     public void A_lease_a_live_process_holds_is_never_moved_and_moves_nothing_under_it()

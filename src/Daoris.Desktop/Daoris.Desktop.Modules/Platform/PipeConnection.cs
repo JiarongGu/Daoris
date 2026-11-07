@@ -56,7 +56,7 @@ internal sealed class PipeConnection(InstancePipe pipe, NamedPipeServerStream st
         }
     }
 
-    /// <summary>The hello's nonce for one act, forgotten as it is taken: null where none was drawn, it was used, or its minute passed.</summary>
+    /// <summary>The hello's nonce for one act, forgotten as it is taken: null where none is drawn, it is used, or its minute passes.</summary>
     public string? TakeNonce()
     {
         lock (_nonceGate)
@@ -174,7 +174,7 @@ internal sealed class PipeConnection(InstancePipe pipe, NamedPipeServerStream st
                     line.Write(buffer, start, at - start);
                     start = at + 1;
                     if (line.Length > pipe.Limits.LineBytes) return;
-                    // Lines past the bound pile up only where nothing it was answered is read: the connection ends.
+                    // Lines past the bound pile up only where the answers sent back are never read: the connection ends.
                     if (!_lines.Writer.TryWrite(Utf8.GetString(line.GetBuffer(), 0, (int)line.Length).TrimEnd('\r')))
                     {
                         Close();

@@ -19,8 +19,8 @@ public static class IntegrationEpoch
         string.Join('|', Format, policy.Commit, policy.Batch, policy.Order, policy.Gates, policy.Unreached, policy.Reached, policy.Overlap, blob ?? "", policy.Line ?? "");
 
     /// <summary>
-    /// The accepted declaration's blob the epoch froze; null where the epoch is none (an older record), or where nothing was accepted when the
-    /// request was admitted, so the owner's later acceptance is the one that runs.
+    /// The accepted declaration's blob the epoch froze; null where the epoch is none (an older record), or where nothing stood accepted at
+    /// the request's admission, so the owner's later acceptance is the one that runs.
     /// </summary>
     public static string? BlobOf(string? epoch)
     {

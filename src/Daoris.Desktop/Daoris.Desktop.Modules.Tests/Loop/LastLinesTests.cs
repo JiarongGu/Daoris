@@ -36,7 +36,7 @@ public sealed class LastLinesTests
         Assert.Null(await SaidAsync("\n  \r\n\t\n"));
     }
 
-    /// <summary>A few lines, the newest: what was printed last is what came nearest the exit.</summary>
+    /// <summary>A few lines, the newest: what is printed last is what comes nearest the exit.</summary>
     [Fact]
     public async Task Only_the_newest_few_lines_are_kept()
     {
@@ -65,7 +65,7 @@ public sealed class LastLinesTests
         Assert.DoesNotContain("oldest", said);
     }
 
-    /// <summary>A line longer than the bound keeps its start, where a sentence says what it is about, and says it was cut.</summary>
+    /// <summary>A line longer than the bound keeps its start, where a sentence says what it is about, and says it is cut.</summary>
     [Fact]
     public async Task A_line_longer_than_the_bound_keeps_its_start_and_says_it_was_cut()
     {

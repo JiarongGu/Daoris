@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PARALLEL1c: choosing an account no longer waits on another account's probe. A walk
+/// Choosing an account does not wait on another account's probe. A walk
 /// asks its questions outside its gate, each under the account's own lock, and holds the gate only to read again what the
 /// questions left and to count the account it chose; a start whose account stays locked past its patience counts nothing and
 /// runs elsewhere, since a question in flight on it may be spending its single-use refresh token.
@@ -99,7 +99,7 @@ public sealed class AccountWalkGateTests : IDisposable
     {
         Accounts("account-1", "account-2");
         Wire(s => s.WithDefault("fake", "account-1").WithRotation("fake", ["account-1", "account-2"]).WithUse("fake", new UseChange(Use: "order")));
-        // Read signed out over an hour ago, so the next start that walks to it asks it again (TOOL6g's backstop).
+        // Read signed out over an hour ago, so the next start that walks to it asks it again.
         AccountReads.Keep(_home, "fake", "account-1", LoginState.Out, Seen - HarnessRoster.SignedOutAskedAgain - TimeSpan.FromMinutes(1));
         var roster = Roster(status: async account =>
         {
@@ -170,7 +170,7 @@ public sealed class AccountWalkGateTests : IDisposable
             var selection = await roster.SelectAsync("fake", Config, null, null).WaitAsync(Poll.Patience);
 
             Assert.Equal(("account-2", true), (selection.Profile, selection.Allowed));
-            // The start's line says the account was passed for its lock, never that the goal ranked another ahead of it.
+            // The start's line says the account is passed for its lock, never that the goal ranked another ahead of it.
             Assert.Equal(WalkStep.Locked, selection.Rotated!.Step);
             Assert.Equal(OpeningWhy.Locked, Assert.Single(selection.Steps!).Why);
             Assert.Contains("being asked about by another question", selection.Rotated.Why);
@@ -236,7 +236,7 @@ public sealed class AccountWalkGateTests : IDisposable
         // takes asked, never by the clock, which a loaded machine stretched past two waits while the walk's other work ran.
         Assert.True(asked == 1, $"the walk asked {asked} takes of a lock it had already not had");
         Assert.False(roster.Busy("fake", "account-1"));
-        // Nothing was asked, so nothing was kept: its last reading stands.
+        // Nothing is asked, so nothing is kept: its last reading stands.
         Assert.Equal(LoginState.Out, AccountReads.Of(_home, "fake").Accounts["account-1"].Login);
     }
 

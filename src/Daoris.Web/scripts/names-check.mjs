@@ -13,11 +13,11 @@
 // - person: each person's press names its act in every language (`person-words.mjs`, from the generated routes);
 // - kind: each node kind the driver's kit declares has its two titles and each outcome's word in every language (`kind-words.mjs`);
 // - reword: a word a term lists under `avoid.later` is one a later rewording will forbid. Strings that still say it are
-//  reported; nothing fails on it. The glossary lists none now (SETUPUX1w moved them to `avoid`).
+//  reported; nothing fails on it. The glossary lists none now.
 // Alone it REPORTS and exits 0. It exits 2 when the glossary itself is malformed, since a glossary that
 // cannot be read has stopped checking anything. `--strict` exits 1 on a glossary, form or door finding
 // (facts) and never on a budget (a judgement: a character count estimates a width, and the window is where
-// a width is a fact). NAME1b renamed what NAME1a's audit found and put `--strict` in the web's build,
+// a width is a fact). The web's build runs `--strict`,
 // beside the parity check; `--all` also reads every sentence for the words a term must not be called, and
 // reports. A budget judgement looked at and kept is the glossary's `accepted`, with the name it accepted and
 // why: it stops being reported while the name stands, and a rename brings it back to be judged again.

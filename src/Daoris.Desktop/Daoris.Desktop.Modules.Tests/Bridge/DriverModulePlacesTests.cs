@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// <c>PLACES</c>, each place's driving, its works and the values of its head's
-/// line with where each was set, equal to the readers a start uses; and <c>ROLE_STRUCTURE</c> asked for a chosen place's chain alone.
+/// line with where each is set, equal to the readers a start uses; and <c>ROLE_STRUCTURE</c> asked for a chosen place's chain alone.
 /// </summary>
 public sealed class DriverModulePlacesTests : DriverModuleBridge
 {

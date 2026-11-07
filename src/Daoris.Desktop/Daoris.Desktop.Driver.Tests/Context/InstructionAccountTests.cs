@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What a session was handed, section by section: the composer's account of each instruction it
+/// What a session is handed, section by section: the composer's account of each instruction it
 /// composes, each section's size, its source and what its bound left out. The words are the goldens' (<see
 /// cref="TargetPromptGoldenTests"/>); this holds the account beside them, and every bound's cut.
 /// </summary>
@@ -78,7 +78,7 @@ public sealed class InstructionAccountTests
         }
     }
 
-    /// <summary>The claiming instruction's sections, in the order it holds them, then what was not handed and why.</summary>
+    /// <summary>The claiming instruction's sections, in the order it holds them, then what is not handed and why.</summary>
     [Fact]
     public void A_claims_sections_follow_the_instruction_and_the_ones_not_handed_say_why()
     {
@@ -105,7 +105,7 @@ public sealed class InstructionAccountTests
     }
 
     /// <summary>
-    /// CONTEXTONE1c: the census of what the standing block replaced. No instruction of any kind of start holds the map, the
+    /// The census of what the standing block replaced. No instruction of any kind of start holds the map, the
     /// look, the indexes or the standing answer as a section of its own, nor says either of their old leads; and none says them absent.
     /// </summary>
     [Theory]
@@ -276,7 +276,7 @@ public sealed class InstructionAccountTests
     }
 
     /// <summary>
-    /// SESSCTX1b (the session-context design §3.4): a carry-on's brief is a part of its instruction, counted by the brief's own
+    /// A carry-on's brief is a part of its instruction, counted by the brief's own
     /// sections within its account, so the sizes still add up; its plan past its bound is counted there.
     /// </summary>
     [Fact]

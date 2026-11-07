@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 internal static class TreeLinks
 {
     /// <summary>
-    /// The most entries looked at in one tree before its removal: past it the tree stays, since what was not looked through may
+    /// The most entries looked at in one tree before its removal: past it the tree stays, since what is not looked through may
     /// hold a link. Each entry is read once, its kind from the folder's own listing, which costs far less than git's delete of it
     /// after; a tree's installed dependencies run to tens of thousands.
     /// </summary>

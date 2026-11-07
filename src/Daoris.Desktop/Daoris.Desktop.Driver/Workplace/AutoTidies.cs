@@ -6,13 +6,13 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What the look's own tidy did in one repository: each session branch judged, removed or kept, or why
-/// none was judged this look.
+/// none is judged this look.
 /// </summary>
 /// <param name="Results">
 /// Each session branch judged: those the look would not take, kept as judged; then what the clean-up's press path did with each
 /// it would, in its own words (<see cref="SessionTrees.SweepAsync"/>).
 /// </param>
-/// <param name="Held">Why nothing was judged in the repository this look (<see cref="TidyKept"/>); null where the press's path ran.</param>
+/// <param name="Held">Why nothing is judged in the repository this look (<see cref="TidyKept"/>); null where the press's path ran.</param>
 /// <param name="Detail">git's or the service's own words beside <paramref name="Held"/>.</param>
 public sealed record TidyPass(IReadOnlyList<SweepResult> Results, string? Held = null, string? Detail = null)
 {
@@ -51,7 +51,7 @@ public static class TidyKept
     /// <summary>git could not answer: a guard, the branches' list, or whether the checkout is a repository of its own.</summary>
     public const string Unread = "unread";
 
-    /// <summary>A session was starting in one of the repository's trees, which holds them (<see cref="TreeLock"/>).</summary>
+    /// <summary>A session is starting in one of the repository's trees, which holds them (<see cref="TreeLock"/>).</summary>
     public const string Starting = "starting";
 
     /// <summary>The service did not say which sessions run or wait, or which repositories are here.</summary>

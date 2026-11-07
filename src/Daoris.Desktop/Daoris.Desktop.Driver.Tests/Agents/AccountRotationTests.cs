@@ -5,17 +5,17 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL4f: the next start runs on the next ready account of the person's order. The walk is
+/// The next start runs on the next ready account of the person's order. The walk is
 /// <see cref="HarnessRoster.SelectAsync"/>'s: the account the scope begins at runs if it is ready; if not, the next ready
 /// account of its list runs; a pick, the tool's own home and an account outside the list never rotate; and when no account
-/// is ready the start waits for the first reset. TOOL6b reads one scope and, by default, the goal's walk,
-/// which on a fresh machine with nothing running starts where D125 did: <c>AccountRotationGoalTests</c> holds the rest.
+/// is ready the start waits for the first reset. The goal's walk reads one scope and is the default,
+/// which on a fresh machine with nothing running starts at the list's first: <c>AccountRotationGoalTests</c> holds the rest.
 /// </summary>
 /// <remarks>
 /// Nothing here starts a process. The harness is present by a file look (<see cref="TestAgent.ProbeByPresence"/>)
 /// on a command this test writes, and asks nobody whether an account is signed in, so each account is ready unless it
 /// is cooling or refused. Where a hold must come before any probe, the command is one no machine has, so a probe that
-/// was reached would say the harness is not installed. Signed out, which only a probe says, is walked past in
+/// is reached would say the harness is not installed. Signed out, which only a probe says, is walked past in
 /// <c>AccountRotationTickTests</c>, the <c>Process</c> half, and in the words below.
 /// </remarks>
 public sealed class AccountRotationTests : IDisposable
@@ -181,7 +181,7 @@ public sealed class AccountRotationTests : IDisposable
     }
 
     /// <summary>
-    /// TOOL4j: the protocol stub runs as the stub's accounts, so its start walks the stub's order and its spawn is handed
+    /// The protocol stub runs as the stub's accounts, so its start walks the stub's order and its spawn is handed
     /// the stub account it runs as. Present by a file look on the command this test writes; the stub, whose own command
     /// is not named here, is asked nothing, so every account is ready unless it is cooling.
     /// </summary>
@@ -259,7 +259,7 @@ public sealed class AccountRotationTests : IDisposable
     }
 
     /// <summary>
-    /// OWNSPACE1a (amending D125 point 5): where no default and no list name an account, the agent's Daoris accounts
+    /// Where no default and no list name an account, the agent's Daoris accounts
     /// carry the start, so the tool's own home cooling holds nothing.
     /// </summary>
     [Fact]
@@ -275,7 +275,7 @@ public sealed class AccountRotationTests : IDisposable
     }
 
     /// <summary>
-    /// TOOL6b: a scope with a list begins within it, at its first where it names no default, so the tool's own
+    /// A scope with a list begins within it, at its first where it names no default, so the tool's own
     /// sign-in, cooling or not, never runs where a list names accounts.
     /// </summary>
     [Fact]
@@ -291,8 +291,8 @@ public sealed class AccountRotationTests : IDisposable
     }
 
     /// <summary>
-    /// TOOL6b: a default outside its scope's list, which both doors refuse and only a hand edit writes, is read
-    /// with the list winning: the start begins at the list's first and walks it. D125 held such a start on its default.
+    /// A default outside its scope's list, which both doors refuse and only a hand edit writes, is read
+    /// with the list winning: the start begins at the list's first and walks it.
     /// </summary>
     [Fact]
     public async Task A_default_its_list_does_not_hold_is_placed_last_by_the_whole_order_and_begins_the_walk()
@@ -309,7 +309,7 @@ public sealed class AccountRotationTests : IDisposable
 
     /// <summary>
     /// Rewritten by POOL1a2: a machine that named one account and no list
-    /// once ran on that account alone, so its cool-off held the start byte for byte as before TOOL4f. Read as the set now, that
+    /// is read as the set now: that
     /// account is the order's first under <c>use: order</c>, and the start passes to the next account of the set.
     /// </summary>
     [Fact]
@@ -335,7 +335,7 @@ public sealed class AccountRotationTests : IDisposable
         var first = Cool("account-2", Until);
         Cool("account-3", Until.AddDays(1));
 
-        // A probe that was reached would find nothing on this PATH, and say so instead.
+        // A probe that is reached would find nothing on this PATH, and say so instead.
         var selection = await Roster(Nowhere).SelectAsync("fake", Config, null, null);
 
         Assert.False(selection.Allowed);
@@ -379,7 +379,7 @@ public sealed class AccountRotationTests : IDisposable
         Assert.Equal(("the first was refused.", (CoolingEntry?)null), (selection.Refusal, selection.Cooling));
     }
 
-    // ——— ROSTERREFUSE2: the roster's other refusals carry their parts by code beside the English, unchanged to the byte.
+    // ——— The roster's other refusals carry their parts by code beside the English, unchanged to the byte.
 
     [Fact]
     public async Task A_wait_over_an_order_carries_its_parts_by_code_one_clause_each()
@@ -544,7 +544,7 @@ public sealed class AccountRotationTests : IDisposable
     }
 
     /// <summary>
-    /// TOOL6g: a wait that passed accounts not signed in names each, and the sign-in that would start it sooner, so a
+    /// A wait that passed accounts not signed in names each, and the sign-in that would start it sooner, so a
     /// person reading *waits for `account-2`* knows a sign-in frees it.
     /// </summary>
     [Fact]
@@ -560,7 +560,7 @@ public sealed class AccountRotationTests : IDisposable
             RotationWords.Wait("fake", [new("account-1", AccountReadiness.SignedOut), new("account-2", AccountReadiness.Cooling, cooling)], Zone));
     }
 
-    /// <summary>TOOL6g: with nothing cooling, nothing comes ready by itself, so every account not signed in is named with its sign-in.</summary>
+    /// <summary>With nothing cooling, nothing comes ready by itself, so every account not signed in is named with its sign-in.</summary>
     [Fact]
     public void A_hold_with_nothing_cooling_names_every_account_not_signed_in_and_each_sign_in()
     {
@@ -660,8 +660,8 @@ public sealed class AccountRotationTests : IDisposable
         Assert.Equal(400_000L, RotatedOpening.ContextOf(usage, events, "s1"));
     }
 
-    // ——— The log (§5.4; D130 §13 as §16 amends it): `account.rotated`, by profile name and nothing else of an account, with
-    // the step that moved the start, the scope whose list it was, whether any account had said what it has left, and what
+    // ——— The log (§5.4): `account.rotated`, by profile name and nothing else of an account, with
+    // the step that moved the start, the scope whose list it is, whether any account had said what it has left, and what
     // the two accounts said, by Daoris's word alone.
 
     [Fact]

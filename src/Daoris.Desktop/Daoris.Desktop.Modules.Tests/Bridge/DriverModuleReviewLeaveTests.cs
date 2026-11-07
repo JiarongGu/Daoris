@@ -184,7 +184,7 @@ public sealed class DriverModuleReviewLeaveTests() : DriverModuleBridge("review-
 
     private readonly List<string> _commands = [];
 
-    /// <summary>Each start's git arguments, in the order the stand-in was asked.</summary>
+    /// <summary>Each start's git arguments, in the order the stand-in is asked.</summary>
     private IReadOnlyList<string> Commands
     {
         get

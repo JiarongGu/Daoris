@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// <para>An entry is said as JSON: whose, until when and seen when (UTC, to the second), and what said so; <c>null</c>
-/// is no account cooling. An <c>after</c> is the file's JSON once the end is done, or <c>unchanged</c> where nothing was
+/// is no account cooling. An <c>after</c> is the file's JSON once the end is done, or <c>unchanged</c> where nothing is
 /// written.</para>
 /// <para>🔴 <b>Keep each row on one line, its cells literals</b>: the CLI's test reads them.</para>
 /// </remarks>
@@ -79,7 +79,7 @@ public sealed class CoolingTwinTests : IDisposable
     }
 
     // ——— Ending one early (§2.3, §6): that account and no other; a passed or unreadable entry goes with the write; what
-    // has no field is kept; nothing is written where nothing was cooling under that name.
+    // has no field is kept; nothing is written where nothing is cooling under that name.
 
     [Theory]
     [InlineData("ending a cooling account takes it and no other", """{"claude-code":{"account-1":{"until":"2026-10-03T10:17:00Z","stated":true,"seen":"2026-10-01T08:15:00Z"},"account-2":{"until":"2026-10-03T10:17:00Z","stated":true,"seen":"2026-10-01T08:15:00Z"}}}""", "2026-10-01T08:15:00Z", "claude-code", "account-1", true, """{"claude-code":{"account-2":{"until":"2026-10-03T10:17:00Z","stated":true,"seen":"2026-10-01T08:15:00Z"}}}""")]

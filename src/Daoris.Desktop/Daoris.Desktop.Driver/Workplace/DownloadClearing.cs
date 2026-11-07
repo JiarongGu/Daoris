@@ -29,11 +29,11 @@ public sealed record DownloadedVersion(
 /// <summary>Every downloaded version, and why none could be listed: <c>no-home</c>, or <c>twice</c> where both places of the layout hold one.</summary>
 public sealed record DownloadListing(IReadOnlyList<DownloadedVersion> Versions, string? Why);
 
-/// <summary>What a press asked to remove: a listed row's kind, name and version, and whether it was an unfinished one.</summary>
+/// <summary>What a press asked to remove: a listed row's kind, name and version, and whether it is an unfinished one.</summary>
 public sealed record DownloadAsked(string Kind, string Name, string Version, bool Unfinished = false);
 
 /// <summary>
-/// What one asked row came to: <c>removed</c>; <c>kept</c>, with the version's <see cref="DownloadedVersion.Keeps"/> as it was judged right
+/// What one asked row came to: <c>removed</c>; <c>kept</c>, with the version's <see cref="DownloadedVersion.Keeps"/> as it is judged right
 /// before it would have gone; <c>gone</c>, no longer there; or <c>unfinished</c>, moved aside so nothing runs it, and not all removed. A
 /// version that went carries its size, measured once moved aside.
 /// </summary>
@@ -157,7 +157,7 @@ public sealed record DownloadJudge(Func<DownloadUses> Uses, Func<DateTimeOffset>
 /// deleted; but a rename's success proves nothing, an agent run through npm's shims holding no file open. Once moved, nothing
 /// resolves it, and what a removal could not take is listed as unfinished and goes at the next press.</para>
 ///
-/// <para><b>Only what was listed.</b> A press names the rows the page showed; a version downloaded since, or one not listed, is never
+/// <para><b>Only what is listed.</b> A press names the rows the page showed; a version downloaded since, or one not listed, is never
 /// touched, and a name is matched to a listed folder, never joined into a path.</para>
 /// </remarks>
 public static class DownloadClearing
@@ -165,7 +165,7 @@ public static class DownloadClearing
     /// <summary>How long a fresh download stays whatever uses it: a pin or a use is written once it lands.</summary>
     public static readonly TimeSpan Settling = TimeSpan.FromHours(1);
 
-    /// <summary>A version moved aside by a press, beside where it was: <c>&lt;version&gt;.&lt;8 hex&gt;.clearing</c>.</summary>
+    /// <summary>A version moved aside by a press, beside where it stood: <c>&lt;version&gt;.&lt;8 hex&gt;.clearing</c>.</summary>
     public const string Aside = ".clearing";
 
     /// <summary>A download under way, which both installers stage beside its folder.</summary>
@@ -445,7 +445,7 @@ public static class DownloadClearing
         }
     }
 
-    /// <summary>The version an unfinished folder was, or null where the name is no such folder's.</summary>
+    /// <summary>The version an unfinished folder holds, or null where the name is no such folder's.</summary>
     private static string? UnfinishedVersion(string name)
     {
         if (!name.EndsWith(Aside, StringComparison.Ordinal)) return null;
@@ -464,7 +464,7 @@ public static class DownloadClearing
         return System.IO.Path.GetFullPath(file).StartsWith(top, OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
     }
 
-    /// <summary>When a version arrived: its folder was made as its download began, and written as it landed.</summary>
+    /// <summary>When a version arrived: its folder is made as its download begins, and written as it lands.</summary>
     private static DateTimeOffset Arrived(string folder)
     {
         try
@@ -480,7 +480,7 @@ public static class DownloadClearing
         }
     }
 
-    /// <summary>A row with the size of <paramref name="folder"/>, its own or where it was moved aside.</summary>
+    /// <summary>A row with the size of <paramref name="folder"/>, its own or where it is moved aside.</summary>
     private static DownloadedVersion MeasuredAt(DownloadedVersion row, string folder, CancellationToken cancellationToken)
     {
         var (bytes, _, partial) = WiringSizes.MeasureFolder(folder, WiringBudget.Default, cancellationToken);

@@ -23,7 +23,7 @@ public sealed record LineBehind(string Line, int Commits, int Ahead);
 /// <summary>
 /// The choice of a review's base among the commits a tree's history holds: the newest commit the work shares with
 /// the line, here or on origin, and the commit its record says it began at. Pure; <c>SessionTrees.ReviewRangeAsync</c> asks git,
-/// and says why the record's base alone was not enough.
+/// and says why the record's base alone is not enough.
 /// </summary>
 public static class ReviewBase
 {

@@ -31,7 +31,7 @@ namespace Daoris.Desktop;
 ///
 /// <para><b>Held words wait in this process</b>, for the record to move through this machine's client or for a slow look,
 /// whichever comes first, <b>and in a small file under the home</b> (<see cref="HeldPath"/>), written whole beside
-/// and renamed each time a word is held or leaves. The page was told they are held, so a restart in that moment must not
+/// and renamed each time a word is held or leaves. The page is told they are held, so a restart in that moment must not
 /// lose them: the next shell's judge reads them back as it starts and tries them as before.</para>
 ///
 /// <para><b>Against a host whose marks keep the moving open and the head nothing is held</b>:
@@ -95,7 +95,7 @@ public sealed class SessionWords : IDisposable
 
     /// <summary>
     /// Where words held while a session winds up are kept across a restart: each in the order said, with its session,
-    /// its text, the names its files are kept under and the door it was said at, and, where it had them, its producer's key, its level
+    /// its text, the names its files are kept under and the door it is said at, and, where it has them, its producer's key, its level
     /// and its display choice. Absent while nothing is held.
     /// </summary>
     /// <remarks>Its place is the driver library's (<see cref="HeldWordsFile"/>), which takes a cleared or deleted session's words out of it.</remarks>
@@ -154,7 +154,7 @@ public sealed class SessionWords : IDisposable
             }
             catch (Exception error) when (WordsRead.Unanswered(error) || error is ObjectDisposedException)
             {
-                // Nothing told is nothing claimed: the page keeps what it was told, and a word said refuses as before. The
+                // Nothing told is nothing claimed: the page keeps what it is told, and a word said is refused. The
                 // loop closing under it disposes the client, which says nothing either.
             }
         });
@@ -166,8 +166,8 @@ public sealed class SessionWords : IDisposable
     /// </summary>
     public event Action<string, WordsAnswer>? Reached;
 
-    // The sessions whose reach is being read to be told, each with whether it was asked again meanwhile: one read at a time
-    // per session, so what is told last is what was read last, and a burst of moves costs one more read, not one each.
+    // The sessions whose reach is being read to be told, each with whether it is asked again meanwhile: one read at a time
+    // per session, so what is told last is what is read last, and a burst of moves costs one more read, not one each.
     private readonly Dictionary<string, bool> _telling = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
@@ -272,7 +272,7 @@ public sealed class SessionWords : IDisposable
                     new ChatMessage(text, []) { Level = level, Key = inboxKey }, ct)
                 .ConfigureAwait(false);
             // The record is no longer its line's head, so its inbox held nothing: said at the head,
-            // under the key this say was kept under.
+            // under the key this say is kept under.
             if (forRun is { Outcome: InboxKeep.Continued, Head: { } head })
             {
                 return await OnAsync(head, text, files, preface, door, ct, level, inboxKey, choice, question, walk).ConfigureAwait(false);
@@ -409,7 +409,7 @@ public sealed class SessionWords : IDisposable
 
     /// <summary>
     /// A word said while its conversation is handed over or moved, held behind any already held for it and tried once
-    /// the take is told over (<see cref="OnTakeEnded"/>), or at once where the box went while it was held.
+    /// the take is told over (<see cref="OnTakeEnded"/>), or at once where the box went while it is held.
     /// </summary>
     private async Task<WordsAnswer> HoldForTakeAsync(string id, HeldSay word, CancellationToken ct)
     {
@@ -426,7 +426,7 @@ public sealed class SessionWords : IDisposable
             waiting.Turn.Release();
         }
 
-        // Taken while it was held: no end will be told for it now.
+        // Taken while held: no end will be told for it now.
         if (!TakeStanding(id)) _held.Wake(id);
         return new(true, "resume", null);
     }

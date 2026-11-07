@@ -6,8 +6,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// What the landing gate asks of the workflows: the gate's assembly, which reads the run's process, judges its workflow part, reads the
 /// review and the second opinion over it and judges the graph's part, and the process a quest's work follows. Workflows keeps each and
-/// implements this, installed when the driver loads (<c>Workflows/WorkplaceWorkflowsWiring.cs</c>); each does exactly what
-/// <see cref="TreeGates"/> did before it was a port, in the same order, reading the workplace's own parts back through
+/// implements this, installed when the driver loads (<c>Workflows/WorkplaceWorkflowsWiring.cs</c>); each does its part,
+/// in the gate's order, reading the workplace's own parts back through
 /// <see cref="TreeGates"/> (<c>ChangedAsync</c>, its context) and the review's second opinion through its <c>OpinionAsync</c>.
 /// </summary>
 internal interface IWorkplaceGateWorkflows
@@ -90,7 +90,7 @@ internal sealed class TreeGates(TreeContext context)
         return code == 0 ? [.. names.Split('\0', StringSplitOptions.RemoveEmptyEntries)] : null;
     }
 
-    /// <summary>The name a chain's gate is kept under: its first quest's id, or the quest's own where no chain was read.</summary>
+    /// <summary>The name a chain's gate is kept under: its first quest's id, or the quest's own where no chain is read.</summary>
     internal static string OpinionChain(IReadOnlyList<QuestView> chain, string quest) => chain.Count > 0 ? chain[0].Id : quest.TrimStart('#');
 
     /// <summary>

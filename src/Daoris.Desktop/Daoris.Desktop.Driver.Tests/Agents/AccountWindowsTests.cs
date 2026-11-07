@@ -5,9 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL6b (§16.3 step 4, §16.4): <c>windows.json</c> keeps the weekly reset a limit tells, per agent and
+/// <c>windows.json</c> keeps the weekly reset a limit tells, per agent and
 /// account, and a start reads it carried forward a week at a time where the agent's maker fixes the weekly reset per
-/// account (Claude, C1), and dropped at its reset where that was not read. Written and read by the driver alone (§14).
+/// account (Claude, C1), and dropped at its reset where that is not read. Written and read by the driver alone (§14).
 /// </summary>
 public sealed class AccountWindowsTests : IDisposable
 {
@@ -35,7 +35,7 @@ public sealed class AccountWindowsTests : IDisposable
     // Before it passes it is what the limit said, carried or not.
     [InlineData(-30.0, true, 0)]
     [InlineData(-30.0, false, 0)]
-    // Once it passes, a week on where the maker fixes it, as many weeks as it takes; nothing where that was not read.
+    // Once it passes, a week on where the maker fixes it, as many weeks as it takes; nothing where that is not read.
     [InlineData(0.0, true, 7)]
     [InlineData(1.0, true, 7)]
     [InlineData(15.0 * 24 * 60, true, 21)]
@@ -117,7 +117,7 @@ public sealed class AccountWindowsTests : IDisposable
     }
 
     // ——— What an agent said about its windows: kept per window, the newest replacing the older, a
-    // floor as of when it was said, and gone at its reset; the weekly window's reset is the account's week for step 4.
+    // floor as of when it is said, and gone at its reset; the weekly window's reset is the account's week for step 4.
 
     private static readonly DateTimeOffset Said = new(2026, 10, 2, 12, 0, 0, TimeSpan.Zero);
 
@@ -158,7 +158,7 @@ public sealed class AccountWindowsTests : IDisposable
         Assert.Equal(new WindowSaid("weekly", 0.10, Said.AddHours(105), null, false, Said, "s1"), read.Of("weekly"));
     }
 
-    // ——— USAGEREAD2a: a window's source, and the newer reading winning.
+    // ——— A window's source, and the newer reading winning.
 
     [Fact]
     public void A_read_s_source_is_kept_and_read_back_and_a_frame_s_is_absent_and_reads_as_said()

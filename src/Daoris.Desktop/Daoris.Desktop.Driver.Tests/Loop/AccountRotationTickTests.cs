@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL4f through REAL ticks: with account-1 cooling and the order <c>[account-1, account-2]</c>, the carry-on
+/// Through REAL ticks: with account-1 cooling and the order <c>[account-1, account-2]</c>, the carry-on
 /// of a quest a limit cut off runs on account-2, in the same tree; its record names account-2; its note names the cut-off
 /// session and no account; its conversation record opens saying both; the log says <c>account.rotated</c>; and once
 /// account-1 is ready again, the next start takes it.
@@ -14,7 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para>On the pipe stub first, whose door carries text alone, so the limit there is replayed as the driver records one,
 /// its account cooled by the roster's reader and its record saying <c>limit</c>. The stub agent answers the sign-in
 /// question for each account from the directory it is handed, and writes down where it ran, as which account, what it
-/// was handed and what its record's note said while it ran.</para>
+/// is handed and what its record's note says while it runs.</para>
 /// <para>Then on the protocol door, where the limit is the door's own failure: the protocol stub runs as the
 /// stub's accounts, so its refused turn cools stub account 1 through the driver's own conclusion, and the carry-on opens
 /// on stub account 2.</para>
@@ -131,7 +131,7 @@ public sealed class AccountRotationTickTests : IDisposable
         Assert.DoesNotContain("account-1", note);
         Assert.DoesNotContain("account-2", note);
 
-        // It was handed Daoris's brief of its line, the cut-off session's last words among it, and told its account
+        // It is handed Daoris's brief of its line, the cut-off session's last words among it, and told its account
         // changed, naming none.
         var handed = runs[1]["target"]!.GetValue<string>();
         Assert.Contains("carrying on quest `#q1`", handed);
@@ -168,7 +168,7 @@ public sealed class AccountRotationTickTests : IDisposable
     }
 
     /// <summary>
-    /// TOOL4j: on the protocol door, the refused turn itself is the limit. The first session runs on
+    /// On the protocol door, the refused turn itself is the limit. The first session runs on
     /// stub account 1, takes the quest and is refused with observation 4's sentence; the driver reads it, the record says
     /// <c>limit</c> and stub account 1 cools until the reset it names, for both doors onto it. The carry-on, which a strike
     /// would have parked, opens on stub account 2 in the same tree and closes the quest.
@@ -228,12 +228,12 @@ public sealed class AccountRotationTickTests : IDisposable
         Assert.Equal(Path.GetFullPath(tree), Path.GetFullPath(carried["tree"]!.GetValue<string>()), ignoreCase: true);
         Assert.Equal("Done", service.Status("q1"));
 
-        // Each run was handed its stub account through the stub's own variable.
+        // Each run is handed its stub account through the stub's own variable.
         var runs = File.ReadAllLines(Log).Select(line => JsonNode.Parse(line)!).ToList();
         Assert.Equal(["account-1", "account-2"], runs.Select(run => run["account"]!.GetValue<string>()));
         Assert.Equal(Path.GetFullPath(tree), Path.GetFullPath(runs[1]["cwd"]!.GetValue<string>()), ignoreCase: true);
 
-        // It was told its last session ran on another account, now cooling, naming none; its note, which travels, too.
+        // It is told its last session ran on another account, now cooling, naming none; its note, which travels, too.
         var handed = runs[1]["prompt"]!.GetValue<string>();
         Assert.Contains("carrying on quest `#q1`", handed);
         Assert.Contains("It ran on another account, which reached its limit and is cooling", handed);
@@ -301,7 +301,7 @@ public sealed class AccountRotationTickTests : IDisposable
         Assert.Null(selection.Cooling);
     }
 
-    // ——— MSG1g (D137 §2.2's account paragraph): a resume asks for its record's own account.
+    // ——— A resume asks for its record's own account.
 
     private string ResumeLog => Path.Combine(_home, "resume.log");
 
@@ -356,7 +356,7 @@ public sealed class AccountRotationTickTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITSWITCH1 (D137's note of 2026-10-25, point 7 amended): a record that ended, its own account cooling with
+    /// 🔴 A record that ended, its own account cooling with
     /// <c>account-2</c> ready, is not held for the weekly reset. The person's words go on at once in one briefed part on
     /// <c>account-2</c>, in the same tree, taken off the old record once and handed to the new part once; nothing resumes the own
     /// conversation, and no limit's word of Daoris's is kept.
@@ -401,7 +401,7 @@ public sealed class AccountRotationTickTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITSWITCH1: with every account cooling, the ended record's words wait, and the hold names the earliest reset of any
+    /// 🔴 With every account cooling, the ended record's words wait, and the hold names the earliest reset of any
     /// account, <c>account-2</c>'s, never the own account's alone. At that reset the next look takes them on <c>account-2</c> briefed,
     /// the own account still cooling, the words received once.
     /// </summary>
@@ -448,7 +448,7 @@ public sealed class AccountRotationTickTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITSWITCH2: words to a closed quest's session whose own account cools with <c>account-2</c> ready go
+    /// 🔴 Words to a closed quest's session whose own account cools with <c>account-2</c> ready go
     /// on at once as a conversation in its tree where the shell's chat runner is: the driver hands the session over with the reason
     /// <c>account</c>, once, holds nothing, opens no driven record and walks no start it does not make (its judgement counts none; the
     /// runner's ended move walks and counts the one start).
@@ -491,7 +491,7 @@ public sealed class AccountRotationTickTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITSWITCH2: with every account cooling, a closed quest's session's words wait, the hold naming the earliest reset of any account,
+    /// With every account cooling, a closed quest's session's words wait, the hold naming the earliest reset of any account,
     /// <c>account-2</c>'s, never the own account's alone; nothing is handed to the runner while none is ready.
     /// </summary>
     [Fact]
@@ -533,9 +533,9 @@ public sealed class AccountRotationTickTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITSWITCH1's bound, kept where no runner is (the headless host): nothing carries a closed quest's session on by
+    /// The switch's bound, kept where no runner is (the headless host): nothing carries a closed quest's session on by
     /// itself, so words to a record whose quest is done still wait for the own account's reset while another is ready, said
-    /// with the door that starts a conversation with them, as before; the switch is for a line that is open or taken, or that a runner
+    /// with the door that starts a conversation with them; the switch is for a line that is open or taken, or that a runner
     /// takes on.
     /// </summary>
     [Fact]
@@ -569,10 +569,10 @@ public sealed class AccountRotationTickTests : IDisposable
     private const string RebaseWords = "Daoris: your branch conflicts with the line; rebase it in your own tree and say ready again.";
 
     /// <summary>
-    /// 🔴 LIMITSWITCH3: the install's case. A closed quest's completed driven record holds Daoris's own rebase
+    /// 🔴 The install's case. A closed quest's completed driven record holds Daoris's own rebase
     /// word (said as Daoris's, keyed <c>rebase/session/tip</c>, when its landing conflicted) while its account cools for days and another is
-    /// ready. LIMITSWITCH2 handed a closed quest's session to the runner only where the person's words waited, so the word waited for the
-    /// weekly reset. It goes on at once through the runner, as the person's words do, the reason <c>account</c>, holding nothing.
+    /// ready. It does not wait for the
+    /// weekly reset: it goes on at once through the runner, as the person's words do, the reason <c>account</c>, holding nothing.
     /// </summary>
     [Fact]
     public async Task Daoris_s_rebase_word_to_a_closed_quests_session_whose_account_cools_goes_on_through_the_runner_on_the_ready_account()
@@ -609,7 +609,7 @@ public sealed class AccountRotationTickTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITSWITCH3: with every account cooling, Daoris's rebase word on a closed quest's session waits for the earliest reset of any
+    /// 🔴 With every account cooling, Daoris's rebase word on a closed quest's session waits for the earliest reset of any
     /// account, <c>account-2</c>'s, never the own account's alone, said as a limit's wait; nothing is handed to the runner while none is
     /// ready, and the word is not marked as one that cannot go on.
     /// </summary>
@@ -657,8 +657,8 @@ public sealed class AccountRotationTickTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITSWITCH3: the same for a record of an open or taken quest. Daoris's word alone was marked as one that cannot go on (a message of
-    /// Daoris's starts no new session) the moment the switch left its own account; it goes on at once in one briefed part on
+    /// 🔴 The same for a record of an open or taken quest. Daoris's word alone is never marked as one that cannot go on (a message of
+    /// Daoris's starts no new session) the moment the switch leaves its own account; it goes on at once in one briefed part on
     /// <c>account-2</c>, said as Daoris's words and not the person's, taken off the old record once and handed to the new part once.
     /// </summary>
     [Fact]
@@ -693,7 +693,7 @@ public sealed class AccountRotationTickTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITSWITCH3: a rebase word whose commit the line already holds, landed by another path, is settled at the look, through the real
+    /// 🔴 A rebase word whose commit the line already holds, landed by another path, is settled at the look, through the real
     /// line and git: taken off the record once, so it is held for no account's reset though every account of the agent cools, and nothing
     /// is handed to the runner for it.
     /// </summary>
@@ -739,8 +739,8 @@ public sealed class AccountRotationTickTests : IDisposable
     /// 🔴 Its own account cooling with every other cooling too and its own the earliest, the words wait for its reset: the look holds the
     /// start with the account's cool-off, so the
     /// quest waits for an account and the record's conversation says why once, with the door out; nothing is spawned
-    /// and the words stay waiting, unmarked. The person then chooses a new session (MSG1g's door), and the next look that finds an
-    /// account ready carries the words on, on <c>account-2</c>, in the same tree, its note saying it was their choice and naming no account.
+    /// and the words stay waiting, unmarked. The person then chooses a new session, and the next look that finds an
+    /// account ready carries the words on, on <c>account-2</c>, in the same tree, its note saying it is their choice and naming no account.
     /// </summary>
     [Fact]
     public async Task Words_to_a_session_whose_account_is_cooling_wait_for_its_reset_until_the_person_chooses_a_new_session()
@@ -848,7 +848,7 @@ public sealed class AccountRotationTickTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITRESUME1b (the limit-resume design §3.3 step 2, D137 point 7 amended): limited on account-1 with account-2 free, the
+    /// 🔴 Limited on account-1 with account-2 free, the
     /// person's words never wait for account-1's reset: the line goes on at once in a briefed part on account-2, handed the words as
     /// theirs, and no word of Daoris's is kept, since its own conversation is not resumed.
     /// </summary>
@@ -931,7 +931,7 @@ public sealed class AccountRotationTickTests : IDisposable
 
     /// <summary>
     /// The protocol door's stand-in that resumes: it names its conversation <c>conv-&lt;session&gt;</c> and writes down
-    /// each frame with the stub account it runs as, what it was prompted and what its record's note said. A first prompt takes
+    /// each frame with the stub account it runs as, what it is prompted and what its record's note said. A first prompt takes
     /// the quest and, by its mode, closes it (<c>closes</c>) or fails its turn with the quest still taken (<c>fails</c>); a
     /// carry-on closes it; a resumed prompt answers.
     /// </summary>
@@ -1013,7 +1013,7 @@ public sealed class AccountRotationTickTests : IDisposable
 
     /// <summary>
     /// The stand-in harness. Asked its version or an account's sign-in, it answers, signed out for the accounts named in
-    /// its second argument. Run, it writes down where it ran, as which account, what it was handed and what its record's
+    /// its second argument. Run, it writes down where it ran, as which account, what it is handed and what its record's
     /// note said; then a first start takes the quest, says its last words and is cut off, and a carry-on closes it.
     /// </summary>
     private string Agent()
@@ -1049,7 +1049,7 @@ public sealed class AccountRotationTickTests : IDisposable
 
     /// <summary>
     /// The protocol door's stand-in. It speaks the wire and nothing else on stdout, and for each prompt writes
-    /// down where it ran, as which stub account, what it was prompted and what its record's note said. A first prompt takes
+    /// down where it ran, as which stub account, what it is prompted and what its record's note said. A first prompt takes
     /// the quest, says its last words and is refused with observation 4's sentence, its zone the test's; a carry-on closes
     /// the quest.
     /// </summary>

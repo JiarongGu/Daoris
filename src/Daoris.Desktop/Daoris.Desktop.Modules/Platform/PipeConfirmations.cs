@@ -66,7 +66,7 @@ public enum PipeConfirmationEnd
 
 /// <summary>
 /// What the pipe already made of a press it asks: its id, minted before its record is
-/// written; when it was asked and shown, where it is restored from its record; whether it carries a key; whether it is restored; and
+/// written; when it is asked and shown, where it is restored from its record; whether it carries a key; whether it is restored; and
 /// whether a terminal waits on its line for it; whether its Confirm also makes a hold.
 /// </summary>
 public sealed record PipeAsAsked(
@@ -79,7 +79,7 @@ public sealed record PipeEnding(PipeConfirmationEnd End, PipeGroundChange? Chang
 /// <summary>What the grounds read at the Confirm said.</summary>
 public enum PipeJudged
 {
-    /// <summary>Every ground the press was asked on holds: it runs.</summary>
+    /// <summary>Every ground the press is asked on holds: it runs.</summary>
     Holds,
 
     /// <summary>A ground moved: the press ends <see cref="PipeConfirmationEnd.Changed"/> and runs nothing.</summary>
@@ -95,13 +95,13 @@ public sealed record PipeJudgement(PipeJudged Judged, PipeGroundChange? Change =
     public static PipeJudgement Holding { get; } = new(PipeJudged.Holds);
 }
 
-/// <summary>How the person's answer in the window was taken (the bridge's <c>PERSON_CONFIRM</c>).</summary>
+/// <summary>How the person's answer in the window is taken (the bridge's <c>PERSON_CONFIRM</c>).</summary>
 public enum PipeAnswered
 {
     /// <summary>Taken: refused, or confirmed with its grounds holding, and running.</summary>
     Answered,
 
-    /// <summary>It no longer waits (answered in another window, taken back), or it is being judged already: nothing was taken.</summary>
+    /// <summary>It no longer waits (answered in another window, taken back), or it is being judged already: nothing is taken.</summary>
     Gone,
 
     /// <summary>Confirmed, and a ground had moved: it ended <see cref="PipeConfirmationEnd.Changed"/> and nothing ran.</summary>
@@ -139,7 +139,7 @@ public enum PipePersisted
     Held,
 }
 
-/// <summary>The person's answer as taken, with the ground that moved where it was <see cref="PipeAnswered.Changed"/>.</summary>
+/// <summary>The person's answer as taken, with the ground that moved where it is <see cref="PipeAnswered.Changed"/>.</summary>
 public sealed record PipeAnswer(PipeAnswered Outcome, PipeGroundChange? Change = null);
 
 /// <summary>How a withdrawal by a press's asker is taken.</summary>
@@ -293,7 +293,7 @@ public sealed class PipeConfirmations : IDisposable
         lock (_gate) return Telling();
     }
 
-    /// <summary>When the oldest press that waits was asked, or null where none waits.</summary>
+    /// <summary>When the oldest press that waits is asked, or null where none waits.</summary>
     public DateTimeOffset? Oldest()
     {
         lock (_gate) return _waiting.Count == 0 ? null : _waiting.Min(each => each.Shown.Asked);
@@ -476,7 +476,7 @@ public sealed class PipeConfirmations : IDisposable
         bool draining;
         lock (_gate)
         {
-            // A close may have lost it meanwhile (a press carrying a key): its terminal was told so, and this answer takes nothing.
+            // A close may have lost it meanwhile (a press carrying a key): its terminal is told so, and this answer takes nothing.
             if (!_waiting.Contains(held)) return new PipeAnswer(PipeAnswered.Gone);
             // A drain begun while it is judged: nothing is taken, and it waits on, its buttons back.
             draining = Holding?.Invoke(held.Shown.Module, held.Shown.Route) == true;
@@ -540,7 +540,7 @@ public sealed class PipeConfirmations : IDisposable
         lock (_gate)
         {
             held.Settling = false;
-            // A close may have lost it meanwhile (a press carrying a key): its terminal was told so, and this answer takes nothing.
+            // A close may have lost it meanwhile (a press carrying a key): its terminal is told so, and this answer takes nothing.
             if (!_waiting.Contains(held)) return new PipeAnswer(PipeAnswered.Gone);
             told = Take(held);
         }

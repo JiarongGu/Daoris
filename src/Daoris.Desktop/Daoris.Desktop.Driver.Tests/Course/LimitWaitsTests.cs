@@ -5,11 +5,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1d-ii part 4 (the foundation design §3.4 rule 3, O6-F2, O6-F8, O6-F13): the limit's moves against a host whose keyed open moves
+/// The limit's moves against a host whose keyed open moves
 /// the old part's words, and against one that does not. The ended move's body, its delivery and its box, and the live move, compose from the
 /// new part's moved words, never the old record's ids: the first prompt is the brief, the refused turns' words, then every moved word with its
 /// file, each shown on the new part under its id; the moved words leave the new part once on the wire, and the box goes only once the new part
-/// holds none of them. Against a mark-1 host the old record is read again and its words taken, as LIMITWORD1 made it.
+/// holds none of them. Against a mark-1 host the old record is read again and its words taken.
 /// </summary>
 /// <remarks>
 /// The conversations run on the <c>acp-stub</c> adapter, a node stand-in on the protocol door whose accounts are the stub's, which a
@@ -148,7 +148,7 @@ public sealed class LimitWaitsTests : IDisposable
     /// named and the old record left holding none. The first prompt is the brief, the refused turn's words, then every moved word in order with
     /// its file linked from the new part's folder; each moved word is shown on the new part by its own event under its id before the agent's
     /// answer, the refused turn's words as one; the moved words leave the new part once on the wire, nothing is taken off the old record, and
-    /// the move is delivered with the new part holding none of them, no box written at any point (FOUNDATION1f-vi part a).
+    /// the move is delivered with the new part holding none of them, no box written at any point.
     /// </summary>
     [Fact]
     public async Task The_ended_moves_first_prompt_is_the_refused_words_then_every_moved_word_with_its_file_a_late_one_among_them()
@@ -194,8 +194,7 @@ public sealed class LimitWaitsTests : IDisposable
     /// <summary>
     /// 🔴 The move ends only on what the new part holds after the delivery's take, never on the take's answer, since a take naming words that do
     /// not wait answers success: a new part that still holds its moved words once the move is on the wire leaves the move standing, never
-    /// closed <c>delivered</c>, and the old record, which holds none of them, is never asked to take them. No box is written for it
-    /// (FOUNDATION1f-vi part a).
+    /// closed <c>delivered</c>, and the old record, which holds none of them, is never asked to take them. No box is written for it.
     /// </summary>
     [Fact]
     public async Task The_ended_move_is_not_delivered_while_the_new_part_still_holds_its_moved_words()

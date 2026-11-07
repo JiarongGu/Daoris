@@ -134,7 +134,7 @@ public sealed class WiringSizes
             }
             catch (ObjectDisposedException)
             {
-                // It ended as it was asked to stop.
+                // It stopped when asked.
             }
         }
     }

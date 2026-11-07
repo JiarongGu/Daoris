@@ -24,7 +24,7 @@ public static class TextBounds
 
     /// <summary>
     /// The first <paramref name="keep"/> characters and the mark, whether or not the text is longer: for the caller whose own
-    /// test decided that it is cut (a line that ran past its bound while it was read).
+    /// test decided that it is cut (a line that ran past its bound while it is read).
     /// </summary>
     public static string Cut(string text, int keep, bool trimEnd = false, bool wholePairs = false)
     {
@@ -48,7 +48,7 @@ public static class TextBounds
         text.Length <= limit ? text : Ellipsis + text[^limit..].TrimStart();
 
     /// <summary>
-    /// A field cut to a limit saying how long it was, never silently shortened; null stays null.
+    /// A field cut to a limit, saying its full length, never silently shortened; null stays null.
     /// </summary>
     [return: NotNullIfNotNull(nameof(text))]
     public static string? ClipCounted(string? text, int limit) =>

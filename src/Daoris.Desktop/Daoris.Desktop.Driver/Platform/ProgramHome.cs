@@ -8,6 +8,6 @@ namespace Daoris.Driver;
 /// </summary>
 public static class ProgramHome
 {
-    /// <summary>The home the program's entry named; null where none was, as in a test's process, whose git is then the system's.</summary>
+    /// <summary>The home the program's entry named; null where none is set, as in a test's process, whose git is then the system's.</summary>
     public static string? Named { get; set; }
 }

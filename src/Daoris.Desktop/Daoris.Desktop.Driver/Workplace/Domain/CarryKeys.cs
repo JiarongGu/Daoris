@@ -9,7 +9,7 @@ public static class CarryKeys
     public const string Kind = "carry";
 
     /// <summary>
-    /// The carry-on's key: the session, what it is carried on for (a dirty tree's status fingerprint, or the tip a conflict was found at),
+    /// The carry-on's key: the session, what it is carried on for (a dirty tree's status fingerprint, or the tip a conflict is found at),
     /// and which carry-on of the Accept's two it is, so an unchanged tree is told once however often the person presses, and the second
     /// carry-on after a turn that changed nothing is still a word of its own. No quest's fact: <see cref="DaorisKeys.Read"/> names none.
     /// </summary>

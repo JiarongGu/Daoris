@@ -37,7 +37,7 @@ internal static class AttentionMachineRows
         }
 
         // A plugin step's attempt held for the person, a held close among them: the attempt whole, since
-        // its word was recorded where one was, else since it was held.
+        // its recorded word where there is one, else since its hold.
         foreach (var attempt in facts.Held)
         {
             var row = Row(
@@ -49,7 +49,7 @@ internal static class AttentionMachineRows
         }
 
         // A node record that does not read: nothing on its unit is judged or started until the person mends it, and
-        // the row's press opens the folder it is kept in. By its file, since its unit may be unknown; since it was last written.
+        // the row's press opens the folder it is kept in. By its file, since its unit may be unknown; since its last write.
         foreach (var record in facts.Unreadable)
         {
             var row = Row("work", $"record#{Part(record["file"])}", Text(record, "at"), unitScope(Text(record, "unit")));
@@ -59,7 +59,7 @@ internal static class AttentionMachineRows
         }
 
         // A closure graph closed only in part: while its close node's stop is offered, or the person's stop waits for
-        // the next look, since it was found. An override is the person's own, and said on the work's foot alone.
+        // the next look, since its finding. An override is the person's own, and said on the work's foot alone.
         foreach (var end in facts.Ends.Where(end => Text(end, "kind") == "partially-closed"
                      && (Text(end, "resolution") is not null || (end["words"] as JsonArray)?.Any(word => word?.GetValue<string>() == "stop") == true)))
         {
@@ -70,8 +70,8 @@ internal static class AttentionMachineRows
         }
 
         // A press a terminal sent that waits for the person's Confirm in the window: its terminal holds still until they
-        // answer on its card, or its time ends, which refuses it. By its route and the terminal as the system names it, since it was
-        // asked; never a value it carries, which the card alone shows beside its Confirm. Every window shows it: the pipe is this machine's.
+        // answer on its card, or its time ends, which refuses it. By its route and the terminal as the system names it, since its ask;
+        // never a value it carries, which the card alone shows beside its Confirm. Every window shows it: the pipe is this machine's.
         foreach (var waiting in facts.Confirmations)
         {
             // No workspace, deliberately: a terminal's press is the machine's, whichever workspace its route touches.
@@ -89,7 +89,7 @@ internal static class AttentionMachineRows
         }
 
         // A volume still below its free-space floor once the floor freed what Daoris can make again: the
-        // rest is the person's to free, by the press its row opens, since it was said; it goes once the volume is above its floor by the
+        // rest is the person's to free, by the press its row opens, since its saying; it goes once the volume is above its floor by the
         // margin. Every window shows it: the disk is the machine's.
         foreach (var low in facts.Space)
         {

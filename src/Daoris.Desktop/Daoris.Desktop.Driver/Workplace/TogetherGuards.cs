@@ -70,7 +70,7 @@ internal sealed class TogetherLocks : IDisposable
 
     private TogetherLocks(IReadOnlyList<LandingHold> holds, TreeLock trees) => (_holds, _trees) = (holds, trees);
 
-    /// <summary>Take (1) for every tree, then (2); null with the words where one was held past <paramref name="within"/>.</summary>
+    /// <summary>Take (1) for every tree, then (2); null with the words where one is held past <paramref name="within"/>.</summary>
     public static async Task<(TogetherLocks? Held, string? Refused)> TakeAsync(
         string home, string repository, IReadOnlyList<string> trees, TimeSpan within, CancellationToken ct)
     {

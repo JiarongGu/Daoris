@@ -132,7 +132,7 @@ public sealed record FloorVolume(VolumeReading Read, long? Floor, IReadOnlyList<
 /// <summary>
 /// One stretch below the floor on one volume: from the first pass that finds it below to the one that
 /// finds it above its floor by the margin. What the floor's acts freed in it, when they last ran, whether the browser's caches were cleared
-/// in it, and whether it was said: <c>space.low</c> and the row in <i>What needs you</i>, once.
+/// in it, and whether it is said: <c>space.low</c> and the row in <i>What needs you</i>, once.
 /// </summary>
 public sealed record FloorStretch(string Volume, DateTimeOffset Since)
 {
@@ -148,13 +148,13 @@ public sealed record FloorStretch(string Volume, DateTimeOffset Since)
     /// <summary>When it last freed anything.</summary>
     public DateTimeOffset? FreedAt { get; init; }
 
-    /// <summary>Said: still below once its acts ran, so <c>space.low</c> was written and the row stands until <c>space.ok</c>.</summary>
+    /// <summary>Said: still below once its acts ran, so <c>space.low</c> is written and the row stands until <c>space.ok</c>.</summary>
     public DateTimeOffset? Said { get; init; }
 
-    /// <summary>The volume as it was read when it was said: its root, free space, size and floor.</summary>
+    /// <summary>The volume as read when it is said: its root, free space, size and floor.</summary>
     public FloorVolume? Read { get; init; }
 
-    /// <summary>What the person's press could free when it was said, in bytes, of what the list could measure; null where none was read.</summary>
+    /// <summary>What the person's press could free when it is said, in bytes, of what the list could measure; null where none is read.</summary>
     public long? Could { get; init; }
 }
 
@@ -332,7 +332,7 @@ public static class SpaceFloor
             else if (!volume.Below && stretches.TryGetValue(id, out var stretch)
                      && volume.Read.Free >= volume.Floor!.Value + FloorPolicy.Margin(volume.Read.Total))
             {
-                // Above the floor by the margin: the stretch ends, said where it was said.
+                // Above the floor by the margin: the stretch ends, said where it is said.
                 stretches.Remove(id);
                 if (stretch.Said is not null)
                 {
@@ -517,7 +517,7 @@ public static class SpaceFloor
             }
             else
             {
-                // A path the profile does not hold is no keep: there was nothing to clear.
+                // A path the profile does not hold is no keep: there is nothing to clear.
                 foreach (var why in cleared.Kept.Values.Where(why => why != SpaceKept.Gone)) kept[why] = kept.GetValueOrDefault(why) + 1;
                 act = new FloorAct("browser-cache", cleared.Removed.Count, cleared.Removed.Values.Sum(), kept);
             }

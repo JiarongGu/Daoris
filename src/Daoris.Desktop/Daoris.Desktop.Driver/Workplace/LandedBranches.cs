@@ -143,7 +143,7 @@ public sealed class LandedBranches(string home)
     /// says no why, or says it moved, gains it, and no longer names where it moved. One with a fact already, one Daoris removed, and one that
     /// says another why are left as they are: a trace with its fact is never judged again.
     /// </summary>
-    /// <returns>Whether it was written.</returns>
+    /// <returns>Whether it is written.</returns>
     internal bool HoldGone(LandedBranch entry, HeldFact held)
     {
         var wrote = false;
@@ -210,7 +210,7 @@ public sealed class LandedBranches(string home)
     /// withdrawn, why, and the recovery ref its commits stay on. Applied to that landing alone (<see cref="SameLanding"/>), so a new landing of
     /// the same name keeps its standing, and never over a trace, which is never judged again.
     /// </summary>
-    /// <returns>Whether it was written.</returns>
+    /// <returns>Whether it is written.</returns>
     internal bool Withdrawn(LandedBranch entry, string why, string keptOn)
     {
         var wrote = false;
@@ -228,7 +228,7 @@ public sealed class LandedBranches(string home)
         return wrote;
     }
 
-    /// <summary>The same landing as <paramref name="entry"/>: its identity (<see cref="SameEntry"/>) and the tip it was observed at.</summary>
+    /// <summary>The same landing as <paramref name="entry"/>: its identity (<see cref="SameEntry"/>) and the tip observed.</summary>
     private static bool SameLanding(LandedBranch each, LandedBranch entry) =>
         SameEntry(each, entry) && string.Equals(each.Tip, entry.Tip, StringComparison.OrdinalIgnoreCase);
 

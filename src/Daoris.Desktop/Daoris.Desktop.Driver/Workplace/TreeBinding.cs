@@ -62,7 +62,7 @@ internal static class TreeBinding
     }
 
     /// <summary>
-    /// The refusal's words: what git reports, what binds it there and where git read it, that nothing was done, and what the person does.
+    /// The refusal's words: what git reports, what binds it there and where git read it, that nothing is done, and what the person does.
     /// </summary>
     internal static string Said(string tree, string reported, (string File, string Value)? origin) =>
         $"git reports {reported} as the working root of the tree at {tree}, not that folder: "

@@ -19,7 +19,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
 {
     private static readonly JsonSerializerOptions Wire = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
-    /// <summary>A route that notes, as it answers, whether the event was raised before it: it must not have been.</summary>
+    /// <summary>A route that notes, as it answers, whether the event has been raised before it: it must not have been.</summary>
     private sealed class Moving(Func<bool> raisedYet) : ModuleBase
     {
         public override string ModuleName => "TEST.STATE";
@@ -146,7 +146,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
 
     private IReadOnlyList<EventMessage> Changed() => [.. Raised.Where(message => message.Type == StatePublisher.Type)];
 
-    /// <summary>What was told under way, in the order the publisher numbered it (the bus does not wait, so not always raised so).</summary>
+    /// <summary>What is told under way, in the order the publisher numbered it (the bus does not wait, so not always raised so).</summary>
     private IReadOnlyList<string> Told() =>
     [
         .. Raised.Where(message => message.Type == StatePublisher.UnderWayType)
@@ -287,7 +287,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
 
     /// <summary>
     /// A press whose landing waits behind another's hold says the waiting step before it
-    /// waits, and the step it was at when it has the hold; the waiting reaches the page's telling like any step, and ends with the press.
+    /// waits, and the step it is at when it has the hold; the waiting reaches the page's telling like any step, and ends with the press.
     /// </summary>
     [Fact]
     public async Task A_press_waiting_behind_a_landing_says_so_and_goes_back_to_its_step()
@@ -698,7 +698,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
 
     /// <summary>
     /// A change the driver itself makes, with no press behind it (words taken up, a proposal written, a size landed), is
-    /// told to every window as a press's is: the scopes in the page's words, and the one session it was about where there is one.
+    /// told to every window as a press's is: the scopes in the page's words, and the one session it is about where there is one.
     /// </summary>
     [Fact]
     public async Task A_change_the_driver_makes_is_told_in_the_same_words_a_press_is()

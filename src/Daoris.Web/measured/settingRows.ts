@@ -2,7 +2,7 @@
  * **The label track, measured** (the UI/UX design R1 and §5's first trap): every setting row on the page, as the
  * browser laid it out. jsdom lays nothing out, so a class proves no alignment; this reads each row's label cell and value
  * cell by their boxes, and each label's max-content width (the width its words would take on one line), which is what sets
- * the track and what D185's UIFIT1 note records.
+ * the track.
  *
  * Self-contained, with no import and nothing from outside its body, so Playwright can send it to the page as source.
  */

@@ -16,7 +16,7 @@ namespace Daoris.Desktop;
 /// its sync is the person's to turn on (`docs/2026-09-28-managed-edge-evidence.md`).</para>
 ///
 /// <para><b>Found again, not started twice.</b> A second Edge started on the same profile hands over
-/// to the one already running and exits, and that one listens on the port it was started with. So the
+/// to the one already running and exits, and that one listens on the port it is started with. So the
 /// port is recorded beside the profile, and a shell that restarts adopts the Edge it finds there.</para>
 /// </remarks>
 public static class EdgeBrowser
@@ -59,7 +59,7 @@ public static class EdgeBrowser
         "edge://newtab/",
     ];
 
-    /// <summary>The port a recorded Edge was started with, or null when the record says none.</summary>
+    /// <summary>The port a recorded Edge is started with, or null when the record says none.</summary>
     public static int? RecordedPort(string? json)
     {
         try

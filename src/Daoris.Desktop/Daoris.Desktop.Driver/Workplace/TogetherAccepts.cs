@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
-/// <summary>What a combined Accept brought a member into: the branch, or the line a merge went into, and the tip it was bound at.</summary>
+/// <summary>What a combined Accept brought a member into: the branch, or the line a merge went into, and the tip it is bound at.</summary>
 public sealed record TogetherBrought(string Operation, string Session, string Tree, string Tip, string Into, bool Line, DateTimeOffset At);
 
 /// <summary>
 /// The inclusion record of every form: a landed operation, not a landing record, says what
-/// a member was brought into, since a merge keeps none of its own.
+/// a member comes into, since a merge keeps none of its own.
 /// </summary>
 public static class TogetherInclusion
 {
@@ -25,7 +25,7 @@ public static class TogetherInclusion
     public static TogetherBrought? OfTree(string home, string tree) =>
         Brought(home).LastOrDefault(each => TogetherOperation.SameTree(each.Tree, tree));
 
-    /// <summary>What a member's own landing says where its work was brought in already.</summary>
+    /// <summary>What a member's own landing says where its work is already in.</summary>
     public static string Words(TogetherBrought brought) =>
         $"its work at {TextBounds.ShortCommit(brought.Tip, 8)} was brought into {(brought.Line ? $"the line `{brought.Into}`" : $"`{brought.Into}`")} "
         + $"by another session's Accept (operation {brought.Operation}), so it lands no second time; a later commit of its own lands as any does";

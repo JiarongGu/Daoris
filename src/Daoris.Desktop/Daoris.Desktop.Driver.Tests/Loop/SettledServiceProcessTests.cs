@@ -8,7 +8,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 row p: the settlement end to end. The driver's own client and
+/// The settlement end to end. The driver's own client and
 /// dispatchers talk to the service's own host, started in a process of its own over a scratch home (<see cref="RealServiceHost"/>), so the
 /// service's say door, its desks and the trigger that writes the settlement are the real ones, and the client reads what they write on the wire.
 /// Codex's reused id through both real dispatchers: a word K kept on A and taken, a successor B the test's own statement makes holding another
@@ -192,7 +192,7 @@ public sealed class SettledServiceProcessTests : IAsyncLifetime
 
     /// <summary>
     /// A helper's hand and a partner's, each retried after its take, are answered settled with no word: the helper's asker is the newest record
-    /// of its line and its word left the predecessor it was kept on; nothing is kept again on either line.
+    /// of its line and its word left the predecessor that kept it; nothing is kept again on either line.
     /// </summary>
     [Fact]
     public async Task A_helpers_and_a_partners_hand_retried_after_the_take_are_answered_settled_by_the_real_desks()
@@ -231,7 +231,7 @@ public sealed class SettledServiceProcessTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// COMMS1b (the comms design §4.2, §10 row b): the helper's look against the real host's one door. A lead asks a helper and, between the ask
+    /// The helper's look against the real host's one door. A lead asks a helper and, between the ask
     /// and the answer, is handed over to another agent's part; the look hands the answer through the door, which keeps it on the new part under
     /// the helper's key, and tells that part's runner once. A restart that cut the next hand between its attempt and the take asks the door again,
     /// which answers the word waiting on the new part, and once the new part took it, settled: nothing is kept twice, and nothing on the part left.

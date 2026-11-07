@@ -27,7 +27,7 @@ public sealed class PipeLimits
 
     /// <summary>
     /// How many lines a connection may send ahead of the instance's taking them: past it the connection is closed, since lines
-    /// pile up only where a terminal sends on without reading what it was answered, and an answer to them could not be read either.
+    /// pile up only where a terminal sends on without reading what it is answered, and an answer to them could not be read either.
     /// </summary>
     public int Queued { get; init; } = 64;
 

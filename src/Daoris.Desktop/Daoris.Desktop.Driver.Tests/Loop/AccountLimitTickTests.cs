@@ -4,9 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL4d, observation 4 replayed through REAL ticks on the protocol door. On 1 October a driven session
-/// carrying a quest on was refused mid-turn by the account's weekly spend limit; the driver carried the quest on twice
-/// more, each refused at once, and the third failure parked the quest on its strikes in seconds. Now the refusal cools
+/// Observation 4 replayed through REAL ticks on the protocol door: a driven session carrying a quest on is refused
+/// mid-turn by the account's weekly spend limit; the refusal cools
 /// the account until the reset the agent named, the carry-on waits for it with nothing spawned, the quest is never
 /// parked for it, the wait is said once, and at the reset the carry-on runs and closes the quest.
 /// </summary>

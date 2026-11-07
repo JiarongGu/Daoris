@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL6b through a REAL tick: cap K over N stub accounts on the protocol door, the list's
+/// Through a REAL tick: cap K over N stub accounts on the protocol door, the list's
 /// <c>use</c> left at its default, the goal. One look starts K sessions in K repositories, and no account runs more than
 /// ⌈K ÷ N⌉ of them; each record opens naming the step that chose its account. A weekly limit then refuses the sessions on
 /// one account, and cuts off only its own while the others work on; and the weekly reset that limit told puts that account
@@ -14,7 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para>Real node processes in real git checkouts, against the in-process ledger (<see cref="StandInLedger"/>), as
 /// <c>SessionsOutliveTheirLookProcessTests</c> runs them. The protocol stub runs as the stub's accounts: on stub
 /// account 1 its turn is refused with observation 4's weekly sentence; on any other it holds its turn until stopped.</para>
-/// <para>Written by TOOL6b and run by the parent at the merge: it starts K processes at once.</para>
+/// <para>Run by the parent at the merge: it starts K processes at once.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class AccountGoalTickTests : IDisposable

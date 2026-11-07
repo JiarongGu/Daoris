@@ -120,7 +120,7 @@ public sealed class AtWorkHintWatchTests : IDisposable
         Assert.Equal(before + 1, _woken);
         Assert.Equal(RoutingStanding.OneAtATime, Hint());
 
-        // A lane renamed leaves the standing as it was: the read is not woken for it.
+        // A lane renamed leaves the standing unchanged: the read is not woken for it.
         Assert.True(_standing.Hear([Game("docs")]));
         Assert.False(_watch.JudgeStandings());
         Assert.Equal(before + 1, _woken);

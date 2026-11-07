@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL6e through <see cref="HarnessRoster.Next"/>: which account the next start of a scope would
+/// Through <see cref="HarnessRoster.Next"/>: which account the next start of a scope would
 /// take and why, read from the walk's own pieces — the scope <see cref="HarnessRoster.SelectAsync"/> reads, what it knows of
 /// each account, its order, each account's cool-off and refusal — so the screen and the start never disagree, and asking
 /// counts nothing.
@@ -146,7 +146,7 @@ public sealed class AccountNextStartTests : IDisposable
     }
 
     /// <summary>
-    /// OWNSPACE1a (amending D125 point 5): nothing named takes the agent's Daoris account, never the tool's own
+    /// Nothing named takes the agent's Daoris account, never the tool's own
     /// sign-in, whose cool-off then holds nothing; the rule's own cases are <c>OwnSpaceTests</c>'.
     /// </summary>
     [Fact]

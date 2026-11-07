@@ -45,7 +45,7 @@ public static class GitVersions
     public static Version? Parse(string? said) =>
         said is not null && ToolQuestions.VersionIn(said) is { } dotted && Version.TryParse(dotted, out var version) ? version : null;
 
-    /// <summary>The version kept for <paramref name="file"/> as it stands now; null where it was never asked, or has changed since.</summary>
+    /// <summary>The version kept for <paramref name="file"/> as it stands now; null where it has never been asked, or has changed since.</summary>
     public static Version? Known(string? file) =>
         s_pretended.Value
         ?? (file is not null && Stamp(file) is { } now && s_asked.TryGetValue(Key(file), out var kept) && (kept.Written, kept.Length) == now

@@ -17,25 +17,25 @@ public static class StrayKind
 }
 
 /// <summary>A folder under a repository's trees that the look met as no tree of its own: moved aside, or kept and why.</summary>
-/// <param name="Folder">Where it was, under the trees home.</param>
-/// <param name="Kind">What it was (<see cref="StrayKind"/>).</param>
-/// <param name="Moved">Whether it was moved aside.</param>
-/// <param name="Message">Kept: why, in a clause. A cut-off opening moved aside: why its lock was a cut-off opening's, in a clause.</param>
+/// <param name="Folder">Where it stood, under the trees home.</param>
+/// <param name="Kind">What it is (<see cref="StrayKind"/>).</param>
+/// <param name="Moved">Whether it is moved aside.</param>
+/// <param name="Message">Kept: why, in a clause. A cut-off opening moved aside: why its lock is a cut-off opening's, in a clause.</param>
 public sealed record StrayResult(string Folder, string Kind, bool Moved, string Message)
 {
-    /// <summary>Where it was moved aside to; null where it stays.</summary>
+    /// <summary>Where it is moved aside to; null where it stays.</summary>
     public string? MovedTo { get; init; }
 
     /// <summary>A cut-off opening's session branch (<c>daoris/s-…</c>), where it had one; null for a folder git lists no tree in.</summary>
     public string? Branch { get; init; }
 
-    /// <summary>A cut-off opening moved aside whose branch stayed: why, in a clause; null where the branch went, or there was none.</summary>
+    /// <summary>A cut-off opening moved aside whose branch stayed: why, in a clause; null where the branch went, or there is none.</summary>
     public string? BranchKept { get; init; }
 
-    /// <summary>Kept: why, as the machine log's <c>branch.kept</c> code (<see cref="TidyKept"/>); null where it was moved aside.</summary>
+    /// <summary>Kept: why, as the machine log's <c>branch.kept</c> code (<see cref="TidyKept"/>); null where it is moved aside.</summary>
     public string? Kept { get; init; }
 
-    /// <summary>Kept <see cref="TidyKept.Unread"/>: which read it was (<see cref="TidyCause"/>).</summary>
+    /// <summary>Kept <see cref="TidyKept.Unread"/>: which read it is (<see cref="TidyCause"/>).</summary>
     public string? Cause { get; init; }
 }
 
@@ -46,7 +46,7 @@ public sealed record StrayResult(string Folder, string Kind, bool Moved, string 
 /// </summary>
 /// <remarks>
 /// <para><b>What goes.</b> A folder under <c>trees/&lt;workspace&gt;/&lt;repository&gt;/</c> that git lists no tree in, once nothing
-/// in it was written for <see cref="Quiet"/>: an empty one a removed tree left, a tree half removed, a folder a session wrote beside
+/// in it has been written within <see cref="Quiet"/>: an empty one a removed tree left, a tree half removed, a folder a session wrote beside
 /// its tree. And a tree git lists, locked by an opening no running process holds (<see cref="TreeOpenings.CutOff"/>), on its own
 /// session branch or none yet: its lock let go of, its folder moved aside and its record let go of, and its branch removed at the
 /// commit judged where every commit on it is held by another ref.</para>
@@ -88,7 +88,7 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
     /// repository it could not judge, or held by a start, is left quietly for a later look: its session branches' pass says so.
     /// </summary>
     /// <param name="inUse">The trees sessions still running or waiting name, and those a review shows from.</param>
-    /// <param name="now">What time it is, against what was last written in a folder (<see cref="Quiet"/>).</param>
+    /// <param name="now">What time it is, against the last write in a folder (<see cref="Quiet"/>).</param>
     internal async Task<IReadOnlyList<StrayResult>> TidyAsync(
         string root, string repository, string? workspace, Func<CancellationToken, Task<IReadOnlySet<string>>> inUse, DateTimeOffset now,
         CancellationToken ct = default)
@@ -222,7 +222,7 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
     /// <summary>
     /// A cut-off opening's tree let go of: its lock first, since git keeps a locked tree's record; then its folder moved
     /// aside and its record let go of, as the look takes a tree (<see cref="TreeSetAside.MoveAsideAsync(string, string, string, string, CancellationToken)"/>);
-    /// then its branch, only while it is the commit judged. A tree that stays is locked again as it was found.
+    /// then its branch, only while it is the commit judged. A tree that stays is locked again as found.
     /// </summary>
     private async Task<StrayResult> CutOffAsync(string root, string workspace, string repository, Found cut, CancellationToken done)
     {
@@ -268,7 +268,7 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
             : new StrayResult(stray.Folder, StrayKind.Folder, true, "") { MovedTo = moved.To };
 
     /// <summary>
-    /// Whether anything in <paramref name="folder"/>, the folder itself included, was written or made after <paramref name="since"/>:
+    /// Whether anything in <paramref name="folder"/>, the folder itself included, is written or made after <paramref name="since"/>:
     /// read from the folders, hidden ones included, never following a link, and stopping at the first. A folder that cannot be
     /// read throws. A pass's leftover is judged by it too (<see cref="PassLeftovers"/>).
     /// </summary>

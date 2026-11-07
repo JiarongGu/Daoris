@@ -11,7 +11,7 @@ namespace Daoris.Desktop;
 /// </summary>
 /// <remarks>
 /// <para><b>Through the start gate</b> (<see cref="ProcessStarts"/>): *Update now*'s <c>SET</c> applies before
-/// it answers, and the start it made in the route's synchronous part was a start on the window's thread.</para>
+/// it answers, and a start made in the route's synchronous part is a start on the window's thread.</para>
 /// </remarks>
 public static class UpdateLauncher
 {

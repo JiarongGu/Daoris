@@ -38,7 +38,7 @@ internal sealed class PipeListener(InstancePipe pipe, string name)
             }
             catch (IOException)
             {
-                // A client gone before it was accepted: this instance is spent, and the next one listens.
+                // A client gone before it is accepted: this instance is spent, and the next one listens.
                 await listening.DisposeAsync().ConfigureAwait(false);
                 listening = await NextAsync(token, acquired: true).ConfigureAwait(false);
                 if (listening is null) return;

@@ -57,7 +57,7 @@ public sealed class DriverModuleCommitsTests : DriverModuleBridge
         Assert.False(File.Exists(DriverConfigPath) && DriverConfig.Load(DriverConfigPath).Commits.Count > 0);
     }
 
-    /// <summary>Each repository the registry holds, the rule standing for it and where it was set; nothing set is the default, from `default`.</summary>
+    /// <summary>Each repository the registry holds, the rule standing for it and where it is set; nothing set is the default, from `default`.</summary>
     [Fact]
     public async Task The_lines_answer_what_each_repository_resolves_to_and_from_where()
     {
@@ -81,7 +81,7 @@ public sealed class DriverModuleCommitsTests : DriverModuleBridge
 
     /// <summary>
     /// What a session's *Details* says of the process its own tree runs under, its
-    /// repository's commit rule and landing rule as resolved here, each with where it was set, read from the driver file and the
+    /// repository's commit rule and landing rule as resolved here, each with where it is set, read from the driver file and the
     /// tree's place alone. A session whose record names a tree this home did not make (the person's checkout) or none is told no
     /// process, and the answer says none.
     /// </summary>

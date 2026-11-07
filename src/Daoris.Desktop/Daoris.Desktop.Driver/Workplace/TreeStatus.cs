@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A tree's uncommitted paths, its head commit and its branch, from one <c>status --porcelain=v2 --branch</c> where each was a start of its
+/// A tree's uncommitted paths, its head commit and its branch, from one <c>status --porcelain=v2 --branch</c> where each would take a start of its
 /// own (<c>status --porcelain</c>, <c>rev-parse HEAD^{commit}</c>, <c>symbolic-ref --short -q HEAD</c>). Read-only: the same question
 /// asked again in a flow that reads once is answered from the first.
 /// </summary>

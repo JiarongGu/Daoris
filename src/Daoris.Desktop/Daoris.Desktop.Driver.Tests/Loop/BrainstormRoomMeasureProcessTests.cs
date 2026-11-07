@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BRAINSTORM1c: the room measurement proven on stand-ins, with no model and no account. A stand-in agent on the protocol
+/// The room measurement proven on stand-ins, with no model and no account. A stand-in agent on the protocol
 /// door is a real process in the pass's room, handed the probe's instruction as its prompt: one that keeps to its room and is refused every
 /// step, one that reads and writes wherever it is asked, and one that says nothing. The measurement judges each by what its run shows, keeps
 /// the evidence, and removes its probe; asked without spending, it starts nothing.
@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// A real process on a real connector, so the class is in the real-process half and needs `Daoris.Service.Mcp` built, as
 /// <see cref="BrainstormProcessTests"/> does; it hands the driver an environment naming its own scratch. No real Claude Code or Codex
-/// starts and no account is spent: the real run is the owner's, and this is what it was proven on.
+/// starts and no account is spent: the real run is the owner's, and this is what it is proven on.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class BrainstormRoomMeasureProcessTests : IDisposable
@@ -119,7 +119,7 @@ public sealed class BrainstormRoomMeasureProcessTests : IDisposable
     private static Dictionary<string, string> Outcomes(RoomMeasure measure) => measure.Probes.ToDictionary(each => each.Step, each => each.Outcome);
 
     /// <summary>
-    /// 🔴 An agent that keeps to its room, read its packet and was refused every step is measured `kept`, step by step; the evidence is kept
+    /// 🔴 An agent that keeps to its room, reads its packet and is refused every step is measured `kept`, step by step; the evidence is kept
     /// with the brainstorm's own records, and the room and the probe's folder are gone.
     /// </summary>
     [Fact]

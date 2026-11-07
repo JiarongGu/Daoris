@@ -7,12 +7,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// 🔴 <b>A door runs as its owner's accounts</b>.
 /// </summary>
 /// <remarks>
-/// <para><c>accountOf</c> has said since ACP2 that the protocol door runs as the agent's account — and
-/// the page groups a tool's doors on it — but the driver resolved a door's accounts, defaults and keys
-/// under the DOOR's own name: <c>harnesses/claude-code-acp/…</c>. So an account made for Claude Code
-/// was invisible to Claude Code over the protocol door, a Codex account never reached
-/// <c>codex-acp</c>, and a key account worked on the direct door only. Found while designing
-/// the key accounts, 2026-09-23.</para>
+/// <para><c>accountOf</c> says the protocol door runs as the agent's account — and
+/// the page groups a tool's doors on it — so the driver resolves a door's accounts, defaults and keys
+/// under the OWNER's name, never the DOOR's own: <c>harnesses/claude-code-acp/…</c>. So an account made for Claude Code
+/// is visible to Claude Code over the protocol door, a Codex account reaches
+/// <c>codex-acp</c>, and a key account works on both doors.</para>
 /// <para>What stays the door's own: its <b>pin</b>. A door is a different package at a different
 /// version, and one pin for both would install the wrong thing under a trusted name.</para>
 /// </remarks>
@@ -83,7 +82,7 @@ public sealed class DoorAccountTests : IDisposable
         Assert.True(selection.Allowed, selection.Refusal);
         Assert.Equal("work", selection.Profile);
         Assert.Equal(work, selection.ProfileHome);
-        // Nothing was made under the door's own name.
+        // Nothing is made under the door's own name.
         Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.AgentHomes, "owner-acp")));
     }
 
@@ -148,7 +147,7 @@ public sealed class DoorAccountTests : IDisposable
     /// <summary>
     /// An owner this build carries no adapter for (`codex` behind `codex-acp`) still owns the
     /// accounts: they are directories under its name, and the door runs in them. Nothing to ask about
-    /// the login, so it is unknown and permissive, and no key is handed (none was measured).
+    /// the login, so it is unknown and permissive, and no key is handed (none is measured).
     /// </summary>
     [Fact]
     public async Task A_door_whose_owner_has_no_adapter_still_runs_in_the_owner_s_accounts()

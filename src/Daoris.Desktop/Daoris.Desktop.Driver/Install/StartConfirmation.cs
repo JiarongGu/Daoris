@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// Whether a start's confirmation is settled, read from its install's swap journal:
 /// the store holds every import and every stamp-raising migration until it is, so a build rolled back before it confirmed meets every file
-/// as it was and a store it can still write.
+/// unchanged and a store it can still write.
 /// </summary>
 /// <remarks>
 /// <para><b>Settled</b> is a journal at no phase the launcher can still roll back from: no journal, no install (a workspace build), or

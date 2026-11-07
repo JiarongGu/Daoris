@@ -54,8 +54,8 @@ public sealed class DriverModuleRegistryTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The look's follow registered a set-up repository from its line, adopted, and
-    /// no route's press was behind it, so no window was told and the page read it not adopted until a reload. A follow that sent a
+    /// The look's follow registers a set-up repository from its line, adopted, and
+    /// no route's press is behind it, so no window is told and the page reads it not adopted until a reload. A follow that sent a
     /// registration tells the windows <c>registry</c>; one that sent nothing (unchanged, not set up, refused) tells nothing.
     /// </summary>
     [Fact]

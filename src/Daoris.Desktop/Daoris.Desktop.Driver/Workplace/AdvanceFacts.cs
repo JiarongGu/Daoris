@@ -15,6 +15,6 @@ namespace Daoris.Driver;
 /// <param name="Ahead">How many commits the session's work holds beyond the recorded tip.</param>
 /// <param name="Completed">
 /// Where the end proof found the recorded tip's work on the line — a form of it, such as <c>origin/main</c> — so its pull
-/// request was merged; null where it does not read there.
+/// request is merged; null where it does not read there.
 /// </param>
 public sealed record AdvanceFacts(LandedBranch? Recorded, string Tip, string? CheckedOutAt, bool Descends, int Ahead, string? Completed);

@@ -320,7 +320,7 @@ public sealed class AccountSetTests : IDisposable
     }
 
     /// <summary>
-    /// POOLSTRAY1: a scratch home holding a folder no agent Daoris knows names folds to the known agents alone, every reader passing
+    /// A scratch home holding a folder no agent Daoris knows names folds to the known agents alone, every reader passing
     /// it over; the folder is said once to the machine log, however many folds see it, and is never touched.
     /// </summary>
     [Fact]
@@ -350,7 +350,7 @@ public sealed class AccountSetTests : IDisposable
     }
 
     /// <summary>
-    /// POOLSTRAY1: a wiring a fold wrote over a stray folder, its order and its receipt under the stray agent, loses both at the next
+    /// A wiring a fold wrote over a stray folder, its order and its receipt under the stray agent, loses both at the next
     /// fold, with its <c>accounts.strayDropped</c> line as the receipt; the known agent's order, and what a person wrote for the stray
     /// agent elsewhere, stay; a second fold writes nothing.
     /// </summary>
@@ -385,7 +385,7 @@ public sealed class AccountSetTests : IDisposable
     }
 
     /// <summary>
-    /// POOLSTRAY1: the agents Daoris knows are the build's, each agent a door runs as, and every installed plugin's harness, a disabled
+    /// The agents Daoris knows are the build's, each agent a door runs as, and every installed plugin's harness, a disabled
     /// one's too, so turning a plugin off drops none of its wiring.
     /// </summary>
     [Fact]

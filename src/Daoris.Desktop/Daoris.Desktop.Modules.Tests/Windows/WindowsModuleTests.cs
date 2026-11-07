@@ -114,7 +114,7 @@ public sealed class WindowsModuleTests : Bridge
         Assert.Equal(MainWindows.First, _scopes.Pick("games"));
         Assert.Equal("main:2", _scopes.Pick("work"));
 
-        // The second window turned to every workspace: it holds the first's too, and the first was last in front.
+        // The second window turned to every workspace: it holds the first's too, and the first is the one last in front.
         await AnswerAsync(Module(), "SET_TITLE", new { name = "main:2", title = "Daoris (道衍)", workspace = (string?)null });
         Assert.Equal(MainWindows.First, _scopes.Pick("games"));
         Assert.Equal("main:2", _scopes.Pick("work"));

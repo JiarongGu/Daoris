@@ -192,7 +192,7 @@ public static class ToolInstall
     /// A download's first half: fetched, verified, unpacked and its record
     /// written into its own staging, <c>&lt;version&gt;.part-&lt;pid&gt;</c>, where no reader takes it for a version and no other run
     /// meets it. It holds nothing while it waits on the network; <see cref="Publish"/> makes it the version. Null where the version is
-    /// already downloaded: nothing was fetched. Its start sweeps the tool's stagings whose process no longer runs.
+    /// already downloaded: nothing is fetched. Its start sweeps the tool's stagings whose process no longer runs.
     /// </summary>
     /// <param name="ct">The person's stop: it ends the download, and the staging goes with it.</param>
     /// <param name="process">The process the staging is named by: this one, unless a test names two runs in one process.</param>
@@ -437,7 +437,7 @@ public static class ToolInstall
     /// <param name="config">The person's choices as the loop resolves them; this home's resolution where null.</param>
     /// <returns>The folder deleted.</returns>
     /// <exception cref="ToolRefusal"><c>version</c>, <c>missing</c>, <c>file</c> (which version runs cannot be read),
-    /// <c>in-use</c> (Tools runs it), or <c>held</c> with its reason: a program holds it, a running session was handed it, a setting names a
+    /// <c>in-use</c> (Tools runs it), or <c>held</c> with its reason: a program holds it, a running session is handed it, a setting names a
     /// file inside it, or what uses it cannot be read now.</exception>
     public static async Task<string> DeleteAsync(
         string home, string tool, string version, Func<CancellationToken, Task<LiveSessions>> sessions, string? harnesses = null,
@@ -585,7 +585,7 @@ public static class ToolInstall
         ];
     }
 
-    /// <summary>How long ago a file was written, in the largest whole unit.</summary>
+    /// <summary>How long since a file's last write, in the largest whole unit.</summary>
     internal static string Age(string file, DateTimeOffset now)
     {
         var seconds = (long)Math.Max(0, Math.Round((now - File.GetLastWriteTimeUtc(file)).TotalSeconds));

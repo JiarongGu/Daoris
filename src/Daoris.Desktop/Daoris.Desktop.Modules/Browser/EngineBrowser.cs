@@ -64,7 +64,7 @@ public static class EngineBrowser
 
     /// <summary>
     /// The engine's language, from the person's: one of the two the install keeps (en-US, zh-CN), so
-    /// the engine never asks for a locale file that was left out.
+    /// the engine never asks for a locale file that is left out.
     /// </summary>
     public static string Locale(string uiCulture) =>
         uiCulture.StartsWith("zh", StringComparison.OrdinalIgnoreCase) ? "zh-CN" : "en-US";
@@ -232,7 +232,7 @@ public sealed class EngineCdp(int port) : IDisposable
     /// The browser's first window: made over this port once it answers, the way an agent's windows
     /// are, in the background when a session asked. Throws what went wrong, a port that never answered
     /// within <paramref name="portLimit"/> as a <see cref="TimeoutException"/>; cancelled only when
-    /// <paramref name="ct"/> is, because the shell or the engine went before there was a window to make.
+    /// <paramref name="ct"/> is, because the shell or the engine went before there is a window to make.
     /// </summary>
     /// <remarks>
     /// In the modules rather than in `daoris-browser`, so it is tested: the browser starts it and

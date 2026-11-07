@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 rows d, e and f: what the roster reads of an account's words, its key variable and its week, it reads through the
-/// registry, each door answering as the toolchain it was read from did; Claude Code's and Codex's words stand in their own folders; Claude
+/// What the roster reads of an account's words, its key variable and its week, it reads through the
+/// registry, each door answering as the toolchain it is read from does; Claude Code's and Codex's words stand in their own folders; Claude
 /// Code's conversation home is the one the tool-home leftovers read; the pin's move is decided once.
 /// </summary>
 public sealed class ProviderAccountReadsTests

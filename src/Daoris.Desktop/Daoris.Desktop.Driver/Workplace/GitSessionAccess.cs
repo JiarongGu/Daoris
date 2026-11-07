@@ -64,7 +64,7 @@ public static class GitSessionAccess
         return Valid(session) && Parse(PathOf(home, session!))?[Tightened] is JsonObject tightened ? Narrowed(resolved, tightened) : resolved;
     }
 
-    /// <summary>The record of <paramref name="session"/> as it holds now; null where none was begun.</summary>
+    /// <summary>The record of <paramref name="session"/> as it holds now; null where none is begun.</summary>
     public static GitSessionRecord? Read(string home, string? session)
     {
         if (!Valid(session) || Parse(PathOf(home, session!)) is not { } record) return null;
@@ -101,7 +101,7 @@ public static class GitSessionAccess
     {
         var held = Read(home, session) ?? throw new DriverException($"no running session {session} holds git access here.");
         if (set.Count == 0) throw new DriverException("name a class to tighten: read, write or dangerous.");
-        // A copy: the held node belongs to the record it was read from, and the record written is a new one.
+        // A copy: the held node belongs to the record it is read from, and the record written is a new one.
         var tightened = Parse(PathOf(home, session))?[Tightened]?.DeepClone() as JsonObject ?? new JsonObject();
         foreach (var (spelled, value) in set)
         {

@@ -9,13 +9,13 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para>🔴 Measured: a session started its repository's dev servers from a background
 /// shell, its turn ended, the agent exited, and the servers kept running, holding two ports and a tree
-/// whose session was over. <see cref="Process.Kill(bool)"/> walks a tree from a live root, and by then
-/// there was no root: the agent had exited on its own and its descendants were nobody's children.</para>
+/// whose session had ended. <see cref="Process.Kill(bool)"/> walks a tree from a live root, and once the agent exits
+/// there is no root: its descendants are nobody's children.</para>
 ///
 /// <para>On Windows the process joins a job object that kills on close, and every process it starts
 /// joins the same job, detached or not, unless the job allows breaking away, and this one does not.
 /// Disposing the handle ends them all, and so does this process exiting, since the handle closes with
-/// it. Elsewhere this is a no-op: the platform where the orphan was measured is the one it holds.</para>
+/// it. Elsewhere this is a no-op: the platform where the orphan occurs is the one it holds.</para>
 ///
 /// <para>Best effort by construction. A process that exited before it could join, or a job the
 /// system refused, leaves the session running without the job.</para>
@@ -296,7 +296,7 @@ public sealed class ProcessJob : IDisposable
 
     /// <summary>
     /// End the job a dead holder of a heavy-run slot named, if it is still there, and wait until it holds nothing: true
-    /// where it was. A name no job answers to is a job whose last handle closed, which ended what it held as it closed.
+    /// where the job existed. A name no job answers to is a job whose last handle closed, which ended what it held as it closed.
     /// </summary>
     /// <exception cref="System.ComponentModel.Win32Exception">It is there and would not open: cannot tell, which is never "ended".</exception>
     internal static async Task<bool> EndNamedAsync(string name)

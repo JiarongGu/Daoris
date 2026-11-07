@@ -16,13 +16,13 @@ namespace Daoris.Desktop;
 /// <para><b>What an ask is answered.</b> The answer held for its route and payload, at once; with none held yet (the first ask
 /// since the start, or one the bound let go), what the work answers within <see cref="Patience"/>, waited for off the window's
 /// thread, else <see cref="Pending"/>, which the page reads as "keep what you hold". A work that failed with nothing held is
-/// answered as the refusal it was, once, so a page asking again reads the failure rather than waiting for ever.</para>
+/// answered as the refusal it makes, once, so a page asking again reads the failure rather than waiting for ever.</para>
 ///
 /// <para><b>Every ask starts the work again</b>, or joins the one under way for its key, so a held answer is never more than one
 /// ask behind; a press forgets the works under way (<see cref="Forget"/>), as it does a shared read's, so the ask after a change
 /// never joins a work begun before it, and an older work landing after a newer one never overwrites it.</para>
 ///
-/// <para><b>Told only when it moved.</b> A work answering what was held tells nothing, so the page's ask, the work and the event
+/// <para><b>Told only when it moved.</b> A work answering what is held tells nothing, so the page's ask, the work and the event
 /// never chase each other. The event names the page's own query (the payload's <c>held</c>, its key's hash), never the payload,
 /// whose trees are machine paths: the page sends <c>held</c>, and an ask without one is answered and told nothing.</para>
 ///
@@ -177,7 +177,7 @@ public sealed class HeldAnswers
     }
 
     /// <summary>
-    /// The last work begun for <paramref name="key"/> landed, its answer held: what a test waits for when an ask was answered
+    /// The last work begun for <paramref name="key"/> landed, its answer held: what a test waits for when an ask is answered
     /// <see cref="Pending"/>, or held.
     /// </summary>
     public Task LandedAsync(string key)
@@ -251,7 +251,7 @@ public sealed class HeldAnswers
             }
             else
             {
-                // A failure keeps what was held: the page goes on reading it. With nothing held it is the next ask's refusal.
+                // A failure keeps what is held: the page goes on reading it. With nothing held it is the next ask's refusal.
                 if (entry.Answered) return true;
                 entry.Fault = done.Exception?.InnerException ?? done.Exception;
                 failed = true;

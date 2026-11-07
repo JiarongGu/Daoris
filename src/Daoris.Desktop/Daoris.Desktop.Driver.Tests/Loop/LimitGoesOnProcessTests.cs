@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LIMITGOON1 with real conversations: a conversation whose account answers a limit
+/// With real conversations: a conversation whose account answers a limit
 /// sentence mid-conversation goes on, at that turn's end, in a new part of its line on the next account of the same agent, handed
 /// Daoris's brief and then the words the refused turn held, as the person's. The old part ends saying where it went on, the new one
 /// opens saying where it came from, each by its code, and the machine log says the move. For a repository's chat, in its tree with its
@@ -140,7 +140,7 @@ public sealed class LimitGoesOnProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1a-ii (D205 §3.5(d)): the same limit refusing a chat whose account the person picked moves nothing. Its binding in the
+    /// 🔴 The same limit refusing a chat whose account the person picked moves nothing. Its binding in the
     /// store says they picked account-1, so the conversation waits for that account, its held words with it, though account-2 has room: one
     /// record, no prompt on account-2, the wait said as the limit's, and no part opened on another account.
     /// </summary>
@@ -177,7 +177,7 @@ public sealed class LimitGoesOnProcessTests : IDisposable
 
     /// <summary>
     /// 🔴 Ask Daoris: the limit refuses its turn on account-1, and the same conversation goes on on account-2 in its room, its history
-    /// naming the one it continues and what it was handed, the held words its first turn; the log's opening line says what it carries.
+    /// naming the one it continues and what it is handed, the held words its first turn; the log's opening line says what it carries.
     /// </summary>
     [Fact]
     public async Task Ask_Daoris_whose_account_answers_a_limit_goes_on_in_its_room_on_the_next_account_with_the_held_words()

@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// <param name="Tip">The landing's recorded tip, the node's subject.</param>
 /// <param name="Code">Why its landing is no request (<see cref="IntegrationRefusals"/>).</param>
 /// <param name="Said">The door's sentence for it.</param>
-/// <param name="Since">When the branch was landed.</param>
+/// <param name="Since">When the branch landed.</param>
 public sealed record IntegrationCardWait(
     string Unit, string Repository, string Workspace, string Branch, string Tip, string Code, string Said, DateTimeOffset? Since)
 {

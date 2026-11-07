@@ -92,7 +92,7 @@ test.describe('the waiting panel', () => {
     expect(at.main.height).toBeGreaterThanOrEqual(CONVERSATION - 4);
   });
 
-  // QUESTIONUI1a (the supervisor design §8.4): six long answers at the panel's floor scroll within the park's part, and the box's field
+  // Six long answers at the panel's floor scroll within the park's part, and the box's field
   // and *Send*, outside every part, stay in sight in the column under it.
   for (const story of ['SixLongAtTheFloor', 'SixLongAtTheFloorChineseDark']) {
     test(`keeps the field and its send in sight under six long answers at the floor: ${story}`, async ({ page }) => {

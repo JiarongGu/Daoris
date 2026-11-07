@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CODEXACCT1: the window adds a Codex account as the terminal does. Codex reaches the driver only
+/// The window adds a Codex account as the terminal does. Codex reaches the driver only
 /// through <c>codex-acp</c>, which runs <c>codex</c> and has no sign-in of its own, and no <c>codex</c> door exists, so the
 /// agent whose accounts the door runs as is declared for it: <c>codex</c>'s own binary, its <c>login</c>, its
 /// <c>login status</c> and its <c>CODEX_HOME</c>, the CLI's <c>codex</c> entry's twin.
@@ -46,7 +46,7 @@ public sealed class CodexAccountTests : IDisposable
         Assert.Equal(["codex"], Roster().AccountAgentOf("codex-acp")!.Program.Binary);
         // The door itself still has none: it runs `codex` and reads the home `codex` signed into.
         Assert.Null(Roster().AgentOf("codex-acp")!.Accounts.LoginArguments);
-        // Measured with no key spent: `--with-api-key` stores a key in Codex's own home, which D67 §1 does not carry.
+        // Measured with no key spent: `--with-api-key` stores a key in Codex's own home, which Daoris does not carry.
         Assert.Null(agent.Accounts.KeyVariable);
     }
 
@@ -132,10 +132,10 @@ public sealed class CodexAccountTests : IDisposable
         Assert.Null(said.Account);
     }
 
-    // The declaration was held to the CLI's `codex` entry in `toolchain.ts` until `TOOLCHAINS` left with the plugins' TypeScript: every sign-in is the driver's since `daoris agent` became its program's, so the declaration has one home.
+    // Every sign-in is the driver's, so the declaration has one home.
 
     /// <summary>
-    /// CODEXACCT2: what <c>codex login --device-auth</c> prints reaches the window's console as plain lines, as Claude
+    /// What <c>codex login --device-auth</c> prints reaches the window's console as plain lines, as Claude
     /// Code's sign-in does: its colours gone, the link a line of its own for the page to offer, and the one-time code the
     /// line after the sentence that asks for it. The words are those measured with 0.160.0, shaped
     /// as Codex prints them, with a colour around the version, the link, the code and the notes; the code is invented.
@@ -219,7 +219,7 @@ public sealed class CodexAccountTests : IDisposable
         Assert.Equal("`by-phone` is no way to sign in — `browser` or `device-code`.", Assert.Throws<DriverException>(() => SignInWays.Of("by-phone")).Message);
     }
 
-    // ——— CODEXLOGIN1: the browser sign-in's ports, tried for a moment, never read from Windows' table.
+    // ——— The browser sign-in's ports, tried for a moment, never read from Windows' table.
 
     /// <summary>
     /// A port another program holds reads as held, and one nobody holds as free, by taking it on the loopback address as

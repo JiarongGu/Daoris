@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Which of the two looks over the checkouts here <c>daoris tree list</c> was asked for.</summary>
+/// <summary>Which of the two looks over the checkouts here <c>daoris tree list</c> is asked for.</summary>
 public enum TreesLook
 {
     /// <summary>The clean-up: the session branches whose work landed or that hold nothing, and the landed branches whose work reached the line.</summary>
@@ -10,7 +10,7 @@ public enum TreesLook
     Sync,
 }
 
-/// <summary>What <c>daoris tree clean|sync</c> was asked: which checkouts, and whether it is the press.</summary>
+/// <summary>What <c>daoris tree clean|sync</c> is asked: which checkouts, and whether it is the press.</summary>
 /// <param name="Look">The clean-up, or bringing up to date.</param>
 public sealed record TreesAsk(TreesLook Look)
 {

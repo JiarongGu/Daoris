@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-ii part b (the foundation design §3.3, §13.4 steps 1 to 5, §19.4, row f-ii's proof): the live limit move's record holds
+/// The live limit move's record holds
 /// through a crash at every boundary. A shell is killed at each place the executor passes (<see cref="Cuts"/>: after the decision, after
 /// <c>old-ended</c>, after <c>opening</c> with and without the open made, after <c>opened</c>, after the mark and before the write, after the
 /// write and before <c>sent</c>, after <c>sent</c> and before the take, after the take and before <c>delivered</c>), and a shell that comes up
@@ -27,9 +27,9 @@ public sealed class LimitMoveCrashProcessTests : IAsyncLifetime
 
     public async Task DisposeAsync() => await _h.DisposeAsync();
 
-    /// <summary>What a killed shell's move comes to once a shell comes up: its end, whether its word was written by the dead shell or carried, and where it waits.</summary>
+    /// <summary>What a killed shell's move comes to once a shell comes up: its end, whether its word is written by the dead shell or carried, and where it waits.</summary>
     /// <param name="Phase">The move's phase after the come-up.</param>
-    /// <param name="Held">The reason it was held, where it was.</param>
+    /// <param name="Held">The reason it is held, where it is held.</param>
     /// <param name="Closed">The reason it closed, where it did.</param>
     /// <param name="OnOldPart">Whether the word still waits on the old part: the open never moved it.</param>
     /// <param name="Wrote">How many times the dead shell's door wrote the word to the new part.</param>
@@ -39,11 +39,11 @@ public sealed class LimitMoveCrashProcessTests : IAsyncLifetime
 
     private static readonly Dictionary<string, Ends> Table = new(StringComparer.Ordinal)
     {
-        // Before the open was asked: the line stays on its old part, the word with it, for the old part's own come-up (§13.5's first row).
+        // Before the open is asked: the line stays on its old part, the word with it, for the old part's own come-up (§13.5's first row).
         [Cuts.Decided] = new("fell-back", null, null, OnOldPart: true, 0, 0, 0),
         [Cuts.OldEnded] = new("fell-back", null, null, OnOldPart: true, 0, 0, 0),
 
-        // The open asked and never made: held `unrecorded` and closed, nothing opened, the word where it was.
+        // The open asked and never made: held `unrecorded` and closed, nothing opened, the word stays where it is.
         [Cuts.Opening] = new("closed", MoveHoldWhy.Unrecorded, MoveCloseWhy.Resolved, OnOldPart: true, 0, 0, 0),
 
         // The open made and its answer lost, and every later boundary before the write: the move is closed and the destination's own go-on
@@ -55,7 +55,7 @@ public sealed class LimitMoveCrashProcessTests : IAsyncLifetime
         // The write made and `sent` not written: uncertain, taken back and said, never carried again.
         [Cuts.Written] = new("closed", MoveHoldWhy.Undelivered, MoveCloseWhy.Resolved, OnOldPart: false, 1, 0, 1),
 
-        // `sent` written: the word is taken, and the move delivered by it, whether its take was made or not.
+        // `sent` written: the word is taken, and the move delivered by it, whether its take is made or not.
         [Cuts.Sent] = new("delivered", null, null, OnOldPart: false, 1, 0, 0),
         [Cuts.Taken] = new("delivered", null, null, OnOldPart: false, 1, 0, 0),
     };

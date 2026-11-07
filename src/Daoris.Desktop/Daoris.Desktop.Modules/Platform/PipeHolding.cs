@@ -18,7 +18,7 @@ namespace Daoris.Desktop;
 /// holder: a second is refused <see cref="HeldElsewhere"/>, naming the terminal's process.</para>
 /// <para><b>How one ends.</b> The terminal's <c>LET_GO</c>, the window's <c>SESSION_LET_GO</c>, the conversation's end, or the connection
 /// closing, a restart included. Each end is told to the connection where it is still there (<see cref="HeldType"/>, <c>held: ended</c>,
-/// its reason) after what was forwarded before it. The start and the end are logged <see cref="LogEvent"/>, by codes alone.</para>
+/// its reason) after what is forwarded before it. The start and the end are logged <see cref="LogEvent"/>, by codes alone.</para>
 /// <para>Holds live in the pipe's state (<see cref="PipeState.Holds"/>) under its gate; every window is told them whole at each change
 /// (<see cref="Event"/>).</para>
 /// </remarks>
@@ -140,7 +140,7 @@ public sealed class PipeHolding(InstancePipe pipe, IEventBus bus) : IDisposable
             _asking[shown.Id] = connection;
         }
 
-        // A connection that closed while it was shown has nothing to hold for: its card is taken back. One still there is told it waits.
+        // A connection that closes while it is shown has nothing to hold for: its card is taken back. One still there is told it waits.
         if (!Open(connection)) pipe.Confirmations.Withdraw(shown.Id);
         else _ = connection.WriteAsync(Told(InstancePipe.Confirming, new { id = request.Id }));
         var ending = await ended.ConfigureAwait(false);

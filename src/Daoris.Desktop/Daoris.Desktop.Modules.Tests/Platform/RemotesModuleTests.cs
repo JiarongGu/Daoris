@@ -98,7 +98,7 @@ public sealed class RemotesModuleTests : Bridge
     [Fact]
     public async Task Unwiring_something_that_was_never_wired_is_an_answer_not_a_failure()
     {
-        // The end state is the one that was asked for, so a failure here would make an idempotent
+        // The end state is the one that is asked for, so a failure here would make an idempotent
         // surface look broken — the same judgement `daoris remote remove` makes.
         var state = await AnswerAsync(Module(), "REMOVE", new { workspace = "never-wired" });
 

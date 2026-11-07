@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL4d: an account's cool-off, kept per account in <c>cooling.json</c> under the home, written when a
+/// An account's cool-off, kept per account in <c>cooling.json</c> under the home, written when a
 /// limit is read and read before any probe, so a start on a spent account is held with nothing spawned.
 /// </summary>
 /// <remarks>
@@ -77,7 +77,7 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.Equal("3f9c2a71", named["session"]!.GetValue<string>());
         Assert.Equal(["until", "stated", "window", "seen", "session"], named.Select(field => field.Key));
 
-        // The tool's own configuration home is `""`, AGT3b's key; a window it did not name is not written.
+        // The tool's own configuration home is `""`, its key; a window it does not name is not written.
         var own = written["claude-code"]![""]!.AsObject();
         Assert.False(own["stated"]!.GetValue<bool>());
         Assert.False(own.ContainsKey("window"));
@@ -127,7 +127,7 @@ public sealed class AccountCoolingTests : IDisposable
     }
 
     /// <summary>
-    /// TOOL6e: a cool-off that ended within the last day, which the file still holds, says when its account was offered
+    /// A cool-off that ended within the last day, which the file still holds, says when its account is offered
     /// again; one still cooling, one that ended longer ago, and one a later write dropped say nothing.
     /// </summary>
     [Fact]
@@ -256,7 +256,7 @@ public sealed class AccountCoolingTests : IDisposable
     }
 
     /// <summary>
-    /// TOOL4e: an account removed takes its cool-off with it, as the CLI's <c>profile remove</c> does — an account made
+    /// An account removed takes its cool-off with it, as the CLI's <c>profile remove</c> does — an account made
     /// later under its name by <c>profile add</c> must not start out cooling.
     /// </summary>
     [Fact]
@@ -375,7 +375,7 @@ public sealed class AccountCoolingTests : IDisposable
     }
 
     /// <summary>
-    /// ROSTERREFUSE1: the roster's refusal carries its coded parts beside the English, which is unchanged to the byte: a cooling
+    /// The roster's refusal carries its coded parts beside the English, which is unchanged to the byte: a cooling
     /// account by its owner and id (never its name), the tool's own sign-in with its refresh line, and an agent not installed.
     /// </summary>
     [Fact]
@@ -439,7 +439,7 @@ public sealed class AccountCoolingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 MIXAGENT1a-ii: a quest handed over names an account, tried first as a pick is; where it cannot run, the walk
+    /// 🔴 A quest handed over names an account, tried first as a pick is; where it cannot run, the walk
     /// goes on within the NAMED agent's accounts, never back to the old agent, and the answer says which account it passed.
     /// </summary>
     [Fact]
@@ -497,7 +497,7 @@ public sealed class AccountCoolingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITRESUME1b (the limit-resume design §3.1, round 3's Codex 10; D125 point 3 amended): a cool-off whose write fails is
+    /// 🔴 A cool-off whose write fails is
     /// still the limit read, kept in this process's memory, so the account is passed until its <c>until</c> as a written one is, and
     /// each read tries the write again until it lands; <i>Try now</i> ends it as it ends a written one.
     /// </summary>
@@ -564,7 +564,7 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.Equal(limited.Value.Entry, AccountCooling.Of(_home, "fake", "account-1", _now));
     }
 
-    /// <summary>TOOL4e: the default a limit naming no time takes is the one the caller hands over, the machine's <c>cooloff</c>.</summary>
+    /// <summary>The default a limit naming no time takes is the one the caller hands over, the machine's <c>cooloff</c>.</summary>
     [Fact]
     public void A_limit_that_names_no_time_cools_for_the_cool_off_handed_over_and_an_hour_without_one()
     {

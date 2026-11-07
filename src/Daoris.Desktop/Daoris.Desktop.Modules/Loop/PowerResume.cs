@@ -3,7 +3,7 @@ namespace Daoris.Desktop;
 /// <summary>
 /// The machine's resume from sleep, as the shell hears it: the desktop raises it from the
 /// system's power event, a test raises it by hand, and a loop's change watch reopens its roots and judges them. The watch's own
-/// overrun rule stays behind it as the fallback where no power event was heard.
+/// overrun rule stays behind it as the fallback where no power event is heard.
 /// </summary>
 /// <remarks>In Modules, which takes no <c>SystemEvents</c>: the shell's window process owns that hook and calls <see cref="Raise"/>.</remarks>
 public sealed class PowerResume

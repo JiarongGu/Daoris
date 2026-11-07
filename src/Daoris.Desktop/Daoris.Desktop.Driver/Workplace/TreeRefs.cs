@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The sync's reads of a checkout's refs (out of <c>SessionTrees.Sync.cs</c>): where a revision is, whether one holds
-/// another, how far apart, where the line stands, whether a branch is on its remote, the fetch and when origin was last heard
+/// another, how far apart, where the line stands, whether a branch is on its remote, the fetch and when origin is last heard
 /// from, and the bound over many checkouts at once. Static, since none reads anything of the trees' context.
 /// </summary>
 internal static class TreeRefs
@@ -28,7 +28,7 @@ internal static class TreeRefs
         if (pathCode == 0 && pathOut.Trim() is { Length: > 0 } relative)
         {
             var file = new FileInfo(Path.IsPathRooted(relative) ? relative : Path.Combine(root, relative));
-            // An empty one is a fetch that failed before it heard anything: it says when a fetch was tried, not heard.
+            // An empty one is a fetch that failed before it heard anything: it says when a fetch ran, not when it heard.
             if (file.Exists && file.Length > 0) fetchHead = new DateTimeOffset(file.LastWriteTimeUtc, TimeSpan.Zero);
         }
 

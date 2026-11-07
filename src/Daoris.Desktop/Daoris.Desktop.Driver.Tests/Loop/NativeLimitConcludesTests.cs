@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// D210 row 1c, LIMITRESUME1f: a native run whose last turn its account's limit ended concludes as the protocol door's refused turn
+/// A native run whose last turn its account's limit ended concludes as the protocol door's refused turn
 /// does. A driven run's conclusion reads the limit as its turn's failure, so the account cools there once and the record says <c>limit</c>; a
 /// conversation's cooling line stands before its turn's end, which reads it limited, so its line moves to the next account by its rules.
 /// </summary>

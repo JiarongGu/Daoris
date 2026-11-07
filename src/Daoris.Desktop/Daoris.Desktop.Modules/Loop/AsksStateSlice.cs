@@ -51,7 +51,7 @@ public static class AsksStateSlice
             Keyed = true,
             WakesOn = WakesOn,
             Hears = [wake => QuestsStateSlice.HearLedger(loop, Families, wake)],
-            // The service away or refusing: the windows keep what was judged, and the next wake reads it again.
+            // The service away or refusing: the windows keep what is judged, and the next wake reads it again.
             Failed = error => loop.Log?.Warn("state.slice", ("slice", Name), ("message", error.Message)),
         };
 

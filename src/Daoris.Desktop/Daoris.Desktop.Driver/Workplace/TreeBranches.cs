@@ -333,7 +333,7 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
     /// <param name="against">The line's form the commits were counted from, which a squash's branch is counted from again.</param>
     /// <param name="squash">
     /// The session the rule squashes: the advance is one more commit on the branch, its tree the session's
-    /// tip's, its parent the branch's tip, its message only what was added since the recorded tip; null is the fast-forward.
+    /// tip's, its parent the branch's tip, its message only what is added since the recorded tip; null is the fast-forward.
     /// </param>
     /// <param name="replayed">
     /// The tip of what the line lacks replayed onto the branch's, which the branch moves to in place of the session's tip;

@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 /// <remarks>
 /// 🔴 <b>No real agent runs here.</b> An update runs a stand-in script as the agent's command, and the
-/// service is a stand-in handler that records what it was asked.
+/// service is a stand-in handler that records what it is asked.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class HelpDoorsTests : Bridge

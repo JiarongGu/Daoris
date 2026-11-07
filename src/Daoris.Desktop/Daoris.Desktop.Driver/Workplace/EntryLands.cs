@@ -72,7 +72,7 @@ public static class EntryPartOutcome
     /// <summary>Its work landed, as <see cref="EntryPartLanding.Landing"/> says.</summary>
     public const string Landed = "landed";
 
-    /// <summary>It was refused, as <see cref="EntryPartLanding.Landing"/> says; the parts after it were not tried.</summary>
+    /// <summary>It is refused, as <see cref="EntryPartLanding.Landing"/> says; the parts after it are not tried.</summary>
     public const string Refused = "refused";
 
     /// <summary>The person chose to leave it out: nothing of it is landed, and its tree stays.</summary>
@@ -81,7 +81,7 @@ public static class EntryPartOutcome
     /// <summary>Its tree is an earlier part's, whose landing carried its commits.</summary>
     public const string SameTree = "same-tree";
 
-    /// <summary>An earlier part was refused, so it was not tried: the order is the ledger's, and a later part may build on it.</summary>
+    /// <summary>An earlier part is refused, so it is not tried: the order is the ledger's, and a later part may build on it.</summary>
     public const string NotTried = "not-tried";
 
     /// <summary>Its work is replayed onto the head bringing it in: the head's landing carries it, and it lands nothing itself.</summary>
@@ -94,12 +94,12 @@ public static class EntryPartOutcome
     public const string Accepted = "accepted";
 }
 
-/// <summary>One part's outcome at an entry's Accept, with its landing's answer where it was tried.</summary>
+/// <summary>One part's outcome at an entry's Accept, with its landing's answer where it is tried.</summary>
 public sealed record EntryPartLanding(string Session, string Outcome, TreeLanding? Landing = null);
 
 /// <summary>
 /// What came of an entry's Accept: whether every part it tried landed, its sentence, the branch (or line) the parts
-/// landed on, and each part. A part that landed before a later one was refused stays landed: each is its own landing, recorded.
+/// landed on, and each part. A part that landed before a later one is refused stays landed: each is its own landing, recorded.
 /// </summary>
 public sealed record EntryLanding(bool Landed, string Message, string? Branch, IReadOnlyList<EntryPartLanding> Parts);
 
@@ -301,7 +301,7 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
 
     /// <summary>
     /// The entry's one branch, named by the rule for the entry's first part (the chain's first quest, as a chain's is), or,
-    /// where that branch's pull request was merged or closed, the first of its successors (<see cref="EntryLandings.Candidate"/>) that
+    /// where that branch's pull request is merged or closed, the first of its successors (<see cref="EntryLandings.Candidate"/>) that
     /// is free or stands open. Null under a merge rule, which makes no branch.
     /// </summary>
     private async Task<string?> BranchAsync(string tree, IWorkplaceProcess? process, LandingSubject subject, CancellationToken ct)
@@ -320,7 +320,7 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
         for (var n = 1; n <= EntryLandings.Names; n++)
         {
             var candidate = EntryLandings.Candidate(name, n);
-            // Free: the press makes it. Not Daoris's, or moved since it was landed on: the press refuses it, said, as a chain's is.
+            // Free: the press makes it. Not Daoris's, or moved since its landing: the press refuses it, said, as a chain's is.
             if (await CommitOfAsync(root, $"refs/heads/{candidate}", ct).ConfigureAwait(false) is not { } stands) return candidate;
             var recorded = context.Recorded.Of(repository, candidate);
             if (recorded is null || !string.Equals(stands, recorded.Tip, StringComparison.OrdinalIgnoreCase)) return candidate;

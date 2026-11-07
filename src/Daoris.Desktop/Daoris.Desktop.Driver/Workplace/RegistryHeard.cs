@@ -16,7 +16,7 @@ public static class RegistryHeard
             /// and no Daoris landing says so. Read with no process: one never followed is the start's to follow, and a line the files cannot
             /// say (the reftable format, a ref being replaced) waits for the next start. Never throws.
             /// </summary>
-            /// <returns>Whether it was recorded moved now.</returns>
+            /// <returns>Whether it is recorded moved now.</returns>
             public static bool Heard(string home, RefRepository repository)
             {
                 try

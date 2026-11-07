@@ -37,7 +37,7 @@ public static class PullKind
 /// <param name="From">The local line's commit, where it has one.</param>
 /// <param name="To">Origin's commit it would move to, where there is one.</param>
 /// <param name="Commits">Fast-forward: the commits it would take. Ahead: those origin lacks. Diverged: those the local line lacks.</param>
-/// <param name="Fetch">Why the fetch did not happen, in git's words, or null where it did or none was asked for.</param>
+/// <param name="Fetch">Why the fetch did not happen, in git's words, or null where it did or none is asked for.</param>
 /// <param name="Detail">Git's own words where it could not say.</param>
 public sealed record LinePull(
     string Repository, string Workspace, string? Line, string Kind, string? From, string? To, int Commits, string? Fetch, string? Detail)
@@ -102,7 +102,7 @@ public static class CutBy
 /// <param name="Landed">A branch a landing made and recorded, rather than a session's own.</param>
 /// <param name="Onto">The line it is brought up to.</param>
 /// <param name="Cut">The commit its own commits start after, where it is replayed; null otherwise.</param>
-/// <param name="CutBy">How that commit was found (<see cref="Driver.CutBy"/>).</param>
+/// <param name="CutBy">How that commit is found (<see cref="Driver.CutBy"/>).</param>
 /// <param name="GrewFrom">The step before's branch it started on, where its record knows one.</param>
 /// <param name="Commits">Replay: its own commits. Pushed and moved since: the commits its remote lacks.</param>
 /// <param name="Detail">Git's own words where it could not say.</param>
@@ -160,7 +160,7 @@ public sealed record SyncScope
 
     /// <summary>
     /// This scope and each repository a row the person saw listed names (`repository:branch`, the key a press takes): the
-    /// press acts on what it was shown, so a repository included at the look is included at the press.
+    /// press acts on what it is shown, so a repository included at the look is included at the press.
     /// </summary>
     public SyncScope Listed(IReadOnlySet<string>? only) => only is null ? this : this with
     {

@@ -31,11 +31,11 @@ public sealed class AccountLimitsTests
     // ——— §2.1's rows.
 
     /// <summary>
-    /// A stated reset is the first such moment after the limit was seen, in the zone it names, plus the
+    /// A stated reset is the first such moment after the limit is seen, in the zone it names, plus the
     /// 2-minute margin: a time of day within a day, a date when days away, and the next year when the
     /// date has passed this one. A time of day just past is TOMORROW's (FIX 2026-10-02): the agent prints
     /// the date only when the reset is a day or more away, and its refusal says the reset has not come. Only
-    /// a dated reset gets the grace: up to 15 minutes before it was seen is two clocks disagreeing, so the
+    /// a dated reset gets the grace: up to 15 minutes before it is seen is two clocks disagreeing, so the
     /// account waits only the margin.
     /// </summary>
     [Theory]
@@ -76,7 +76,7 @@ public sealed class AccountLimitsTests
 
     /// <summary>
     /// A zone that is not an IANA name, or none at all, is the machine's own: the harness printed the
-    /// time for the machine it runs on, which is this one. The reading says the zone was assumed.
+    /// time for the machine it runs on, which is this one. The reading says the zone is assumed.
     /// </summary>
     [Theory]
     [InlineData("resets 7am (PST)")]
@@ -157,9 +157,9 @@ public sealed class AccountLimitsTests
 
     /// <summary>
     /// The sentence the install recorded on 2 October (FIX 2026-10-02), at 16:12 in the zone it named: the
-    /// weekly reset was the next day's 4pm, which the same account's sentence the day before had dated
+    /// weekly reset fell on the next day's 4pm, which the same account's sentence the day before had dated
     /// <i>Oct 3, 4pm</i>. Read as today's 4pm in the grace, it cooled the account for two minutes, and every
-    /// start after was refused on it again.
+    /// start after met its refusal again.
     /// </summary>
     [Fact]
     public void A_time_of_day_just_past_is_tomorrow_s_as_the_install_recorded()
@@ -222,7 +222,7 @@ public sealed class AccountLimitsTests
 
     /// <summary>
     /// The marker is a clause that ENDS <i>You've hit your &lt;what&gt; limit</i>, whatever a door put before
-    /// it; what was hit and the window the reset names are kept for the record.
+    /// it; what limit is hit and the window the reset names are kept for the record.
     /// </summary>
     [Theory]
     [InlineData("Internal error: You've hit your individual spend limit · your session limit resets 7am", "individual spend", "session")]
@@ -352,7 +352,7 @@ public sealed class AccountLimitsTests
     }
 
     /// <summary>
-    /// 🔴 CODEXCREDITS1: the workspace's credits are spent, as three driven sessions met it on the install. It is a limit whose sentence
+    /// 🔴 The workspace's credits are spent, as three driven sessions met it on the install. It is a limit whose sentence
     /// names no reset (the owner refills), so the default stands in, said as unstated.
     /// </summary>
     [Fact]
@@ -403,7 +403,7 @@ public sealed class AccountLimitsTests
 
     /// <summary>
     /// Every recorded sentence, in the zone this test chose, is recognised by its own entry and its reset
-    /// read as stated: the five of D125 §0.2 each named a time, and so does the weekday the maker documents, which its page prints with no zone, so the machine's stands in.
+    /// read as stated: the five recorded each named a time, and so does the weekday the maker documents, which its page prints with no zone, so the machine's stands in.
     /// </summary>
     [Fact]
     public void Every_recorded_sentence_is_recognised_and_its_reset_read()
@@ -469,7 +469,7 @@ public sealed class AccountLimitsTests
     /// <summary>
     /// Only an agent whose limit's words are recorded declares an entry: Claude Code; the stub that mirrors its
     /// words as it mirrors <c>Refused</c>, so a rehearsal can gate a limit with no account; and Codex's door, whose
-    /// sentences TOOL4b read in Codex's source, since no <c>codex</c> adapter exists to own them. A door onto
+    /// sentences are read in Codex's source, since no <c>codex</c> adapter exists to own them. A door onto
     /// Claude Code reads its owner's; dsh and a plugin have none, and read every failure as a failure.
     /// </summary>
     [Fact]

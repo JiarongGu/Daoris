@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 /// <para><b>The recovery asks git, never the store alone.</b> Where the candidate has a tip, git is asked whether the line holds it
 /// (<c>merge-base --is-ancestor</c>), since the line may move before its record: a promotion's <c>update-ref</c> made and its end never
 /// written. Held, and the store not yet saying so, the promotion is recorded at the come-up (its open step ended <c>promoted</c>, or a
-/// promotion's start and end written where none was open) and never made again. Not held, the open step ends <c>interrupted</c> and runs again
+/// promotion's start and end written where none is open) and never made again. Not held, the open step ends <c>interrupted</c> and runs again
 /// from its start as its next attempt, once the candidate's job holds no process, so two attempts never run at once. Where git cannot say,
 /// nothing is written and the step stays as it stands, to be asked again; where the store records a promotion the line no longer holds,
 /// nothing is retried. A step is idempotent from its start because its start records the line's commit it goes from, and a promotion's one
@@ -148,18 +148,18 @@ public static class IntegrationResumes
     /// <summary>The line holds the candidate's tip and its promotion is now recorded: the caller settles.</summary>
     public const string Promoted = "promoted";
 
-    /// <summary>The open step was cut and ended <c>interrupted</c>: the caller runs <see cref="IntegrationResumed.Step"/>'s step again from its start.</summary>
+    /// <summary>The open step ended <c>interrupted</c>, cut short: the caller runs <see cref="IntegrationResumed.Step"/>'s step again from its start.</summary>
     public const string Again = "again";
 
-    /// <summary>No step was open: the caller goes on after <see cref="IntegrationResumed.Step"/>, the last ended.</summary>
+    /// <summary>No step is open: the caller goes on after <see cref="IntegrationResumed.Step"/>, the last ended.</summary>
     public const string Next = "next";
 
     /// <summary>The candidate ended: nothing to resume.</summary>
     public const string Ended = "ended";
 
-    /// <summary>git, or the candidate's job, could not answer: nothing was written, and the resume is asked again at the next look.</summary>
+    /// <summary>git, or the candidate's job, could not answer: nothing is written, and the resume is asked again at the next look.</summary>
     public const string Unread = "unread";
 
-    /// <summary>The store records a promotion the line does not hold: nothing was retried or written.</summary>
+    /// <summary>The store records a promotion the line does not hold: nothing is retried or written.</summary>
     public const string Unheld = "unheld";
 }

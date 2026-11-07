@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// landing's replay that conflicts in such a file, where both sides changed only lines the pattern matches, takes the line's side
 /// of those lines and has the rule's writer recompute them from the replayed tree (<see cref="GeneratedWriters.WriteAsync"/>), in a
 /// commit on top; every other change of either side is kept as the merge by the base keeps it (<see cref="BacklogMerge.ByBase"/>). No
-/// rule keeps one side's copy: a writer that fails refuses the replay as the conflict it was.
+/// rule keeps one side's copy: a writer that fails refuses the replay as the conflict it is.
 /// </summary>
 /// <remarks>
 /// <para><b>Only under the owner's acceptance for integration.</b> The writer is a command read from the repository, so the rules are

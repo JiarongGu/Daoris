@@ -53,7 +53,7 @@ for await (const line of createInterface({ input: process.stdin })) {
       break;
     }
 
-    // The driver is stopping, or this plugin was switched off. Leave; the driver ends a process that
+    // The driver is stopping, or this plugin is switched off. Leave; the driver ends a process that
     // does not.
     case 'shutdown':
       process.exit(0);

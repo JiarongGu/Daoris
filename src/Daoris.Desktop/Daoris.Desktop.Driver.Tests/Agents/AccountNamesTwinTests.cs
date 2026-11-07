@@ -232,7 +232,7 @@ public sealed class AccountNamesTwinTests : IDisposable
     }
 
     /// <summary>
-    /// ACCT1: a sign-in into an account is refused, before anything starts and with nothing made, where its folder is not
+    /// A sign-in into an account is refused, before anything starts and with nothing made, where its folder is not
     /// there; only a sign-in to a new account opens one.
     /// </summary>
     [Fact]
@@ -263,7 +263,7 @@ public sealed class AccountNamesTwinTests : IDisposable
     }
 
     /// <summary>
-    /// ACCT2: a rename touches <c>accounts.json</c> alone. The rotation, the defaults, the readings, the cool-offs, the session
+    /// A rename touches <c>accounts.json</c> alone. The rotation, the defaults, the readings, the cool-offs, the session
     /// records' count and the usage totals all name the account's id, so each keeps it across the rename, and the name a
     /// person types reaches the same account.
     /// </summary>

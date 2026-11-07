@@ -90,7 +90,7 @@ internal sealed class TreeFollows(TreeContext context)
     /// <param name="root">The repository's checkout, whose working trees git lists with each one's branch.</param>
     /// <param name="refs">
     /// The judgement's refs: each tree's branch is read from the one list of the repository's working trees they hold,
-    /// where asking each tree was a git start per tree at every look. A tree the list does not name is asked on its own.
+    /// where asking each tree would be a git start per tree at every look. A tree the list does not name is asked on its own.
     /// </param>
     internal async Task LearnTreesAsync(string workspace, string repository, CancellationToken ct, string? root = null, RefSnapshot? refs = null)
     {
@@ -154,7 +154,7 @@ internal sealed class TreeFollows(TreeContext context)
             .Where(entry => repository is null || string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))];
 
     /// <summary>
-    /// The session branch a tree this home opened was on, from the layout Daoris chose: the tree's name under its repository
+    /// The session branch a tree this home opened stands on, from the layout Daoris chose: the tree's name under its repository
     /// is the branch's after <c>daoris/</c>. What finds a session's branch once its tree is gone; null for a path that is no
     /// tree of this home's.
     /// </summary>

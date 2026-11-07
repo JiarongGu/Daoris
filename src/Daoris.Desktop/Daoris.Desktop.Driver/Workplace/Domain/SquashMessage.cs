@@ -34,7 +34,7 @@ public static class SquashMessage
     public static string Subject(string? title, IReadOnlyList<LandingCommit> commits, string session, string? message) =>
         Opening(title, commits, session, message).Split('\n')[0].Trim();
 
-    /// <summary>The last line, naming the session the commit was squashed from.</summary>
+    /// <summary>The last line, naming the session the commit is squashed from.</summary>
     public static string Ending(string session) => $"Squashed by Daoris from session `{session}`";
 
     /// <summary>

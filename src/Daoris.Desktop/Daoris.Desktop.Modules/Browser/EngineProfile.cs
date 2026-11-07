@@ -177,7 +177,7 @@ public static class EngineProfile
         }
         catch (JsonException)
         {
-            // A record Daoris cannot read is no record: nothing was refused by it, the bar never shown.
+            // A record Daoris cannot read is no record: nothing is refused by it, the bar never shown.
         }
 
         return new EngineRecord([], false);

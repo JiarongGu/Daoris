@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <summary>
 /// The slice of <i>Done and failed</i> pushed from this process's read of
 /// <c>data/notices.json</c>, one partition keyed by notice, its fields allow-listed; the writer pushing its own write; another process's
-/// write read again and its notices said once, none older than the first read; a failed read keeping what was pushed; recording
+/// write read again and its notices said once, none older than the first read; a failed read keeping what is pushed; recording
 /// whatever the notify switch says; the presses <c>NOTICES_READ</c> and <c>NOTICE_DISMISS</c>; and a press's unanswered end kept.
 /// </summary>
 /// <remarks>Files only, in the bridge's home, on a held clock. The watch that wakes the slice is the driver's <c>HomeWatchTests</c>'.</remarks>
@@ -245,7 +245,7 @@ public sealed class NoticesStateSliceTests : DriverModuleBridge
 
     /// <summary>
     /// The presses: <c>NOTICES_READ</c> reads the ids it names, <c>NOTICE_DISMISS</c> one id or all of a window's scope, each
-    /// answering whether it was written and declaring the notices.
+    /// answering whether it is written and declaring the notices.
     /// </summary>
     [Fact]
     public async Task The_presses_read_and_dismiss_through_the_loop_s_notices()
@@ -274,7 +274,7 @@ public sealed class NoticesStateSliceTests : DriverModuleBridge
     /// <summary>
     /// A terminal's press its terminal took back after a window
     /// showed it, and one lost as Daoris closed (a press carrying a key), are kept as notices, every window's, the route as the page's
-    /// catalogue names it, a lost one counting one; one taken back that nobody was shown, and one confirmed or refused, keep nothing. None
+    /// catalogue names it, a lost one counting one; one taken back and shown to nobody, and one confirmed or refused, keep nothing. None
     /// ends by its time.
     /// </summary>
     [Fact]

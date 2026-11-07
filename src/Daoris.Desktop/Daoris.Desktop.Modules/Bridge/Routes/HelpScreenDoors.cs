@@ -44,7 +44,7 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
         (service ?? throw NotReady()).DeleteAskAsync(id, ct);
 
     // SESSION_ARCHIVE's own marks: each judged again by where the list places it as it goes, counted in the
-    // machine log as the screen's. The service is the one this Apply was handed, as the other doors use it.
+    // machine log as the screen's. The service is the one this Apply is handed, as the other doors use it.
     public async Task<(bool Ok, string Message)> ArchiveSessionsAsync(IReadOnlyList<string> ids, bool archived, CancellationToken ct)
     {
         var marks = new SessionArchive(_loop.Home);
@@ -112,7 +112,7 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
     }
 
     // HISTORY_CLEAR's own clear of exactly the units the card listed: the driver library's one owner, each unit judged
-    // again as it goes; the outcome comes back whole, and a service that did not answer throws before anything was removed.
+    // again as it goes; the outcome comes back whole, and a service that does not answer throws before anything is removed.
     public Task<HistoryOutcome> ClearHistoryAsync(HistoryScope scope, string id, IReadOnlyList<HistoryUnitName> units, CancellationToken ct) =>
         HistoryClearing.ClearAsync(HistoryRoutes.WorldOf(_loop), scope, id, units, PluginEvents.Screen, ct);
 

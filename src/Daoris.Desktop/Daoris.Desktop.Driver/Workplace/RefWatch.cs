@@ -9,7 +9,7 @@ public sealed record RefRepository(string Repository, string Workspace, string R
 }
 
 /// <summary>One of Daoris's own ref moves, said once git is done: the home whose work it is, and the repository it moved.</summary>
-/// <param name="Workspace">Where a tree was opened: with <paramref name="Root"/>, a repository not yet watched is added.</param>
+/// <param name="Workspace">Where a tree is opened: with <paramref name="Root"/>, a repository not yet watched is added.</param>
 public sealed record RefMove(string Home, string Repository, string? Workspace, string? Root);
 
 /// <summary>
@@ -76,7 +76,7 @@ public static class RefMoves
 /// The ref watch (link 1 of its chain): one <see cref="ChangeWatch"/> root on the common git dir of each
 /// repository holding Daoris's work, never one per tree, whose hint makes that repository's end judgement due. The judge keeps what the
 /// line holds (<see cref="EndKeeping"/>, through <see cref="SessionTrees.KeepEndsAsync"/>): a fact link, which emits only where a
-/// <see cref="HeldFact"/> was written.
+/// <see cref="HeldFact"/> is written.
 /// </summary>
 /// <remarks>
 /// <para><b>A hint is a wake, never a value.</b> The judge is handed the repository alone and reads its refs afresh; a ref told deleted is
@@ -199,7 +199,7 @@ public sealed class RefWatch : IAsyncDisposable
     // Whether link 2 is bound here: only then do the unblocking wakes have a topic.
     private readonly bool _tidy;
 
-    /// <summary>Where each judgement that was not an idle deadline, each loss and each link that acted is written; none by default.</summary>
+    /// <summary>Where each judgement that is not an idle deadline, each loss and each link that acted is written; none by default.</summary>
     public MachineLog? Log
     {
         get => _changes.Log;
@@ -315,7 +315,7 @@ public sealed class RefWatch : IAsyncDisposable
 
     private void Listen() => _listening ??= RefMoves.Listen(_home, Moved);
 
-    /// <summary>Daoris's own move: its repository judged now, added first where a tree was opened in one not yet watched.</summary>
+    /// <summary>Daoris's own move: its repository judged now, added first where a tree is opened in one not yet watched.</summary>
     private void Moved(RefMove move)
     {
         string? subject = null;

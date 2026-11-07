@@ -24,7 +24,7 @@ public sealed class IndexFeed
     }
 
     /// <summary>
-    /// The list's signature: each repository's name, workspace, size and when and at what it was indexed, by name. Null where the answer
+    /// The list's signature: each repository's name, workspace, size and when and at what it is indexed, by name. Null where the answer
     /// is no list.
     /// </summary>
     public static string? Signature(string listed)

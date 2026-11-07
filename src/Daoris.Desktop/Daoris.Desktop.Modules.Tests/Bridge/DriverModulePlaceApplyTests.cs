@@ -124,7 +124,7 @@ public sealed class DriverModulePlaceApplyTests : DriverModuleBridge
         await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new StandIn()))));
         await loop.Settling;
 
-        // Atlas still has no tree of its own, so the edit did not land: pending again, and nothing was written but the receipt.
+        // Atlas still has no tree of its own, so the edit does not land: pending again, and nothing is written but the receipt.
         Assert.Equal(PlaceOutcomes.Pending, receipts.Read(digest)!.Of(PlaceOperations.Configuration)!.Outcome);
         Assert.Equal(written, File.ReadAllBytes(DriverConfigPath));
     }

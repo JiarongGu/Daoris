@@ -76,7 +76,7 @@ public sealed class SessionWordsTerminalTests : DriverModuleBridge
 
     /// <summary>
     /// A terminal's words at <c>now</c> are carried out by the session's door as the screen's press is, and
-    /// answered whole: where it was not now, why, beside <c>sent</c>. A door that takes words only when its turn ends holds them for
+    /// answered whole: where it is not now, why, beside <c>sent</c>. A door that takes words only when its turn ends holds them for
     /// it and stops nothing. A request's <c>level</c> reads as the page's: ordinary waits for the turn's end on a
     /// door that takes words at its next step.
     /// </summary>

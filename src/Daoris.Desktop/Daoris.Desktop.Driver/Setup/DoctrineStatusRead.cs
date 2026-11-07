@@ -14,7 +14,7 @@ public static class DoctrineStatusRead
 
     /// <summary>
     /// Run <paramref name="program"/>, then <paramref name="leading"/>, then <c>status --json</c> in <paramref name="root"/>, handed the tools'
-    /// environment from <paramref name="read"/>: the status, or what was found in place of one.
+    /// environment from <paramref name="read"/>: the status, or what is found in place of one.
     /// </summary>
     /// <param name="leading">The words before the command, as <c>node</c> takes the CLI's entry; none for a launcher.</param>
     public static async Task<DoctrineReading> ReadAsync(

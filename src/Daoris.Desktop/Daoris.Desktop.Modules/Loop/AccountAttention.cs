@@ -14,7 +14,7 @@ namespace Daoris.Desktop;
 /// roster's last reading with its time, its cool-off and its scope's list the accounts' files. What no read answered is said so,
 /// <i>unknown, never read</i>, and never guessed signed in or out.</para>
 ///
-/// <para><b>What a row carries</b>: the ids of the accounts it names, each with its state, when it was read, its cool-off's end and the
+/// <para><b>What a row carries</b>: the ids of the accounts it names, each with its state, when it is read, its cool-off's end and the
 /// name the look read beside it; and what the start holds. No account is outside the set, so none is offered to let in or read
 /// first. An account's name, the row's title and its line of why are the page's words, named from the roster it holds.</para>
 ///
@@ -255,7 +255,7 @@ internal static class AccountAttention
     private static bool Unwritten(JsonObject? cooling) => cooling?["unwritten"] is JsonValue value && value.TryGetValue<bool>(out var unwritten) && unwritten;
 
     /// <summary>
-    /// Since when it has waited: since what it holds was asked for (the oldest quest filed, the oldest ask asked), or since the limit
+    /// Since when it has waited: since the first ask for what it holds (the oldest quest filed, the oldest ask asked), or since the limit
     /// that held it where that came later; the limit's where nothing it holds is in hand, and null where neither is known.
     /// </summary>
     private static string? HeldSince(Held held, JsonObject? use, AttentionFacts facts)

@@ -362,7 +362,7 @@ public static class JsonKeeping
 
     /// <summary>
     /// A set made: <paramref name="file"/>'s array as it stands, null for none, with every name the edit
-    /// from <paramref name="was"/> to <paramref name="now"/> took gone in any spelling and every name it added that is not there in any case
+    /// between the old set and the new took gone in any spelling and every name it added that is not there in any case
     /// put at the end in the edit's order; every other element, another writer's names and a value of any other kind, stays where it
     /// stands. Names compare as <c>OrdinalIgnoreCase</c> compares them, as the CLI's <c>casefold.ts</c> does. Null, written as no key,
     /// where nothing is left and <paramref name="keepEmpty"/> does not keep an empty array.
@@ -400,7 +400,7 @@ public static class JsonKeeping
     }
 
     /// <summary>
-    /// The first key path under <paramref name="where"/> the edit from <paramref name="was"/> to <paramref name="now"/> changes, in the
+    /// The first key path under <paramref name="where"/> the edit between the old value and the new changes, in the
     /// edit's order and then the keys it took; or null where it changes none. What a refusal names.
     /// </summary>
     private static string? Changed(JsonElement was, JsonElement now, string where)

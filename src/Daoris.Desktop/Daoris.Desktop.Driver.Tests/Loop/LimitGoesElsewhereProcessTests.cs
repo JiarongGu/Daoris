@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LIMITGOON2 (D205 §3.5(e)) with real conversations: a conversation whose agent has no account left goes on with its actor's next
+/// With real conversations: a conversation whose agent has no account left goes on with its actor's next
 /// choice on another agent, as a new part handed Daoris's brief and then the words the refused turn held, the move said once naming the
 /// agent it went to. A repository's chat continues the old by <c>limit</c> in its tree, told the earlier maker's trailer where that part
 /// left work uncommitted; Ask Daoris's goes on in its workspace's room, its history naming the old, and a person's
@@ -167,7 +167,7 @@ public sealed class LimitGoesElsewhereProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 STAFFPOLICY1d: a conversation of an added role that takes Chat in its workspace, at its agent's limit, goes on with that role's next
+    /// 🔴 A conversation of an added role that takes Chat in its workspace, at its agent's limit, goes on with that role's next
     /// choice, not the seeded Chat's (which lists no other agent): the bound role's order is the one read.
     /// </summary>
     [Fact]
@@ -293,7 +293,7 @@ public sealed class LimitGoesElsewhereProcessTests : IDisposable
     }
 
     /// <summary>
-    /// A stand-in ACP agent: names its conversation, writes down each prompt with the stub account it runs as, or the tag it was given,
+    /// A stand-in ACP agent: names its conversation, writes down each prompt with the stub account it runs as, or the tag it is given,
     /// and on <c>account-1</c> answers every prompt but the first exchange with the protocol door's limit refusal; elsewhere it answers
     /// after a moment.
     /// </summary>

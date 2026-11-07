@@ -136,7 +136,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
 
     /// <summary>
     /// A press for a question the park no longer asks (answered and asked anew in another window, or none kept) is
-    /// refused `question-changed` and keeps nothing, so a label never answers a question it was not offered for.
+    /// refused `question-changed` and keeps nothing, so a label never answers a question it is not offered for.
     /// </summary>
     [Theory]
     [InlineData("e5f6a7b8")]
@@ -755,7 +755,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
         await UntilAsync(() => QueuedWords("s1") is ["w1"]);
     }
 
-    /// <summary>The ids of the words in the last <c>SESSION_QUEUED</c> told for this session, or null where none was told.</summary>
+    /// <summary>The ids of the words in the last <c>SESSION_QUEUED</c> told for this session, or null where none is told.</summary>
     private string[]? QueuedWords(string session)
     {
         string[]? last = null;

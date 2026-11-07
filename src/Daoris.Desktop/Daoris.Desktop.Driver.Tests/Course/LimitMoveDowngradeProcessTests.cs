@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-ii part b (the foundation design §13.5's downgrade table, §19.4, row f-ii's proof): the live limit move across a downgrade.
+/// The live limit move across a downgrade.
 /// A shell is killed at each boundary of the move (<see cref="Cuts"/>), then an older build comes up on the home, then this build returns.
 /// Each moved word is delivered once, uncertain and said, or carried by its destination's go-on, never twice, whichever build acts, and this
 /// build's return acts once.
@@ -27,7 +27,7 @@ public sealed class LimitMoveDowngradeProcessTests : IAsyncLifetime
     public async Task DisposeAsync() => await _h.DisposeAsync();
 
     /// <param name="Phase">The move's phase after this build's return.</param>
-    /// <param name="Held">The reason it was held, where it was.</param>
+    /// <param name="Held">The reason it is held, where it is held.</param>
     /// <param name="Closed">The reason it closed, where it did.</param>
     /// <param name="Word">The disposition the return gave the word, where it read it.</param>
     /// <param name="OnOldPart">Whether the word still waits on the old part: the open never moved it.</param>
@@ -37,7 +37,7 @@ public sealed class LimitMoveDowngradeProcessTests : IAsyncLifetime
 
     private static readonly Dictionary<string, After> Table = new(StringComparer.Ordinal)
     {
-        // `decided`, `quiescing`, `old-ended`: the old part as it was; an older build opens nothing here, and this build's return goes back
+        // `decided`, `quiescing`, `old-ended`: the old part as it stands; an older build opens nothing here, and this build's return goes back
         // to its old part (§13.5's first row). `opening` with no open made: the same, the move closed with nothing to name.
         [Cuts.Decided] = new("fell-back", null, null, null, OnOldPart: true, 0, 0),
         [Cuts.OldEnded] = new("fell-back", null, null, null, OnOldPart: true, 0, 0),

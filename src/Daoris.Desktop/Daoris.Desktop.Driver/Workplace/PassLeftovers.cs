@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// What a pass a kill cut off left under a repository's trees: an opinion's copy
 /// (<see cref="OpinionTree"/>, <c>o-</c>) or a replay's tree (<see cref="BranchReplays"/>, <c>r-</c>), each made by its own flow
 /// outside the repository's hold and removed at its end. The next pass of the same kind in that repository moves each such folder
-/// aside, as the look moves a tree's folder, once nothing running holds it and nothing in it was written for
+/// aside, as the look moves a tree's folder, once nothing running holds it and nothing in it has been written for
 /// <see cref="TreeStrays.Quiet"/>.
 /// </summary>
 /// <remarks>
@@ -22,7 +22,7 @@ namespace Daoris.Driver;
 /// use stays for the next pass; the look's purge deletes it after its fourteen days, as it deletes a tree's. A replay's tree is
 /// unlocked first and git's record of it let go of once its folder is gone
 /// (<see cref="TreeSetAside.MoveAsideAsync(string, string, string, string, CancellationToken)"/>); where it stays, its lock is put back
-/// as it was found. Nothing here is said: a pass's own removal says nothing either, and the purge logs what it deletes.</para>
+/// as found. Nothing here is said: a pass's own removal says nothing either, and the purge logs what it deletes.</para>
 /// </remarks>
 internal sealed class PassLeftovers(TreeContext context, TreeSetAside setAside)
 {
@@ -49,7 +49,7 @@ internal sealed class PassLeftovers(TreeContext context, TreeSetAside setAside)
     /// The opinions' copies a killed pass left in one repository's trees (<paramref name="trees"/>, <c>trees/&lt;workspace&gt;/&lt;repository&gt;</c>),
     /// moved aside: where each went. Asked at a pass's start, before its own copy is made.
     /// </summary>
-    /// <param name="now">What time it is, against what was last written in a copy.</param>
+    /// <param name="now">What time it is, against what is last written in a copy.</param>
     /// <param name="running">Whether a process of that id runs (<see cref="TreeOpenings.Running"/>; a test's stand-in).</param>
     internal IReadOnlyList<string> ClearCopies(string trees, DateTimeOffset now, Func<int, bool> running)
     {
@@ -179,7 +179,7 @@ internal sealed class PassLeftovers(TreeContext context, TreeSetAside setAside)
     }
 
     /// <summary>
-    /// Whether a pass's folder was left by one a kill cut off: no running process holds it, and nothing in it was written or made
+    /// Whether a pass's folder is left by one a kill cut off: no running process holds it, and nothing in it has been written or made
     /// for <see cref="TreeStrays.Quiet"/>. A folder that cannot be read throws.
     /// </summary>
     private static bool Left(string folder, int? holder, DateTimeOffset now, Func<int, bool> running) =>

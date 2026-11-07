@@ -61,7 +61,7 @@ internal sealed class LandingPress(
 
     /// <summary>
     /// What a landing says that waited for another of its tree, which landed this very commit meanwhile (its review): where
-    /// it is, who accepted it, and that nothing more was landed. Kept as <see cref="LandingCode.Already"/>, as the look keeps a press's landing.
+    /// it is, who accepted it, and that nothing more landed. Kept as <see cref="LandingCode.Already"/>, as the look keeps a press's landing.
     /// </summary>
     internal static TreeLanding LandedMeanwhile(LandingAttempt before, string session)
     {
@@ -254,7 +254,7 @@ internal sealed class LandingPress(
             followed = branched.Followed;
             squashedTip = landed.Landed ? branched.Squashed : null;
             // Recorded the moment it exists: the branch is Daoris's to judge and to hand on only
-            // because this line wrote it down, at the commit it was made at.
+            // because this line wrote it down, at the commit of its making.
             var tip = branched.Commits.Count > 0 ? branched.Commits[^1].Sha : null;
             squashedInto = squashedTip is null ? null : tip;
             // A delivery's record is written ahead in its phase, and read back after.
@@ -331,7 +331,7 @@ internal sealed class LandingPress(
         }
 
         // The planning's table ends here. What follows moves the tree, judges and removes (the end keeping, the tidy's proof
-        // and its delete): each of those reads git as it stands, never what the planning was told.
+        // and its delete): each of those reads git as it stands, never what the planning holds.
         GitFacts.Close();
 
         // The session follows what landed, so its next turn starts in sync with the line; where it

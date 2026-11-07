@@ -27,7 +27,7 @@ internal sealed class PullRequestAsks(TreeContext context)
 {
     /// <summary>
     /// One occasion's asks, over every repository it looks at: each entry, standing or a
-    /// trace, whose kept answer is not completed, that was not asked in the last minute, and whose answer could remove something
+    /// trace, whose kept answer is not completed, that has not been asked in the last minute, and whose answer could remove something
     /// now, is asked of the plugin that pushed it, else the one the rule names. One process per plugin and one bound for the
     /// whole occasion. Answers and failures are kept on the record; a failure never overwrites an answer. Never at a press that
     /// removes, nor at a read: the callers are the looks that may remove, which <c>PullRequestOccasionTests</c> holds.
@@ -135,7 +135,7 @@ internal sealed class PullRequestAsks(TreeContext context)
     /// A due moment's asks: origin's line moved, Daoris pushed, or the window's focus, as
     /// <see cref="PullRequestMoments"/> judged it. These entries alone, each still due by the minute as the record keeps it, are asked
     /// of their plugin whether or not the answer could remove something now, since it feeds the end as well as a removal. Kept
-    /// as an occasion keeps it; it removes nothing. How many came back completed where the kept answer was not.
+    /// as an occasion keeps it; it removes nothing. How many came back completed where the kept answer is not.
     /// </summary>
     internal async Task<int> AskAtMomentAsync(
         string root, string repository, string workspace, IReadOnlyCollection<LandedBranch> entries, CancellationToken ct)
@@ -275,7 +275,7 @@ internal sealed class PullRequestAsks(TreeContext context)
 
     /// <summary>
     /// Every completed pull request of one repository that carried work here, by the kept answers alone: what a
-    /// look lists and a press re-judges by, so what was listed is what goes. Nothing is asked.
+    /// look lists and a press re-judges by, so what is listed is what goes. Nothing is asked.
     /// </summary>
     /// <param name="refs">The judgement's refs; null asks git.</param>
     internal async Task<IReadOnlyList<PullRequestCarrier>> CarriersAsync(

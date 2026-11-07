@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * The stand-in's program (AGENTPROVIDER1 row b, part 3; the agent-provider design §10, §11 row b; D213's row b part 3 note): one Node module
+ * The stand-in's program: one Node module
  * serving both doors of provider `stub`, chosen by the arguments its `provider.json` states for each (`--door native`, `--door protocol`).
  * No model, no account and no credential anywhere in it. The driver's project carries it beside the driver by one glob
  * (`Agents/Providers/*\/Program/**`), so the conformance suite runs it from its build output and the family rehearsal from its own.
  *
  * It answers the scenario contract in the stand-in's vocabulary, which is Claude Code's by reference (§3.3): `--scenario <name>` picks a
- * case, `open` where none is named, and `--seen <file>` keeps each protocol method it was sent, a line each. What it was handed it says
+ * case, `open` where none is named, and `--seen <file>` keeps each protocol method it is sent, a line each. What it is handed it says
  * back in words the contract fixes, so a check reads them whichever stand-in spoke: a start says where it started and whether it had a
  * target, a turn says `heard: ` and the words, and a sign-in reads as alice@example.org of Acme on max.
  *

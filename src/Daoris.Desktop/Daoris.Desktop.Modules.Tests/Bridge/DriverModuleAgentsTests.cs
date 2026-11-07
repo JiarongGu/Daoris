@@ -12,7 +12,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
 {
     /// <summary>
     /// What sessions consumed, over the bridge and nowhere else. A machine that has
-    /// measured nothing answers empty lists — <b>never a zero</b>, because "nothing was measured" and
+    /// measured nothing answers empty lists — <b>never a zero</b>, because "nothing measured" and
     /// "it used nothing" are different claims and only one of them is true.
     /// </summary>
     [Fact]
@@ -60,7 +60,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         var declared = rows.Single(h => h.GetProperty("door").GetString() == "acme-agent");
         Assert.Equal("acme.gate", declared.GetProperty("plugin").GetString());
         Assert.Equal("protocol", declared.GetProperty("transport").GetString());
-        // Probed by presence: the file is there, so it is present, and nothing was started to say so.
+        // Probed by presence: the file is there, so it is present, and nothing is started to say so.
         Assert.True(declared.GetProperty("present").GetBoolean());
         // The build's own carry no plugin.
         Assert.Equal(JsonValueKind.Null, rows.Single(h => h.GetProperty("door").GetString() == "claude-code").GetProperty("plugin").ValueKind);
@@ -213,7 +213,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
 
     /// <summary>
     /// Each account and the tool's own sign-in say when they were last read. Nothing has answered for the
-    /// stub's account, so it was never read; one agent's *Read again* asks its accounts, and each then says when. 🔴 It never
+    /// stub's account, so it stays unread; one agent's *Read again* asks its accounts, and each then says when. 🔴 It never
     /// asks the tool's own sign-in, and neither does the roster's whole refresh, so the own
     /// sign-in stays never read.
     /// </summary>
@@ -293,7 +293,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     /// <summary>
     /// The roster asks no account when it is read, the first read after a start included (a cold
     /// cache), where it asked every named account; an account's own *Read again* asks that account alone and says when; and a
-    /// module started afresh, as after a restart, starts from what was read, asking nothing.
+    /// module started afresh, as after a restart, starts from what is read, asking nothing.
     /// </summary>
     [Fact]
     public async Task Reading_the_roster_asks_no_account_and_an_accounts_read_again_asks_that_one_alone()

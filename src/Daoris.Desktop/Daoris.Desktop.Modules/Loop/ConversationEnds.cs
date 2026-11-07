@@ -33,7 +33,7 @@ public sealed class ConversationEnds
     private static Task Tell(IEventBus bus, string session, string state) =>
         bus.EmitAsync("DAORIS", DriverLoop.EndedType, new { Session = session, State = state });
 
-    /// <summary>Whether this is the first sight of the end: false where the other path's mark of it was waiting.</summary>
+    /// <summary>Whether this is the first sight of the end: false where the other path's mark of it waits.</summary>
     private bool Sight(string session, string state, bool journal)
     {
         var now = Environment.TickCount64;

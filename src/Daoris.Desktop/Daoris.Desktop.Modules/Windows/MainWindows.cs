@@ -82,7 +82,7 @@ public sealed class MainWindows(Action? end = null, Daoris.Driver.MachineLog? lo
     }
 
     /// <summary>
-    /// A window closed, by its name. True when that ends the application: it was the last main window, the first having been
+    /// A window closed, by its name. True when that ends the application: it is the last main window, the first having been
     /// put away; the end is asked for here, once.
     /// </summary>
     public bool Closed(string name)
@@ -113,7 +113,7 @@ public sealed class MainWindows(Action? end = null, Daoris.Driver.MachineLog? lo
     }
 
     /// <summary>
-    /// The person asks for a window back, by a later launch or the tray: true where the first was put away (or the kit has
+    /// The person asks for a window back, by a later launch or the tray: true where the first is put away (or the kit has
     /// just shown it for this launch), which is now theirs again and is the one to show, so no other opens. Once.
     /// </summary>
     public bool TakeBackFirst()

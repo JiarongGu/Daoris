@@ -6,8 +6,8 @@ import { measureSettingRows } from './settingRows';
 // every value's box starts at its track's edge, one column a card; at the 400 px floor the track goes and every value sits
 // under its words. The track itself stays between its floor and its cap, and at most half the card. jsdom lays nothing
 // out, so no unit test can hold any of it; `ui.test.tsx` holds the structure.
-// The run prints each story's label widths and the track each card chose: the measurements D185's UIFIT1 note set the
-// bounds from. `npm --prefix src/Daoris.Web run e2e:measured -- --grep settings`.
+// The run prints each story's label widths and the track each card chose: the measurements the
+// bounds are set from. `npm --prefix src/Daoris.Web run e2e:measured -- --grep settings`.
 
 /** The track's bounds, as `SETTING_TRACK` in `design/ui.tsx` spells them, in px at the page's 16 px root. */
 const FLOOR = 12 * 16;

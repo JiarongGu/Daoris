@@ -5,9 +5,9 @@ import { measureFlows } from './measure';
 // and the quest's own, drawn by `Flow` in a real browser at the frame's widths; every node's and every label's box
 // measured and every edge sampled along its length by the browser's own geometry. No edge enters a box but its own ends',
 // no label lies over a node or another label, and each drawn frame's crossings stay at or under its ceiling.
-// The table is the engine's (§4.3): the same fixtures were drawn by @dagrejs/dagre over the same measured boxes on
-// 2026-10-20, and D186's note of that day says what each engine gave and which was locked. Each ceiling is what the hand
-// layout drew that day: a change that draws worse fails here, and one that draws better lowers it.
+// The table is the engine's (§4.3).
+// Each ceiling is what the hand
+// layout draws: a change that draws worse fails here, and one that draws better lowers it.
 
 /**
  * A story, by its stories file and name, and each frame it draws (not the rail) with that frame's crossing ceiling. A name ending

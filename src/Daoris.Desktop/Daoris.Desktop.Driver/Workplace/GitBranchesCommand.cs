@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris git branches</c> was asked: which repositories, and in which form.</summary>
+/// <summary>What <c>daoris git branches</c> is asked: which repositories, and in which form.</summary>
 /// <param name="Repository">The one repository named, which is listed whatever it holds; null for the scope's.</param>
 /// <param name="All">Every repository with a checkout here, not only those holding Daoris's branches.</param>
 /// <param name="Json">The list whole, written, rather than said.</param>

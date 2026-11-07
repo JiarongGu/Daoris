@@ -40,7 +40,7 @@ public static class Tools
     /// <summary>
     /// A downloaded version's record, in its version folder: finding it is the proof the download verified.
     /// The download writes it; this reads its <c>exe</c>, which names the executable inside
-    /// <see cref="Package"/>, where the archive was unpacked whole. The CLI's <c>TOOL_RECORD</c>.
+    /// <see cref="Package"/>, where the archive is unpacked whole. The CLI's <c>TOOL_RECORD</c>.
     /// </summary>
     public const string Record = "tool.json";
 
@@ -367,7 +367,7 @@ public static class Tools
     /// Remove a resource location: its versions are no longer offered, and a version already downloaded stays.
     /// Every other entry stays as written, one that is not an address included. The CLI's <c>removeLocation</c>.
     /// </summary>
-    /// <returns>False when it was not listed, and nothing is written.</returns>
+    /// <returns>False when it is not listed, and nothing is written.</returns>
     public static bool RemoveLocation(string home, string address) => RemoveLocation(home, address, read: null);
 
     /// <summary><see cref="RemoveLocation(string, string)"/>, with what happens once the file is read: a test's other writer.</summary>
@@ -411,7 +411,7 @@ public static class Tools
     }
 
     /// <summary>
-    /// The file as an object to edit, and as it read, written by this writer (null where there was none); or the refusal that
+    /// The file as an object to edit, and as it read, written by this writer (null where there is none); or the refusal that
     /// leaves it as it is.
     /// </summary>
     private static (string Path, JsonObject Root, string? Read) Writable(string home)

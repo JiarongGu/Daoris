@@ -56,7 +56,7 @@ public static class SessionsStateSlice
 
     /// <summary>
     /// What the service answers of a record that is never pushed: the transcript's path, and what no view reads from the list
-    /// (whether its quest was taken by its connector, a stop's cause, its delete, its line of work, its mode, and the downloaded
+    /// (whether its quest is taken by its connector, a stop's cause, its delete, its line of work, its mode, and the downloaded
     /// versions its starts were handed, which the downloads' rule reads; and the part its line ends at, which the groups
     /// slice's entries carry for the page).
     /// </summary>
@@ -81,7 +81,7 @@ public static class SessionsStateSlice
             Keyed = true,
             WakesOn = WakesOn,
             Hears = [wake => HearLedger(loop, wake)],
-            // The service away or refusing: the windows keep what was judged, and the next wake reads it again.
+            // The service away or refusing: the windows keep the last judgement, and the next wake reads it again.
             Failed = error => loop.Log?.Warn("state.slice", ("slice", Name), ("message", error.Message)),
         };
 

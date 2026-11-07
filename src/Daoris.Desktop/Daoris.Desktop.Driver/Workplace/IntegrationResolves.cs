@@ -12,7 +12,7 @@ internal sealed record IntegrationResolved
     /// <summary>Why the files in <see cref="Unsettled"/> stay conflicts where that is not simply that no rule settles them (a line rule's writer failed).</summary>
     public string? Refused { get; init; }
 
-    /// <summary>The backlog the merge base settled, summed over its conflict; null where none was.</summary>
+    /// <summary>The backlog the merge base settled, summed over its conflict; null where none is.</summary>
     public BacklogMerge.Settled? Backlog { get; init; }
 
     /// <summary>The declared row tables the merge base settled.</summary>
@@ -61,7 +61,7 @@ internal sealed record IntegrationResolved
 /// </summary>
 /// <remarks>
 /// <para><b>Declared at the line.</b> Which files are generated, the backlog and its row tables, the line rules and the writers are read as the
-/// candidate's base holds them (the line's commit it was formed on), so an earlier member's declaration changes nothing for a later one, as
+/// candidate's base holds them (the line's commit it is formed on), so an earlier member's declaration changes nothing for a later one, as
 /// the merge tool reads the row tables of <c>base</c> (<c>mergeMember</c>), and a session's own declaration is never read. The writers and the
 /// line rules run only as the person accepted them for integration (<see cref="IntegrationAcceptance"/>); with no config handed in nothing is run.</para>
 /// <para><b>One commit.</b> Everything staged here is part of the member's merge commit, whose second parent is the frozen tip: the set-apart
@@ -74,8 +74,8 @@ internal static class IntegrationResolves
     /// <paramref name="unmerged"/> (the conflicted paths git left, none for a merge that went clean) settled where a rule settles them, the
     /// joins union left set apart, the generated files and line-rule files written again; staged, never committed.
     /// </summary>
-    /// <param name="lineBase">The line's commit the candidate was formed on: where the declarations are read.</param>
-    /// <param name="onto">The candidate's tip so far, which the merge was made onto.</param>
+    /// <param name="lineBase">The line's commit the candidate is formed on: where the declarations are read.</param>
+    /// <param name="onto">The candidate's tip so far, which the merge is made onto.</param>
     /// <param name="tip">The member's frozen tip, the merge's second parent.</param>
     /// <param name="config">The person's choices the acceptances are read from, as the replay reads them; null runs no writer and settles no line rule.</param>
     internal static async Task<IntegrationResolved> ResolveAsync(

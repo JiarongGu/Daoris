@@ -84,7 +84,7 @@ test('an attempt writes its preview once, says it reached on its receipt, and it
 
 test('an attempt an earlier process began is done where its preview finished, and begun again where it did not', async (t) => {
   const { data, home } = scratch(t);
-  // A journal and previews as a process left them: `i-1` finished its preview, `i-2` was cut off partway.
+  // A journal and previews as a process leaves them: `i-1` finished its preview, `i-2` is cut off partway.
   mkdirSync(join(data, 'previews', 'i-1'), { recursive: true });
   writeFileSync(join(data, 'previews', 'i-1', 'done'), 'x\n');
   mkdirSync(join(data, 'previews', 'i-2'), { recursive: true });

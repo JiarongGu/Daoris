@@ -36,7 +36,7 @@ public enum PipeGroundKind
 }
 
 /// <summary>
-/// One reading of a ground: what it was read about (<see cref="Subject"/>: a session's id, a repository's name, a branch, a plan's
+/// One reading of a ground: what it is read about (<see cref="Subject"/>: a session's id, a repository's name, a branch, a plan's
 /// route), the value compared (<see cref="Value"/>: a state and a time, a fingerprint, a tip), and the code the person's reason
 /// names it by (<see cref="Words"/>: a session's or a quest's state), never the asker's words.
 /// </summary>

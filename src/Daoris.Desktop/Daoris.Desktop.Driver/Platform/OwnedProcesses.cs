@@ -108,8 +108,8 @@ public sealed class OwnedProcesses
 
     /// <summary>
     /// End <paramref name="process"/> and everything it started: the kill a runner makes past its bound, on its caller's cancellation, or at
-    /// its owner's end. A process that ended as it was stopped is already what was asked for, so the refusal of one that is gone is
-    /// answered, never thrown: why the kill was refused, or null where it was made. Whether it ended is the exit wait's to say
+    /// its owner's end. A process that ended when stopped is already what the kill asks for, so the refusal of one that is gone is
+    /// answered, never thrown: why the kill is refused, or null where it is made. Whether it ended is the exit wait's to say
     /// (<see cref="ChildProcess.EndAsync"/>).
     /// </summary>
     public static string? End(Process process)
@@ -122,7 +122,7 @@ public sealed class OwnedProcesses
         }
         catch (Exception error) when (error is InvalidOperationException or Win32Exception or NotSupportedException)
         {
-            // It ended as it was stopped, or the exit wait after it says it did not.
+            // It ended when stopped, or the exit wait after it says it did not.
             return error.Message;
         }
     }

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ACCT2b: what a person reads names an account by the name they gave it, looked up when it is
+/// What a person reads names an account by the name they gave it, looked up when it is
 /// said, and by its id where it has none. A held start's sentence, rotation's waits, a picked account's refusal, a refused
 /// credential's hold and a resume's wait each say the name, and the facts *What needs you* says them from carry it beside the
 /// id. A record keeps the id, which never moves: the record's opening line, a note's English, which travels, and the machine
@@ -310,7 +310,7 @@ public sealed class AccountNamesSaidTests : IDisposable
         Assert.Equal("account-1", line.Data.Single(field => field.Key == "account").Value);
     }
 
-    // ——— A command spells its ids for any shell: an id `profile add` was given may hold a
+    // ——— A command spells its ids for any shell: an id given to `profile add` may hold a
     // space, kept whole in double quotes, or a character no spelling keeps, named by its placeholder. The sentence around it
     // names the account as it is.
 

@@ -19,7 +19,7 @@ public sealed class AgentsRoutes(DriverContext context)
     private AgentActions Actions => _context.Actions;
 
     // This machine's harnesses, and the accounts they run as. Each account and the tool's own
-    // sign-in say what was last read of them and when, the driver's report kept under the home, so a page
+    // sign-in say what is last read of them and when, the driver's report kept under the home, so a page
     // asking, the first time after a start included, asks no account. It is a read and
     // declares nothing, so a window's read is never published, which every window would read again without end.
     [DriverRoute("HARNESSES", PipeClass.Open)]
@@ -164,7 +164,7 @@ public sealed class AgentsRoutes(DriverContext context)
                     TakesKey = accountActs.TakesKey,
                     // 🔴 The account a person actually HAS — the tool's own configuration home —
                     // answered beside the profiles rather than left out, which read as "No
-                    // accounts" to an owner who was logged in.
+                    // accounts" to an owner who is logged in.
                     OwnLogin = report.OwnLogin.ToString().ToLowerInvariant(),
                     report.OwnAccount,
                     // Its organisation and plan, as an account's.
@@ -396,7 +396,7 @@ public sealed class AgentsRoutes(DriverContext context)
 
             var replaced = HarnessKeys.Replace(
                 _loop.Harnesses.Home, owner, Named(press.Profile), ActField.Needs(press.Key, "key"));
-            // The roster's own memory of the account: its last word and what it was owed, forgotten as a removal forgets them.
+            // The roster's own memory of the account: its last word and what it is owed, forgotten as a removal forgets them.
             _loop.Harnesses.Removed(owner, replaced);
             await ChangedAsync(_loop, harness, action, config, cancellationToken);
             return new
@@ -602,7 +602,7 @@ public sealed class AgentsRoutes(DriverContext context)
     /// and no name reaches it.</para>
     ///
     /// <para>A delete that fails — a running session holding a file open in it — says so and leaves
-    /// the wiring as it was, because the account is still there to point at.</para>
+    /// the wiring unchanged, because the account is still there to point at.</para>
     /// </remarks>
     private int ProfileRemove(string harness, string? named, Action<string> stream)
     {

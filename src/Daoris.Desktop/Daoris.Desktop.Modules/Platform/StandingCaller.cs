@@ -56,7 +56,7 @@ public sealed class PipeClientProcess : IDisposable
         }
     }
 
-    /// <summary>The process <paramref name="pid"/>, opened now and taken only where it was created no later than <paramref name="taken"/>.</summary>
+    /// <summary>The process <paramref name="pid"/>, opened now and taken only where its creation is no later than <paramref name="taken"/>.</summary>
     public static PipeClientProcess Of(int pid, DateTime taken)
     {
         if (!OperatingSystem.IsWindows()) return Unknown;
@@ -69,7 +69,7 @@ public sealed class PipeClientProcess : IDisposable
 
         if (!GetProcessTimes(handle, out var created, out _, out _, out _) || DateTime.FromFileTimeUtc(created) > taken)
         {
-            // A process id reused after the connection was taken names another process: unknown.
+            // A process id reused after the connection is taken names another process: unknown.
             handle.Dispose();
             return Unknown;
         }

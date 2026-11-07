@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 
 // The large positioned worlds measured (the canvas design §4.1, traps 11 and 22): the synthetic scenes of 100, 1,000,
-// 5,000 and 10,000 nodes drawn in a real browser. Each figure it times is printed as a `large:` line, which D224's note of 2026-11-02
-// records: the first usable frame, the frames of a scripted pan and zoom, and what stays in the DOM.
+// 5,000 and 10,000 nodes drawn in a real browser. Each figure it times is printed as a `large:` line:
+// the first usable frame, the frames of a scripted pan and zoom, and what stays in the DOM.
 
 const ready = (page: Page) => page.waitForFunction(
   () => (window as unknown as { flowReady?: boolean }).flowReady === true && document.querySelector('[data-canvas-world] [data-flow-node]') !== null,

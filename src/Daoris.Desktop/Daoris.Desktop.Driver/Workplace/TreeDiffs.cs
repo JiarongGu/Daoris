@@ -260,7 +260,7 @@ internal static class TreeDiffs
         private int _spent;
         private int _dropped;
 
-        /// <summary>Whether the budget was spent and the rest of git's answer is not wanted.</summary>
+        /// <summary>Whether the budget is spent and the rest of git's answer is not wanted.</summary>
         public bool Stopped { get; private set; }
 
         /// <summary>Read the next piece of git's answer; false once nothing more is wanted.</summary>
@@ -297,7 +297,7 @@ internal static class TreeDiffs
             if (!_inPatch) BeginPatch();
             if (Stopped)
             {
-                // Every file from here was past the budget when its turn came.
+                // Every file from here is past the budget when its turn comes.
                 _dropped += _files.Count - _next;
             }
             else

@@ -22,7 +22,7 @@ internal static class TickShown
     /// accounts alone has no time, and its quest says its accounts by <c>SignedOut</c>, whose and which, so the page names each with
     /// its sign-in.</para>
     /// <para>A <c>TakenElsewhere</c> verdict names the machine that took the quest and its session where a teammate's record named
-    /// them, or that it was taken here after the session ended and the session here not carried on.</para>
+    /// them, or that it is taken here after the session has ended and the session here is not carried on.</para>
     /// <para>Each is null for every verdict it does not belong to, which the bridge leaves out.</para>
     /// </remarks>
     /// <param name="park">The quest's park as the loop last read it (<see cref="QuestParkReader"/>), or null.</param>

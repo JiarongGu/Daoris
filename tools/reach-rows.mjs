@@ -1,5 +1,5 @@
 /**
- * Reach rows kept beside `tools/merge-branch.mjs`, which is over its size budget, until MERGETOOL1 moves the table whole.
+ * Reach rows kept beside `tools/merge-branch.mjs`, which is over its size budget, until the table moves whole.
  *
  * A provider's own sources: the tools' provider census runs the contracts' generator,
  * which reads each provider's sources (the words its vocabulary names) and the registry's reader of them, so a change there

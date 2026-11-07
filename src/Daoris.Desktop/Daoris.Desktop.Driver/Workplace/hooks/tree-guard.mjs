@@ -142,7 +142,7 @@ function skipHeredoc(text, from, { delimiter, strip }) {
 /**
  * A command's words, redirects and separators, or null when it cannot be read to its end.
  * A word is `{ text, dynamic, quoted }`: dynamic when anything in it is made by a variable, a
- * substitution or a backtick, quoted when any part of it was quoted or escaped.
+ * substitution or a backtick, quoted when any part of it is quoted or escaped.
  */
 function lex(command, ps) {
   const items = [];

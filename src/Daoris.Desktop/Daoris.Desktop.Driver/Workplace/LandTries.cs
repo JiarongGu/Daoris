@@ -8,7 +8,7 @@ public static class LandTries
 {
     /// <summary>
     /// Whether a run's work is worth a try now: its first, and a hold's at every pass; a refusal only once its tree's tip or status moved
-    /// since it, so a pass never repeats one that nothing changed; and a try that closed, only at a tip other than the one it was kept at.
+    /// since it, so a pass never repeats one that nothing changed; and a try that closed, only at a tip other than the one it is kept at.
     /// </summary>
     public static bool ShouldTry(LandEntry entry, string? tip, string status) => entry.Last switch
     {
@@ -61,7 +61,7 @@ public static class LandTryNotes
         or LandingCode.Unreviewed or LandingCode.Opinion or LandingCode.CarriedOn or LandingCode.CarryBound;
 
     /// <summary>
-    /// The note for one try: its lead-in by its code, then the landing's sentence where there was a landing to say it.
+    /// The note for one try: its lead-in by its code, then the landing's sentence where there is a landing to say it.
     /// </summary>
     /// <param name="landed">What the landing said, or null where the try never reached one (a hold, uncommitted work, no commits).</param>
     /// <param name="uncommitted">How many paths were uncommitted, where that held it.</param>

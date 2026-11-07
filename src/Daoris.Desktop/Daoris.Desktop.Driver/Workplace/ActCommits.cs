@@ -49,7 +49,7 @@ internal static class ActCommits
         return run.End(run.Exit == 0 ? "git made the commit" : $"git refused the commit ({ContentHolds.Said(words)})");
     }
 
-    /// <summary>What the step's postconditions read: done where HEAD stands on the plan's parents, not done where it stands where it was, else unknown.</summary>
+    /// <summary>What the step's postconditions read: done where HEAD stands on the plan's parents, not done where it stands where it began, else unknown.</summary>
     public static async Task<string?> ReadAsync(string root, JsonNode plan, CancellationToken ct)
     {
         var head = plan["head"]?.GetValue<string>();

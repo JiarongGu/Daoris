@@ -20,7 +20,7 @@ public static class PieceStarts
 
     /// <summary>
     /// Make <paramref name="harness"/>'s start the launcher's, in place: the launcher named as the program and handed the jobs, in order, then
-    /// the harness and its words after it; everything else of the start kept. Null where it was made; otherwise why not, the start unchanged.
+    /// the harness and its words after it; everything else of the start kept. Null where it is made; otherwise why not, the start unchanged.
     /// </summary>
     public static string? Through(ProcessStartInfo harness, string? launcher, IReadOnlyList<string> jobs)
     {

@@ -29,7 +29,7 @@ internal sealed class UnheldTips
     {
         lock (_gate)
         {
-            // A read that threw or was cancelled, or that git could not give, is asked again.
+            // A read that throws or is cancelled, or that git cannot give, is asked again.
             if (_read is { } kept && !kept.IsFaulted && !kept.IsCanceled && !(kept.IsCompletedSuccessfully && kept.Result is null)) return kept;
             return _read = LoadAsync(root, refs, ct);
         }

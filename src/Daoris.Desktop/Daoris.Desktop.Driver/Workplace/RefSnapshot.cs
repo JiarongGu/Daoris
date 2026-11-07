@@ -41,7 +41,7 @@ internal sealed class RefSnapshot
     private RefSnapshot(Func<CancellationToken, Task<string?>> read, Func<CancellationToken, Task<string?>>? list) =>
         (_read, _list) = (read, list);
 
-    /// <summary>One ref as it was read.</summary>
+    /// <summary>One ref as read.</summary>
     internal sealed record Entry(string Name, string Object, string Type, string? Upstream, string? UpstreamShort, string? Tree = null);
 
     /// <summary>A read's refs by their full names, in git's order, and the same names blind to case.</summary>
@@ -294,7 +294,7 @@ internal sealed class RefSnapshot
     }
 
     /// <summary>
-    /// The tree of <paramref name="commit"/> from any listing this flow already holds, whichever folder it was read in: an id names its
+    /// The tree of <paramref name="commit"/> from any listing this flow already holds, whichever folder it is read in: an id names its
     /// tree in every repository, so a listing of the same repository from another tree of it answers as its own does. Nothing is
     /// started; null where no held listing has a ref at exactly that commit.
     /// </summary>
@@ -386,7 +386,7 @@ internal sealed class RefSnapshot
     {
         lock (_gate)
         {
-            // A read that threw or was cancelled is read again; one git could not give stays unread for this snapshot.
+            // A read that threw or got cancelled is read again; one git could not give stays unread for this snapshot.
             if (_refs is { } read && !read.IsFaulted && !read.IsCanceled) return read;
             return _refs = LoadAsync(ct);
         }

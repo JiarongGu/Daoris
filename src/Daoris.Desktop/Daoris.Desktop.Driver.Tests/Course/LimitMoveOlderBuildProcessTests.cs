@@ -4,14 +4,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-ii part b (the foundation design §3.4 rule 4, §13.4 step 5, §19.1, §19.3, row f-ii's proof): the cases where an older
+/// The cases where an older
 /// build acts on a line beside the live limit move, the first move that delivers. An older build opening a successor of the move's destination
 /// and crashing before it moved the destination's words; Codex's delayed older move, delivering its own copy after a newer move ended; an
 /// older shell's resume of the old part beside the newer shell's open, in both orders.
 /// </summary>
 /// <remarks>
 /// The older build's own statements are made at the ledger, as the build before the store made them: an unkeyed open of a successor, its
-/// state moves, its takes. Words land at the real protocol stub where a go-on carries them, so what is heard there is what an agent was sent.
+/// state moves, its takes. Words land at the real protocol stub where a go-on carries them, so what is heard there is what an agent is sent.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class LimitMoveOlderBuildProcessTests : IAsyncLifetime
@@ -44,7 +44,7 @@ public sealed class LimitMoveOlderBuildProcessTests : IAsyncLifetime
         var word = Assert.Single(_h.Store("run-probe").WordsOf(move.Id));
         Assert.Equal(("k1", MoveWordDispositions.Held), (word.Word, word.Disposition));
 
-        // Nothing was delivered to the destination, by the move or by its go-on, which a record that went on elsewhere never restarts.
+        // Nothing is delivered to the destination, by the move or by its go-on, which a record that went on elsewhere never restarts.
         Assert.Equal((0, 0), (LiveLimitHarness.Wrote(shell, LiveLimitHarness.Word), _h.Heard(LiveLimitHarness.Word)));
         Assert.Equal(["c2:k1"], _h.Waiting());
 

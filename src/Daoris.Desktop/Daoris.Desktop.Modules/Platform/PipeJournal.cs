@@ -22,7 +22,7 @@ internal sealed record PipeBinding(string Request, string Payload, string Key)
 /// <summary>
 /// What the pipe is asked, by each request's id: a line when a press begins and a line when
 /// it ends, with its answer, kept 24 hours under <c>&lt;home&gt;/pipe/</c>, one file per UTC day. So an id seen before is answered
-/// from its line and never run twice, and <c>RESULT</c> says how a press ended whether or not its client was still there.
+/// from its line and never run twice, and <c>RESULT</c> says how a press ended whether or not its client is still there.
 /// </summary>
 /// <remarks>
 /// <para><b>Read once, at the start</b>: an id whose last line says it began, written by an instance that stopped before it ended,
@@ -30,7 +30,7 @@ internal sealed record PipeBinding(string Request, string Payload, string Key)
 /// yesterday is removed.</para>
 ///
 /// <para><b>Each line appended whole</b>, BOM-less UTF-8 and LF, under one lock: a reader never meets half a line it wrote. A
-/// press whose first line cannot be written is not run (<see cref="Begin"/> says so), so an id the journal does not hold was never
+/// press whose first line cannot be written is not run (<see cref="Begin"/> says so), so an id the journal does not hold has never been
 /// dispatched. Each line carries the id's <see cref="PipeBinding"/>. The answer is the response envelope as it went on the wire,
 /// which carries this machine's paths only to this machine.</para>
 /// </remarks>
@@ -51,7 +51,7 @@ internal sealed class PipeJournal
         /// <summary>Answered: its answer is kept.</summary>
         Answered,
 
-        /// <summary>Begun by an instance that stopped before it ended: whether it was done is not known.</summary>
+        /// <summary>Begun by an instance that stopped before it ended: whether it finished is not known.</summary>
         Interrupted,
     }
 
@@ -66,7 +66,7 @@ internal sealed class PipeJournal
         Load();
     }
 
-    /// <summary>How <paramref name="id"/> stands, what it is bound to, and its answer where it was answered; null where it was never seen, or not for a day.</summary>
+    /// <summary>How <paramref name="id"/> stands, what it is bound to, and its answer where it is answered; null where it has never been seen, or not for a day.</summary>
     public (Seen State, string? Answer, PipeBinding Binding)? Find(string id)
     {
         lock (_gate)

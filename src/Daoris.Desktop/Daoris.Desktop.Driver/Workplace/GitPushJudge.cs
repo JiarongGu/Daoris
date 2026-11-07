@@ -20,7 +20,7 @@ public static class GitPushJudge
     public static string NotCarriedLine(string reference) =>
         $"daoris: the grant for this push does not carry {reference}: it names the refs of its own act and no others.";
 
-    /// <summary>The line a refusal says where the grant was taken by another push first.</summary>
+    /// <summary>The line a refusal says where the grant is taken by another push first.</summary>
     public const string TakenLine = "daoris: the grant for this push was already used by another push.";
 
     /// <summary>

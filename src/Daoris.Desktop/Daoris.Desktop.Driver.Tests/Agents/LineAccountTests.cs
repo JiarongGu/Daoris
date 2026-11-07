@@ -8,11 +8,11 @@ using static Daoris.Desktop.Driver.Tests.AccountRotationWalkTests;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1a-i (the foundation design §3.2 and row a-i): the account rule as one call, <see cref="LineAccount.Decide"/>, over what
-/// LIMITSWITCH1 and LIMITSWITCH2 built. Every case is the line's own account (ready, near, cooling, signed out, refused, missing, outside,
+/// The account rule as one call, <see cref="LineAccount.Decide"/>, over what the
+/// limit switch built. Every case is the line's own account (ready, near, cooling, signed out, refused, missing, outside,
 /// kept, not offered) × the person's new session and a limit's end × the others' states × the line's kind, run through the roster's resume
 /// and through the rule over a walk handed lazily, and the two must agree in <b>the answer, how many walks were made and how many starts
-/// were counted</b> (X4-1.1, O4-4). A second check pins each case to what today's callers answered when the rule was written, the table
+/// were counted</b> (X4-1.1, O4-4). A second check pins each case to what today's callers answered before the rule, the table
 /// <c>line-account-cases.txt</c> beside this file: it holds the callers moved onto the rule to the answers they gave.
 /// </summary>
 /// <remarks>
@@ -368,7 +368,7 @@ public sealed class LineAccountTests : IDisposable
 
     /// <summary>
     /// Today's callers' answers, case by case, kept to the byte: the answer's fields, its words (hashed), how many walks and how many
-    /// starts. This is the proof that moving the callers onto the rule changed nothing: the table was written from the roster's resume
+    /// starts. This is the proof that moving the callers onto the rule changed nothing: the table comes from the roster's resume
     /// before any caller moved, and every case in it still answers so.
     /// </summary>
     [Fact]
@@ -520,7 +520,7 @@ public sealed class LineAccountTests : IDisposable
         }
 
         Assert.True(failures.Count == 0, $"{failures.Count} of {cases} cases disagree:\n" + string.Join("\n", failures.Take(25)));
-        // Every own state with an account, for a driven and for a conversation's start, was read.
+        // Every own state with an account, for a driven and for a conversation's start, is read.
         Assert.Equal(
             [OwnState.Ready, OwnState.Cooling, OwnState.SignedOut, OwnState.Refused, OwnState.Missing, OwnState.MissingCooling, OwnState.Kept, OwnState.NotOffered],
             byOwn.Keys.Select(key => key.Item1).Distinct().OrderBy(own => own));
@@ -529,7 +529,7 @@ public sealed class LineAccountTests : IDisposable
 
     /// <summary>
     /// What a pick changes and what it leaves: the same cooling own account of a conversation that carries its words, the others ready,
-    /// goes on elsewhere as an agent's pick and a record from before the pick was kept do (the switch), and waits for its own reset where the
+    /// goes on elsewhere as an agent's pick and a record from before the pick do (the switch), and waits for its own reset where the
     /// person picked it, its refusal naming that reset and nothing counted; the same ready account is resumed either way.
     /// </summary>
     [Fact]

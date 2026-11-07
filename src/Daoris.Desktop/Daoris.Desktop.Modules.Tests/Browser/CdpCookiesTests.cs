@@ -37,7 +37,7 @@ public sealed class CdpCookiesTests : Bridge
     public void An_answer_with_no_cookies_is_none() =>
         Assert.Empty(CdpCookies.FromCdp(JsonDocument.Parse("{}").RootElement));
 
-    /// <summary>What is put back carries no expiry, and a same-site only where one was said.</summary>
+    /// <summary>What is put back carries no expiry, and a same-site only where one is given.</summary>
     [Fact]
     public void What_is_put_back_is_what_was_read_without_an_expiry()
     {

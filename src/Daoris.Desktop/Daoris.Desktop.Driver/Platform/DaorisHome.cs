@@ -89,7 +89,7 @@ public static class DaorisHome
     /// <summary>
     /// Take the install's home as this process's <c>DAORIS_HOME</c> where none is named, as the desktop does for
     /// itself: every file, the machine log and each process it starts then read the same machine. The home it set, or
-    /// null when one was named or this is no install.
+    /// null when one is named or this is no install.
     /// </summary>
     public static string? Adopt(Func<string, string?> environment, Action<string, string> setProcess, string baseDirectory)
     {
@@ -256,7 +256,7 @@ public static class DaorisHome
     public static string Require(HomeEntry entry) => Require(Environment.GetEnvironmentVariable, entry);
 
     /// <summary>
-    /// A place under the home: its <c>/</c> parts, each <c>*</c> taking the next part asked. Whole where every item part was
+    /// A place under the home: its <c>/</c> parts, each <c>*</c> taking the next part asked. Whole where every item part is
     /// asked; the rest asked is what lies under it.
     /// </summary>
     private static (string Place, string[] Under, bool Whole) Expand(string home, string place, string[] asked)
@@ -395,7 +395,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     // with its record; data/ (backed up), since they are the person's files as they stood.
     public static readonly HomeEntry ActFiles = new("act-files", HomeCategory.Data, "data/act-files/*", "data/act-files/*");
     // A place's apply written before its first effect, one file per plan's digest, each operation's
-    // outcome kept there so a restart settles it; data/ (backed up), since it says what was done to the person's configuration.
+    // outcome kept there so a restart settles it; data/ (backed up), since it says what is done to the person's configuration.
     public static readonly HomeEntry PlaceReceipts = new("place-receipts", HomeCategory.Data, "data/place-receipts", "data/place-receipts");
     // The steward desk's requests kept across a restart, an open one read as interrupted; no caller's key, no grant.
     public static readonly HomeEntry StewardDesk = new("steward-desk", HomeCategory.Data, "data/steward-desk.json", "data/steward-desk.json");

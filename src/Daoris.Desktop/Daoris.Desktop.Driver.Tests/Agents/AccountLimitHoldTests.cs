@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL4d: a turn the door refused for an account's limit fails with <c>limit</c>, which is never a
+/// A turn the door refused for an account's limit fails with <c>limit</c>, which is never a
 /// strike; the account cools until the reset the agent named; a start on it is held at spawn with no process and no
 /// record, the quest waiting rather than parked; and the wait is said once.
 /// </summary>
@@ -133,8 +133,8 @@ public sealed class AccountLimitHoldTests : IDisposable
     }
 
     /// <summary>
-    /// AGT3c (D125's discovery note; D80's ACPEND1): the note travels to every machine, so a limit's carries its facts, the
-    /// reset as a moment and why it holds, and never the agent's sentence, whose zone is the zone of the machine it was said
+    /// The note travels to every machine, so a limit's carries its facts, the
+    /// reset as a moment and why it holds, and never the agent's sentence, whose zone is the zone of the machine it is said
     /// on. That sentence stays in the transcript and the conversation, the raw view, which stay here.
     /// </summary>
     [Fact]
@@ -242,7 +242,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         "the ACP agent refused the call: Internal error: You've hit your individual spend limit · run /usage-credits to ask "
         + "your admin for a higher limit";
 
-    /// <summary>TOOL4e: a limit that names no time cools for the machine's <c>cooloff</c>, not the constant TOOL4d left.</summary>
+    /// <summary>A limit that names no time cools for the machine's <c>cooloff</c>, not a fixed constant.</summary>
     [Fact]
     public void A_driven_limit_that_names_no_time_cools_for_the_machine_s_cool_off()
     {
@@ -303,7 +303,7 @@ public sealed class AccountLimitHoldTests : IDisposable
     }
 
     /// <summary>
-    /// CONVNOTE1b: a conversation's cooling note carries its line's code and values, as a session
+    /// A conversation's cooling note carries its line's code and values, as a session
     /// record's cooling note does, so the page words it in the reader's language rather than showing the driver's English.
     /// Its English stays the conversation's own sentence, and neither names the account.
     /// </summary>

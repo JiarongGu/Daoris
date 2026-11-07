@@ -47,8 +47,8 @@ public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
 
     /// <summary>
     /// 🔴 Words kept on ended chats while no shell ran wait until another word is said, unless the loop takes them up as it
-    /// comes up. One whose conversation was kept goes on, and its end reaches the page as <c>SESSION_ENDED</c> with the state
-    /// its record took; one whose conversation was not kept says why in its conversation; a driven record is the planner's
+    /// comes up. One whose conversation is kept goes on, and its end reaches the page as <c>SESSION_ENDED</c> with the state
+    /// its record took; one whose conversation is not kept says why in its conversation; a driven record is the planner's
     /// and is left.
     /// </summary>
     [Fact]
@@ -83,7 +83,7 @@ public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
     /// <summary>
     /// The moment the driver takes a conversation's words up, its record moving to <c>working</c>, the windows are told
     /// <c>sessions</c> for it, so Ask Daoris's list needs no 1.5 s read while words wait. The move out of it is told too: the
-    /// restore of an ended record where every word was withdrawn announces no end, so a page that read <c>working</c> would stay there.
+    /// restore of an ended record where every word is withdrawn announces no end, so a page that read <c>working</c> would stay there.
     /// </summary>
     [Fact]
     public async Task Taking_words_up_and_each_move_out_of_working_publish_the_sessions()

@@ -19,7 +19,7 @@ public static class LandedStanding
     public static readonly TimeSpan Grace = TimeSpan.FromDays(1);
 
     /// <summary>
-    /// Whether a quest is closed: its done is in and nothing holds it for the person's yes, or it was declined. A quest still open or
+    /// Whether a quest is closed: its done is in and nothing holds it for the person's yes, or it is declined. A quest still open or
     /// taken, or one whose done is held, may yet land its work, so it is not closed.
     /// </summary>
     public static bool IsClosed(QuestView quest) => quest.Status == "Declined" || (quest.Status == "Done" && !quest.Held);
@@ -32,7 +32,7 @@ public static class LandedStanding
 
     /// <summary>
     /// A pull request may still carry it (<see cref="LandedWithdrawals"/> refuses it too): a plugin pushed the branch or it names one, unless
-    /// the platform said the pull request was abandoned.
+    /// the platform said the pull request is abandoned.
     /// </summary>
     public static bool Carried(LandedBranch entry) =>
         (entry.Pushed || entry.PullRequest is not null) && entry.PullRequestState?.State != PullRequestStates.Abandoned;

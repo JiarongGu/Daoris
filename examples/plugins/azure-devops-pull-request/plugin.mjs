@@ -6,7 +6,7 @@
 //  - `work/perform` for its one step, `pull-request`: opens the pull request from the pushed branch, or finds the active one already
 //  open for it, once per idempotency key (the kit's work.mjs keeps that), and reports its address as evidence and as its
 //  `pullRequest` output. The branch and checkout come from the units `work/watch` tells it; the step's attempt names its unit
-//  by the tip it was made at.
+//  by the tip it is made at.
 //  - `work/state`: a landed branch's pull request, found by its address or its source branch, and its state in Daoris's words, with
 //  the merge commit where it completed.
 //  DAORIS_PLUGIN_DATA the data folder (the kit's journal)
@@ -230,7 +230,7 @@ const kit = work({
     if (String(attempt.step).split('/').pop() !== 'pull-request') return failed('unknown-step', `no step ${attempt.step}`);
     return pullRequest(attempt);
   },
-  // An attempt an earlier process began: the pull request active from its branch says whether it was made.
+  // An attempt an earlier process began: the pull request active from its branch says whether the attempt made one.
   check: async (attempt) => {
     const unit = units.find((each) => each.tip === attempt.subjectRevision);
     if (!unit) return null;

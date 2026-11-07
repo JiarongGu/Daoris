@@ -216,7 +216,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         var held = await module.HandleMessageAsync(Request(route, payload, "q1"), CancellationToken.None);
         Assert.Equal(Unnumbered(answered.GetProperty("answer").GetRawText()), Unnumbered(JsonSerializer.Serialize(held.Data, Wire)));
 
-        // Asked again with the work slow again: what was held, at once; the same answer landing tells nothing more.
+        // Asked again with the work slow again: what is held, at once; the same answer landing tells nothing more.
         var again = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         module.Held.BeforeWork = _ => again.Task;
         clock.Restart();
@@ -256,7 +256,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         trees.Recorded.Record(new LandedBranch("engine", "aurora", "feature/42-streamer", "main", "abc123", "landed1", "42", null, at));
         // The landing's press tells its scope, one of the inputs the route declares.
         StatePublisher.Publish(Bus, StateScopes.Landing);
-        // What was held, at once; the look's answer, by event.
+        // What is held, at once; the look's answer, by event.
         var stale = JsonSerializer.SerializeToElement((await module.HandleMessageAsync(Request("SESSION_WHERE", payload, "where"), CancellationToken.None)).Data, Wire);
         Assert.Equal(JsonValueKind.Null, stale.GetProperty("sessions")[0].GetProperty("landed").ValueKind);
         await UntilAsync(() => told.Count == 2);

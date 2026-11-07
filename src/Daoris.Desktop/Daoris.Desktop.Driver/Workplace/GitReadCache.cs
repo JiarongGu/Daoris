@@ -52,7 +52,7 @@ public sealed class GitReadCache
         }
     }
 
-    /// <summary>The answer kept under <paramref name="key"/>, as the type it was kept as; asking for it makes it the most recent.</summary>
+    /// <summary>The answer kept under <paramref name="key"/>, as the type it is kept as; asking for it makes it the most recent.</summary>
     public bool TryGet<T>(string key, [MaybeNullWhen(false)] out T value) where T : class
     {
         lock (_gate)
