@@ -14,6 +14,7 @@
   "projects.group.outside": "已注册，尚未采用（{{count}}）",
   "projects.group.adoptedIn": "{{workspace}} 中已采用",
   "projects.row.undeclared": "尚未声明领域",
+  "projects.row.bench": "工位",
   "projects.row.branches": "{{count}} 条 Daoris 的分支",
   "projects.row.branches_other": "{{count}} 条 Daoris 的分支",
   "projects.none.headline": "请选择仓库",

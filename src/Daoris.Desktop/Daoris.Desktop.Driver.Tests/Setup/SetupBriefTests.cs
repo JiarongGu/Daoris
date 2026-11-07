@@ -270,11 +270,7 @@ public sealed partial class SetupBriefTests
         Assert.DoesNotContain(".gitattributes", declaring);
     }
 
-    /// <summary>
-    /// A set-up that declares a repository's documents and safe work proposes its rooms and the classes of its ignored files where it
-    /// declares neither, by the canon's conventions, may write them, and says them in its close; a set-up that writes no declaration
-    /// asks none.
-    /// </summary>
+    /// <summary>A set-up that declares the safe work proposes the rooms and classes where none are, and one that declares nothing asks none.</summary>
     [Fact]
     public void A_set_up_proposes_rooms_and_classes_for_a_repository_with_none()
     {

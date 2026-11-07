@@ -31,10 +31,7 @@ public sealed class HelpRoomMayProposeTests
     /// the rule its session needs, refused in `--plan`'s words, and never a shell or a write into the repository. The owner's
     /// helper could only name the terminal command; now it proposes the press.
     /// </summary>
-    /// <summary>
-    /// A repository that declares no rooms and no classes is offered them: by the set-up's adoption, or for one set up already by an
-    /// ask to its own session, which writes the declaration on its branch by the canon's conventions. The room drafts nothing itself.
-    /// </summary>
+    /// <summary>A repository with no rooms and no classes is offered them through its own session; the room drafts nothing itself.</summary>
     [Fact]
     public void The_room_proposes_rooms_and_classes_for_a_repository_with_none()
     {
