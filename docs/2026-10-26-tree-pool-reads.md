@@ -977,6 +977,234 @@ g's count of how often a slot stayed its line's for this reason.
 saving and takes F2 to F14 as named changes the steward can check without another read. If the owner wants the first build saved, round 4
 reopens §1.1 row 1. In both cases the central mechanics stand as round 2's read found them, and I found no case in which they lose work.
 
+## Opus (independent), round 4
+
+The independent Opus 5.5 reader's read of round 4 at main `b8ef097e29`: 8 findings, 2 of them blocking. The slot's mechanics hold at today's code:
+- a fixed folder that no record names;
+- every record naming its line's path, so a reader the pool missed, and an older build, meet a gone tree;
+- the switch in place under the start's shared hold;
+- the claim on the act engine's job and generation.
+
+I found no case in which they lose work. But the saving the owner chose the fixed path for does not hold in this repository (F1). The .NET SDK
+stamps the commit into every assembly, so a take compiles every project again. Measured here, the best case saves about 18 s of a 69 s cold
+build, not 86 s of 98 s. And two of the kinds `SlotKeeps` carries, `bin/` and `wwwroot`, are outputs this repository's runners use without
+building, the class §11 keeps from crossing lines (F2). **Verdict: another round, scoped to F1 and F2.** F3 to F8 are named changes the steward
+can check without another read.
+
+Read at main `b8ef097e29`, round 4's `75a4b694be` with eleven hours of main merged. I read with the file tools and git and changed no file but
+this one. I ran builds in my own worktree, which wrote only its ignored `bin/` and `obj/` and scratch under `_fixtures/`. To give a build
+another commit, I switched that worktree detached and back. A bare path is under `src/Daoris.Desktop/Daoris.Desktop.Driver/`, and `Design` is
+`docs/2026-10-26-tree-pool-design.md`.
+
+### 0. What was measured
+
+The SDK is 10.0.402, on Windows, with other sessions running on the machine.
+
+- **One small project, its inputs equal at two commits.** `Daoris.Desktop.PieceStart` compiles two driver files. Its project, those files,
+  `src/Daoris.Desktop/Directory.*.props` and `canon/canon.json` are byte for byte the same at `e7e96cfaa6` and `b8ef097e29`.
+  - Rebuilt with nothing changed: `Skipping target "CoreCompile"`, 1.4 s.
+  - After `switch --detach e7e96cfaa6`, with no input changed: `csc` ran. The generated `obj/.../Daoris.Desktop.PieceStart.AssemblyInfo.cs`
+    went from `AssemblyInformationalVersionAttribute("0.0.1+b8ef097e29…")` to `"0.0.1+e7e96cfaa6…"`, and the project's
+    `obj/.../*.sourcelink.json` names the commit too.
+- **The two desktop test projects** (the driver's and the modules'), the pair round 4 measured:
+  - cold, restore included: 42 s and 27 s, 69 s together;
+  - unchanged: 11 s and 7 s, and 5 s and 7 s in a later sample;
+  - after a switch to `6e715f8942`, whose tree is identical to `b8ef097e29`'s, so the switch wrote no file: 67 s and 21 s under the
+    machine's load, and 37 s and 14 s, 51 s together, after switching back.
+- **What compiled after each switch.** Every project of the driver tests' build compiled (8 `csc` runs, 0 skipped). The modules tests' build
+  compiled its 4 others, the 2 it shares with the driver tests' build already being current at that commit.
+
+So the round's 12 s is a build at an unchanged `HEAD`, which no take meets. A take moves `HEAD` to another commit, and that alone compiles
+every project.
+
+### 1. Round 4 against main today
+
+| § | Holds? | What I found |
+|---|---|---|
+| Standing, 2.1, 11, 24's F1 | **No**, in the saving | A commit change alone compiles every .NET project (F1); `bin/` and `wwwroot` are run without a build (F2) |
+| 2.2, 2.3 | Yes | `TreeReturns.cs:57-65`, `:63` and `GrowTree.cs:11` as cited. §2.3's "writer stamp unchanged" is stale (F8) |
+| 2.4 | Yes | `SessionLocks` unchanged |
+| 3.1, 3.2 | The rule, yes | The census misses the readers that name a branch from a listed folder (F7) |
+| 3.3, 4 | Yes | `TidyHolders.cs:30-37`, `:99-108` as cited; Claude Code files by folder, so a same-slot return keeps the conversation |
+| 5.1 | In part | Choice 4 is empty in this repository, not few (F5) |
+| 5.2 | Yes | Steps 2 and 6 as cited. The npm judgement trusts another line's install by a file's time (F6) |
+| 5.3 | In part | Step 3's `CopyAsync` declines a copy already there (F3). Step 6's journaled delete is refused under the start's shared hold (F4). Step 5's hook writes an ignored path of the line's own (F5) |
+| 6, 7, 8, 9, 10 | Yes | `LandPerformer.cs:97`, `:146` and `TreeFolders.cs:13-15` as cited |
+| 11 | **No** | F1, F2, F6 |
+| 12, 13, 14 | Yes | An older build's TREEGONE1 holds a line whose branch a slot has checked out (`TreeReturns.cs:88-93`), as §14 says |
+| 15 to 20 | Yes | Row b's proof of builds cannot pass as written (F1) |
+
+### 2. Round 4's answers to round 3 (§24)
+
+| Finding | Round 4 | Answered? |
+|---|---|---|
+| F1 (blocking) no take saves the first build | A fixed path, the owner's choice | **Partly.** The outputs stay valid at the slot's path, but in this repository a commit change compiles every project again. The 86 s is the unchanged-`HEAD` case (F1 here) |
+| F2 moved citations; the take a run stage | The take a `[RunStage]` of `Grown`, its claim on `RunState` | Answered (`GrowTree.cs:11`, `RunState.cs:199-204`) |
+| F3 two new holders | `TidyHolders` read as the one rule | Answered |
+| F4 TREELOCAL1's inputs | Daoris's own; copied again at a take | **Partly.** `CopyAsync` refreshes nothing in a slot that holds them (F3 here) |
+| F5 the binding check | At the judgement and the check | Answered |
+| F6 a second way to delete a branch | `JournaledDeletes.DeleteAsync` judged at `start` | **Partly.** Refused where the design runs it, inside the start's shared hold (F4 here) |
+| F7 GITLOCK1's census and lock order | The take in the start's shared hold, as an open; the pool's writes named | Answered |
+| F8 the act engine's job and generation | Reused | Answered |
+| F9 `moves` alone | Taken | Answered |
+| F10 the `land` node | `LandPerformer`'s two `TreeGone` reads re-keyed | Answered |
+| F11 the integration tree | Named a neighbour; two makings kept | Answered |
+| F12 the size limit | Days or size, wherever a folder waits | Answered |
+| F13 an unanswered read | Holds the claim | Answered |
+| F14 nits | Each taken | Answered. (b)'s hook now runs, and here it writes `docs/index/` (F5 here) |
+
+### 3. Findings
+
+1. **Blocking. A take compiles every .NET project again, since the SDK stamps the commit into every assembly.**
+   - **Where:**
+     - Design:16-19, the standing's saving;
+     - Design:867-873: "compiles only what its branch changed since the slot's last build";
+     - Design:881-892, the 86 s;
+     - Design:1112-1113, row b's proof that B's build "compiles that project and its dependants only";
+     - Design:1458, §24's F1;
+     - `docs/decisions/D214.md:4-5`: "a reused tree skips the first build".
+
+     Against them:
+     - `src/Daoris.Desktop/Directory.Build.props` and `src/Daoris.Service/Directory.Build.props` set neither
+       `IncludeSourceRevisionInInformationalVersion` nor `EnableSourceLink`. So the SDK's defaults put `+<commit>` into every assembly's
+       informational version and the commit into its source link file, and §0 measured the effect.
+     - This repository reads that version at run time (`Store/DesktopStore.cs:88`; `Workplace/InstallRollback.cs:14`;
+       `Instance/InstanceClient.cs:227`; `Loop/SystemWiring.cs:96`; `src/Daoris.Service/Daoris.Service.Http/HostVersion.cs:9-10`). So neither
+       Daoris nor a session can turn the stamp off for a line's builds without changing what those builds test.
+   - **What goes wrong:**
+     - Every take moves `HEAD`, so every take recompiles every project. Even a switch that writes no file does.
+     - What a take saves of the first .NET build is the restore and the copy of package files: about 18 s of 69 s here. A switch between lines
+       that differ a lot saves less: a changed package reference restores again, and the switch writes more files.
+     - Against today, a take saves the checkout, TREEDEPS1's copy (about 6 s) and that restore. It pays for them with what §1.1 row 1 lists:
+       D189 amended, every folder-reader asking the pool, another line's outputs underfoot.
+     - The owner chose the fixed path on 2026-11-07 on round 3's F1 and this round's 86 s. Neither holds for this repository.
+     - Row b's proof as written cannot pass.
+   - **Smallest change:**
+     - Restate the saving in the standing, §11, §24 and D214, from a build after a switch, never an unchanged one. Say it by toolchain: a .NET
+       repository on the SDK's defaults compiles every project per commit, and other toolchains are unmeasured.
+     - Turning the stamp off is a repository's own build choice, asked of it as any change in its code is. It is never the pool's.
+     - Row b's proof says every project compiles, the restore and unchanged copies are skipped, and the outputs equal a clean build.
+     - Put the corrected trade to the owner before any row is built (§4 below).
+
+2. **Blocking. `bin/` and `wwwroot` are outputs this repository's runners use without building, the class §11 keeps from crossing lines.**
+   - **Where:** Design:855-866. `SlotKeeps` keeps `bin/`, `obj/` and `wwwroot`, while "what never crosses lines" is "an output a tool runs in
+     place of the line's sources". Design:888-890: "a kept `wwwroot` serves only a line that does not build the web again".
+
+     Against them:
+     - `src/Daoris.Web/scripts/e2e-host.mjs:14-24` runs the host's kept `bin/Debug/net10.0/daoris-knowledge-http.dll` and refuses only where it
+       is missing. It serves the project's `wwwroot` (`:36-42`).
+     - `tools/desktop/commands.mjs:106` and `:160` run the kept shell and host, and refuse only where none is built.
+     - `Daoris.Desktop.Modules/Windows/DesktopPage.cs:49-62` serves the first `wwwroot` that holds a page.
+     - This repository's agents are told to build once and then `dotnet test --no-build` (`.claude/agents/branch-worker.md:51-52`).
+   - **What goes wrong:**
+     - In a fresh tree each of these stops: "not built". In a taken slot each runs the previous line's build silently, and reports its result as
+       this line's. That is a wrong test result with no tool saying so.
+     - `started.tree-kept-built` says a kept output is no proof that the commit builds. It does not say that a run without a build runs another
+       line's code.
+     - After F1, keeping `bin/` saves only the copy of package files, and §11's own measurement says keeping `wwwroot` saves nothing.
+   - **Smallest change:**
+     - `SlotKeeps` is `node_modules`, and `obj/` beside a tracked project file. `bin/` and `wwwroot` are the line's own, as `dist/` is, and go
+       aside at its finish. The next build copies `obj/`'s outputs into `bin/` again.
+     - `obj/` holds no output that runs unbuilt: the driver tests' own host build under `obj/service-host` is built before every use
+       (`Tests/Service/RealServiceHost.cs:41-60`).
+     - Row b proves that `--no-build`, `e2e-host.mjs` and `desktop.mjs run` refuse in a taken slot as they do in a fresh tree, and measures what
+       copying `bin/` again costs.
+
+3. **Not blocking, before row b. `CopyAsync` refreshes no TREELOCAL1 copy that a slot already holds.**
+   - **Where:** Design:612-614 (§5.3 step 3). `Workplace/TreeLocalInputs.cs:141` declines an input whose place is taken (`LinkOnTheWay`,
+     `:204`, `Path.Exists(final)`). `CopyOne` renames without overwriting (`:180`).
+   - **What goes wrong:**
+     - At a take every input is declined, so the slot keeps the previous line's copies. A pattern the checkout changed is never seen, and row b's
+       own case of that change fails.
+     - A copy the checkout no longer declares is, by §5.2 step 5, the line's own, so it holds the slot.
+   - **Smallest change:** at a take, delete the slot's earlier copies under `local/` first: the read-only mark cleared, never following a link,
+     the undeclared ones among them. Then run `CopyAsync`. Say that all of them are Daoris's.
+
+4. **Not blocking. A take's undo cannot run the journaled delete inside the start's shared hold.**
+   - **Where:** Design:323-324 and :629-630: a refusal or a start ended before its open deletes B's branch through `JournaledDeletes.DeleteAsync`,
+     in the take's stage. Against them:
+     - an act takes the checkout lock alone (`Workplace/ActRuns.cs:113`);
+     - it runs under an outer hold only where that hold is alone (`:121-124`; `Workplace/TreeLock.cs:81-82`);
+     - a start holds the lock shared (`TreeLock.cs:20-23`).
+   - **What goes wrong:** the delete is refused, "nothing was changed", so B's empty branch stands. Nothing is lost, since the look's tidy takes an
+     empty branch and the takeover runs outside any hold. But the design names a step that cannot run where it puts it.
+   - **Smallest change:** in a living process, detach and free the slot under the shared hold, and leave the delete to the look's takeover once
+     the hold is let go. Or use the opening's own undo, the census's one exception, with the census naming the take. Row b's "a take ended
+     before its open" proves which.
+
+5. **Not blocking. Every pooled line in this repository holds ignored paths of its own from its first moment.**
+   - **Where:** Design:535-538 (choice 4, "few such slots qualify"), :622-624 (the hook after the check), :1313-1329 (§18 item 4). Against them,
+     three writers run in every line:
+     - this repository's `post-checkout` and `post-merge` hooks write the ignored `docs/index/` after a switch or a merge on a branch
+       (`tools/index-hook.mjs:7-11`, `:27-35`);
+     - `npm run quick`, which every session runs before it hands back (`package.json:16`), writes the contracts' ignored types
+       (`.gitignore`'s `src/Daoris.Web/src/data/generated/` and `src/Daoris.Web/src/bridge/generated/`);
+     - the web's pre-scripts write the same types.
+   - **What goes wrong:**
+     - None of these is in `SlotKeeps` or Daoris's copies, so each is the line's own. Choice 4 is empty here, whatever a line writes.
+     - Every finish sets them aside, and the next take's hook and the next `--if-stale` write them again.
+     - Carrying them is safe: the hook writes the index after every switch, and each generated file stamps a hash of its sources
+       (`tools/contracts.mjs:12-15`).
+   - **Smallest change:** name these two as the slot's in a dated note on row b's proof, or say that choice 4 is empty in this repository until
+     §18 item 4 is answered. Row g counts it.
+
+6. **Not blocking. npm's freshness, read by a file's time, trusts another line's install.**
+   - **Where:** Design:893-897, after TREEDEPS1's rule (`Workplace/TreeDependencies.cs:123`; `docs/decisions/D51.md:60`): fresh where
+     `node_modules/.package-lock.json` is not older than `package-lock.json`.
+   - **What goes wrong:**
+     - In the checkout, only the person installs. In a slot, an earlier line's agent did.
+     - An `npm install --no-save <name>` rewrites the hidden lockfile and leaves the tracked one, so the next line is told its dependencies match,
+       with a package installed that its lockfile does not name.
+     - A hand edit inside `node_modules` changes neither file.
+   - **Smallest change:** read fresh only where the hidden lockfile's `packages` equal the tracked lockfile's. Otherwise treat it as stale.
+
+7. **Not blocking. The readers that name a branch from a listed folder meet a slot as `daoris/k-<n>`.**
+   - **Where:** Design:224-226 argues that only TREEFOLLOW1 learns from a folder. Others act on the name:
+     - a detached tree's discard keeps its commits under the layout's name (`Workplace/TreeWorkReads.cs:166-167`);
+     - a removal of a detached tree names it (`Workplace/TreeRemovals.cs:88`);
+     - a landing's replay reads it (`Workplace/TreeBranches.cs:151`, `:168`);
+     - an update reads its grown entry (`Workplace/TreeUpdates.cs:383`).
+   - **What goes wrong:** a person's commit made in a detached slot and then discarded would be kept as `refs/daoris/discarded/daoris/k-1`, a
+     recovery ref named for a slot, which §19 rejects (O-2).
+   - **Smallest change:** row a's census also lists every reader that derives a branch from a folder git lists, each asking the pool or refusing
+     a `k-` folder.
+
+8. **Not blocking. Nits.**
+   - (a) Design:247-249 still says "the writer stamp unchanged". Round 3's read found the stamp raised twice
+     (`Store/DesktopStoreSteps.cs:453`, `:503`, `:633`): restate why older builds never open the tables.
+   - (b) `git hook run` needs git 2.36, by git's documentation; the doors' floor is 2.31 (git area rule 14). Say what a take does below 2.36.
+   - (c) Design:877-878's "MSBuild reads the SDK among its inputs" is a time comparison, and an SDK installed with older file times is not newer
+     than the slot's outputs. After F1 a take compiles anyway, so say only that row b measures a toolchain change at an unchanged commit.
+
+**8 findings, 2 of them blocking.**
+
+### 4. §18 item 4, for the owner
+
+*Whether a kept tree may be handed on while its last line may still come back.* Under round 4, the tree's dependencies and builds stay in it.
+What would move is the line's own: its scratch, and any output a tool runs in place of the next line's sources.
+
+- **(a) No**, round 4's default: such a tree stays its line's until the line finishes.
+  - In this repository, no tree is ever handed on this way, not few. Every line holds `docs/index/`, which the take's own hook writes, and
+    the contracts' generated types, which `npm run quick` writes (F5).
+  - So the pool here hands on finished lines' trees and new ones only.
+- **(b) Yes, moved aside and laid back.** As row j writes it. The line also loses its conversation unless it returns to the same tree (§4).
+  - After F1 the tree's builds save the restore and little more, so this buys little: a checkout, TREEDEPS1's copy and the restore.
+- **(c) Yes, moved aside and not laid back.** As (b), but the line comes back without its scratch.
+- **(d) Yes, deleted at the take.** Not recommended.
+
+**Recommendation:** answer **(a)** for the first build, as round 4 does, and record that in this repository it hands on finished lines' trees
+alone until F5's content-stamped kinds are named the tree's. Choose (b) only if row g shows that starts went past the count because live
+lines held trees, and only after F1's corrected saving shows the move is worth a conversation lost to the brief. Prefer (b) to (c), since
+laying back makes the move a delay, not a loss.
+
+**Verdict: another round, scoped to F1 and F2.**
+- F1: the owner is told the saving the fixed path buys in this repository, measured after a switch, and answers whether its costs are still
+  worth it.
+- F2: `SlotKeeps` loses `bin/` and `wwwroot`.
+- F3 to F8 are named changes the steward can check without another read.
+
+The round's mechanics hold at main's code, and I found no case in which they lose work.
+
 ## Moved from the design at round 4
 
 Round 4 moved the design's own superseded round text here, so the design does not grow: rounds 1 to 3's standings and *Read at* paragraphs,
