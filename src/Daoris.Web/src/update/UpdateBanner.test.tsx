@@ -77,6 +77,16 @@ describe('the update banner', () => {
     expect(screen.getByRole('status')).toHaveTextContent('was not installed: a file is not the one its manifest names.');
   });
 
+  it('refused while a delivery is unresolved, says the driver’s sentence naming it, and Update now tries again', async () => {
+    const why = 'going back to a build older than the delivery record is refused while 1 delivery is unresolved (`unit-1` by branch at a1b2c3d4).';
+    const { onSay } = draw(state({ state: 'refused', staged: STAGED, problem: { code: 'deliveries', message: why } }));
+
+    expect(screen.getByRole('status')).toHaveTextContent(`was not installed: ${why}`);
+    await userEvent.click(screen.getByRole('button', { name: 'Update now' }));
+    expect(onSay).toHaveBeenCalledWith('now');
+    expect(screen.queryByRole('button', { name: 'Not now' })).toBeNull();
+  });
+
   it('after a roll-back, says it once with its reason, and Dismiss puts it away', async () => {
     const { onDismiss } = draw(state({
       outcome: { phase: 'rolled-back', build: 'b1', version: '0.0.2', commit: null, reason: 'exited', detail: 'it ended.' },

@@ -107,6 +107,10 @@ export function UpdateBanner({ update, busy = false, onSay, onDismiss }: {
               <Button variant="ghost" disabled={busy} onClick={() => onSay('not-now')}>{t('update.notNow')}</Button>
             </>
           )}
+          {/* A new word checks the build again: what refused it, an unresolved delivery among them, may have moved. */}
+          {state === 'refused' && (
+            <Button variant="primary" disabled={busy} onClick={() => onSay('now')}>{t('update.now')}</Button>
+          )}
         </div>
       )}
     </div>
