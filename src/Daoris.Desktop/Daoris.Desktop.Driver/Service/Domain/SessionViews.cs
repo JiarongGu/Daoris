@@ -20,12 +20,6 @@ public sealed record PriorSession(
     public string? Choice { get; init; }
     public ActorAsked? Asked { get; init; }
     public System.Text.Json.JsonElement? Override { get; init; }
-
-    /// <summary>
-    /// The model its next start on <paramref name="agent"/> asks (MODELROLE1k2): its choice's, the composer's kept change laid over it; null
-    /// for account default. A model family's cool-off holds a start of that family alone, so this is what every reader of a line's cool-off asks.
-    /// </summary>
-    public string? ModelOn(string agent) => (Asked ?? ActorAsked.Before(agent)).Overlaid(ActorOverride.Read(Override)).NamedModel;
     public ActorRan? Ran { get; init; }
     public ActorChosen? Chosen { get; init; }
     /// <summary>
