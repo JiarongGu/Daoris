@@ -98,7 +98,7 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
                 .ConfigureAwait(false);
 
             // A conversation going on is working already: the ledger moved it out of its ended state before the spawn.
-            if (goOn is null) await Context.Service.AdvanceAsync(sessionId, "working", transcript: transcript).ConfigureAwait(false);
+            if (goOn is null && !watched.Working) await Context.Service.AdvanceAsync(sessionId, "working", transcript: transcript).ConfigureAwait(false);
 
             // Its exit, then its capture read to its end, then its process's lineage end.
             ending = true;
@@ -115,7 +115,7 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
 
             if (goOn?.Ask.Refused is { } refused)
             {
-                await goOnDoor.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
+                if (goOn.Carried is null) await goOnDoor.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
                 return;
             }
 
@@ -141,7 +141,7 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
             // An agent that would not resume the conversation: nothing went, so the record goes back to how it ended.
             if (goOn?.Ask.Refused is { } refused)
             {
-                await goOnDoor.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
+                if (goOn.Carried is null) await goOnDoor.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
                 return;
             }
 

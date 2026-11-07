@@ -567,6 +567,13 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
     /// </summary>
     public async Task WentOnAsync(string sessionId, GoingOn goOn, string adapter)
     {
+        // A limit's carried part is its move's delivery, which the move's record reads, and says no reopening.
+        if (goOn.Carried is { } carried)
+        {
+            carried.Went(goOn.Ask);
+            return;
+        }
+
         var ids = goOn.Ask.Ids;
         if (ids.Count > 0)
         {

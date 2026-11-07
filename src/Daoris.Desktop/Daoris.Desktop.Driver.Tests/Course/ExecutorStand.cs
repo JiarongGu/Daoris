@@ -36,8 +36,8 @@ internal sealed class ExecutorStand(IChatRunning runner, ChatContext context) : 
     Task<ChatStart> IChatRunning.StartAsync(
         string repository, string adapter, DriverConfig config, Func<string, string, Task>? onEnded, string? profile, bool? ownTree,
         CancellationToken ct, string? tree, ContinuedFrom? from, IReadOnlyList<ActorEffective>? order, EarlierMaker? leftBy,
-        HarnessSelection? settled, bool picked, bool ownFirst, MoveWords? moves) =>
-        runner.StartAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy, settled, picked, ownFirst, moves);
+        HarnessSelection? settled, bool picked, bool ownFirst, MoveWords? moves, ChatLimitCarry? carries) =>
+        ((IChatRunning)runner).StartAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy, settled, picked, ownFirst, moves, carries);
 
     Task<HelpPlaced> IChatRunning.PlaceHelpAsync(
         string adapter, DriverConfig config, string? workspace, CancellationToken ct, string? carries, IReadOnlyList<ActorEffective>? order) =>
@@ -50,8 +50,9 @@ internal sealed class ExecutorStand(IChatRunning runner, ChatContext context) : 
 
     Task<ChatStart> IChatRunning.RunAsync(
         string actor, string sessionId, string message, ChatAgent resolved, HarnessSelection selection, DriverConfig config,
-        ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn, ActorEffective? chosen, ChatPending? pending) =>
-        runner.RunAsync(actor, sessionId, message, resolved, selection, config, place, onEnded, ct, goOn, chosen, pending);
+        ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn, ActorEffective? chosen, ChatPending? pending,
+        bool working) =>
+        runner.RunAsync(actor, sessionId, message, resolved, selection, config, place, onEnded, ct, goOn, chosen, pending, working);
 
     ChatPlace IChatRunning.RepositoryPlace(
         DriverConfig config, IReadOnlyList<RepoView> registry, RepoView known, string repository, string workTree, IReadOnlyList<string>? continued,

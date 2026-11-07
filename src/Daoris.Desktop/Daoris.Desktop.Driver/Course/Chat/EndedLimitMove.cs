@@ -19,7 +19,8 @@ internal sealed class EndedLimitMove(IExecutorWiring wiring, LimitMove move)
     /// 🔴 The same move for a conversation its limit holds that has already ended: <see cref="MoveAsync"/>'s
     /// body with no live turn to hold and no part to end. To the walk's next account where another frees first; or, where its own
     /// conversation is proven lost (<paramref name="lost"/>), on whichever the walk gives, its own account allowed for that reason
-    /// alone (which a hand-over otherwise refuses). Handed the brief of its line before the refused turns, then those
+    /// alone (which a hand-over otherwise refuses). At a limit onto another account of its own agent it carries its own conversation there
+    /// (<see cref="ChatLimitCarry"/>); else handed the brief of its line before the refused turns, then those
     /// turns' words, then the words said while it waited, each once.
     /// </summary>
     /// <remarks>
@@ -179,6 +180,16 @@ internal sealed class EndedLimitMove(IExecutorWiring wiring, LimitMove move)
             var from = new ContinuedFrom(sessionId, moveWhy, HandOverBy.Daoris);
             // The open moves the words named and every word of the person's kept since this read, in its own step.
             var moves = MovedWords.Asked(sessionId, said, prior.Waiting.Select(word => word.Id)) with { Opens = key };
+            // A limit's move onto another account of its own agent carries its conversation there, as the live move's does; a conversation
+            // proven lost has none to carry.
+            var fence = new MoveFence(move);
+            var plan = moveWhy != HandOverWhy.Limit || lost is not null || isHelp || elsewhere is not null
+                       || !await context.Service.Opens.MovesAsync(ct).ConfigureAwait(false)
+                ? null
+                : ChatLimitCarry.Planned(context, agent, prior, selection, tree);
+            var carrier = plan is CarryPlan.Carried carried
+                ? new ChatLimitCarry(wiring, agent, prior, selection, carried, held?.Words ?? [], [], before, move, fence, read)
+                : null;
             var started = isHelp
                 ? await owner.HelpStartAsync(prior, agent, config, onEnded, ct, elsewhere?.Order).ConfigureAwait(false)
                 : elsewhere is { Order: { } order }
@@ -188,7 +199,7 @@ internal sealed class EndedLimitMove(IExecutorWiring wiring, LimitMove move)
                         .ConfigureAwait(false)
                     : await runner.StartAsync(
                             prior.Repository!, agent.Id.Value, config, onEnded, profile: null, ct: ct, tree: tree, from: from, settled: selection,
-                            moves: moves)
+                            moves: moves, carries: carrier)
                         .ConfigureAwait(false);
             if (started.SessionId is not { } to)
             {
@@ -202,9 +213,12 @@ internal sealed class EndedLimitMove(IExecutorWiring wiring, LimitMove move)
             // As the live move's: the open's answer, every word it moved by its id on the new
             // part, the line's head read before anything is handed, then `delivering` and the prompt's mark. A write the store refuses makes
             // no hand, and the moved words wait on the new part, never attempted.
-            var fenced = move.Opened(to, started.Moved);
-            if (fenced is null && await move.SupersededAsync().ConfigureAwait(false)) fenced = "the line went on past its new part";
-            fenced ??= move.Delivering();
+            var fenced = await fence.AskAsync(to, started.Moved).ConfigureAwait(false);
+            if (carrier is { Resumed: true })
+            {
+                toWire = true;
+                return new StartedFrom(to, true, null, $"`{sessionId}` went on in its own conversation, carried to conversation `{to}` with your words.");
+            }
 
             var refused = held?.Words ?? [];
             ChatMessage message;
@@ -259,8 +273,9 @@ internal sealed class EndedLimitMove(IExecutorWiring wiring, LimitMove move)
             var onto = landed?.Adapter is { Length: > 0 } went ? went : agent.Id.Value;
             if (lost is not null) context.Note(sessionId, LimitNotes.ResumeRefused(lost));
             context.Note(sessionId, HandOverNotes.MovedOn(to, onto, account, moveWhy, null, message.Brief?.Text.Length ?? 0));
+            if (ChatLimitCarry.NotCarried(plan) is { } notCarried) context.Note(to, CarriedNotes.NotCarried(notCarried));
             context.Service.AccountSaid(
-                Continuations.Moved(to, sessionId, ranOn, onto, prior.Profile, account, moveWhy, briefed: true));
+                Continuations.Moved(to, sessionId, ranOn, onto, prior.Profile, account, moveWhy, briefed: true, carry: ChatLimitCarry.NotCarried(plan)));
 
             // A text door writes as it is handed, and tells no message of no moved word that it wrote: its return is the write's.
             var turned = context.Turned.ContainsKey(to);

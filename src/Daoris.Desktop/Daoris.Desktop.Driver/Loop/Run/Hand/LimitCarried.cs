@@ -9,9 +9,6 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class LimitCarried
 {
-    /// <summary>Daoris's word to the carried conversation, after whatever the person said.</summary>
-    public const string Words = "Your account reached its limit, so this conversation goes on on another account. Go on with the work where you stopped.";
-
     /// <summary>How the move takes the conversation, its copy made where it carries; null where the move is no limit's within one agent.</summary>
     public static CarryPlan? Plan(LoopContext context, AgentDoor door, PriorSession? prior, string? why, HarnessSelection selection, string tree)
     {
@@ -50,7 +47,7 @@ internal static class LimitCarried
     public static ResumeAsk Ask(CarryPlan.Carried carried, Noted first, IReadOnlyList<SaidWordView>? moved)
     {
         var persons = moved is null ? "" : SaidWordView.PersonsJoined(moved);
-        return new ResumeAsk(carried.Conversation, [], first, persons is { Length: > 0 } ? $"{persons}\n\n{Words}" : Words);
+        return new ResumeAsk(carried.Conversation, [], first, persons is { Length: > 0 } ? $"{persons}\n\n{LimitCarry.Words}" : LimitCarry.Words);
     }
 
     /// <summary>

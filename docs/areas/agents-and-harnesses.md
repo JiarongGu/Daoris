@@ -243,14 +243,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     family's week (`seven_day_opus`, `seven_day_sonnet`) at 100% with its reset ahead, cool the account plus that family alone
     until the reset, under the account's `models` in `cooling.json` (`ModelLimits`); every other limit cools the whole
     account. *Try now* and a sign-in end both. (from D125, D205)
-38. A limited line resumes by itself at the look: its own conversation on its own account when ready; else a driven line goes on
-    on another account of the same agent in a new part that carries its own conversation there (`LimitCarried` in the start's
-    hand, the plan `LimitCarry`), its files copied to that account's home, resumed by its id with Daoris's word and no brief:
+38. A limited line resumes by itself at the look: its own conversation on its own account when ready; else a driven line, and a
+    repository's chat at its limit move, goes on on another account of the same agent in a new part that carries its own conversation
+    there (`LimitCarried` in a driven start's hand, `ChatLimitCarry` in the chat's limit move, the plan `LimitCarry` for both), its
+    files copied to that account's home once the part it leaves has ended, resumed by its id with Daoris's word and no brief:
     whole at or under its provider's `WholeBound`, compacted first past it where the harness can be asked to, else briefed; it is
     briefed on another choice of agent, from or to the tool's own home, and where its door declares no carry or the copy fails,
     the new part saying why (`moved.not-carried`, its code `unable`, `unkept`, `unhomed`, `too-large`, `missing`, `copy-failed`, or
-    `resume-refused` where the door would not resume the copied conversation before any prompt: the same start takes the copy out
-    of that account's home (`IConversationCarry.Remove`) and goes on in the brief, a second `session.moved` saying so) and
+    `resume-refused` where the door would not resume the copied conversation before any prompt: the same start, or the chat's same
+    part once its refused run let go, takes the copy out of that account's home (`IConversationCarry.Remove`) and goes on in the
+    brief, a second `session.moved` saying so) and
     `session.moved` saying `carry` (`whole`, `compacted` or that code) beside `briefed`; else it waits showing the earliest reset.
     Measured on the install (a Sonnet session on the protocol door cut off at 155,233 tokens of a 1,000,000 window): a driven
     session starts at about 64,500 tokens and its briefed successor at 67,838, so a carry writes about 87,400 more tokens to the
