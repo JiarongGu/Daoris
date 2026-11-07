@@ -46,7 +46,7 @@ public sealed class StartTreeCloseGitTests : LandedFixture
         WorkingTree.Started.Value = arguments =>
         {
             lock (asked) asked.Add(string.Join(' ', arguments));
-            if (arguments is ["worktree", "add", ..]) opened = true;
+            if (arguments is ["-c", _, "worktree", "add", ..]) opened = true;
 
             // The tree's head, read just before the record's open is asked: the driver closes here.
             else if (opened && arguments is ["rev-parse", "HEAD"]) closing.Cancel();

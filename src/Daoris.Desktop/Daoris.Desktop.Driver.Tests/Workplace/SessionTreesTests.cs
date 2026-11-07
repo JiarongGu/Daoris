@@ -374,19 +374,22 @@ public sealed class SessionTreesTests : IDisposable
 
     /// <summary>
     /// An open cut off while git is still adding its tree, the branch made and the tree checked out, leaves nothing.
-    /// git runs <c>post-checkout</c> before its add returns, so a hook that waits holds git there while the open is cancelled.
+    /// The open holds the repository's hooks, so a smudge filter that waits holds git in its checkout while the open is cancelled.
     /// </summary>
     [Fact]
     public async Task An_open_cancelled_while_git_is_still_adding_its_tree_leaves_nothing()
     {
         var root = await MakeRepositoryAsync("engine");
-        var ran = Path.Combine(_scratch, "post-checkout-ran");
-        await File.WriteAllTextAsync(
-            Path.Combine(root, ".git", "hooks", "post-checkout"), $"#!/bin/sh\necho ran > '{ran.Replace('\\', '/')}'\nsleep 120\n");
+        await File.WriteAllTextAsync(Path.Combine(root, ".gitattributes"), "held.txt filter=held\n");
+        await File.WriteAllTextAsync(Path.Combine(root, "held.txt"), "held\n");
+        await GitAsync(root, "add", ".");
+        await GitAsync(root, "commit", "-m", "held");
+        var ran = Path.Combine(_scratch, "smudge-ran");
+        await GitAsync(root, "config", "filter.held.smudge", $"echo ran > '{ran.Replace('\\', '/')}'; sleep 120; cat");
         using var closing = new CancellationTokenSource();
 
         var opening = new SessionTrees(_home).OpenAsync(root, "engine", "aurora", closing.Token);
-        await Poll.Until(() => File.Exists(ran) || opening.IsCompleted, () => "git never ran the hook", TimeSpan.FromMinutes(2));
+        await Poll.Until(() => File.Exists(ran) || opening.IsCompleted, () => "git never ran the filter", TimeSpan.FromMinutes(2));
         Assert.Single((await GitAsync(root, "branch", "--list", "daoris/*")).Split('\n', StringSplitOptions.RemoveEmptyEntries));
         await closing.CancelAsync();
 
