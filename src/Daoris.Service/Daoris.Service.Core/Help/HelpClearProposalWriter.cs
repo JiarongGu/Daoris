@@ -3,7 +3,7 @@ using static Daoris.Knowledge.HelpProposalFile;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The <c>clear</c> kind's writer (HIST1f-a, D153): a quest's, an ask's or a workspace's finished history cleared, as the
+/// The <c>clear</c> kind's writer: a quest's, an ask's or a workspace's finished history cleared, as the
 /// terminal's <c>history clear</c> does. Which units would be cleared and which kept is the driver's to judge.
 /// </summary>
 internal sealed class HelpClearProposalWriter(HelpProposalFile file)
@@ -20,7 +20,7 @@ internal sealed class HelpClearProposalWriter(HelpProposalFile file)
         var circle = Blank(workspace);
         if (string.IsNullOrWhiteSpace(why)) return NoReason;
         var named = new[] { questId, askId, circle }.Count(value => value is not null);
-        // HIST1f-d: the failed door names the quest whose failed sessions go, so it reads the quest parameter.
+        // The failed door names the quest whose failed sessions go, so it reads the quest parameter.
         var target = door switch { "quest" or "failed" => questId, "ask" => askId, _ => circle };
         var refused = door is not ("quest" or "ask" or "failed" or "workspace")
             ? "a clear proposal's door is quest, ask, failed or workspace."

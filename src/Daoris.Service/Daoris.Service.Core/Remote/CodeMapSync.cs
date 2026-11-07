@@ -6,20 +6,20 @@ namespace Daoris.Knowledge;
 public sealed record CodeMapSyncReport(int Fetched, int Forgotten, string? Problem);
 
 /// <summary>
-/// One pass of the team's code maps for one workspace (MAP3e): each repository of the circle that
+/// One pass of the team's code maps for one workspace: each repository of the circle that
 /// this machine holds only a teammate's copy of — no checkout here — has its map brought down as the
 /// remote holds it, so this machine answers for it instead of saying it keeps none.
 /// </summary>
 /// <remarks>
 /// <para><b>The remote's holding is the order.</b> A shared deployment already took each map by
-/// ancestry and kept the first reading of a commit (SYNC5a), so this machine holds exactly what the
+/// ancestry and kept the first reading of a commit, so this machine holds exactly what the
 /// remote holds, at the commit it holds it: a newer commit replaces the map here, a commit that keeps
 /// none is held with none, and a map the remote no longer holds is forgotten here.</para>
 ///
 /// <para><b>A checkout here is the authority</b> on its own map and is read from disk, so a repository
 /// with a root is never asked for; and a copy another circle keeps is that circle's pass's.</para>
 ///
-/// <para><b>It runs in the host</b>, beside the quests and the records (D69): pulling a map needs no
+/// <para><b>It runs in the host</b>, beside the quests and the records: pulling a map needs no
 /// git, and the host is what answers the page. The commit is asked first, so a map that has not moved
 /// is not sent again.</para>
 /// </remarks>

@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// The HTTP host watches no settings file (HTTPWATCH1): the web host's defaults watch the content root and everything below
+/// The HTTP host watches no settings file: the web host's defaults watch the content root and everything below
 /// it for <c>appsettings.json</c>, and walk each folder renamed there, which held the install's <c>app/</c> against an update's
 /// swap and a checkout's folders against their renames.
 /// </summary>

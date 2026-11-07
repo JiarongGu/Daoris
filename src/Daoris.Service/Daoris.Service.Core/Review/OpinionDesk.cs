@@ -2,7 +2,7 @@ using System.Globalization;
 
 namespace Daoris.Knowledge;
 
-/// <summary>Why a door to a second opinion refused (XAGENT1c) — or <see cref="None"/> when it did what was asked.</summary>
+/// <summary>Why a door to a second opinion refused — or <see cref="None"/> when it did as asked.</summary>
 public enum OpinionRefusal
 {
     None,
@@ -19,13 +19,13 @@ public enum OpinionRefusal
     /// <summary>A bound (design §8.3): one pass the rule starts per working session, one recheck a pass, from its tip, once its findings went.</summary>
     Bound,
 
-    /// <summary>The reviewer's tree is held by another session: one session per working tree (D51).</summary>
+    /// <summary>The reviewer's tree is held by another session: one session per working tree.</summary>
     Busy,
 
     /// <summary>The session that said one reads no work for a second opinion: only an opinion's own reviewer gives it.</summary>
     NotAReviewer,
 
-    /// <summary>The opinion was said already: a pass says it once.</summary>
+    /// <summary>The opinion is said already: a pass says it once.</summary>
     AlreadyGiven,
 
     /// <summary>The pass's minutes, the rule's bound, ran out before it said its opinion.</summary>
@@ -44,7 +44,7 @@ public enum OpinionRefusal
     Closed,
 }
 
-/// <param name="Refusal"><see cref="OpinionRefusal.None"/> when the door did what was asked.</param>
+/// <param name="Refusal"><see cref="OpinionRefusal.None"/> when the door did as asked.</param>
 /// <param name="Message">The whole answer, phrased once here for every door.</param>
 /// <param name="Opinion">The opinion as it now stands, when the door did it.</param>
 public sealed record OpinionOutcome(OpinionRefusal Refusal, string Message, Opinion? Opinion = null)
@@ -55,23 +55,22 @@ public sealed record OpinionOutcome(OpinionRefusal Refusal, string Message, Opin
     /// <summary>The word the findings wait in on the working session's record, when they were handed.</summary>
     public SaidWord? Word { get; init; }
 
-    /// <summary>The findings were waiting already (COMMS1b): <see cref="Session"/> holds the word and <see cref="Word"/> is it; nothing was kept now.</summary>
+    /// <summary>The findings are waiting already: <see cref="Session"/> holds the word and <see cref="Word"/> is it; nothing is kept now.</summary>
     public bool Waiting { get; init; }
 
-    /// <summary>The findings' key was settled: the record its word left, and nothing was kept now.</summary>
+    /// <summary>The findings' key is settled: the record its word left, and nothing is kept now.</summary>
     public string? SettledOn { get; init; }
 }
 
 /// <summary>
-/// The judgement over second opinions (XAGENT1c, D155 points 5, 7, 8, 10 and 11; the second agent design §5.4, §6.1–§6.4,
-/// §8.3): one implementation for the local host's doors and the connector's two tools, as <see cref="SessionLedger"/> is for
+/// The judgement over second opinions: one implementation for the local host's doors and the connector's two tools, as <see cref="SessionLedger"/> is for
 /// sessions. It never gives the person's answer to a dispute, and nothing here lets an agent settle one.
 /// </summary>
 /// <remarks>
 /// <para><b>Machine-local by construction.</b> Composed on a shared host, every door refuses with one sentence: the candidate
-/// is commits only this machine holds until they land, and the reviewer names an account (D47 §4).</para>
+/// is commits only this machine holds until they land, and the reviewer names an account.</para>
 ///
-/// <para><b>Read, judged and written as one step</b> (REV3), inside the session store's write lock: the opinions are kept on
+/// <para><b>Read, judged and written as one step</b>, inside the session store's write lock: the opinions are kept on
 /// the same connection, so a pass's record and its reviewer's session are made together or not at all.</para>
 /// </remarks>
 /// <param name="local">Whether this is a local host's desk; a shared host's refuses every door.</param>
@@ -226,12 +225,12 @@ public sealed class OpinionDesk(OpinionStore opinions, SessionStore sessions, bo
 
     /// <summary>
     /// Hand a first pass's findings to its working session (design §6.3): a word on its record naming the opinion as
-    /// <see cref="SaidWord.By"/>, in Daoris's fixed words, which reopens it at the driver's next look (D137). Once, and only
+    /// <see cref="SaidWord.By"/>, in Daoris's fixed words, which reopens it at the driver's next look. Once, and only
     /// to a record of this machine's that ended and takes words: a running turn takes them at its end, never mid-step, so
     /// the driver hands them then. A recheck's findings go to the person, and a pass that raised nothing has nothing to hand.
     /// </summary>
     /// <param name="to">
-    /// A chat run's record to hand them to (CHATFLOW1e, the chat-flow design §6.1 (a), (e)), the line's newest in its tree, which the driver
+    /// A chat run's record to hand them to, the line's newest in its tree, which the driver
     /// names; null for the working session itself, as before. A conversation's line may hand them to its live record between turns, which its
     /// runner takes as an ordinary turn of its own, or to its ended newest record, which goes on with them. Once handed, they are handed again
     /// only once, to the newest record, where a hand-over ended the record they went to before it answered.
@@ -263,7 +262,7 @@ public sealed class OpinionDesk(OpinionStore opinions, SessionStore sessions, bo
                 return Refused(OpinionRefusal.CannotTake, why);
             }
 
-            // The second hand (CHATFLOW1e) is its own key, so the settled read of the first never answers it.
+            // The second hand is its own key, so the settled read of the first never answers it.
             var again = opinion.Handed is not null && named is not null;
             var outcome = await SolicitedAnswers.KeepAsync(
                 sessions,
@@ -273,7 +272,7 @@ public sealed class OpinionDesk(OpinionStore opinions, SessionStore sessions, bo
                 {
                     EarlierKey = again ? KeyOf(opinion.Id) : null,
                     By = opinion.Id,
-                    // A chat run's findings are an ordinary word of their own turn (CHATFLOW1e, §6): never steered into a turn in flight.
+                    // A chat run's findings are an ordinary word of their own turn: never steered into a turn in flight.
                     Level = named is null ? null : SaidLevel.Ordinary,
                     Settled = settled,
                     BeforeKeep = (head, door) => NotAgainAsync(opinion, named, head, door),
@@ -347,7 +346,7 @@ public sealed class OpinionDesk(OpinionStore opinions, SessionStore sessions, bo
     }
 
     /// <summary>
-    /// Why a chat run's record is not one the findings may be handed from (CHATFLOW1e, the chat-flow design §6.1 (a)), or null where it is: a
+    /// Why a chat run's record is not one the findings may be handed from, or null where it is: a
     /// conversation of this machine's that serves no quest, no ask, no opinion and nobody else, in <paramref name="working"/>'s tree and line.
     /// Whether the line's head takes them now is the solicited-answer door's table.
     /// </summary>
@@ -374,8 +373,8 @@ public sealed class OpinionDesk(OpinionStore opinions, SessionStore sessions, bo
     }
 
     /// <summary>
-    /// Why findings already handed are not handed again to <paramref name="target"/> (CHATFLOW1e, the chat-flow design §6.1 (e)), or null where
-    /// they are: once, where the record they went to ended before any answer was kept, and only to its line's head, never itself.
+    /// Why findings already handed are not handed again to <paramref name="target"/>, or null where
+    /// they are: once, where the record they went to ended before any answer is kept, and only to its line's head, never itself.
     /// </summary>
     private async Task<string?> AgainRefusedAsync(Opinion opinion, OpinionHanded before, Session target, CancellationToken inside)
     {
@@ -505,7 +504,7 @@ public sealed class OpinionDesk(OpinionStore opinions, SessionStore sessions, bo
 
     /// <summary>
     /// Where a pass stands, read from its reviewer's record and never kept (design §6.1): given once said; reading while its
-    /// session runs within its minutes; failed otherwise, limited where an account's limit ended it (LIMITRESUME1h), out of time where the
+    /// session runs within its minutes; failed otherwise, limited where an account's limit ended it, out of time where the
     /// minutes ran out first, else ended.
     /// </summary>
     private async Task<OpinionStanding> StandingAsync(Opinion opinion, DateTimeOffset now, CancellationToken ct)

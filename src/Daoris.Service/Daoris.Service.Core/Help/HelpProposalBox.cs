@@ -1,11 +1,11 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Where Ask Daoris's proposals are written (HELP1c, D89): one file each, under the driver's home, for
+/// Where Ask Daoris's proposals are written: one file each, under the driver's home, for
 /// the person to apply or not.
 /// </summary>
 /// <remarks>
-/// <para><b>One writer per kind (MOD6)</b>, each a door a screen or a terminal already has, each a class,
+/// <para><b>One writer per kind</b>, each a door a screen or a terminal already has, each a class,
 /// <c>Help&lt;Kind&gt;ProposalWriter</c>, in a file of its own (<c>HelpProposalBox.&lt;Kind&gt;.cs</c>, the name the
 /// driver's twin tests read) and listed in <see cref="Kinds"/>. The box's <c>Propose…</c>
 /// method, which the connector's tool calls, is one call to the kind's writer, which checks the kind's shape and hands
@@ -13,10 +13,10 @@ namespace Daoris.Knowledge;
 /// <c>target</c>, <c>workspace</c>, <c>value</c> and <c>sentence</c>, null where the kind has none; a kind's own fields
 /// follow them.</para>
 ///
-/// <para><b>Not a partial type (PART7, D166's note on partial types)</b>: a new kind is a writer's file, a line in
+/// <para><b>Not a partial type</b>: a new kind is a writer's file, a line in
 /// <see cref="Kinds"/> and a one-line <c>Propose…</c> here, so the connector's tools and the tests keep calling the box.</para>
 ///
-/// <para><b>PERM2's shape</b> (<see cref="RuleProposalBox"/>): a file under the home, never a row in the
+/// <para><b>The rule proposals' shape</b> (<see cref="RuleProposalBox"/>): a file under the home, never a row in the
 /// store, since what it would change is machine-local; one file per proposal, so two never collide.</para>
 ///
 /// <para><b>This checks the shape and nothing more.</b> Whether the route would take it — a line git
@@ -24,7 +24,7 @@ namespace Daoris.Knowledge;
 /// machine has — is the driver's, which judges each with the route's own code before the person sees
 /// it and hands a refusal back to the conversation in the route's words.</para>
 ///
-/// <para><b>It never applies.</b> Every change is the person's press (D89).</para>
+/// <para><b>It never applies.</b> Every change is the person's press.</para>
 ///
 /// <para><b>THE FILE is the contract</b>: the driver's <c>HelpProposals</c> reads and settles it, shares no
 /// code with this, and each side's tests hold the same shape — and the same table of kinds.</para>
@@ -33,7 +33,7 @@ public sealed class HelpProposalBox(string? home)
 {
     /// <summary>
     /// The kinds this box writes, each with the connector's tool that proposes it, in the order the room allows
-    /// them (MOD6). A new kind is a file <c>HelpProposalBox.&lt;Kind&gt;.cs</c> holding its writer, a line here and its
+    /// them. A new kind is a file <c>HelpProposalBox.&lt;Kind&gt;.cs</c> holding its writer, a line here and its
     /// <c>Propose…</c>; the driver's <c>HelpProposalKinds</c> lists the same.
     /// </summary>
     public static readonly IReadOnlyList<(string Kind, string Tool)> Kinds =
@@ -63,7 +63,7 @@ public sealed class HelpProposalBox(string? home)
     /// <summary>The folder a proposal is written in, under the home.</summary>
     public static string FolderOf(string home) => DaorisHome.Entry(home, HomeEntry.HelpProposals);
 
-    /// <summary>The driver's named home first — where what this would change lives — then the account's (D63).</summary>
+    /// <summary>The driver's named home first — where what this would change lives — then the account's.</summary>
     public static HelpProposalBox FromEnvironment() =>
         new(RuleProposalBox.FromEnvironment().Home);
 

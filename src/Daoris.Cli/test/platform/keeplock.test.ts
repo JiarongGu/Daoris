@@ -8,9 +8,9 @@ import { driverTestFile } from '../_csharp.ts';
 import { makeFixture } from '../_fixture.ts';
 
 /**
- * CONFIGLOCK1 (D173's CONFIG1 note): a keeping write holds `<file>.lock` from its re-read to its rename, so a change another writer makes
+ * A keeping write holds `<file>.lock` from its re-read to its rename, so a change another writer makes
  * in between is never lost. The stale rules are one table both twins read, `driver-config-keeps.json`'s `lock`, row for row with the
- * driver's `KeepLockTests`, among the driver's tests' fixtures since PUSH1f2b; the driver's `KeepLockProcessTests` holds it across the
+ * driver's `KeepLockTests`, among the driver's tests' fixtures; the driver's `KeepLockProcessTests` holds it across the
  * two runtimes.
  */
 

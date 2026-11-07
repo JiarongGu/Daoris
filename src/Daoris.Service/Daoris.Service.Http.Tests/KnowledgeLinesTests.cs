@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 
 namespace Daoris.Service.Http.Tests;
 
-/// <summary>A local host over one repository that declares its index of where things are (ORIENT2e).</summary>
+/// <summary>A local host over one repository that declares its index of where things are.</summary>
 public sealed class IndexedHost() : DaorisHost(ServiceMode.Local, seed: repositories =>
 {
     var root = Path.Combine(repositories, "atlas");
@@ -18,7 +18,7 @@ public sealed class IndexedHost() : DaorisHost(ServiceMode.Local, seed: reposito
 });
 
 /// <summary>
-/// The HTTP door names a hit's lines too (ORIENT2e; the orientation design §3.2), beside the fields every client
+/// The HTTP door names a hit's lines too, beside the fields every client
 /// already reads: the entry's first and last line, and the line its excerpt starts on. Absent lines are null,
 /// never a guess.
 /// </summary>
@@ -33,7 +33,7 @@ public sealed class KnowledgeLinesTests(IndexedHost host) : IClassFixture<Indexe
         var hit = Assert.Single(found.Json.EnumerateArray());
         Assert.Equal("Index", hit.GetProperty("kind").GetString());
         Assert.Equal("docs/index/routes.md", hit.GetProperty("path").GetString());
-        // The route's row, its own line (ORIENT2h).
+        // The route's row, its own line.
         Assert.Equal(7, hit.GetProperty("firstLine").GetInt32());
         Assert.Equal(7, hit.GetProperty("lastLine").GetInt32());
         Assert.Equal(7, hit.GetProperty("excerptLine").GetInt32());
@@ -47,7 +47,7 @@ public sealed class KnowledgeLinesTests(IndexedHost host) : IClassFixture<Indexe
         Assert.Contains(entries.Json.EnumerateArray(), e => e.GetProperty("firstLine").ValueKind == JsonValueKind.Number);
     }
 
-    /// <summary>KNOWCURRENT1: the summary and the refresh say when each repository was read, and from which commit where it has one.</summary>
+    /// <summary>The summary and the refresh say the read time of each repository, and its commit where it has one.</summary>
     [Fact]
     public async Task The_summary_and_the_refresh_say_when_each_repository_was_read()
     {

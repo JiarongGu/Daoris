@@ -10,9 +10,9 @@ import { DESKTOP, driverFile, driverRows, driverTestFile, type Cell } from '../_
 import { captureError, makeFixture } from '../_fixture.ts';
 
 /**
- * Where every machine-local file lives (D63): one home, named by `DAORIS_HOME`, and no default under
+ * Where every machine-local file lives: one home, named by `DAORIS_HOME`, and no default under
  * the user profile. The CLI's copy of a three-way twin — the driver and the service hold the same
- * contract in C#, sharing no code, the way the remotes map's three copies do (WSP3).
+ * contract in C#, sharing no code, the way the remotes map's three copies do.
  */
 
 test('the home is the variable and nothing else', () => {
@@ -23,7 +23,7 @@ test('the home is the variable and nothing else', () => {
 });
 
 /**
- * 🔴 FINDDAORIS1 (D171 point 1): the install's launchers set no variable, so a `daoris` the install carries
+ * 🔴 The install's launchers set no variable, so a `daoris` the install carries
  * (`<install>/app/cli/node_modules/daoris/`) finds its home where it runs: the install's own `data` folder. The
  * variable still wins, and a checkout is no install.
  */
@@ -36,7 +36,7 @@ test('a daoris the install carries finds the install’s data folder, and the va
     const data = join(fx.root, INSTALL_DATA);
     assert.equal(daorisHome({}, installOf(pkg)), data);
     assert.equal(daorisHome({ DAORIS_HOME: 'D:/somewhere/data' }, fx.root), 'D:/somewhere/data');
-    // The install's data entries are where they were (HOMELAYOUT3), in its `data/`, whichever spelling names the install.
+    // The install's data entries are in its `data/`, whichever spelling names the install.
     assert.equal(homeFile({}, 'driver', fx.root), join(data, 'driver.json'));
     assert.equal(requireHomeFile({}, 'driver', fx.root), join(data, 'driver.json'));
     assert.equal(resolve(homeFile({ DAORIS_HOME: fx.root }, 'driver')!), resolve(data, 'driver.json'));
@@ -63,7 +63,7 @@ test('an entry asked of the environment’s home is the entry, or null when ther
 });
 
 /**
- * A home's identity (HOMEID1, the terminal RPC design §3.1), the twin of the driver's and the service's `HomeIdentity`: read
+ * A home's identity, the twin of the driver's and the service's `HomeIdentity`: read
  * from `home.json` alike by every path to the folder, and a file that does not read is no id (and is never replaced).
  */
 test('a home’s id is read from home.json by every path to the folder, and a file that does not read is none', () => {
@@ -101,7 +101,7 @@ test('requiring an entry with no home is a refusal that names the variable and t
 });
 
 /**
- * 🔴 D172 point 5 (HOMELAYOUT2, the install layout design §6.2) with its review note: an entry is read and written at its new
+ * 🔴 An entry is read and written at its new
  * place if that holds what the entry is, else at its old place if that is there, else at its new place; where both hold it,
  * neither is chosen and the refusal names both. The rows are the driver's `An_entry_is_where_it_is`, whose summary says each
  * column, and the service's holds the same rows: each is held to these, cell for cell.
@@ -148,7 +148,7 @@ const PLACES_ROWS: readonly (readonly string[])[] = [
 ];
 
 /**
- * 🔴 D172 point 2 (HOMELAYOUT3): a home names its Daoris folder and the old home. The driver's `A_home_names_its_folder`, whose
+ * 🔴 A home names its Daoris folder and the old home. The driver's `A_home_names_its_folder`, whose
  * summary says each column, and the service's hold the same rows: each is held to these, cell for cell.
  */
 const FOLDER_ROWS: readonly (readonly string[])[] = [
@@ -320,7 +320,7 @@ function csharpTwice(source: string): string {
 }
 
 /**
- * 🔴 D172 point 5: the three home twins hold the same table (the install layout design §3), cell for cell and in order:
+ * 🔴 The three home twins hold the same table, cell for cell and in order:
  * each entry's name, category, new place, old place and the names that make a place there.
  */
 test('the driver’s and the service’s tables are this one, cell for cell (HOMELAYOUT2)', () => {
@@ -331,7 +331,7 @@ test('the driver’s and the service’s tables are this one, cell for cell (HOM
   assert.equal(csharpTwice(readFileSync(serviceFile('DaorisHome.cs'), 'utf8')), HOME_TWICE, 'the service’s refusal');
 });
 
-/** HOMEROOMS1: a named workspace's Ask Daoris room (`help-<name>`, ASKSCOPE1b) is an entry beside the default room's. */
+/** A named workspace's Ask Daoris room (`help-<name>`) is an entry beside the default room's. */
 test('the table names a named workspace’s help room beside the default one (HOMEROOMS1)', () => {
   const room = HOME_ENTRIES.find((entry) => entry.name === 'help-rooms');
   assert.ok(room);
@@ -349,7 +349,7 @@ test('each entry is named once, its places are relative, and an item’s parts a
 });
 
 /**
- * 🔴 D172 §3 switched on (HOMELAYOUT3): every new place is under the top folder its category names, and the logs are the `logs`
+ * 🔴 Every new place is under the top folder its category names, and the logs are the `logs`
  * folder itself, so the Daoris folder holds the seven categories and nothing else of Daoris's at its top.
  */
 test('each new place is under its category’s folder (HOMELAYOUT3)', () => {

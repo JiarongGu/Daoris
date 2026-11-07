@@ -9,9 +9,9 @@ namespace Daoris.Contracts.Registry;
 
 /// <summary>
 /// Where <c>daoris repository connect</c> lands: a repository's description of itself, persisted, because for a remote service the pushed
-/// registrations are the family. <c>Workspace</c> is null when the client said nothing, which preserves the row (D48 §2); <c>DefaultBranch</c>
-/// likewise (D48 §6). The commit and its base are a checkout's, read by the rules of a feed's: a shared host orders declarations by them.
-/// <c>Adopted</c> is false only from a door that looked and found no manifest (D70). <c>Lanes</c> are the words of the lanes it declares,
+/// registrations are the family. <c>Workspace</c> is null when the client said nothing, which preserves the row; <c>DefaultBranch</c>
+/// likewise. The commit and its base are a checkout's, read by the rules of a feed's: a shared host orders declarations by them.
+/// <c>Adopted</c> is false only from a door that looked and found no manifest. <c>Lanes</c> are the words of the lanes it declares,
 /// never their paths; null is unstated and preserves the row's.
 /// </summary>
 public sealed record RegisterRepository(
@@ -38,7 +38,7 @@ public sealed record WireRepository(string Repository, string? Workspace) : IRou
     public static string Path => "/api/registry/{repository}/workspace";
 }
 
-/// <summary>The bootstrap, as a verb a person runs: a folder's immediate subdirectories, registered into <c>Workspace</c> where one is named (D77).</summary>
+/// <summary>The bootstrap, as a verb a person runs: a folder's immediate subdirectories, registered into <c>Workspace</c> where one is named.</summary>
 public sealed record ImportRepositories(string? Folder, string? Workspace = null) : IRoute<ImportedResponse>
 {
     public static string Method => "POST";
@@ -53,7 +53,7 @@ public sealed record ListRegistry(string? Workspace = null) : IRoute<Registratio
 }
 
 /// <summary>
-/// A repository's code map (MAP3a): its modules and how they depend on each other, from its own committed file or what was fed or
+/// A repository's code map: its modules and how they depend on each other, from its own committed file or what is fed or
 /// brought down. The answer is the code map wire (<c>CodeMapWire</c>), the shape a machine's host reads when it brings a map down.
 /// </summary>
 public sealed record ReadCodeMap(string Repository) : IRoute<JsonObject>
@@ -69,14 +69,14 @@ public sealed record RefreshIndex : IRoute<RefreshResponse>
     public static string Path => "/api/refresh";
 }
 
-/// <summary>The retires this machine's checkouts owe a circle (SYNC5b), which the driver's pass carries to the circle's deployment.</summary>
+/// <summary>The retires this machine's checkouts owe a circle, which the driver's pass carries to the circle's deployment.</summary>
 public sealed record ReadRetiredPending(string? Workspace = null) : IRoute<RetiredPendingResponse>
 {
     public static string Method => "GET";
     public static string Path => "/api/registry/retired";
 }
 
-/// <summary>Clears one retire a circle was owed, once its deployment has been told.</summary>
+/// <summary>Clears one retire a circle is owed, once its deployment has been told.</summary>
 public sealed record ClearRetired(string Repository, string? Workspace = null) : IRoute<RetiredResponse>
 {
     public static string Method => "DELETE";

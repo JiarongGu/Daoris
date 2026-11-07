@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The memory log's author columns under the names this build reads (D232): a table that still spells the author's door
+/// The memory log's author columns under the names this build reads: a table that still spells the author's door
 /// <c>adapter</c> and the version its spawn observed <c>harness</c> has both renamed as the store opens. The store moves itself
 /// because a shared host opens the same schema and runs no desktop migration.
 /// </summary>

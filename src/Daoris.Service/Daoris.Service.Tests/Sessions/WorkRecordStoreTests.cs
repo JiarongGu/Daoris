@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// KEEPSIZE1b (D195's keep-size note; the keep-size design §2.1, §2.2): a finished tree's record kept in <c>work_records</c> and
+/// A finished tree's record kept in <c>work_records</c> and
 /// <c>work_record_sessions</c>, one per tree, naming every session that ran in it before its move, attributed only where their bases bound
 /// the range; a second post kept once; a store a newer build stamped refused whole; history: gone with its last session through
 /// <see cref="SessionStore.DeleteAsync"/>, which both the single delete and the clear of history call, and a record with no session taken
@@ -121,7 +121,7 @@ public sealed class WorkRecordStoreTests : IAsyncLifetime
         Assert.All(record.Sessions, each => Assert.Null(each.Commits));
     }
 
-    /// <summary>🔴 Round 3's finding 11 (KSCHEMA1's way): a store a newer build stamped reads and writes no record, and is never lowered.</summary>
+    /// <summary>🔴 A store a newer build stamped reads and writes no record, and is never lowered.</summary>
     [Fact]
     public async Task Records_stamped_newer_are_refused_and_never_touched()
     {
@@ -192,7 +192,7 @@ public sealed class WorkRecordStoreTests : IAsyncLifetime
         var lone = await _records.PostAsync(Post(), Now.AddHours(1));
         Assert.Empty(lone.Record.Sessions);
 
-        // A clear whose sessions last moved before the record was kept leaves it.
+        // A clear whose sessions last moved before the record is kept leaves it.
         var before = await Closed("Before");
         await Ran(null, Now.AddHours(-2), before.Id, tree: "/elsewhere");
         await Desk().ClearAsync([new HistoryUnitRef(HistoryUnitKind.Quest, before.Id)], Now.AddHours(1));

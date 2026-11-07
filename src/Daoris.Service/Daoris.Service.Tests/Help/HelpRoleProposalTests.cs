@@ -4,7 +4,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The <c>role</c> kind's writer (FOUNDATION1y-i, the foundation design §2.7): a change of the role catalogue, its door the change, its
+/// The <c>role</c> kind's writer: a change of the role catalogue, its door the change, its
 /// target the role, and its own <c>press</c> the record's fields and choices as the driver's role door reads them. Shape alone is checked.
 /// </summary>
 public sealed class HelpRoleProposalTests : HelpProposalBoxFixture
@@ -29,7 +29,7 @@ public sealed class HelpRoleProposalTests : HelpProposalBoxFixture
         Assert.Contains($"Proposed `#{id}`", message);
     }
 
-    /// <summary>I18NOPEN1 (D222): a name is one text as written, or any languages by tag; a name needs no English and no Chinese.</summary>
+    /// <summary>A name is one text as written, or any languages by tag; a name needs no English and no Chinese.</summary>
     [Fact]
     public void A_name_is_one_text_or_any_languages_by_tag_and_a_bad_tag_is_refused()
     {
@@ -65,7 +65,7 @@ public sealed class HelpRoleProposalTests : HelpProposalBoxFixture
         Assert.Contains($"Proposed `#{id}`", message);
     }
 
-    /// <summary>STAFFPOLICY1b: a set carries a policy as a preset's name, the record as JSON, or `none`, with the policy revision read.</summary>
+    /// <summary>A set carries a policy as a preset's name, the record as JSON, or `none`, with the policy revision read.</summary>
     [Fact]
     public void A_policy_is_written_as_a_preset_a_record_or_a_clear_with_the_revision_read()
     {
@@ -95,7 +95,7 @@ public sealed class HelpRoleProposalTests : HelpProposalBoxFixture
         Assert.Contains(said, message, StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>CONTEXTDRIVE1d: the supervisor's rules, a set of `supervisor` naming the place, its whole list and the revision read, alone.</summary>
+    /// <summary>The supervisor's rules, a set of `supervisor` naming the place, its whole list and the revision read, alone.</summary>
     [Fact]
     public void CONTEXTDRIVE1d_the_supervisor_s_rules_are_written_with_the_place_and_the_revision_read()
     {

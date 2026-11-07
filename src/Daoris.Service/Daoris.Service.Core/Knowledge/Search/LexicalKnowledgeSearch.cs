@@ -20,7 +20,7 @@ public sealed class LexicalKnowledgeSearch(IKnowledgeStore store) : IKnowledgeSe
     {
         var entries = await store.AllAsync(ct).ConfigureAwait(false);
         var terms = Text.Tokenize(query.Text);
-        // The question's adjacent words joined, as an identifier spells them (ORIENT1f): a bonus where one
+        // The question's adjacent words joined, as an identifier spells them: a bonus where one
         // matches, counted once for each word it joins as the SQLite search counts it, and no part of how much
         // of the question an entry covers.
         var asked = Text.QueryTerms(query.Text);

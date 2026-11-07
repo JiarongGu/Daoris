@@ -11,12 +11,12 @@ import { analyze } from '../../src/doctrine/analyze.ts';
 import { DaorisError } from '../../src/platform/errors.ts';
 
 /**
- * 🔴 **A pack may switch a core row off, the repository confirms it, and it is never silent** (D71).
+ * 🔴 **A pack may switch a core row off, the repository confirms it, and it is never silent.**
  *
- * The owner reopened D4 (2026-09-24). A pack offers, with a reason (`switchesOff` in `pack.json`);
+ * A pack offers, with a reason (`switchesOff` in `pack.json`);
  * the manifest accepts, naming the pack (`switchedOff` in `daoris.json`); the lock records it so the
  * offline `check` can say so. An offer nobody confirmed leaves the core row installed and is reported
- * — the safer default, and the owner's to reverse. D19's new cells are the `sync` tests below.
+ * — the safer default, and the owner's to reverse. The `sync` tests are below.
  */
 
 const doc = (name: string, body = `Body of ${name}.`) =>
@@ -90,8 +90,8 @@ test('a switch naming no core document is refused, naming the pack and the row',
 });
 
 test('a switch names one document or one whole skill — never a tier, never a file inside a skill', () => {
-  // REV3 CLI F15: the key was matched as a prefix, so `rules` took every core rule out, and one file
-  // of a skill could go while its SKILL.md stayed — a skill shipped without what it uses.
+  // A key matched as a prefix would let `rules` take every core rule out, and one file
+  // of a skill go while its SKILL.md stays — a skill shipped without what it uses.
   for (const key of ['rules', 'skills', 'skills/fix-log/template.md', 'skills/fix-log/SKILL.md']) {
     const canonFx = canonFixture(`shape-${key.replace(/\W/g, '-')}`, { [key]: 'why' });
     const error = captureError(() => readCanon(canonFx.root));
@@ -159,7 +159,7 @@ test('a confirmed switch takes the core row out — a skill with every file it s
 });
 
 /**
- * D4's reason survives: a repository ALONE cannot drop a core row. A confirmation no selected pack
+ * A repository ALONE cannot drop a core row. A confirmation no selected pack
  * offers — the pack not selected, or never offering it — is a manifest defect, so a tool error.
  */
 test('a confirmation no selected pack offers is a tool error, naming the row', () => {
@@ -188,7 +188,7 @@ test('a switchedOff that is not a map of rows to packs is a tool error', () => {
   done(repoFx);
 });
 
-// ——— `sync`: D19's new cells.
+// ——— `sync`.
 
 test('confirmed, locked and untouched: the row goes off, the lock records it, sync names it', () => {
   const canonFx = canonFixture('off');
@@ -313,7 +313,7 @@ test('check names every switched-off row on every run, and stays clean', () => {
   const canonFx = canonFixture('check');
   const repoFx = repoFixture('check', { packs: ['tracker'], switchedOff: { 'rules/task-lifecycle.md': 'tracker' } });
   sync(canonFx, repoFx);
-  canonFx.cleanup(); // D8: check never reads the canon
+  canonFx.cleanup(); // check never reads the canon
 
   const out: string[] = [];
   assert.equal(commandCheck({ root: repoFx.root, write: (line) => out.push(line) }), 0, out.join('\n'));
@@ -365,8 +365,8 @@ test('status names each switched-off row with its pack and reason, and each pend
 });
 
 test('status names what check would fail on: a switch never synced, and an index behind the disk', () => {
-  // REV3 CLI F11: `status` rendered drifted, missing and stale packs, and dropped the other two facts
-  // `inspect` computes — so the one command a person asks "why is check red?" said nothing about them.
+  // `status` renders drifted, missing and stale packs and the other two facts `inspect` computes,
+  // so the one command a person asks "why is check red?" speaks of them.
   const canonFx = canonFixture('status-stale');
   const repoFx = repoFixture('status-stale', { packs: ['tracker'] });
   sync(canonFx, repoFx);

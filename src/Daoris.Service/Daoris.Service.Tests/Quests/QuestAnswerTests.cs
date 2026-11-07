@@ -4,8 +4,8 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// DRIFT1d (D133 §4): a done answers each requirement. Closing a quest that carries the person's requirements
-/// says, for each, <c>met</c> with how its check was met, or <c>departed</c> with the reason and the person's own
+/// A done answers each requirement. Closing a quest that carries the person's requirements
+/// says, for each, <c>met</c> with how its check is met, or <c>departed</c> with the reason and the person's own
 /// words it turns on, quoted. A done that leaves one unanswered is refused, naming it; a departure is kept on the
 /// quest and holds what follows it, a chain's next step or a quest waiting on it, until the person accepts it.
 /// One session closed its quest "per your answer", on its own reading, and the next verified that reading rather
@@ -74,7 +74,7 @@ public sealed class QuestAnswerTests : IAsyncLifetime
 
     /// <summary>
     /// The drift's build quest: asked by the ask, carrying both of the person's requirements (the second quoting
-    /// their answer, DRIFT1a), with a verifying step to follow, and taken by its repository.
+    /// their answer), with a verifying step to follow, and taken by its repository.
     /// </summary>
     private async Task<(Ask Ask, Quest Quest)> Built(bool chain = true, IReadOnlyList<QuestRequirement>? requirements = null)
     {
@@ -124,7 +124,7 @@ public sealed class QuestAnswerTests : IAsyncLifetime
         Assert.Empty(await FollowUps(ask, quest));
     }
 
-    /// <summary>A done with no answers at all, as every done was before, names every requirement it leaves.</summary>
+    /// <summary>A done with no answers at all names every requirement it leaves.</summary>
     [Fact]
     public async Task A_done_with_no_answers_on_a_quest_with_requirements_names_each()
     {
@@ -338,7 +338,7 @@ public sealed class QuestAnswerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A quest that waits on a held question is held with it (D79's resume): the done names it as waiting for the yes,
+    /// A quest that waits on a held question is held with it: the done names it as waiting for the yes,
     /// the question stays among the outstanding the driver plans from, and the yes says it resumes.
     /// </summary>
     [Fact]

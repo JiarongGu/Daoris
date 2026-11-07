@@ -9,13 +9,13 @@ import { CLI_BIN, DRIVER_EXE, DRIVER_HOME, cliLaunchers } from '../../../../tool
 import { makeFixture } from '../_fixture.ts';
 
 /**
- * An argument as a terminal hint prints it (ACCTQUOTE1, D125's ACCTQUOTE1 note): bare where every shell reads it as itself,
+ * An argument as a terminal hint prints it: bare where every shell reads it as itself,
  * in double quotes where they keep it whole in PowerShell, Command Prompt and a POSIX shell alike, and a placeholder where
  * no spelling does. The driver's `ShellWord` and the page's `shellWord.ts` read one table, the driver's
- * `fixtures/shell-words.json`, row for row; the CLI's `shellword.ts` left with `daoris agent`'s TypeScript (PUSH1f2e).
+ * `fixtures/shell-words.json`, row for row.
  *
  * The table is a claim about shells, so it is held against them here, where the install's launchers are: every spelled row is handed through the install's own
- * launchers (D124 §1.2) by the shells this platform has, and must arrive as one argument, itself.
+ * launchers by the shells this platform has, and must arrive as one argument, itself.
  */
 
 const repository = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
@@ -34,9 +34,9 @@ test('the table holds a spelled row and a placeholder row', () => {
 
 /**
  * The install's launchers (`daoris` and `daoris.cmd`, as the publish lays them) in front of a desktop program that prints the
- * arguments it was handed as JSON, each character past ASCII escaped, so a shell's code page cannot change it on the way back. The
+ * arguments it receives as JSON, each character past ASCII escaped, so a shell's code page cannot change it on the way back. The
  * program is this test's node under the program's name, which a preload makes print and end before it reads its first word as a
- * script (ONEWAY1ai-i: the launchers run the program, not node). The folder is put first on PATH, as the install's own is found.
+ * script (the launchers run the program, not node). The folder is put first on PATH, as the install's own is found.
  */
 function install(root: string): NodeJS.ProcessEnv {
   const bin = join(root, ...CLI_BIN);

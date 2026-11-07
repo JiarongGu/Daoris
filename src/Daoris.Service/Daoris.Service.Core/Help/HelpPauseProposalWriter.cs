@@ -3,7 +3,7 @@ using static Daoris.Knowledge.HelpProposalFile;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The <c>pause</c> kind's writer (PAUSE1f-a, D132): an ask's or a quest's work paused or resumed. Abandon is never
+/// The <c>pause</c> kind's writer: an ask's or a quest's work paused or resumed. Abandon is never
 /// proposed: it is the person's own, on the ask's or quest's page.
 /// </summary>
 internal sealed class HelpPauseProposalWriter(HelpProposalFile file)
@@ -30,7 +30,7 @@ internal sealed class HelpPauseProposalWriter(HelpProposalFile file)
             writer.WriteString("door", door);
             writer.WriteString("target", questId ?? askId);
             writer.WriteNull("workspace");
-            // Which one was named, so the driver need not tell an ask from a quest by lookup, which an id both have defeats.
+            // Which one is named, so the driver need not tell an ask from a quest by lookup, which an id both have defeats.
             writer.WriteString("value", questId is not null ? "quest" : "ask");
             writer.WriteNull("sentence");
         }, why, session, at);

@@ -1,5 +1,5 @@
-// `init` and `analyze` name candidate records by role, from conventional names, and write none (DOC3;
-// D122, the development documents design §2.7): declaring is the repository's act, done by its session.
+// `init` and `analyze` name candidate records by role, from conventional names, and write none:
+// declaring is the repository's act, done by its session.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

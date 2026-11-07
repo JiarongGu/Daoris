@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A test lets go of its own SQLite file by clearing that database's pool, never every pool (FLAKE3). Clearing all of them
+/// A test lets go of its own SQLite file by clearing that database's pool, never every pool. Clearing all of them
 /// reached the pools of the classes running beside it, and Microsoft.Data.Sqlite reads a connection still being opened as
 /// leaked and disposes it: <c>SearchTests</c> then met <c>ObjectDisposedException</c> on a connection it had just opened.
 /// </summary>
@@ -42,7 +42,7 @@ public sealed class SqlitePoolsTests : IDisposable
     }
 
     /// <summary>
-    /// The release reaches the one database it names: another database's pooled connection is left as it was, so a class
+    /// The release reaches the one database it names: another database's pooled connection is left untouched, so a class
     /// releasing its own file never touches a connection another class is opening.
     /// </summary>
     [Fact]

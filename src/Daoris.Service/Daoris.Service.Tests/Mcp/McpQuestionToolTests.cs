@@ -5,7 +5,7 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// PARKVIEW1 (the park's ask design §2): the connector's `question_ask`. A driven session's agent records what only the person can
+/// The connector's `question_ask`. A driven session's agent records what only the person can
 /// decide before it ends its turn on it: the question, the answers it offers with what it does on each, the one it recommends and
 /// by when, as its own words. One file per session under the home's sessions folder, which the driver binds to the park and the
 /// page draws at the conversation's end, each answer a press.
@@ -14,7 +14,7 @@ public sealed class McpQuestionToolTests : McpToolsFixture
 {
     private string Home => Path.Combine(_root, "question-home");
 
-    /// <summary>The sessions folder of that home, asked of the table as the box asks it (HOMELAYOUT3), and a file in it.</summary>
+    /// <summary>The sessions folder of that home, asked of the table as the box asks it, and a file in it.</summary>
     private string Sessions(params string[] file) => DaorisHome.Entry(Home, HomeEntry.Sessions, file);
 
     private static QuestionChoiceInput Choice(string? label, string? does) => new(label, does);
@@ -70,7 +70,7 @@ public sealed class McpQuestionToolTests : McpToolsFixture
         Assert.Contains("go_ahead_ask", said);
     }
 
-    /// <summary>A question with no answers offered is a free answer's, and keeps no recommendation nor deadline it was not given.</summary>
+    /// <summary>A question with no answers offered is a free answer's, and keeps no recommendation nor deadline it is not given.</summary>
     [Fact]
     public async Task A_question_with_no_answers_offered_keeps_none()
     {
@@ -108,7 +108,7 @@ public sealed class McpQuestionToolTests : McpToolsFixture
     /// conversation (its person reads it as it comes), a helper, a reviewer, an intake, Ask Daoris's own conversation, a driven record
     /// on no quest, and every bound: the question blank or too long, too many answers, an answer with no label or no words for what it
     /// does or either too long, a recommendation that names no answer, a deadline too long, and a reason with no recommendation or too
-    /// long (QUESTIONUI1a).
+    /// long.
     /// </summary>
     [Fact]
     public async Task question_ask_refuses_what_it_can_judge_and_writes_nothing()
@@ -157,7 +157,7 @@ public sealed class McpQuestionToolTests : McpToolsFixture
     }
 
     /// <summary>
-    /// 🔴 SUPERVISOR1b (D208; the supervisor design §4.1): a question the agent marks the owner's keeps its mark, one of the six codes,
+    /// 🔴 A question the agent marks the owner's keeps its mark, one of the six codes,
     /// in the file the service and the driver both read; an unmarked one keeps none; and a mark that is none of the six is refused by
     /// name, writing nothing.
     /// </summary>

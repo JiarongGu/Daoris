@@ -9,7 +9,7 @@ namespace Daoris.Knowledge;
 public sealed record ChannelFetch(IReadOnlyList<ChannelMessage> Messages, long Through, bool More);
 
 /// <summary>
-/// An ask's channel messages on the wire (SESSONE2d; D167 point 8), written once and read by both sides: the remote's two channel
+/// An ask's channel messages on the wire, written once and read by both sides: the remote's two channel
 /// doors and the machine's client that speaks to them. Hand-written, for the reason every JSON shape in Core is.
 /// </summary>
 /// <remarks>
@@ -87,7 +87,7 @@ public static class ChannelWire
         if (message.To is not null) writer.WriteString("to", message.To);
         if (message.Re is not null) writer.WriteString("re", message.Re);
         if (message.Question) writer.WriteBoolean("question", true);
-        // COWORK1d (the message-urgency design §9): said whenever kept, an explicit false included, since absent is a message from
+        // Said whenever kept, an explicit false included, since absent is a message from
         // before and keeps its old reach. An older machine ignores the field.
         if (message.Urgent is { } urgent) writer.WriteBoolean("urgent", urgent);
         writer.WriteString("text", message.Text);
@@ -120,7 +120,7 @@ public static class ChannelWire
 }
 
 /// <summary>
-/// The channel feed's judgement on a shared host (SESSONE2d), in Core for the reason <see cref="SessionFeed"/> is: one judgement for every
+/// The channel feed's judgement on a shared host, in Core for the reason <see cref="SessionFeed"/> is: one judgement for every
 /// door. Messages are kept by the key that carried them, once each; a message of a repository that has not joined is refused whole, as a
 /// session record is, and a feed refused changes nothing. The words are cleaned again on arrival, which a cleaned sentence survives
 /// unchanged, so a client that forgot to is not what a teammate then reads.

@@ -19,7 +19,7 @@ internal sealed class QuestRebaseLosses(IReadOnlyList<QuestOperation> replayed, 
     /// <summary>Whether anything went with the take that its conflict's note must now name.</summary>
     internal bool Any => Waits.Count > 0 || Submission;
 
-    /// <summary>The lost take's note as it was given, then the waits and the submission that went with it.</summary>
+    /// <summary>The lost take's note as given, then the waits and the submission that went with it.</summary>
     internal string? Named(string? note)
     {
         var withWaits = Waits.Count > 0 ? QuestWaitOperation.WaitsWentWith(note, Waits) : note;

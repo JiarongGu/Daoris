@@ -3,9 +3,9 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The <c>repository</c> kind's writer (ENTRY1d1, D161's ENTRY1d note): a registered repository moved to a workspace on this
-/// machine, by its name and the workspace's, as the Manage drawer's *Move to workspace* moves it. A move needs no path
-/// (D48 §7), so none is written.
+/// The <c>repository</c> kind's writer: a registered repository moved to a workspace on this
+/// machine, by its name and the workspace's, as the Manage drawer's *Move to workspace* moves it. A move needs no path,
+/// so none is written.
 /// </summary>
 public sealed class HelpRepositoryProposalTests : HelpProposalBoxFixture
 {

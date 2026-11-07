@@ -4,7 +4,7 @@ using Lyntai.Memory;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A hit names its lines (ORIENT2e; the orientation design §3.2): the entry's <c>path:first-last</c> and the line
+/// A hit names its lines: the entry's <c>path:first-last</c> and the line
 /// its excerpt starts on, by every search and through the store, so the read that follows is a range.
 /// </summary>
 public sealed class HitLinesTests
@@ -158,7 +158,7 @@ public sealed class HitLinesTests
     }
 
     /// <summary>
-    /// A hit found by meaning alone shows the opening of the piece that matched (SEM3), and names the line that
+    /// A hit found by meaning alone shows the opening of the piece that matched, and names the line that
     /// piece starts on; fused with the words, the excerpt and its line stay together.
     /// </summary>
     [Fact]
@@ -199,8 +199,8 @@ public sealed class HitLinesTests
     }
 
     /// <summary>
-    /// A search that names no kinds answers with at most two index entries (§3.1), so a question about why
-    /// something was decided is not crowded out by rows of identifiers, and it says more matched.
+    /// A search that names no kinds answers with at most two index entries, so a question about why
+    /// something is decided is not crowded out by rows of identifiers, and it says more matched.
     /// </summary>
     [Fact]
     public async Task A_search_naming_no_kinds_answers_with_at_most_two_index_entries_and_says_more_matched()

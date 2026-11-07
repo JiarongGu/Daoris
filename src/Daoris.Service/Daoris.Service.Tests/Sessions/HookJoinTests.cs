@@ -4,7 +4,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// FABRIC-C2a (D173's FABRIC-C2a note, point 5): a Claude Code call's id joined to the hook line naming the agent behind it, read
+/// A Claude Code call's id joined to the hook line naming the agent behind it, read
 /// from the session's lineage file's end, bounded in bytes and time, cancellable, refusing on a conflict.
 /// </summary>
 public sealed class HookJoinTests : IDisposable

@@ -5,7 +5,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A search hit says its standing (KNOWFRESH1a-ii; the knowledge-freshness design's §3.1 and §5): the commit its reading was
+/// A search hit says its standing: the commit its reading is
 /// taken at, <c>+ uncommitted</c> where the root's record folders differ from it, <c>fed at</c> where a feed gave the
 /// reading, and for a decision the notes that follow it and the mark a later note of its own record puts on it, read from the
 /// note entries so a fed reading derives the same. The reading is taken once, so the cost is one <c>git status</c> a root and
@@ -27,7 +27,7 @@ public sealed class KnowledgeStandingTests : IDisposable
         }
     }
 
-    /// <summary>D10: three notes, the last marking it superseded by D50; D60: one note and no mark.</summary>
+    /// <summary>A decision with three notes, the last marking it superseded by another; a second with one note and no mark.</summary>
     private const string Superseded =
         "# D10: The probe lock\n\nAardvark opening: one probe at a time.\n\n"
         + "**Built 2026-10-01 (LOCK1a).** Quokka note: the lock is held.\n\n"
@@ -102,7 +102,7 @@ public sealed class KnowledgeStandingTests : IDisposable
 
     private static string[] Lines(string text) => [.. text.Split('\n').Select(line => line.TrimEnd('\r'))];
 
-    /// <summary>The row's proof: an opening says it was superseded, its note says what follows it, an unmarked decision says so.</summary>
+    /// <summary>The row's proof: an opening says it is superseded, its note says what follows it, an unmarked decision says so.</summary>
     [Fact]
     public async Task A_decision_says_the_commit_it_was_read_at_what_follows_it_and_the_mark_it_carries()
     {
@@ -192,7 +192,7 @@ public sealed class KnowledgeStandingTests : IDisposable
         await using var _ = composed;
         Assert.Equal($"standing: read at {Head(checkout)[..8]}", await Settled(tools, "Pelican", "pelican.md", kind: null));
 
-        // A service composed over a folder it was never told is a registered root names no reading at all.
+        // A service composed over a folder it is never told is a registered root names no reading at all.
         var store = new InMemoryKnowledgeStore();
         var bare = new KnowledgeService(
             store, new LexicalKnowledgeSearch(store), new FileSystemKnowledgeSource([checkout], new RepositoryScanner(documents: "docs")));
@@ -277,7 +277,7 @@ public sealed class KnowledgeStandingTests : IDisposable
         Assert.Equal([checkout], asked);
     }
 
-    /// <summary>A status that fails says the root's uncommitted state is unknown, never that it is clean (KNOWCENTRAL2a).</summary>
+    /// <summary>A status that fails says the root's uncommitted state is unknown, never that it is clean.</summary>
     [Fact]
     public async Task A_failed_status_says_uncommitted_unknown()
     {
@@ -296,7 +296,7 @@ public sealed class KnowledgeStandingTests : IDisposable
     }
 
     /// <summary>
-    /// KNOWCENTRAL2a: a hit's standing reads the entry, its file's marks and the reading together, from the index every connector
+    /// A hit's standing reads the entry, its file's marks and the reading together, from the index every connector
     /// writes. Another connector writing, restamping or retiring the repository between the hit and its standing never leaves
     /// one reading's commit beside another's marks.
     /// </summary>
@@ -334,7 +334,7 @@ public sealed class KnowledgeStandingTests : IDisposable
     }
 
     /// <summary>
-    /// A git that is slow to start never holds an answer: the registry answers while the status is pending, a hit says it was not
+    /// A git that is slow to start never holds an answer: the registry answers while the status is pending, a hit says it is not
     /// yet read, and once the status lands the hit says what it found.
     /// </summary>
     [Fact]

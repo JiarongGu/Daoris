@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The paths an ask or a quest declares it touches (INTEGRATE1l, the integration design §9 point 1): repository-relative globs, as git names
+/// The paths an ask or a quest declares it touches: repository-relative globs, as git names
 /// a path, which a start compares with the repository's other open work. A fact of the work, never a machine's path.
 /// </summary>
 public static class QuestPaths

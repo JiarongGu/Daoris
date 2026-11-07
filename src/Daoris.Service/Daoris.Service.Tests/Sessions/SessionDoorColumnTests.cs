@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The session record names its door by <c>door</c> and the version its spawn observed by <c>door_version</c> (AGENTPROVIDER1t-ii): a store
+/// The session record names its door by <c>door</c> and the version its spawn observed by <c>door_version</c>: a store
 /// whose table still spells them <c>adapter</c> and <c>harness_version</c> has both renamed as it opens, every record kept, once.
 /// </summary>
 public sealed class SessionDoorColumnTests : IAsyncLifetime

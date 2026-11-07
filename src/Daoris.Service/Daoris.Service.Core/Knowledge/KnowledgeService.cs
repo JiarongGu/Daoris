@@ -29,31 +29,31 @@ public sealed class KnowledgeService(
     // registration lives only as long as the process, which is fine for a test and wrong for a service.
     RegistrationStore? registrations = null,
     // Whether the source reads the registered roots and nothing else fills the index — a local host,
-    // fed by nobody (D47 §4). Then the registry decides what is a ghost, even when a refresh can read
-    // nothing (POLISH5). A fed host's empty source says nothing about what it holds.
+    // fed by nobody. Then the registry decides what is a ghost, even when a refresh can read
+    // nothing. A fed host's empty source says nothing about what it holds.
     bool readsRegisteredRoots = false,
-    // The embedder's window (SEM3, D123): the most characters one embedded text carries. The deployment
+    // The embedder's window: the most characters one embedded text carries. The deployment
     // states it, because only the deployment knows which model answers; a longer entry becomes pieces.
     int embedWindow = EntryPieces.DefaultWindow,
-    // How old a reading may be before an answer re-reads the source (ORIENT1c): set by a deployment over
+    // How old a reading may be before an answer re-reads the source: set by a deployment over
     // one checkout, which is merged into while the index persists. Null reads once, at first use, and
     // only into an empty index, as before; set, the first use re-reads whatever the store already held.
     TimeSpan? rereadAfter = null,
     // The clock the window is measured on; the system's unless a test moves one by hand.
     TimeProvider? time = null,
-    // The watch of that checkout (FABRIC-EVENT6): while it is in service, a reading is read again when it has been marked
+    // The watch of that checkout: while it is in service, a reading is read again when it has been marked
     // stale or has reached the watch's deadline, and the minute above is the fallback of a checkout nothing watches.
     CheckoutFreshness? freshness = null,
-    // How a registered root is judged cheaply (KNOWCURRENT1): a host over the registered roots, which names no one checkout,
+    // How a registered root is judged cheaply: a host over the registered roots, which names no one checkout,
     // asks this of each root at use, at most once a minute, and reads again only a root whose answer moved. Null judges
     // nothing and reads once, as a fed host does.
     Func<string, RootSignature>? rootSignature = null,
-    // Whether a root's record folders differ from its commit, asked once as the root is read (KNOWFRESH1a-ii) and never per
+    // Whether a root's record folders differ from its commit, asked once as the root is read and never per
     // hit; null says nothing of it, as a host that cannot ask git does.
     Func<string, bool?>? uncommitted = null,
-    // The finished trees' records (KEEPSIZE1c): only a local host is given them, since a record holds a person's words and this machine's names.
+    // The finished trees' records: only a local host is given them, since a record holds a person's words and this machine's names.
     IWorkRecordSearch? records = null,
-    // Whether one record file of a root differs from its commit (KNOWCENTRAL2a): a citation's recheck asks it of the cited file
+    // Whether one record file of a root differs from its commit: a citation's recheck asks it of the cited file
     // alone. Null leaves every recheck of a read reading inconclusive, as a host that cannot ask git.
     Func<string, string, bool?>? fileUncommitted = null)
 {
@@ -62,10 +62,10 @@ public sealed class KnowledgeService(
     /// <summary>How many rechecks in a row find a cited id gone before its owner's next session is asked to cite it again.</summary>
     public const int GoneTries = 3;
 
-    /// <summary>How often a host over the registered roots judges them (KNOWCURRENT1): the minute a one-checkout server reads again by.</summary>
+    /// <summary>How often a host over the registered roots judges them: the minute a one-checkout server reads again by.</summary>
     public static readonly TimeSpan RootsJudgedEvery = TimeSpan.FromMinutes(1);
 
-    /// <summary>What one registered root was when this process read it: by whom it is named, when, from which commit, by which signature.</summary>
+    /// <summary>What one registered root stood at when this process read it: by whom it is named, when, from which commit, by which signature.</summary>
     private sealed record RootReading(string Repository, DateTimeOffset ReadAt, string? Commit, RootSignature? Signature);
 
     /// <summary>How long a search waits, in all, for the uncommitted readings of the repositories its hits come from before it says "not yet read".</summary>
@@ -85,9 +85,9 @@ public sealed class KnowledgeService(
     /// ONE detector, not one per call.
     /// </summary>
     /// <remarks>
-    /// It was constructed per request, which threw away the vectors it had just computed — so every
-    /// look cost a full re-embed of the corpus, measured at 31 seconds over 449 entries. The interesting
-    /// use is a person moving a threshold and looking again, which made that the common path rather than
+    /// One built per request would throw away the vectors it had just computed — so every
+    /// look would cost a full re-embed of the corpus, measured at 31 seconds over 449 entries. The interesting
+    /// use is a person moving a threshold and looking again, which makes that the common path rather than
     /// the rare one.
     /// </remarks>
     private readonly ConvergenceDetector _convergence = new(store, embedder, vectors, embedWindow);
@@ -119,8 +119,8 @@ public sealed class KnowledgeService(
     public bool SemanticEnabled => embedder is not null && vectors is not null;
 
     /// <summary>
-    /// How many index entries a search that names no kinds answers with (ORIENT2e; the orientation design §3.1),
-    /// so a question about why something was decided is not crowded out by rows of identifiers.
+    /// How many index entries a search that names no kinds answers with,
+    /// so a question about why something is decided is not crowded out by rows of identifiers.
     /// </summary>
     public const int IndexEntriesUnasked = 2;
 
@@ -130,11 +130,11 @@ public sealed class KnowledgeService(
     public async Task<IReadOnlyList<KnowledgeHit>> SearchAsync(KnowledgeQuery query, CancellationToken ct = default) =>
         (await AnswerAsync(query, ct).ConfigureAwait(false)).Hits;
 
-    /// <summary>Search, and say which tier ANSWERED (TIER1, D24).</summary>
+    /// <summary>Search, and say which tier ANSWERED.</summary>
     public Task<SearchAnswer> AnswerAsync(KnowledgeQuery query, CancellationToken ct = default) => Answers.AnswerAsync(query, ct);
 
     /// <summary>
-    /// The index's refusal, before an operation on it does anything else (KSCHEMA1): a search's tiers would each fold
+    /// The index's refusal, before an operation on it does anything else: a search's tiers would each fold
     /// it into a failure and answer nothing, and a feed or a retire would write its other half first.
     /// </summary>
     private void RefuseNewerIndex()
@@ -162,7 +162,7 @@ public sealed class KnowledgeService(
         return await store.FindAsync(id, ct).ConfigureAwait(false);
     }
 
-    /// <summary>What each entry's reading and, for a decision, its own record say of its standing, by entry id (KNOWFRESH1a-ii).</summary>
+    /// <summary>What each entry's reading and, for a decision, its own record say of its standing, by entry id.</summary>
     public Task<IReadOnlyDictionary<string, EntryStanding>> StandingsAsync(
         IEnumerable<KnowledgeEntry> entries, CancellationToken ct = default) => Standings.OfAsync(entries, ct);
 
@@ -173,21 +173,21 @@ public sealed class KnowledgeService(
             : null;
 
     /// <summary>
-    /// Cite an entry at the reading the index stores for it (KNOWCENTRAL2a; the memory coordinator design's §5). An entry its
+    /// Cite an entry at the reading the index stores for it. An entry its
     /// own record already supersedes is refused, naming what superseded it.
     /// </summary>
     /// <param name="lines">The span a hit named, which must be lines of the entry; null cites it whole.</param>
     public Task<CitationAnswer> CiteAsync(string id, LineSpan? lines = null, CancellationToken ct = default) =>
         Citations.CiteAsync(id, lines, ct);
 
-    /// <summary>Whether a citation still holds (KNOWCENTRAL2a).</summary>
+    /// <summary>Whether a citation still holds.</summary>
     /// <param name="attempt">How many rechecks in a row this one is: a cited id found gone asks to be cited again at <see cref="GoneTries"/>.</param>
     public Task<CitationCheck> RecheckAsync(Citation citation, int attempt = 1, CancellationToken ct = default) =>
         Citations.RecheckAsync(citation, attempt, ct);
 
     /// <summary>
     /// The root a repository's checkout is at here, read again first where its signature moved from the stored reading's
-    /// (KNOWCENTRAL2a); null where no checkout of it is read here.
+    /// null where no checkout of it is read here.
     /// </summary>
     private async Task<string?> ReadAgainWhereMovedAsync(string repository, CancellationToken ct)
     {
@@ -211,9 +211,9 @@ public sealed class KnowledgeService(
         return root;
     }
 
-    /// <param name="workspace">The circle to summarize (D48). Null is every one this machine holds.</param>
+    /// <param name="workspace">The circle to summarize. Null is every one this machine holds.</param>
     /// <remarks>
-    /// Carries each repository's fed provenance where there is one (D48 §6) — served, never implied.
+    /// Carries each repository's fed provenance where there is one — served, never implied.
     /// A deployment that scans its own checkouts has none, and says so by absence: what it shows is
     /// the machine's own state, which is the one thing it cannot be stale about.
     /// </remarks>
@@ -269,10 +269,10 @@ public sealed class KnowledgeService(
     /// Read from each repository's own manifest rather than configured here, so the declaration sits
     /// next to the thing it describes and is reviewed by the people it describes. It is also the gate
     /// on addressing a quest: a repository with no manifest has no client to see one, and a quest
-    /// nobody can read looks exactly like a quest that was read and ignored.
+    /// nobody can read looks exactly like a quest that is read and ignored.
     /// </remarks>
     /// <param name="workspace">
-    /// The circle to answer for (D48). Null is every workspace this machine holds — right for the
+    /// The circle to answer for. Null is every workspace this machine holds — right for the
     /// judgement that needs both sides (<see cref="QuestExchange"/>), and something a door showing a
     /// person must narrow or say it did not.
     /// </param>
@@ -282,7 +282,7 @@ public sealed class KnowledgeService(
         await ReloadRegistryAsync(ct).ConfigureAwait(false);
         await Behind.ReadyAsync(ct).ConfigureAwait(false);
         // A quest is addressed by the registry, so it answers over an index a newer Daoris wrote, counting nothing in
-        // it (KSCHEMA1): each row's entries read none.
+        // it: each row's entries read none.
         var counts = store.Refusal is null
             ? await store.CountByRepositoryAsync(ct).ConfigureAwait(false)
             : new Dictionary<string, int>();
@@ -293,12 +293,12 @@ public sealed class KnowledgeService(
             : all.Where(r => Workspaces.Same(r.InWorkspace, workspace)).ToList();
     }
 
-    /// <summary>Take a repository off the map (D48 §3); nothing on disk is touched.</summary>
-    /// <returns>Whether there was a registration to retire; false is an answer, not a failure.</returns>
+    /// <summary>Take a repository off the map; nothing on disk is touched.</summary>
+    /// <returns>Whether there is a registration to retire; false is an answer, not a failure.</returns>
     public Task<bool> RetireAsync(string repository, CancellationToken ct = default) => Registrar.RetireAsync(repository, ct);
 
     /// <summary>
-    /// Register everything a folder's subdirectories propose (D48 §3) — the bootstrap, run deliberately.
+    /// Register everything a folder's subdirectories propose — the bootstrap, run deliberately.
     /// </summary>
     /// <remarks>
     /// The scan proposes no workspace, so re-importing a folder never re-points a repository someone
@@ -306,7 +306,7 @@ public sealed class KnowledgeService(
     /// which is what makes `import` the right answer to "I edited several declarations at once".
     /// </remarks>
     /// <param name="workspace">
-    /// The person's word for which circle every row lands in (D77) — "set this folder up as a
+    /// The person's word for which circle every row lands in — "set this folder up as a
     /// workspace" as one statement. A statement re-points, as `connect --workspace` does; null is
     /// silence, and silence moves nobody.
     /// </param>
@@ -344,16 +344,16 @@ public sealed class KnowledgeService(
     public Task<Registration> RegisterAsync(Registration registration, DateTimeOffset now, CancellationToken ct = default) =>
         Registrar.RegisterAsync(registration, now, ct);
 
-    /// <summary>A declaration arriving at a shared deployment from a checkout (SYNC5b), ordered as a feed is.</summary>
-    /// <param name="provenance">The commit the manifest was read at, with the held one git said it
+    /// <summary>A declaration arriving at a shared deployment from a checkout, ordered as a feed is.</summary>
+    /// <param name="provenance">The commit the manifest is read at, with the held one git says it
     /// descends from; null when the checkout could not name one.</param>
-    /// <returns>The judgement, and the registration as it now stands when it was taken or already held.</returns>
+    /// <returns>The judgement, and the registration as it now stands when it is taken or already held.</returns>
     public Task<(FeedOutcome Outcome, Registration? Registered)> RegisterFedAsync(
         Registration registration, FeedProvenance? provenance, DateTimeOffset now, CancellationToken ct = default) =>
         Feeds.RegisterFedAsync(registration, provenance, now, ct);
 
     /// <summary>
-    /// The repositories this machine's checkouts took out of a circle that has not been told yet (SYNC5b)
+    /// The repositories this machine's checkouts took out of a circle that has not been told yet
     /// — what the sync carries to that circle's deployment.
     /// </summary>
     public async Task<IReadOnlyList<string>> RetiredAsync(string workspace, CancellationToken ct = default) =>
@@ -365,7 +365,7 @@ public sealed class KnowledgeService(
         && await registrations.ClearRetiredAsync(repository, workspace, ct).ConfigureAwait(false);
 
     /// <summary>
-    /// One repository's own knowledge, whole — what a sync loop feeds from (D47 §4). Local provenance
+    /// One repository's own knowledge, whole — what a sync loop feeds from. Local provenance
     /// only: canonical content is identical everywhere by construction and never feeds.
     /// </summary>
     public async Task<IReadOnlyList<KnowledgeEntry>> LocalEntriesAsync(
@@ -381,17 +381,17 @@ public sealed class KnowledgeService(
 
     /// <summary>
     /// Accept one repository's knowledge content from a feed — the only ingest a remote deployment has,
-    /// since it never scans a filesystem (D47 §4); the disclosure judgement runs at this door.
+    /// since it never scans a filesystem; the disclosure judgement runs at this door.
     /// </summary>
     public Task<FeedOutcome> FeedAsync(
         string repository, IReadOnlyList<KnowledgeEntry> entries, FeedProvenance? provenance = null,
         CancellationToken ct = default) => Feeds.FeedAsync(repository, entries, provenance, ct);
 
     /// <summary>
-    /// Accept one repository's code map from a feed (MAP3b) — the map a deployment with no checkout
+    /// Accept one repository's code map from a feed — the map a deployment with no checkout
     /// answers with. A null map is the repository saying it keeps none at that commit.
     /// </summary>
-    /// <param name="file">Which candidate the map was read from; ignored when there is no map.</param>
+    /// <param name="file">Which candidate the map is read from; ignored when there is no map.</param>
     /// <param name="map">The file's text, or null when the checkout keeps no map.</param>
     public Task<FeedOutcome> FeedCodeMapAsync(
         string repository, string? file, string? map, FeedProvenance? provenance, CancellationToken ct = default) =>
@@ -399,7 +399,7 @@ public sealed class KnowledgeService(
 
     /// <summary>
     /// Which commit this deployment holds a repository's knowledge, code map and declaration at — what a
-    /// feeding machine asks git about before it feeds (SYNC5a, SYNC5b).
+    /// feeding machine asks git about before it feeds.
     /// </summary>
     public async Task<FeedHeld> HeldAsync(string repository, CancellationToken ct = default) =>
         registrations is null
@@ -429,7 +429,7 @@ public sealed class KnowledgeService(
             {
                 var age = _time.GetUtcNow() - _refreshedAt;
                 // A watch in service marks what moved and the deadline reconciles what it missed; a checkout nobody
-                // watches is read again by the window it was handed.
+                // watches is read again by the window it is handed.
                 var fresh = freshness is { Watching: true }
                     ? !freshness.IsStale && age < CheckoutFreshness.Deadline
                     : age < window;
@@ -455,15 +455,15 @@ public sealed class KnowledgeService(
     }
 
     /// <summary>One read of every repository into the index, under <see cref="_refreshLock"/>.</summary>
-    /// <param name="onlyRoots">Some roots to read alone, or null for all (KNOWCURRENT1).</param>
+    /// <param name="onlyRoots">Some roots to read alone, or null for all.</param>
     private async Task<IndexReport> RefreshReadingAsync(CancellationToken ct, IReadOnlyList<string>? onlyRoots = null)
     {
-        // 🔴 Each repository's generation, read before the registry and the source (KNOWCENTRAL2a): a write any connector
+        // 🔴 Each repository's generation, read before the registry and the source: a write any connector
         // makes after this, a retirement included, refuses this refresh's write of that repository.
         var generations = await store.GenerationsAsync(ct).ConfigureAwait(false);
         await ReloadRegistryAsync(ct).ConfigureAwait(false);
 
-        // A root named before the registry was read again is read only while it is still registered.
+        // A root named before the registry is read again is read only while it is still registered.
         if (onlyRoots is not null && readsRegisteredRoots)
         {
             var registered = LocalRoots().Select(r => r.Root).ToHashSet(_readings.Comparer);
@@ -479,7 +479,7 @@ public sealed class KnowledgeService(
                 if (onlyRoots is not null && !onlyRoots.Contains(root, _readings.Comparer)) continue;
                 var signature = rootSignature?.Invoke(root);
                 var commit = signature is null ? RootSignature.Head(root) : signature.Commit;
-                // One status a root a reading (KNOWFRESH1a-ii), only for a root that has a commit to differ from. It is not
+                // One status a root a reading, only for a root that has a commit to differ from. It is not
                 // waited for here: a process start can take seconds a repository, and no answer waits on a repository's status.
                 var dirty = commit is not null && _probes.Asks ? _probes.Probe(root) : null;
                 taken.Add((repository, root, signature, commit, dirty));
@@ -504,7 +504,7 @@ public sealed class KnowledgeService(
             repository => readAt.TryGetValue(repository, out var read) ? read : (null, null),
             ct).ConfigureAwait(false);
 
-        // A root whose write was refused keeps no reading here, so its next use reads it again.
+        // A root whose write is refused keeps no reading here, so its next use reads it again.
         taken.RemoveAll(t => refused.Contains(t.Repository));
 
         report = report with { Absent = AbsentCheckouts() };
@@ -563,23 +563,23 @@ public sealed class KnowledgeService(
     }
 
     /// <summary>
-    /// A registered repository's code map (MAP3a), read from its checkout on each ask; one with no checkout here
-    /// answers with what was fed (MAP3b). Null for a repository nobody registered.
+    /// A registered repository's code map, read from its checkout on each ask; one with no checkout here
+    /// answers with what is fed. Null for a repository nobody registered.
     /// </summary>
     public Task<CodeMapRead?> CodeMapAsync(string repository, CancellationToken ct = default) => CodeMaps.ReadAsync(repository, ct);
 
-    /// <summary>The commit a teammate's code map is held at on this machine, or null where none is (MAP3e).</summary>
+    /// <summary>The commit a teammate's code map is held at on this machine, or null where none is.</summary>
     public Task<string?> FedCodeMapCommitAsync(string repository, CancellationToken ct = default) => CodeMaps.FedCommitAsync(repository, ct);
 
-    /// <summary>Hold a teammate's code map as the circle's remote holds it (MAP3e).</summary>
+    /// <summary>Hold a teammate's code map as the circle's remote holds it.</summary>
     public Task HoldFedCodeMapAsync(string repository, FedCodeMap map, CancellationToken ct = default) => CodeMaps.HoldFedAsync(repository, map, ct);
 
-    /// <summary>Stop holding a teammate's code map the remote no longer holds (MAP3e).</summary>
-    /// <returns>Whether there was one to forget.</returns>
+    /// <summary>Stop holding a teammate's code map the remote no longer holds.</summary>
+    /// <returns>Whether there is one to forget.</returns>
     public Task<bool> ForgetFedCodeMapAsync(string repository, CancellationToken ct = default) => CodeMaps.ForgetFedAsync(repository, ct);
 
     /// <summary>
-    /// The registry as the store holds it NOW, re-read before every answer that reads it (REV3).
+    /// The registry as the store holds it NOW, re-read before every answer that reads it.
     /// </summary>
     /// <remarks>
     /// Every host on a machine opens one store: the desktop's HTTP host, and a connector for each
@@ -594,11 +594,11 @@ public sealed class KnowledgeService(
     }
 
     /// <summary>
-    /// Registered repositories whose checkout is not where the registry says it is (D48 §3).
+    /// Registered repositories whose checkout is not where the registry says it is.
     /// </summary>
     /// <remarks>
     /// A row with no path is not an absence — a teammate's mirrored registration has no checkout here
-    /// by construction (D47 §9), and reporting it as missing would turn a normal remote family into a
+    /// by construction, and reporting it as missing would turn a normal remote family into a
     /// screen of false alarms.
     /// </remarks>
     private IReadOnlyList<string> AbsentCheckouts() =>
@@ -614,12 +614,12 @@ public sealed class KnowledgeService(
     /// </summary>
     private async Task EnsureIndexedAsync(CancellationToken ct)
     {
-        // An index a newer Daoris wrote is never read into here (KSCHEMA1): no refresh is tried, so none is retried, and
+        // An index a newer Daoris wrote is never read into here: no refresh is tried, so none is retried, and
         // the host said why once, at its start.
         if (store.Refusal is not null) return;
 
         // A source that moves under the store is re-read at first use and once its reading is older than
-        // the window (ORIENT1c): what the store held from an earlier process is that process's reading.
+        // the window: what the store held from an earlier process is that process's reading.
         if (rereadAfter is { } window)
         {
             await RefreshUnlessFreshAsync(window, ct).ConfigureAwait(false);
@@ -627,7 +627,7 @@ public sealed class KnowledgeService(
         }
 
         // A host over the registered roots judges each by its signature, so a record merged into one is found without
-        // anyone telling the index (KNOWCURRENT1): what the store held from an earlier process is read again at first use.
+        // anyone telling the index: what the store held from an earlier process is read again at first use.
         if (rootSignature is not null && readsRegisteredRoots && registry is not null)
         {
             await KeepRootsCurrentAsync(ct).ConfigureAwait(false);
@@ -647,7 +647,7 @@ public sealed class KnowledgeService(
     }
 
     /// <summary>
-    /// Reads the registered roots again as they move (KNOWCURRENT1). The first use reads them all, since what the store held is an
+    /// Reads the registered roots again as they move. The first use reads them all, since what the store held is an
     /// earlier process's reading. After that each root is judged by its <see cref="RootSignature"/> at most once a
     /// <see cref="RootsJudgedEvery"/>, and only a root whose signature moved is read again; a root that is no longer registered
     /// takes a whole read, which retires what it held.
@@ -688,7 +688,7 @@ public sealed class KnowledgeService(
         }
     }
 
-    /// <summary>When and from which commit each registered repository was read, by repository name.</summary>
+    /// <summary>When and from which commit each registered repository is read, by repository name.</summary>
     private List<RepositoryReading> Readings()
     {
         lock (_readings)
@@ -708,9 +708,9 @@ public sealed class KnowledgeService(
             .ToList();
 
     /// <summary>
-    /// 🔴 SEM1: the rows persist and the vectors do not. A start over an index already on disk skipped
-    /// the refresh, so the semantic half answered nothing until somebody rebuilt the index — while
-    /// every door said the tier was semantic. What is on disk is embedded once, on first use, under
+    /// 🔴 The rows persist and the vectors do not. A start over an index already on disk would skip
+    /// the refresh, so the semantic half would answer nothing until somebody rebuilt the index — while
+    /// every door said the tier is semantic. What is on disk is embedded once, on first use, under
     /// the refresh's own lock; the disk is not re-read.
     /// </summary>
     /// <remarks>

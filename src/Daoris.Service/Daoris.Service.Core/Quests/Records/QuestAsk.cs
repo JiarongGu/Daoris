@@ -1,15 +1,14 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// What a publish is asked for: who asks, of whom, what — and what the quest carries beside its words
-/// (D65 §2).
+/// What a publish is asked for: who asks, of whom, what — and what the quest carries beside its words.
 /// </summary>
 /// <remarks>
 /// A file arrives one of two ways and the type says which. <see cref="Uploads"/> come WITH their
 /// bytes, from a door on the machine that has them, and are kept under this machine's home.
 /// <see cref="Named"/> come by name only, from a machine that keeps the bytes itself and is relaying
 /// to the quest's home — the only shape a shared deployment ever takes, because it keeps names and
-/// never bytes. A relay has no field for bytes at all: absent, not policed (D47 §4).
+/// never bytes. A relay has no field for bytes at all: absent, not policed.
 /// </remarks>
 public sealed record QuestAsk(string From, string To, string Title, string Body)
 {
@@ -19,11 +18,11 @@ public sealed record QuestAsk(string From, string To, string Title, string Body)
 
     public IReadOnlyList<QuestAttachment> Named { get; init; } = [];
 
-    /// <summary>What to ask next when this closes done (D65 §4) — judged here, when the chain is composed.</summary>
+    /// <summary>What to ask next when this closes done — judged here, when the chain is composed.</summary>
     public IReadOnlyList<QuestStep> Then { get; init; } = [];
 
     /// <summary>
-    /// The circle a sender that is NOT a repository asks from — an ask (D65 §1a), which has no registry
+    /// The circle a sender that is NOT a repository asks from — an ask, which has no registry
     /// row to say it. Ignored for a registered sender, whose row is the machine's wiring and decides.
     /// </summary>
     public string? Workspace { get; init; }
@@ -39,7 +38,7 @@ public sealed record QuestAsk(string From, string To, string Title, string Body)
     public bool ByAgent { get; init; }
 
     /// <summary>
-    /// What the person requires (D133 §3), each quoting their words on the ask that asks it —
+    /// What the person requires, each quoting their words on the ask that asks it —
     /// judged here against that ask's words, so every door refuses the same quote.
     /// </summary>
     public IReadOnlyList<QuestRequirement> Requirements { get; init; } = [];
@@ -69,7 +68,7 @@ public sealed record QuestAsk(string From, string To, string Title, string Body)
     public string? Request { get; init; }
 
     /// <summary>
-    /// The chain's review choice (D154 point 3), inherited by each step: the person's, with any words they give,
+    /// The chain's review choice, inherited by each step: the person's, with any words they give,
     /// or an agent's quoting them, which is judged here against the ask's words as a requirement's quote is. An agent's
     /// <c>off</c> is kept on the ask as a proposal instead, never as the choice. Null for none.
     /// </summary>

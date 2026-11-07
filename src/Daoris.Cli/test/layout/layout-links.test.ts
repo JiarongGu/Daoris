@@ -1,6 +1,6 @@
-// Links, and links held as text (LAYOUT3; D117 §3 and §5.4's last table).
+// Links, and links held as text.
 //
-// D3 stands: Daoris writes real files. A link at a path it would write is refused and never written
+// Daoris writes real files. A link at a path it would write is refused and never written
 // through, and so is the text a checkout without links (`core.symlinks=false`) leaves in its place.
 // The refusal names both answers — a real file holding `@AGENTS.md`, or a folder of mirrors — and says
 // the choice is the repository's, because on the other side of the guess is how the repository is

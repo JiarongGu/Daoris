@@ -17,10 +17,9 @@ public static partial class Text
     /// "tmp", and a reader looking for one word of a hyphenated name is the common case.
     /// </summary>
     /// <remarks>
-    /// This is the rule FTS5's <c>unicode61</c> tokeniser applies to the same text, so a query's terms
-    /// are the index's terms. It replaced a hand-listed ASCII string, which no list of characters
-    /// can be the equal of: <c>D51：会话</c> tokenised to <c>d51：</c> — the fullwidth colon was not in
-    /// the list — and no index row had ever held that term.
+    /// This is the rule fts5's <c>unicode61</c> tokeniser applies to the same text, so a query's terms
+    /// are the index's terms. No hand-listed ASCII string can be the equal of it: <c>q51：会话</c> would tokenise to <c>q51：</c> —
+    /// the fullwidth colon is not in such a list — and no index row would ever hold that term.
     /// </remarks>
     private static bool IsWordCharacter(char c) => char.IsLetterOrDigit(c);
 
@@ -40,7 +39,7 @@ public static partial class Text
 
     /// <summary>
     /// What a question asks: its <see cref="Tokenize">tokens</see>, then each two and three of its adjacent
-    /// words joined, as an identifier spells them (ORIENT1f), each once, with how many words it stands for.
+    /// words joined, as an identifier spells them, each once, with how many words it stands for.
     /// </summary>
     /// <remarks>
     /// <para>The index holds <c>ProbeLock</c> whole as well as by its words (<see cref="Segment"/>), and a
@@ -49,8 +48,7 @@ public static partial class Text
     /// nothing and costs nothing.</para>
     ///
     /// <para><b>A join counts once for each word it joins.</b> Matched, it is those words in the one form the
-    /// code gives them, so it stands for each of them again. Measured on this repository's index (ORIENT1f,
-    /// D134's ORIENT1g note): asked once, <i>what decided the probe lock</i> still ranked a design section
+    /// code gives them, so it stands for each of them again. Measured on this repository's index: asked once, <i>what decided the probe lock</i> still ranked a design section
     /// titled with <i>lock</i> and <i>decided</i> above the FIX-LOG entry and the decision note that name
     /// <c>ProbeLock</c>; counted as its two words, the note came first and the fix second. A phrase of the
     /// adjacent words instead ranked first the note that quotes the question, and proximity is not what the
@@ -106,7 +104,7 @@ public static partial class Text
     /// <summary>
     /// The same text cut so a tokenizer that splits on spaces and punctuation finds every word in it: each
     /// run of ideographs as its overlapping two-character bigrams, and each identifier with its words
-    /// spelled beside it (<see cref="Identifiers"/>, ORIENT1f).
+    /// spelled beside it (<see cref="Identifiers"/>).
     /// </summary>
     /// <remarks>
     /// Applied at index time (the FTS row) and at query time (through <see cref="Tokenize"/>), never to the
@@ -120,16 +118,16 @@ public static partial class Text
     /// </summary>
     /// <remarks>
     /// <para>🔴 <b><c>unicode61</c> keeps <c>ProbeLock</c> as ONE token</b>, as it keeps a run of
-    /// ideographs (ORIENT1f). The question <i>what decided the probe lock</i> never reached the decision that
-    /// named it: no word of the question was its token (D24's ORIENT1c note). An underscore already
-    /// separates, so <c>probe_lock</c> was its words and never itself whole. Each shape now matches the
+    /// ideographs. The question <i>what decided the probe lock</i> never reaches the decision that
+    /// names it: no word of the question is its token. An underscore already
+    /// separates, so <c>probe_lock</c> is its words and never itself whole. Each shape now matches the
     /// others and the words, and still matches itself.</para>
     ///
     /// <para><b>Where the words are</b>: a run of letters, digits and underscores, cut at its underscores and
     /// where its case turns: before an upper-case letter after a lower-case one (<c>probe|Lock</c>), and
     /// before the last capital of a run of capitals or a digit when a lower-case letter follows it
     /// (<c>HTTP|Server</c>, <c>UTF8|Encoding</c>), except a plural's <c>s</c> (<c>APIs</c>,
-    /// <c>URLs|For</c>). A digit is no boundary on its own, so a task's id (<c>TOOL6g</c>, <c>D125</c>)
+    /// <c>URLs|For</c>). A digit is no boundary on its own, so a task's id (<c>Row6g</c>, <c>Q125</c>)
     /// stays one word. A run with one word, or with an ideograph in it, is left as it is.</para>
     ///
     /// <para><b>What is added</b>: the run joined where underscores cut it, then each cut piece's case
@@ -219,9 +217,9 @@ public static partial class Text
     /// space-separated — so a tokenizer that splits on spaces and punctuation finds words in it.
     /// </summary>
     /// <remarks>
-    /// <para>🔴 <b>FTS5's <c>unicode61</c> keeps a run of ideographs as ONE token.</b> There are no
+    /// <para>🔴 <b>fts5's <c>unicode61</c> keeps a run of ideographs as ONE token.</b> There are no
     /// spaces between words in 中文, so <c>每个会话都留下一份记录</c> is indexed whole and a query for
-    /// <c>记录</c> matches nothing inside it — found by the test that was written for the tokeniser's
+    /// <c>记录</c> matches nothing inside it — found by the test written for the tokeniser's
     /// floor, which cleared the floor and then returned an empty result instead of a wrong one.
     /// Every Chinese query on the first real index had been browsing the whole corpus; with the
     /// floor fixed it would have found nothing at all, which is the same defect wearing a quieter
@@ -297,7 +295,7 @@ public static partial class Text
     /// it is not. When nothing matches — a semantic hit shares no literal term by definition — the
     /// opening of the body is still more useful than nothing.
     ///
-    /// **The window is the prose's, never the frontmatter's** (POLISH4). Every canon-shaped entry
+    /// **The window is the prose's, never the frontmatter's**. Every canon-shaped entry
     /// opens with its frontmatter, and a window there read "--- name: … applies_when: …" flattened
     /// onto one line. The frontmatter is still searched; a hit found only there shows the prose's
     /// opening, as a semantic hit does.
@@ -306,7 +304,7 @@ public static partial class Text
         ExcerptAt(body, terms, window).Text;
 
     /// <summary>
-    /// <see cref="Excerpt"/>, and the line of the body it starts on, counted from 0 (ORIENT2e): what a hit names
+    /// <see cref="Excerpt"/>, and the line of the body it starts on, counted from 0: what a hit names
     /// as the line its excerpt starts on, once the entry's own first line is added.
     /// </summary>
     /// <remarks>
@@ -368,9 +366,9 @@ public static partial class Text
     }
 
     /// <summary>
-    /// A body without the Markdown that marks its words (UX5 U39): a heading's hashes, emphasis's
-    /// <c>**</c> and <c>__</c>, and code's backticks. The frontmatter went (POLISH4) and these stayed, so
-    /// an excerpt read "# World streaming … **chunk hydration** runs". The page shows an excerpt as
+    /// A body without the Markdown that marks its words: a heading's hashes, emphasis's
+    /// <c>**</c> and <c>__</c>, and code's backticks. The frontmatter is cut and these stay, so
+    /// an excerpt reads "# World streaming … **chunk hydration** runs". The page shows an excerpt as
     /// plain text, so they are machinery too.
     /// </summary>
     /// <remarks>
@@ -399,7 +397,7 @@ public static partial class Text
     public static string ReadDocument(string path) => ReadDocumentAt(path).Text;
 
     /// <summary>
-    /// <see cref="ReadDocument"/>, and the line of the file its text starts on, counted from 1 (ORIENT2e): the
+    /// <see cref="ReadDocument"/>, and the line of the file its text starts on, counted from 1: the
     /// lines the trim took from the top are still the file's, so every line an entry names is counted from them.
     /// </summary>
     public static (string Text, int First) ReadDocumentAt(string path)
@@ -410,7 +408,7 @@ public static partial class Text
     }
 }
 
-/// <summary>One term a question asks (ORIENT1f): a word, or adjacent words joined, and how many words it stands for.</summary>
+/// <summary>One term a question asks: a word, or adjacent words joined, and how many words it stands for.</summary>
 /// <param name="Term">The term as the index holds it, lower-cased.</param>
 /// <param name="Words">1 for a word; the number of words joined for a join.</param>
 public readonly record struct QueryTerm(string Term, int Words);

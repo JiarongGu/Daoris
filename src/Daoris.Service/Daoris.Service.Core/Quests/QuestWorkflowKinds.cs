@@ -4,16 +4,15 @@ namespace Daoris.Knowledge;
 internal sealed class QuestWorkflowKinds(QuestStore quests, AskStore? asks)
 {
     /// <summary>
-    /// The person sets the kind and workflow of a quest published with no ask, on its page before it starts (D157; the
-    /// workflow design §4.1 row 1, §4.3): a kind, a workflow, both, or neither to clear them, with any words they give, kept with when
-    /// in a <see cref="QuestOperationKind.Chosen"/> operation; the latest stands. A run is bound at its first start (§4.5), so a choice
+    /// The person sets the kind and workflow of a quest published with no ask, on its page before it starts: a kind, a workflow, both, or neither to clear them, with any words they give, kept with when
+    /// in a <see cref="QuestOperationKind.Chosen"/> operation; the latest stands. A run is bound at its first start, so a choice
     /// reaches the quest's work only while it is open.
     /// </summary>
     /// <remarks>
-    /// <b>The person's door</b> (D156 §3.2), a local host's alone, as a verdict is: no connector tool reaches it, and an agent's kind is
+    /// <b>The person's door</b>, a local host's alone, as a verdict is: no connector tool reaches it, and an agent's kind is
     /// a proposal. A quest an ask published follows its ask's choice, which is set on the ask. Whether the quest's workspace
     /// declares the kind and the workflow reads is the driving machine's to say; the service holds neither. It travels from here as an
-    /// operation (D68), so the machine that starts the quest reads it against its own workspace's kinds.
+    /// operation, so the machine that starts the quest reads it against its own workspace's kinds.
     /// </remarks>
     public async Task<QuestRespondOutcome> ChooseWorkflowAsync(
         string id, string? kind, string? workflow, string? words, DateTimeOffset now, CancellationToken ct = default)
@@ -70,8 +69,7 @@ internal sealed class QuestWorkflowKinds(QuestStore quests, AskStore? asks)
     }
 
     /// <summary>
-    /// Why an intake's kind proposal at publish is refused, or null where there is none or it stands (D157; the workflow
-    /// design §4.3): a kind that is not a kind's id, a reason that is missing or past its bound, one on no ask held here, or a reason
+    /// Why an intake's kind proposal at publish is refused, or null where there is none or it stands: a kind that is not a kind's id, a reason that is missing or past its bound, one on no ask held here, or a reason
     /// that is not the person's words, verbatim, as a review choice's words are. The exchange only judges; the ask's
     /// desk keeps the proposal and the person's press applies it. Version 1 only proposes: whether a kind lowers the person's part
     /// is the driving machine's table, which the service does not hold.

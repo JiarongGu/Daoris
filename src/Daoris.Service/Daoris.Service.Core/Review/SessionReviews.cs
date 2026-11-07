@@ -1,6 +1,6 @@
 namespace Daoris.Knowledge;
 
-/// <summary>Why a set-up step's session's word was not kept (REVIEWENV1b) — or <see cref="None"/> when it was.</summary>
+/// <summary>Why a set-up step's session's word is not kept — or <see cref="None"/> when it is.</summary>
 public enum ReviewSayRefusal
 {
     None,
@@ -18,21 +18,20 @@ public enum ReviewSayRefusal
     BadShape,
 }
 
-/// <param name="Refusal"><see cref="ReviewSayRefusal.None"/> when it was kept.</param>
+/// <param name="Refusal"><see cref="ReviewSayRefusal.None"/> when it is kept.</param>
 /// <param name="Message">The whole answer, phrased once here for every door.</param>
 public sealed record ReviewSayOutcome(ReviewSayRefusal Refusal, string Message);
 
 /// <summary>
-/// A set-up step's session asks Daoris to serve its build, and says what it showed (REVIEWENV1b, D154 point 5; design
-/// §2.6): kept on its own record, this machine's, until its driver posts each set-up with the commit it read. The ledger hands in the stores and keeps both doors as
-/// one-line calls (PART6).
+/// A set-up step's session asks Daoris to serve its build, and says what it showed: kept on its own record, this machine's, until its driver posts each set-up with the commit it read. The ledger hands in the stores and keeps both doors as
+/// one-line calls.
 /// </summary>
 public sealed class SessionReviews(QuestStore quests, SessionStore sessions)
 {
     /// <summary>
     /// Keep the folder a set-up step's session asks Daoris to serve to its tab, and the address it is served at: the folder a
     /// path in its tree, a folder there with no link on the way, the address an absolute <c>http</c> or <c>https</c> one.
-    /// Whether the address is the review rule's, and the serving itself, are the shell's (REVIEWENV1d), so this build keeps the
+    /// Whether the address is the review rule's, and the serving itself, are the shell's, so this build keeps the
     /// folder for the set-up it names, and says that nothing is served yet.
     /// </summary>
     public async Task<ReviewSayOutcome> ServeAsync(
@@ -77,8 +76,8 @@ public sealed class SessionReviews(QuestStore quests, SessionStore sessions)
     }
 
     /// <summary>
-    /// Keep a set-up a set-up step's session says (design §2.6): where its tab is, what it showed, how to show it again, and a
-    /// review run's command where there was one. Its driver reads the commit the step's tree holds when the session ends, and
+    /// Keep a set-up a set-up step's session says: where its tab is, what it showed, how to show it again, and a
+    /// review run's command where there is one. Its driver reads the commit the step's tree holds when the session ends, and
     /// at the end of each later turn, and posts each set-up with it; a session never reports a commit. Said again in a later
     /// turn, it is a new set-up.
     /// </summary>

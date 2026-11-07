@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// One machine's <c>knowledge.db</c> for the memory coordinator's record (KNOWCENTRAL2c): a file of its own under the repository's
+/// One machine's <c>knowledge.db</c> for the memory coordinator's record: a file of its own under the repository's
 /// gitignored <c>_fixtures/</c>, with the stores a host opens over it, and a restart that closes the connection and opens them again,
 /// as a killed host's next start does.
 /// </summary>

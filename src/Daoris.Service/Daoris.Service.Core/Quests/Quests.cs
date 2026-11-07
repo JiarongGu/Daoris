@@ -20,19 +20,19 @@ namespace Daoris.Knowledge;
 ///
 /// <para><b>Only a repository something can answer for is addressed.</b> That is an adopter, whose own
 /// connector sees the quest, or a repository registered with a root on this machine, whose driven
-/// session is handed a connector over the protocol door (D70). A quest nothing could answer would sit
+/// session is handed a connector over the protocol door. A quest nothing could answer would sit
 /// in a queue nobody reads, so refusing at publish time says that immediately, rather than letting it
 /// look delivered.</para>
 ///
-/// <para><b>A quest is its history</b> (D68, SYNC1). Every verb appends an operation to
+/// <para><b>A quest is its history</b>. Every verb appends an operation to
 /// <c>quest_log</c>, stamped with this store's machine and that machine's next sequence number, and
 /// the <c>quests</c> table is rewritten from replaying the quest's history through
 /// <see cref="QuestTransitions"/> in the same transaction — so what the platform reads is a cache of
 /// the replay, never a second truth beside it.</para>
 ///
-/// <para><b>A remote is where histories meet</b> (D68 §3, design §8): a machine fetches what the
+/// <para><b>A remote is where histories meet</b>: a machine fetches what the
 /// remote accepted, rebases what it has not pushed on top, and pushes; the remote accepts a quest's
-/// operations only when nothing reached that quest since the push was rebased. Both halves live here,
+/// operations only when nothing reached that quest since the push is rebased. Both halves live here,
 /// behind the same table: <see cref="IntegrateAsync"/>, <see cref="PendingAsync"/> and
 /// <see cref="AcceptedAsync"/> for a machine, <see cref="OperationsSinceAsync"/> and
 /// <see cref="ReceiveAsync"/> for a remote.</para>
@@ -40,25 +40,25 @@ namespace Daoris.Knowledge;
 public sealed class QuestStore
 {
     /// <summary>
-    /// Hex characters in a quest id: 48 bits (design §7). Six were enough while a machine held its own
-    /// quests; once every machine holds every quest touching its repositories, unrelated asks collide.
+    /// Hex characters in a quest id: 48 bits. Every machine holds every quest touching its repositories,
+    /// so a shorter id lets unrelated asks collide.
     /// </summary>
     internal const int IdLength = 12;
 
     /// <summary>
-    /// The version of what this build keeps in the store (CLOSETAKE1, QUESTSTOREVER1), stamped in <c>quest_store_version</c>;
+    /// The version of what this build keeps in the store, stamped in <c>quest_store_version</c>;
     /// raise it with any change to a table or a contract an older build would misread.
     /// </summary>
     public const int StoreVersion = 1;
 
-    /// <summary>The version a newer build stamped on this store, or null where this build's is the newest that has written it.</summary>
+    /// <summary>The version a newer build stamps on this store, or null where this build's is the newest that has written it.</summary>
     public int? NewerVersion { get; private set; }
 
-    /// <summary>The connection's gate: every command here runs inside it (SQLITETX1).</summary>
+    /// <summary>The connection's gate: every command here runs inside it.</summary>
     private readonly ConnectionGate _db;
 
     /// <summary>
-    /// The clock a take measures its wait for the write on (FABRIC-CLOSE1w), so the bind named for it is judged at the moment the
+    /// The clock a take measures its wait for the write on, so the bind named for it is judged at the moment the
     /// write began, never at the caller's moment before it queued.
     /// </summary>
     private readonly TimeProvider _time;
@@ -221,7 +221,7 @@ public sealed class QuestStore
     public Task<QuestFetch> OperationsSinceAsync(long since, int limit = 500, CancellationToken ct = default) =>
         _sync.OperationsSinceAsync(since, limit, ct);
 
-    /// <summary>A remote's half of a push: accepts the operations of each quest nothing reached since the push was rebased.</summary>
+    /// <summary>A remote's half of a push: accepts the operations of each quest nothing reached since the push is rebased.</summary>
     public Task<QuestPush> ReceiveAsync(
         long @base, IReadOnlyList<QuestOperation> pushed, Func<Quest, string?> judge, Func<Quest, string> workspaceOf,
         CancellationToken ct = default) =>
@@ -232,19 +232,19 @@ public sealed class QuestStore
         _cache.WriteAsync(quest, transaction, ct);
 
     /// <summary>
-    /// This store's machine: the stable id every operation it writes is stamped with (D68 §2) — never
+    /// This store's machine: the stable id every operation it writes is stamped with — never
     /// the key, which rotates.
     /// </summary>
     /// <remarks>
     /// Kept in the store, beside the sequence it numbers, rather than in a file of its own: a machine
-    /// whose store was deleted starts its sequence again at one, and under the same id that would
+    /// whose store is deleted starts its sequence again at one, and under the same id that would
     /// name operations a remote already holds. A new store is a new machine, and cannot be anything else.
     /// </remarks>
     public string Machine { get; private set; } = "";
 
     /// <param name="connection">The store's connection, opened.</param>
     /// <param name="ct">Honoured while waiting for the connection's gate.</param>
-    /// <param name="time">The clock a take measures its wait on (FABRIC-CLOSE1w); the system's where none is named.</param>
+    /// <param name="time">The clock a take measures its wait on; the system's where none is named.</param>
     public static Task<QuestStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default, TimeProvider? time = null) =>
         ConnectionGate.For(connection).RunAsync(async () =>
         {
@@ -278,15 +278,15 @@ public sealed class QuestStore
     /// <summary>
     /// Run <paramref name="work"/> in a write transaction taken at once (BEGIN IMMEDIATE), not at its
     /// first write: the judgement is made on what it reads, so the read must already hold the lock, or
-    /// two hosts over one file could both judge the same open quest and both append a take (D47 §5).
+    /// two hosts over one file could both judge the same open quest and both append a take.
     /// </summary>
     /// <remarks>
     /// <para>Within one host, the connection's gate holds every other request's work off until this one
-    /// ends, its commands as well as its transactions (<see cref="ConnectionGate"/>, SQLITETX1).</para>
+    /// ends, its commands as well as its transactions (<see cref="ConnectionGate"/>).</para>
     ///
     /// <para>It COMMITS whenever the work returns, including a refusal that wrote nothing, and rolls back
     /// only on a throw. Cancellation is not one, once the transaction has begun: the wait honours the
-    /// caller, and the work is handed a token nobody cancels (REV3).</para>
+    /// caller, and the work is handed a token nobody cancels.</para>
     /// </remarks>
     private Task<T> InTransactionAsync<T>(
         Func<SqliteTransaction, CancellationToken, Task<T>> work, CancellationToken ct) =>
@@ -304,18 +304,18 @@ public sealed class QuestStore
     internal TimeProvider Time => _time;
 
     /// <summary>
-    /// A handle derived from who asked, of whom, and for what — twelve hex characters (design §7).
+    /// A handle derived from who asked, of whom, and for what — twelve hex characters.
     /// </summary>
     /// <remarks>
     /// Content-derived so publishing the same quest twice collides rather than multiplying — an agent
     /// that retries should not produce a second copy of the same ask, and the same ask made on two
-    /// machines is one quest. A chain's step also derives from its PARENT (D65 §4): "Verify in the
+    /// machines is one quest. A chain's step also derives from its PARENT: "Verify in the
     /// browser" is a title many chains will use, and a step that collided with an earlier quest of
-    /// those words would quietly join somebody else's closed quest. The widening kept the hash, so an
+    /// those words would quietly join somebody else's closed quest. The widening keeps the hash, so an
     /// id from before it is exactly the first six characters of the same ask's id now. A quest to
-    /// LANES widens the same way (D115 §2.2), only when there are some, so every quest to a whole
-    /// repository keeps its id and a lane's ask is not the repository's. A workflow request's key widens it the same way (INTEGRATE1p,
-    /// R5's C32), only when there is one, so distinct runs or nodes make distinct quests whatever their words.
+    /// LANES widens the same way, only when there are some, so every quest to a whole
+    /// repository keeps its id and a lane's ask is not the repository's. A workflow request's key widens it the same way,
+    /// only when there is one, so distinct runs or nodes make distinct quests whatever their words.
     /// </remarks>
     internal static string MakeId(
         string from, string to, string title, string? parent = null, IReadOnlyList<string>? lanes = null, string? request = null) =>
@@ -327,22 +327,22 @@ public sealed class QuestStore
                     + (request is null ? "" : $"#{request}"))))[..IdLength]
             .ToLowerInvariant();
 
-    /// <summary>Publish a quest. Returns the existing one unchanged if it was already asked.</summary>
+    /// <summary>Publish a quest. Returns the existing one unchanged if it is already asked.</summary>
     /// <param name="workspace">
     /// The circle both sides share — decided by <see cref="QuestExchange"/>, which is where the
     /// same-workspace clause lives. The store holds state; it does not judge who may ask whom.
     /// </param>
     /// <param name="links">Addresses the quest carries, already judged by the exchange.</param>
     /// <param name="attachments">Files the quest carries, by name — the bytes are never this store's.</param>
-    /// <param name="then">The chain after this quest (D65 §4), already judged by the exchange.</param>
-    /// <param name="publishedBy">The session whose connector published it, when one did (SESS1).</param>
-    /// <param name="lanes">The lanes of <paramref name="to"/> it addresses, already judged by the exchange (D115 §2.2).</param>
-    /// <param name="requirements">What the person requires, already judged by the exchange against their words (DRIFT1c).</param>
-    /// <param name="shortTitle">The publisher's short title, already judged by the exchange (SESSUX1j); null for none.</param>
-    /// <param name="review">The chain's review choice, already judged by the exchange (REVIEWENV1b); null for none.</param>
-    /// <param name="setUpIn">A set-up step's environment, already judged by the exchange (REVIEWENV1b); null for any other quest.</param>
+    /// <param name="then">The chain after this quest, already judged by the exchange.</param>
+    /// <param name="publishedBy">The session whose connector published it, when one did.</param>
+    /// <param name="lanes">The lanes of <paramref name="to"/> it addresses, already judged by the exchange.</param>
+    /// <param name="requirements">What the person requires, already judged by the exchange against their words.</param>
+    /// <param name="shortTitle">The publisher's short title, already judged by the exchange; null for none.</param>
+    /// <param name="review">The chain's review choice, already judged by the exchange; null for none.</param>
+    /// <param name="setUpIn">A set-up step's environment, already judged by the exchange; null for any other quest.</param>
     /// <param name="parent">
-    /// The quest a set-up step follows, when a door publishes one after its chain's close (REVIEWENV1b, D149 point 1): its id
+    /// The quest a set-up step follows, when a door publishes one after its chain's close: its id
     /// derives from it as a chain step's does, so pressing twice is one step. Null for every other publish.
     /// </param>
     public async Task<Quest> PublishAsync(
@@ -375,9 +375,9 @@ public sealed class QuestStore
         (lanes ?? []).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
 
     /// <summary>
-    /// The id these words would publish under, when this machine forgot that quest (HIST1b, D153 point 3); null when it did
+    /// The id these words would publish under, when this machine forgot that quest; null when it did
     /// not. The exchange asks it before a publish, so the same words asked again are refused here rather than making a fresh
-    /// quest the remote, which still holds the closed one, refuses for good (H5).
+    /// quest the remote, which still holds the closed one, refuses for good.
     /// </summary>
     internal async Task<string?> ForgottenIdAsync(
         string from, string to, string title, IReadOnlyList<string>? lanes, CancellationToken ct, string? request = null)
@@ -391,10 +391,10 @@ public sealed class QuestStore
     /// the caller's write transaction, so two hosts over one file cannot take the same number.
     /// </summary>
     /// <remarks>
-    /// The next number is one past the larger of the log's highest for this machine and the store's mark (HIST1a),
+    /// The next number is one past the larger of the log's highest for this machine and the store's mark,
     /// which the insert's trigger then moves. The log alone goes back when its newest rows are removed, and the number
     /// handed out again is one a remote already holds: it answers a push of it as a retry, and a fetch brings its own
-    /// operation back under it, so the new move is lost without an error (H1).
+    /// operation back under it, so the new move is lost without an error.
     /// </remarks>
     internal async Task<QuestOperation> AppendAsync(
         string quest, QuestOperationKind kind, DateTimeOffset at, string? note, Quest? published,
@@ -417,7 +417,7 @@ public sealed class QuestStore
             Evidence: kind == QuestOperationKind.Evidenced ? evidence : null,
             SetUp: kind == QuestOperationKind.SetUp ? setUp : null,
             Verdict: kind == QuestOperationKind.Verdict ? review : null,
-            // Parts only beside a note, as the store keeps them (QUESTCLOSE1b1): what it reads back is what it wrote.
+            // Parts only beside a note, as the store keeps them: what it reads back is what it wrote.
             NoteParts: note is null ? null : NoteParts.Normalize(NoteParts.Element(noteParts)),
             Close: kind == QuestOperationKind.Done ? close : null,
             Submission: Carries(kind) ? submission : null,
@@ -444,12 +444,12 @@ public sealed class QuestStore
         return operation with { Sequence = Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false)) };
     }
 
-    /// <summary>The kinds that name a submission (FABRIC-CLOSE1c): a reopen, and a rebind.</summary>
+    /// <summary>The kinds that name a submission: a reopen, and a rebind.</summary>
     internal static bool Names(QuestOperationKind kind) => kind is QuestOperationKind.Reopened or QuestOperationKind.Rebound;
 
     /// <summary>
-    /// The kinds that keep the session that said them through its connector: a ready (FABRIC-CLOSE1c4), and a done and a decline
-    /// (HANDBACK1, D219), each the act a handback is written at. On any other kind it is never written, kept or read; on these it is
+    /// The kinds that keep the session that said them through its connector: a ready, and a done and a decline
+    /// each the act a handback is written at. On any other kind it is never written, kept or read; on these it is
     /// written only where a session said it, so a close through any other door, and every one from before, reads as it did.
     /// </summary>
     internal static bool KeepsSession(QuestOperationKind kind) =>
@@ -457,12 +457,12 @@ public sealed class QuestStore
 
     /// <summary>
     /// The kinds a submission may ride on: the two that name one (<see cref="Names"/>), and a take, which carries its step's source as it
-    /// found it (FABRIC-CLOSE1c18), only where it found one. On any other kind it is never written, kept or read.
+    /// found it, only where it found one. On any other kind it is never written, kept or read.
     /// </summary>
     internal static bool Carries(QuestOperationKind kind) => Names(kind) || kind == QuestOperationKind.Taken;
 
     /// <summary>
-    /// The kinds a <c>whileOpen</c> mark may carry: a decline (PAUSE1c), and a publication's rebind (FABRIC-CLOSE1c15). On any other
+    /// The kinds a <c>whileOpen</c> mark may carry: a decline, and a publication's rebind. On any other
     /// kind it is never written, kept or read.
     /// </summary>
     internal static bool JudgedOpen(QuestOperationKind kind) => kind is QuestOperationKind.Declined or QuestOperationKind.Rebound;
@@ -539,7 +539,7 @@ public sealed class QuestStore
         WriteAsync(tx => Operations.Of<QuestDismissOperation>().BringForwardAsync(tx, id, conflict, now, running), ct);
 
     /// <summary>
-    /// Delete an open quest (D95), judged against the replayed history inside the write, as every move
+    /// Delete an open quest, judged against the replayed history inside the write, as every move
     /// is: only an open quest goes. Whether anything outside this store stands on it — a session, a
     /// waiting quest — is the exchange's judgement, made before this is asked.
     /// </summary>

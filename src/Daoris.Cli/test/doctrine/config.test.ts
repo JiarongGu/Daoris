@@ -60,7 +60,7 @@ test('an absent lock reads as null, and lockIndex keys by target', () => {
 
 /**
  * What may leave this machine for a remote deployment is declared in the MANIFEST — tracked and
- * reviewed, because disclosure is the repository's call, not one person's local toggle (D47 §4).
+ * reviewed, because disclosure is the repository's call, not one person's local toggle.
  * Silence means local: the cost of the wrong default is asymmetric.
  */
 test('the remote declaration is silent by default and normalizes to booleans', () => {

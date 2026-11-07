@@ -3,12 +3,12 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The contract both knowledge stores keep, asserted against each (REV3 CLEAN1).
+/// The contract both knowledge stores keep, asserted against each.
 /// </summary>
 /// <remarks>
 /// Most of the suite runs on <see cref="InMemoryKnowledgeStore"/>, so wherever it is looser than the
-/// SQLite store a test passes on something production refuses. That is how a refresh that wrote one id
-/// twice passed every test and failed on the real index (REV3, service F4).
+/// SQLite store a test passes on something production refuses. A refresh that writes one id
+/// twice would pass every test and fail on the real index.
 /// </remarks>
 public sealed class KnowledgeStoreContractTests : IAsyncLifetime
 {
@@ -43,7 +43,7 @@ public sealed class KnowledgeStoreContractTests : IAsyncLifetime
     public Task The_sqlite_store_refuses_a_write_whose_generation_moved_and_writes_nothing_beside_it() =>
         A_write_whose_generation_moved_is_refused_and_writes_nothing(_sqlite);
 
-    /// <summary>KNOWCENTRAL2a: a write lands only on the generation its writer read, and what rides with it lands with it.</summary>
+    /// <summary>A write lands only on the generation its writer read, and what rides with it lands with it.</summary>
     private static async Task A_write_whose_generation_moved_is_refused_and_writes_nothing(IKnowledgeStore store)
     {
         var at = DateTimeOffset.Parse("2026-10-31T09:00:00Z");

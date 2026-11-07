@@ -1,6 +1,6 @@
 namespace Daoris.Knowledge;
 
-/// <summary>One thing the person said on an ask, verbatim (D133 §1).</summary>
+/// <summary>One thing the person said on an ask, verbatim.</summary>
 /// <param name="Kind">How they gave it.</param>
 /// <param name="Text">Their words, as given, trimmed at the ends only.</param>
 /// <param name="At">When they gave it.</param>

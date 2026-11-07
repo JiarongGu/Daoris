@@ -1,5 +1,5 @@
 /**
- * A tar writer, just enough to say what an archive holds (AGT2b). Written from the ustar layout, not
+ * A tar writer, just enough to say what an archive holds. Written from the ustar layout, not
  * from the reader, so the two can disagree — which is what a test of the reader needs.
  */
 

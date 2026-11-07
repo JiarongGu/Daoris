@@ -8,8 +8,8 @@ namespace Daoris.Knowledge;
 /// </summary>
 /// <remarks>
 /// 🔴 It keeps the SQLite store's contract, not a looser one: an id is unique across the index, and a
-/// replace that would repeat one is refused and changes nothing. Accepting it let a refresh that wrote
-/// one id twice pass every test and fail on the real index (REV3). <c>KnowledgeStoreContractTests</c>
+/// replace that would repeat one is refused and changes nothing. Accepting it would let a refresh that writes
+/// one id twice pass every test and fail on the real index. <c>KnowledgeStoreContractTests</c>
 /// asserts both stores against the same case.
 /// </remarks>
 public sealed class InMemoryKnowledgeStore : IKnowledgeStore
@@ -39,7 +39,7 @@ public sealed class InMemoryKnowledgeStore : IKnowledgeStore
                 if (!held.Add(entry.Id)) throw new InvalidOperationException($"UNIQUE constraint failed: entries.id ({entry.Id})");
             }
 
-            // Before anything here changes, so a failure there leaves this store as it was.
+            // Before anything here changes, so a failure there leaves this store unchanged.
             if (alongside is not null) await alongside(CancellationToken.None).ConfigureAwait(false);
             _byRepository[repository] = [.. entries];
             _readings[repository] = new IndexReading(repository, generation + 1, reading.Commit, reading.Signature, reading.Fed, reading.At);

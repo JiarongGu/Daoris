@@ -20,7 +20,7 @@ import {
   CLI_BIN, CLI_ENTRY, CLI_LAUNCHERS, CLI_PACKAGE, DRIVER_EXE, DRIVER_HOME, CONNECTOR_EXE, CONNECTOR_HOME, GIT_DOORS, HOST_EXE, HOST_HOME, OFFERED_PLUGINS, PIECE_START, PLUGIN_OFFERS, layGitDoors, layPieceStart,
   // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 } from '../../../tools/desktop-publish.mjs';
-// The protocol stub both rehearsals run (DEPLOY5): one copy, where the family rehearsal's used to be.
+// The protocol stub both rehearsals run: one copy.
 // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 import { ACP_STUB_AGENT } from '../../../tools/rehearsal-kit.mjs';
 
@@ -31,7 +31,7 @@ import { ACP_STUB_AGENT } from '../../../tools/rehearsal-kit.mjs';
  *
  * What is asserted here is the part of that gate which can be wrong while the gate stays green. Its
  * phases run a real publish and a real window and are their own evidence; its PREDICATES are not —
- * a transcript check that compared decoded strings would pass on exactly the bytes DEPLOY2 exists to
+ * a transcript check that compared decoded strings would pass on exactly the bytes the byte check exists to
  * catch, and nothing downstream could tell.
  */
 
@@ -39,7 +39,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = dirname(dirname(dirname(here)));
 
 /**
- * PLUG9 (d), D103: the gate's check on the install's offers, watched failing both ways — an offer the
+ * The gate's check on the install's offers, watched failing both ways — an offer the
  * install does not carry, and one installed under a home, which a publish must never do.
  */
 test('the offers check names an offer not carried and one installed, and passes on a sound install', () => {
@@ -67,8 +67,8 @@ test('the offers check names an offer not carried and one installed, and passes 
  * check that compares bytes sees the wrong bytes. Only the second can tell.
  *
  * The mangling is reproduced by its shape rather than by its codepage: decode UTF-8 bytes as a
- * single-byte page, re-encode as UTF-8. That is what .NET did with CP936 on the machine this was
- * found on, and what it does with any ANSI codepage that is not 65001.
+ * single-byte page, re-encode as UTF-8. That is what .NET does with any ANSI
+ * codepage that is not 65001.
  */
 test('a transcript check reads bytes, and mojibake is bytes it does not hold', () => {
   const line = 'stub: 道衍 — the unfolding of the way';
@@ -112,7 +112,7 @@ test('symbols and package doc files are strays, and the marker and the bundle ar
 });
 
 /**
- * WSSETUP2 (D124 §1.2): the gate reads the install's doctrine tool back off the published folder, and each
+ * The gate reads the install's doctrine tool back off the published folder, and each
  * thing the publish claims is a sentence when it is not so: a launcher missing, the package without its
  * entry, its dispatcher or its canon, the source tree where the packed artefact belongs, or a version that
  * is not the canon's.
@@ -149,13 +149,13 @@ test('the doctrine tool check names what an install lacks, and passes on a sound
 });
 
 /**
- * GITAUTH1b (D198 point 2): the publish lays the git doors out in `app/bin/`, the ssh door's publish whole and its executable again
+ * The publish lays the git doors out in `app/bin/`, the ssh door's publish whole and its executable again
  * as the remote helper, under the names `GitWiring` hands a start only where they are laid out; the gate names a door or their
  * library missing, and holds each door's answer to its own name.
  */
 test('the publish lays the git doors out under the names GitWiring hands, and the gate names what is missing', () => {
   const wiring = readText(driverFile('GitWiring.cs'));
-  // GITAUTH1c: the ssh door's name lives with Daoris's git file, which an Install file holds and the wiring names (TOOLS6).
+  // The ssh door's name lives with Daoris's git file, which an Install file holds and the wiring names.
   const sshDoor = wiring.includes('SshDoor = GitGlobalFile.SshDoor') ? readText(driverFile('GitGlobalFile.cs')) : wiring;
   assert.ok(sshDoor.includes(`SshDoor = "${GIT_DOORS[0]}"`), `GitWiring.SshDoor is not ${GIT_DOORS[0]}`);
   assert.ok(wiring.includes(`RemoteHelper = "${GIT_DOORS[1]}"`), `GitWiring.RemoteHelper is not ${GIT_DOORS[1]}`);
@@ -177,7 +177,7 @@ test('the publish lays the git doors out under the names GitWiring hands, and th
   fx.cleanup();
 });
 
-// D241 point 1: every publish lays all three doors, so no flag asks for them and no skip line says they were left out.
+// Every publish lays all three doors, so no flag asks for them and no skip line says they are left out.
 test('no publish flag asks for the git doors, and the move needs all three', () => {
   for (const file of ['tools/desktop-publish.mjs', 'tools/deployment-rehearsal.mjs', 'tools/family-rehearsal.mjs']) {
     assert.ok(!readText(join(repoRoot, file)).includes('--git-doors'), `${file} still names --git-doors`);
@@ -233,7 +233,7 @@ test('the daoris a shell found is the install’s only when the first one it lis
 
 /**
  * Git Bash is the `bash.exe` beside git, never whatever `bash` PATH finds first, which on Windows is usually
- * WSL's: the rule the terminal's shell list keeps (`TerminalShells`, D96), read here so the gate measures the
+ * WSL's: the rule the terminal's shell list keeps (`TerminalShells`), read here so the gate measures the
  * shell a terminal and a session would open. Three folders up from git covers `cmd\`, `bin\` and `mingw64\bin\`.
  */
 test('Git Bash is the bash beside git, up to three folders up, and none without git', () => {
@@ -256,8 +256,8 @@ test('Git Bash is the bash beside git, up to three folders up, and none without 
  * The masking agent, named.
  *
  * `ServiceHostLocator` walks up from the running binary to a workspace manifest and falls through to
- * the HTTP host's own build — a candidate that exists on every machine this had ever run on, which
- * is exactly why 2a was invisible until a deployed machine had no workspace beneath it. A deployed
+ * the HTTP host's own build — a candidate that exists on every machine this runs on, which
+ * is exactly why it stays invisible until a deployed machine has no workspace beneath it. A deployed
  * shell that ends up on that candidate has proven nothing about deployment, so the gate has to be
  * able to say which side of the line the host it found is on.
  */
@@ -290,7 +290,7 @@ test('the host’s home in an install is a path the locator actually looks in', 
 });
 
 /**
- * CONNECTOR1, the same counterpart set one host over: the publish lays the connector under `app/`, and
+ * The same counterpart set one host over: the publish lays the connector under `app/`, and
  * `KnowledgeConnector.Candidates` must look there before the home's `bin/`, or `--service` publishes a connector
  * nothing hands out and every session goes on being handed the home's older copy.
  */
@@ -306,7 +306,7 @@ test('the connector’s home in an install is a path KnowledgeConnector looks in
 });
 
 /**
- * Phase 7 reads which connector the conversation was handed from what the agent itself said on `session/new`: the
+ * Phase 7 reads which connector the conversation is handed from what the agent itself said on `session/new`: the
  * protocol stub says each server's command, and this reads the knowledge server's back. Nothing said is null, never
  * a guess at a neighbouring line.
  */
@@ -324,8 +324,8 @@ test('the connector a session was handed is read from the stub’s own line, and
 });
 
 /**
- * The check on what was read: the install's own connector, by resolved path and in Windows' case, and so never the
- * home's `bin/` copy the gate plants beside it, which is what every session on an install was handed before.
+ * The check on what is read: the install's own connector, by resolved path and in Windows' case, and so never the
+ * home's `bin/` copy the gate plants beside it, which is the older copy a session would otherwise be handed.
  */
 test('the connector handed is the install’s only when it is the one under its app/, and the home’s copy never is', () => {
   const install = join(repoRoot, '_fixtures', 'x', 'install');
@@ -340,7 +340,7 @@ test('the connector handed is the install’s only when it is the one under its 
 
 /**
  * Phase 6 counts the example plugin's hook processes before and after the shell closes. Matched on
- * the script's name alone, it counted the same plugin running ANYWHERE on the machine (REV3) — another
+ * the script's name alone, it counted the same plugin running ANYWHERE on the machine — another
  * rehearsal's, or the owner's installed Daoris — and called those this shell's orphans.
  */
 test('a hook process is this install’s only when it was started from under its scratch', () => {
@@ -358,7 +358,7 @@ test('a hook process is this install’s only when it was started from under its
 });
 
 // ---------------------------------------------------------------------------------------------
-// DEPLOY5: a conversation open when the installed shell closes. A chat starts over the bridge, which
+// A conversation open when the installed shell closes. A chat starts over the bridge, which
 // is the page's alone, so the gate calls it from inside the page over the debug port; and the record
 // it reads afterwards has two `stopped` notes it could hold, only one of which is the close's.
 
@@ -474,7 +474,7 @@ test('a record is concluded by the close only when it carries the close’s note
 });
 
 /**
- * UPDATE1 (D139 §5, §6): the gate reads how the launcher's swap ended from its journal, and only a phase it knows; a journal
+ * The gate reads how the launcher's swap ended from its journal, and only a phase it knows; a journal
  * that is missing or torn is no outcome, so the check waits rather than passing on it.
  */
 test('the swap’s journal is read for its phase, reason and confirmation, and nothing else counts as one', () => {
@@ -503,8 +503,8 @@ test('the machine log is read by event, for each line’s data, skipping what do
 
 /**
  * The rehearsal's roll-back stages the live build again with its application replaced by a program that exits at once,
- * and a manifest that agrees with it, so the check passes and the start fails: the case D139 §6 rolls back. Its refusal
- * stages the live build with one file changed after the manifest was written, so the check refuses it.
+ * and a manifest that agrees with it, so the check passes and the start fails: the case that rolls back. Its refusal
+ * stages the live build with one file changed after the manifest is written, so the check refuses it.
  */
 test('a build staged to fail its start passes the check’s shape, and one staged to fail the check does not', () => {
   const fixture = makeFixture('deploy-update');
@@ -623,9 +623,9 @@ test('the protocol stub both rehearsals run holds a conversation open until its 
 });
 
 /**
- * CONNECTOR1: the stub says the command of each server it was offered on `session/new`, beside the names it already
- * said, so phase 7 can read back which connector binary the deployed shell handed a session. The names' line stays as
- * it was: the family rehearsal reads it.
+ * The stub says the command of each server it is offered on `session/new`, beside the names it already
+ * says, so phase 7 can read back which connector binary the deployed shell handed a session. The names' line stays
+ * unchanged: the family rehearsal reads it.
  */
 test('the protocol stub says the command of each server it was offered, which is what the gate reads back', async () => {
   const fx = makeFixture('deployment-rehearsal-acp-servers');

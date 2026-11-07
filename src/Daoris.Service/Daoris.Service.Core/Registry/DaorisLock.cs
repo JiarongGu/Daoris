@@ -13,7 +13,7 @@ namespace Daoris.Knowledge;
 /// A repository that has not adopted daoris has no lock, and everything in it is local — which is
 /// correct rather than a special case, and is why an absent lock is not an error.
 ///
-/// 🔴 <b>The lock, not the manifest, says where the files are</b> (D117 §5.1, LAYOUT4). Since the agents
+/// 🔴 <b>The lock, not the manifest, says where the files are</b>. Since the agents
 /// layout the lock carries the descriptor and root its entries were written under, and the mirrors it
 /// wrote. A twin of the CLI's <c>lockLayout</c> (<c>src/Daoris.Cli/src/layout/layout.ts</c>), which shares no
 /// code with this; <see cref="RepositoryLayout"/> names the rest of the twin and its test table.
@@ -39,7 +39,7 @@ public sealed class DaorisLock
 
     /// <summary>
     /// The descriptor the lock's entries were written under: <c>claude-code</c> when the lock names
-    /// none, the only layout written before D117. Null when there is no lock, or it is read as none.
+    /// none, the only layout older locks carry. Null when there is no lock, or it is read as none.
     /// </summary>
     public string? Harness { get; }
 
@@ -52,7 +52,7 @@ public sealed class DaorisLock
     public string? Target { get; }
 
     /// <summary>
-    /// One canonical document that lives as a SPAN inside a file rather than as a file (D59).
+    /// One canonical document that lives as a SPAN inside a file rather than as a file.
     /// </summary>
     /// <param name="Source">
     /// <c>pack/source</c>, exactly as the provenance line inside the region spells it — which is how
@@ -94,7 +94,7 @@ public sealed class DaorisLock
                 return Empty;
             }
 
-            // Lock targets are relative to the root the lock was written under. A lock on the older
+            // Lock targets are relative to the root the lock is written under. A lock on the older
             // layout does not name it, so the manifest has to be read for it (the CLI's lockLayout).
             if (Layout(document.RootElement, repositoryRoot) is not { } layout) return Empty;
             var (harness, target) = layout;
@@ -105,7 +105,7 @@ public sealed class DaorisLock
                 foreach (var mirror in written.EnumerateArray())
                 {
                     // `path` is repository-relative: a mirror is written outside the target, for the one
-                    // agent that does not read there (D117 §3.2).
+                    // agent that does not read there.
                     if (mirror.TryGetProperty("path", out var path) && path.GetString() is { Length: > 0 } copy)
                     {
                         mirrors.Add(Normalize(copy));
@@ -121,7 +121,7 @@ public sealed class DaorisLock
                 if (value.GetString() is not { Length: > 0 } relative) continue;
                 paths.Add(Normalize($"{target}/{relative}"));
 
-                // `in` says this entry is a span inside a file rather than a file of its own (D59),
+                // `in` says this entry is a span inside a file rather than a file of its own,
                 // and the file is repository-relative — NOT relative to the target directory, because
                 // the file belongs to the repository rather than to daoris.
                 if (!entry.TryGetProperty("in", out var within)) continue;
@@ -145,7 +145,7 @@ public sealed class DaorisLock
                 target,
                 mirrors);
         }
-        // Wrong shape as well as wrong syntax (REV3): an element read on a number or an array throws
+        // Wrong shape as well as wrong syntax: an element read on a number or an array throws
         // InvalidOperationException, and a lock like that failed the whole refresh.
         catch (Exception error) when (error is JsonException or InvalidOperationException)
         {
@@ -153,19 +153,19 @@ public sealed class DaorisLock
         }
     }
 
-    /// <summary>Whether a repository-relative path was materialized by daoris.</summary>
+    /// <summary>Whether a repository-relative path is materialized by daoris.</summary>
     public Provenance ProvenanceOf(string relativePath) =>
         _canonicalPaths.Contains(Normalize(relativePath)) ? Provenance.Canonical : Provenance.Local;
 
     /// <summary>
     /// Whether a repository-relative path is a mirror the lock records: a copy of a skill for the one
-    /// agent that reads only its own folder (D117 §3.2). Never indexed, so a search finds each skill
+    /// agent that reads only its own folder. Never indexed, so a search finds each skill
     /// once per repository, at its source.
     /// </summary>
     public bool IsMirror(string relativePath) => _mirrors.Contains(Normalize(relativePath));
 
     /// <summary>
-    /// The descriptor and root a lock was written under, the CLI's <c>lockLayout</c> row for row; null
+    /// The descriptor and root a lock is written under, the CLI's <c>lockLayout</c> row for row; null
     /// for a lock this reads as none.
     /// </summary>
     /// <remarks>

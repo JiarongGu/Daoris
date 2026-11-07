@@ -7,13 +7,13 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// KSCHEMA1: an older build never drops a newer index, and never refuses the rest of the store. Every host on a
-/// machine opens the one file, and a connector an update left behind is an older build. It read any version but its
-/// own as one to rebuild, so it dropped the newer index, stamped its own older version and forgot every repository's
-/// fed commit, and the newer host failed every knowledge route. A store whose index is one version ahead now opens
-/// with nothing dropped or stamped: its quests, sessions, asks, keys and registry work, and every operation on the
+/// An older build never drops a newer index, and never refuses the rest of the store. Every host on a
+/// machine opens the one file, and a connector an update left behind is an older build. Reading any version but its
+/// own as one to rebuild would drop the newer index, stamp its own older version and forget every repository's
+/// fed commit, and the newer host would fail every knowledge route. A store whose index is one version ahead
+/// opens with nothing dropped or stamped: its quests, sessions, asks, keys and registry work, and every operation on the
 /// index answers the refusal, naming both versions. Refusing the whole store would leave an install an update rolled
-/// back (D139) with no host at all.
+/// back with no host at all.
 /// </summary>
 public sealed class NewerIndexTests : IDisposable
 {
@@ -65,7 +65,7 @@ public sealed class NewerIndexTests : IDisposable
             Assert.Contains($"its schema is version {Ahead}, and this build's is {SqliteKnowledgeStore.SchemaVersion}", refusal.Message);
             Assert.Contains("quests, sessions and asks work as before", refusal.Message);
             Assert.Contains("Update this Daoris", refusal.Message);
-            // A door answers it, and a browser or a keyed caller is never told a machine path (D46, D47 §4).
+            // A door answers it, and a browser or a keyed caller is never told a machine path.
             Assert.DoesNotContain(_root, refusal.Message, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain(refusal.Build, refusal.Message, StringComparison.OrdinalIgnoreCase);
 
@@ -86,7 +86,7 @@ public sealed class NewerIndexTests : IDisposable
     /// <summary>
     /// The whole composition, as each host opens it: it starts, and what is not derived works as it does over an index
     /// of this build's own. Each operation on the index refuses, the index's tables and the fed commit stay as they were,
-    /// and nothing forgets which commit the index holds (REV3's rule is for a rebuild, and nothing was rebuilt).
+    /// and nothing forgets which commit the index holds (nothing is rebuilt).
     /// </summary>
     [Fact]
     public async Task A_composed_service_over_a_newer_index_starts_and_its_records_work_while_its_index_refuses()
@@ -342,7 +342,7 @@ public sealed class NewerIndexTests : IDisposable
             Assert.DoesNotContain("knowledge.db", refused, StringComparison.Ordinal);
             Assert.DoesNotContain(Path.GetFileName(_root), refused, StringComparison.Ordinal);
 
-            // TESTWAIT2: stderr is read asynchronously, so its line is waited for, not assumed with the log's.
+            // Stderr is read asynchronously, so its line is waited for, not assumed with the log's.
             string error = "";
             for (var attempt = 0; attempt < Poll.Patience.TotalMilliseconds / 100; attempt++)
             {

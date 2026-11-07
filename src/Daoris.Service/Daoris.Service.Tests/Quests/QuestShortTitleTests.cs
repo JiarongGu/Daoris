@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// SESSUX1j (D126 §9, the session management design §6): a quest carries a short title, the few words that tell it apart
+/// A quest carries a short title, the few words that tell it apart
 /// in a list. Whoever publishes it may give one, at most 40 characters on one line, kept with the quest and travelling in
 /// its publish operation. Where none is given, its name is derived from its own words, never cut mid-word, a note line
 /// skipped and a ticket key leading, and never written into the record as the publisher's.
@@ -125,7 +125,7 @@ public sealed class QuestShortTitleTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// SHORTFIT1: a verb and then a branch name too long to fit whole named the quest by the verb alone (*Create…*). Where
+    /// A verb and then a branch name too long to fit whole would name the quest by the verb alone (*Create…*). Where
     /// a name would keep a single word, the next is cut by its characters, at the last joiner that fits, and never ends on
     /// the joiner.
     /// </summary>
@@ -141,7 +141,7 @@ public sealed class QuestShortTitleTests : IAsyncLifetime
         Assert.True(name.Length <= QuestTitles.MaxShort);
     }
 
-    /// <summary>SHORTFIT1: with no joiner inside the room, the next word is cut by its characters, up to the width.</summary>
+    /// <summary>With no joiner inside the room, the next word is cut by its characters, up to the width.</summary>
     [Theory]
     [InlineData("Rename TheConfigurationLoaderFactoryProviderService everywhere")]
     [InlineData("Rename TheConfigurationLoaderFactoryProvider-Service everywhere")]

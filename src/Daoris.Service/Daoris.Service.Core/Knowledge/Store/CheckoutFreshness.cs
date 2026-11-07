@@ -1,8 +1,8 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Whether the one checkout a knowledge server reads has moved since it was read, by a watch of its git refs and its
-/// knowledge folders rather than a timer (FABRIC-EVENT6; the events design §A1, §A4.1).
+/// Whether the one checkout a knowledge server reads has moved since its last read, by a watch of its git refs and its
+/// knowledge folders rather than a timer.
 /// </summary>
 /// <remarks>
 /// <para><b>A hint is a wake, never a fact.</b> A watcher marks the reading stale and says nothing of what changed; the
@@ -10,11 +10,11 @@ namespace Daoris.Knowledge;
 /// of service, so the server falls back to its minute (<see cref="ServiceOptions.CheckoutRereadAfter"/>) until the process
 /// restarts. A watch never marks fresh.</para>
 ///
-/// <para><b>The deadline is the reconciliation behind it</b> (§A3): a watcher fails quietly as well as loudly, and a
+/// <para><b>The deadline is the reconciliation behind it</b>: a watcher fails quietly as well as loudly, and a
 /// folder that no watcher could open moves unheard. A watched reading is therefore read again once it is
-/// <see cref="Deadline"/> old, whatever was heard.</para>
+/// <see cref="Deadline"/> old, whatever is heard.</para>
 ///
-/// <para><b>A folder made later is watched when it is made</b> (FABRIC-EVENT6b): a knowledge folder or a declared room's
+/// <para><b>A folder made later is watched when it is made</b>: a knowledge folder or a declared room's
 /// folder that is not there is awaited in the deepest folder of its path that is, and opened when that hears it made; a
 /// folder made inside one watched in parts is opened the same way. Each declared room (<see cref="RepositoryLayout.Rooms"/>)
 /// outside the knowledge folders is watched for its <c>AGENTS.md</c> alone, and the rooms and roots are read again when the
@@ -26,7 +26,7 @@ namespace Daoris.Knowledge;
 /// small watcher over the same <see cref="FileSystemWatcher"/>, with the same rules: a hint is a wake, an overflow or an
 /// error is never taken for fresh.</para>
 ///
-/// <para><b>No watch reaches what git ignores</b> (KNOWWALK1): a watched folder with an ignored folder in it is watched in
+/// <para><b>No watch reaches what git ignores</b>: a watched folder with an ignored folder in it is watched in
 /// parts around it (<see cref="IgnoredPaths"/>), so <c>.claude/worktrees/</c>, every agent's checkout, wakes nothing.</para>
 ///
 /// <para>Its own writes wake nothing: a refresh only reads the checkout.</para>
@@ -36,12 +36,12 @@ public sealed class CheckoutFreshness : IDisposable
     /// <summary>
     /// How old a watched reading may be before a search reads it again whatever the watch heard. Five minutes: the
     /// lower end of the design's range, since a silenced watcher costs a stale answer for at most this long and a read is
-    /// one to two seconds (this repository's 7,724 entries, measured under ORIENT1c) paid at most once per window by the search
+    /// one to two seconds (this repository's 7,724 entries, measured) paid at most once per window by the search
     /// that finds it due.
     /// </summary>
     public static readonly TimeSpan Deadline = TimeSpan.FromMinutes(5);
 
-    /// <summary>A room's instructions, the one file of its folder the scan reads (D117 §2.2).</summary>
+    /// <summary>A room's instructions, the one file of its folder the scan reads.</summary>
     private const string RoomInstructions = "AGENTS.md";
 
     /// <summary>A path's case as the disk compares it: Windows and macOS fold it, Linux does not.</summary>
@@ -88,19 +88,19 @@ public sealed class CheckoutFreshness : IDisposable
         }
     }
 
-    /// <summary>Whether something moved under the watch since the reading was last taken.</summary>
+    /// <summary>Whether something moved under the watch since the reading is last taken.</summary>
     public bool IsStale => Volatile.Read(ref _stale) != 0;
 
     /// <summary>Says the checkout moved.</summary>
     public void MarkStale() => Volatile.Write(ref _stale, 1);
 
     /// <summary>
-    /// Takes the mark, clearing it, and says whether it was set. Taken when a read BEGINS, so a change heard during the
+    /// Takes the mark, clearing it, and says whether it is set. Taken when a read BEGINS, so a change heard during the
     /// read marks the next one.
     /// </summary>
     public bool Take() => Interlocked.Exchange(ref _stale, 0) != 0;
 
-    /// <summary>A watcher's error: stale at once, and out of service unless it was only an overflow, which loses events and not the watcher.</summary>
+    /// <summary>A watcher's error: stale at once, and out of service unless it is only an overflow, which loses events and not the watcher.</summary>
     internal void Failed(Exception error)
     {
         MarkStale();
@@ -112,7 +112,7 @@ public sealed class CheckoutFreshness : IDisposable
     {
         var root = _checkout!;
         // The checkout's own top: its AGENTS.md, README, backlog and the lock that says what it owns, not every file there;
-        // and a knowledge folder, or the first folder of a room's path, made there after the watch opened (FABRIC-EVENT6b).
+        // and a knowledge folder, or the first folder of a room's path, made there after the watch opened.
         OpenFolder(
             root,
             recursive: false,
@@ -134,7 +134,7 @@ public sealed class CheckoutFreshness : IDisposable
 
     /// <summary>
     /// Opens a watch for each knowledge folder and each declared room that has none and is there, and awaits each that is
-    /// not (FABRIC-EVENT6b). Run at the start, when a folder awaited is heard made, and when the checkout's
+    /// not. Run at the start, when a folder awaited is heard made, and when the checkout's
     /// <c>daoris.json</c> or <c>daoris.lock</c> moves, since they say which roots and rooms the scan reads.
     /// </summary>
     private void Reconcile()
@@ -154,7 +154,7 @@ public sealed class CheckoutFreshness : IDisposable
 
             if (late.Count > 0)
             {
-                // What git ignores in them, asked once for the folders opened together (KNOWWALK1): `.claude/worktrees/` is
+                // What git ignores in them, asked once for the folders opened together: `.claude/worktrees/` is
                 // every agent's checkout. At the start that is every folder there; later, the one just made.
                 var ignored = IgnoredPaths.Of(root, [.. late]);
                 foreach (var tree in late) OpenTree(root, tree, ignored);
@@ -180,7 +180,7 @@ public sealed class CheckoutFreshness : IDisposable
     }
 
     /// <summary>
-    /// Reconciles after a folder was heard made or the declarations moved, then marks the reading stale again: what was written
+    /// Reconciles after a folder is heard made or the declarations moved, then marks the reading stale again: what is written
     /// in a new folder before its watch opened is read at the next search, not at the deadline.
     /// </summary>
     private void Reconciled()
@@ -248,7 +248,7 @@ public sealed class CheckoutFreshness : IDisposable
         lock (_gate) return _awaited.TryGetValue(folder, out var names) && names.Contains(name);
     }
 
-    /// <summary>Whether a folder was opened for this purpose already.</summary>
+    /// <summary>Whether a folder is opened for this purpose already.</summary>
     private bool Opened(string purpose, string folder)
     {
         lock (_gate) return _opened.Contains($"{purpose}:{folder}");
@@ -264,12 +264,11 @@ public sealed class CheckoutFreshness : IDisposable
         Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
 
     /// <summary>
-    /// Watches a folder and all of it git does not ignore (KNOWWALK1): one watch of the whole where nothing within is
+    /// Watches a folder and all of it git does not ignore: one watch of the whole where nothing within is
     /// ignored, else this folder alone, hearing none of its ignored entries, and each folder in it git does not ignore, the
-    /// same way. A recursive watch hears every write beneath it, and under <c>.claude/</c> that was every agent's build and
+    /// same way. A recursive watch hears every write beneath it, and under <c>.claude/</c> that is every agent's build and
     /// install in <c>.claude/worktrees/</c>, each a reading marked stale for nothing. A folder made later, inside a folder
-    /// watched alone, is heard being made and watched the same way from then (FABRIC-EVENT6b), by git's answer as it was
-    /// asked: a folder git would ignore that is made later inside one watched alone is heard, for nothing, until the next start.
+    /// watched alone, is heard being made and watched the same way from then, by git's answer as asked: a folder git would ignore that is made later inside one watched alone is heard, for nothing, until the next start.
     /// </summary>
     /// <param name="relative">The folder, repository-relative with forward slashes.</param>
     private void OpenTree(string root, string relative, IgnoredPaths ignored)

@@ -3,7 +3,7 @@ using static Daoris.Knowledge.HelpProposalFile;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The <c>session</c> kind's writer (SESSUX1h2a, D161's SESSUX1h1 note): sessions archived or unarchived, by id, or every
+/// The <c>session</c> kind's writer: sessions archived or unarchived, by id, or every
 /// ended one archived, as the terminal's <c>sessions archive</c> does.
 /// </summary>
 internal sealed class HelpSessionProposalWriter(HelpProposalFile file)
@@ -15,7 +15,7 @@ internal sealed class HelpSessionProposalWriter(HelpProposalFile file)
     /// </summary>
     /// <param name="sessions">The session ids, comma-separated; exactly one of this or <paramref name="ended"/>.</param>
     /// <param name="helper">
-    /// The person's helper doors (COWORKUX1): <c>helper</c> asks one session's helper a question, naming the answered ask it asks
+    /// The person's helper doors: <c>helper</c> asks one session's helper a question, naming the answered ask it asks
     /// again after and whether its answer is the person's, and <c>pass</c> sends an answer kept for the person to the session that
     /// asked; the sessions then name exactly one. Null for archive and unarchive.
     /// </param>
@@ -74,7 +74,7 @@ internal sealed class HelpSessionProposalWriter(HelpProposalFile file)
             : null;
     }
 
-    // A session is named by its id; a teammate's is `<origin>/<id>` (SYNC4), the one form with a slash that §5.2 lets be archived
+    // A session is named by its id; a teammate's is `<origin>/<id>`, the one form with a slash that may be archived
     // here: one slash, a word each side, no drive, no backslash, not rooted. Anything else is a path.
     private static bool IsSessionId(string id) =>
         id.IndexOf('\\') < 0 && !id.Contains(':') && !Path.IsPathRooted(id) && id.Split('/') is { Length: <= 2 } parts

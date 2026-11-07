@@ -5,7 +5,7 @@ import { readCanon, PACK_API } from '../../src/doctrine/canon.ts';
 import { DaorisError } from '../../src/platform/errors.ts';
 
 /**
- * 🔴 **A pack says which canon it needs, or it does not say anything** (PLUG1).
+ * 🔴 **A pack says which canon it needs, or it does not say anything**.
  *
  * Taken from a neighbouring application's plugin manifests, which declare an integer `apiVersion`
  * the host reads **before loading anything**. `pack.json` carried a name and a description, so a

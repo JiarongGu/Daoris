@@ -4,15 +4,15 @@ using static Daoris.Knowledge.JsonFields;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Quest operations on the wire (D68, sync design §8) — written once, here, and read by both sides: the
+/// Quest operations on the wire — written once, here, and read by both sides: the
 /// remote's doors and the machine's client that speaks to them. Two hands rolling the same shape is two
 /// shapes that drift.
 /// </summary>
 /// <remarks>
 /// <para>Machine and sequence name an operation anywhere; <c>number</c> is where the remote placed it,
 /// absent while it is pending. A publish carries its ask and NO workspace: the receiving side files it
-/// by its own wiring (SYNC0a). Files travel by name — there is no field for bytes, a root or a
-/// transcript. Absent, not policed (D47 §4).</para>
+/// by its own wiring. Files travel by name — there is no field for bytes, a root or a
+/// transcript. Absent, not policed.</para>
 ///
 /// <para>Hand-written rather than reflected, for the reason every JSON shape in Core is: nothing here may
 /// quietly stop working under AOT.</para>
@@ -67,7 +67,7 @@ public static class QuestWire
 
     /// <summary>A push: what is pending, rebased on <paramref name="base"/>.</summary>
     /// <param name="declares">
-    /// The pushing machine, declaring that its build knows a bound quest (FABRIC-CLOSE1i): <c>machine</c> and <c>closure: true</c> beside the
+    /// The pushing machine, declaring that its build knows a bound quest: <c>machine</c> and <c>closure: true</c> beside the
     /// operations. None declares nothing, as a build before it pushes, and a remote before it reads the push as it always did.
     /// </param>
     public static string Push(long @base, IReadOnlyList<QuestOperation> operations, string? declares = null) => Written(writer =>
@@ -96,7 +96,7 @@ public static class QuestWire
     }
 
     /// <summary>
-    /// The machine a push declares knows a bound quest (FABRIC-CLOSE1i), or null where it declares none: no <c>machine</c>, or a
+    /// The machine a push declares knows a bound quest, or null where it declares none: no <c>machine</c>, or a
     /// <c>closure</c> that is not true, as a build before it pushes.
     /// </summary>
     public static string? Declares(string json) =>
@@ -138,7 +138,7 @@ public static class QuestWire
     });
 
     /// <summary>
-    /// The remote's answer to a person's retirement of a machine (FABRIC-CLOSE1i2): whether it retired one, false where it had heard
+    /// The remote's answer to a person's retirement of a machine: whether it retired one, false where it had heard
     /// nothing from it, and the handshake as it stands after it.
     /// </summary>
     public static string Retired(bool retired, QuestClosure closure) => Written(writer =>
@@ -156,7 +156,7 @@ public static class QuestWire
             : null;
 
     /// <summary>
-    /// The remote's handshake (FABRIC-CLOSE1i), beside a page or a push's answer: <c>closure: { all, undeclared }</c>. Only where the remote
+    /// The remote's handshake, beside a page or a push's answer: <c>closure: { all, undeclared }</c>. Only where the remote
     /// answers it, so a remote's answer without it crosses exactly as it did.
     /// </summary>
     private static void WriteClosure(Utf8JsonWriter writer, QuestClosure? closure)
@@ -224,40 +224,40 @@ public static class QuestWire
         writer.WriteString("kind", operation.Kind.ToString().ToLowerInvariant());
         writer.WriteString("at", Moments.Write(operation.At));
         if (operation.Note is not null) writer.WriteString("note", operation.Note);
-        // Only beside a note written with them (QUESTCLOSE1b1): an operation without crosses exactly as it did, and an older
+        // Only beside a note written with them: an operation without crosses exactly as it did, and an older
         // build reads the note alone, as it always did.
         QuestRecordCodec.WriteNoteParts(writer, operation.Note, operation.NoteParts);
-        // Only when set, and only on a decline (PAUSE1c) or a publication's rebind (FABRIC-CLOSE1c15): a plain one crosses exactly
+        // Only when set, and only on a decline or a publication's rebind: a plain one crosses exactly
         // as it did, and an older build reads a flagged one as a plain one.
         if (operation.WhileOpen && QuestStore.JudgedOpen(operation.Kind)) writer.WriteBoolean("whileOpen", true);
-        // Only when it answers some (DRIFT1d): a done on a quest with none crosses exactly as it did.
+        // Only when it answers some: a done on a quest with none crosses exactly as it did.
         if (operation.Answers is { Count: > 0 } answers)
         {
             writer.WritePropertyName("answers");
             QuestRecordCodec.WriteAnswers(writer, answers);
         }
 
-        // A graph's close's provenance (FABRIC-CLOSE1a), only on its done: every other done crosses exactly as it did, and an
+        // A graph's close's provenance, only on its done: every other done crosses exactly as it did, and an
         // older build reads the done without it.
         if (operation is { Kind: QuestOperationKind.Done, Close: { } close }) QuestRecordCodec.WriteClose(writer, close);
 
-        // The submission a reopen or a rebind names (FABRIC-CLOSE1c), and the source a take found (FABRIC-CLOSE1c18), on those kinds alone:
+        // The submission a reopen or a rebind names, and the source a take found, on those kinds alone:
         // a take that found none crosses exactly as it did, and an older build reads a take without it.
         if (QuestStore.Carries(operation.Kind) && operation.Submission is { } submission) QuestRecordCodec.WriteRef(writer, "submission", submission);
 
-        // The session that said a ready (FABRIC-CLOSE1c4), or wrote a done's or a decline's handback (HANDBACK1), on those kinds alone and
+        // The session that said a ready, or wrote a done's or a decline's handback, on those kinds alone and
         // only where one said it: every other operation crosses exactly as it did, and an older build reads each without it.
         if (QuestStore.KeepsSession(operation.Kind) && operation.Session is { } session) writer.WriteString("session", session);
 
-        // An evidenced operation's verdict (EVID1a): names and codes only; its when and machine are the operation's.
+        // An evidenced operation's verdict: names and codes only; its when and machine are the operation's.
         if (operation is { Kind: QuestOperationKind.Evidenced, Evidence: { } verdict })
         {
             writer.WritePropertyName("evidence");
             verdict.Write(writer);
         }
 
-        // A set-up and a review's verdict (REVIEWENV1b). A local set-up crosses without its address: its tab is on the
-        // machine that showed it (the review environment design §3.5).
+        // A set-up and a review's verdict. A local set-up crosses without its address: its tab is on the
+        // machine that showed it.
         if (operation is { Kind: QuestOperationKind.SetUp, SetUp: { } setUp })
         {
             writer.WritePropertyName("setUp");
@@ -270,7 +270,7 @@ public static class QuestWire
             Reviews.Write(writer, review);
         }
 
-        // The person's workflow choice (WORKFLOW1e2), on a choice alone.
+        // The person's workflow choice, on a choice alone.
         if (operation is { Kind: QuestOperationKind.Chosen, Choice: { } choice })
         {
             writer.WritePropertyName("choice");
@@ -278,7 +278,7 @@ public static class QuestWire
         }
 
         if (operation.Attempted is { } attempted) writer.WriteString("attempted", attempted.ToString());
-        // Only when set, and only on a conflict (FABRIC-CLOSE1c22): every other conflict crosses exactly as it did, and an older build
+        // Only when set, and only on a conflict: every other conflict crosses exactly as it did, and an older build
         // reads a marked one as plain.
         if (operation is { Kind: QuestOperationKind.Conflict, LostToTheReopen: true }) writer.WriteBoolean("lostToTheReopen", true);
         if (operation.Dismisses is { } named)
@@ -289,8 +289,8 @@ public static class QuestWire
             writer.WriteEndObject();
         }
 
-        // Only when set, and only on a dismissal (SYNCMERGE1a): a plain one crosses exactly as it did, and an older build reads a marked
-        // one as plain, so a mixed family degrades to the conflict dismissed, with no push refused (D178 point 5).
+        // Only when set, and only on a dismissal: a plain one crosses exactly as it did, and an older build reads a marked
+        // one as plain, so a mixed family degrades to the conflict dismissed, with no push refused.
         if (operation is { Kind: QuestOperationKind.Dismissed, Forward: { } forward }) QuestRecordCodec.WriteRef(writer, "forward", forward);
         if (operation.Published is { } asked)
         {
@@ -301,7 +301,7 @@ public static class QuestWire
             writer.WriteString("body", asked.Body);
             if (asked.Parent is not null) writer.WriteString("parent", asked.Parent);
             if (asked.PublishedBy is not null) writer.WriteString("publishedBy", asked.PublishedBy);
-            // Only when it names some (D115 §2.2): an older build reads a quest with lanes as a quest to
+            // Only when it names some: an older build reads a quest with lanes as a quest to
             // the whole repository, and a quest to the whole repository crosses exactly as it did.
             if (asked.Lanes.Count > 0)
             {
@@ -310,22 +310,22 @@ public static class QuestWire
                 writer.WriteEndArray();
             }
 
-            // Only when it names some (DRIFT1c): a quest with none crosses exactly as it did, and an older
-            // build reads one with them as the quest it always was.
+            // Only when it names some: a quest with none crosses exactly as it did, and an older
+            // build reads one with them as the quest it always is.
             if (asked.Requirements.Count > 0)
             {
                 writer.WritePropertyName("requirements");
                 QuestRecordCodec.WriteRequirements(writer, asked.Requirements);
             }
 
-            // Only when its publisher gave one (SESSUX1j): an older build reads the quest as it always did, named by its title.
+            // Only when its publisher gave one: an older build reads the quest as it always did, named by its title.
             if (asked.Short is not null) writer.WriteString("short", asked.Short);
 
-            // Only when marked (FOUNDATION1x): an unmarked quest crosses exactly as it did, and an older build reads a marked one
+            // Only when marked: an unmarked quest crosses exactly as it did, and an older build reads a marked one
             // as unweighted, which starts it on Build's order.
             if (asked.Weight is not null) writer.WriteString("weight", asked.Weight);
 
-            // Only when it declares some (INTEGRATE1l): a quest declaring none crosses exactly as it did, and an older build reads one
+            // Only when it declares some: a quest declaring none crosses exactly as it did, and an older build reads one
             // that declares some as declaring none, which a start there compares by its branch's changes alone.
             if (asked.Paths.Count > 0)
             {
@@ -334,12 +334,12 @@ public static class QuestWire
                 writer.WriteEndArray();
             }
 
-            // Only on a workflow request's publish (INTEGRATE1p): every other quest crosses exactly as it did. The key is part of the id, so an
+            // Only on a workflow request's publish: every other quest crosses exactly as it did. The key is part of the id, so an
             // older build that reads none keeps the quest under that id and says no run asked it; it publishes no request of its own.
             if (asked.Request is not null) writer.WriteString("request", asked.Request);
 
-            // Only when set (REVIEWENV1b): a quest that chose nothing and is no set-up step crosses exactly as it did, and an
-            // older build reads one as the quest it always was.
+            // Only when set: a quest that chose nothing and is no set-up step crosses exactly as it did, and an
+            // older build reads one as the quest it always is.
             if (asked.Review is { } chosen)
             {
                 writer.WritePropertyName("review");
@@ -348,7 +348,7 @@ public static class QuestWire
 
             if (asked.SetUpIn is not null) writer.WriteString("setUpIn", asked.SetUpIn);
 
-            // Only on a step a submission published (FABRIC-CLOSE1c): every other quest crosses exactly as it did.
+            // Only on a step a submission published: every other quest crosses exactly as it did.
             if (asked.GrewFrom is { } grew) QuestRecordCodec.WriteRef(writer, "grewFrom", grew);
 
             writer.WriteStartArray("links");
@@ -435,8 +435,8 @@ public static class QuestWire
             dismisses = new QuestOperationRef(conflictMachine, conflictSequence);
         }
 
-        // The take a dismissal brought forward (SYNCMERGE1a), where it says one. One present and not whole makes the dismissal half of
-        // one: read as plain, it would settle the conflict wherever it landed, where the take it was made with lost as well.
+        // The take a dismissal brought forward, where it says one. One present and not whole makes the dismissal half of
+        // one: read as plain, it would settle the conflict wherever it landed, where the take it is made with lost as well.
         QuestOperationRef? forward = null;
         if (kind == QuestOperationKind.Dismissed && item.TryGetProperty("forward", out var brought)
             && (forward = QuestRecordCodec.ReadRef(brought)) is null)
@@ -474,7 +474,7 @@ public static class QuestWire
                     return null;
                 }
 
-                // A set-up step's environment that is not one, production above all, is half a step (REVIEWENV1b).
+                // A set-up step's environment that is not one, production above all, is half a step.
                 var stepSetUpIn = Text(step, "setUpIn");
                 if ((step.TryGetProperty("setUpIn", out _) && stepSetUpIn is null)
                     || (stepSetUpIn is not null && Reviews.JudgeEnvironment(stepSetUpIn) is not null))
@@ -485,7 +485,7 @@ public static class QuestWire
                 steps.Add(new(stepTo, stepTitle, stepBody) { SetUpIn = stepSetUpIn });
             }
 
-            // A review choice or a set-up step's environment that is not one is half a quest (REVIEWENV1b): replayed, it
+            // A review choice or a set-up step's environment that is not one is half a quest: replayed, it
             // would hold a landing, or show work, in a place nobody named.
             QuestReview? choice = null;
             if (asked.TryGetProperty("review", out var chosen) && (choice = Reviews.JudgedReview(chosen)) is null) return null;
@@ -496,19 +496,19 @@ public static class QuestWire
                 return null;
             }
 
-            // A weight no publish would keep is half a quest (FOUNDATION1x): replayed, it would start work on a mark nobody gave.
+            // A weight no publish would keep is half a quest: replayed, it would start work on a mark nobody gave.
             var (weight, unfitWeight) = QuestWeights.Judge(Text(asked, "weight"));
             if (unfitWeight is not null || (asked.TryGetProperty("weight", out _) && Text(asked, "weight") is null)) return null;
 
-            // A path no publish would keep is half a quest (INTEGRATE1l): replayed, it would hold a start on a place outside the repository.
+            // A path no publish would keep is half a quest: replayed, it would hold a start on a place outside the repository.
             var paths = Items(asked, "paths");
             if (paths.Any(path => path.ValueKind != JsonValueKind.String || !QuestPaths.Fits(path.GetString()))) return null;
 
-            // A request's key no publish would keep is half a quest (INTEGRATE1p): its run would never find it again.
+            // A request's key no publish would keep is half a quest: its run would never find it again.
             var request = Text(asked, "request");
             if (asked.TryGetProperty("request", out _) && !QuestRequests.Fits(request)) return null;
 
-            // The submission a step grew from (FABRIC-CLOSE1c), where it names one: not whole, the step could not be reopened by it.
+            // The submission a step grew from, where it names one: not whole, the step could not be reopened by it.
             QuestOperationRef? grewFrom = null;
             if (asked.TryGetProperty("grewFrom", out var grew) && (grewFrom = QuestRecordCodec.ReadRef(grew)) is null) return null;
 
@@ -516,9 +516,9 @@ public static class QuestWire
             var lanes = Items(asked, "lanes");
             if (lanes.Any(lane => lane.ValueKind != JsonValueKind.String)) return null;
 
-            // A requirement without its words or its check is half of one (DRIFT1c), never replayed blank. So is
-            // evidence naming both or neither, or a path that is not repository-relative (EVID1a): a machine's path
-            // never crosses (D47 §4).
+            // A requirement without its words or its check is half of one, never replayed blank. So is
+            // evidence naming both or neither, or a path that is not repository-relative: a machine's path
+            // never crosses.
             var requirements = new List<QuestRequirement>();
             foreach (var requirement in Items(asked, "requirements"))
             {
@@ -554,7 +554,7 @@ public static class QuestWire
         }
 
         // An answer that names no requirement, says both or neither, or departs without the person's words is half
-        // of one (DRIFT1d), and a replay would hold the quest, or release it, on something nobody said.
+        // of one, and a replay would hold the quest, or release it, on something nobody said.
         List<QuestAnswer>? answers = null;
         if (item.TryGetProperty("answers", out var answered))
         {
@@ -571,8 +571,8 @@ public static class QuestWire
             }
         }
 
-        // A decline's flag (PAUSE1c) is true or false. Anything else is half of one, and read as plain it would
-        // decline over a take — the one thing the flag exists to stop. A rebind's (FABRIC-CLOSE1c15) likewise: read as plain,
+        // A decline's flag is true or false. Anything else is half of one, and read as plain it would
+        // decline over a take — the one thing the flag exists to stop. A rebind's likewise: read as plain,
         // it would let go a started step without the person's word.
         var whileOpen = false;
         if (QuestStore.JudgedOpen(kind) && item.TryGetProperty("whileOpen", out var open))
@@ -581,7 +581,7 @@ public static class QuestWire
             whileOpen = open.ValueKind == JsonValueKind.True;
         }
 
-        // A conflict's mark that its take went with a take lost to the person's reopen (FABRIC-CLOSE1c22) is true or false. Anything
+        // A conflict's mark that its take went with a take lost to the person's reopen is true or false. Anything
         // else is half of one: read as plain, a done its machine made on the step published anew would land over the person's reopen.
         var lostToTheReopen = false;
         if (kind == QuestOperationKind.Conflict && item.TryGetProperty("lostToTheReopen", out var reopened))
@@ -590,7 +590,7 @@ public static class QuestWire
             lostToTheReopen = reopened.ValueKind == JsonValueKind.True;
         }
 
-        // A verdict is an evidenced operation's whole point (EVID1a): one missing, or not whole, makes the operation half
+        // A verdict is an evidenced operation's whole point: one missing, or not whole, makes the operation half
         // of one, which a replay would read as evidence found or missing on nobody's reading.
         QuestEvidenceVerdict? verdict = null;
         if (kind == QuestOperationKind.Evidenced
@@ -599,7 +599,7 @@ public static class QuestWire
             return null;
         }
 
-        // A set-up or a review's verdict is its operation's whole point (REVIEWENV1b): one missing, or not whole, makes the
+        // A set-up or a review's verdict is its operation's whole point: one missing, or not whole, makes the
         // operation half of one, which a replay would read as work shown, or a review given, that nobody said.
         QuestSetUp? setUp = null;
         if (kind == QuestOperationKind.SetUp
@@ -615,7 +615,7 @@ public static class QuestWire
             return null;
         }
 
-        // A workflow choice is its operation's whole point (WORKFLOW1e2): one missing, or not whole, makes the operation half of one,
+        // A workflow choice is its operation's whole point: one missing, or not whole, makes the operation half of one,
         // which a replay would read as a choice nobody made, or a clear of one somebody did.
         QuestWorkflowChoice? workflowChoice = null;
         if (kind == QuestOperationKind.Chosen
@@ -624,12 +624,12 @@ public static class QuestWire
             return null;
         }
 
-        // A note's parts (QUESTCLOSE1b1) are only how it is worded, so parts that are not a list are none, never half an
+        // A note's parts are only how it is worded, so parts that are not a list are none, never half an
         // operation: the note is the record, and it crossed whole.
         var note = Text(item, "note");
         var parts = note is not null && item.TryGetProperty("noteParts", out var given) ? NoteParts.Normalize(given) : null;
 
-        // A close's provenance (FABRIC-CLOSE1a) is what a second close with the same key is answered by: one that is not
+        // A close's provenance is what a second close with the same key is answered by: one that is not
         // whole makes the done half of one, which a replay could not tell from another close.
         QuestClose? close = null;
         if (kind == QuestOperationKind.Done && item.TryGetProperty("close", out var closing)
@@ -638,7 +638,7 @@ public static class QuestWire
             return null;
         }
 
-        // The submission a reopen or a rebind names is its whole point (FABRIC-CLOSE1c): one missing, or not whole, makes the
+        // The submission a reopen or a rebind names is its whole point: one missing, or not whole, makes the
         // operation half of one, which a replay would read as a reopen of nothing, or a step rebound to nothing.
         QuestOperationRef? submission = null;
         if (QuestStore.Names(kind)
@@ -647,7 +647,7 @@ public static class QuestWire
             return null;
         }
 
-        // A take's source (FABRIC-CLOSE1c18) is absent from a source-free quest's take and every take from before. One present and not
+        // A take's source is absent from a source-free quest's take and every take from before. One present and not
         // whole makes the take half of one: read as absent, it would be judged as such a take, and stand on work the person reopened.
         if (kind == QuestOperationKind.Taken && item.TryGetProperty("submission", out var found)
             && (submission = QuestRecordCodec.ReadRef(found)) is null)
@@ -655,8 +655,8 @@ public static class QuestWire
             return null;
         }
 
-        // Which session said a ready (FABRIC-CLOSE1c4) only names whom a reopen is told to, and which wrote a done's or a decline's
-        // handback (HANDBACK1) only whom the handback is by, so one that is no name is none, never half an operation: it crossed whole.
+        // Which session said a ready only names whom a reopen is told to, and which wrote a done's or a decline's
+        // handback only whom the handback is by, so one that is no name is none, never half an operation: it crosses whole.
         var session = QuestStore.KeepsSession(kind) && Text(item, "session") is { Length: > 0 } speaker ? speaker : null;
 
         return new QuestOperation(

@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// What the go-ahead test classes stand on (PART6): two repositories, an ask desk, a ledger over in-memory stores, and a
+/// What the go-ahead test classes stand on: two repositories, an ask desk, a ledger over in-memory stores, and a
 /// session working a quest in a tree of its own. xunit builds one per test, so a derived class shares the setup and no state.
 /// </summary>
 public abstract class GoAheadFixture : IAsyncLifetime

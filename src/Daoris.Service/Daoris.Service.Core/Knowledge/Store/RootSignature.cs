@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// What one registered root looked like when the index read it (KNOWCURRENT1): the commit its <c>HEAD</c> named and the
+/// What one registered root looks like when the index reads it: the commit its <c>HEAD</c> named and the
 /// newest write among its tracked record folders. A host over the registered roots judges each root by this at use, so a
 /// record merged into a root becomes searchable without anyone telling the index; two equal signatures are one reading.
 /// </summary>

@@ -4,7 +4,7 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// KNOWCENTRAL2f (the memory coordinator design §3, §6's presentation): memory is current when it is presented. A session's reads fill its
+/// Memory is current when it is presented. A session's reads fill its
 /// read set and it is told once that an entry it read moved, a replaced one included; what a line read is rechecked before its brief shows
 /// it, an invalidation before delivery discards the answer, and an inconclusive recheck is never stamped.
 /// </summary>
@@ -56,7 +56,7 @@ public sealed class MemoryCurrencyTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 An entry that moves after it was rechecked and before the answer leaves discards that answer: the one delivered is read again and
+    /// 🔴 An entry that moves after it is rechecked and before the answer leaves discards that answer: the one delivered is read again and
     /// shows the end, never the current entry the first reading found.
     /// </summary>
     [Fact]

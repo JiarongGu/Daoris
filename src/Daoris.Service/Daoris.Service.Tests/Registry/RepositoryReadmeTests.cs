@@ -4,8 +4,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// Until a repository adopts, the service indexes its README as the repository's own word (WSSETUP8;
-/// D124, `docs/2026-10-01-workspace-setup-design.md` §5): the root's <c>README.md</c>, in any case, split
+/// Until a repository adopts, the service indexes its README as the repository's own word: the root's <c>README.md</c>, in any case, split
 /// at its headings as a log is, each section a local knowledge entry labelled by its path, titled
 /// <c>README</c> for the part before the first heading and by its heading after. Never through a link or a
 /// link held as text, never <c>docs/README.md</c>, no other format, and not once a lock exists.
@@ -86,7 +85,7 @@ public sealed class RepositoryReadmeTests : IDisposable
     }
 
     /// <summary>
-    /// It claims no role (§5, *why DOC5's objection does not reach it*): not a router, not a log, whatever
+    /// It claims no role: not a router, not a log, whatever
     /// its headings look like. Knowledge, the repository's own, carrying its path, one hit among others.
     /// </summary>
     [Fact]
@@ -144,7 +143,7 @@ public sealed class RepositoryReadmeTests : IDisposable
     // ── what is never read ─────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Not `docs/README.md` (DOC5: it may be a site's front page, and a router is declared, never guessed),
+    /// Not `docs/README.md` (it may be a site's front page, and a router is declared, never guessed),
     /// and no other format, since only markdown has headings the splitter reads.
     /// </summary>
     [Theory]
@@ -175,7 +174,7 @@ public sealed class RepositoryReadmeTests : IDisposable
     }
 
     /// <summary>
-    /// A link held as text (D117 §5.5): on a checkout without links a README that was one is a small file
+    /// A link held as text: on a checkout without links a README that is one is a small file
     /// holding its target. Read, it would put a path in a search where the repository's word should be.
     /// </summary>
     [Theory]
@@ -213,8 +212,8 @@ public sealed class RepositoryReadmeTests : IDisposable
     // ── until it adopts ────────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// The row's last proof. Once a lock exists the repository has declared its documents (DOC3), and its
-    /// README is its front page again: the next scan, and so the next refresh, no longer reads it.
+    /// The row's last proof. Once a lock exists the repository has declared its documents, and its
+    /// README is its front page: the next scan, and so the next refresh, does not read it.
     /// </summary>
     [Fact]
     public void A_repository_that_adopts_stops_having_its_README_read()
@@ -252,7 +251,7 @@ public sealed class RepositoryReadmeTests : IDisposable
     // ── one file, one place ────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// One file is one place in the index (DOC5, REV3). A README a declaration already names is read by
+    /// One file is one place in the index. A README a declaration already names is read by
     /// that declaration's reader, whole as a router or split as a log, and never again here: read twice, the
     /// router's entry and the part before the first heading share an id, and the store's primary key fails
     /// the whole refresh on the second. Declared wins over the baseline.

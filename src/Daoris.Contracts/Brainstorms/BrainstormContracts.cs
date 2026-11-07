@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace Daoris.Contracts.Brainstorms;
 
 // The doors a terminal's `daoris brainstorm` and `daoris meeting` reach: the person's question written as the request the driver's
-// look freezes into a packet, the packet and document read back, the person's send, stop and clear. A brainstorm is kept where it was
+// look freezes into a packet, the packet and document read back, the person's send, stop and clear. A brainstorm is kept where it is
 // asked and is never a quest operation, so a local host serves it to a caller on this machine alone. The passes are the driver's;
 // nothing here runs one. `Kind` is `brainstorm` (none) or `meeting`; anything else is the caller's mistake.
 

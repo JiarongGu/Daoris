@@ -5,10 +5,10 @@ using Daoris.Knowledge.Http;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// The person key (PERSONDOOR1a, D156 point 1; the person-door design §2.1, §2.3): 32 random bytes in base64url, read from
+/// The person key: 32 random bytes in base64url, read from
 /// the first line of the host's standard input when its starter asks, compared in constant time, and proved by an HMAC of
 /// a nonce. The rows here are the twin's (<c>.claude/knowledge/twins.md</c>): the shell that mints and hands the key
-/// (PERSONDOOR1g) spells the variable, the header, the key's form and the proof again, and its tests hold these rows.
+/// spells the variable, the header, the key's form and the proof again, and its tests hold these rows.
 /// </summary>
 public sealed class PersonKeyTests
 {

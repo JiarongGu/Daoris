@@ -8,7 +8,7 @@ namespace Daoris.Knowledge;
 /// <param name="Prefix">Short and non-secret — how a key is named in an audit log or a revocation, so
 /// the full key never has to be written anywhere to be talked about (service design §5b).</param>
 /// <param name="Name">Whose key, on which machine — per person AND per machine, so revoking one
-/// disrupts exactly one (D47 §7). A label, not an identity model.</param>
+/// disrupts exactly one. A label, not an identity model.</param>
 public sealed record ApiKeyRecord(
     string Prefix, string Name, DateTimeOffset Created, DateTimeOffset Expires, DateTimeOffset? Revoked);
 
@@ -36,7 +36,7 @@ public enum KeyVerdict
 public sealed record KeyValidation(KeyVerdict Verdict, ApiKeyRecord? Key);
 
 /// <summary>
-/// The shared deployment's machine credentials (D47 §7): per-person per-machine keys, minted at the
+/// The shared deployment's machine credentials: per-person per-machine keys, minted at the
 /// deployment, stored as a hash beside a short audit prefix, expiring by default.
 /// </summary>
 /// <remarks>
@@ -52,7 +52,7 @@ public sealed class ApiKeyStore
     private const string Marker = "dk_";
     private const int PrefixLength = 8;
 
-    /// <summary>The connection's gate: every command here runs inside it (SQLITETX1).</summary>
+    /// <summary>The connection's gate: every command here runs inside it.</summary>
     private readonly ConnectionGate _db;
 
     private ApiKeyStore(SqliteConnection connection) => _db = ConnectionGate.For(connection);

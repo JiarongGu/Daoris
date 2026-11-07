@@ -4,7 +4,7 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// A driven session records what only the person can decide before it ends its turn on it (PARKVIEW1, the park's ask design §2):
+/// A driven session records what only the person can decide before it ends its turn on it (the park's ask design §2):
 /// the question, the answers it offers with what it does on each, the one it recommends and by when, which the page draws at the
 /// conversation's end with each answer a press. Not a go-ahead, which <see cref="GoAheadTools"/> holds on the ask.
 /// </summary>
@@ -51,7 +51,7 @@ public sealed class QuestionTools(IntakeScope? intake = null, SessionLedger? led
     }
 }
 
-/// <summary>One answer a question offers (PARKVIEW1): each part nullable, so a part left out is refused by name.</summary>
+/// <summary>One answer a question offers: each part nullable, so a part left out is refused by name.</summary>
 public sealed record QuestionChoiceInput(
     [property: Description("The words on its press, as the person would say the answer, at most 80 characters.")]
     string? Label,

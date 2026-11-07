@@ -9,7 +9,7 @@ public static class MemoryOpKind
     public const string Confirm = "confirm";
     public const string Propose = "propose";
 
-    /// <summary>A write that ends the entries it replaces, in one change once approved (KNOWCENTRAL2h).</summary>
+    /// <summary>A write that ends the entries it replaces, in one change once approved.</summary>
     public const string Supersede = "supersede";
 
     internal static readonly string[] All = [Write, Relate, End, Confirm, Propose, Supersede];

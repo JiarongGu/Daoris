@@ -1,8 +1,8 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// One operation of a quest's history read as a move (FLOWCHART1a2; D186, the flowchart design §2.1): what the quest's page draws
-/// its path from and a trace says. Every field is by allow-list, so a shared host answers it as a local one does (D47 §4): never
+/// One operation of a quest's history read as a move: what the quest's page draws
+/// its path from and a trace says. Every field is by allow-list, so a shared host answers it as a local one does: never
 /// the published payload, a note's body, the answers or a path. A field a move does not keep is null, and a reader says it is not
 /// recorded.
 /// </summary>
@@ -19,13 +19,13 @@ namespace Daoris.Knowledge;
 public sealed record QuestMoveReading(
     QuestOperationKind Kind, DateTimeOffset At, string Machine, long Sequence, long? Number, bool Applied, QuestStatus? From)
 {
-    /// <summary>A conflict's: the status the move that lost attempted (D68 §5).</summary>
+    /// <summary>A conflict's: the status the move that lost attempted.</summary>
     public QuestStatus? Attempted { get; init; }
 
     /// <summary>A dismissal's: the conflict it settles, by the machine and sequence the conflict keeps.</summary>
     public QuestOperationRef? Dismisses { get; init; }
 
-    /// <summary>A wait's: the quest it waits on (D79), which its note is; null where the note does not read as a quest's id.</summary>
+    /// <summary>A wait's: the quest it waits on, which its note is; null where the note does not read as a quest's id.</summary>
     public string? WaitsOn { get; init; }
 
     /// <summary>A submission's: the session that said its <c>ready</c>; null where none did. A take keeps no session.</summary>
@@ -34,7 +34,7 @@ public sealed record QuestMoveReading(
     /// <summary>An evidence read's: <see cref="QuestMoves.Found"/>, <see cref="QuestMoves.Missing"/> or <see cref="QuestMoves.CommitOnly"/>.</summary>
     public string? Evidence { get; init; }
 
-    /// <summary>A set-up's: <see cref="QuestMoves.Local"/> or <see cref="QuestMoves.Deployed"/>, where it was shown.</summary>
+    /// <summary>A set-up's: <see cref="QuestMoves.Local"/> or <see cref="QuestMoves.Deployed"/>, where it is shown.</summary>
     public string? SetUp { get; init; }
 
     /// <summary>A verdict's: what the person said, <c>reviewed</c>, <c>not-yet</c> or <c>skipped</c> (<see cref="Reviews.Verdicts"/>).</summary>
@@ -42,13 +42,13 @@ public sealed record QuestMoveReading(
 
     /// <summary>
     /// The hold an applied move left the quest under, where it changed it: a hold's code (<see cref="QuestEvidenceCodes.Spell"/>), or
-    /// <see cref="QuestMoves.NoHold"/> where it let one go. Null where the move left the hold as it was, or did not apply.
+    /// <see cref="QuestMoves.NoHold"/> where it let one go. Null where the move leaves the hold as it is, or does not apply.
     /// </summary>
     public string? Hold { get; init; }
 }
 
 /// <summary>
-/// A quest's history read as its moves (FLOWCHART1a2; the flowchart design §2.1, §7 traps 13 and 20): what
+/// A quest's history read as its moves: what
 /// <c>GET /api/quests/{id}/moves</c> answers on both hosts, and <c>TRACE</c>'s quest link carries.
 /// </summary>
 /// <remarks>
@@ -74,7 +74,7 @@ public static class QuestMoves
     /// <summary>An evidence read that did not find some item.</summary>
     public const string Missing = "missing";
 
-    /// <summary>A submission's commit read with no evidence to find (FABRIC-CLOSE1c6).</summary>
+    /// <summary>A submission's commit read with no evidence to find.</summary>
     public const string CommitOnly = "commit";
 
     /// <summary>A set-up shown in a local environment: its tab is on the machine that made it.</summary>
@@ -115,7 +115,7 @@ public static class QuestMoves
         QuestOperationKind.Published or QuestOperationKind.Taken or QuestOperationKind.Done or QuestOperationKind.Declined
             or QuestOperationKind.Deleted or QuestOperationKind.Accepted or QuestOperationKind.Bound or QuestOperationKind.Reopened
             or QuestOperationKind.Rebound => move,
-        // A workflow choice answers none of its own (WORKFLOW1e2): the quest's own answer says what stands, and the person's words
+        // A workflow choice answers none of its own: the quest's own answer says what stands, and the person's words
         // stay in the log.
         QuestOperationKind.Chosen => move,
         QuestOperationKind.Conflict => move with { Attempted = operation.Attempted },

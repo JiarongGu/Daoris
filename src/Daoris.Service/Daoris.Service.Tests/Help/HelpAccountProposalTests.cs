@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 
 namespace Daoris.Service.Tests;
 
-/// <summary>The <c>account</c> kind's writer (HELP6): an account's own model and effort (the Agents screen's <i>Model &amp; effort</i>).</summary>
+/// <summary>The <c>account</c> kind's writer: an account's own model and effort (the Agents screen's <i>Model &amp; effort</i>).</summary>
 public sealed class HelpAccountProposalTests : HelpProposalBoxFixture
 {
     [Fact]

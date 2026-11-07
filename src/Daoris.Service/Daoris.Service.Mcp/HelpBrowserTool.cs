@@ -3,7 +3,7 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>Ask Daoris's <c>browser_propose</c> (HELP10): the <c>browser</c> kind's tool, written by <see cref="HelpProposalBox.ProposeBrowser"/>.</summary>
+/// <summary>Ask Daoris's <c>browser_propose</c>: the <c>browser</c> kind's tool, written by <see cref="HelpProposalBox.ProposeBrowser"/>.</summary>
 [McpServerToolType]
 public sealed class HelpBrowserTool(IntakeScope? intake = null, HelpProposalBox? help = null)
 {

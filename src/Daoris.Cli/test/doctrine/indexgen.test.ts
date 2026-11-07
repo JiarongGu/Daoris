@@ -52,15 +52,15 @@ test('the index lists the on-demand tiers in separate tables', () => {
 });
 
 /**
- * This table is what replaces a hand-written `skill-loader` skill. Its content
- * is "which skills does this repo have", which is generated, not doctrine (D14)
+ * This table stands in for a hand-written `skill-loader` skill. Its content
+ * is "which skills does this repo have", which is generated, not doctrine
  * — and generating it is what lets a canonical workflow rule point at a roster
  * it cannot know in advance.
  */
 test('the index lists skills by their entry file and description', () => {
   const fx = seedRepo();
   const text = indexFromDisk({ root: fx.root, target: '.claude', lock: LOCK });
-  // The path from the repository's root, as a code span: an agent opens it as written (D128 §2.3).
+  // The path from the repository's root, as a code span: an agent opens it as written.
   assert.match(text, /^\| `\.claude\/skills\/doc-loader\/SKILL\.md` \| what doc-loader is for \|$/m);
   assert.match(text, /what ef-migration is for/);
   // A skill's supporting files are not skills.
@@ -71,8 +71,8 @@ test('the index lists skills by their entry file and description', () => {
 /**
  * A skill's `description` is the harness's TRIGGER text — long by design, because it has to match
  * against whatever a person asks. Copying it whole pays for it twice: once where the harness reads it,
- * once in every session that reads the index. Measured on the second adoption, the skills table was 46%
- * of an index that had become the largest always-loaded file in the repository.
+ * once in every session that reads the index. The skills table can reach 46% of an index that
+ * becomes the largest always-loaded file in the repository.
  *
  * The index needs to say what each skill IS. What it triggers on stays in the skill.
  */
@@ -103,8 +103,8 @@ test("a repo's own skill is marked local, a canonical one is not", () => {
 });
 
 /**
- * A knowledge document, because that tier is still files. A repository's own always-loaded rules now
- * live in its instruction file outside the region (D59) — its own prose, which nothing enumerates.
+ * A knowledge document, because that tier is files. A repository's own always-loaded rules
+ * live in its instruction file outside the region — its own prose, which nothing enumerates.
  */
 test('files not in the lock are marked local, and an old rules folder is not listed', () => {
   const fx = seedRepo();
@@ -114,7 +114,7 @@ test('files not in the lock are marked local, and an old rules folder is not lis
   fx.cleanup();
 });
 
-/** By its first heading, in a table of its own (WSSETUP14c, D128 §3.1); `index-headings.test.ts` has the cases. */
+/** By its first heading, in a table of its own; `index-headings.test.ts` has the cases. */
 test('a file without frontmatter is listed by its heading, never dropped', () => {
   const fx = seedRepo();
   const text = indexFromDisk({ root: fx.root, target: '.claude', lock: LOCK });
@@ -135,8 +135,8 @@ test('output is deterministic', () => {
 
 /**
  * 🔴 The region's roster read from disk has NO rules rows and NO document rows. The rules' frontmatter
- * is stripped on the way in, so nothing offline can rebuild those rows; the documents are the index's
- * (WSSETUP14a, D128 §2.2). What is left is what `check` compares: the pointer, and what the manifest
+ * is stripped on the way in, so nothing offline can rebuild those rows; the documents are the index's.
+ * What is left is what `check` compares: the pointer, and what the manifest
  * declares.
  */
 test('the region\'s disk half is the pointer and what the manifest declares, which is what keeps check offline', () => {

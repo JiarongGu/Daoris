@@ -4,16 +4,16 @@ using System.Text;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Git for Windows' launcher, started past (GITSTART2): the <c>git.exe</c> in an install's <c>cmd</c> folder is a
+/// Git for Windows' launcher, started past: the <c>git.exe</c> in an install's <c>cmd</c> folder is a
 /// launcher that starts <c>&lt;top&gt;\&lt;prefix&gt;\bin\git.exe</c> as a second process, and a start costs 100–700 ms
-/// on a loaded machine (PROC1a). Where the git a start's <c>PATH</c> finds is that launcher, the real git starts
+/// on a loaded machine. Where the git a start's <c>PATH</c> finds is that launcher, the real git starts
 /// directly, handed the environment the launcher would have handed it.
 /// </summary>
 /// <remarks>
-/// <para>The driver's <c>GitForWindows</c> twin (GITSTART1; <c>.claude/knowledge/twins.md</c>): the same layout, the
+/// <para>The driver's <c>GitForWindows</c> twin (<c>.claude/knowledge/twins.md</c>): the same layout, the
 /// same variables and the same bounds, in the service's own code, since the service and the driver share none. This
 /// side's <c>GitForWindowsTests</c> holds the driver's rows, case for case, and the two change together.</para>
-/// <para>🔴 The launcher's variables are what it was measured setting (git 2.53.0.windows.3; FIX-LOG, GITSTART1), held to
+/// <para>🔴 The launcher's variables are what it is measured setting (git 2.53.0.windows.3), held to
 /// a real install by the driver's <c>GitForWindowsProcessTests</c>. git started bare with no <c>MSYSTEM</c> repairs its
 /// own <c>PATH</c>, but in another order (<c>HOME\bin</c> first), and with any <c>MSYSTEM</c> set it repairs nothing, so
 /// <c>sh</c>, and with it every hook and <c>!</c> alias, would go unfound; so the start sets them all.</para>
@@ -64,7 +64,7 @@ internal static class GitForWindows
     }
 
     /// <summary>
-    /// The variables the launcher sets for its child, read from the environment it was started with: <c>MSYSTEM</c> named
+    /// The variables the launcher sets for its child, read from the environment it is started with: <c>MSYSTEM</c> named
     /// for its prefix over any; <c>PLINK_PROTOCOL</c> <c>ssh</c> where unset; <c>HOME</c> where unset, from
     /// <c>HOMEDRIVE</c> and <c>HOMEPATH</c> where that is a folder other than the system's, else <c>USERPROFILE</c>; and
     /// its two folders and <c>HOME</c>'s <c>bin</c> before <c>PATH</c>. A variable set empty counts as set.
@@ -102,7 +102,7 @@ internal static class GitForWindows
 
     /// <summary>
     /// Start the real git where <paramref name="info"/> names the launcher, handed the launcher's variables over the
-    /// environment <paramref name="info"/> already holds; true where it now does. Any other start is left as it was, and so
+    /// environment <paramref name="info"/> already holds; true where it now does. Any other start is left alone, and so
     /// is one whose <c>PATH</c> would pass <see cref="LongestVariable"/>.
     /// </summary>
     public static bool Direct(ProcessStartInfo info)
@@ -118,7 +118,7 @@ internal static class GitForWindows
     }
 
     /// <summary>
-    /// The service's own git (GITSTART2): where <paramref name="info"/> names <c>git</c> bare and the <c>PATH</c> it is
+    /// The service's own git: where <paramref name="info"/> names <c>git</c> bare and the <c>PATH</c> it is
     /// handed finds Git for Windows' launcher, start the real git behind it (<see cref="Direct"/>); true where it now does.
     /// A start whose <c>PATH</c> finds any other git, or none, still names <c>git</c> bare and starts as before.
     /// </summary>

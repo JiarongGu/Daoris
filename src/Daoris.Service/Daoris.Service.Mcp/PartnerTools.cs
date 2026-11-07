@@ -4,7 +4,7 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// A partner's one tool (COAGENT1b, D199 point 8; the co-agent design §2.3 step 8): the partner the driver started for a piece says its
+/// A partner's one tool (the co-agent design §2.3 step 8): the partner the driver started for a piece says its
 /// answer, once. It speaks only for the session its connector names; any other session is refused in a sentence. What the partner did
 /// is the files it left, which Daoris reads itself: the answer is its claim beside them.
 /// </summary>

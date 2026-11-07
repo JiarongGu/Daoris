@@ -4,13 +4,13 @@ namespace Daoris.Knowledge;
 
 /// <summary>
 /// The development documents a repository declares in <c>daoris.json</c>'s <c>documents</c>, as the
-/// scanner reads them (DOC5; D122, `docs/2026-10-01-development-documents-design.md` §2.7 and §5).
+/// scanner reads them (`docs/2026-10-01-development-documents-design.md` §2.7 and §5).
 /// </summary>
 /// <remarks>
 /// <para><b>A declaration adds a path; it is never required</b> (§5). The scanner still needs no
-/// configuration, and a repository that declares nothing is read exactly as before. One that declares its
+/// configuration, and a repository that declares nothing is read as if it had no such field. One that declares its
 /// decisions, fixes or archive has that path read before the scanner's candidates, its router read as
-/// a document, and its index of where things are read at its headings (ORIENT2e, <see cref="RepositoryScanner"/>).</para>
+/// a document, and its index of where things are read at its headings (<see cref="RepositoryScanner"/>).</para>
 ///
 /// <para>🔴 <b>A twin</b> (<c>.claude/knowledge/twins.md</c>, *the development documents*): the CLI's
 /// <c>checkDocuments</c> (<c>src/Daoris.Cli/src/layout/documents.ts</c>) reads the same field, and the two share
@@ -20,10 +20,10 @@ namespace Daoris.Knowledge;
 /// <para><b>The one difference is the direction.</b> The CLI is a gate: it refuses the whole manifest
 /// for one role it cannot honour (exit 2), so <c>check</c> fails and <c>sync</c> refuses, and the
 /// repository hears it from its own tool. This is an indexer, with nobody to tell: a refusal here would
-/// drop the repository from search, or fail the refresh for every repository after it (REV3). So a role
+/// drop the repository from search, or fail the refresh for every repository after it. So a role
 /// the CLI refuses is read as undeclared, the roles beside it are read, and a <c>documents</c> that is not
 /// a map, or is declared twice, is read as none. Never worse than declaring nothing, never a path the CLI
-/// would refuse, and never a guess at which of two declarations was meant.</para>
+/// would refuse, and never a guess at which of two declarations is meant.</para>
 /// </remarks>
 public static class RepositoryDocuments
 {
@@ -38,8 +38,8 @@ public static class RepositoryDocuments
         ("brief", false),
         ("room", false),
         ("router", true),
-        // ORIENT2e (D151 points 4 and 6): the generated index of where things are, after the router as the CLI
-        // lists it (ORIENT2b); the scanner reads every file in its folder as entries of its own kind.
+        // The generated index of where things are, after the router as the CLI
+        // lists it; the scanner reads every file in its folder as entries of its own kind.
         ("index", true),
         ("areas", true),
         ("decisions", true),
@@ -134,7 +134,7 @@ public static class RepositoryDocuments
 
     /// <summary>
     /// A declared path as the scanner reads it, or null where the CLI refuses it: leaving the repository,
-    /// the repository's root, inside the target or the mirror root (D18, §2.7).
+    /// the repository's root, inside the target or the mirror root (§2.7).
     /// </summary>
     /// <remarks>
     /// Read-side only: the path is resolved, and both its spelling and where it lands are checked. The CLI

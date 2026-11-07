@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The open work that names the unit, where it stays for <see cref="HistoryRefusal.Awaited"/> (HIST1m): named by the desk that
+/// The open work that names the unit, where it stays for <see cref="HistoryRefusal.Awaited"/>: named by the desk that
 /// judged it, so the driver says *chain* from the refusal rather than from a second read of the quest it names.
 /// </summary>
 public enum HistoryAwaitedBy

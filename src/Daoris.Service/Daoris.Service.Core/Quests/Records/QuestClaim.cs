@@ -1,6 +1,6 @@
 namespace Daoris.Knowledge;
 
-/// <summary>Where this machine's claim on a quest stands (D68 §4, D69).</summary>
+/// <summary>Where this machine's claim on a quest stands.</summary>
 public enum QuestClaim
 {
     /// <summary>This machine never took it.</summary>

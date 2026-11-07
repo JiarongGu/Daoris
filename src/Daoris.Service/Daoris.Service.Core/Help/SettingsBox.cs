@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Ask Daoris's chosen settings, the connector's half (HELPMODE1c3, D183's note; the Ask Daoris modes design §4.1): each tool's call
+/// Ask Daoris's chosen settings, the connector's half: each tool's call
 /// is a keyed request in the home's session requests for the conversation's own session, as a housekeeping call is
 /// (<see cref="HousekeepingBox"/>), which the driver's loop running that conversation takes once, judges, applies through the
 /// setting's own checks and writer, and answers beside it.
@@ -12,7 +12,7 @@ namespace Daoris.Knowledge;
 /// <remarks>
 /// <para><b>This judges what only the connector can say</b>: that it speaks for a session, that the session's record is an Ask
 /// Daoris conversation of this machine's (a driven session is handed the same connector), and that the call names what its
-/// setting needs. Whether the person granted the setting, whether it was handed at this start, the conversation's workspace and
+/// setting needs. Whether the person granted the setting, whether it is handed at this start, the conversation's workspace and
 /// the value itself are the driver's, at every call, whatever the agent.</para>
 ///
 /// <para><b>A twin, the file the contract</b> (<c>.claude/knowledge/twins.md</c>): the request's fields are the driver's
@@ -65,7 +65,7 @@ public sealed partial class SettingsBox(string? home)
     /// <summary>How often the folder is looked at while waiting.</summary>
     public TimeSpan Poll { get; init; } = TimeSpan.FromMilliseconds(100);
 
-    /// <summary>The home the driver names on the connector it offers, else the account's (D63): where the session requests live.</summary>
+    /// <summary>The home the driver names on the connector it offers, else the account's: where the session requests live.</summary>
     public static SettingsBox FromEnvironment() => new(RuleProposalBox.FromEnvironment().Home);
 
     /// <summary>

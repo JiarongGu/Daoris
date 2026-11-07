@@ -3,10 +3,10 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// 🔴 HOMEID1 (D171, the terminal RPC design §3.2): FINDDAORIS1's discovery took any address whose status named a <c>tier</c>,
-/// so another install's service passed. A local host now answers its home's id, <c>home</c>, read from the home it was started
-/// with (minted there where it had none), and a terminal takes an address only where that is its own home's id. A shared host
-/// answers none (D47): it serves a team, and has no person's home.
+/// 🔴 A local host answers its home's id, <c>home</c>, read from the home it starts
+/// with (minted there where it had none), and a terminal takes an address only where that is its own home's id, so another
+/// install's service never passes. A shared host
+/// answers none: it serves a team, and has no person's home.
 /// </summary>
 public sealed class HomeStatusTests
 {

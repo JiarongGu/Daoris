@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The intake session (D65 §1b, INT4b): an ask the declarations did not settle is answered by a
+/// The intake session: an ask the declarations did not settle is answered by a
 /// SESSION — a conversation Daoris opens for the ask in a room it owns — which publishes the quests
 /// itself, asked by the ask, in the ask's circle. The harness carries the model; nothing here names one.
 /// </summary>
@@ -76,13 +76,13 @@ public sealed class IntakeTests : IAsyncLifetime
 
         Assert.Equal(SessionOpenRefusal.None, opened.Refusal);
         var session = opened.Session!;
-        // A conversation (SES2) — the kind every build already reads safely: no quest, never planned from.
+        // A conversation — the kind every build already reads safely: no quest, never planned from.
         Assert.Equal(SessionKind.Chat, session.Kind);
         Assert.Null(session.Quest);
         Assert.Equal($"ask #{ask.Id}", session.Repository);
         Assert.Equal("work", session.Workspace);
         Assert.Equal(ask.Id, session.Ask);
-        // SESSONE1a: the intake is the ask's own entry, read apart from its repositories' (D167 point 2).
+        // The intake is the ask's own entry, read apart from its repositories'.
         Assert.Equal($"ask:{ask.Id}/intake", session.Entry);
         Assert.Equal(Trees.Normalize(Room()), session.Tree);
         Assert.Null(session.BaseCommit);
@@ -115,7 +115,7 @@ public sealed class IntakeTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// LIMITRESUME1h (D206, design §3.8): an intake an account's limit ended leaves its ask unbound in the same step as its end, so the
+    /// An intake an account's limit ended leaves its ask unbound in the same step as its end, so the
     /// next intake may serve it; its record stays, still naming the ask. The binding is cleared only where it names that session, and
     /// only on a move to failed.
     /// </summary>
@@ -145,9 +145,9 @@ public sealed class IntakeTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// AGENTERRORS1d (D210 point 8, design §7): the first intake that ended `intake.transient` frees its ask for a fresh one, and an ask
+    /// The first intake that ended `intake.transient` frees its ask for a fresh one, and an ask
     /// whose earlier intake already ended so stays bound to the second failed record, so an outage costs two bounds and then the person
-    /// hears of it. An end with no such line is let go as before.
+    /// hears of it. An end with no such line is let go.
     /// </summary>
     [Fact]
     public async Task An_ask_whose_earlier_intake_ended_transient_stays_bound_after_a_second_transient_end()

@@ -39,10 +39,10 @@ public sealed class BusyHost() : DaorisHost(ServiceMode.Local, seed: repositorie
 }
 
 /// <summary>
-/// SQLITETX1: the host answers requests at once over the one connection its stores share, and no request may meet
+/// The host answers requests at once over the one connection its stores share, and no request may meet
 /// another's open transaction. On the install a say answered 500, <i>Execute requires the command to have a transaction
 /// object when the connection assigned to the command is in a pending local transaction</i>, while its words were kept:
-/// one of its commands was made before another request began a transaction and ran after.
+/// one of its commands made before another request began a transaction ran after.
 /// </summary>
 public sealed class ConcurrentRequestsTests(BusyHost host, ITestOutputHelper output) : IClassFixture<BusyHost>
 {
@@ -79,7 +79,7 @@ public sealed class ConcurrentRequestsTests(BusyHost host, ITestOutputHelper out
             + $"slowest look {slowest.GetValueOrDefault("look").TotalMilliseconds:F0} ms");
         var burst = failures.Count;
 
-        // KNOW500's shape: whatever the burst met, the next request on the same store answers.
+        // Whatever the burst met, the next request on the same store answers.
         await Answered("after: repositories", () => host.GetAsync("/api/repositories"))();
         await Answered("after: search", () => host.GetAsync("/api/search?q=bridge"))();
         await Answered("after: a quest", () => host.PostAsync("/api/quests", new { from = "Asker", to = "Keeper", title = "After the burst", body = "why" }))();

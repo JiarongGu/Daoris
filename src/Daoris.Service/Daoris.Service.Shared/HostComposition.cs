@@ -8,17 +8,16 @@ namespace Daoris.Knowledge.Hosting;
 /// <summary>
 /// The composition both hosts share, as a source file linked into each (`Compile Include` in the two
 /// csproj files). It cannot live in Core — it constructs providers, and Core holds
-/// <see cref="IVectorProvider"/> and nothing that implements one (D22, D24) — and it must not be
-/// written twice: these ~50 lines were copy-pasted between the hosts, sitting just outside the
-/// factory that exists to stop exactly that drift.
+/// <see cref="IVectorProvider"/> and nothing that implements one — and it must not be
+/// written twice, so the hosts cannot drift.
 /// </summary>
 internal static class HostComposition
 {
     /// <summary>
     /// The deployment's embedder, when it named a model — null leaves the service lexical-only rather
-    /// than refusing to start (D24). An Ollama ROOT speaks Ollama's own wire — the same judgement the
-    /// sibling's DI door applies (its D160), replicated because this composition builds by hand;
-    /// `Produces` must say Vector, or the default is a chat backend posting /chat/completions (D130).
+    /// than refusing to start. An Ollama ROOT speaks Ollama's own wire — the same judgement the
+    /// sibling's DI door applies, replicated because this composition builds by hand;
+    /// `Produces` must say Vector, or the default is a chat backend posting /chat/completions.
     /// </summary>
     public static IVectorProvider? BuildEmbedder(ServiceOptions options)
     {
@@ -39,7 +38,7 @@ internal static class HostComposition
     }
 
     /// <summary>
-    /// Where the index lives by default — one file under the Daoris home (D63), shared by every
+    /// Where the index lives by default — one file under the Daoris home, shared by every
     /// session on the machine — or null where there is no home, which a host refuses to start on
     /// rather than writing an index somewhere nobody pointed it.
     /// </summary>

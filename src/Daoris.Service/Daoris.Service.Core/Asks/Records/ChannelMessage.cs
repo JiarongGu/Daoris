@@ -1,17 +1,17 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// One message on an ask's channel (SESSONE2a). Kept as the record shape that can travel (SESSONE2d): an id the poster's machine made
-/// with <see cref="Origin"/> naming the machine it came from where it was not made here, and words that carry no machine path.
+/// One message on an ask's channel. Kept as the record shape that can travel: an id the poster's machine made
+/// with <see cref="Origin"/> naming the machine it came from where it is not made here, and words that carry no machine path.
 /// </summary>
 /// <param name="Id">Short and stable; <c>origin/id</c> across machines.</param>
 /// <param name="Ask">The ask it is on.</param>
 /// <param name="Workspace">The ask's circle, which decides where the record travels.</param>
-/// <param name="At">When it was posted.</param>
+/// <param name="At">When it is posted.</param>
 /// <param name="Session">The session that posted it; null for the person.</param>
 /// <param name="Repository">The poster's repository, for a session.</param>
-/// <param name="Agent">The poster's harness adapter, a name and never a model (D24), for a session.</param>
-/// <param name="Entry">The poster's entry (D167 point 2), for a session: its read mark's key.</param>
+/// <param name="Agent">The poster's harness adapter, a name and never a model, for a session.</param>
+/// <param name="Entry">The poster's entry, for a session: its read mark's key.</param>
 /// <param name="To">The one repository it is addressed to; null for everyone.</param>
 /// <param name="Re">The message it answers, where it answers one.</param>
 /// <param name="Question">Whether its poster marked it a question.</param>
@@ -25,7 +25,7 @@ public sealed record ChannelMessage(
     public bool ByPerson => Session is null;
 
     /// <summary>
-    /// Whether an agent outside Daoris posted it, a channel's member (CHANNELJOIN1): read from its poster's id, on this machine and on a
+    /// Whether an agent outside Daoris posted it, a channel's member: read from its poster's id, on this machine and on a
     /// teammate's, where the id arrives behind the machine it came from. Still never the person's, and an older build reads it as a session's.
     /// </summary>
     public bool Outside => ChannelMember.IsId(Session);
@@ -34,9 +34,9 @@ public sealed record ChannelMessage(
     public bool Open { get; init; }
 
     /// <summary>
-    /// When its sender asked it to reach a working session (COWORK1d, D188 point 2; the message-urgency design §9): true, urgent, at
-    /// the session's next step where its door takes words then; false, ordinary, at a natural point. Said on every message kept from
-    /// COWORK1d on, decided in the insert's own statement (<see cref="ChannelBounds.UrgentPerPart"/>). Null only on a message from
+    /// When its sender asked it to reach a working session: true, urgent, at
+    /// the session's next step where its door takes words then; false, ordinary, at a natural point. Said on every message kept now,
+    /// decided in the insert's own statement (<see cref="ChannelBounds.UrgentPerPart"/>). Null only on a message from
     /// before, or from an older teammate's machine, which keeps its old reach; null never means ordinary.
     /// </summary>
     public bool? Urgent { get; init; }

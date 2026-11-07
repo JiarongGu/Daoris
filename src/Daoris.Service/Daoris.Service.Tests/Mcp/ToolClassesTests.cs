@@ -6,7 +6,7 @@ using ModelContextProtocol.Server;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// FABRIC-C2a (D173's FABRIC-C2a note, point 3): one class for every tool the host registers, so a tool added later is refused to
+/// One class for every tool the host registers, so a tool added later is refused to
 /// a child until it is classed.
 /// </summary>
 public sealed class ToolClassesTests

@@ -4,8 +4,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Where the scanner reads a repository's doctrine, and which of its folders are rooms (LAYOUT4; D117,
-/// `docs/2026-10-01-agent-layout-design.md` §5.5).
+/// Where the scanner reads a repository's doctrine, and which of its folders are rooms (`docs/2026-10-01-agent-layout-design.md` §5.5).
 /// </summary>
 /// <remarks>
 /// <para><b>The roots.</b> 🔴 The lock, not the manifest, says where the files are (§5.1): between a
@@ -22,7 +21,7 @@ namespace Daoris.Knowledge;
 /// <c>sync</c> wrote, a <c>CLAUDE.md</c> holding one import line, and are not read here: a room's
 /// <c>AGENTS.md</c> is the repository's own file, and its declaration is where it is.</para>
 ///
-/// <para><b>The documents</b> are the manifest's <c>documents</c> (DOC5), checked against the same target
+/// <para><b>The documents</b> are the manifest's <c>documents</c>, checked against the same target
 /// and mirror root as the rooms, by <see cref="RepositoryDocuments"/>, a twin of the CLI's
 /// <c>documents.ts</c>.</para>
 ///
@@ -35,12 +34,12 @@ namespace Daoris.Knowledge;
 /// </remarks>
 public sealed partial class RepositoryLayout
 {
-    /// <summary>The layout every lock written before D117 was written under.</summary>
+    /// <summary>The layout of a lock that names none.</summary>
     internal const string Older = "claude-code";
 
     /// <summary>
     /// The layouts the CLI writes, by the manifest's <c>harness</c>: a copy of <c>HARNESSES</c> in
-    /// <c>src/Daoris.Cli/src/layout/harness.ts</c> (its <c>defaultTarget</c>, <c>formerly</c> and
+    /// <c>src/Daoris.Cli/src/layout/harness.ts</c> (its <c>defaultTarget</c>, its older targets and
     /// <c>mirror.root</c>), kept in step by hand, since the two artefacts share no code.
     /// </summary>
     internal static readonly IReadOnlyDictionary<string, Descriptor> Descriptors =
@@ -64,7 +63,7 @@ public sealed partial class RepositoryLayout
 
     /// <summary>
     /// Whether a lock says where daoris wrote. False for a repository with no lock, or one read as none,
-    /// which is read at both roots and, until it adopts, by its README (WSSETUP8; D124 §5).
+    /// which is read at both roots and, until it adopts, by its README.
     /// </summary>
     public bool Locked { get; }
 
@@ -79,7 +78,7 @@ public sealed partial class RepositoryLayout
 
     /// <summary>
     /// The development documents the manifest declares, as the CLI would accept them, in the roles' order
-    /// (DOC5, <see cref="RepositoryDocuments"/>). Checked against the same target and mirror root as the
+    /// (<see cref="RepositoryDocuments"/>). Checked against the same target and mirror root as the
     /// rooms, so the two declarations of one manifest are read by one rule.
     /// </summary>
     public IReadOnlyList<RepositoryDocuments.Declared> Documents { get; }
@@ -178,14 +177,14 @@ public sealed partial class RepositoryLayout
     /// <summary>
     /// What the scanner needs of <c>daoris.json</c>, read leniently: a field of the wrong shape is
     /// absent, and a manifest that cannot be read at all declares nothing, rather than failing the
-    /// corpus for one repository's file (REV3's reasoning, as <see cref="DaorisLock"/> reads its own).
+    /// corpus for one repository's file, as <see cref="DaorisLock"/> reads its own.
     /// </summary>
     /// <param name="Harness">The descriptor it names; null when it names none.</param>
     /// <param name="Target">Its target, declared; null when absent or leaving the repository.</param>
     /// <param name="Rooms">Its rooms as written, before any is checked.</param>
     /// <param name="Documents">
-    /// Its <c>documents</c> as written, before any role is checked (DOC5); null when absent, or when the
-    /// manifest holds the field twice, since which was meant is not this reader's guess.
+    /// Its <c>documents</c> as written, before any role is checked; null when absent, or when the
+    /// manifest holds the field twice, since which is meant is not this reader's guess.
     /// </param>
     internal sealed record Manifest(string? Harness, string? Target, IReadOnlyList<string> Rooms, JsonElement? Documents = null)
     {

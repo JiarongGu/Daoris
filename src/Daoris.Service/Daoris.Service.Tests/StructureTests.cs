@@ -1,7 +1,7 @@
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The structure gate for the service core (D166; the code-structure design §5): every core source sits in its module's
+/// The structure gate for the service core: every core source sits in its module's
 /// folder, which is its module; the core keeps no <c>Application</c>, <c>Infrastructure</c> or <c>Domain</c> folder; a test
 /// folder is a module's or a door's; and nothing outside <c>Composition</c> names a type declared in it. The rules are held on
 /// sources made in memory, one case each, and then run over the core's own tree.

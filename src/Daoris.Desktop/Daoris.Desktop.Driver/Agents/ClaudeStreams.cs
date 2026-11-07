@@ -115,6 +115,13 @@ internal sealed class ClaudeStreams(ISessionStreams streams, Action<string> say,
         return false;
     }
 
+    public void Followed(string task, string path)
+    {
+        Work? work;
+        lock (_gate) work = _work.GetValueOrDefault(task);
+        if (work is not null) Watch(work, path);
+    }
+
     public void Said(string call, string text) => streams.Line(ChildOf(call).StreamId, text);
 
     /// <summary>The child its spawning call names; one nobody announced (a synchronous one, which has no task) is still not the session's.</summary>

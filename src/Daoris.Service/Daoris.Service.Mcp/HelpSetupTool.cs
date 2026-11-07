@@ -3,7 +3,7 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>Ask Daoris's <c>setup_propose</c> (LAYOUT8; WORKFLOWCLEAN1 1f): the <c>setup</c> kind's tool, a place's set-up, written by <see cref="HelpProposalBox.ProposeSetup"/>.</summary>
+/// <summary>Ask Daoris's <c>setup_propose</c>: the <c>setup</c> kind's tool, a place's set-up, written by <see cref="HelpProposalBox.ProposeSetup"/>.</summary>
 [McpServerToolType]
 public sealed class HelpSetupTool(IntakeScope? intake = null, HelpProposalBox? help = null)
 {

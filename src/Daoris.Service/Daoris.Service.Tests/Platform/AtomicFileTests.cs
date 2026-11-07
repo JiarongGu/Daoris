@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The one atomic write the service core uses (DEDUP9a, <see cref="AtomicFile"/>): beside under a name of its own, renamed over
+/// The one atomic write the service core uses (<see cref="AtomicFile"/>): beside under a name of its own, renamed over
 /// the target, nothing left behind.
 /// </summary>
 public sealed class AtomicFileTests : IDisposable

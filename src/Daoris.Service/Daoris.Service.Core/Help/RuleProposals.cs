@@ -4,9 +4,9 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Knowledge;
 
-/// <summary>What an agent proposes to change about what agents may do (PERM2, D74).</summary>
+/// <summary>What an agent proposes to change about what agents may do.</summary>
 /// <param name="Action">`add` a rule to a list, `remove` one, or switch a `default` on or off.</param>
-/// <param name="Scope">Where it reaches: `machine`, `workspace` or `repository` (D72's three scopes).</param>
+/// <param name="Scope">Where it reaches: `machine`, `workspace` or `repository`.</param>
 /// <param name="Name">The circle or repository, for those two scopes.</param>
 /// <param name="List">For `add`: `allow`, `ask` or `deny`.</param>
 /// <param name="Rule">For `add` and `remove`: the harness's own rule.</param>
@@ -15,14 +15,14 @@ namespace Daoris.Knowledge;
 public sealed record RuleChange(
     string Action, string Scope, string? Name, string? List, string? Rule, string? Default, bool? On);
 
-/// <summary>One rule proposal as clearing history reads it (HIST1b): its file's id, who made it, and whether it waits.</summary>
+/// <summary>One rule proposal as clearing history reads it: its file's id, who made it, and whether it waits.</summary>
 /// <param name="Session">The session that proposed it, when its connector named one.</param>
 /// <param name="Ask">The ask that session answers, when it is an intake.</param>
 /// <param name="Pending">Whether the person or the driver has yet to settle it.</param>
 public sealed record RuleProposalNote(string Id, string? Session, string? Ask, bool Pending);
 
 /// <summary>
-/// Where an agent's proposals to change the rules are written (PERM2, D74): one file each, under the
+/// Where an agent's proposals to change the rules are written: one file each, under the
 /// Daoris home beside the rules they would change.
 /// </summary>
 /// <remarks>
@@ -34,7 +34,7 @@ public sealed record RuleProposalNote(string Id, string? Session, string? Ask, b
 ///
 /// <para><b>The door decides nothing about narrowing.</b> Whether a change narrows depends on the rules
 /// as they stand, which only the driver reads: it applies a narrowing at its next tick and holds a
-/// widening for the person (D74). This checks the proposal is well formed and records who made it.</para>
+/// widening for the person. This checks the proposal is well formed and records who made it.</para>
 ///
 /// <para><b>THE FILE is the contract</b>, as `permissions.json` is. The driver's `RuleProposals.cs` reads
 /// and settles it (the CLI's `daoris agent rules accept|decline` through it since PUSH1f2d) and shares no
@@ -48,8 +48,7 @@ public sealed class RuleProposalBox(string? home)
 
     /// <summary>
     /// The same shape the driver's and the CLI's rules hold — judged again when a proposal is applied. <c>\z</c>, since
-    /// .NET's <c>$</c> also passes a final line break the CLI's refuses, and the connector hands the rule untrimmed
-    /// (PERMSHAPE1).
+    /// .NET's <c>$</c> also passes a final line break the CLI's refuses, and the connector hands the rule untrimmed.
     /// </summary>
     private static readonly Regex Shape = new(@"^[A-Za-z][A-Za-z0-9_-]*(\([^\r\n]+\))?\z", RegexOptions.CultureInvariant);
 
@@ -57,7 +56,7 @@ public sealed class RuleProposalBox(string? home)
 
     /// <summary>
     /// The driver's named home first — it is where the rules this would change live — then the
-    /// account's (D63), for a connector the driver did not start. Neither is none.
+    /// account's, for a connector the driver did not start. Neither is none.
     /// </summary>
     public static RuleProposalBox FromEnvironment(Func<string, string?> environment)
     {
@@ -131,7 +130,7 @@ public sealed class RuleProposalBox(string? home)
     }
 
     /// <summary>
-    /// Every proposal under the home, as clearing history reads them (HIST1b, design §2.2): who made it, and whether it
+    /// Every proposal under the home, as clearing history reads them: who made it, and whether it
     /// still waits. One the person or the driver has not settled (<c>proposed</c>, <c>waiting</c>, or a state this build
     /// does not know, read as the driver reads it) waits on the person, and keeps the work that made it. A file that will
     /// not parse is passed over, as the driver passes it over.
@@ -165,7 +164,7 @@ public sealed class RuleProposalBox(string? home)
     }
 
     /// <summary>
-    /// Remove one settled proposal whose session or ask a clear took (HIST1b): it is history, and it would name a record
+    /// Remove one settled proposal whose session or ask a clear took: it is history, and it would name a record
     /// that is gone. Best effort, as a quest's kept files are: a file the disk will not let go of stays.
     /// </summary>
     public void Forget(string id)

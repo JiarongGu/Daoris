@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Search backed by SQLite's FTS5 index, ranked by BM25.
+/// Search backed by SQLite's fts5 index, ranked by bm25.
 /// </summary>
 /// <remarks>
 /// Replaces the hand-rolled scorer with a real ranking function, and filters in SQL rather than in
@@ -20,7 +20,7 @@ public sealed class SqliteKnowledgeSearch(SqliteKnowledgeStore store) : IKnowled
     /// thing, and an entry titled for the query is almost always the one wanted.
     /// </summary>
     /// <remarks>
-    /// These are BM25 <em>column</em> weights, and they are positional across <b>every</b> column of
+    /// These are bm25 <em>column</em> weights, and they are positional across <b>every</b> column of
     /// the FTS table — including the <c>UNINDEXED</c> <c>id</c>. Passing two weights therefore
     /// assigned them to <c>id</c> and <c>title</c>, leaving body and title equal and the title
     /// weighting silently doing nothing. The leading <c>0.0</c> for <c>id</c> is what keeps the rest
@@ -37,8 +37,8 @@ public sealed class SqliteKnowledgeSearch(SqliteKnowledgeStore store) : IKnowled
     private static int RankOrdinal => SqliteKnowledgeStore.ColumnCount;
 
     /// <remarks>
-    /// Inside the connection's gate, as every command on the stores' one connection is (SQLITETX1). An index a newer
-    /// Daoris wrote is refused, as the store's own reads are (KSCHEMA1).
+    /// Inside the connection's gate, as every command on the stores' one connection is. An index a newer
+    /// Daoris wrote is refused, as the store's own reads are.
     /// </remarks>
     public Task<IReadOnlyList<KnowledgeHit>> SearchAsync(KnowledgeQuery query, CancellationToken ct = default) =>
         store.Refused<IReadOnlyList<KnowledgeHit>>() ?? store.Gate.RunAsync(() => SearchInAsync(query, ct), ct);
@@ -94,21 +94,21 @@ public sealed class SqliteKnowledgeSearch(SqliteKnowledgeStore store) : IKnowled
     }
 
     /// <summary>
-    /// Turn free text into an FTS5 MATCH expression.
+    /// Turn free text into an fts5 MATCH expression.
     /// </summary>
     /// <remarks>
-    /// Every term is quoted, because FTS5's query language treats <c>" * : ( ) NOT OR</c> and others
+    /// Every term is quoted, because fts5's query language treats <c>" * : ( ) NOT OR</c> and others
     /// as syntax — an unquoted apostrophe or colon from an ordinary question is a syntax error, and a
     /// search box that throws on a normal sentence is worse than one that finds nothing.
     ///
-    /// Terms are joined with OR so a partial match still returns something; BM25 then ranks the
+    /// Terms are joined with OR so a partial match still returns something; bm25 then ranks the
     /// entries matching more of the query above those matching less, which is the behaviour wanted
     /// without making a missing word fatal.
     ///
-    /// The terms are the question's words and its adjacent words joined (<see cref="Text.QueryTerms"/>,
-    /// ORIENT1f): the row holds an identifier whole beside its words, so <i>probe lock</i> reaches
+    /// The terms are the question's words and its adjacent words joined (<see cref="Text.QueryTerms"/>):
+    /// the row holds an identifier whole beside its words, so <i>probe lock</i> reaches
     /// <c>ProbeLock</c> by both. A join is named once for each word it joins, which is how it counts that
-    /// many times: FTS5's bm25 adds every phrase of the expression, a phrase named twice twice, and takes
+    /// many times: fts5's bm25 adds every phrase of the expression, a phrase named twice twice, and takes
     /// no weight per phrase.
     /// </remarks>
     internal static string? BuildMatchExpression(string text)
@@ -151,7 +151,7 @@ public sealed class SqliteKnowledgeSearch(SqliteKnowledgeStore store) : IKnowled
         if (query.Repositories is { Count: > 0 } repositories)
         {
             var names = repositories.Select((r, i) => (Name: $"$repo{i}", Value: (object)r)).ToList();
-            // NOCASE, as the parsed set is and as every other door compares a repository name (REV3).
+            // NOCASE, as the parsed set is and as every other door compares a repository name.
             filter.Append($" AND e.repository COLLATE NOCASE IN ({string.Join(", ", names.Select(n => n.Name))})");
             parameters.AddRange(names);
         }

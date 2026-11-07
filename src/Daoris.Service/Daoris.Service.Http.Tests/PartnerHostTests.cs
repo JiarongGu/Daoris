@@ -4,9 +4,9 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// COAGENT1b (D199 points 1 and 2; the co-agent design §2.3 step 5, §7.3): the driver opens a partner's record through
+/// The driver opens a partner's record through
 /// <c>POST /api/partners</c>, idempotent by the piece's id. The record serves its lead, carries its piece and an entry of its own, and
-/// both `serves` and `piece` are this machine's own (D47 §4).
+/// both `serves` and `piece` are this machine's own.
 /// </summary>
 public sealed class PartnerHostTests(LocalHost host) : IClassFixture<LocalHost>
 {

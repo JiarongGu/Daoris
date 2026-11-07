@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The key a workflow's <c>request</c> node publishes its quest under (INTEGRATE1p, the integration design §17.5, R5's C32):
+/// The key a workflow's <c>request</c> node publishes its quest under:
 /// <c>&lt;run&gt;/&lt;node&gt;/&lt;n&gt;</c>, the run, the node's id and the publication's number. It widens the quest's id
 /// (<see cref="QuestStore.MakeId"/>), so two runs asking in the same words make two quests and the same key sent again is its own quest.
 /// </summary>

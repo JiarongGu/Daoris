@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// HANDBACK1 (D219): a session's closing note is its handback, the one record of what it did that outlives its conversation, so a
+/// A session's closing note is its handback, the one record of what it did that outlives its conversation, so a
 /// note that only points elsewhere is refused. The rule is narrow: a note is refused only where every part of it is a pointer to
 /// another message, a commit, a file or a place, or a bare word that says nothing (<c>Done</c>, <c>Handback</c>), and one part at
 /// least is a pointer. A short real handback, a pointer beside words of its own, and a note with no pointer at all go through.
@@ -59,7 +59,7 @@ public sealed class HandbackNoteTests
     [InlineData("Details are in my last message: the cache is now keyed by tree, and its tests pass.")]
     [InlineData("Read path fixed in src/report.ts.")]
     [InlineData("已修复缓存，测试通过。")]
-    // A report of what was read is a handback of a reading quest, never a pointer; and a pointer beside words of its own stays one.
+    // A report of what is read is a handback of a reading quest, never a pointer; and a pointer beside words of its own stays one.
     [InlineData("Read README.md.")]
     [InlineData("Read README.md; read docs/setup.md.")]
     [InlineData("See above: fixed the cache key; tests pass.")]

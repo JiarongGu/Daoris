@@ -3,28 +3,28 @@ using static Daoris.Knowledge.HelpProposalFile;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The <c>agent</c> kind's writer (HELP6): an agent's Update, or a pin to one exact version, and how its accounts are used, ordered and
-/// offered again (TOOL4l-a). Since POOL1b (D197 point 6, the account-pool design §5.3) its accounts are one set: a <c>use</c> or an
+/// The <c>agent</c> kind's writer: an agent's Update, or a pin to one exact version, and how its accounts are used, ordered and
+/// offered again. Its accounts are one set: a <c>use</c> or an
 /// <c>order</c> names no workspace.
 /// </summary>
 internal sealed class HelpAgentProposalWriter(HelpProposalFile file)
 {
-    /// <summary>The doors this writes, the driver's <c>HelpAgentProposals.Doors</c> exactly (TOOL4l-b; the kinds test holds both ways).</summary>
+    /// <summary>The doors this writes, the driver's <c>HelpAgentProposals.Doors</c> exactly (the kinds test holds both ways).</summary>
     public static readonly IReadOnlyList<string> Doors = ["update", "pin", "use", "order", "ready"];
 
     /// <summary>
-    /// Write one agent proposal (HELP6): <c>update</c> to its newest release, or <c>pin</c> to one exact
+    /// Write one agent proposal: <c>update</c> to its newest release, or <c>pin</c> to one exact
     /// version — the Agents screen's two presses, which the driver judges by that door's roster — or <c>use</c>, <c>order</c> or
     /// <c>ready</c> on the agent's one set.
     /// </summary>
     /// <param name="account">For <c>ready</c>, the account whose cool-off ends (or <c>own</c>), written as <c>account</c>.</param>
-    /// <param name="use">For <c>use</c> (TOOL4l-a): <c>goal</c> or <c>order</c>, the set's way of choosing.</param>
+    /// <param name="use">For <c>use</c>: <c>goal</c> or <c>order</c>, the set's way of choosing.</param>
     /// <param name="keep">For <c>use</c>: the account kept; <paramref name="noKeep"/> keeps none, and neither leaves it as it is.</param>
-    /// <param name="early">For <c>use</c>, the old name (D165 §6): switch before the limit, or not; the driver reads it on.</param>
-    /// <param name="near">For <c>use</c>, the old name: the person's curve's five-hour window flat at this percent.</param>
+    /// <param name="early">For <c>use</c>: switch before the limit, or not; the driver reads it on.</param>
+    /// <param name="near">For <c>use</c>: the person's curve's five-hour window flat at this percent.</param>
     /// <param name="accounts">For <c>order</c>: the accounts put first, in order; the rest follow in theirs.</param>
     /// <param name="clear">For <c>order</c>: the order goes back to the accounts' ids.</param>
-    /// <param name="switched">For <c>use</c> (SWITCH1d): <c>smart</c>, <c>curve</c> or <c>off</c>, when the scope switches accounts.</param>
+    /// <param name="switched">For <c>use</c>: <c>smart</c>, <c>curve</c> or <c>off</c>, when the scope switches accounts.</param>
     /// <param name="curve">For <c>use</c>: the person's points, one window each, spelled as the terminal's <c>--curve</c>
     /// (<c>weekly=0:30,50:70,100:100</c>); the driver judges the curve's rules.</param>
     /// <param name="noCurve">For <c>use</c>: the person's curve taken out, written as a curve of null.</param>
@@ -84,18 +84,18 @@ internal sealed class HelpAgentProposalWriter(HelpProposalFile file)
             writer.WriteString("kind", "agent");
             writer.WriteString("door", door);
             writer.WriteString("target", named);
-            // The set serves every workspace (POOL1b), so a proposal names none.
+            // The set serves every workspace, so a proposal names none.
             writer.WriteNull("workspace");
             // A pin's version: what the change sets.
             Nullable(writer, "value", release);
-            // The use, order and ready doors' own fields (TOOL4l-a): a field left out is no change, and keep none is a null.
+            // The use, order and ready doors' own fields: a field left out is no change, and keep none is a null.
             if (door == "ready") writer.WriteString("account", whose);
             if (way is not null) writer.WriteString("use", way);
             if (kept is not null) writer.WriteString("keep", kept);
             else if (noKeep) writer.WriteNull("keep");
             if (early is { } flag) writer.WriteBoolean("early", flag);
             if (near is { } percent) writer.WriteNumber("near", percent);
-            // SWITCH1d: the switch, and the person's curve as `harnesses.json` keeps it, or null for none.
+            // The switch, and the person's curve as `harnesses.json` keeps it, or null for none.
             if (when is not null) writer.WriteString("switch", when);
             if (noCurve) writer.WriteNull("curve");
             else if (points.Count > 0)

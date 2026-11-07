@@ -100,7 +100,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// D104: a stop the sweep or a shutdown made, not the person, is kept on the record as interrupted —
+    /// A stop the sweep or a shutdown made, not the person, is kept on the record as interrupted —
     /// read back as written, and false for every move that did not say so.
     /// </summary>
     [Fact]
@@ -118,7 +118,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// TOOL4c (D125 §5.2): a failure an account's limit made is kept on the record as a limit — read back as
+    /// A failure an account's limit made is kept on the record as a limit — read back as
     /// written, and false for every failure that did not say so.
     /// </summary>
     [Fact]
@@ -139,7 +139,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// KEEP1b (D195 point 6): the downloaded versions a record's starts were handed, kept on this machine's own records alone and read
+    /// The downloaded versions a record's starts were handed, kept on this machine's own records alone and read
     /// back in order, each start's added to the last's; a teammate's mirrored record is never written to and reads none, as a record from
     /// before the column does.
     /// </summary>
@@ -180,7 +180,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// ANSWER1b, as MSG1a keeps it (D137 §2.4): a word kept with a note leaves the state where it is and is a new revision,
+    /// A word kept with a note leaves the state where it is and is a new revision,
     /// so the note goes up with the next push; a word kept with no note writes no revision, since the words never travel.
     /// Words are kept in order, each whole, and `Answer` is them joined by a blank line. A teammate's mirrored record is
     /// never written to here. A move told to clear the words clears them, and any other move keeps them.
@@ -228,7 +228,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// MSG1a: taking words removes exactly those named, in any order, passing over an id the record does not hold; the
+    /// Taking words removes exactly those named, in any order, passing over an id the record does not hold; the
     /// last one taken leaves nothing. No revision is written, since the words never travel.
     /// </summary>
     [Fact]
@@ -251,7 +251,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// MSG1a: a word a later build wrote with fields this one does not know reads as the word it is, and a malformed one —
+    /// A word a later build wrote with fields this one does not know reads as the word it is, and a malformed one —
     /// no id, no text, no moment — is passed over, never a failed read of the record.
     /// </summary>
     [Fact]
@@ -271,14 +271,14 @@ public sealed class SessionStoreTests : IAsyncLifetime
 
         Assert.Equal(("w1", "kept"), (word.Id, word.Text));
         Assert.Equal(["a.md"], word.Files);
-        // XAGENT1c: a word with no `by` is the person's, as every word kept before the field is.
+        // A word with no `by` is the person's, as every word kept before the field is.
         Assert.Null(word.By);
     }
 
     /// <summary>
-    /// SESSUX1f (D126 §5.4): a record that went up to a remote is marked so, and the mark is no change of the record, so
+    /// A record that went up to a remote is marked so, and the mark is no change of the record, so
     /// it moves no revision and the next push does not send it again. It is kept through later moves, since the remote
-    /// still holds the copy it was sent.
+    /// still holds the copy sent.
     /// </summary>
     [Fact]
     public async Task A_record_that_went_up_is_marked_pushed_without_a_new_revision_and_keeps_the_mark()
@@ -297,10 +297,10 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 HIST1a (D153 point 4, H2): the revision never goes back. Deleting the newest record, as D126's delete does an
-    /// ended conversation whose close was the newest write, leaves every later write numbered past what a push already
+    /// 🔴 The revision never goes back. Deleting the newest record, as a delete does an
+    /// ended conversation whose close is the newest write, leaves every later write numbered past what a push already
     /// examined: a new record, a move and a teammate's copy, even from a store opened again. Taken back, the push cursor
-    /// would pass them by and they would never go up. Whether the newest revision was written by the record's making or
+    /// would pass them by and they would never go up. Whether the newest revision is written by the record's making or
     /// by its move, each is kept.
     /// </summary>
     [Theory]
@@ -327,7 +327,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// HIST1a: a store from before the mark starts it at the newest revision it holds, so a delete made after the upgrade
+    /// A store from before the mark starts it at the newest revision it holds, so a delete made after the upgrade
     /// cannot take the revision back either.
     /// </summary>
     [Fact]
@@ -338,7 +338,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
         var through = (await _sessions.OwnChangedSinceAsync(0, Workspaces.Default)).Max(change => change.Revision);
         await using (var older = _connection.CreateCommand())
         {
-            // The build before HIST1a: no mark, and nothing that moves one.
+            // An older build: no mark, and nothing that moves one.
             older.CommandText = """
                 DROP TRIGGER IF EXISTS session_revision_written;
                 DROP TRIGGER IF EXISTS session_revision_moved;
@@ -356,7 +356,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// SESSUX1f: the store deletes a record whole when asked, and says whether there was one. It judges nothing: whether a
+    /// The store deletes a record whole when asked, and says whether there is one. It judges nothing: whether a
     /// record may go is the ledger's.
     /// </summary>
     [Fact]
@@ -398,7 +398,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Since D51 the question is per TREE: a repository may hold more than one, and a session in one
+    /// The question is per TREE: a repository may hold more than one, and a session in one
     /// of them is not a session in another. The store answers; the ledger judges.
     /// </summary>
     [Fact]
@@ -412,8 +412,8 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Unknown means "possibly yours", on either side. A record that never said which tree it was in
-    /// — anything from before D51, or a record mirrored from a machine that rightly sent no path —
+    /// Unknown means "possibly yours", on either side. A record that never says which tree it is in
+    /// — anything from an older store, or a record mirrored from a machine that rightly sent no path —
     /// holds every tree in its repository, and an ASK that names no tree is answered by any of them.
     /// The lock errs toward refusing, because the other way round is two agents in one working tree.
     /// </summary>
@@ -471,8 +471,8 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A fed record is the copy of a judgement that already ran on the machine that owns the process
-    /// (D47 §6): it upserts whole and is never re-judged — the ledger's rules governed the original.
+    /// A fed record is the copy of a judgement that already ran on the machine that owns the process:
+    /// it upserts whole and is never re-judged — the ledger's rules governed the original.
     /// Keyed by origin + id, because two machines will eventually mint the same random id.
     /// </summary>
     [Fact]
@@ -508,8 +508,8 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// What a session ran ON and AS (D49 §4) — written once at spawn, and never revised by a later
-    /// state change, which is about how it ENDED rather than about what it was.
+    /// What a session ran ON and AS — written once at spawn, and never revised by a later
+    /// state change, which is about how it ENDED rather than about what it ran as.
     /// </summary>
     [Fact]
     public async Task A_record_carries_the_tool_and_the_account_it_ran_as()
@@ -539,7 +539,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// <b>The account name never crosses a machine boundary</b> (D49 §4) — machine-local, exactly like
+    /// <b>The account name never crosses a machine boundary</b> — machine-local, exactly like
     /// the transcript beside it. Written as a literal NULL by the mirror rather than taken from the
     /// record, so a caller that filled the field cannot make it travel by accident: the feed has no
     /// field for it, and the store would refuse it anyway. Two guards, one rule.
@@ -551,7 +551,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
             "alice-laptop/ab12cd34", "abc123", "Owner", "claude-code",
             SessionState.Working, null, null, null, Now, Now,
             DoorVersion: "2.1.220 (Claude Code)", Profile: "alice-personal",
-            // A tree is a PATH on somebody else's machine (D51) — the newest thing on the list the
+            // A tree is a PATH on somebody else's machine — the newest thing on the list the
             // transcript started. The feed has no field for it, and this is the guard that holds even
             // when a caller fills one in anyway.
             Tree: "/srv/work/Owner");
@@ -565,9 +565,9 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// XAGENT1c (D155 points 7 and 11): a reviewer's record is a chat that names the opinion it reads for, and another
+    /// A reviewer's record is a chat that names the opinion it reads for, and another
     /// agent's claims wait in `said` naming that opinion as `by`. `answer`, which every reader takes as the person's words,
-    /// joins only theirs; a word with no `by` is the person's, as every word before the field was. Neither travels: the
+    /// joins only theirs; a word with no `by` is the person's, as every word kept before the field is. Neither travels: the
     /// mirror writes no opinion.
     /// </summary>
     [Fact]
@@ -599,9 +599,9 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// COWORK1b (the message-urgency design §9, trap 6): Daoris's own words keep <c>from</c> and their producer's <c>key</c> through the
-    /// store, and are never the person's, so <c>answer</c> joins none of them. A word kept with neither field, as every word before
-    /// them was, reads as it did: the person's, with no key.
+    /// Daoris's own words keep <c>from</c> and their producer's <c>key</c> through the
+    /// store, and are never the person's, so <c>answer</c> joins none of them. A word kept with neither field, as every word kept before
+    /// them is, reads as it does: the person's, with no key.
     /// </summary>
     [Fact]
     public async Task Daoris_words_keep_their_author_and_key_and_a_word_from_before_reads_as_the_persons()
@@ -623,7 +623,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// COWORK1c (the message-urgency design §6, §9): a word keeps the level it was said at, and the moment a dispatcher first wrote it
+    /// A word keeps the level it is said at, and the moment a dispatcher first writes it
     /// to a harness, each beside the others; a word from before reads with neither, no level and never attempted. The attempt is marked
     /// on one word in place, in one statement, and only once: a second mark keeps the first moment. An id the record does not hold,
     /// or a record this machine does not hold, marks nothing.
@@ -654,7 +654,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// MIXAGENT1a-iii (D163 point 4): a session that continues another names it on its own record, with why and who asked; a
+    /// A session that continues another names it on its own record, with why and who asked; a
     /// record that continues none names none, and a why or an asker with no session is no link. This machine's own, as the
     /// opinion is: the mirror writes none.
     /// </summary>
@@ -680,7 +680,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// FOUNDATION1c (D212; the foundation design §2.2): a record's work is read from its marks and never stored, so a host that has the
+    /// A record's work is read from its marks and never stored, so a host that has the
     /// reading answers it for every record of this machine, each as its marks say, and a mirror another machine's answers none (its marks
     /// and its actor do not travel, <c>SessionFeed</c>).
     /// </summary>
@@ -703,7 +703,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// FOUNDATION1c: the work is on no wire. A fed record has no member for it, so what a machine feeds says none, and a teammate's mirror
+    /// The work is on no wire. A fed record has no member for it, so what a machine feeds says none, and a teammate's mirror
     /// is read as a teammate's session as before.
     /// </summary>
     [Fact]
@@ -716,7 +716,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// AUTONOMY1a (D184 point 1): a driven session's record keeps the access setup it started under, each pause with its value, as the
+    /// A driven session's record keeps the access setup it started under, each pause with its value, as the
     /// driver resolved it; a record told none keeps none. This machine's own, as the opinion is: the mirror writes none.
     /// </summary>
     [Fact]
@@ -735,7 +735,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
         Assert.Null((await _sessions.FindAsync("alice-laptop/" + started.Id))!.Access);
     }
 
-    /// <summary>A chat is the same row with no quest in it (D49 §3).</summary>
+    /// <summary>A chat is the same row with no quest in it.</summary>
     [Fact]
     public async Task A_chat_round_trips_with_no_quest()
     {
@@ -752,7 +752,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
 }
 
 /// <summary>
-/// The upgrade that let a session have no quest (D49 §3).
+/// The upgrade that lets a session have no quest.
 /// </summary>
 /// <remarks>
 /// SQLite cannot drop a NOT NULL constraint, so the table is rebuilt — and the rows are COPIED, not
@@ -804,21 +804,21 @@ public sealed class SessionSchemaUpgradeTests : IAsyncLifetime
         Assert.Equal("abc123", elder!.Quest);
         Assert.Equal("commit deadbee", elder.Evidence);
         Assert.Equal("aurora", elder.Workspace);
-        // Everything that predates kinds is driven — which is what it was.
+        // Everything that predates kinds is driven.
         Assert.Equal(SessionKind.Driven, elder.Kind);
-        // …and everything that predates D51 names no tree, which the lock reads as "possibly any of
+        // …and everything that predates trees names no tree, which the lock reads as "possibly any of
         // them". A record of work that happened survives every column that arrives after it.
         Assert.Null(elder.Tree);
-        // …and a record from before D104 says nothing about being interrupted: the old reading, a stop
-        // that was the person's.
+        // …and a record from before the mark says nothing about being interrupted: a stop
+        // is the person's.
         Assert.False(elder.Interrupted);
-        // …nor about an account's limit (TOOL4c): the old reading, a failure like any other.
+        // …nor about an account's limit: a failure like any other.
         Assert.False(elder.Limit);
-        // …and it names no second opinion (XAGENT1c): the old reading, a session that read nobody's work for one.
+        // …and it names no second opinion: a session that reads nobody's work for one.
         Assert.Null(elder.Opinion);
-        // …nor a session it continues (MIXAGENT1a-iii): the old reading, a session that went on from none.
+        // …nor a session it continues: a session that goes on from none.
         Assert.Equal(((string?)null, (string?)null, (string?)null), (elder.From, elder.FromWhy, elder.FromBy));
-        // …nor the access setup it started under (AUTONOMY1a): the old reading, a start before the setup, which ran as today's.
+        // …nor the access setup it started under: a start before the setup runs as today's.
         Assert.Null(elder.Access);
         Assert.Null(elder.Actor);
         Assert.Null(elder.Choice);
@@ -826,7 +826,7 @@ public sealed class SessionSchemaUpgradeTests : IAsyncLifetime
         Assert.Null(elder.Override);
         Assert.Null(elder.Ran);
         Assert.Null(elder.Chosen);
-        // …and it is answered its work from its marks by a host that has the reading (FOUNDATION1c): a quest's driven session is build.
+        // …and it is answered its work from its marks by a host that has the reading: a quest's driven session is build.
         Assert.Equal(ParticipantWork.Build, ParticipantWork.Of(elder));
 
         var chat = await sessions.CreateAsync(
@@ -846,7 +846,7 @@ public sealed class SessionSchemaUpgradeTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// SESSUX1f (D126 §5.4): a store from before the pushed mark derives it once, from its push cursor. A record of this
+    /// A store from before the pushed mark derives it once, from its push cursor. A record of this
     /// machine's at or before what its workspace pushed went up as far as anything here can tell, so it is marked, which
     /// errs toward refusing a delete; one written after, a teammate's and one of a workspace never pushed are not.
     /// </summary>

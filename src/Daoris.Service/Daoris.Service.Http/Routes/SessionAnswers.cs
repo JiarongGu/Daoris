@@ -4,7 +4,7 @@ namespace Daoris.Knowledge.Http.Routes;
 
 /// <summary>
 /// A session's record and what hangs on it as every door answers it, and the wire's records read into the domain's. What names this
-/// machine's tree, account or words answers a caller on this machine only, as the transcript does (D47 §4): which account a session
+/// machine's tree, account or words answers a caller on this machine only, as the transcript does: which account a session
 /// ran as is this machine's wiring, and the tree is a filesystem path outright.
 /// </summary>
 public static class SessionAnswers

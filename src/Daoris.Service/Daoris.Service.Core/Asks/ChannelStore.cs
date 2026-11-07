@@ -3,7 +3,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The messages of every ask's channel, and each entry's read mark (SESSONE2a; design §2.5). Machine-local service records beside the
+/// The messages of every ask's channel, and each entry's read mark. Machine-local service records beside the
 /// asks they are on; Daoris's own lines are not here, they are read from the quests.
 /// </summary>
 public sealed class ChannelStore
@@ -20,7 +20,7 @@ public sealed class ChannelStore
     /// <summary>A line's own channel and the messages to one part, kept apart from this store's.</summary>
     public ChannelAddressedStore Addressed { get; }
 
-    /// <summary>The agents outside Daoris on a channel (CHANNELJOIN1), never synced.</summary>
+    /// <summary>The agents outside Daoris on a channel, never synced.</summary>
     public ChannelMemberStore Members { get; }
 
     public static Task<ChannelStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default) =>
@@ -66,9 +66,9 @@ public sealed class ChannelStore
             """;
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
 
-        // PUSH1d1 (D182 point 5): the channel's revision, the change stream's `channel` family, one row moved by every insert,
+        // The channel's revision, the change stream's `channel` family, one row moved by every insert,
         // update and delete of a message. The newest `seq` would not do: an ask's channel forgotten with it deletes older messages
-        // and leaves the newest where it was. Kept by triggers, as the asks' is, so a connector built before them still moves it.
+        // and leaves the newest in place. Kept by triggers, as the asks' is, so a connector built before them still moves it.
         // The read marks and the cursors move nothing: a mark is one reader's place, moved by a read and by the driver as a part
         // starts, and a cursor is the sync's own.
         await using var revision = _db.Command();
@@ -96,12 +96,12 @@ public sealed class ChannelStore
             """;
         await revision.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
 
-        // COWORK1d (the message-urgency design §9): a message's level, said on every message kept from now; a message from before says
+        // A message's level, said on every message kept from now; a message from before says
         // none, which keeps its old reach and is never read as ordinary.
         await SchemaColumns.EnsureAsync(_db, "channel", "urgent", "urgent INTEGER NULL", ct).ConfigureAwait(false);
         await ChannelMemberStore.EnsureSchemaAsync(_db, ct).ConfigureAwait(false);
 
-        // FOUNDATION1 row k part 2 (D212, the foundation design §4.1): a message kept as a row of the event journal, minted by a trigger in the
+        // A message kept as a row of the event journal, minted by a trigger in the
         // statement that writes it. After the columns the trigger reads (`urgent` is the last added), so it names none that is not there.
         await using (var journal = _db.Command())
         {
@@ -109,7 +109,7 @@ public sealed class ChannelStore
             await journal.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        // COWORK1d (the design §6): each entry's acknowledgment of each message, by its id, which a mark by moment could not keep. A
+        // Each entry's acknowledgment of each message, by its id, which a mark by moment could not keep. A
         // channel from before has marks and no rows: every message at or before an entry's mark counts as taken, written once as the
         // table is made, so a message mirrored later with an older moment is still the entry's to be handed.
         await using var probe = _db.Command();
@@ -184,7 +184,7 @@ public sealed class ChannelStore
         $"CASE {state} WHEN 'partly' THEN 0 WHEN 'taking' THEN 1 WHEN 'sent' THEN 2 WHEN 'read' THEN 3 WHEN 'taken' THEN 4 ELSE -1 END";
 
     /// <summary>
-    /// One part's claim on a message for its entry (COWORK1d, trap 21), in one statement: it succeeds only where the entry holds no
+    /// One part's claim on a message for its entry, in one statement: it succeeds only where the entry holds no
     /// acknowledgment of it, one a start's packet left <c>partly</c> for another part, or a claim <paramref name="stale"/> names, whose
     /// holder no longer runs. So two parts of one entry never both take a message.
     /// </summary>
@@ -210,8 +210,8 @@ public sealed class ChannelStore
     }, ct);
 
     /// <summary>
-    /// An entry's acknowledgment of a message raised to <paramref name="state"/>, never lowered (COWORK1d, the design §6): a late
-    /// <c>sent</c> leaves <c>taken</c> as it was. <see cref="ChannelAcks.Released"/> lets a part's claim go instead.
+    /// An entry's acknowledgment of a message raised to <paramref name="state"/>, never lowered: a late
+    /// <c>sent</c> leaves <c>taken</c> untouched. <see cref="ChannelAcks.Released"/> lets a part's claim go instead.
     /// </summary>
     /// <returns>Whether the row changed.</returns>
     public Task<bool> AcknowledgeAsync(
@@ -261,18 +261,18 @@ public sealed class ChannelStore
     /// Keep a message, unless its session has posted <paramref name="perPart"/> already: one statement, so two posts at once cannot both
     /// pass the count. A message of no session (the person's) has no cap.
     /// </summary>
-    /// <returns>False when the cap refused it, and nothing was kept.</returns>
+    /// <returns>False when the cap refused it, and nothing is kept.</returns>
     public async Task<bool> AddAsync(ChannelMessage message, int perPart, CancellationToken ct = default) =>
         await KeepAsync(message, perPart, ct).ConfigureAwait(false) is not null;
 
     /// <summary>
-    /// <see cref="AddAsync"/>, answering the message as kept. Its level is decided in the same statement (COWORK1d, trap 10): a part's
+    /// <see cref="AddAsync"/>, answering the message as kept. Its level is decided in the same statement: a part's
     /// urgent post past <paramref name="urgentPerPart"/> of its urgent ones is kept ordinary, an explicit false, so two posts at once
     /// cannot both pass the bound; a message of no session has none.
     /// </summary>
     /// <returns>The message as kept, its <see cref="ChannelMessage.Urgent"/> as the statement decided; null when the cap refused it.</returns>
     /// <remarks>
-    /// A write transaction of its own, as every <c>RETURNING</c> write is (QUESTOPENLOCK1, ConnectionGate.InTransactionAsync says why).
+    /// A write transaction of its own, as every <c>RETURNING</c> write is (ConnectionGate.InTransactionAsync says why).
     /// </remarks>
     public Task<ChannelMessage?> KeepAsync(
         ChannelMessage message, int perPart, CancellationToken ct = default, int urgentPerPart = ChannelBounds.UrgentPerPart) =>
@@ -330,7 +330,7 @@ public sealed class ChannelStore
 
     /// <summary>
     /// This machine's OWN messages in a workspace after <paramref name="seq"/>, in arrival order, each with its number: what a push sends
-    /// (SESSONE2d). A message fed down from a teammate is never in it. A message is never changed once kept, so the arrival number is
+    /// A message fed down from a teammate is never in it. A message is never changed once kept, so the arrival number is
     /// a cursor with nothing to re-send.
     /// </summary>
     public Task<IReadOnlyList<(ChannelMessage Message, long Seq)>> OwnChangedSinceAsync(
@@ -361,7 +361,7 @@ public sealed class ChannelStore
             INSERT OR IGNORE INTO channel (id, ask, workspace, at, session, repository, agent, entry, to_repo, re, question, text, origin, urgent)
             VALUES ($id, $ask, $workspace, $at, $session, $repository, $agent, $entry, $to, $re, $question, $text, $origin, $urgent)
             """;
-        // COWORK1d: the level as its machine said it; none from an older machine, kept as none.
+        // The level as its machine said it; none from an older machine, kept as none.
         command.Parameters.AddWithValue("$urgent", Level(message.Urgent));
         command.Parameters.AddWithValue("$id", message.Id);
         command.Parameters.AddWithValue("$ask", message.Ask);
@@ -447,8 +447,8 @@ public sealed class ChannelStore
     }
 
     /// <summary>
-    /// Every ask the kept messages name, each with its circle and the moments of its messages by origin (SESSONE2h): what a list of the
-    /// asks held elsewhere is made of, and whether a person wrote each (NOTIFY2g: no session did). The messages' words are not read.
+    /// Every ask the kept messages name, each with its circle and the moments of its messages by origin: what a list of the
+    /// asks held elsewhere is made of, and whether a person wrote each (no session did). The messages' words are not read.
     /// </summary>
     public Task<IReadOnlyList<(string Ask, string Workspace, string? Origin, DateTimeOffset At, bool ByPerson)>> NamedAsksAsync(CancellationToken ct = default) =>
         _db.RunAsync<IReadOnlyList<(string Ask, string Workspace, string? Origin, DateTimeOffset At, bool ByPerson)>>(async () =>

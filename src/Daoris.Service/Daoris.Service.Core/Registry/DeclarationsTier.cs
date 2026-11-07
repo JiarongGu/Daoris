@@ -4,7 +4,7 @@ namespace Daoris.Knowledge;
 /// <param name="Repository">The repository proposed.</param>
 /// <param name="Score">
 /// How strongly — a word the repository says it OWNS counts double. A repository the sentence NAMES
-/// scores above every overlap in the same proposal, the first named highest (ASKNAME1).
+/// scores above every overlap in the same proposal, the first named highest.
 /// </param>
 /// <param name="Matched">
 /// The evidence: the ask's words its declaration shares, in the ask's order — or, for a repository the
@@ -13,7 +13,7 @@ namespace Daoris.Knowledge;
 public sealed record DeclarationMatch(string Repository, int Score, IReadOnlyList<string> Matched);
 
 /// <summary>
-/// The intake's floor (D65 §1b): with no harness to read the ask, its words are still read against
+/// The intake's floor: with no harness to read the ask, its words are still read against
 /// what each repository DECLARED — its summary, what it owns, what it accepts — and the best overlaps
 /// are proposed, with the words that matched as the evidence. A repository the sentence names comes
 /// before them all.
@@ -28,18 +28,16 @@ public sealed record DeclarationMatch(string Repository, int Score, IReadOnlyLis
 /// says <i>by declarations only</i> whenever this is what ran.</para>
 ///
 /// <para>Only a DECLARATION is matched on words: an adopted repository in the ask's own circle.
-/// Another circle would be a proposal the exchange refuses (D48 §4). A declaration is the manifest's
-/// (D34).</para>
+/// Another circle would be a proposal the exchange refuses. A declaration is the manifest's.</para>
 ///
-/// <para><b>A repository the sentence NAMES is the exception</b> (ASKNAME1): one of the ask's own
+/// <para><b>A repository the sentence NAMES is the exception</b>: one of the ask's own
 /// circle that can be asked (<see cref="Registration.Addressable"/>), adopted or not, whose exact name
 /// the sentence holds whole is proposed first, in the order the sentence names them, with its name as
-/// the evidence. An ask that opens <i>In release-infra: …</i> has said whose it is. Since D70 a
+/// the evidence. An ask that opens <i>In release-infra: …</i> has said whose it is. A
 /// repository registered here with a root and no manifest can be asked, but it declares nothing, so
-/// words alone could never reach it: on the owner's install a different, adopted repository was
-/// proposed alone on words, and the one word that settles the receiver counted for nothing. A name is
+/// words alone could never reach it, and the one word that settles the receiver would count for nothing. A name is
 /// still a proposal, never a publish: a sentence can name a repository it only mentions. Another
-/// circle's name is never proposed (D48 §4), nor one nobody here can ask, since the exchange would
+/// circle's name is never proposed, nor one nobody here can ask, since the exchange would
 /// refuse both.</para>
 ///
 /// <para>Whole means a longer name or word that contains it is not it: <c>portal</c> is not named by

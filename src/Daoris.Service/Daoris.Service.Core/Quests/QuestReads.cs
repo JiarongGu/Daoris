@@ -9,7 +9,7 @@ internal sealed class QuestReads(QuestStore store)
     private readonly ConnectionGate _db = store.Db;
 
     /// <summary>
-    /// The taken quests waiting on <paramref name="question"/> (D79) — what keeps a question from being
+    /// The taken quests waiting on <paramref name="question"/> — what keeps a question from being
     /// deleted: deleted, the quests waiting on it would wait on nothing for good.
     /// </summary>
     public Task<IReadOnlyList<Quest>> WaitingOnAsync(string question, CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<Quest>>(async () =>
@@ -24,7 +24,7 @@ internal sealed class QuestReads(QuestStore store)
         return quests;
     }, ct);
 
-    /// <summary>Every question a taken quest waits on (D79) — what <see cref="WaitingOnAsync"/> answers, for a whole list at once.</summary>
+    /// <summary>Every question a taken quest waits on — what <see cref="WaitingOnAsync"/> answers, for a whole list at once.</summary>
     public Task<IReadOnlySet<string>> AwaitedAsync(CancellationToken ct = default) => _db.RunAsync<IReadOnlySet<string>>(async () =>
     {
         await using var command = _db.Command();
@@ -43,7 +43,7 @@ internal sealed class QuestReads(QuestStore store)
     internal async Task<long> CursorAsync(string workspace, SqliteTransaction? transaction, CancellationToken ct)
     {
         await using var command = _db.Command();
-        // None handed in keeps the one the command was made in, as HistoryAsync's does.
+        // None handed in keeps the one the command is made in, as HistoryAsync's does.
         if (transaction is not null) command.Transaction = transaction;
         command.CommandText = "SELECT number FROM quest_cursor WHERE workspace = $workspace";
         command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
@@ -58,7 +58,7 @@ internal sealed class QuestReads(QuestStore store)
     internal async Task<Quest?> FindAsync(string id, SqliteTransaction? transaction, CancellationToken ct)
     {
         await using var command = _db.Command();
-        // None handed in keeps the one the command was made in, as HistoryAsync's does.
+        // None handed in keeps the one the command is made in, as HistoryAsync's does.
         if (transaction is not null) command.Transaction = transaction;
         command.CommandText = "SELECT * FROM quests WHERE id = $id";
         command.Parameters.AddWithValue("$id", id);
@@ -72,7 +72,7 @@ internal sealed class QuestReads(QuestStore store)
     /// <remarks>
     /// Open and taken first: what is outstanding is the question worth asking, and a finished queue
     /// pushing live work off the end is how a list stops being read. A done that a departure holds for the
-    /// person's yes is outstanding too (DRIFT1d): it waits on someone, and what follows it waits with it — the
+    /// person's yes is outstanding too: it waits on someone, and what follows it waits with it — the
     /// driver keeps a quest waiting on it waiting because it is listed here.
     /// </remarks>
     public Task<IReadOnlyList<Quest>> ListAsync(
@@ -99,7 +99,7 @@ internal sealed class QuestReads(QuestStore store)
 
     /// <summary>
     /// Every quest one sender asked, closed ones included — or, <paramref name="startingWith"/>, every
-    /// quest whose sender begins with it. What an ask's standing is read from (USE1c): its quests are
+    /// quest whose sender begins with it. What an ask's standing is read from: its quests are
     /// the ones asked BY it, chain steps included, whichever machine last moved them.
     /// </summary>
     public Task<IReadOnlyList<Quest>> FromAsync(

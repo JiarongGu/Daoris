@@ -1,10 +1,9 @@
-// A knowledge document without frontmatter, by its heading (WSSETUP14c; D128 §3.1–§3.2).
+// A knowledge document without frontmatter, by its heading.
 //
-// The first real set-up met 166 of a repository's own documents with no frontmatter, and the index
-// gave each a row reading *needs frontmatter* twice, which told a reader nothing. A heading says what
+// A row reading *needs frontmatter* for each such document tells a reader nothing. A heading says what
 // a document is about, so the index lists such a document by its first heading in a table of its own,
-// and `check` says how many once, never failing (D54). A skill keeps its warning: one without
-// frontmatter never fires on any agent. Written before the code.
+// and `check` says how many once, never failing. A skill keeps its warning: one without
+// frontmatter never fires on any agent.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -56,7 +55,7 @@ test('a heading only: listed in its own table by its path and first heading, aft
     '| `.claude/knowledge/legacy.md` _(local)_ | Legacy storage notes |',
   ]);
   assert.ok(!section(index, '## Knowledge').some((line) => line.includes('legacy')), 'not a row of the described table');
-  // After the described ones, before the skills (D128 §2.3).
+  // After the described ones, before the skills.
   assert.ok(index.indexOf('## Knowledge\n') < index.indexOf(WITHOUT));
   assert.ok(index.indexOf(WITHOUT) < index.indexOf('## Skills'));
   noWarningIn(index);
@@ -128,7 +127,7 @@ test('check says it in the singular for one, and says nothing when every documen
 
 /**
  * A canonical document without frontmatter is a defect of the canon, held by the canon's own tests
- * (D128 §3.2), so the index lists it by its heading, unmarked, and `check`'s count leaves it out.
+ * so the index lists it by its heading, unmarked, and `check`'s count leaves it out.
  */
 test('a canonical document without frontmatter is listed by its heading and left out of check\'s count', () => {
   const fx = layoutFixture('headings-canonical');

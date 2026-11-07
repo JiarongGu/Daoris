@@ -5,13 +5,13 @@ using static Daoris.Knowledge.JsonFields;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A repository's code map as a remote holds it, read off the wire (MAP3e): the file it was read from
+/// A repository's code map as a remote holds it, read off the wire: the file it is read from
 /// and its canonical text — both null for a commit that keeps no map — and where it came from.
 /// </summary>
 public sealed record FedCodeMap(string? File, string? Body, FeedProvenance Fed);
 
 /// <summary>
-/// The one shape of `GET /api/code-map/{repository}` (MAP3a, MAP3e): what the door answers, what a
+/// The one shape of `GET /api/code-map/{repository}`: what the door answers, what a
 /// machine's host reads when it brings a teammate's map down, and what the page and the driver's feed
 /// read — two hands, one shape, as the quest doors have <see cref="QuestWire"/>.
 /// </summary>

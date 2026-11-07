@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A teammate's ask's channel as this machine takes part in it (SESSONE2i): an ask held on another machine, of which this one holds the
+/// A teammate's ask's channel as this machine takes part in it: an ask held on another machine, of which this one holds the
 /// messages the sync mirrored. The person here, and a session here on a quest of that ask, post to it as to an ask's channel: the
 /// message is kept in <c>channel</c> as this machine's own, at its level, and the sync carries it to the holder, whose parts take it as
 /// a teammate's claim, never their person's words. A session here reads it as an entry reads an ask's channel, its mark and its

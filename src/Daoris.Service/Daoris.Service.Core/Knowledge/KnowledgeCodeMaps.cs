@@ -1,14 +1,14 @@
 namespace Daoris.Knowledge;
 
-/// <summary>A registered repository's code map, read from its checkout or held as a teammate's or a feed's (MAP3).</summary>
+/// <summary>A registered repository's code map, read from its checkout or held as a teammate's or a feed's.</summary>
 internal sealed class KnowledgeCodeMaps(
     Registry? registry, RegistrationStore? registrations, Func<CancellationToken, Task> reloadRegistry)
 {
     /// <summary>
-    /// A registered repository's code map (MAP3a), read from its checkout on each ask — the person's
-    /// machine showing the person's state, as the local index does (WSP4). Null for a repository
-    /// nobody registered. One with no checkout here answers with what was fed (MAP3b), judged again on
-    /// the way out, or with no file when nothing was.
+    /// A registered repository's code map, read from its checkout on each ask — the person's
+    /// machine showing the person's state, as the local index does. Null for a repository
+    /// nobody registered. One with no checkout here answers with what is fed, judged again on
+    /// the way out, or with no file when nothing is.
     /// </summary>
     public async Task<CodeMapRead?> ReadAsync(string repository, CancellationToken ct)
     {
@@ -21,8 +21,8 @@ internal sealed class KnowledgeCodeMaps(
             return CodeMapReader.Read(registration.Root);
         }
 
-        // No checkout here: what was fed — at a shared deployment by the machine with the checkout
-        // (MAP3b), on a machine by its sync from the circle's remote (MAP3e) — said with where it came
+        // No checkout here: what is fed — at a shared deployment by the machine with the checkout,
+        // on a machine by its sync from the circle's remote — said with where it came
         // from, including a commit that keeps none.
         if (registrations is null) return new CodeMapRead(null, null, null);
         var fed = await registrations.CodeMapProvenanceAsync(registration.Repository, ct).ConfigureAwait(false);
@@ -36,14 +36,14 @@ internal sealed class KnowledgeCodeMaps(
         return new CodeMapRead(map, file, problem, fed);
     }
 
-    /// <summary>The commit a teammate's code map is held at on this machine, or null where none is (MAP3e).</summary>
+    /// <summary>The commit a teammate's code map is held at on this machine, or null where none is.</summary>
     public async Task<string?> FedCommitAsync(string repository, CancellationToken ct) =>
         registrations is null
             ? null
             : (await registrations.CodeMapProvenanceAsync(repository, ct).ConfigureAwait(false))?.Commit;
 
     /// <summary>
-    /// Hold a teammate's code map as the circle's remote holds it (MAP3e) — already judged whole by
+    /// Hold a teammate's code map as the circle's remote holds it — already judged whole by
     /// <see cref="CodeMapWire.Read"/>, and digested here over what is kept, as a fed map is.
     /// </summary>
     public async Task HoldFedAsync(string repository, FedCodeMap map, CancellationToken ct)
@@ -55,8 +55,8 @@ internal sealed class KnowledgeCodeMaps(
             .ConfigureAwait(false);
     }
 
-    /// <summary>Stop holding a teammate's code map the remote no longer holds (MAP3e).</summary>
-    /// <returns>Whether there was one to forget.</returns>
+    /// <summary>Stop holding a teammate's code map the remote no longer holds.</summary>
+    /// <returns>Whether there is one to forget.</returns>
     public async Task<bool> ForgetFedAsync(string repository, CancellationToken ct) =>
         registrations is not null && await registrations.ForgetCodeMapAsync(repository, ct).ConfigureAwait(false);
 }

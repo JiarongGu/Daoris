@@ -19,7 +19,7 @@ public sealed record HistoryUnit(HistoryUnitKind Kind, string Id, string? Worksp
     /// <summary>This machine's session records it takes, intakes included.</summary>
     public IReadOnlyList<string> Sessions { get; init; } = [];
 
-    /// <summary>This machine's copies of a teammate's records it takes, keyed <c>origin/id</c> (SYNC4).</summary>
+    /// <summary>This machine's copies of a teammate's records it takes, keyed <c>origin/id</c>.</summary>
     public IReadOnlyList<string> Teammates { get; init; } = [];
 
     /// <summary>Why the whole unit stays; null when it may go.</summary>
@@ -28,6 +28,6 @@ public sealed record HistoryUnit(HistoryUnitKind Kind, string Id, string? Worksp
     /// <summary>Pieces listed and kept while the unit goes: a teammate's failed session (<see cref="HistoryRefusal.NotOurs"/>).</summary>
     public IReadOnlyList<HistoryKept> Kept { get; init; } = [];
 
-    /// <summary>Whether it may go now. Nothing to clear is no refusal (D48 §6): a unit that takes nothing may still be pressed.</summary>
+    /// <summary>Whether it may go now. Nothing to clear is no refusal: a unit that takes nothing may still be pressed.</summary>
     public bool Clearable => Refusal is null;
 }

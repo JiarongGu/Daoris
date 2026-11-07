@@ -10,7 +10,7 @@ namespace Daoris.Service.Tests;
 public sealed class HttpRemoteTests
 {
     /// <summary>
-    /// 🔴 REV3: `daoris remote add team --url team.example.com:5177` is accepted, and so is the
+    /// 🔴 `daoris remote add team --url team.example.com:5177` is accepted, and so is the
     /// environment's url. Such an address parses as a SCHEME (or as relative), and the request threw
     /// NotSupportedException / InvalidOperationException — outside the catch, so a sync pass answered a
     /// bare 500 and a take on a shared quest committed locally and then threw.

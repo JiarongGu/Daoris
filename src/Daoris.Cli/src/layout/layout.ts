@@ -1,8 +1,8 @@
-// Where a repository's doctrine sits, and the paths it may declare (LAYOUT3, D117).
+// Where a repository's doctrine sits, and the paths it may declare.
 //
 // `docs/2026-10-01-agent-layout-design.md` §5.1 is the contract. Three questions live here because
 // every command asks them: which layout the files were WRITTEN under (the lock's answer, never the
-// manifest's), whether a declared path stays inside the repository (D18 over the declared roots), and
+// manifest's), whether a declared path stays inside the repository (over the declared roots), and
 // which of the repository's own documents sit in a tier its index no longer lists.
 
 import type { Harness, HarnessTier, Lock, Manifest } from '../doctrine/records.ts';
@@ -14,14 +14,14 @@ import { DaorisError } from '../platform/errors.ts';
 
 /**
  * The smallest limit an agent puts on a repository's instruction files: codex reads 32,768 bytes of
- * the project chain, root first, and cuts the file where the budget runs out (LAYOUT2,
- * `docs/2026-10-01-entry-point-evidence.md` §2). dsh caps the chain at 65,536 and Claude Code skips a
+ * the project chain, root first, and cuts the file where the budget runs out
+ * (`docs/2026-10-01-entry-point-evidence.md` §2). dsh caps the chain at 65,536 and Claude Code skips a
  * file over 4 MiB, so this is the one a root `AGENTS.md` meets first. `check` reports against it and
- * never fails on it (D54): a size is a judgement, and the tail it would lose is the region's last rule.
+ * never fails on it: a size is a judgement, and the tail it would lose is the region's last rule.
  */
 export const INSTRUCTION_LIMIT = 32768;
 
-/** The layout every lock written before D117 was written under. */
+/** The layout of every lock that records none. */
 const OLDER = HARNESSES[DEFAULT_HARNESS]!;
 
 /** A declared path as the manifest and the lock spell it: forward slashes, no `./`, no trailing slash. */
@@ -43,7 +43,7 @@ export const within = (child: string, parent: string): boolean =>
 const overlap = (a: string, b: string): boolean => within(a, b) || within(b, a);
 
 /**
- * The manifest's target, checked against what the descriptor declares (D117 §5.1, D18).
+ * The manifest's target, checked against what the descriptor declares.
  *
  * @remarks
  * A target is a folder inside the repository; one that leaves it would put every write somewhere a
@@ -73,8 +73,8 @@ export function checkTarget(target: string, harness: Harness): string {
 }
 
 /**
- * The manifest's rooms, checked (D117 §2.2, §5.1): a list of folders of the repository's own, never its
- * root, a tier's folder or a mirror's. Refused rather than corrected, as D18 refuses a lock entry: a
+ * The manifest's rooms, checked: a list of folders of the repository's own, never its
+ * root, a tier's folder or a mirror's. Refused rather than corrected, as a lock entry is refused: a
  * room that escapes is a pointer written somewhere nobody asked.
  */
 export function checkRooms(raw: unknown, target: string, harness: Harness): string[] {
@@ -105,14 +105,14 @@ export function checkRooms(raw: unknown, target: string, harness: Harness): stri
 }
 
 /**
- * The layout a lock's files were written under (D117 §5.1).
+ * The layout a lock's files were written under.
  *
  * 🔴 **The lock, not the manifest, says where the files are.** Between a manifest's flip and the sync
  * that moves them, the manifest names the new root and the files are still at the old. Absent fields
  * mean `claude-code` under `.claude`, the only layout written before — except a lock with neither field
  * beside a manifest still on `claude-code`, which an older build wrote at the manifest's own target.
  *
- * @throws DaorisError when the lock's target leaves the repository (D18): the lock is generated, the
+ * @throws DaorisError when the lock's target leaves the repository: the lock is generated, the
  * file nobody reads closely, so a crafted root is refused rather than written into.
  */
 export function lockLayout(
@@ -136,13 +136,13 @@ export function lockLayout(
   return { harness, target: normal };
 }
 
-/** Whether a lock records a layout other than the older one, and so carries the fields (additive, as D71's). */
+/** Whether a lock records a layout other than the older one, and so carries the fields (additive). */
 export function layoutFields(harness: Harness, target: string): { harness: string; target: string } | null {
   return harness.id === OLDER.id && target === OLDER.defaultTarget ? null : { harness: harness.id, target };
 }
 
 /**
- * The folder a path must resolve inside, or a refusal (D18). Every write, delete, mirror and pointer
+ * The folder a path must resolve inside, or a refusal. Every write, delete, mirror and pointer
  * goes through here, against the root that declared it.
  */
 export function contained(root: string, base: string, rel: string): string {
@@ -168,7 +168,7 @@ export function isFile(abs: string): boolean {
 
 /**
  * Remove the folders a delete emptied, from the file's own up, stopping at the first that still holds
- * something and never at or above the repository root. Only ever an empty folder (D117 §5.2).
+ * something and never at or above the repository root. Only ever an empty folder.
  */
 export function pruneEmpty(root: string, deleted: readonly string[]): void {
   const top = resolve(root);
@@ -237,7 +237,7 @@ export const folderTiers = (harness: Harness): [string, HarnessTier][] =>
   Object.entries(harness.tiers).filter(([, tier]) => tier.dir !== undefined);
 
 /**
- * What a move leaves behind (D117 §5.4, the repository's own documents): each of its own documents in
+ * What a move leaves behind (the repository's own documents): each of its own documents in
  * an old on-demand tier refuses the move, with the `git mv` that moves it — left there, the index stops
  * listing it and nothing else says so. The same document under both roots refuses too, since which copy
  * is meant is the repository's call. An old `rules/` file is only reported: Claude Code still reads it,
@@ -265,7 +265,7 @@ export function planLeftBehind(
     }
   }
 
-  // Before D59 the always-loaded tier was a folder, so a repository may still keep its own rules there.
+  // The always-loaded tier is no longer a folder, but a repository may still keep its own rules there.
   const keptRules = listMarkdown(join(root, from, 'rules'))
     .filter((file) => file !== 'RULES_INDEX.md' && !owned(`rules/${file}`))
     .map((file) => `${from}/rules/${file}`);
@@ -275,7 +275,7 @@ export function planLeftBehind(
 
 /**
  * The repository's own documents a descriptor's index does not list, for `check` to report and never
- * fail on (D117 §5.2): a document in the root the older layout used, with the move that fixes it; and a
+ * fail on: a document in the root the older layout used, with the move that fixes it; and a
  * skill of its own under the mirror root, which only the mirror's harness reads.
  */
 export function unlistedDocuments(
@@ -286,7 +286,7 @@ export function unlistedDocuments(
   const readAlone: string[] = [];
   const mirror = harness.mirror;
   for (const doc of formerDocuments({ root, harness, target, mirrors })) {
-    // Under the mirror root, a skill of the repository's own is a choice (D117 §2.3): read by one agent.
+    // Under the mirror root, a skill of the repository's own is a choice: read by one agent.
     if (mirror && within(doc.path, mirror.root)) readAlone.push(doc.path);
     else unlisted.push(doc);
   }
@@ -295,7 +295,7 @@ export function unlistedDocuments(
 
 /**
  * The repository's own documents in the root the older layout kept its on-demand tiers in, each with
- * the `git mv` that moves it under the descriptor's target — what `init` names (D117 §5.2), since the
+ * the `git mv` that moves it under the descriptor's target — what `init` names, since the
  * index lists the target only. A mirror the lock records is Daoris's, and is never one of them.
  */
 export function formerDocuments(

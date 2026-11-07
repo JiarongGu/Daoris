@@ -6,7 +6,7 @@ using ICountableMemoryGraphStore = Lyntai.Memory.ICountableMemoryGraphStore;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// Lyntai's engines over a file of their own under the repository's gitignored <c>_fixtures/</c> (KNOWCENTRAL2d), and a reading of every
+/// Lyntai's engines over a file of their own under the repository's gitignored <c>_fixtures/</c>, and a reading of every
 /// effect a read could have on an engine's entries: each one's decay state and revision, its links' weights, and the review rows.
 /// </summary>
 internal sealed class LyntaiFile : IAsyncDisposable

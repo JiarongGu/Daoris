@@ -1,4 +1,4 @@
-// The fixture the layout suites share (LAYOUT3, D117): a canon with one of each tier, a skill that
+// The fixture the layout suites share : a canon with one of each tier, a skill that
 // carries a file beside its SKILL.md, and a repository on either descriptor. Each suite passes its
 // own tag, because `node --test` runs the files at once and a shared folder would be two suites
 // deleting each other's scratch.

@@ -10,11 +10,11 @@ import { driverTestFile } from '../_csharp.ts';
 const tools = await import('../../../../tools/doc-duplicates.mjs') as { fenced: (text: string[]) => boolean[] };
 
 /**
- * A fence read as CommonMark reads one (ORIENT2h6, D151's ORIENT2h3, ORIENT2h4 and ORIENT2h6 notes): a run of three or
+ * A fence read as CommonMark reads one: a run of three or
  * more backticks or tildes after any indent opens it, a bare run of the same at least as long closes it, a backtick run
- * with a backtick later on its line is code inline, and a fence never closed holds the rest of the file. The heading
- * reader toggled on any three of either, so a four-backtick fence closed on the example it quoted and the example's
- * heading named the document.
+ * with a backtick later on its line is code inline, and a fence never closed holds the rest of the file. A heading
+ * reader that toggles on any three of either closes a four-backtick fence on the example it quotes, and the example's
+ * heading names the document.
  *
  * One TWIN table, `fixtures/fence-cases.json`, read row for row by the CLI's `markdownFence`, the tools' `fenced` and
  * the driver's `SelfDescription.Fence` (`SelfDescriptionTests`); the service's `MarkdownFence` is held to the tools'

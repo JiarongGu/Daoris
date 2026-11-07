@@ -3,8 +3,8 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A step its source's reopen withdrew, moved onto the submission that publishes it now (FABRIC-CLOSE1c), keeping its id and its history.
-/// A publication's rebind is judged while the step is open (FABRIC-CLOSE1c15); the person's go-on is not, since their word is what lets
+/// A step its source's reopen withdrew, moved onto the submission that publishes it now, keeping its id and its history.
+/// A publication's rebind is judged while the step is open; the person's go-on is not, since their word is what lets
 /// a started step go.
 /// </summary>
 [QuestOperation("rebound", QuestOperationPhase.Log)]

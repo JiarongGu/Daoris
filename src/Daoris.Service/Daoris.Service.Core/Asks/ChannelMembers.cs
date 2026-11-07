@@ -9,7 +9,7 @@ namespace Daoris.Knowledge;
 public sealed record ChannelJoin(string? Ask, string? Line, string? Agent, string? Repository, string? Confirmation);
 
 /// <summary>
-/// An agent outside Daoris on one channel (CHANNELJOIN1, D244 point 9): this machine's, never synced. It posts and reads under its own
+/// An agent outside Daoris on one channel: this machine's, never synced. It posts and reads under its own
 /// id, an <c>o</c> and seven hex characters so it is never read for a session's, with its own entry, <c>&lt;origin&gt;/outside:&lt;id&gt;</c>.
 /// Its mark is its own record's <see cref="Read"/>, on an ask's channel and a line's alike. A member that left keeps its record, so its
 /// messages keep their poster.
@@ -27,7 +27,7 @@ public sealed record ChannelMember(
     /// <summary>The person removed it.</summary>
     public const string ByPerson = "removed";
 
-    /// <summary>Daoris's look ended it: its channel's claims expired, or it was quiet for a day.</summary>
+    /// <summary>Daoris's look ended it: its channel's claims expired, or it stayed quiet for a day.</summary>
     public const string Expired = "expired";
 
     /// <summary>An agent whose harness this build does not name.</summary>
@@ -94,7 +94,7 @@ public sealed class ChannelMemberStore
     }
 
     /// <summary>Keep <paramref name="member"/> unless its channel holds <see cref="ChannelBounds.MembersPerChannel"/> or this machine <see cref="ChannelBounds.MembersHere"/>.</summary>
-    /// <returns>Whether it was kept.</returns>
+    /// <returns>Whether it is kept.</returns>
     public Task<bool> AdmitAsync(ChannelMember member, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
         await using var command = _db.Command();
@@ -140,7 +140,7 @@ public sealed class ChannelMemberStore
     }, ct);
 
     /// <summary>End a membership once, with why.</summary>
-    /// <returns>Whether it was a member until now.</returns>
+    /// <returns>Whether it had been a member.</returns>
     public Task<bool> LeaveAsync(string id, string why, DateTimeOffset at, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
         await using var command = _db.Command();
@@ -175,7 +175,7 @@ public sealed class ChannelMemberStore
 }
 
 /// <summary>
-/// An agent outside Daoris on a channel (CHANNELJOIN1; the event-channel design §5): admitted by the person's door once they confirmed
+/// An agent outside Daoris on a channel: admitted by the person's door once they confirmed
 /// its join, it posts and reads the one channel it joined under its own id, and leaves. Its post is a part's in every bound and every
 /// judgement but one: it names no part, since it is no part of the line. A member id is no session's, so every session door, the
 /// connector's among them, finds none in the ledger.

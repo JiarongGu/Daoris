@@ -3,13 +3,13 @@ using static Daoris.Knowledge.HelpProposalFile;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The <c>plugin</c> kind's writer (PLUG9): a plugin added from its folder or from the install's own offers by
+/// The <c>plugin</c> kind's writer: a plugin added from its folder or from the install's own offers by
 /// id, switched on or off, or updated, with the proposal's <c>repository</c> and its own <c>folder</c> and <c>offer</c>.
 /// </summary>
 internal sealed class HelpPluginProposalWriter(HelpProposalFile file)
 {
     /// <summary>
-    /// Write one plugin proposal (PLUG9): <c>add</c> a plugin that has landed, from its folder in the
+    /// Write one plugin proposal: <c>add</c> a plugin that has landed, from its folder in the
     /// checkout of the repository that holds it — <c>daoris plugin add</c>'s copy — or <c>enable</c> or
     /// <c>disable</c> one installed here, the Plugins place's switch. Whether the folder holds a sound
     /// manifest, and whether the id is installed, is the driver's, read with the catalogue's own reader.
@@ -17,13 +17,13 @@ internal sealed class HelpPluginProposalWriter(HelpProposalFile file)
     /// <param name="id">For enable, disable and update: the installed plugin's id.</param>
     /// <param name="folder">For add: the folder from the repository's checkout root, or a whole path the person gave.</param>
     /// <param name="repository">For add: the repository whose checkout holds it; null only for a whole path.</param>
-    /// <param name="offer">For add, instead of a folder: one of the install's own plugins, by its id (PLUG9 d) — never a path.</param>
+    /// <param name="offer">For add, instead of a folder: one of the install's own plugins, by its id — never a path.</param>
     /// <param name="server">For approve and withdraw: the server the plugin offers Ask Daoris; null where it offers one only.</param>
     /// <param name="writes">For approve: the writes the person accepts, each by name; none accepts its reads only.</param>
     /// <remarks>
-    /// Since PLUG9 (c) and (d) (D103) an <c>add</c> may name an offer, and an <c>update</c> takes a newer copy of an
+    /// An <c>add</c> may name an offer, and an <c>update</c> takes a newer copy of an
     /// installed plugin from where it came from. Whether the install offers it, and whether the plugin recorded
-    /// where it came from, is the driver's, which reads both with its own code. Since HELPPLUG1c an <c>approve</c> proposes
+    /// where it came from, is the driver's, which reads both with its own code. An <c>approve</c> proposes
     /// the person's approval of what a plugin's server offers Ask Daoris, and a <c>withdraw</c> takes it back: whether the
     /// plugin offers that server, and whether each write is one it declares, is the driver's, as the page's press judges it.
     /// </remarks>
@@ -66,7 +66,7 @@ internal sealed class HelpPluginProposalWriter(HelpProposalFile file)
             Nullable(writer, "repository", door == "add" ? holder : null);
             Nullable(writer, "folder", door == "add" ? where : null);
             Nullable(writer, "offer", door == "add" ? offered : null);
-            // HELPPLUG1c: the server and the writes an approval accepts; a withdrawal names its server only.
+            // The server and the writes an approval accepts; a withdrawal names its server only.
             Nullable(writer, "server", granting ? served : null);
             if (door == "approve")
             {

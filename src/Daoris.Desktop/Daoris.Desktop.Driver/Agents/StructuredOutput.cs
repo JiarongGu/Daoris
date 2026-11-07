@@ -86,6 +86,11 @@ public interface IStreamsReader
     {
     }
 
+    /// <summary>The file a running task's output is written to, named by an event: its stream follows it from there on.</summary>
+    void Followed(string task, string path)
+    {
+    }
+
     /// <summary>True when the line was a stream's, so the session's reader never sees it.</summary>
     bool Take(NativeFrame frame);
 

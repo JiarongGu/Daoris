@@ -4,7 +4,7 @@ using Daoris.Service.Tests;
 
 namespace Daoris.Service.Http.Tests;
 
-/// <summary>A local host over two adopted repositories, imported from its folder on first run (D48 §3).</summary>
+/// <summary>A local host over two adopted repositories, imported from its folder on first run.</summary>
 public sealed class LocalHost() : DaorisHost(ServiceMode.Local, seed: Seed)
 {
     public string RootOf(string repository) => Path.Combine(Repositories, repository);
@@ -30,9 +30,9 @@ public sealed class LocalHost() : DaorisHost(ServiceMode.Local, seed: Seed)
 }
 
 /// <summary>
-/// The local host's doors (HTTP1): the loopback is the trust boundary (D21), so a registration's root
-/// answers a caller on this machine and nobody else (D46); the delete doors answer here, with the
-/// service's own sentence (D95); and the page is served — the counterpart the shared host's refusal is
+/// The local host's doors: the loopback is the trust boundary, so a registration's root
+/// answers a caller on this machine and nobody else; the delete doors answer here, with the
+/// service's own sentence; and the page is served — the counterpart the shared host's refusal is
 /// measured against.
 /// </summary>
 public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
@@ -54,7 +54,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         (await host.GetAsync("/api/quests")).Json.EnumerateArray()
             .Any(row => row.GetProperty("id").GetString() == quest);
 
-    /// <summary>The local driver is on this machine, and it needs the root to spawn in (D46).</summary>
+    /// <summary>The local driver is on this machine, and it needs the root to spawn in.</summary>
     [Theory]
     [InlineData("127.0.0.1")]
     [InlineData("::1")]
@@ -67,11 +67,11 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// 🔴 A root never leaves the machine (D46): a caller off it is answered the row, and no path — not
+    /// 🔴 A root never leaves the machine: a caller off it is answered the row, and no path — not
     /// in the field, and not anywhere else in the body.
     /// </summary>
     /// <summary>
-    /// FABRIC-CLOSE1c18: the claim's answer says why a lost take lost where it lost to the person's reopen of the work its step grew
+    /// The claim's answer says why a lost take lost where it lost to the person's reopen of the work its step grew
     /// from, so the driver stops its session in words that are true. A take lost to another machine's is answered as before, with none.
     /// </summary>
     [Fact]
@@ -107,7 +107,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// CARRY3: the claim's answer says when the take the quest stands taken by was made, which a later move of the quest's own (here a
+    /// The claim's answer says when the take the quest stands taken by happened, which a later move of the quest's own (here a
     /// wait) does not move as it moves <c>updated</c>; an open quest is answered no time.
     /// </summary>
     [Fact]
@@ -133,13 +133,13 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.True(!none.TryGetProperty("taken", out var taken) || taken.ValueKind == JsonValueKind.Null);
     }
 
-    /// <summary>What a move of <c>GET /api/quests/{id}/moves</c> may answer (FLOWCHART1a2; the flowchart design §2.1, trap 13), and nothing else.</summary>
+    /// <summary>What a move of <c>GET /api/quests/{id}/moves</c> may answer, and nothing else.</summary>
     private static readonly string[] MoveFields =
         ["kind", "at", "machine", "sequence", "number", "applied", "from", "hold", "attempted", "dismisses", "waitsOn", "session", "evidence", "setUp", "verdict"];
 
     /// <summary>
-    /// FLOWCHART1a2 (D186; the flowchart design §2.1, traps 13 and 20): one quest's moves, in the order its history replays, each by
-    /// the allow-list alone: its kind, when and where it was made, its name and number, whether the replay applied it and from which
+    /// One quest's moves, in the order its history replays, each by
+    /// the allow-list alone: its kind, when and where it happened, its name and number, whether the replay applied it and from which
     /// status, and its kind's own field (a wait's quest, a conflict's attempted status, the conflict a dismissal names). Never the
     /// publish's words, a note's body, the answers, or a path any of them holds.
     /// </summary>
@@ -218,8 +218,8 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// 🔴 HANDBACK1 (D219): one quest's handback whole, by the quest's id or the id of the session that served it, in the read's own
-    /// words beside its fields: the act, the note, how each requirement was answered, when, where and by which session. Any id is
+    /// 🔴 One quest's handback whole, by the quest's id or the id of the session that served it, in the read's own
+    /// words beside its fields: the act, the note, how each requirement is answered, when, where and by which session. Any id is
     /// answered, one naming nothing as not found, so a client tells this door's answer from an older host's 404.
     /// </summary>
     [Fact]
@@ -274,7 +274,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// D115 §2.2 (DEV4), through the HTTP doors: a registration's lanes arrive as words and are listed
+    /// Through the HTTP doors: a registration's lanes arrive as words and are listed
     /// by the registry's answer; a registration silent about them keeps them; a quest to one of them is
     /// published to the repository with its lanes, and one to a lane nobody declared is refused, naming
     /// the lanes there are.
@@ -325,7 +325,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Contains("`assets`", said);
     }
 
-    /// <summary>A quest nobody took goes, and the answer is the exchange's sentence (D95).</summary>
+    /// <summary>A quest nobody took goes, and the answer is the exchange's sentence.</summary>
     [Fact]
     public async Task A_quest_nobody_took_is_deleted()
     {
@@ -361,7 +361,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// A decline made while open (PAUSE1c) is the respond door's too, so an abandon reaches it from the driver: an
+    /// A decline made while open is the respond door's too, so an abandon reaches it from the driver: an
     /// open quest is declined with the flag kept, and a taken one answers 409, the lock's shape, with the exchange's
     /// sentence, and stays taken.
     /// </summary>
@@ -397,7 +397,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Contains("0000000000", missing.Error);
     }
 
-    /// <summary>HEAD2e: an ask's short title is kept and answered as `short`; too long is 400 in the rule's sentence; none is null.</summary>
+    /// <summary>An ask's short title is kept and answered as `short`; too long is 400 in the rule's sentence; none is null.</summary>
     [Fact]
     public async Task An_asks_short_title_is_kept_and_answered_and_one_too_long_is_refused()
     {
@@ -421,7 +421,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Contains("at most 40 characters", long_.Error);
     }
 
-    /// <summary>An ask made by mistake goes, and so does the one quest it became (D95).</summary>
+    /// <summary>An ask made by mistake goes, and so does the one quest it became.</summary>
     [Fact]
     public async Task An_ask_made_by_mistake_is_deleted_with_its_quest()
     {
@@ -441,7 +441,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.False(await ListedAsync(quest));
     }
 
-    /// <summary>An ask one of whose quests was taken stays whole: 409, and the desk's sentence.</summary>
+    /// <summary>An ask one of whose quests is taken stays whole: 409, and the desk's sentence.</summary>
     [Fact]
     public async Task An_ask_whose_quest_was_taken_is_refused_with_409_and_the_services_sentence()
     {
@@ -480,8 +480,8 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// DRIFT1a (D133 §1): what the person adds to a running session and what they answer it are kept on the
-    /// ask its quest was asked by, and both ask routes answer them as `words`, after the ask's own sentence:
+    /// What the person adds to a running session and what they answer it are kept on the
+    /// ask its quest is asked by, and both ask routes answer them as `words`, after the ask's own sentence:
     /// each verbatim, with when, the session and the quest. An ask made now keeps its words whole, so it
     /// says nothing of when keeping began.
     /// </summary>
@@ -529,7 +529,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// KNOWUSE1a (D135 §2): a go-ahead a session asked is answered on both ask routes as `goAheads`, the act by its kind,
+    /// A go-ahead a session asked is answered on both ask routes as `goAheads`, the act by its kind,
     /// place and words, with each session's request; the person's answer door keeps their yes or no with their words,
     /// 200 with the ask as it now stands. An answer that is neither, a go-ahead the ask does not hold and an ask nobody
     /// holds are refused, and nothing is kept.
@@ -581,7 +581,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// GOAHEAD2: the go-ahead door answers a park the last of whose go-aheads it answers. A session asks two and parks; the
+    /// The go-ahead door answers a park the last of whose go-aheads it answers. A session asks two and parks; the
     /// first answered keeps it waiting, the sentence naming the one still open; the second keeps the park's blank answer,
     /// the sentence saying it goes on. A caller that answers the park itself says `goesOn: false`, and the park is left to it.
     /// </summary>
@@ -601,7 +601,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
         async Task<JsonElement> RecordAsync(string id) =>
             (await host.GetAsync("/api/sessions?includeClosed=true")).Json.EnumerateArray().Single(row => row.GetProperty("id").GetString() == id);
-        // ONEWAY1m: a park's answer is read from its keyed words alone.
+        // A park's answer is read from its keyed words alone.
         static IReadOnlyList<string?> SaidOf(JsonElement record) =>
             [.. record.GetProperty("said").EnumerateArray().Select(word => word.GetProperty("text").GetString())];
 
@@ -640,7 +640,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// DRIFT1c (D133 §3): the ask's publish door takes requirements, each the person's words with its check.
+    /// The ask's publish door takes requirements, each the person's words with its check.
     /// A quote they never said is refused, 409 with the exchange's sentence naming the words, and nothing is
     /// published; one they said is published, and the quest answers it on the publish and on the list.
     /// </summary>
@@ -680,7 +680,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// SESSUX1j: the quest door takes the composer's short title and answers every quest with what a list calls it, the
+    /// The quest door takes the composer's short title and answers every quest with what a list calls it, the
     /// publisher's short title or a name read from its words; one past 40 characters is refused, 400, in the service's words.
     /// </summary>
     [Fact]
@@ -711,7 +711,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// FOUNDATION1x: a quest published marked design answers its weight, as the driver reads it to start the work on the role taking
+    /// A quest published marked design answers its weight, as the driver reads it to start the work on the role taking
     /// design; an unmarked one answers none, and a weight that is neither design nor exact is refused, 400.
     /// </summary>
     [Fact]
@@ -736,7 +736,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// INTEGRATE1l: a quest published with paths answers them, as the driver reads them to compare a start with the repository's
+    /// A quest published with paths answers them, as the driver reads them to compare a start with the repository's
     /// other open work; one declaring none answers an empty list, and a path outside the repository is refused, 400. The ask door
     /// keeps and answers an asker's paths the same way.
     /// </summary>
@@ -764,7 +764,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// INTEGRATE1p (R5's C32): the driver publishes a workflow request's quest under its key, and the door answers the key; the same
+    /// The driver publishes a workflow request's quest under its key, and the door answers the key; the same
     /// key posted again, as after a lost answer, is the same quest, and a key that is no run, node and number is refused, 400.
     /// </summary>
     [Fact]
@@ -782,7 +782,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// DRIFT1c: the quest door keeps working for a client that names no requirements, answering the quest
+    /// The quest door keeps working for a client that names no requirements, answering the quest
     /// with none; a repository naming some is asking on no ask, so there is nothing to quote, 400.
     /// </summary>
     [Fact]
@@ -808,7 +808,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// DRIFT1d (D133 §4): the respond door's done answers each requirement. One left unanswered is refused, 400 naming
+    /// The respond door's done answers each requirement. One left unanswered is refused, 400 naming
     /// it; a departure closes the quest done, answered on the quest with <c>held</c>, and it stays on the outstanding
     /// list. The accept door, the person's yes, releases it: 200 once, 409 after, 404 for a quest nobody holds.
     /// </summary>
@@ -864,8 +864,8 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// QUESTCLOSE1 (D126's note): the person's done door closes a taken quest that carries their requirements, answering
-    /// none, its note saying it was theirs with their words: 200 once, 409 after, 404 for a quest nobody holds.
+    /// The person's done door closes a taken quest that carries their requirements, answering
+    /// none, its note saying it is theirs with their words: 200 once, 409 after, 404 for a quest nobody holds.
     /// </summary>
     [Fact]
     public async Task The_persons_done_door_closes_a_quest_with_requirements_and_says_it_was_theirs()
@@ -881,7 +881,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
             requirements = new[] { new { quote = "through the v3 bridge", check = "The write-up names the bridge's route." } },
         });
         var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
-        // A quest with no note parts is answered as it was, with no field for them (QUESTCLOSE1b1).
+        // A quest with no note parts is answered with no field for them.
         Assert.False(published.Json.GetProperty("quest").TryGetProperty("noteParts", out _));
         Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
 
@@ -892,7 +892,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         var closed = done.Json.GetProperty("quest");
         Assert.Equal("Done", closed.GetProperty("status").GetString());
         Assert.Equal("The person marked this done: It is in the shared folder.", closed.GetProperty("note").GetString());
-        // The note's parts beside it (QUESTCLOSE1b1): Daoris's lead by its code, then the person's words, as theirs.
+        // The note's parts beside it: Daoris's lead by its code, then the person's words, as theirs.
         var parts = closed.GetProperty("noteParts");
         Assert.Equal("quest.person-done", parts[0].GetProperty("code").GetString());
         Assert.Equal(("It is in the shared folder.", "person"), (parts[1].GetProperty("words").GetString(), parts[1].GetProperty("by").GetString()));
@@ -904,7 +904,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// EVID1a (D144 §2–§3, §6): the publish doors take a requirement's evidence and answer it on the quest; a gate is
+    /// The publish doors take a requirement's evidence and answer it on the quest; a gate is
     /// refused naming the queue. A met done waits for its evidence (<c>hold</c> <c>evidence-unread</c>); the evidence
     /// door takes the driver's verdict: missing keeps it held (<c>evidence-missing</c>), a verdict that is not one is 400,
     /// found releases it, and a second is 409, an unknown quest 404.
@@ -958,7 +958,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
         Assert.Contains(("POST", "/api/quests/{id}/evidence"), host.Routes());
         const string Commit = "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678";
-        // REFAC3: the door hands every field to the one judge of a verdict's shape, which keeps `spelled` to a `case` read.
+        // The door hands every field to the one judge of a verdict's shape, which keeps `spelled` to a `case` read.
         var astray = await host.PostAsync($"/api/quests/{quest}/evidence", new
         {
             commit = Commit, how = "session-end",
@@ -982,7 +982,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(400, unread.Status);
         Assert.Contains("`docs/report-bridge.md`", unread.Error);
 
-        // FABRIC-CLOSE1e: a verdict names the submission it was read for, and a done has none, so one naming a submission is
+        // A verdict names the submission it is read for, and a done has none, so one naming a submission is
         // read for something else (409); one half named is not a verdict (400).
         var reportFound = new[] { new { requirement = 1, path = "docs/report-bridge.md", result = "found" } };
         var elsewhere = await host.PostAsync($"/api/quests/{quest}/evidence", new
@@ -1015,14 +1015,14 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1a (the fabric events design §E5): the driver binds a taken quest to the graph that closes it; the agent's
+    /// The driver binds a taken quest to the graph that closes it; the agent's
     /// done is refused there naming `ready`, and its `ready` answers the quest Taken with its submission and the graph's digest.
     /// The close door writes it Done on the submission named, answers the same key again with the first outcome, and refuses a
     /// call that is not one (400), an unknown quest (404) and a stale or closed one (409).
     /// </summary>
     /// <summary>
-    /// FABRIC-CLOSE1c5 (§E5): a submission on the wire names the commit its evidence was read at, once that is read for it, and
-    /// leaves `commit` out before, so a quest no evidence was read for is answered as it was.
+    /// A submission on the wire names the commit its evidence is read at, once that is read for it, and
+    /// leaves `commit` out before, so a quest no evidence is read for is answered without it.
     /// </summary>
     [Fact]
     public async Task A_submission_answers_its_evidence_commit_once_read_and_leaves_it_out_before()
@@ -1108,7 +1108,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
             key = "k0", token = "t", quests = new[] { named with { sequence = named.sequence + 7 } },
         })).Status);
 
-        // FABRIC-CLOSE1v: a quest of no chain this one grew from is refused by its own code, the whole close with it.
+        // A quest of no chain this one grew from is refused by its own code, the whole close with it.
         var otherAsk = (await host.PostAsync("/api/asks", new { workspace = "default", sentence = "Write the stray report for the weekly review." }))
             .Json.GetProperty("ask").GetProperty("id").GetString()!;
         var other = (await host.PostAsync($"/api/asks/{otherAsk}/publish", new { to = "Keeper", title = "Write the stray report", body = "For the review." }))
@@ -1131,7 +1131,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(200, again.Status);
         Assert.Contains("made already", again.Json.GetProperty("message").GetString());
         Assert.Equal(409, (await host.PostAsync($"/api/quests/{quest}/close", new { key = "k2", token = "t", quests = new[] { named } })).Status);
-        // FABRIC-CLOSE1e: a key answers only its own close (409 sent with another token), and a refusal is its first outcome,
+        // A key answers only its own close (409 sent with another token), and a refusal is its first outcome,
         // so the stale close's key still answers stale.
         var reused = await host.PostAsync($"/api/quests/{quest}/close", new { key = "k1", token = "another", quests = new[] { named } });
         Assert.Equal(409, reused.Status);
@@ -1143,11 +1143,11 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(409, stale.Status);
         Assert.Contains("first sent", stale.Error);
 
-        // FABRIC-CLOSE1b: each refusal names its check by a code the driver reads, a replayed one the check it was refused on then.
+        // Each refusal names its check by a code the driver reads, a replayed one the check that refused it.
         Assert.Equal("key-reused", reused.Json.GetProperty("code").GetString());
         Assert.Equal("stale", stale.Json.GetProperty("code").GetString());
 
-        // FABRIC-CLOSE1u: what became of a key, at its own door, executing nothing: a close made answers it; a key never taken is
+        // What became of a key, at its own door, executing nothing: a close made answers it; a key never taken is
         // withdrawn (409 `withdrawn`), and its close sent after is refused alike; a question that is not one is 400.
         Assert.Contains(("POST", "/api/quests/{id}/close/outcome"), host.Routes());
         var made = await host.PostAsync($"/api/quests/{quest}/close/outcome", new { key = "k1", token = "t", quests = new[] { named } });
@@ -1159,16 +1159,16 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal((409, "withdrawn"), (late.Status, late.Json.GetProperty("code").GetString()));
         Assert.Equal(400, (await host.PostAsync($"/api/quests/{quest}/close/outcome", new { token = "t", quests = new[] { named } })).Status);
 
-        // FABRIC-CLOSE1b's handshake: this host knows a closure graph's operations and doors.
+        // The handshake: this host knows a closure graph's operations and doors.
         Assert.True((await host.GetAsync("/api/status")).Json.GetProperty("closure").GetBoolean());
-        // CLOSECAP1: and its outcome door, which a binding also needs.
+        // And its outcome door, which a binding also needs.
         Assert.True((await host.GetAsync("/api/status")).Json.GetProperty("closeOutcome").GetBoolean());
-        // FABRIC-CLOSE1i: and judges a bind through a remote by the remote's handshake.
+        // And judges a bind through a remote by the remote's handshake.
         Assert.True((await host.GetAsync("/api/status")).Json.GetProperty("closeRemote").GetBoolean());
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1i2: the person's retirement of a machine at a circle's remote is a door of this host, and a circle with no remote here
+    /// The person's retirement of a machine at a circle's remote is a door of this host, and a circle with no remote here
     /// has nothing to retire there: refused in words, and its standing names no machines.
     /// </summary>
     [Fact]
@@ -1182,7 +1182,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1c (§E5): the person's reopen of a sealed submission and their word to go on, at their own doors. The step answers
+    /// The person's reopen of a sealed submission and their word to go on, at their own doors. The step answers
     /// the submission it grew from, and the one reopened under it with its hold; a take of the withdrawn step is a stand-down (409);
     /// the next ready rebinds the same step.
     /// </summary>
@@ -1216,7 +1216,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(404, (await host.PostAsync("/api/quests/feedfacecafe/reopen", new { submission = named })).Status);
         Assert.Equal(409, (await host.PostAsync($"/api/quests/{quest}/reopen", new { submission = named with { sequence = named.sequence + 7 } })).Status);
 
-        // A ready through this door names no session (FABRIC-CLOSE1c4).
+        // A ready through this door names no session.
         Assert.False(submission.TryGetProperty("session", out _));
         Assert.False(ready.Json.GetProperty("quest").TryGetProperty("reopened", out _));
 
@@ -1224,7 +1224,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
         Assert.Equal(200, reopened.Status);
         Assert.False(reopened.Json.GetProperty("quest").TryGetProperty("submission", out _));
-        // FABRIC-CLOSE1c4: the source answers the reopen by its own name, the submission it reopened, and the person's words.
+        // The source answers the reopen by its own name, the submission it reopened, and the person's words.
         var reopen = reopened.Json.GetProperty("quest").GetProperty("reopened");
         Assert.Equal((named.machine, named.sequence, "Build it again."),
             (reopen.GetProperty("of").GetProperty("machine").GetString(), reopen.GetProperty("of").GetProperty("sequence").GetInt64(),
@@ -1232,7 +1232,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(named.machine, reopen.GetProperty("machine").GetString());
         Assert.True(reopen.GetProperty("sequence").GetInt64() > named.sequence);
         Assert.True(reopen.TryGetProperty("at", out _));
-        // FABRIC-CLOSE1c8: a ready this door made names no session, so its reopen names none to tell.
+        // A ready this door made names no session, so its reopen names none to tell.
         Assert.False(reopen.TryGetProperty("session", out _));
         Assert.Contains($"#{stepId}", reopened.Json.GetProperty("message").GetString());
         var withdrawn = await Step();
@@ -1253,7 +1253,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// SYNCMERGE1a (D178 point 3): the person's bring-forward of their machine's lost take, at its own door. The body names the conflict
+    /// The person's bring-forward of their machine's lost take, at its own door. The body names the conflict
     /// by its machine and sequence, as the quest answers it; one not named whole is refused before anything is asked of the store, a quest
     /// there is not is 404, and a conflict that is not this machine's lost take is a state, the lock's 409. The press that stands is
     /// proven on two machines and the remote by the service's suites, which a host with no remote cannot make.
@@ -1275,8 +1275,6 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal("Open", (await host.GetAsync("/api/quests")).Json.EnumerateArray()
             .Single(row => row.GetProperty("id").GetString() == quest).GetProperty("status").GetString());
     }
-
-    // ——— SYNCMERGE1b0 (D178 points 3, 7 and 8): what a bring-forward needs said, to the driver and the page.
 
     /// <summary>A quest as the list answers it, closed ones included, to a caller on this machine or off it.</summary>
     private async Task<JsonElement> QuestRowAsync(string id, System.Net.IPAddress? from = null) =>
@@ -1308,9 +1306,9 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
     /// <summary>
     /// The person brings their machine's lost take forward. The quest answers the conflict settled, brought forward, with the take it made
-    /// and that take's standing, unconfirmed on a host with no remote (D178 point 8); this machine holds the step, and the answer names this
+    /// and that take's standing, unconfirmed on a host with no remote; this machine holds the step, and the answer names this
     /// machine, to a caller on it, so the page knows the conflict and the take as its own. The claim says the take came from the
-    /// bring-forward, which the driver carries the kept session on from (SYNCMERGE1b). Before the press: an open conflict, nobody holding the
+    /// bring-forward, which the driver carries the kept session on from. Before the press: an open conflict, nobody holding the
     /// step, and a claim lost with no bring-forward.
     /// </summary>
     [Fact]
@@ -1356,7 +1354,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// How each other conflict reads (D178 point 7): one lost to the person's reopen of the work its step grew from says so, and one lost to
+    /// How each other conflict reads: one lost to the person's reopen of the work its step grew from says so, and one lost to
     /// another machine's take does not, that machine holding the step; dropped by a plain dismissal it is settled, `dropped`, with no
     /// take; and brought forward but lost again to another machine's take, the conflict stays, its bring-forward named with the take it
     /// made, now `lost`, which is a conflict of its own beside it, and the other machine holds the step. The claim then names no
@@ -1407,7 +1405,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1c10: the person's word to go on with a started step that had submitted answers the step taken with no submission,
+    /// The person's word to go on with a started step that had submitted answers the step taken with no submission,
     /// and says its old result is cleared and that it must submit again.
     /// </summary>
     [Fact]
@@ -1445,8 +1443,8 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1c4: a submission a session's ready made answers that session (the one its connector's intake named), so the driver
-    /// tells the session that said it when the person reopens it, not the newest one on the quest. FABRIC-CLOSE1c8: the reopen, which
+    /// A submission a session's ready made answers that session (the one its connector's intake named), so the driver
+    /// tells the session that said it when the person reopens it, not the newest one on the quest. The reopen, which
     /// clears the submission, answers that session in its place.
     /// </summary>
     [Fact]
@@ -1475,7 +1473,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// REVIEWENV1b (D154; the review environment design §2.1, §2.6, §3.3–§3.6): the publish doors take a chain's review choice
+    /// The publish doors take a chain's review choice
     /// and a set-up step and answer them on the quest; a set-up step that reads as production is refused. The set-up step's
     /// done waits on a set-up, here the person's own posted at the set-up door, then holds (<c>hold</c> <c>unreviewed</c>)
     /// until the review door's <c>reviewed</c>. The person's <i>Set it up</i> door publishes one after done work, and the ask's
@@ -1548,7 +1546,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(400, (await host.PostAsync($"/api/quests/{stepId}/review", new { verdict = "not-yet" })).Status);
         Assert.Equal(400, (await host.PostAsync($"/api/quests/{stepId}/review", new { verdict = "fine" })).Status);
         Assert.Equal(404, (await host.PostAsync("/api/quests/feedfacecafe/review", new { verdict = "reviewed" })).Status);
-        // The set-up the person looked at, named as the quest answers it (REVIEWENV1b3).
+        // The set-up the person looked at, named as the quest answers it.
         var looked = new { machine = setUp.GetProperty("machine").GetString(), sequence = setUp.GetProperty("sequence").GetInt64() };
         var reviewed = await host.PostAsync($"/api/quests/{stepId}/review", new { verdict = "reviewed", words = "That is the setting.", setUp = looked });
         Assert.Equal(200, reviewed.Status);
@@ -1580,8 +1578,8 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// WORKFLOW1e (the workflow design §4.3): the ask's workflow door keeps the person's kind and workflow, the latest standing, and
-    /// answers them on the ask; an ask that chose none answers without the field, as it always did. A shape that is not one is
+    /// The ask's workflow door keeps the person's kind and workflow, the latest standing, and
+    /// answers them on the ask; an ask that chose none answers without the field. A shape that is not one is
     /// 400, a closed ask 409, an unknown one 404.
     /// </summary>
     [Fact]
@@ -1609,7 +1607,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// WORKFLOW1e2 (the workflow design §4.1 row 1): a quest published with no ask keeps the person's kind and workflow from its page
+    /// A quest published with no ask keeps the person's kind and workflow from its page
     /// while it is open, the latest standing, and answers them on the quest; one that chose none answers without the field. A shape
     /// that is not one is 400, an unknown quest 404, and one already taken 409, its run bound at its start. A quest an ask published is
     /// 409 too: its ask's choice is the task's.
@@ -1650,7 +1648,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// WORKFLOW1i-a (the workflow design §4.3): an intake's publish carries a kind proposal whose reason quotes the person, and the
+    /// An intake's publish carries a kind proposal whose reason quotes the person, and the
     /// ask answers it as <c>workflowProposals</c>, beside <c>workflowChoices</c>, which it never touches; an ask with none answers
     /// without the field. A reason the person never said is 409, and a kind that is not a kind's id 400.
     /// </summary>
@@ -1688,8 +1686,8 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// DRIFT1a: the added door keeps nothing for a session on no ask, and says so with a 200 — its own record
-    /// holds what was said, which is no error; it refuses a session it does not hold, 404, and no words, 400.
+    /// The added door keeps nothing for a session on no ask, and says so with a 200 — its own record
+    /// holds what is said, which is no error; it refuses a session it does not hold, 404, and no words, 400.
     /// </summary>
     [Fact]
     public async Task The_added_door_keeps_nothing_off_an_ask_and_refuses_an_unknown_session_or_no_words()
@@ -1712,7 +1710,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// D104: the driver says a stop was not the person's — the sweep's, or a shutdown's — through the
+    /// The driver says a stop is not the person's — the sweep's, or a shutdown's — through the
     /// state door, and the record answers it back. Asked of any other move, it is refused, 409.
     /// </summary>
     [Fact]
@@ -1742,8 +1740,8 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// CARRY2: a carry-on over a take that is not this machine's is a state conflict, 409, as a taken quest is, and its
-    /// sentence names the session it will not carry on. Here that session failed before its take, and the quest was taken
+    /// A carry-on over a take that is not this machine's is a state conflict, 409, as a taken quest is, and its
+    /// sentence names the session it will not carry on. Here that session failed before its take, and the quest is taken
     /// through the door after it ended.
     /// </summary>
     [Fact]
@@ -1769,8 +1767,8 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// LANG1a (D142 point 2): the state door takes a note's parts beside it, and the record's route and the list answer
-    /// them back, the note unchanged beside them. A note sent without parts clears them, so an older driver's note never
+    /// The state door takes a note's parts beside it, and the record's route and the list answer
+    /// them back, the note unchanged beside them. A note sent without parts clears them, so a note never
     /// sits beside stale ones; a move that sends no note keeps both; an answer adds its own lines after them.
     /// </summary>
     [Fact]
@@ -1816,9 +1814,9 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     ];
 
     /// <summary>
-    /// ONEWAY1k (the oneway design §4 M1): a park is answered through the say door alone, its own answer route gone. The say replies with
+    /// A park is answered through the say door alone, its own answer route gone. The say replies with
     /// the session as it now stands, still `awaiting-person`, its words kept and said on its note, which is how the driver tells a watcher
-    /// nothing moved; a second word joins the first (MSG1a, D137 §6). The words are answered to this machine only, like a transcript, and a
+    /// nothing moved; a second word joins the first. The words are answered to this machine only, like a transcript, and a
     /// running record is a 409.
     /// </summary>
     [Fact]
@@ -1855,9 +1853,9 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// MSG1a (D137 §2.3, §5.3): the say door keeps the person's words on an ended session of this machine's, the record
+    /// The say door keeps the person's words on an ended session of this machine's, the record
     /// staying as it ended. It answers the word with its id, when and its files' names (never a path), and the session as
-    /// it stands. The words are answered to this machine only, as the keyed words alone: no joined `answer` (ONEWAY1m). The
+    /// it stands. The words are answered to this machine only, as the keyed words alone: no joined `answer`. The
     /// state door then takes the record out of its ended state to working, and the taken door takes the words off it.
     /// </summary>
     [Fact]
@@ -1908,7 +1906,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// MSG1a (D137 §2.2, §5.3): the say door refuses what never goes on, each by its word beside the ledger's sentence and
+    /// The say door refuses what never goes on, each by its word beside the ledger's sentence and
     /// the fact the word names: a stood-down session (its quest), a teammate's record (its machine), an intake (its ask)
     /// and a running session, each 409; no words, 400; and a session this host does not hold, 404.
     /// </summary>
@@ -1949,9 +1947,9 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// COWORK1c (the message-urgency design §6, §9): the say door keeps words for a running session's run where the driver that runs
+    /// The say door keeps words for a running session's run where the driver that runs
     /// it asks so (<c>running</c>), the record staying as it runs, and answers the word with its level, to this machine only. Nothing
-    /// is kept on the ask, since no park was answered: the run keeps them there as it takes them. A level this service does not know
+    /// is kept on the ask, since no park is answered: the run keeps them there as it takes them. A level this service does not know
     /// is 400 by its word, and nothing is kept.
     /// </summary>
     [Fact]
@@ -1984,8 +1982,8 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal((400, "level"), (shouted.Status, shouted.Json.GetProperty("refusal").GetString()));
         Assert.Equal(words, await WordsAsync());
 
-        // The attempt door (COWORK1c, the design §6): the dispatcher marks the word before the wire, the first moment kept; a word no
-        // longer waiting marks nothing and is said so, never an error; none named is 400, and a session nobody holds 404.
+        // The attempt door: the dispatcher marks the word before the wire, the first moment kept; a word not
+        // waiting marks nothing and is said so, never an error; none named is 400, and a session nobody holds 404.
         var kept = word.GetProperty("id").GetString()!;
         var attempted = await host.PostAsync($"/api/sessions/{running}/attempt", new { said = new[] { kept } });
         var again = await host.PostAsync($"/api/sessions/{running}/attempt", new { said = new[] { kept } });
@@ -2005,9 +2003,9 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// SAIDBACK1a (D137 §2.4): the take-back door takes a word waiting on an ended session of this machine's off its record by
+    /// The take-back door takes a word waiting on an ended session of this machine's off its record by
     /// its id, or with <c>text</c> rewords it: the old word out, the new one last under a new id, answered to this machine only.
-    /// A word no longer waiting answers <c>done: false, why: taken</c>, never an error; a reword with no words is 400, a session
+    /// A word not waiting answers <c>done: false, why: taken</c>, never an error; a reword with no words is 400, a session
     /// nobody holds 404, and what never goes on 409 by the say door's word. Nothing is kept on the ask.
     /// </summary>
     [Fact]
@@ -2070,7 +2068,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// MSG1a (D137 §2.4, D133 §1): the person's words reach the ask the session's work is for. Said to a parked session,
+    /// The person's words reach the ask the session's work is for. Said to a parked session,
     /// through the say door, they are its answer and kept at once. Said to an ended one, they
     /// are kept once taken, as `reopened`, said to the session that took them; an answer taken off the record is not kept
     /// twice.
@@ -2115,9 +2113,8 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// SESSONE2e (D167): words the channel carried, said with the channel message's id, are kept on the ask by the channel as
-    /// `channel` (SESSONE2a), so the say door keeps no `answered` for a park nor, once taken, `reopened` for an ended one.
-    /// Words said with no id behave as before.
+    /// Words the channel carried, said with the channel message's id, are kept on the ask by the channel as
+    /// `channel`, so the say door keeps no `answered` for a park nor, once taken, `reopened` for an ended one.
     /// </summary>
     [Fact]
     public async Task Words_said_with_a_channel_id_are_not_kept_on_the_ask_a_second_time()
@@ -2151,9 +2148,9 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// COWORK1b (D188's COWORK1b note; the message-urgency design §6, §9): Daoris's own words reach the say door with <c>from</c> and
+    /// Daoris's own words reach the say door with <c>from</c> and
     /// their producer's <c>key</c>, are answered back with both, and are never kept on the ask, where every later session would read
-    /// them as the person's (DRIFT1a): not as a park's answer, nor as <c>reopened</c> once taken. A second say under the same key is
+    /// them as the person's: not as a park's answer, nor as <c>reopened</c> once taken. A second say under the same key is
     /// answered as the word kept, and an author this build does not know is refused, 400.
     /// </summary>
     [Fact]
@@ -2170,7 +2167,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
         var told = await host.PostAsync($"/api/sessions/{id}/say", new { text = "Daoris: the person reopened it.", from = "daoris", key = "reopen/q1/desk/44" });
         var again = await host.PostAsync($"/api/sessions/{id}/say", new { text = "Daoris: the person reopened it.", from = "daoris", key = "reopen/q1/desk/44" });
-        // COWORK1d made `agent` an author this build knows (a claim the person passed on): a stranger is any other word.
+        // `agent` is an author this build knows (a claim the person passed on): a stranger is any other word.
         var stranger = await host.PostAsync($"/api/sessions/{id}/say", new { text = "Hello.", from = "teammate" });
 
         Assert.Equal((200, 200, 400), (told.Status, again.Status, stranger.Status));
@@ -2194,7 +2191,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// TOOL4c (D125 §5.2): the driver says a failure was an account's limit through the state door, and the
+    /// The driver says a failure is an account's limit through the state door, and the
     /// record answers it back to every caller, off this machine too: the flag names no account, so it
     /// travels where the account's name does not. Asked of any other move, it is refused, 409.
     /// </summary>
@@ -2231,7 +2228,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// LIMITRESUME1h (D206, design §3.8): an intake an account's limit ended lets its ask go through the state door, in the same move, so
+    /// An intake an account's limit ended lets its ask go through the state door, in the same move, so
     /// the next intake may open for it; asked of a move to anything but failed, it is refused, 409.
     /// </summary>
     [Fact]
@@ -2277,7 +2274,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
             .Cast<JsonElement?>().SingleOrDefault(row => row!.Value.GetProperty("id").GetString() == id);
 
     /// <summary>
-    /// SESSUX1f (D126 §5.4): a conversation that served no quest is listed as deletable and goes, with the ledger's
+    /// A conversation that served no quest is listed as deletable and goes, with the ledger's
     /// sentence; the judgement alone, which the driver asks before its own half, answers the same and deletes nothing.
     /// </summary>
     [Fact]
@@ -2300,7 +2297,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// SESSUX1f: a session that served a quest is listed as not deletable, and its delete is a 409 carrying the ledger's
+    /// A session that served a quest is listed as not deletable, and its delete is a 409 carrying the ledger's
     /// sentence verbatim and the refusal's word and facts, which the driver reads instead of the sentence. The judgement
     /// answers the same refusal.
     /// </summary>
@@ -2337,7 +2334,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal("not-found", missing.Json.GetProperty("refusal").GetString());
     }
 
-    // ——— Clearing finished history (HIST1b, D153; the history-clearing design §6.3): listed first, then pressed (D88).
+    // ——— Clearing finished history: listed first, then pressed.
 
     /// <summary>A quest of <c>Asker</c>'s to <c>Keeper</c>, taken and closed done through the respond door.</summary>
     private async Task<string> ClosedAsync(string title)
@@ -2354,7 +2351,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
     /// <summary>
     /// A closed quest is listed with what a clear takes, by its quest and with its workspace, deleting nothing; the press
-    /// names it and clears exactly it, and the answer says what went. Here nothing was ever numbered by a remote, so it
+    /// names it and clears exactly it, and the answer says what went. Here nothing is numbered by a remote, so it
     /// simply goes, row and log together.
     /// </summary>
     [Fact]
@@ -2387,8 +2384,8 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// A kept file the disk will not let go of is named in the press's answer (HIST1j), additively: <c>failed</c> names the quest
-    /// whose kept files stayed, and an answer where every removal was made carries none, so a driver from before reads both. On
+    /// A kept file the disk will not let go of is named in the press's answer: <c>failed</c> names the quest
+    /// whose kept files stayed, and an answer where every removal is made carries none. On
     /// Windows a file held open without delete sharing is the disk refusing; the desk's tests inject it on every platform.
     /// </summary>
     [Fact]
@@ -2418,7 +2415,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
     /// <summary>
     /// A unit that may not go is listed with its refusal's word, the desk's sentence as <c>error</c> and what it names,
-    /// as SESSUX1f's refusals are, so the driver reads the word and never the sentence; pressed, it stays.
+    /// as a session's refusals are, so the driver reads the word and never the sentence; pressed, it stays.
     /// </summary>
     [Fact]
     public async Task A_unit_that_stays_answers_its_word_the_desks_sentence_and_what_it_names()
@@ -2442,8 +2439,8 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// HIST1l: a <c>needs-you</c> names what waits beside its word, in <c>waits</c>, at both doors, so the driver says the sentence
-    /// meant without reading the records again (design §6.3). Additive: the word is unchanged, and no other word carries it.
+    /// A <c>needs-you</c> names what waits beside its word, in <c>waits</c>, at both doors, so the driver says the sentence
+    /// meant without reading the records again. The word is unchanged, and no other word carries it.
     /// </summary>
     [Theory]
     [InlineData("parked", "parked")]
@@ -2573,8 +2570,8 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// HIST1m: an <c>open</c> names how the work in progress stands, in <c>stands</c>, and an <c>awaited</c> the open work that
-    /// names it, in <c>by</c>, at both doors, as HIST1l's <c>waits</c> rides beside <c>needs-you</c> (design §6.3). Additive: the
+    /// An <c>open</c> names how the work in progress stands, in <c>stands</c>, and an <c>awaited</c> the open work that
+    /// names it, in <c>by</c>, at both doors, as <c>waits</c> rides beside <c>needs-you</c>. The
     /// words are unchanged, and each field rides beside its own word alone.
     /// </summary>
     [Theory]
@@ -2717,7 +2714,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
     /// <summary>
     /// The same words as a quest this machine forgot are refused at the publish door with 409, the exchange's sentence,
-    /// as a closed quest's move is: the remote still holds it closed (HIST1b, H5). Forgotten here by the store's own rows,
+    /// as a closed quest's move is: the remote still holds it closed. Forgotten here by the store's own rows,
     /// as a clear of a quest a remote numbered leaves them, since this host has no remote.
     /// </summary>
     [Fact]

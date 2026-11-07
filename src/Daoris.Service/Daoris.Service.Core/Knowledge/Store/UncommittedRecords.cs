@@ -4,16 +4,15 @@ using System.Text;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Whether a checkout's record folders differ from the commit its <c>HEAD</c> names (KNOWFRESH1a-ii; the knowledge-freshness
-/// design's §3.1): a hit's reading is "at that commit" only while the files it read are that commit's, and a search says
+/// Whether a checkout's record folders differ from the commit its <c>HEAD</c> names: a hit's reading is "at that commit" only while the files it read are that commit's, and a search says
 /// <c>+ uncommitted</c> where they are not.
 /// </summary>
 /// <remarks>
 /// <para><b>One git status, asked once for a reading.</b> The newest write among the records says a root moved, never whether
-/// it moved from its commit, and a <c>git log</c> a hit was cut for its cost; one <c>status</c> over the folders the scan reads
+/// it moved from its commit, and a <c>git log</c> per hit costs too much; one <c>status</c> over the folders the scan reads
 /// answers for every hit of the reading. It is asked as the reading is taken, so what changes during the read marks the next.</para>
 ///
-/// <para><b>It never takes git's index lock</b> (<c>--no-optional-locks</c>, REVIEWLOCK1): a status refreshes the index's stat data and
+/// <para><b>It never takes git's index lock</b> (<c>--no-optional-locks</c>): a status refreshes the index's stat data and
 /// writes it back where it can, and a session writing in the tree would then fail its own <c>git add</c> on a lock this read held.</para>
 ///
 /// <para><b>Where git cannot answer, nothing is said</b>: a folder that is no checkout of its own, a git that is not installed, an
@@ -38,7 +37,7 @@ public static class UncommittedRecords
 
     /// <summary>
     /// Whether one record file of <paramref name="root"/> differs from the commit its <c>HEAD</c> names, a new file git does not
-    /// ignore included (KNOWCENTRAL2a): a citation's recheck asks of the cited file alone, so another file's edit changes nothing.
+    /// ignore included: a citation's recheck asks of the cited file alone, so another file's edit changes nothing.
     /// Null where git did not answer.
     /// </summary>
     /// <param name="relativePath">The file, repository-relative with forward slashes, as an entry names it.</param>
@@ -99,7 +98,7 @@ public static class UncommittedRecords
         return folders;
     }
 
-    /// <summary>The start of the one git <see cref="Of"/> asks, past Git for Windows' launcher where that is the git found (GITSTART2).</summary>
+    /// <summary>The start of the one git <see cref="Of"/> asks, past Git for Windows' launcher where that is the git found.</summary>
     /// <param name="specs">The pathspecs the status reads, each as git takes it.</param>
     internal static ProcessStartInfo Start(string root, IReadOnlyList<string> specs)
     {

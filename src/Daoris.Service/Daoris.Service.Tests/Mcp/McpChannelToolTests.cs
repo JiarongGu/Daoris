@@ -5,7 +5,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// SESSONE2a (D167 point 7; the co-working design §2.2): <c>channel_post</c> and <c>channel_read</c> speak only for the session the
+/// <c>channel_post</c> and <c>channel_read</c> speak only for the session the
 /// connector names, say each refusal in a sentence the agent reads, and read what is new since that session's entry last read.
 /// </summary>
 public sealed class McpChannelToolTests : IAsyncLifetime
@@ -88,7 +88,7 @@ public sealed class McpChannelToolTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 COWORK1d (trap 10): <c>channel_post</c>'s <c>urgent</c> says the post reaches a working session at its next step; the
+    /// 🔴 <c>channel_post</c>'s <c>urgent</c> says the post reaches a working session at its next step; the
     /// answer says so, and a part's fourth urgent post is kept ordinary, which the answer says too. An ordinary post says it waits.
     /// </summary>
     [Fact]
@@ -107,7 +107,7 @@ public sealed class McpChannelToolTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 COWORK1d (the message-urgency design §7, trap 15): <c>channel_read</c> marks an urgent message so, and answers a poster what each
+    /// 🔴 <c>channel_read</c> marks an urgent message so, and answers a poster what each
     /// of its own messages reached, per repository it addresses.
     /// </summary>
     [Fact]
@@ -126,7 +126,7 @@ public sealed class McpChannelToolTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 COWORK1d (the message-urgency design §4.2, D188's note): the line every answer ends with names what waits for the session's
+    /// 🔴 The line every answer ends with names what waits for the session's
     /// entry, how many and how many urgent, once per new message; nothing once the agent read them, and nothing for a session on no ask.
     /// </summary>
     [Fact]
@@ -163,7 +163,7 @@ public sealed class McpChannelToolTests : IAsyncLifetime
         Assert.Contains("no words", await As(_channel, session.Id).PostAsync("  "));
         Assert.Contains("4000", await As(_channel, session.Id).PostAsync(new string('x', 4001)));
         Assert.Contains("not one of this channel's repositories", await As(_channel, session.Id).PostAsync("hello", to: "nowhere"));
-        // COMMS1k: a session of another line named in `to` is no sibling part.
+        // A session of another line named in `to` is no sibling part.
         Assert.Contains("no other part of your own line of work", await As(_channel, session.Id).PostAsync("hello", to: chat.Id));
         Assert.Contains("no message", await As(_channel, session.Id).PostAsync("hello", re: "nosuchid"));
         Assert.Contains("no session", await As(_channel, null).PostAsync("hello"));
@@ -173,7 +173,7 @@ public sealed class McpChannelToolTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// COMMS1k: a chat on no ask posts on its own line's channel, which the session on the quest it published reads with its poster named,
+    /// A chat on no ask posts on its own line's channel, which the session on the quest it published reads with its poster named,
     /// and the chat's own read says its line's channel holds nothing new for it; the line every answer ends with names that channel.
     /// </summary>
     [Fact]

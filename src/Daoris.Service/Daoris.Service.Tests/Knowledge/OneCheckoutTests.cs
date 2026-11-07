@@ -3,8 +3,8 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A deployment that serves one checkout (ORIENT1c): a workspace's own knowledge server, which agents
-/// working in that checkout ask where something is and what was decided. It registers that checkout
+/// A deployment that serves one checkout: a workspace's own knowledge server, which agents
+/// working in that checkout ask where something is and what is decided. It registers that checkout
 /// alone, reads its documents and index where it names them, and re-reads the checkout as it moves.
 /// </summary>
 public sealed class OneCheckoutTests : IDisposable
@@ -117,7 +117,7 @@ public sealed class OneCheckoutTests : IDisposable
     }
 
     /// <summary>
-    /// The store persists and the checkout moves under it: a document written after the index was built is
+    /// The store persists and the checkout moves under it: a document written after the index is built is
     /// found by the next process over the same store, because each re-reads the checkout at its first use.
     /// </summary>
     [Fact]
@@ -181,9 +181,9 @@ public sealed class OneCheckoutTests : IDisposable
         File.ReadAllText(Path.Combine(folder, ".git", "refs", "heads", "main")).Trim();
 
     /// <summary>
-    /// KNOWCURRENT1: the installed shape, a host over the registered roots with no checkout named. What is merged into a
+    /// The installed shape, a host over the registered roots with no checkout named. What is merged into a
     /// registered root becomes searchable within the minute, with no edit of the store, and the index says when and from
-    /// which commit each repository was read.
+    /// which commit each repository is read.
     /// </summary>
     [Fact]
     public async Task A_host_over_registered_roots_reads_a_root_again_once_its_commit_moved_and_says_when_and_from_which()
@@ -216,7 +216,7 @@ public sealed class OneCheckoutTests : IDisposable
         Assert.Equal(DateTimeOffset.Parse("2026-10-29T10:01:00Z"), served.IndexedAt);
     }
 
-    /// <summary>A root whose signature did not move is not read again, and its reading keeps the time it was taken.</summary>
+    /// <summary>A root whose signature does not move is not read again, and its reading keeps the time it is taken.</summary>
     [Fact]
     public async Task A_root_that_did_not_move_is_not_read_again()
     {

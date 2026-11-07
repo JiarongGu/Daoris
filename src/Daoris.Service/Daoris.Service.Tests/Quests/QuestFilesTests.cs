@@ -5,7 +5,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The bytes a quest carries (D65 §2): kept under the home of the machine that has them, per quest,
+/// The bytes a quest carries: kept under the home of the machine that has them, per quest,
 /// by content. The layout is the service's alone — a caller on this machine is told each kept file's
 /// path rather than deriving it, because the driver's home is not always this one.
 /// </summary>
@@ -23,7 +23,7 @@ public sealed class QuestFilesTests : IDisposable
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text))).ToLowerInvariant();
 
     /// <summary>
-    /// The layout: the home's kept files (under <c>work/files/</c> in a new home since HOMELAYOUT3), the quest, then the content's
+    /// The layout: the home's kept files (under <c>work/files/</c>), the quest, then the content's
     /// head and the file's own name.
     /// </summary>
     [Theory]
@@ -41,7 +41,7 @@ public sealed class QuestFilesTests : IDisposable
     }
 
     /// <summary>
-    /// Forgetting a record's kept files says whether nothing of them is left (HIST1j): gone, or never kept here, is true; a folder
+    /// Forgetting a record's kept files says whether nothing of them is left: gone, or never kept here, is true; a folder
     /// the disk will not let go of is false and stays, for a history clear to report. An ask's keeper is held alike.
     /// </summary>
     [Fact]
@@ -78,7 +78,7 @@ public sealed class QuestFilesTests : IDisposable
     /// <summary>
     /// A name is the person's, but a path is not theirs to give: a directory in it is dropped, and a
     /// character no file system takes becomes an underscore — so the kept file can never land outside
-    /// its quest's directory, whatever a door was sent.
+    /// its quest's directory, whatever a door is sent.
     /// </summary>
     [Theory]
     [InlineData("../../escape.txt", "escape.txt")]
@@ -120,7 +120,7 @@ public sealed class QuestFilesTests : IDisposable
 
     /// <summary>
     /// The MCP door's shape: an agent attaches a file it can see, by path — relative to the repository
-    /// its session runs in, since that is where its MCP host was started.
+    /// its session runs in, since that is where its MCP host starts.
     /// </summary>
     [Fact]
     public async Task A_path_on_this_machine_is_read_whole_relative_to_where_the_session_is()

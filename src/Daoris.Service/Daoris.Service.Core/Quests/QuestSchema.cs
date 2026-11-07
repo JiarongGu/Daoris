@@ -16,7 +16,7 @@ internal static class QuestSchema
         await using (var command = db.Command())
         {
             // The log's position is this store's order of appending — and, on a remote, the NUMBER it
-            // gives what it accepts (design §8). Machine + sequence names one operation anywhere;
+            // gives what it accepts. Machine + sequence names one operation anywhere;
             // position names it here; `remote` is where the remote placed it, null while pending.
             command.CommandText = """
                 CREATE TABLE IF NOT EXISTS quest_log (
@@ -108,9 +108,9 @@ internal static class QuestSchema
         }
 
         // 🔴 A store a newer build stamped keeps its stamp and refuses what this build cannot write into it (a take's bind: the next
-        // change to that contract would hide its rows in a new table, as FABRIC-CLOSE1w's did); it never refuses to open, since the
+        // change to that contract would hide its rows in a new table, as a take's did); it never refuses to open, since the
         // quests and their history are read and moved as before.
-        // In a write transaction of its own, as every RETURNING write is (QUESTOPENLOCK1, ConnectionGate.InTransactionAsync says why).
+        // In a write transaction of its own, as every RETURNING write is (ConnectionGate.InTransactionAsync says why).
         var newer = await db.InTransactionAsync(async (transaction, inside) =>
         {
             await using var stamp = db.Command();
@@ -171,64 +171,64 @@ internal static class QuestSchema
         }
 
         // A store from before workspaces has no workspace; one from before quests carried anything
-        // (D65) has neither list; one from before sync has no conflicts, and a log with no numbers.
-        // Their quests survive the upgrade — the one workspace there was, and nothing carried or
-        // raced, which is exactly right, because everything in them was its own.
+        // has neither list; one from before sync has no conflicts, and a log with no numbers.
+        // Their quests survive the upgrade — the one workspace there is, and nothing carried or
+        // raced, which is exactly right, because everything in them is its own.
         foreach (var (table, column, definition) in new[]
         {
             ("quests", "workspace", $"workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'"),
             ("quests", "links", "links TEXT NOT NULL DEFAULT '[]'"),
             ("quests", "attachments", "attachments TEXT NOT NULL DEFAULT '[]'"),
-            // A chain (D65 §4): `then` is an SQL keyword, so the column says what it holds.
+            // A chain: `then` is an SQL keyword, so the column says what it holds.
             ("quests", "then_steps", "then_steps TEXT NOT NULL DEFAULT '[]'"),
             ("quests", "parent", "parent TEXT NULL"),
             ("quests", "conflicts", "conflicts TEXT NOT NULL DEFAULT '[]'"),
-            // Ask and wait (D79): the question a taken quest waits on.
+            // Ask and wait: the question a taken quest waits on.
             ("quests", "awaits", "awaits TEXT NULL"),
-            // The session that published it (SESS1); a quest from before says none, which is true.
+            // The session that published it; a quest from before says none, which is true.
             ("quests", "published_by", "published_by TEXT NULL"),
-            // The lanes it addresses (D115 §2.2); a quest from before asked the whole repository.
+            // The lanes it addresses; a quest from before asked the whole repository.
             ("quests", "lanes", "lanes TEXT NOT NULL DEFAULT '[]'"),
-            // What the person requires (DRIFT1c); a quest from before named none.
+            // What the person requires; a quest from before named none.
             ("quests", "requirements", "requirements TEXT NOT NULL DEFAULT '[]'"),
-            // How a done answered them, and the person's yes to a departure (DRIFT1d); a quest from before has
+            // How a done answered them, and the person's yes to a departure; a quest from before has
             // neither, and nothing it carries waits. `held` is the replay's own reading, kept so a list can ask it.
             ("quests", "answers", "answers TEXT NOT NULL DEFAULT '[]'"),
             ("quests", "accepted", "accepted TEXT NULL"),
             ("quests", "held", "held INTEGER NOT NULL DEFAULT 0"),
-            // The publisher's short title (SESSUX1j); a quest from before was given none, and is named from its words.
+            // The publisher's short title; a quest from before is given none, and is named from its words.
             ("quests", "short_title", "short_title TEXT NULL"),
-            // The work's mark (FOUNDATION1x); a quest from before was marked none, and starts on Build's order.
+            // The work's mark; a quest from before is marked none, and starts on Build's order.
             ("quests", "weight", "weight TEXT NULL"),
-            // The paths it declares (INTEGRATE1l); a quest from before declared none.
+            // The paths it declares; a quest from before declared none.
             ("quests", "paths", "paths TEXT NULL"),
-            // The workflow request's key (INTEGRATE1p); a quest from before no request published.
+            // The workflow request's key; a quest from before no request published.
             ("quests", "request", "request TEXT NULL"),
-            // What Daoris last read of a done's evidence (EVID1a); a quest from before named none, so none was read.
+            // What Daoris last read of a done's evidence; a quest from before named none, so none is read.
             ("quests", "evidence", "evidence TEXT NULL"),
-            // The chain's review choice, a set-up step's environment, its set-ups and the person's verdicts (REVIEWENV1b); a
-            // quest from before chose nothing, is no set-up step, and was never shown or reviewed.
+            // The chain's review choice, a set-up step's environment, its set-ups and the person's verdicts; a
+            // quest from before chose nothing, is no set-up step, and is never shown or reviewed.
             ("quests", "review", "review TEXT NULL"),
             ("quests", "set_up_in", "set_up_in TEXT NULL"),
             ("quests", "set_ups", "set_ups TEXT NOT NULL DEFAULT '[]'"),
             ("quests", "verdicts", "verdicts TEXT NOT NULL DEFAULT '[]'"),
-            // The note's parts (QUESTCLOSE1b1); a quest from before has a note with none, which the page shows as recorded.
+            // The note's parts; a quest from before has a note with none, which the page shows as recorded.
             ("quests", "note_parts", "note_parts TEXT NULL"),
-            // A closure graph's binding and its current submission (FABRIC-CLOSE1a); a quest from before has neither.
+            // A closure graph's binding and its current submission; a quest from before has neither.
             ("quests", "closure", "closure TEXT NULL"),
             ("quests", "submission", "submission TEXT NULL"),
-            // The submission a step grew from, and the one its source's reopen withdrew it from (FABRIC-CLOSE1c); a quest from before
+            // The submission a step grew from, and the one its source's reopen withdrew it from; a quest from before
             // has neither, which reads as before.
             ("quests", "grew_from", "grew_from TEXT NULL"),
             ("quests", "source_reopened", "source_reopened TEXT NULL"),
-            // A quest's own reopen no later submission answered (FABRIC-CLOSE1c4); a row from before keeps none, and the next replay
+            // A quest's own reopen no later submission answered; a row from before keeps none, and the next replay
             // that writes it reads the log.
             ("quests", "reopened", "reopened TEXT NULL"),
-            // The person's workflow choices on a quest before it started (WORKFLOW1e2); no build before it made one, so no row from
+            // The person's workflow choices on a quest before it started; no build before it made one, so no row from
             // before needs its log read again.
             ("quests", "workflow_choices", "workflow_choices TEXT NOT NULL DEFAULT '[]'"),
             ("quest_log", "remote", "remote INTEGER NULL"),
-            // The remote's handshake as a circle's last pass heard it (FABRIC-CLOSE1i); a pass from before heard none, which binds nothing.
+            // The remote's handshake as a circle's last pass heard it; a pass from before heard none, which binds nothing.
             ("quest_passes", "closure", "closure TEXT NULL"),
         })
         {
@@ -249,7 +249,7 @@ internal static class QuestSchema
             await binds.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        // The mirror is gone (design §8). Its rows were copies of a remote's quests, so they are
+        // The mirror is gone. Its rows were copies of a remote's quests, so they are
         // dropped rather than migrated: this machine's cursor starts at zero, and its first fetch
         // brings every one of them back as history. The column that marked them goes with them.
         if (await SchemaColumns.HasAsync(db, "quests", "home", ct).ConfigureAwait(false))
@@ -262,8 +262,8 @@ internal static class QuestSchema
             await drop.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        // HIST1a: a store from before the mark starts it at the highest sequence its own machine holds in the log, which
-        // is what every number so far was one past. Nothing changes for a store that never removed anything; one that
+        // A store from before the mark starts it at the highest sequence its own machine holds in the log, which
+        // is what every number so far is one past. Nothing changes for a store that never removed anything; one that
         // removes rows after the upgrade cannot take the sequence back.
         if (!await SchemaColumns.HasAsync(db, "quest_machine", "sequence", ct).ConfigureAwait(false))
         {
@@ -278,7 +278,7 @@ internal static class QuestSchema
 
         // After the column, which it names. The mark is moved by the statement that writes the operation, not by its
         // callers, so no way into the log can forget it (the registry's tombstones are kept the same way). An operation
-        // of this machine's kept back from a remote raises it too: that number was this machine's, and is held there.
+        // of this machine's kept back from a remote raises it too: that number is this machine's, and is held there.
         await using (var trigger = db.Command())
         {
             trigger.CommandText = """
@@ -291,7 +291,7 @@ internal static class QuestSchema
             await trigger.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        // FOUNDATION1 row k part 2 (D212, the foundation design §4.1): each operation kept is one `quest-op` row of the event journal, minted by
+        // Each operation kept is one `quest-op` row of the event journal, minted by
         // a trigger in the statement that appends it, so every writer mints it. The journal's table is made here too, so a store opened alone
         // never has a trigger writing to a table that is not there.
         await using (var journal = db.Command())
@@ -300,7 +300,7 @@ internal static class QuestSchema
             await journal.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        // EVENTHOOK1d-i (D244 point 1): and each move the replay writes to the cache, the source of the quest kinds an outside session hears.
+        // And each move the replay writes to the cache, the source of the quest kinds an outside session hears.
         await using (var moves = db.Command())
         {
             moves.CommandText = EventJournal.QuestsSchema;

@@ -4,8 +4,8 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The <c>plugin</c> kind's writer (PLUG9): a plugin that has landed, added from its folder in the checkout of the
-/// repository that holds it, or one installed here switched on or off — and since PLUG9 (c) and (d) one of the
+/// The <c>plugin</c> kind's writer: a plugin that has landed, added from its folder in the checkout of the
+/// repository that holds it, or one installed here switched on or off — and one of the
 /// install's own by id, or an update. The driver reads the folder with the catalogue's own reader; here only the
 /// shape is checked.
 /// </summary>
@@ -48,7 +48,7 @@ public sealed class HelpPluginProposalTests : HelpProposalBoxFixture
     }
 
     /// <summary>
-    /// PLUG9 (c) and (d): an add may name one of the install's own plugins by its id (<c>offer</c>, never a path),
+    /// An add may name one of the install's own plugins by its id (<c>offer</c>, never a path),
     /// and an <c>update</c> names an installed plugin by its id. Whether the install offers it, and whether the
     /// plugin recorded where it came from, is the driver's to judge.
     /// </summary>
@@ -89,7 +89,7 @@ public sealed class HelpPluginProposalTests : HelpProposalBoxFixture
     }
 
     /// <summary>
-    /// HELPPLUG1c: the person's approval of what a plugin's server offers Ask Daoris, proposed (<c>approve</c>, with the writes
+    /// The person's approval of what a plugin's server offers Ask Daoris, proposed (<c>approve</c>, with the writes
     /// it accepts, each by name) or withdrawn (<c>withdraw</c>). Whether the plugin offers it that server, and whether a write is
     /// one it declares, is the driver's, which judges it as the page's press does.
     /// </summary>
@@ -132,7 +132,7 @@ public sealed class HelpPluginProposalTests : HelpProposalBoxFixture
         Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 
-    /// <summary>PLUG9: a plugin proposal's shape, checked here and nothing more; the driver's twin table holds what the catalogue says.</summary>
+    /// <summary>A plugin proposal's shape, checked here and nothing more; the driver's twin table holds what the catalogue says.</summary>
     [Theory]
     [InlineData("install", "", "quiet-hours", "house-plugins", "`add`, `enable`, `disable`, `update`, `approve` or `withdraw`")]
     [InlineData("add", "", "", "house-plugins", "names the plugin's folder")]
@@ -153,7 +153,7 @@ public sealed class HelpPluginProposalTests : HelpProposalBoxFixture
         Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 
-    /// <summary>PLUG9: a folder in a repository is written from its checkout's root, never as a whole path.</summary>
+    /// <summary>A folder in a repository is written from its checkout's root, never as a whole path.</summary>
     [Fact]
     public void A_folder_in_a_repository_is_never_a_whole_path()
     {

@@ -19,7 +19,7 @@ import {
   stagedManifest, ungatedRefusal, unstage, writeManifest, GATE_TREE_LOCK, GATE_TREE_RECORD, childArgs, gatedSource, recordStaged, recordStage, stageReport, stagedAdvice,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop-publish.mjs';
-// The service hosts' one build recipe (CONNECTOR1), which the desktop's `--service` publishes by.
+// The service hosts' one build recipe, which the desktop's `--service` publishes by.
 // @ts-expect-error — untyped workspace tooling; see above
 import { HOSTS, publishCommand } from '../../../tools/service-publish.mjs';
 // @ts-expect-error — untyped workspace tooling; see above
@@ -29,7 +29,7 @@ import { DRIVER_PROGRAM_FILE, DRIVER_PROGRAM_HOME } from '../src/platform/driver
 import { INSTALL_APP, INSTALL_DATA, INSTALL_MARKER, installOf } from '../src/platform/home.ts';
 import { makeFixture } from '../test/_fixture.ts';
 
-/** The address file the running desktop leaves in its home (the driver's `RunningAddress.FileName`); the CLI reads it no more (ONEWAY1ai-i). */
+/** The address file the running desktop leaves in its home (the driver's `RunningAddress.FileName`); the CLI does not read it. */
 const RUNNING_FILE = 'running.json';
 import { TAR_END, tarEntry } from '../test/_tar.ts';
 
@@ -51,7 +51,7 @@ const folder = (): string => mkdtempSync(join(tmpdir(), 'daoris-publish-'));
 
 const markInstalled = (at: string) => writeFileSync(join(at, MARKER), `${MARKER_HEADER}\n\nours\n`);
 
-/** CISCOPE1d: a background run's receipt on `tree` in the main checkout's `local/ci-runs.jsonl`, which a stage needs beside its verdicts. */
+/** A background run's receipt on `tree` in the main checkout's `local/ci-runs.jsonl`, which a stage needs beside its verdicts. */
 function receipt(home: string, tree: string): void {
   const file = join(home, 'local', 'ci-runs.jsonl');
   mkdirSync(dirname(file), { recursive: true });
@@ -66,7 +66,7 @@ test('five names make an install, the marker and the update’s folder among the
 });
 
 /**
- * UPDATE1 (D139 §1, §4): the publish's `--stage` writes the build where the application and the launcher look for it,
+ * The publish's `--stage` writes the build where the application and the launcher look for it,
  * with the manifest their one check reads (`StagedBuild.cs`, which the launcher compiles). Two languages, one layout:
  * this reads the C# for its spellings and its required files.
  */
@@ -143,8 +143,8 @@ test('--stage stages only beside an install, never over a swap in progress, and 
 });
 
 /**
- * GATE3: a merge runs only the gates its lanes reach, so the full set runs before the install is built. A
- * "web only" batch once skipped the .NET suites and broke main unseen; the lane table could be wrong the
+ * A merge runs only the gates its lanes reach, so the full set runs before the install is built. A
+ * "web only" batch can skip the .NET suites and break main unseen; the lane table could be wrong the
  * same way, and this is where that is caught, the same day. The deployment rehearsal's own publishes go
  * into a scratch folder under `_fixtures`, which is never asked: it is one of the gates being run.
  */
@@ -190,7 +190,7 @@ test('a publish refuses a commit the full set has not passed, naming what is mis
   assert.match(refused.refusal!, /--force-ungated/);
   assert.match(refused.refusal!, /run every gate on this checkout: node tools\/merge-branch\.mjs --full\n/);
 
-  // GATE6b: when a smaller command would pass it, the tool names that one, and so does the refusal, in place of the full set.
+  // When a smaller command would pass it, the tool names that one, and so does the refusal, in place of the full set.
   const stale = ungatedRefusal(to, fx.root, { ask: ask(1, `${missing}  Run the 2 stale gates on it: node tools/merge-branch.mjs --stale\n`) });
   assert.match(stale.refusal!, /run the 2 stale gates on this checkout: node tools\/merge-branch\.mjs --stale\n/);
   assert.equal(stale.refusal!.split('merge-branch.mjs --stale').length, 2, 'it names the command once');
@@ -250,7 +250,7 @@ test('the stage refuses an ungated commit, as the merge tool\'s gates record rea
   let gated = ungatedRefusal(to, repo);
   assert.match(gated.refusal!, /first\s+none/);
   assert.match(gated.refusal!, /second\s+none/);
-  // CISCOPE1d: no background run finished on it, so the stage's own run is what it names.
+  // No background run finished on it, so the stage's own run is what it names.
   assert.match(gated.refusal!, /not staged\s+no background run's receipt on its commit's tree/);
   assert.match(gated.refusal!, /run the stage's own CI run on this checkout: node tools\/merge-branch\.mjs --ci --stage [0-9a-f]{7}\n/);
   receipt(repo, tree);
@@ -262,7 +262,7 @@ test('the stage refuses an ungated commit, as the merge tool\'s gates record rea
   gated = ungatedRefusal(to, repo);
   assert.match(gated.refusal!, /second\s+none/);
   assert.match(gated.refusal!, /first\s+PASS/);
-  // GATE6b: one gate lacking is one gate to run, which the refusal names in place of the full set.
+  // One gate lacking is one gate to run, which the refusal names in place of the full set.
   assert.match(gated.refusal!, /run the gate it lacks on this checkout: node tools\/merge-branch\.mjs --rerun second\n/);
   assert.doesNotMatch(gated.refusal!, /--full/);
 
@@ -273,7 +273,7 @@ test('the stage refuses an ungated commit, as the merge tool\'s gates record rea
   fx.cleanup();
 });
 
-// GATEWT1: the full set ran in a worktree of its own while main moved on; the stage builds what it gated.
+// The full set runs in a worktree of its own while main moves on; the stage builds what it gated.
 test('a stage from the gate tree builds the commit it holds, refuses another or one whose full set runs, and is judged by the main checkout\'s verdicts', () => {
   const fx = makeFixture('publish-gate-tree');
   const repo = join(fx.root, 'repo');
@@ -298,12 +298,12 @@ test('a stage from the gate tree builds the commit it holds, refuses another or 
   const to = join(fx.root, 'install');
 
   let source = gatedSource(repo, gated);
-  // CI1: the CI gates a commit in the gate tree, running there only what its verdicts lack.
+  // The CI gates a commit in the gate tree, running there only what its verdicts lack.
   assert.match(source.refusal!, new RegExp(`no gate tree at local/gate-tree: node tools/merge-branch\\.mjs --ci --stage ${gated.slice(0, 7)} makes one and gates it`));
 
   const tree = join(repo, 'local', 'gate-tree');
   git('worktree', 'add', '--quiet', '--detach', tree, gated);
-  // Main moves on past what was gated: a merge committed while the full set ran.
+  // Main moves on past what is gated: a merge committed while the full set runs.
   writeFileSync(join(repo, 'code.txt'), 'merged since\n');
   git('commit', '--quiet', '-am', 'merged since');
   const moved = git('rev-parse', 'HEAD');
@@ -327,7 +327,7 @@ test('a stage from the gate tree builds the commit it holds, refuses another or 
     schema: 1, verdicts: trees.map((at) => ({ gate: 'first', verdict: 'PASS', tree: at, at: '2026-10-18T11:00:00Z', commit: null, branch: null })),
   }, null, 2)}\n`);
   record([git('rev-parse', `${moved}^{tree}`)]);
-  // CISCOPE1d: a background run finished on each tree, as a stage needs.
+  // A background run finished on each tree, as a stage needs.
   receipt(repo, git('rev-parse', `${moved}^{tree}`));
   receipt(repo, git('rev-parse', `${gated}^{tree}`));
   assert.equal(ungatedRefusal(to, repo).refusal, null, 'the main checkout passes on its own tree');
@@ -351,7 +351,7 @@ test('a stage from the gate tree builds the commit it holds, refuses another or 
   fx.cleanup();
 });
 
-// CISCOPE1d (design §5.3): the stage history is the stage's own record, apart from the gate tree's, which every run rewrites.
+// The stage history is the stage's own record, apart from the gate tree's, which every run rewrites.
 test('the stage history survives a prune and another CI run, a later stage reads its baseline from it, and a first stage or a non-ancestor says the range is unknown', () => {
   const fx = makeFixture('publish-stage-history');
   const repo = join(fx.root, 'repo');
@@ -403,7 +403,7 @@ test('the stage history survives a prune and another CI run, a later stage reads
   fx.cleanup();
 });
 
-// CI1: a CI watch moves the gate tree to main's tip as main moves, so a stage that only looked at the lock first would build a
+// A CI watch moves the gate tree to main's tip as main moves, so a stage that only looked at the lock first would build a
 // tree moved under it. The pipeline design's §4.6 shape: the stage holds the gate tree's lock through its build, a holder of its own kind.
 test('a stage from the gate tree holds its lock through the build, so no CI run moves the tree under it, and is refused while a run holds it (CI1)', async () => {
   const fx = makeFixture('publish-gated-hold');
@@ -528,12 +528,12 @@ test('a folder this script installed to before is fine, whatever else it now hol
 
 /**
  * The note a publish writes is also its marker, so it opens with the header `isInstall` reads, and it
- * names no machine path (`sensitive-info`): it is written into the install, never tracked. LEFT1 adds
- * how to pin Daoris (D108 §2): from its running window, because the window names Daoris's taskbar id
+ * names no machine path (`sensitive-info`): it is written into the install, never tracked. It also says
+ * how to pin Daoris: from its running window, because the window names Daoris's taskbar id
  * and a pin made from it starts the launcher; a pin made on the launcher in Explorer carries no id, so
  * the running window shows as a second button beside it.
  */
-// DRAINHOLD1: a staged build drains the install, which holds the presses that would start work, so the stage says so and how to
+// A staged build drains the install, which holds the presses that would start work, so the stage says so and how to
 // stage it *not now*, in the install's note and in what the stage prints.
 test('the stage says the install drains, what it holds, and that update --cancel stages it not now (DRAINHOLD1)', () => {
   for (const words of [installedNote(), stagedAdvice().join('\n')]) {
@@ -568,7 +568,7 @@ test('the install note is the marker, and says how to pin Daoris from its runnin
 });
 
 /**
- * CONNECTOR1: the note names both service hosts `--service` lays under `app/`, the connector a session is handed
+ * The note names both service hosts `--service` lays under `app/`, the connector a session is handed
  * among them, and says what they outrank: whoever opens the folder to ask which connector runs reads it here.
  */
 test('the install note says where both service hosts are, and that they come before any in the home’s bin/', () => {
@@ -578,13 +578,13 @@ test('the install note says where both service hosts are, and that they come bef
   assert.ok(row.includes(`\`${CONNECTOR_HOME.slice(1).join('/')}/\``), 'the connector’s folder');
   assert.match(row, /handed/, 'what the connector is for');
   assert.match(note, /ahead of any in `bin\/`/);
-  // CONNECTOR1b: what it says of a re-publish is what `refusal` does, below.
+  // What it says of a re-publish is what `refusal` does, below.
   assert.match(note.replace(/\s+/g, ' '), /with `--service` while it carries the hosts \(a re-publish without it is refused/);
 });
 
 /**
- * WSSETUP2 (D124 §1.2): the note says the install carries its doctrine tool, where, how each shell runs it,
- * on which Node, and that nothing changed the account's PATH (D124 §10 refused that), so whoever opens
+ * The note says the install carries its doctrine tool, where, how each shell runs it,
+ * on which Node, and that nothing changes the account's PATH, so whoever opens
  * the folder is not left wondering why a terminal of theirs still runs another `daoris`.
  */
 test('the install note says where the doctrine tool is, how each shell runs it, and that your PATH is untouched', () => {
@@ -603,9 +603,8 @@ test('the install note says where the doctrine tool is, how each shell runs it, 
 });
 
 /**
- * WSSETUP3 (D124 §1.3): every child Daoris starts is handed a PATH that begins with the install's `app/bin/`, found
- * beside the home (`Tools.InstallBin`; the CLI's `installBin` left with `tools.ts`, PUSH1f2f, its one child the driver's
- * program), while the account's PATH stays the person's. The note says both, in one section, and names the condition the
+ * Every child Daoris starts is handed a PATH that begins with the install's `app/bin/`, found
+ * beside the home (`Tools.InstallBin`), while the account's PATH stays the person's. The note says both, in one section, and names the condition the
  * driver's `ToolsChildrenTests` holds: the home, `data/`, sits beside `app/`.
  */
 test('the install note says Daoris’s own children find the doctrine tool first on their PATH, and your account’s PATH is untouched', () => {
@@ -622,7 +621,7 @@ test('the install note says Daoris’s own children find the doctrine tool first
 });
 
 /**
- * HOMELAYOUT4 (D172 point 1, the install layout design §2 and §4): the note says what each top folder of the Daoris folder is
+ * The note (the install layout design §2 and §4) says what each top folder of the Daoris folder is
  * and who may lose it, a row each, in the design's order; that `data/` is the one to back up and holds no key; and what a start
  * after an update moves out of an older `data/`, once, and what it never moves.
  */
@@ -684,7 +683,7 @@ test('--beside on a previous install is the ordinary re-publish', () => {
 });
 
 /**
- * CONNECTOR1b: both locators run a host the install carries under `app/` ahead of the home's `bin/`, so a publish in
+ * Both locators run a host the install carries under `app/` ahead of the home's `bin/`, so a publish in
  * place that left an older build's there would hand every session that build's binaries. A publish without `--service`
  * never touches the hosts' folders, so over an install that carries either host it is refused, naming each folder and
  * `--service`, as `--stage` refuses an install that carries its HTTP host.
@@ -739,7 +738,7 @@ test('a publish in place without --service over an install that carries neither 
 });
 
 /**
- * The launcher and the publish are twins (D93): the publish lays the application out where the
+ * The launcher and the publish are twins: the publish lays the application out where the
  * launcher looks, and the application's assembly names the file the launcher starts. Three spellings in
  * two languages, and the only thing that holds them together is this.
  */
@@ -758,9 +757,9 @@ test('the launcher starts the application the publish lays out, by the name its 
 });
 
 /**
- * CONNECTOR1: `--service` lays the knowledge connector beside the HTTP host under `app/`. An install that
- * carried only its HTTP host handed every session the home's `bin/` copy, which one `publish:service --install`
- * laid down and no republish refreshed, and an eight-day-old connector rebuilt the shared store at its own
+ * `--service` lays the knowledge connector beside the HTTP host under `app/`. An install that
+ * carries only its HTTP host hands every session the home's `bin/` copy, which one `publish:service --install`
+ * lays down and no republish refreshes, so a stale connector could rebuild the shared store at its own
  * older schema. Each host goes in the folder `service-publish` publishes it into, built by that script's
  * recipe, so there is one way to build a host and one name for its folder.
  */
@@ -776,7 +775,7 @@ test('--service lays the connector beside the HTTP host under app/, each built b
     assert.equal(step.folder, dirname(step.executable));
     assert.equal(step.command, publishCommand(step.host, 'win-x64', step.folder), `${step.host.binary} is built by another recipe`);
   }
-  // Under the application's folder, where a swap carries them (D139) and the locators look.
+  // Under the application's folder, where a swap carries them and the locators look.
   assert.deepEqual([CONNECTOR_HOME[0], HOST_HOME[0]], [SHELL_HOME[0], SHELL_HOME[0]]);
 });
 
@@ -796,10 +795,10 @@ test('a service host is published self-contained, single-file, its native librar
 });
 
 /**
- * REHLANE2b: the deployment rehearsal runs beside the driver's git half, which builds into and runs from the desktop
+ * The deployment rehearsal runs beside the driver's git half, which builds into and runs from the desktop
  * projects' own `bin/` and `obj/`. So, told an output of its own (`--artifacts-path`), every `dotnet publish` this script
  * runs builds there, by the SDK's own `--artifacts-path`, and the stages it lays an install out from go there too. Untold,
- * each recipe is the install's as it always was. The merge test's own-output rule reads the rehearsal's half.
+ * each recipe is the install's own. The merge test's own-output rule reads the rehearsal's half.
  */
 test('told an output of its own, every publish builds and stages there; untold, each recipe is as it was', () => {
   const repo = join(tmpdir(), 'a-checkout');
@@ -839,7 +838,7 @@ test('told an output of its own, every publish builds and stages there; untold, 
     assert.match(read.refusal ?? '', /--artifacts-path <folder>/);
   }
 
-  // And the publish itself runs every `dotnet publish` through those recipes, each told the output it was given.
+  // And the publish itself runs every `dotnet publish` through those recipes, each told the output it is given.
   const text = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'tools', 'desktop-publish.mjs'), 'utf8');
   const main = text.slice(text.indexOf('async function main()'));
   assert.ok(main.length > 1000, 'the publish has no main any more: this test has stopped reading it');
@@ -853,9 +852,9 @@ test('told an output of its own, every publish builds and stages there; untold, 
 });
 
 /**
- * D93's rule, for what an earlier publish wrote and this one no longer does: a republish into its own
- * install removes exactly those names — the single-file shell's launcher at the root, and since CHR8
- * (D99) the browser's own folder under `app/`, with its executable and its second engine — and a folder
+ * What an earlier publish wrote and this one no longer does: a republish into its own
+ * install removes exactly those names — the single-file shell's launcher at the root, and
+ * the browser's own folder under `app/`, with its executable and its second engine — and a folder
  * it never published is never asked to lose anything.
  */
 test('a republish removes what an earlier publish wrote and this one no longer does, by name', () => {
@@ -874,8 +873,8 @@ test('a republish removes what an earlier publish wrote and this one no longer d
 });
 
 /**
- * The install's languages are the kit's to lay out since SHEN1, and there is one engine to lay them out
- * for since CHR8: the engine's fallback, `en-US`, and what the app project names
+ * The install's languages are the kit's to lay out, and there is one engine to lay them out
+ * for: the engine's fallback, `en-US`, and what the app project names
  * (`ShenoraChromiumLocales`). The publish keeps `KEPT_LOCALES` of them and the deployment gate reads
  * them back off the install, so the list and the project must agree.
  */
@@ -886,7 +885,7 @@ test('the locales an install keeps are the kit’s fallback and the ones the app
 });
 
 /**
- * PLUG9 (d), D103: the install carries Daoris's own example plugins as OFFERS, in `app/plugin-offers/`,
+ * The install carries Daoris's own example plugins as OFFERS, in `app/plugin-offers/`,
  * never under `data/plugins/`, so none is installed until a press. The ones meant for people: the two that
  * land work, and the one that hands a session the install's own browser. Not the rehearsal fixture, and not
  * the browser a machine without the shell launches, which claims the same server name.
@@ -895,15 +894,14 @@ test('the offers are the examples meant for people, never a rehearsal fixture', 
   assert.deepEqual([...OFFERED_PLUGINS], ['github-pull-request', 'azure-devops-pull-request', 'in-app-browser']);
   assert.ok(!OFFERED_PLUGINS.includes('hold-by-title'), 'the family and deployment rehearsals install hold-by-title');
   assert.ok(!OFFERED_PLUGINS.includes('browser'), 'a second `browser` server would contribute nothing beside in-app-browser');
-  // Each is a plugin's folder; that each reads sound, by the catalogue's rules, is the driver's `PluginOfferTests`' (the CLI's
-  // reader left with `daoris plugin`'s TypeScript, PUSH1f2f).
+  // Each is a plugin's folder; that each reads sound, by the catalogue's rules, is the driver's `PluginOfferTests`'.
   const examples = join(here, '..', '..', '..', 'examples', 'plugins');
   for (const id of OFFERED_PLUGINS) assert.ok(existsSync(join(examples, id, 'plugin.json')), id);
 });
 
 /**
- * Where the offers are is a twin (D103): the publish lays them out, and the driver's `PluginOffers.Layout` finds them beside the
- * application or the home. Two spellings, held here: the CLI's `OFFERS_DIR` left with `daoris plugin`'s TypeScript (PUSH1f2f).
+ * Where the offers are is a twin: the publish lays them out, and the driver's `PluginOffers.Layout` finds them beside the
+ * application or the home. Two spellings, held here.
  */
 test('the offers folder is where the driver looks for it', () => {
   assert.deepEqual([...PLUGIN_OFFERS], ['app', 'plugin-offers']);
@@ -988,10 +986,9 @@ test('an offer missing from the examples stops the publish, naming it, and the o
 });
 
 /**
- * TOOLS3, D121 §3.1: the install carries the list built in at `app/resources.json`, beside the application,
+ * The install carries the list built in at `app/resources.json`, beside the application,
  * where the driver reads it from its own folder. Two spellings, held here, and the source the publish copies is the
- * driver's own. The CLI read it too until PUSH1f2c handed `daoris tool` to the driver's program; whether the list
- * reads is the driver's `ToolResourcesTests`', which read the build's copy.
+ * driver's own. Whether the list reads is the driver's `ToolResourcesTests`', which read the build's copy.
  */
 const workspace = join(here, '..', '..', '..');
 
@@ -1061,7 +1058,7 @@ locales
 });
 
 // ---------------------------------------------------------------------------------------------
-// WSSETUP2 (D124 §1.2): the install carries its doctrine tool. The publish packs `src/Daoris.Cli` as the
+// The install carries its doctrine tool. The publish packs `src/Daoris.Cli` as the
 // release does, unpacks the tarball under `app/cli/` with the tar reader the CLI carries, and writes a
 // launcher for each shell into `app/bin/`. The pack itself is a real `npm pack`, which only the deployment
 // rehearsal runs; what is held here is where the package lands, what the launchers say, and what the
@@ -1077,7 +1074,7 @@ function packed(at: string, name: string, files: Record<string, string>): string
   return tarball;
 }
 
-/** A bin entry that says what it was handed, and exits with the code `--exit` names. */
+/** A bin entry that says what it is handed, and exits with the code `--exit` names. */
 const ECHO_BIN = [
   'const args = process.argv.slice(2);',
   'console.log(JSON.stringify(args));',
@@ -1129,7 +1126,7 @@ test('the doctrine tool lands where the CLI reads the canon it ships, as npm lay
 });
 
 /**
- * FINDDAORIS1 (D171 point 1): a program the install carries finds its install, and the home in it, by the layout the publish
+ * A program the install carries finds its install, and the home in it, by the layout the publish
  * lays out: the marker at the root, the programs under `app/`, the home in `data/`. And the running desktop's address in that
  * home is one file name to the driver that writes it and the CLI that reads it. Three spellings each, held here.
  */
@@ -1141,10 +1138,9 @@ test('a terminal’s programs find the install and the running Daoris where the 
   assert.ok(home.includes(`InstallMarker = "${MARKER}"`), 'DaorisHome.InstallMarker');
   assert.ok(home.includes(`InstallApp = "${SHELL_HOME[0]}"`), 'DaorisHome.InstallApp');
   assert.ok(home.includes(`InstallData = "${HOME}"`), 'DaorisHome.InstallData');
-  // The address file is the home's `running` entry, its place in the driver's table (HOMELAYOUT2): `run/` once its new places
-  // were switched on (HOMELAYOUT3), and where it was before.
+  // The address file is the home's `running` entry, its place in the driver's table, under `run/`.
   assert.ok(home.includes(`new("running", HomeCategory.Run, "run/${RUNNING_FILE}", "${RUNNING_FILE}")`), 'HomeEntry.Running');
-  // SERVICEHOME2: the service's hosts find it by the same three spellings, in the service's own copy.
+  // The service's hosts find it by the same three spellings, in the service's own copy.
   const serviceHome = readFileSync(join(here, '..', '..', 'Daoris.Service', 'Daoris.Service.Core', 'Platform', 'DaorisHome.cs'), 'utf8');
   assert.ok(serviceHome.includes(`InstallMarker = "${MARKER}"`), 'the service’s DaorisHome.InstallMarker');
   assert.ok(serviceHome.includes(`InstallApp = "${SHELL_HOME[0]}"`), 'the service’s DaorisHome.InstallApp');
@@ -1160,10 +1156,9 @@ test('a terminal’s programs find the install and the running Daoris where the 
 });
 
 /**
- * WSSETUP3 (D124 §1.3): the launchers' folder is where every child's PATH begins. The publish lays it out, and the driver's
+ * The launchers' folder is where every child's PATH begins. The publish lays it out, and the driver's
  * `DaorisHome.InstallBinLayout` (which `Tools.InstallBinLayout` reads) finds it beside the home, which in an install is the same
- * `app/`. Two spellings, held here: the CLI's `INSTALL_BIN` left with `tools.ts` (PUSH1f2f), the driver's program its one child, which
- * hands its own children the tools.
+ * `app/`. Two spellings, held here.
  */
 test('the launchers are where the tools’ environment puts them first on every child’s PATH', () => {
   const driver = readFileSync(driverFile('DaorisHome.cs'), 'utf8');
@@ -1176,7 +1171,7 @@ test('ONEWAY1ai-i daoris’s launcher for each shell runs the desktop’s progra
   assert.deepEqual([...CLI_LAUNCHERS].sort(), ['daoris', 'daoris.cmd']);
   const program = [...DRIVER_HOME, DRIVER_EXE].join('/');
 
-  // Git Bash: a shell script, LF, finding its own folder from how it was called.
+  // Git Bash: a shell script, LF, finding its own folder from how it is called.
   const sh = launchers['daoris'] ?? '';
   assert.ok(sh.startsWith('#!/bin/sh\n'), 'Git Bash runs a file by its shebang');
   assert.ok(!sh.includes('\r'), 'a carriage return ends the shebang line in the wrong place');
@@ -1200,13 +1195,13 @@ test('ONEWAY1ai-i daoris’s launcher for each shell runs the desktop’s progra
 });
 
 /**
- * DRIVERDOOR1, ONEWAY1ai-i: the desktop's program is published framework-dependent into `app/daoris-driver/`, which keeps its name
+ * The desktop's program is published framework-dependent into `app/daoris-driver/`, which keeps its name
  * for good; `daoris`'s launchers run it.
  */
 test('ONEWAY1ai-iv the program is its own folder under app/', () => {
   assert.deepEqual([...DRIVER_HOME], [SHELL_HOME[0], 'daoris-driver']);
   assert.equal(DRIVER_EXE, 'daoris-driver.exe');
-  // PUSH1f2a (D194 point 1): the CLI finds the program its install carries where the publish lays it, two spellings held here.
+  // The CLI finds the program its install carries where the publish lays it, two spellings held here.
   assert.deepEqual([...DRIVER_PROGRAM_HOME], [...DRIVER_HOME]);
   assert.equal(DRIVER_PROGRAM_FILE, process.platform === 'win32' ? DRIVER_EXE : DRIVER_EXE.replace(/\.exe$/, ''));
   const csproj = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', DRIVER_PROJECT, 'Daoris.Desktop.Driver.Host.csproj'), 'utf8');
@@ -1241,7 +1236,7 @@ test('laying the doctrine tool out retries a held rename at each package and lau
       attempts.set(to, attempt);
       if (attempt === 1) throw Object.assign(new Error('file held'), { code: 'EPERM' });
       // The second attempt is a real move of files just unpacked, which the scanner may really hold: it waits as the
-      // shipped default does, so only the injected refusal is counted (FLAKE1, 2026-10-07).
+      // shipped default does, so only the injected refusal is counted.
       renameHeld(from, to);
     },
   });
@@ -1299,7 +1294,7 @@ test('a republish replaces the doctrine tool whole: a stale file in either folde
 
 /**
  * Refused before anything is replaced, naming what is wrong: a package that is not the release's `daoris`
- * would put a tool on every session's path that is not the one the release publishes (D124 §1.2).
+ * would put a tool on every session's path that is not the one the release publishes.
  */
 test('a package that is not the release’s daoris stops the publish, naming why, and the last one stands', async () => {
   const fx = makeFixture('publish-cli-refuse');

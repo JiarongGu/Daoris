@@ -5,7 +5,7 @@ using Daoris.Knowledge.Http.Routes;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// FOUNDATION1 row p (D212; the foundation design §19.2, §19.12) over the wire: <c>GET /api/protocol</c> answers the host's run and its
+/// Over the wire: <c>GET /api/protocol</c> answers the host's run and its
 /// <c>settled</c> mark, and a keyed say or hand that sends <c>settled: true</c> is answered, after the take, with a success naming the record
 /// the word left and no <c>said</c>, while a request without it, an older client's, is answered by today's door.
 /// </summary>
@@ -32,7 +32,7 @@ public sealed class SaidSettledHostTests(LocalHost host) : IClassFixture<LocalHo
         Assert.Equal(1, first.Json.GetProperty("marks").GetProperty("settled").GetInt32());
         // Row d-i adds replay alone; d-ii's say door adds `head` 1 (the `Continued` refusal), and its open, which moves the words, `opens` 2.
         // Row k adds `journal` 1: the change stream answers the event journal's family and place to a reader that asks for them.
-        // COMMS1b adds `answers` 1: solicited answers go through one door (the head walk, answered parks, already waiting, the opinion key, `serves`).
+        // `answers` 1: solicited answers go through one door (the head walk, answered parks, already waiting, the opinion key, `serves`).
         Assert.Equal(["settled", "opens", "head", "journal", "answers", "presses"], first.Json.GetProperty("marks").EnumerateObject().Select(mark => mark.Name).ToArray());
         Assert.Equal(1, first.Json.GetProperty("marks").GetProperty("presses").GetInt32());
         Assert.Equal(1, first.Json.GetProperty("marks").GetProperty("answers").GetInt32());
@@ -243,7 +243,7 @@ public sealed class SaidSettledHostTests(LocalHost host) : IClassFixture<LocalHo
     }
 
     /// <summary>
-    /// FOUNDATION1o over the wire: the shell's say with <c>ending</c> to a record that winds up keeps the word on it, for its next part, with
+    /// Over the wire: the shell's say with <c>ending</c> to a record that winds up keeps the word on it, for its next part, with
     /// <c>reopens</c>; the same say without it is refused <c>running</c> at the door's conflict status, as an older host refuses both.
     /// </summary>
     [Fact]

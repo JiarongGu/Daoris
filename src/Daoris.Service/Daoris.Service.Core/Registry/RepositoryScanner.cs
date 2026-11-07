@@ -18,40 +18,40 @@ namespace Daoris.Knowledge;
 /// a scanner that needs setting up before it can read anything gets set up for one repository and
 /// then never for the rest.
 ///
-/// A repository may still say where its records are, in its manifest's <c>documents</c> (DOC5; D122
-/// §2.7, <see cref="RepositoryDocuments"/>). A declaration adds a path and is never required: the
+/// A repository may still say where its records are, in its manifest's <c>documents</c>
+/// (<see cref="RepositoryDocuments"/>). A declaration adds a path and is never required: the
 /// declared decisions, fixes or archive is the first candidate for its log, a file or a folder of
-/// records, each titled by its first heading (DOC8c), a decision's dated notes each an entry of its own
-/// (ORIENT1g, <see cref="DecisionNotes"/>), and the declared router is read as a document. A
-/// declaration the CLI refuses is read as none, so the candidates are read as before it was written. One
+/// records, each titled by its first heading, a decision's dated notes each an entry of its own
+/// (<see cref="DecisionNotes"/>), and the declared router is read as a document. A
+/// declaration the CLI refuses is read as none, so the candidates are read as if none were written. One
 /// file is one place in the index.
 ///
-/// Where the documents live is the layout's (D117 §5.5, LAYOUT4): the lock's root before the
+/// Where the documents live is the layout's: the lock's root before the
 /// manifest's, both roots for a repository with no lock, the lock's mirrors skipped so each skill is
 /// found once, and each declared room's <c>AGENTS.md</c> read as the repository's own knowledge
 /// (<see cref="RepositoryLayout"/>). A link, or a link held as text, is skipped and never followed
 /// (<see cref="RepositoryLinks"/>): what it points at is not this repository's document.
 ///
 /// Until a repository adopts, its root <c>README.md</c> is read too, split at its headings as a log is,
-/// as local knowledge labelled by its path (WSSETUP8; D124 §5). It assigns no role. Once a lock exists
+/// as local knowledge labelled by its path. It assigns no role. Once a lock exists
 /// the repository has declared its documents, and the README is its front page again.
 ///
-/// A deployment may name two more folders (ORIENT1c), read in every repository it registers and in none
+/// A deployment may name two more folders, read in every repository it registers and in none
 /// by default: a folder of documents, each markdown file under it split at its headings with its opening
 /// titled by its first heading; and a generated index, each table row and list item of a markdown file
 /// under it one entry (<see cref="IndexRows"/>). Both are read after the router and the logs, so a file a
 /// role read is not read again, and the index is never read as documents.
 ///
-/// The declared index of where things are (ORIENT2e; D151 §6) is read after the deployment's index and before
+/// The declared index of where things are is read after the deployment's index and before
 /// its documents: every markdown file in the folder its README is in, split at its headings, each table row and
-/// each list item an entry of its own naming its lines (<see cref="IndexSections"/>, ORIENT2h, ORIENT2h2), as entries of
+/// each list item an entry of its own naming its lines (<see cref="IndexSections"/>), as entries of
 /// <see cref="EntryKind.Index"/>. A folder the deployment named as its index is read a row at a time with its
 /// cells labelled, as it chose, and never at its headings beside.
 ///
-/// A folder walked for its records never enters or opens what git ignores within it (KNOWWALK1,
-/// <see cref="IgnoredPaths"/>): a docs site's packages and a person's ignored scratch are not the repository's.
+/// A folder walked for its records never enters or opens what git ignores within it
+/// (<see cref="IgnoredPaths"/>): a docs site's packages and a person's ignored scratch are not the repository's.
 ///
-/// Every entry keeps the lines of its file its body is (<see cref="KnowledgeEntry.Lines"/>, ORIENT2e), counted
+/// Every entry keeps the lines of its file its body is (<see cref="KnowledgeEntry.Lines"/>), counted
 /// from the file's first line whatever the read trimmed above it, except a deployment's index row, which is its
 /// cells labelled by their columns and no line as written.
 /// </remarks>
@@ -59,10 +59,10 @@ namespace Daoris.Knowledge;
 /// <param name="index">The generated index's folder, the same; null reads none.</param>
 public sealed class RepositoryScanner(string? documents = null, string? index = null)
 {
-    /// <summary>A room's instructions, the file every agent reads in that folder (D117 §2.2).</summary>
+    /// <summary>A room's instructions, the file every agent reads in that folder.</summary>
     private const string RoomInstructions = "AGENTS.md";
 
-    /// <summary>An unadopted repository's front page, read at its root in any case (WSSETUP8; D124 §5).</summary>
+    /// <summary>An unadopted repository's front page, read at its root in any case.</summary>
     private const string ReadmeFile = "README.md";
 
     private static readonly string[] DecisionFiles =
@@ -99,11 +99,11 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
         var daorisLock = DaorisLock.Read(repositoryRoot);
         var layout = RepositoryLayout.Of(repositoryRoot, daorisLock);
         var entries = new List<KnowledgeEntry>();
-        // What git ignores, asked once and only when a folder of records is walked (KNOWWALK1).
+        // What git ignores, asked once and only when a folder of records is walked.
         var ignored = new Lazy<IgnoredPaths>(() => IgnoredPaths.Of(repositoryRoot));
 
         // The always-loaded tier, wherever this repository keeps it. A repository on the old layout
-        // has files under `rules/`; one that has synced since D59 has a SPAN in the file every
+        // has files under `rules/`; a synced one has a SPAN in the file every
         // harness reads, and the lock is what says which — so both are read and neither is guessed at.
         foreach (var root in layout.Roots)
         {
@@ -119,7 +119,7 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
             entries.AddRange(ScanSkills(repositoryRoot, name, daorisLock, RepositoryLayout.Under(root, "skills")));
         }
         // 🔴 One file is one place in the index: read twice, under two kinds or two readers, its entries
-        // share ids, and the store's primary key fails the whole refresh on the second (REV3).
+        // share ids, and the store's primary key fails the whole refresh on the second.
         var indexed = entries.Select(entry => entry.RelativePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
         void Add(IEnumerable<KnowledgeEntry> read)
         {
@@ -132,7 +132,7 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
 
         Add(ScanRooms(repositoryRoot, name, layout, indexed));
 
-        // The router, declared and never guessed (DOC5): a `docs/README.md` in a repository that
+        // The router, declared and never guessed: a `docs/README.md` in a repository that
         // declared nothing may be a site's front page as easily as a router of its documents. A
         // document, not a log: it is read whole at a task's start, and its rows are about each other.
         if (layout.PathOf("router") is { } router && !indexed.Contains(router))
@@ -156,12 +156,12 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
             // `docs/DECISIONS.md` and `docs/decisions.md` are the same file. Found immediately, on
             // Windows; on Linux it would have waited until someone happened to have both.
             //
-            // The declared path is the first candidate (DOC5), so a log at a name no candidate knows is
+            // The declared path is the first candidate, so a log at a name no candidate knows is
             // found, and one a candidate also names is found once. Declared, it may be a folder of
-            // records; absent from the disk, the candidates are read as before it was declared.
+            // records; absent from the disk, the candidates are read as if it were not declared.
             var declared = layout.PathOf(role) is { } path && Exists(repositoryRoot, path, folder: true) ? path : null;
             var found = declared ?? candidates.FirstOrDefault(candidate => Exists(repositoryRoot, candidate, folder: false));
-            // A log reached through a link is some other folder's log (LAYOUT4): skipped, never followed,
+            // A log reached through a link is some other folder's log: skipped, never followed,
             // and never replaced by a candidate, which would be a guess at which log is the repository's.
             if (found is null || indexed.Contains(found)) continue;
 
@@ -170,15 +170,15 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
                 : ScanLog(repositoryRoot, name, found, kind));
         }
 
-        // What the deployment named (ORIENT1c), after the roles that are files of their own: its index a row
+        // What the deployment named, after the roles that are files of their own: its index a row
         // at a time, as it chose for that folder, before the declared index, so a deployment that names the
-        // declared index's own folder reads it as it always has (one file, one place).
+        // declared index's own folder reads it by its own reading (one file, one place).
         if (index is not null && Directory.Exists(Absolute(repositoryRoot, index)))
         {
             Add(ScanIndex(repositoryRoot, name, index, indexed, ignored));
         }
 
-        // The index of where things are, declared and never guessed (ORIENT2e; D151 §6), as the router is: a
+        // The index of where things are, declared and never guessed, as the router is: a
         // folder named like one may be anything. Every file of it the deployment did not read, at its headings.
         if (layout.PathOf("index") is { } declaredIndex)
         {
@@ -192,7 +192,7 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
             Add(ScanDocumentFolder(repositoryRoot, name, documents, indexed, ignored));
         }
 
-        // The README, as the repository's own word until it adopts (WSSETUP8; D124 §5): what its authors
+        // The README, as the repository's own word until it adopts: what its authors
         // wrote for a newcomer, and a session searching the index is one. Last, so a declaration that
         // names the file reads it by its role, and this never reads it a second time.
         if (!layout.Locked && Readme(repositoryRoot) is { } readme && !indexed.Contains(readme))
@@ -205,8 +205,8 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
 
     /// <summary>
     /// The root's <c>README.md</c> in any case, spelled as the disk spells it so a session can open it;
-    /// null when there is none. Only that file: not <c>docs/README.md</c>, which may be a site's front page
-    /// (DOC5), and no other format, since only markdown has headings the splitter reads.
+    /// null when there is none. Only that file: not <c>docs/README.md</c>, which may be a site's front page,
+    /// and no other format, since only markdown has headings the splitter reads.
     /// </summary>
     /// <remarks>Two spellings side by side, which only a case-sensitive disk holds, read as the first in ordinal order.</remarks>
     private static string? Readme(string root) =>
@@ -219,13 +219,12 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     /// <summary>
     /// A README split at its headings, as a log is: the part before the first heading titled
     /// <c>README</c>, each section after by its heading. Knowledge, the repository's own, labelled by its
-    /// path and claiming no role: one hit among others, where a router guessed would be followed as a map
-    /// (D124 §5, on DOC5's objection).
+    /// path and claiming no role: one hit among others, where a router guessed would be followed as a map.
     /// </summary>
     private static IEnumerable<KnowledgeEntry> ScanReadme(string root, string repository, string relative)
     {
         // Through the one boundary: a README that is a link, or a link held as text, is some other
-        // folder's word (D117 §5.5).
+        // folder's word.
         if (ReadDocumentAt(root, relative) is not { } read) yield break;
 
         // The part a log drops is the part a newcomer reads first. Unanchored, so a reader following it
@@ -241,7 +240,7 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     }
 
     /// <summary>
-    /// The logs, each with the role a repository declares it under (D122 §2.7) and the names the scanner
+    /// The logs, each with the role a repository declares it under and the names the scanner
     /// tries when it declares none.
     /// </summary>
     private static readonly (string Role, string[] Candidates, EntryKind Kind)[] Logs =
@@ -260,12 +259,12 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
 
     /// <summary>
     /// A document's text, or null when it is not one to index: absent, reached through a link, or a
-    /// link held as text (D117 §5.5). Read once, through the same boundary every document goes through.
+    /// link held as text. Read once, through the same boundary every document goes through.
     /// </summary>
     private static string? ReadDocument(string root, string relative) => ReadDocumentAt(root, relative)?.Text;
 
     /// <summary>
-    /// <see cref="ReadDocument"/>, and the line of the file its text starts on (ORIENT2e), so every entry read
+    /// <see cref="ReadDocument"/>, and the line of the file its text starts on, so every entry read
     /// from it names the file's own lines.
     /// </summary>
     private static (string Text, int First)? ReadDocumentAt(string root, string relative)
@@ -286,7 +285,7 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
         section.First > 0 ? new LineSpan(first - 1 + section.First, first - 1 + section.Last) : null;
 
     /// <summary>
-    /// Each declared room's instructions, as the repository's own knowledge (D117 §5.5): a folder's
+    /// Each declared room's instructions, as the repository's own knowledge: a folder's
     /// reference, which is what the search exists to find. Always local, since Daoris never writes a
     /// room's text, and named by its folder, since every room's file has the same name.
     /// </summary>
@@ -309,7 +308,7 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     }
 
     /// <summary>
-    /// The always-loaded rules, out of the region the lock points at (CANON8e / D59).
+    /// The always-loaded rules, out of the region the lock points at.
     /// </summary>
     /// <remarks>
     /// <para>Each rule is its OWN entry, split by its provenance line — the same reason a decisions
@@ -325,7 +324,7 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     {
         foreach (var span in daorisLock.Spans)
         {
-            // The file is named by the lock, which nobody reads closely (D18): never read outside the
+            // The file is named by the lock, which nobody reads closely: never read outside the
             // repository, and never through a link.
             var host = RepositoryLayout.Declared(span.Key);
             if (RepositoryLayout.Escapes(host) || RepositoryLinks.Crosses(root, host)) continue;
@@ -355,7 +354,7 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     {
         var absolute = Path.Combine(root, directory.Replace('/', Path.DirectorySeparatorChar));
         // A file where the folder must go is a folder link held as text, and a folder reached through a
-        // link is some other folder: neither is enumerated (D117 §5.5).
+        // link is some other folder: neither is enumerated.
         if (!Directory.Exists(absolute) || RepositoryLinks.Crosses(root, directory)) yield break;
 
         foreach (var file in Directory.EnumerateFiles(absolute, "*.md").Order(StringComparer.Ordinal))
@@ -392,7 +391,7 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
         {
             var skillName = new DirectoryInfo(skillDirectory).Name;
             var relative = $"{directory}/{skillName}/SKILL.md";
-            // 🔴 A mirror is a copy of its source for the one agent that reads only here (D117 §3.2):
+            // 🔴 A mirror is a copy of its source for the one agent that reads only here:
             // indexed, it would put every skill in a search twice per repository.
             if (daorisLock.IsMirror(relative)) continue;
             if (ReadDocumentAt(root, relative) is not { } read) continue;
@@ -409,16 +408,16 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     }
 
     /// <summary>
-    /// A declared folder (DOC5; D122 §2.1): one entry per markdown file in it or below, each read whole,
+    /// A declared folder: one entry per markdown file in it or below, each read whole,
     /// since a record's headings are its own parts (an ADR's context and consequences) and not records of
     /// their own.
     /// </summary>
     /// <param name="indexed">What is already read: a file another reader took is not read again.</param>
     /// <param name="byHeading">
-    /// Whether each file is titled by its first heading, and by its name where it has none (DOC8c; D134 §5).
-    /// A log's folder is: a search for a decision showed <c>D130</c> where its heading says what was decided,
+    /// Whether each file is titled by its first heading, and by its name where it has none.
+    /// A log's folder is: a decision's heading says what is decided,
     /// and an ADR's file name is a number and a slug. A router's folder is not: it holds documents, named by
-    /// their files as the knowledge tier's are (D122). The id is the path either way, so a title is never a key.
+    /// their files as the knowledge tier's are. The id is the path either way, so a title is never a key.
     /// </param>
     private static IEnumerable<KnowledgeEntry> ScanFolder(
         string root, string repository, string folder, EntryKind kind, ISet<string> indexed, bool byHeading, Lazy<IgnoredPaths> ignored)
@@ -439,15 +438,15 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     }
 
     /// <summary>
-    /// A decision in a folder of records (ORIENT1g; D134 §5 as amended): its text before its first dated note,
-    /// at the id it always had, then each note an entry of its own, titled by the decision's file and the
+    /// A decision in a folder of records: its text before its first dated note,
+    /// at the decision file's own id, then each note an entry of its own, titled by the decision's file and the
     /// note's label and anchored by that label, as the decisions digest gives them (<see cref="DecisionNotes"/>).
     /// </summary>
     /// <remarks>
-    /// A question about one note landed on the whole decision, or past it, while every other note's words
-    /// diluted the one that answered (D125's twenty-two). A label twice in one file is told apart by its count,
-    /// as a heading twice is (REV3), and a label that is another's counted anchor gets the next free one
-    /// (<see cref="EntryAnchors"/>, ORIENT2h3), so one file never yields one id twice.
+    /// A question about one note would land on the whole decision, or past it, while every other note's words
+    /// dilute the one that answers. A label twice in one file is told apart by its count,
+    /// as a heading twice is, and a label that is another's counted anchor gets the next free one
+    /// (<see cref="EntryAnchors"/>), so one file never yields one id twice.
     /// </remarks>
     private static IEnumerable<KnowledgeEntry> Decision(string repository, string relative, string title, (string Text, int First) read)
     {
@@ -468,18 +467,18 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     }
 
     /// <summary>
-    /// The declared index of where things are (ORIENT2e; D151 §6, the orientation design §3.1): every markdown
+    /// The declared index of where things are: every markdown
     /// file in the folder its README is in, and below, split at its headings, each table row and each list item an
-    /// entry of its own (<see cref="IndexSections"/>, ORIENT2h, ORIENT2h2), as entries of the index's own kind, the
+    /// entry of its own (<see cref="IndexSections"/>), as entries of the index's own kind, the
     /// repository's own, each keeping its lines.
     /// </summary>
     /// <remarks>
     /// The folder the README is in, since the index is the folder and the README only names its files; a declared
     /// folder is that folder. A README at the repository's root is read alone: its folder is the whole repository,
     /// and the index is the small, reviewed statement of where things are, never every file beside it. A section,
-    /// a row or an item is anchored by its title, a title twice in one file told apart by its count (REV3) and never
-    /// given an anchor already given (<see cref="EntryAnchors"/>, ORIENT2h3), an item's without the lines it leads
-    /// with (ORIENT2h5); text before any heading is the file's own, unanchored.
+    /// a row or an item is anchored by its title, a title twice in one file told apart by its count and never
+    /// given an anchor already given (<see cref="EntryAnchors"/>), an item's without the lines it leads
+    /// with; text before any heading is the file's own, unanchored.
     /// </remarks>
     private static IEnumerable<KnowledgeEntry> ScanDeclaredIndex(
         string root, string repository, string declared, ISet<string> indexed, Lazy<IgnoredPaths> ignored)
@@ -508,10 +507,10 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
             foreach (var section in IndexSections.Read(read.Text, relative, read.First))
             {
                 // The file's opening is the file, unanchored; prose before any heading after a table or a list is a
-                // second run of it, and anchored as a repeat, so no two entries share an id (REV3), as is an item's text
-                // after its nested items (ORIENT2h2). A row or an item is anchored with the sections, since its title
-                // can be a subsection's (ORIENT2h3: each anchor reserved). An item past the lines it leads with
-                // (ORIENT2h5), so an edit above them leaves its id as it was.
+                // second run of it, and anchored as a repeat, so no two entries share an id, as is an item's text
+                // after its nested items. A row or an item is anchored with the sections, since its title
+                // can be a subsection's (each anchor reserved). An item past the lines it leads with
+                // keeps its id when an edit lands above them.
                 var anchor = anchors.Next(section.Anchored ?? section.Title);
                 if (section.Opening && anchor == section.Title) anchor = null;
                 yield return new KnowledgeEntry(
@@ -522,11 +521,11 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     }
 
     /// <summary>
-    /// A generated index (ORIENT1c): each table row and list item of each markdown file one entry, and the
+    /// A generated index: each table row and list item of each markdown file one entry, and the
     /// file's prose one more, so a search for where something is lands on the row that says so.
     /// </summary>
     /// <remarks>
-    /// Entries of the index's kind (ORIENT2e), as the declared index's sections are, so a search by kind finds
+    /// Entries of the index's kind, as the declared index's sections are, so a search by kind finds
     /// them and a search naming none holds them to two. A row is its cells labelled by their columns, not its
     /// file's line as written, so it names no lines; its cells name the places themselves.
     /// </remarks>
@@ -547,7 +546,7 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     }
 
     /// <summary>
-    /// A folder of documents (ORIENT1c): each markdown file under it split at its level-two headings, as a log
+    /// A folder of documents: each markdown file under it split at its level-two headings, as a log
     /// is, with the part before the first one titled by the document's first heading. A design's sections are
     /// what a question about it is answered by; the whole file buries the answer as a whole log would.
     /// </summary>
@@ -575,10 +574,10 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
 
     /// <summary>
     /// The markdown files in a folder and below, repository-relative. A folder reached through a link is
-    /// some other folder (LAYOUT4) and is never entered, so a link that loops back is never walked round.
+    /// some other folder and is never entered, so a link that loops back is never walked round.
     /// </summary>
     /// <remarks>
-    /// What git ignores in the checkout is never entered or opened (KNOWWALK1): a docs site's <c>node_modules/</c>
+    /// What git ignores in the checkout is never entered or opened: a docs site's <c>node_modules/</c>
     /// under a documents folder is thousands of folders and READMEs that are not this repository's, and a person's
     /// ignored scratch is not its record. Git is asked once per read, at the first record found
     /// (<see cref="IgnoredPaths"/>); the folder the walk starts at is the one declared, and is read as it is, a declared
@@ -613,7 +612,7 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
         string root, string repository, string relativePath, EntryKind kind)
     {
         // Through the one boundary every document goes through: a log reached through a link, or a link
-        // held as text, is some other folder's (LAYOUT4).
+        // held as text, is some other folder's.
         if (ReadDocumentAt(root, relativePath) is not { } read) yield break;
 
         // A log is always the repository's own: canonical files are rules, knowledge and skills.
@@ -622,15 +621,15 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
 
     /// <summary>
     /// One local entry per section of a file split at its headings, each anchored by its heading and keeping the
-    /// lines of the file its body is (ORIENT2e).
+    /// lines of the file its body is.
     /// </summary>
     private static IEnumerable<KnowledgeEntry> Sections(
         string repository, EntryKind kind, string relativePath, (string Text, int First) read)
     {
-        // 🔴 An anchor is unique within its file (REV3). Two sections under one heading — date-only fix
-        // headings do it — shared an id, and the store's primary key threw on the second, failing the
-        // whole refresh. The first keeps the id it always had; each repeat is told apart by its count, and
-        // a heading that is another's counted anchor gets the next free one (ORIENT2h3).
+        // 🔴 An anchor is unique within its file. Two sections under one heading — date-only fix
+        // headings do it — would share an id, and the store's primary key throws on the second, failing the
+        // whole refresh. The first keeps the heading as its id; each repeat is told apart by its count, and
+        // a heading that is another's counted anchor gets the next free one.
         var anchors = new EntryAnchors();
         foreach (var section in MarkdownSections.Split(read.Text))
         {

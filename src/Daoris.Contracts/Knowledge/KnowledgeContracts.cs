@@ -47,13 +47,13 @@ public sealed record ListRepositories(string? Workspace = null) : IRoute<Reposit
 }
 
 /// <summary>
-/// A fed copy is a claim about a commit, so the answer names the commit, when it was made, its line and the machine that fed
+/// A fed copy is a claim about a commit, so the answer names the commit, when it is made, its line and the machine that fed
 /// it: staleness a person can see beats freshness they must assume. A host that reads its own checkouts has no feed.
 /// </summary>
 public sealed record ProvenanceResponse(string Commit, string ShortCommit, DateTimeOffset CommittedAt, string Branch, string? Origin);
 
 /// <param name="IndexedAt">When the host read the repository's checkout; null where it read none.</param>
-/// <param name="IndexedCommit">The commit that reading was at.</param>
+/// <param name="IndexedCommit">The commit that reading is at.</param>
 public sealed record RepositoryResponse(
     string Name, int Total, int Local, int Canonical, string Workspace, ProvenanceResponse? Fed,
     DateTimeOffset? IndexedAt = null, string? IndexedCommit = null);

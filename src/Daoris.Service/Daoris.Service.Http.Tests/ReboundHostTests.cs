@@ -5,8 +5,8 @@ using Daoris.Knowledge.Http;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// ORIGIN2: a local host answers only a request that names it by a loopback name. A website whose DNS name is pointed at
-/// 127.0.0.1 (DNS rebinding) is its own origin here, so CORS and ORIGIN1's gate both see a same-origin page: its reads
+/// A local host answers only a request that names it by a loopback name. A website whose DNS name is pointed at
+/// 127.0.0.1 (DNS rebinding) is its own origin here, so CORS and the origin gate both see a same-origin page: its reads
 /// would be answered, the index, the quests and the registration roots a loopback caller is given among them. Every
 /// request under any other name is refused 403 before anything runs, with the house's sentence and a code; the names
 /// every caller uses, <c>localhost</c>, <c>127.x.x.x</c> and <c>[::1]</c>, with any port, are answered as before.
@@ -95,7 +95,7 @@ public sealed class ReboundHostTests(LocalHost host) : IClassFixture<LocalHost>
 
     /// <summary>
     /// The names every caller uses: the shell at <c>127.0.0.1</c> (and its page, which calls that address from its own
-    /// origin, D92), the CLI, the rehearsals, Playwright and the development proxy at <c>localhost</c>, any port, any
+    /// origin), the CLI, the rehearsals, Playwright and the development proxy at <c>localhost</c>, any port, any
     /// case; the rest of 127/8 and IPv6's loopback. A request that names no host is no browser's, and a program's.
     /// </summary>
     [Theory]
@@ -143,7 +143,7 @@ public sealed class ReboundHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(loopback, BrowserOrigins.IsLoopbackName(name));
 
     /// <summary>
-    /// ORIGIN1's own origin reads the same test, so a rebound page is never its own origin here even where the name's
+    /// The origin gate reads the same test, so a rebound page is never its own origin here even where the name's
     /// gate does not stand in front of it.
     /// </summary>
     [Theory]
@@ -159,7 +159,7 @@ public sealed class ReboundHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 }
 
-/// <summary>ORIGIN2's log line, and the shared host, which is reached by its real name.</summary>
+/// <summary>The log line, and the shared host, which is reached by its real name.</summary>
 public sealed class ReboundHostLogTests
 {
     private static JsonElement Parse(string line) => JsonDocument.Parse(line).RootElement;
@@ -180,7 +180,7 @@ public sealed class ReboundHostLogTests
         var data = logged.GetProperty("data");
         Assert.Equal("POST", data.GetProperty("method").GetString());
         Assert.Equal("/api/quests/{id}/accept", data.GetProperty("route").GetString());
-        // The name refuses it first: ORIGIN1's gate never runs, so the request is one line, not two.
+        // The name refuses it first: the origin gate never runs, so the request is one line, not two.
         Assert.DoesNotContain(lines, line => Parse(line).GetProperty("event").GetString() == BrowserOrigins.Event);
         Assert.DoesNotContain(lines, line => Parse(line).GetProperty("event").GetString() == "request.failed");
         Assert.All(lines, line =>
@@ -193,7 +193,7 @@ public sealed class ReboundHostLogTests
 
     /// <summary>
     /// A shared host is reached by whatever name its deployment gives it, which this build cannot know; its key gate is
-    /// what keeps a page off it (D47 §7), since a browser never sends a bearer key on its own. So the name is not judged
+    /// what keeps a page off it, since a browser never sends a bearer key on its own. So the name is not judged
     /// there.
     /// </summary>
     [Fact]

@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A set-up step's word on where it showed the work for the person's review (REVIEWENV1b, D154 point 9). It applies only to a set-up
+/// A set-up step's word on where it showed the work for the person's review. It applies only to a set-up
 /// step, a second post of the same set-up is no move, and a newer one holds the step for the person again; it moves no status.
 /// </summary>
 [QuestOperation("setup", QuestOperationPhase.Log)]
@@ -45,7 +45,7 @@ internal sealed class QuestSetUpOperation : IQuestOperation
         var history = await tx.HistoryAsync(id).ConfigureAwait(false);
         if (QuestLog.Replay(history) is not { } quest) return new QuestMove(await tx.FindAsync(id).ConfigureAwait(false), Moved: false);
 
-        // Its identity is made here, where its local address is still known, and crosses with it (REVIEWENV1b3).
+        // Its identity is made here, where its local address is still known, and crosses with it.
         var said = setUp with { At = null, Machine = null, Sequence = null };
         var shown = said with { Id = said.Id ?? Reviews.IdentityOf(said) };
         var judged = new QuestOperation(id, QuestOperationKind.SetUp, tx.Machine, 0, now, SetUp: shown);

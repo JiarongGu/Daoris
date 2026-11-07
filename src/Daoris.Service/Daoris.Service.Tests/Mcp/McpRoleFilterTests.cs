@@ -12,7 +12,7 @@ using ModelContextProtocol.Server;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// FOUNDATION1r (the foundation design §2.3; COAGENT1b before it): the connector refuses, by the work of the session it names and
+/// The connector refuses, by the work of the session it names and
 /// before the tool runs, every tool its row of the call layer's table does not serve. The census holds the table to every tool the
 /// host registers and every column, so a tool added later is refused until it is classed and placed.
 /// </summary>
@@ -63,7 +63,7 @@ public sealed class McpRoleFilterTests : McpToolsFixture
     private static readonly SessionWork Partner = new(ParticipantWork.Partner);
 
     /// <summary>
-    /// 🔴 FOUNDATION1r, the census: every tool the host registers against every column the call layer places a named session in, each
+    /// 🔴 The census: every tool the host registers against every column the call layer places a named session in, each
     /// cell as <c>fixtures/call-table.json</c> names it, and the file names every column and no tool the host does not register.
     /// </summary>
     [Fact]
@@ -88,7 +88,7 @@ public sealed class McpRoleFilterTests : McpToolsFixture
         Assert.True(differences.Count == 0, string.Join('\n', differences));
     }
 
-    /// <summary>COMPANYVIEW1i: the file's <c>registered</c> list is every tool the host registers, which the window shows each work's calls against.</summary>
+    /// <summary>The file's <c>registered</c> list is every tool the host registers, which the window shows each work's calls against.</summary>
     [Fact]
     public void The_tables_file_lists_every_registered_tool()
     {
@@ -99,7 +99,7 @@ public sealed class McpRoleFilterTests : McpToolsFixture
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1r, failing closed: a tool the table does not class is refused to every column, and a work it does not know (a
+    /// 🔴 Failing closed: a tool the table does not class is refused to every column, and a work it does not know (a
     /// brainstorm with no turn, a work added later) is served the reads alone. A connector naming no session keeps its scope.
     /// </summary>
     [Fact]
@@ -117,7 +117,7 @@ public sealed class McpRoleFilterTests : McpToolsFixture
     }
 
     /// <summary>
-    /// 🔴 KNOWCENTRAL2b (the memory coordinator design §2): the table's file names the driver's four permission sources that move with it,
+    /// 🔴 The table's file names the driver's four permission sources that move with it,
     /// each a list in the driver's code, so a tool placed here is placed there in the same change.
     /// </summary>
     [Fact]
@@ -203,8 +203,8 @@ public sealed class McpRoleFilterTests : McpToolsFixture
     }
 
     /// <summary>
-    /// 🔴 The foundation design §7 row 10: a stand-in caller naming a session this machine keeps no record of is served the reads and
-    /// refused every mutation, unplaced; before, nothing was refused it.
+    /// 🔴 A stand-in caller naming a session this machine keeps no record of is served the reads and
+    /// refused every mutation, unplaced.
     /// </summary>
     [Fact]
     public async Task A_named_caller_with_no_record_is_served_reads_and_refused_mutations()
@@ -224,8 +224,8 @@ public sealed class McpRoleFilterTests : McpToolsFixture
     }
 
     /// <summary>
-    /// Each refusal says why in the words its caller read before the table, where it was refused before: by the filter (a partner, a
-    /// record that serves, a brainstorm pass) or by the box that judged by the work alone (the channel, Ask Daoris's tools, a turn).
+    /// Each refusal says why in the words its caller reads: by the filter (a partner, a
+    /// record that serves, a brainstorm pass) or by the box that judges by the work alone (the channel, Ask Daoris's tools, a turn).
     /// </summary>
     [Theory]
     [InlineData("partner", null, "quest_list", "not a partner's to call")]
@@ -245,7 +245,7 @@ public sealed class McpRoleFilterTests : McpToolsFixture
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1r: a brainstorm's scope is placed first, by the turn named on its connector and never by a record, as its generator
+    /// 🔴 A brainstorm's scope is placed first, by the turn named on its connector and never by a record, as its generator
     /// or its synthesizer. A connector naming no whole turn is read by its record, and a session no record keeps is unplaced.
     /// </summary>
     [Fact]
@@ -261,7 +261,7 @@ public sealed class McpRoleFilterTests : McpToolsFixture
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1r: the connector's session is its record's work, read by the one rule (<see cref="ParticipantWork.Of"/>); a session
+    /// 🔴 The connector's session is its record's work, read by the one rule (<see cref="ParticipantWork.Of"/>); a session
     /// with no record is unplaced, and a connector that names none is a person's own agent's.
     /// </summary>
     [Fact]
@@ -390,7 +390,7 @@ public sealed class McpRoleFilterTests : McpToolsFixture
         return names;
     }
 
-    /// <summary>Each tool called through the server in turn: what it answered, and the refusal's code where it was refused.</summary>
+    /// <summary>Each tool called through the server in turn: what it answered, and the refusal's code where it is refused.</summary>
     private static async Task<List<(string Text, string? Code)>> CallAsync(Func<CancellationToken, Task<SessionWork>> role, params string[] tools)
     {
         var toServer = new Pipe();

@@ -9,7 +9,7 @@ internal sealed class QuestClaims(QuestStore store)
     private readonly ConnectionGate _db = store.Db;
 
     /// <summary>
-    /// Where THIS machine's claim on a quest stands (D68 §4, D69): held once a remote numbered its take,
+    /// Where THIS machine's claim on a quest stands: held once a remote numbered its take,
     /// unconfirmed while the take is only here, lost once the rebase made it a conflict — and none when
     /// this machine never took it. A take on a machine with no remote is never numbered, so it stays
     /// unconfirmed, which nothing acts on.
@@ -30,7 +30,7 @@ internal sealed class QuestClaims(QuestStore store)
 
     /// <summary>
     /// Whether THIS machine's claim on a quest reads lost because its take lost to the person's reopen of the work the step grew from
-    /// (FABRIC-CLOSE1c18, <see cref="QuestLog.LostToTheReopen"/>), not to another machine's take: what the claim's answer says beside
+    /// (<see cref="QuestLog.LostToTheReopen"/>), not to another machine's take: what the claim's answer says beside
     /// it, so the driver stops the session in words that are true. False where the claim does not read lost.
     /// </summary>
     public async Task<bool> LostToTheReopenAsync(string id, CancellationToken ct = default)

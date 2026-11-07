@@ -4,7 +4,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The <c>sync</c> kind's writer (HELP10): bringing repositories up to date after a pull request merged (WSR6, D109), for
+/// The <c>sync</c> kind's writer: bringing repositories up to date after a pull request merged, for
 /// one repository or every one with a checkout. What the look lists, and the press, are the driver's.
 /// </summary>
 public sealed class HelpSyncProposalTests : HelpProposalBoxFixture
@@ -36,7 +36,7 @@ public sealed class HelpSyncProposalTests : HelpProposalBoxFixture
         Assert.Equal(JsonValueKind.Null, Written(every!).GetProperty("target").ValueKind);
     }
 
-    /// <summary>BRSCOPE1b: the workspace the look and the press are scoped to is written; omitted it stays null.</summary>
+    /// <summary>The workspace the look and the press are scoped to is written; omitted it stays null.</summary>
     [Fact]
     public void A_workspace_is_written_trimmed_and_null_when_omitted()
     {

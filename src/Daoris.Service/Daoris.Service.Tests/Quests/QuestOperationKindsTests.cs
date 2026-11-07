@@ -5,10 +5,9 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// QUESTOP1: a kind of quest operation is not one enum value. It is placed in each of the places
+/// A kind of quest operation is not one enum value. It is placed in each of the places
 /// <c>.claude/knowledge/quest-operations.md</c> names: the replay's rule, the log's payload and the cache, the wire and
-/// its shape sentence, the rebase's rule. EVID1a's <c>evidenced</c> went into eight of them, and nothing tied them
-/// together. Every theory here runs over every value of <see cref="QuestOperationKind"/>, so a kind added to the enum and
+/// its shape sentence, the rebase's rule. Every theory here runs over every value of <see cref="QuestOperationKind"/>, so a kind added to the enum and
 /// missed in one place fails here, naming the place.
 /// </summary>
 public sealed class QuestOperationKindsTests
@@ -43,11 +42,11 @@ public sealed class QuestOperationKindsTests
             },
         ],
         Short = "The report",
-        // The paths it declares (INTEGRATE1l), so the log's, the cache's and the wire's theories see them kept.
+        // The paths it declares, so the log's, the cache's and the wire's theories see them kept.
         Paths = ["docs/report.md", "src/report/**"],
-        // The workflow request's key (INTEGRATE1p), so the theories see it kept.
+        // The workflow request's key, so the theories see it kept.
         Request = "run-1/ask-reports/1",
-        // The submission it grew from (FABRIC-CLOSE1c), so a publish is held to carrying it, and a reopen naming it reaches it.
+        // The submission it grew from, so a publish is held to carrying it, and a reopen naming it reaches it.
         GrewFrom = new QuestOperationRef("m9", 3),
     };
 
@@ -55,7 +54,7 @@ public sealed class QuestOperationKindsTests
         new(Id, kind, machine, sequence, At(sequence));
 
     /// <summary>
-    /// A note's parts beside its English (QUESTCLOSE1b1, D142 point 2), as the store keeps them: Daoris's coded lead, then the
+    /// A note's parts beside its English, as the store keeps them: Daoris's coded lead, then the
     /// person's words, the shape the person's done writes.
     /// </summary>
     private const string DoneParts =
@@ -68,10 +67,10 @@ public sealed class QuestOperationKindsTests
         {
             Published = Asked with { Filed = At(s), Updated = At(s) },
         },
-        // The step's source as the take found it (FABRIC-CLOSE1c18): the submission the quest as asked grew from.
+        // The step's source as the take found it: the submission the quest as asked grew from.
         [QuestOperationKind.Taken] = s => Op(QuestOperationKind.Taken, s) with { Note = "The owner's session.", Submission = new QuestOperationRef("m9", 3) },
-        // The close's provenance is a done's (FABRIC-CLOSE1a), so the sample carries it, and the wire and the log are held to it. So is
-        // the session that wrote it through its connector (HANDBACK1), a decline's too.
+        // The close's provenance is a done's, so the sample carries it, and the wire and the log are held to it. So is
+        // the session that wrote it through its connector, a decline's too.
         [QuestOperationKind.Done] = s => Op(QuestOperationKind.Done, s) with
         {
             Note = "The person marked this done: Built.", NoteParts = DoneParts,
@@ -86,7 +85,7 @@ public sealed class QuestOperationKindsTests
         {
             Note = "The person marked this done: Built.", NoteParts = DoneParts, Attempted = QuestStatus.Done, LostToTheReopen = true,
         },
-        // Marked as brought forward with the fresh take it made (SYNCMERGE1a, D178 point 5): the conflict and the take the state below
+        // Marked as brought forward with the fresh take it made: the conflict and the take the state below
         // shows at sequences 2 and 3, since a marked dismissal applies only while the take it resolves stands unsettled.
         [QuestOperationKind.Dismissed] = s => Op(QuestOperationKind.Dismissed, s) with
         {
@@ -104,7 +103,7 @@ public sealed class QuestOperationKindsTests
                     Object = "fedcba9876543210fedcba9876543210fedcba98", Changed = true,
                 },
             ])
-            // Read for the submission the states below show at sequence 4 (FABRIC-CLOSE1e), so the field is held everywhere.
+            // Read for the submission the states below show at sequence 4, so the field is held everywhere.
             { Session = "s1a2b3c4", Submission = new QuestOperationRef("m1", 4) },
         },
         // A deployed set-up, so its address crosses as given: a local one leaves it behind on the wire, which
@@ -128,20 +127,20 @@ public sealed class QuestOperationKindsTests
                 SetUp = new QuestOperationRef("m1", 4), Commit = Commit, Words = "That is the setting.",
             },
         },
-        // The closure graph's digest, as the driver binds a taken quest (FABRIC-CLOSE1a).
+        // The closure graph's digest, as the driver binds a taken quest.
         [QuestOperationKind.Bound] = s => Op(QuestOperationKind.Bound, s) with { Note = "sha256:0f1e2d3c4b5a6978" },
-        // A ready's note and answers, as a done carries them (FABRIC-CLOSE1a), and the session that said it (FABRIC-CLOSE1c4).
+        // A ready's note and answers, as a done carries them, and the session that said it.
         [QuestOperationKind.Submitted] = s => Op(QuestOperationKind.Submitted, s) with
         {
             Note = "Built.", Answers = [new QuestAnswer(1, Met: "It is in docs/report.md.")], Session = "s1a2b3c4",
         },
-        // The person's reopen of the submission the states below show at sequence 4, with their words (FABRIC-CLOSE1c).
+        // The person's reopen of the submission the states below show at sequence 4, with their words.
         [QuestOperationKind.Reopened] = s => Op(QuestOperationKind.Reopened, s) with
         {
             Note = "The bridge is wrong; build it again.", Submission = new QuestOperationRef("m1", 4),
         },
-        // A withdrawn step rebound to its source's next submission (FABRIC-CLOSE1c), as that publication marks it: judged while the
-        // step is open (FABRIC-CLOSE1c15). The person's go-on, unmarked, is QuestReopenTests'.
+        // A withdrawn step rebound to its source's next submission, as that publication marks it: judged while the
+        // step is open. The person's go-on, unmarked, is QuestReopenTests'.
         [QuestOperationKind.Rebound] = s => Op(QuestOperationKind.Rebound, s) with
         {
             Submission = new QuestOperationRef("m9", 8), WhileOpen = true,
@@ -175,19 +174,19 @@ public sealed class QuestOperationKindsTests
             ("done, departed", [published, taken, Departure()]),
             ("done, shown for review", [published, taken, Departure(), Sample(QuestOperationKind.SetUp, 4)]),
             ("declined", [published, Sample(QuestOperationKind.Declined, 2) with { WhileOpen = false }]),
-            // FABRIC-CLOSE1a: a taken quest a closure graph binds, and one whose agent submitted, waiting on its evidence.
+            // A taken quest a closure graph binds, and one whose agent submitted, waiting on its evidence.
             ("taken, bound to a closure graph", [published, taken, Sample(QuestOperationKind.Bound, 3)]),
             ("taken, submitted", [published, taken, Sample(QuestOperationKind.Bound, 3), Sample(QuestOperationKind.Submitted, 4)]),
-            // FABRIC-CLOSE1c10: a step that submitted, then held by its source's reopen. The census's rebind is a publication's, judged
-            // while open (FABRIC-CLOSE1c15), so it applies to the withdrawn one below and not here; the person's go-on, which clears this
+            // A step that submitted, then held by its source's reopen. The census's rebind is a publication's, judged
+            // while open, so it applies to the withdrawn one below and not here; the person's go-on, which clears this
             // step's own result, is checked in its row and its replay by QuestReopenTests.
             ("taken, submitted, held by its source's reopen",
                 [published, taken, Sample(QuestOperationKind.Bound, 3), Sample(QuestOperationKind.Submitted, 4),
                     Sample(QuestOperationKind.Reopened, 5) with { Submission = new QuestOperationRef("m9", 3) }]),
-            // FABRIC-CLOSE1c: a step its source's reopen withdrew, the reopen naming the submission it grew from.
+            // A step its source's reopen withdraws, the reopen naming the submission it grew from.
             ("open, withdrawn by its source's reopen",
                 [published, Sample(QuestOperationKind.Reopened, 2) with { Submission = new QuestOperationRef("m9", 3) }]),
-            // SYNCMERGE1a: a take of this machine's that lost, kept as a conflict, and the fresh take its bring-forward made.
+            // A take of this machine's that lost, kept as a conflict, and the fresh take its bring-forward made.
             ("taken afresh, its earlier take lost",
                 [published, Op(QuestOperationKind.Conflict, 2) with { Attempted = QuestStatus.Taken, Note = "The owner's session." },
                     Sample(QuestOperationKind.Taken, 3)]),
@@ -247,7 +246,7 @@ public sealed class QuestOperationKindsTests
     // ——— The wire: QuestWire.Write, QuestWire.Read and QuestWire.Shape.
 
     /// <summary>
-    /// Every kind crosses the wire as it was made, both ways: a push, and a fetched page carrying its number. A field the
+    /// Every kind crosses the wire as it is made, both ways: a push, and a fetched page carrying its number. A field the
     /// kind carries that <see cref="QuestWire"/> does not write, or does not read back, is lost on the first sync.
     /// </summary>
     [Theory]
@@ -355,7 +354,7 @@ public sealed class QuestOperationKindsTests
     }
 
     /// <summary>
-    /// SYNCMERGE1a (D178 point 5): a dismissal's mark that it brought its machine's lost take forward is optional, since a plain dismissal
+    /// A dismissal's mark that it brought its machine's lost take forward is optional, since a plain dismissal
     /// and every one from before carries none, and a marked one crosses naming the fresh take it made. One present and not whole makes
     /// the dismissal half of one: read as plain, it would settle the conflict wherever it landed, where its take lost as well.
     /// </summary>
@@ -383,7 +382,7 @@ public sealed class QuestOperationKindsTests
     // ——— The log and the cache: QuestStore's payload, its reader, and the row the replay writes.
 
     /// <summary>
-    /// Every kind is kept in the log and read back as it was made, and the quest's cached row is what its history
+    /// Every kind is kept in the log and read back as it is made, and the quest's cached row is what its history
     /// replays to, every property of it. A field the payload does not write is lost when the store reads the history
     /// back; a property a kind's step sets that the cache does not keep is missing from every list.
     /// </summary>
@@ -416,8 +415,8 @@ public sealed class QuestOperationKindsTests
 
     /// <summary>
     /// Every kind has a rebase rule, and the conflict a rebase makes of a move crosses the wire. A kind with no rule
-    /// once fell through to a conflict naming no attempted status, which a remote refused, and every later push of
-    /// its circle with it (QUESTOP1, the fix log).
+    /// falls through to a conflict naming no attempted status, which a remote refuses, and every later push of
+    /// its circle with it.
     /// </summary>
     [Theory]
     [MemberData(nameof(Kinds))]
@@ -497,7 +496,7 @@ internal static class QuestMovesFields
         nameof(QuestMoveReading.Verdict),
     ];
 
-    /// <summary>What every move answers: what it is, when and where it was made, its name, its number, whether it applied, from where, and the hold it left.</summary>
+    /// <summary>What every move answers: what it is, when and where it is made, its name, its number, whether it applied, from where, and the hold it left.</summary>
     public static readonly string[] Every =
     [
         nameof(QuestMoveReading.Kind), nameof(QuestMoveReading.At), nameof(QuestMoveReading.Machine), nameof(QuestMoveReading.Sequence),

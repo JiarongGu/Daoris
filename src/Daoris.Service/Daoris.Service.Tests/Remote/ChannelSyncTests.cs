@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// SESSONE2d (D167 point 8; the co-working design §2.5): an ask's channel travels within the workspace as session records do. A
+/// An ask's channel travels within the workspace as session records do. A
 /// machine's own messages go up by a cursor and the team's come down keyed `origin/id`, read-only; the words are cleaned of machine
 /// paths before they leave; a feed from before the optional fields reads; and a remote from before has no doors, which is said once.
 /// </summary>
@@ -137,7 +137,7 @@ public sealed class ChannelSyncTests : IAsyncLifetime
         Assert.Equal(Words, (await _a.Channel.OfAsync("ask1")).Single().Text);
     }
 
-    /// <summary>Silence means local (D47 §4): a session's message from a repository that has not joined stays home.</summary>
+    /// <summary>Silence means local: a session's message from a repository that has not joined stays home.</summary>
     [Fact]
     public async Task A_message_of_a_repository_that_has_not_joined_stays_home()
     {
@@ -159,7 +159,7 @@ public sealed class ChannelSyncTests : IAsyncLifetime
         var message = Assert.Single(feed!);
         Assert.Equal(("m1", "ask1", "hello", false), (message.Id, message.Ask, message.Text, message.Question));
         Assert.Null(message.To);
-        // COWORK1d: a message from before says no level, which keeps its old reach; absent is never read as ordinary.
+        // A message from before says no level, which keeps its reach; absent is never read as ordinary.
         Assert.Null(message.Urgent);
         var fetched = Assert.Single(page!.Messages);
         Assert.Equal(("a@one", "m1", 4L), (fetched.Origin, fetched.Id, page.Through));
@@ -169,8 +169,8 @@ public sealed class ChannelSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 COWORK1d (the message-urgency design §9): a message's level travels on every message kept from now, an explicit false
-    /// included, and comes down to a teammate as it was said; one from before still says none.
+    /// 🔴 A message's level travels on every message kept, an explicit false
+    /// included, and comes down to a teammate as it is said; one from before says none.
     /// </summary>
     [Fact]
     public async Task A_messages_level_travels_said_true_or_false_and_comes_down_as_it_was()

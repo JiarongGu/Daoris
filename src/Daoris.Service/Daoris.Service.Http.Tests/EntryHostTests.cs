@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// SESSONE1a (D167 points 2 and 3): the session's DTO carries <c>entry</c>, the key the ledger wrote at the open — to every caller,
+/// The session's DTO carries <c>entry</c>, the key the ledger wrote at the open — to every caller,
 /// since it names a line of work and a repository and no path and no account — and answers a derived one for a record from before.
 /// </summary>
 public sealed class EntryHostTests(LocalHost host) : IClassFixture<LocalHost>
@@ -42,7 +42,7 @@ public sealed class EntryHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// 🔴 CHATFLOW1a (the chat-flow design §4.2): the quest a chat took (CHATTAKE1) is answered as <c>tookQuest</c> to this machine, as
+    /// 🔴 The quest a chat took is answered as <c>tookQuest</c> to this machine, as
     /// <c>opinion</c> is, and to nobody off it; a chat that took none answers none.
     /// </summary>
     [Fact]

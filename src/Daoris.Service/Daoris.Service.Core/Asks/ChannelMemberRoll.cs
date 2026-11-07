@@ -4,7 +4,7 @@ namespace Daoris.Knowledge;
 public sealed record ChannelMemberStanding(ChannelMember Member, bool Spent);
 
 /// <summary>
-/// The members a channel holds now (CHANNELJOIN1c), for the person's page and the driver's look. A channel's claims are spent once its ask
+/// The members a channel holds now, for the person's page and the driver's look. A channel's claims are spent once its ask
 /// has no quest open and no part of its line, nor a helper a part asked, is still active here, judged as it is read and never stored, so a quest opened again, or a
 /// part started again, makes it not spent again. A channel whose ask this machine does not hold is judged by its parts alone.
 /// </summary>

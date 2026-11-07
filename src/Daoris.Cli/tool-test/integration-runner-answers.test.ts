@@ -5,8 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * INTEGRATE1f part f1 (the integration design §5.9; D192's runner contract, extended; D215's notes on INTEGRATE1j): the answers the
- * driver reads, held to what this tool writes. The driver's `RunnerAnswers` reads `fixtures/runner-answers.json` there
+ * The answers the driver reads (the integration design §5.9), held to what this tool writes. The driver's `RunnerAnswers` reads `fixtures/runner-answers.json` there
  * (`RunnerAnswerTests`); here each piece of an answer is built with the tool's own writers (`verifyGates`, `verifyRunGates`,
  * `verifyPlanAnswer`, `verifyCommitsAnswer`, `verifyUnfinished`) and held to the table's answer, so a field the tool names `composition`,
  * `failures`, `kept`, `deferred` or `probe.result` is the field the driver reads, and one renamed on either side fails the other.
@@ -15,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 
 // The census of test units reads this file's strings as data, not as reads; what it reads is declared.
 // test-map: strings name paths as data
-// reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/runner-answers.json — INTEGRATE1f's driver twin reads the answers row for row
+// reaches: src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/runner-answers.json — the driver twin reads the answers row for row
 
 type Json = Record<string, unknown>;
 interface Result { gate: { name: string }; verdict: string; log?: string }

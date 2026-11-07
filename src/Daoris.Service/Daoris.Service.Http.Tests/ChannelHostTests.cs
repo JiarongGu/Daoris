@@ -4,7 +4,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// SESSONE2a (D167 points 6 and 8; the co-working design §2.5): <c>GET</c> and <c>POST /api/asks/{id}/channel</c>. The post is the
+/// <c>GET</c> and <c>POST /api/asks/{id}/channel</c>. The post is the
 /// person's, kept on the channel and on the ask as the <c>channel</c> kind; the read answers messages and Daoris's coded lines in time
 /// order and moves a mark only when asked; a refusal is a code.
 /// </summary>
@@ -38,7 +38,7 @@ public sealed class ChannelHostTests(LocalHost host) : IClassFixture<LocalHost>
         var read = await host.GetAsync($"/api/asks/{ask}/channel");
         Assert.Equal(200, read.Status);
         Assert.Equal(["line:published", "message:"], Codes(read.Json.GetProperty("items")));
-        // NOTIFY2g: the person's count passes over their own post and Daoris's line.
+        // The person's count passes over their own post and Daoris's line.
         Assert.Equal(0, read.Json.GetProperty("unread").GetInt32());
         var line = read.Json.GetProperty("items")[0];
         Assert.Equal($"ask #{ask}", line.GetProperty("from").GetString());
@@ -54,7 +54,7 @@ public sealed class ChannelHostTests(LocalHost host) : IClassFixture<LocalHost>
     {
         var ask = await AskedAsync("Channel the second report through the bridge.");
         await host.PostAsync($"/api/asks/{ask}/channel", new { text = "one" });
-        // An agent's message, a teammate's: the person's count is it alone (NOTIFY2g), never their own post nor Daoris's line.
+        // An agent's message, a teammate's: the person's count is it alone, never their own post nor Daoris's line.
         await host.Composed.Messages.MirrorAsync(Teammates("r-" + ask, ask, "agent words", DateTimeOffset.UtcNow));
 
         Assert.Equal(1, (await host.GetAsync($"/api/asks/{ask}/channel")).Json.GetProperty("unread").GetInt32());
@@ -99,7 +99,7 @@ public sealed class ChannelHostTests(LocalHost host) : IClassFixture<LocalHost>
         id, ask, "default", at, Session: "ab12cd34", Repository: "Keeper", Agent: "claude", Entry: "ask-" + ask + "/keeper", To: null, Re: null,
         Question: false, text, Origin: "teammate-key");
 
-    /// <summary>🔴 SESSONE2g: an ask held elsewhere reads from the mirrored messages by its id, with their origin, in time order and no lines.</summary>
+    /// <summary>🔴 An ask held elsewhere reads from the mirrored messages by its id, with their origin, in time order and no lines.</summary>
     [Fact]
     public async Task A_teammates_ask_reads_from_the_mirrored_messages()
     {
@@ -118,7 +118,7 @@ public sealed class ChannelHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// 🔴 NOTIFY2g (D196 point 6; the notification design §2.4): the person's read mark is kept on a teammate's ask, the same door as
+    /// 🔴 The person's read mark is kept on a teammate's ask, the same door as
     /// a local ask's, so its count falls to none; a session's entry there is not found, and so is an ask nowhere.
     /// </summary>
     [Fact]
@@ -142,7 +142,7 @@ public sealed class ChannelHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// 🔴 SESSONE2i: the person posts to a teammate's ask as to their own, at their level, and the message is this machine's own, which the
+    /// 🔴 The person posts to a teammate's ask as to their own, at their level, and the message is this machine's own, which the
     /// sync carries to the holder; an ask no message names is still not found.
     /// </summary>
     [Fact]
@@ -166,7 +166,7 @@ public sealed class ChannelHostTests(LocalHost host) : IClassFixture<LocalHost>
         Question: false, "words " + id, Origin: origin);
 
     /// <summary>
-    /// 🔴 SESSONE2h: <c>GET /api/channel/elsewhere</c> lists the asks the mirrored messages name that this machine does not hold: each with
+    /// 🔴 <c>GET /api/channel/elsewhere</c> lists the asks the mirrored messages name that this machine does not hold: each with
     /// its origins, its latest message, its count and its unread against the person's local mark, newest first; an ask held here is not in it.
     /// </summary>
     [Fact]
@@ -198,7 +198,7 @@ public sealed class ChannelHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
-    /// 🔴 COWORK1d (the message-urgency design §6, §8.4, §9): a message answers its level, the person's urgent unless they asked
+    /// 🔴 A message answers its level, the person's urgent unless they asked
     /// ordinary; <c>/channel/ack</c> keeps an entry's acknowledgment by message id, one part's claim once, which a session's read
     /// answers as <c>ack</c> and the person's as each addressed repository's receipt; an unknown state is refused.
     /// </summary>

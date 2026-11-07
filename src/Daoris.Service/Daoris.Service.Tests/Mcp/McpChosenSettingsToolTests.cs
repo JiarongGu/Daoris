@@ -5,7 +5,7 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// HELPMODE1c3 (D183's note; the Ask Daoris modes design §4.1): Ask Daoris's chosen settings, five typed tools. Each is a keyed
+/// Ask Daoris's chosen settings, five typed tools. Each is a keyed
 /// request in the home's session requests for the conversation's own session, as housekeeping's is, which the loop running it
 /// takes, judges and answers beside; the tool says the answer's words. The connector judges only what it can: that it speaks for
 /// an Ask Daoris conversation, and that the call names what its setting needs. The grant, the value and the writer are the
@@ -163,8 +163,8 @@ public sealed class McpChosenSettingsToolTests : McpToolsFixture
     }
 
     /// <summary>
-    /// 🔴 A request nobody takes in time is withdrawn, so no loop changes the setting after the agent was told nothing was done; one
-    /// taken and not answered says it may still be under way, never that nothing was done.
+    /// 🔴 A request nobody takes in time is withdrawn, so no loop changes the setting after the agent is told nothing is done; one
+    /// taken and not answered says it may still be under way, never that nothing is done.
     /// </summary>
     [Fact]
     public async Task A_request_nobody_takes_is_withdrawn_and_one_unanswered_may_still_be_under_way()

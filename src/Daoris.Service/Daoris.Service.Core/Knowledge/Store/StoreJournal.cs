@@ -3,7 +3,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// How the store's file is written (D236): ahead into a log beside it (<c>-wal</c>), each commit synced in full. SQLite's rollback
+/// How the store's file is written: ahead into a log beside it (<c>-wal</c>), each commit synced in full. SQLite's rollback
 /// journal made and deleted a file at every commit, 13 to 16 ms of a write; the log measured 3.8 ms with the same sync.
 /// </summary>
 /// <remarks>

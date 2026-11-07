@@ -10,8 +10,8 @@ using Xunit.Abstractions;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// CONTEXTONE1d2 (D230 point 3): a session Daoris runs in a repository loads its connector's tools at its start, so it is served the
-/// connector's core set and its own kind's tools alone, from the call layer's one table; Ask Daoris is served every tool it was. What a
+/// A session Daoris runs in a repository loads its connector's tools at its start, so it is served the
+/// connector's core set and its own kind's tools alone, from the call layer's one table; Ask Daoris is served every tool. What a
 /// kind is not served it is neither listed nor let call.
 /// </summary>
 public sealed class CoreSetTests(ITestOutputHelper output)

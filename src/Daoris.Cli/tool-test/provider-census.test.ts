@@ -5,14 +5,14 @@ import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * AGENTPROVIDER1 row a, part 3 (the agent-provider design §9, D213): the tools' twin of the driver's `ProviderCensusTests`. Every site
+ * The tools' twin of the driver's `ProviderCensusTests` (the agent-provider design §9). Every site
  * in the repository's tools (`tools/`) and in the CLI's doctrine code (`src/Daoris.Cli/src/`) that names a provider's id, variable, file
  * or wire key is counted over the source with its comments blanked, and each is a named exception in the `tools` section of the driver's
- * `fixtures/provider-census.json` by file and token (the count is not pinned, CENSUSRULES1), the design's row that moves it and its class. The ids and the vocabulary are the
+ * `fixtures/provider-census.json` by file and token (the count is not pinned), the design's row that moves it and its class. The ids and the vocabulary are the
  * driver's registrations', `PROVIDER_VOCABULARY` in the page's generated service types, the one
  * table the four censuses share; nothing here copies a word of it. The census runs the contracts' generator first (`--if-stale`, under
- * its run lock, into its own build output), so it reads no file another step was to write: a fresh checkout and this file run alone
- * read the same table (D251). Run by the `tool-tests` gate (the merge tool's `REACH` rows send the fixture here).
+ * its run lock, into its own build output), so it reads no file another step awaits: a fresh checkout and this file run alone
+ * read the same table. Run by the `tool-tests` gate (the merge tool's `REACH` rows send the fixture here).
  */
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -145,7 +145,7 @@ function count(sources: Iterable<[file: string, source: string]>): Map<string, M
 
 /** The problems a census holds against the fixture, in order; none is a passing census. */
 function problems(found: Map<string, Map<string, number>>, rows: Row[], exact = true): string[] {
-  // How often a listed file names a token is not the rule's (CENSUSRULES1): a listed file and token pass at any count.
+  // How often a listed file names a token is not the rule's: a listed file and token pass at any count.
   const named = new Set(rows.map((row) => `${row[0]}\n${row[1]}`));
   const out: string[] = [];
   for (const file of [...found.keys()].sort()) {

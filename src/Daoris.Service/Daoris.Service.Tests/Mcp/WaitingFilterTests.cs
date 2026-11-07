@@ -10,7 +10,7 @@ using ModelContextProtocol.Server;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// COWORK1d (D188's note of the owner's direction; the message-urgency design §4.2): every tool's answer ends with what waits for the
+/// Every tool's answer ends with what waits for the
 /// caller on its ask's channel, where something new waits, and <c>channel_read</c>'s never does, since it is the read. A server over
 /// in-memory streams, as <see cref="CallLineageFilterTests"/> runs one, with the filter the host composes.
 /// </summary>

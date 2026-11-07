@@ -1,6 +1,6 @@
 namespace Daoris.Knowledge;
 
-/// <summary>Why a knowledge feed was not taken — or <see cref="None"/> when it was.</summary>
+/// <summary>Why a knowledge feed is not taken — or <see cref="None"/> when it is.</summary>
 public enum FeedRefusal
 {
     None,
@@ -16,7 +16,7 @@ public enum FeedRefusal
 
     /// <summary>
     /// Fed from a line that is not the repository's canonical one. A feature-branch checkout is work
-    /// in flight: unmerged lessons are not yet the family's (D48 §6).
+    /// in flight: unmerged lessons are not yet the family's.
     /// </summary>
     NotDefaultBranch,
 
@@ -28,21 +28,21 @@ public enum FeedRefusal
 
     /// <summary>
     /// The feeding machine checked its ancestry against a commit another machine has since replaced
-    /// (SYNC5a). Information: the next pass asks git again, against what is held then.
+    /// Information: the next pass asks git again, against what is held then.
     /// </summary>
     Moved,
 
     /// <summary>
-    /// The commit held, read differently (SYNC0c). The first reading stands, as information: two
+    /// The commit held, read differently. The first reading stands, as information: two
     /// readings of one commit are two tools disagreeing, and flapping between them helps nobody.
     /// </summary>
     ContentDiffers,
 
-    /// <summary>What was fed breaks the rules of its own shape — a code map judged whole at the door.</summary>
+    /// <summary>What is fed breaks the rules of its own shape — a code map judged whole at the door.</summary>
     Malformed,
 
     /// <summary>
-    /// A declaration naming no commit, where one naming a commit is held (SYNC5b). Nothing orders the
+    /// A declaration naming no commit, where one naming a commit is held. Nothing orders the
     /// two, so the named one stands. Information: the repository is registered either way, and its
     /// records and quests travel.
     /// </summary>

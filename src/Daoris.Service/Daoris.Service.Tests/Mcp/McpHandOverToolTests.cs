@@ -5,7 +5,7 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// MIXAGENT1c (D163 point 3; the mixed agents design §2, §5): the connector's `handover_propose`. A working session's agent asks to
+/// The connector's `handover_propose`. A working session's agent asks to
 /// hand its session over to another agent with a note of its own, kept as its claim: one file per session under the home's
 /// sessions folder, which the driver judges by the person's `handOver` rule.
 /// </summary>
@@ -13,7 +13,7 @@ public sealed class McpHandOverToolTests : McpToolsFixture
 {
     private string RulesHome => Path.Combine(_root, "rules-home");
 
-    /// <summary>The sessions folder of that home, asked of the table as the box asks it (HOMELAYOUT3), and a file in it.</summary>
+    /// <summary>The sessions folder of that home, asked of the table as the box asks it, and a file in it.</summary>
     private string Sessions(params string[] file) => DaorisHome.Entry(RulesHome, HomeEntry.Sessions, file);
 
     private async Task<(HandOverTools Tools, SessionStore Sessions, SessionLedger Ledger)> ConnectorAsync(Func<SessionStore, Task<string?>> session)

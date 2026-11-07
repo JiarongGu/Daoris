@@ -100,7 +100,7 @@ internal sealed class QuestPublishOperation : IQuestOperation
         },
     };
 
-    /// <summary>Publish a quest. Returns the existing one unchanged if it was already asked.</summary>
+    /// <summary>Publish a quest. Returns the existing one unchanged if it is already asked.</summary>
     /// <remarks>
     /// The workspace is the circle both sides share, decided by <see cref="QuestExchange"/>, which is where the same-workspace clause
     /// lives; every other field is already judged by the exchange. A set-up step's <paramref name="parent"/> derives its id as a chain
@@ -142,7 +142,7 @@ internal sealed class QuestPublishOperation : IQuestOperation
 
     /// <summary>
     /// Append a quest's `published` and write its row from the replay, inside the write. A <paramref name="note"/> stays in the history
-    /// and never on the quest: what a chain step's publish says of what it inherited (EVID1a).
+    /// and never on the quest: what a chain step's publish says of what it inherited.
     /// </summary>
     private static async Task<Quest> PublishInAsync(QuestTx tx, Quest asked, string? note = null)
     {
@@ -165,9 +165,9 @@ internal sealed class QuestPublishOperation : IQuestOperation
             return await PublishInAsync(tx, next.Step, next.Left).ConfigureAwait(false);
         }
 
-        // FABRIC-CLOSE1c: a step its source's reopen withdrew, never taken, is the same step again: rebound to the submission that
+        // A step its source's reopen withdrew, never taken, is the same step again: rebound to the submission that
         // publishes it now, keeping its id and its history, so no second quest is asked and no withdrawal outlives the work it named.
-        // A started one waits for the person's word (ContinueAsync). FABRIC-CLOSE1c15: the rebind is judged on the step this machine
+        // A started one waits for the person's word (ContinueAsync). The rebind is judged on the step this machine
         // reads open, so it is marked while-open, and never lets go a step another machine's take reached first, here or at the remote.
         if (standing is { Status: QuestStatus.Open, SourceReopened: not null } && next.Step.GrewFrom is { } from)
         {
@@ -198,12 +198,12 @@ internal sealed class QuestPublishOperation : IQuestOperation
         {
             Then = parent.Then.Skip(1).ToList(),
             Parent = parent.Id,
-            // The submission that publishes it (FABRIC-CLOSE1c, §E5): what a reopen names it by, and what seals it. A done names none.
+            // The submission that publishes it: what a reopen names it by, and what seals it. A done names none.
             GrewFrom = parent is { Status: QuestStatus.Taken, Submission: { } from } ? new QuestOperationRef(from.Machine, from.Sequence) : null,
             Requirements = left.Count == 0
                 ? parent.Requirements
                 : [.. parent.Requirements.Select(requirement => requirement with { Evidence = [] })],
-            // The chain's review choice is every step's (REVIEWENV1b, D154 point 3), and a set-up step is one by its step.
+            // The chain's review choice is every step's, and a set-up step is one by its step.
             Review = parent.Review,
             SetUpIn = step.SetUpIn,
         };

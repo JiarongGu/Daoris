@@ -117,9 +117,9 @@ internal static class QuestRecordCodec
     internal static QuestOperation ReadPayload(QuestOperation read, JsonElement payload)
     {
         var note = payload.TryGetProperty("note", out var said) ? said.GetString() : null;
-        // Absent from every operation before note parts, and from every note written without them (QUESTCLOSE1b1).
+        // Absent from every operation before note parts, and from every note written without them.
         var parts = note is not null && payload.TryGetProperty("noteParts", out var noted) ? NoteParts.Normalize(noted) : null;
-        // Absent from every done before answers, and from one on a quest with no requirements (DRIFT1d).
+        // Absent from every done before answers, and from one on a quest with no requirements.
         var answers = payload.TryGetProperty("answers", out var answered) ? ReadAnswers(answered) : null;
         return QuestOperations.Registered.For(read.Kind)!.ReadPayload(read with { Note = note, NoteParts = parts, Answers = answers }, payload);
     }
@@ -135,13 +135,13 @@ internal static class QuestRecordCodec
     internal static string KindText(QuestOperationKind kind) => kind.ToString().ToLowerInvariant();
 
     /// <summary>
-    /// The session that said an operation, absent from every submission before FABRIC-CLOSE1c4, every done and decline before HANDBACK1,
+    /// The session that said an operation, absent from every operation of a build before it,
     /// and from one no session said.
     /// </summary>
     internal static string? ReadSession(JsonElement payload) =>
         payload.TryGetProperty("session", out var speaker) && speaker.ValueKind == JsonValueKind.String ? speaker.GetString() : null;
 
-    /// <summary>A close's provenance (FABRIC-CLOSE1a), or null where it is not whole: a key and a token, both strings.</summary>
+    /// <summary>A close's provenance, or null where it is not whole: a key and a token, both strings.</summary>
     internal static QuestClose? ReadClose(JsonElement close) =>
         close.ValueKind == JsonValueKind.Object
         && close.TryGetProperty("key", out var key) && key.ValueKind == JsonValueKind.String
@@ -159,7 +159,7 @@ internal static class QuestRecordCodec
         writer.WriteEndObject();
     }
 
-    /// <summary>An operation named by its machine and sequence, as the log and the wire write it (FABRIC-CLOSE1c).</summary>
+    /// <summary>An operation named by its machine and sequence, as the log and the wire write it.</summary>
     internal static void WriteRef(Utf8JsonWriter writer, string name, QuestOperationRef named)
     {
         writer.WriteStartObject(name);
@@ -193,7 +193,7 @@ internal static class QuestRecordCodec
             : null;
 
     /// <summary>
-    /// A note's parts beside it (QUESTCLOSE1b1): a list, only where the note was written with some, so an operation without them is
+    /// A note's parts beside it: a list, only where the note is written with some, so an operation without them is
     /// recorded exactly as before, and a reader from before ignores the field.
     /// </summary>
     internal static void WriteNoteParts(Utf8JsonWriter writer, string? note, string? noteParts)
@@ -205,7 +205,7 @@ internal static class QuestRecordCodec
 
     internal static string AnswersJson(IReadOnlyList<QuestAnswer> answers) => JsonFields.Written(writer => WriteAnswers(writer, answers));
 
-    /// <summary>A done's answers, one shape in the cache, the log's payload and the wire (DRIFT1d): each its requirement's number and either <c>met</c>, or <c>departed</c> with the <c>quote</c> it turns on.</summary>
+    /// <summary>A done's answers, one shape in the cache, the log's payload and the wire: each its requirement's number and either <c>met</c>, or <c>departed</c> with the <c>quote</c> it turns on.</summary>
     internal static void WriteAnswers(Utf8JsonWriter writer, IReadOnlyList<QuestAnswer> answers)
     {
         writer.WriteStartArray();
@@ -279,7 +279,7 @@ internal static class QuestRecordCodec
             writer.WriteString("to", step.To);
             writer.WriteString("title", step.Title);
             writer.WriteString("body", step.Body);
-            // Only on a set-up step (REVIEWENV1b): every other step reads as it did.
+            // Only on a set-up step: every other step reads as it did.
             if (step.SetUpIn is not null) writer.WriteString("setUpIn", step.SetUpIn);
             writer.WriteEndObject();
         }
@@ -307,7 +307,7 @@ internal static class QuestRecordCodec
     internal static string RequirementsJson(IReadOnlyList<QuestRequirement> requirements) =>
         JsonFields.Written(writer => WriteRequirements(writer, requirements));
 
-    /// <summary>A quest's requirements, one shape in its column, the log's payload and the wire (DRIFT1c, EVID1a).</summary>
+    /// <summary>A quest's requirements, one shape in its column, the log's payload and the wire.</summary>
     internal static void WriteRequirements(Utf8JsonWriter writer, IReadOnlyList<QuestRequirement> requirements)
     {
         writer.WriteStartArray();
@@ -316,7 +316,7 @@ internal static class QuestRecordCodec
             writer.WriteStartObject();
             writer.WriteString("quote", requirement.Quote);
             writer.WriteString("check", requirement.Check);
-            // Only when it names some (EVID1a): a requirement with none reads as it did.
+            // Only when it names some: a requirement with none reads as it did.
             if (requirement.Evidence.Count > 0)
             {
                 writer.WritePropertyName("evidence");
@@ -341,7 +341,7 @@ internal static class QuestRecordCodec
                 item.GetProperty("quote").GetString() ?? "",
                 item.GetProperty("check").GetString() ?? "")
             {
-                // Absent from every requirement before evidence, and from one that names none (EVID1a).
+                // Absent from every requirement before evidence, and from one that names none.
                 Evidence = item.TryGetProperty("evidence", out var evidence) ? QuestEvidence.Judged(evidence) ?? [] : [],
             })
             .ToList();

@@ -1,8 +1,8 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Each root's uncommitted status, asked once for the commit and signature it was taken at and shared: a background pass walks
-/// the ones a refresh started, and a hit whose stored reading is another's starts its own (KNOWCENTRAL2a).
+/// Each root's uncommitted status, asked once for the commit and signature it is taken at and shared: a background pass walks
+/// the ones a refresh started, and a hit whose stored reading is another's starts its own.
 /// </summary>
 internal sealed class RootProbes(Func<string, bool?>? uncommitted)
 {

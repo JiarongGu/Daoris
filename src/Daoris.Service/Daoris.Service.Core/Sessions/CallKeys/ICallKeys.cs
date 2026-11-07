@@ -8,8 +8,8 @@ namespace Daoris.Knowledge;
 /// </summary>
 public interface ICallKeys
 {
-    /// <summary>The agent the key is written by, as the driver names its harness.</summary>
-    string Harness { get; }
+    /// <summary>The agent the key is written by, as the driver names its door.</summary>
+    string Door { get; }
 
     /// <summary>The <c>_meta</c> key its lineage is read from.</summary>
     string Key { get; }

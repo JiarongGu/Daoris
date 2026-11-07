@@ -1,13 +1,13 @@
-// The line endings `init` pins for an adopter (INIT1; D25 and its note).
+// The line endings `init` pins for an adopter.
 //
 // `sync` writes BOM-less UTF-8 with LF, and the lock records a hash per document. The tool's own comparisons
-// normalize on read (D25), but the bytes a checkout holds are git's answer, and without a `.gitattributes` git
+// normalize on read, but the bytes a checkout holds are git's answer, and without a `.gitattributes` git
 // takes it from each machine's `core.autocrlf`: a Windows clone holds CRLF where `sync` wrote LF. So `init` writes
 // the one line that settles it, where the repository has said nothing.
 //
 // 🔴 Never recorded in the lock, and never touched once it exists. A lock entry for a file the canon does not hold
-// is a retirement in D19's table, so the next `sync` would delete it, and refuse it the moment the repository added
-// a line of its own. Unrecorded, it is invisible to the tool (D5): written once, like the manifest, and the
+// is a retirement, so the next `sync` would delete it, and refuse it the moment the repository added
+// a line of its own. Unrecorded, it is invisible to the tool: written once, like the manifest, and the
 // repository's own from then on. One it already has is read, to say whether it pins anything, and kept byte for byte.
 
 import { lstatSync, readFileSync } from 'node:fs';

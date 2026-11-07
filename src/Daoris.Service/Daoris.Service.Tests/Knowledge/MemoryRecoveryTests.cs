@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// KNOWCENTRAL2c (the memory coordinator design §3), over 2b's stand-in: only the service marks <c>applying</c>, calls the engine and
+/// Over the stand-in: only the service marks <c>applying</c>, calls the engine and
 /// settles; at its start it applies what is <c>ready</c> and reads each <c>applying</c> row observationally, settling an end by its token
 /// and holding an addition or relation, which nothing says ran.
 /// </summary>
@@ -115,7 +115,7 @@ public sealed class MemoryRecoveryTests : IAsyncLifetime
         Assert.Equal(MemoryOpState.Stale, await StateAsync(end));
     }
 
-    /// <summary>🔴 After a kill in <c>applying</c> before the engine was called, the entry unended at the revision read is ended again, once.</summary>
+    /// <summary>🔴 After a kill in <c>applying</c> before the engine is called, the entry unended at the revision read is ended again, once.</summary>
     [Fact]
     public async Task After_a_kill_in_applying_an_end_at_the_revision_read_is_ended_again()
     {

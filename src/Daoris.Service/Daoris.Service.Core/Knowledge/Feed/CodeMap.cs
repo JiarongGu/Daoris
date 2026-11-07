@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace Daoris.Knowledge;
 
-/// <summary>One module of a repository, as its code map names it (MAP3).</summary>
+/// <summary>One module of a repository, as its code map names it.</summary>
 /// <param name="Id">Unique in the file; what a dependency names.</param>
 /// <param name="Path">Repository-relative — the map is read by machines that are not this one.</param>
 /// <param name="Summary">One line.</param>
@@ -16,17 +16,17 @@ public sealed record CodeMap(IReadOnlyList<CodeModule> Modules, IReadOnlyList<Co
 
 /// <summary>What reading a checkout's code map found.</summary>
 /// <param name="Map">The map, when the file exists and keeps every rule; otherwise null.</param>
-/// <param name="File">Which candidate was read, repository-relative; null when there is none.</param>
-/// <param name="Problem">Why the file was refused, naming the first break; null when it was not.</param>
+/// <param name="File">Which candidate is read, repository-relative; null when there is none.</param>
+/// <param name="Problem">Why the file is refused, naming the first break; null when it is not.</param>
 /// <param name="Fed">
-/// Where the map came from when it was not read from a checkout here (MAP3b, MAP3e): the commit it
-/// was fed at, its line, and whose key fed it. Null for a checkout read from disk, and for a
+/// Where the map came from when it is not read from a checkout here: the commit it is
+/// fed at, its line, and whose key fed it. Null for a checkout read from disk, and for a
 /// repository nobody has fed a map for.
 /// </param>
 public sealed record CodeMapRead(CodeMap? Map, string? File, string? Problem, FeedProvenance? Fed = null);
 
 /// <summary>
-/// Reads a repository's code map (MAP3a, <c>docs/2026-09-23-map-design.md</c> §3) — one committed
+/// Reads a repository's code map — one committed
 /// file, found by convention, <b>judged whole</b>.
 /// </summary>
 /// <remarks>
@@ -156,7 +156,7 @@ public static class CodeMapReader
 
     /// <summary>
     /// A judged map in the file's own shape and one canonical form — what a deployment keeps of a fed
-    /// map (MAP3b), so that two readings saying the same thing hash alike whatever their whitespace.
+    /// map, so that two readings saying the same thing hash alike whatever their whitespace.
     /// </summary>
     public static string Write(CodeMap map)
     {

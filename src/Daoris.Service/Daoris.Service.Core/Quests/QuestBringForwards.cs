@@ -3,15 +3,15 @@ namespace Daoris.Knowledge;
 /// <summary>The person's bring-forward of this machine's lost take: judged, written, and claimed by push on a shared quest.</summary>
 internal sealed class QuestBringForwards(QuestStore quests, KnowledgeService service, SessionStore? sessions, QuestRemoteClaims claims)
 {
-    /// <summary>What the kept session goes on from once its take holds again (D178 point 3), said wherever it does.</summary>
+    /// <summary>What the kept session goes on from once its take holds again, said wherever it does.</summary>
     private const string GoesOnFrom =
         "Its kept session goes on from here: bring its branch up to date with the step's source first. No result the old take submitted "
         + "comes back: the step is judged from its next ready.";
 
     /// <summary>
-    /// The person brings this machine's lost take forward (D178 point 3): the store writes a fresh take of the step as it stands
+    /// The person brings this machine's lost take forward: the store writes a fresh take of the step as it stands
     /// and the conflict's dismissal marked with it, in one write, and on a shared quest the take is pushed and its answer awaited before
-    /// anything goes on, as every take is (D69). Confirmed, offline (unconfirmed, D68 rule 1), or lost again, each said in words a person
+    /// anything goes on, as every take is. Confirmed, offline (unconfirmed), or lost again, each said in words a person
     /// and a session read; a loss is never said as brought forward. The person's own, at a local host's door: no connector tool reaches it.
     /// </summary>
     public async Task<QuestRespondOutcome> BringForwardAsync(
@@ -73,9 +73,9 @@ internal sealed class QuestBringForwards(QuestStore quests, KnowledgeService ser
     }
 
     /// <summary>
-    /// A bring-forward on a shared quest claims by push (D69), as a take does: held when the remote numbered
+    /// A bring-forward on a shared quest claims by push, as a take does: held when the remote numbered
     /// the fresh take, unconfirmed while it has not, and lost again when another machine's take, the person's reopen, or a dismissal of the
-    /// same conflict reached the remote first, whose rebase lost the mark with the take (D178 point 5). Null for a quest that never leaves
+    /// same conflict reached the remote first, whose rebase lost the mark with the take. Null for a quest that never leaves
     /// this machine.
     /// </summary>
     private async Task<QuestRespondOutcome?> ForwardByPushAsync(Quest quest, QuestOperationRef conflict, CancellationToken ct)

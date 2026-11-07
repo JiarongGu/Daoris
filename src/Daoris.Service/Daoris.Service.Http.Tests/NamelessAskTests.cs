@@ -6,7 +6,7 @@ using Daoris.Knowledge.Http;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// PERSONDOOR1j: an ask naming no session is the terminal's, so an agent that leaves its session off was one asker with both of the
+/// An ask naming no session is the terminal's, so an agent that leaves its session off is one asker with both of the
 /// terminal's places. The host reads the asking process from the connection (the loopback port's owner), and one process holds one
 /// place of the terminal's; a connection whose process cannot be read keeps the terminal's two.
 /// </summary>

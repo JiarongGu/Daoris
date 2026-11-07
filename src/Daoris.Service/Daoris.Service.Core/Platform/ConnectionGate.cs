@@ -6,16 +6,16 @@ using SQLitePCL;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// One unit of work at a time on a connection: every command a store runs, not only every transaction (SQLITETX1).
+/// One unit of work at a time on a connection: every command a store runs, not only every transaction.
 /// </summary>
 /// <remarks>
 /// <para>A host holds ONE connection for all its stores and answers requests at once, and a
 /// <see cref="SqliteConnection"/> is not safe to use from two threads: the transaction it has open and the list of
-/// commands it made are plain fields. Gating only the transactions (SYNC1) left every other command free to run beside
+/// commands it made are plain fields. Gating only the transactions leaves every other command free to run beside
 /// one. On the install that answered a say 500 with <i>Execute requires the command to have a transaction object</i> (a
 /// command made before another request's <c>BEGIN</c> and run after it), and it left the database inside a transaction
 /// no object owned (the corrupted list threw after <c>BEGIN</c> had run), so every later <c>BEGIN</c> failed until the
-/// host restarted (KNOW500), and every write in between was never committed.</para>
+/// host restarted, and every write in between never committed.</para>
 ///
 /// <para>So a store reaches the connection only inside <see cref="RunAsync{T}"/>: a <see cref="Command"/> made outside
 /// it throws. The gate is reentrant within one flow of work, because a transaction's work calls the stores' own
@@ -66,7 +66,7 @@ internal sealed class ConnectionGate
     /// <remarks>
     /// The wait honours <paramref name="ct"/>; the work is its own. A unit that began on a clean connection ends on one:
     /// a transaction it left open, by an exception or without one, is rolled back before the next unit begins, and one it
-    /// left without throwing fails it, because nothing it wrote there was kept. A transaction a caller holds outside
+    /// left without throwing fails it, because nothing it wrote there is kept. A transaction a caller holds outside
     /// every gate (another host's, in a test) is joined, as a statement made while one is open always joins it.
     /// </remarks>
     public async Task<T> RunAsync<T>(Func<Task<T>> work, CancellationToken ct)
@@ -115,16 +115,16 @@ internal sealed class ConnectionGate
     /// </summary>
     /// <remarks>
     /// <para>The wait honours the caller; the transaction does not. Once <c>BEGIN</c> has run, a cancelled request (a
-    /// client that went away) must not throw halfway, so the work is handed a token nobody cancels (REV3).</para>
+    /// client that went away) must not throw halfway, so the work is handed a token nobody cancels.</para>
     ///
     /// <para>Asked for inside work that already holds one, the work is part of that transaction: SQLite does not nest
     /// them, and the outer one commits or rolls back for both.</para>
     ///
-    /// <para>🔴 A write with a <c>RETURNING</c> clause runs in one (QUESTOPENLOCK1). The driver waits out a lock another
+    /// <para>🔴 A write with a <c>RETURNING</c> clause runs in one. The driver waits out a lock another
     /// host holds only at a statement's first step, and on its own such a write commits when its reader ends: where the file
     /// keeps a rollback journal, a read under way in another host answers that commit as busy at once, and the write throws
     /// <i>database is locked</i>. Here <c>BEGIN IMMEDIATE</c> and <c>COMMIT</c> are each a first step, and waited on. The
-    /// store writes ahead (D236), where a read holds no commit and a write meets another host's at its
+    /// store writes ahead, where a read holds no commit and a write meets another host's at its
     /// <c>BEGIN IMMEDIATE</c>.</para>
     ///
     /// <para><paramref name="deferred"/> begins a read's transaction (<c>BEGIN</c>): its reads see one state of the file, and
@@ -182,7 +182,7 @@ internal sealed class ConnectionGate
         if (OpenTransaction() is null && InTransaction()) RollBack();
     }
 
-    /// <summary>Roll back whatever a unit of work left open; whether there was anything.</summary>
+    /// <summary>Roll back whatever a unit of work left open; whether it found anything.</summary>
     private bool RollBackLeft()
     {
         var left = false;
