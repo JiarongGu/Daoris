@@ -10,7 +10,7 @@ public static class GitRouting
     /// <summary>The Daoris home both doors act for, written by <c>GitWiring.Hand</c> over any inherited value.</summary>
     public const string HomeVariable = "DAORIS_GIT_HOME";
 
-    /// <summary>The landing's grant, handed to one plugin process alone (§6.7; <see cref="GitGrants"/>).</summary>
+    /// <summary>The push act's grant, handed to that act's own git start alone (§6.7; <see cref="GitGrants"/>).</summary>
     public const string GrantVariable = "DAORIS_GIT_GRANT";
 
     /// <summary>The API token of the identity serving a place's origin, handed to one plugin process alone (<c>PluginHostToken</c>); no other start carries it.</summary>
