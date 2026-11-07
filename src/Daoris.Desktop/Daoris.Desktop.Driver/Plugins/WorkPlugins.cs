@@ -370,9 +370,9 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
         if (!resync && said == state.Told) return;
 
         state.Told = said;
-        state.ResyncDue = false;
         if (resync)
         {
+            state.ResyncDue = false;
             // The replay this asks for is taken whole, one event per awaited step beyond the minute's 60, and waits whole. Admitting
             // the first 60 of a stable replay would drop the same last ones at every resync, for ever. Daoris's own set sizes it, never the plugin.
             var now = clock();
