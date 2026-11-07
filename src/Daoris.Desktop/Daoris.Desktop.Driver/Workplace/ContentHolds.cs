@@ -142,8 +142,7 @@ internal sealed class ContentHolds(TreeContext context)
         var notHeld = unread is null ? ContentProof.NotHeld with { Lacks = lacks } : ContentProof.UnreadBy(unread);
         if (changed is null) return notHeld;
         // Newest first: a cherry-pick is a recent commit, so the holder is usually found before the rest are compared.
-        var (refsCode, byDate, refsErr) = await WorkingTree.GitAsync(
-            cwd, ["for-each-ref", "--sort=-committerdate", "--format=%(objectname) %(refname)", "refs/heads/"], ct).ConfigureAwait(false);
+        var (refsCode, byDate, refsErr) = await BranchesByDate.ReadAsync(cwd, ct).ConfigureAwait(false);
         if (refsCode != 0) return ContentProof.UnreadBy(unread ?? $"git could not list the branches: {Said(refsErr)}");
         foreach (var row in byDate.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
@@ -166,7 +165,6 @@ internal sealed class ContentHolds(TreeContext context)
         return unread is null ? notHeld : ContentProof.UnreadBy(unread);
     }
 
-    /// <summary>Git's own words for a failure, or that it said none.</summary>
     /// <summary>git's words as a clause, its first line, or that it said nothing.</summary>
     internal static string Said(string error) => string.IsNullOrWhiteSpace(error) ? "git said nothing" : FirstLine(error);
 

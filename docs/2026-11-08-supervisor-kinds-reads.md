@@ -321,3 +321,121 @@ Both reported defects in today’s code **hold**. `Modules/Platform/RoleJudge.cs
 I found **no additional defect** in the proposed six-step structural resolution order, its refusal to fall through when the selected supervisor cannot act, grant-free leaving, or the separate agent-generation namespace. Today’s question-word path also has substantive person-first protection: `Service/Daoris.Service.Core/Sessions/SessionSays.cs:245–286` and `SaidKeeping.cs:65–74` serialize release and replacement.
 
 No files were changed; no builds or tests were run.
+
+## Opus (independent), round 2
+
+Read on 2026-11-08 by Claude Opus 5.5, read-only, from main at `109487b163`: the sections round 2 names for rows a, c, e, f and g,
+with the code they cite and TREEPOOL1 §30.4, against D233's three notes of 2026-11-08 and D214's principle note. No code was built or run.
+
+### Verdict per row
+
+- **a — ready to build.** Finding 7 is small.
+- **c — ready to build**, with finding 2's clause in the start's sweep and finding 8 taken in its build.
+- **e — another round, narrow.** Findings 1, 2, 4 and 5.
+- **f — another round, one sentence.** Finding 3.
+- **g — another round, one sentence.** Finding 6.
+
+### Round 1's findings
+
+- **1, 2, 4, 7, 8, 10, 11 and 13: answered.** What remains of the steward's choice is findings 4 and 5.
+- **3: answered** for a scoped rule; a default's switch is not one (finding 1).
+- **5: answered** on Claude Code and Codex; a `copy-alone` harness is finding 8.
+- **6: answered** for a record; the workspace map's own failure is finding 7.
+- **9: answered** as listed; the file lists were not read again.
+- **12: answered in part**, the declined half argued; nothing to add.
+
+### The author's two readings
+
+- **A `files` allow is the ask's exact text.** It holds, read as the held act's text (`run(npm ci)`), never the `ask` rule's pattern:
+  `allow` is read before `ask` (§30.4), so an allow of `run(npm *)` would lift the whole restriction. §30.4's *may be a pattern* is
+  then the person's own allow; §5.1 should say both. Its layer is finding 6.
+- **The steward's ungranted act waits at most ten minutes.** Only as the request's own clock from its raise: "the actor's turn bound"
+  is per turn (§2.5), an attempt starts at the look's `supervise` pass, a limited end takes the next choice (§2.3 point 5), and a
+  terminal holder has no turn. Finding 5.
+
+### Findings
+
+**1. Blocking (row e; §5.3). A widening may undo the person's deny, and a default's switch reaches the machine whatever scope it
+names.** `RuleProposals.Effect` classes as a widening an `add allow` or `add ask` over a rule in that scope's `deny`, and a `remove`
+of a deny (`Agents/RuleProposals.cs:119-142`); `PermissionRules.Add` drops the deny (`Agents/Permissions.cs:404`). A deny asks for no
+allow (§30.4), and D233's first note gives a supervisor *an allow an added restriction asks for*. And `permission_propose` takes a
+scope for every action (`Service/Daoris.Service.Mcp/RuleProposalTools.cs:27-28`), which a `default` change ignores: `SwitchDefault`
+edits one machine-wide list (`Agents/Permissions.cs:419-436`; `RuleProposals.cs:154`).
+
+- *Sequence:* the person denies `Bash(git clean:*)` for repository X. A session in X proposes allowing it for X; X's agent-held allow
+  supervisor keeps it under `allow.standing`, and the deny is gone. Or the session proposes `no-publish` off with `scope: repository`,
+  `name: X`; X's supervisor decides it, and `no-publish`, which keeps publishing the person's (`Permissions.cs:186-190`), is off for
+  every session on the machine.
+- *Smallest change:* in §5.3's widening row, a change that removes or moves a `deny` of its scope, or switches off a default that
+  denies (`no-publish`, `tree-guard`), is the person's; a `default` switch is placed at the machine whatever scope it names.
+
+**2. Blocking (row e, and c's sweep; §5.3, §2.2). The widening's recovery saves over the person's later edit.** §5.3 saves a proposal
+found `settling` again, since `Add` is idempotent; it is so against itself, not against an edit between.
+
+- *Sequence:* at 14:00 X's supervisor allows `add allow Bash(docker:*)`; `Settle` writes `settling`, saves the rules, and Daoris stops
+  before the mark. At 14:02 the person runs `daoris agent rules remove`, which acts alone while no Daoris runs
+  (`Agents/AgentsCommand.cs:11-13`). At 14:05 the start's tick finds `settling` and saves the allow again: the removal is undone. The
+  sweep meanwhile closes the decision `stale`, though its rule stood.
+- *Smallest change:* a proposal found `settling` is never saved again: it is marked settled where its change stands in the rules and
+  returned to the person where it does not. The sweep reads an allow's own door before closing its decision (the proposal's settlement,
+  a `files` allow in the person's list) and records it made where the door holds it.
+
+**3. Blocking (row f; §3.6). A landing's released word outlives the restart that closes its decision.** The word waits on the node
+record, a file; the sweep closes its decision `stale`, but only a question's waiting word is taken back
+(`Roles/SupervisorSweeps.cs:104`).
+
+- *Sequence:* a supervisor's Accept is released at 14:05; Daoris restarts at 14:05:10 and the sweep makes the review the person's; the
+  first pass applies the word as `supervisor-accept`, and the work lands on a decision that reads stale.
+- *Smallest change:* in §3.6's *It binds its attempt*, a supervisor's word whose decision is not live in this run is dropped at the
+  pass, its decision `stale`; one applied before the restart is recorded made (finding 2's clause).
+
+**4. Blocking (row e; §5.2). The steward's ungranted act: its place, and a landing.**
+
+- *Place.* Given a session, `DependenciesAsync` looks for a quest by the session's id and answers the session alone
+  (`Modules/Bridge/SupervisorDoor.cs:201-204`); only the act door resolves a session to its quest first (`:110-132`). Read as §5.2
+  cites it, `stop`, `finish`, `land` and `clean` on a session in X name no repository and go to the machine's allow supervisor. A quest
+  whose repository does not read answers null, which is not "a target that names no repository". *Smallest change:* the place is read
+  as `ActAsync` reads the target, its workspace as §3.4 reads every place's; a dependency that does not read is the person's card.
+- *A landing.* `land` lands a tree on its line, which D233's round-2 note holds for the window *since a landed branch is not taken
+  back*; allowed under `allow.steward`, it acts at once. *Smallest change:* an allowed `land` waits the allow supervisor's window, with
+  *Overrule*, before it runs. Not blocking: whether §2.7's *a deletion* reaches the steward's `delete`.
+
+**5. Blocking (row e; §5.2, §5.3). The ten minutes do not close the supervisor's side before the card.** One request, one id and one
+answer become either the steward's own act (`pipe.RunAsync`, `Modules/Platform/PipeAdmission.cs:160`) or the person's press
+(`AskThenRunAsync`, `:188`). §5.3 names the settlement "the judge's one admission", but the card is not the judge's.
+
+- *Sequence:* a terminal holding the machine's allow supervisor lists the subject at 14:09:50 and decides at 14:10:05; the card was
+  reserved at 14:10:00. The allow runs the act as the steward's, and the person's Confirm at 14:11 runs it again as theirs. An agent's
+  second choice, after a first limited at 14:04, answers at 14:12 the same way.
+- *Smallest change:* one pending entry under the pipe's gate, settled by the first of an allow, a leave, the steward's withdrawal and
+  ten minutes from the raise; the bound closes the subject for the supervisor (`supervisor.dropped`) before the card is reserved.
+
+**6. Blocking (row g; §5.1). Which layer a `files` allow is written into.** The person's `permissions` are the machine's and each
+repository's, unioned, with no workspace layer (§30.4); §5.1 says only "the person's `allow`".
+
+- *Sequence:* the machine's layer asks `run(npm *)`. Repository X's start meets `run(npm ci)`; X's supervisor allows it, written into the
+  machine's list, the layer whose ask held it. Repository Y's starts now run it unasked, though Y's `files` supervisor is held by rules.
+- *Smallest change:* the allow goes into the deciding place's own layer: the repository's for `run` and `copy`, whichever supervisor
+  answered by §3.4; for a share, each of the two repositories' layers, since the machine's reaches every repository.
+
+**7. Not blocking (row a; §3.4). A workspace map that does not read falls through to the machine.** `RuleWiderPlaceStore.Read` answers
+`None` for a store that fails to read as for one before its step (`Roles/RuleWiderPlaceStore.cs:26-37`), so X's chain skips its
+workspace, whose allow supervisor, held by rules, keeps X's allows the person's, and the machine's decides. *Smallest change:* the
+resolver holds the place for the person on a map that did not read, as on an unreadable record.
+
+**8. Not blocking (row c; §2.8). Two holes left in the containment.** On a `copy-alone` harness the turn may run `daoris role set` in
+its own process and widen its own grants; §2.8 says so, which D233's choice 3 may be read to allow. One check holds on every harness:
+the role verb's writes refused from a process in an agents' job, as the pipe refuses a role act from one
+(`Modules/Platform/RoleJudge.cs:117`). And the turn's place rests on the tree guard, which the person may switch off; a partner is held
+to its copy whatever the defaults say (`Loop/Session/SessionRules.cs:92`), and the supervise turn can be.
+
+### Where I found nothing
+
+- **Row a's order and boundary**: kind first, the admission by act at every step, the cutoff under the decision's lock, and
+  `not-converted` before the step, `answer` granting nothing meanwhile.
+- **An agent's generation**: never in `Holds`, so a pipe act carrying one is refused (`Modules/Platform/RoleJudge.cs:135-141`).
+- **A held request**: one end (`Events/HeldPermissions.cs:216`), its standing options refused.
+- **The shared holder**: refused at the hold; an allowed steward act's run reads its generation live again
+  (`Modules/Platform/RoleActsLedger.cs:28`).
+- **The attempt**: a late, foreign or second block dropped, a closed subject never handed again.
+- **The releases**: only the person's stop and pause are read, so a point stays its kind's to release.

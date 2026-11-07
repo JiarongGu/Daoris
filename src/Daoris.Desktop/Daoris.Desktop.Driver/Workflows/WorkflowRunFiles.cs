@@ -12,6 +12,9 @@ namespace Daoris.Driver;
 /// </summary>
 public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
 {
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (DateTime Written, long Length, WorkflowRunBinding Binding)> Kept =
+        new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Whether a run is bound here.</summary>
     public bool Bound(string run) => WorkflowRunBindings.IsRunId(run) && File.Exists(WorkflowRunBindings.PathOf(home, run));
 
@@ -22,9 +25,16 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
     public WorkflowRunBinding? Read(string run)
     {
         if (!Bound(run)) return null;
+        var path = WorkflowRunBindings.PathOf(home, run);
+        var file = new FileInfo(path);
+        var (written, length) = (file.LastWriteTimeUtc, file.Length);
+        if (Kept.TryGetValue(path, out var kept) && kept.Written == written && kept.Length == length) return kept.Binding;
         try
         {
-            return Parse(AtomicFile.ReadText(WorkflowRunBindings.PathOf(home, run)));
+            var binding = Parse(AtomicFile.ReadText(path));
+            // A younger file could be written again within the clock grain, to the same stamp and length.
+            if (binding is not null && DateTime.UtcNow - written > NodeRecordFiles.Settled) Kept[path] = (written, length, binding);
+            return binding;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -54,6 +64,7 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
     {
         var path = WorkflowRunBindings.PathOf(home, run);
         AtomicFile.WriteText(path, ToJson(binding));
+        Kept.TryRemove(path, out _);
         HomeWrites.Mine(path);
     }
 
