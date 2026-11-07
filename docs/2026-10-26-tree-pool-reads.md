@@ -2938,3 +2938,21 @@ Two findings, neither blocking.
   change there.
 
 None of it reopens an owner's choice.
+
+
+## Codex, round 13
+
+Codex's final confirming read of rows 3 and 4, at `540de34a85`, run by the steward from outside the install, read-only; verbatim but for its headings set down.
+
+**Rows 3 and 4: ready to build.** No remaining findings, blocking or otherwise, in the specified passages against §33.1. Read at `540de34a85`, including the cited code.
+
+**My round-12 blocking case is answered.** §29.7’s worked-tree paragraph and R5.6’s group bullet now require every preceding dependency to have been kept or placed by this stage before a store hit is placed. In the earlier sequence—A’s headers edited, B removed, then resume—A fails validation, so B stays absent and the reason is reported. Its expected key no longer stands in for A’s actual files.
+
+I found nothing further in:
+
+- **§29.7’s files-record paragraph:** the go-on removes a return’s mark before its resumed turn; failed removal preserves the waiting words. The cited resume code supports that hand-off location.
+- **The paragraph after step 6 and floor 4’s R13-F2 sentence:** serialized record writes prevent mark resurrection. Rechecking the mark before subsequent writes stops the stage from restoring, deleting or recording the terminal user’s work after a visit takes it.
+- **§29.7 step 4:** persisted hook debt survives an interrupted start, and other writes are checked at every unworked stage.
+- **§5.5 step 5’s R13-F4 sentence:** a return laying back uncommitted work writes no `unworked`, so the files stage cannot reset that restored work.
+
+No file changed, no `local/` folder read, and no builds or tests run.

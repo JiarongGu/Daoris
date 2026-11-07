@@ -568,3 +568,35 @@ withdrawal in the window drops it as an overrule does, with no card.
 - **`settling`**: settled only where `Effect` answers `Nothing`, else the person's, so a Take back between stands.
 - **The sweep**: a decision its door holds is recorded made before any closing.
 - **Containment**: the whole-shell deny outranks every allow; the role verb refused from an agents' job; `copy-alone` as chosen.
+
+
+## Codex, round 3
+
+Codex's confirming read of rows c and e, at `540de34a85`, run by the steward from outside the install, read-only; verbatim but for its headings set down.
+
+Read at `540de34a85`. **Row c: ready to build. Row e: another narrow round**, for one remaining permission-write race.
+
+- **B2 — answered.** §5.3’s recovery never saves a `settling` proposal again. A withdrawal or replacement deny therefore survives recovery; a change already standing completes settlement. §2.2 also makes the startup sweep consult that door before closing the decision.
+- **B3 — answered.** §2.8 denies the shell tools entirely on the rule-taking harness, overriding an inherited interpreter allow. It also requires the tree guard regardless of defaults and refuses the role verb’s writes from an agent job. The owner-authorized `copy-alone` choice is not a finding.
+
+**New finding — blocking for row e: ordinary settlement can still restore an allow the person just removed.**
+
+**Where:** §5.3, “The widening’s one settlement.” Code references use the design’s Driver/Modules convention: `Agents/Permissions.cs:333–345`, `Store/JsonKeeping.cs:111–157`, `:306–314`, and `Modules/Bridge/Routes/RulesRoutes.cs:32–57`.
+
+The proposed lock covers the proposal file. The existing permission-file lock covers the save’s reread and rename, but begins **after** the caller reads and computes its permission change. Changed permission arrays are written whole; they are not merged as sets.
+
+**Concrete sequence:**
+
+1. A repository’s rules allow operation A and ask for operation B.
+2. The supervisor approves the proposal allowing B. Settlement holds that proposal’s lock, reads the rules, and computes `allow: [A, B]`.
+3. Before settlement saves, the person removes A through their rule door. That write succeeds.
+4. Settlement saves its computed change. `JsonKeeping` restores the changed allow array `[A, B]`, undoing the person’s removal of A.
+5. A restart preserves the restored access. No recovery replay is involved, so round 3’s no-save recovery does not prevent it.
+
+The supervisor decided B, yet its write also restores A.
+
+**Smallest change:** make permission mutation one locked read–judge–edit–write operation using the permission file’s existing lock. Recheck the deny/default exclusions against that locked read, and save without reacquiring the lock. Route the person’s rule edits through the same mutation operation. Add an interleaving regression proving that approval of B cannot restore withdrawn A.
+
+I found **nothing further in row c**, including §2.2’s durable-door checks. In row e, I found no further defect in resolving the steward’s target as `ActAsync` does, settling its pending pipe entry once, holding an allowed `land` for the window, keeping deny-removing changes the person’s, placing default switches at the machine, or recovering `settling` without another save.
+
+No files changed; no builds or tests ran.
