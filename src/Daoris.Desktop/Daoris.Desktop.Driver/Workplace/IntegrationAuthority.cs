@@ -47,6 +47,9 @@ internal static class IntegrationAuthority
         var requester = request.Requester;
         if (requester.Kind == IntegrationRequester.Person) return null;
 
+        // An automatic land's merge stands as a press does: its delivery judged the standing authority again just before its first effect.
+        if (requester.Door == IntegrationDoors.Landing) return null;
+
         // INTEGRATE1g: a node's request is its landing's acceptance (§17.4). The person's Accept stands as their card does; a version's own step,
         // its gate proof naming the version, stands whatever the place follows now, since a bound version is never edited; an automatic landing
         // with no version behind it stands while the place's workflow says `request: done`, as the sweep's does.

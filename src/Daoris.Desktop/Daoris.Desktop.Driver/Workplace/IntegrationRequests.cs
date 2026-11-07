@@ -65,7 +65,11 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     /// <param name="delivered">
     /// A delivery's merge (LANDNODE1b2): its method is its intent's, so the rule is not read and no rule source is kept.
     /// </param>
-    public IntegrationAdmission Press(string repository, string? workspace, string branch, string tip, string line, bool delivered = false)
+    /// <param name="automatic">
+    /// A delivery the standing automatic authority lands, with no press: requested through its own door (<see cref="IntegrationRequester.Landing"/>)
+    /// and said as its workflow's landing, never as the person's press.
+    /// </param>
+    public IntegrationAdmission Press(string repository, string? workspace, string branch, string tip, string line, bool delivered = false, bool automatic = false)
     {
         if (!delivered && config().LinePolicyOf(repository, workspace) is not null)
         {
@@ -73,7 +77,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
         }
 
         var request = new IntegrationRequest(NewId(), repository, RemoteTarget.Workspace(workspace), branch, tip, IntegrationRoutes.Merge, line,
-            IntegrationRequester.Press, Legacy, DateTimeOffset.UtcNow)
+            automatic && delivered ? IntegrationRequester.Landing : IntegrationRequester.Press, Legacy, DateTimeOffset.UtcNow)
         {
             RuleSource = delivered ? null : LandingSource.Default,
             Epoch = IntegrationEpoch.Of(Legacy, null),
@@ -81,7 +85,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
         // An earlier press of the same commit still open (its run held) is this press's request: the press goes on with it.
         return store.Add(request) switch
         {
-            null => new IntegrationAdmission(true, $"`{branch}` at {Short(tip)} is requested for `{line}` by the person's press, as the merge rule's.") { Request = request },
+            null => new IntegrationAdmission(true, $"`{branch}` at {Short(tip)} is requested for `{line}` {By(request.Requester)}.") { Request = request },
             { Route: IntegrationRoutes.Merge } open when SameCommit(open.Tip, tip) =>
                 new IntegrationAdmission(true, $"`{branch}` at {Short(tip)} was requested for `{line}` by an earlier press, which this one goes on with.") { Request = open },
             var open => Opened(open, branch, tip),
@@ -426,8 +430,10 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     /// <summary>Who asked, in words: the person's card, Daoris's come-up sweep, or the steward's act by its id.</summary>
     private static string By(IntegrationRequester requester) => requester.Kind switch
     {
+        IntegrationRequester.Person when requester.Door == IntegrationDoors.Press => "by the person's press, as the merge rule's",
         IntegrationRequester.Person => "by the person's card",
         IntegrationRequester.Daoris when requester.Door == IntegrationDoors.Node => "by the unit's `integrate` step",
+        IntegrationRequester.Daoris when requester.Door == IntegrationDoors.Landing => "by its workflow's landing, with no press",
         IntegrationRequester.Daoris => "by Daoris's come-up sweep",
         IntegrationRequester.Steward => $"by the steward's act `{requester.Act}`",
         _ => $"by `{requester.Kind}`",

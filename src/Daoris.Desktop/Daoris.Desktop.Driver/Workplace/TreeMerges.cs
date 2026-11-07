@@ -166,7 +166,7 @@ internal sealed class TreeMerges(TreeContext context)
         // LANDNODE1c3: Current's delivery is admitted by its rule and says today's message, as the press always was.
         var (carried, refused) = await IntegrationPresses.MergeAsync(
             context.Home, context.Config(), root, repository, workspace, canonical, branch, frozen, ct, beside, delivered: delivering is { Live: false },
-            message: delivering?.Template).ConfigureAwait(false);
+            message: delivering?.Template, automatic: delivering?.Accepted == AcceptedBy.Auto).ConfigureAwait(false);
         if (delivering is not null) await delivering.MergedAsync(root, canonical, frozen, carried ? null : refused, ct).ConfigureAwait(false);
         if (!carried) return new(false, refused!);
 

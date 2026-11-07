@@ -39,7 +39,8 @@ internal static class IntegrationSettles
             // A merge rule's press (INTEGRATE1g): nothing after it is the request's; the session's tree follows the merge as the landing says.
             if (request.Route == IntegrationRoutes.Merge)
             {
-                members.Add(new IntegrationSettlement(member.Request, branch, request.Tip, "merged on the person's press.", [], 0, 0));
+                var by = request.Requester.Door == IntegrationDoors.Landing ? "merged by its workflow's landing, with no press." : "merged on the person's press.";
+                members.Add(new IntegrationSettlement(member.Request, branch, request.Tip, by, [], 0, 0));
                 continue;
             }
 
