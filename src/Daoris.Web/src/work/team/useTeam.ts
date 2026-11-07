@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useOutsideAgents, useRemoveOutsideAgent } from '../../bridge/sessions/channelOutside';
 import { usePassHelper, useAskHelper, useSessionHelpers } from '../../bridge/sessions/sessionHelpers';
 import type { Session } from '../../data/api';
+import { leadsPieces } from '../identity';
 import type { Answered } from '../InlineConfirm';
 import type { BringInChoice } from './BringInAgent';
 import type { MemberThreadProps } from './MemberThread';
@@ -34,8 +35,8 @@ export function useTeam({ attended, here, nameOf, attend, open }: {
   here: boolean;
   nameOf: (agent: string) => string;
   attend: (session: string) => void;
-  /** Open one of the attended session's own doors (*Ask another agent…*, *Go on with another agent…*). */
-  open: (door: 'askHelper' | 'handOver') => void;
+  /** Open one of the attended session's own doors (*Ask another agent…*, a piece's ask, its review, *Go on with another agent…*). */
+  open: (door: 'askHelper' | 'askPiece' | 'review' | 'handOver') => void;
 }): TeamFacts | null {
   const { t } = useTranslation();
   const pass = usePassHelper();
@@ -81,7 +82,12 @@ export function useTeam({ attended, here, nameOf, attend, open }: {
     passing: pass.isPending,
     choices: leads ? [
       { door: 'question', onChoose: () => open('askHelper') },
+      // A piece and a second opinion both need a tree of its own to be kept apart from; the doors judge the rest as they do now.
+      leadsPieces(attended) ? { door: 'piece', onChoose: () => open('askPiece') } : { door: 'piece', off: t('work.team.off.noTree') },
+      leadsPieces(attended) ? { door: 'opinion', onChoose: () => open('review') } : { door: 'opinion', off: t('work.team.off.noTree') },
       { door: 'goOn', onChoose: () => open('handOver') },
+      // A second request on the ask runs alongside by itself: there is no press to make it, so the dialog says so.
+      { door: 'alongside', off: t('work.team.off.alongside') },
     ] : [],
     thread,
     outside: outside.data ?? [],

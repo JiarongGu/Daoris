@@ -55,6 +55,29 @@ public sealed class SupervisorRuleDoorTests : IDisposable
     }
 
     [Fact]
+    public void CONTEXTDRIVE1r_a_repository_s_chain_is_read_from_the_store_in_every_process_and_answered_in_ROLES()
+    {
+        Assert.True(SupervisorRuleBook.SeedFresh(_home, () => StoreSettled.Yes));
+        // The look keeps the registry's workspaces; an empty registry keeps what was kept.
+        Assert.True(new RuleWiderPlaceStore(_home, () => StoreSettled.Yes).Keep([("engine", "w1"), ("atlas", null)]));
+        Assert.False(new RuleWiderPlaceStore(_home, () => StoreSettled.Yes).Keep([]));
+        Assert.False(new RuleWiderPlaceStore(_home, () => StoreSettled.Yes).Keep([("engine", "w1")]));
+        Assert.Equal(1, Store.Write("workspace:w1", 0, Press("""{ "id": "supervisor", "place": "workspace:w1", "rulesRevision": 0, "rules": [{ "count": "moves", "at": 3, "do": "ask" }] }""").Rules,
+            "test", SupervisorRuleDoor.World(_home)).Revision);
+        Assert.Equal(1, Store.Write("repository:engine", 0, Press("""{ "id": "supervisor", "place": "repository:engine", "rulesRevision": 0, "rules": [{ "count": "limits", "at": 1, "do": "weighted", "roles": ["build"] }] }""").Rules,
+            "test", SupervisorRuleDoor.World(_home)).Revision);
+
+        // A terminal's own process reads the same chain: a machine write is judged on engine's chain through w1, and stands.
+        var machine = Store.Of("machine");
+        var write = Press($$"""{ "id": "supervisor", "place": "machine", "rulesRevision": {{machine.Revision}}, "rules": [{ "count": "answers-alone", "at": 3, "do": "hold" }, { "count": "failures", "at": 3, "do": "hold" }, { "count": "tries", "at": 5, "do": "hold" }] }""");
+        Assert.Null(SupervisorRuleDoor.Judge(_home, write));
+
+        var rows = SupervisorRuleRows.Of(_home);
+        Assert.Equal(["workspace:w1"], rows.Wider["repository:engine"]);
+        Assert.False(rows.Wider.ContainsKey("repository:atlas"));
+    }
+
+    [Fact]
     public void CONTEXTDRIVE1l_a_seeded_home_takes_a_rule_with_no_conversion_asked()
     {
         Assert.True(SupervisorRuleBook.SeedFresh(_home,() => StoreSettled.Yes));

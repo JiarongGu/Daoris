@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class LandingChainTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-landing-chain-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-landing-chain-" + Guid.NewGuid().ToString("N")[..8]);
 
     public LandingChainTests() => Directory.CreateDirectory(_home);
 

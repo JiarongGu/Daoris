@@ -401,9 +401,9 @@ export const GIT_STASH_PLAN_ENGINE = {
   why: null as string | null,
   hooks: [] as string[],
   entries: [
-    { id: '3fa91c0e2b7d4a18c6e5d0b9a7f1e2c3d4b5a697', message: 'On release: before the switch', untracked: true, collides: 0 },
-    { id: '9bd20e51a7c3f4086d1e2b3c4a5f6978e0d1c2b3', message: '', untracked: false, collides: 2 },
-  ] as { id: string; message: string; untracked: boolean; collides: number }[],
+    { id: '3fa91c0e2b7d4a18c6e5d0b9a7f1e2c3d4b5a697', message: 'On release: before the switch', untracked: true, collides: 0, mine: true },
+    { id: '9bd20e51a7c3f4086d1e2b3c4a5f6978e0d1c2b3', message: '', untracked: false, collides: 2, mine: false },
+  ] as { id: string; message: string; untracked: boolean; collides: number; mine: boolean }[],
   applyWhy: null as string | null,
 };
 

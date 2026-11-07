@@ -67,6 +67,8 @@ public sealed class CommandTreeTests
     [InlineData("brainstorm why --kind meeting --agents a,b", "meeting ask why --agents a,b")]
     [InlineData("brainstorm show m-1 --kind meeting", "meeting show m-1")]
     [InlineData("drive --until-idle", "drive --until-idle")]
+    [InlineData("chat --repository engine --agent stub", "chat --repository engine --agent stub")]
+    [InlineData("chat --session c-1", "chat --session c-1")]
     public void ONEWAY1ai_i_a_groups_words_route_into_its_commands(string typed, string inward)
     {
         var route = CommandTree.Route(typed.Split(' '));

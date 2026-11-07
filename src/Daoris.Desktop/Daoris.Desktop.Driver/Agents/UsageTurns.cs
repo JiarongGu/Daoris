@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 /// </param>
 /// <param name="Door">The adapter the session runs through.</param>
 /// <param name="Meaning">
-/// What its turns' counts mean: the door's own <see cref="HarnessToolchain.TurnReport"/>, or <see cref="UsageHistory.MeaningUnknown"/>
+/// What its turns' counts mean: the door's own <see cref="AccountAgent.TurnReport"/>, or <see cref="UsageHistory.MeaningUnknown"/>
 /// where it declares none.
 /// </param>
 public sealed record TurnBinding(string? Agent, string? Account, string Door, string Meaning)
@@ -27,12 +27,12 @@ public sealed record TurnBinding(string? Agent, string? Account, string Door, st
     public string? Brainstorm { get; init; }
 
     /// <summary>A session's binding as its start chose the account: <paramref name="profile"/>, or null for the tool's own.</summary>
-    public static TurnBinding Of(ProviderRegistry adapters, ISessionAdapter adapter, string? profile)
+    public static TurnBinding Of(ProviderRegistry adapters, AgentDoor adapter, string? profile)
     {
-        var owner = adapter.Toolchain is null ? null : adapters.OwnerOfAgent(adapter.Name).Value;
+        var owner = adapters.AgentNamed(adapter.Id.Value) is null ? null : adapters.OwnerOfAgent(adapter.Id.Value).Value;
         return new(
-            owner, owner is null ? null : profile ?? AccountWindows.Own, adapter.Name,
-            adapter.Toolchain?.TurnReport ?? UsageHistory.MeaningUnknown);
+            owner, owner is null ? null : profile ?? AccountWindows.Own, adapter.Id.Value,
+            adapters.AgentNamed(adapter.Id.Value)?.TurnReport ?? UsageHistory.MeaningUnknown);
     }
 }
 

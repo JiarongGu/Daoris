@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class TerminalShellsTests : IDisposable
 {
     private readonly string _root = Path.Combine(
-        Path.GetTempPath(), "daoris-shells-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-shells-" + Guid.NewGuid().ToString("N")[..8]);
 
     public TerminalShellsTests() => Directory.CreateDirectory(_root);
 

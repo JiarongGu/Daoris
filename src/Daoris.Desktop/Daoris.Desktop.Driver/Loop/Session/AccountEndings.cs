@@ -25,7 +25,7 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
     /// <param name="used">The context the door reported, for the log; null where it reported none.</param>
     /// <param name="byCode">A limit the reader read by its code with no sentence: cooled for an hour.</param>
     public (SessionConclusion Conclusion, bool Limit) Limited(
-        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed, string sessionId,
+        SessionConclusion conclusion, AgentDoor adapter, HarnessSelection selection, string? turnFailed, string sessionId,
         AcpUsage? used, LimitSeen? byCode = null)
     {
         if (conclusion.State != "failed" || turnFailed is not { Length: > 0 }) return (conclusion, false);
@@ -39,7 +39,7 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
 
         try
         {
-            limited = context.Harnesses.Limited(adapter.Name, selection.Profile, turnFailed, sessionId, config.CoolOff, byCode);
+            limited = context.Harnesses.Limited(adapter.Id.Value, selection.Profile, turnFailed, sessionId, config.CoolOff, byCode);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -51,9 +51,9 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
         if (limited is not { } read) return (conclusion, false);
 
         var (entry, seen) = read;
-        service.AccountSaid(AccountLine.Limited(sessionId, adapter.Name, selection.Profile, seen, context.Events.TurnsEnded(sessionId) + 1, used?.Used));
+        service.AccountSaid(AccountLine.Limited(sessionId, adapter.Id.Value, selection.Profile, seen, context.Events.TurnsEnded(sessionId) + 1, used?.Used));
         // Kept in memory only, said once in the machine log for this entry.
-        if (AccountCooling.Unwritten(home, entry.Agent, entry.Account)) service.AccountSaid(AccountLine.CoolingUnkept(sessionId, adapter.Name, selection.Profile, seen));
+        if (AccountCooling.Unwritten(home, entry.Agent, entry.Account)) service.AccountSaid(AccountLine.CoolingUnkept(sessionId, adapter.Id.Value, selection.Profile, seen));
         var noted = conclusion.Unsaid(turnFailed).Then(" ", CoolingWords.NoteOf(entry, context.Harnesses.Zone));
 
         // 🔴 An attempt refused with the same kind of limit within the margin after its account's cool-off ended met a reset that did
@@ -62,7 +62,7 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
         if (LimitResume.NotLifted(ended, entry, now) is { } notLifted)
         {
             noted = noted.Then(" ", notLifted);
-            service.AccountSaid(AccountLine.NotLifted(sessionId, adapter.Name, selection.Profile, seen));
+            service.AccountSaid(AccountLine.NotLifted(sessionId, adapter.Id.Value, selection.Profile, seen));
         }
 
         return (noted, true);
@@ -72,7 +72,7 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
     /// The native door's limit, read from its failed <c>result</c> as the run says it (<see cref="NativeLimits"/>): the run's conclusion reads
     /// it as the turn's failure, so <see cref="Limited"/> cools the account the session ran as there, once, as for a protocol door's limit.
     /// </summary>
-    public NativeLimits NativeLimit(ISessionAdapter adapter) =>
+    public NativeLimits NativeLimit(AgentDoor adapter) =>
         new(failure => AgentErrors.Read(context.Adapters, adapter, failure, context.Harnesses.Clock(), context.Harnesses.Zone));
 
     /// <summary>
@@ -83,14 +83,14 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
     /// Asked once by every start that holds a session (a driven one, an intake, a carry-on, an opinion's or a helper's pass), where
     /// its account is chosen: so the session's turns are bound to that account in the usage history here.
     /// </remarks>
-    public Action<JsonElement> Said(ISessionAdapter adapter, HarnessSelection selection, string sessionId)
+    public Action<JsonElement> Said(AgentDoor adapter, HarnessSelection selection, string sessionId)
     {
         UsageTurns.Bound(home, context.Events, sessionId, TurnBinding.Of(context.Harnesses.Adapters, adapter, selection.Profile));
         return info =>
         {
             try
             {
-                context.Harnesses.Said(adapter.Name, selection.Profile, info, sessionId);
+                context.Harnesses.Said(adapter.Id.Value, selection.Profile, info, sessionId);
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
@@ -111,29 +111,29 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
     /// its line is one no strike counts (<see cref="AccountNoteCodes.AccountsOwn"/>).</para>
     /// </remarks>
     /// <param name="ended">What the harness said of its ending, by its door.</param>
-    public SessionConclusion Refused(SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, HarnessEnding ended)
+    public SessionConclusion Refused(SessionConclusion conclusion, AgentDoor adapter, HarnessSelection selection, HarnessEnding ended)
     {
-        if (conclusion.State != "failed" || adapter.Toolchain is not { Refused: { Length: > 0 } refusedWords }
+        if (conclusion.State != "failed" || context.Harnesses.Adapters.AgentNamed(adapter.Id.Value) is not { Tables.Refused: { Length: > 0 } refusedWords }
             || !Observation.Refused(ended, refusedWords))
         {
             return conclusion;
         }
 
-        return conclusion.Then(" ", Refuse(adapter, selection, context.Harnesses.Adapters.OwnerOfAgent(adapter.Name).Value));
+        return conclusion.Then(" ", Refuse(adapter, selection, context.Harnesses.Adapters.OwnerOfAgent(adapter.Id.Value).Value));
     }
 
     /// <summary>
     /// The account a refused credential holds and reads signed out, named by <paramref name="owner"/>; its line for the record. What
     /// <see cref="Refused"/> applies, and a resume's open refused for access applies as the reader read it.
     /// </summary>
-    public Noted Refuse(ISessionAdapter adapter, HarnessSelection selection, string owner)
+    public Noted Refuse(AgentDoor adapter, HarnessSelection selection, string owner)
     {
         // The hold a later start says names the account by the person's name, read now; the note, which travels and whose cleaner knows
         // only the record's own id, keeps the id.
         var named = selection.Profile is { } profile ? AccountNames.Said(AccountNames.Of(context.Harnesses.Home, owner), profile) : null;
         var hold = RefusedAccounts.RefusedHold(owner, selection.Profile, named);
-        context.Harnesses.Refuse(adapter.Name, selection.Profile, hold.Note, hold);
-        context.Harnesses.SignedOut(adapter.Name, selection.Profile);
+        context.Harnesses.Refuse(adapter.Id.Value, selection.Profile, hold.Note, hold);
+        context.Harnesses.SignedOut(adapter.Id.Value, selection.Profile);
         return RefusedAccounts.RefusedNote(owner, selection.Profile);
     }
 
@@ -175,7 +175,7 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
     /// <param name="turnFailed">What the protocol door said refusing the call, or null.</param>
     /// <param name="ended">The run's ending: a refusal its door's own code reads as access is the account's sign-in, whatever its words.</param>
     public SessionConclusion SignedOut(
-        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed, HarnessEnding? ended = null) =>
+        SessionConclusion conclusion, AgentDoor adapter, HarnessSelection selection, string? turnFailed, HarnessEnding? ended = null) =>
         conclusion.State == "failed"
         && RefusedAccounts.SignInRefused(context.Harnesses, adapter, selection.Profile, turnFailed, AccessByCode(adapter, ended)) is { } line
             ? conclusion.Then(" ", line)
@@ -185,7 +185,7 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
     /// Whether the refusal a run ended on reads access by a code or kind its door declares: the one reader's disposition, its words read
     /// apart, since a credential its provider refused by its words is <see cref="Refused"/>'s.
     /// </summary>
-    private bool AccessByCode(ISessionAdapter adapter, HarnessEnding? ended) =>
+    private bool AccessByCode(AgentDoor adapter, HarnessEnding? ended) =>
         ended?.Refusal is { } refused
         && AgentErrors.Read(context.Adapters, adapter, DoorFailures.OfPrompt(refused), context.Harnesses.Clock(), context.Harnesses.Zone)
             .Access == AccessDisposition.SignedOutByCode;

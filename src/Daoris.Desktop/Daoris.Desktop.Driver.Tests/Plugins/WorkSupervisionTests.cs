@@ -16,7 +16,7 @@ public sealed class WorkSupervisionTests : IDisposable
 
     private const string Deploy = "acme.deploy";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-work-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-work-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly MachineLog _log;
 

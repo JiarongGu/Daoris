@@ -11,7 +11,7 @@ public sealed class SheetLineTests
     [Fact]
     public void Each_capability_is_said_with_its_value_and_an_absent_one_as_not_known()
     {
-        var sheet = new AgentCapabilities("door", AgentCapabilities.Pipe,
+        var sheet = new AgentCapabilities("door", "native",
         [
             Row(SheetCapability.Door, "native", SheetRow.Declared),
             Row(SheetCapability.Conversation, "yes", SheetRow.Declared),

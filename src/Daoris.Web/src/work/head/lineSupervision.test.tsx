@@ -18,7 +18,7 @@ const held: LineSupervision = {
     { count: 'answers-alone', n: 2, known: 'exact', from: 'admission', watch: { at: 2, do: 'hold', place: 'repository:daoris' } },
     { count: 'failures', n: 1, known: 'exact', from: 'records', watch: { at: 3, do: 'hold', place: 'machine' } },
     { count: 'moves', n: null, known: 'unknown', why: 'no log', from: 'log' },
-    { count: 'tries', n: 1, known: 'at-least', from: 'events', watch: { at: 5, do: 'ask' } },
+    { count: 'tries', n: 1, known: 'at-least', from: 'ended.transient', watch: { at: 5, do: 'ask', place: 'workspace:main' } },
   ],
   acts: [
     { count: 'answers-alone', n: 2, known: true, rule: { at: 2, do: 'hold', place: 'repository:daoris' }, point: 'go-on', when: new Date().toISOString() },
@@ -44,7 +44,7 @@ describe('a line’s supervision', () => {
       ['Answers alone in a row', '2 · your rule: Wait for you at 2 (daoris)'],
       ['Failed sessions on a quest', '1 · your rule: Wait for you at 3 (This Daoris)'],
       ['Moves to another choice a day', 'not known'],
-      ['The service did not answer', 'at least 1 · Daoris: Ask before the next at 5'],
+      ['The service did not answer', 'at least 1 · your rule: Ask before the next at 5 (main)'],
     ]);
   });
 
@@ -57,12 +57,12 @@ describe('a line’s supervision', () => {
 
   it('chips the count a rule holds the line at, else the one a count short of its rule, else nothing', () => {
     expect(supervisionChip(t, held)).toMatchObject({ count: 'answers-alone', held: true, text: 'answers alone in a row 2 of 2' });
-    const near = supervisionChip(t, { counts: [{ count: 'failures', n: 2, known: 'exact', from: 'records', watch: { at: 3, do: 'hold' } }], acts: [] });
+    const near = supervisionChip(t, { counts: [{ count: 'failures', n: 2, known: 'exact', from: 'records', watch: { at: 3, do: 'hold', place: 'machine' } }], acts: [] });
     expect(near).toMatchObject({ held: false, text: 'failed sessions on a quest 2 of 3' });
-    expect(supervisionChip(t, { counts: [{ count: 'failures', n: 1, known: 'exact', from: 'records', watch: { at: 3, do: 'hold' } }], acts: [] })).toBeNull();
+    expect(supervisionChip(t, { counts: [{ count: 'failures', n: 1, known: 'exact', from: 'records', watch: { at: 3, do: 'hold', place: 'machine' } }], acts: [] })).toBeNull();
     // A count not known exactly, or one the rule does not hold on, never chips.
-    expect(supervisionChip(t, { counts: [{ count: 'tries', n: 5, known: 'at-least', from: 'events', watch: { at: 5, do: 'hold' } }], acts: [] })).toBeNull();
-    expect(supervisionChip(t, { counts: [{ count: 'limits', n: 1, known: 'exact', from: 'events', watch: { at: 1, do: 'wait' } }], acts: [] })).toBeNull();
+    expect(supervisionChip(t, { counts: [{ count: 'tries', n: 5, known: 'at-least', from: 'ended.transient', watch: { at: 5, do: 'hold', place: 'machine' } }], acts: [] })).toBeNull();
+    expect(supervisionChip(t, { counts: [{ count: 'limits', n: 1, known: 'exact', from: 'events', watch: { at: 1, do: 'wait', place: 'machine' } }], acts: [] })).toBeNull();
   });
 
   it('opens Details at the course and the Supervisor line, in Chinese too', async () => {

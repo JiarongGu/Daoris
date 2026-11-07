@@ -554,7 +554,7 @@ public sealed class NoteSitesTests
     [Fact]
     public void A_stop_s_request_carries_the_pause_s_parts_beside_its_note()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-notes-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-notes-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             var requests = new SessionRequests(home);

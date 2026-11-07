@@ -155,7 +155,7 @@ public sealed class HelpSessionProposalsTests : HelpProposalsFixture
     [InlineData("unarchive", null, "ended", "`ended` goes only with `archive`: what ended is archived, never unarchived.")]
     [InlineData("archive", null, null, "a session proposal names the sessions by id, or `ended` for every one that ended.")]
     [InlineData("archive", " ", "later", "a session proposal names the sessions by id, or `ended` for every one that ended.")]
-    [InlineData("delete", "c1chat00", null, "`delete` is not a session's change — `archive` or `unarchive`; a delete is `delete_propose`.")]
+    [InlineData("delete", "c1chat00", null, "`delete` is not a session's change — `archive`, `unarchive`, `helper` or `pass`; a delete is `delete_propose`.")]
     public void A_proposal_the_list_would_not_take_is_refused(string door, string? sessions, string? value, string refusal)
     {
         var plan = HelpProposals.Plan(Session(door, sessions, value), DriverConfig.Empty, SessionsHere);
@@ -170,7 +170,7 @@ public sealed class HelpSessionProposalsTests : HelpProposalsFixture
         var plan = HelpProposals.Plan(Session("stop", "s3live00"), DriverConfig.Empty, SessionsHere);
 
         Assert.Equal(
-            "`stop` is not a session's change — `archive` or `unarchive`; a stop is the person's own, on the session's page, "
+            "`stop` is not a session's change — `archive`, `unarchive`, `helper` or `pass`; a stop is the person's own, on the session's page, "
             + "where a go takes them.",
             plan.Refusal);
     }
@@ -203,6 +203,86 @@ public sealed class HelpSessionProposalsTests : HelpProposalsFixture
         Assert.Equal(["SESSION_ARCHIVE unarchive s6archiv"], back.Calls);
         Assert.True(ended.Applied);
         Assert.Equal(["SESSION_ARCHIVE archive s1ended0,s2ended0,h1helper,north/s7team0,c1chat00,c2tree00,c3named0,c4remote"], all.Calls);
+    }
+
+    // COWORKUX1: the person's helper doors, a card for the page's Ask another agent…, Ask again… and Pass to the lead.
+
+    private static HelpProposal Helping(string question, HelperProposalFields? fields = null, string session = "s1ended0") =>
+        Session("helper", session, question) with { Helper = fields ?? new HelperProposalFields(null, null, false) };
+
+    [Fact]
+    public void A_helper_card_says_whom_it_asks_and_where_the_answer_goes_and_names_the_terminal_that_does_it()
+    {
+        var lead = HelpProposals.Plan(Helping("Why does it drop the last day?"), DriverConfig.Empty, SessionsHere);
+        var again = HelpProposals.Plan(
+            Helping("And on a leap year?", new HelperProposalFields("codex-acp", "a1b2c3d4", true)), DriverConfig.Empty, SessionsHere);
+
+        Assert.Null(lead.Refusal);
+        Assert.Contains("Ask another agent Daoris chooses, read-only, a question about session `s1ended0`'s work", lead.Describe);
+        Assert.Contains("comes back to that session as its next turn, marked as the helper's", lead.Describe);
+        Assert.Equal("daoris session helper s1ended0 \"Why does it drop the last day?\"", lead.Terminal);
+        Assert.Null(again.Refusal);
+        Assert.Contains("Ask agent `codex-acp`", again.Describe);
+        Assert.Contains("asks again after `#a1b2c3d4`", again.Describe);
+        Assert.Contains("reaches that session only once you pass it to the lead", again.Describe);
+        Assert.Equal("daoris session helper s1ended0 \"And on a leap year?\" --agent codex-acp --after a1b2c3d4 --to-me", again.Terminal);
+    }
+
+    [Theory]
+    [InlineData("zz000000", "Why?", "there is no session `zz000000` on this machine")]
+    [InlineData("h1helper", "Why?", "`h1helper` is Ask Daoris's own conversation, which asks no helper and has none to pass")]
+    [InlineData("north/s7team0", "Why?", "`north/s7team0` is a teammate's: its helper is asked on their machine")]
+    [InlineData("s1ended0", "  ", "a helper is asked a question, and none was given.")]
+    [InlineData("s1ended0,s2ended0", "Why?", "the helper door names exactly one session, by its id.")]
+    public void A_helper_card_the_machine_would_refuse_is_refused_in_the_cards_words(string session, string question, string refusal)
+    {
+        Assert.Equal(refusal, HelpProposals.Plan(Helping(question, session: session), DriverConfig.Empty, SessionsHere).Refusal);
+    }
+
+    [Fact]
+    public void A_pass_card_names_the_ask_and_the_session_and_nothing_else()
+    {
+        var pass = Session("pass", "s1ended0") with { Helper = new HelperProposalFields(null, "a1b2c3d4", false) };
+        var none = Session("pass", "s1ended0") with { Helper = new HelperProposalFields(null, null, false) };
+
+        var plan = HelpProposals.Plan(pass, DriverConfig.Empty, SessionsHere);
+
+        Assert.Null(plan.Refusal);
+        Assert.Contains("Pass the answer to ask `#a1b2c3d4`, kept for you, to session `s1ended0`", plan.Describe);
+        Assert.Equal("daoris session pass a1b2c3d4", plan.Terminal);
+        Assert.Equal("the pass door names the ask whose kept answer is passed.", HelpProposals.Plan(none, DriverConfig.Empty, SessionsHere).Refusal);
+    }
+
+    [Fact]
+    public async Task A_helper_card_and_a_pass_card_go_through_the_pages_own_doors_and_their_sentences_are_said()
+    {
+        var (asked, ask, _) = await ApplyAsync(
+            Helping("Why?", new HelperProposalFields("codex-acp", "a1", true)), facts: SessionsHere);
+        var refusing = new HelpStandInDoors { Helped = (false, "Session s1ended0 holds no ask #a1 to ask again after. Nothing was asked.") };
+        var (passed, pass, _) = await ApplyAsync(
+            Session("pass", "s1ended0") with { Id = "p8", Helper = new HelperProposalFields(null, "a1", false) }, refusing, SessionsHere);
+
+        Assert.True(asked.Applied);
+        Assert.Equal(["SESSION_HELPER_ASK s1ended0 Why? agent=codex-acp after=a1 toPerson=True"], ask.Calls);
+        Assert.Equal("Applied: `#p6` (`daoris session helper s1ended0 \"Why?\" --agent codex-acp --after a1 --to-me`) — Asked #h1.", asked.Told);
+        Assert.False(passed.Applied);
+        Assert.Equal(["SESSION_HELPER_PASS s1ended0 a1"], pass.Calls);
+        Assert.Equal("refused", HelpProposals.Find(_home, "p8")!.State);
+    }
+
+    /// <summary>The proposal's file is read back with the helper doors' fields, as the service's writer spells them.</summary>
+    [Fact]
+    public void The_helper_fields_are_read_from_the_proposals_file()
+    {
+        var folder = HelpProposals.FolderOf(_home);
+        Directory.CreateDirectory(folder);
+        System.IO.File.WriteAllText(
+            Path.Combine(folder, "p5.json"),
+            """{"id":"p5","kind":"session","door":"helper","target":"s1ended0","workspace":null,"value":"Why?","sentence":null,"agent":"codex-acp","ask":"a1","toMe":true,"why":"x","state":"proposed"}""");
+
+        var read = HelpProposals.Find(_home, "p5")!;
+
+        Assert.Equal(new HelperProposalFields("codex-acp", "a1", true), read.Helper);
     }
 
     /// <summary>A card that changes nothing calls no door when applied, and says so.</summary>

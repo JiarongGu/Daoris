@@ -10,7 +10,7 @@ public sealed class RecordLockStoresTests : IDisposable
 {
     private static readonly DateTimeOffset Then = new(2026, 10, 21, 9, 0, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-record-stores-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-record-stores-" + Guid.NewGuid().ToString("N")[..8]);
 
     public RecordLockStoresTests() => Directory.CreateDirectory(_home);
 

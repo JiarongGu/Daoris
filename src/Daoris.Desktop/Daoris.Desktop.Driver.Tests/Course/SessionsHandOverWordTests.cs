@@ -11,7 +11,7 @@ public sealed class SessionsHandOverWordTests : IDisposable
 {
     private static readonly DateTimeOffset At = DateTimeOffset.Parse("2026-10-20T10:00:00Z");
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-sessions-handword-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-sessions-handword-" + Guid.NewGuid().ToString("N")[..8]);
 
     public SessionsHandOverWordTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
 

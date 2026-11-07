@@ -15,7 +15,7 @@ import { mergeKeyed } from '../state/slices';
 import { usageSlice } from './agents';
 
 const session = (id: string, when: string, extra: Record<string, unknown> = {}) =>
-  ({ session: id, repository: 'engine', harness: 'claude-code', profile: 'work', used: 1_000, size: 200_000, when, ...extra });
+  ({ session: id, repository: 'engine', door: 'claude-code', profile: 'work', used: 1_000, size: 200_000, when, ...extra });
 
 describe('what sessions consumed, pushed (PUSH1e)', () => {
   it("feeds `USAGE`'s own entry from the one snapshot route, its deltas merged by key", () => {

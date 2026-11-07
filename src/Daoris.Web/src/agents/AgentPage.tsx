@@ -312,14 +312,14 @@ export function AgentPage({
   const pinnable = tool.doors.find((each) => each.pinnable);
   const headMenu: MenuAct[] = [
     ...(tool.present && (owning?.updates === 'pin' || owning?.updates === 'tool')
-      ? [{ id: 'update', label: t('harness.update'), disabled: busy, onSelect: () => acts.onDoor(owning!.harness, 'update') }] : []),
+      ? [{ id: 'update', label: t('harness.update'), disabled: busy, onSelect: () => acts.onDoor(owning!.door, 'update') }] : []),
     ...(pinnable && !pinnable.pinned
       ? [{
         id: 'pin', label: t('agents.head.pin'), disabled: busy,
-        onSelect: () => { setOpen((was) => new Set([...was, 'doors' as const])); setPinOpen(pinnable.harness); },
+        onSelect: () => { setOpen((was) => new Set([...was, 'doors' as const])); setPinOpen(pinnable.door); },
       }] : []),
     ...(pinnable?.pinned
-      ? [{ id: 'unpin', label: t('harness.pin.unpin'), disabled: busy, onSelect: () => acts.onDoor(pinnable.harness, 'unpin') }] : []),
+      ? [{ id: 'unpin', label: t('harness.pin.unpin'), disabled: busy, onSelect: () => acts.onDoor(pinnable.door, 'unpin') }] : []),
     { id: 'copy', label: t('contextMenu.act.copyAgent'), icon: 'copy' as const, copy: tool.name },
   ];
   const version = tool.doors.find((each) => each.present)?.version;

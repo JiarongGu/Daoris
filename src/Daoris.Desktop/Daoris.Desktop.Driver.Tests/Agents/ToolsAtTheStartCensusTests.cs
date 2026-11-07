@@ -9,7 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// <b>Equipped</b> is a call to <c>Equip(</c>, or the process handed on to the driver's <c>Prepare(adapter</c> or a host's
-/// <c>Prepared(adapter</c>, which call it, within the statements after the process is made.
+/// <c>Prepared(adapter</c>, which call it, within the statements after the process is made; either may be handed the registry the run
+/// was started from first (<c>Prepared(adapters, adapter</c>).
 /// </remarks>
 [Trait(Category.Name, Category.Census)]
 public sealed class ToolsAtTheStartCensusTests
@@ -26,8 +27,7 @@ public sealed class ToolsAtTheStartCensusTests
             readers.AddRange(Enumerable.Repeat(Path.GetFileName(file), reads));
         }
 
-        // The one place, and the shim that answers it for a door written on the contract.
-        Assert.Equal(["LegacyDoor.cs", "SpawnEquipment.cs"], readers.Order(StringComparer.Ordinal));
+        Assert.Equal(["SpawnEquipment.cs"], readers.Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -38,11 +38,11 @@ public sealed class ToolsAtTheStartCensusTests
         foreach (var file in SourceFiles.All(SourceFiles.DriverProject, "*.cs"))
         {
             var source = Code(File.ReadAllText(file));
-            foreach (Match call in Regex.Matches(source, @"\b(adapter|resolved)\.(Prepare|PrepareChat|PrepareResume)\("))
+            foreach (Match call in Regex.Matches(source, @"\.(Start|Chat|Resume)\((adapter|resolved)\b"))
             {
                 made++;
                 var after = source.Substring(call.Index, Math.Min(Window, source.Length - call.Index));
-                if (!Regex.IsMatch(after, @"\bEquip\(|\.Prepared?\(adapter\b"))
+                if (!Regex.IsMatch(after, @"\bEquip\(|\.Prepared?\((adapters,\s*)?adapter\b"))
                 {
                     missing.Add($"{Path.GetFileName(file)} at offset {call.Index}: {call.Value}");
                 }

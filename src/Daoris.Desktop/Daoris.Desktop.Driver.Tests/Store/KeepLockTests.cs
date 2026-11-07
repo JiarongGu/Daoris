@@ -14,7 +14,7 @@ public sealed class KeepLockTests : IDisposable
     /// <summary>A process id no process has, as the CLI's twin uses 2147483647.</summary>
     private const int Gone = int.MaxValue;
 
-    private readonly string _folder = Path.Combine(Path.GetTempPath(), "daoris-keeplock-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _folder = Path.Combine(TestHomes.Root, "daoris-keeplock-" + Guid.NewGuid().ToString("N")[..8]);
 
     public KeepLockTests() => Directory.CreateDirectory(_folder);
 

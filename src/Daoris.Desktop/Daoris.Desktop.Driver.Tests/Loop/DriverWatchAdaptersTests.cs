@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class DriverWatchAdaptersTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-watch-adapters-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-watch-adapters-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
 
@@ -30,7 +30,7 @@ public sealed class DriverWatchAdaptersTests : IDisposable
     }
 
     private static ProviderRegistry Only(string name) =>
-        new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { [name] = ProviderRegistry.Built().Resolve(name) });
+        TestDoors.Registry(TestDoors.Shipped(name));
 
     private DriverWatch Watch(ProviderRegistry? adapters, HarnessRoster? harnesses = null)
     {

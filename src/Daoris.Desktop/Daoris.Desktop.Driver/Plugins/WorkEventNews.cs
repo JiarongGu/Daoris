@@ -13,7 +13,7 @@ public static class WorkEventNews
         AttentionKind.Parked => new WorkEvent(WorkEventKinds.SessionParked, piece.At) { Session = piece.Session, Quest = record?.Quest, Ask = record?.Ask },
         AttentionKind.Ended => new WorkEvent(WorkEventKinds.SessionEnded, piece.At)
         {
-            Session = piece.Session, State = piece.State, Quest = record?.Quest, Ask = record?.Ask,
+            Session = piece.Session, State = piece.State, Quest = record?.Quest, Ask = record?.Ask, Adapter = record?.Adapter,
         },
         _ => null,
     };

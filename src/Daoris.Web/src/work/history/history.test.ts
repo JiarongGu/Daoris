@@ -118,6 +118,10 @@ describe('why a unit stays, in the reader’s language (design §1.2)', () => {
     expect(reasonSaid(en, { code: 'HISTORY_NEEDS_YOU', context: 'ask', ask: 'b2c3d4' }))
       .toBe('Ask #b2c3d4 is waiting for you to publish or close it, so it was not cleared.');
     expect(reasonSaid(zh, { code: 'HISTORY_NEEDS_YOU', context: 'ask', ask: 'b2c3d4' })).toBe('需求 #b2c3d4 正等你发布或关闭，所以没有清除。');
+    expect(reasonSaid(en, { code: 'HISTORY_NEEDS_YOU', context: 'piece', session: 's1' }))
+      .toBe('A piece s1 asked for is waiting for you to take it in or discard it, so it was not cleared.');
+    expect(reasonSaid(zh, { code: 'HISTORY_NEEDS_YOU', context: 'piece', session: 's1' }))
+      .toBe('s1 请求的一个分项正等你并入或丢弃，所以没有清除。');
     expect(reasonSaid(en, { code: 'HISTORY_LANDING_STANDS', branch: 'feature/x', repository: 'engine' }))
       .toBe('The branch feature/x a landing made still stands in engine, so it was not cleared. Clean it up once it has merged.');
     // A newer service's word is said as the driver passed it on, verbatim.
@@ -133,6 +137,8 @@ describe('why a unit stays, in the reader’s language (design §1.2)', () => {
     expect(keptDoor({ code: 'HISTORY_NEEDS_YOU', context: 'held', quest: 'q1' })).toEqual({ to: 'quest', id: 'q1' });
     expect(keptDoor({ code: 'HISTORY_NEEDS_YOU', context: 'conflict', quest: 'q1' })).toEqual({ to: 'quest', id: 'q1' });
     expect(keptDoor({ code: 'HISTORY_NEEDS_YOU', context: 'ask', ask: 'a1' })).toEqual({ to: 'ask', id: 'a1' });
+    // A piece is settled from its lead's Pieces section.
+    expect(keptDoor({ code: 'HISTORY_NEEDS_YOU', context: 'piece', session: 's1' })).toEqual({ to: 'session', id: 's1' });
     expect(keptDoor({ code: 'HISTORY_AWAITED', quest: 'q2' })).toEqual({ to: 'quest', id: 'q2' });
     expect(keptDoor({ code: 'HISTORY_ASKED', quest: 'q1', ask: 'a1' })).toEqual({ to: 'ask', id: 'a1' });
     // A teammate's record, or one still running on their machine, has no door here.

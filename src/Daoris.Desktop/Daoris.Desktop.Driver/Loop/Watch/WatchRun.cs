@@ -98,7 +98,7 @@ internal sealed class WatchRun(
 
     private Func<string, Noted, bool>? Stops => watch.Stops;
 
-    private Func<string, string, CancellationToken, Task<HandedOver>>? HandsOver => watch.HandsOver;
+    private Func<string, string, HandOverStep?, CancellationToken, Task<HandedOver>>? HandsOver => watch.HandsOver;
 
     private IChatSendBacks? SendsBack => watch.SendsBack;
 

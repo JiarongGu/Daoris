@@ -47,12 +47,12 @@ const ROSTER = {
   adapter: 'claude-code',
   harnesses: [
     {
-      harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', wire: 'pipe',
+      door: 'claude-code', product: 'Claude Code', maker: 'Anthropic', transport: 'native',
       present: true, version: 'claude 9.9.9', problem: null, machineDefault: null,
       pinned: null, managed: null, pinnable: true, ownLogin: 'in', workspaceDefaults: [], profiles: [],
     },
     {
-      harness: 'claude-code-acp', product: 'Claude Code', maker: 'Anthropic', wire: 'acp', accountOf: 'claude-code',
+      door: 'claude-code-acp', product: 'Claude Code', maker: 'Anthropic', transport: 'protocol', accountOf: 'claude-code',
       present: true, version: '0.9.1', problem: null, machineDefault: null,
       pinned: null, managed: null, pinnable: true, ownLogin: 'in', workspaceDefaults: [], profiles: [],
     },
@@ -351,7 +351,7 @@ describe('Intake in the Roles mode', () => {
       if (module !== 'DAORIS.DRIVER') return WIRING;
       if (type === 'PLACES') return PLACES((request?.payload ?? {}) as Parameters<typeof PLACES>[0]);
       if (type === 'SET_ROLE' && request?.payload?.id === 'intake') intake = request.payload.choices ?? [];
-      if (type === 'STATE' || type === 'SET_ROLE') return { ...DRIVER_STATE, intakeAdapter: intake[0]?.agent ?? '' };
+      if (type === 'STATE' || type === 'SET_ROLE') return { ...DRIVER_STATE, intakeAgent: intake[0]?.agent ?? '' };
       if (type === 'ROLES') return staffed(SEEDED, actors().actors);
       if (type === 'HARNESSES') return ROSTER;
       if (type === 'STARTS') {

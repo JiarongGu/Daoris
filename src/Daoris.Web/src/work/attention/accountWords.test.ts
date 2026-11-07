@@ -16,7 +16,7 @@ const READ = '2026-10-05T10:42:00Z';
 const UNTIL = '2026-10-06T04:42:00Z';
 
 const door = (over: Partial<ToolDoor> = {}): ToolDoor => ({
-  harness: 'claude-code', present: true, product: 'Claude Code', maker: 'Anthropic', signsIn: true, wire: 'pipe',
+  door: 'claude-code', present: true, product: 'Claude Code', maker: 'Anthropic', signsIn: true, transport: 'native',
   ownLogin: 'unknown', ownRead: null,
   profiles: [
     { name: 'account-1', home: 'H/account-1', login: 'out', read: READ, account: 'you@work.example' },
@@ -31,7 +31,7 @@ const named = (id: string | null, state: PushedNamed['state'], over: Partial<Pus
   ({ id, name: null, state, read: id === 'account-2' ? '2026-10-05T09:00:00Z' : READ, until: state === 'cooling' ? UNTIL : null, ...over });
 
 const facts = (over: Partial<PushedAccountFacts> = {}): PushedAccountFacts => ({
-  agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true, named: [], ...over,
+  agent: 'claude-code', product: 'Claude Code', door: 'claude-code', signsIn: true, named: [], ...over,
 });
 
 /** A start waiting on its accounts, as the shell pushes it. */
@@ -56,7 +56,7 @@ describe('a start waiting for accounts, worded', () => {
 
     expect(row).toMatchObject({ kind: 'account-wait', title: 'Intake for 2 asks', where: 'work', circle: true, since: '2026-10-05T10:25:00Z' });
     expect(row.detail).toBe(`home cools until ${moment(UNTIL)}; account-1 and account-3 read signed out at ${clockOf(READ, NOW)}.`);
-    expect(row.account).toMatchObject({ agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true });
+    expect(row.account).toMatchObject({ agent: 'claude-code', product: 'Claude Code', door: 'claude-code', signsIn: true });
     expect(row.account!.named.map(({ id, label, state }) => [id, label, state])).toEqual([
       ['account-2', 'home', 'cooling'], ['account-1', 'account-1', 'out'], ['account-3', 'account-3', 'out'],
     ]);
@@ -120,8 +120,8 @@ describe('a start waiting for accounts, worded', () => {
 
   /** Before the roster answers, the names the look read stand, else each account's id. */
   it('names each account by the look’s names before the roster answers', () => {
-    const row = attentionWorded(waiting({ account: facts({ product: 'claude-code', harness: null, signsIn: false, named: waiting().account!.named }) }), {}, NOW);
-    expect(row.account).toMatchObject({ product: 'claude-code', harness: null, signsIn: false });
+    const row = attentionWorded(waiting({ account: facts({ product: 'claude-code', door: null, signsIn: false, named: waiting().account!.named }) }), {}, NOW);
+    expect(row.account).toMatchObject({ product: 'claude-code', door: null, signsIn: false });
     expect(row.account!.named.map(({ label }) => label)).toEqual(['home', 'account-1', 'account-3']);
   });
 
@@ -145,7 +145,7 @@ describe('a start waiting for accounts, worded', () => {
       kind: 'account-wait', title: 'Intake for ask #a1', where: 'work', circle: true,
       detail: 'No Daoris account is signed in for Claude Code, so its starts wait until you sign in.',
     });
-    expect(row.account).toMatchObject({ noAccount: true, signsIn: true, harness: 'claude-code' });
+    expect(row.account).toMatchObject({ noAccount: true, signsIn: true, door: 'claude-code' });
     expect(attentionOffers(row)).toEqual([{ act: 'sign-in-new' }]);
   });
 });

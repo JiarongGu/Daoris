@@ -70,7 +70,7 @@ function bridge(start: (payload: Payload) => Start | Promise<Start> = () => ({ s
   invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Payload }) => {
     const payload = options?.payload ?? {};
     switch (type) {
-      case 'STATE': return { drivable: ['engine'], holds: [], trees: [], helperAdapter: 'claude-code-acp' };
+      case 'STATE': return { drivable: ['engine'], holds: [], trees: [], helperAgent: 'claude-code-acp' };
       case 'HARNESSES': return { harnesses: [] };
       case 'LINES': return { lines: [], landings: [] };
       case 'START_HELP': return start(payload);

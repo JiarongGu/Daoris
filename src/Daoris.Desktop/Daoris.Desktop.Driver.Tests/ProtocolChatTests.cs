@@ -20,7 +20,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class ProtocolChatTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-acp-chat-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-acp-chat-" + Guid.NewGuid().ToString("N")[..8]);
 
     public ProtocolChatTests() => Directory.CreateDirectory(Path.Combine(_home, "engine"));
 
@@ -191,7 +191,7 @@ public sealed class ProtocolChatTests : IDisposable
         var measured = Assert.Single(usage.Sessions);
         Assert.Equal(id, measured.Session);
         Assert.Equal("engine", measured.Repository);
-        Assert.Equal("acp-stub", measured.Harness);
+        Assert.Equal("acp-stub", measured.Door);
         Assert.Equal("a longer message".Length * 1000, measured.Used);
         Assert.Equal(200_000, measured.Size);
     }

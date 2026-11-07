@@ -78,11 +78,22 @@ if (args is ["roles", "brief"])
     return 0;
 }
 
+// The events relay (EVENTHOOK1c; the event hook design §6.1 step 1): routed before the home's adoption, the generic lease and the machine
+// log, whose own lines print what no fixed sentence holds; its console says every failure of both its forms by a fixed sentence.
+if (args is ["events", .. var eventsArgs])
+{
+    return await RelayCommand.RunAsync(eventsArgs, Console.Out, Console.Error, AppContext.BaseDirectory);
+}
+
 // A terminal finds the Daoris that runs (D171 point 1): the install's launcher sets no variable, so a host the
 // install carries takes the install's own `data/` as its home where none is named, as the desktop does (D63), before any door
 // reads one. The service is found where a door asks for it (`ServiceHttp.FromEnvironment`): the variable, else the address the
 // running desktop left in this home. A workspace build is no install, and keeps needing both named.
 DaorisHome.Adopt(AppContext.BaseDirectory);
+
+// The home this program acts for, named once: what carries no home of its own (Daoris's own git, a probe's tools) reads it, never the
+// variable a process inherited.
+ProgramHome.Named = DaorisHome.Resolve();
 
 // The foundation design §19.15: the home's driver.json reads its staffing from the store, wired before any door or the
 // loop loads it.

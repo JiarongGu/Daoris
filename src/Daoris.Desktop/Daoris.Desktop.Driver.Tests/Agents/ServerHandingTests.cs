@@ -23,7 +23,7 @@ public sealed class ServerHandingTests : IDisposable
     public void Claude_codes_native_door_hands_the_plan_as_its_own_file_and_every_other_built_door_has_no_carrier()
     {
         var info = new ProcessStartInfo();
-        var file = ProviderRegistry.Built().Resolve("claude-code").ServerHanding()!.Hand(info, _home, Plan("s1"));
+        var file = ProviderRegistry.Built().Door("claude-code").ServerHanding()!.Hand(info, _home, Plan("s1"));
         Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Spawn, "s1.mcp.json"), file);
         Assert.Equal(["--mcp-config", file], info.ArgumentList);
         Assert.Contains("\"HEADLESS\"", File.ReadAllText(file!), StringComparison.Ordinal);
@@ -31,10 +31,10 @@ public sealed class ServerHandingTests : IDisposable
 
         foreach (var door in new[] { "claude-code-acp", "codex-acp", "dsh", "stub", "acp-stub" })
         {
-            Assert.Null(ProviderRegistry.Built().Resolve(door).ServerHanding());
+            Assert.Null(ProviderRegistry.Built().Door(door).ServerHanding());
         }
 
-        Assert.Null(ProviderRegistry.Built().Resolve("claude-code").ServerHanding()!.Hand(new ProcessStartInfo(), _home, new ConnectorPlan("s2", [])));
+        Assert.Null(ProviderRegistry.Built().Door("claude-code").ServerHanding()!.Hand(new ProcessStartInfo(), _home, new ConnectorPlan("s2", [])));
         Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.Spawn, "s2.mcp.json")));
     }
 
@@ -78,7 +78,7 @@ public sealed class ServerHandingTests : IDisposable
         var wire = AcpProtocol.Offer(plan);
         Assert.Equal(2, wire.Length);
         Assert.Empty(AcpProtocol.Offer(null));
-        var file = ProviderRegistry.Built().Resolve("claude-code").ServerHanding()!.Hand(new ProcessStartInfo(), _home, plan);
+        var file = ProviderRegistry.Built().Door("claude-code").ServerHanding()!.Hand(new ProcessStartInfo(), _home, plan);
         var written = File.ReadAllText(file!);
         Assert.Contains("\"docs\"", written, StringComparison.Ordinal);
         Assert.Contains("\"wiki\"", written, StringComparison.Ordinal);
@@ -89,13 +89,13 @@ public sealed class ServerHandingTests : IDisposable
     public void A_native_door_drives_an_adopted_repository_only_where_its_servers_inherit_its_environment()
     {
         var built = ProviderRegistry.Built();
-        Assert.True(built.Resolve("claude-code").Abilities().ServersInherit);
-        Assert.False(built.Resolve("claude-code-acp").Abilities().ServersInherit);
-        Assert.True(Adoption.Drives(built.Resolve("claude-code").Abilities(), adopted: true));
-        Assert.False(Adoption.Drives(built.Resolve("claude-code").Abilities(), adopted: false));
-        Assert.True(Adoption.Drives(built.Resolve("codex-acp").Abilities(), adopted: false));
-        Assert.True(Adoption.Drives(built.Resolve("codex-acp").Abilities(), adopted: true));
-        Assert.False(Adoption.Drives(built.Resolve("claude-code").Abilities() with { ServersInherit = false }, adopted: true));
+        Assert.True(built.Door("claude-code").Can.ServersInherit);
+        Assert.False(built.Door("claude-code-acp").Can.ServersInherit);
+        Assert.True(Adoption.Drives(built.Door("claude-code").Can, adopted: true));
+        Assert.False(Adoption.Drives(built.Door("claude-code").Can, adopted: false));
+        Assert.True(Adoption.Drives(built.Door("codex-acp").Can, adopted: false));
+        Assert.True(Adoption.Drives(built.Door("codex-acp").Can, adopted: true));
+        Assert.False(Adoption.Drives(built.Door("claude-code").Can with { ServersInherit = false }, adopted: true));
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public sealed class ServerHandingTests : IDisposable
         var entry = Server("docs") with { Environment = new Dictionary<string, string> { ["DAORIS_SESSION"] = "s7" } };
         Assert.Equal("Daoris.Driver", typeof(ServerEntry).Namespace);
         Assert.Equal("ServerEntry", typeof(ServerEntry).Name);
-        var file = ProviderRegistry.Built().Resolve("claude-code").ServerHanding()!.Hand(new ProcessStartInfo(), _home, new ConnectorPlan("s7", [entry]));
+        var file = ProviderRegistry.Built().Door("claude-code").ServerHanding()!.Hand(new ProcessStartInfo(), _home, new ConnectorPlan("s7", [entry]));
         Assert.Contains("DAORIS_SESSION", File.ReadAllText(file!), StringComparison.Ordinal);
         SpawnFiles.Remove(file);
     }

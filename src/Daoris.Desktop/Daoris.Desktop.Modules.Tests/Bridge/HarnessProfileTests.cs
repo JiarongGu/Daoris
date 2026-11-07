@@ -34,7 +34,7 @@ public sealed class HarnessProfileTests : Bridge
     public async Task Adding_a_profile_makes_a_directory_and_nothing_else()
     {
         await AnswerAsync(Module(), "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-add", profile = "work" });
+            new { door = "claude-code", action = "profile-add", profile = "work" });
 
         Assert.True(Directory.Exists(ProfileAt("claude-code", "work")));
         // 🔴 And it is the SAME path the CLI verb makes. The two doors share no code — the driver
@@ -56,9 +56,9 @@ public sealed class HarnessProfileTests : Bridge
     {
         var module = Module();
         await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-add", profile = "work" });
+            new { door = "claude-code", action = "profile-add", profile = "work" });
         await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-add", profile = "work" });
+            new { door = "claude-code", action = "profile-add", profile = "work" });
 
         Assert.True(Directory.Exists(ProfileAt("claude-code", "work")));
     }
@@ -73,9 +73,9 @@ public sealed class HarnessProfileTests : Bridge
     {
         var module = Module();
         await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-add", profile = "work" });
+            new { door = "claude-code", action = "profile-add", profile = "work" });
         var refused = await RefusalAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-default", profile = "work" });
+            new { door = "claude-code", action = "profile-default", profile = "work" });
 
         Assert.StartsWith(Refusals.AccountsOneSet, refused);
         Assert.False(HarnessSettings.Load(HarnessSettingsPath).Defaults.ContainsKey("claude-code"));
@@ -92,11 +92,11 @@ public sealed class HarnessProfileTests : Bridge
     {
         var module = Module();
         await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-add", profile = "work" });
+            new { door = "claude-code", action = "profile-add", profile = "work" });
         var set = await RefusalAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-default", profile = "work", workspace = "aurora" });
+            new { door = "claude-code", action = "profile-default", profile = "work", workspace = "aurora" });
         var cleared = await RefusalAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-default", workspace = "aurora" });
+            new { door = "claude-code", action = "profile-default", workspace = "aurora" });
 
         Assert.StartsWith(Refusals.AccountsOneSet, set);
         Assert.StartsWith(Refusals.AccountsOneSet, cleared);
@@ -150,15 +150,15 @@ public sealed class HarnessProfileTests : Bridge
         var module = ModuleWithStubHarness();
         foreach (var profile in new[] { "spare", "work" })
         {
-            await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "profile-add", profile });
+            await AnswerAsync(module, "HARNESS_ACTION", new { door = "stub", action = "profile-add", profile });
         }
 
         File.WriteAllText(Path.Combine(ProfileAt("stub", "work"), "credentials.json"), "someone@example.invalid");
-        await AnswerAsync(module, "ACCOUNT_USE", new { action = "order", harness = "stub", accounts = new[] { "work" } });
+        await AnswerAsync(module, "ACCOUNT_USE", new { action = "order", door = "stub", accounts = new[] { "work" } });
         Assert.Equal(["work", "spare"], HarnessSettings.Load(HarnessSettingsPath).Rotation["stub"]);
 
         var answer = await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "stub", action = "profile-remove", profile = "work" });
+            new { door = "stub", action = "profile-remove", profile = "work" });
 
         Assert.Equal(0, answer.GetProperty("exitCode").GetInt32());
         Assert.False(Directory.Exists(ProfileAt("stub", "work")));
@@ -184,7 +184,7 @@ public sealed class HarnessProfileTests : Bridge
         // Someone already has an account: the new one takes a fresh id (ACCT2), answered as the sign-in starts.
         Directory.CreateDirectory(ProfileAt("stub", "account-1"));
 
-        var answer = await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "login-new" });
+        var answer = await AnswerAsync(module, "HARNESS_ACTION", new { door = "stub", action = "login-new" });
         Assert.True(answer.GetProperty("started").GetBoolean());
         var made = answer.GetProperty("profile").GetString()!;
         Assert.Matches("^acct-[0-9a-f]{8}$", made);
@@ -222,7 +222,7 @@ public sealed class HarnessProfileTests : Bridge
         File.WriteAllText(Path.Combine(ProfileAt("stub", "acct-0000000a"), "credentials.json"), "person@example.invalid\norg: Org A\nplan: max");
         AccountNames.Rename(Home, "stub", HarnessSettings.Profiles(Home, "stub"), "acct-0000000a", "person@example.invalid");
 
-        var made = (await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "login-new" })).GetProperty("profile").GetString()!;
+        var made = (await AnswerAsync(module, "HARNESS_ACTION", new { door = "stub", action = "login-new" })).GetProperty("profile").GetString()!;
         await UntilAsync(() => Raised.Any(m => m.Type == "HARNESS_ENDED"));
 
         var ended = JsonSerializer.SerializeToElement(Raised.Single(m => m.Type == "HARNESS_ENDED").Payload);
@@ -231,12 +231,12 @@ public sealed class HarnessProfileTests : Bridge
         Assert.Equal("person@example.invalid·Org-B", ended.GetProperty("Offered").GetString());
         Assert.Null(AccountNames.NameOf(Home, "stub", made));
         var listed = (await AnswerAsync(module, "HARNESSES")).GetProperty("harnesses").EnumerateArray()
-            .Single(h => h.GetProperty("harness").GetString() == "stub").GetProperty("profiles").EnumerateArray()
+            .Single(h => h.GetProperty("door").GetString() == "stub").GetProperty("profiles").EnumerateArray()
             .Single(p => p.GetProperty("name").GetString() == made);
         Assert.Equal("Org B", listed.GetProperty("org").GetString());
 
         var renamed = await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "stub", action = "profile-rename", profile = made, name = "person@example.invalid·Org-B" });
+            new { door = "stub", action = "profile-rename", profile = made, name = "person@example.invalid·Org-B" });
         Assert.Equal("person@example.invalid·Org-B", renamed.GetProperty("name").GetString());
     }
 
@@ -274,7 +274,7 @@ public sealed class HarnessProfileTests : Bridge
         var loop = Loop();
         loop.Harnesses.Ports = _ => PortHold.Free;
 
-        var answer = await AnswerAsync(new DriverModule(Bus, loop), "HARNESS_ACTION", new { harness = "codex-acp", action = "login-new" });
+        var answer = await AnswerAsync(new DriverModule(Bus, loop), "HARNESS_ACTION", new { door = "codex-acp", action = "login-new" });
         var made = answer.GetProperty("profile").GetString()!;
         await UntilAsync(() => Raised.Any(m => m.Type == "HARNESS_ENDED"));
 
@@ -300,7 +300,7 @@ public sealed class HarnessProfileTests : Bridge
     {
         var module = ModuleWithStubHarness(login);
 
-        await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "login-new" });
+        await AnswerAsync(module, "HARNESS_ACTION", new { door = "stub", action = "login-new" });
         await UntilAsync(() => Raised.Any(m => m.Type == "HARNESS_ENDED"));
 
         var ended = JsonSerializer.SerializeToElement(Raised.Single(m => m.Type == "HARNESS_ENDED").Payload);
@@ -322,7 +322,7 @@ public sealed class HarnessProfileTests : Bridge
         var module = Module();
 
         var answer = await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "key-add", key });
+            new { door = "claude-code", action = "key-add", key });
 
         // A fresh id (ACCT2), never the first free `account-N`.
         var account = answer.GetProperty("profile").GetString()!;
@@ -333,7 +333,7 @@ public sealed class HarnessProfileTests : Bridge
 
         var roster = await AnswerAsync(module, "HARNESSES");
         var claude = roster.GetProperty("harnesses").EnumerateArray()
-            .Single(h => h.GetProperty("harness").GetString() == "claude-code");
+            .Single(h => h.GetProperty("door").GetString() == "claude-code");
         Assert.True(claude.GetProperty("takesKey").GetBoolean());
         var row = claude.GetProperty("profiles").EnumerateArray()
             .Single(p => p.GetProperty("name").GetString() == account);
@@ -354,14 +354,14 @@ public sealed class HarnessProfileTests : Bridge
         const string replacement = "sk-ant-api03-replaced-abcd";
         var module = Module();
         var first = (await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "key-add", key = "sk-ant-api03-first-1111" })).GetProperty("profile").GetString()!;
+            new { door = "claude-code", action = "key-add", key = "sk-ant-api03-first-1111" })).GetProperty("profile").GetString()!;
         var second = (await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "key-add", key = "sk-ant-api03-second-2222" })).GetProperty("profile").GetString()!;
+            new { door = "claude-code", action = "key-add", key = "sk-ant-api03-second-2222" })).GetProperty("profile").GetString()!;
         await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-rename", profile = first, name = "work-key" });
+            new { door = "claude-code", action = "profile-rename", profile = first, name = "work-key" });
 
         var answer = await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "key-replace", profile = first, key = replacement });
+            new { door = "claude-code", action = "key-replace", profile = first, key = replacement });
 
         Assert.Equal(first, answer.GetProperty("profile").GetString());
         Assert.Equal("…abcd", answer.GetProperty("key").GetString());
@@ -380,11 +380,11 @@ public sealed class HarnessProfileTests : Bridge
         Directory.CreateDirectory(ProfileAt("claude-code", "signed-in"));
 
         Assert.Contains("takes no API key", await RefusalAsync(module, "HARNESS_ACTION",
-            new { harness = "dsh", action = "key-replace", profile = "x", key = "sk-something-9999" }));
+            new { door = "dsh", action = "key-replace", profile = "x", key = "sk-something-9999" }));
         Assert.Contains("no account", await RefusalAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "key-replace", profile = "nobody", key = "sk-something-9999" }));
+            new { door = "claude-code", action = "key-replace", profile = "nobody", key = "sk-something-9999" }));
         Assert.Contains("not an API key account", await RefusalAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "key-replace", profile = "signed-in", key = "sk-something-9999" }));
+            new { door = "claude-code", action = "key-replace", profile = "signed-in", key = "sk-something-9999" }));
         Assert.Null(HarnessKeys.Of(Home, "claude-code", "signed-in"));
     }
 
@@ -394,11 +394,11 @@ public sealed class HarnessProfileTests : Bridge
     {
         var module = Module();
         var added = await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "key-add", key = "sk-ant-api03-remove-1234" });
+            new { door = "claude-code", action = "key-add", key = "sk-ant-api03-remove-1234" });
         var account = added.GetProperty("profile").GetString()!;
 
         await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-remove", profile = account });
+            new { door = "claude-code", action = "profile-remove", profile = account });
 
         Assert.Null(HarnessKeys.Of(Home, "claude-code", account));
         Assert.False(Directory.Exists(ProfileAt("claude-code", account)));
@@ -419,11 +419,11 @@ public sealed class HarnessProfileTests : Bridge
     {
         var module = Module();
         await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code-acp", action = "profile-add", profile = "work" });
+            new { door = "claude-code-acp", action = "profile-add", profile = "work" });
         await AnswerAsync(module, "ACCOUNT_USE",
-            new { action = "order", harness = "claude-code-acp", accounts = new[] { "work" } });
+            new { action = "order", door = "claude-code-acp", accounts = new[] { "work" } });
         var keyed = await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code-acp", action = "key-add", key = "sk-ant-api03-door-5678" });
+            new { door = "claude-code-acp", action = "key-add", key = "sk-ant-api03-door-5678" });
 
         Assert.True(Directory.Exists(ProfileAt("claude-code", "work")));
         var order = HarnessSettings.Load(HarnessSettingsPath).Rotation;
@@ -439,7 +439,7 @@ public sealed class HarnessProfileTests : Bridge
     public async Task An_agent_that_takes_no_key_refuses_one_and_makes_nothing()
     {
         var refusal = await RefusalAsync(Module(), "HARNESS_ACTION",
-            new { harness = "dsh", action = "key-add", key = "sk-something-9999" });
+            new { door = "dsh", action = "key-add", key = "sk-something-9999" });
 
         Assert.Contains("takes no API key", refusal);
         Assert.Empty(HarnessSettings.Profiles(Home, "dsh"));
@@ -460,7 +460,7 @@ public sealed class HarnessProfileTests : Bridge
         string? UpdateOf(string name)
         {
             var updates = roster.GetProperty("harnesses").EnumerateArray()
-                .Single(h => h.GetProperty("harness").GetString() == name)
+                .Single(h => h.GetProperty("door").GetString() == name)
                 .GetProperty("updates");
             return updates.ValueKind == JsonValueKind.Null ? null : updates.GetString();
         }
@@ -478,7 +478,7 @@ public sealed class HarnessProfileTests : Bridge
     [Fact]
     public async Task Update_on_a_door_with_neither_is_refused_as_before()
     {
-        var refusal = await RefusalAsync(Module(), "HARNESS_ACTION", new { harness = "dsh", action = "update" });
+        var refusal = await RefusalAsync(Module(), "HARNESS_ACTION", new { door = "dsh", action = "update" });
 
         Assert.Contains("declares no updater", refusal);
     }
@@ -509,7 +509,7 @@ public sealed class HarnessProfileTests : Bridge
     public async Task A_profile_verb_without_a_name_is_refused()
     {
         var refusal = await RefusalAsync(
-            Module(), "HARNESS_ACTION", new { harness = "claude-code", action = "profile-add" });
+            Module(), "HARNESS_ACTION", new { door = "claude-code", action = "profile-add" });
 
         Assert.Contains(Refusals.HarnessProfileNeeded, refusal);
     }
@@ -522,7 +522,7 @@ public sealed class HarnessProfileTests : Bridge
     public async Task The_unknown_action_refusal_names_the_profile_verbs_too()
     {
         var refusal = await RefusalAsync(
-            Module(), "HARNESS_ACTION", new { harness = "claude-code", action = "nope" });
+            Module(), "HARNESS_ACTION", new { door = "claude-code", action = "nope" });
 
         Assert.Contains("profile-add", refusal);
         Assert.Contains("profile-default", refusal);

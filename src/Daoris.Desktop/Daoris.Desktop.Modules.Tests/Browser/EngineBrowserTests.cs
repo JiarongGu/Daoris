@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -11,7 +12,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class EngineBrowserTests : Bridge
 {
-    private static new readonly string Home = Path.Combine(Path.GetTempPath(), "daoris-engine-home");
+    private static new readonly string Home = Path.Combine(TestHomes.Root, "daoris-engine-home");
 
     /// <summary>
     /// Under the home (D63), and apart from the WebView2 window's old `browser/profile`, which a

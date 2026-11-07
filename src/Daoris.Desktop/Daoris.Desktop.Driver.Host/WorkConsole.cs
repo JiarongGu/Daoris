@@ -95,7 +95,8 @@ internal static class WorkConsole
     /// <summary>
     /// <c>daoris work recovery drop &lt;ref&gt;... --repository &lt;name&gt; | --unheld [--repository &lt;name&gt;] [--plan]</c> (RECOVERYDROP1,
     /// D50): the person's delete of the recovery refs nothing holds, the screen's <c>RECOVERY_DROP</c> being the other door. Only the
-    /// lease's holder acts (<see cref="RecoveryDropping.WithoutHome"/>); <c>--plan</c> lists what it would do and changes nothing. Exit
+    /// lease's holder acts (<see cref="RecoveryDropping.WithoutHome"/>); <c>--plan</c> lists what it would do and changes nothing, and counts
+    /// the refs no journal record names (<see cref="RecoveryCensus"/>), with their sum over every checkout read. Exit
     /// 0 clean; 1 where it was refused or a ref named was kept; 2 for words not understood or a service that did not answer.
     /// </summary>
     public static async Task<int> RecoveryDropAsync(string[] args)
@@ -131,11 +132,14 @@ internal static class WorkConsole
 
         var kept = false;
         var dropped = 0;
+        var (unrecorded, unread) = (0, 0);
         foreach (var (repository, root) in checkouts)
         {
             if (ask.Plan)
             {
                 foreach (var line in await RecoveryDropping.PlanAsync(home, root, repository, CancellationToken.None).ConfigureAwait(false)) Console.WriteLine(line);
+                var count = await RecoveryCensus.CountAsync(home, root, repository, CancellationToken.None).ConfigureAwait(false);
+                (unrecorded, unread) = (unrecorded + (count.Unrecorded?.Count ?? 0), unread + (count.Unread is null ? 0 : 1));
                 continue;
             }
 
@@ -144,6 +148,12 @@ internal static class WorkConsole
             foreach (var line in RecoveryDropping.Words(repository, done)) Console.WriteLine(line);
             dropped += done.Dropped.Count;
             kept |= done.Refused is not null || (!ask.Unheld && done.Skipped.Count > 0);
+        }
+
+        if (ask.Plan)
+        {
+            Console.WriteLine($"census: {unrecorded} recovery {(unrecorded == 1 ? "ref" : "refs")} no journal record names, over {checkouts.Count} {(checkouts.Count == 1 ? "checkout" : "checkouts")}"
+                + (unread > 0 ? $", {unread} not read" : "") + (unrecorded == 0 && unread == 0 ? ": none is left for the old list and this press." : "."));
         }
 
         if (dropped > 0) PressesTold.Tell(home, PressesTold.RecoveryDrop);

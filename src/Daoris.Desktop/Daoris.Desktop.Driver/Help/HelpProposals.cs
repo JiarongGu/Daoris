@@ -21,6 +21,14 @@ public sealed record HelpProposal(
     /// </summary>
     public string? Repository { get; init; }
 
+    // The session kind's.
+
+    /// <summary>
+    /// The <c>helper</c> and <c>pass</c> doors' fields (COWORKUX1): the agent, the ask it asks again after or the answer to pass, and
+    /// that the answer is the person's; null for every other door and kind.
+    /// </summary>
+    public HelperProposalFields? Helper { get; init; }
+
     // The account kind's.
 
     /// <summary>An account's name, for an account's settings (HELP6).</summary>
@@ -424,6 +432,9 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
 
     /// <summary>For a role change the judge takes (FOUNDATION1y-i): the change, its choices and the revision read; null for every other kind.</summary>
     public HelpRoleChange? Role { get; init; }
+
+    /// <summary>For the supervisor's rules at a place: the rules before and after as fields, which the page words from its catalogue; null for every other plan.</summary>
+    public HelpRulesView? Rules { get; init; }
 
     // The session kind's.
 

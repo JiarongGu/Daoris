@@ -283,7 +283,7 @@ public sealed class AgentsCommandTests : IDisposable
         Assert.Equal("ACCOUNT_USE", press.GetProperty("type").GetString());
         var payload = press.GetProperty("payload");
         Assert.Equal("order", payload.GetProperty("action").GetString());
-        Assert.Equal("claude-code", payload.GetProperty("harness").GetString());
+        Assert.Equal("claude-code", payload.GetProperty("door").GetString());
         Assert.Equal(["seat", "work"], payload.GetProperty("accounts").EnumerateArray().Select(each => each.GetString()));
         Assert.False(payload.TryGetProperty("workspace", out _));
         Assert.Contains("daoris: `claude-code`'s order is seat, then work.", running.Out.ToString(), StringComparison.Ordinal);
@@ -328,7 +328,7 @@ public sealed class AgentsCommandTests : IDisposable
         Assert.Equal("ACCOUNT_USE", press.GetProperty("type").GetString());
         var payload = press.GetProperty("payload");
         Assert.Equal("use", payload.GetProperty("action").GetString());
-        Assert.Equal("claude-code", payload.GetProperty("harness").GetString());
+        Assert.Equal("claude-code", payload.GetProperty("door").GetString());
         Assert.False(payload.TryGetProperty("workspace", out _));
         Assert.Equal("order", payload.GetProperty("use").GetString());
         Assert.Equal("seat", payload.GetProperty("keep").GetString());
@@ -371,7 +371,7 @@ public sealed class AgentsCommandTests : IDisposable
         }
 
         string[] Run(System.Text.Json.JsonElement answer) => [.. answer.GetProperty("run").EnumerateArray().Select(each => each.GetString()!)];
-        var binary = ProviderRegistry.Built().Resolve("claude-code-acp").Toolchain!.Binary;
+        var binary = ProviderRegistry.Built().AgentNamed("claude-code-acp")!.Program.Binary;
 
         var path = await Which("claude-code-acp");
         Assert.Equal("claude-code-acp", path.GetProperty("agent").GetString());
@@ -570,9 +570,7 @@ public sealed class AgentsCommandTests : IDisposable
             string[] install = OperatingSystem.IsWindows()
                 ? [Path.Combine(Environment.SystemDirectory, "cmd.exe"), "/d", "/c", $"exit {exits}"]
                 : ["/bin/sh", "-c", $"exit {exits}"];
-            var set = new ProviderRegistry(
-                new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase),
-                new Dictionary<string, HarnessToolchain> { ["stand-in"] = new(["stand-in"], ["--version"], Install: install) });
+            var set = TestDoors.Registry(TestDoors.Holder("stand-in", new TestAgent(["stand-in"], ["--version"], Install: install)));
 
             var exit = await AgentsCommand.RunAsync(["install", "stand-in"], _held.World(adapters: set, path: ""), CancellationToken.None);
 
@@ -677,13 +675,12 @@ public sealed class AgentsCommandTests : IDisposable
         private static ProviderRegistry StandIn(int exits)
         {
             string[] shell = OperatingSystem.IsWindows() ? [Path.Combine(Environment.SystemDirectory, "cmd.exe"), "/d", "/c"] : ["/bin/sh", "-c"];
-            var toolchain = new HarnessToolchain(
+            var toolchain = new TestAgent(
                 [shell[0]], ["--version"], ProfileVariable: "STAND_IN_HOME",
                 LoginArguments: [.. shell.Skip(1), $"exit {exits}"],
                 LoginCheck: new LoginQuestion([.. shell.Skip(1), "echo Logged in as seat@work.example"], "Logged in", "Not logged in", Account: @"as (\S+)"));
-            return new ProviderRegistry(
-                new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase),
-                new Dictionary<string, HarnessToolchain> { ["stand-in"] = toolchain });
+            // Its own door, since the home an account signs in to is its door's (a holder with no door has none).
+            return TestDoors.Registry(TestDoors.Door("stand-in", toolchain));
         }
 
         /// <summary>

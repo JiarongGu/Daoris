@@ -20,7 +20,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
 {
     private const string Limit = "Internal error: You've hit your weekly limit";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-limit-waits-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-limit-waits-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _root;
 
@@ -1214,12 +1214,8 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>The built stand-ins, and a plugin's protocol door as the second agent.</summary>
-    private static ProviderRegistry TwoAgents() => new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-    {
-        ["stub"] = BuiltDoors.Stub,
-        ["acp-stub"] = BuiltDoors.AcpStub,
-        ["acp-second"] = PluginDoors.Adapter(new PluginHarness("acp-second", ["node"]), "second-plugin"),
-    });
+    private static ProviderRegistry TwoAgents() =>
+        TestDoors.Registry(TestDoors.Shipped("stub", "acp-stub")).Joined([PluginDoors.Door(new PluginHarness("acp-second", ["node"]), "second-plugin")], []);
 
     /// <summary>The machine's choices with Chat's order the first stand-in, then the second, which runs in its own home and answers every prompt.</summary>
     private DriverConfig ConfigWithSecondChoice()

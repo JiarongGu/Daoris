@@ -7,9 +7,10 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class StaffSnapshotCourse
 {
-    /// <summary>A driven quest's line as the rules place it: its repository, the repository's workspace and the quest's id, the line's key.</summary>
-    internal static StaffPlace PlaceOf(Snapshot snapshot, QuestView quest) =>
-        new(quest.To, snapshot.Repositories.FirstOrDefault(repo => string.Equals(repo.Repository, quest.To, StringComparison.OrdinalIgnoreCase))?.Workspace, quest.Id);
+    /// <summary>A driven quest's line as its rules read it (<see cref="RuledLine"/>), the registry placing the quest's repository in its workspace.</summary>
+    internal static RuledLine LineOf(StaffLedger staff, Snapshot snapshot, QuestView quest, PriorSession? record) =>
+        RuledLine.OfQuest(
+            staff.Home, quest, record, snapshot.Repositories.FirstOrDefault(repo => string.Equals(repo.Repository, quest.To, StringComparison.OrdinalIgnoreCase))?.Workspace);
 
     /// <summary>The failed sessions that park each open quest (CONTEXTDRIVE1e): its line's effective failures rule, 0 where none holds.</summary>
     internal static IReadOnlyDictionary<string, int> FailuresAt(StaffLedger? staff, Snapshot snapshot)
@@ -19,9 +20,7 @@ internal static class StaffSnapshotCourse
         var book = staff.Rules();
         foreach (var quest in snapshot.Quests.Where(quest => quest.Status is "Open" or "Taken"))
         {
-            var place = PlaceOf(snapshot, quest);
-            var role = RoleOf(staff, snapshot, quest, snapshot.LastRun.GetValueOrDefault(quest.Id));
-            at[quest.Id] = SupervisorRuleBook.FailuresAt(book.For(role, place.Repository, place.Workspace, place.Line));
+            at[quest.Id] = SupervisorRuleBook.FailuresAt(LineOf(staff, snapshot, quest, snapshot.LastRun.GetValueOrDefault(quest.Id)).In(book));
         }
 
         return at;
@@ -40,10 +39,6 @@ internal static class StaffSnapshotCourse
         && !record.Limit && !record.NotOffered && !Planner.EndedTransient(record) && !EndedQuiet(record)
         && record.NoteParts?.Any(part => part.Code is { } code && (code == RecordNotes.UpdateClosed || RecordNotes.AccountsOwn.Contains(code))) != true;
 
-    /// <summary>The role a record's line goes on under, at the place the snapshot gives its quest (<see cref="StaffCourse.RoleOf"/>).</summary>
-    internal static string RoleOf(StaffLedger staff, Snapshot snapshot, QuestView quest, PriorSession record) =>
-        StaffCourse.RoleOf(staff, snapshot.Repositories.FirstOrDefault(repo => string.Equals(repo.Repository, quest.To, StringComparison.OrdinalIgnoreCase))?.Workspace, quest, record);
-
     /// <summary>
     /// The planner's policy facts at a look: for each open or taken quest whose last session ended past its transient bound under a role that
     /// moves on <c>transient</c>, the course decides, once. A move is counted and written; an ask or the bound's hold is the quest's typed hold.
@@ -60,9 +55,10 @@ internal static class StaffSnapshotCourse
             if (quest.Status is not ("Open" or "Taken") || !snapshot.LastRun.TryGetValue(quest.Id, out var last)) continue;
             var condition = Planner.EndedTransient(last) ? StaffConditions.Transient : EndedQuiet(last) ? StaffConditions.Quiet : FailedStrike(last) ? StaffConditions.Failed : null;
             if (condition is null || (condition == StaffConditions.Transient && config.ReleasesTransient(quest.Id, last.Session, last.Updated))) continue;
-            var role = RoleOf(staff, snapshot, quest, last);
+            var line = LineOf(staff, snapshot, quest, last);
+            var role = line.Role;
             if (snapshot.Handed.TryGetValue(quest.Id, out var handed) && string.Equals(handed.From, last.Session, StringComparison.Ordinal)) continue;
-            if (StaffCourse.CourseOf(staff, role, PlaceOf(snapshot, quest)) is not { } policy || !policy.Moves.TryGetValue(condition, out _)) continue;
+            if (StaffCourse.CourseOf(staff, role, line.Place) is not { } policy || !policy.Moves.TryGetValue(condition, out _)) continue;
 
             // The strikes park a quest as they always did: a parked line is the person's, and a move would only be counted against it.
             var strikes = snapshot.Strikes.GetValueOrDefault(quest.Id) - config.ForgivenAt(quest.Id);
@@ -146,8 +142,8 @@ internal static class StaffSnapshotCourse
         {
             if (quest.Status is not ("Open" or "Taken") || !snapshot.LastRun.TryGetValue(quest.Id, out var last) || !last.Limit || last.State != "failed") continue;
             if (snapshot.Handed.ContainsKey(quest.Id)) continue;
-            var role = RoleOf(staff, snapshot, quest, last);
-            if (StaffCourse.CourseOf(staff, role, PlaceOf(snapshot, quest)) is not { } policy || !policy.Moves.ContainsKey(StaffConditions.Limit)) continue;
+            var line = LineOf(staff, snapshot, quest, last);
+            if (StaffCourse.CourseOf(staff, line.Role, line.Place) is not { } policy || !policy.Moves.ContainsKey(StaffConditions.Limit)) continue;
             var moved = staff.Moves.Of(quest.Id);
             var action = StaffJudge.OnCondition(policy, StaffConditions.Limit, new StaffLine(true, moved.Moves));
             if (action.Do == StaffActions.Ask && !moved.Approved) holds[quest.Id] = action.MovesBound ? HoldMovesBound : HoldAsk;

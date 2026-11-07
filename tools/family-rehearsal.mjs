@@ -4590,12 +4590,12 @@ let portKept = null;
 try {
   portKept = JSON.parse(readFileSync(homeEntry(acpHome, 'sessions', `${portPark?.id}.harness.json`), 'utf8'));
 } catch {
-  // Not a file: FOUNDATION1 z-iii keeps a conversation in the desktop store once a look has imported the home's binding files.
+  // Not a file: the store keeps it once a look imported the binding files, its door read as the file's key.
   try {
     const { DatabaseSync } = await import('node:sqlite');
     const store = new DatabaseSync(homeEntry(acpHome, 'desktop-db'), { readOnly: true });
     try {
-      portKept = store.prepare('SELECT adapter, conversation FROM bindings WHERE session = ?').get(portPark?.id ?? '') ?? null;
+      portKept = store.prepare('SELECT door AS adapter, conversation FROM bindings WHERE session = ?').get(portPark?.id ?? '') ?? null;
     } finally {
       store.close();
     }

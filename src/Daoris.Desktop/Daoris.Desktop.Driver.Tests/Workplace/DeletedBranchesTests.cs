@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Parallel, Category.Git)]
 public sealed class DeletedBranchesTests : TreeSyncFixture
 {
-    private static Task<string?> Clear() => Task.FromResult<string?>(null);
+    private static Task<string?> Clear(string? made) => Task.FromResult<string?>(null);
 
     [Fact]
     public async Task A_judged_delete_is_a_row_naming_the_recovery_ref_its_door_kept_and_its_Undo_closes_the_row()
@@ -19,13 +19,13 @@ public sealed class DeletedBranchesTests : TreeSyncFixture
         await GitAsync(root, "branch", "daoris/s-1");
         var tip = await RevAsync(root, "daoris/s-1");
         var main = await RevAsync(root, "main");
-        await GitAsync(root, "update-ref", "refs/daoris/discarded/s-1", tip);
+        var (keep, _) = await RecoveryKeeps.NameAsync(root, "daoris/s-1", tip, CancellationToken.None);
 
-        var gone = await JournaledDeletes.DeleteAsync(Home, root, "engine", "daoris/s-1", tip, [("refs/heads/main", main)], Clear);
+        var gone = await JournaledDeletes.DeleteAsync(Home, root, "engine", "daoris/s-1", tip, [("refs/heads/main", main)], Clear, keep);
 
         var read = await DeletedBranches.ReadAsync(Home, root, "engine", CancellationToken.None);
         var row = Assert.Single(read.Value!.Rows);
-        Assert.Equal((gone.Act, "branch", "daoris/s-1", tip, JournaledDeletes.Press, "refs/daoris/discarded/s-1", null),
+        Assert.Equal((gone.Act, "branch", "daoris/s-1", tip, JournaledDeletes.Press, "refs/daoris/discarded/daoris/s-1", null),
             (row.Act, row.Kind, row.Name, row.Commit, row.Press, row.Recovery, row.Closed));
 
         var undone = await GitRefActs.UndoAsync(new ActRuns(new ActJournal(Home)), "engine", root, row.Act, "window", "window", CancellationToken.None);

@@ -19,23 +19,23 @@ internal sealed class RosterWalk(HarnessRoster roster)
         CancellationToken ct, OfferAsk? offer = null, bool asks = true)
     {
         offer ??= OfferAsk.None;
-        var resolved = roster.Adapters.Resolve(adapter);
+        var resolved = roster.Adapters.Door(adapter);
 
         // An adapter that declares no toolchain has nothing to check: it spawns exactly as it did
         // before this existed. Purely additive, which is what lets a new adapter arrive without
         // answering questions about installers it may not have.
-        if (resolved.Toolchain is not { } toolchain) return new HarnessSelection(Refusal: null);
+        if (roster.Adapters.AgentNamed(resolved.Id.Value) is not { } toolchain) return new HarnessSelection(Refusal: null);
 
         var settings = roster.Settings;
         // 🔴 A door runs as its OWNER's accounts (AGT7): the owner's default, the owner's directory,
         // the owner's login question and key. The pin below stays the door's own — a door is a
         // different package at a different version (ACP2).
-        var owner = roster.Adapters.OwnerOfAgent(resolved.Name).Value;
+        var owner = roster.Adapters.OwnerOfAgent(resolved.Id.Value).Value;
         // The agent's one set, whatever the workspace (POOL1a2, the account-pool design §2.4): no start reads a workspace's scope.
         var named = settings.Set(owner);
         var picked = string.IsNullOrWhiteSpace(chosen) ? null : chosen.Trim();
         // Where the person named no account, the agent's Daoris accounts are the start's (OWNSPACE1a), and none signed in holds it.
-        var ours = picked is null && !ownHome && named.List.Count == 0 && named.Begins is null && !toolchain.StartsInOwnHome;
+        var ours = picked is null && !ownHome && named.List.Count == 0 && named.Begins is null && !toolchain.Home.StartsInOwnHome;
         var scope = ours ? roster.Walked(named, owner, toolchain) : named;
 
         // Where the agent's door carries none of its windows, its own server is asked them first, for each account of the list
@@ -46,7 +46,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
         // run where they run whatever they would say, so the hour's backstop and a person's look read them instead.
         if (counts && picked is null && !ownHome && scope.List.Count > 1)
         {
-            await roster.FreshenAsync(resolved.Name, owner, scope.List, config, ct, scope.Use).ConfigureAwait(false);
+            await roster.FreshenAsync(resolved.Id.Value, owner, scope.List, config, ct, scope.Use).ConfigureAwait(false);
         }
 
         // The first look, before any question: read again under the gate once the questions are asked (PARALLEL1c).
@@ -72,7 +72,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
             if (picked is null || states[0].Cooling is not { } pick) return Unready(owner, states, picked is null ? scope : null, kind, now, names);
 
             var refusal = RotationWords.PickedOf(
-                pick, await roster.ReadyAsync(resolved.Name, toolchain, config, pick.Account, now, ct).ConfigureAwait(false), roster.Zone, names);
+                pick, await roster.ReadyAsync(resolved.Id.Value, toolchain, config, pick.Account, now, ct).ConfigureAwait(false), roster.Zone, names);
             return new HarnessSelection(refusal.Note) { Cooling = pick, RefusalNote = refusal };
         }
 
@@ -81,29 +81,29 @@ internal sealed class RosterWalk(HarnessRoster roster)
         // last word — a pin quietly replacing it would be a standing choice overruling a specific one.
         string? managed = null;
         string? pinnedVersion = null;
-        if (config.Commands.GetValueOrDefault(resolved.Name) is not { Count: > 0 }
-            && settings.ResolveVersion(resolved.Name, workspace, chosen: null) is { } pinned)
+        if (config.Commands.GetValueOrDefault(resolved.Id.Value) is not { Count: > 0 }
+            && settings.ResolveVersion(resolved.Id.Value, workspace, chosen: null) is { } pinned)
         {
             pinnedVersion = pinned;
-            managed = HarnessSettings.ManagedBinary(roster.Home, resolved.Name, pinned, toolchain.Binary);
+            managed = HarnessSettings.ManagedBinary(roster.Home, resolved.Id.Value, pinned, toolchain.Program.Binary);
             if (managed is null)
             {
                 // 🔴 Refused, never a silent fall back to PATH. Running a different tool than the one
                 // that was pinned — and recording its version as though it were the pinned one —
                 // is the failure this whole shape exists to prevent.
-                var pinRefusal = $"`{resolved.Name}` is pinned to {pinned} on this machine, and nothing is "
-                    + $"installed at that version — `daoris agent pin {resolved.Name} {pinned}` "
-                    + $"installs it, and `daoris agent unpin {resolved.Name}` goes back to PATH. "
+                var pinRefusal = $"`{resolved.Id.Value}` is pinned to {pinned} on this machine, and nothing is "
+                    + $"installed at that version — `daoris agent pin {resolved.Id.Value} {pinned}` "
+                    + $"installs it, and `daoris agent unpin {resolved.Id.Value}` goes back to PATH. "
                     + "Daoris will not quietly run a different version than the one you asked for.";
                 return new HarnessSelection(pinRefusal)
                 {
                     Absent = AgentAbsence.PinNotInstalled,
-                    RefusalNote = Noted.Of(HeldNoteCodes.HeldPinNotInstalled, pinRefusal, ("agent", resolved.Name), ("version", pinned)),
+                    RefusalNote = Noted.Of(HeldNoteCodes.HeldPinNotInstalled, pinRefusal, ("agent", resolved.Id.Value), ("version", pinned)),
                 };
             }
         }
 
-        var report = await roster.ReportAsync(resolved.Name, config, refresh: false, ct).ConfigureAwait(false);
+        var report = await roster.ReportAsync(resolved.Id.Value, config, refresh: false, ct).ConfigureAwait(false);
         // 🔴 A pin this start resolved counts for this start alone (WSPINONLY1): the roster's binary look reads the machine's
         // install and pin, never a workspace's, so an agent only a workspace pins was refused as absent. The managed install
         // the pin names is its presence, found above; another workspace's start resolves no such pin and still asks the machine.
@@ -113,39 +113,39 @@ internal sealed class RosterWalk(HarnessRoster roster)
             // Asked again before refusing: the cached answer may predate the install the last refusal
             // asked for. Its binary alone, since an install is no question of an account (ROSTER1). A view's read refuses on the
             // cached answer, as it asks nothing.
-            await roster.BinaryChangedAsync(resolved.Name, config, ct).ConfigureAwait(false);
-            report = await roster.ReportAsync(resolved.Name, config, refresh: false, ct).ConfigureAwait(false);
+            await roster.BinaryChangedAsync(resolved.Id.Value, config, ct).ConfigureAwait(false);
+            report = await roster.ReportAsync(resolved.Id.Value, config, refresh: false, ct).ConfigureAwait(false);
         }
 
         // The pin's version is the version this start runs, where the machine's look found none to name.
         var version = pinPresent && report is { Present: false } ? pinnedVersion : report?.Version;
         if (!pinPresent && report is { Present: false })
         {
-            var installs = toolchain.Install is { Count: > 0 };
-            var own = string.Join(' ', toolchain.Command(config.Commands.GetValueOrDefault(resolved.Name)));
+            var installs = toolchain.Program.Install is { Count: > 0 };
+            var own = string.Join(' ', toolchain.Program.Command(config.Commands.GetValueOrDefault(resolved.Id.Value)));
             var install = installs
-                ? $"`daoris agent install {resolved.Name}` installs it"
+                ? $"`daoris agent install {resolved.Id.Value}` installs it"
                 : $"install it with its own tooling ({own})";
 
             const string never = "Daoris never installs an agent unasked: a tool that changed under a running loop is a moving target.";
-            var absent = $"`{resolved.Name}` is not installed on this machine, so there is nothing to spawn — {install}. {never}";
+            var absent = $"`{resolved.Id.Value}` is not installed on this machine, so there is nothing to spawn — {install}. {never}";
             return new HarnessSelection(absent)
             {
                 Absent = AgentAbsence.NotInstalled,
                 // An agent with its own tooling names that command, which may hold a path: it is the program's words between the
                 // lead and the line that says Daoris never installs, never a value (ROSTERREFUSE2).
                 RefusalNote = installs
-                    ? Noted.Of(HeldNoteCodes.HeldNotInstalled, absent, ("agent", resolved.Name))
+                    ? Noted.Of(HeldNoteCodes.HeldNotInstalled, absent, ("agent", resolved.Id.Value))
                     : Noted.Of(HeldNoteCodes.HeldNotInstalledOwn,
-                            $"`{resolved.Name}` is not installed on this machine, so there is nothing to spawn — install it with its own tooling (",
-                            ("agent", resolved.Name))
+                            $"`{resolved.Id.Value}` is not installed on this machine, so there is nothing to spawn — install it with its own tooling (",
+                            ("agent", resolved.Id.Value))
                         .Then("", Noted.Said(own, NoteBy.Program)).Then("). ", Noted.Of(HeldNoteCodes.HeldNeverInstalls, never)),
             };
         }
 
         // Claude Code's seam (ACP2), on a door whose program runs Claude Code's: the Agent SDK needs to be told which `claude` to use.
         // Read from the PIPE door's pin, because that is where the CLI lives.
-        var claude = resolved.TakesClaudeSeam()
+        var claude = resolved.Spawned().ClaudeSeam
             ? HarnessSettings.ManagedBinary(
                 roster.Home, "claude-code", settings.ResolveVersion("claude-code", workspace, null), ["claude"])
             : null;
@@ -157,7 +157,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
 
         // The account's state is its owner's answer when this build carries the owner — a door
         // declares no login question of its own, which is what `accountOf` says.
-        var asker = roster.AccountAgent(resolved.Name, toolchain);
+        var asker = roster.AnswersFor(resolved.Id.Value, toolchain);
 
         // 🔴 The walk (TOOL4f, D125 §3.3), with no question asked under its gate (PARALLEL1c, D181 point 3). A pass reads again
         // the order, each account's state and what the agent last said of each, and chooses the first still ready, counting it
@@ -170,7 +170,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
         string? Offers(string account) =>
             offer.Passed?.Contains(account, StringComparer.OrdinalIgnoreCase) == true
                 ? AgentOffers.NotOffered
-                : offer.Model is null ? null : AgentOffers.Offers(roster.Home, resolved.Name, version, account, roster.Clock()).Session.Judge(offer.Model);
+                : offer.Model is null ? null : AgentOffers.Offers(roster.Home, resolved.Id.Value, version, account, roster.Clock()).Session.Judge(offer.Model);
         WalkPass pass;
         while (true)
         {
@@ -195,7 +195,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
                 HarnessProbe.LoginAnswer answer;
                 try
                 {
-                    answer = await roster.AskOneAsync(asker.Name, asker.Toolchain, owner, asking, config, ct).ConfigureAwait(false);
+                    answer = await roster.AskOneAsync(asker.Name, asker, owner, asking, config, ct).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -232,7 +232,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
 
         // An account that is a key is handed its key through the tool's own variable (AGT3) — the
         // owner's variable, for a door, since the door runs the owner's tool.
-        var key = asker.Toolchain.KeyVariable is { Length: > 0 } variable
+        var key = asker.Accounts.KeyVariable is { Length: > 0 } variable
             && HarnessKeys.Of(roster.Home, owner, runs) is { } held
                 ? new Dictionary<string, string> { [variable] = held }
                 : null;

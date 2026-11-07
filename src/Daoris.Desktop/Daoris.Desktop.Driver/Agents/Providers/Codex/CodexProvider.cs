@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// Codex written on the contract (AGENTPROVIDER1 row d; the agent-provider design §2.3, §11): agent <c>codex</c>, whose program,
 /// sign-in and status question are <see cref="CodexAccounts"/>' (CODEXACCT1), with its one door <c>codex-acp</c> on the protocol,
-/// which runs as its accounts. The shim (<see cref="LegacyDoor"/>) presents its door to the adapter seam's readers.
+/// which runs as its accounts.
 /// </summary>
 /// <remarks>
 /// What a harness naming <c>codex</c> reads of it is its sign-in alone, no words and no usage question, as today. Codex's limit
@@ -14,10 +14,13 @@ internal static class CodexProvider
 {
     private const string Evidence = "Codex's declaration";
 
+    private const string HomeVariable = "CODEX_HOME";
+
     public static Provider Registration()
     {
-        var holder = CodexAccounts.Toolchain;
-        var pool = PoolFacts.Of(holder);
+        var pool = CodexAccounts.Pool;
+        // Its refused resume's reason on the protocol, and the turn header its connector calls carry their lineage in.
+        var vocabulary = new VocabularyPart([HomeVariable], [], ["thread_active_writer", "x-codex-turn-metadata"]);
         var door = new AgentDoor(
             new DoorId("codex-acp"), Transport.Protocol, new DoorIdentity(null, null, null),
             // The binary is the adapter's own bin, `codex-acp`, verified against the installed package's `bin` map.
@@ -27,10 +30,10 @@ internal static class CodexProvider
                     "@agentclientprotocol/codex-acp", null, null, ProbeByPresence: false),
                 Evidence),
             // Its home must exist before `initialize` completes (ACP3); every managed home is made before a launch.
-            new DoorHome("CODEX_HOME", OwnHome: false, TrustFile: null),
+            new DoorHome(HomeVariable, OwnHome: false, TrustFile: null),
             // The same words and question, lent to a harness naming this door (O3-F2): a plugin's door onto `codex-acp` reads Codex's
             // by reference, while one joined to `codex` reads neither.
-            new LentPart(PoolFacts.None, TablesPart.None with { Limits = CodexLimits.Words }, new UsagePart(CodexUsage.Question)),
+            new LentPart(PoolFacts.None, TablesPart.None with { Limits = CodexLimits.Words }, new UsagePart(UsageReads.Of(CodexUsage.Question))),
             Known<IDoorOffers>.Absent,
             new PosturesPart("agent", Asking: "workspace-write", Full: "agent-full-access", Reading: "read-only"),
             Known<ISpawn>.Declared(new CodexAcpSpawn(), Evidence),
@@ -47,19 +50,19 @@ internal static class CodexProvider
 
         return new Provider(
             new ProviderId(CodexAccounts.Agent),
-            new ProviderIdentity(holder.Product, holder.Maker, holder.Mark, StandIn: false, DeclaredBy: []),
+            CodexAccounts.Identity,
             [door],
-            Known<ToolSpec>.Declared(ToolSpecs.Of(holder), Evidence),
+            Known<ToolSpec>.Declared(CodexAccounts.Program, Evidence),
             Known<AccountsPart>.Declared(new AccountsPart(new AccountKey(CodexAccounts.Agent), null, pool), Evidence),
             // What Codex says when a limit refuses a turn (TOOL4k) and how an account's windows are asked (CODEXUSE1) are the agent's:
             // its built door is read through them, and a harness naming `codex` still reads its sign-in alone (its `Lent` part below).
             Known<TablesPart>.Declared(TablesPart.None with { Limits = CodexLimits.Words }, Evidence),
-            Known<UsagePart>.Declared(new UsagePart(CodexUsage.Question), Evidence),
+            Known<UsagePart>.Declared(new UsagePart(UsageReads.Of(CodexUsage.Question)), Evidence),
             Known<LentPart>.Declared(new LentPart(pool, TablesPart.None, UsagePart.None), Evidence),
             Known<ISettingsFile>.Absent, Known<IChildVocabulary>.Declared(CodexChildVocabulary.Vocabulary, Evidence),
             Known<IRuleLanguage>.Absent, Known<ISkillLayout>.Absent,
             Known<IConversationHome>.Absent,
             Reach.Everywhere,
-            Known<VocabularyPart>.Absent);
+            Known<VocabularyPart>.Declared(vocabulary, Evidence));
     }
 }

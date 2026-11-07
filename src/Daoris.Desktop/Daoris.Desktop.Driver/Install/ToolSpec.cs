@@ -22,4 +22,9 @@ public sealed record ToolSpec(
     string? Package,
     string? Channel,
     IReadOnlyDictionary<string, string>? PinnedEnvironment,
-    bool ProbeByPresence);
+    bool ProbeByPresence)
+{
+    /// <summary>The command this program actually runs as: the machine's configured one, or the declared one.</summary>
+    public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>
+        configured is { Count: > 0 } ? configured : Binary;
+}

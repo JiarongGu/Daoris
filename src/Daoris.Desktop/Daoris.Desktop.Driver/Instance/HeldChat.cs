@@ -15,6 +15,7 @@ namespace Daoris.Driver;
 /// <para>Printed console lines are numbered by the conversation (<c>sequence</c>): the backlog is read once the hold forwards, and a
 /// forwarded line already printed is dropped; a <c>GAP</c> reads the backlog again from the last line printed.</para>
 /// </remarks>
+[CommandGroup("chat", Whole = true)]
 public sealed class HeldChat(InstanceWorld world)
 {
     /// <summary>The line that attaches a file to the next message (CONV4c).</summary>

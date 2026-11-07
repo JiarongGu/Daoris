@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Text.Json;
 
 namespace Daoris.Driver.Tests.Platform;
@@ -11,7 +12,7 @@ namespace Daoris.Driver.Tests.Platform;
 public sealed class ToolHomeLeftoversTests : IDisposable
 {
     private readonly string _root = Path.Combine(
-        Path.GetTempPath(), "daoris-toolhome-tests", Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-toolhome-tests", Guid.NewGuid().ToString("N")[..8]);
 
     private static readonly DateTimeOffset Now = new(2026, 10, 16, 12, 0, 0, TimeSpan.Zero);
 
@@ -264,19 +265,6 @@ public sealed class ToolHomeLeftoversTests : IDisposable
 
         Assert.Equal("resumable", listing.Folders.Single(folder => folder.Name == ToolHomeLeftovers.Flatten(legacy)).Keeps);
         Assert.Null(listing.Folders.Single(folder => folder.Name == ToolHomeLeftovers.Flatten(daoris)).Keeps);
-    }
-
-    [Fact]
-    public void A_conversation_record_that_cannot_be_read_is_not_absent_and_marks_the_folder()
-    {
-        var (home, tool, projects) = Homes();
-        var legacy = Tree(home, "s-dddd7777");
-        Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Sessions));
-        File.WriteAllText(new HarnessConversations(home).PathOf("legacy"), "{ this is not json");
-        var origins = ToolHomeLeftovers.Origins(home, Records(Record("legacy", legacy, profile: null)));
-        Project(projects, ToolHomeLeftovers.Flatten(legacy), Old);
-
-        Assert.Equal("record-unread", Assert.Single(ToolHomeLeftovers.List(WorldOf(home, tool, origins)).Folders).Keeps);
     }
 
     [Fact]

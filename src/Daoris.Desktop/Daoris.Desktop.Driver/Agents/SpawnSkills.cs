@@ -23,15 +23,15 @@ public static class SpawnSkills
     /// <summary>
     /// Lay out the skills <paramref name="catalog"/> hands <paramref name="to"/> in the door's provider's layout and hand them by the
     /// door's spawn; a protocol door carries them in its <c>session/new</c> meta instead
-    /// (<see cref="ISessionAdapter.AcpSessionMeta(string, IReadOnlyList{string})"/>), so the plugins are answered for the caller to put
+    /// (<see cref="AgentDoor.AcpSessionMeta(string, IReadOnlyList{string})"/>), so the plugins are answered for the caller to put
     /// there. A door whose provider lays out none is handed none.
     /// </summary>
     public static (string? Folder, IReadOnlyList<string> Plugins) Hand(
-        ISessionAdapter adapter, ProcessStartInfo info, string home, string sessionId, IAgentPlugins catalog, string to)
+        ProviderRegistry adapters, AgentDoor adapter, ProcessStartInfo info, string home, string sessionId, IAgentPlugins catalog, string to)
     {
-        if (adapter.SkillLayout() is not { } layout) return (null, []);
+        if (adapters.SkillLayout(adapter) is not { } layout) return (null, []);
         var (folder, plugins) = layout.Write(home, sessionId, catalog.Skills(to));
-        if (plugins.Count > 0) adapter.HandPlugins(info, plugins);
+        if (plugins.Count > 0) adapter.Spawned().HandPlugins(info, plugins);
         return (folder, plugins);
     }
 }

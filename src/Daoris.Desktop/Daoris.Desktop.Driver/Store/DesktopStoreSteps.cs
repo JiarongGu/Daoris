@@ -627,5 +627,25 @@ internal static class DesktopStoreSteps
             );
             INSERT INTO continuation_made (one, at) VALUES (1, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
             """)),
+
+        // The context counters design §4.4: each repository's workspace as the registry placed it at the last look, Roles', so
+        // the rules' judge in any process weighs a write on the chain the lines read. No raise: an older build reads no table it does not know.
+        new(21, PolicyWriter, write => write.Execute(
+            """
+            CREATE TABLE repository_workspaces (
+              repository TEXT PRIMARY KEY COLLATE NOCASE,
+              workspace  TEXT NOT NULL
+            );
+            """)),
+
+        // AGENTPROVIDER1t (D232): a binding's door by today's name, and the staffing's projection of driver.json's old keys, which no
+        // code reads, dropped. The home's migration runs it (`StoreNamesStep`) with the store's copy kept. No raise: no build older than
+        // the migration runs on a converted home.
+        new(DesktopStore.NamesVersion, PolicyWriter, write => write.Execute(
+            """
+            ALTER TABLE bindings RENAME COLUMN adapter TO door;
+            DROP TABLE role_staffing_found;
+            DROP TABLE role_staffing_projection;
+            """)),
     ];
 }

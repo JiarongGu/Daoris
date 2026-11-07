@@ -21,7 +21,7 @@ internal static class AgentTrustVerb
         var path = AgentsCommand.WiringPath(world);
         var home = HarnessSettings.HomeOf(path);
         var (name, toolchain, _, roster) = AgentsCommand.Agent(args, "trust", "<agent>", world, path);
-        if (toolchain.TrustFile is not { } trustFile)
+        if (toolchain.Home.TrustFile is not { } trustFile)
         {
             throw new AgentWords($"`{name}` has no trust question Daoris knows of, so there is nothing to grant: its own permissions apply as they are.");
         }

@@ -10,7 +10,7 @@ import { said } from '../test/said';
 // registered, everything done, and a browser, which may learn nothing of a machine (D47 §4).
 
 const door = (over: Partial<ToolDoor> = {}): ToolDoor => ({
-  harness: 'claude-code', present: true, product: 'Claude Code', ownLogin: 'in',
+  door: 'claude-code', present: true, product: 'Claude Code', ownLogin: 'in',
   profiles: [{ name: 'work', home: 'h', login: 'in' }], ...over,
 });
 
@@ -19,7 +19,7 @@ const MACHINES = {
   fresh: {
     attached: true,
     registry: [],
-    driver: { drivable: [], helperAdapter: '', intakeAdapter: '' },
+    driver: { drivable: [], helperAgent: '', intakeAgent: '' },
     harnesses: [door({ present: false, ownLogin: 'unknown' })],
     sessions: [],
     lines: [],
@@ -27,7 +27,7 @@ const MACHINES = {
   signedInNothingRegistered: {
     attached: true,
     registry: [],
-    driver: { drivable: [], helperAdapter: '', intakeAdapter: '' },
+    driver: { drivable: [], helperAgent: '', intakeAgent: '' },
     harnesses: [door()],
     sessions: [],
     lines: [],
@@ -35,7 +35,7 @@ const MACHINES = {
   everythingDone: {
     attached: true,
     registry: [{ repository: 'engine' }, { repository: 'game' }],
-    driver: { drivable: ['engine'], helperAdapter: 'claude-code-acp', intakeAdapter: 'claude-code-acp' },
+    driver: { drivable: ['engine'], helperAgent: 'claude-code-acp', intakeAgent: 'claude-code-acp' },
     harnesses: [door()],
     sessions: [{ state: 'working' as const }],
     lines: [
@@ -48,7 +48,7 @@ const MACHINES = {
   browser: {
     attached: false,
     registry: [{ repository: 'engine' }],
-    driver: { drivable: ['engine'], helperAdapter: 'claude-code-acp' },
+    driver: { drivable: ['engine'], helperAgent: 'claude-code-acp' },
     harnesses: [door()],
     sessions: [{ state: 'awaiting-person' as const }],
     lines: [{ repository: 'engine', workspace: 'aurora', source: 'none' as const }],

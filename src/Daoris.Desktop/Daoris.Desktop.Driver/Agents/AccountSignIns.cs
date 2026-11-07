@@ -10,7 +10,7 @@ public sealed record RecordedSignIn(string Sentence, string Seen, string Channel
 
 /// <summary>
 /// The words one agent refuses a start for its sign-in in (ROSTER1b, D150 §5.3): its entry, declared on its toolchain as
-/// <see cref="HarnessToolchain.SignIn"/>, beside AGT3b's <c>Refused</c> and TOOL4a's <c>Limits</c>, and read as a limit is (D125
+/// <see cref="AccountAgent.SignIn"/>, beside AGT3b's <c>Refused</c> and TOOL4a's <c>Limits</c>, and read as a limit is (D125
 /// point 1): from the door's failure, apart from the agent's words, and never from the transcript.
 /// </summary>
 /// <remarks>

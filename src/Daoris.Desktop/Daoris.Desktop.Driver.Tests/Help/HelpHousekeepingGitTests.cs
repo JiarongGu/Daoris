@@ -32,7 +32,7 @@ public sealed class HelpHousekeepingGitTests : LandedFixture
         File.WriteAllText(ConfiguredAccess.PathOf(Home), """{ "housekeeping": ["inspect", "clean-up"] }""");
         new HelpWired(Home).Keep("h1", new HelpReceipt
         {
-            At = DateTimeOffset.UtcNow, Harness = "codex-acp", Folder = HelpRoom.PathOf(Home, "aurora"),
+            At = DateTimeOffset.UtcNow, Door = "codex-acp", Folder = HelpRoom.PathOf(Home, "aurora"),
             Housekeeping = [ConfiguredAccess.Inspect, ConfiguredAccess.CleanUp],
         });
         var ledger = new HousekeepingLedger

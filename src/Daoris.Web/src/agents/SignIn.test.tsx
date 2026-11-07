@@ -94,7 +94,7 @@ describe('signing in on the row', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_INPUT', {
-      payload: { harness: 'claude-code', action: 'login', text: 'abc-123' },
+      payload: { door: 'claude-code', action: 'login', text: 'abc-123' },
     });
     // Sent once: the box goes, so a second paste cannot land on a tool that is finishing.
     expect(await screen.findByText(/Code sent/)).toBeTruthy();
@@ -107,7 +107,7 @@ describe('signing in on the row', () => {
     await userEvent.click(await screen.findByRole('button', { name: /Cancel/ }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_CANCEL', {
-      payload: { harness: 'claude-code', action: 'login' },
+      payload: { door: 'claude-code', action: 'login' },
     });
   });
 
@@ -128,7 +128,7 @@ describe('signing in on the row', () => {
     expect(await screen.findByText('Signing in to another claude-code account')).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: /Cancel/ }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_CANCEL', {
-      payload: { harness: 'claude-code', action: 'login-new' },
+      payload: { door: 'claude-code', action: 'login-new' },
     });
   });
 

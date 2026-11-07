@@ -23,7 +23,7 @@ public sealed class SignedOutLooksTests : IDisposable
 
     private const int Looks = 5;
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-signed-out-looks-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-signed-out-looks-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
 

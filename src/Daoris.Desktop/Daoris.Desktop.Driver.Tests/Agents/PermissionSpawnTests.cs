@@ -14,7 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class PermissionSpawnTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-permission-spawn-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-permission-spawn-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
 
@@ -305,18 +305,18 @@ public sealed class PermissionSpawnTests : IDisposable
     }
 
     private Daoris.Driver.Driver Driver(
-        ISessionAdapter adapter, IReadOnlyList<string> command, DrivenSessionInputTests.StandInService service,
+        Provider adapter, IReadOnlyList<string> command, DrivenSessionInputTests.StandInService service,
         Func<DriverConfig, DriverConfig>? configure = null)
     {
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
-            Actors = StaffedRoles.On(adapter.Name),
+            Actors = StaffedRoles.On(adapter.Id.Value),
             TestBound = 1,
-            Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter.Name] = command },
+            Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter.Id.Value] = command },
         };
         config = configure?.Invoke(config) ?? config;
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter> { [adapter.Name] = adapter });
+        var adapters = TestDoors.Registry([adapter]);
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
@@ -327,7 +327,7 @@ public sealed class PermissionSpawnTests : IDisposable
     {
         private readonly ISpawn _stub = TestDoors.SpawnOf(BuiltDoors.Stub);
 
-        public ISessionAdapter Door => TestDoors.Door("recording", takesSettings: true, spawn: this);
+        public Provider Door => TestDoors.Door("recording", takesSettings: true, spawn: this);
         public string? Handed { get; private set; }
         public string? HandedText { get; private set; }
 
@@ -354,7 +354,7 @@ public sealed class PermissionSpawnTests : IDisposable
     {
         private readonly ISpawn _stub = TestDoors.SpawnOf(BuiltDoors.Stub);
 
-        public ISessionAdapter Door => TestDoors.Door(
+        public Provider Door => TestDoors.Door(
             "recording-acp", transport: Transport.Protocol, takesSettings: true, spawn: this, dialect: this);
         public string? Handed { get; private set; }
         public string? HandedText { get; private set; }

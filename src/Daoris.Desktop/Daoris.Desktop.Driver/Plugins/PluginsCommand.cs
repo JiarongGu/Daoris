@@ -317,6 +317,8 @@ public static class PluginsCommand
                 // FABRIC-PERFORM1a: the work wire's process is the lease's loop's, kept while its steps are awaited.
                 : points.Any(point => HookPoints.Work.Contains(point, StringComparer.Ordinal))
                     ? "ready: the loop that holds this home starts it while a unit awaits one of its steps"
+                : points.Contains(HookPoints.Event, StringComparer.Ordinal)
+                    ? "ready: the loop that holds this home starts it, and tells it what moves in the work cycle"
                 : points.Contains(HookPoints.State, StringComparer.Ordinal)
                     ? "ready: a look that may remove a landed branch starts it to ask about its pull request"
                     : "ready: it declares agents and servers, and runs nothing itself",
@@ -331,6 +333,7 @@ public static class PluginsCommand
               : points.Contains(HookPoints.SessionEnded, StringComparer.Ordinal) ? HookPoints.SessionEnded
               // STATEHUB1g: an observation too, so a plugin that only watches the state costs nothing when it fails.
               : points.Contains(HookPoints.StateChanged, StringComparer.Ordinal) ? HookPoints.StateChanged
+              : points.Contains(HookPoints.Event, StringComparer.Ordinal) ? HookPoints.Event
               : points.Any(point => HookPoints.Work.Contains(point, StringComparer.Ordinal)) ? HookPoints.Watch
               : HookPoints.State
             : where;

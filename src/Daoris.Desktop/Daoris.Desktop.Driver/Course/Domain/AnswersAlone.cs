@@ -18,29 +18,12 @@ namespace Daoris.Driver;
 /// </remarks>
 internal static class AnswersAlone
 {
-    /// <summary>How many go-ons by answers alone a line takes in a row: a first value the owner may move (§2.3).</summary>
-    public const int Bound = SupervisorRuleBook.AnswersAloneBound;
-
     /// <summary>
     /// Whether a word is an answer the line goes on by with nobody between: a helper's, a second opinion's findings, or the supervisor's
     /// (SUPERVISOR1a-i, the supervisor design §4.3: one count, D188's, so a mixed prompt evades neither). The look hands only an
     /// attributed supervisor's word, so one reaching here is one.
     /// </summary>
     public static bool Solicited(SaidWordView word) => word.Helper is not null || word.By is not null || word.Supervisors;
-
-    /// <summary>
-    /// Whether going on with <paramref name="words"/> now would take the line on by answers alone once past the bound: every word an
-    /// answer, and the line already gone on so <see cref="Bound"/> times in a row.
-    /// </summary>
-    public static bool Holds(IReadOnlyList<SaidWordView> words, IEnumerable<SessionEvent> line) =>
-        words.Count > 0 && words.All(Solicited) && Count(line) >= Bound;
-
-    /// <summary>
-    /// Whether the line is at the bound already (SUPERVISOR1b, the supervisor design §4.3): one more go-on by answers alone, the
-    /// supervisor's word alone among them, would be held. The supervisor's route refuses <c>supervisor-bound</c> here, at its keeping
-    /// and again at its release, so a decision is never kept only to be held behind the bound.
-    /// </summary>
-    public static bool AtBound(IEnumerable<SessionEvent> line) => Count(line) >= Bound;
 
     /// <summary>
     /// The go-ons by answers alone at the line's end, in a row, back to the last word of the person's or Daoris's: the events read whole,

@@ -22,7 +22,7 @@ public sealed class ReadShareTreeTests : IDisposable
          "nodes":[{"id":"close","kind":"quest.close","version":1,"reach":"performed"}],"wires":[]}
         """;
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-readshare-trees-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-readshare-trees-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

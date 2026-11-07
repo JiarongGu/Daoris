@@ -45,7 +45,7 @@ public sealed record StatusKind(int From, int To, AgentErrorKind Kind);
 
 /// <summary>
 /// One agent's map from its door's codes, kind words and statuses to a kind, with its recorded transient sentences (AGENTERRORS1a, the
-/// design §4.1): declared on its toolchain as <see cref="HarnessToolchain.ErrorWords"/>, beside <c>Limits</c> and <c>SignIn</c>.
+/// design §4.1): declared on its toolchain as <see cref="AccountAgent.ErrorWords"/>, beside <c>Limits</c> and <c>SignIn</c>.
 /// </summary>
 /// <remarks>
 /// <para><b>Read own, then owner</b> (§4.1, round 3): the adapter's own entry and its owner's, each step of the order over both
@@ -91,7 +91,7 @@ public static class AgentErrors
     /// <summary>The table an entry came from, as <see cref="AgentError.By"/> names it.</summary>
     public const string Own = "own";
 
-    /// <summary>The owner's table (<see cref="HarnessToolchain.AccountOf"/>), read after the adapter's own.</summary>
+    /// <summary>The owner's table (<see cref="AccountAgent.AccountOf"/>), read after the adapter's own.</summary>
     public const string Owner = "owner";
 
     /// <summary>What decided a failure no table reads.</summary>
@@ -104,30 +104,30 @@ public static class AgentErrors
     /// <param name="seen">When the failure arrived: a limit's reset is read from it.</param>
     /// <param name="zone">This machine's zone, for a limit's sentence (D125 §2.1).</param>
     public static AgentError Read(
-        ProviderRegistry adapters, ISessionAdapter adapter, DoorFailure failure, DateTimeOffset seen, TimeZoneInfo zone)
+        ProviderRegistry adapters, AgentDoor adapter, DoorFailure failure, DateTimeOffset seen, TimeZoneInfo zone)
     {
-        var own = adapter.Toolchain;
+        var own = adapters.AgentNamed(adapter.Id.Value);
         var owner = OwnerOf(adapters, adapter);
         (string From, ErrorWords Words)[] tables =
         [
-            .. own?.ErrorWords is { } mine ? [(Own, mine)] : Array.Empty<(string, ErrorWords)>(),
-            .. owner?.ErrorWords is { } theirs ? [(Owner, theirs)] : Array.Empty<(string, ErrorWords)>(),
+            .. own?.Tables.ErrorWords is { } mine ? [(Own, mine)] : Array.Empty<(string, ErrorWords)>(),
+            .. owner?.Tables.ErrorWords is { } theirs ? [(Owner, theirs)] : Array.Empty<(string, ErrorWords)>(),
         ];
 
         // 🔴 The source before any kind (Codex's owed read of D210, finding 8): the harness's own lines are read for its credential's
         // refusal alone (§3.3). Read after the limit, a weekly limit's sentence on stderr was a limit, and would cool an account.
-        if (failure.Where == DoorWhere.Harness)
+        if (failure.Where == DoorWhere.Lines)
         {
-            return (own?.Refused ?? owner?.Refused) is { Length: > 0 } words
+            return (own?.Tables.Refused ?? owner?.Tables.Refused) is { Length: > 0 } words
                    && failure.Words?.Contains(words, StringComparison.OrdinalIgnoreCase) == true
-                ? new AgentError(AgentErrorKind.Access, failure, $"{(own?.Refused is not null ? Own : Owner)}:words:refused", Access: AccessDisposition.Refused)
+                ? new AgentError(AgentErrorKind.Access, failure, $"{(own?.Tables.Refused is not null ? Own : Owner)}:words:refused", Access: AccessDisposition.Refused)
                 : new AgentError(AgentErrorKind.Fatal, failure, Unread);
         }
 
         // 1. A limit by its sentence, whatever the code says (D125, D206 unchanged), then by its code or kind with the unstated reset.
-        if (AccountLimits.Read(own?.Limits ?? owner?.Limits, failure.Words, seen, zone) is { } limit)
+        if (AccountLimits.Read(own?.Tables.Limits ?? owner?.Tables.Limits, failure.Words, seen, zone) is { } limit)
         {
-            return new AgentError(AgentErrorKind.Limit, failure, $"{(own?.Limits is not null ? Own : Owner)}:words:limit", limit);
+            return new AgentError(AgentErrorKind.Limit, failure, $"{(own?.Tables.Limits is not null ? Own : Owner)}:words:limit", limit);
         }
 
         if (ByCode(tables, failure, AgentErrorKind.Limit) is { } byLimit)
@@ -138,7 +138,7 @@ public static class AgentErrors
         }
 
         // 2. Access: the door's own authentication-required code, never an owner's; then the codes; then the sign-in and refusal words.
-        if (failure.Code is { } code && own?.ErrorWords?.AuthRequiredCode == code)
+        if (failure.Code is { } code && own?.Tables.ErrorWords?.AuthRequiredCode == code)
         {
             return new AgentError(AgentErrorKind.Access, failure, $"{Own}:code:{code}", Access: AccessDisposition.SignedOutByCode);
         }
@@ -148,18 +148,18 @@ public static class AgentErrors
             return new AgentError(AgentErrorKind.Access, failure, byAccess, Access: AccessDisposition.SignedOutByCode);
         }
 
-        if (SignInRefusals.Read(own?.SignIn ?? owner?.SignIn, failure.Words))
+        if (SignInRefusals.Read(own?.Tables.SignIn ?? owner?.Tables.SignIn, failure.Words))
         {
             return new AgentError(
-                AgentErrorKind.Access, failure, $"{(own?.SignIn is not null ? Own : Owner)}:words:sign-in", Access: AccessDisposition.SignedOutByWords);
+                AgentErrorKind.Access, failure, $"{(own?.Tables.SignIn is not null ? Own : Owner)}:words:sign-in", Access: AccessDisposition.SignedOutByWords);
         }
 
         // AGT3b's refused credential, which AccountRefused reads with no owner's fallback today (§1.2): closed here.
-        if ((own?.Refused ?? owner?.Refused) is { Length: > 0 } refused
+        if ((own?.Tables.Refused ?? owner?.Tables.Refused) is { Length: > 0 } refused
             && failure.Words?.Contains(refused, StringComparison.OrdinalIgnoreCase) == true)
         {
             return new AgentError(
-                AgentErrorKind.Access, failure, $"{(own?.Refused is not null ? Own : Owner)}:words:refused", Access: AccessDisposition.Refused);
+                AgentErrorKind.Access, failure, $"{(own?.Tables.Refused is not null ? Own : Owner)}:words:refused", Access: AccessDisposition.Refused);
         }
 
         // 3. Transient by code, then by the recorded sentences.
@@ -233,16 +233,16 @@ public static class AgentErrors
     }
 
     /// <summary>
-    /// The owner's toolchain (AGT7, the design §4.1): <see cref="HarnessToolchain.AccountOf"/>'s adapter in this set, or null where it
+    /// The owner's toolchain (AGT7, the design §4.1): <see cref="AccountAgent.AccountOf"/>'s adapter in this set, or null where it
     /// names none, itself, or an agent this set has no door for.
     /// </summary>
-    private static HarnessToolchain? OwnerOf(ProviderRegistry adapters, ISessionAdapter adapter)
+    private static AccountAgent? OwnerOf(ProviderRegistry adapters, AgentDoor adapter)
     {
-        var owner = adapter.Toolchain is null ? null : adapters.OwnerOfAgent(adapter.Name).Value;
+        var owner = adapters.AgentNamed(adapter.Id.Value) is null ? null : adapters.OwnerOfAgent(adapter.Id.Value).Value;
         return owner is not null
-               && !string.Equals(owner, adapter.Name, StringComparison.OrdinalIgnoreCase)
+               && !string.Equals(owner, adapter.Id.Value, StringComparison.OrdinalIgnoreCase)
                && adapters.Names.Contains(owner, StringComparer.OrdinalIgnoreCase)
-            ? adapters.Resolve(owner).Toolchain
+            ? adapters.AgentNamed(owner)
             : null;
     }
 

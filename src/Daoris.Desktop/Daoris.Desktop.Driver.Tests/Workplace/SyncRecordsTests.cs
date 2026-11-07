@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class SyncRecordsTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-sync-records-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-sync-records-" + Guid.NewGuid().ToString("N")[..8]);
 
     public SyncRecordsTests() => Directory.CreateDirectory(_home);
 

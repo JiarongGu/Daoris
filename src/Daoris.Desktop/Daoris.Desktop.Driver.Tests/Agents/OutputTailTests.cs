@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class OutputTailTests : IDisposable
 {
     private readonly string _folder = Path.Combine(
-        Path.GetTempPath(), "daoris-tail-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-tail-" + Guid.NewGuid().ToString("N")[..8]);
 
     public OutputTailTests() => Directory.CreateDirectory(_folder);
 

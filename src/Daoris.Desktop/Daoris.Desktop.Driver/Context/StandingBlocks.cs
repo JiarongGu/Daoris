@@ -50,12 +50,12 @@ public static class StandingBlocks
     /// with a repository, the tree's skill folders where it loads none itself and the repository's rules where its instruction file is
     /// longer than the harness reads.
     /// </summary>
-    public static StandingFacts OnHarness(StandingFacts facts, ISessionAdapter adapter, string tree)
+    public static StandingFacts OnHarness(StandingFacts facts, AgentDoor adapter, string tree)
     {
-        facts = facts with { NoDenies = !adapter.TakesSettings };
+        facts = facts with { NoDenies = !adapter.Can.TakesSettings };
         if (facts.Repository is not { } repository) return facts;
-        IReadOnlyList<string> skills = adapter.LoadsTreeSkills ? [] : [.. SkillFolders.Where(folder => Directory.Exists(Path.Combine(tree, folder)))];
-        return facts with { Skills = skills, Rules = adapter.InstructionFileLimit is { } limit ? Rules(repository, tree, limit) : null };
+        IReadOnlyList<string> skills = adapter.Instructions.LoadsTreeSkills ? [] : [.. SkillFolders.Where(folder => Directory.Exists(Path.Combine(tree, folder)))];
+        return facts with { Skills = skills, Rules = adapter.Instructions.FileLimit is { } limit ? Rules(repository, tree, limit) : null };
     }
 
     /// <summary>The session's block file under <paramref name="home"/>, in its own folder, which its rules read and its record's delete takes.</summary>

@@ -313,7 +313,7 @@ public sealed class DriverRoutes(DriverContext context)
     // stored choices, and the work codes a role may take; a read, the same `daoris role` says. Beside them, the roles Daoris
     // suggests adding (the Designer while no role takes design), each the person's press alone.
     [DriverRoute("ROLES", PipeClass.Open)]
-    [ByEvent("ROLES", Untold = "the store's roles, role policies, rules and starts, driver.json's staffing, and the machine log's starts that Use sums")]
+    [ByEvent("ROLES", Untold = "the store's roles, role policies, rules, repositories' workspaces and starts, driver.json's staffing, and the machine log's starts that Use sums")]
     private Task<object?> RolesAsync(NoPayload _, CancellationToken cancellationToken)
     {
         var catalogue = RoleCatalog.ReadHome(_loop.Home);

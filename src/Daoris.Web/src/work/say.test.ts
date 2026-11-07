@@ -196,10 +196,10 @@ describe('tooLong', () => {
   /** §2.4: the native door takes the words as one argument, so its box refuses words past the bound before sending. */
   it('holds a driven session on the native door to the bound, and nothing else', () => {
     const long = 'x'.repeat(NATIVE_WORDS_LIMIT + 1);
-    expect(tooLong(long, { door: 'pipe', kind: 'driven' })).toBe(true);
-    expect(tooLong('x'.repeat(NATIVE_WORDS_LIMIT), { door: 'pipe', kind: 'driven' })).toBe(false);
-    expect(tooLong(long, { door: 'acp', kind: 'driven' })).toBe(false);
-    expect(tooLong(long, { door: 'pipe', kind: 'chat' })).toBe(false);
+    expect(tooLong(long, { door: 'native', kind: 'driven' })).toBe(true);
+    expect(tooLong('x'.repeat(NATIVE_WORDS_LIMIT), { door: 'native', kind: 'driven' })).toBe(false);
+    expect(tooLong(long, { door: 'protocol', kind: 'driven' })).toBe(false);
+    expect(tooLong(long, { door: 'native', kind: 'chat' })).toBe(false);
     expect(tooLong(long, { door: null, kind: 'driven' })).toBe(false);
   });
 });
@@ -219,8 +219,8 @@ describe('coolingFor', () => {
   });
   const answer = (...agents: AgentAccounts[]): AccountsAnswer => ({ agents });
   const doors: ToolDoor[] = [
-    { harness: 'claude-code', present: true },
-    { harness: 'claude-code-acp', present: true, accountOf: 'claude-code' },
+    { door: 'claude-code', present: true },
+    { door: 'claude-code-acp', present: true, accountOf: 'claude-code' },
   ];
 
   it('reads the cool-off of the account the record ran on, by its own door or a door onto the same tool', () => {

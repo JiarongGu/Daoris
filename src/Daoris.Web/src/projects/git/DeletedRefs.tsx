@@ -35,10 +35,13 @@ const shut = (t: TFunction, row: GitDeletedRef): string =>
  * Daoris's, with the *Undo* its act carries. A row whose Undo is shut says why, in words; a refusal an Undo met is the driver's sentence,
  * shown as written.
  *
+ * `unrecorded` counts the commits kept for recovery that no journal record names, kept before every keep was journaled: said under the
+ * list, since the old recovery list stays for them alone.
+ *
  * @remarks
  * **A molecule**: the rows and the acts arrive as props; a repository with no delete draws nothing.
  */
-export function DeletedRefs({ rows, acts }: { rows: readonly GitDeletedRef[]; acts: Pick<RefActs, 'undo'> }) {
+export function DeletedRefs({ rows, unrecorded = 0, acts }: { rows: readonly GitDeletedRef[]; unrecorded?: number; acts: Pick<RefActs, 'undo'> }) {
   const { t } = useTranslation();
   const named = useId();
   if (rows.length === 0) return null;
@@ -48,6 +51,7 @@ export function DeletedRefs({ rows, acts }: { rows: readonly GitDeletedRef[]; ac
       <ul className="m-0 grid list-none p-0">
         {rows.map((row) => <DeletedRow key={row.act} row={row} acts={acts} />)}
       </ul>
+      {unrecorded > 0 && <p className="m-0 text-small text-ink-soft">{t('projects.git.deleted.unrecorded', { count: unrecorded })}</p>}
     </section>
   );
 }

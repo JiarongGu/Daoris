@@ -94,7 +94,7 @@ public static class CommandTree
             "session" => ["sessions", .. rest],
             "settings" => ["driver", .. rest],
             "tree" => ["trees", .. rest],
-            "workflow" when verb is "run" or "keep" or "skip" or "stop" or "changes" => ["workflow", .. rest],
+            "workflow" when verb is "run" or "keep" or "skip" or "stop" or "changes" or "fix" => ["workflow", .. rest],
             "workflow" => ["driver", "workflow", .. rest],
             _ => [group, .. rest],
         };

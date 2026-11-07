@@ -15,7 +15,7 @@ internal sealed class RunState : IDisposable, IAsyncDisposable
     private Slot<RecordOpened> _opened;
     private Slot<TreeLock> _starting;
     private Slot<TreeFound> _tree;
-    private Slot<ISessionAdapter?> _preflight;
+    private Slot<AgentDoor?> _preflight;
     private Slot<GoOnFound> _goneOn;
     private Slot<string> _agent;
     private Slot<HandedQuest?> _handedQuest;
@@ -204,7 +204,7 @@ internal sealed class RunState : IDisposable, IAsyncDisposable
     }
 
     /// <summary>The adapter the harness trust is asked of, or null where this machine does not know the agent.</summary>
-    public ISessionAdapter? Preflight
+    public AgentDoor? Preflight
     {
         get => _preflight.Get(nameof(Preflight), "trust");
         set => _preflight.Set(value);

@@ -32,16 +32,13 @@ public sealed class RoleStructureTests : IDisposable
 
     private string Command => Path.Combine(_home, "fake-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
+    private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain);
 
     /// <summary>The fake agent, present by a file look, whose every status and usage question is written down and fails.</summary>
     private HarnessRoster Roster() =>
-        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = Adapter("fake", new HarnessToolchain(
+        new(TestDoors.Registry([Adapter("fake", new TestAgent(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
-                LoginCheck: new LoginQuestion(["auth", "status"], @"""loggedIn""\s*:\s*true", @"""loggedIn""\s*:\s*false"))),
-        }), Settings)
+                LoginCheck: new LoginQuestion(["auth", "status"], @"""loggedIn""\s*:\s*true", @"""loggedIn""\s*:\s*false")))]), Settings)
         {
             Clock = () => Now,
             Asking = (_, account, _) =>

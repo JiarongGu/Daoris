@@ -80,7 +80,7 @@ public static class WorkflowPresets
         if (Of(WorkflowKinds.Look) is not null) said.Add("You look at it running before it lands.");
         // LANDNODE1c2: a `land` waits on the person where a `review` comes before it.
         var you = Of(NodeKinds.Review) is not null;
-        if (nodes.Any(node => PullRequestStep.PluginOf((string?)node["kind"] ?? "") is not null))
+        if (nodes.Any(node => PullRequestKind.PluginOf((string?)node["kind"] ?? "") is not null))
         {
             said.Add(you ? "You accept; the plugin pushes and opens a pull request; you merge it."
                 : "A pull request opens once its agent is done; you merge it.");

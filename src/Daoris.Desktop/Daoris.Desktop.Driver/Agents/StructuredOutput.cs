@@ -65,11 +65,19 @@ public interface IStreamMapper
 }
 
 /// <summary>
-/// A wire's streams beside the session (CONSOLE3c): offered each stdout line before the session's own
-/// reader, and ended when the output ends.
+/// A wire's streams beside the session (CONSOLE3c): told each child's and background task's start and end as its reading, offered each
+/// stdout line before the session's own reader, and ended when the output ends.
 /// </summary>
 public interface IStreamsReader
 {
+    /// <summary>
+    /// A reading the capture said of a child or a background task (AGENTPROVIDER1l): its start opens its stream and its end ends it, never read
+    /// off the line again. A wire whose streams keep none passes over it.
+    /// </summary>
+    void Read(WireReading reading)
+    {
+    }
+
     /// <summary>True when the line was a stream's, so the session's reader never sees it.</summary>
     bool Take(NativeFrame frame);
 
@@ -133,7 +141,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
     /// </summary>
     public string? Conversation { get; private set; }
 
-    /// <summary>A subagent's lines by <c>parent_tool_use_id</c>, and tasks on <c>system</c> lines (CONSOLE3c).</summary>
+    /// <summary>A subagent's lines by <c>parent_tool_use_id</c>, each child and task opened and ended by its reading (CONSOLE3c).</summary>
     public IStreamsReader? Beside(ISessionStreams streams, Action<string> say) => new ClaudeStreams(streams, say);
 
     /// <summary>One line, read once into its frame and then read.</summary>
@@ -439,10 +447,29 @@ public sealed class ClaudeStreamJson : IStreamMapper
         return null;
     }
 
-    private static SessionEvent ToolCall(JsonElement block)
+    private static SessionEvent ToolCall(JsonElement block) =>
+        Step(Text(block, "name") ?? "tool", block.TryGetProperty("input", out var i) && i.ValueKind == JsonValueKind.Object ? i : default, Text(block, "id"));
+
+    /// <summary>
+    /// A Claude Code tool call as this reader shows it, from its name, its input as written and its id: what a reader of the same call
+    /// through another way in (the layer's Claude door, AGENTLYNTAI1d) shows alike.
+    /// </summary>
+    internal static SessionEvent Step(string name, string? input, string? id)
     {
-        var name = Text(block, "name") ?? "tool";
-        var input = block.TryGetProperty("input", out var i) && i.ValueKind == JsonValueKind.Object ? i : default;
+        if (input is null) return Step(name, default(JsonElement), id);
+        try
+        {
+            using var parsed = JsonDocument.Parse(input);
+            return Step(name, parsed.RootElement.ValueKind == JsonValueKind.Object ? parsed.RootElement : default, id);
+        }
+        catch (JsonException)
+        {
+            return Step(name, default(JsonElement), id);
+        }
+    }
+
+    private static SessionEvent Step(string name, JsonElement input, string? id)
+    {
         var path = input.ValueKind == JsonValueKind.Object
             ? Text(input, "file_path") ?? Text(input, "notebook_path") ?? Text(input, "path")
             : null;
@@ -450,7 +477,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
         return new SessionEvent
         {
             Kind = SessionEventKind.Tool,
-            Id = Text(block, "id"),
+            Id = id,
             Title = Title(name, input, path),
             ToolKind = KindOf(name),
             Status = "in_progress",

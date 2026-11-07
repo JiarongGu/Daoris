@@ -149,7 +149,7 @@ public sealed class AgentContextPortsTests
         Assert.Equal(0, events.Subscriptions);
         var streamCalls = output.Streams.Calls;
         var reader = new ClaudeStreams(output.Streams, _ => { });
-        Assert.True(reader.Take(NativeFrame.Of("{\"type\":\"system\",\"subtype\":\"task_started\",\"task_id\":\"b1\",\"description\":\"task\",\"task_type\":\"local_bash\"}")));
+        reader.Read(new WireReading.TaskStarted("b1") { Kind = "local_bash", Name = "task" });
         Assert.Contains("open:task/b1:task", streamCalls);
         await reader.EndAllAsync();
         Assert.Contains("end:task/b1:session-ended", streamCalls);
@@ -169,7 +169,7 @@ public sealed class AgentContextPortsTests
         public ComposedInstruction Intake(SessionTarget target, string prompt, StandingBlockTold? block) { Check(); Target = target; Prompt = prompt; return Instruction; }
         public string Parts(SessionTarget target) { Check(); Target = target; return ""; }
         public StandingBlockTold Block(StandingFacts facts, int before) { Check(); return new("stand block", new HandedSection(HandedSections.Block, HandedSources.Machine, "stand block")); }
-        public StandingFacts OnHarness(StandingFacts facts, ISessionAdapter adapter, string tree) { Check(); return facts; }
+        public StandingFacts OnHarness(StandingFacts facts, AgentDoor adapter, string tree) { Check(); return facts; }
     }
     private sealed class Writer(List<string> calls) : StringWriter
     {

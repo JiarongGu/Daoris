@@ -40,7 +40,7 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
         var wiring = File.ReadAllText(HarnessSettingsPath);
 
         var answer = await AnswerAsync(Module(), "HARNESS_ACTION",
-            new { harness = "claude-code-acp", action = "profile-rename", profile = "account-1", name = "you@work.example" });
+            new { door = "claude-code-acp", action = "profile-rename", profile = "account-1", name = "you@work.example" });
 
         Assert.Equal("you@work.example", answer.GetProperty("name").GetString());
         Assert.Equal(wiring, File.ReadAllText(HarnessSettingsPath));
@@ -97,7 +97,7 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
     {
         Accounts("claude-code", "account-1");
         await AnswerAsync(Module(), "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-rename", profile = "account-1", name = "seat" });
+            new { door = "claude-code", action = "profile-rename", profile = "account-1", name = "seat" });
         var loop = Loop();
         var running = AccountsRoutes.RunningOn(
             """[{"id":"s1a2b3c4","adapter":"claude-code-acp","profile":"account-1","state":"running"}]""",
@@ -120,12 +120,12 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
         AccountNames.Rename(Home, "claude-code", ["account-1", "account-2"], "account-2", "seat");
 
         var refusal = await RefusalAsync(Module(), "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-rename", profile = "account-1", name = "SEAT" });
+            new { door = "claude-code", action = "profile-rename", profile = "account-1", name = "SEAT" });
         Assert.Contains("already names `account-2`", refusal);
         Assert.Null(AccountNames.NameOf(Home, "claude-code", "account-1"));
 
         var cleared = await AnswerAsync(Module(), "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-rename", profile = "account-2", name = "account-2" });
+            new { door = "claude-code", action = "profile-rename", profile = "account-2", name = "account-2" });
         Assert.Equal(JsonValueKind.Null, cleared.GetProperty("name").ValueKind);
         Assert.Null(AccountNames.NameOf(Home, "claude-code", "account-2"));
     }
@@ -142,7 +142,7 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
         var wiring = File.ReadAllText(HarnessSettingsPath);
 
         var refusal = await RefusalAsync(Module(), "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-join", profile = "account-3", join = new string?[] { "work", null } });
+            new { door = "claude-code", action = "profile-join", profile = "account-3", join = new string?[] { "work", null } });
 
         Assert.StartsWith("ACCOUNTS_ONE_SET", refusal);
         Assert.Equal(wiring, File.ReadAllText(HarnessSettingsPath));
@@ -164,13 +164,13 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
         Accounts("claude-code", "account-1");
         AccountNames.Rename(Home, "claude-code", ["account-1"], "account-1", "seat");
 
-        var refusal = await RefusalAsync(Module(), "HARNESS_ACTION", new { harness = "claude-code", action = "login", profile = "account-2" });
+        var refusal = await RefusalAsync(Module(), "HARNESS_ACTION", new { door = "claude-code", action = "login", profile = "account-2" });
 
         Assert.Contains("no account `account-2` on this machine, so nothing was signed in and no account was made", refusal);
         Assert.Contains("seat (account-1)", refusal);
         Assert.False(Directory.Exists(HarnessSettings.ProfileHome(Home, "claude-code", "account-2")));
 
-        var none = await RefusalAsync(Module(), "HARNESS_ACTION", new { harness = "claude-code", action = "login" });
+        var none = await RefusalAsync(Module(), "HARNESS_ACTION", new { door = "claude-code", action = "login" });
         Assert.Contains("name the `claude-code` account to sign in to", none);
         Assert.False(Directory.Exists(HarnessSettings.ProfileHome(Home, "claude-code", "default")));
         Assert.Equal(["account-1"], HarnessSettings.Profiles(Home, "claude-code"));
@@ -187,9 +187,9 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
         AccountNames.Rename(Home, "claude-code", ["account-1"], "account-1", "seat");
 
         var join = await RefusalAsync(Module(), "HARNESS_ACTION",
-            new { harness = "claude-code", action = "login-new", join = new[] { "forge" } });
+            new { door = "claude-code", action = "login-new", join = new[] { "forge" } });
         var name = await RefusalAsync(Module(), "HARNESS_ACTION",
-            new { harness = "claude-code", action = "login-new", name = "Seat" });
+            new { door = "claude-code", action = "login-new", name = "Seat" });
 
         Assert.StartsWith("ACCOUNTS_ONE_SET", join);
         Assert.Contains("already names `account-1`, so nothing was signed in", name);

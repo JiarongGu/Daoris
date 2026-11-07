@@ -14,7 +14,7 @@ public sealed class HelperCaptureTests : IDisposable
 {
     private const string Commit = "2222222222222222222222222222222222222222";
 
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-helper-capture-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-helper-capture-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _tree;
 

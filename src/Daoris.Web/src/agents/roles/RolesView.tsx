@@ -43,10 +43,10 @@ export function useRoleEditing(notify: Notify) {
   const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
   // An agent a person can name here is a way in this machine HAS: one not installed would hold every start, and a choice whose only
   // outcome is a hold is worse than none.
-  const agents = harnesses.filter((door) => door.present).map((door) => ({ value: door.harness, label: doorLabel(t, door) }));
+  const agents = harnesses.filter((door) => door.present).map((door) => ({ value: door.door, label: doorLabel(t, door) }));
   // What a session on each door may carry for a model and an effort, so a choice is picked and not typed; never the account settings' own
   // list, which holds no `max`.
-  const offers = Object.fromEntries(harnesses.map((door) => [door.harness, door.sessionChoices ?? null]));
+  const offers = Object.fromEntries(harnesses.map((door) => [door.door, door.sessionChoices ?? null]));
 
   // Each order as the driver reads it; every change of it is a role's, over SET_ROLE (ONEWAY1a).
   const actors = useActors();

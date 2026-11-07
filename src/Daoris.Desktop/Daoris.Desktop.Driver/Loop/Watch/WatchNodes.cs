@@ -235,6 +235,20 @@ internal sealed class WatchNodes
         if (pass.AwaitedChanged) _watch.NodesWoken(Awaited);
         var acted = pass.Performed.Count(done => Acted.Contains(done.What));
         if (acted > 0) Log?.Info("chain.fired", ("link", ChainRanks.Nodes), ("topic", ChangeTopics.Nodes), ("count", acted));
+
+        // The pipeline design §4.5: a failed verification whose check says `failed: ask` asks for its fix with no press, at a whole look.
+        if (whole && LineBatching.Armed(_config()) && HomeLease.HeldHere(home))
+        {
+            try
+            {
+                lines.AddRange(await VerifyFixStanding.AskAsync(service, new NodeRecordFiles(home), token).ConfigureAwait(false));
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException)
+            {
+                lines.Add($"work  a failed verification's fix was not asked this time, and is asked again at the next look: {error.Message}");
+            }
+        }
+
         return [.. lines, .. NodeRuntimeLines(pass)];
     }
 

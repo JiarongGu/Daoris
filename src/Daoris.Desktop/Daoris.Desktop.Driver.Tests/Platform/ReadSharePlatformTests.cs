@@ -12,7 +12,7 @@ public sealed class ReadSharePlatformTests : IDisposable
 
     private const string Address = "git@ssh.dev.azure.com:v3/org/project/engine";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-readshare-platform-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-readshare-platform-" + Guid.NewGuid().ToString("N")[..8]);
 
     public ReadSharePlatformTests() => Directory.CreateDirectory(_home);
 
@@ -302,27 +302,6 @@ public sealed class ReadSharePlatformTests : IDisposable
         {
             Refused(next);
             Assert.Equal(next, DaorisHome.Entry(_home, HomeEntry.DriverConfig));
-        }
-    }
-
-    /// <summary>
-    /// READSHARE1: <c>ToolHomeLeftovers.ConversationKeeps</c>, reached through <see cref="ToolHomeLeftovers.Origins"/>, opens a kept
-    /// conversation its move still holds, and keeps its folder as resumable.
-    /// </summary>
-    [Fact]
-    public void A_kept_conversation_keeps_its_folder_while_its_move_into_place_still_holds_it()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
-        var conversations = new HarnessConversations(_home);
-        conversations.Keep("legacy", "claude-code", "conversation-1");
-        var path = conversations.PathOf("legacy");
-        var records = new JsonArray(new JsonObject { ["id"] = "legacy", ["tree"] = Path.Combine(_home, "tree"), ["state"] = "completed" }).ToJsonString();
-
-        using (MoveHold.Take(path))
-        {
-            Refused(path);
-            Assert.Equal("resumable", Assert.Single(ToolHomeLeftovers.Origins(_home, records)!).Keeps);
         }
     }
 

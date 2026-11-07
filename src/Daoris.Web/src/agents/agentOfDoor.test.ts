@@ -5,9 +5,9 @@ import { agentOfDoor, usageOfTool } from './agentOfDoor';
 // two doors one agent, as the roster's sheet says which agent each door is.
 
 const SHEETS = [
-  { id: 'claude-code', doors: [{ door: 'claude-code', wire: 'pipe' as const, rows: [] }, { door: 'claude-code-acp', wire: 'acp' as const, rows: [] }] },
-  { id: 'p-a', doors: [{ door: 'p-a', wire: 'acp' as const, rows: [] }] },
-  { id: 'p-b', doors: [{ door: 'p-b', wire: 'acp' as const, rows: [] }] },
+  { id: 'claude-code', doors: [{ door: 'claude-code', transport: 'native' as const, rows: [] }, { door: 'claude-code-acp', transport: 'protocol' as const, rows: [] }] },
+  { id: 'p-a', doors: [{ door: 'p-a', transport: 'protocol' as const, rows: [] }] },
+  { id: 'p-b', doors: [{ door: 'p-b', transport: 'protocol' as const, rows: [] }] },
 ];
 
 describe('agentOfDoor', () => {
@@ -28,9 +28,9 @@ describe('usageOfTool', () => {
       { agent: 'codex', profile: 'work' },
       { agent: 'p-a', profile: null },
     ];
-    expect(usageOfTool({ name: 'claude-code', doors: [{ harness: 'claude-code' }, { harness: 'claude-code-acp' }] }, used))
+    expect(usageOfTool({ name: 'claude-code', doors: [{ door: 'claude-code' }, { door: 'claude-code-acp' }] }, used))
       .toEqual([{ agent: 'claude-code', profile: 'work' }]);
-    expect(usageOfTool({ name: 'claude-code-acp', doors: [{ harness: 'p-a' }, { harness: 'p-b' }] }, used))
+    expect(usageOfTool({ name: 'claude-code-acp', doors: [{ door: 'p-a' }, { door: 'p-b' }] }, used))
       .toEqual([{ agent: 'p-a', profile: null }]);
   });
 });

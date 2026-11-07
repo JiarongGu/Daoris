@@ -121,7 +121,7 @@ export function useAskConversation(
   const held = useChatTurns(shown && live ? [shown.id] : []);
   const turns = held[shown?.id ?? ''] ?? NO_TURNS;
   const structured = Array.isArray(roster.data?.harnesses)
-    ? roster.data.harnesses.find((row) => row.harness === shown?.adapter)?.structured
+    ? roster.data.harnesses.find((row) => row.door === shown?.adapter)?.structured
     : undefined;
 
   // What the person is writing, kept per conversation and apart for a new one (ASKHIST1c): its words and its files, held here

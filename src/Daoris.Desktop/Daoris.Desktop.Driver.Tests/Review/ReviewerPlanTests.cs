@@ -40,23 +40,23 @@ public sealed class ReviewerPlanTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
+    private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
 
     private static readonly string[] Agents = ["claude-code", "claude-code-acp", "codex-acp", "dsh"];
 
     /// <summary>Each of <see cref="Agents"/> with its declared family, present by a file look, or installed nowhere where <paramref name="absent"/> names it.</summary>
     private HarnessRoster Roster(string[]? absent = null)
     {
-        var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase);
+        var adapters = new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase);
         foreach (var name in Agents)
         {
-            var real = ProviderRegistry.Built().Resolve(name).Toolchain!;
-            adapters[name] = Adapter(name, new HarnessToolchain(
-                Binary: [absent?.Contains(name) == true ? Nowhere : Command], VersionArguments: [], ProfileVariable: real.ProfileVariable,
+            var real = ProviderRegistry.Built().AgentNamed(name)!;
+            adapters[name] = Adapter(name, new TestAgent(
+                Binary: [absent?.Contains(name) == true ? Nowhere : Command], VersionArguments: [], ProfileVariable: real.Home.Variable,
                 AccountOf: real.AccountOf, ProbeByPresence: true, Product: real.Product, Maker: real.Maker, RunsInOwnHome: true));
         }
 
-        return new HarnessRoster(new ProviderRegistry(adapters), Settings) { Clock = () => Now, Zone = Zone };
+        return new HarnessRoster(TestDoors.Registry(adapters), Settings) { Clock = () => Now, Zone = Zone };
     }
 
     private void Cool(string agent) =>

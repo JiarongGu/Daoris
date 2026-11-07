@@ -18,7 +18,7 @@ public sealed class DriverConfigFenceProcessTests : IDisposable
 {
     private const string Start = "{\n  \"cap\": 3,\n  \"intakeAdapter\": \"codex-acp\"\n}\n";
 
-    private readonly string _folder = Path.Combine(Path.GetTempPath(), "daoris-fence-process-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _folder = Path.Combine(TestHomes.Root, "daoris-fence-process-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _path;
 

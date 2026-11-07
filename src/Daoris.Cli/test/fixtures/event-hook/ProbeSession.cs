@@ -77,7 +77,7 @@ Put("probe/env.sh", """
 Put("app/daoris-driver/daoris-driver", """
     #!/usr/bin/env bash
     room="$(cd "$(dirname "$0")/../.." && pwd -W)"
-    echo "$room/home/bin/events-relay/$(cat "$room/probe/build.txt")/daoris-driver events relay --once --home $room/home --probe ${@: -1}"
+    echo "$room/daoris-home/bin/events-relay/$(cat "$room/probe/build.txt")/daoris-driver events relay --once --home $room/daoris-home --probe ${@: -1}"
     """);
 var relay = """
     #!/usr/bin/env bash
@@ -104,7 +104,7 @@ var relay = """
     esac
     date +%s > "$out/$probe.end"
     """;
-Put($"home/bin/events-relay/{BuildA}/daoris-driver", relay);
+Put($"daoris-home/bin/events-relay/{BuildA}/daoris-driver", relay);
 
 string Hook(string name) => $$"""{"hooks":[{"type":"command","command":"bash probe/hook.sh {{name}}"}]}""";
 var where = $"{roomM}/app/daoris-driver/daoris-driver events relay --where";
@@ -114,8 +114,8 @@ Put(".claude/settings.json", $$"""
         "allow": [
           "Bash(bash probe/env.sh)",
           "Bash({{where}}:*)",
-          "Bash({{roomM}}/home/bin/events-relay/:*)",
-          "Bash({{roomM}}/home/bin/events-relay/*)"
+          "Bash({{roomM}}/daoris-home/bin/events-relay/:*)",
+          "Bash({{roomM}}/daoris-home/bin/events-relay/*)"
         ]
       },
       "hooks": {
@@ -343,9 +343,9 @@ try
     }
 
     // A change of build: the stand-in `--where` now prints another build's folder under the same prefix.
-    Directory.CreateDirectory(Path.Combine(room, "home", "bin", "events-relay", BuildB));
-    File.Copy(Path.Combine(room, "home", "bin", "events-relay", BuildA, "daoris-driver"),
-        Path.Combine(room, "home", "bin", "events-relay", BuildB, "daoris-driver"));
+    Directory.CreateDirectory(Path.Combine(room, "daoris-home", "bin", "events-relay", BuildB));
+    File.Copy(Path.Combine(room, "daoris-home", "bin", "events-relay", BuildA, "daoris-driver"),
+        Path.Combine(room, "daoris-home", "bin", "events-relay", BuildB, "daoris-driver"));
     File.WriteAllText(Path.Combine(room, "probe", "build.txt"), BuildB);
     Turn("rebuilt", Arm("rebuilt"));
     Wake("rebuilt", TimeSpan.FromSeconds(150), "after a change of build");

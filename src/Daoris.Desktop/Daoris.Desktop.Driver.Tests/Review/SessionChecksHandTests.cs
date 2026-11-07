@@ -178,9 +178,9 @@ public sealed class SessionChecksHandTests : IDisposable
         // The roster reads this test's own harness file, never the one DAORIS_HOME names (the live install's, where it is set).
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, Home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)));
-        var adapter = adapters.Resolve(name);
-        var handed = HeavyTold.Hand(_fixture.Checkout, Home, "engine", SessionChecks.Light, adapter.TakesSettings);
-        var info = adapter.Prepare(Target(_fixture.Checkout), ["claude"]);
+        var adapter = adapters.Door(name);
+        var handed = HeavyTold.Hand(_fixture.Checkout, Home, "engine", SessionChecks.Light, adapter.Can.TakesSettings);
+        var info = ProviderRegistry.Built().Start(adapter, Target(_fixture.Checkout), ["claude"]);
 
         var (file, _, _) = driver.HandRules(adapter, info, "s-light", null, "engine", _fixture.Checkout, kept: null, heavy: handed);
 
@@ -203,9 +203,9 @@ public sealed class SessionChecksHandTests : IDisposable
         // The roster reads this test's own harness file, never the one DAORIS_HOME names (the live install's, where it is set).
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, Home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)));
-        var adapter = adapters.Resolve("codex-acp");
-        var handed = HeavyTold.Hand(_fixture.Checkout, Home, "engine", SessionChecks.Light, adapter.TakesSettings);
-        var info = adapter.Prepare(Target(_fixture.Checkout), ["codex"]);
+        var adapter = adapters.Door("codex-acp");
+        var handed = HeavyTold.Hand(_fixture.Checkout, Home, "engine", SessionChecks.Light, adapter.Can.TakesSettings);
+        var info = ProviderRegistry.Built().Start(adapter, Target(_fixture.Checkout), ["codex"]);
 
         var (file, meta, _) = driver.HandRules(adapter, info, "s-codex", null, "engine", _fixture.Checkout, kept: null, heavy: handed);
 
@@ -278,25 +278,25 @@ public sealed class SessionChecksHandTests : IDisposable
         var light = Bound("light", """{"checks":"light","callMinutes":30}""");
         Assert.True(light.Named);
         Assert.Equal(SessionChecks.Light, SessionChecks.Of(rule, "engine", light));
-        Assert.Equal(30, LongCalls.MinutesOf(light));
+        Assert.Equal(30, CallBound.MinutesOf(light));
 
         var atEnd = Bound("at-end", """{"checks":"heavy-at-end"}""");
         Assert.Equal(SessionChecks.HeavyAtEnd, SessionChecks.Of(rule, "engine", atEnd));
-        Assert.Null(LongCalls.MinutesOf(atEnd));
+        Assert.Null(CallBound.MinutesOf(atEnd));
 
         // A graph that sets none is today's, never Current's rule.
         Assert.Null(SessionChecks.Of(rule, "engine", Bound("none", options: null)));
 
         var spelled = Bound("spelled", """{"checks":"Light","callMinutes":"30"}""");
         Assert.Null(SessionChecks.Of(rule, "engine", spelled));
-        Assert.Null(LongCalls.MinutesOf(spelled));
-        Assert.Null(LongCalls.MinutesOf(Bound("zero", """{"checks":"light","callMinutes":0}""")));
-        Assert.Null(LongCalls.MinutesOf(Bound("part", """{"checks":"light","callMinutes":2.5}""")));
+        Assert.Null(CallBound.MinutesOf(spelled));
+        Assert.Null(CallBound.MinutesOf(Bound("zero", """{"checks":"light","callMinutes":0}""")));
+        Assert.Null(CallBound.MinutesOf(Bound("part", """{"checks":"light","callMinutes":2.5}""")));
 
         // Bound at a digest the file's version is not: not the version its run started on, so nothing of it is taken.
         var other = Bound("other", """{"checks":"light","callMinutes":30}""", digest: "gph-00000000000000000000000000000000");
         Assert.Null(SessionChecks.Of(rule, "engine", other));
-        Assert.Null(LongCalls.MinutesOf(other));
+        Assert.Null(CallBound.MinutesOf(other));
     }
 
     /// <summary>The smallest development graph: <c>claimed</c>, with <paramref name="options"/> where set, then <c>handed</c>.</summary>

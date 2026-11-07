@@ -27,9 +27,6 @@ internal sealed record TransportStart(ProcessStartInfo Info, StartClass Whose)
     /// <summary>A fact about how the run was set up, written ahead of anything the process says; null says none.</summary>
     public string? Preamble { get; init; }
 
-    /// <summary>The home whose lineage file is told each subagent's start and end (FABRIC-C1a); null tells none.</summary>
-    public string? LineageHome { get; init; }
-
     /// <summary>Where the harness's own words are kept for its ending (AGT3c), which its executor reads after; null keeps the run's own.</summary>
     public HarnessWords? Own { get; init; }
 
@@ -181,6 +178,11 @@ internal interface ITransportHost
     /// <summary>A stream a run reads, stamping its session heard at each line (SESSWATCH1a).</summary>
     TextReader Hearing(TextReader reader, string sessionId);
 
+    /// <summary>The same stamp for a run that reads no stream of its own, told each raw line its runner reads (AGENTLYNTAI1d).</summary>
+    void Heard(string sessionId)
+    {
+    }
+
     /// <summary>
     /// A process's lineage token (COWORKVIEW1a): issued, its <c>start</c> written and set on the spawn's environment, all before the spawn;
     /// <paramref name="moved"/> where its run's move issued it already (<c>Driver.Bracketed</c>).
@@ -217,10 +219,11 @@ internal interface ITransportHost
     Task KeepHandedAsync(string sessionId, ProcessStartInfo info, CancellationToken ct);
 
     /// <summary>
-    /// A resume's process given the environment a start has (<c>Driver.Prepare</c>). Never asked of a host whose runs are handed no selection,
-    /// as a conversation's are: it goes on through a start of its own (MSG1c).
+    /// A resume's process given the environment a start has (<c>Driver.Prepare</c>), its door's facts read from <paramref name="adapters"/>, the
+    /// registry the run was started from: never the host's registry now, which a plugin's change since may have made without the door. Never
+    /// asked of a host whose runs are handed no selection, as a conversation's are: it goes on through a start of its own (MSG1c).
     /// </summary>
-    ProcessStartInfo Prepared(ISessionAdapter adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo next) =>
+    ProcessStartInfo Prepared(ProviderRegistry adapters, AgentDoor adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo next) =>
         throw new NotSupportedException("a conversation goes on through a start of its own, never through its run's go-on.");
 
     /// <summary>How long an agent whose session ended with its own background work still running is given to exit once its stdin closed (DONEEND1).</summary>

@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Text.RegularExpressions;
 using Daoris.Driver;
 
@@ -18,7 +19,7 @@ public sealed class WireReadingsTests : IDisposable
     private const string Ended = """{"type":"result","subtype":"success","is_error":false,"result":"Capped at 4 per frame.","num_turns":1,"usage":{"input_tokens":2,"output_tokens":4}}""";
     private const string FailedResult = """{"type":"result","subtype":"error_during_execution","is_error":true,"result":"API Error: 500 overloaded","num_turns":1}""";
 
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-wire-readings-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-wire-readings-" + Guid.NewGuid().ToString("N")[..8]);
 
     public WireReadingsTests() => Directory.CreateDirectory(_root);
 
@@ -79,7 +80,7 @@ public sealed class WireReadingsTests : IDisposable
             ReadingSinks.On<WireReading>(readings.Add), new ClaudeStreamJson(), prompt: null, CancellationToken.None, own: new HarnessWords());
 
         var failed = Assert.Single(readings.OfType<WireReading.Failed>());
-        Assert.Equal(new DoorFailure("pipe", null, null, null, "API Error: 500 overloaded", DoorWhere.Result), failed.Failure);
+        Assert.Equal(new DoorFailure("native", null, null, null, "API Error: 500 overloaded", DoorWhere.Result), failed.Failure);
         // The conversation the stream named is one reading too, before anything ended.
         Assert.Equal("c1", Assert.Single(readings.OfType<WireReading.ConversationNamed>()).Conversation);
     }
@@ -141,14 +142,16 @@ public sealed class WireReadingsTests : IDisposable
     public void Each_reading_a_run_says_carries_its_run_its_process_and_its_place_in_the_run_s_order()
     {
         var heard = new List<WireReading>();
-        var generation = 1;
-        IReadingSink sink = new StampedSink(ReadingSinks.On<WireReading>(heard.Add), () => "s1", () => generation);
+        var (generation, process) = (1, (string?)"0123456789abcdef");
+        IReadingSink sink = new StampedSink(ReadingSinks.On<WireReading>(heard.Add), () => "s1", () => generation, () => process);
 
         sink.Read(new WireReading.Shown("one"));
-        generation = 2;
+        (generation, process) = (2, "fedcba9876543210");
         sink.Read(new WireReading.Shown("two"));
 
-        Assert.Equal([("s1", 1, 1L), ("s1", 2, 2L)], heard.Select(reading => (reading.Run, reading.Generation, reading.Sequence)));
+        Assert.Equal(
+            [("s1", 1, "0123456789abcdef", 1L), ("s1", 2, "fedcba9876543210", 2L)],
+            heard.Select(reading => (reading.Run, reading.Generation, reading.Process, reading.Sequence)));
         Assert.Equal(["one", "two"], heard.Cast<WireReading.Shown>().Select(shown => shown.Text));
     }
 
@@ -166,11 +169,11 @@ public sealed class WireReadingsTests : IDisposable
     public void The_native_door_s_failed_result_read_as_a_limit_is_its_turn_s_limit_told_once_and_a_protocol_failure_is_none()
     {
         var met = new List<AgentError>();
-        var part = new NativeLimits(failure => failure.Door == "pipe" ? Limited : Limited with { Kind = AgentErrorKind.Fatal }, met.Add);
+        var part = new NativeLimits(failure => failure.Door == "native" ? Limited : Limited with { Kind = AgentErrorKind.Fatal }, met.Add);
 
         part.Read(new WireReading.Failed(DoorFailures.OfResult("You've hit your limit")));
         part.Read(new WireReading.Failed(DoorFailures.OfPrompt(new AcpRefusal("overloaded", errorKind: "overloaded", code: -32603, words: "overloaded"))));
-        part.Read(new WireReading.Failed(new DoorFailure("pipe", null, null, null, "You've hit your limit", DoorWhere.Harness)));
+        part.Read(new WireReading.Failed(new DoorFailure("native", null, null, null, "You've hit your limit", DoorWhere.Lines)));
         part.Read(new WireReading.Failed(DoorFailures.OfResult("replayed")) { Replayed = true });
         part.Read(new WireReading.Shown("You've hit your limit"));
         Assert.Empty(met);

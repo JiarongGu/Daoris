@@ -22,7 +22,7 @@ public sealed class CommandShimTests : IDisposable
     // Scratch in the repository's own gitignored `_fixtures/`, never OS temp.
     private readonly string _folder = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "command-shim", Guid.NewGuid().ToString("N")[..8]);
 
-    private static readonly HarnessToolchain Plain = new(["x"], ["--version"]);
+    private static readonly TestAgent Plain = new(["x"], ["--version"]);
 
     public CommandShimTests() => Directory.CreateDirectory(_folder);
 
@@ -78,15 +78,15 @@ public sealed class CommandShimTests : IDisposable
         if (!OperatingSystem.IsWindows()) return;
         NpmShim("claude-agent-acp");
         NpmShim("claude");
-        var acp = ProviderRegistry.Built().Resolve("claude-code-acp");
-        var pipe = ProviderRegistry.Built().Resolve("claude-code");
+        var acp = ProviderRegistry.Built().Door("claude-code-acp");
+        var pipe = ProviderRegistry.Built().Door("claude-code");
 
-        var driven = acp.Prepare(Target(), command: null);
-        var chat = pipe.PrepareChat(SpawnRequests.Chat("Game", _folder, "http://localhost:5177", null));
+        var driven = ProviderRegistry.Built().Start(acp, Target(), command: null);
+        var chat = ProviderRegistry.Built().Chat(pipe, SpawnRequests.Chat("Game", _folder, "http://localhost:5177", null));
         foreach (var (info, adapter) in new[] { (driven, acp), (chat, pipe) })
         {
             info.Environment["PATH"] = _folder;
-            Shell.Equip(info, adapter.Toolchain!, profileHome: null);
+            Shell.Equip(info, ProviderRegistry.Built().AgentNamed(adapter.Id.Value)!, profileHome: null);
         }
 
         Assert.Equal(Path.Combine(_folder, "claude-agent-acp.cmd"), driven.FileName, ignoreCase: true);
@@ -104,11 +104,11 @@ public sealed class CommandShimTests : IDisposable
     {
         if (!OperatingSystem.IsWindows()) return;
         NpmShim("claude");
-        var pipe = ProviderRegistry.Built().Resolve("claude-code");
-        var info = pipe.Prepare(Target(), command: null);
+        var pipe = ProviderRegistry.Built().Door("claude-code");
+        var info = ProviderRegistry.Built().Start(pipe, Target(), command: null);
         info.Environment["PATH"] = _folder;
 
-        Shell.Equip(info, pipe.Toolchain!, profileHome: null);
+        Shell.Equip(info, ProviderRegistry.Built().AgentNamed(pipe.Id.Value)!, profileHome: null);
 
         Assert.Equal(Path.Combine(_folder, "claude.cmd"), info.FileName, ignoreCase: true);
         Assert.True(info.RedirectStandardInput);
@@ -131,10 +131,10 @@ public sealed class CommandShimTests : IDisposable
         try
         {
             var present = await HarnessProbe.ProbeAsync(
-                "use1f-probe", new HarnessToolchain(["use1f-probe"], ["--version"]), command: null,
+                "use1f-probe", new TestAgent(["use1f-probe"], ["--version"]), command: null,
                 new HarnessSettings(), _folder);
             var absent = await HarnessProbe.ProbeAsync(
-                "use1f-nowhere", new HarnessToolchain(["use1f-nowhere"], ["--version"]), command: null,
+                "use1f-nowhere", new TestAgent(["use1f-nowhere"], ["--version"]), command: null,
                 new HarnessSettings(), _folder);
 
             Assert.True(present.Present, present.Problem);

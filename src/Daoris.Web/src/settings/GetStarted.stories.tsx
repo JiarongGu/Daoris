@@ -6,7 +6,7 @@ import { GetStarted } from './GetStarted';
 // The setup guide (SETUP1a, D97), from the machines a first start meets: nothing at all, halfway with
 // Ask Daoris's agent named, everything required done, and a browser, which knows only the registry.
 
-const IN = { harness: 'claude-code', present: true, product: 'Claude Code', ownLogin: 'in' };
+const IN = { door: 'claude-code', present: true, product: 'Claude Code', ownLogin: 'in' };
 
 const meta = {
   title: 'Settings/GetStarted',
@@ -32,7 +32,7 @@ export const Halfway: Story = {
     steps: setupSteps(readMachine({
       attached: true,
       registry: [{ repository: 'engine' }, { repository: 'game' }],
-      driver: { drivable: ['engine'], helperAdapter: 'claude-code-acp' },
+      driver: { drivable: ['engine'], helperAgent: 'claude-code-acp' },
       harnesses: [IN],
       lines: [{ repository: 'engine', workspace: 'aurora', source: 'none' }],
     })),
@@ -46,7 +46,7 @@ export const Done: Story = {
     steps: setupSteps(readMachine({
       attached: true,
       registry: [{ repository: 'engine' }],
-      driver: { drivable: ['engine'], helperAdapter: 'claude-code-acp' },
+      driver: { drivable: ['engine'], helperAgent: 'claude-code-acp' },
       harnesses: [IN],
       lines: [{ repository: 'engine', workspace: 'aurora', branch: 'develop', source: 'workspace' }],
     })),

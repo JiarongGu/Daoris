@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 public static class WorkEventGrammar
 {
     /// <summary>Raised whenever a kind or a field's shape changes; the handshake says it.</summary>
-    public const int Version = 2;
+    public const int Version = 3;
 
     /// <summary>A trial's <c>run</c> (§5.4): a sample is never taken for the live point's.</summary>
     public const string Sample = "sample";
@@ -37,6 +37,8 @@ public static class WorkEventGrammar
         [WorkEventKinds.QuestCloseLost] = new(["quest", "state"], []),
         [WorkEventKinds.ConfirmationEnded] = new(["confirmation", "end"], []),
         [WorkEventKinds.WorkEnded] = new(["session"], ["quest"]),
+        // Version 3 (CHANNELJOIN1d, the event channel design §5.7).
+        [WorkEventKinds.ChannelPosted] = new(["by"], ["message", "ask", "poster", "urgent"]),
     };
 
     /// <summary>A landing's codes: landed, or a chain's branch moved on.</summary>
@@ -53,6 +55,12 @@ public static class WorkEventGrammar
     private static readonly Regex SessionShape = new(@"\A[0-9a-f]{8}\z", RegexOptions.CultureInvariant);
     private static readonly Regex QuestShape = new(@"\A(?:[0-9a-f]{12}|[0-9a-f]{6})\z", RegexOptions.CultureInvariant);
     private static readonly Regex AskShape = new(@"\A[0-9a-f]{6}\z", RegexOptions.CultureInvariant);
+
+    /// <summary>A message kept here, its id's minted shape.</summary>
+    private static readonly Regex MessageShape = new(@"\A[0-9a-f]{8}\z", RegexOptions.CultureInvariant);
+
+    /// <summary>The shape of a <c>--not-by</c> id or a <c>poster</c>: a session's, or a member's.</summary>
+    public static bool IsPoster(string? id) => id is not null && (SessionShape.IsMatch(id) || ChannelPosts.IsMember(id));
 
     /// <summary>A new <c>run</c>, from the system's random source, never twelve zeros.</summary>
     public static string MintRun()
@@ -84,6 +92,10 @@ public static class WorkEventGrammar
         "session" => value is string session && SessionShape.IsMatch(session),
         "quest" => value is string quest && QuestShape.IsMatch(quest),
         "ask" => value is string ask && AskShape.IsMatch(ask),
+        "message" => value is string message && MessageShape.IsMatch(message),
+        "poster" => value is string poster && IsPoster(poster),
+        "by" => value is string by && ChannelPosts.Classes.Contains(by),
+        "urgent" => value is true or "true",
         "state" => value is string state && SessionLog.Closed.Contains(state) && state == state.ToLowerInvariant(),
         "adapter" => value is string adapter && adapters.Contains(adapter),
         "code" => value is string code && LandedCodes.Contains(code),

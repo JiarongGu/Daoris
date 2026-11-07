@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -8,14 +9,13 @@ namespace Daoris.Desktop.Driver.Tests;
 /// AGENTPROVIDER1 row a (the agent-provider design §9, D213): every site in the desktop's code that knows a provider by a string or a
 /// type is counted, and each is a named exception with the row that moves it, so a later row moves named sites and a new one cannot
 /// appear unnoticed. The fixture is <c>fixtures/provider-census.json</c> (the exceptions, the providers' folders and the declared
-/// references between them), the vocabulary seed <c>fixtures/provider-vocabulary.json</c>, which row t deletes once every word comes
-/// from a provider's registration.
+/// references between them); the ids and the words are the registrations' own, <see cref="ProviderVocabulary"/>.
 /// </summary>
 /// <remarks>
 /// <para><b>What is counted</b> (design §9): a door's test (<c>SessionWire.Acp</c> or <c>.Pipe</c>, the type <c>SessionWire</c>, a
 /// <c>.Wire</c> read, the helpers that only hide that read, the spellings <c>"pipe"</c>, <c>"acp"</c> and <c>"protocol"</c>); an
-/// agent's or a door's id as a literal, including a prefix test; a provider's type; and a provider's variable, file or wire key, from
-/// the vocabulary seed. Comments are read out, and for the types and the doors so are strings, so a sentence naming one is no use of it.</para>
+/// agent's or a door's id as a literal, including a prefix test, and a hyphened id in a sentence; a provider's type; and a provider's
+/// variable, file or wire key. Comments are read out, and for the types and the doors so are strings, so a sentence naming one is no use of it.</para>
 /// <para><b>How the three projects are read.</b> The structure analysis compiles the driver's sources alone, and the modules and the
 /// host are not in that compilation, so this census reads all three the same way: by name in the source text, a type by its whole word
 /// (a qualified, aliased or statically imported reference carries the name and counts; a different type of the same name would too, and
@@ -78,27 +78,24 @@ public sealed class ProviderCensusTests
             new("door", "\"acp\"", Quoted("acp"), Scan.Text, ""),
             new("door", "\"protocol\"", Quoted("protocol"), Scan.Text, ""),
             new("id", "StartsWith(agent)", new Regex(@"\.StartsWith\(\s*""(?:claude|codex|dsh)"), Scan.Text, ""),
-            // An id as an example or a name in a sentence (help, a refusal): words, but still a site that names a provider.
-            new("id", "id in a sentence", new Regex(@"(?<![\w@/.\-])(?:claude-code-acp|claude-code|codex-acp|acp-stub|alt-stub)(?![\w""\-])"), Scan.Text, ""),
+            // An id as an example or a name in a sentence (help, a refusal): words, but still a site that names a provider. A hyphened id
+            // is no ordinary word, so every one the registrations hold is counted.
+            new("id", "id in a sentence", new Regex(
+                $@"(?<![\w@/.\-])(?:{string.Join('|', ProviderVocabulary.Ids.Select(row => row.Id).Where(id => id.Contains('-'))
+                    .OrderByDescending(id => id.Length).Select(Regex.Escape))})(?![\w""\-])"), Scan.Text, ""),
         };
         foreach (var (owner, types) in ProviderTypes)
         {
             tokens.AddRange(types.Select(type => new Token("type", type, Word(type), Scan.Code, owner)));
         }
 
-        using var vocabulary = JsonDocument.Parse(File.ReadAllText(Path.Combine(FixtureFolder(), "provider-vocabulary.json")));
-        // The ids an agent or a door goes by are the vocabulary seed's too, so the four censuses read one table.
-        foreach (var row in vocabulary.RootElement.GetProperty("ids").EnumerateArray())
+        // The ids an agent or a door goes by and the words each provider owns, as its registration declares them.
+        tokens.AddRange(ProviderVocabulary.Ids.Select(row => new Token("id", $"\"{row.Id}\"", Quoted(row.Id), Scan.Text, row.Owner)));
+        foreach (var row in ProviderVocabulary.Words)
         {
-            tokens.Add(new Token("id", $"\"{row[0].GetString()}\"", Quoted(row[0].GetString()!), Scan.Text, row[1].GetString()!));
-        }
-
-        foreach (var row in vocabulary.RootElement.GetProperty("words").EnumerateArray())
-        {
-            var word = row[0].GetString()!;
-            var plain = word.All(c => char.IsAsciiLetterOrDigit(c) || c == '_') && !word.StartsWith('_') && !word.EndsWith('_');
-            var pattern = plain ? new Regex($@"(?<![A-Za-z0-9_]){Regex.Escape(word)}(?![A-Za-z0-9_])") : new Regex(Regex.Escape(word));
-            tokens.Add(new Token("vocabulary", word, pattern, Scan.Text, row[1].GetString()!));
+            var plain = row.Word.All(c => char.IsAsciiLetterOrDigit(c) || c == '_') && !row.Word.StartsWith('_') && !row.Word.EndsWith('_');
+            var pattern = plain ? new Regex($@"(?<![A-Za-z0-9_]){Regex.Escape(row.Word)}(?![A-Za-z0-9_])") : new Regex(Regex.Escape(row.Word));
+            tokens.Add(new Token("vocabulary", row.Word, pattern, Scan.Text, row.Owner));
         }
 
         return tokens;

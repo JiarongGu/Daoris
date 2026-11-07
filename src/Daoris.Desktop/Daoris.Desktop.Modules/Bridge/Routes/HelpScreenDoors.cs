@@ -72,6 +72,24 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
             : (true, $"Archived {Count(done.Count)}: {Listed(done)}.{left}");
     }
 
+    // SESSION_HELPER_ASK's own ask, judged and written by the library both the page and the terminal share.
+    public async Task<(bool Ok, string Message)> AskHelperAsync(
+        string session, string question, string? agent, string? after, bool toPerson, CancellationToken ct)
+    {
+        var asked = await HelperPersonAskDoor.AskAsync(
+            service ?? throw NotReady(), new HelperFiles(_loop.Home), _loop.Events, session, question, agent, after, toPerson, ct).ConfigureAwait(false);
+        if (asked.Asked is not null) _loop.Nudge();
+        return (asked.Asked is not null, asked.Message);
+    }
+
+    // SESSION_HELPER_PASS's own pass: the library's judge marks the state for the look to hand.
+    public Task<(bool Ok, string Message)> PassHelperAnswerAsync(string session, string ask, CancellationToken ct)
+    {
+        var answer = HelperPassToLead.Pass(new HelperFiles(_loop.Home), session, ask, DateTimeOffset.UtcNow);
+        if (answer.Wrote) _loop.Nudge();
+        return Task.FromResult((answer.Stands, answer.Message));
+    }
+
     // WORK_PAUSE's own pause as the screen's, then the loop asked to look: only an id this machine does not
     // have is not applied; a pause that finds nothing to hold is said, as the route says it.
     public async Task<(bool Ok, string Message)> PauseWorkAsync(WorkScope scope, string id, CancellationToken ct)
@@ -119,8 +137,7 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
     public Task StartAgentActionAsync(string harness, string action, string? version, Action<int, string?> ended, CancellationToken ct)
     {
         var config = DriverConfig.Load(_loop.ConfigPath);
-        var toolchain = _loop.Harnesses.Toolchain(harness)
-            ?? throw new DriverException($"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
+        var toolchain = ManagedAgents.Of(_loop.Harnesses, harness);
         return context.Actions.StartProcessActionAsync(
             harness, action, profile: null, version, toolchain, config.Commands.GetValueOrDefault(harness),
             context.Actions.Relay(harness, action), config, ended);

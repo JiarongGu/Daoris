@@ -130,8 +130,8 @@ export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enab
     read: catalogueRead,
     actors: actors.data ?? [],
     // An agent a person can name is one this machine has: a choice on one not installed would only hold the start.
-    agents: harnesses.filter((door) => door.present).map((door) => ({ value: door.harness, label: doorLabel(t, door) })),
-    offers: Object.fromEntries(harnesses.map((door) => [door.harness, door.settingsChoices ?? null])),
+    agents: harnesses.filter((door) => door.present).map((door) => ({ value: door.door, label: doorLabel(t, door) })),
+    offers: Object.fromEntries(harnesses.map((door) => [door.door, door.settingsChoices ?? null])),
     busy: setRole.isPending,
     onSet: (press, answered) => setRole.mutate(press, {
       onSuccess: () => { rolesAgain(); answered.done(); },

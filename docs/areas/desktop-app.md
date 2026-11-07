@@ -26,6 +26,7 @@ web paths are under `src/Daoris.Web/src/`.
 | `StatePublisher` | `Modules/Platform/StatePublisher.cs` | Innermost middleware: `STATE_CHANGED` after a press answers; `UNDER_WAY` while presses run |
 | `StateSlices` and the 16 slices | `Modules/Platform/StateSlices.cs`, `Modules/Loop/*StateSlice.cs` | Machine state judged in .NET and pushed (`STATE_PUSH`, `STATE_MANIFEST`, `STATE_SLICE`) |
 | `DriverLoop`, `HostSupervisor` | `Modules/Loop/DriverLoop.cs`, `Modules/Loop/HostSupervisor.cs` | The in-process loop that owns the slices; the host started or adopted, handed the person key |
+| `ProcessStarts`, `OwnedProcesses` | `Driver/Platform/ProcessStarts.cs`, `OwnedProcesses.cs`, `ProcessJob.cs` | The start gate, a person's start first; the one management every start is handed to under its purpose: its job, its end and its census (rule 63) |
 | `DriverLoop`'s parts | `Modules/Loop/LoopState.cs`, `LoopRun.cs`, `LookTold.cs`, `LoopComeUp.cs`, `LoopAddress.cs`, `HomeHold.cs`, `TickShown.cs`, `TickSignatures.cs`, `TickErrors.cs`, `AttentionTold.cs`, `OutputTold.cs`, `PipeDecisionAdmission.cs` | What the run brings up and the loop's doors read, in one state type written whole with no lock; the address and pipe named in the home under their own lock with the stop's cancel; one run per loop, declaring what it brings up in the order it is let go in reverse; what each look keeps and tells; what the come-up hears; the home's lease waited for; the tick's shapes, signatures and errors; the attention and console events; the supervisor's decisions' admission. The loop keeps one-line doors, the start and the stop (D231) |
 | `PersonRoutes` | `Modules/Bridge/Routes/PersonRoutes.cs` | `PERSON_KEY` and the person's confirmations, answered to the page |
 | `InstancePipe`, `PipeCensus`, `RouteMarks`, `PipeConfirmations` | `Modules/Platform/` | A terminal's verbs into the running Daoris; each route classed `Open`, `Person`, `Window` or `Role` by its mark, read at start |
@@ -249,6 +250,36 @@ web paths are under `src/Daoris.Web/src/`.
     *All of them* shows, no work yet); a service that does not answer leaves a drawn map saying so, or the failed
     state, and a workspace with no repository has a door to Repositories. (from D150, D67, D224, D239)
 62. Doctrine is never written from the window; it shows the command to run. (from D31)
+63. Nothing the desktop starts outlives the process that started it. Every start through the gate names its purpose and is joined, as
+    it returns, to that purpose's kill-on-close job, held for the process's life; a process ended early is ended by
+    `OwnedProcesses.End`; the census reads each job by process id and stops nothing. (from D249)
+
+### The processes Daoris starts
+
+One management, `OwnedProcesses`, behind the start gate; the purposes and where each start is held:
+
+| Start | Purpose | Held by | After a crash of its owner |
+|---|---|---|---|
+| An agent, plugin process or piece through the launcher (`AgentStarts`) | `Launched` | the agents' job, from its first instruction; a session's own job beneath | ended |
+| The same where no launcher took it (a test's home, a refused job) | `Agent`, `Plugin` | its kind's job | ended |
+| git's runs (`GitRuns`) and what git starts | `Git` | the git job | ended |
+| A question read to its end (`ChildProcess`: git's, a version probe, a plugin tool's check), a usage read (`CodexUsage`) | `Read` | the read job | ended |
+| An agent's install or sign-in, a plugin tool's set-up, a key made, the doctrine CLI, a server's package | `Tool` | the tool job (npm's run also in a job of its own) | ended |
+| The HTTP host (`HostSupervisor`) | `EndsItself` | none: it stops when its input ends | it stops itself |
+| The update's launcher, the recorded Edge | `Outlives` | none, by design | running |
+| The file manager; a terminal's shell | gate's `RunAsync` | the system's; the shell's own job from its first instruction | the shell ended |
+| A heavy run's gate, a git act's step | direct, suspended | a named job of their own | ended |
+
+A child is joined as its start returns, so what it starts in that instant is outside the job; a start that cannot accept that starts
+suspended in a job of its own. Off Windows there are no jobs. The proof is `OwnedProcessesProcessTests` (an owner killed, its child and
+grandchild found gone, against a control held by no job) and `ProcessStartsCensusTests` (each file's purpose, the starts and kills
+outside the management with why).
+
+The census is read once, as the application stops: `RunningProcessesLine` writes a `processes.running` line naming each purpose that
+still holds a process, by id, and nothing where none does (`RunningProcessesLineProcessTests`). The tests' own direct starts are named
+in `TestProcessStarts`, each file under a kind (a stand-in program, a Daoris program run whole, a kept host, an agent's command run bare,
+a probe, git through a counting seam, a source that only names a start, a process object never started); git past `TestGit.Past` or
+`TestGit.Ceiling` is `GitCeilingCensusTests`'s. Both desktop test projects hold it, and a start in an unlisted file fails.
 
 ## Where a change goes
 
@@ -312,3 +343,5 @@ web paths are under `src/Daoris.Web/src/`.
 - **MEETUX1a–d**: meetings and brainstorms in Sessions: started, followed, read, and in *What needs you*.
 - **PERSONDOOR2** (no row filed): the boundary between the person and their agents that D156 §7 names, and the machine
   key moved off a session's connector.
+- **OPTIMIZE1b**: D249 is accepted and built, every test start named with its purpose and the census read as the process stops
+  (`RunningProcessesLine`). No door reads the census while the window is open.

@@ -183,7 +183,7 @@ describe('the proposals against an open draft', () => {
   });
 
   it('names who made it by the agent a person calls it and the models its conversation reported', () => {
-    const doors = [{ harness: 'claude', product: 'Claude Code' }] as unknown as Parameters<typeof makerOf>[1];
+    const doors = [{ door: 'claude', product: 'Claude Code' }] as unknown as Parameters<typeof makerOf>[1];
     expect(makerOf({ adapter: 'claude', ran: { models: ['claude-opus-5-5'], more: 0, entries: [], entriesMore: 0 } }, doors))
       .toEqual({ agent: 'Claude Code', models: ['claude-opus-5-5'] });
     expect(makerOf({ adapter: 'codex', ran: null }, [])).toEqual({ agent: 'codex', models: [] });
@@ -269,8 +269,8 @@ describe('Ask Daoris’s mode and what it was handed', () => {
   };
 
   const RECEIPT = {
-    at: '2026-10-19T10:00:00+00:00', start: 'new', mode: 'restricted', harness: 'claude-code-acp', version: '0.9.1',
-    account: 'personal', door: 'acp', posture: 'default', permissionMode: null, folder: 'X:/daoris/help',
+    at: '2026-10-19T10:00:00+00:00', start: 'new', mode: 'restricted', door: 'claude-code-acp', version: '0.9.1',
+    account: 'personal', transport: 'protocol', posture: 'default', permissionMode: null, folder: 'X:/daoris/help',
     tools: ['mcp__daoris-knowledge__search'],
     skills: [{ name: 'browser:look', state: 'unverified', why: null }],
     servers: [{ name: 'daoris-knowledge', plugin: null, state: 'handed', tools: ['search'], why: null }],
@@ -291,9 +291,9 @@ describe('Ask Daoris’s mode and what it was handed', () => {
     expect(wiredAnswer({ session: 'h1', recorded: true, receipts: [RECEIPT] }, 'h1')).toEqual({
       session: 'h1', recorded: true, receipts: [RECEIPT],
     });
-    const bare = wiredAnswer({ session: 'h1', recorded: true, receipts: [{ at: RECEIPT.at, mode: 'full', harness: 'codex-acp' }] }, 'h1');
+    const bare = wiredAnswer({ session: 'h1', recorded: true, receipts: [{ at: RECEIPT.at, mode: 'full', door: 'codex-acp' }] }, 'h1');
     expect(bare.receipts[0]).toMatchObject({
-      mode: 'full', harness: 'codex-acp', version: null, account: null, rules: null, tools: [], skills: [], servers: [],
+      mode: 'full', door: 'codex-acp', version: null, account: null, rules: null, tools: [], skills: [], servers: [],
       checkouts: [], lacks: [], guarded: false, loaded: null,
     });
     // A conversation from before keeps none: not recorded.

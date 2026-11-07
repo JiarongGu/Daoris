@@ -19,7 +19,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class DshProfileTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-dsh-profile", Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-dsh-profile", Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

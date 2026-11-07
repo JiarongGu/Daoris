@@ -76,7 +76,7 @@ public sealed class ProviderConformanceTests(ITestOutputHelper output) : IDispos
 
         Assert.Equal("conformance-plugin", door.Identity.DeclaredBy);
         Assert.Equal(Transport.Protocol, door.Transport);
-        Assert.True(subject.Adapters.Resolve(door.Id.Value) is LegacyDoor { Declared: true });
+        Assert.True(subject.Adapters.Door(door.Id.Value) .Declared);
         Assert.Empty(subject.Registry.Providers.Single(each => each.Id.Value == ConformanceSubjects.PluginOff).Doors);
     }
 

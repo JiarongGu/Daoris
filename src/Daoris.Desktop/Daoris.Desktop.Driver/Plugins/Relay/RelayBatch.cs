@@ -9,7 +9,8 @@ namespace Daoris.Driver;
 /// <param name="since">The watermark <c>--since</c> gave, already checked; null where none was given.</param>
 /// <param name="kinds">The kinds printed; a kind left out still moves the watermark, so filtering is never taken for loss.</param>
 /// <param name="build">This copy's build: a plugin of another ends the relay with its update line.</param>
-public sealed class RelayBatch((string Run, long Seq)? since, IReadOnlySet<string> kinds, string build)
+/// <param name="notBy">A poster whose <c>channel.posted</c> frames move the watermark and print nothing: a member's own posts never wake it.</param>
+public sealed class RelayBatch((string Run, long Seq)? since, IReadOnlySet<string> kinds, string build, string? notBy = null)
 {
     /// <summary>The kinds printed where <c>--kinds</c> names none: the first build's four, since a quest kind floods at a sync (§3.6).</summary>
     public static readonly IReadOnlySet<string> Default = new HashSet<string>(
@@ -54,6 +55,7 @@ public sealed class RelayBatch((string Run, long Seq)? since, IReadOnlySet<strin
         _seq = frame.Seq;
         if (gapped) Gap();
         if (!RelaySaid.Said.Contains(frame.Kind) || !kinds.Contains(frame.Kind)) return;
+        if (notBy is not null && frame.Kind == WorkEventKinds.ChannelPosted && frame.Fields.GetValueOrDefault("poster") == notBy) return;
         if (_events.Count < Events) _events.Add(RelaySaid.Event(frame));
         else _more++;
     }

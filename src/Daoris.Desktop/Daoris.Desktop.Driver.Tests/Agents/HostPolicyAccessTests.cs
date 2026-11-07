@@ -44,7 +44,7 @@ public sealed class HostPolicyAccessTests
         var built = ProviderRegistry.Built();
         var seen = new DateTimeOffset(2026, 11, 6, 9, 0, 0, TimeSpan.Zero);
         AccessDisposition? Today(string door, int? code, string words) =>
-            AgentErrors.Read(built, built.Resolve(door), new DoorFailure("protocol", code, null, null, words, DoorWhere.Open), seen, TimeZoneInfo.Utc).Access;
+            AgentErrors.Read(built, built.Door(door), new DoorFailure("protocol", code, null, null, words, DoorWhere.Open), seen, TimeZoneInfo.Utc).Access;
 
         Assert.Equal(new AccessEvidence(AccessReason.SignInAgain, false, false).Opening, Today("claude-code-acp", -32000, "Authentication required"));
         Assert.Equal(new AccessEvidence(null, true, false).Opening, Today("acp-stub", -32000, "Internal error: Authentication required"));

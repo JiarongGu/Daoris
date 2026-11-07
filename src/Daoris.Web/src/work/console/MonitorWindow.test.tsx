@@ -276,8 +276,8 @@ describe('the monitor window', () => {
       const id = (request as { payload?: { id?: string } } | undefined)?.payload?.id;
       if (type === 'HARNESSES') {
         return { adapter: 'claude-code', harnesses: [
-          { harness: 'claude-code', present: true, structured: true, profiles: [] },
-          { harness: 'pipe-tool', present: true, structured: false, profiles: [] },
+          { door: 'claude-code', present: true, structured: true, profiles: [] },
+          { door: 'pipe-tool', present: true, structured: false, profiles: [] },
         ] };
       }
       if (type === 'SESSION_HISTORY') {

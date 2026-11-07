@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class LookStagesTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-stages-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-stages-" + Guid.NewGuid().ToString("N")[..8]);
 
     // The clock the spans read, in milliseconds, moved by hand so a span's length is the test's to say.
     private long _now;

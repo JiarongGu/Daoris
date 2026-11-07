@@ -32,7 +32,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class ToolResourcesTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-resources-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-resources-" + Guid.NewGuid().ToString("N")[..8]);
 
     /// <summary>A hash that reads: the placeholder <c>"SHA"</c> in a row.</summary>
     private static readonly string Hash = new('a', 64);

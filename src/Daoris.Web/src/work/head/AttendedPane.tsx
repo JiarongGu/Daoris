@@ -89,7 +89,7 @@ export function AttendedPane({
       // The page header above carries its state, its id and its stop (D126 §3.2): said once.
       headed
       // An agent on the roster has accounts, so a record naming none ran on the tool's own sign-in (D125 §3.7).
-      ownSignIn={roster.some((row) => row.harness === attended.adapter)}
+      ownSignIn={roster.some((row) => row.door === attended.adapter)}
       nameOf={nameOf}
       // Its entry's parts (SESSONE1c, D167 point 5): every act on this page stays the part shown's, and the strip picks it.
       parts={attendedParts ? { entry: attendedParts, attended: attended.id, rows: partRows, onShow: onShowPart } : undefined}

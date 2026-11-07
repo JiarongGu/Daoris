@@ -69,13 +69,16 @@ public static class CallsStateSlice
         return [new SliceJudged(Partition, part)];
     }
 
-    /// <summary>The watcher's marks (SESSWATCH1a): each quiet session under its id as <c>{since}</c>, when it was last heard.</summary>
-    public static SliceJudged Quiet(IReadOnlyDictionary<string, DateTimeOffset> quiet)
+    /// <summary>
+    /// The watcher's marks (SESSWATCH1a, SESSWATCH1b): each quiet session under its id as <c>{since, told}</c>, when it was last heard and
+    /// whether Daoris's word to it was kept.
+    /// </summary>
+    public static SliceJudged Quiet(IReadOnlyDictionary<string, QuietMark> quiet)
     {
         var part = new JsonObject();
-        foreach (var (session, since) in quiet.OrderBy(each => each.Key, StringComparer.Ordinal))
+        foreach (var (session, mark) in quiet.OrderBy(each => each.Key, StringComparer.Ordinal))
         {
-            part[session] = JsonSerializer.SerializeToNode(new { Since = since }, IpcJson.Options);
+            part[session] = JsonSerializer.SerializeToNode(new { mark.Since, mark.Told }, IpcJson.Options);
         }
 
         return new SliceJudged(QuietPartition, part);

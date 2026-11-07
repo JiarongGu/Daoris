@@ -1,28 +1,44 @@
-using System.Text.Json;
+using Microsoft.Data.Sqlite;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The harness's own conversation id (ANSWER1a, D131 §1): kept the moment the wire says it, beside the session's transcript
-/// under the home, with the adapter that opened it; read back when the person answers a park. Never read from the agent's
-/// own home. Files only, so this is the suite's fast half.
+/// The harness's own conversation id (ANSWER1a, D131 §1): kept in the desktop store's bindings the moment the wire says it, with the door
+/// that opened it; read back when the person answers a park. Never read from the agent's own home.
 /// </summary>
 public sealed class HarnessConversationsTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-harness-conv-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-harness-conv-" + Guid.NewGuid().ToString("N")[..8]);
 
     public HarnessConversationsTests() => Directory.CreateDirectory(_home);
 
-    [Fact]
-    public void A_failed_keep_logs_the_session_adapter_and_error_kind()
+    public void Dispose()
     {
-        var store = new HarnessConversations(_home);
-        Directory.CreateDirectory(store.PathOf("s1"));
+        SqliteConnection.ClearAllPools();
+        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+    }
+
+    private HarnessConversations Kept() => new(_home, () => StoreSettled.Yes);
+
+    [Fact]
+    public void A_failed_keep_logs_the_session_door_and_error_kind()
+    {
+        // A newer Daoris migrated the store and stamped it past this build's: this build reads what it knows and writes nothing.
+        using (DesktopStore.Open(DesktopStore.LocationIn(_home), new DesktopStoreOptions
+        {
+            Writer = DesktopStore.WriterStamp + 1,
+            Steps = [.. DesktopStore.Steps, new StoreMigration(DesktopStore.Steps.Count + 1, DesktopStore.WriterStamp + 1, write => write.Execute("CREATE TABLE raised (x TEXT)"))],
+            Settled = () => StoreSettled.Yes,
+        }))
+        {
+        }
+
+        var store = Kept();
         store.Keep("s1", "acp-stub", "conv-1");
+
         Assert.Null(store.Read("s1"));
-        var lines = Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs), "*.jsonl")
-            .SelectMany(File.ReadAllLines).ToArray();
+        var lines = Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs), "*.jsonl").SelectMany(File.ReadAllLines).ToArray();
         var line = Assert.Single(lines);
         Assert.Contains("conversation.unkept", line);
         Assert.Contains("acp-stub", line);
@@ -30,71 +46,28 @@ public sealed class HarnessConversationsTests : IDisposable
         Assert.DoesNotContain("conv-1", line);
     }
 
-    public void Dispose()
-    {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
-    }
-
     [Fact]
-    public void A_kept_conversation_reads_back_with_the_adapter_that_opened_it()
+    public void A_kept_conversation_reads_back_with_the_door_that_opened_it()
     {
-        var kept = new HarnessConversations(_home);
+        var kept = Kept();
 
         kept.Keep("76cdd5db", "claude-code-acp", "0b5e7c1a-1f6e-4c1d-9e47-3f1c7a2b9d10");
 
         Assert.Equal(new HarnessConversation("claude-code-acp", "0b5e7c1a-1f6e-4c1d-9e47-3f1c7a2b9d10"), kept.Read("76cdd5db"));
-        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Sessions,"76cdd5db.harness.json"), kept.PathOf("76cdd5db"));
-    }
-
-    /// <summary>The file is Daoris's own JSON, BOM-less and LF, as every file under the home is written.</summary>
-    [Fact]
-    public void The_file_is_written_as_the_home_writes_its_files()
-    {
-        new HarnessConversations(_home).Keep("s1", "claude-code", "abc");
-
-        var bytes = File.ReadAllBytes(DaorisHome.Entry(_home, HomeEntry.Sessions,"s1.harness.json"));
-        Assert.False(bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF);
-        var text = System.Text.Encoding.UTF8.GetString(bytes);
-        Assert.DoesNotContain("\r", text);
-        Assert.EndsWith("\n", text);
-        using var document = JsonDocument.Parse(text);
-        Assert.Equal("claude-code", document.RootElement.GetProperty("adapter").GetString());
-        Assert.Equal("abc", document.RootElement.GetProperty("conversation").GetString());
     }
 
     /// <summary>A later id replaces an earlier one: a fallback's new conversation is its own record's, and a resume says the same id again.</summary>
     [Fact]
     public void Keeping_again_replaces_what_was_kept()
     {
-        var kept = new HarnessConversations(_home);
+        var kept = Kept();
         kept.Keep("s1", "claude-code-acp", "first");
         kept.Keep("s1", "claude-code-acp", "second");
 
         Assert.Equal("second", kept.Read("s1")!.Conversation);
     }
 
-    /// <summary>Nothing kept, a file that does not read, or one missing a field is no conversation: the answer falls back, it never throws.</summary>
-    [Theory]
-    [InlineData(null)]
-    [InlineData("not json")]
-    [InlineData("""{"adapter":"claude-code-acp"}""")]
-    [InlineData("""{"conversation":"abc"}""")]
-    [InlineData("""{"adapter":"claude-code-acp","conversation":""}""")]
-    [InlineData("""{"adapter":"claude-code-acp","conversation":7}""")]
-    [InlineData("[]")]
-    public void What_does_not_read_is_no_conversation(string? content)
-    {
-        var kept = new HarnessConversations(_home);
-        if (content is not null)
-        {
-            Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
-            File.WriteAllText(kept.PathOf("s1"), content);
-        }
-
-        Assert.Null(kept.Read("s1"));
-    }
-
-    /// <summary>🔴 A session id that is not one names no file, and never a path under the home or outside it.</summary>
+    /// <summary>🔴 A session id that is not one is neither kept nor read, and makes no store.</summary>
     [Theory]
     [InlineData("")]
     [InlineData("../escape")]
@@ -102,40 +75,41 @@ public sealed class HarnessConversationsTests : IDisposable
     [InlineData("..")]
     public void An_id_that_is_not_one_is_neither_kept_nor_read(string session)
     {
-        var kept = new HarnessConversations(_home);
+        var kept = Kept();
 
         kept.Keep(session, "claude-code-acp", "abc");
 
         Assert.Null(kept.Read(session));
-        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.Sessions)) && Directory.EnumerateFiles(DaorisHome.Entry(_home, HomeEntry.Sessions)).Any());
+        Assert.False(File.Exists(DesktopStore.LocationIn(_home)));
     }
 
     /// <summary>
     /// A chat keeps its conversation too (MSG1c, D137 §4.2): what its door is told the id through keeps it under the chat's
-    /// record with the adapter that opened it, read back as the conversation an ended chat goes on in; a blank id keeps
-    /// nothing, and a record id that is not one names no file.
+    /// record with the door that opened it, read back as the conversation an ended chat goes on in; a blank id keeps
+    /// nothing, and a record id that is not one keeps nothing.
     /// </summary>
     [Fact]
     public void What_a_chats_door_is_told_keeps_the_conversation_under_its_record()
     {
-        var kept = new HarnessConversations(_home);
+        var kept = Kept();
 
         kept.Keeping("c1a2b3c4", "claude-code")("0b5e7c1a-1f6e");
         kept.Keeping("c1a2b3c4", "claude-code")(" ");
         kept.Keeping("../escape", "claude-code")("abc");
 
         Assert.Equal(new HarnessConversation("claude-code", "0b5e7c1a-1f6e"), kept.Read("c1a2b3c4"));
-        Assert.Equal(["c1a2b3c4.harness.json"], Directory.EnumerateFiles(DaorisHome.Entry(_home, HomeEntry.Sessions)).Select(Path.GetFileName));
+        Assert.Null(kept.Read("../escape"));
     }
 
     /// <summary>A blank conversation id is nothing to keep: the wire said none.</summary>
     [Fact]
     public void A_blank_conversation_is_not_kept()
     {
-        var kept = new HarnessConversations(_home);
+        var kept = Kept();
 
         kept.Keep("s1", "claude-code-acp", " ");
 
-        Assert.False(File.Exists(kept.PathOf("s1")));
+        Assert.Null(kept.Read("s1"));
+        Assert.False(File.Exists(DesktopStore.LocationIn(_home)));
     }
 }

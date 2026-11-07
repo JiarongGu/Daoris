@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
 
@@ -10,7 +11,7 @@ namespace Daoris.Driver.Tests;
 /// </summary>
 public abstract class HelpProposalsFixture : IDisposable
 {
-    protected readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-help-plans-" + Guid.NewGuid().ToString("N")[..8]);
+    protected readonly string _home = Path.Combine(TestHomes.Root, "daoris-help-plans-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly HashSet<string> _scratch = [];
 
@@ -361,6 +362,20 @@ public sealed class HelpStandInDoors : IHelpDoors
     {
         Calls.Add($"SESSION_ARCHIVE {(archived ? "archive" : "unarchive")} {string.Join(",", ids)}");
         return Task.FromResult(Archived);
+    }
+
+    public (bool Ok, string Message) Helped { get; set; } = (true, "Asked #h1.");
+
+    public Task<(bool Ok, string Message)> AskHelperAsync(string session, string question, string? agent, string? after, bool toPerson, CancellationToken ct)
+    {
+        Calls.Add($"SESSION_HELPER_ASK {session} {question} agent={agent} after={after} toPerson={toPerson}");
+        return Task.FromResult(Helped);
+    }
+
+    public Task<(bool Ok, string Message)> PassHelperAnswerAsync(string session, string ask, CancellationToken ct)
+    {
+        Calls.Add($"SESSION_HELPER_PASS {session} {ask}");
+        return Task.FromResult(Helped);
     }
 
     // IHelpSettingDoors

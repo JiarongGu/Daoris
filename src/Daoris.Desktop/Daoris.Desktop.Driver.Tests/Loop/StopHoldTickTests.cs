@@ -23,7 +23,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class StopHoldTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-stop-hold-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-stop-hold-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
 

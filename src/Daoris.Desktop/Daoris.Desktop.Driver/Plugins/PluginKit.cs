@@ -65,6 +65,12 @@ public static class PluginKit
     /// <summary>A change, as the kit's samples say it (STATEHUB1g): what a session's landing moved, as accepting it declares.</summary>
     public static readonly StateChangedFrame SampleChange = new(["sessions", "landing", "diff", "sweep", "treesSync"], ["s1a2b3c4"]);
 
+    /// <summary>A work event, as the kit's samples say it (EVENTHOOK1b): a session parked, waiting on the person, under the sample run.</summary>
+    public static readonly WorkEvent SampleEvent = new(WorkEventKinds.SessionParked, new DateTimeOffset(2026, 11, 6, 10, 0, 0, TimeSpan.Zero))
+    {
+        Session = "4b62a9fe", Quest = "0fda18",
+    };
+
     /// <summary>
     /// A sample frame's step (FABRIC-PERFORM1e): the plugin's own, which the wire test and the trial replace with its first declared
     /// step, its kind <c>&lt;plugin&gt;/&lt;id&gt;</c> where Daoris names a kind and its id where it names an id. A README says the plugin's.
@@ -221,6 +227,23 @@ public static class PluginKit
             """
               // One attempt, written down and acknowledged by the kit's work.mjs, which then calls act() above once for its key.
               'work/perform': kit.points['work/perform'],
+            """),
+        new(
+            HookPoints.Event,
+            "observation",
+            "Only by the Daoris that holds the machine, once something moved in the work cycle: a session parked, a quest parked, a "
+            + "session or a work ended, a branch landed, a quest published or closed, a press settled, a message posted, or events "
+            + "missed. Each frame carries `run`, `seq`, `missed`, `kind` and `at`, and the ids and closed codes of its kind, never a name, "
+            + "a word or a path; the first frame of a `run` is `seq` 1, and a gap in `seq` is events lost. A frame is answered before the "
+            + "next is sent. A sample's `run` is `sample`, which a live consumer refuses.",
+            "`{}`. The answer is not read, but it is waited for.",
+            "the driver would say so in the machine log as `event.unsent`, count the late answer, and stop the plugin after three in a row",
+            HookPeer.DefaultPatience,
+            Sample(HookFrames.Event(SampleEvent, WorkEventGrammar.Sample, 1, 0, new HashSet<string>(StringComparer.Ordinal)).Frame),
+            """
+              // An observation, once something moved in the work cycle: frame.kind says what, frame.seq orders it within frame.run.
+              // Ids and codes only. Nothing said here changes anything; answer {} promptly.
+              'work/event': (frame) => ({}),
             """),
     ];
 

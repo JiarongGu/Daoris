@@ -28,10 +28,10 @@ public sealed record LandedWithdrawal(bool Done, string Message)
 /// a name no landing recorded are refused: those are the clean-up's, with its proof, or not Daoris's at all. It is local only and never
 /// touches a remote.</para>
 ///
-/// <para><b>A way back first, then the delete.</b> The branch's commits go on a recovery ref (<see cref="ContentHolds.KeepDiscardedAsync"/>),
-/// then the branch is deleted only while it is the commit judged, in one <c>update-ref</c> transaction
-/// (<see cref="ContentHolds.DeleteJudgedAsync"/>, which reads the working trees again as it goes and puts the branch back on a late
-/// checkout); a refused delete takes the ref it made away again. Never <c>git branch -D</c>, which keeps no ref.</para>
+/// <para><b>A way back with the delete.</b> The branch is deleted only while it is the commit judged, and its commits go on a recovery ref
+/// (<see cref="RecoveryKeeps"/>), in one <c>update-ref</c> transaction (<see cref="ContentHolds.DeleteJudgedAsync"/>, which reads the working
+/// trees again as it goes and puts the branch back on a late checkout, taking the ref back with it); a refused delete makes no ref. Never
+/// <c>git branch -D</c>, which keeps no ref.</para>
 ///
 /// <para><b>The record keeps it as a trace</b> (<see cref="LandedBranches.Withdrawn"/>): when, why, and the ref, on that landing alone.</para>
 /// </remarks>
@@ -83,17 +83,18 @@ internal sealed class LandedWithdrawals(TreeContext context, ContentHolds conten
         var now = await JudgeAsync(root, repository, entry, ct).ConfigureAwait(false);
         if (now is null || now.Tip != judged.Tip || Refusal(repository, entry, now) is not null) return new(false, $"`{branch}`: {ChangedSince}.");
 
-        var (reference, kept) = await ContentHolds.KeepDiscardedAsync(root, branch, now.Tip, CancellationToken.None).ConfigureAwait(false);
-        if (reference is null)
+        var (name, kept) = await RecoveryKeeps.NameAsync(root, branch, now.Tip, CancellationToken.None).ConfigureAwait(false);
+        if (name is null)
         {
             return new(false, $"Daoris could not keep the commits on `{branch}` on a ref of their own ({kept}), so nothing was withdrawn.");
         }
 
-        // The branch at the commit judged is the whole of what this rests on: nothing else holds its work, which is the point.
-        var stays = await content.DeleteJudgedAsync(root, repository, branch, now.Tip, [($"refs/heads/{branch}", now.Tip)], ct).ConfigureAwait(false);
+        // The branch at the commit judged is the whole of what this rests on: nothing else holds its work, which is the point. Its recovery ref
+        // is made in the delete's own act, so a refused delete makes none.
+        var reference = name.Ref;
+        var stays = await content.DeleteJudgedAsync(root, repository, branch, now.Tip, [($"refs/heads/{branch}", now.Tip)], ct, name).ConfigureAwait(false);
         if (stays is not null)
         {
-            await ContentHolds.DropKeptAsync(root, branch, reference, now.Tip, CancellationToken.None).ConfigureAwait(false);
             return new(false, $"`{branch}` is kept: {(stays == ContentHolds.MovedSince ? ChangedSince : stays)}");
         }
 

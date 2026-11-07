@@ -137,7 +137,7 @@ export type DraftCard = {
 /** Who made a proposal: the conversation's agent as a person calls it, its product else its tool's else its id, and the models it reported. */
 export function makerOf(session: Pick<Session, 'adapter' | 'ran'> | undefined, doors: readonly ToolDoor[]): DraftCard['maker'] {
   if (!session) return null;
-  const found = byTool(doors).flatMap((tool) => tool.doors.map((door) => ({ tool, door }))).find((each) => each.door.harness === session.adapter);
+  const found = byTool(doors).flatMap((tool) => tool.doors.map((door) => ({ tool, door }))).find((each) => each.door.door === session.adapter);
   return { agent: found?.door.product || found?.tool.product || session.adapter, models: [...(session.ran?.models ?? [])] };
 }
 
@@ -279,10 +279,10 @@ export function wiredAnswer(answer: unknown, session: string): HelpWired {
       at: textOf(receipt.at) ?? '',
       start: textOf(receipt.start) ?? 'new',
       mode: textOf(receipt.mode) ?? 'restricted',
-      harness: textOf(receipt.harness) ?? '',
+      door: textOf(receipt.door) ?? '',
       version: textOf(receipt.version),
       account: textOf(receipt.account),
-      door: textOf(receipt.door) ?? '',
+      transport: textOf(receipt.transport) ?? '',
       posture: textOf(receipt.posture),
       permissionMode: textOf(receipt.permissionMode),
       folder: textOf(receipt.folder) ?? '',

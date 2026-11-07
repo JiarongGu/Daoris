@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -10,7 +11,7 @@ namespace Daoris.Desktop.Modules.Tests;
 public sealed class SplashLiftTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-splashdata1-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-splashdata1-" + Guid.NewGuid().ToString("N")[..8]);
 
     public SplashLiftTests() => Directory.CreateDirectory(_home);
 

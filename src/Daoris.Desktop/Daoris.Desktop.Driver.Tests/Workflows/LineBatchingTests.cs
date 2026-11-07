@@ -318,6 +318,84 @@ public sealed class LineBatchingTests : IDisposable
         Assert.Contains(heard, call => call.Method == "POST" && call.Path.StartsWith("/api/asks/a1", StringComparison.Ordinal));
     }
 
+    /// <summary>The verification pipeline saved again with its check saying <c>failed: ask</c>, the person's standing say-so.</summary>
+    private void SaysAsk() => File.WriteAllText(WorkflowStore.PathOf(_home, "verify"),
+        $$"""{"id":"verify","name":"Verify","pipeline":"verification","versions":[{"version":1,"at":"2026-11-01T09:00:00Z","door":"terminal","schema":2,"graph":{{Graph.Replace("{\"ask\":\"fix\"}", "{\"ask\":\"fix\",\"failed\":\"ask\"}", StringComparison.Ordinal)}}}]}""");
+
+    [Fact]
+    public async Task A_failure_whose_check_says_failed_ask_is_asked_for_with_no_press_and_only_once()
+    {
+        SaysAsk();
+        var run = await SettledAsync(First, VerifyVerdicts.Failed);
+        var made = false;
+        var (service, heard) = ReviewChoiceStandIn.Of((method, path, _) => (method, path) switch
+        {
+            ("GET", "/api/asks") => (System.Net.HttpStatusCode.OK, made
+                ? $$"""[{"id":"a1b2c3","workspace":"default","sentence":"{{VerifyFixAsks.First("main", "suite", run.Run)}}","state":"Published","tier":"named"}]"""
+                : "[]"),
+            ("POST", "/api/asks") => (System.Net.HttpStatusCode.OK, """{"ask":{"id":"a1b2c3"},"message":"Asked."}"""),
+            _ => null,
+        });
+
+        Assert.Equal([new VerifyFixStanding.Owed(RunUnits.IdOf(run.Run), Check.Id, 1)], VerifyFixStanding.Of(Files));
+        var said = await VerifyFixStanding.AskAsync(service, Files, CancellationToken.None);
+        made = true;
+        var again = await VerifyFixStanding.AskAsync(service, Files, CancellationToken.None);
+
+        Assert.Contains("asked for a fix of the gate suite: #a1b2c3", Assert.Single(said), StringComparison.Ordinal);
+        Assert.Empty(again);
+        Assert.Single(heard, call => call.Method == "POST" && call.Path == "/api/asks");
+        // The failure stays the person's to see, with Run again and Not now.
+        Assert.Single(HeldAttempts.Read(Files));
+    }
+
+    [Fact]
+    public async Task A_failure_whose_check_waits_for_the_press_asks_nothing_by_itself()
+    {
+        await SettledAsync(First, VerifyVerdicts.Failed);
+        var (service, heard) = ReviewChoiceStandIn.Of((_, _, _) => null);
+
+        Assert.Empty(VerifyFixStanding.Of(Files));
+        Assert.Empty(await VerifyFixStanding.AskAsync(service, Files, CancellationToken.None));
+        Assert.Empty(heard);
+    }
+
+    [Fact]
+    public void The_fix_ask_names_the_sessions_whose_landings_carried_the_batch()
+    {
+        var at = new DateTimeOffset(2026, 11, 6, 8, 0, 0, TimeSpan.Zero);
+        IntegrationRequest Landed(string id, string branch, string tip, int minutes, string? session = null) =>
+            new(id, "engine", "default", branch, tip, IntegrationRoutes.Merge, "main", IntegrationRequester.Press, new LandingIntegrate().Resolved(), at)
+            {
+                Session = session, ClosedAt = at.AddMinutes(minutes), ClosedWhy = IntegrationRequestCloses.Settled,
+            };
+        var settled = new[]
+        {
+            Landed("r3", "daoris/tree-b", Third, 3),
+            Landed("r2", "quest/fix-q2", Second, 2, session: "s-quest"),
+            Landed("r1", "daoris/tree-a", First, 1),
+        };
+        var sessions = new[]
+        {
+            new SessionRecord("s-b", "engine", "done") { Tree = Path.Combine("trees", "tree-b"), Created = at },
+            new SessionRecord("s-other", "web", "done") { Tree = Path.Combine("trees", "tree-b"), Created = at },
+        };
+
+        // The batch holds the second and third landings; the first landed before its base.
+        var carried = VerifyBatchSessions.Of(settled, new HashSet<string>([Second, Third], StringComparer.OrdinalIgnoreCase), sessions);
+
+        Assert.Equal(["s-quest", "s-b"], carried);
+        var run = new VerifyRun("v-0000000000000001", "engine", "default", "checkout", "verify", 1, _digest, Third, WorkflowLevels.RepositoryLanded, _now)
+        {
+            Line = "main", Base = First,
+        };
+        var result = new VerifyResult("i-1", Third, VerifyVerdicts.Failed, "why", [new VerifyGate("suite", "fail", 3)]) { Failed = "suite" };
+        var words = VerifyFixAsks.Sentence(run, "main", "suite", result, VerifyFixAsks.First("main", "suite", run.Run),
+            [new(Third, "3333333 third"), new(Second, "2222222 second")], carried);
+        Assert.Contains("- 3333333 third\n- 2222222 second", words.ReplaceLineEndings("\n"), StringComparison.Ordinal);
+        Assert.EndsWith("The batch landed from the sessions `s-quest`, `s-b`.", words, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task Ask_for_a_fix_is_refused_on_a_verification_that_did_not_fail()
     {
@@ -328,6 +406,104 @@ public sealed class LineBatchingTests : IDisposable
 
         Assert.False(pressed.Done);
         Assert.Empty(heard);
+    }
+
+    [Theory]
+    [InlineData("fix v-1", "v-1", null)]
+    [InlineData("fix #v-1 verify", "v-1", "verify")]
+    public void Workflow_fix_reads_a_run_and_an_optional_node(string words, string run, string? node)
+    {
+        Assert.Equal(new WorkflowFixAsk(run, node), WorkflowFixCommand.Read(words.Split(' '), out var problem));
+        Assert.Null(problem);
+        Assert.True(WorkflowFixCommand.Asks(words.Split(' ')));
+    }
+
+    [Theory]
+    [InlineData("fix")]
+    [InlineData("fix --yes")]
+    [InlineData("fix v-1 verify extra")]
+    public void Workflow_fix_with_other_words_is_refused_with_its_usage(string words)
+    {
+        Assert.Null(WorkflowFixCommand.Read(words.Split(' '), out var problem));
+        Assert.Contains("workflow fix <run> [<node>]", problem, StringComparison.Ordinal);
+        Assert.Contains("usage: daoris workflow fix <run> [<node>]", WorkflowFixCommand.Usage, StringComparison.Ordinal);
+    }
+
+    private (string Output, int Exit, IReadOnlyList<(string Method, string Path, string Body)> Heard) Fixed(
+        string run, string? node, Func<string, string, string, (System.Net.HttpStatusCode, string)?> serve, string? session = null)
+    {
+        var (service, heard) = ReviewChoiceStandIn.Of(serve);
+        var output = new StringWriter { NewLine = "\n" };
+        var exit = WorkflowFixCommand.RunAsync(new WorkflowFixAsk(run, node), Files, () => service, output, instance: null,
+            variable => variable == DriverChoicesCommand.SessionVariable ? session : null).GetAwaiter().GetResult();
+        return (output.ToString(), exit, heard);
+    }
+
+    [Fact]
+    public async Task Workflow_fix_asks_for_the_failed_gate_and_says_the_ask_and_a_repeat_finds_it()
+    {
+        var run = await SettledAsync(First, VerifyVerdicts.Failed);
+
+        var asked = Fixed(run.Run, null, (method, path, _) => (method, path) switch
+        {
+            ("GET", "/api/asks") => (System.Net.HttpStatusCode.OK, "[]"),
+            ("POST", "/api/asks") => (System.Net.HttpStatusCode.OK, """{"ask":{"id":"a1b2c3"},"message":"Asked."}"""),
+            _ => null,
+        });
+        Assert.Equal((0, "workflow: asked for a fix of the gate suite: #a1b2c3\n"), (asked.Exit, asked.Output));
+
+        var again = Fixed(run.Run, Check.Id, (method, path, _) => (method, path) switch
+        {
+            ("GET", "/api/asks") => (System.Net.HttpStatusCode.OK,
+                $$"""[{"id":"a1","workspace":"default","sentence":"{{VerifyFixAsks.First("main", "suite", run.Run)}}","state":"Published","tier":"named"}]"""),
+            _ => null,
+        });
+        Assert.Equal((0, "workflow: the ask for this failure is made already: #a1\n"), (again.Exit, again.Output));
+        Assert.DoesNotContain(again.Heard, call => call.Method == "POST");
+    }
+
+    [Fact]
+    public async Task Workflow_fix_refuses_an_unknown_run_and_a_node_that_did_not_fail_and_asks_nothing()
+    {
+        var unknown = await SettledAsync(First, VerifyVerdicts.Unknown);
+
+        var noRun = Fixed("v-00000000000000aa", null, (_, _, _) => null);
+        var notFailed = Fixed(unknown.Run, null, (_, _, _) => null);
+        var noNode = Fixed(unknown.Run, "other", (_, _, _) => null);
+
+        foreach (var refused in new[] { noRun, notFailed, noNode })
+        {
+            Assert.Equal((1, "workflow: that is not a failed verification held for you\n"), (refused.Exit, refused.Output));
+            Assert.Empty(refused.Heard);
+        }
+    }
+
+    [Fact]
+    public async Task Workflow_fix_is_refused_from_a_session_s_terminal_and_asks_nothing()
+    {
+        var run = await SettledAsync(First, VerifyVerdicts.Failed);
+
+        var refused = Fixed(run.Run, null, (_, _, _) => null, session: "s1");
+
+        Assert.Equal(1, refused.Exit);
+        Assert.Contains(DriverChoicesCommand.SessionsTerminal, refused.Output, StringComparison.Ordinal);
+        Assert.Empty(refused.Heard);
+    }
+
+    [Fact]
+    public async Task Work_held_lists_a_failed_check_s_words_without_ask_fix_and_points_at_the_verb_that_asks()
+    {
+        var run = await SettledAsync(First, VerifyVerdicts.Failed);
+        var unit = RunUnits.IdOf(run.Run);
+
+        var lines = HeldAttempts.Lines(HeldAttempts.Read(Files));
+
+        Assert.Contains($"  say: daoris work held {unit} verify 1 again|stop", lines);
+        Assert.Contains($"  ask for a fix: daoris workflow fix {run.Run} verify", lines);
+        var refused = HeldAttempts.Word(Files, unit, Check.Id, 1, HeldResolutions.AskFix);
+        Assert.Equal(PerformedWhat.Refused, refused.What);
+        Assert.Contains("daoris workflow fix <run> <node>", HeldAttempts.Said(refused, 1, HeldResolutions.AskFix), StringComparison.Ordinal);
+        Assert.Single(HeldAttempts.Read(Files));
     }
 
     [Fact]

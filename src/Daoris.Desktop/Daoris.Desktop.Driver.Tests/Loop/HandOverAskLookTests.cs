@@ -14,7 +14,7 @@ public sealed class HandOverAskLookTests : IDisposable
 {
     private static readonly DateTimeOffset T0 = new(2026, 10, 20, 9, 0, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-handask-look-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-handask-look-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
 
@@ -34,17 +34,21 @@ public sealed class HandOverAskLookTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private static DriverConfig Config(string? mode = null) =>
-        ActorChoices.With(ActorChoices.With(DriverConfig.Empty with { Drivable = ["engine"], Actors = StaffedRoles.On("stub"), Cap = 3, PollSeconds = 1, Trees = ["engine"] }, "build", [new ActorChoice("stub"), new ActorChoice("codex-acp")]), "chat", [new ActorChoice("stub"), new ActorChoice("codex-acp")]) is var config && mode is not null
+    private static DriverConfig Config(string? mode = null, string? chatModel = null) =>
+        ActorChoices.With(ActorChoices.With(DriverConfig.Empty with { Drivable = ["engine"], Actors = StaffedRoles.On("stub"), Cap = 3, PollSeconds = 1, Trees = ["engine"] }, "build", [new ActorChoice("stub"), new ActorChoice("codex-acp")]), "chat", [new ActorChoice("stub"), new ActorChoice("codex-acp", chatModel)]) is var config && mode is not null
             ? HandOverRules.Apply(config, new HandOverEdit { Repository = "engine", Set = new HandOverSet { Mode = mode, ModeGiven = true } })
             : config;
 
+    /// <summary>What the chat runner's take was handed: the conversation, the agent, and the arranged order's step for it, where it names one.</summary>
+    private readonly List<(string Session, string Agent, string? Model)> _taken = [];
+
     /// <summary>A driver for a look: the roster's doors a stand-in, its starts only said, and the chat runner's take where <paramref name="wired"/>.</summary>
-    private Daoris.Driver.Driver Driver(string? mode = null, bool wired = false, bool drained = false)
+    private Daoris.Driver.Driver Driver(string? mode = null, bool wired = false, bool drained = false, string? chatModel = null)
     {
         var service = _ledger.Client();
         var adapters = ProviderRegistry.Built();
-        return new Daoris.Driver.Driver(service, drained ? InstallUpdate.Drained(Config(mode)) : Config(mode), adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
+        var config = Config(mode, chatModel);
+        return new Daoris.Driver.Driver(service, drained ? InstallUpdate.Drained(config) : config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Stops = (session, note) =>
             {
@@ -54,9 +58,10 @@ public sealed class HandOverAskLookTests : IDisposable
             Runner = (start, _, _) => Task.FromResult(new StartRun($"stand-in  #{start.Quest.Id}", false)),
             HandOverDoors = _ => Task.FromResult<IReadOnlyList<HandOverDoor>>([new("stub", true, null), new("codex-acp", true, "codex")]),
             HandsOver = wired
-                ? (session, agent, _) =>
+                ? (session, agent, step, _) =>
                 {
                     _handed.Add((session, agent));
+                    _taken.Add((session, agent, step?.Model));
                     return Task.FromResult(new HandedOver("n3wc0nv1", true, null, "taken"));
                 }
                 : null,
@@ -140,6 +145,27 @@ public sealed class HandOverAskLookTests : IDisposable
         Assert.Equal([("c0nv0002", "codex-acp")], _handed);
         Assert.Null(new HandOverBox(_home).Read("c0nv0002"));
         Assert.Equal(HandOverAskStates.Taken, State("c0nv0002")!.State);
+    }
+
+    /// <summary>
+    /// 🔴 STAFFPOLICY1 (D205): a conversation's ask handed to the shell's chat runner takes the arranged order's step for the agent it goes to,
+    /// its model with it, as a quest's move and a headless look's do; an order that names no model hands none.
+    /// </summary>
+    [Fact]
+    public async Task A_conversations_ask_handed_to_the_chat_runner_takes_the_arranged_orders_model()
+    {
+        _ledger.Working("c0nv0003", "engine", Tree("tree-e"));
+        Asks("c0nv0003", id: "c1b2c3d4");
+
+        await Driver(HandOverRules.On, wired: true, chatModel: "gpt-5").TickAsync().WaitAsync(Poll.Patience);
+
+        Assert.Equal([("c0nv0003", "codex-acp", (string?)"gpt-5")], _taken);
+
+        _ledger.Working("c0nv0004", "engine", Tree("tree-f"));
+        Asks("c0nv0004", id: "d1b2c3d4");
+        await Driver(HandOverRules.On, wired: true).TickAsync().WaitAsync(Poll.Patience);
+
+        Assert.Equal(("c0nv0004", "codex-acp", (string?)null), _taken[^1]);
     }
 
     /// <summary>

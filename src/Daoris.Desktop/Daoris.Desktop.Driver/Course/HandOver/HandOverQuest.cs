@@ -76,11 +76,11 @@ public static class QuestHandOver
     {
         try
         {
-            var resolved = adapters.Resolve(agent);
-            IReadOnlyList<string> accounts = resolved.Toolchain is { } toolchain
-                ? [.. HarnessSettings.Profiles(home, adapters.OwnerOfAgent(resolved.Name).Value)]
+            var resolved = adapters.Door(agent);
+            IReadOnlyList<string> accounts = adapters.AgentNamed(resolved.Id.Value) is not null
+                ? [.. HarnessSettings.Profiles(home, adapters.OwnerOfAgent(resolved.Id.Value).Value)]
                 : [];
-            return new HandOverAgent(accounts, Adoption.Unadopted(resolved.Abilities()));
+            return new HandOverAgent(accounts, Adoption.Unadopted(resolved.Can));
         }
         catch (DriverException)
         {

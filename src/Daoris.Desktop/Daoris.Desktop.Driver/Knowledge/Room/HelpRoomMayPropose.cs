@@ -106,6 +106,10 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  A session still running, in Waiting on you or in To review is never archived: archive never hides what\n");
         text.Append("  needs the person, and the route refuses it. Stopping a session is never proposed: it is the person's own,\n");
         text.Append("  on the session's page, where `go_propose` takes them.\n");
+        // COWORKUX1: the person's helper doors, judged as the page's Ask another agent…, Ask again… and Pass to the lead are.
+        text.Append("  Door `helper` asks another agent, read-only, one question about one session's work (`question`, and `agent` to\n");
+        text.Append("  name it); `ask` asks again after an answered one, and `toMe` keeps the answer for the person, who passes it on.\n");
+        text.Append("  Door `pass` sends an answer kept for the person to the session that asked, naming the ask.\n");
         // PAUSE1f-b (D132 §7.4, design §2.1): the pages' Pause… and Resume, judged by what a pause does with each piece of the
         // work. Abandon is exempt: it declines quests with the person's reason, which is their answer (D37).
         text.Append("- `pause_propose`: pause one ask's work, or one quest's, on this machine, or resume it, naming the ask or\n");

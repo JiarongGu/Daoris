@@ -54,7 +54,7 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
   // (HELPMODE1c4, each readable checkout the driver serves turned off or on by its repository's name) are chosen here; and the
   // browser's is its plugin's approval, drawn read only, its door that plugin's tab (the modes design §4.1's decided note).
   const served = Array.isArray(driver.data?.helpGrants) ? driver.data.helpGrants : null;
-  const helperDoor = harnesses.find((door) => door.harness === driver.data?.helperAdapter);
+  const helperDoor = harnesses.find((door) => door.door === driver.data?.helperAgent);
   const built: Partial<Record<HelpGrantId, readonly string[]>> = Object.fromEntries(
     (served ?? []).filter((grant) => Array.isArray(grant.built)).map((grant) => [grant.id, grant.built!]));
   const chooseGrant = (grant: HelpGrantId, operation: string, chosen: boolean) => {
@@ -91,7 +91,7 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
         ? {
           // The agent Ask Daoris runs on, and whether it takes Claude's rules; with none named, nothing is unavailable on it yet.
           agent: {
-            name: helperDoor ? doorLabel(t, helperDoor) : driver.data?.helperAdapter ?? '',
+            name: helperDoor ? doorLabel(t, helperDoor) : driver.data?.helperAgent ?? '',
             rules: helperDoor ? helperDoor.takesRules === true : true,
           },
           // Pending while a conversation running here was handed another choice, which its next turn takes (ACCESSSWAP1); the

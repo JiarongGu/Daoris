@@ -16,7 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class AccessSwapTickTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-swap-tick-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-swap-tick-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
 
@@ -84,8 +84,7 @@ public sealed class AccessSwapTickTests : IDisposable
         }).WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Asking)] }).Save(ConfigPath);
         await using var service = SaidStandIn.Start(_repository);
         var built = ProviderRegistry.Built();
-        var adapters = new ProviderRegistry(built.Names.ToDictionary(
-            name => name, name => name == "acp-stub" ? PosturedStub() : built.Resolve(name), StringComparer.OrdinalIgnoreCase));
+        var adapters = TestDoors.Registry([.. Providers.Built().Where(provider => provider.Id.Value != "stub"), PosturedStub()]);
         var processes = new SessionProcesses();
 
         var tick = Look(service, adapters, processes).RunOnceAsync();
@@ -175,7 +174,7 @@ public sealed class AccessSwapTickTests : IDisposable
     }
 
     /// <summary>The protocol stub with postures: Claude's words for its auto, asking and unrestricted modes.</summary>
-    private static ISessionAdapter PosturedStub() => TestDoors.Postured(BuiltDoors.AcpStub, new PosturesPart("auto", "default", "bypassPermissions", null));
+    private static Provider PosturedStub() => TestDoors.Postured(BuiltDoors.AcpStub, new PosturesPart("auto", "default", "bypassPermissions", null));
 
     /// <summary>
     /// The protocol door's stand-in: it resumes, and offers Claude's modes on each session, a mode set going to the log. Its first

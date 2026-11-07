@@ -105,8 +105,7 @@ public sealed class DriverCommandTests
             .ToList();
         Assert.True(verbs.Count >= 8, $"expected the host's verbs, found {string.Join(", ", verbs)}");
 
-        // `chat` is held by the running Daoris's conversation (D238), answered by the host before the tree is asked.
-        HashSet<string> reached = ["drive", "chat"];
+        HashSet<string> reached = ["drive"];
         foreach (var group in CommandWords.Groups)
         {
             foreach (var verb in group.Verbs.Prepend("x"))

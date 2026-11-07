@@ -15,7 +15,7 @@ public sealed class AccessDispositionTests
     private static readonly ProviderRegistry Built = ProviderRegistry.Built();
 
     private static AgentError Read(string adapter, int? code, string? kind, string? words, string where = DoorWhere.Open) =>
-        AgentErrors.Read(Built, Built.Resolve(adapter), new DoorFailure("protocol", code, kind, null, words, where), Seen, TimeZoneInfo.Utc);
+        AgentErrors.Read(Built, Built.Door(adapter), new DoorFailure("protocol", code, kind, null, words, where), Seen, TimeZoneInfo.Utc);
 
     [Fact]
     public void A_refused_credential_reads_refused_on_the_wire_and_on_the_harness_s_lines()
@@ -23,7 +23,7 @@ public sealed class AccessDispositionTests
         Assert.Equal(AccessDisposition.Refused, Read("claude-code-acp", -32603, null, "Internal error: API Error: 401 API key is invalid.").Access);
         Assert.Equal(
             AccessDisposition.Refused,
-            Read("claude-code-acp", null, null, "Failed to authenticate. API Error: 401 API key is invalid.", DoorWhere.Harness).Access);
+            Read("claude-code-acp", null, null, "Failed to authenticate. API Error: 401 API key is invalid.", DoorWhere.Lines).Access);
     }
 
     [Fact]

@@ -13,15 +13,15 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class ClaudeUsageTests
 {
-    private static readonly DateTimeOffset Now = new(2026, 10, 12, 12, 0, 0, TimeSpan.Zero);
+    internal static readonly DateTimeOffset Now = new(2026, 10, 12, 12, 0, 0, TimeSpan.Zero);
 
-    private static string At(double hours) => (Now + TimeSpan.FromHours(hours)).ToString("yyyy-MM-dd'T'HH:mm:ss.ffffffzzz");
+    internal static string At(double hours) => (Now + TimeSpan.FromHours(hours)).ToString("yyyy-MM-dd'T'HH:mm:ss.ffffffzzz");
 
     /// <summary>The evidence's answer body (shape only: no account, plan dollar or id), resets placed against this test's moment.</summary>
-    private static string Body(string fiveHour, string sevenDay) =>
+    internal static string Body(string fiveHour, string sevenDay) =>
         $$$"""{"subscription_type":"team","rate_limits_available":true,"rate_limits":{"five_hour":{{{fiveHour}}},"seven_day":{{{sevenDay}}},"seven_day_opus":null,"seven_day_sonnet":null,"limits":[{"kind":"session","percent":23,"severity":"normal"}],"extra_usage":null},"session":{"total_cost_usd":0}}""";
 
-    private static string Window(double percent, string? resets) =>
+    internal static string Window(double percent, string? resets) =>
         $$"""{"utilization":{{percent.ToString(System.Globalization.CultureInfo.InvariantCulture)}},"resets_at":{{(resets is null ? "null" : "\"" + resets + "\"")}},"limit_dollars":null,"used_dollars":null,"remaining_dollars":null,"locked_reason":null}""";
 
     private static IReadOnlyList<WindowReading> Read(string body) =>
@@ -32,9 +32,9 @@ public sealed class ClaudeUsageTests
     [Fact]
     public void Claude_s_native_door_declares_the_measured_command_asked_of_its_own_pin_and_a_recorded_answer()
     {
-        var question = BuiltDoors.Claude.Toolchain!.Usage;
+        var question = ProviderRegistry.Built().AgentNamed("claude-code")!.Usage;
 
-        Assert.Same(ClaudeUsage.Question, question);
+        Assert.Same(UsageReads.Of(ClaudeUsage.Question), question);
         Assert.Equal("claude-code", question!.Harness);
         Assert.Equal(
             ["claude", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose", "--strict-mcp-config"],
@@ -99,7 +99,7 @@ public sealed class ClaudeUsageTests
     private static UsageAnswer Answer(string body) => ClaudeUsage.Read(JsonDocument.Parse(body).RootElement.Clone(), Now);
 
     /// <summary>The recorded answer, its resets (<c>&lt;reset&gt;</c>, in order) placed <paramref name="hours"/> after now.</summary>
-    private static string Recorded(params double[] hours)
+    internal static string Recorded(params double[] hours)
     {
         var placed = ClaudeUsage.Question.Recorded[0].Frame;
         foreach (var each in hours)
@@ -145,24 +145,25 @@ public sealed class ClaudeUsageTests
             answer.Seen);
     }
 
+    /// <summary>Scoped weeks, the server's rows (two of them not read whole) and the money windows left unread.</summary>
+    internal static string ScopedWeeks => $$$"""
+        {"subscription_type":"max","rate_limits_available":true,"rate_limits":{
+          "five_hour":{{{Window(23, At(3.5))}}},"seven_day":{{{Window(79, At(100.25))}}},
+          "seven_day_opus":{{{Window(40.5, At(100.25))}}},"seven_day_sonnet":null,"seven_day_oauth_apps":{{{Window(10, null)}}},
+          "limits":[
+            {"kind":"session","group":"g","percent":23,"severity":"normal","resets_at":"{{{At(3.5)}}}","is_active":true},
+            {"kind":"weekly_scoped","group":"g","percent":40,"severity":"warning","resets_at":"{{{At(100.25)}}}","scope":"opus","is_active":true},
+            {"kind":"weekly_scoped","percent":"40"},
+            "a row in words"],
+          "extra_usage":{"utilization":50,"resets_at":"{{{At(1)}}}","is_enabled":true},
+          "spend":{"utilization":5}},
+         "session":{"total_cost_usd":0}}
+        """;
+
     [Fact]
     public void Scoped_weeks_and_the_server_s_rows_are_kept_for_the_history_while_the_walk_reads_its_two()
     {
-        var body = $$$"""
-            {"subscription_type":"max","rate_limits_available":true,"rate_limits":{
-              "five_hour":{{{Window(23, At(3.5))}}},"seven_day":{{{Window(79, At(100.25))}}},
-              "seven_day_opus":{{{Window(40.5, At(100.25))}}},"seven_day_sonnet":null,"seven_day_oauth_apps":{{{Window(10, null)}}},
-              "limits":[
-                {"kind":"session","group":"g","percent":23,"severity":"normal","resets_at":"{{{At(3.5)}}}","is_active":true},
-                {"kind":"weekly_scoped","group":"g","percent":40,"severity":"warning","resets_at":"{{{At(100.25)}}}","scope":"opus","is_active":true},
-                {"kind":"weekly_scoped","percent":"40"},
-                "a row in words"],
-              "extra_usage":{"utilization":50,"resets_at":"{{{At(1)}}}","is_enabled":true},
-              "spend":{"utilization":5}},
-             "session":{"total_cost_usd":0}}
-            """;
-
-        var answer = Answer(body);
+        var answer = Answer(ScopedWeeks);
 
         Assert.Equal([new WindowReading("session", 0.23, Parsed(3.5)), new WindowReading("weekly", 0.79, Parsed(100.25))], answer);
         Assert.Equal(
@@ -177,6 +178,45 @@ public sealed class ClaudeUsageTests
             ],
             answer.Seen);
         Assert.Equal("max", answer.Plan);
+    }
+
+    /// <summary>
+    /// The installed server's answer as a signed-in account gives it (measured 2026-11-07, D248's note; every value a placeholder): a
+    /// row's <c>scope</c> an object naming a model and a surface, beside rows whose scope is null, and the per-model arrays beside the
+    /// windows. The model's <c>id</c> is a JSON literal: the server measured names the model by its display name alone, its id null.
+    /// </summary>
+    internal static string ObjectScope(string id) => $$$"""
+        {"subscription_type":"team","rate_limits_available":true,"rate_limits":{
+          "five_hour":{{{Window(23, At(3.5))}}},"seven_day":{{{Window(79, At(100.25))}}},
+          "seven_day_oauth_apps":null,"seven_day_opus":null,"seven_day_sonnet":null,
+          "extra_usage":{"is_enabled":false,"utilization":null},
+          "limits":[
+            {"kind":"session","group":"session","percent":23,"resets_at":"{{{At(3.5)}}}","severity":"normal","is_active":false,"scope":null},
+            {"kind":"weekly_all","group":"weekly","percent":79,"resets_at":"{{{At(100.25)}}}","severity":"warning","is_active":true,"scope":null},
+            {"kind":"weekly_scoped","group":"weekly","percent":40,"resets_at":"{{{At(100.25)}}}","severity":"normal","is_active":false,
+             "scope":{"model":{"display_name":"Model Example","id":{{{id}}}},"surface":null}}],
+          "weekly_scoped_shares":[{"limit_index":2,"used_percent_of_weekly":20,"allowance_percent_of_weekly":50}],
+          "model_scoped":[{"display_name":"Model Example","utilization":40,"resets_at":"{{{At(100.25)}}}"}]},
+         "session":{"total_cost_usd":0}}
+        """;
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData("\"claude-model-example\"")]
+    public void A_row_whose_scope_is_an_object_is_kept_with_no_scope_and_the_walk_reads_its_two(string id)
+    {
+        var answer = Answer(ObjectScope(id));
+
+        Assert.Equal([new WindowReading("session", 0.23, Parsed(3.5)), new WindowReading("weekly", 0.79, Parsed(100.25))], answer);
+        Assert.Equal(
+            [
+                new WindowSeen("five_hour", "session", null, 300, 0.23, 0.01, Parsed(3.5), UsageHistory.ResetSaid),
+                new WindowSeen("seven_day", "weekly", null, 10080, 0.79, 0.01, Parsed(100.25), UsageHistory.ResetSaid),
+                new WindowSeen("limits:session", null, null, 300, 0.23, 0.01, Parsed(3.5), UsageHistory.ResetSaid),
+                new WindowSeen("limits:weekly_all", null, null, 10080, 0.79, 0.01, Parsed(100.25), UsageHistory.ResetSaid),
+                new WindowSeen("limits:weekly_scoped", null, null, 10080, 0.4, 0.01, Parsed(100.25), UsageHistory.ResetSaid),
+            ],
+            answer.Seen);
     }
 
     [Fact]

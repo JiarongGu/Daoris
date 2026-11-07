@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class ChatRunnerTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-chat-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-chat-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {
@@ -189,7 +189,7 @@ public sealed class ChatRunnerTests : IDisposable
               "servers": [ { "name": "tickets", "command": ["node", "tickets.mjs"] } ] }
             """);
         var talk = new PipeTalk(Path.Combine(_home, "no-such-harness.exe"));
-        var own = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = talk.Door });
+        var own = TestDoors.Registry([talk.Door]);
         // The live set, as the driver's tick hands the roster it: this set and the plugin's agent.
         var live = own.WithPlugins(PluginCatalog.Load(_home, own.Names));
         Assert.Equal("acme.agent", live.DeclaredBy("acme-agent"));
@@ -211,7 +211,7 @@ public sealed class ChatRunnerTests : IDisposable
     {
         public List<string> Handed { get; } = [];
 
-        public ISessionAdapter Door => TestDoors.Door("talk", interactive: true, spawn: this);
+        public Provider Door => TestDoors.Door("talk", interactive: true, spawn: this);
 
         public ProcessRecipe Start(SpawnRequest request) => throw new InvalidOperationException("this test drives no session");
 

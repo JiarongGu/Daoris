@@ -77,6 +77,7 @@ public sealed class ShortWaitsCensusTests
         ($"{Driver}/Events/ChainTests.cs: TimeSpan LookDeadline", "an input: a topic's deadline, spent on the test's own clock"),
         ($"{Driver}/Events/ChainTests.cs: TimeSpan RequestsDeadline", "an input: a topic's deadline, spent on the test's own clock"),
         ($"{Driver}/Events/ChangeWatchTests.cs: TimeSpan Deadline", "an input: a topic's deadline, spent on the test's own clock"),
+        ($"{Driver}/Events/LongCallLookTests.cs: TimeSpan Pace", "an input: the watch's pace, spent on the test's own clock"),
         ($"{Driver}/Events/SessionWatchQuietSettingTests.cs: TimeSpan Pace", "an input: the watch's pace, spent on the test's own clock"),
         ($"{Driver}/Events/SessionWatchTests.cs: TimeSpan Pace", "an input: the watch's pace, spent on the test's own clock"),
         ($"{Driver}/Loop/QuietWordTests.cs: TimeSpan Pace", "an input: the watch's pace, spent on the test's own clock"),

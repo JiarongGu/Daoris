@@ -8,26 +8,26 @@ import { PluginTools } from './PluginTools';
 
 // A plugin's tools on its page (ADOSIGNIN1): each declared tool, what a Check found, and a press per unmet check.
 
-const AZ: ToolShown = {
-  id: 'az', name: 'Azure CLI', for: 'Opens the pull request.', versions: '>=2.0.79',
-  install: 'winget install -e --id Microsoft.AzureCLI',
+const SHIP: ToolShown = {
+  id: 'ship', name: 'Ship CLI', for: 'Opens the release.', versions: '>=2.0.79',
+  install: 'winget install -e --id Ship.Cli',
   checks: [
-    { says: 'Its devops extension is added', fix: 'az extension add --name azure-devops', signIn: false, press: true },
-    { says: 'Signed in', fix: 'az login', signIn: true, press: true },
+    { says: 'Its deploy plugin is added', fix: 'ship plugin add deploy', signIn: false, press: true },
+    { says: 'Signed in', fix: 'ship login', signIn: true, press: true },
   ],
 };
 
 const READ: ToolShown = {
-  ...AZ, found: true, ok: true, version: '2.70.0', sentence: 'Azure CLI 2.70.0, the system\'s, in its range (2.0.79 or newer).',
+  ...SHIP, found: true, ok: true, version: '2.70.0', sentence: 'Ship CLI 2.70.0, the system\'s, in its range (2.0.79 or newer).',
   checks: [
-    { ...AZ.checks[0], ready: true, sentence: 'ready: Its devops extension is added.' },
-    { ...AZ.checks[1], ready: false, sentence: 'not ready: Signed in. `az account show` exited 1. Run `az login` to put it right.' },
+    { ...SHIP.checks[0], ready: true, sentence: 'ready: Its deploy plugin is added.' },
+    { ...SHIP.checks[1], ready: false, sentence: 'not ready: Signed in. `ship whoami` exited 1. Run `ship login` to put it right.' },
   ],
 };
 
 function tools(over: Partial<Parameters<typeof PluginTools>[0]> = {}) {
   const calls = { onCheck: vi.fn(), onFix: vi.fn() };
-  const view = render(<PluginTools plugin="azure-devops-pull-request" tools={[AZ]} {...calls} {...over} />);
+  const view = render(<PluginTools plugin="azure-devops-pull-request" tools={[SHIP]} {...calls} {...over} />);
   return { ...view, ...calls };
 }
 
@@ -39,8 +39,8 @@ describe("a plugin's tools", () => {
     tools();
 
     expect(screen.getByRole('heading', { name: 'Tools it needs' })).toBeInTheDocument();
-    expect(screen.getByText('Azure CLI')).toBeInTheDocument();
-    expect(screen.getByText('Opens the pull request.')).toBeInTheDocument();
+    expect(screen.getByText('Ship CLI')).toBeInTheDocument();
+    expect(screen.getByText('Opens the release.')).toBeInTheDocument();
     expect(screen.getByText('Signed in')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Check azure-devops-pull-request’s tools' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Sign in|Set up/ })).toBeNull();
@@ -62,18 +62,18 @@ describe("a plugin's tools", () => {
     const { onFix } = tools({ tools: [unmet] });
 
     expect(screen.getAllByRole('button', { name: /^Set up|^Sign in/ })).toHaveLength(2);
-    await userEvent.click(screen.getByRole('button', { name: 'Set up: Its devops extension is added' }));
-    expect(onFix).toHaveBeenLastCalledWith('azure-devops-pull-request', 'az', 1);
+    await userEvent.click(screen.getByRole('button', { name: 'Set up: Its deploy plugin is added' }));
+    expect(onFix).toHaveBeenLastCalledWith('azure-devops-pull-request', 'ship', 1);
     await userEvent.click(screen.getByRole('button', { name: 'Sign in: Signed in' }));
-    expect(onFix).toHaveBeenLastCalledWith('azure-devops-pull-request', 'az', 2);
+    expect(onFix).toHaveBeenLastCalledWith('azure-devops-pull-request', 'ship', 2);
   });
 
   it('names the command a press runs, and offers no press on a check that is ready', () => {
     tools({ tools: [READ] });
 
     expect(screen.getAllByRole('button', { name: /^Set up|^Sign in/ })).toHaveLength(1);
-    expect(screen.getByText('az login')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Set up: Its devops/ })).toBeNull();
+    expect(screen.getByText('ship login')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Set up: Its deploy/ })).toBeNull();
   });
 
   it('says a fix the plugin may not run, and draws no press for it', () => {
@@ -88,35 +88,35 @@ describe("a plugin's tools", () => {
   });
 
   it('says the install hint for a tool not found, and presses nothing', () => {
-    tools({ tools: [{ ...AZ, found: false, ok: false, sentence: '`az` is not on this machine\'s PATH.' }] });
+    tools({ tools: [{ ...SHIP, found: false, ok: false, sentence: '`ship` is not on this machine\'s PATH.' }] });
 
     expect(screen.getByText(/Not found on this machine/)).toBeInTheDocument();
-    expect(screen.getByText('winget install -e --id Microsoft.AzureCLI')).toBeInTheDocument();
+    expect(screen.getByText('winget install -e --id Ship.Cli')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Set up|Sign in/ })).toBeNull();
   });
 
   it('says when the plugin names no way to get a tool that is not found', () => {
-    tools({ tools: [{ ...AZ, install: null, found: false, ok: false }] });
+    tools({ tools: [{ ...SHIP, install: null, found: false, ok: false }] });
 
     expect(screen.getByText(/names no way to get it/)).toBeInTheDocument();
   });
 
   it('holds the presses while a console is open and says where the person acts', () => {
-    tools({ tools: [READ], fixing: { tool: 'az', check: 2 } });
+    tools({ tools: [READ], fixing: { tool: 'ship', check: 2 } });
 
-    expect(said()).toContain('A console is open for az login');
+    expect(said()).toContain('A console is open for ship login');
     expect(screen.getAllByRole('button', { name: /Set up|Sign in|^Check/ }).every((button) => button.hasAttribute('disabled'))).toBe(true);
   });
 
   it('words a press that was refused in its own sentence', () => {
-    tools({ tools: [READ], refused: { tool: 'az', check: 2, why: 'not_found', message: '`az` is not on this machine\'s PATH.' } });
+    tools({ tools: [READ], refused: { tool: 'ship', check: 2, why: 'not_found', message: '`ship` is not on this machine\'s PATH.' } });
 
     const row = screen.getByText('Signed in').closest('li')!;
-    expect(row.textContent?.replace(/\s+/g, ' ')).toContain('az is not on this machine');
+    expect(row.textContent?.replace(/\s+/g, ' ')).toContain('ship is not on this machine');
   });
 
   it('says a tool entry that is not read, and the tools field when it is not an array', () => {
-    tools({ tools: [{ id: 'az', name: 'az', problem: 'tool `az` has a bad `install`.', checks: [] }] });
+    tools({ tools: [{ id: 'ship', name: 'ship', problem: 'tool `ship` has a bad `install`.', checks: [] }] });
 
     expect(said()).toContain('has a bad install.');
   });

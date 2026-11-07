@@ -200,7 +200,8 @@ public static class JournalFeed
             rows.Add(new JournalEntry(
                 row.GetProperty("position").GetInt64(), row.GetProperty("at").GetInt64(), row.GetProperty("record").GetString() ?? "",
                 Text(row, "family"), Text(row, "change") ?? "", Text(row, "stateOld"), Text(row, "stateNew"), Flag(row, "limitedOld"), Flag(row, "limitedNew"),
-                Split(Text(row, "noteCodes")), Split(Text(row, "marks")) ?? [], Text(row, "workspace"), Text(row, "quest")));
+                Split(Text(row, "noteCodes")), Split(Text(row, "marks")) ?? [], Text(row, "workspace"), Text(row, "quest"),
+                Text(row, "ask"), Text(row, "message"), Text(row, "fromSession")));
         }
 
         return new JournalBatch(root.GetProperty("store").GetString() ?? "", root.GetProperty("floor").GetInt64(), root.GetProperty("newest").GetInt64(), rows);

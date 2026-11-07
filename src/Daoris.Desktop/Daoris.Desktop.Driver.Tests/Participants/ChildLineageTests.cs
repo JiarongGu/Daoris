@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>Files only: the suite's fast half. The hook as node runs it is <see cref="LineageHookProcessTests"/>.</remarks>
 public sealed class ChildLineageTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-lineage-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-lineage-" + Guid.NewGuid().ToString("N")[..8]);
 
     public ChildLineageTests() => Directory.CreateDirectory(_home);
 
@@ -111,14 +111,19 @@ public sealed class ChildLineageTests : IDisposable
     }
 
     [Fact]
-    public void The_writer_writes_each_subagent_s_start_and_end_off_claude_code_s_stream()
+    public void The_part_writes_each_subagent_s_start_and_end_off_claude_code_s_stream()
     {
-        var writer = ChildLineage.Writer(_home, "s1");
+        var part = new LineageReadings(_home, "s1");
+        var children = new NativeChildren();
+        void Stream(string line)
+        {
+            if (children.Read(NativeFrame.Of(line)) is { } said) part.Read(said);
+        }
 
-        writer.Stream(NativeFrame.Of("""{"type":"system","subtype":"init","session_id":"c1"}"""));
-        writer.Stream(NativeFrame.Of("""{"type":"system","subtype":"task_started","task_id":"a1","tool_use_id":"toolu_1","subagent_type":"general-purpose","spawn_depth":1,"task_type":"local_agent"}"""));
-        writer.Stream(NativeFrame.Of("""{"type":"system","subtype":"task_started","task_id":"a2","tool_use_id":"toolu_2","subagent_type":"general-purpose","spawn_depth":2,"parent_task_id":"a1","task_type":"local_agent"}"""));
-        writer.Stream(NativeFrame.Of("""{"type":"system","subtype":"task_notification","task_id":"a2","status":"completed"}"""));
+        Stream("""{"type":"system","subtype":"init","session_id":"c1"}""");
+        Stream("""{"type":"system","subtype":"task_started","task_id":"a1","tool_use_id":"toolu_1","subagent_type":"general-purpose","spawn_depth":1,"task_type":"local_agent"}""");
+        Stream("""{"type":"system","subtype":"task_started","task_id":"a2","tool_use_id":"toolu_2","subagent_type":"general-purpose","spawn_depth":2,"parent_task_id":"a1","task_type":"local_agent"}""");
+        Stream("""{"type":"system","subtype":"task_notification","task_id":"a2","status":"completed"}""");
 
         var bound = ChildLineage.Read(_home, "s1");
         Assert.Equal(
@@ -127,13 +132,14 @@ public sealed class ChildLineageTests : IDisposable
     }
 
     [Fact]
-    public void The_writer_appends_the_protocol_door_s_announcements_and_ends_naming_its_process()
+    public void The_part_appends_the_protocol_door_s_announcements_and_ends_naming_its_process()
     {
-        var writer = ChildLineage.Writer(_home, "s1", "0123456789abcdef");
+        var part = new LineageReadings(_home, "s1");
+        const string proc = "0123456789abcdef";
 
-        writer.Spawned(new LineageAnnouncement("a1", "Reader", "Read it.") { ByRoot = true });
-        writer.Spawned(new LineageAnnouncement("../a2", "Bad", null) { ByRoot = true });
-        writer.Ended("a1", "completed");
+        part.Read(new WireReading.ChildSeen("a1", ChildSignal.Announced) { Depth = 1, Name = "Reader", Task = "Read it.", Process = proc });
+        part.Read(new WireReading.ChildSeen("../a2", ChildSignal.Announced) { Depth = 1, Name = "Bad", Process = proc });
+        part.Read(new WireReading.ChildEnded("a1", ChildSignal.Announced, "completed") { Process = proc });
 
         var lines = File.ReadAllLines(ChildLineage.PathOf(_home, "s1")).Select(line => JsonDocument.Parse(line).RootElement).ToList();
         Assert.Equal(

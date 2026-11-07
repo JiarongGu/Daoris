@@ -79,15 +79,15 @@ public sealed class AgentsRoutes(DriverContext context)
         return [.. roster.Select(report =>
             {
                 // Asked once per harness: every field below reads the same two answers.
-                var toolchain = harnesses.Toolchain(report.Adapter);
+                var toolchain = harnesses.AgentOf(report.Adapter);
                 var pinned = settings.ResolveVersion(report.Adapter, null, null);
                 // The tool's own settings file under an account (AGT6, D98), where this build
                 // knows it: a door's is its owner's (AGT7), and null offers nothing.
-                var settingsFile = harnesses.AccountToolchain(report.Adapter)?.SettingsFile;
+                var settingsFile = harnesses.AccountAgentOf(report.Adapter)?.Accounts.SettingsFile;
                 var accountActs = AccountActs(harnesses, report.Adapter);
                 return new
                 {
-                    Harness = report.Adapter,
+                    Door = report.Adapter,
                     report.Present,
                     report.Version,
                     report.Problem,
@@ -99,13 +99,13 @@ public sealed class AgentsRoutes(DriverContext context)
                     Managed = HarnessSettings.ManagedBinary(
                         harnesses.Home, report.Adapter,
                         pinned,
-                        toolchain?.Binary ?? []),
+                        toolchain?.Program.Binary ?? []),
                     // Whether this harness CAN be pinned at all. A harness that declares neither
                     // a package nor a maker's channel (AGT2b) has no version for Daoris to fetch,
                     // and a surface offering the control anyway would be a button whose only
                     // outcome is a refusal.
                     Pinnable = toolchain is { } pinnable
-                        && (pinnable.Package is { Length: > 0 } || pinnable.Channel is { Length: > 0 }),
+                        && (pinnable.Program.Package is { Length: > 0 } || pinnable.Program.Channel is { Length: > 0 }),
                     // Whether this door can run a sign-in at all — the same rule: an agent that
                     // declares no login flow gets no "Sign in" whose only outcome is a refusal. Its
                     // agent's flow (AGT7, CODEXACCT1), as `TakesKey` reads its key: `codex-acp` has no
@@ -121,7 +121,7 @@ public sealed class AgentsRoutes(DriverContext context)
                     // Whether Daoris has an installer for this door (AGENTMARK1) — the test `InstallAsync` makes, so a
                     // surface offering Install anyway is a button whose only outcome is a refusal; the page says
                     // How to install where this is false.
-                    Installs = toolchain?.Install is { Count: > 0 },
+                    Installs = toolchain?.Program.Install is { Count: > 0 },
                     // The mark this tool wears on the page's strip (AGENTMARK1), declared by the harness; null leaves the
                     // page to derive one.
                     Mark = toolchain?.Mark,
@@ -135,14 +135,14 @@ public sealed class AgentsRoutes(DriverContext context)
                     // to the owner until it said.
                     toolchain?.Product,
                     toolchain?.Maker,
-                    // Its transport in the page's word, as its sheet says it (COAGENT1e).
-                    Wire = harnesses.Adapters.Facts.Of(report.Adapter)?.Door(report.Adapter) is { Wire: var wire } ? wire : null,
+                    // Its transport, as its sheet says it (COAGENT1e).
+                    Transport = harnesses.Adapters.Facts.Of(report.Adapter)?.Door(report.Adapter) is { Transport: var transport } ? transport : null,
                     // Whether a session on this door keeps a conversation (D76 §1) — what the page
                     // reads an empty record by, rather than guessing from the emptiness (CONV3b).
                     Structured = harnesses.Structured(report.Adapter),
                     // Whether a session on this door is handed the rules file (PERM1, D72): the agent's
                     // page has *What it may do* only where Daoris hands its agent one (UX6e, D150 §5.1).
-                    TakesRules = harnesses.Adapters.Resolve(report.Adapter).TakesSettings,
+                    TakesRules = harnesses.Adapters.Door(report.Adapter).Can.TakesSettings,
                     // The plugin this harness came from (D64), or null for one this build carries
                     // — shown beside it, so a person knows which folder to look in.
                     Plugin = harnesses.Adapters.DeclaredBy(report.Adapter),
@@ -219,9 +219,9 @@ public sealed class AgentsRoutes(DriverContext context)
     /// auth login</c> alone. Public for the fast half's table, which reads it without the roster the route asks.
     /// </summary>
     public static (bool SignsIn, bool TakesKey, bool DeviceCode) AccountActs(HarnessRoster harnesses, string adapter) =>
-        harnesses.AccountToolchain(adapter) is { } agent
-            ? (agent.LoginArguments is { Count: > 0 }, agent.KeyVariable is { Length: > 0 },
-               agent.LoginArguments is { Count: > 0 } && agent.DeviceLoginArguments is { Count: > 0 })
+        harnesses.AccountAgentOf(adapter) is { } agent
+            ? (agent.Accounts.LoginArguments is { Count: > 0 }, agent.Accounts.KeyVariable is { Length: > 0 },
+               agent.Accounts.LoginArguments is { Count: > 0 } && agent.Accounts.DeviceLoginArguments is { Count: > 0 })
             : (false, false, false);
 
     /// <summary>
@@ -233,10 +233,10 @@ public sealed class AgentsRoutes(DriverContext context)
         string? first = null;
         foreach (var name in _loop.Harnesses.Known)
         {
-            HarnessToolchain? toolchain;
+            AccountAgent? toolchain;
             try
             {
-                toolchain = _loop.Harnesses.Toolchain(name);
+                toolchain = _loop.Harnesses.AgentOf(name);
             }
             catch (DriverException)
             {
@@ -325,11 +325,11 @@ public sealed class AgentsRoutes(DriverContext context)
             wiring.Refusal,
         };
 
-        HarnessToolchain? Known(string adapter)
+        AccountAgent? Known(string adapter)
         {
             try
             {
-                return _loop.Harnesses.Toolchain(adapter);
+                return _loop.Harnesses.AgentOf(adapter);
             }
             catch (DriverException)
             {
@@ -345,17 +345,15 @@ public sealed class AgentsRoutes(DriverContext context)
     [DriverRoute("HARNESS_ACTION", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("HARNESS_ACTION", None = OwnerNone.MachineSetting)]
     [GroundRead("HARNESS_ACTION", nameof(PipeReads.HarnessToAct))]
-    [Says("HARNESS_ACTION", "harness:agent")]
+    [Says("HARNESS_ACTION", "door:agent")]
     [Publishes("HARNESS_ACTION", StateScopes.Harnesses)]
     private async Task<object?> HarnessActionAsync(HarnessActionPress press, CancellationToken cancellationToken)
     {
-        var (action, harness) = (press.Action, press.Harness);
+        var (action, harness) = (press.Action, press.Door);
         var config = DriverConfig.Load(_loop.ConfigPath);
         // A DriverException, so it travels the same way `Toolchain` already refuses an adapter
         // name it does not know: one mapping, one shape, and the driver's own sentence intact.
-        var toolchain = _loop.Harnesses.Toolchain(harness)
-            ?? throw new DriverException(
-                $"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
+        var toolchain = ManagedAgents.Of(_loop.Harnesses, harness);
 
         var command = config.Commands.GetValueOrDefault(harness);
         var stream = Actions.Relay(harness, action);
@@ -380,7 +378,7 @@ public sealed class AgentsRoutes(DriverContext context)
             await ChangedAsync(_loop, harness, action, config, cancellationToken);
             return new
             {
-                Harness = harness, Action = action, ExitCode = 0, Profile = account,
+                Door = harness, Action = action, ExitCode = 0, Profile = account,
                 Key = HarnessKeys.Handle(HarnessKeys.Of(_loop.Harnesses.Home, owner, account)!),
             };
         }
@@ -403,7 +401,7 @@ public sealed class AgentsRoutes(DriverContext context)
             await ChangedAsync(_loop, harness, action, config, cancellationToken);
             return new
             {
-                Harness = harness, Action = action, ExitCode = 0, Profile = replaced,
+                Door = harness, Action = action, ExitCode = 0, Profile = replaced,
                 Key = HarnessKeys.Handle(HarnessKeys.Of(_loop.Harnesses.Home, owner, replaced)!),
             };
         }
@@ -416,7 +414,7 @@ public sealed class AgentsRoutes(DriverContext context)
             var name = AccountNames.Rename(
                 _loop.Harnesses.Home, owner, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), renamed, press.Name);
             await ChangedAsync(_loop, harness, action, config, cancellationToken);
-            return new { Harness = harness, Action = action, ExitCode = 0, Profile = renamed, Name = name };
+            return new { Door = harness, Action = action, ExitCode = 0, Profile = renamed, Name = name };
         }
 
         // One set of Daoris's accounts serves every workspace (POOL1a, D197; the account-pool design §5.2): there is no list to join
@@ -448,7 +446,7 @@ public sealed class AgentsRoutes(DriverContext context)
             // The report reads the wiring, the directories and the readings fresh at every question, so an edit reads
             // no account again (ROSTER1); an unpin asks its binary.
             await ChangedAsync(_loop, harness, action, config, cancellationToken);
-            return new { Harness = harness, Action = action, ExitCode = code };
+            return new { Door = harness, Action = action, ExitCode = code };
         }
 
         // A pin's version is asked for before anything starts: a pin without one is a malformed call.
@@ -463,7 +461,7 @@ public sealed class AgentsRoutes(DriverContext context)
         var switching = signsIn && press.Switch;
         var reached = await Actions.StartProcessActionAsync(
             harness, action, profile, version, toolchain, command, stream, config, joins: joins, name: named, way: way, switching: switching);
-        return new { Harness = harness, Action = action, Started = true, Profile = reached };
+        return new { Door = harness, Action = action, Started = true, Profile = reached };
     }
 
     /// <summary>
@@ -498,7 +496,7 @@ public sealed class AgentsRoutes(DriverContext context)
     [Owner("HARNESS_INPUT", None = OwnerNone.NamesNothing)]
     private object? HarnessInput(HarnessInputPress press)
     {
-        Actions.Running(press.Harness, press.Action).Send(press.Text);
+        Actions.Running(press.Door, press.Action).Send(press.Text);
         return new { Sent = true };
     }
 
@@ -506,7 +504,7 @@ public sealed class AgentsRoutes(DriverContext context)
     [Owner("HARNESS_CANCEL", None = OwnerNone.NamesNothing)]
     private object? HarnessCancel(HarnessCancelPress press)
     {
-        Actions.Cancel(press.Harness, press.Action);
+        Actions.Cancel(press.Door, press.Action);
         return new { Cancelled = true };
     }
 
@@ -517,14 +515,14 @@ public sealed class AgentsRoutes(DriverContext context)
     [DriverRoute("SET_AGENT_SETTINGS", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_AGENT_SETTINGS", None = OwnerNone.MachineSetting)]
     [GroundRead("SET_AGENT_SETTINGS", nameof(PipeReads.ProfileSettings))]
-    [Says("SET_AGENT_SETTINGS", "harness:agent")]
+    [Says("SET_AGENT_SETTINGS", "door:agent")]
     [NotAlready("SET_AGENT_SETTINGS", "merges into a profile's settings")]
     [Publishes("SET_AGENT_SETTINGS", StateScopes.Harnesses)]
     private object? SetAgentSettings(AgentSettingsPress press)
     {
         var (owner, profile, read) = Daoris.Driver.AccountSettings.Write(
-            _loop.Harnesses, press.Harness, press.Profile, () => (Edit(press.Model, "model"), Edit(press.Effort, "effort"), PerModel(press.PerModel)));
-        return new { Harness = owner, Profile = profile, read.Model, read.Effort, PerModel = PerModelOf(read), read.Problem };
+            _loop.Harnesses, press.Door, press.Profile, () => (Edit(press.Model, "model"), Edit(press.Effort, "effort"), PerModel(press.PerModel)));
+        return new { Door = owner, Profile = profile, read.Model, read.Effort, PerModel = PerModelOf(read), read.Problem };
     }
 
     // What sessions consumed (TOOL3/D57 §4) — measured before it is managed.

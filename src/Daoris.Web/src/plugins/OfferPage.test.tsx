@@ -16,7 +16,7 @@ const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Toolt
 const OFFER: OfferShown = {
   id: 'land-github', name: 'Land on GitHub', version: '0.2.0', description: 'Pushes a landed branch and opens its pull request.',
   problem: null, harnesses: [], points: ['work/land'], servers: ['github'],
-  needs: ['`gh` on the PATH, signed in', 'A repository whose origin is on GitHub'], installed: false,
+  needs: ['A git identity for the host (Settings → Git)', 'A repository whose origin is on GitHub'], installed: false,
 };
 
 const KIT = [{ name: 'work/land', kind: 'act' }];
@@ -58,7 +58,7 @@ describe("an offer's page", () => {
     expect(screen.queryByRole('region', { name: 'Agents' })).toBeNull();
     const needs = screen.getByRole('region', { name: 'What it needs' });
     expect(within(needs).getAllByRole('listitem').map((item) => item.textContent)).toEqual([
-      'gh on the PATH, signed in', 'A repository whose origin is on GitHub',
+      'A git identity for the host (Settings → Git)', 'A repository whose origin is on GitHub',
     ]);
   });
 

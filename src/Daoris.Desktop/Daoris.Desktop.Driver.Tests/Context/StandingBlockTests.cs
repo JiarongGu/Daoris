@@ -13,7 +13,7 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
 {
     private static readonly DateTimeOffset At = new(2026, 11, 3, 9, 0, 0, TimeSpan.Zero);
 
-    private readonly string _tree = Path.Combine(Path.GetTempPath(), "daoris-standing-block-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _tree = Path.Combine(TestHomes.Root, "daoris-standing-block-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {
@@ -155,9 +155,9 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
         File.WriteAllText(Path.Combine(_tree, "AGENTS.md"), new string('a', 32_769));
         var facts = new StandingFacts { Repository = "engine" };
 
-        var codex = StandingBlocks.OnHarness(facts, ProviderRegistry.Built().Resolve("codex-acp"), _tree);
+        var codex = StandingBlocks.OnHarness(facts, ProviderRegistry.Built().Door("codex-acp"), _tree);
         var claude = StandingBlocks.OnHarness(facts, BuiltDoors.Claude, _tree);
-        var acp = StandingBlocks.OnHarness(facts, ProviderRegistry.Built().Resolve("claude-code-acp"), _tree);
+        var acp = StandingBlocks.OnHarness(facts, ProviderRegistry.Built().Door("claude-code-acp"), _tree);
 
         Assert.Equal([".claude/skills"], codex.Skills);
         Assert.Equal(["engine:.claude/rules/a-rule.md", "engine:.claude/rules/b-rule.md"], codex.Rules!.Ids);
@@ -173,9 +173,9 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
 
         // An instruction file the harness reads whole carries no rule index.
         File.WriteAllText(Path.Combine(_tree, "AGENTS.md"), new string('a', 32_768));
-        Assert.Null(StandingBlocks.OnHarness(facts, ProviderRegistry.Built().Resolve("codex-acp"), _tree).Rules);
+        Assert.Null(StandingBlocks.OnHarness(facts, ProviderRegistry.Built().Door("codex-acp"), _tree).Rules);
         // A kind with no repository is told neither, only that its harness holds none of the person's denies.
-        Assert.Equal(new StandingFacts { NoDenies = true }, StandingBlocks.OnHarness(new StandingFacts(), ProviderRegistry.Built().Resolve("codex-acp"), _tree));
+        Assert.Equal(new StandingFacts { NoDenies = true }, StandingBlocks.OnHarness(new StandingFacts(), ProviderRegistry.Built().Door("codex-acp"), _tree));
     }
 
     /// <summary>
@@ -187,7 +187,7 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
     {
         var facts = new StandingFacts { Repository = "engine" };
 
-        var codex = StandingBlocks.OnHarness(facts, ProviderRegistry.Built().Resolve("codex-acp"), _tree);
+        var codex = StandingBlocks.OnHarness(facts, ProviderRegistry.Built().Door("codex-acp"), _tree);
         var claude = StandingBlocks.OnHarness(facts, BuiltDoors.Claude, _tree);
 
         Assert.True(codex.NoDenies);
@@ -253,8 +253,8 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
 
         foreach (var name in new[] { "claude-code", "claude-code-acp", "codex-acp" })
         {
-            var adapter = ProviderRegistry.Built().Resolve(name);
-            var target = TargetPrompt.ForStart(bounded, adapter);
+            var adapter = ProviderRegistry.Built().Door(name);
+            var target = TargetPrompt.ForStart(bounded, ProviderRegistry.Built(), adapter);
             var composed = TargetPrompt.Composed(target);
             var filed = TargetPrompt.Filed(target);
             output.WriteLine($"{name}: the whole first prompt {composed.Text.Length:N0} characters, its block {(filed ? "filed" : "inline")} "
@@ -265,7 +265,7 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
         }
 
         // Every part at its own cap besides, requirements and go-aheads too: the block goes through its file, and the prompt names it.
-        var everything = TargetPrompt.ForStart(Everything(bounded), ProviderRegistry.Built().Resolve("codex-acp"));
+        var everything = TargetPrompt.ForStart(Everything(bounded), ProviderRegistry.Built(), ProviderRegistry.Built().Door("codex-acp"));
         var all = TargetPrompt.Composed(everything);
         output.WriteLine($"every part at its cap: the instruction {all.Text.Length:N0} characters with the line naming its block's file, "
                          + $"the block {StandingBlock.Compose(everything.Block!).Text.Length:N0} in the file");

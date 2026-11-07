@@ -22,7 +22,7 @@ const ACTS: AgentActs = {
   rules: { onSwitchDefault: nothing, onRemove: nothing, onAdd: nothing, onAnswer: nothing },
 };
 
-const CLAUDE = DOORS.find((door) => door.harness === 'claude-code')!;
+const CLAUDE = DOORS.find((door) => door.door === 'claude-code')!;
 const FRESH = 'acct-5e1f0a2b';
 
 /** Claude Code's page at the add flow's last step, the new account kept as `profile` and who signed in as `who`. */

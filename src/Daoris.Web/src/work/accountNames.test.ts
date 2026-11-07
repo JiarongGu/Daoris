@@ -9,7 +9,7 @@ import { accountNames } from './accountNames';
 describe('the names a note says an account by', () => {
   const roster: ToolDoor[] = [
     {
-      harness: 'claude-code', present: true,
+      door: 'claude-code', present: true,
       profiles: [
         { name: 'account-1', displayName: 'personal', home: 'h1', login: 'in' },
         { name: 'account-2', home: 'h2', login: 'in' },
@@ -17,7 +17,7 @@ describe('the names a note says an account by', () => {
       ],
     },
     {
-      harness: 'codex', present: true,
+      door: 'codex', present: true,
       profiles: [{ name: 'shared', displayName: 'two', home: 'h4', login: 'in' }],
     },
   ];
@@ -34,7 +34,7 @@ describe('the names a note says an account by', () => {
   it('names two accounts of one email apart by their organisations', () => {
     const email = 'person@example.invalid';
     const names = accountNames([{
-      harness: 'claude-code', present: true,
+      door: 'claude-code', present: true,
       profiles: [
         { name: 'acct-0000000a', home: 'ha', login: 'in', account: email, org: 'Org A' },
         { name: 'acct-0000000b', home: 'hb', login: 'in', account: email, org: 'Org B' },

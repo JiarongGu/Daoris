@@ -12,8 +12,11 @@ public sealed record WorkEventMade(WorkEventPoint Point, IDisposable Ends) : IAs
     }
 }
 
-/// <summary>The handshake's <c>events</c> for a plugin on <c>work/event</c> (the event hook design §4.1): the grammar it speaks, the last <c>seq</c> minted, and the build.</summary>
-public sealed record WorkEventHandshake(int Grammar, long Seq, string Build);
+/// <summary>
+/// The handshake's <c>events</c> for a plugin on <c>work/event</c> (the event hook design §4.1): the set's run, the grammar it speaks, the
+/// last <c>seq</c> minted, and the build; the relay plugin's first line names all four.
+/// </summary>
+public sealed record WorkEventHandshake(string Run, int Grammar, long Seq, string Build);
 
 /// <summary>
 /// The hook set's half of <c>work/event</c> (EVENTHOOK1b, the event hook design §4.1, §4.4): which plugins it starts for the point, the
@@ -42,7 +45,7 @@ public static class WorkEventPlugins
 
     /// <summary>The plugin's queue attached before its process starts, and the handshake that says where it begins.</summary>
     public static WorkEventHandshake Join(WorkEventPoint point, string plugin, string home) =>
-        new(WorkEventGrammar.Version, point.Join(plugin), Build(home));
+        new(point.Run, WorkEventGrammar.Version, point.Join(plugin), Build(home));
 
     /// <summary>
     /// A hook set's point: an event whose required field fails logged by its kind and field, a failed call by its kind, a plugin late

@@ -21,7 +21,7 @@ public sealed class ReviewTreeTests : IDisposable
     private const string Identity = "-c user.name=\"Driver Tests\" -c user.email=\"tests@example.invalid\"";
 
     private readonly GitTree _repository = new("review-tree");
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-review-tree-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-review-tree-" + Guid.NewGuid().ToString("N")[..8]);
     private readonly string _base;
     private readonly string _middle;
     private readonly string _tip;

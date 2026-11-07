@@ -35,7 +35,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `ApprovedChoice` | `Course/HandOver/ApprovedChoice.cs` | The choice a hand-over is approved on: an agent's own ask takes the arranged order's step for its agent; a handed quest's file keeps its model and effort, and its start takes them while the role still lists them |
 | `SupervisorRules` | `Roles/SupervisorRules.cs` | The rule supervisor's pure half: counts, actions, bounds, places, judge, effective set, act |
 | `SupervisorRuleStore`, `SupervisorRuleBook`, `RuledPolicy` | `Roles/SupervisorRule*.cs`, `Roles/RuledPolicy.cs` | `supervisor_rules`; the fresh seed; what each executor reads; a preset's rules |
-| `SupervisorRuleActs`, `SupervisorRuleHold`, `RuleWiderPlaces` | `Roles/SupervisorRuleActs.cs`, `Roles/SupervisorRuleHold.cs`, `Roles/RuleWiderPlaces.cs` | A rule's act said, kept and read back; `rule-holds`; a repository's workspace as its wider place. A Planned look pass (`RuleActsLook`, `PlannedRuleActs`) records a park, a transient hold, a rule's move and the moves bound once per session; the supervisor's print lists them (`LineFacts.Acts`) |
+| `SupervisorRuleActs`, `SupervisorRuleHold`, `RuleWiderPlaces`, `RuleWiderPlaceStore` | `Roles/SupervisorRuleActs.cs`, `Roles/SupervisorRuleHold.cs`, `Roles/RuleWiderPlaces.cs`, `Roles/RuleWiderPlaceStore.cs` | A rule's act said, kept and read back; `rule-holds`; a repository's workspace as its wider place, kept in the store from the look's registry. A Planned look pass (`RuleActsLook`, `PlannedRuleActs`) records a park, a transient hold, a rule's move and the moves bound once per session; the supervisor's print lists them (`LineFacts.Acts`) |
 | `QuestionSupervisorDecisions`, `SupervisorWhy`, `SupervisorBounds` | `Roles/QuestionSupervisorDecisions.cs`, `Roles/SupervisorDecision.cs` | The agent supervisor's decisions in memory, its lifecycle, refusals and bounds; the class keeps one-line doors |
 | `SupervisorBook`, `SupervisorDecisionFiles`, `SupervisorKeeping`, `SupervisorReleasing`, `SupervisorSweeps`, `SupervisorTickets`, `SupervisorReads` | `Roles/Supervisor*.cs` | The decisions' shared memory (live decisions, session locks, closed questions) and its one move in the book; the files, keeping, releasing, sweeps, tickets and reads each reach it and keep no state |
 | `SessionsSuperviseCommand`, `SupervisorQuarantine`, `HolderKey` | `Roles/SessionsSuperviseCommand.cs`, `Roles/SupervisorQuarantine.cs`, `Roles/SupervisorProof.cs` | The holder's verb; unattributed words taken back; the key, its proof and the role terminal's verbs |
@@ -127,37 +127,55 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     *Try again*, failures in a row on one choice, transient tries, a quiet end, a limited end, and moves in 24 hours. (from D229)
 32. The actions are hold, ask, wait (5 to 600 minutes), next, weighted, refer and off, each count allowing its own set.
     `refer` (ask the agent supervisor) is not offered yet. (from D229)
-33. A place is the machine, `workspace:<id>`, `repository:<id>` or `line:<key>`. For each count the most specific place
+33. A place is the machine, `workspace:<id>` or `repository:<id>`; a line has no place of its own, so the judge refuses
+    `line:<key>` (`place`) and the chain has no line step. A failure is one thing for the quest's count and its run on
+    one choice: a failed end or a cut-off, never a limit, a refused account, a choice not offered, a transient end, an
+    update's close or the quiet end (`SessionReads.IsFailure`). For each count the most specific place
     holding a rule decides, with no layering. Rules naming the role beat those naming none; `off` ends inheritance. A
-    repository's workspace, as the driver's last look read the registry, is its wider place at the judge as at the lines. (from D229)
+    repository's workspace is its wider place at the judge in every process as at the lines: the look keeps the registry's
+    in the store (`repository_workspaces`, step 21) and the judge reads it there; `ROLES` answers each place's wider places,
+    and the fold draws what a place's rules replace and inherit along that chain, for each role's lines. (from D229)
 34. A write is refused where any place's effective set has no tries rule, a move with no moves rule, or failures on one
-    choice acting at or past failures. A place's set is written whole at the revision read. No write asks for a
-    conversion first. (from D229, D232)
-35. A fresh home is seeded at its first start: answers alone at 2, failures at 3, tries at 5. The release's migration
-    writes an older home's caps as the machine's rules (answers alone 2, failures at its `strikes`, tries 5, moves 3 a
-    day), and takes `strikes` out; a stored policy's moves are passed over. Where the machine's
-    place holds nothing, or the store does not read, the seeded rules decide. (from D229, D232)
-36. Every executor reads the effective rules: the answers-alone hold, the failures that park a quest, the tries of a
-    transient episode and a line's moves. A count no rule watches acts on nothing. (from D229, D232)
+    choice acting at or past failures, and where two rules on one count at the place would apply to one line (`ladder`:
+    both for every role, or both naming one role); a rule naming a role beside the every-role rule stands. The terminal's
+    `--set` takes one step. A place's set is written whole at the revision read. No write asks for a conversion first. (from D229, D232)
+35. One seed serves a fresh home's first start and the release's migration: answers alone at 2, failures at 3 (the
+    migration: an older home's `strikes`), tries at 5 and moves 3 a day before the next asks, for every role; the
+    migration takes `strikes` out and passes a stored policy's moves over. Where the machine's place holds nothing, or the
+    store does not read, the seeded rules decide. (from D229, D232)
+36. Every executor reads the effective rules, one rule per count: the answers-alone hold, the failures that park a quest,
+    the tries of a transient episode and a line's moves. A count no rule watches acts on nothing. A line's role and place
+    for its rules are resolved once (`RuledLine`): the role its start was bound to while the catalogue holds it, else the
+    role taking its work at its place; the place its record's repository and workspace, a first start's the quest's
+    repository and the registry's workspace. Every reader takes it: the hold, the facts, a conversation's rules, the
+    planner, the course, a run's tries and the acts. (from D229, D232)
 37. A rule decides at the executor that acts on its count: answers alone in the admission's `at`, failures at the
     planner's start, tries at a run's start and past its episode, conditions where the staffing course reads a move. (from D229, D212)
 38. A rule acts between turns only. It never acts on an unknown count, never ends a running or quiet session, and never
     answers a question. Each hold is released by its own door. Its act is said on the line (`supervisor.rule`: the
     count, its value, the rule's number, place and act), kept as a final decision file of holder kind `rule` with no
-    question, which the questions' reader and the sweep pass by, and logged; the answers-alone hold records it. (from D229)
+    question, which the questions' reader and the sweep pass by, and logged; the answers-alone hold records it. The value
+    is the count its executor read: the admission's, the failed sessions past *Try again*'s mark, the episode's tries
+    (`ended.transient`'s count, also the line's `tries` count), the line's moves, the failures in a row on a choice; one
+    hold is one act, and a new answer while a line waits joins its mark. Every watched count names its rule's place;
+    a line whose rules did not read says so. (from D229)
 39. The failed sessions that park a quest are the failures rule's alone: no door sets `strikes` and no configuration reads it.
     The planner's park carries its rule's number (`Consideration.ParksAt`), which *Try again*, Ask Daoris's `retry` and the
     terminal say; a set-up parks at its line's rule; `STATE`'s `strikes` answers the retried quest's rule, else the machine's;
     `driver list` points to `role supervisor`. The cap stays a machine setting outside the rules. (from D229, D232)
 40. Rules are read with `driver role supervisor` and written with `driver role rules`, `SET_ROLE`/`SET_ROLES` naming
-    `supervisor` with `rules`, or `role_propose`. A rules press carrying a role's field is `mixed-shape`. The page writes
+    `supervisor` with `rules`, or `role_propose`. A rules press carrying a role's field is `mixed-shape`. The terminal names a
+    rule's roles after an `@` on each `--set`, `--off` or `--clear` (`SupervisorRulesFlags`), so Ask Daoris's card twin is
+    one command that clears the place and writes the rules the judge accepted, and the card carries the place and its rules
+    before and after as fields (`HelpRulesView`) that the page words from its catalogue in both languages (`RulesChange`). The page writes
     them in a fold under each place's Roles (`SupervisorRulesFold`, over `ROLES`' `supervisor` sets and counts), whole
-    at the revision read, each rule saying what it replaces; a role's editor says the rules naming it and writes none,
+    at the revision read, each rule saying what it replaces and keeping its roles whole (a rule set for several roles is
+    drawn with them and written back as read); a role's editor says the rules naming it and writes none,
     and its policy record carries the rule and choices alone (the web's `StaffPolicy` wire type names no `moves` or
     `most`). A held answer carries its rule (`AnswerRuleWords`), a parked quest the failures rule's number
     (`parksAt`), and a hold on an ask or the moves bound words the rule; the head, the foot and *What needs you* say
     one in one sentence, and *Change the rule…* opens the place whose rule it is (`ruleDoor`, handed down by the frame as
-    `onChangeRule`). `SESSION_SUPERVISOR` answers, beside the decisions, the line's `counts` (each with the rule it acts
+    `onChangeRule`; a place that is not the machine, a workspace or a repository opens nothing). `SESSION_SUPERVISOR` answers, beside the decisions, the line's `counts` (each with the rule it acts
     by) and the `acts` the rules made: *Details* draws each count and its Supervisor line, and the head's chip
     (`supervisionChip`) names a count a rule holds the line at or one short of it. The room says each place's rules
     (`HelpRoomRules`); the window says *supervisor rule* and *count*. (from D229)
@@ -254,8 +272,9 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
    the catalogue holds working roles alone and reserves both ids. Code reads right.
 2. D229 point 5 (a rule is a holder of the supervisor role) vs `Modules/Platform/StandingConfirmation.cs:172-176` (holders
    are `terminal` and `actor`; rules are a store set through the role door). Same meaning; the code's split reads right.
-3. D229's 2026-11-04 note (`daoris role rules`, `daoris role supervisor`) vs `Roles/RoleVerbs.cs:130` (`driver role rules`);
-   the note's form is not printed anywhere now. The verb's grammar reads right.
+3. D229's 2026-11-04 note (`daoris role rules`, `daoris role supervisor`) vs `Roles/RoleVerbs.cs` (`driver role rules`):
+   Ask Daoris's role cards print the note's form as their terminal twin (`Roles/SupervisorRulesFlags.cs`, `Terminal`
+   and the role card's command), while the verb's own grammar and help say `driver role`. The verb's grammar reads right.
 4. D226 (seven conditions, each with its actions) vs `Roles/StaffPolicyDoor.cs:12-34` (moves for four; signed-out,
    model-refused and budget are the walk's). Code reads right.
 5. D226 (moves and `most` live in the policy) vs D229 and `Roles/StaffPolicy.cs` (the policy holds neither; they are the supervisor's rules).
@@ -276,13 +295,10 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 
 ## Open
 
-- **CONTEXTDRIVE1k (rest):** the room's goldens, regenerated at SCOPEVERIFY2; Ask Daoris's `role_propose` rules card is
-  the driver's one English sentence (`HelpRoleProposals.RulesPlan`), not yet a catalogue's words in both languages.
 - **CONTEXTDRIVE1j:** `refer`, the agent supervisor's *course* act.
-- **CONTEXTDRIVE1l, m:** the installed proof. No class named `HelpCoverageTests` exists in the tree, so the hooks' coverage
-  rows owed at CONTEXTDRIVE1g have nowhere to go until the coverage test that names them is written.
-- **STAFFPOLICY1h/i:** selection by measurement; the installed proof. A conversation's hand-over by the agent's ask
-  (`HandsOver`, the shell's chat runner) still starts the agent's own entry.
+- **CONTEXTDRIVE1l, m:** the installed proof. The hooks' coverage rows owed at CONTEXTDRIVE1g are not written: the every-door
+  census that would hold them was retired with the door-only-where-wanted rule (D233 point 1), so no test names a hook.
+- **STAFFPOLICY1h/i:** selection by measurement; the installed proof.
 - **MODELROLE1l/e2:** the installed proof of a design quest on Design; the partner's real-process case. D233 choice 5
   removes Ask Daoris's Accept and hand-over proposals, not the hand-over doors a person or an agent presses, so the
   hand-over's model stands; the four fenced roles are edited in the one role editor.

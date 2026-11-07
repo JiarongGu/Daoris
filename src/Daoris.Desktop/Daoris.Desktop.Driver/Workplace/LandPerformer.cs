@@ -69,6 +69,7 @@ public sealed class LandPerformer(
                 .OrderByDescending(each => each.Created).FirstOrDefault();
         if (record is null) return null;
         var entry = EntryOf(record.Id, record.Quest!, start, record.Tree!);
+        if (PieceLandings.Refused(record) is { } partner) return Workflow(entry, partner, line: null);
         var (said, choice) = await JudgeAsync(entry, fresh, new Records(fresh), start, ct).ConfigureAwait(false);
         if (choice is null) return said;
         var landed = await LandOneAsync(choice, fresh, ct).ConfigureAwait(false);
@@ -92,6 +93,7 @@ public sealed class LandPerformer(
             ?? (WorkplaceRunFiles.RecordOf(start.Run) is { } first ? RecordOf(records, first) : null);
         if (record is not { Tree: { Length: > 0 } tree }) return null;
         var entry = EntryOf(record.Id, "", start, tree);
+        if (PieceLandings.Refused(record) is { } partner) return Workflow(entry, partner, line: null);
         if (TreeFolders.TreeGone(tree)) return Tried(entry, LandingCode.Gone, start.Tip, "gone", new TreeLanding(false, Words(LandingCode.Gone, null)));
         var (tip, status, uncommitted) = await ReadTreeAsync(tree, ct).ConfigureAwait(false);
         if (!LandTries.ShouldTry(entry, tip, status)) return null;
@@ -385,7 +387,10 @@ public sealed class LandPerformer(
     private string Closed(LandEntry entry, string code, string? branch = null) =>
         Tried(entry, code, tip: null, status: null, named: branch);
 
-    /// <summary>What the run's graph holds: a refusal kept once, with no tip and no status, so the next pass reads the gate again whatever the tree does.</summary>
+    /// <summary>
+    /// What the run's graph holds, or a partner's record that lands nothing (<see cref="PieceLandings"/>): a refusal kept once, with no tip and no
+    /// status, so the next pass reads the gate again whatever the tree does.
+    /// </summary>
     /// <returns>The line said, or null where it was said already.</returns>
     private string? Workflow(LandEntry entry, TreeLanding held, LandingLine? line)
     {

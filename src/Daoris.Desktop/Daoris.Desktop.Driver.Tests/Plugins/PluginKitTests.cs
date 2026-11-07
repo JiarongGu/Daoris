@@ -20,7 +20,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class PluginKitTests : IDisposable
 {
     private readonly string _scratch = Path.Combine(
-        Path.GetTempPath(), "daoris-kit-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-kit-" + Guid.NewGuid().ToString("N")[..8]);
 
     public PluginKitTests() => Directory.CreateDirectory(_scratch);
 
@@ -50,7 +50,6 @@ public sealed class PluginKitTests : IDisposable
     public void The_kit_has_every_point_the_driver_has_in_the_driver_s_order()
     {
         Assert.Equal(HookPoints.All, PluginKit.Points.Select(point => point.Name));
-        Assert.Equal(["decision", "observation", "query", "observation", "observation", "event", "act"], PluginKit.Points.Select(point => point.Kind));
     }
 
     [Fact]

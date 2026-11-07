@@ -17,7 +17,7 @@ public sealed class DriverConfigKeepsTests
     [MemberData(nameof(Rows))]
     public void An_edit_changes_only_what_it_edits(string name, string edit, bool missing, string start, string? between, string? refused, string expected)
     {
-        var folder = Path.Combine(Path.GetTempPath(), "daoris-keeps-" + Guid.NewGuid().ToString("N")[..8]);
+        var folder = Path.Combine(TestHomes.Root, "daoris-keeps-" + Guid.NewGuid().ToString("N")[..8]);
         var path = Path.Combine(folder, "driver.json");
         try
         {
@@ -103,7 +103,7 @@ public sealed class DriverConfigKeepsTests
         var config = DriverConfig.Parse(text);
         Assert.Equal(twice.GetProperty("notify").GetBoolean(), config.Notify);
 
-        var folder = Path.Combine(Path.GetTempPath(), "daoris-keeps-" + Guid.NewGuid().ToString("N")[..8]);
+        var folder = Path.Combine(TestHomes.Root, "daoris-keeps-" + Guid.NewGuid().ToString("N")[..8]);
         var path = Path.Combine(folder, "driver.json");
         try
         {
@@ -232,7 +232,7 @@ public sealed class DriverConfigKeepsTests
     [Fact]
     public void A_config_read_where_no_file_was_writes_the_edits_keys_alone()
     {
-        var folder = Path.Combine(Path.GetTempPath(), "daoris-keeps-" + Guid.NewGuid().ToString("N")[..8]);
+        var folder = Path.Combine(TestHomes.Root, "daoris-keeps-" + Guid.NewGuid().ToString("N")[..8]);
         var path = Path.Combine(folder, "driver.json");
         try
         {

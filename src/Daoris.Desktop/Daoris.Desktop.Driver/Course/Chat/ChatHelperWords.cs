@@ -115,7 +115,7 @@ internal sealed class ChatHelperWords(IExecutorWiring wiring) : IExecutor
                 new CourseFacts(
                     new CourseHead(
                         record.State, Conversation: true, Waiting: [new CourseWord(word.Id ?? "", CourseAuthor.Helper, word.Key)], Session: sessionId),
-                    CourseBoundary.TurnRunning, Alone: new CourseAlone(at, at)),
+                    CourseBoundary.TurnRunning, Alone: at is { } n ? new CourseAlone(n, n) : null),
                 CourseTrigger.Answer));
 
         if (word.Id is { } id) _helperSaying.TryRemove(id, out _);

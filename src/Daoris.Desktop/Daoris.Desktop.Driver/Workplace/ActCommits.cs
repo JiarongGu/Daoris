@@ -102,6 +102,14 @@ internal static class ActCommits
         return code != 0 ? null : said.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).Skip(1).ToList();
     }
 
+    /// <summary>A commit's tree, parents and whole message from one <c>log</c>, where a plan asked each of the three; null where git could not say.</summary>
+    public static async Task<(string Tree, IReadOnlyList<string> Parents, string Message)?> FactsAsync(string root, string commit, CancellationToken ct)
+    {
+        var (code, said, _) = await WorkingTree.GitAsync(root, ["log", "-1", "--format=%T%x00%P%x00%B", "--no-show-signature", commit], environment: null, GitBounds.Question, ct).ConfigureAwait(false);
+        var parts = said.Split('\0', 3);
+        return code != 0 || parts.Length != 3 || !WorkingTree.IsCommitId(parts[0].Trim()) ? null : (parts[0].Trim(), parts[1].Split(' ', StringSplitOptions.RemoveEmptyEntries), parts[2]);
+    }
+
     /// <summary>The whole message of <paramref name="commit"/>; null where git could not say.</summary>
     public static async Task<string?> MessageAsync(string root, string commit, CancellationToken ct)
     {

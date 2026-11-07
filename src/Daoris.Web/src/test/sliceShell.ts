@@ -299,3 +299,11 @@ export function holdingSlices<T extends { isAvailable: boolean }>(shell: SliceSh
   if (answer.isAvailable && client) shell.hold(client);
   return answer;
 }
+
+/**
+ * What the page asked a mocked `invoke`, by its call's type, the window's own slice reads left out: a window holds its slices once the
+ * page's modules have loaded (`SliceShell.hold`), which a loaded machine reaches before a test's rows, so those reads are the window's
+ * and no ask of what the test renders.
+ */
+export const asksOf = (invoke: { mock: { calls: unknown[][] } }): string[] =>
+  invoke.mock.calls.map(([, type]) => String(type)).filter((type) => type !== 'STATE_SLICE');

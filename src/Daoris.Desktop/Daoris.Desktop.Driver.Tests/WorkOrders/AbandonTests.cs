@@ -20,7 +20,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class AbandonTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-abandon-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-abandon-" + Guid.NewGuid().ToString("N")[..8]);
 
     private static readonly DateTimeOffset Now = new(2026, 10, 3, 16, 20, 0, TimeSpan.Zero);
 

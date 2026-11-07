@@ -17,7 +17,7 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
 {
     private const string Key = "5e17e1a15e17e1a15e17e1a15e17e1a15e17e1a15e17e1a15e17e1a15e17e1a1";
 
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-supervise-tests", Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-supervise-tests", Guid.NewGuid().ToString("N")[..8]);
     private string _install = "";
     private string _home = "";
     private string _app = "";

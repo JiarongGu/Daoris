@@ -105,21 +105,28 @@ public sealed class ProcessStarts
     }
 
     /// <summary>
-    /// A person's start of <paramref name="info"/> (<see cref="StartAsync(ProcessStartInfo, StartClass, CancellationToken)"/>):
+    /// A person's start of <paramref name="info"/> (<see cref="StartAsync(ProcessStartInfo, ProcessPurpose, StartClass, CancellationToken)"/>):
     /// the doors a person waits on start through this.
     /// </summary>
-    public Task<Process?> StartAsync(ProcessStartInfo info, CancellationToken ct) => StartAsync(info, StartClass.Person, ct);
+    public Task<Process?> StartAsync(ProcessStartInfo info, ProcessPurpose purpose, CancellationToken ct) =>
+        StartAsync(info, purpose, StartClass.Person, ct);
 
     /// <summary>
-    /// Start <paramref name="info"/> once a place is free for <paramref name="whose"/>, on the thread pool. Cancelling
+    /// Start <paramref name="info"/> once a place is free for <paramref name="whose"/>, on the thread pool, and hand the process to the one
+    /// management as <paramref name="purpose"/>'s (<see cref="OwnedProcesses"/>, D249) before its caller holds it. Cancelling
     /// <paramref name="ct"/> while waiting for a place throws <see cref="OperationCanceledException"/>; once the start is under
     /// way it is seen through, since a process abandoned as it started would run on unowned. The runtime's refusal to start is
     /// thrown as it threw it.
     /// </summary>
-    public Task<Process?> StartAsync(ProcessStartInfo info, StartClass whose, CancellationToken ct)
+    public Task<Process?> StartAsync(ProcessStartInfo info, ProcessPurpose purpose, StartClass whose, CancellationToken ct)
     {
         var start = s_within.Value ?? _start;
-        return RunAsync(() => start(info), whose, ct);
+        return RunAsync(() =>
+        {
+            var process = start(info);
+            OwnedProcesses.Shared.Take(process, purpose);
+            return process;
+        }, whose, ct);
     }
 
     /// <summary>
@@ -194,6 +201,13 @@ public sealed class ProcessStarts
         using (ct.Register(() => Abandon(whose, waiting, ct)))
         {
             await waiter.Task.ConfigureAwait(false);
+        }
+
+        // A place handed on just as the wait was given up is given back: a start cancelled before it began never begins.
+        if (ct.IsCancellationRequested)
+        {
+            Leave(whose);
+            ct.ThrowIfCancellationRequested();
         }
     }
 

@@ -19,8 +19,8 @@ const TEN = '2026-10-04T10:42:00.000Z';
 const NOW = new Date('2026-10-04T12:00:00.000Z');
 
 const claude = (over: Partial<ToolDoor> = {}): ToolDoor => ({
-  harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: '2.1.4 (Claude Code)',
-  wire: 'pipe', ownLogin: 'unknown', ownRead: null,
+  door: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: '2.1.4 (Claude Code)',
+  transport: 'native', ownLogin: 'unknown', ownRead: null,
   profiles: [
     { name: 'account-1', home: 'h/1', login: 'out', account: 'you@work', read: TEN },
     { name: 'account-2', home: 'h/2', login: 'in', account: 'you@home', read: TEN },
@@ -156,9 +156,9 @@ describe('the list', () => {
   it('lists each agent once, whatever doors reach it, with its accounts in a phrase', () => {
     const doors: ToolDoor[] = [
       claude(),
-      { ...claude(), harness: 'claude-code-acp', wire: 'acp', accountOf: 'claude-code' },
-      { harness: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', present: true, wire: 'acp', profiles: [{ name: 'account-1', home: 'c/1', login: 'in' }] },
-      { harness: 'dsh', product: 'DeepSeek Harness', maker: 'DeepSeek', present: false, profiles: [] },
+      { ...claude(), door: 'claude-code-acp', transport: 'protocol', accountOf: 'claude-code' },
+      { door: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', present: true, transport: 'protocol', profiles: [{ name: 'account-1', home: 'c/1', login: 'in' }] },
+      { door: 'dsh', product: 'DeepSeek Harness', maker: 'DeepSeek', present: false, profiles: [] },
     ];
     const rows = agentRows(byTool(doors), { agents: [THREE] });
     expect(rows.map((row) => row.name)).toEqual(['claude-code', 'codex', 'dsh']);
@@ -183,29 +183,29 @@ describe('the list', () => {
   it('gives each agent a mark of its own: a declared one, else its first letters, never one already worn', () => {
     const doors: ToolDoor[] = [
       claude(),
-      { harness: 'codex-acp', accountOf: 'codex', product: 'Codex', present: true, wire: 'acp', profiles: [] },
-      { harness: 'dsh', product: 'DeepSeek Harness', present: false, profiles: [] },
-      { harness: 'cody', product: 'Cody', present: true, profiles: [] },
-      { harness: 'acme-agent', present: true, profiles: [] },
+      { door: 'codex-acp', accountOf: 'codex', product: 'Codex', present: true, transport: 'protocol', profiles: [] },
+      { door: 'dsh', product: 'DeepSeek Harness', present: false, profiles: [] },
+      { door: 'cody', product: 'Cody', present: true, profiles: [] },
+      { door: 'acme-agent', present: true, profiles: [] },
     ];
     expect(agentRows(byTool(doors), undefined).map((row) => row.mark)).toEqual(['CC', 'Co', 'DH', 'Cd', 'Ac']);
 
     // A mark the agent's declaration gives is its own, as written, a letter or two of it.
-    const declared = doors.map((door) => (door.harness === 'codex-acp' ? { ...door, mark: ' Cx ' } : door));
+    const declared = doors.map((door) => (door.door === 'codex-acp' ? { ...door, mark: ' Cx ' } : door));
     expect(agentRows(byTool(declared), undefined).map((row) => row.mark)).toEqual(['CC', 'Cx', 'DH', 'Co', 'Ac']);
     expect(agentRows(byTool([{ ...claude(), mark: 'Claude' }]), undefined)[0]!.mark).toBe('Cl');
     // INSTALLDOOR1: a null mark falls back to the letters.
     expect(agentRows(byTool([{ ...claude(), mark: null }]), undefined)[0]!.mark).toBe('CC');
 
     // A 中文 name gives its first two characters whole.
-    expect(agentRows(byTool([{ harness: 'yinqing', product: '引擎', present: true, profiles: [] }]), undefined)[0]!.mark).toBe('引擎');
+    expect(agentRows(byTool([{ door: 'yinqing', product: '引擎', present: true, profiles: [] }]), undefined)[0]!.mark).toBe('引擎');
   });
 
   it('says an agent with no Daoris account has none yet, not its own sign-in', () => {
     const rows = agentRows(toolsOf([claude({ profiles: [] })]), undefined);
     expect(rows[0]!.phrase).toBe('no Daoris account yet');
     // A plugin's agent that signs in nowhere is only installed.
-    const declared = agentRows(toolsOf([{ harness: 'acme-agent', present: true, signsIn: false, profiles: [] }]), undefined);
+    const declared = agentRows(toolsOf([{ door: 'acme-agent', present: true, signsIn: false, profiles: [] }]), undefined);
     expect(declared[0]!.phrase).toBe('installed');
   });
 });
@@ -696,13 +696,13 @@ describe('each folded section’s line', () => {
   });
 
   it('says each way in, its version, and which one driven work starts on', () => {
-    const [tool] = byTool([claude(), { ...claude(), harness: 'claude-code-acp', wire: 'acp', accountOf: 'claude-code', version: '0.9.1' }]);
+    const [tool] = byTool([claude(), { ...claude(), door: 'claude-code-acp', transport: 'protocol', accountOf: 'claude-code', version: '0.9.1' }]);
     expect(doorsSummary(tool!, 'claude-code')).toBe('direct 2.1.4, for driven work · protocol 0.9.1');
   });
 
   it('keeps a Chinese word tight to the Chinese word beside it, and a number apart (UX7d-2)', () => {
     i18n.changeLanguage('zh');
-    const [tool] = byTool([claude({ present: false }), { ...claude(), harness: 'claude-code-acp', wire: 'acp', accountOf: 'claude-code', version: '0.9.1' }]);
+    const [tool] = byTool([claude({ present: false }), { ...claude(), door: 'claude-code-acp', transport: 'protocol', accountOf: 'claude-code', version: '0.9.1' }]);
     expect(doorsSummary(tool!, 'claude-code')).toBe('直连未安装 · 协议 0.9.1');
     expect(usageSummary(3)).toBe('已测量 3 个会话');
   });

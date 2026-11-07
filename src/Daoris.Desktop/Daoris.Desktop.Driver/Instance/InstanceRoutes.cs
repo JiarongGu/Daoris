@@ -99,7 +99,7 @@ public static class OpenRoutes
         ("git review <session>", null,
             "alone: its `--time` counts and times the git this process starts itself (GITAPP1a-i), which a route's answer cannot carry; SESSION_DIFF answers the page's shape only"),
         ("workflow", null,
-            "alone: WORKFLOW_RUN answers the page's shape only, and `workflow keep` writes its run; `workflow skip` and `stop` are the person's press (WORKFLOW_NODE)"),
+            "alone: WORKFLOW_RUN answers the page's shape only, and `workflow keep` writes its run; `workflow skip` and `stop` are the person's press (WORKFLOW_NODE), and `workflow fix` is WORK_HELD's"),
         ("plugins show <id>", null, "alone: its words name the plugin's folders on this machine, which PLUGIN's page answers apart, and no said line carries"),
         ("plugins activity <id>", null, "alone: a read of the machine log this process reads itself; with no log its words name the log's folder"),
         ("plugins try <folder|id>", null, "alone: a trial starts the plugin as this terminal's own child, and its words name the folder it tried"),
@@ -168,6 +168,9 @@ public static class PersonPresses
     /// <summary><c>sessions helper --decline &lt;ask&gt;</c>: the no to an agent's ask of a helper.</summary>
     public static InstanceRoute SessionHelperDecline { get; } = Person("SESSION_HELPER_DECLINE");
 
+    /// <summary><c>sessions pass &lt;ask&gt;</c>: a helper's answer kept for the person, passed to the session that asked.</summary>
+    public static InstanceRoute SessionHelperPass { get; } = Person("SESSION_HELPER_PASS");
+
     /// <summary><c>sessions partner &lt;id&gt; "…" --agent &lt;name&gt;</c>: the person's ask of a piece (COAGENT1b).</summary>
     public static InstanceRoute SessionPartnerAsk { get; } = Person("SESSION_PARTNER_ASK");
 
@@ -194,6 +197,9 @@ public static class PersonPresses
 
     /// <summary><c>git fetch &lt;repository&gt; --yes</c> (GITAPP2f, D204): origin's branches fetched into <c>refs/remotes/origin/*</c> alone, the person's yes.</summary>
     public static InstanceRoute GitFetch { get; } = Person("GIT_FETCH");
+
+    /// <summary><c>git stash drop &lt;repository&gt; &lt;commit&gt; --yes</c> (GITAPP2, D204): one stash of Daoris's own Save dropped by its commit id, the person's yes.</summary>
+    public static InstanceRoute GitStashDrop { get; } = Person("GIT_STASH_DROP");
 
     /// <summary><c>git push &lt;repository&gt; branch|tag &lt;name&gt; --yes</c> (GITAPP2g, n; D241 point 2): one ref pushed to origin under its grant, the person's yes.</summary>
     public static InstanceRoute GitPush { get; } = Person("GIT_PUSH");
@@ -276,6 +282,12 @@ public static class PersonPresses
     /// </summary>
     public static InstanceRoute WorkflowNode { get; } = Person("WORKFLOW_NODE");
 
+    /// <summary>
+    /// <c>workflow fix &lt;run&gt; [&lt;node&gt;]</c> (FABRIC-PIPELINE1): the window's <i>Ask for a fix…</i> on a failed verification, the person's
+    /// word <c>ask-fix</c> on its held attempt, which publishes an ask and writes nothing on the record.
+    /// </summary>
+    public static InstanceRoute WorkHeld { get; } = Person("WORK_HELD");
+
     /// <summary>Each person's press a verb sends over the pipe, in the verb's words, with its route.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
     [
@@ -287,6 +299,7 @@ public static class PersonPresses
         ("git branch <repository> <name> [<commit>] --rename <new-name> --yes", GitRefRename),
         ("git tag <repository> <name> [<commit>] --rename <new-name> --yes", GitRefRename),
         ("git fetch <repository> --yes", GitFetch),
+        ("git stash drop <repository> <commit> --yes", GitStashDrop),
         ("git push <repository> branch <name> [<commit>] --yes", GitPush),
         ("git push <repository> tag <name> [<commit>] --yes", GitPush),
         ("git pick <repository> <branch> <commit|A..B> --yes", GitHistoryEdit),
@@ -320,6 +333,7 @@ public static class PersonPresses
         ("workflow done <run> <node> [\"…\"]", WorkflowNode),
         ("workflow approve <run> <node> [\"…\"]", WorkflowNode),
         ("workflow reject <run> <node> [\"…\"]", WorkflowNode),
+        ("workflow fix <run> [<node>]", WorkHeld),
         ("sessions archive <id>…", SessionArchive),
         ("sessions unarchive <id>…", SessionArchive),
         ("sessions stop <id>", SessionStop),
@@ -337,6 +351,7 @@ public static class PersonPresses
         ("sessions helper <id> \"…\"", SessionHelperAsk),
         ("sessions helper --approve <ask>", SessionHelperApprove),
         ("sessions helper --decline <ask>", SessionHelperDecline),
+        ("sessions pass <ask>", SessionHelperPass),
         ("sessions partner <id> \"…\" --agent <name>", SessionPartnerAsk),
         ("sessions partner <piece> --stop", SessionStop),
     ];

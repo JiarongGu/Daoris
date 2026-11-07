@@ -40,6 +40,10 @@ public static class HomeMigration
         new NoteRecordsStep(),
         new ClosedQuestsStep(),
         new TurnMarksStep(),
+        new StoreNamesStep(),
+        new BindingFilesStep(),
+        new WiredFilesStep(),
+        new UsageFileStep(),
     ];
 
     /// <summary>

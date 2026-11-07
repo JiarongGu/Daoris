@@ -16,6 +16,8 @@
   "workflow.part.accept": "你采纳它",
   "workflow.part.merge": "你在平台上合并它的拉取请求",
   "workflow.part.join": "；然后",
+  "workflow.part.fixWait": "检查失败时，由你请人修复（*请人修复…*）",
+  "workflow.part.fixAsk": "{{said}}验证失败时，不问你便请人修复。",
   "workflow.chart": "{{name}} 中的工作如何推进",
   "workflow.holds.says": "工作开始之前，{{plugins}} 可以拦下它。",
   "workflow.listJoin": "、",

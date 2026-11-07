@@ -13,6 +13,17 @@ public sealed class GitDoorsPinnedProcessTests : GitDoorsProcessTests
     protected override bool Pinned => true;
 }
 
+/// <summary>
+/// The HTTPS class run with the pinned MinGit as the client (the doors' git, the credential door and the remote helper), the TLS host
+/// trusted by <c>http.sslCAInfo</c> through OpenSSL; the HTTP backend behind it is the runner's git, since MinGit ships no
+/// <c>git-http-backend</c>.
+/// </summary>
+[Trait(Category.Name, Category.Process)]
+public sealed class GitHttpsPinnedProcessTests(GitTlsHost host) : GitHttpsProcessTests(host), IClassFixture<GitTlsHost>
+{
+    protected override bool Pinned => true;
+}
+
 /// <inheritdoc cref="GitDoorsPinnedProcessTests"/>
 [Trait(Category.Name, Category.Process)]
 public sealed class GitSshPinnedProcessTests(GitSshHost host, PullRequestApiHost api, ITestOutputHelper output)

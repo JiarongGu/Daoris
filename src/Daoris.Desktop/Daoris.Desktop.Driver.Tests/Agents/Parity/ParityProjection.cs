@@ -32,6 +32,12 @@ internal static class ParityProjection
 
     public const string Id = "id";
 
+    /// <summary>
+    /// The lineage token a run stamps on each reading: issued fresh for each process by the lineage, so a generated id whichever path ran.
+    /// A run not held by its executor stamps none, and a null against a token is a difference.
+    /// </summary>
+    public const string Process = "process";
+
     public const string At = "at";
 
     public const string Until = "until";
@@ -50,6 +56,7 @@ internal static class ParityProjection
         [Source] = ParityCorrespondence.Provenance,
         [Reader] = ParityCorrespondence.Provenance,
         [Id] = ParityCorrespondence.GeneratedId,
+        [Process] = ParityCorrespondence.GeneratedId,
         [At] = ParityCorrespondence.Time,
         [Until] = ParityCorrespondence.Time,
         [Clock] = ParityCorrespondence.Clock,

@@ -33,18 +33,18 @@ describe('AI features on Settings', () => {
     adapter: 'claude-code',
     harnesses: [
       {
-        harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', wire: 'pipe',
+        door: 'claude-code', product: 'Claude Code', maker: 'Anthropic', transport: 'native',
         present: true, version: 'claude 9.9.9', problem: null, machineDefault: 'personal',
         pinned: null, managed: null, pinnable: true, ownLogin: 'in', workspaceDefaults: [],
         profiles: [{ name: 'personal', home: 'C:/somewhere/.daoris/harnesses/claude-code/personal', login: 'in' }],
       },
       {
-        harness: 'claude-code-acp', product: 'Claude Code', maker: 'Anthropic', wire: 'acp', accountOf: 'claude-code',
+        door: 'claude-code-acp', product: 'Claude Code', maker: 'Anthropic', transport: 'protocol', accountOf: 'claude-code',
         present: true, version: '0.9.1', problem: null, machineDefault: 'personal',
         pinned: null, managed: null, pinnable: true, ownLogin: 'in', workspaceDefaults: [], profiles: [],
       },
       {
-        harness: 'codex', product: 'Codex', maker: 'OpenAI', present: false, version: null,
+        door: 'codex', product: 'Codex', maker: 'OpenAI', present: false, version: null,
         problem: '`codex` is not on this machine\'s PATH', machineDefault: null,
         pinned: null, managed: null, pinnable: false, profiles: [],
       },
@@ -103,7 +103,7 @@ describe('Ask Daoris’s access on Settings', () => {
       if (module !== 'DAORIS.DRIVER') return WIRING;
       if (type === 'SET_HELP_MODE') helpMode = request?.payload?.mode;
       if (type === 'STATE' || type === 'SET_HELP_MODE') {
-        return { ...DRIVER_STATE, helperAdapter: 'claude-code-acp', intakeAdapter: '', ...(helpMode ? { helpMode } : {}) };
+        return { ...DRIVER_STATE, helperAgent: 'claude-code-acp', intakeAgent: '', ...(helpMode ? { helpMode } : {}) };
       }
       if (type === 'HARNESSES') return { harnesses: [] };
       if (type === 'STARTS') return { adapter: 'claude-code', starts: [] };
@@ -233,7 +233,7 @@ describe('Ask Daoris’s configured access on Settings', () => {
       }
       if (type === 'STATE' || type === 'SET_HELP_GRANT') {
         return {
-          ...DRIVER_STATE, helperAdapter: 'claude-code-acp', intakeAdapter: '', helpMode: 'restricted',
+          ...DRIVER_STATE, helperAgent: 'claude-code-acp', intakeAgent: '', helpMode: 'restricted',
           ...(grants
             ? {
               helpGrants: [

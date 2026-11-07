@@ -17,7 +17,7 @@ public sealed class HelpHousekeepingTests : IDisposable
 {
     private const string Branch = "daoris/s-1a2b3c4d";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-housekeeping-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-housekeeping-" + Guid.NewGuid().ToString("N")[..8]);
 
     public HelpHousekeepingTests() => Directory.CreateDirectory(_home);
 
@@ -39,7 +39,7 @@ public sealed class HelpHousekeepingTests : IDisposable
     private void Handed(string session, params string[] housekeeping) =>
         new HelpWired(_home).Keep(session, new HelpReceipt
         {
-            At = DateTimeOffset.UtcNow, Harness = "codex-acp", Folder = HelpRoom.PathOf(_home, "aurora"), Housekeeping = housekeeping,
+            At = DateTimeOffset.UtcNow, Door = "codex-acp", Folder = HelpRoom.PathOf(_home, "aurora"), Housekeeping = housekeeping,
         });
 
     /// <summary>
@@ -142,7 +142,7 @@ public sealed class HelpHousekeepingTests : IDisposable
         Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__housekeeping_inspect", allow);
         Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__housekeeping_clean_up", allow);
         Assert.DoesNotContain($"mcp__{KnowledgeConnector.ServerName}__housekeeping_discard_branch", allow);
-        Assert.Equal(place.Housekeeping, HelpPlacement.Under(place, HelpAccess.For(HelpModes.Full, new ChatAgent(ProviderRegistry.Built().Resolve("claude-code")))).Housekeeping);
+        Assert.Equal(place.Housekeeping, HelpPlacement.Under(place, HelpAccess.For(HelpModes.Full, new ChatAgent(ProviderRegistry.Built(), ProviderRegistry.Built().Door("claude-code")))).Housekeeping);
     }
 
     /// <summary>

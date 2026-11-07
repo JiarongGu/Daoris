@@ -35,7 +35,7 @@ public sealed class ProcessStartsTests
             if (info.FileName == "holder") held.Wait(Poll.Patience);
             return null;
         });
-        holder = starts.StartAsync(new ProcessStartInfo("holder") { UseShellExecute = false, CreateNoWindow = true }, CancellationToken.None);
+        holder = starts.StartAsync(new ProcessStartInfo("holder") { UseShellExecute = false, CreateNoWindow = true }, ProcessPurpose.Agent, CancellationToken.None);
         return starts;
     }
 
@@ -52,7 +52,7 @@ public sealed class ProcessStartsTests
 
         using (var start = stages.Begin("start", "#q1"))
         {
-            var git = start.RunAsync(() => starts.StartAsync(Info(), StartClass.Background, CancellationToken.None));
+            var git = start.RunAsync(() => starts.StartAsync(Info(), ProcessPurpose.Git, StartClass.Background,CancellationToken.None));
             Pass(2500);
             held.Set();
             await git.WaitAsync(Poll.Patience);
@@ -71,7 +71,7 @@ public sealed class ProcessStartsTests
 
         using (var start = stages.Begin("start", "#q1"))
         {
-            await start.RunAsync(() => starts.StartAsync(Info(), StartClass.Background, CancellationToken.None));
+            await start.RunAsync(() => starts.StartAsync(Info(), ProcessPurpose.Git, StartClass.Background,CancellationToken.None));
             Pass(400);
         }
 
@@ -92,7 +92,7 @@ public sealed class ProcessStartsTests
         using (var start = stages.Begin("start", "#q1"))
         {
             await start.RunAsync(() => Task.CompletedTask);
-            var git = starts.StartAsync(Info(), StartClass.Background, CancellationToken.None);
+            var git = starts.StartAsync(Info(), ProcessPurpose.Git, StartClass.Background,CancellationToken.None);
             Pass(2500);
             held.Set();
             await git.WaitAsync(Poll.Patience);
@@ -117,7 +117,7 @@ public sealed class ProcessStartsTests
                 Pass(100);
                 await stages.TimeAsync("consider", async () =>
                 {
-                    var plugin = starts.StartAsync(Info(), StartClass.Background, CancellationToken.None);
+                    var plugin = starts.StartAsync(Info(), ProcessPurpose.Git, StartClass.Background,CancellationToken.None);
                     Pass(2000);
                     held.Set();
                     await plugin.WaitAsync(Poll.Patience);
@@ -142,7 +142,7 @@ public sealed class ProcessStartsTests
         {
             await landing.RunAsync(async () =>
             {
-                var beside = ProcessStarts.QueuedToAsync(null, () => starts.StartAsync(Info(), StartClass.Background, CancellationToken.None));
+                var beside = ProcessStarts.QueuedToAsync(null, () => starts.StartAsync(Info(), ProcessPurpose.Git, StartClass.Background,CancellationToken.None));
                 Pass(2000);
                 held.Set();
                 await beside.WaitAsync(Poll.Patience);
@@ -164,7 +164,7 @@ public sealed class ProcessStartsTests
 
         using (var start = stages.Begin("start", "#q1"))
         {
-            var git = start.RunAsync(() => starts.StartAsync(Info(), StartClass.Background, closing.Token));
+            var git = start.RunAsync(() => starts.StartAsync(Info(), ProcessPurpose.Git, StartClass.Background,closing.Token));
             Pass(700);
             await closing.CancelAsync();
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => git);
@@ -211,10 +211,10 @@ public sealed class ProcessStartsTests
             return null;
         });
 
-        var git = Enumerable.Range(0, 4).Select(_ => starts.StartAsync(Info(), StartClass.Background, CancellationToken.None)).ToList();
+        var git = Enumerable.Range(0, 4).Select(_ => starts.StartAsync(Info(), ProcessPurpose.Git, StartClass.Background,CancellationToken.None)).ToList();
         Assert.True(SpinWait.SpinUntil(() => Volatile.Read(ref inside) == 3, Poll.Patience), "three background starts never ran");
 
-        var agent = starts.StartAsync(new ProcessStartInfo("agent") { UseShellExecute = false, CreateNoWindow = true }, CancellationToken.None);
+        var agent = starts.StartAsync(new ProcessStartInfo("agent") { UseShellExecute = false, CreateNoWindow = true }, ProcessPurpose.Agent, CancellationToken.None);
 
         Assert.Null(await agent.WaitAsync(Poll.Patience));
         // Every git is still held or waiting, and the fourth never went in: the person's place is never the background's.
@@ -246,7 +246,7 @@ public sealed class ProcessStartsTests
             return null;
         });
 
-        var calls = Enumerable.Range(0, 40).Select(_ => starts.StartAsync(Info(), StartClass.Background, CancellationToken.None)).ToList();
+        var calls = Enumerable.Range(0, 40).Select(_ => starts.StartAsync(Info(), ProcessPurpose.Git, StartClass.Background,CancellationToken.None)).ToList();
         Assert.True(SpinWait.SpinUntil(() => Volatile.Read(ref inside) == 3, Poll.Patience), "three starts never ran");
         await Task.Delay(200);
         Assert.Equal(3, Volatile.Read(ref inside));
@@ -274,7 +274,7 @@ public sealed class ProcessStartsTests
             return null;
         });
         Task<Process?> Start(string name, StartClass whose) =>
-            starts.StartAsync(new ProcessStartInfo(name) { UseShellExecute = false, CreateNoWindow = true }, whose, CancellationToken.None);
+            starts.StartAsync(new ProcessStartInfo(name) { UseShellExecute = false, CreateNoWindow = true }, ProcessPurpose.Git, whose, CancellationToken.None);
 
         try
         {
@@ -320,11 +320,11 @@ public sealed class ProcessStartsTests
             return null;
         });
 
-        var first = starts.StartAsync(Info(), StartClass.Background, CancellationToken.None);
+        var first = starts.StartAsync(Info(), ProcessPurpose.Git, StartClass.Background,CancellationToken.None);
         Assert.True(SpinWait.SpinUntil(() => Volatile.Read(ref ran) == 1, Poll.Patience), "the first never ran");
         using var cancel = new CancellationTokenSource();
-        var second = starts.StartAsync(Info(), StartClass.Background, cancel.Token);
-        var third = starts.StartAsync(Info(), StartClass.Background, CancellationToken.None);
+        var second = starts.StartAsync(Info(), ProcessPurpose.Git, StartClass.Background,cancel.Token);
+        var third = starts.StartAsync(Info(), ProcessPurpose.Git, StartClass.Background,CancellationToken.None);
         await cancel.CancelAsync();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => second);
@@ -360,7 +360,7 @@ public sealed class ProcessStartsTests
         t_calling = true;
         try
         {
-            calls = [.. Enumerable.Range(0, 40).Select(_ => starts.StartAsync(Info(), CancellationToken.None))];
+            calls = [.. Enumerable.Range(0, 40).Select(_ => starts.StartAsync(Info(), ProcessPurpose.Agent, CancellationToken.None))];
         }
         finally
         {
@@ -394,9 +394,9 @@ public sealed class ProcessStartsTests
             return null;
         });
 
-        var first = starts.StartAsync(Info(), CancellationToken.None);
+        var first = starts.StartAsync(Info(), ProcessPurpose.Agent, CancellationToken.None);
         using var cancel = new CancellationTokenSource();
-        var second = starts.StartAsync(Info(), cancel.Token);
+        var second = starts.StartAsync(Info(), ProcessPurpose.Agent, cancel.Token);
         await cancel.CancelAsync();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => second);

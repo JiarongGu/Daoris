@@ -31,7 +31,7 @@ public sealed class ProviderAccountReadsTests
         Assert.Same(CodexLimits.Words, roster.LimitsOf("codex-acp"));
         Assert.Null(roster.SignInOf("codex-acp"));
         Assert.Null(roster.WindowsOf("codex-acp"));
-        Assert.IsType<CodexUsageQuestion>(roster.UsageOf("codex-acp"));
+        Assert.Same(UsageReads.Of(CodexUsage.Question), roster.UsageOf("codex-acp"));
     }
 
     [Fact]
@@ -53,7 +53,7 @@ public sealed class ProviderAccountReadsTests
     {
         var roster = Roster();
         Assert.Equal("ANTHROPIC_API_KEY", roster.KeyVariableOf(door));
-        Assert.Equal(ProviderRegistry.Built().Resolve("claude-code").Toolchain!.KeyVariable, roster.KeyVariableOf(door));
+        Assert.Equal(ProviderRegistry.Built().AgentNamed("claude-code")!.Accounts.KeyVariable, roster.KeyVariableOf(door));
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public sealed class ProviderAccountReadsTests
         foreach (var door in ProviderRegistry.Built().Names)
         {
             Assert.Equal(
-                roster.AccountToolchain(door)?.KeyVariable is { Length: > 0 } variable ? variable : null,
+                roster.AccountAgentOf(door)?.Accounts.KeyVariable is { Length: > 0 } variable ? variable : null,
                 roster.KeyVariableOf(door));
         }
     }

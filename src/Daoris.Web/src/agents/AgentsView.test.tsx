@@ -78,7 +78,7 @@ describe('the Agents place', () => {
     adapter: 'claude-code',
     harnesses: [
       {
-        harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic',
+        door: 'claude-code', product: 'Claude Code', maker: 'Anthropic',
         present: true, version: 'claude 9.9.9', problem: null,
         pinned: null, managed: null, pinnable: true,
         ownLogin: 'in', ownRead: READ,
@@ -88,7 +88,7 @@ describe('the Agents place', () => {
         ],
       },
       {
-        harness: 'codex', present: false, version: null,
+        door: 'codex', present: false, version: null,
         problem: '`codex` is not on this machine\'s PATH',
         pinned: null, managed: null, pinnable: false, profiles: [],
       },
@@ -198,7 +198,7 @@ describe('the Agents place', () => {
     expect(within(work).queryByRole('button', { name: 'Read work' })).toBeNull();
     await userEvent.click(within(work).getByRole('button', { name: 'Sign in to work' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'login', profile: 'work' },
+      payload: { door: 'claude-code', action: 'login', profile: 'work' },
     }));
   });
 
@@ -226,7 +226,7 @@ describe('the Agents place', () => {
    */
   it('installs an agent from its row: the agent opens and its own installer runs once', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'HARNESS_ACTION') return { harness: 'codex', action: 'install', started: true };
+      if (type === 'HARNESS_ACTION') return { door: 'codex', action: 'install', started: true };
       return type === 'HARNESSES' ? ROSTER : WIRING;
     });
     place();
@@ -241,7 +241,7 @@ describe('the Agents place', () => {
     await userEvent.click(within(list).getByRole('button', { name: 'Install codex' }));
     expect(await screen.findByRole('heading', { level: 1, name: 'codex' })).toBeTruthy();
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'codex', action: 'install' },
+      payload: { door: 'codex', action: 'install' },
     }));
     expect(invoke.mock.calls.filter(([, type]) => type === 'HARNESS_ACTION')).toHaveLength(1);
   });
@@ -278,7 +278,7 @@ describe('the Agents place', () => {
     const head = screen.getByRole('heading', { level: 1, name: 'codex' }).closest('header')!;
     await userEvent.click(within(head).getByRole('button', { name: 'Install' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'codex', action: 'install' },
+      payload: { door: 'codex', action: 'install' },
     });
   });
 
@@ -308,7 +308,7 @@ describe('the Agents place', () => {
    */
   it('a login that has started stays on its row until its end arrives as news', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: 'login', started: true };
+      if (type === 'HARNESS_ACTION') return { door: 'claude-code', action: 'login', started: true };
       return type === 'HARNESSES' ? ROSTER : WIRING;
     });
     const notify = vi.fn();
@@ -322,7 +322,7 @@ describe('the Agents place', () => {
 
     await act(async () => {
       eventHandlers.get('DAORIS.HARNESS_ENDED')!({
-        harness: 'claude-code', action: 'login', profile: 'work', exitCode: 0, problem: null,
+        door: 'claude-code', action: 'login', profile: 'work', exitCode: 0, problem: null,
       });
     });
 
@@ -336,7 +336,7 @@ describe('the Agents place', () => {
    */
   it('a sign-in outlives leaving the place: its panel is there on the way back, and its end is said away from it', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: 'login', started: true };
+      if (type === 'HARNESS_ACTION') return { door: 'claude-code', action: 'login', started: true };
       return type === 'HARNESSES' ? ROSTER : WIRING;
     });
     const notify = vi.fn();
@@ -361,7 +361,7 @@ describe('the Agents place', () => {
     rerender(page(false));
     await act(async () => {
       eventHandlers.get('DAORIS.HARNESS_ENDED')!({
-        harness: 'claude-code', action: 'login', profile: 'work', exitCode: 0, problem: null,
+        door: 'claude-code', action: 'login', profile: 'work', exitCode: 0, problem: null,
       });
     });
     expect(notify).toHaveBeenCalledWith('work is signed in — sessions can run as it.');
@@ -376,7 +376,7 @@ describe('the Agents place', () => {
     const menu = await more('personal');
     await userEvent.click(within(menu).getByRole('menuitem', { name: 'Sign in again' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'login', profile: 'personal' },
+      payload: { door: 'claude-code', action: 'login', profile: 'personal' },
     });
   });
 
@@ -421,7 +421,7 @@ describe('the Agents place', () => {
    */
   it('Add an account… offers a signed-out account’s own sign-in first, then makes a new one and asks only its name', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: 'login-new', started: true };
+      if (type === 'HARNESS_ACTION') return { door: 'claude-code', action: 'login-new', started: true };
       return type === 'HARNESSES' ? ROSTER : WIRING;
     });
     const notify = vi.fn();
@@ -436,13 +436,13 @@ describe('the Agents place', () => {
 
     await userEvent.click(within(back).getByRole('button', { name: 'Add a new account' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'login-new' },
+      payload: { door: 'claude-code', action: 'login-new' },
     });
     expect(await screen.findByText('Signing in to another Claude Code account')).toBeTruthy();
 
     await act(async () => {
       eventHandlers.get('DAORIS.HARNESS_ENDED')!({
-        harness: 'claude-code', action: 'login-new', profile: 'acct-1a2b3c4d', exitCode: 0, problem: null,
+        door: 'claude-code', action: 'login-new', profile: 'acct-1a2b3c4d', exitCode: 0, problem: null,
         account: 'someone@example.invalid', kept: true,
       });
     });
@@ -463,7 +463,7 @@ describe('the Agents place', () => {
    */
   it('heads with Sign in for Daoris while the agent has no Daoris account, and runs login-new', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: 'login-new', started: true };
+      if (type === 'HARNESS_ACTION') return { door: 'claude-code', action: 'login-new', started: true };
       return type === 'HARNESSES' ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], profiles: [] }] } : WIRING;
     });
     place();
@@ -472,7 +472,7 @@ describe('the Agents place', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Sign in for Daoris' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'login-new' },
+      payload: { door: 'claude-code', action: 'login-new' },
     });
     expect(await screen.findByText('Signing in to another Claude Code account')).toBeTruthy();
   });
@@ -491,7 +491,7 @@ describe('the Agents place', () => {
             code: 'DRIVER_REFUSED', parameters: { message: 'A sign-in for `claude-code` is already running.' },
           });
         }
-        return { harness: 'claude-code', action: 'login-new', started: true };
+        return { door: 'claude-code', action: 'login-new', started: true };
       }
       return type === 'HARNESSES' ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], profiles: [] }] } : WIRING;
     });
@@ -527,7 +527,7 @@ describe('the Agents place', () => {
   /** With no account signed out or unknown there is nobody to bring back: *Add an account…* starts the sign-in at once. */
   it('Add an account… starts the sign-in at once where no account reads signed out or unknown', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: 'login-new', started: true };
+      if (type === 'HARNESS_ACTION') return { door: 'claude-code', action: 'login-new', started: true };
       return type === 'HARNESSES'
         ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], profiles: [ROSTER.harnesses[0]!.profiles![0]!] }] }
         : WIRING;
@@ -536,7 +536,7 @@ describe('the Agents place', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: 'Add an account…' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'login-new' },
+      payload: { door: 'claude-code', action: 'login-new' },
     });
   });
 
@@ -548,8 +548,8 @@ describe('the Agents place', () => {
     invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
       if (type === 'HARNESS_ACTION') {
         const action = options?.payload?.action;
-        if (action === 'profile-rename') return { harness: 'claude-code', action, exitCode: 0, profile: 'acct-1a2b3c4d', name: 'spare' };
-        return { harness: 'claude-code', action, started: true };
+        if (action === 'profile-rename') return { door: 'claude-code', action, exitCode: 0, profile: 'acct-1a2b3c4d', name: 'spare' };
+        return { door: 'claude-code', action, started: true };
       }
       return type === 'HARNESSES' ? ROSTER : WIRING;
     });
@@ -560,7 +560,7 @@ describe('the Agents place', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Add a new account' }));
     await act(async () => {
       eventHandlers.get('DAORIS.HARNESS_ENDED')!({
-        harness: 'claude-code', action: 'login-new', profile: 'acct-1a2b3c4d', exitCode: 0, problem: null,
+        door: 'claude-code', action: 'login-new', profile: 'acct-1a2b3c4d', exitCode: 0, problem: null,
         account: 'spare@example.invalid', kept: true,
       });
     });
@@ -575,7 +575,7 @@ describe('the Agents place', () => {
     await userEvent.click(within(asking).getByRole('button', { name: 'Done' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'profile-rename', profile: 'acct-1a2b3c4d', name: 'spare' },
+      payload: { door: 'claude-code', action: 'profile-rename', profile: 'acct-1a2b3c4d', name: 'spare' },
     }));
     await waitFor(() => expect(notify).toHaveBeenCalledWith('acct-1a2b3c4d is called spare now.'));
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Add an account' })).toBeNull());
@@ -594,7 +594,7 @@ describe('the Agents place', () => {
             code: 'DRIVER_REFUSED', parameters: { message: '`work` already names `work` — each `claude-code` account has a name of its own.' },
           });
         }
-        return { harness: 'claude-code', action, started: true };
+        return { door: 'claude-code', action, started: true };
       }
       return type === 'HARNESSES' ? ROSTER : WIRING;
     });
@@ -605,7 +605,7 @@ describe('the Agents place', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Add a new account' }));
     await act(async () => {
       eventHandlers.get('DAORIS.HARNESS_ENDED')!({
-        harness: 'claude-code', action: 'login-new', profile: 'acct-1a2b3c4d', exitCode: 0, problem: null,
+        door: 'claude-code', action: 'login-new', profile: 'acct-1a2b3c4d', exitCode: 0, problem: null,
         account: 'spare@example.invalid', kept: true,
       });
     });
@@ -641,7 +641,7 @@ describe('the Agents place', () => {
     };
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'ACCOUNTS') return ACCOUNTS;
-      if (type === 'ACCOUNT_USE') return { harness: 'claude-code', action: 'said' };
+      if (type === 'ACCOUNT_USE') return { door: 'claude-code', action: 'said' };
       return type === 'HARNESSES' ? ROSTER : WIRING;
     });
     place();
@@ -655,7 +655,7 @@ describe('the Agents place', () => {
     ]);
     await userEvent.click(within(said).getByRole('button', { name: 'Got it' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNT_USE', {
-      payload: { harness: 'claude-code', action: 'said', ids: ['r1'] },
+      payload: { door: 'claude-code', action: 'said', ids: ['r1'] },
     }));
     expect(screen.queryByRole('button', { name: /in a workspace…$/ })).toBeNull();
     expect(document.body.textContent).not.toMatch(/this machine's list|no workspace/);
@@ -693,7 +693,7 @@ describe('the Agents place', () => {
    */
   it('a sign-in that kept nothing says so in its panel, which stays until it is closed', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: 'login-new', started: true };
+      if (type === 'HARNESS_ACTION') return { door: 'claude-code', action: 'login-new', started: true };
       return type === 'HARNESSES' ? ROSTER : WIRING;
     });
     const notify = vi.fn();
@@ -703,7 +703,7 @@ describe('the Agents place', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Add a new account' }));
     await act(async () => {
       eventHandlers.get('DAORIS.HARNESS_ENDED')!({
-        harness: 'claude-code', action: 'login-new', profile: 'account-1', exitCode: 0, problem: null,
+        door: 'claude-code', action: 'login-new', profile: 'account-1', exitCode: 0, problem: null,
         account: null, kept: false,
       });
     });
@@ -721,7 +721,7 @@ describe('the Agents place', () => {
    */
   it('a failed sign-in stays on its row with its sentence, and a cancelled one closes saying nothing', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: 'login', started: true };
+      if (type === 'HARNESS_ACTION') return { door: 'claude-code', action: 'login', started: true };
       return type === 'HARNESSES' ? ROSTER : WIRING;
     });
     const notify = vi.fn();
@@ -732,7 +732,7 @@ describe('the Agents place', () => {
       expect(await screen.findByText('Signing in to work')).toBeTruthy();
     };
     const end = (news: Record<string, unknown>) => act(async () => {
-      eventHandlers.get('DAORIS.HARNESS_ENDED')!({ harness: 'claude-code', action: 'login', profile: 'work', problem: null, ...news });
+      eventHandlers.get('DAORIS.HARNESS_ENDED')!({ door: 'claude-code', action: 'login', profile: 'work', problem: null, ...news });
     });
 
     await signIn();
@@ -759,14 +759,14 @@ describe('the Agents place', () => {
       settingsPath: ROSTER.settingsPath,
       adapter: 'claude-code',
       harnesses: [{
-        harness: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', wire: 'acp',
+        door: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', transport: 'protocol',
         present: true, version: 'codex-acp 1.12.0', problem: null, pinned: null, managed: null, pinnable: true,
         signsIn: true, takesKey: false, ownLogin: 'in', ownRead: READ,
         profiles: [{ name: 'account-1', home: 'C:/somewhere/.daoris/harnesses/codex/account-1', login: 'out', read: READ }],
       }],
     };
     invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'HARNESS_ACTION') return { harness: 'codex-acp', action: 'login-new', started: true, profile: 'acct-5e6f7a8b' };
+      if (type === 'HARNESS_ACTION') return { door: 'codex-acp', action: 'login-new', started: true, profile: 'acct-5e6f7a8b' };
       return type === 'HARNESSES' ? CODEX : WIRING;
     });
     const notify = vi.fn();
@@ -782,13 +782,13 @@ describe('the Agents place', () => {
 
     await userEvent.click(within(back).getByRole('button', { name: 'Add a new account' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'codex-acp', action: 'login-new' },
+      payload: { door: 'codex-acp', action: 'login-new' },
     });
     expect(await screen.findByText('Signing in to another Codex account')).toBeTruthy();
 
     await act(async () => {
       eventHandlers.get('DAORIS.HARNESS_ENDED')!({
-        harness: 'codex-acp', action: 'login-new', profile: 'acct-5e6f7a8b', exitCode: 0, problem: null,
+        door: 'codex-acp', action: 'login-new', profile: 'acct-5e6f7a8b', exitCode: 0, problem: null,
         account: null, kept: true,
       });
     });
@@ -810,13 +810,13 @@ describe('the Agents place', () => {
       settingsPath: ROSTER.settingsPath,
       adapter: 'claude-code',
       harnesses: [{
-        harness: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', wire: 'acp',
+        door: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', transport: 'protocol',
         present: true, version: 'codex-acp 1.12.0', problem: null, machineDefault: null, pinned: null, managed: null, pinnable: true,
         signsIn: true, deviceCode: true, takesKey: false, ownLogin: 'in', ownRead: READ, workspaceDefaults: [], profiles: [],
       }],
     };
     invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'HARNESS_ACTION') return { harness: 'codex-acp', action: 'login-new', started: true, profile: 'acct-5e6f7a8b' };
+      if (type === 'HARNESS_ACTION') return { door: 'codex-acp', action: 'login-new', started: true, profile: 'acct-5e6f7a8b' };
       return type === 'HARNESSES' ? CODEX : WIRING;
     });
     const notify = vi.fn();
@@ -826,12 +826,12 @@ describe('the Agents place', () => {
     expect(await screen.findByText('Signing in to another Codex account')).toBeTruthy();
     await userEvent.click(await screen.findByRole('button', { name: 'Use a device code' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'codex-acp', action: 'login-new', way: 'device-code', switch: true },
+      payload: { door: 'codex-acp', action: 'login-new', way: 'device-code', switch: true },
     });
 
     await act(async () => {
       eventHandlers.get('DAORIS.HARNESS_ENDED')!({
-        harness: 'codex-acp', action: 'login-new', profile: 'acct-5e6f7a8b', exitCode: -1, problem: null,
+        door: 'codex-acp', action: 'login-new', profile: 'acct-5e6f7a8b', exitCode: -1, problem: null,
         kept: false, cancelled: true, switched: true,
       });
     });
@@ -843,7 +843,7 @@ describe('the Agents place', () => {
 
     await act(async () => {
       eventHandlers.get('DAORIS.HARNESS_ENDED')!({
-        harness: 'codex-acp', action: 'login-new', profile: 'acct-5e6f7a8b', exitCode: 0, problem: null, account: null, kept: true, places: [],
+        door: 'codex-acp', action: 'login-new', profile: 'acct-5e6f7a8b', exitCode: 0, problem: null, account: null, kept: true, places: [],
       });
     });
     expect(notify).toHaveBeenCalledTimes(1);
@@ -854,7 +854,7 @@ describe('the Agents place', () => {
       settingsPath: ROSTER.settingsPath,
       adapter: 'claude-code',
       harnesses: [{
-        harness: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', wire: 'acp',
+        door: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', transport: 'protocol',
         present: true, version: 'codex-acp 1.12.0', problem: null, machineDefault: null, pinned: null, managed: null, pinnable: true,
         signsIn: true, deviceCode: true, takesKey: false, ownLogin: 'in', ownRead: READ, workspaceDefaults: [], profiles: [],
       }],
@@ -866,7 +866,7 @@ describe('the Agents place', () => {
           parameters: { message: '`codex login` waits for your browser on port 1455, else 1457, and neither can be taken now.' },
         });
       }
-      if (type === 'HARNESS_ACTION') return { harness: 'codex-acp', action: 'login-new', started: true, profile: 'acct-5e6f7a8b' };
+      if (type === 'HARNESS_ACTION') return { door: 'codex-acp', action: 'login-new', started: true, profile: 'acct-5e6f7a8b' };
       return type === 'HARNESSES' ? CODEX : WIRING;
     });
     place(vi.fn(), { first: 'codex' });
@@ -876,7 +876,7 @@ describe('the Agents place', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Use a device code' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'codex-acp', action: 'login-new', way: 'device-code' },
+      payload: { door: 'codex-acp', action: 'login-new', way: 'device-code' },
     });
     await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
     expect(await screen.findByRole('button', { name: 'Use the browser' })).toBeTruthy();
@@ -944,7 +944,7 @@ describe('the Agents place', () => {
   /** ACCOUNTID1b: the add flow's last step offers the name the driver offered at the sign-in's end, and no third copy of its rule. */
   it('offers the name the sign-in’s end offered, and none where it offered none', async () => {
     invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
-      if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: options?.payload?.action, started: true };
+      if (type === 'HARNESS_ACTION') return { door: 'claude-code', action: options?.payload?.action, started: true };
       return type === 'HARNESSES' ? ROSTER : WIRING;
     });
     place();
@@ -953,7 +953,7 @@ describe('the Agents place', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Add a new account' }));
       await act(async () => {
         eventHandlers.get('DAORIS.HARNESS_ENDED')!({
-          harness: 'claude-code', action: 'login-new', profile: 'acct-1a2b3c4d', exitCode: 0, problem: null,
+          door: 'claude-code', action: 'login-new', profile: 'acct-1a2b3c4d', exitCode: 0, problem: null,
           account: 'person@example.invalid', org: 'Org B', plan: 'max', offered, kept: true, places: [],
         });
       });
@@ -971,7 +971,7 @@ describe('the Agents place', () => {
     invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
       if (type === 'HARNESS_ACTION') {
         const name = options?.payload?.name;
-        return { harness: 'claude-code', action: 'profile-rename', exitCode: 0, profile: 'work', name: name === 'work' ? null : name };
+        return { door: 'claude-code', action: 'profile-rename', exitCode: 0, profile: 'work', name: name === 'work' ? null : name };
       }
       return type === 'HARNESSES' ? ROSTER : WIRING;
     });
@@ -983,7 +983,7 @@ describe('the Agents place', () => {
     await userEvent.type(within(form).getByRole('textbox', { name: 'Its name' }), 'office');
     await userEvent.click(within(form).getByRole('button', { name: 'Save the name' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'profile-rename', profile: 'work', name: 'office' },
+      payload: { door: 'claude-code', action: 'profile-rename', profile: 'work', name: 'office' },
     });
     await waitFor(() => expect(notify).toHaveBeenCalledWith('work is called office now.'));
   });
@@ -1004,7 +1004,7 @@ describe('the Agents place', () => {
             parameters: { message: '`office` already names `personal` — each `claude-code` account has a name of its own, and an id is one.' },
           });
         }
-        return { harness: 'claude-code', action: 'profile-rename', exitCode: 0, profile: 'work', name: options?.payload?.name };
+        return { door: 'claude-code', action: 'profile-rename', exitCode: 0, profile: 'work', name: options?.payload?.name };
       }
       return type === 'HARNESSES' ? ROSTER : WIRING;
     });
@@ -1055,7 +1055,7 @@ describe('the Agents place', () => {
   /** 🔴 Remove REMOVES (D66 §3): it deletes the sign-in, so its first press only asks, and says what the second will do. */
   it('Remove… asks once, then deletes the account', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: 'profile-remove', exitCode: 0 };
+      if (type === 'HARNESS_ACTION') return { door: 'claude-code', action: 'profile-remove', exitCode: 0 };
       if (type === 'TAIL_SESSION') {
         return {
           session: 'claude-code:profile-remove', sequence: 1, live: false, dropped: 0,
@@ -1073,7 +1073,7 @@ describe('the Agents place', () => {
 
     await userEvent.click(within(work).getByRole('button', { name: 'Remove account' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'profile-remove', profile: 'work' },
+      payload: { door: 'claude-code', action: 'profile-remove', profile: 'work' },
     });
     // UXFIX2: the ask closes once the removal answered, never on the press.
     await waitFor(() => expect(within(work).queryByRole('group', { name: 'remove work' })).toBeNull());
@@ -1162,7 +1162,7 @@ describe('the Agents place', () => {
     expect(await screen.findByRole('tooltip')).toHaveTextContent(/newest release/);
     await userEvent.click(update);
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'update' },
+      payload: { door: 'claude-code', action: 'update' },
     });
   });
 
@@ -1219,7 +1219,7 @@ describe('the Agents place', () => {
     };
     invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
       if (type === 'HARNESSES') return named;
-      if (type === 'HARNESS_ACTION' && options?.payload?.action === 'login') return { harness: 'claude-code', action: 'login', started: true };
+      if (type === 'HARNESS_ACTION' && options?.payload?.action === 'login') return { door: 'claude-code', action: 'login', started: true };
       return WIRING;
     });
     place(notify);
@@ -1228,7 +1228,7 @@ describe('the Agents place', () => {
     await userEvent.click(within(lab).getByRole('button', { name: 'Sign in to lab' }));
     await act(async () => {
       eventHandlers.get('DAORIS.HARNESS_ENDED')!({
-        harness: 'claude-code', action: 'login', profile: 'acct-3f9c1a2b', account: 'you@lab.example', exitCode: 0, problem: null,
+        door: 'claude-code', action: 'login', profile: 'acct-3f9c1a2b', account: 'you@lab.example', exitCode: 0, problem: null,
       });
     });
     expect(notify).toHaveBeenCalledWith('lab is signed in — sessions can run as it.');
@@ -1250,7 +1250,7 @@ describe('the Agents place', () => {
     const key = 'sk-ant-api03-page-test-wxyz';
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'HARNESS_ACTION') {
-        return { harness: 'claude-code', action: 'key-add', exitCode: 0, profile: 'account-1', key: '…wxyz' };
+        return { door: 'claude-code', action: 'key-add', exitCode: 0, profile: 'account-1', key: '…wxyz' };
       }
       return type === 'HARNESSES'
         ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], takesKey: true }, ROSTER.harnesses[1]] }
@@ -1267,7 +1267,7 @@ describe('the Agents place', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save key' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'key-add', key },
+      payload: { door: 'claude-code', action: 'key-add', key },
     });
     // Said where it was added, in the step that asks its name (ACCTUX3), rather than in a toast.
     const asking = await screen.findByRole('region', { name: 'Add an API key' });
@@ -1292,7 +1292,7 @@ describe('the Agents place', () => {
             code: 'DRIVER_REFUSED', parameters: { message: '`claude-code` takes no key while a sign-in runs.' },
           });
         }
-        return { harness: 'claude-code', action: 'key-add', exitCode: 0, profile: 'acct-9c8d7e6f', key: '…wxyz' };
+        return { door: 'claude-code', action: 'key-add', exitCode: 0, profile: 'acct-9c8d7e6f', key: '…wxyz' };
       }
       return type === 'HARNESSES'
         ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], takesKey: true }, ROSTER.harnesses[1]] }
@@ -1324,8 +1324,8 @@ describe('the Agents place', () => {
     invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
       if (type === 'HARNESS_ACTION') {
         const action = options?.payload?.action;
-        if (action === 'key-add') return { harness: 'claude-code', action, exitCode: 0, profile: 'acct-9c8d7e6f', key: '…wxyz' };
-        if (action === 'profile-rename') return { harness: 'claude-code', action, exitCode: 0, profile: 'acct-9c8d7e6f', name: 'spare-key' };
+        if (action === 'key-add') return { door: 'claude-code', action, exitCode: 0, profile: 'acct-9c8d7e6f', key: '…wxyz' };
+        if (action === 'profile-rename') return { door: 'claude-code', action, exitCode: 0, profile: 'acct-9c8d7e6f', name: 'spare-key' };
       }
       return type === 'HARNESSES'
         ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], takesKey: true }, ROSTER.harnesses[1]] }
@@ -1350,7 +1350,7 @@ describe('the Agents place', () => {
     await userEvent.click(within(asking).getByRole('button', { name: 'Done' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'profile-rename', profile: 'acct-9c8d7e6f', name: 'spare-key' },
+      payload: { door: 'claude-code', action: 'profile-rename', profile: 'acct-9c8d7e6f', name: 'spare-key' },
     }));
     await waitFor(() => expect(notify).toHaveBeenCalledWith('acct-9c8d7e6f is called spare-key now.'));
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Add an API key' })).toBeNull());
@@ -1386,7 +1386,7 @@ describe('the Agents place', () => {
             code: 'DRIVER_REFUSED', parameters: { message: '`claude-code` takes no key while a sign-in runs.' },
           });
         }
-        return { harness: 'claude-code', action: 'key-replace', exitCode: 0, profile: 'account-1', key: '…newk' };
+        return { door: 'claude-code', action: 'key-replace', exitCode: 0, profile: 'account-1', key: '…newk' };
       }
       return type === 'HARNESSES'
         ? {
@@ -1410,7 +1410,7 @@ describe('the Agents place', () => {
     await userEvent.click(within(row).getByRole('button', { name: 'Save key' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'key-replace', profile: 'account-1', key },
+      payload: { door: 'claude-code', action: 'key-replace', profile: 'account-1', key },
     });
     expect(await within(row).findByRole('alert')).toHaveProperty('textContent', 'claude-code takes no key while a sign-in runs.');
     expect(within(row).getByLabelText('New API key for API key …wxyz')).toHaveProperty('value', key);
@@ -1426,7 +1426,7 @@ describe('the Agents place', () => {
   it("sets an account's own model over the bridge, from the choices the tool offers", async () => {
     const CHOICES = { models: ['default', 'sonnet', 'opus'], efforts: ['low', 'medium', 'high', 'xhigh'] };
     invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'SET_AGENT_SETTINGS') return { harness: 'claude-code', profile: 'work', model: 'sonnet', effort: 'high', perModel: [], problem: null };
+      if (type === 'SET_AGENT_SETTINGS') return { door: 'claude-code', profile: 'work', model: 'sonnet', effort: 'high', perModel: [], problem: null };
       return type === 'HARNESSES'
         ? {
           ...ROSTER,
@@ -1456,7 +1456,7 @@ describe('the Agents place', () => {
     await userEvent.click(within(form).getByRole('button', { name: 'Save' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_AGENT_SETTINGS', {
-      payload: { harness: 'claude-code', profile: 'work', model: 'sonnet' },
+      payload: { door: 'claude-code', profile: 'work', model: 'sonnet' },
     });
     await waitFor(() => expect(notify).toHaveBeenCalledWith('work: saved — the next session reads it.'));
     expect(serviceCalls()).toEqual([]);
@@ -1556,7 +1556,7 @@ describe('the Agents place', () => {
         harnesses: [
           ...ROSTER.harnesses,
           {
-            harness: 'acme-agent', present: true, version: '(not asked)', problem: null, wire: 'acp',
+            door: 'acme-agent', present: true, version: '(not asked)', problem: null, transport: 'protocol',
             machineDefault: null, pinned: null, managed: null, pinnable: false, profiles: [], plugin: 'acme.gate',
           },
         ],
@@ -1689,7 +1689,7 @@ describe('the Agents place', () => {
   /** UX5 U56: a way in that is not there does not run from PATH yet. */
   it('says a missing way in will run from PATH once it is there', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
-      ? { ...ROSTER, harnesses: ROSTER.harnesses.map((door) => (door.harness === 'codex' ? { ...door, pinnable: true } : door)) }
+      ? { ...ROSTER, harnesses: ROSTER.harnesses.map((door) => (door.door === 'codex' ? { ...door, pinnable: true } : door)) }
       : WIRING));
     place(() => {}, { first: 'codex' });
 
@@ -1706,7 +1706,7 @@ describe('the Agents place', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Pin' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'pin', profile: undefined, version: '1.2.3' },
+      payload: { door: 'claude-code', action: 'pin', profile: undefined, version: '1.2.3' },
     });
   });
 
@@ -1767,7 +1767,7 @@ describe('what it may do', () => {
     settingsPath: 'C:/somewhere/.daoris/harnesses.json',
     adapter: 'claude-code',
     harnesses: [{
-      harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: 'claude 9.9.9', problem: null,
+      door: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: 'claude 9.9.9', problem: null,
       machineDefault: null, pinned: null, managed: null, pinnable: true, ownLogin: 'in', takesRules: true, profiles: [],
     }],
   };
@@ -1884,7 +1884,7 @@ describe('how accounts are used', () => {
     settingsPath: 'C:/somewhere/.daoris/harnesses.json',
     adapter: 'claude-code',
     harnesses: [{
-      harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: 'claude 9.9.9', problem: null,
+      door: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: 'claude 9.9.9', problem: null,
       pinned: null, managed: null, pinnable: true, ownLogin: 'in', signsIn: true,
       profiles: [
         { name: 'personal', home: 'C:/somewhere/.daoris/harnesses/claude-code/personal', login: 'in' },
@@ -1911,7 +1911,7 @@ describe('how accounts are used', () => {
     async (_module: string, type: string, args?: { payload?: { action?: string } }) => {
       if (type === 'HARNESSES') return roster;
       if (type === 'ACCOUNTS') return accounts;
-      if (type === 'ACCOUNT_USE') return { harness: 'claude-code', action: args?.payload?.action, ended: true };
+      if (type === 'ACCOUNT_USE') return { door: 'claude-code', action: args?.payload?.action, ended: true };
       return WIRING;
     };
 
@@ -1939,7 +1939,7 @@ describe('how accounts are used', () => {
     await userEvent.click(within(personal).getByRole('button', { name: 'try personal now' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNT_USE', {
-      payload: { harness: 'claude-code', action: 'ready', profile: 'personal' },
+      payload: { door: 'claude-code', action: 'ready', profile: 'personal' },
     });
     await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringMatching(/^personal is offered again\./)));
   });
@@ -1957,7 +1957,7 @@ describe('how accounts are used', () => {
     expect(screen.queryByRole('checkbox')).toBeNull();
     await userEvent.click(await screen.findByRole('button', { name: 'Move up · work' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNT_USE', {
-      payload: { harness: 'claude-code', action: 'order', accounts: ['work', 'personal'] },
+      payload: { door: 'claude-code', action: 'order', accounts: ['work', 'personal'] },
     });
     // No ⋯ offers a default or a list: the order says where starts begin.
     expect(within(await more('work')).queryByRole('menuitem', { name: /default|list/i })).toBeNull();
@@ -1977,7 +1977,7 @@ describe('how accounts are used', () => {
     await unfold('How accounts are used');
     await userEvent.click(await screen.findByRole('radio', { name: 'One by one, in order' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNT_USE', {
-      payload: { harness: 'claude-code', action: 'use', use: 'order' },
+      payload: { door: 'claude-code', action: 'use', use: 'order' },
     }));
   });
 
@@ -2089,7 +2089,7 @@ describe('how accounts are used', () => {
     expect(await within(personal).findByText(/over its curve's 90% now/)).toBeTruthy();
     expect(within(personal).getByText('read from Claude Code 20m ago')).toBeTruthy();
     const readsOf = () => invoke.mock.calls.filter(([, type]) => type === 'ACCOUNTS_READ');
-    await waitFor(() => expect(readsOf()).toEqual([['DAORIS.DRIVER', 'ACCOUNTS_READ', { payload: { harness: 'claude-code' } }]]));
+    await waitFor(() => expect(readsOf()).toEqual([['DAORIS.DRIVER', 'ACCOUNTS_READ', { payload: { door: 'claude-code' } }]]));
 
     await userEvent.click(screen.getByRole('button', { name: 'Read now' }));
     await waitFor(() => expect(readsOf()).toHaveLength(2));

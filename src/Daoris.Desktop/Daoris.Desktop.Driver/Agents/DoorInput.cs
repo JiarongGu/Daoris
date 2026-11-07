@@ -62,6 +62,15 @@ internal sealed class DoorInput(string? refuses = null)
         }
     }
 
+    /// <summary>
+    /// The lines the next process is handed, in order, nothing written yet: each written to the one before and never acknowledged, then each
+    /// waiting. A run whose door takes its prompt whole at the start composes it from these, and attaches once the door wrote it.
+    /// </summary>
+    public IReadOnlyList<string> Lines()
+    {
+        lock (_gate) return [.. _written.Concat(_waiting).Select(word => word.Line)];
+    }
+
     /// <summary>What the record opens a process with that carries the waiting words: their openings, in order.</summary>
     public IReadOnlyList<SessionEvent> Openings()
     {

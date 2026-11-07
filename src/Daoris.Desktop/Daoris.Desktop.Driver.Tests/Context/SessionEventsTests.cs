@@ -15,7 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class SessionEventsTests : IDisposable
 {
     private readonly string _directory = Path.Combine(
-        Path.GetTempPath(), "daoris-events-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-events-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

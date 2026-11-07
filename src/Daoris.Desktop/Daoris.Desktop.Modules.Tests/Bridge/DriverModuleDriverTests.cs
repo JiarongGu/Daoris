@@ -132,10 +132,11 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
     [Fact]
     public async Task A_retry_writes_the_same_file_the_terminal_edits()
     {
-        // SESSUX1b: a retry does what the loop's last look says applies, so the look parked the quest first.
+        // SESSUX1b: a retry does what the loop's last look says applies, so the look parked the quest first, at the failures rule's
+        // number as the planner's park carries it (CONTEXTDRIVE1l).
         var loop = Loop();
         loop.Look.Record([new Consideration(
-            new QuestView("a78553", "game", "engine", "A parked quest", "A body.", "Open"), StartVerdict.Exhausted, "parked") { Failures = 3 }]);
+            new QuestView("a78553", "game", "engine", "A parked quest", "A body.", "Open"), StartVerdict.Exhausted, "parked") { ParksAt = 3 }]);
         var module = new DriverModule(Bus, loop);
 
         Assert.Equal(3, (await AnswerAsync(module, "STATE")).GetProperty("strikes").GetInt32());
@@ -165,16 +166,16 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
         {
             var module = Module();
 
-            Assert.Equal("", (await AnswerAsync(module, "STATE")).GetProperty("intakeAdapter").GetString());
+            Assert.Equal("", (await AnswerAsync(module, "STATE")).GetProperty("intakeAgent").GetString());
 
             var on = await AnswerAsync(module, "SET_ROLE", Staff("intake", [new { agent = "claude-code-acp" }]));
-            Assert.Equal("claude-code-acp", on.GetProperty("intakeAdapter").GetString());
+            Assert.Equal("claude-code-acp", on.GetProperty("intakeAgent").GetString());
 
             await AnswerAsync(module, "SET_NOTIFY", new { notify = false });
             Assert.Equal("claude-code-acp", ActorChoices.FirstAgent("intake", DriverConfig.Load(DriverConfigPath)));
 
             var off = await AnswerAsync(module, "SET_ROLE", Staff("intake", []));
-            Assert.Equal("", off.GetProperty("intakeAdapter").GetString());
+            Assert.Equal("", off.GetProperty("intakeAgent").GetString());
             Assert.Null(ActorChoices.FirstAgent("intake", DriverConfig.Load(DriverConfigPath)));
             Assert.Empty(DriverConfig.Load(DriverConfigPath).Actors["intake"]);
         }
@@ -192,15 +193,15 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
         try
         {
             var module = Module();
-            Assert.Equal("", (await AnswerAsync(module, "STATE")).GetProperty("helperAdapter").GetString());
+            Assert.Equal("", (await AnswerAsync(module, "STATE")).GetProperty("helperAgent").GetString());
 
             await AnswerAsync(module, "SET_ROLE", Staff("intake", [new { agent = "claude-code-acp" }]));
             var on = await AnswerAsync(module, "SET_ROLE", Staff("ask-daoris", [new { agent = "codex-acp" }]));
-            Assert.Equal("codex-acp", on.GetProperty("helperAdapter").GetString());
-            Assert.Equal("claude-code-acp", on.GetProperty("intakeAdapter").GetString());
+            Assert.Equal("codex-acp", on.GetProperty("helperAgent").GetString());
+            Assert.Equal("claude-code-acp", on.GetProperty("intakeAgent").GetString());
 
             var off = await AnswerAsync(module, "SET_ROLE", Staff("ask-daoris", []));
-            Assert.Equal("", off.GetProperty("helperAdapter").GetString());
+            Assert.Equal("", off.GetProperty("helperAgent").GetString());
             Assert.Null(ActorChoices.FirstAgent("ask-daoris", DriverConfig.Load(DriverConfigPath)));
         }
         finally

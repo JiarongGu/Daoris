@@ -179,6 +179,7 @@
   "person.route.GIT_REF_FINISH": "完成一次中途停下、配置尚未移动的分支重命名",
   "person.route.GIT_FETCH": "将 origin 的分支获取到一个仓库中",
   "person.route.GIT_PUSH": "将一个仓库的分支或标签推送到 origin",
+  "person.route.GIT_STASH_DROP": "丢弃 Daoris 在一个仓库中保存的暂存",
   "person.route.GIT_HISTORY_EDIT": "在一个仓库的分支上拣选、还原或变基提交",
   "person.route.SET_WRITE_ACROSS": "更改一个仓库的会话可以在别处写入什么",
   "person.route.TRUST_FOLDER": "为智能体的工作信任一个文件夹",

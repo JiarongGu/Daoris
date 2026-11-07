@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Diagnostics;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
@@ -13,7 +14,7 @@ namespace Daoris.Desktop.Modules.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class HomePlacingProcessTests : IDisposable
 {
-    private readonly string _install = Path.Combine(Path.GetTempPath(), "daoris-home-placing-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _install = Path.Combine(TestHomes.Root, "daoris-home-placing-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly List<Process> _spawned = [];
 

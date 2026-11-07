@@ -23,7 +23,7 @@ public sealed class AccountRotationGoalTests : IDisposable
 
     private static readonly DateTimeOffset Until = new(2026, 10, 3, 16, 2, 0, TimeSpan.FromMinutes(345));
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-goal-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-goal-" + Guid.NewGuid().ToString("N")[..8]);
 
     private DateTimeOffset _now = Seen;
 
@@ -42,14 +42,14 @@ public sealed class AccountRotationGoalTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
+    private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain);
 
-    private HarnessToolchain Toolchain(bool weekFixed = true, string? accountOf = null) => new(
+    private TestAgent Toolchain(bool weekFixed = true, string? accountOf = null) => new(
         Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
         AccountOf: accountOf, WeekFixed: weekFixed);
 
     private HarnessRoster Roster() =>
-        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = Adapter("fake", Toolchain()),
             // A door onto the fake agent's accounts (AGT7): its sessions are the fake agent's.

@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// Nothing here starts a process or asks git: the walk is asked directly, and each agent is present by a file look that asks nobody
-/// whether an account is signed in (<see cref="HarnessToolchain.ProbeByPresence"/>), as <c>RefusedByTheHarnessTests</c>' are.
+/// whether an account is signed in (<see cref="TestAgent.ProbeByPresence"/>), as <c>RefusedByTheHarnessTests</c>' are.
 /// </remarks>
 public sealed class BuildWalkTests : IDisposable
 {
@@ -46,17 +46,12 @@ public sealed class BuildWalkTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain, Transport wire = Transport.Protocol) => TestDoors.Door(name, toolchain, transport: wire, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
+    private static Provider Adapter(string name, TestAgent toolchain, Transport wire = Transport.Protocol) => TestDoors.Door(name, toolchain, transport: wire, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
 
     private Daoris.Driver.Driver Driver(params ActorChoice[] build)
     {
-        var present = new HarnessToolchain(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["cool"] = Adapter("cool", present),
-            ["fine"] = Adapter("fine", present),
-            ["piped"] = Adapter("piped", present, Transport.Native),
-        });
+        var present = new TestAgent(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
+        var adapters = TestDoors.Registry([Adapter("cool", present), Adapter("fine", present), Adapter("piped", present, Transport.Native)]);
         var roster = _roster = new HarnessRoster(adapters, Settings) { Clock = () => Now, Zone = Zone };
         var config = ActorChoices.With(DriverConfig.Empty with { Actors = StaffedRoles.On("cool"), Drivable = ["engine"] }, "build", build);
         return new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), config, adapters, _home, harnesses: roster) { Log = _log };
@@ -282,7 +277,7 @@ public sealed class BuildWalkTests : IDisposable
 
         Assert.Equal(("build", "3"), (settled.Role, settled.Chosen!.From));
         Assert.Equal(counted + 1, settled.Reservation);
-        Assert.Equal("fine", settled.Adapter!.Name);
+        Assert.Equal("fine", settled.Adapter!.Id.Value);
 
         var moved = await driver.ReaskAsync(Start, registry, settled.Chosen, settled.Selection, CancellationToken.None);
 

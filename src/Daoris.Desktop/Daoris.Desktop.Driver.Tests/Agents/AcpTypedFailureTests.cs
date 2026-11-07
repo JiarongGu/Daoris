@@ -38,7 +38,7 @@ public sealed class AcpTypedFailureTests
     private static TransientRetry Retry(MovedClock clock, AcpTransientTests.Told told) => new()
     {
         Read = refused => AgentErrors.Read(
-            Built, Built.Resolve("codex-acp"), DoorFailures.OfPrompt(refused), clock.GetUtcNow(), TimeZoneInfo.Utc),
+            Built, Built.Door("codex-acp"), DoorFailures.OfPrompt(refused), clock.GetUtcNow(), TimeZoneInfo.Utc),
         Clock = clock,
         Began = (_, next) => told.Add($"began:{(next - clock.GetUtcNow()).TotalMinutes:0}"),
         Tried = (_, number, next) => told.Add($"try:{number}:{(next is { } at ? (at - clock.GetUtcNow()).TotalMinutes.ToString("0") : "last")}"),
@@ -67,8 +67,8 @@ public sealed class AcpTypedFailureTests
 
         Assert.DoesNotContain("sessionFailure", Asked(plain));
         Assert.Contains("sessionFailure", Asked(typed));
-        Assert.True(Built.Resolve("codex-acp").Toolchain!.ErrorWords!.TypedFailures);
-        Assert.All(new[] { "claude-code-acp", "acp-stub", "dsh" }, name => Assert.NotEqual(true, Built.Resolve(name).Toolchain?.ErrorWords?.TypedFailures));
+        Assert.True(Built.AgentNamed("codex-acp")!.Tables.ErrorWords!.TypedFailures);
+        Assert.All(new[] { "claude-code-acp", "acp-stub", "dsh" }, name => Assert.NotEqual(true, Built.AgentNamed(name)?.Tables.ErrorWords?.TypedFailures));
     }
 
     /// <summary>

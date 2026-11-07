@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { NODE_KINDS } from '../../bridge/generated/routes';
+import { NODE_KINDS } from '../../data/generated/service';
 import { variantOf, VARIANT_GLYPH } from './stepKinds';
 
 // FLOWCHART2a (D223): a step is drawn by the variant of its kind, in the graph's words and in a Current's; a kind the page has none
@@ -14,7 +14,7 @@ describe('the variant of a kind', () => {
     ['land', 'landing'], ['landing', 'landing'], ['handed', 'unknown'],
     ['line', 'line'], ['push', 'line'], ['pull-request', 'line'], ['monitor', 'line'], ['tidy', 'line'],
     ['request', 'other'], ['wait.unit', 'other'], ['integrate', 'other'], ['quest.close', 'other'], ['all', 'other'], ['stop', 'other'],
-    ['local-release/record', 'plugin'],
+    ['local-release/record', 'plugin'], ['acme-host/pull-request', 'line'],
     ['something-new', 'unknown'], ['', 'unknown'],
   ])('reads %s as %s', (kind, variant) => {
     expect(variantOf(kind, [])).toBe(variant);

@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Diagnostics;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -10,7 +11,7 @@ namespace Daoris.Desktop.Modules.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class AppWorkingFolderProcessTests : IDisposable
 {
-    private readonly string _install = Path.Combine(Path.GetTempPath(), "daoris-app-cwd-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _install = Path.Combine(TestHomes.Root, "daoris-app-cwd-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly List<Process> _spawned = [];
 

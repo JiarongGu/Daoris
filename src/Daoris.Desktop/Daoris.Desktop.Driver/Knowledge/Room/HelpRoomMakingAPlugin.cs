@@ -19,6 +19,7 @@ internal sealed class HelpRoomMakingAPlugin : IHelpRoomSection
         // FABRIC-PERFORM1e: the work wire's points, which the kit scaffolds with its performer's contract and contract test.
         [HookPoints.Watch] = "to be told which units await its steps",
         [HookPoints.Step] = "to report what became of a step it performs or observes",
+        [HookPoints.Event] = "to hear what moved in the work cycle (a session or quest parked, a work ended or landed), as ids and codes, for a program on this machine",
         [HookPoints.Perform] = "to perform a step of the work, once per attempt, with what it makes removed at the end: a `<plugin>/pull-request` step opens the pull request of the branch Daoris pushed",
     };
 

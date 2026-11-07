@@ -1,6 +1,6 @@
 import { type KeyboardEvent, useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { NODE_KINDS } from '../../bridge/generated/routes';
+import { NODE_KINDS } from '../../data/generated/service';
 import { QuickPanel } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { isComposing } from '../../lib/composing';

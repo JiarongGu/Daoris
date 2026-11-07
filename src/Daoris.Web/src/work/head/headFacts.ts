@@ -115,7 +115,7 @@ export function nextPress(waits: readonly Wait[]): 'answer' | 'accept' | 'rebase
 export function leadingAgentOf(
   entry: Pick<SessionEntry, 'leading' | 'parts'> | null | undefined,
   sessions: readonly Pick<Session, 'id' | 'adapter'>[],
-  roster: readonly { harness: string; product?: string | null }[],
+  roster: readonly { door: string; product?: string | null }[],
   sheets?: AgentDoors,
 ): string | null {
   if (!entry || entry.parts.length < 2) return null;
@@ -124,7 +124,7 @@ export function leadingAgentOf(
   const agents = new Set(doors.map((door) => agentOfDoor(door, sheets)));
   const leading = held.get(entry.leading);
   if (!leading || agents.size < 2) return null;
-  return roster.find((row) => row.harness === leading)?.product || leading;
+  return roster.find((row) => row.door === leading)?.product || leading;
 }
 
 /**

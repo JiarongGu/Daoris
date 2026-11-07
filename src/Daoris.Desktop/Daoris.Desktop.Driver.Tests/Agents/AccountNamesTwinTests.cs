@@ -18,7 +18,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class AccountNamesTwinTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-names-twin-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-names-twin-" + Guid.NewGuid().ToString("N")[..8]);
 
     public AccountNamesTwinTests() => Directory.CreateDirectory(_home);
 
@@ -238,7 +238,7 @@ public sealed class AccountNamesTwinTests : IDisposable
     [Fact]
     public async Task A_sign_in_into_an_account_that_is_not_there_makes_nothing()
     {
-        var toolchain = new HarnessToolchain(["no-such-agent-binary"], ["--version"], "AGENT_HOME", LoginArguments: ["login"]);
+        var toolchain = new TestAgent(["no-such-agent-binary"], ["--version"], "AGENT_HOME", LoginArguments: ["login"]);
         var missing = HarnessSettings.ProfileHome(_home, "claude-code", "account-3");
 
         var refused = await Assert.ThrowsAsync<DriverException>(

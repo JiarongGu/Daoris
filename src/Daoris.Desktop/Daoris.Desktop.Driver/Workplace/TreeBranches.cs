@@ -171,7 +171,7 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
         if (!BranchName.IsValid(name)) return new TreeLanding(false, Untaken(name, entered));
 
         // PROCESS1b-ii (point 1): the squash is a commit Daoris makes, so git's own identity here makes it, asked before anything is.
-        if (squash is not null && await TreeSquashes.IdentityProblemAsync(root, repository, ct).ConfigureAwait(false) is { } nobody)
+        if (squash is not null && await TreeSquashes.IdentityProblemAsync(context.Home, root, repository, ct).ConfigureAwait(false) is { } nobody)
         {
             return new TreeLanding(false, nobody);
         }
@@ -281,7 +281,7 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
             var squashing = replayed?.Landed ?? commits;
             // LANDNODE1f: a delivery's message, frozen in its intent, is the commit's opening; under Current none is named (LANDNODE1c3).
             var said = delivering?.Template;
-            var (made, why) = await TreeSquashes.SquashAsync(root, tip, mergeBase.Trim(), SquashMessage.Of(squash.SquashTitle, squashing, squash.Session, said), ct)
+            var (made, why) = await TreeSquashes.SquashAsync(context.Home, root, tip, mergeBase.Trim(), SquashMessage.Of(squash.SquashTitle, squashing, squash.Session, said), ct)
                 .ConfigureAwait(false);
             if (made is null) return new TreeLanding(false, $"git would not make the squashed commit for `{name}`: {why} Nothing was landed.");
             start = made;
@@ -391,7 +391,7 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
 
         if (squash is not null)
         {
-            return await TreeSquashes.AdvanceSquashedAsync(root, name, standsAt, branch, line, head, grewFrom!, handedOn, against, squash, ct, delivering)
+            return await TreeSquashes.AdvanceSquashedAsync(context.Home, root, name, standsAt, branch, line, head, grewFrom!, handedOn, against, squash, ct, delivering)
                 .ConfigureAwait(false);
         }
 

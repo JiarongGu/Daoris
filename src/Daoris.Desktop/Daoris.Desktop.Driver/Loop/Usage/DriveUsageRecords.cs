@@ -34,6 +34,11 @@ internal static class DriveUsageRecords
               another live driver drives is refused, naming it; --share runs beside it on purpose. No
               session is ended on time: a quiet one is said, and --quiet-end ends one of this run
               unheard that long and carries it on, for a run nobody watches.
+          events relay --where  ·  events relay --once --home <home> [--since <run>:<seq>] [--kinds <kind,...>] [--not-by <id>] [--session-pid <pid>]
+              the work cycle's events for a session outside Daoris, through the event-relay plugin: --where lays
+              this build's copy out in the home and prints the command to start in the background; --once,
+              run from that copy, prints one batch of fixed lines (ids and codes, never words) and ends, its
+              last line the bracket the next one's --since takes. Holds no key, opens no door of Daoris's.
           gate run [--gate <name> | --look | -- <command>]
               run this checkout's heavy gates, those its daoris.gates.json marks "heavy": true, one after another, or the
               one named, holding its repository's one heavy-run slot: a run from any tree of it waits, saying behind whom and
@@ -68,6 +73,10 @@ internal static class DriveUsageRecords
               is a Dangerous push, which the place's Dangerous value decides at the door. --plan says what it would
               push; --yes pushes it, after your yes in Daoris's window where Daoris runs. Refused from a session's
               terminal, where Write denies, or where the identity serving origin is read only.
+          git stash drop <repository> <commit> [--plan | --yes]
+              drop one entry of the shared stash by its commit id, as the Changes tab's Drop does, only one that a Save
+              of Daoris's own made. --plan says what it would drop and the command that stores it again; --yes drops it,
+              after your yes in Daoris's window where Daoris runs. Refused from a session's terminal.
           git pick|revert <repository> <branch> <commit|A..B> [--plan | --yes]
           git rebase <repository> <branch> <onto> [--plan | --yes]
               edit a branch no tree has out without a working tree, as a branch page's Edit history does: pick or

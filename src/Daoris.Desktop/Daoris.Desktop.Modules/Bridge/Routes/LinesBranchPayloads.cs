@@ -37,5 +37,5 @@ public sealed record WithdrawLandingBranchPress(string Repository, string Branch
 /// <summary>The units' milestones, or with <c>Unit</c> the ones that name picks (its id, session or branch).</summary>
 public sealed record WorkStateRead(string? Unit);
 
-/// <summary>A held attempt of a node worded with its <c>Resolution</c>.</summary>
-public sealed record WorkHeldPress(string Unit, string Node, int Attempt, string Resolution);
+/// <summary>A held attempt of a node worded with its <c>Resolution</c>; <c>Said</c> asks for the terminal verb's lines (<c>ask-fix</c> only).</summary>
+public sealed record WorkHeldPress(string Unit, string Node, int Attempt, string Resolution, bool Said = false);

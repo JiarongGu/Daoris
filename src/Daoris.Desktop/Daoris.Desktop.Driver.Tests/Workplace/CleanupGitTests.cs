@@ -484,7 +484,7 @@ public sealed class CleanupGitTests : LandedFixture
         var work = await OldCommitAsync(root, main, "work of a landing");
         await GitAsync(root, "update-ref", "refs/heads/feature/back", work);
 
-        var (kept, why) = await ContentHolds.KeepDiscardedAsync(root, "feature/back", work, CancellationToken.None, absent: "refs/heads/feature/back");
+        var (kept, why) = await RecoveryKeeps.KeepAsync(Home, root, "engine", "feature/back", work, absent: "refs/heads/feature/back");
 
         Assert.Null(kept);
         Assert.NotNull(why);
@@ -602,13 +602,14 @@ public sealed class CleanupGitTests : LandedFixture
         var old = await OldCommitAsync(root, main, "work from 40 days ago", DateTimeOffset.UtcNow.AddDays(-40));
         await GitAsync(root, "update-ref", "refs/heads/main", old, main);
         var before = DateTimeOffset.UtcNow.AddMinutes(-1);
-        var (plain, _) = await ContentHolds.KeepDiscardedAsync(root, "daoris/s-plain", old, CancellationToken.None);
-        var (verified, why) = await ContentHolds.KeepDiscardedAsync(root, "daoris/s-verified", old, CancellationToken.None, absent: "refs/heads/daoris/s-verified");
+        var (plain, _) = await RecoveryKeeps.KeepAsync(Home, root, "engine", "daoris/s-plain", old);
+        var (verified, why) = await RecoveryKeeps.KeepAsync(Home, root, "engine", "daoris/s-verified", old, absent: "refs/heads/daoris/s-verified");
         Assert.True(plain is not null && verified is not null, why);
+        var recorded = RecoveryKeeps.Recorded(Home, "engine");
 
-        Assert.Empty(await RecoveryRetention.TidyAsync(root, "engine", NoneMade, DateTimeOffset.UtcNow, CancellationToken.None));
+        Assert.Empty(await RecoveryRetention.TidyAsync(root, "engine", NoneMade, DateTimeOffset.UtcNow, CancellationToken.None, recorded));
 
-        var (refs, unread) = await RecoveryRetention.ReadAsync(root, "engine", NoneMade, CancellationToken.None);
+        var (refs, unread) = await RecoveryRetention.ReadAsync(root, "engine", NoneMade, CancellationToken.None, recorded);
         Assert.Null(unread);
         Assert.Equal(2, refs!.Count);
         Assert.All(refs, each =>
@@ -618,7 +619,7 @@ public sealed class CleanupGitTests : LandedFixture
             Assert.Equal(each.Dated + RecoveryRetention.Kept, RecoveryRetention.Until(each));
         });
 
-        var gone = await RecoveryRetention.TidyAsync(root, "engine", NoneMade, DateTimeOffset.UtcNow.AddDays(31), CancellationToken.None);
+        var gone = await RecoveryRetention.TidyAsync(root, "engine", NoneMade, DateTimeOffset.UtcNow.AddDays(31), CancellationToken.None, recorded);
         Assert.Equal([plain, verified], gone.Select(each => each.Ref).Order(StringComparer.Ordinal));
     }
 

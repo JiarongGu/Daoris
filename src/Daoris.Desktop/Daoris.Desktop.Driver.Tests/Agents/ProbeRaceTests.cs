@@ -27,7 +27,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class ProbeRaceTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-probe-race-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-probe-race-" + Guid.NewGuid().ToString("N")[..8]);
 
     private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
@@ -90,9 +90,9 @@ public sealed class ProbeRaceTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain);
+    private static Provider Adapter(string name, TestAgent toolchain) => TestDoors.Door(name, toolchain);
 
-    private HarnessToolchain Toolchain(string? accountOf = null) => new(
+    private TestAgent Toolchain(string? accountOf = null) => new(
         Binary: ["node", Script],
         VersionArguments: ["--version"],
         ProfileVariable: "RACE_CONFIG_DIR",
@@ -102,12 +102,12 @@ public sealed class ProbeRaceTests : IDisposable
     /// <summary>The owner, and where asked a door onto it that asks the same question of the same accounts.</summary>
     private HarnessRoster Roster(bool door = false)
     {
-        var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        var adapters = new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
             ["agent"] = Adapter("agent", Toolchain()),
         };
         if (door) adapters["agent-door"] = Adapter("agent-door", Toolchain(accountOf: "agent"));
-        return new HarnessRoster(new ProviderRegistry(adapters), Settings);
+        return new HarnessRoster(TestDoors.Registry(adapters), Settings);
     }
 
     private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("agent") };
@@ -209,10 +209,7 @@ public sealed class ProbeRaceTests : IDisposable
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "agent", "account-2"));
         new HarnessSettings().WithDefault("agent", "account-1").Save(Settings);
         var now = DateTimeOffset.UtcNow;
-        var roster = new HarnessRoster(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["agent"] = Adapter("agent", Toolchain()),
-        }), Settings) { Clock = () => now };
+        var roster = new HarnessRoster(TestDoors.Registry([Adapter("agent", Toolchain())]), Settings) { Clock = () => now };
 
         await roster.ReportAsync("agent", Config, refresh: true);
         Assert.Equal((1, 1, 0), (TimesAsked("account-1"), TimesAsked("account-2"), TimesAsked("(own)")));

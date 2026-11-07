@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class AskAtWorkVerbTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-ask-atwork-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-ask-atwork-" + Guid.NewGuid().ToString("N")[..8]);
     private readonly StandInLedger _ledger = new();
 
     public AskAtWorkVerbTests()

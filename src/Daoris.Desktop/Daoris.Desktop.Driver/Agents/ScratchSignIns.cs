@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para>A <b>scratch home</b> is one under a <c>_fixtures</c> folder, or under the OS's temporary folder, where the driver's tests
 /// make theirs. A person's home is neither.</para>
-/// <para>The <b>real agent binary</b> is the agent's own (<see cref="HarnessToolchain.Binary"/>'s first word, its extension
+/// <para>The <b>real agent binary</b> is the agent's own (<see cref="AccountAgent.Binary"/>'s first word, its extension
 /// aside) found on <c>PATH</c>: what a start runs where no command is named and nothing is pinned, or a command named by that bare
 /// word. A stub at a path, as <c>AgentSignInProcessTests</c> lays Claude Code's managed binary under its scratch home, is no real
 /// one; nor is a command of another name (<c>node</c> and a script), nor an agent with no binary of its own (<c>stub</c>,
@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 public static class ScratchSignIns
 {
     /// <summary>The refusal for a sign-in of <paramref name="run"/> into <paramref name="profileHome"/>, or null where it may run.</summary>
-    public static string? Refusal(HarnessToolchain toolchain, HarnessCommand run, string profileHome)
+    public static string? Refusal(AccountAgent toolchain, HarnessCommand run, string profileHome)
     {
         if (!IsScratch(profileHome) || !IsReal(toolchain, run.Run)) return null;
         return $"a sign-in under a scratch home runs no real agent, and `{run.Harness}`'s would have run the `{run.Run[0]}` on PATH, so nothing was "
@@ -39,9 +39,9 @@ public static class ScratchSignIns
     }
 
     /// <summary>Whether <paramref name="command"/> starts the agent's own binary from PATH: its bare name, its extension aside.</summary>
-    public static bool IsReal(HarnessToolchain toolchain, IReadOnlyList<string> command)
+    public static bool IsReal(AccountAgent toolchain, IReadOnlyList<string> command)
     {
-        if (toolchain.Binary is not { Count: > 0 } binary || command is not { Count: > 0 }) return false;
+        if (toolchain.Program.Binary is not { Count: > 0 } binary || command is not { Count: > 0 }) return false;
         var word = command[0];
         return Path.GetFileName(word) == word
             && string.Equals(Path.GetFileNameWithoutExtension(word), Path.GetFileNameWithoutExtension(binary[0]), Comparison);

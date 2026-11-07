@@ -76,23 +76,23 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
         var chosen = order is [var only] ? only : null;
         if (chosen is not null) adapter = chosen.Agent;
         var harnesses = wiring.Context.Harnesses;
-        var resolved = harnesses.Adapters.Resolve(adapter);
-        if (!resolved.Interactive)
+        var resolved = harnesses.Adapters.Door(adapter);
+        if (!resolved.Can.Interactive)
         {
             return new(
                 null,
-                $"the `{resolved.Name}` adapter does not hold conversations — it spawns an agent that "
+                $"the `{resolved.Id.Value}` adapter does not hold conversations — it spawns an agent that "
                 + "takes its target once and runs to completion. Name another under Agents → Roles, Ask Daoris, "
                 + "or `daoris role set ask-daoris \"<agent>\"`.");
         }
 
         // Full access on an agent with no mode that asks nothing is refused before anything is opened.
-        var access = HelpAccess.For(config.HelpMode, new ChatAgent(resolved));
+        var access = HelpAccess.For(config.HelpMode, new ChatAgent(wiring.Context.Harnesses.Adapters, resolved));
         if (access.Refusal is { } refused) return new(null, refused);
 
         // The account its workspace names, then the machine's, as a start in that workspace takes one.
         var selection = await harnesses
-            .SelectAsync(resolved.Name, config, workspace, null, StartKind.Conversation, ct, chosen?.Model).ConfigureAwait(false);
+            .SelectAsync(resolved.Id.Value, config, workspace, null, StartKind.Conversation, ct, chosen?.Model).ConfigureAwait(false);
         if (!selection.Allowed) return new(null, selection.Refusal!);
         return await OpenHelpAsync(resolved, selection, chosen, [], config, workspace, carries, ct, order: order).ConfigureAwait(false);
     }
@@ -174,7 +174,7 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
             // A replacement of this start runs as this run does, on the machine's reading, its end told to the same listener.
             if (placed.Pending is { } pending) pending.Open = (owner, token) => RunReplacementAsync(owner, config, machine, onEnded, token);
             return await wiring.RunAsync(
-                    "ask-daoris", sessionId, placed.Message, new ChatAgent(resolved), selection, config, wiring.HelpPlace(room, reads, placed.Workspace), onEnded, ct,
+                    "ask-daoris", sessionId, placed.Message, new ChatAgent(wiring.Context.Harnesses.Adapters, resolved), selection, config, wiring.HelpPlace(room, reads, placed.Workspace), onEnded, ct,
                     chosen: placed.Chosen, pending: placed.Pending)
                 .ConfigureAwait(false);
         }
@@ -200,16 +200,16 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
     /// <summary>The record opened on the agent and account its start chose, and its opening said.</summary>
     /// <param name="pending">The pending start a replacement opens for; null makes one where the start asks its entry on the protocol wire.</param>
     private async Task<HelpPlaced> OpenHelpAsync(
-        ISessionAdapter resolved, HarnessSelection selection, ActorEffective? chosen, IReadOnlyList<BuildPass> passes, DriverConfig config,
+        AgentDoor resolved, HarnessSelection selection, ActorEffective? chosen, IReadOnlyList<BuildPass> passes, DriverConfig config,
         string? workspace, string? carries, CancellationToken ct, ChatPending? pending = null, IReadOnlyList<ActorEffective>? order = null)
     {
         var context = wiring.Context;
-        var access = HelpAccess.For(config.HelpMode, new ChatAgent(resolved));
+        var access = HelpAccess.For(config.HelpMode, new ChatAgent(wiring.Context.Harnesses.Adapters, resolved));
 
         // Its workspace's own room, which its record keeps as its tree: the folder its harness keeps it by. With the mode its start gets,
         // which its run reads from the same file.
         var (sessionId, message) = await context.Service
-            .OpenHelpAsync(resolved.Name, HelpRoom.PathOf(context.Home, workspace), selection.Version, selection.Profile, workspace, access.Mode, ct)
+            .OpenHelpAsync(resolved.Id.Value, HelpRoom.PathOf(context.Home, workspace), selection.Version, selection.Profile, workspace, access.Mode, ct)
             .ConfigureAwait(false);
         if (sessionId is null) return new(null, message);
         // Marked as this process's start until its spawn's marker replaces it: placed, it waits for its run.
@@ -217,7 +217,7 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
 
         // Its opening rotates like a start, on its scope's order, and says so first; one that goes on from a limit names the conversation it
         // carries and the turn the limit refused.
-        RotatedOpening.Say(context.Service, context.Events, sessionId, resolved.Name, selection, wiring.LimitCarried(carries));
+        RotatedOpening.Say(context.Service, context.Events, sessionId, resolved.Id.Value, selection, wiring.LimitCarried(carries));
         // Where a later choice of its order ran, its actor line says which and why.
         if (chosen is not null) RotatedOpening.SayActor(context.Events, sessionId, "ask-daoris", chosen, passes);
         await RotatedOpening.SayStaffAsync(context.Events, context.Harnesses.Staff(), context.Service, null, sessionId, selection, "ask-daoris")
@@ -229,7 +229,7 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
             pending.Entry = chosen!;
             context.Pending.Link(pending, sessionId);
         }
-        else if (chosen is not null && resolved.Abilities().SetAtOpen && carries is null)
+        else if (chosen is not null && resolved.Can.SetAtOpen && carries is null)
         {
             pending = context.Pending.Add(new ChatPending(
                 sessionId, "ask-daoris", order is { Count: > 0 } ? order : [chosen], chosen, null, workspace, (_, _) => Task.FromResult(new ChatStart(null, "Ask Daoris's replacement opens only from its run."))));

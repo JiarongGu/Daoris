@@ -9,8 +9,8 @@ export type LineCountRead = {
   known: 'exact' | 'at-least' | 'unknown';
   why?: string | null;
   from: string;
-  /** What Daoris does at `at`, by the person's rule of `place`; no place is Daoris's own number. */
-  watch?: { at: number; do: string; place?: string | null } | null;
+  /** What Daoris does at `at`, by the person's rule of `place`. */
+  watch?: { at: number; do: string; place: string } | null;
 };
 
 /** One act a person's rule made on the line, as it was kept. */
@@ -58,11 +58,7 @@ function figure(t: TFunction, count: LineCountRead): string {
 export function countRows(t: TFunction, { counts }: LineSupervision): DetailRow[] {
   return counts.map((count) => {
     const watch = count.watch;
-    const rule = watch
-      ? t(watch.place ? 'work.supervision.ruleAt' : 'work.supervision.ownAt', {
-        act: actWord(t, watch.do), at: watch.at, place: watch.place ? placeWord(t, watch.place) : '',
-      })
-      : null;
+    const rule = watch ? t('work.supervision.ruleAt', { act: actWord(t, watch.do), at: watch.at, place: placeWord(t, watch.place) }) : null;
     return { label: countWord(t, count.count), value: rule ? `${figure(t, count)} · ${rule}` : figure(t, count) };
   });
 }

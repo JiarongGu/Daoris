@@ -54,12 +54,7 @@ public sealed class ContinuedChoiceTickTests : IDisposable
 
     private string Log => Path.Combine(_home, "continued-choice.log");
 
-    private static ProviderRegistry Adapters() => new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-    {
-        ["stub"] = BuiltDoors.Stub,
-        ["acp-stub"] = BuiltDoors.AcpStub,
-        ["acp-other"] = WalkAgentTickTests.AcpOtherAdapter(),
-    });
+    private static ProviderRegistry Adapters() => TestDoors.Registry([.. TestDoors.Shipped("stub", "acp-stub"), WalkAgentTickTests.AcpOtherAdapter()]);
 
     /// <summary>Build's order: the stub · sonnet · low, then the other agent · codex-mini · high; a failed turn leaves a strike to carry on past.</summary>
     private DriverConfig Config() => ActorChoices.With(

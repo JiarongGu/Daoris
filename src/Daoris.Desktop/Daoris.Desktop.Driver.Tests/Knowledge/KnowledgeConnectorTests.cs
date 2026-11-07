@@ -16,11 +16,15 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class KnowledgeConnectorTests : IDisposable
 {
     private readonly string _root = Path.Combine(
-        Path.GetTempPath(), "daoris-connector-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-connector-" + Guid.NewGuid().ToString("N")[..8]);
+
+    /// <summary>A folder no workspace lies above, which nothing under the checkout's fixture folder is: the locator walks up to the checkout's manifest and its build.</summary>
+    private readonly string _bare = Path.Combine(Path.GetTempPath(), "daoris-connector-bare-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {
         if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
+        if (Directory.Exists(_bare)) Directory.Delete(_bare, recursive: true);
     }
 
     private static string Touch(string path)
@@ -189,9 +193,10 @@ public sealed class KnowledgeConnectorTests : IDisposable
     [Fact]
     public void Nothing_anywhere_is_no_connector_rather_than_a_throw()
     {
-        Directory.CreateDirectory(Application);
+        var application = Path.Combine(_bare, "install", "app");
+        Directory.CreateDirectory(application);
 
-        Assert.Null(KnowledgeConnector.Offer(null, Home, Application, new Dictionary<string, string?>()));
+        Assert.Null(KnowledgeConnector.Offer(null, Path.Combine(_bare, "install", "data"), application, new Dictionary<string, string?>()));
     }
 
     /// <summary>

@@ -230,6 +230,12 @@ public sealed class ActJournal(
             $"SELECT {ActColumns} FROM git_acts WHERE kind = $kind AND repository = $repository ORDER BY at DESC, id DESC LIMIT $limit", MapAct,
             ("$kind", kind), ("$repository", repository), ("$limit", limit)), []);
 
+    /// <summary>The acts of <paramref name="repository"/> that did their work, done or partial, whose plan or recovery holds <paramref name="text"/>, oldest first.</summary>
+    public IReadOnlyList<ActRecord> Naming(string repository, string text) =>
+        Reading(reader => reader.Query(
+            $"SELECT {ActColumns} FROM git_acts WHERE repository = $repository AND outcome IN ($done, $partial) AND (instr(plan, $text) > 0 OR instr(recovery, $text) > 0) ORDER BY at, id",
+            MapAct, ("$repository", repository), ("$done", ActOutcomes.Done), ("$partial", ActOutcomes.Partial), ("$text", text)), []);
+
     /// <summary>Every act not closed, oldest first: what the driver's start reconciles.</summary>
     public IReadOnlyList<ActRecord> Unclosed() =>
         Reading(reader => reader.Query($"SELECT {ActColumns} FROM git_acts WHERE closed_at IS NULL ORDER BY at, id", MapAct), []);

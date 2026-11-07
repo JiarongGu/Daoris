@@ -9,13 +9,17 @@ namespace Daoris.Driver;
 public sealed record DeletedRef(string Act, string Kind, string Name, string Commit, DateTimeOffset At, string Press, string? Recovery, string? Closed);
 
 /// <summary>The deletes of one repository, newest first.</summary>
-public sealed record DeletedRefs(IReadOnlyList<DeletedRef> Rows);
+public sealed record DeletedRefs(IReadOnlyList<DeletedRef> Rows)
+{
+    /// <summary>The recovery refs standing here that no journal record names (<see cref="RecoveryCensus"/>), counted where the deletes' read lists refs.</summary>
+    public int Unrecorded { get; init; }
+}
 
 /// <summary>
 /// **A repository's deletes, read from the journal alone** (ONEWAY1r, D204, D228): each done <c>ref.delete</c> act is a row, whoever pressed
 /// it (the person's <c>GIT_REF_DELETE</c> or a door of Daoris's through <see cref="JournaledDeletes"/>), with the Undo the act carries. A row
-/// reads the plan the act wrote and nothing under <c>refs/daoris/discarded/</c>: which delete it was, at which commit, which recovery ref kept
-/// the commit. git is asked only whether the Undo can still run (the name free, the commit still known).
+/// reads the plan the act wrote: which delete it was, at which commit, which recovery ref kept the commit. git is asked only whether the Undo
+/// can still run (the name free, the commit still known), in a listing that also counts the recovery refs no journal record names.
 /// </summary>
 public static class DeletedBranches
 {
@@ -40,9 +44,13 @@ public static class DeletedBranches
         var undone = journal.OfKind(GitRefActs.UndoKind, repository, Listed * 4).Where(each => each.Outcome == ActOutcomes.Done)
             .Select(each => (string?)JsonNode.Parse(each.Plan)?["undo"]).Where(each => each is not null).ToHashSet(StringComparer.Ordinal);
 
-        var (listed, standing, _) = await WorkingTree.GitAsync(root, ["for-each-ref", "--format=%(refname)", "refs/heads/", "refs/tags/"], ct).ConfigureAwait(false);
+        // The same listing names the recovery refs, so the census of those no record names costs no further git start.
+        var (listed, standing, _) = await WorkingTree.GitAsync(
+            root, ["for-each-ref", "--format=%(refname)", "refs/heads/", "refs/tags/", ContentHolds.DiscardedPrefix], ct).ConfigureAwait(false);
         if (listed != 0) return new(null, GitReadRefusal.NotAnswered, "git could not list the repository's refs, so the deletes' Undo is not known.");
         var names = standing.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.Ordinal);
+        var recorded = RecoveryKeeps.Recorded(home, repository);
+        var unrecorded = names.Count(each => each.StartsWith(ContentHolds.DiscardedPrefix, StringComparison.Ordinal) && !recorded.ContainsKey(each));
 
         var rows = new List<DeletedRef>();
         foreach (var act in deletes)
@@ -55,6 +63,6 @@ public static class DeletedBranches
                 plan["recovery"]?.GetValue<string>(), closed));
         }
 
-        return new(new DeletedRefs(rows), GitReadRefusal.None, null) { Commands = ["git reflog show --all", "git for-each-ref refs/daoris/discarded/"] };
+        return new(new DeletedRefs(rows) { Unrecorded = unrecorded }, GitReadRefusal.None, null) { Commands = ["git reflog show --all", "git for-each-ref refs/daoris/discarded/"] };
     }
 }

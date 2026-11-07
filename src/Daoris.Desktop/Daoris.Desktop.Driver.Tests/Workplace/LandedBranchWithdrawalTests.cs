@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Census)]
 public sealed class LandedBranchWithdrawalTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-withdrawal-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-withdrawal-" + Guid.NewGuid().ToString("N")[..8]);
 
     public LandedBranchWithdrawalTests() => Directory.CreateDirectory(_home);
 

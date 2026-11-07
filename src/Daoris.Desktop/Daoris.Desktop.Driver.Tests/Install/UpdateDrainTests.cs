@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class UpdateDrainTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-drain-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-drain-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
 

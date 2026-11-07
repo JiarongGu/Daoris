@@ -16,7 +16,7 @@ public sealed class NativePromptProcessTests : IDisposable
 {
     private const string Prompt = "报告 😀 Serve the report\n端口 8080 \U0001F600";
 
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-native-prompt-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-native-prompt-" + Guid.NewGuid().ToString("N")[..8]);
 
     public NativePromptProcessTests() => Directory.CreateDirectory(_root);
 
@@ -47,7 +47,7 @@ public sealed class NativePromptProcessTests : IDisposable
 
     /// <summary>The real adapter's resume start, built as the driver builds it, over <paramref name="script"/>.</summary>
     private ProcessStartInfo Resume(string script) =>
-        BuiltDoors.Claude.PrepareResume(Target(_root), ["node", script], "0b5e7c1a")!;
+        ProviderRegistry.Built().Resume("claude-code", Target(_root), ["node", script], "0b5e7c1a")!;
 
     [Fact]
     public async Task The_prompt_arrives_whole_as_bom_less_utf8_and_the_input_is_closed()
@@ -73,11 +73,11 @@ public sealed class NativePromptProcessTests : IDisposable
     [Fact]
     public async Task A_start_that_redirects_no_input_is_left_alone()
     {
-        var stub = ProviderRegistry.Built().Resolve("stub");
+        var stub = ProviderRegistry.Built().Door("stub");
         // It never reads its input, which is the host's own: the point is that nothing is written to one that is not redirected.
         var script = Path.Combine(_root, "idle.mjs");
         File.WriteAllText(script, "console.log('ok');\n");
-        var info = stub.Prepare(Target(_root), ["node", script]);
+        var info = ProviderRegistry.Built().Start(stub, Target(_root), ["node", script]);
         Assert.False(info.RedirectStandardInput);
         info.RedirectStandardOutput = true;
         info.RedirectStandardError = true;
@@ -95,8 +95,8 @@ public sealed class NativePromptProcessTests : IDisposable
     [Fact]
     public async Task The_protocol_doors_input_is_never_written_a_prompt()
     {
-        var acp = ProviderRegistry.Built().Resolve("acp-stub");
-        var info = acp.Prepare(Target(_root), ["node", Reader()]);
+        var acp = ProviderRegistry.Built().Door("acp-stub");
+        var info = ProviderRegistry.Built().Start(acp, Target(_root), ["node", Reader()]);
         Assert.True(info.RedirectStandardInput);
         using var process = Process.Start(info)!;
         var read = process.StandardOutput.ReadToEndAsync();

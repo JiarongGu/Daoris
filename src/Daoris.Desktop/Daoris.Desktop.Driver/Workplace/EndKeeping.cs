@@ -125,6 +125,8 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
             // D245: a part its chain's tidy ended at this tip is ended by that record alone, and none of the proofs below judge it again.
             if (ChainTidies.Of(standing, repository, grown.Branch, tip) is { } tidied)
             {
+                // Kept while it holds, as every other end is: Next stamps the moment of each judgement, so a judged-again fact is never equal.
+                if (grown.Held is { By: EndBy.Tidied } already && already.On == tidied.Landing.Branch && await HoldsAsync(already, tip).ConfigureAwait(false)) continue;
                 var ended = new EndVerdict(EndState.Ended, EndBy.Tidied, tidied.Landing.Branch,
                     InventoryWords.ProofSaid(EndBy.Tidied, tidied.Landing.Branch)) { Tip = tip, Line = line };
                 var tidiedHeld = Next(grown.Held, ended, await OnAtAsync(ended).ConfigureAwait(false), identity, now);

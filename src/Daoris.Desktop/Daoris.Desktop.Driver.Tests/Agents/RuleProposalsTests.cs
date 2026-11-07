@@ -17,7 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class RuleProposalsTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-rule-proposals-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-rule-proposals-" + Guid.NewGuid().ToString("N")[..8]);
 
     public RuleProposalsTests() => Directory.CreateDirectory(_home);
 

@@ -29,9 +29,9 @@ public sealed class AgentCapabilitiesTests
     [Fact]
     public void A_door_s_word_is_its_transport_s()
     {
-        Assert.Equal(AgentCapabilities.Acp, SheetOf("claude-code-acp").Wire);
+        Assert.Equal("protocol", SheetOf("claude-code-acp").Transport);
         Assert.Equal("protocol", SheetOf("claude-code-acp").Row(SheetCapability.Door).Value);
-        Assert.Equal(AgentCapabilities.Pipe, SheetOf("claude-code").Wire);
+        Assert.Equal("native", SheetOf("claude-code").Transport);
         Assert.Equal("native", SheetOf("claude-code").Row(SheetCapability.Door).Value);
     }
 

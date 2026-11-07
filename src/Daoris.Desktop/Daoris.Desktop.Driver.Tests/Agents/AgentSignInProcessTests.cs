@@ -95,7 +95,7 @@ public sealed class AgentSignInProcessTests : IDisposable
 
         var set = ProviderRegistry.Built();
         var settings = new HarnessSettings().WithVersion(Agent, Stubbed);
-        foreach (var name in set.Names.Where(name => name != Agent && set.Resolve(name).Toolchain is { Binary.Count: > 0 }))
+        foreach (var name in set.Names.Where(name => name != Agent && set.AgentNamed(name) is { Program.Binary.Count: > 0 }))
         {
             settings = settings.WithVersion(name, "0.0.0-none");
         }
@@ -103,7 +103,7 @@ public sealed class AgentSignInProcessTests : IDisposable
         settings.Save(DaorisHome.Entry(Home, HomeEntry.Harnesses));
 
         // 🔴 LIVELOGIN1: the binary a sign-in runs is the stub, by its full path, before anything starts.
-        var binary = HarnessProbe.CommandOf(Agent, set.Resolve(Agent).Toolchain!, command: null, settings, Home);
+        var binary = HarnessProbe.CommandOf(Agent, set.AgentNamed(Agent)!, command: null, settings, Home);
         Assert.False(binary.Missing);
         Assert.StartsWith(bin, binary.Run[0], StringComparison.OrdinalIgnoreCase);
     }

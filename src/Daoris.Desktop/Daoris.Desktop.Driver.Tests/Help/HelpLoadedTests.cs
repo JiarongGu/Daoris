@@ -22,7 +22,7 @@ public sealed class HelpLoadedTests : IDisposable
     public void Dispose() => GitSeed.Remove(_home);
 
     private static HelpReceipt Receipt(string at) =>
-        new() { At = DateTimeOffset.Parse(at), Harness = "claude-code", Folder = "room" };
+        new() { At = DateTimeOffset.Parse(at), Door = "claude-code", Folder = "room" };
 
     [Fact]
     public void An_init_frame_is_read_as_what_the_door_says_it_loaded_and_no_other_frame_is()

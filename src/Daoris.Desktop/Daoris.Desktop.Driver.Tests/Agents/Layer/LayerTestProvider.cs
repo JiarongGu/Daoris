@@ -50,14 +50,20 @@ internal static class LayerTestProvider
     {
         var descriptor = Descriptor(door);
         return new(door, builder => builder.AddAgentProvider(
-            descriptor, services => new AgentProvider(descriptor, _ => new Session(services.GetRequiredService<IProcessRunner>(), command, plant))));
+            descriptor, services => new AgentProvider(descriptor, _ => new Session(services.GetRequiredService<IProcessRunner>(), command, plant))))
+        {
+            ModelRefusals = new HashSet<string>(StringComparer.Ordinal) { RefusedBy },
+        };
     }
+
+    /// <summary>The entry the tests' door spells a refused model with.</summary>
+    public const string RefusedBy = "tests:refused";
 
     /// <summary>A scenario's program in <paramref name="scratch"/>, saying what <paramref name="spec"/> says, as a command.</summary>
     /// <remarks>
     /// The spec's fields: <c>out</c>, lines said at once (a string as written, an object as its JSON); <c>err</c>, stderr lines first;
     /// <c>wait</c>, milliseconds before <c>after</c>'s lines; <c>hang</c>, never ending by itself; <c>echo</c>, its stdin said back;
-    /// <c>argv</c>, its arguments after the spec said back; <c>exit</c>, its code. A resume's conversation is said first, as
+    /// <c>argv</c>, its arguments after the spec said back; <c>env</c>, the variable it names said back; <c>exit</c>, its code. A resume's conversation is said first, as
     /// <c>resumed id</c>.
     /// </remarks>
     public static IReadOnlyList<string> Scenario(string scratch, object spec, string name = "scenario")
@@ -68,6 +74,26 @@ internal static class LayerTestProvider
         var file = Path.Combine(scratch, name + ".json");
         File.WriteAllText(file, JsonSerializer.Serialize(spec));
         return ["node", program, file];
+    }
+
+    /// <summary>
+    /// A production door's layer registration spawns one program with its own arguments: a shim in <paramref name="scratch"/> running
+    /// <paramref name="command"/> (a scenario's) before them.
+    /// </summary>
+    public static string Shim(string scratch, IReadOnlyList<string> command, string name)
+    {
+        var quoted = string.Join(' ', command.Select(each => $"\"{each}\""));
+        if (OperatingSystem.IsWindows())
+        {
+            var cmd = Path.Combine(scratch, name + ".cmd");
+            File.WriteAllText(cmd, $"@{quoted} %*\r\n");
+            return cmd;
+        }
+
+        var sh = Path.Combine(scratch, name + ".sh");
+        File.WriteAllText(sh, $"#!/bin/sh\nexec {quoted} \"$@\"\n");
+        File.SetUnixFileMode(sh, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        return sh;
     }
 
     private const string Program = """
@@ -83,6 +109,7 @@ internal static class LayerTestProvider
           if (resume >= 0) say(`resumed ${args[resume + 1]}`);
           if (spec.argv) say(`argv ${JSON.stringify(args.slice(1))}`);
           if (spec.echo) say(`heard ${heard}`);
+          if (spec.env) say(`env ${process.env[spec.env] ?? ''}`);
           for (const line of spec.err ?? []) console.error(line);
           for (const line of spec.out ?? []) say(line);
           if (spec.wait) await new Promise((done) => setTimeout(done, spec.wait));
@@ -120,6 +147,7 @@ internal static class LayerTestProvider
             SessionEnded? ended = null;
             SessionEnded? faulted = null;
             string? conversation = null;
+            List<AgentShownKind> shown = [];
             await using (lines.ConfigureAwait(false))
             {
                 while (true)
@@ -142,10 +170,13 @@ internal static class LayerTestProvider
                     foreach (var each in Read(line))
                     {
                         if (each is SessionStarted started) conversation ??= started.SessionId;
+                        if (Shown(each) is { } kind && !shown.Contains(kind)) shown.Add(kind);
                         if (each is SessionEnded terminal)
                         {
                             if (ended is not null) continue;
                             ended = terminal;
+                            yield return Stamped(terminal, shown);
+                            continue;
                         }
 
                         yield return each;
@@ -155,12 +186,39 @@ internal static class LayerTestProvider
 
             if (ended is null)
             {
-                yield return faulted ?? new SessionEnded(
+                yield return Stamped(faulted ?? new SessionEnded(
                     ProviderVerdict.Failed, true, null, conversation, null, "no output produced (no terminal result)")
                 {
                     Failure = new AgentFailure(AgentFailureKind.Fatal, "no-terminal-event"),
-                };
+                }, shown);
             }
+        }
+
+        /// <summary>The kind of event a turn showed, as the layer's loop counts one after the write (a start is none).</summary>
+        private static AgentShownKind? Shown(AgentStreamEvent each) => each switch
+        {
+            TextDelta => AgentShownKind.Text,
+            Thinking => AgentShownKind.Thinking,
+            ToolCall => AgentShownKind.ToolCall,
+            ToolResult => AgentShownKind.ToolResult,
+            UsageLive or UsageFinal or UsageReading => AgentShownKind.Usage,
+            PlanUpdated => AgentShownKind.Plan,
+            _ => null,
+        };
+
+        /// <summary>The terminal with what the turn showed, and the layer's own delivery stamp, which counts a meter as the prompt taken.</summary>
+        private static SessionEnded Stamped(SessionEnded terminal, List<AgentShownKind> shown)
+        {
+            var delivery = shown.Any(kind => kind is AgentShownKind.ToolCall or AgentShownKind.ToolResult) ? AgentDelivery.Uncertain
+                : shown.Count > 0 ? AgentDelivery.Taken : AgentDelivery.NeverSent;
+            return terminal with
+            {
+                Turn = new AgentTurnEvidence(null, [.. shown]),
+                Failure = terminal.Failure is null ? null : new AgentFailure(terminal.Failure.Kind, terminal.Failure.By)
+                {
+                    Restriction = terminal.Failure.Restriction, Delivery = delivery,
+                },
+            };
         }
 
         private static IEnumerable<AgentStreamEvent> Read(string line)
@@ -183,7 +241,11 @@ internal static class LayerTestProvider
             switch (Text("t"))
             {
                 case "start":
-                    yield return new SessionStarted(Text("id")!);
+                    // A start the agent did not announce is a later frame that only carries an id (AG35).
+                    yield return new SessionStarted(Text("id")!)
+                    {
+                        Announced = !frame.TryGetProperty("announced", out var announced) || announced.ValueKind != JsonValueKind.False,
+                    };
                     break;
                 case "text":
                     yield return new TextDelta(Text("text")!);
@@ -200,21 +262,62 @@ internal static class LayerTestProvider
                 case "plan":
                     yield return new PlanUpdated([new LayerPlanEntry(Text("text")!, PlanEntryStatus.InProgress)]);
                     break;
-                case "usage":
-                    yield return new UsageFinal(Count("in"), Count("out"), Count("read"), Count("write"), Text("model"));
-                    break;
                 case "end" when Text("kind") is { } kind:
+                    foreach (var report in Closing(frame)) yield return report;
                     yield return new SessionEnded(ProviderVerdict.Failed, true, Text("subtype"), Text("id"), null, Text("why"))
                     {
                         Failure = new AgentFailure(Enum.Parse<AgentFailureKind>(kind), Text("by") ?? "tests:failed")
                         {
-                            Delivery = Text("delivery") is { } delivery ? Enum.Parse<AgentDelivery>(delivery) : default,
+                            Restriction = Text("restricts") switch
+                            {
+                                // A model the agent refused (AG12), and the same subject under a limit or a capacity, which are not one.
+                                "model" => new AgentRestriction(RestrictionCause.Unknown, RestrictionSubject.Model, RestrictionRecovery.OwnerAction),
+                                "model-quota" => new AgentRestriction(RestrictionCause.Quota, RestrictionSubject.Model, RestrictionRecovery.Unknown),
+                                "model-capacity" => new AgentRestriction(RestrictionCause.Capacity, RestrictionSubject.Model, RestrictionRecovery.Unknown),
+                                _ => null,
+                            },
                         },
                     };
                     break;
                 case "end":
+                    foreach (var report in Closing(frame)) yield return report;
                     yield return new SessionEnded(ProviderVerdict.Ok, false, Text("subtype") ?? "success", Text("id"), Text("text"), null);
                     break;
+            }
+
+            // An assistant message's usage, which the layer's Claude door ticks after the blocks it read (the context the message held).
+            if (Text("t") is "text" or "think" or "call" && frame.TryGetProperty("ctx", out var ctx))
+            {
+                long Held(string name) => ctx.TryGetProperty(name, out var value) ? value.GetInt64() : 0;
+                yield return new UsageLive(Held("in"), Held("out"), Held("read"));
+            }
+        }
+
+        /// <summary>What a result frame reports before its terminal: the usage, the denials, the tokens by model (AG33), as the layer's Claude door orders them.</summary>
+        private static IEnumerable<AgentStreamEvent> Closing(JsonElement frame)
+        {
+            long Count(JsonElement of, string name) => of.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number ? value.GetInt64() : 0;
+            var model = frame.TryGetProperty("model", out var named) ? named.GetString() : null;
+            if (frame.TryGetProperty("usage", out var usage))
+            {
+                yield return new UsageFinal(Count(usage, "in"), Count(usage, "out"), Count(usage, "read"), Count(usage, "write"), model);
+            }
+
+            if (frame.TryGetProperty("denied", out var denied))
+            {
+                foreach (var each in denied.EnumerateArray())
+                {
+                    yield return new AgentToolDenied(each.GetProperty("name").GetString()!, each.GetProperty("id").GetString(), null);
+                }
+            }
+
+            if (frame.TryGetProperty("byModel", out var byModel))
+            {
+                yield return new AgentModelUsage(
+                    [.. byModel.EnumerateObject().Select(each => new AgentModelUsageEntry(
+                        each.Name, Count(each.Value, "in"), Count(each.Value, "out"), Count(each.Value, "read"), Count(each.Value, "write"),
+                        Count(each.Value, "window"), each.Name == model))],
+                    DateTimeOffset.UnixEpoch);
             }
         }
     }

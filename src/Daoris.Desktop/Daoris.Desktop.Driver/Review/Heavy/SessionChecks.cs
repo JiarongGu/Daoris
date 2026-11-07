@@ -127,7 +127,7 @@ public static class SessionChecks
     /// (the pipeline design §3.2's second layer): beside the session's other spawn files, gone when its run is (<see cref="LetGo"/>) or with
     /// its record (<see cref="SessionHomeFiles"/>). Nothing set keeps nothing, which reads as today's.
     /// </summary>
-    /// <param name="callMinutes">Its run's <c>callMinutes</c> (<see cref="LongCalls.MinutesOf"/>, FABRIC-PIPELINE1b3), kept beside the checks
+    /// <param name="callMinutes">Its run's <c>callMinutes</c> (<see cref="CallBound.MinutesOf"/>, FABRIC-PIPELINE1b3), kept beside the checks
     /// for the long-call watch only where set, so the file keeps its shape for every run that sets none.</param>
     /// <returns>The file kept, or null for none.</returns>
     public static string? Hold(string home, string session, string? checks, int? callMinutes = null)
@@ -136,7 +136,7 @@ public static class SessionChecks
         var path = DaorisHome.Entry(home, HomeEntry.Spawn, session + Suffix);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         var kept = new System.Text.Json.Nodes.JsonObject { ["checks"] = choice };
-        if (callMinutes is { } minutes) kept[LongCalls.Option] = minutes;
+        if (callMinutes is { } minutes) kept[CallBound.Option] = minutes;
         JsonFile.Write(path, kept);
         return path;
     }
@@ -152,7 +152,7 @@ public static class SessionChecks
     /// does not read as a whole number of minutes from one, which is the default bound.
     /// </summary>
     public static int? HeldMinutes(string home, string session) =>
-        Kept(home, session) is { } kept && kept.TryGetProperty(LongCalls.Option, out var minutes) ? LongCalls.Minutes(minutes) : null;
+        Kept(home, session) is { } kept && kept.TryGetProperty(CallBound.Option, out var minutes) ? CallBound.Minutes(minutes) : null;
 
     /// <summary>A session's kept checks file as an object; null where there is none or it does not read.</summary>
     private static JsonElement? Kept(string home, string session)

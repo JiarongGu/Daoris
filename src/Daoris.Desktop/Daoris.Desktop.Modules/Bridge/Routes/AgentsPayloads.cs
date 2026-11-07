@@ -13,17 +13,17 @@ public sealed record StartsRead(IReadOnlyList<string>? Workspaces);
 /// <c>Way</c> is the sign-in's way and <c>Switch</c> whether it switches from the one running.
 /// </summary>
 public sealed record HarnessActionPress(
-    string Action, string Harness, string? Profile, string? Key, string? Name, string? Version, string? Way, JsonElement? Join,
+    string Action, string Door, string? Profile, string? Key, string? Name, string? Version, string? Way, JsonElement? Join,
     bool Switch = false);
 
 /// <summary>The answer a running action's prompt asked for.</summary>
-public sealed record HarnessInputPress(string Harness, string Action, string Text);
+public sealed record HarnessInputPress(string Door, string Action, string Text);
 
 /// <summary>The running action to stop.</summary>
-public sealed record HarnessCancelPress(string Harness, string Action);
+public sealed record HarnessCancelPress(string Door, string Action);
 
 /// <summary>
 /// An account's own settings. A key sent as null clears it, a text sets it, and one left out is no change, so each is the value as
 /// sent; <c>PerModel</c> is the effort per model's name, a text or null each.
 /// </summary>
-public sealed record AgentSettingsPress(string Harness, string? Profile, JsonElement? Model, JsonElement? Effort, JsonElement? PerModel);
+public sealed record AgentSettingsPress(string Door, string? Profile, JsonElement? Model, JsonElement? Effort, JsonElement? PerModel);

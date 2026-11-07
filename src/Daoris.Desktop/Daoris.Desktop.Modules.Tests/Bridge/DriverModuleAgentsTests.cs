@@ -57,13 +57,13 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         var roster = await AnswerAsync(Module(), "HARNESSES");
 
         var rows = roster.GetProperty("harnesses").EnumerateArray().ToList();
-        var declared = rows.Single(h => h.GetProperty("harness").GetString() == "acme-agent");
+        var declared = rows.Single(h => h.GetProperty("door").GetString() == "acme-agent");
         Assert.Equal("acme.gate", declared.GetProperty("plugin").GetString());
-        Assert.Equal("acp", declared.GetProperty("wire").GetString());
+        Assert.Equal("protocol", declared.GetProperty("transport").GetString());
         // Probed by presence: the file is there, so it is present, and nothing was started to say so.
         Assert.True(declared.GetProperty("present").GetBoolean());
         // The build's own carry no plugin.
-        Assert.Equal(JsonValueKind.Null, rows.Single(h => h.GetProperty("harness").GetString() == "claude-code").GetProperty("plugin").ValueKind);
+        Assert.Equal(JsonValueKind.Null, rows.Single(h => h.GetProperty("door").GetString() == "claude-code").GetProperty("plugin").ValueKind);
     }
 
     /// <summary>
@@ -76,7 +76,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     public async Task The_roster_says_which_doors_carry_a_conversations_structure()
     {
         var rows = (await AnswerAsync(Module(), "HARNESSES")).GetProperty("harnesses").EnumerateArray()
-            .ToDictionary(h => h.GetProperty("harness").GetString()!, h => h.GetProperty("structured").GetBoolean());
+            .ToDictionary(h => h.GetProperty("door").GetString()!, h => h.GetProperty("structured").GetBoolean());
 
         Assert.True(rows["claude-code"]);      // stream-json, read by its adapter (CONV3a)
         Assert.True(rows["claude-code-acp"]);  // the protocol door
@@ -90,7 +90,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     public async Task The_roster_says_which_doors_are_handed_the_rules()
     {
         var rows = (await AnswerAsync(Module(), "HARNESSES")).GetProperty("harnesses").EnumerateArray()
-            .ToDictionary(h => h.GetProperty("harness").GetString()!, h => h.GetProperty("takesRules").GetBoolean());
+            .ToDictionary(h => h.GetProperty("door").GetString()!, h => h.GetProperty("takesRules").GetBoolean());
 
         Assert.True(rows["claude-code"]);
         Assert.True(rows["claude-code-acp"]);
@@ -115,7 +115,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         File.WriteAllText(Path.Combine(folder, "agent.mjs"), "// never run by a probe\n");
 
         var rows = (await AnswerAsync(Module(), "HARNESSES")).GetProperty("harnesses").EnumerateArray()
-            .ToDictionary(h => h.GetProperty("harness").GetString()!);
+            .ToDictionary(h => h.GetProperty("door").GetString()!);
 
         Assert.Equal("CC", rows["claude-code"].GetProperty("mark").GetString());
         Assert.Equal("CC", rows["claude-code-acp"].GetProperty("mark").GetString());
@@ -144,7 +144,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         Assert.True(claude.GetProperty("acts").GetProperty("signsIn").GetBoolean());
         Assert.True(claude.GetProperty("acts").GetProperty("installs").GetBoolean());
         var protocol = claude.GetProperty("doors")[1];
-        Assert.Equal("acp", protocol.GetProperty("wire").GetString());
+        Assert.Equal("protocol", protocol.GetProperty("transport").GetString());
         var steering = protocol.GetProperty("rows").EnumerateArray().Single(row => row.GetProperty("capability").GetString() == "steering");
         Assert.Equal("measured", steering.GetProperty("source").GetString());
         Assert.Equal("docs/2026-10-03-steer-evidence.md", steering.GetProperty("evidence").GetString());
@@ -153,7 +153,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         Assert.True(agents["codex"].GetProperty("acts").GetProperty("deviceCode").GetBoolean());
         Assert.False(agents.ContainsKey("codex-acp"));
         Assert.All(roster.GetProperty("harnesses").EnumerateArray(),
-            door => Assert.Contains(door.GetProperty("wire").GetString(), new[] { "acp", "pipe" }));
+            door => Assert.Contains(door.GetProperty("transport").GetString(), new[] { "protocol", "native" }));
     }
 
     /// <summary>Detection is free and read-only (D49 §4) — the roster answers with no service at all.</summary>
@@ -168,17 +168,17 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         // Every row carries what the page renders, whether or not the tool is installed here.
         foreach (var harness in harnesses)
         {
-            Assert.False(string.IsNullOrWhiteSpace(harness.GetProperty("harness").GetString()));
+            Assert.False(string.IsNullOrWhiteSpace(harness.GetProperty("door").GetString()));
             Assert.True(harness.TryGetProperty("present", out _));
             Assert.True(harness.TryGetProperty("profiles", out _));
         }
 
         // AGT1: what a person calls the tool, and whose it is — `dsh` meant nothing to the owner
         // until it said. Answered by the toolchain's own declaration, not a table on the page.
-        var claude = harnesses.Single(h => h.GetProperty("harness").GetString() == "claude-code");
+        var claude = harnesses.Single(h => h.GetProperty("door").GetString() == "claude-code");
         Assert.Equal("Claude Code", claude.GetProperty("product").GetString());
         Assert.Equal("Anthropic", claude.GetProperty("maker").GetString());
-        var dsh = harnesses.Single(h => h.GetProperty("harness").GetString() == "dsh");
+        var dsh = harnesses.Single(h => h.GetProperty("door").GetString() == "dsh");
         Assert.Equal("DeepSeek", dsh.GetProperty("maker").GetString());
     }
 
@@ -199,7 +199,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
             """);
 
         var roster = await AnswerAsync(Module(), "HARNESSES");
-        var stub = roster.GetProperty("harnesses").EnumerateArray().Single(h => h.GetProperty("harness").GetString() == "stub");
+        var stub = roster.GetProperty("harnesses").EnumerateArray().Single(h => h.GetProperty("door").GetString() == "stub");
 
         var profile = Assert.Single(stub.GetProperty("profiles").EnumerateArray().ToList());
         Assert.Equal("work", profile.GetProperty("name").GetString());
@@ -228,17 +228,17 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         var module = Module();
 
         var stub = (await AnswerAsync(module, "HARNESSES")).GetProperty("harnesses").EnumerateArray()
-            .Single(h => h.GetProperty("harness").GetString() == "stub");
+            .Single(h => h.GetProperty("door").GetString() == "stub");
         Assert.Equal(JsonValueKind.Null, stub.GetProperty("profiles")[0].GetProperty("read").ValueKind);
         Assert.Equal(JsonValueKind.Null, stub.GetProperty("ownRead").ValueKind);
 
         stub = (await AnswerAsync(module, "HARNESSES_REFRESH", new { agent = "stub" })).GetProperty("harnesses").EnumerateArray()
-            .Single(h => h.GetProperty("harness").GetString() == "stub");
+            .Single(h => h.GetProperty("door").GetString() == "stub");
         Assert.Equal(JsonValueKind.String, stub.GetProperty("profiles")[0].GetProperty("read").ValueKind);
         Assert.Equal(JsonValueKind.Null, stub.GetProperty("ownRead").ValueKind);
 
         stub = (await AnswerAsync(module, "HARNESSES_REFRESH")).GetProperty("harnesses").EnumerateArray()
-            .Single(h => h.GetProperty("harness").GetString() == "stub");
+            .Single(h => h.GetProperty("door").GetString() == "stub");
         Assert.Equal(JsonValueKind.Null, stub.GetProperty("ownRead").ValueKind);
         Assert.Null(AccountReads.Of(Home, "stub").Own);
     }
@@ -285,7 +285,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     }
 
     private static JsonElement Stub(JsonElement roster) =>
-        roster.GetProperty("harnesses").EnumerateArray().Single(h => h.GetProperty("harness").GetString() == "stub");
+        roster.GetProperty("harnesses").EnumerateArray().Single(h => h.GetProperty("door").GetString() == "stub");
 
     private static JsonElement Account(JsonElement stub, string name) =>
         stub.GetProperty("profiles").EnumerateArray().Single(p => p.GetProperty("name").GetString() == name);
@@ -344,11 +344,11 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         var module = Module();
         await AnswerAsync(module, "HARNESSES_REFRESH", new { agent = "stub", profile = "work" });
 
-        await AnswerAsync(module, "ACCOUNT_USE", new { harness = "stub", action = "order", accounts = new[] { "work" } });
-        await AnswerAsync(module, "ACCOUNT_USE", new { harness = "stub", action = "order", accounts = Array.Empty<string>() });
-        await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "profile-add", profile = "spare" });
-        await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "profile-remove", profile = "work" });
-        await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "profile-add", profile = "work" });
+        await AnswerAsync(module, "ACCOUNT_USE", new { door = "stub", action = "order", accounts = new[] { "work" } });
+        await AnswerAsync(module, "ACCOUNT_USE", new { door = "stub", action = "order", accounts = Array.Empty<string>() });
+        await AnswerAsync(module, "HARNESS_ACTION", new { door = "stub", action = "profile-add", profile = "spare" });
+        await AnswerAsync(module, "HARNESS_ACTION", new { door = "stub", action = "profile-remove", profile = "work" });
+        await AnswerAsync(module, "HARNESS_ACTION", new { door = "stub", action = "profile-add", profile = "work" });
 
         Assert.Equal(["work"], File.ReadAllLines(asked));
         var stub = Stub(await AnswerAsync(module, "HARNESSES"));
@@ -375,10 +375,10 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
 
         foreach (var press in new object[]
         {
-            new { harness = "stub", action = "profile-default", profile = "work", workspace = "aurora" },
-            new { harness = "stub", action = "profile-default", workspace = "aurora" },
-            new { harness = "stub", action = "profile-default", profile = "work" },
-            new { harness = "stub", action = "profile-default" },
+            new { door = "stub", action = "profile-default", profile = "work", workspace = "aurora" },
+            new { door = "stub", action = "profile-default", workspace = "aurora" },
+            new { door = "stub", action = "profile-default", profile = "work" },
+            new { door = "stub", action = "profile-default" },
         })
         {
             var module = Module();
@@ -399,7 +399,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     public async Task An_action_on_a_harness_daoris_manages_nothing_for_carries_the_driver_s_own_sentence()
     {
         var refusal = await RefusalAsync(
-            Module(), "HARNESS_ACTION", new { harness = "not-a-harness", action = "install" });
+            Module(), "HARNESS_ACTION", new { door = "not-a-harness", action = "install" });
 
         Assert.Contains(Refusals.DriverRefused, refusal);
         Assert.Contains("not-a-harness", refusal);
@@ -436,7 +436,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         var module = Module();
 
         var answer = await AnswerAsync(
-            module, "HARNESS_ACTION", new { harness = "claude-code", action = "login", profile = "work" });
+            module, "HARNESS_ACTION", new { door = "claude-code", action = "login", profile = "work" });
         Assert.True(answer.GetProperty("started").GetBoolean());
         Assert.False(answer.TryGetProperty("exitCode", out _));
 
@@ -444,7 +444,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         await UntilAsync(() => Raised.Any(m => m.Type == "SESSION_OUTPUT"
             && JsonSerializer.Serialize(m.Payload).Contains("Paste code")));
         // …and the answer reaches the process, which ends; the end is announced, naming the account.
-        await AnswerAsync(module, "HARNESS_INPUT", new { harness = "claude-code", action = "login", text = "abc-123" });
+        await AnswerAsync(module, "HARNESS_INPUT", new { door = "claude-code", action = "login", text = "abc-123" });
         await UntilAsync(() => Raised.Any(m => m.Type == "HARNESS_ENDED"));
 
         var ended = JsonSerializer.SerializeToElement(Raised.Single(m => m.Type == "HARNESS_ENDED").Payload);
@@ -453,7 +453,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         Assert.Equal("login", ended.GetProperty("Action").GetString());
         Assert.Contains(Raised, m => m.Type == "SESSION_OUTPUT" && JsonSerializer.Serialize(m.Payload).Contains("Logged in with abc-123"));
 
-        var late = await RefusalAsync(module, "HARNESS_INPUT", new { harness = "claude-code", action = "login", text = "late" });
+        var late = await RefusalAsync(module, "HARNESS_INPUT", new { door = "claude-code", action = "login", text = "late" });
         Assert.Contains(Refusals.HarnessActionIdle, late);
     }
 
@@ -484,19 +484,19 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "claude-code", "home"));
         var module = Module();
 
-        await AnswerAsync(module, "HARNESS_ACTION", new { harness = "claude-code", action = "login", profile = "work" });
+        await AnswerAsync(module, "HARNESS_ACTION", new { door = "claude-code", action = "login", profile = "work" });
         var second = await RefusalAsync(
-            module, "HARNESS_ACTION", new { harness = "claude-code", action = "login", profile = "home" });
+            module, "HARNESS_ACTION", new { door = "claude-code", action = "login", profile = "home" });
         Assert.Contains(Refusals.HarnessActionBusy, second);
         Assert.Contains("claude-code:login", second);
 
-        await AnswerAsync(module, "HARNESS_INPUT", new { harness = "claude-code", action = "login", text = "abc-123" });
+        await AnswerAsync(module, "HARNESS_INPUT", new { door = "claude-code", action = "login", text = "abc-123" });
         await UntilAsync(() => Raised.Any(m => m.Type == "HARNESS_ENDED"));
 
         // Free again: the next one starts.
-        var again = await AnswerAsync(module, "HARNESS_ACTION", new { harness = "claude-code", action = "login", profile = "home" });
+        var again = await AnswerAsync(module, "HARNESS_ACTION", new { door = "claude-code", action = "login", profile = "home" });
         Assert.True(again.GetProperty("started").GetBoolean());
-        await AnswerAsync(module, "HARNESS_CANCEL", new { harness = "claude-code", action = "login" });
+        await AnswerAsync(module, "HARNESS_CANCEL", new { door = "claude-code", action = "login" });
     }
 
     /// <summary>
@@ -509,7 +509,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     public async Task An_answer_or_a_stop_for_an_action_that_is_not_running_is_refused_naming_it(string type)
     {
         var refusal = await RefusalAsync(
-            Module(), type, new { harness = "claude-code", action = "login", text = "abc-123" });
+            Module(), type, new { door = "claude-code", action = "login", text = "abc-123" });
 
         Assert.Contains(Refusals.HarnessActionIdle, refusal);
         Assert.Contains("login", refusal);
@@ -519,7 +519,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     public async Task An_unknown_harness_action_is_refused_naming_it()
     {
         var refusal = await RefusalAsync(
-            Module(), "HARNESS_ACTION", new { harness = "claude-code", action = "frobnicate" });
+            Module(), "HARNESS_ACTION", new { door = "claude-code", action = "frobnicate" });
 
         Assert.Contains(Refusals.HarnessActionUnknown, refusal);
         Assert.Contains("action=frobnicate", refusal);

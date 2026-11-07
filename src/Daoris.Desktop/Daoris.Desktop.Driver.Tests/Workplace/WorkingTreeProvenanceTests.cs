@@ -15,6 +15,17 @@ public sealed class WorkingTreeProvenanceTests : IDisposable
 
     public void Dispose() => _tree.Dispose();
 
+    /// <summary>
+    /// A folder no repository contains, made empty: under the OS temp folder, since git walks up from any folder under the checkout's
+    /// <c>_fixtures/</c> into the checkout's own repository and answers for it.
+    /// </summary>
+    private static string Plain()
+    {
+        var plain = Path.Combine(Path.GetTempPath(), "daoris-plain-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(plain);
+        return plain;
+    }
+
     [Fact]
     public async Task Provenance_names_the_commit_its_time_and_the_line()
     {
@@ -91,15 +102,14 @@ public sealed class WorkingTreeProvenanceTests : IDisposable
     [Fact]
     public async Task A_folder_that_is_not_a_repository_throws()
     {
-        var plain = Path.Combine(Path.GetTempPath(), "daoris-plain-" + Guid.NewGuid().ToString("N")[..8]);
-        Directory.CreateDirectory(plain);
+        var plain = Plain();
         try
         {
             await Assert.ThrowsAsync<DriverException>(() => WorkingTree.BranchAsync(plain));
         }
         finally
         {
-            Directory.Delete(plain, recursive: true);
+            GitSeed.Remove(plain);
         }
     }
 
@@ -110,8 +120,7 @@ public sealed class WorkingTreeProvenanceTests : IDisposable
     [Fact]
     public async Task A_folder_that_is_not_a_repository_answers_nothing()
     {
-        var plain = Path.Combine(Path.GetTempPath(), "daoris-plain-" + Guid.NewGuid().ToString("N")[..8]);
-        Directory.CreateDirectory(plain);
+        var plain = Plain();
         try
         {
             Assert.Null(await WorkingTree.ProvenanceAsync(plain));
@@ -119,7 +128,7 @@ public sealed class WorkingTreeProvenanceTests : IDisposable
         }
         finally
         {
-            Directory.Delete(plain, recursive: true);
+            GitSeed.Remove(plain);
         }
     }
 

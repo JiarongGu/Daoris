@@ -12,8 +12,8 @@ public static class DoorWhere
     /// <summary>The pipe door's failed <c>result</c> (row 1c's).</summary>
     public const string Result = "result";
 
-    /// <summary>The harness's own lines beside a failed result or exit, read for access alone (§3.3).</summary>
-    public const string Harness = "harness";
+    /// <summary>The door's own lines beside a failed result or exit, read for access alone (§3.3).</summary>
+    public const string Lines = "lines";
 }
 
 /// <summary>
@@ -21,7 +21,7 @@ public static class DoorWhere
 /// streamed message, which carries the same words first, is never one, since an agent can write any sentence (D125 point 1.4). A reading's
 /// payload, so it sits with the readings below Agents; each transport builds it from its own wire (<c>DoorFailures</c>).
 /// </summary>
-/// <param name="Door"><c>protocol</c> or <c>pipe</c>.</param>
+/// <param name="Door"><c>protocol</c> or <c>native</c>.</param>
 /// <param name="Code">The JSON-RPC code, or null where the wire carried none.</param>
 /// <param name="Kind">The wire's own kind word (<c>data.errorKind</c>, the harness's <c>error</c> field), or null: an absent kind is no reading, never <c>unknown</c>.</param>
 /// <param name="Status">An HTTP status the wire names, or null.</param>

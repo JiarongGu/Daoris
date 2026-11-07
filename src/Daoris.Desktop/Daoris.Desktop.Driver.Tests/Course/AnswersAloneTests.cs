@@ -12,6 +12,14 @@ public sealed class AnswersAloneTests
 {
     private static readonly DateTimeOffset At = DateTimeOffset.Parse("2026-10-21T09:00:00Z");
 
+    // The seeded rule's number: the count is read here, the bound is the line's rule's at the admission.
+    private const int Seeded = SupervisorRuleBook.AnswersAloneBound;
+
+    private static bool Holds(IReadOnlyList<SaidWordView> words, IEnumerable<SessionEvent> line) =>
+        words.Count > 0 && words.All(AnswersAlone.Solicited) && AnswersAlone.Count(line) >= Seeded;
+
+    private static bool AtBound(IEnumerable<SessionEvent> line) => AnswersAlone.Count(line) >= Seeded;
+
     // ——— The events a line keeps, as the doors write them.
 
     private static SessionEvent Started() => new() { Kind = SessionEventKind.User, Origin = "target", Text = "The quest's instruction." };
@@ -58,7 +66,7 @@ public sealed class AnswersAloneTests
 
         Assert.Equal(2, AnswersAlone.Count([.. twice, .. Turn(watch)]));
         Assert.Equal(2, AnswersAlone.Count([.. twice, watch]));
-        Assert.True(AnswersAlone.Holds([Answer()], [.. twice, .. Turn(watch)]));
+        Assert.True(Holds([Answer()], [.. twice, .. Turn(watch)]));
         Assert.Equal(0, AnswersAlone.Count([.. twice, .. Turn(Daoris())]));
     }
 
@@ -76,9 +84,9 @@ public sealed class AnswersAloneTests
         IEnumerable<SessionEvent> once = [.. Turn(Started()), .. Turn(Opening(), Helper())];
         IEnumerable<SessionEvent> twice = [.. once, .. Turn(Opening(), Helper("w2"))];
 
-        Assert.False(AnswersAlone.Holds([Answer()], once));
-        Assert.True(AnswersAlone.Holds([Answer()], twice));
-        Assert.True(AnswersAlone.Holds([Finding(), Answer()], twice));
+        Assert.False(Holds([Answer()], once));
+        Assert.True(Holds([Answer()], twice));
+        Assert.True(Holds([Finding(), Answer()], twice));
     }
 
     /// <summary>
@@ -100,7 +108,7 @@ public sealed class AnswersAloneTests
         ];
 
         Assert.Equal(2, AnswersAlone.Count(line));
-        Assert.True(AnswersAlone.Holds([new SaidWordView("w7", "A partner's answer.", At, [], true) { Helper = "pt3", Key = "partner:p3" }], line));
+        Assert.True(Holds([new SaidWordView("w7", "A partner's answer.", At, [], true) { Helper = "pt3", Key = "partner:p3" }], line));
     }
 
     /// <summary>Only a word of the person's or Daoris's resets it, whether it prompted a turn or was taken inside one.</summary>
@@ -125,10 +133,10 @@ public sealed class AnswersAloneTests
         IEnumerable<SessionEvent> passed = [.. twice, .. Turn(Passed(), Opening(), Helper("w3"))];
 
         Assert.Equal(0, AnswersAlone.Count(passed));
-        Assert.False(AnswersAlone.Holds([Answer()], [.. passed, .. Turn(Opening(), Helper("w4"))]));
-        Assert.True(AnswersAlone.Holds([Answer()], [.. passed, .. Turn(Opening(), Helper("w4")), .. Turn(Opening(), Helper("w5"))]));
+        Assert.False(Holds([Answer()], [.. passed, .. Turn(Opening(), Helper("w4"))]));
+        Assert.True(Holds([Answer()], [.. passed, .. Turn(Opening(), Helper("w4")), .. Turn(Opening(), Helper("w5"))]));
         // Pressed while nothing has gone on yet: the answer it lets go is judged against the press.
-        Assert.False(AnswersAlone.Holds([Answer()], [.. twice, Passed()]));
+        Assert.False(Holds([Answer()], [.. twice, Passed()]));
     }
 
     /// <summary>An urgent answer taken at a step of a running turn is no go-on (§2.3): no run went on past its own turn.</summary>
@@ -147,7 +155,7 @@ public sealed class AnswersAloneTests
         IEnumerable<SessionEvent> line = [.. Turn(Started()), .. Turn(Opening(), Helper()), .. Turn(Brief()), .. Turn(Opening(), Helper("w2"))];
 
         Assert.Equal(2, AnswersAlone.Count(line));
-        Assert.True(AnswersAlone.Holds([Answer()], line));
+        Assert.True(Holds([Answer()], line));
     }
 
     /// <summary>Two answers handed in one prompt are one go-on; a word shown while it waits and a go-on no agent answered are none.</summary>
@@ -165,7 +173,7 @@ public sealed class AnswersAloneTests
     public void A_line_with_no_events_counts_nothing_and_never_holds()
     {
         Assert.Equal(0, AnswersAlone.Count([]));
-        Assert.False(AnswersAlone.Holds([Answer()], []));
+        Assert.False(Holds([Answer()], []));
     }
 
     /// <summary>
@@ -191,10 +199,10 @@ public sealed class AnswersAloneTests
     {
         IEnumerable<SessionEvent> twice = [.. Turn(Opening(), Helper()), .. Turn(Opening(), Helper("w2"))];
 
-        Assert.False(AnswersAlone.Holds([Answer(), Said()], twice));
-        Assert.False(AnswersAlone.Holds([Answer(), Said() with { From = DaorisWords.From }], twice));
-        Assert.False(AnswersAlone.Holds([Answer(), Said() with { From = "agent" }], twice));
-        Assert.False(AnswersAlone.Holds([], twice));
+        Assert.False(Holds([Answer(), Said()], twice));
+        Assert.False(Holds([Answer(), Said() with { From = DaorisWords.From }], twice));
+        Assert.False(Holds([Answer(), Said() with { From = "agent" }], twice));
+        Assert.False(Holds([], twice));
         Assert.True(AnswersAlone.Solicited(Answer()) && AnswersAlone.Solicited(Finding()) && !AnswersAlone.Solicited(Said()));
     }
 
@@ -214,8 +222,8 @@ public sealed class AnswersAloneTests
 
         Assert.Equal(2, AnswersAlone.Count(twice));
         Assert.True(AnswersAlone.Solicited(Supervised()));
-        Assert.True(AnswersAlone.Holds([Supervised()], twice));
-        Assert.False(AnswersAlone.Holds([Supervised()], [.. twice, .. Turn(Person())]));
+        Assert.True(Holds([Supervised()], twice));
+        Assert.False(Holds([Supervised()], [.. twice, .. Turn(Person())]));
     }
 
     /// <summary>
@@ -230,7 +238,7 @@ public sealed class AnswersAloneTests
 
         Assert.Equal(2, AnswersAlone.Count(mixed));
         Assert.Equal(3, AnswersAlone.Count(alternating));
-        Assert.True(AnswersAlone.Holds([Supervised(), Answer()], mixed));
+        Assert.True(Holds([Supervised(), Answer()], mixed));
         Assert.Equal(0, AnswersAlone.Count([.. alternating, .. Turn(Daoris())]));
     }
 
@@ -262,14 +270,14 @@ public sealed class AnswersAloneTests
         IEnumerable<SessionEvent> once = [.. Turn(Started()), .. Turn(Supervisor())];
         IEnumerable<SessionEvent> twice = [.. once, .. Turn(Helper("w6"))];
 
-        Assert.False(AnswersAlone.AtBound(once));
-        Assert.True(AnswersAlone.AtBound(twice));
-        Assert.True(AnswersAlone.AtBound([.. Turn(Started()), .. Turn(Supervisor()), .. Turn(Supervisor("w5"))]));
-        Assert.True(AnswersAlone.AtBound([.. Turn(Started()), .. Turn(Findings()), .. Turn(Supervisor(), Helper("w6"))]));
-        Assert.False(AnswersAlone.AtBound([.. twice, .. Turn(Person())]));
-        Assert.False(AnswersAlone.AtBound([.. twice, .. Turn(Daoris())]));
-        Assert.True(AnswersAlone.Holds([Supervised()], twice));
-        Assert.False(AnswersAlone.Holds([Supervised()], once));
+        Assert.False(AtBound(once));
+        Assert.True(AtBound(twice));
+        Assert.True(AtBound([.. Turn(Started()), .. Turn(Supervisor()), .. Turn(Supervisor("w5"))]));
+        Assert.True(AtBound([.. Turn(Started()), .. Turn(Findings()), .. Turn(Supervisor(), Helper("w6"))]));
+        Assert.False(AtBound([.. twice, .. Turn(Person())]));
+        Assert.False(AtBound([.. twice, .. Turn(Daoris())]));
+        Assert.True(Holds([Supervised()], twice));
+        Assert.False(Holds([Supervised()], once));
     }
 
     /// <summary>

@@ -16,7 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class PluginSourceTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-plugin-source-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-plugin-source-" + Guid.NewGuid().ToString("N")[..8]);
 
     /// <summary>The install's `data/`: its sibling `app/plugin-offers/` is where the install's offers are.</summary>
     private string Home => Path.Combine(_root, "data");

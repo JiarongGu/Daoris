@@ -17,7 +17,7 @@ public sealed class KeepLockProcessTests : IDisposable
 
     private const string Both = "{\n  \"drivable\": [\n    \"engine\",\n    \"orders\"\n  ],\n  \"notify\": false\n}\n";
 
-    private readonly string _folder = Path.Combine(Path.GetTempPath(), "daoris-keeplock-process-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _folder = Path.Combine(TestHomes.Root, "daoris-keeplock-process-" + Guid.NewGuid().ToString("N")[..8]);
 
     public KeepLockProcessTests() => Directory.CreateDirectory(_folder);
 

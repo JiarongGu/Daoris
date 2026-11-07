@@ -19,7 +19,7 @@ public sealed record RecordedLimit(string Sentence, string Seen, string Channel,
 
 /// <summary>
 /// The words one agent says an account's limit in (TOOL4a, D125 §1.3): its entry in the limit table,
-/// declared on its toolchain as <see cref="HarnessToolchain.Limits"/>, beside AGT3b's <c>Refused</c>.
+/// declared on its toolchain as <see cref="AccountAgent.Limits"/>, beside AGT3b's <c>Refused</c>.
 /// </summary>
 /// <remarks>
 /// <para><b>An entry grows only with a recorded sentence.</b> Every marker and every reset is matched by one

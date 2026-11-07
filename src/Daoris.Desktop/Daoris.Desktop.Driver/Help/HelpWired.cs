@@ -26,8 +26,8 @@ public sealed record HelpReceipt
     /// <summary>The access mode it ran under, the effective one (<see cref="HelpModes"/>; design §1), never the mode chosen now.</summary>
     public string Mode { get; init; } = HelpModes.Restricted;
 
-    /// <summary>Its agent: the harness Daoris names it by.</summary>
-    public string Harness { get; init; } = "";
+    /// <summary>The door it ran on: the id Daoris names it by.</summary>
+    public string Door { get; init; } = "";
 
     /// <summary>The harness version observed for the start, or null where none was.</summary>
     public string? Version { get; init; }
@@ -35,8 +35,8 @@ public sealed record HelpReceipt
     /// <summary>The account it ran as, by its name here; null for the agent's own sign-in.</summary>
     public string? Account { get; init; }
 
-    /// <summary>Its door: <see cref="HelpWired.Pipe"/> (the native door) or <see cref="HelpWired.Acp"/> (the protocol door).</summary>
-    public string Door { get; init; } = HelpWired.Pipe;
+    /// <summary>Its transport: <see cref="HelpWired.Native"/> or <see cref="HelpWired.Protocol"/>.</summary>
+    public string Transport { get; init; } = HelpWired.Native;
 
     /// <summary>The protocol door's mode it asked (D81, D183), its required mark taken off; null on the native door.</summary>
     public string? Posture { get; init; }
@@ -178,11 +178,14 @@ public sealed class HelpWired(string home)
     /// <summary>A start of a conversation going on (MSG1c, ASKHIST1).</summary>
     public const string GoingOn = "going-on";
 
-    /// <summary>The native door, in the sheet's word.</summary>
-    public const string Pipe = AgentCapabilities.Pipe;
+    /// <summary>The native transport.</summary>
+    public const string Native = "native";
 
-    /// <summary>The protocol door, in the sheet's word.</summary>
-    public const string Acp = AgentCapabilities.Acp;
+    /// <summary>The protocol transport.</summary>
+    public const string Protocol = "protocol";
+
+    /// <summary>A transport's word in the receipt.</summary>
+    public static string TransportWord(Daoris.Driver.Transport transport) => transport == Daoris.Driver.Transport.Protocol ? Protocol : Native;
 
     /// <summary>On the spawn: approved for Ask Daoris, or Daoris's own.</summary>
     public const string Handed = "handed";
@@ -367,10 +370,10 @@ public sealed class HelpWired(string home)
             At = at,
             Start = handed.GoesOn ? GoingOn : New,
             Mode = handed.Mode,
-            Harness = handed.Harness,
+            Door = handed.Harness,
             Version = handed.Version,
             Account = handed.Account,
-            Door = Sheet.WireOf(handed.Transport),
+            Transport = TransportWord(handed.Transport),
             Posture = handed.Posture is { } posture ? PostureAsked.Parse(posture).Modes : null,
             PermissionMode = handed.PermissionMode,
             Folder = handed.Folder,
@@ -495,10 +498,10 @@ public sealed class HelpWired(string home)
         writer.WriteString("at", receipt.At);
         writer.WriteString("start", receipt.Start);
         writer.WriteString("mode", receipt.Mode);
-        writer.WriteString("harness", receipt.Harness);
+        writer.WriteString("door", receipt.Door);
         Text(writer, "version", receipt.Version);
         Text(writer, "account", receipt.Account);
-        writer.WriteString("door", receipt.Door);
+        writer.WriteString("transport", receipt.Transport);
         Text(writer, "posture", receipt.Posture);
         Text(writer, "permissionMode", receipt.PermissionMode);
         writer.WriteString("folder", receipt.Folder);
@@ -589,16 +592,16 @@ public sealed class HelpWired(string home)
     private static HelpReceipt? ReadReceipt(JsonElement element)
     {
         if (!element.TryGetProperty("at", out var at) || at.ValueKind != JsonValueKind.String || !at.TryGetDateTimeOffset(out var when)) return null;
-        if (Json.NonEmpty(element, "harness") is not { } harness || Json.Text(element, "folder") is not { } folder) return null;
+        if (Json.NonEmpty(element, "door") is not { } door || Json.Text(element, "folder") is not { } folder) return null;
         return new HelpReceipt
         {
             At = when,
             Start = Json.Text(element, "start") == GoingOn ? GoingOn : New,
             Mode = HelpModes.Recorded(Json.Text(element, "mode")),
-            Harness = harness,
+            Door = door,
             Version = Json.NonEmpty(element, "version"),
             Account = Json.NonEmpty(element, "account"),
-            Door = Json.Text(element, "door") == Acp ? Acp : Pipe,
+            Transport = Json.Text(element, "transport") == Protocol ? Protocol : Native,
             Posture = Json.NonEmpty(element, "posture"),
             PermissionMode = Json.NonEmpty(element, "permissionMode"),
             Folder = folder,

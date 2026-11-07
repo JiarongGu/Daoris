@@ -3,7 +3,12 @@
 Status: proposed 2026-11-03 (D229 reserved for it), for its reads under D191; revised the same day after its Opus read, whose findings
 §12 settles, with the owner's two answers in §10. **Accepted 2026-11-03** by the steward after the Opus reader's second read, whose
 two new findings (a preset's moves on a reached home, §6.4; the next start's walk as an executor, §4.5) and per-role inheritance (§4.4)
-are written in and row e proves them; the other maker's read is owed under its spend cap and is folded in if it finds anything. It answers `2026-11-03-context-counters-brief.md`, whose §2 binds every section:
+are written in and row e proves them. The other maker's read was taken as an Opus read (`2026-11-06-context-drive-read.md`), and
+parts of this text are superseded: §6.2-§6.4 (the conversion door's `rules` part, reached homes, `convert-first`, the census and its
+kept reads) are D232's migration step and row l's deletions; §6.1's policy moves are passed over; one seed serves a fresh home and the
+migration; a count takes one rule per place and roles, so §4.5's ladder and its decide are gone; §2.2's shown counts that no reader asks
+for (`tokens`, `minutes`, `quests-handed`, `results-waited`, `refusals.*`, `over-budget`, `posts`, `starts`) are not read; and the
+backlog's letters differ from §9's: its installed proof is §9's m. It answers `2026-11-03-context-counters-brief.md`, whose §2 binds every section:
 each piece joins a structure that exists, and none runs beside one. Each claim about the code was read at `6bcd5cce9`. Driver paths
 start at `src/Daoris.Desktop/Daoris.Desktop.Driver/`, the modules' at `src/Daoris.Desktop/Daoris.Desktop.Modules/` (written `Mod/`),
 the web's at `src/Daoris.Web/src/`, the service's at `src/Daoris.Service/Daoris.Service.Core/`.

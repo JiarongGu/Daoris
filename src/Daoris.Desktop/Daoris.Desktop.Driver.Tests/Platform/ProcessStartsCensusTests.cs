@@ -94,7 +94,7 @@ public sealed class ProcessStartsCensusTests
     [Theory]
     [InlineData("Daoris.Desktop.Driver/Agents/TransportRun.cs", "AgentStarts.StartAsync(")]
     [InlineData("Daoris.Desktop.Driver/Plugins/HookProcess.cs", "AgentStarts.StartAsync(")]
-    [InlineData("Daoris.Desktop.Driver/Platform/AgentStarts.cs", "ProcessStarts.Shared.StartAsync(info, whose, ct)")]
+    [InlineData("Daoris.Desktop.Driver/Platform/AgentStarts.cs", "ProcessStarts.Shared.StartAsync(info, PurposeOf(start), whose, ct)")]
     [InlineData("Daoris.Desktop.Driver/Agents/HarnessActions.cs", "ProcessStarts.Shared.StartAsync(")]
     [InlineData("Daoris.Desktop.Driver/Agents/Providers/Codex/CodexUsage.cs", "ProcessStarts.Shared.StartAsync(")]
     [InlineData("Daoris.Desktop.Driver/Plugins/PluginToolSetUp.cs", "ProcessStarts.Shared.StartAsync(")]
@@ -283,7 +283,8 @@ public sealed class ProcessStartsCensusTests
 
     /// <summary>
     /// KEEP1b once (ONEWAY1h-i): the downloads an agent's start is handed are kept by its run's spawn (<see cref="TransportRun"/> through the
-    /// driver's port, or the conversation's since ONEWAY1h-iii), and no executor keeps them beside it.
+    /// driver's port, or the conversation's since ONEWAY1h-iii; a layer run's through its hold, AGENTLYNTAI1d), and no executor keeps them
+    /// beside it.
     /// </summary>
     [Fact]
     public void A_starts_downloads_are_kept_by_its_runs_spawn_and_by_no_executor_beside_it()
@@ -296,7 +297,7 @@ public sealed class ProcessStartsCensusTests
 
         Assert.Equal(
             [
-                "Daoris.Desktop.Driver/Agents/TransportRun.cs", "Daoris.Desktop.Driver/Agents/TransportStart.cs",
+                "Daoris.Desktop.Driver/Agents/Layer/LayerHold.cs", "Daoris.Desktop.Driver/Agents/TransportRun.cs", "Daoris.Desktop.Driver/Agents/TransportStart.cs",
                 "Daoris.Desktop.Driver/Loop/Chat/ChatTransportHost.cs", "Daoris.Desktop.Driver/Loop/DriverTransportHost.cs", "Daoris.Desktop.Driver/Workplace/DownloadKeeping.cs",
             ],
             keeping);
@@ -308,7 +309,116 @@ public sealed class ProcessStartsCensusTests
     {
         var source = Sources().Single(each => each.File == "Daoris.Desktop.Driver/Platform/ChildProcess.cs").Source;
 
-        Assert.Contains("starts.StartAsync(info, StartClass.Background, ct)", source);
+        Assert.Contains("starts.StartAsync(info, ProcessPurpose.Read, StartClass.Background, ct)", source);
+    }
+
+    /// <summary>
+    /// What each start through the gate is for (D249), by file: the gate hands every start to the one management
+    /// (<see cref="OwnedProcesses"/>) under the purpose it names, a required word, so a start cannot pass it unmanaged; this holds which
+    /// purpose each file names. How many starts a listed file makes is not pinned (CENSUSRULES1).
+    /// </summary>
+    private static readonly Dictionary<string, string> Purposes = new(StringComparer.Ordinal)
+    {
+        // The agents' job where the launcher took the start, else its kind's job here.
+        [AgentRoute] = "PurposeOf(start)",
+        ["Daoris.Desktop.Driver/Workplace/GitRuns.cs"] = "ProcessPurpose.Git",
+        ["Daoris.Desktop.Driver/Platform/ChildProcess.cs"] = "ProcessPurpose.Read",
+        ["Daoris.Desktop.Driver/Agents/Providers/Codex/CodexUsage.cs"] = "ProcessPurpose.Read",
+        ["Daoris.Desktop.Driver/Agents/HarnessActions.cs"] = "ProcessPurpose.Tool",
+        ["Daoris.Desktop.Driver/Agents/ServerPackages.cs"] = "ProcessPurpose.Tool",
+        ["Daoris.Desktop.Driver/Workplace/GitIdentityActs.cs"] = "ProcessPurpose.Tool",
+        ["Daoris.Desktop.Driver/Plugins/PluginToolSetUp.cs"] = "ProcessPurpose.Tool",
+        ["Daoris.Desktop.Driver.Host/DoctrineConsole.cs"] = "ProcessPurpose.Tool",
+        ["Daoris.Desktop.Modules/Loop/HostSupervisor.cs"] = "ProcessPurpose.EndsItself",
+        ["Daoris.Desktop.App/EngineBrowserHost.cs"] = "ProcessPurpose.Outlives",
+        ["Daoris.Desktop.Modules/Update/UpdateLauncher.cs"] = "ProcessPurpose.Outlives",
+    };
+
+    /// <summary>
+    /// The starts through the gate that no job of the one management holds (D249), each with why: a purpose held by none, and a start the gate
+    /// runs without a process to hand on. The direct starts (<see cref="Allowed"/>) are each a program of its own or held in a job of their
+    /// own from before their first instruction, as their reasons say.
+    /// </summary>
+    private static readonly Dictionary<string, string> HeldByNone = new(StringComparer.Ordinal)
+    {
+        ["Daoris.Desktop.Modules/Loop/HostSupervisor.cs"] =
+            "the HTTP host stops itself when its input ends with this process (LOG2a), and a job's kill would cut that stop short",
+        ["Daoris.Desktop.App/EngineBrowserHost.cs"] = "the Edge the settings choose, on Daoris's profile, recorded and reused by the next shell",
+        ["Daoris.Desktop.Modules/Update/UpdateLauncher.cs"] = "the update's launcher, which replaces this process and outlives it by design",
+        ["Daoris.Desktop.Modules/Windows/OpenFolder.cs"] = "the file manager, the system's own, handed the folder by the window kit's launcher",
+        ["Daoris.Desktop.Modules/Windows/TerminalModule.cs"] =
+            "the terminal's shell, started suspended and held in a job of its own before its first instruction (CONSOLE4a)",
+    };
+
+    /// <summary>🔴 D249: every start through the gate names its purpose as listed, and each start no job holds is named with why.</summary>
+    [Fact]
+    public void Every_start_through_the_gate_names_its_purpose_and_each_held_by_no_job_says_why()
+    {
+        var problems = PurposeProblems(Sources());
+
+        Assert.True(problems.Count == 0, "the one management (D249): name each start's purpose in Purposes, and why one no job holds in "
+            + "HeldByNone:\n" + string.Join('\n', problems));
+    }
+
+    /// <summary>The purposes' census, red on a start planted with no purpose listed and on one held by no job unnamed.</summary>
+    [Fact]
+    public void A_start_planted_with_an_unlisted_purpose_or_held_by_no_job_is_named_by_the_census()
+    {
+        var planted = Sources().Append(("Daoris.Desktop.Driver/Loop/Planted.cs",
+            "var p = await ProcessStarts.Shared.StartAsync(info, ProcessPurpose.Outlives, StartClass.Background, ct);"));
+
+        Assert.Equal(
+            [
+                "Daoris.Desktop.Driver/Loop/Planted.cs: a start whose purpose is not listed in Purposes",
+                "Daoris.Desktop.Driver/Loop/Planted.cs: held by no job, and not named in HeldByNone with why",
+            ],
+            PurposeProblems(planted));
+    }
+
+    /// <summary>The runtime's kills that stay outside the one management's end (D249, <see cref="OwnedProcesses.End"/>), each with why.</summary>
+    private static readonly Dictionary<string, string> OwnKills = new(StringComparer.Ordinal)
+    {
+        ["Daoris.Desktop.Driver/Platform/OwnedProcesses.cs"] = "the management's own end",
+        ["Daoris.Desktop.Driver/Workplace/GitDoors.cs"] =
+            "the git doors' program of its own, which git starts and which compiles without the management: the door's ssh ended with it",
+        ["Daoris.Desktop.Driver/Workplace/ActReconciler.cs"] =
+            "a journaled act step's git an earlier Daoris left, found by its pid, whose refused kill the reconciler reads as not ended",
+    };
+
+    [Fact]
+    public void Every_process_is_ended_through_the_one_management_but_in_the_files_named_with_their_reason()
+    {
+        // The runtime's tree kill, as every kill of the desktop's was written; a plugin trial's own Kill() ends through the management.
+        var killing = Sources().Where(each => Regex.IsMatch(each.Source, @"\.Kill\(\s*(?:entireProcessTree|true|false)\b")).Select(each => each.File).ToHashSet();
+
+        Assert.True(killing.All(OwnKills.ContainsKey), "a process ended outside OwnedProcesses.End: end it there, or name the file in "
+            + "OwnKills with why:\n" + string.Join('\n', killing.Where(file => !OwnKills.ContainsKey(file))));
+        Assert.All(OwnKills.Keys, file => Assert.True(killing.Contains(file), $"{file} kills nothing itself now: take it off OwnKills"));
+    }
+
+    private static List<string> PurposeProblems(IEnumerable<(string File, string Source)> sources)
+    {
+        var problems = new List<string>();
+        var starting = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var (file, source) in sources)
+        {
+            // The management itself names the purposes it joins to none.
+            if (file == "Daoris.Desktop.Driver/Platform/OwnedProcesses.cs") continue;
+            var starts = Regex.IsMatch(source, @"\bProcessStarts\.Shared\.StartAsync\(|\bstarts\.StartAsync\(");
+            var runs = Regex.IsMatch(source, @"\bProcessStarts\.Shared\.RunAsync\(");
+            if (starts || runs) starting.Add(file);
+            if (starts && !(Purposes.TryGetValue(file, out var purpose) && source.Contains(purpose, StringComparison.Ordinal)))
+            {
+                problems.Add($"{file}: a start whose purpose is not listed in Purposes");
+            }
+
+            var none = runs || Regex.IsMatch(source, @"\bProcessPurpose\.(?:Outlives|EndsItself)\b");
+            if (none && !HeldByNone.ContainsKey(file)) problems.Add($"{file}: held by no job, and not named in HeldByNone with why");
+        }
+
+        problems.AddRange(Purposes.Keys.Concat(HeldByNone.Keys).Distinct().Where(file => !starting.Contains(file))
+            .Select(file => $"{file} starts nothing through the gate now: take it off the list"));
+        return problems;
     }
 
     /// <summary>The launcher is called by <c>OpenFolders.OpenAsync</c> alone, which passes the gate: no module calls it itself.</summary>
@@ -342,6 +452,26 @@ public sealed class ProcessStartsCensusTests
         Assert.True(starts >= 20, $"expected to find the projects' starts, found {starts}");
         Assert.True(problems.Count == 0, string.Join('\n', problems));
         Assert.Empty(NoConsoleStarts.Stale(sources));
+    }
+
+    /// <summary>Every direct start a driver test makes is git past the ceiling or named with its purpose in <see cref="TestProcessStarts"/> (D249).</summary>
+    [Fact]
+    public void Every_direct_start_a_driver_test_makes_is_named_with_its_purpose()
+    {
+        var problems = TestProcessStarts.Problems(TestProcessStarts.Sources("Daoris.Desktop.Driver.Tests"), "Daoris.Desktop.Driver.Tests");
+
+        Assert.True(problems.Count == 0, string.Join('\n', problems));
+    }
+
+    /// <summary>A start planted in an unlisted test file is named, and a listed file that starts nothing is taken off.</summary>
+    [Fact]
+    public void A_test_start_planted_unlisted_is_named_by_the_census()
+    {
+        var planted = TestProcessStarts.Sources("Daoris.Desktop.Driver.Tests").Append(("Daoris.Desktop.Driver.Tests/Planted.cs", "var p = Process.Start(info);"));
+
+        Assert.Contains("Daoris.Desktop.Driver.Tests/Planted.cs: a direct start of a process, not named",
+            TestProcessStarts.Problems(planted, "Daoris.Desktop.Driver.Tests"));
+        Assert.Empty(TestProcessStarts.Problems([("Daoris.Desktop.Driver.Tests/Planted.cs", "var p = TestGit.Past(info); Process.Start(info);")], "Other"));
     }
 
     /// <summary>A start with no window hidden fails; each way of hiding it, and each named exemption, passes.</summary>

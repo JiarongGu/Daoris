@@ -583,10 +583,10 @@ export function useSummary(use: AgentAccounts, count: number): string {
 /** The ways in, folded: each door's word and version, and the one driven work starts on (`driver.json`'s adapter). */
 export function doorsSummary(tool: Tool, adapter: string | undefined): string {
   return tool.doors.map((door) => {
-    const word = i18n.t(door.wire === 'acp' ? 'harness.wire.acp' : 'harness.wire.pipe');
+    const word = i18n.t(door.transport === 'protocol' ? 'harness.wire.acp' : 'harness.wire.pipe');
     if (!door.present) return i18n.t('agents.doors.absent', { door: word });
     const version = versionOnly(door.version ?? '');
-    return i18n.t(door.harness === adapter ? 'agents.doors.driven' : 'agents.doors.door', { door: word, version });
+    return i18n.t(door.door === adapter ? 'agents.doors.driven' : 'agents.doors.door', { door: word, version });
   }).join(' · ');
 }
 

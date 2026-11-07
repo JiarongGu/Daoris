@@ -13,14 +13,14 @@ import { GetStarted } from './GetStarted';
 // screens that do it and the command that does the same, shown and copyable (D50).
 
 const FRESH = setupSteps(readMachine({
-  attached: true, registry: [], driver: { drivable: [], helperAdapter: '' }, harnesses: [], lines: [],
+  attached: true, registry: [], driver: { drivable: [], helperAgent: '' }, harnesses: [], lines: [],
 }));
 
 const HALFWAY = setupSteps(readMachine({
   attached: true,
   registry: [{ repository: 'engine' }],
-  driver: { drivable: [], helperAdapter: 'claude-code-acp' },
-  harnesses: [{ harness: 'claude-code', present: true, ownLogin: 'in', profiles: [{ name: 'work', home: 'h', login: 'in' }] }],
+  driver: { drivable: [], helperAgent: 'claude-code-acp' },
+  harnesses: [{ door: 'claude-code', present: true, ownLogin: 'in', profiles: [{ name: 'work', home: 'h', login: 'in' }] }],
   lines: [],
 }));
 

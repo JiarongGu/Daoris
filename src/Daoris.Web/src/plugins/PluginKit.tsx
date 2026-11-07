@@ -15,6 +15,7 @@ const OWN_GLOSS: Record<string, string> = {
   'work/watch': 'plugin.kit.kind.workWatch',
   'work/step': 'plugin.kit.kind.workStep',
   'work/perform': 'plugin.kit.kind.workPerform',
+  'work/event': 'plugin.kit.kind.workEvent',
 };
 
 /** A point's gloss, in the kit and on a plugin's page: its own where it has one, else its kind's, else the kind as the driver says it. */

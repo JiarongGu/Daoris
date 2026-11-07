@@ -50,7 +50,7 @@ public sealed class AgentSettingsModuleTests : Bridge
         Account("claude-code", "play");
 
         var rows = (await AnswerAsync(Module(), "HARNESSES")).GetProperty("harnesses").EnumerateArray()
-            .ToDictionary(row => row.GetProperty("harness").GetString()!);
+            .ToDictionary(row => row.GetProperty("door").GetString()!);
 
         var claude = rows["claude-code"];
         var choices = claude.GetProperty("settingsChoices");
@@ -85,7 +85,7 @@ public sealed class AgentSettingsModuleTests : Bridge
         Account("claude-code", "work", "not json at all");
 
         var claude = (await AnswerAsync(Module(), "HARNESSES")).GetProperty("harnesses").EnumerateArray()
-            .Single(row => row.GetProperty("harness").GetString() == "claude-code");
+            .Single(row => row.GetProperty("door").GetString() == "claude-code");
         var settings = claude.GetProperty("profiles").EnumerateArray().Single().GetProperty("settings");
 
         Assert.Contains("could not be read", settings.GetProperty("problem").GetString());
@@ -97,7 +97,7 @@ public sealed class AgentSettingsModuleTests : Bridge
         var file = Account("claude-code", "work", """{"theme":"dark","model":"opus"}""");
 
         var answer = await AnswerAsync(Module(), "SET_AGENT_SETTINGS",
-            new { harness = "claude-code", profile = "work", model = "sonnet", effort = "xhigh" });
+            new { door = "claude-code", profile = "work", model = "sonnet", effort = "xhigh" });
 
         Assert.Equal("sonnet", answer.GetProperty("model").GetString());
         Assert.Equal("xhigh", answer.GetProperty("effort").GetString());
@@ -113,7 +113,7 @@ public sealed class AgentSettingsModuleTests : Bridge
 
         var answer = await AnswerAsync(Module(), "SET_AGENT_SETTINGS", new
         {
-            harness = "claude-code", profile = "work", model = (string?)null,
+            door = "claude-code", profile = "work", model = (string?)null,
             perModel = new Dictionary<string, string?> { ["claude-opus-5"] = "low" },
         });
 
@@ -129,7 +129,7 @@ public sealed class AgentSettingsModuleTests : Bridge
     {
         var file = Account("claude-code", "work");
 
-        await AnswerAsync(Module(), "SET_AGENT_SETTINGS", new { harness = "claude-code-acp", profile = "work", effort = "medium" });
+        await AnswerAsync(Module(), "SET_AGENT_SETTINGS", new { door = "claude-code-acp", profile = "work", effort = "medium" });
 
         Assert.Contains("\"effortLevel\": \"medium\"", File.ReadAllText(file));
     }
@@ -140,17 +140,17 @@ public sealed class AgentSettingsModuleTests : Bridge
         var file = Account("claude-code", "work", "{\"model\":\"opus\"}\n");
         var module = Module();
 
-        var max = await RefusalAsync(module, "SET_AGENT_SETTINGS", new { harness = "claude-code", profile = "work", effort = "max" });
+        var max = await RefusalAsync(module, "SET_AGENT_SETTINGS", new { door = "claude-code", profile = "work", effort = "max" });
         Assert.Contains(Refusals.DriverRefused, max);
         Assert.Contains("one session", max);
         Assert.Equal("{\"model\":\"opus\"}\n", File.ReadAllText(file));
 
         // Never the tool's own configuration home: that home is the tool's.
-        Assert.Contains("never touches", await RefusalAsync(module, "SET_AGENT_SETTINGS", new { harness = "claude-code", model = "opus" }));
+        Assert.Contains("never touches", await RefusalAsync(module, "SET_AGENT_SETTINGS", new { door = "claude-code", model = "opus" }));
         // Never an account made by a setting.
-        Assert.Contains("no account `play`", await RefusalAsync(module, "SET_AGENT_SETTINGS", new { harness = "claude-code", profile = "play", model = "opus" }));
+        Assert.Contains("no account `play`", await RefusalAsync(module, "SET_AGENT_SETTINGS", new { door = "claude-code", profile = "play", model = "opus" }));
         Assert.False(Directory.Exists(HarnessSettings.ProfileHome(Home, "claude-code", "play")));
         // A tool whose settings Daoris does not know is offered nothing to set.
-        Assert.Contains("does not know", await RefusalAsync(module, "SET_AGENT_SETTINGS", new { harness = "dsh", profile = "work", model = "x" }));
+        Assert.Contains("does not know", await RefusalAsync(module, "SET_AGENT_SETTINGS", new { door = "dsh", profile = "work", model = "x" }));
     }
 }

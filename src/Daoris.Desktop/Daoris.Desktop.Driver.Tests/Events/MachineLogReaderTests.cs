@@ -20,7 +20,7 @@ public sealed class MachineLogReaderTests : IDisposable
     private static readonly DateTimeOffset Now = new(2026, 9, 30, 12, 0, 0, TimeSpan.Zero);
 
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-log-reader-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-log-reader-" + Guid.NewGuid().ToString("N")[..8]);
 
     public MachineLogReaderTests() => Directory.CreateDirectory(Logs);
 

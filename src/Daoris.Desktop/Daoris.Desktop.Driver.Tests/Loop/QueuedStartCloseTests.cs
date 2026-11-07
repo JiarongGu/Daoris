@@ -23,7 +23,7 @@ public sealed class QueuedStartCloseTests : IDisposable
 {
     private const string Nowhere = "daoris-parallel1f-nowhere";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-queued-close-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-queued-close-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
 
@@ -107,14 +107,14 @@ public sealed class QueuedStartCloseTests : IDisposable
     {
         var driver = Driver();
         var adapter = BuiltDoors.Claude;
-        new HarnessConversations(_home).Keep("s1", adapter.Name, "conv-1");
+        new HarnessConversations(_home).Keep("s1", adapter.Id.Value, "conv-1");
         var held = driver.Context.Processes.OpenInbox("s1");
         Assert.True(held.Hold(new ChatMessage("And log it.", [])));
         using var closed = new CancellationTokenSource();
         await closed.CancelAsync();
         var target = new SessionTarget("q1", "Serve it", "", "game", "engine", Tree("s-1"), "http://localhost:5177") { Home = _home };
         await using var run = new TransportRun(
-            new DriverTransportHost(driver), adapter,
+            new DriverTransportHost(driver), ProviderRegistry.Built(), adapter,
             new TransportStart(new ProcessStartInfo(Nowhere), StartClass.Person) { Target = target, Selection = new HarnessSelection(null) });
         run.HandStart(run.Start with { Session = "s1", Transcript = Path.Combine(_home, "s1.log") });
         run.HandSink(new RecordReadings("s1", null, driver.Context.Events));

@@ -20,7 +20,7 @@ public sealed class JournaledDeletesTests : TreeSyncFixture
         return code == 0 ? said.Trim() : null;
     }
 
-    private static Task<string?> Clear() => Task.FromResult<string?>(null);
+    private static Task<string?> Clear(string? made) => Task.FromResult<string?>(null);
 
     [Fact]
     public async Task A_judged_delete_is_the_journals_act_pressed_by_daoris_and_its_Undo_makes_the_branch_again_with_its_section()
@@ -73,7 +73,7 @@ public sealed class JournaledDeletesTests : TreeSyncFixture
         await GitAsync(root, "config", "branch.daoris/s-3.remote", "origin");
         var tip = await RevAsync(root, "daoris/s-3");
 
-        var kept = await JournaledDeletes.DeleteAsync(Home, root, "engine", "daoris/s-3", tip, [("refs/heads/daoris/s-3", tip)], async () =>
+        var kept = await JournaledDeletes.DeleteAsync(Home, root, "engine", "daoris/s-3", tip, [("refs/heads/daoris/s-3", tip)], async _ =>
         {
             await GitAsync(root, "update-ref", "refs/heads/daoris/s-3", tip, "");
             return "it was checked out at elsewhere as it went, so it was put back where it was";

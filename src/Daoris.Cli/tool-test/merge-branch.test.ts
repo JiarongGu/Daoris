@@ -7,6 +7,7 @@ import { chmodSync, closeSync, existsSync, lstatSync, mkdirSync, openSync, readd
 import { delimiter, dirname, join, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeFixture, PATIENCE } from '../test/_fixture.ts';
+import { folderSet } from './support/folder-set.ts';
 
 /**
  * MOD9 (`docs/2026-09-30-parallel-development-design.md` §3 rule 6): the parent's one merge tool. It
@@ -1581,10 +1582,9 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['the usage curve table', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/usage-curves.json'], [...BASE, 'driver', 'modules', 'web-unit']],
     // PARKVIEW1: a park's question as each reader takes it, the driver's QuestionFilesTests and the page's parkQuestion.test.ts.
     ['the park question table', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/park-question.json'], [...BASE, 'driver', 'web-unit']],
-    // AGENTPROVIDER1a: the provider census's exceptions and the vocabulary the four censuses share: the driver's ProviderCensusTests,
-    // the service's, the page's providerCensus.test.ts and the tools' provider-census.test.ts.
+    // AGENTPROVIDER1a: the provider census's exceptions the four censuses share: the driver's ProviderCensusTests, the service's, the
+    // page's providerCensus.test.ts and the tools' provider-census.test.ts.
     ['the provider census', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/provider-census.json'], [...BASE, 'driver', 'service', 'web-unit', 'tool-tests']],
-    ['the provider vocabulary', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/provider-vocabulary.json'], [...BASE, 'driver', 'service', 'web-unit', 'tool-tests']],
     // AGENTPROVIDER1b part 3, placed by INTEGRATE1d part 4: the stand-ins' reader is the tools' (its tool test and the family rehearsal
     // import it), and each provider's own files are the driver's, which the tool test and the rehearsal read too.
     ["the stand-ins' reader", ['tools/stand-ins.mjs'], [...BASE, 'tool-tests', 'rehearse-family']],
@@ -2389,11 +2389,6 @@ function namedReads(text: string, files: readonly string[]): string[] {
   }
   if (/\bSourceFiles\.Driver\(\s*\$/.test(text)) reads.add(`${under(driver)}probe.cs`);
   return [...reads];
-}
-
-/** Every folder that holds a tracked file, at any depth. */
-function folderSet(files: readonly string[]): Set<string> {
-  return new Set(files.flatMap((path) => path.split('/').slice(0, -1).map((_, i, parts) => parts.slice(0, i + 1).join('/'))));
 }
 
 /** MOD9d: a read names something here, a tracked file or a file in a tracked folder (`probe.txt`, `probe.cs`), or it holds nothing. */

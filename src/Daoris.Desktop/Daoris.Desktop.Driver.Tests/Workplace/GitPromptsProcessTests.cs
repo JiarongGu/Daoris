@@ -19,7 +19,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class GitPromptsProcessTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-git-prompts-process-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-git-prompts-process-" + Guid.NewGuid().ToString("N")[..8]);
 
     public GitPromptsProcessTests() => Directory.CreateDirectory(_root);
 

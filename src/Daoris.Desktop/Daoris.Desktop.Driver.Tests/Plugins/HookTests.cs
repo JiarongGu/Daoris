@@ -14,7 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class HookTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-hooks-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-hooks-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

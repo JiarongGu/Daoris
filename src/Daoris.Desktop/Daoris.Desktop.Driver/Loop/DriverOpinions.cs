@@ -42,11 +42,11 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
         OpinionPassRun Held(string why) => new($"held  second opinion on {named}: {why}", false) { Code = choice.Code };
 
         // Asked BEFORE anything is made, like every hold a driven spawn asks: the adapter, then the candidate as git reads it.
-        ISessionAdapter adapter;
+        AgentDoor adapter;
         OpinionCandidateRead candidate;
         try
         {
-            adapter = _context.Adapters.Resolve(reviewer);
+            adapter = _context.Adapters.Door(reviewer);
             candidate = await OpinionPackets.ReadAsync(ask.Root, ask.Repository, ask.Base, ask.Tip, ct).ConfigureAwait(false);
         }
         catch (DriverException error)
@@ -86,7 +86,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
 
                 try
                 {
-                    adapter = _context.Adapters.Resolve(nextReviewer);
+                    adapter = _context.Adapters.Door(nextReviewer);
                 }
                 catch (DriverException error)
                 {
@@ -110,7 +110,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
 
     /// <summary>The pass from its record's open to its record's end, in its copy.</summary>
     private async Task<OpinionPassRun> ReadInCopyAsync(
-        OpinionPassAsk ask, ReviewerChoice choice, ISessionAdapter adapter, HarnessSelection selection, string reviewer, string label,
+        OpinionPassAsk ask, ReviewerChoice choice, AgentDoor adapter, HarnessSelection selection, string reviewer, string label,
         OpinionCandidateRead candidate, OpinionTreeOpened copy, string named, OneTurnReask? reask, CancellationToken ct)
     {
         var service = _context.Service;
@@ -215,7 +215,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
 
             // HELPPLUG1c (D170 point 4): the skills plugins hand sessions, though not their servers: a skill is words, and one that
             // allows itself tools is handed nowhere, so the reviewer's rules below stand. Gone with the pass.
-            var (skills, skillPlugins) = SpawnSkills.Hand(adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
+            var (skills, skillPlugins) = SpawnSkills.Hand(_context.Adapters, adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
             using var skilled = new Disposer(() => SpawnFiles.RemoveFolder(skills));
 
             // What it may do (§5.2): the person's composition under the opinion's rules, held to its copy by the tree guard,
@@ -245,14 +245,14 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
                     if (used is not null)
                     {
                         _context.Usage?.Record(new UsageEntry(
-                            sessionId, ask.Repository, adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
+                            sessionId, ask.Repository, adapter.Id.Value, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
                     }
 
                     // Refused at the open, before any prompt: the record ends `choice-not-offered`, its one count given back once its
                     // process has stopped, and the pass asks its walk again (above) before it publishes an outcome.
                     if (!_context.Processes.WasStopRequested(sessionId) && ended.NotOffered is { } notOffered)
                     {
-                        var refusedEnd = Observation.ChoiceNotOffered(adapter.Name, notOffered);
+                        var refusedEnd = Observation.ChoiceNotOffered(adapter.Id.Value, notOffered);
                         await service.AdvanceAsync(sessionId, refusedEnd.State, note: refusedEnd.Note, ct: ct, parts: refusedEnd.Parts).ConfigureAwait(false);
                         _context.Harnesses.Release(selection.Number, sessionId);
                         return Ended(refusedEnd.State, refusedEnd.Note) with { NotOffered = true };
@@ -267,7 +267,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
                     conclusion = _driver.AccountRefused(conclusion, adapter, selection, ended);
                     conclusion = _driver.AccountSignedOut(conclusion, adapter, selection, turnFailed, ended);
                     (conclusion, var limited) = _driver.AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
-                    if (!byPerson && !limited) conclusion = TransientEnded.Over(conclusion, ended, TransientEnded.Opinion, adapter.Name, timedOut: exitCode is null);
+                    if (!byPerson && !limited) conclusion = TransientEnded.Over(conclusion, ended, TransientEnded.Opinion, adapter.Id.Value, timedOut: exitCode is null);
 
                     await service.AdvanceAsync(
                         sessionId, conclusion.State, note: conclusion.Note, ct: ct, limit: limited, parts: conclusion.Parts).ConfigureAwait(false);

@@ -6,8 +6,9 @@ namespace Daoris.Driver;
 /// <summary>
 /// A session's lineage file, where its native children are bound to its part (FABRIC-C1a, D173): the connector writes a line
 /// per call with the lineage its harness carried, the hook this driver hands Claude Code writes what it says of each agent, and
-/// this driver writes each process's start and end (COWORKVIEW1a) and what Claude Code's stream and the protocol door say of each
-/// subagent. Every line names the process it was written for where it has a token. <see cref="ChildBindings"/> reads them.
+/// this driver writes each process's start and end (COWORKVIEW1a) and, through its part of the run's sink (<see cref="LineageReadings"/>),
+/// each child a door's readings say started or ended. Every line names the process it was written for where it has a token.
+/// <see cref="ChildBindings"/> reads them.
 /// </summary>
 /// <remarks>
 /// <para><b>The file is the contract</b> (<c>.claude/knowledge/twins.md</c>): <c>&lt;home&gt;/sessions/&lt;id&gt;/lineage.jsonl</c>,
@@ -151,35 +152,6 @@ public static class ChildLineage
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             return LineageReading.Failed(error.GetType().Name);
-        }
-    }
-
-    /// <summary>
-    /// What one process's run tells its part's lineage (COWORKVIEW1a): each subagent's start and end Claude Code's stream says
-    /// (<see cref="ChildBindings.StreamLine"/>), and each the protocol door announces and ends, every line naming
-    /// <paramref name="proc"/> where it is a token.
-    /// </summary>
-    public static ILineageWriter Writer(string home, string sessionId, string? proc = null) => new ProcessWriter(home, sessionId, proc);
-
-    private sealed class ProcessWriter(string home, string sessionId, string? proc) : ILineageWriter
-    {
-        private readonly HashSet<string> _agents = new(StringComparer.Ordinal);
-
-        public void Stream(NativeFrame frame)
-        {
-            string? said;
-            lock (_agents) said = ChildBindings.StreamLine(frame, DateTimeOffset.UtcNow, _agents, proc);
-            if (said is not null) Append(home, sessionId, said);
-        }
-
-        public void Spawned(LineageAnnouncement said)
-        {
-            if (ChildBindings.AcpStarted(said, DateTimeOffset.UtcNow, proc) is { } line) Append(home, sessionId, line);
-        }
-
-        public void Ended(string agent, string? state)
-        {
-            if (ChildBindings.AcpEnded(agent, state, DateTimeOffset.UtcNow, proc) is { } line) Append(home, sessionId, line);
         }
     }
 }

@@ -344,6 +344,8 @@ public sealed class PipeCensusTests
     // GITAPP2g, n: one ref pushed to origin moves origin under the person's grant; its plan is a read.
     [InlineData("DAORIS.DRIVER", "GIT_PUSH", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "GIT_PUSH_PLAN", PipeClass.Open)]
+    // GITAPP2: a stash of Daoris's own Save dropped removes an entry of the shared stash.
+    [InlineData("DAORIS.DRIVER", "GIT_STASH_DROP", PipeClass.Person)]
     // GITAPP2m: a branch's history edited moves the person's branch; its plan form is open (a rule on `plan`).
     [InlineData("DAORIS.DRIVER", "GIT_HISTORY_EDIT", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "SWEEP", PipeClass.Person)]
@@ -523,6 +525,7 @@ public sealed class PipeCensusTests
     [InlineData("GIT_REF_FINISH", PipeDrain.Waits)]
     [InlineData("GIT_FETCH", PipeDrain.Waits)]
     [InlineData("GIT_PUSH", PipeDrain.Waits)]
+    [InlineData("GIT_STASH_DROP", PipeDrain.Waits)]
     [InlineData("GIT_HISTORY_EDIT", PipeDrain.Waits)]
     [InlineData("ROLE_ACT", PipeDrain.Waits)]
     public void A_drain_holds_what_starts_work_or_changes_a_repository_and_lets_the_rest_through(string route, PipeDrain expected)

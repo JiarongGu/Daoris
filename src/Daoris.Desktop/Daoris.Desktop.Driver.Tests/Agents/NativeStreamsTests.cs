@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Text.Json;
 using Daoris.Driver;
 
@@ -11,7 +12,7 @@ namespace Daoris.Driver.Tests;
 /// </summary>
 public sealed class NativeStreamsTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-native-streams-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-native-streams-" + Guid.NewGuid().ToString("N")[..8]);
 
     public NativeStreamsTests() => Directory.CreateDirectory(_root);
 
@@ -117,7 +118,7 @@ public sealed class NativeStreamsTests : IDisposable
         string[] Heard(params string[] lines)
         {
             var own = new HarnessWords();
-            foreach (var line in lines) own.Heard(NativeFrame.Of(line));
+            Hear(own, lines);
             return [.. own.Ended(0).BackgroundCut];
         }
 
@@ -129,9 +130,83 @@ public sealed class NativeStreamsTests : IDisposable
             System("task_updated", new { task_id = "a1", patch = new { status = "killed" } })));
 
         var again = new HarnessWords();
-        foreach (var line in BackgroundCut) again.Heard(NativeFrame.Of(line));
+        Hear(again, BackgroundCut);
         again.Begin();
         Assert.Empty(again.Ended(0).BackgroundCut);
+    }
+
+    /// <summary>
+    /// BGWAIT1c at the capture's close: Daoris ended the process at its turn's end after the harness killed its command and before it wrote the
+    /// notification, so the update's word is the command's end and the run's ending cuts it; its stream ends with its session, as before.
+    /// </summary>
+    [Fact]
+    public async Task A_command_killed_after_the_turn_with_no_notification_is_cut_at_the_capture_s_close()
+    {
+        var output = new SessionOutput();
+        var own = new HarnessWords();
+        var lines = new[]
+        {
+            System("task_started", new { task_id = "b1", tool_use_id = "toolu_bg", description = "npm run gates", task_type = "local_bash" }),
+            Json(new { type = "result", subtype = "success", is_error = false }),
+            System("task_updated", new { task_id = "b1", patch = new { status = "killed" } }),
+        };
+
+        await HarnessCapture.CaptureStructuredAsync(
+            new StringReader(string.Join('\n', lines)), new StringReader(""), Path.Combine(_root, "s5.log"), new RecordReadings("s5", output, null),
+            new ClaudeStreamJson(), prompt: null, CancellationToken.None, own: own);
+
+        Assert.Equal(["npm run gates"], own.Ended(0).BackgroundCut);
+        Assert.Equal(SessionStream.SessionEnded, Assert.Single(output.Streams("s5")).State);
+    }
+
+    /// <summary>Lines read as the capture reads them: each frame's task said once as its reading, then the close's, which the run's own ending reads.</summary>
+    private static void Hear(HarnessWords own, IEnumerable<string> lines)
+    {
+        var tasks = new NativeTasks();
+        foreach (var line in lines)
+        {
+            if (tasks.Read(NativeFrame.Of(line)) is { } task) own.Read(task);
+        }
+
+        foreach (var ended in tasks.Close()) own.Read(ended);
+    }
+
+    /// <summary>
+    /// AGENTPROVIDER1l: a child's and a background task's start and end reach the streams beside and the run's own ending as readings alone, no
+    /// frame saying them, and a child's lines still go to the stream its start's call opened.
+    /// </summary>
+    [Fact]
+    public void A_child_s_and_a_task_s_start_and_end_seen_only_as_readings_reach_the_streams_and_the_words()
+    {
+        var output = new SessionOutput();
+        var said = new List<string>();
+        IStreamsReader beside = new ClaudeStreams(new SessionStreams(output, "s4"), said.Add);
+        var own = new HarnessWords();
+        void Read(WireReading reading)
+        {
+            beside.Read(reading);
+            own.Read(reading);
+        }
+
+        Read(new WireReading.ChildSeen("a1", ChildSignal.Stream) { Call = "toolu_ag", Task = "Read README first line" });
+        Read(new WireReading.TaskStarted("b1") { Kind = "local_bash", Name = "dev server" });
+        Assert.True(beside.Take(NativeFrame.Of(Json(new
+        {
+            type = "assistant",
+            parent_tool_use_id = "toolu_ag",
+            message = new { id = "msg_child", role = "assistant", content = new object[] { new { type = "text", text = "# console3 room" } } },
+        }))));
+        Read(new WireReading.ChildEnded("a1", ChildSignal.Stream, "completed"));
+        Read(new WireReading.TaskEnded("b1", "killed") { AfterTurn = true });
+
+        Assert.Equal(
+            [("s4/subagent/a1", SessionStreamKind.Subagent, "Read README first line", "completed"), ("s4/task/b1", SessionStreamKind.Task, "dev server", "killed")],
+            output.Streams("s4").Select(stream => (stream.Key, stream.Kind, stream.Name, stream.State)));
+        Assert.Contains("# console3 room", output.Tail("s4/subagent/a1").Lines.Select(line => line.Text));
+        Assert.Equal(
+            ["→ subagent: Read README first line", "→ background: dev server", "  ✓ subagent: Read README first line", "  ■ background: dev server stopped"],
+            said);
+        Assert.Equal(["dev server"], own.Ended(0).BackgroundCut);
     }
 
     /// <summary>A stream still open when the session's output ends is ended with it, and says so.</summary>

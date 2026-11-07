@@ -507,7 +507,7 @@ describe('Settings → This Daoris', () => {
       asked(versions);
       return { cleared: [
         { kind: 'agent', name: 'claude-code', version: '2.0.1', unfinished: false, outcome: 'removed', bytes: 120_000_000 },
-        { kind: 'tool', name: 'gh', version: '2.61.0', unfinished: false, outcome: 'kept', bytes: 30_000_000, keeps: 'in-use', by: [] },
+        { kind: 'tool', name: 'git', version: '2.61.0', unfinished: false, outcome: 'kept', bytes: 3e7, keeps: 'in-use', by: [] },
       ] };
     }));
     open();
@@ -519,10 +519,10 @@ describe('Settings → This Daoris', () => {
 
     await vi.waitFor(() => expect(asked).toHaveBeenCalledWith([
       { kind: 'agent', name: 'claude-code', version: '2.0.1', unfinished: false },
-      { kind: 'tool', name: 'gh', version: '2.61.0', unfinished: false },
+      { kind: 'tool', name: 'git', version: '2.61.0', unfinished: false },
     ]));
     expect(await list.findByText(/^Removed 1 version \(.+\)\.$/)).toBeTruthy();
-    expect(list.getByText(/kept: a program is running from it$/).textContent).toBe('gh 2.61.0 · kept: a program is running from it');
+    expect(list.getByText(/kept: a program is running from it$/).textContent).toBe('git 2.61.0 · kept: a program is running from it');
   });
 
   it('lists and presses in 中文', async () => {

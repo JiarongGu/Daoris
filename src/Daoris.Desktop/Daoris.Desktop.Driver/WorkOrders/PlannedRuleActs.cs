@@ -11,32 +11,35 @@ internal static class PlannedRuleActs
     /// The acts <paramref name="plan"/> and <paramref name="snapshot"/> hold, each on its quest's last session. A quest whose last session,
     /// role or rule does not read acts nothing.
     /// </summary>
-    /// <param name="roleOf">The role a quest's line goes on under.</param>
+    /// <param name="lineOf">A quest's line as its rules read it.</param>
+    /// <param name="movesOf">A quest's line's moves in 24 hours as the store answers them; null where it does not.</param>
     public static IReadOnlyList<RuleActed> Of(
-        Snapshot snapshot, IReadOnlyList<Consideration> plan, SupervisorRuleBook book, Func<QuestView, PriorSession, string> roleOf, DateTimeOffset at)
+        Snapshot snapshot, IReadOnlyList<Consideration> plan, SupervisorRuleBook book, Func<QuestView, PriorSession, RuledLine> lineOf,
+        Func<string, int?> movesOf, DateTimeOffset at)
     {
         var acts = new List<RuleActed>();
 
+        // Each act says the count its executor read; a count that did not read acts nothing said.
         void Add(QuestView quest, string count, Func<SupervisorRule, bool> acting, int? n, string point, string? session = null)
         {
-            if (!snapshot.LastRun.TryGetValue(quest.Id, out var last)) return;
-            var effective = book.For(roleOf(quest, last), quest.To, WorkspaceOf(snapshot, quest), quest.Id);
+            if (n is null || !snapshot.LastRun.TryGetValue(quest.Id, out var last)) return;
+            var effective = lineOf(quest, last).In(book);
             if (!effective.TryGetValue(count, out var rules) || rules.Where(acting).MinBy(rule => rule.At) is not { } rule) return;
-            acts.Add(new RuleActed(quest.Id, session ?? last.Session, rule, book.RevisionOf(rule.Place), n ?? rule.At, Known: true, point, at));
+            acts.Add(new RuleActed(quest.Id, session ?? last.Session, rule, book.RevisionOf(rule.Place), n.Value, Known: true, point, at));
         }
 
         foreach (var held in plan)
         {
             switch (held)
             {
-                case { Verdict: StartVerdict.Exhausted, Failures: { } failures }:
-                    Add(held.Quest, SupervisorRules.Failures, rule => rule.Do == SupervisorRules.Hold, failures, "start");
+                case { Verdict: StartVerdict.Exhausted, FailedSince: { } failed }:
+                    Add(held.Quest, SupervisorRules.Failures, rule => rule.Do == SupervisorRules.Hold, failed, "start");
                     break;
                 case { Verdict: StartVerdict.TransientHeld, HeldBy: { } ended }:
-                    Add(held.Quest, SupervisorRules.Tries, rule => rule.Do == SupervisorRules.Hold, null, "episode", ended.Session);
+                    Add(held.Quest, SupervisorRules.Tries, rule => rule.Do == SupervisorRules.Hold, LineCounts.TriesOf(ended), "episode", ended.Session);
                     break;
                 case { Verdict: StartVerdict.PolicyHeld, Said.Code: SittingFact.MovesBound, HeldBy: { } ended }:
-                    Add(held.Quest, SupervisorRules.Moves, rule => rule.Do == SupervisorRules.Ask, null, "start", ended.Session);
+                    Add(held.Quest, SupervisorRules.Moves, rule => rule.Do == SupervisorRules.Ask, movesOf(held.Quest.Id), "start", ended.Session);
                     break;
             }
         }
@@ -45,7 +48,14 @@ internal static class PlannedRuleActs
         {
             if (snapshot.Quests.FirstOrDefault(each => string.Equals(each.Id, quest, StringComparison.OrdinalIgnoreCase)) is not { } asked) continue;
             if (CountOf(moving.Condition) is not { } count) continue;
-            Add(asked, count, rule => StaffActions.Moves(rule.Do), null, "episode", moving.Session);
+            var ended = snapshot.LastRun.GetValueOrDefault(quest);
+            int? n = moving.Condition switch
+            {
+                StaffConditions.Transient => LineCounts.TriesOf(ended),
+                StaffConditions.Failed => snapshot.FailedRuns.GetValueOrDefault(quest),
+                _ => 1,
+            };
+            Add(asked, count, rule => StaffActions.Moves(rule.Do), n, "episode", moving.Session);
         }
 
         return acts;
@@ -60,7 +70,4 @@ internal static class PlannedRuleActs
         StaffConditions.Limit => SupervisorRules.Limits,
         _ => null,
     };
-
-    private static string? WorkspaceOf(Snapshot snapshot, QuestView quest) =>
-        snapshot.Repositories.FirstOrDefault(repo => string.Equals(repo.Repository, quest.To, StringComparison.OrdinalIgnoreCase))?.Workspace;
 }

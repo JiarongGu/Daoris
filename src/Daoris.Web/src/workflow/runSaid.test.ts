@@ -5,7 +5,7 @@ import i18n from '../locales/i18n';
 import type { GraphRun, RunStep } from './run';
 import { bindingProblemSaid } from './place/effective';
 import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, runSaid, runShort, stateSaid } from './runSaid';
-import { WORKING } from './runFixtures';
+import { MERGED, WORKING } from './runFixtures';
 
 // WORKFLOW1c5 (D157's WORKFLOW1c5 note, `.claude/knowledge/twins.md`): the English a run says is one table with the driver, its
 // tests' `fixtures/workflow-run-said.json`, which `WorkflowRunSaidTwinTests` holds `WorkflowRunWords` to. Each row is said here
@@ -96,6 +96,13 @@ describe("a run's English, as the driver's table holds it", () => {
       expect(addedSaid(t, { ...stepOf({ kind: 'look', detail: '', said: null }), added: level })).toBe(said);
     }
     expect(addedSaid(t, stepOf({ kind: 'look', detail: '', said: null }))).toBeNull();
+  });
+
+  // D245: a chain composed through the tidy ends there, and only a merged request starts it, so a run finished at its tidy is a merged one.
+  it('says a run finished at its tidy as merged, as one finished at the pull request is', () => {
+    const finished = (kind: string) => ({ ...MERGED, steps: MERGED.steps.map((step) => (step.step.kind === 'pull-request' ? { ...step, step: { ...step.step, kind } } : step)) });
+    for (const kind of ['pull-request', 'tidy']) expect(runShort(t, finished(kind))).toBe(runShort(t, MERGED));
+    expect(runShort(t, finished('push'))).not.toBe(runShort(t, MERGED));
   });
 
   // FABRIC-WORKFLOW2d: a reopened submission waits on its agent, which the head says as the reopen, never as another repository's answer.

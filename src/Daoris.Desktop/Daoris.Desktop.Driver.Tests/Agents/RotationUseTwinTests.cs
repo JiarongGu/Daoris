@@ -24,7 +24,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class RotationUseTwinTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-rotation-use-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-rotation-use-" + Guid.NewGuid().ToString("N")[..8]);
 
     public RotationUseTwinTests() => Directory.CreateDirectory(_home);
 

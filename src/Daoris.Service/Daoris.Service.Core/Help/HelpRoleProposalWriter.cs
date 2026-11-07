@@ -173,8 +173,8 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
             : Blank(name) is not null || nameIn is { Count: > 0 } || takes is { Count: > 0 } || scope is not null || choices is { Count: > 0 } || revision is not null
               || policy is not null || policyRevision is not null
                 ? $"the supervisor is an appointed role: a proposal of it carries a place, its rules and the revision read alone."
-            : where is null || !(where == "machine" || where.Split(':', 2) is [("workspace" or "repository" or "line"), { Length: > 0 }])
-                ? $"`{where}` is not a place: `machine`, `workspace:<id>`, `repository:<id>` or `line:<key>`."
+            : where is null || !(where == "machine" || where.Split(':', 2) is [("workspace" or "repository"), { Length: > 0 }])
+                ? $"`{where}` is not a place: `machine`, `workspace:<id>` or `repository:<id>`."
             : list is not { ValueKind: System.Text.Json.JsonValueKind.Array } ? "the rules are the place's whole list, a JSON array, `[]` for none."
             : rulesRevision is null ? "the revision of the place's rules you read is named, so a change made since is refused rather than overwritten."
             : null;

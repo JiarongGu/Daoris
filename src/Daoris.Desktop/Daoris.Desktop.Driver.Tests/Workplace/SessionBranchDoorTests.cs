@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class SessionBranchDoorTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-branch-door-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-branch-door-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {
@@ -115,6 +115,6 @@ public sealed class SessionBranchDoorTests : IDisposable
 
         Assert.Equal(("aurora", "engine", "daoris/s-1a2b3c4d"),
             trees.BranchOfTree(Path.Combine(trees.TreesRoot, "aurora", "engine", "s-1a2b3c4d")));
-        Assert.Null(trees.BranchOfTree(Path.Combine(Path.GetTempPath(), "elsewhere", "s-1a2b3c4d")));
+        Assert.Null(trees.BranchOfTree(Path.Combine(TestHomes.Root, "elsewhere", "s-1a2b3c4d")));
     }
 }

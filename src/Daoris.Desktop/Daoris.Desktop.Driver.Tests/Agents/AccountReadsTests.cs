@@ -19,7 +19,7 @@ public sealed class AccountReadsTests : IDisposable
 {
     private static readonly DateTimeOffset Ten = new(2026, 10, 4, 10, 0, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-account-reads-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-account-reads-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

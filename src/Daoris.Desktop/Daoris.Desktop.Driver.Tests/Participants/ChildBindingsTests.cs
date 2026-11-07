@@ -176,8 +176,15 @@ public sealed class ChildBindingsTests
         if (stops) yield return Hook("stopped", SiblingB, proc);
     }
 
-    private static string? Stream(string line, ISet<string> agents, string? proc = null) =>
-        ChildBindings.StreamLine(NativeFrame.Of(line), DateTimeOffset.UnixEpoch, agents, proc);
+    private static string? Stream(string line, NativeChildren agents, string? proc = null) =>
+        agents.Read(NativeFrame.Of(line)) is { } said ? Line(said with { Process = proc }) : null;
+
+    private static string? Seen(string id, string? name = null, string? task = null, string? parent = null, int? depth = null, string? proc = null) =>
+        Line(new WireReading.ChildSeen(id, ChildSignal.Announced) { Name = name, Task = task, Parent = parent, Depth = depth, Process = proc });
+
+    private static string? End(string id, string? word, string? proc = null) => Line(new WireReading.ChildEnded(id, ChildSignal.Announced, word) { Process = proc });
+
+    private static string? Line(WireReading said) => ChildBindings.ChildLine(said, DateTimeOffset.UnixEpoch);
 
     /// <summary>A recorded process's start then its lines, in a window watching it.</summary>
     private static IEnumerable<string> Recorded(IEnumerable<string> lines, string proc = P1) =>
@@ -360,7 +367,7 @@ public sealed class ChildBindingsTests
     [Fact]
     public void Claude_s_stream_says_each_subagent_s_start_with_its_parent_and_its_end_and_nothing_else()
     {
-        var agents = new HashSet<string>(StringComparer.Ordinal);
+        var agents = new NativeChildren();
         string? Take(string line) => Stream(line, agents);
 
         Assert.Equal(
@@ -383,7 +390,7 @@ public sealed class ChildBindingsTests
     [Fact]
     public void The_stream_s_start_keeps_the_task_s_description_to_its_first_line_bounded()
     {
-        var agents = new HashSet<string>(StringComparer.Ordinal);
+        var agents = new NativeChildren();
         var description = new string('d', 205) + "\nthe rest";
 
         var said = JsonNode.Parse(Stream(
@@ -399,39 +406,35 @@ public sealed class ChildBindingsTests
     [Fact]
     public void The_protocol_door_s_lines_name_the_child_its_label_its_place_and_the_word_its_wire_said()
     {
-        var at = DateTimeOffset.UnixEpoch;
-
         Assert.Equal(
             """{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"started","agent":"a1","depth":1,"name":"Reader","task":"Read the README."}""",
-            ChildBindings.AcpStarted(new LineageAnnouncement("a1", "Reader", "Read the README.") { ByRoot = true }, at));
+            Seen("a1", "Reader", "Read the README.", depth: 1));
         Assert.Equal(
             """{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"started","agent":"a2:generation:2","parent":"a1"}""",
-            ChildBindings.AcpStarted(new LineageAnnouncement("a2:generation:2", null, null) { Parent = "a1" }, at));
+            Seen("a2:generation:2", parent: "a1"));
         Assert.Equal(
             """{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"started","agent":"a3","name":"D:/fam/x"}""",
-            ChildBindings.AcpStarted(new LineageAnnouncement("a3", "D:/fam/x", null) { Parent = "../up" }, at));
-        Assert.Null(ChildBindings.AcpStarted(new LineageAnnouncement("../a4", "Bad", null) { ByRoot = true }, at));
+            Seen("a3", "D:/fam/x", parent: "../up"));
+        Assert.Null(Seen("../a4", "Bad", depth: 1));
 
         Assert.Equal(
             """{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"ended","agent":"a1","state":"completed"}""",
-            ChildBindings.AcpEnded("a1", "completed", at));
-        Assert.Equal("""{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"ended","agent":"a1"}""", ChildBindings.AcpEnded("a1", null, at));
-        Assert.Equal("""{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"ended","agent":"a1"}""", ChildBindings.AcpEnded("a1", "no word/here", at));
-        Assert.Null(ChildBindings.AcpEnded("a b", "completed", at));
+            End("a1", "completed"));
+        Assert.Equal("""{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"ended","agent":"a1"}""", End("a1", null));
+        Assert.Equal("""{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"ended","agent":"a1"}""", End("a1", "no word/here"));
+        Assert.Null(End("a b", "completed"));
     }
 
     [Fact]
     public void A_line_the_driver_writes_for_a_process_names_that_process_where_its_token_is_one()
     {
-        var agents = new HashSet<string>(StringComparer.Ordinal);
-        var at = DateTimeOffset.UnixEpoch;
         const string started = """{"type":"system","subtype":"task_started","task_id":"a1","spawn_depth":1,"task_type":"local_agent"}""";
 
-        Assert.Equal("0123456789abcdef", (string?)JsonNode.Parse(Stream(started, agents, "0123456789abcdef")!)!["proc"]);
-        Assert.Equal("0123456789abcdef", (string?)JsonNode.Parse(ChildBindings.AcpStarted(new LineageAnnouncement("a1", null, null), at, "0123456789abcdef")!)!["proc"]);
-        Assert.Equal("0123456789abcdef", (string?)JsonNode.Parse(ChildBindings.AcpEnded("a1", null, at, "0123456789abcdef")!)!["proc"]);
-        Assert.Null(JsonNode.Parse(Stream(started, agents, "not a token")!)!["proc"]);
-        Assert.Null(JsonNode.Parse(ChildBindings.AcpEnded("a1", null, at)!)!["proc"]);
+        Assert.Equal("0123456789abcdef", (string?)JsonNode.Parse(Stream(started, new(), "0123456789abcdef")!)!["proc"]);
+        Assert.Equal("0123456789abcdef", (string?)JsonNode.Parse(Seen("a1", proc: "0123456789abcdef")!)!["proc"]);
+        Assert.Equal("0123456789abcdef", (string?)JsonNode.Parse(End("a1", null, "0123456789abcdef")!)!["proc"]);
+        Assert.Null(JsonNode.Parse(Stream(started, new(), "not a token")!)!["proc"]);
+        Assert.Null(JsonNode.Parse(End("a1", null)!)!["proc"]);
     }
 
     [Fact]

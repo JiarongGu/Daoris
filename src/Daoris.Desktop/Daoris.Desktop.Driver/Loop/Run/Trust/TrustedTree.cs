@@ -11,8 +11,8 @@ internal sealed class TrustedTree(IRunWiring wiring) : IRunStage
 {
     public ValueTask<StartRun?> RunAsync(RunRound run, CancellationToken ct)
     {
-        ISessionAdapter? preflight = null;
-        try { preflight = wiring.Context.Adapters.Resolve(run.State.Agent); } catch (DriverException) { }
+        AgentDoor? preflight = null;
+        try { preflight = wiring.Context.Adapters.Door(run.State.Agent); } catch (DriverException) { }
         run.State.Preflight = preflight;
         return ValueTask.FromResult(TrustAsk.Untrusted(wiring, run, run.State.Selection));
     }

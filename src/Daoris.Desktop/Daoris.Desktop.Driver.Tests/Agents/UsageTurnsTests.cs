@@ -24,7 +24,7 @@ public sealed class UsageTurnsTests : IDisposable
 
     private static readonly TurnTokens Total = new(Input: 4, Output: 88, CacheRead: 48666, CacheWrite: 20035);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-turns-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-turns-" + Guid.NewGuid().ToString("N")[..8]);
 
     public UsageTurnsTests() => Directory.CreateDirectory(_home);
 
@@ -234,7 +234,7 @@ public sealed class UsageTurnsTests : IDisposable
         var events = Watched();
         var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, _home, events: events);
-        _ = driver.Said(adapters.Resolve("claude-code-acp"), new HarnessSelection(null, Profile: "account-1"), "s1");
+        _ = driver.Said(adapters.Door("claude-code-acp"), new HarnessSelection(null, Profile: "account-1"), "s1");
 
         // The words shown the moment they are said are no ask (MSG1d): the turn begins where the session took them.
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "go on", Reaches = "turn-end", At = Now.AddMinutes(-3) });
@@ -269,7 +269,7 @@ public sealed class UsageTurnsTests : IDisposable
         var events = Watched();
         var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, _home, events: events);
-        _ = driver.Said(adapters.Resolve("claude-code-acp"), new HarnessSelection(null, Profile: "account-1"), "brainstorm-b1-1");
+        _ = driver.Said(adapters.Door("claude-code-acp"), new HarnessSelection(null, Profile: "account-1"), "brainstorm-b1-1");
 
         events.Append("brainstorm-b1-1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "the pass", At = Now.AddMinutes(-1) });
         events.Append("brainstorm-b1-1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn", Tokens = Total, At = Now });
@@ -293,7 +293,7 @@ public sealed class UsageTurnsTests : IDisposable
         Assert.Equal(Total, turn.Tokens);
     }
 
-    private static ISessionAdapter Bare(string name) => TestDoors.Door(name, null, transport: Transport.Protocol);
+    private static Provider Bare(string name) => TestDoors.Door(name, null, transport: Transport.Protocol);
 
     [Fact]
     public void Each_door_s_turn_report_means_per_turn_where_measured_and_codex_s_unknown_until_a_frame_is_recorded()
@@ -302,16 +302,17 @@ public sealed class UsageTurnsTests : IDisposable
 
         Assert.Equal(
             new TurnBinding("claude-code", "account-1", "claude-code", UsageHistory.PerTurn),
-            TurnBinding.Of(adapters, adapters.Resolve("claude-code"), "account-1"));
+            TurnBinding.Of(adapters, adapters.Door("claude-code"), "account-1"));
         Assert.Equal(
             new TurnBinding("claude-code", "account-1", "claude-code-acp", UsageHistory.PerTurn),
-            TurnBinding.Of(adapters, adapters.Resolve("claude-code-acp"), "account-1"));
+            TurnBinding.Of(adapters, adapters.Door("claude-code-acp"), "account-1"));
         Assert.Equal(
             new TurnBinding(CodexAccounts.Agent, "account-2", "codex-acp", UsageHistory.MeaningUnknown),
-            TurnBinding.Of(adapters, adapters.Resolve("codex-acp"), "account-2"));
+            TurnBinding.Of(adapters, adapters.Door("codex-acp"), "account-2"));
         // The tool's own sign-in is named as its readings name it; an agent with no accounts has none to name.
-        Assert.Equal(AccountWindows.Own, TurnBinding.Of(adapters, adapters.Resolve("claude-code"), null).Account);
-        Assert.Equal(new TurnBinding(null, null, "bare", UsageHistory.MeaningUnknown), TurnBinding.Of(adapters, Bare("bare"), "account-1"));
+        Assert.Equal(AccountWindows.Own, TurnBinding.Of(adapters, adapters.Door("claude-code"), null).Account);
+        var bare = TestDoors.Registry(Bare("bare"));
+        Assert.Equal(new TurnBinding(null, null, "bare", UsageHistory.MeaningUnknown), TurnBinding.Of(bare, bare.Door("bare"), "account-1"));
     }
 
     // ——— The model: what the door's split agrees on with the turn's total.
@@ -391,7 +392,7 @@ public sealed class UsageTurnsTests : IDisposable
     {
         const string Email = "someone@example.com", Org = "Acme Holdings", Key = "sk-ant-api03-secret", Words = "the agent said this";
         var events = Watched();
-        UsageTurns.Bound(_home, events, "s1", TurnBinding.Of(ProviderRegistry.Built(), ProviderRegistry.Built().Resolve("claude-code"), "account-1"));
+        UsageTurns.Bound(_home, events, "s1", TurnBinding.Of(ProviderRegistry.Built(), ProviderRegistry.Built().Door("claude-code"), "account-1"));
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = $"{Words} {Email} {Key}", At = Now.AddMinutes(-1) });
 
         var mapper = new ClaudeStreamJson();

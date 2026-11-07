@@ -6,16 +6,10 @@ namespace Daoris.Driver;
 /// the room; <c>Sheet.Of</c> makes it from the contract, a pure read.
 /// </summary>
 /// <param name="Door">The door's id.</param>
-/// <param name="Wire">The page's word for its transport: <c>acp</c> for the protocol, <c>pipe</c> for the native.</param>
+/// <param name="Transport">Its transport: <c>protocol</c> or <c>native</c>.</param>
 /// <param name="Rows">Each capability of <see cref="SheetCapability.All"/>, in that order.</param>
-public sealed record AgentCapabilities(string Door, string Wire, IReadOnlyList<SheetRow> Rows)
+public sealed record AgentCapabilities(string Door, string Transport, IReadOnlyList<SheetRow> Rows)
 {
-    /// <summary>The page's word for the protocol door.</summary>
-    public const string Acp = "acp";
-
-    /// <summary>The page's word for the native door.</summary>
-    public const string Pipe = "pipe";
-
     /// <summary>The row of a capability; every capability of the sheet has one.</summary>
     public SheetRow Row(string capability) =>
         Rows.FirstOrDefault(row => row.Capability == capability)

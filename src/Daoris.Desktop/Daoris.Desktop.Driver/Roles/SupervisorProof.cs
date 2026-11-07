@@ -63,6 +63,12 @@ public static class HolderKey
         Strip();
     }
 
+    /// <summary>
+    /// What <see cref="Take"/> read, let go by a verb that holds no key for its life (the events relay, its design §6.1 step 1); the entry's
+    /// marker stays, so a role's terminal is still known as one.
+    /// </summary>
+    public static void Drop() => _taken = null;
+
     /// <summary>What <see cref="Take"/> read, or null where the variable was not set.</summary>
     public static string? Taken => _taken;
 

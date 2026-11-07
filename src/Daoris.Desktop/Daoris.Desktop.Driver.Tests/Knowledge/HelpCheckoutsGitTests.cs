@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Parallel, Category.Git)]
 public sealed class HelpCheckoutsGitTests : IAsyncLifetime
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-help-checkouts-git-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-help-checkouts-git-" + Guid.NewGuid().ToString("N")[..8]);
 
     private string Root => Path.Combine(_home, "checkouts", "engine");
 
@@ -42,7 +42,7 @@ public sealed class HelpCheckoutsGitTests : IAsyncLifetime
     {
         new HelpWired(_home).Keep("h1", new HelpReceipt
         {
-            At = DateTimeOffset.UtcNow, Harness = "codex-acp", Folder = HelpRoom.PathOf(_home), Checkouts = [new HelpRead("engine", "default", Root)],
+            At = DateTimeOffset.UtcNow, Door = "codex-acp", Folder = HelpRoom.PathOf(_home), Checkouts = [new HelpRead("engine", "default", Root)],
         });
         return new HousekeepingLedger { Records = [("h1", HelpRoom.Repository, "default", null)], Registry = [("engine", "default", Root)] };
     }

@@ -10,16 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Census)]
 public sealed class ShellStructureTests
 {
-    private static readonly Lazy<(StructureMap Map, StructureAnalysis Analysis)> Tree = new(() =>
-    {
-        var map = StructureMap.Read(File.ReadAllText(Path.Combine(
-            WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "structure.json")));
-        var driver = SourceFiles.Project(SourceFiles.DriverProject);
-        var sources = SourceFiles.All(SourceFiles.DriverProject, "*.cs")
-            .Select(path => (Path.GetRelativePath(driver, path).Replace(Path.DirectorySeparatorChar, '/'), File.ReadAllText(path)))
-            .ToList();
-        return (map, StructureAnalysis.Of(sources));
-    });
+    private static readonly Lazy<(StructureMap Map, IReadOnlyList<(string Path, string Text)> Sources, IReadOnlyList<string> Tests, StructureAnalysis Analysis, TimeSpan Took)> Tree = DriverTree.Shared;
 
     [Fact]
     public void The_shell_names_no_type_of_Workplace_Work_orders_or_Context()

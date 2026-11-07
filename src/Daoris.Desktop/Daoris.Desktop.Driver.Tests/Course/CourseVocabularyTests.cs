@@ -129,10 +129,9 @@ public sealed class CourseVocabularyTests
     [Fact]
     public void The_facts_take_the_hold_as_values_and_the_answers_are_the_tables_six()
     {
-        Assert.Equal(AnswersAlone.Bound, new CourseAlone(Count: 0).Bound);
-        Assert.False(new CourseAlone(Count: AnswersAlone.Bound - 1).AtBound);
-        Assert.True(new CourseAlone(Count: AnswersAlone.Bound).AtBound);
-        Assert.False(new CourseAlone(Count: AnswersAlone.Bound, Released: true).AtBound);
+        Assert.False(new CourseAlone(Count: 3, Bound: 4).AtBound);
+        Assert.True(new CourseAlone(Count: 4, Bound: 4).AtBound);
+        Assert.False(new CourseAlone(Count: 4, Bound: 4, Released: true).AtBound);
 
         Assert.Equal(
             ["Hold", "Move", "Never", "Resume", "Start", "Wait"],

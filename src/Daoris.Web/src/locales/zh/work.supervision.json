@@ -4,7 +4,6 @@
   "work.supervision.unknown": "不详",
   "work.supervision.atLeast": "至少 {{n}}",
   "work.supervision.ruleAt": "你的规则：到 {{at}} 时{{act}}（{{place}}）",
-  "work.supervision.ownAt": "Daoris：到 {{at}} 时{{act}}",
   "work.supervision.acted": "你的主管规则已生效 {{count}} 次，最近一次在 {{when}}：{{counted}} {{n}}，{{act}}",
   "work.supervision.acted_other": "你的主管规则已生效 {{count}} 次，最近一次在 {{when}}：{{counted}} {{n}}，{{act}}",
   "work.supervision.chip": "{{counted}} {{n}}／{{at}}",

@@ -16,7 +16,7 @@ public sealed class ReviewShowingTests : IDisposable
     private static readonly ReviewEnvironment Local = new("local", "local", "README.md", Address);
     private static readonly ReviewEnvironment Dev = new("dev", "deployed", "docs/deploying-to-dev.md");
 
-    private readonly string _tree = Path.Combine(Path.GetTempPath(), "daoris-review-showing-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _tree = Path.Combine(TestHomes.Root, "daoris-review-showing-" + Guid.NewGuid().ToString("N")[..8]);
     private readonly Tabs _tabs = new();
     private readonly ReviewDesk _desk;
 

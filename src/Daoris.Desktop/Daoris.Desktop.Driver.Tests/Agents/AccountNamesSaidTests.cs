@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// log. A command keeps the id too, since a terminal takes it whatever the account is called by then.
 /// </summary>
 /// <remarks>
-/// Nothing here starts a process. The walk runs on an agent present by a file look (<see cref="HarnessToolchain.ProbeByPresence"/>),
+/// Nothing here starts a process. The walk runs on an agent present by a file look (<see cref="TestAgent.ProbeByPresence"/>),
 /// as <c>AccountRotationTests</c>' does, and the tick on the stand-in service, as <c>AccountLimitHoldTests</c>' does.
 /// </remarks>
 public sealed class AccountNamesSaidTests : IDisposable
@@ -32,7 +32,7 @@ public sealed class AccountNamesSaidTests : IDisposable
     private static readonly IReadOnlyDictionary<string, string> Names =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { [Work] = "work", [Personal] = "personal" };
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-names-said-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-names-said-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
 
@@ -55,14 +55,11 @@ public sealed class AccountNamesSaidTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
+    private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain);
 
     private HarnessRoster Fake() =>
-        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["fake"] = Adapter("fake", new HarnessToolchain(
-                Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),
-        }), Settings)
+        new(TestDoors.Registry([Adapter("fake", new TestAgent(
+                Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true))]), Settings)
         {
             Clock = () => _now,
             Zone = Zone,
@@ -250,7 +247,7 @@ public sealed class AccountNamesSaidTests : IDisposable
         File.WriteAllText(transcript, "working on it\nFailed to authenticate. API Error: 401 API key is invalid.\n");
 
         var conclusion = Driver(service, roster).AccountRefused(
-            new SessionConclusion("failed", "exit 1 before taking its quest."), ProviderRegistry.Built().Resolve("stub"),
+            new SessionConclusion("failed", "exit 1 before taking its quest."), ProviderRegistry.Built().Door("stub"),
             new HarnessSelection(null, "account-1"), HarnessEnding.Transcript(1, transcript));
 
         Assert.Contains("the `stub` account `account-1` (401)", conclusion.Note);
@@ -273,7 +270,7 @@ public sealed class AccountNamesSaidTests : IDisposable
         const string refusal = "the ACP agent refused the call: Authentication required";
 
         var conclusion = Driver(service, Built()).AccountSignedOut(
-            Observation.Conclude(0, "Open", turnFailed: refusal), ProviderRegistry.Built().Resolve("acp-stub"),
+            Observation.Conclude(0, "Open", turnFailed: refusal), ProviderRegistry.Built().Door("acp-stub"),
             new HarnessSelection(null, "account-1"), refusal);
 
         Assert.Contains("the `stub` account `account-1` for its sign-in", conclusion.Note);

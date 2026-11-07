@@ -64,7 +64,7 @@ internal static class AgentAccountUse
             named = true;
         }
 
-        JsonObject Payload() => new() { ["action"] = "use", ["harness"] = owner };
+        JsonObject Payload() => new() { ["action"] = "use", ["door"] = owner };
 
         var clear = at.Args.Contains("--clear");
         if (clear && named)
@@ -316,5 +316,5 @@ internal static class AgentAccountUse
     }
 
     /// <summary>The toolchain an agent's accounts are said by: its door's, or the agent a door runs as.</summary>
-    private static HarnessToolchain? Toolchain(AccountVerbContext at, string agent) => at.World.Adapters(at.Home).ToolchainOf(agent);
+    private static AccountAgent? Toolchain(AccountVerbContext at, string agent) => at.World.Adapters(at.Home).AgentNamed(agent);
 }

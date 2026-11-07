@@ -27,23 +27,23 @@ export function AgentDoors({ t, tool, adapter, open, toggle, onOpenPlugin, busy,
     <>
 <Fold section="doors" title={t('harness.doors')} summary={doorsSummary(tool, adapter)} open={open.has('doors')} onToggle={toggle}>
         {tool.doors.map((each) => (
-          <div key={each.harness} className="border-t border-line py-2 first:border-t-0">
+          <div key={each.door} className="border-t border-line py-2 first:border-t-0">
             <header className="flex flex-wrap items-center gap-2">
-              <Pill tone="neutral">{t(each.wire === 'acp' ? 'harness.wire.acp' : 'harness.wire.pipe')}</Pill>
-              <span className="font-mono text-small text-ink">{each.harness}</span>
+              <Pill tone="neutral">{t(each.transport === 'protocol' ? 'harness.wire.acp' : 'harness.wire.pipe')}</Pill>
+              <span className="font-mono text-small text-ink">{each.door}</span>
               {each.present
                 ? <span className="font-mono text-small text-ink-faint">{versionOnly(each.version ?? '')}</span>
                 : <span className="text-small text-ink-faint">{t('harness.absent')}</span>}
-              {each.harness === adapter && <Chip accent>{t('harness.spawns')}</Chip>}
+              {each.door === adapter && <Chip accent>{t('harness.spawns')}</Chip>}
               {each.plugin && (onOpenPlugin
                 // A door to the plugin's page (PLUGUI1c2b, the Plugins design §5): a control, so a button, not a chip.
                 ? <Button variant="ghost" onClick={() => onOpenPlugin(each.plugin!)}>{t('harness.declaredBy', { plugin: each.plugin })}</Button>
                 : <Chip>{t('harness.declaredBy', { plugin: each.plugin })}</Chip>)}
               <span className="ml-auto flex gap-2">
-                {!each.present && each.installs !== false && <Button disabled={busy} onClick={() => acts.onDoor(each.harness, 'install')}>{t('harness.install')}</Button>}
+                {!each.present && each.installs !== false && <Button disabled={busy} onClick={() => acts.onDoor(each.door, 'install')}>{t('harness.install')}</Button>}
                 {each.present && (each.updates === 'pin' || each.updates === 'tool') && (
                   <Tip content={t(each.updates === 'pin' ? 'harness.update.pinTip' : 'harness.update.toolTip')}>
-                    <Button variant="ghost" disabled={busy} onClick={() => acts.onDoor(each.harness, 'update')}>{t('harness.update')}</Button>
+                    <Button variant="ghost" disabled={busy} onClick={() => acts.onDoor(each.door, 'update')}>{t('harness.update')}</Button>
                   </Tip>
                 )}
               </span>
@@ -53,7 +53,7 @@ export function AgentDoors({ t, tool, adapter, open, toggle, onOpenPlugin, busy,
                 <p className="mt-1.5 line-clamp-2 text-small text-ink-soft"><Inline text={each.problem} /></p>
               </Tip>
             )}
-            <DoorSheetLines t={t} sheet={tool.sheet?.find((one) => one.door === each.harness)} />
+            <DoorSheetLines t={t} sheet={tool.sheet?.find((one) => one.door === each.door)} />
             {each.pinnable && (
               <div className="mt-2 flex flex-wrap items-center gap-2 text-small">
                 {each.pinned ? (
@@ -66,7 +66,7 @@ export function AgentDoors({ t, tool, adapter, open, toggle, onOpenPlugin, busy,
                         <span className="min-w-0 flex-1 truncate font-mono text-meta text-ink-faint">{each.managed}</span>
                       </Tip>
                     )}
-                    <Button variant="ghost" className="ml-auto" disabled={busy} onClick={() => acts.onDoor(each.harness, 'unpin')}>
+                    <Button variant="ghost" className="ml-auto" disabled={busy} onClick={() => acts.onDoor(each.door, 'unpin')}>
                       {t('harness.pin.unpin')}
                     </Button>
                   </>
@@ -76,8 +76,8 @@ export function AgentDoors({ t, tool, adapter, open, toggle, onOpenPlugin, busy,
                     <Button
                       variant="ghost"
                       className="ml-auto"
-                      aria-expanded={pinOpen === each.harness}
-                      onClick={() => setPinOpen(pinOpen === each.harness ? null : each.harness)}
+                      aria-expanded={pinOpen === each.door}
+                      onClick={() => setPinOpen(pinOpen === each.door ? null : each.door)}
                     >
                       {t('harness.pin.open')}
                     </Button>
@@ -85,27 +85,27 @@ export function AgentDoors({ t, tool, adapter, open, toggle, onOpenPlugin, busy,
                 )}
               </div>
             )}
-            {each.pinnable && !each.pinned && pinOpen === each.harness && (
+            {each.pinnable && !each.pinned && pinOpen === each.door && (
               <form
                 className="mt-2 flex flex-wrap items-center gap-2"
                 onSubmit={(event) => {
                   event.preventDefault();
-                  const version = (pinning[each.harness] ?? '').trim();
-                  if (version) acts.onPin(each.harness, version);
+                  const version = (pinning[each.door] ?? '').trim();
+                  if (version) acts.onPin(each.door, version);
                 }}
               >
                 <input
                   autoFocus
-                  aria-label={t('harness.pin.version', { harness: each.harness })}
-                  value={pinning[each.harness] ?? ''}
-                  onChange={(event) => setPinning((held) => ({ ...held, [each.harness]: event.target.value }))}
+                  aria-label={t('harness.pin.version', { harness: each.door })}
+                  value={pinning[each.door] ?? ''}
+                  onChange={(event) => setPinning((held) => ({ ...held, [each.door]: event.target.value }))}
                   placeholder={t('harness.pin.placeholder')}
                   className="w-32 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
                 />
-                <Button type="submit" disabled={busy || !(pinning[each.harness] ?? '').trim()}>{t('harness.pin.action')}</Button>
+                <Button type="submit" disabled={busy || !(pinning[each.door] ?? '').trim()}>{t('harness.pin.action')}</Button>
               </form>
             )}
-            {doorRunning === each.harness && doorConsole}
+            {doorRunning === each.door && doorConsole}
           </div>
         ))}
       </Fold>

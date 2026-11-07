@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// Nothing here starts a process: the file is read and written, and the roster's selection is asked of a harness
-/// whose presence is a PATH look (<see cref="HarnessToolchain.ProbeByPresence"/>) for a command no machine has, so a
+/// whose presence is a PATH look (<see cref="ToolSpec.ProbeByPresence"/>) for a command no machine has, so a
 /// hold that came before the probe reads differently from the probe's own refusal.
 /// </remarks>
 public sealed class AccountCoolingTests : IDisposable
@@ -33,7 +33,7 @@ public sealed class AccountCoolingTests : IDisposable
     private const string Nowhere = "daoris-tool4d-no-such-command";
 
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-cooling-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-cooling-" + Guid.NewGuid().ToString("N")[..8]);
 
     private DateTimeOffset _now = Seen;
 
@@ -335,19 +335,19 @@ public sealed class AccountCoolingTests : IDisposable
 
     // ——— The roster: read before any probe (§3.3, §4).
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain, Transport wire = Transport.Native) => TestDoors.Door(name, toolchain, transport: wire);
+    private static Provider Adapter(string name, TestAgent? toolchain, Transport wire = Transport.Native) => TestDoors.Door(name, toolchain, transport: wire);
 
     /// <summary>
     /// A harness whose presence is a PATH look, so asking it starts nothing. A test double whose own home is nobody's
-    /// (<see cref="HarnessToolchain.RunsInOwnHome"/>, OWNSPACE1a): the own home's cool-off is this file's subject, which a real
+    /// (<see cref="DoorHome.OwnHome"/>, OWNSPACE1a): the own home's cool-off is this file's subject, which a real
     /// agent meets only on a resume begun there.
     /// </summary>
-    private static HarnessToolchain Present(string? accountOf = null, LimitWords? limits = null) => new(
+    private static TestAgent Present(string? accountOf = null, LimitWords? limits = null) => new(
         Binary: [Nowhere], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
         AccountOf: accountOf, Limits: limits, RunsInOwnHome: true);
 
-    private HarnessRoster Roster(params ISessionAdapter[] adapters) =>
-        new(new ProviderRegistry(adapters.ToDictionary(a => a.Name, a => a, StringComparer.OrdinalIgnoreCase)), Settings)
+    private HarnessRoster Roster(params Provider[] adapters) =>
+        new(TestDoors.Registry(adapters), Settings)
         {
             Clock = () => _now,
             Zone = Zone,
@@ -609,14 +609,14 @@ public sealed class AccountCoolingTests : IDisposable
     {
         var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, Settings) { Clock = () => _now, Zone = Zone };
-        var door = adapters.Resolve("acp-stub").Toolchain!;
-        var stub = adapters.Resolve("stub").Toolchain!;
+        var door = adapters.AgentNamed("acp-stub")!;
+        var stub = adapters.AgentNamed("stub")!;
 
         Assert.Equal("stub", adapters.OwnerOfAgent("acp-stub").Value);
-        Assert.Equal(stub.ProfileVariable, door.ProfileVariable);
-        Assert.True(door.ProbeByPresence);
-        Assert.Equal((0, (LimitWords?)null, (LoginQuestion?)null), (door.Binary.Count, door.Limits, door.LoginCheck));
-        Assert.Same(stub.Limits, roster.LimitsOf("acp-stub"));
+        Assert.Equal(stub.Home.Variable, door.Home.Variable);
+        Assert.True(door.Program.ProbeByPresence);
+        Assert.Equal((0, (LimitWords?)null, (LoginQuestion?)null), (door.Program.Binary.Count, door.Tables.Limits, door.Accounts.Login));
+        Assert.Same(stub.Tables.Limits, roster.LimitsOf("acp-stub"));
     }
 
     [Fact]

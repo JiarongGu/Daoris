@@ -109,8 +109,8 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
 
         // Through the roster's live set, not the one the runner was built with: the driver's tick hands the roster the build's adapters plus
         // whatever the plugins declare, so a harness declared since the shell started is a harness a conversation can run on now.
-        var resolved = walking ? null! : harnesses.Adapters.Resolve(adapter);
-        if (!walking && !resolved.Abilities().Interactive) return new(null, NotInteractive(resolved.Name));
+        var resolved = walking ? null! : harnesses.Adapters.Door(adapter);
+        if (!walking && !resolved.Can.Interactive) return new(null, NotInteractive(resolved.Id.Value));
 
         var snapshot = await service.SnapshotAsync(ct).ConfigureAwait(false);
         var known = snapshot.Repositories
@@ -147,8 +147,8 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
                 chosen = order is [var sole] ? sole : null;
                 if (chosen is not null) adapter = chosen.Agent;
                 walking = order.Count > 1;
-                resolved = walking ? null! : harnesses.Adapters.Resolve(adapter);
-                if (!walking && !resolved.Abilities().Interactive) return new(null, NotInteractive(resolved.Name));
+                resolved = walking ? null! : harnesses.Adapters.Door(adapter);
+                if (!walking && !resolved.Can.Interactive) return new(null, NotInteractive(resolved.Id.Value));
             }
         }
         catch (DriverException error)
@@ -177,10 +177,10 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
             // The own account first where ready, else the walk of its agent's accounts, as a handed quest's named one is.
             selection = ownFirst && profile is not null
                 ? (await harnesses
-                    .SelectHandedAsync(resolved.Name, config, known!.Workspace, profile, StartKind.Conversation, ct, chosen?.Model)
+                    .SelectHandedAsync(resolved.Id.Value, config, known!.Workspace, profile, StartKind.Conversation, ct, chosen?.Model)
                     .ConfigureAwait(false)).Selection
                 : await harnesses
-                    .SelectAsync(resolved.Name, config, known!.Workspace, profile, StartKind.Conversation, ct, chosen?.Model)
+                    .SelectAsync(resolved.Id.Value, config, known!.Workspace, profile, StartKind.Conversation, ct, chosen?.Model)
                     .ConfigureAwait(false);
             if (!selection.Allowed) return new(null, selection.Refusal!);
         }
@@ -222,7 +222,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         // is 2; so does the replacement of a start refused at the open, its moving words kept there named; every other start opens as before.
         var keyed = moves is not null
             ? await service
-                .OpenChatMovingAsync(repository, resolved.Name, selection.Version, selection.Profile, workTree, before, from, moves, known.Workspace, ct)
+                .OpenChatMovingAsync(repository, resolved.Id.Value, selection.Version, selection.Profile, workTree, before, from, moves, known.Workspace, ct)
                 .ConfigureAwait(false)
             : null;
         var (sessionId, message) = keyed is not null
@@ -231,7 +231,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
                 // The tree the conversation runs in: its own where one was grown, the checkout found above otherwise, stated by the side that
                 // is about to spawn into it.
                 .OpenChatAsync(
-                    repository, resolved.Name, selection.Version, selection.Profile, workTree, before, ct, from)
+                    repository, resolved.Id.Value, selection.Version, selection.Profile, workTree, before, ct, from)
                 .ConfigureAwait(false);
         if (sessionId is null)
         {
@@ -251,7 +251,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         // person's; an agent's pick and a record from before hold none.
         else if (from is not null && context.Conversations.PickedOn(from.Session, selection.Profile)
             && await service.RecordAsync(from.Session, ct).ConfigureAwait(false) is { Adapter: { Length: > 0 } pickedAgent }
-            && new AgentOfDoor(harnesses.Adapters).Same(pickedAgent, resolved.Name))
+            && new AgentOfDoor(harnesses.Adapters).Same(pickedAgent, resolved.Id.Value))
         {
             context.Conversations.Pick(sessionId, selection.Profile);
         }
@@ -265,7 +265,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         // home, set at spawn. Its first line says which account and why, and, where it goes on from a limit, the conversation it carries and
         // the turn the limit refused.
         RotatedOpening.Say(
-            service, context.Events, sessionId, resolved.Name, selection, from is { Why: HandOverWhy.Limit } ? wiring.LimitCarried(from.Session) : null);
+            service, context.Events, sessionId, resolved.Id.Value, selection, from is { Why: HandOverWhy.Limit } ? wiring.LimitCarried(from.Session) : null);
         // Where a later choice of Chat's order ran, its actor line says which and why, in the local conversation only.
         if (chosen is not null) RotatedOpening.SayActor(context.Events, sessionId, "chat", chosen, passes);
         await RotatedOpening.SayStaffAsync(context.Events, harnesses.Staff(), service, null, sessionId, selection, "chat").ConfigureAwait(false);
@@ -277,7 +277,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
             pending.Entry = chosen!;
             context.Pending.Link(pending, sessionId);
         }
-        else if (chosen is not null && resolved.Abilities().SetAtOpen)
+        else if (chosen is not null && resolved.Can.SetAtOpen)
         {
             // The replacement runs where the refused record ran: its own tree kept, or the checkout. Its open moves the moving words the
             // refused record keeps, which it names and read, and any of the person's kept there since, in its own step.
@@ -291,7 +291,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         }
 
         // The agent the walk settled on, as the conversation reads it from here on: what it is told, and the run that holds it.
-        var agent = new ChatAgent(resolved);
+        var agent = new ChatAgent(harnesses.Adapters, resolved);
 
         // A conversation in a tree it grew is told its process with its first message. A handed-over conversation also needs its new maker's
         // attribution: the record it continues may carry a different maker's instruction. Any other conversation, in the person's checkout or

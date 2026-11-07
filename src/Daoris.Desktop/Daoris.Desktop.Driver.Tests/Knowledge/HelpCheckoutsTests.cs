@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class HelpCheckoutsTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-help-checkouts-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-help-checkouts-" + Guid.NewGuid().ToString("N")[..8]);
 
     public HelpCheckoutsTests()
     {
@@ -47,7 +47,7 @@ public sealed class HelpCheckoutsTests : IDisposable
     private void Handed(string session, params string[] checkouts) =>
         new HelpWired(_home).Keep(session, new HelpReceipt
         {
-            At = DateTimeOffset.UtcNow, Harness = "codex-acp", Folder = HelpRoom.PathOf(_home, "aurora"),
+            At = DateTimeOffset.UtcNow, Door = "codex-acp", Folder = HelpRoom.PathOf(_home, "aurora"),
             Checkouts = [.. checkouts.Select(name => new HelpRead(name, "aurora", Root(name)))],
         });
 

@@ -12,7 +12,7 @@ public sealed class DriverModuleHelpWiredTests : DriverModuleBridge
 {
     private static HelpReceipt Receipt(string at, string mode, string start) => new()
     {
-        At = DateTimeOffset.Parse(at), Start = start, Mode = mode, Harness = "claude-code-acp", Version = null, Door = HelpWired.Acp,
+        At = DateTimeOffset.Parse(at), Start = start, Mode = mode, Door = "claude-code-acp", Version = null, Transport = HelpWired.Protocol,
         Posture = mode == HelpModes.Full ? "bypassPermissions" : HelpRoom.Posture, Folder = "room",
         Servers = [new HelpWiredServer("tickets", "acme.tickets", HelpWired.Handed, ["search"])],
         Rules = new HelpWiredRules(["mcp__tickets__search"], [], []),
@@ -60,8 +60,8 @@ public sealed class DriverModuleHelpWiredTests : DriverModuleBridge
         var wired = new HelpWired(loop.Home);
         Directory.CreateDirectory(Path.GetDirectoryName(wired.PathOf("h2"))!);
         File.WriteAllText(wired.PathOf("h2"), """
-            { "receipts": [ { "at": "2026-10-19T09:00:00Z", "start": "new", "mode": "restricted", "harness": "claude-code",
-              "door": "pipe", "folder": "room", "token": "sk-hostile-file",
+            { "receipts": [ { "at": "2026-10-19T09:00:00Z", "start": "new", "mode": "restricted", "door": "claude-code",
+              "transport": "native", "folder": "room", "token": "sk-hostile-file",
               "servers": [ { "name": "tickets", "state": "handed", "env": { "TICKETS_TOKEN": "sk-hostile-env" }, "args": ["--key", "sk-hostile-arg"] } ] } ] }
             """);
 

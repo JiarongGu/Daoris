@@ -129,7 +129,7 @@ export function WorkFrame({
   /** Go to Sessions, where the attended session is read whole — the door its line offers off Sessions. */
   onOpenSessions?: () => void;
   /** *Change the rule…* on a hold a supervisor rule made: the page of the place whose rule held it, `repository` the attended line's. */
-  onChangeRule?: (place: string, repository: string | null) => void;
+  onChangeRule?: (place: string) => void;
   /**
    * Another view in the frame (DOCK1a, D118 §5): its list pane where it has one, and its main area. Overview,
    * Quests and the rest keep the right side bar and the panel, with every view that stands in them, as VS
@@ -348,7 +348,7 @@ export function WorkFrame({
   const waitsState = useAttendedWaits({
     t, notify, attended, here, intake, agentRoster, actions, chosen, attend, box, say, answering, question, goAheads, parkAsk, onAnswerAsk,
     boxWords, openView, work, talking, centre, pieceAsking: asks.pieceAsking, setPieceAsking: asks.setPieceAsking,
-    onChangeRule: onChangeRule && attended ? (place) => onChangeRule(place, attended.repository ?? null) : undefined,
+    onChangeRule: onChangeRule && attended ? onChangeRule : undefined,
   });
   const {
     partnerPieces, waits, answerBelow, standing, toEvent, waitsOnScreen, goToWait, seekAt, ruleAskAt, waitPanel, tail, awayFromTop, toTop,
@@ -404,7 +404,7 @@ export function WorkFrame({
               registered={registry.data ?? []}
               sessions={sessions.data}
               agentRoster={agentRoster}
-              defaultHarness={roster.find((row) => row.harness === (harnesses.data?.adapter ?? ''))?.harness}
+              defaultHarness={roster.find((row) => row.door === (harnesses.data?.adapter ?? ''))?.door}
               notify={notify}
               onMakeTask={onMakeTask}
               attend={attend}

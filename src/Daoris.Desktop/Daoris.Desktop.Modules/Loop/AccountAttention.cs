@@ -282,7 +282,7 @@ internal static class AccountAttention
         {
             ["agent"] = agent,
             ["product"] = tool?.Product ?? agent,
-            ["harness"] = Text(door, "harness"),
+            ["door"] = Text(door, "door"),
             // Installed, with a door, and that door not saying it runs no sign-in.
             ["signsIn"] = tool is { Present: true } && door is not null
                 && !(door["signsIn"] is JsonValue says && says.TryGetValue<bool>(out var signs) && !signs),
@@ -301,7 +301,7 @@ internal static class AccountAttention
         var grouped = new Dictionary<string, List<JsonObject>>(StringComparer.Ordinal);
         foreach (var door in doors)
         {
-            var name = Trimmed(door["accountOf"]) ?? Text(door, "harness") ?? "";
+            var name = Trimmed(door["accountOf"]) ?? Text(door, "door") ?? "";
             if (!grouped.TryGetValue(name, out var list))
             {
                 grouped[name] = list = [];
@@ -314,7 +314,7 @@ internal static class AccountAttention
         return [.. order.Select(name =>
         {
             var own = grouped[name];
-            List<JsonObject> inOrder = [.. own.Where(door => Text(door, "harness") == name), .. own.Where(door => Text(door, "harness") != name)];
+            List<JsonObject> inOrder = [.. own.Where(door => Text(door, "door") == name), .. own.Where(door => Text(door, "door") != name)];
             var accounts = new List<JsonObject>();
             foreach (var profile in inOrder.SelectMany(door => Objects(door["profiles"])))
             {

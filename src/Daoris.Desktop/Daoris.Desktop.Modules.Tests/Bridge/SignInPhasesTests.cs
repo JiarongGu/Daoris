@@ -116,7 +116,7 @@ public sealed class SignInPhasesTests : Bridge
         Codex();
         var module = Module();
 
-        var answer = await AnswerAsync(module, "HARNESS_ACTION", new { harness = "codex-acp", action = "login-new", way = "device-code" });
+        var answer = await AnswerAsync(module, "HARNESS_ACTION", new { door = "codex-acp", action = "login-new", way = "device-code" });
         Assert.True(answer.GetProperty("started").GetBoolean());
         var made = answer.GetProperty("profile").GetString()!;
         await UntilAsync(() => Texts().Any(text => text.Contains(Code, StringComparison.Ordinal)));
@@ -189,14 +189,14 @@ public sealed class SignInPhasesTests : Bridge
               "commands": { "stub": ["node", {{JsonSerializer.Serialize(script)}}] } }
             """);
         var module = Module();
-        await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "profile-add", profile = "work" });
+        await AnswerAsync(module, "HARNESS_ACTION", new { door = "stub", action = "profile-add", profile = "work" });
 
-        await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "login", profile = "work" });
+        await AnswerAsync(module, "HARNESS_ACTION", new { door = "stub", action = "login", profile = "work" });
         await UntilAsync(() => Raised.Count(m => m.Type == "HARNESS_ENDED") == 1);
         Assert.Equal(["start", "browser", "who", "lists"], Phases());
 
         File.WriteAllText(Path.Combine(Home, "fail"), "");
-        await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "login", profile = "work" });
+        await AnswerAsync(module, "HARNESS_ACTION", new { door = "stub", action = "login", profile = "work" });
         await UntilAsync(() => Raised.Count(m => m.Type == "HARNESS_ENDED") == 2);
 
         // The second run's phases follow its own start: the relay's numbers go on, so a panel that stayed up merges them.
@@ -220,9 +220,9 @@ public sealed class SignInPhasesTests : Bridge
         Codex();
         var module = Module();
 
-        await AnswerAsync(module, "HARNESS_ACTION", new { harness = "codex-acp", action = "login-new", way = "device-code" });
+        await AnswerAsync(module, "HARNESS_ACTION", new { door = "codex-acp", action = "login-new", way = "device-code" });
         await UntilAsync(() => Texts().Any(text => text.Contains(Code, StringComparison.Ordinal)));
-        await AnswerAsync(module, "HARNESS_CANCEL", new { harness = "codex-acp", action = "login-new" });
+        await AnswerAsync(module, "HARNESS_CANCEL", new { door = "codex-acp", action = "login-new" });
         await UntilAsync(() => Raised.Any(m => m.Type == "HARNESS_ENDED"));
 
         var end = LogLines().Single(line => line.GetProperty("event").GetString() == "harness.ended").GetProperty("data");
@@ -244,7 +244,7 @@ public sealed class SignInPhasesTests : Bridge
         Codex();
         var module = Module();
 
-        var answer = await AnswerAsync(module, "HARNESS_ACTION", new { harness = "codex-acp", action = "login-new" });
+        var answer = await AnswerAsync(module, "HARNESS_ACTION", new { door = "codex-acp", action = "login-new" });
         var made = answer.GetProperty("profile").GetString()!;
         var page = await PageAsync();
 
@@ -274,12 +274,12 @@ public sealed class SignInPhasesTests : Bridge
         Codex();
         var module = Module();
 
-        var first = await AnswerAsync(module, "HARNESS_ACTION", new { harness = "codex-acp", action = "login-new", way = "device-code" });
+        var first = await AnswerAsync(module, "HARNESS_ACTION", new { door = "codex-acp", action = "login-new", way = "device-code" });
         var abandoned = first.GetProperty("profile").GetString()!;
         await UntilAsync(() => Texts().Any(text => text.Contains(Code, StringComparison.Ordinal)));
         var device = StandIn("login --device-auth");
 
-        var second = await AnswerAsync(module, "HARNESS_ACTION", new { harness = "codex-acp", action = "login-new", way = "browser", @switch = true });
+        var second = await AnswerAsync(module, "HARNESS_ACTION", new { door = "codex-acp", action = "login-new", way = "browser", @switch = true });
         Assert.True(second.GetProperty("started").GetBoolean());
         var made = second.GetProperty("profile").GetString()!;
 

@@ -16,7 +16,7 @@ public sealed class AskWorkflowCommandTests : IDisposable
 {
     private const string Chosen = "Ask `#a1b2c3`: the chains it publishes are of kind `docs`, and follow `docs-to-pr` in every repository they reach.";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-ask-workflow-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-ask-workflow-" + Guid.NewGuid().ToString("N")[..8]);
 
     public AskWorkflowCommandTests()
     {

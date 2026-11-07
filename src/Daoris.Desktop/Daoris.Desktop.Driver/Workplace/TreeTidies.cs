@@ -75,6 +75,7 @@ internal sealed class TreeTidies(TreeContext context, ContentHolds content, Tree
         ContentHold? held = null;
         LandedBranch? squashedOn = null;
         string? kept = null;
+        RecoveryName? keep = null;
         if (!force)
         {
             // The commit judged, read once (SQUASHTIDY1c): every question below is asked of it, and the branch goes only while it
@@ -138,21 +139,21 @@ internal sealed class TreeTidies(TreeContext context, ContentHolds content, Tree
                         + "If its work is not wanted — a failed or superseded attempt — say it again with --force to discard them.");
                 }
 
-                // SQUASHTIDY1c: the proof compared files, so the commits themselves are kept on a ref of their own first.
-                var (reference, why) = await ContentHolds.KeepDiscardedAsync(root, branch, judged, ct).ConfigureAwait(false);
-                if (reference is null)
+                // SQUASHTIDY1c: the proof compared files, so the commits themselves are kept on a ref of their own, in the delete's act.
+                var (name, why) = await RecoveryKeeps.NameAsync(root, branch, judged, ct).ConfigureAwait(false);
+                if (name is null)
                 {
                     return new(false, $"Daoris could not keep the commits on `{branch}` on a ref of their own ({why}), so it stays. "
                         + "Say it again with --force to discard them.");
                 }
 
-                kept = reference;
+                keep = name;
+                kept = name.Ref;
             }
 
-            var stays = await content.DeleteJudgedAsync(root, repository, branch, judged, rests, ct).ConfigureAwait(false);
+            var stays = await content.DeleteJudgedAsync(root, repository, branch, judged, rests, ct, keep).ConfigureAwait(false);
             if (stays is not null)
             {
-                await ContentHolds.DropKeptAsync(root, branch, kept, judged, ct).ConfigureAwait(false);
                 return new(false, $"`{branch}` stays: {stays}"
                     + (stays == ContentHolds.MovedSince ? ", so it holds work this removal did not judge." : "."));
             }

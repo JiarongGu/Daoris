@@ -179,6 +179,7 @@
   "person.route.GIT_REF_FINISH": "finish a branch rename that stopped before its settings moved",
   "person.route.GIT_FETCH": "fetch origin's branches into a repository",
   "person.route.GIT_PUSH": "push a branch or a tag of a repository to origin",
+  "person.route.GIT_STASH_DROP": "drop a stash that Daoris saved in a repository",
   "person.route.GIT_HISTORY_EDIT": "pick, revert or rebase commits on a branch in a repository",
   "person.route.SET_WRITE_ACROSS": "change what a repository's sessions may write elsewhere",
   "person.route.TRUST_FOLDER": "trust a folder for an agent's work",

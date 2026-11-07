@@ -18,7 +18,7 @@ public sealed class CodexUsageRosterTests : IDisposable
 {
     private static readonly DateTimeOffset Seen = new(2026, 10, 7, 12, 0, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-codexuse-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-codexuse-" + Guid.NewGuid().ToString("N")[..8]);
 
     private DateTimeOffset _now = Seen;
 
@@ -43,16 +43,16 @@ public sealed class CodexUsageRosterTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol);
+    private static Provider Adapter(string name, TestAgent? toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol);
 
     private static readonly UsageQuestion Question = new CodexUsageQuestion("fake", ["fake-agent", "app-server"], CodexUsage.Question.Recorded);
 
-    private HarnessToolchain Toolchain(UsageQuestion? usage = null, string? accountOf = null) => new(
+    private TestAgent Toolchain(UsageQuestion? usage = null, string? accountOf = null) => new(
         Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
         AccountOf: accountOf, Usage: usage);
 
     private HarnessRoster Roster(UsageQuestion? question = null) =>
-        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
             // The agent declares no question of its own and has no door of its own here: its door asks for it (AGT7), as
             // `codex-acp` does for `codex`.
@@ -348,15 +348,15 @@ public sealed class CodexUsageRosterTests : IDisposable
     public void The_question_is_its_owner_s_through_its_door_and_an_agent_speaks_where_either_its_door_or_its_server_says()
     {
         var adapters = ProviderRegistry.Built();
-        var roster = new HarnessRoster(adapters, Path.Combine(Path.GetTempPath(), "daoris-codexuse-unused", "harnesses.json"));
+        var roster = new HarnessRoster(adapters, Path.Combine(TestHomes.Root, "daoris-codexuse-unused", "harnesses.json"));
 
         Assert.Equal(
             ["claude-code", "codex-acp"],
-            adapters.Names.Where(name => adapters.Resolve(name).Toolchain is { Usage: not null }).Order(StringComparer.Ordinal));
-        Assert.Same(CodexUsage.Question, roster.UsageOf("codex-acp"));
-        Assert.Same(ClaudeUsage.Question, roster.UsageOf("claude-code"));
+            adapters.Names.Where(name => adapters.AgentNamed(name) is { Usage: not null }).Order(StringComparer.Ordinal));
+        Assert.Same(UsageReads.Of(CodexUsage.Question), roster.UsageOf("codex-acp"));
+        Assert.Same(UsageReads.Of(ClaudeUsage.Question), roster.UsageOf("claude-code"));
         // The protocol door reads its owner's (AGT7).
-        Assert.Same(ClaudeUsage.Question, roster.UsageOf("claude-code-acp"));
+        Assert.Same(UsageReads.Of(ClaudeUsage.Question), roster.UsageOf("claude-code-acp"));
         Assert.True(roster.Speaks("codex-acp"));
         Assert.True(roster.Speaks("claude-code-acp"));
         Assert.False(roster.Speaks("dsh"));

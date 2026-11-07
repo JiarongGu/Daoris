@@ -13,7 +13,7 @@ public sealed class PlacedWorkTests : IDisposable
     private const string Pr = "acme-pull-request";
     private const string Commit = "0123456789abcdef0123456789abcdef01234567";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-placed-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-placed-" + Guid.NewGuid().ToString("N")[..8]);
     private readonly DateTimeOffset _now = new(2026, 11, 6, 9, 0, 0, TimeSpan.Zero);
     private readonly List<(WorkChannel Channel, string? Token)> _started = [];
     private readonly List<string> _said = [];

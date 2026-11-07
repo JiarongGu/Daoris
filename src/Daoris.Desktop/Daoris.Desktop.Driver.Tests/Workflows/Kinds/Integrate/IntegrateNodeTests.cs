@@ -22,7 +22,7 @@ public sealed class IntegrateNodeTests : IDisposable
 
     private static readonly DateTimeOffset Then = new(2026, 10, 30, 9, 0, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-integrate-node-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-integrate-node-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly ObservedPort _port = new();
 

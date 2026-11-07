@@ -26,11 +26,11 @@ internal static class AgentAccountLines
     /// </summary>
     public static bool Says(ProviderRegistry set, string owner)
     {
-        IEnumerable<HarnessToolchain?> theirs = [set.ToolchainOf(owner), .. set.Names
-            .Select(name => (Name: name, Toolchain: set.ToolchainOf(name)))
+        IEnumerable<AccountAgent?> theirs = [set.AgentNamed(owner), .. set.Names
+            .Select(name => (Name: name, Toolchain: set.AgentNamed(name)))
             .Where(each => each.Toolchain is not null && string.Equals(set.OwnerOfAgent(each.Name).Value, owner, StringComparison.OrdinalIgnoreCase))
             .Select(each => each.Toolchain)];
-        return theirs.Any(toolchain => toolchain?.Windows is not null || toolchain?.Usage is not null);
+        return theirs.Any(toolchain => toolchain?.Tables.Windows is not null || toolchain?.Usage is not null);
     }
 
     /// <summary>

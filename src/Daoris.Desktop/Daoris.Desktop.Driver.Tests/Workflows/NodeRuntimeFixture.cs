@@ -23,7 +23,7 @@ public abstract class NodeRuntimeFixture : IDisposable
     /// <summary>The plugin's build step (FABRIC-PERFORM1c): a pipeline's producer, its artifact a deploy's release.</summary>
     protected static readonly NodeDeclaration Build = Step with { Id = Plugin + "/build", Kind = Plugin + "/build" };
 
-    protected readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-runtime-" + Guid.NewGuid().ToString("N")[..8]);
+    protected readonly string _home = Path.Combine(TestHomes.Root, "daoris-runtime-" + Guid.NewGuid().ToString("N")[..8]);
 
     protected readonly Port _port = new();
 

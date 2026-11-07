@@ -124,8 +124,8 @@ describe('a session’s page header and its acts', () => {
   const TWO_AGENTS = {
     ...ROSTER,
     harnesses: [
-      { harness: 'stub', present: true, version: 'stub 1.0.0', problem: null, machineDefault: null, profiles: [], structured: true },
-      { harness: 'codex', present: true, version: 'codex 1.0.0', problem: null, machineDefault: null, profiles: [{ name: 'team', home: 'x', login: 'in' }] },
+      { door: 'stub', present: true, version: 'stub 1.0.0', problem: null, machineDefault: null, profiles: [], structured: true },
+      { door: 'codex', present: true, version: 'codex 1.0.0', problem: null, machineDefault: null, profiles: [{ name: 'team', home: 'x', login: 'in' }] },
     ],
   };
 
@@ -277,7 +277,7 @@ describe('a session’s page header and its acts', () => {
     ...ROSTER,
     harnesses: [
       { ...ROSTER.harnesses[0], profiles: [{ name: 'personal', home: 'x', login: 'in' }] },
-      { harness: 'codex', present: true, version: 'codex 1.0.0', problem: null, machineDefault: null, profiles: [{ name: 'team', home: 'x', login: 'in' }] },
+      { door: 'codex', present: true, version: 'codex 1.0.0', problem: null, machineDefault: null, profiles: [{ name: 'team', home: 'x', login: 'in' }] },
     ],
   };
   const scopeOf = (over: Record<string, unknown>) => ({
@@ -605,7 +605,7 @@ describe('a session’s page header and its acts', () => {
     SESSIONS = [earlier, { ...CHAT, from: 'e4r1i3r0', fromWhy: 'near', fromBy: 'daoris' }];
     // The roster's codex, named as its product.
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
-      ? { ...ROSTER, harnesses: ROSTER.harnesses.map((row) => (row.harness === 'codex' ? { ...row, product: 'Codex' } : row)) }
+      ? { ...ROSTER, harnesses: ROSTER.harnesses.map((row) => (row.door === 'codex' ? { ...row, product: 'Codex' } : row)) }
       : DRIVER_STATE));
     const { onSelect } = show('c0ffee11');
 

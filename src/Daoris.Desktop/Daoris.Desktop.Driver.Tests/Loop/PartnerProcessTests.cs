@@ -25,7 +25,7 @@ public sealed class PartnerProcessTests : IDisposable
     private const string Version = "0.0.0-stand-in";
 
     private readonly GitTree _repository = new("partner-pass");
-    private readonly string _install = Path.Combine(Path.GetTempPath(), "daoris-partner-pass-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _install = Path.Combine(TestHomes.Root, "daoris-partner-pass-" + Guid.NewGuid().ToString("N")[..8]);
     private readonly string _home;
     private readonly string _base;
 
@@ -168,6 +168,32 @@ public sealed class PartnerProcessTests : IDisposable
         var word = Assert.Single(service.Words);
         Assert.Equal(($"partner:{Piece}", "pt1"), (word["key"]!.GetValue<string>(), word["helper"]!.GetValue<string>()));
         Assert.Equal(PartnerDelivery.Taken, Files.ReadReceipt(Piece)!.Outcome);
+    }
+
+    /// <summary>
+    /// 🔴 COAGENT1b2 (the design §2.3 step 10): the piece a real partner made and handed is taken in once the lead merges its frozen ref in
+    /// its own tree, read at the next look and recorded with the lead's commit; the piece's ref stays where it froze.
+    /// </summary>
+    [Fact]
+    public async Task A_piece_a_real_partner_made_and_handed_is_taken_in_when_the_lead_merges_its_ref()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        LayOutLauncher();
+        Ask();
+        await using var service = PartnerStandIn.Start(_repository.Root);
+        var driver = Driver(service);
+        await driver.PiecesAsync(new Snapshot([], [], []), 0, [], CancellationToken.None);
+        await SettleAsync(driver, state => state is { State: PartnerStates.Handed });
+        var frozen = Files.ReadState(Piece)!.Commit;
+
+        _repository.Git($"-c user.name=\"Lead\" -c user.email=\"lead@example.invalid\" merge --no-ff -q -m \"take the piece in\" {PieceRefs.Of(Piece)}");
+        var tip = _repository.Output("rev-parse HEAD");
+        await driver.PiecesAsync(new Snapshot([], [], []), 0, [], CancellationToken.None);
+
+        var state = Files.ReadState(Piece)!;
+        Assert.Equal((PartnerStates.TakenIn, tip, frozen), (state.State, state.TakenBy, state.Commit));
+        Assert.Equal("export const windowDays = 7;", _repository.Output("show HEAD:src/window.ts"));
+        Assert.Equal(frozen, _repository.Output($"rev-parse {PieceRefs.Of(Piece)}"));
     }
 
     /// <summary>A start with no launcher laid out beside the home is refused `no-job`: no record is opened, no copy kept, nothing run.</summary>

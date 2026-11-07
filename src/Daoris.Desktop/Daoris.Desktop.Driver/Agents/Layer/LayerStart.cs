@@ -16,8 +16,8 @@ internal sealed record LayerStart(string Door, string Prompt, string Transcript,
     /// <summary>The layer door it opens: a native door's turn is the layer's <c>cli</c>.</summary>
     public string Kind { get; init; } = AgentDoorKinds.Cli;
 
-    /// <summary>The door's transport word a failure is read on (<c>pipe</c>, <c>protocol</c>).</summary>
-    public string Transport { get; init; } = "pipe";
+    /// <summary>The door's transport word a failure is read on (<c>native</c>, <c>protocol</c>).</summary>
+    public string Transport { get; init; } = "native";
 
     public string? WorkingDirectory { get; init; }
 
@@ -27,6 +27,15 @@ internal sealed record LayerStart(string Door, string Prompt, string Transcript,
     public string? Model { get; init; }
 
     public AgentToolPolicy Policy { get; init; } = AgentToolPolicy.Write;
+
+    /// <summary>The agent's own permission mode in place of the policy's (Lyntai's AG25, LQ4): today's driven mode.</summary>
+    public string? PermissionMode { get; init; }
+
+    /// <summary>The effort the start's choice asked (AG26, LQ5).</summary>
+    public string? Effort { get; init; }
+
+    /// <summary>The plugin folders the start composed (AG27, LQ6), each fully qualified.</summary>
+    public IReadOnlyList<string> Plugins { get; init; } = [];
 
     /// <summary>The clock a failure is seen on.</summary>
     public TimeProvider Clock { get; init; } = TimeProvider.System;

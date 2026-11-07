@@ -219,7 +219,7 @@ const ASKS_SNAPSHOT = {
 };
 
 const used = (session: string, when: string) =>
-  ({ session, repository: 'engine', harness: 'claude-code', profile: 'work', used: 12_000, size: 200_000, when });
+  ({ session, repository: 'engine', door: 'claude-code', profile: 'work', used: 12_000, size: 200_000, when });
 
 /** What sessions consumed, as the shell's owner holds it (PUSH1e): each session under its id, each account's share under its key. */
 const USAGE_SNAPSHOT = {
@@ -1264,7 +1264,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     await act(async () => {
       heard.get('DRIVER_TICK')?.({ events: [], considered: [], untrusted: [], waits: [] });
       heard.get('STATE_CHANGED')?.({ scopes: ['harnesses'] });
-      heard.get('HARNESS_ENDED')?.({ harness: 'claude-code', action: 'login' });
+      heard.get('HARNESS_ENDED')?.({ door: 'claude-code', action: 'login' });
       heard.get('SESSION_ENDED')?.({ session: 's-2', state: 'completed' });
       await vi.advanceTimersByTimeAsync(2_000);
     });

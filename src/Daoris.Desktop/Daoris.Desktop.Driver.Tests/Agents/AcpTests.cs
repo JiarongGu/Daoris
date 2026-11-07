@@ -278,7 +278,7 @@ public sealed class AcpTests
 
     /// <summary>A driven start of `engine` on Claude's protocol door under its repository's asking permission prompts.</summary>
     private static DrivenAccess Asking() =>
-        DrivenAccess.For(PermissionsOf(AccessRules.Asking), "engine", ProviderRegistry.Built().Resolve("claude-code-acp"));
+        DrivenAccess.For(PermissionsOf(AccessRules.Asking), "engine", BuiltDoors.Of("claude-code-acp"));
 
     private const string Choices =
         """[{"optionId":"always","name":"Always allow","kind":"allow_always"},{"optionId":"yes","name":"Allow","kind":"allow_once"},{"optionId":"no","name":"Reject","kind":"reject_once"}]""";
@@ -950,7 +950,7 @@ public sealed class AcpTests
     [Fact]
     public async Task A_call_the_driver_refused_is_one_ask_in_the_machine_log()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-acp-asks-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-acp-asks-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(home);
         try
         {
@@ -1600,7 +1600,7 @@ public sealed class AcpTests
 
         // 🔴 The posture comes from the ADAPTER, not from a constant in the session (ACP3) — taken
         // here from the real one, so this test fails if the Claude adapter ever stops naming it.
-        var posture = ProviderRegistry.Built().Resolve("claude-code-acp").AcpPosture;
+        var posture = BuiltDoors.Of("claude-code-acp").Postures.Ordinary;
 
         await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, posture)
             .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
@@ -1626,7 +1626,7 @@ public sealed class AcpTests
             {"id":"default","name":"Manual"},{"id":"acceptEdits","name":"Accept edits"},
             {"id":"auto","name":"Auto"},{"id":"bypassPermissions","name":"Bypass"}
             """);
-        var full = ProviderRegistry.Built().Resolve("claude-code-acp").FullPosture;
+        var full = BuiltDoors.Of("claude-code-acp").Postures.Full;
 
         await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, $"{marks}{full}")
             .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
@@ -1694,13 +1694,13 @@ public sealed class AcpTests
         });
 
         var codex = Offering(CodexModes);
-        var asking = DrivenAccess.For(Permissions(AccessRules.Asking), "engine", ProviderRegistry.Built().Resolve("codex-acp"));
+        var asking = DrivenAccess.For(Permissions(AccessRules.Asking), "engine", BuiltDoors.Of("codex-acp"));
         await new AcpSession(codex.Incoming, codex.Outgoing, _ => { }, closeTimeout: null, asking.Posture) { Unoffered = asking.Unoffered }
             .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
         Assert.Equal("workspace-write", ModeSet(codex));
 
         var claude = Offering("""{"id":"default"},{"id":"acceptEdits"},{"id":"agent"}""");
-        var unrestricted = DrivenAccess.For(Permissions(AccessRules.Unrestricted), "engine", ProviderRegistry.Built().Resolve("claude-code-acp"));
+        var unrestricted = DrivenAccess.For(Permissions(AccessRules.Unrestricted), "engine", BuiltDoors.Of("claude-code-acp"));
         var session = new AcpSession(claude.Incoming, claude.Outgoing, _ => { }, closeTimeout: null, unrestricted.Posture)
         {
             Unoffered = unrestricted.Unoffered,
@@ -1736,7 +1736,7 @@ public sealed class AcpTests
             """);
 
         await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null,
-                ProviderRegistry.Built().Resolve("claude-code-acp").AcpPosture)
+                BuiltDoors.Of("claude-code-acp").Postures.Ordinary)
             .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
 
         Assert.Equal("acceptEdits", ModeSet(agent));
@@ -1819,7 +1819,7 @@ public sealed class AcpTests
             };
         });
 
-        var posture = ProviderRegistry.Built().Resolve("codex-acp").AcpPosture;
+        var posture = BuiltDoors.Of("codex-acp").Postures.Ordinary;
 
         await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, posture)
             .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
@@ -1882,7 +1882,7 @@ public sealed class AcpTests
             }
         });
 
-        var posture = ProviderRegistry.Built().Resolve("dsh").AcpPosture;
+        var posture = BuiltDoors.Of("dsh").Postures.Ordinary;
         var outcome = await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, posture)
             .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None);
 
@@ -2309,7 +2309,7 @@ public sealed class AcpTests
     [Fact]
     public async Task A_background_task_streams_its_output_file_and_ends_with_its_last_state()
     {
-        var file = Path.Combine(Path.GetTempPath(), $"daoris-task-{Guid.NewGuid():N}.output");
+        var file = Path.Combine(TestHomes.Root, $"daoris-task-{Guid.NewGuid():N}.output");
         File.WriteAllText(file, "bg tick 1\nbg tick 2\n\n[exited with code 0]\n");
         try
         {
@@ -3096,7 +3096,7 @@ public sealed class AcpTests
     }
 
     private static DrivenAccess CodexAsking() =>
-        DrivenAccess.For(PermissionsOf(AccessRules.Asking), "engine", ProviderRegistry.Built().Resolve("codex-acp"));
+        DrivenAccess.For(PermissionsOf(AccessRules.Asking), "engine", BuiltDoors.Of("codex-acp"));
 
     /// <summary>
     /// 🔴 The workspace boundary: Asking on Codex sets <c>workspace-write</c>, whose boundary is the session's own tree. An edit inside it is
@@ -3169,7 +3169,7 @@ public sealed class AcpTests
         var events = new ConcurrentQueue<SessionEvent>();
         var agent = CodexEditing(answers);
         var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null,
-            ProviderRegistry.Built().Resolve("codex-acp").AcpPosture, onEvent: events.Enqueue);
+            BuiltDoors.Of("codex-acp").Postures.Ordinary, onEvent: events.Enqueue);
 
         var outcome = await session.RunAsync("X:/daoris/engine", "edit two files", CancellationToken.None);
 

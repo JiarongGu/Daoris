@@ -23,7 +23,7 @@ public sealed class GatedStartsTests : IDisposable
     [ThreadStatic]
     private static bool t_calling;
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-gated-starts-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-gated-starts-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly List<(string File, bool OnCaller)> _seen = [];
 
@@ -66,7 +66,7 @@ public sealed class GatedStartsTests : IDisposable
     {
         using var _ = Refusing();
         var refused = await Assert.ThrowsAsync<DriverException>(() => Calling(() => HarnessActions.RunAsync(
-            [Nowhere], new HarnessToolchain(Binary: [Nowhere], VersionArguments: ["--version"]), null, _ => { }, CancellationToken.None)));
+            [Nowhere], new TestAgent(Binary: [Nowhere], VersionArguments: ["--version"]), null, _ => { }, CancellationToken.None)));
 
         Assert.Contains("could not be started", refused.Message);
         SeenOnceOffTheCaller();
@@ -147,7 +147,7 @@ public sealed class GatedStartsTests : IDisposable
         Assert.Empty(_seen);
     }
 
-    private static ISessionAdapter Stub => ProviderRegistry.Built().Resolve("stub");
+    private static AgentDoor Stub => ProviderRegistry.Built().Door("stub");
 
     private SessionTarget Target() => new("q-1", "title", "body", "asker", "repo", _home, "http://svc");
 

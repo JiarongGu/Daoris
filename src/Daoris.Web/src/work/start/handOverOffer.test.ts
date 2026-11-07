@@ -23,9 +23,9 @@ const agent = (name: string, over: Partial<AgentAccounts> = {}): AgentAccounts =
 const next = (account: string | null, reason: NextStart['reason'] = 'onlyReady'): NextStart => ({ account, reason, others: [] });
 
 const doors: ToolDoor[] = [
-  { harness: 'claude-code', present: true },
-  { harness: 'codex', present: true },
-  { harness: 'gemini', present: true },
+  { door: 'claude-code', present: true },
+  { door: 'codex', present: true },
+  { door: 'gemini', present: true },
 ];
 const nearPersonal = { account: 'personal', window: 'session', by: 'number' as const };
 const claude = (over: Partial<AgentAccounts> = {}) => agent('claude-code', over);
@@ -96,16 +96,16 @@ describe('handOverOffer', () => {
       { why: 'near', until: null, agent: 'codex', account: null });
     expect(offer(answer(near, codex({ scopes: [scope()] })))).toBeNull();
     expect(offer(answer(near))).toBeNull();
-    expect(offer(answer(near, codex()), { doors: [doors[0], { harness: 'codex', present: false }] })).toBeNull();
+    expect(offer(answer(near, codex()), { doors: [doors[0], { door: 'codex', present: false }] })).toBeNull();
   });
 
   describe('names another tool on an account with room (MIXAGENT1b-iii)', () => {
     // The install's reading: a conversation on the protocol door, its account near at 99%, the same tool's other door next on
     // that very account, and another tool with a ready account.
     const acpDoors: ToolDoor[] = [
-      { harness: 'claude-code', present: true },
-      { harness: 'claude-code-acp', present: true, accountOf: 'claude-code' },
-      { harness: 'codex', present: true },
+      { door: 'claude-code', present: true },
+      { door: 'claude-code-acp', present: true, accountOf: 'claude-code' },
+      { door: 'codex', present: true },
     ];
     const gmailNear = { account: 'Gmail', window: 'session', by: 'number' as const };
     const claudeGmail = claude({
@@ -120,7 +120,7 @@ describe('handOverOffer', () => {
     });
 
     it('offers a tool with several doors once, by its first present door', () => {
-      const two: ToolDoor[] = [...acpDoors, { harness: 'codex-acp', present: true, accountOf: 'codex' }];
+      const two: ToolDoor[] = [...acpDoors, { door: 'codex-acp', present: true, accountOf: 'codex' }];
       expect(offer(answer(claudeGmail, codex()), { ...onAcp, doors: two })?.agent).toBe('codex');
     });
 

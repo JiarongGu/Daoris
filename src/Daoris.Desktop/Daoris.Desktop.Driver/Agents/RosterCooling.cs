@@ -38,7 +38,7 @@ internal sealed class RosterCooling(HarnessRoster roster)
     /// Whose accounts a cool-off on this adapter belongs to: its owner, as its accounts are (AGT7); null for an adapter
     /// that declares no toolchain, which has no accounts and reads no limit.
     /// </summary>
-    internal string? CoolingAgent(ISessionAdapter resolved) => resolved.Toolchain is null ? null : roster.Adapters.OwnerOfAgent(resolved.Name).Value;
+    internal string? CoolingAgent(AgentDoor resolved) => roster.Adapters.AgentNamed(resolved.Id.Value) is null ? null : roster.Adapters.OwnerOfAgent(resolved.Id.Value).Value;
 
     /// <summary>
     /// The words this adapter says an account's limit in (TOOL4a, D125 §1.3): its own entry, else its owner's, since a
@@ -48,7 +48,7 @@ internal sealed class RosterCooling(HarnessRoster roster)
 
     /// <summary>The registry's door for a name this set carries, else null (an unknown name reads no words).</summary>
     private DoorId? Held(string adapter) =>
-        roster.Adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase) ? new DoorId(roster.Adapters.Resolve(adapter).Name) : null;
+        roster.Adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase) ? new DoorId(roster.Adapters.Door(adapter).Id.Value) : null;
 
     /// <summary>
     /// The words this adapter's agent refuses a start for its sign-in in (ROSTER1b): its own entry, else its owner's, since a
@@ -75,7 +75,7 @@ internal sealed class RosterCooling(HarnessRoster roster)
     /// </remarks>
     public void SignedOut(string adapter, string? profile)
     {
-        if (CoolingAgent(roster.Adapters.Resolve(adapter)) is not { } owner) return;
+        if (CoolingAgent(roster.Adapters.Door(adapter)) is not { } owner) return;
         var before = profile is null ? null : AccountReads.Of(roster.Home, owner).Accounts.GetValueOrDefault(profile);
         Keep(owner, profile, new LoginRead(LoginState.Out, null), roster.Clock());
         if (profile is not null && before is { Login: LoginState.In }
@@ -103,11 +103,11 @@ internal sealed class RosterCooling(HarnessRoster roster)
     /// </remarks>
     public IReadOnlyList<WindowReading>? Said(string adapter, string? profile, JsonElement info, string? session)
     {
-        var resolved = roster.Adapters.Resolve(adapter);
-        if (profile is null || CoolingAgent(resolved) is not { } agent || WindowsOf(resolved.Name) is not { } words) return null;
+        var resolved = roster.Adapters.Door(adapter);
+        if (profile is null || CoolingAgent(resolved) is not { } agent || WindowsOf(resolved.Id.Value) is not { } words) return null;
 
         var now = roster.Clock();
-        History(agent, profile, resolved.Name, AccountReadings.Seen(info, words), UsageHistory.SourceFrame, AccountReadings.HistoryReader, now, session);
+        History(agent, profile, resolved.Id.Value, AccountReadings.Seen(info, words), UsageHistory.SourceFrame, AccountReadings.HistoryReader, now, session);
         var readings = AccountReadings.Read(info, words);
         if (readings.Count == 0) return null;
         AccountWindows.Said(roster.Home, agent, profile, readings, now, session);
@@ -137,14 +137,14 @@ internal sealed class RosterCooling(HarnessRoster roster)
 
     /// <summary>The account's cool-off now, or null when it is ready, a start on this adapter as <paramref name="profile"/> would read it.</summary>
     public CoolingEntry? CoolingOf(string adapter, string? profile) =>
-        CoolingAgent(roster.Adapters.Resolve(adapter)) is { } agent ? AccountCooling.Of(roster.Home, agent, profile, roster.Clock()) : null;
+        CoolingAgent(roster.Adapters.Door(adapter)) is { } agent ? AccountCooling.Of(roster.Home, agent, profile, roster.Clock()) : null;
 
     /// <summary>
     /// Every account of the adapter's owner cooling now, earliest ready first (LIMITRESUME1c, D206 §3.2): what a conversation held by
     /// its limit computes its wait from. None for an adapter that has no accounts.
     /// </summary>
     public IReadOnlyList<CoolingEntry> CoolingsOf(string adapter) =>
-        CoolingAgent(roster.Adapters.Resolve(adapter)) is { } agent
+        CoolingAgent(roster.Adapters.Door(adapter)) is { } agent
             ? [.. AccountCooling.Read(roster.Home, roster.Clock())
                 .Where(entry => string.Equals(entry.Agent, agent, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(entry => entry.Until)]
@@ -167,11 +167,11 @@ internal sealed class RosterCooling(HarnessRoster roster)
     public (CoolingEntry Entry, LimitSeen Seen)? Limited(
         string adapter, string? profile, string? failure, string session, TimeSpan? coolOff = null, LimitSeen? byCode = null)
     {
-        var resolved = roster.Adapters.Resolve(adapter);
+        var resolved = roster.Adapters.Door(adapter);
         if (CoolingAgent(resolved) is not { } agent) return null;
 
         var now = roster.Clock();
-        var read = AccountLimits.Read(LimitsOf(resolved.Name), failure, now, roster.Zone, coolOff ?? AccountLimits.DefaultCoolOff)
+        var read = AccountLimits.Read(LimitsOf(resolved.Id.Value), failure, now, roster.Zone, coolOff ?? AccountLimits.DefaultCoolOff)
                    ?? (byCode is { Stated: false } coded ? coded with { Until = now + (coolOff ?? AccountLimits.DefaultCoolOff) } : null);
         return read is { } seen ? Cool(agent, profile, seen, now, session) : null;
     }
@@ -181,7 +181,7 @@ internal sealed class RosterCooling(HarnessRoster roster)
     /// ingress under D125's bounds, cools its account with the same writes, reading no sentence. Null where the door cools no account.
     /// </summary>
     public (CoolingEntry Entry, LimitSeen Seen)? LimitedTrusted(string adapter, string? profile, LimitSeen seen, string session) =>
-        CoolingAgent(roster.Adapters.Resolve(adapter)) is { } agent ? Cool(agent, profile, seen, roster.Clock(), session) : null;
+        CoolingAgent(roster.Adapters.Door(adapter)) is { } agent ? Cool(agent, profile, seen, roster.Clock(), session) : null;
 
     /// <summary>The writes a limit makes: the cooling entry, the account's set point, and a named weekly reset kept for the weeks after.</summary>
     private (CoolingEntry Entry, LimitSeen Seen) Cool(string agent, string? profile, LimitSeen seen, DateTimeOffset now, string session)
@@ -221,7 +221,7 @@ internal sealed class RosterCooling(HarnessRoster roster)
     /// True when it was cooling; one that was not is told so, and nothing changes.
     /// </summary>
     public bool Ready(string adapter, string? profile) =>
-        CoolingAgent(roster.Adapters.Resolve(adapter)) is { } agent && AccountCooling.End(roster.Home, agent, profile, roster.Clock());
+        CoolingAgent(roster.Adapters.Door(adapter)) is { } agent && AccountCooling.End(roster.Home, agent, profile, roster.Clock());
 
     /// <summary>
     /// Whether this wait is new — an account, the cool-off it is waiting out (none where it waits for a person, TOOL6g), and

@@ -102,15 +102,11 @@ internal static class HarnessCapture
     /// <param name="append">The transcript goes on rather than starting again: a resumed run's record is the one that parked.</param>
     /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event; null where none was.</param>
     /// <param name="own">Where the harness's own words are kept for its run's ending (AGT3c), begun again here; null keeps none.</param>
-    /// <param name="lineage">
-    /// The part's lineage, told each raw line so it keeps each subagent's start and end the stream says (FABRIC-C1a, COWORKVIEW1a),
-    /// bound to this run's process; null tells none.
-    /// </param>
     internal static async Task<AcpUsage?> CaptureStructuredAsync(
         TextReader stdout, TextReader stderr, string transcript, IReadingSink sink, IStreamMapper mapper, string? prompt,
         CancellationToken ct, string? preamble = null, Action<SessionEvent>? observed = null, string? personSaid = null,
         IReadOnlyList<SessionEvent>? opened = null, bool append = false, Action? named = null, InstructionAccount? account = null,
-        HarnessWords? own = null, ILineageWriter? lineage = null, IReadOnlyList<SaidWordView>? handed = null)
+        HarnessWords? own = null, IReadOnlyList<SaidWordView>? handed = null)
     {
         own?.Begin();
         await using var file = AgentContext.Current.OpenTranscript(transcript, append);
@@ -138,14 +134,25 @@ internal static class HarnessCapture
         // What it runs beside itself, each its own console stream (CONSOLE3c), kept wherever someone watches the session's own console;
         // a line that is a stream's never reaches the session's reader.
         var beside = ReadingStreams.Of(sink) is { } streams ? mapper.Beside(streams, Line) : null;
+        var children = new NativeChildren();
+        var tasks = new NativeTasks();
+
+        // A child's or a background task's start or end, said once as its reading: the part's lineage keeps a child's (FABRIC-C1a), the
+        // run's ending the work its harness ended with its turn however its streams are kept (BGWAIT1c), and the streams beside open and
+        // end theirs by it (AGENTPROVIDER1l).
+        void Work(WireReading reading)
+        {
+            sink.Read(reading);
+            own?.Read(reading);
+            beside?.Read(reading);
+        }
+
         while (await stdout.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
         {
             // Each line is read once into its frame, which every reader of it takes (AGENTPROVIDER1l).
             var frame = NativeFrame.Of(line);
-            // Before the streams beside take it: a subagent's start is theirs too, and its lineage is the part's (FABRIC-C1a). And the
-            // background work the harness ends with its turn, the run's ending's however its streams are kept (BGWAIT1c).
-            lineage?.Stream(frame);
-            own?.Heard(frame);
+            if (children.Read(frame) is { } child) Work(child);
+            if (tasks.Read(frame) is { } task) Work(task);
             // What the harness says it loaded, said once as its init frame goes by (HELPWIRED1b).
             if (NativeInit.Read(frame) is { } loaded)
             {
@@ -208,8 +215,10 @@ internal static class HarnessCapture
             }
         }
 
-        // Said while the transcript is still open: what it left running ended with it.
+        // Said while the transcript is still open: what it left running ended with it. Then the ends only an update said, its notification
+        // never written (BGWAIT1c): the run's ending reads them, and a stream the close already ended keeps its words.
         if (beside is not null) await beside.EndAllAsync().ConfigureAwait(false);
+        foreach (var ended in tasks.Close()) Work(ended);
         await errors.ConfigureAwait(false);
         return mapper.Usage;
     }

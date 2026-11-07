@@ -138,7 +138,7 @@ public sealed class LimitMoveStoreTests : IDisposable
     }
 
     /// <summary>A conversation's adapter on the protocol door with no toolchain to ask, so nothing is probed or spawned.</summary>
-    private static ISessionAdapter Talk() => TestDoors.Door("talk", transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("nothing spawns"));
+    private static Provider Talk() => TestDoors.Door("talk", transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("nothing spawns"));
 
     private sealed record World(ChatContext Context, Opening Runner, LimitMove Limit, ChatLedger Ledger, ServiceClient Client, Turned Old)
     {
@@ -170,7 +170,7 @@ public sealed class LimitMoveStoreTests : IDisposable
             Kind = SessionEventKind.Note, Text = "its account is cooling", Parts = [new NotePart { Code = AccountNoteCodes.AccountCoolingWindow.Code }],
         });
         events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
+        var adapters = TestDoors.Registry([Talk()]);
         var context = new ChatContext(
             client, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), output: null,
             new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)), events);

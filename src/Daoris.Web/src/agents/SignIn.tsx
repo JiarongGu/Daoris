@@ -100,7 +100,7 @@ export function SignIn({
     event.preventDefault();
     const text = code.trim();
     if (!text) return;
-    input.mutate({ harness, action, text });
+    input.mutate({ door: harness, action, text });
   };
 
   const title = profile ? t('signin.title', { profile }) : t('signin.titleNew', { harness: tool ?? harness });
@@ -117,7 +117,7 @@ export function SignIn({
             variant="ghost"
             className="ml-auto"
             disabled={cancel.isPending}
-            onClick={() => cancel.mutate({ harness, action })}
+            onClick={() => cancel.mutate({ door: harness, action })}
           >
             <Icon name="x" size={13} />
             {t('signin.cancel')}

@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class HelperLookTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-helper-look-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-helper-look-" + Guid.NewGuid().ToString("N")[..8]);
 
     private const string Helper = "h1000001";
 
@@ -1284,7 +1284,7 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>A conversation's adapter on the protocol door that spawns nothing: its go-on is tried and fails at the start.</summary>
-    private static ISessionAdapter Talk() => TestDoors.Door("talk", transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("a judgement test spawns nothing"));
+    private static Provider Talk() => TestDoors.Door("talk", transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("a judgement test spawns nothing"));
 
     /// <summary>
     /// 🔴 HELPERWAIT1b2 (Codex's round-4 read of COWORKUX1): a hand to an ended conversation whose answer was lost kept the word, and the
@@ -1310,7 +1310,7 @@ public sealed class HelperLookTests : IDisposable
         var ledger = new ChatLedger().Register("engine", root);
         ledger.Chat("s1", "completed", "talk", root).Helped(word, host.HelperHands[0].Text, helper: Helper);
         new HarnessConversations(_home).Keep("s1", "talk", "conv-s1");
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
+        var adapters = TestDoors.Registry([Talk()]);
         using var runner = new ChatRunner(
             ledger.Client(), adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: driver.Context.Events,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

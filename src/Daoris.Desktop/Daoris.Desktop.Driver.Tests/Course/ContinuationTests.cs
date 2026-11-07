@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class ContinuationTests : IDisposable
 {
-    private readonly string _tree = Path.Combine(Path.GetTempPath(), "daoris-continue-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _tree = Path.Combine(TestHomes.Root, "daoris-continue-" + Guid.NewGuid().ToString("N")[..8]);
 
     public ContinuationTests() => Directory.CreateDirectory(_tree);
 

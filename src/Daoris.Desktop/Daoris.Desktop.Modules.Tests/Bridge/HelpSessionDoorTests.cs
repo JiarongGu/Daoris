@@ -93,6 +93,45 @@ public sealed class HelpSessionDoorTests : DriverModuleBridge
         Assert.Contains("q1", message);
     }
 
+    /// <summary>COWORKUX1: a helper card's Apply is the page's own ask, written by the library both share and told in its sentence.</summary>
+    [Fact]
+    public async Task A_helper_card_writes_the_persons_ask_for_the_look_and_a_pass_card_passes_its_kept_answer()
+    {
+        using var ledger = Ledger();
+        var doors = await DoorsAsync(ledger);
+
+        var (asked, message) = await doors.AskHelperAsync("done1", "Why the gap?", "codex-acp", null, true, CancellationToken.None);
+
+        Assert.True(asked);
+        Assert.StartsWith("Asked #", message);
+        var files = new HelperFiles(Home);
+        var ask = Assert.Single(files.Asks());
+        Assert.Equal(("done1", "Why the gap?", true), (ask.Asker, ask.Question, ask.ForPerson));
+
+        var (early, unanswered) = await doors.PassHelperAnswerAsync("done1", ask.Id, CancellationToken.None);
+        Assert.False(early);
+        Assert.Contains("has no answer to pass yet", unanswered);
+
+        files.WriteState(new HelperState(ask.Id, HelperStates.Answered, null, "h1", DateTimeOffset.UtcNow) { Handed = HelperState.KeptForPerson });
+        var (passed, told) = await doors.PassHelperAnswerAsync("done1", ask.Id, CancellationToken.None);
+        Assert.True(passed);
+        Assert.Contains("is passed to session done1", told);
+        Assert.NotNull(files.ReadState(ask.Id)!.Passed);
+    }
+
+    [Fact]
+    public async Task A_helper_card_for_a_session_this_machine_does_not_hold_is_not_applied_and_writes_nothing()
+    {
+        using var ledger = Ledger();
+        var doors = await DoorsAsync(ledger);
+
+        var (asked, message) = await doors.AskHelperAsync("nope", "Why?", null, null, false, CancellationToken.None);
+
+        Assert.False(asked);
+        Assert.Contains("No session `nope`", message);
+        Assert.Empty(new HelperFiles(Home).Asks());
+    }
+
     [Fact]
     public async Task A_delete_before_the_driver_is_up_is_the_cold_start_sentence()
     {

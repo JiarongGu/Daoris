@@ -14,7 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class CodexAccountTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-codexacct-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-codexacct-" + Guid.NewGuid().ToString("N")[..8]);
 
     public CodexAccountTests() => Directory.CreateDirectory(_home);
 
@@ -33,22 +33,22 @@ public sealed class CodexAccountTests : IDisposable
     [Fact]
     public void The_door_onto_codex_signs_in_and_asks_with_codex_s_own_binary()
     {
-        var agent = Roster().AccountAgentOf("codex-acp")!.Value;
+        var agent = Roster().AccountAgentOf("codex-acp")!;
 
         Assert.Equal("codex", agent.Name);
-        Assert.Equal(["codex"], agent.Toolchain.Binary);
-        Assert.Equal("CODEX_HOME", agent.Toolchain.ProfileVariable);
+        Assert.Equal(["codex"], agent.Program.Binary);
+        Assert.Equal("CODEX_HOME", agent.Home.Variable);
         // CODEXLOGIN1: the browser sign-in first, as ChatGPT's desktop app signs in, on the ports 0.160.0 tries in order; the
         // device code beside it, since a workspace may refuse either.
-        Assert.Equal(["login"], agent.Toolchain.LoginArguments!);
-        Assert.Equal(["login", "--device-auth"], agent.Toolchain.DeviceLoginArguments!);
-        Assert.Equal([1455, 1457], agent.Toolchain.LoginPorts!);
-        Assert.Equal(["login", "status"], agent.Toolchain.LoginCheck!.Arguments);
-        Assert.Equal(["codex"], Roster().AccountToolchain("codex-acp")!.Binary);
+        Assert.Equal(["login"], agent.Accounts.LoginArguments!);
+        Assert.Equal(["login", "--device-auth"], agent.Accounts.DeviceLoginArguments!);
+        Assert.Equal([1455, 1457], agent.Accounts.LoginPorts!);
+        Assert.Equal(["login", "status"], agent.Accounts.Login!.Arguments);
+        Assert.Equal(["codex"], Roster().AccountAgentOf("codex-acp")!.Program.Binary);
         // The door itself still has none: it runs `codex` and reads the home `codex` signed into (ACP3).
-        Assert.Null(Roster().Toolchain("codex-acp")!.LoginArguments);
+        Assert.Null(Roster().AgentOf("codex-acp")!.Accounts.LoginArguments);
         // Measured with no key spent: `--with-api-key` stores a key in Codex's own home, which D67 §1 does not carry.
-        Assert.Null(agent.Toolchain.KeyVariable);
+        Assert.Null(agent.Accounts.KeyVariable);
     }
 
     /// <summary>
@@ -64,24 +64,24 @@ public sealed class CodexAccountTests : IDisposable
         var prepared = 0;
         foreach (var door in ProviderRegistry.Built().Names)
         {
-            if (roster.AccountAgentOf(door) is not { Toolchain.LoginArguments: not null } agent) continue;
+            if (roster.AccountAgentOf(door) is not { Accounts.LoginArguments: not null } agent) continue;
             // A command named for the agent, so the binary prepared is never PATH's, which a scratch home refuses (LIVELOGIN1).
             var named = DriverConfig.Empty with { Commands = new Dictionary<string, IReadOnlyList<string>> { [agent.Name] = ["node", "stub.mjs"] } };
             var run = roster.SignInCommand(door, named)!;
-            SignInWay[] ways = agent.Toolchain.DeviceLoginArguments is null ? [SignInWay.Browser] : [SignInWay.Browser, SignInWay.DeviceCode];
+            SignInWay[] ways = agent.Accounts.DeviceLoginArguments is null ? [SignInWay.Browser] : [SignInWay.Browser, SignInWay.DeviceCode];
             foreach (var way in ways)
             {
                 var account = HarnessSettings.ProfileHome(_home, agent.Name, $"acct-{prepared:x8}");
-                var info = HarnessActions.PrepareLogin(agent.Toolchain, run, account, fresh: true, way);
+                var info = HarnessActions.PrepareLogin(agent, run, account, fresh: true, way);
 
-                Assert.Equal(account, info.Environment[agent.Toolchain.ProfileVariable!]);
+                Assert.Equal(account, info.Environment[agent.Home.Variable!]);
                 Assert.Equal((Path.GetFullPath(_home), agent.Name), (HarnessSettings.AccountAt(account)!.Value.Home, HarnessSettings.AccountAt(account)!.Value.Agent));
                 prepared++;
             }
 
             foreach (var elsewhere in new[] { Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), Path.Combine(_home, "elsewhere"), "" })
             {
-                var refusal = Assert.Throws<DriverException>(() => HarnessActions.PrepareLogin(agent.Toolchain, run, elsewhere, fresh: true));
+                var refusal = Assert.Throws<DriverException>(() => HarnessActions.PrepareLogin(agent, run, elsewhere, fresh: true));
                 Assert.StartsWith("a sign-in runs only into one of Daoris's accounts", refusal.Message, StringComparison.Ordinal);
             }
 
@@ -98,14 +98,14 @@ public sealed class CodexAccountTests : IDisposable
     {
         var roster = Roster();
 
-        Assert.Equal("claude-code", roster.AccountAgentOf("claude-code-acp")!.Value.Name);
-        Assert.Equal(["claude"], roster.AccountToolchain("claude-code-acp")!.Binary);
-        Assert.Equal(["auth", "login"], roster.AccountToolchain("claude-code-acp")!.LoginArguments!);
-        Assert.Equal("claude-code", roster.AccountAgentOf("claude-code")!.Value.Name);
-        Assert.Equal("dsh", roster.AccountAgentOf("dsh")!.Value.Name);
+        Assert.Equal("claude-code", roster.AccountAgentOf("claude-code-acp")!.Name);
+        Assert.Equal(["claude"], roster.AccountAgentOf("claude-code-acp")!.Program.Binary);
+        Assert.Equal(["auth", "login"], roster.AccountAgentOf("claude-code-acp")!.Accounts.LoginArguments!);
+        Assert.Equal("claude-code", roster.AccountAgentOf("claude-code")!.Name);
+        Assert.Equal("dsh", roster.AccountAgentOf("dsh")!.Name);
         var built = ProviderRegistry.Built();
-        Assert.Same(CodexAccounts.Toolchain, built.ToolchainOf("codex"));
-        Assert.Null(built.ToolchainOf("nobody"));
+        Assert.Same(CodexAccounts.Program, built.AgentNamed("codex")!.Program);
+        Assert.Null(built.AgentNamed("nobody"));
         Assert.Equal(CodexAccounts.Agent, built.OwnerOfAgent("codex-acp").Value);
         Assert.Equal("claude-code", built.OwnerOfAgent("claude-code-acp").Value);
         Assert.Equal(CodexAccounts.Agent, built.ProviderOf(new DoorId("codex-acp")).Value);
@@ -126,7 +126,7 @@ public sealed class CodexAccountTests : IDisposable
     [InlineData("error: unexpected argument 'status' found", LoginState.Unknown)]
     public void Codex_s_status_words_are_read_as_the_cli_reads_them(string output, LoginState expected)
     {
-        var said = Roster().AccountToolchain("codex-acp")!.LoginCheck!.Read(output);
+        var said = Roster().AccountAgentOf("codex-acp")!.Accounts.Login!.Read(output);
 
         Assert.Equal(expected, said.Login);
         // Codex names nobody in its answer, so the account is named by the person (ACCT2), never guessed.
@@ -191,8 +191,8 @@ public sealed class CodexAccountTests : IDisposable
         var roster = Roster();
 
         var run = roster.SignInCommand("codex-acp", DriverConfig.Empty)!;
-        var info = HarnessActions.PrepareLogin(roster.AccountToolchain("codex-acp")!, run, Fresh, fresh: true);
-        var device = HarnessActions.PrepareLogin(roster.AccountToolchain("codex-acp")!, run, Fresh, fresh: true, SignInWay.DeviceCode);
+        var info = HarnessActions.PrepareLogin(roster.AccountAgentOf("codex-acp")!, run, Fresh, fresh: true);
+        var device = HarnessActions.PrepareLogin(roster.AccountAgentOf("codex-acp")!, run, Fresh, fresh: true, SignInWay.DeviceCode);
 
         Assert.Equal(binary, run.Managed);
         Assert.Equal(binary, info.FileName);
@@ -209,7 +209,7 @@ public sealed class CodexAccountTests : IDisposable
     [Fact]
     public void A_device_code_asked_of_an_agent_with_none_is_refused_and_makes_nothing()
     {
-        var claude = Roster().AccountToolchain("claude-code")!;
+        var claude = Roster().AccountAgentOf("claude-code")!;
         var run = new HarnessCommand("claude-code", [Path.Combine(_home, "claude")], null, null);
 
         var refusal = Assert.Throws<DriverException>(() =>
@@ -267,7 +267,7 @@ public sealed class CodexAccountTests : IDisposable
     public void The_browser_sign_in_is_refused_only_where_none_of_its_ports_can_be_taken(PortHold first, PortHold second, string? said)
     {
         var asked = new List<int>();
-        var codex = Roster().AccountToolchain("codex-acp")!;
+        var codex = Roster().AccountAgentOf("codex-acp")!;
 
         var refusal = SignInPorts.Refusal("codex", codex, port =>
         {
@@ -278,7 +278,7 @@ public sealed class CodexAccountTests : IDisposable
         Assert.Equal(said, refusal);
         Assert.Equal(first == PortHold.Free ? [1455] : [1455, 1457], asked);
         // An agent that waits on no port is never refused for one, and nothing is tried.
-        Assert.Null(SignInPorts.Refusal("claude-code", Roster().AccountToolchain("claude-code")!, _ => throw new InvalidOperationException()));
+        Assert.Null(SignInPorts.Refusal("claude-code", Roster().AccountAgentOf("claude-code")!, _ => throw new InvalidOperationException()));
     }
 
     /// <summary>
@@ -330,7 +330,7 @@ public sealed class CodexAccountTests : IDisposable
         var roster = Roster();
 
         var refusal = Assert.Throws<DriverException>(() => HarnessActions.PrepareLogin(
-            roster.AccountToolchain("codex-acp")!, roster.SignInCommand("codex-acp", DriverConfig.Empty)!, Fresh, fresh: true));
+            roster.AccountAgentOf("codex-acp")!, roster.SignInCommand("codex-acp", DriverConfig.Empty)!, Fresh, fresh: true));
 
         Assert.Contains("`codex` is pinned to 0.160.0 on this machine, and nothing is installed at that version", refusal.Message);
         Assert.Contains("`daoris agent pin codex 0.160.0` installs it", refusal.Message);
@@ -345,7 +345,7 @@ public sealed class CodexAccountTests : IDisposable
 
     private readonly List<string> _asked = [];
 
-    private static ISessionAdapter Door(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol);
+    private static Provider Door(string name, TestAgent toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol);
 
     /// <summary>`fake-door` runs as `fake`'s accounts, and no `fake` door exists: `fake` is declared, as `codex` is.</summary>
     private HarnessRoster HolderRoster()
@@ -353,18 +353,12 @@ public sealed class CodexAccountTests : IDisposable
         var command = Path.Combine(_home, "door-here");
         File.WriteAllText(command, "");
         return new HarnessRoster(
-            new ProviderRegistry(
-                new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["fake-door"] = Door("fake-door", new HarnessToolchain(
-                        Binary: [command], VersionArguments: [], ProfileVariable: "FAKE_HOME", AccountOf: "fake", ProbeByPresence: true)),
-                },
-                new Dictionary<string, HarnessToolchain>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["fake"] = new(
-                        Binary: ["fake-agent-never-run"], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME",
-                        LoginArguments: ["login"], LoginCheck: new LoginQuestion(["login", "status"], "^in", "^out")),
-                }),
+            TestDoors.Registry(
+                Door("fake-door", new TestAgent(
+                    Binary: [command], VersionArguments: [], ProfileVariable: "FAKE_HOME", AccountOf: "fake", ProbeByPresence: true)),
+                TestDoors.Holder("fake", new TestAgent(
+                    Binary: ["fake-agent-never-run"], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME",
+                    LoginArguments: ["login"], LoginCheck: new LoginQuestion(["login", "status"], "^in", "^out")))),
             DaorisHome.Entry(_home, HomeEntry.Harnesses))
         {
             Clock = () => Now,

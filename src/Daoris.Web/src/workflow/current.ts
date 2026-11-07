@@ -28,7 +28,7 @@ export interface WorkflowSource {
 export interface WorkflowStep {
   /** The kind under Current; a saved version keeps its own step id. */
   id: string;
-  /** `work`, `opinion`, `look`, `landing` or `pull-request` today; a kind this page cannot word is drawn as unknown. */
+  /** `work`, `opinion`, `look`, `landing` or `pull-request` of an older steps version, or a built-in's id (`NODE_KINDS`) or a plugin's `plugin/step`; a kind this page cannot word is drawn as unknown. */
   kind: string;
   participation: WorkflowParticipation;
   executor: WorkflowExecutor;

@@ -34,7 +34,7 @@ public sealed class DriverModuleSetupTests : DriverModuleBridge
     public async Task Open_opens_the_folder_the_id_names_and_the_page_never_names_a_path()
     {
         var module = WithAccount(null);
-        var logs = Path.Combine(Home, "logs");
+        var logs = DaorisHome.Entry(Home, HomeEntry.Logs);
         Directory.CreateDirectory(logs);
 
         var opened = await AnswerAsync(module, "SYSTEM_OPEN_FOLDER", new { folder = "logs" });

@@ -8,7 +8,8 @@ namespace Daoris.Driver;
 /// </summary>
 public sealed record JournalEntry(
     long Position, long At, string Record, string? Family, string Change, string? StateOld, string? StateNew, bool? LimitedOld, bool? LimitedNew,
-    IReadOnlyList<string>? NoteCodes, IReadOnlyList<string> Marks, string? Workspace, string? Quest);
+    IReadOnlyList<string>? NoteCodes, IReadOnlyList<string> Marks, string? Workspace, string? Quest, string? Ask = null, string? Message = null,
+    string? FromSession = null);
 
 /// <summary>
 /// A part that ended (§4.2's <c>part.ended</c>), judged from its journal row alone: the record, the state it took, the note's <c>ended.*</c>

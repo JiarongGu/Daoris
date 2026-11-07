@@ -72,7 +72,7 @@ same review path. Do not substitute another deletion API, wrapper or shell to ev
 `npm run verify` is the baseline check, not a substitute for testing a component you changed. Its
 exact steps are in `package.json`; the component gates are in `daoris.gates.json`. Run focused checks
 during the task and the complete reached set before recording completion. `npm run quick` is a builder's
-fast set before a hand-back: the index written, the CLI's types, the doctrine check and the size, partial,
+fast set before a hand-back: the index and the page's generated types written, the CLI's types, the doctrine check and the size, partial,
 transitional-marker and optional-lock censuses.
 
 | Change | Additional verification |
@@ -98,7 +98,10 @@ by link, so a driver file naming a type the launcher lacks fails this gate rathe
 Real-process suites use `src/Daoris.Desktop/process.runsettings` and may take substantial time. The driver's
 runs eight classes at once, and a class that sets the process's environment, measures the whole process or
 holds a bound of a few seconds on a real process runs alone after the rest, in the `Alone` collection
-(PROCPAR1); the modules' runs one class at a time, as its assembly says. The driver's git-only Process
+(PROCPAR1); the modules' runs one class at a time, as its assembly says. The driver's test host, as it loads, takes out
+the Daoris and git variables its shell held, as the gates' environment does, and names a scratch home of its run's
+(`HostEnvironment`), so a run in a person's shell is the gate's run and never reaches the install's home; no other source
+sets the process's environment but those `ProcessEnvironmentCensusTests` names, each run alone. The driver's git-only Process
 classes, marked `Parallel=Git` beside `Category=Process`, run four at once in one host with
 `src/Daoris.Desktop/git.process.runsettings` (gate `driver-process-git`, PROC1c): four at once is load, so
 that half runs after the other one, never beside it, and a class marked so is run alone with that file, not

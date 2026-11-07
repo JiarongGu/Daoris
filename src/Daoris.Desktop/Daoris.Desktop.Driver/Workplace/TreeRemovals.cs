@@ -92,6 +92,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
         LandedBranch? squashedOn = null;
         string? judged = null;
         string? kept = null;
+        RecoveryName? keep = null;
         // DETACHTX1: a detached tree's commit kept while its tree goes, until what its proof rested on is shown standing.
         string? recovery = null;
         // What the proof that clears the branch rests on (FABRIC-END4a, third review), each ref at the commit it read: returned by that proof
@@ -201,18 +202,27 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                         + $"them:\n{proof.Lacking(unmerged)}\nLand them from the review, or say it again with --force to discard them.");
                 }
 
-                // SQUASHTIDY1c: the proof compared files, so the commits themselves are kept on a ref of their own before anything goes.
+                // SQUASHTIDY1c: the proof compared files, so the commits themselves are kept on a ref of their own: in the delete's own act
+                // for a branch, and in an act of its own before the tree goes for a detached tree, which deletes no branch.
                 if (held is not null)
                 {
                     rests = proof!.Rests;
-                    var (reference, why) = await ContentHolds.KeepDiscardedAsync(root, named, judged, ct).ConfigureAwait(false);
-                    if (reference is null)
+                    string? why;
+                    if (detached)
+                    {
+                        (kept, why) = await RecoveryKeeps.KeepAsync(context.Home, root, context.OwnerOf(full).Repository, named, judged).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        (keep, why) = await RecoveryKeeps.NameAsync(root, named, judged, ct).ConfigureAwait(false);
+                        kept = keep?.Ref;
+                    }
+
+                    if (kept is null)
                     {
                         return new(false, $"Daoris could not keep the commits on `{branch}` on a ref of their own ({why}), so nothing "
                             + "was removed. Say it again with --force to discard them.");
                     }
-
-                    kept = reference;
                 }
 
                 // DETACHTX1: a detached tree's commit is held by the tree's own HEAD, which goes with it, and by what its proof rested on,
@@ -220,7 +230,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                 // only in a transaction that verifies what the proof rested on once the tree went.
                 if (detached && kept is null)
                 {
-                    var (reference, why) = await ContentHolds.KeepDiscardedAsync(root, named, judged, ct).ConfigureAwait(false);
+                    var (reference, why) = await RecoveryKeeps.KeepAsync(context.Home, root, context.OwnerOf(full).Repository, named, judged).ConfigureAwait(false);
                     if (reference is null)
                     {
                         return new(false, $"Daoris could not keep the commit the tree at {path} has out on a ref of its own ({why}), so nothing "
@@ -232,10 +242,9 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             }
         }
 
-        // Nothing was removed: the refs this call kept the commits on go again, as before it.
+        // Nothing was removed: the ref this call kept a detached tree's commit on goes again, as before it; a branch's is made only as it goes.
         async Task<TreeRemoval> KeptAsync(string said)
         {
-            if (judged is not null) await ContentHolds.DropKeptAsync(root, branch, kept, judged, ct).ConfigureAwait(false);
             if (recovery is not null) await ContentHolds.DropKeptVerifiedAsync(root, recovery, judged!, rests, CancellationToken.None).ConfigureAwait(false);
             return new(false, said);
         }
@@ -280,8 +289,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             }
             else
             {
-                stays = await content.DeleteJudgedAsync(root, context.OwnerOf(full).Repository, branch, judged, rests, ct).ConfigureAwait(false);
-                if (stays is not null) await ContentHolds.DropKeptAsync(root, branch, kept, judged, ct).ConfigureAwait(false);
+                stays = await content.DeleteJudgedAsync(root, context.OwnerOf(full).Repository, branch, judged, rests, ct, keep).ConfigureAwait(false);
             }
 
             // The record drops what is gone (LAND3): a name no branch has is never judged by a start it no longer has.

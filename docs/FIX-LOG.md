@@ -5,6 +5,80 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-07 - The service's provider census read a file no service gate writes, and the locator's empty cases found the checkout's build (CI 9)
+
+- **Symptom:** CI run 9's fast half: all eleven `ProviderCensusTests` of the service failed with *the page's service types hold no
+  PROVIDER_VOCABULARY*; MOD9's tool test refused the same read; the driver's `ServiceHostLocatorTests` and `KnowledgeConnectorTests`
+  answered the gate tree's built service host where nothing should exist; and two `StructureTests` cases, a web vitest and seven
+  censuses were red beside them.
+- **Root cause:** AGENTPROVIDER1t (5f5d5417a9) had the service's census read its ids and words from the page's generated service
+  types, ignored by git and written only by `quick` and the web's pre-scripts, so the service gate read whatever an earlier run left.
+  The fixture root's move under the checkout (7952835475) left the locators' nothing-anywhere cases under it, where the walk up reaches
+  the checkout's manifest and its build (6105fca831 moved two of the three). The watcher's long-call look (37701903a3) and the store's
+  names step (06a4d64cd6) each named a type above its subdomain. The band's vitest counted the mocked window's slice reads, which land
+  once the page's modules load, as the band's asks.
+- **Fix:** the service's twin is `ServiceProviderCensusTests` in the driver's tests, reading `ProviderVocabulary` (fb376fcc2b); the empty
+  cases stand under the OS temp folder (b4871b4dbd); `RunningTask` lies in `Events/Domain` and the store owns `NamesVersion`
+  (de055b5b09); the band's asks are read through `asksOf` (55d89632fa). The censuses list what the merged chunks added (b4871b4dbd).
+- **The modules' Process half (2):** an action on an unknown agent named none that exists (D23): AGENTPROVIDER1t's `AgentNamed`
+  answers null where `Toolchain` refused by name (f580136940), and `ManagedAgents.Of` now refuses with the registry's sentence. A start
+  handed its place by the gate's hand-on (984cc575b5) as its wait was cancelled began anyway, so a left read could start a git after
+  the leave on a loaded machine; the gate gives the place back and throws (61ca1454e7).
+- **Verify:** the CI 9 logs are the red; each class green filtered; the driver's fast half (two timing reds beside a running CI,
+  `JournalFeedTests` and `ChatGoOnTests`, each green alone); the service's fast half, `quick`, `test-map --check`, the CLI suite and
+  MOD9's tool tests.
+## 2026-11-07 - Two browser specs kept the note and the rail as they were before ONEWAY1 moved them (CI run 9)
+
+- **Symptom:** CI run 9 on main: the e2e "a driven session's record reaches the quest's page (D46)" found no "the process is alive" in
+  the quest page's Session region, and the eleven tests after it did not run; the measured `flow/Dense:whole` and
+  `flow/DenseChinese:whole` drew their 1200 px frame where the table wanted the rail.
+- **Root cause:** ONEWAY1ac (d36b023415) draws a note from its coded parts only, so a record with no parts draws nothing; the e2e
+  seeded the working state with the note's English alone. ONEWAY1aa (81918f4f5b) put the life-flows in the canvas's viewport, where
+  from the 36rem floor a drawing the pane cannot hold is drawn top to bottom and pans (D224), so the rail stands only below that
+  floor; the measured table still named the dense graph's 1200 px frame as the rail. Neither builder ran the browser gate that pins it.
+- **Fix:** the e2e seeds the agent's words as a part beside the English (b29478f620); the table measures the 1200 px frame, whose
+  drawing is the 1440 px one's with its 155 crossings and no box crossed (8a80b4876b).
+- **Verify:** the e2e spec red first with the old seed, then 24 of 24; the four `flow/Dense` cases 4 of 4. The six head cases "kept by
+  no head with every block yet" that the log marks ✘ are `test.fail` cases failing as expected, counted among the passed. The timed
+  `large/Hundred` failed alone beside another run's processes (p95 24.5 to 31 ms against 25.05); the D224-era tree (58c8861cc8)
+  timed beside it gave 24.0 and 24.2 where this tree then gave 24.5 and 25.2, within a frame's noise, so it is unchanged.
+
+## 2026-11-07 - `daoris chat` was refused before the host read it (FIX12)
+
+- **Symptom:** `HeldChatProcessTests` (Process, 2) failed: `daoris-driver chat --repository …` was handed to the CLI and refused,
+  red in CI 8 too.
+- **Root cause:** the command tree routes every word before `Program.cs` reads it, and a word no group owns goes to the CLI. The `chat`
+  group was declared on `TerminalOwner`, which RPC1g4 (f8817c5f5e) deleted with the terminal's conversation runner; the tree's test
+  exempted `chat` as answered before the tree, which hid it.
+- **Fix:** `HeldChat`, the unit that holds a terminal's conversation, declares the group, and the exemption is gone (b9234e6ff2).
+  Beside it, the reads of the process's home FIX11 left (Daoris's own git, a fetch's holds, a squash's author, a probe's tools) carry
+  their home or read the program's named one (`ProgramHome`, 920975d93d).
+- **Verify:** `CommandTreeTests` and `DriverCommandTests` red first (3), then green; `HeldChatProcessTests` 2 of 2.
+
+## 2026-11-07 - A driven start and a conversation spawned with the process's home, and tests wrote into a real one (FIX11)
+
+- **Symptom:** CI runs 7 and 8 failed about 514 driver Process tests with `Value cannot be null (Parameter 'path1')` and a chat ledger
+  that found no row, while each class passed alone in a developer's shell. The gate clears `DAORIS_HOME`; the developer's shells
+  inherited it from the account's environment, where it names the owner's installed home.
+- **Root cause:** a driven start's and a conversation's spawn read the home from the process's environment instead of carrying their
+  own, so with no `DAORIS_HOME` they threw, and with one they used that home, so tests run in such a shell wrote into the installed
+  home. Product reads of the process's home remain in `GitRuns`, `TreeRefs`, `TreeSquashes` and `Tools.Hand` (FIX12).
+- **Fix:** each spawn carries its own home (650609f5b); the test host clears the inherited `DAORIS_*` and git variables and names a
+  scratch home, and `ProcessEnvironmentCensusTests` names every source that sets the process's environment with its why.
+- **Verify:** the Process half as one run, 514 to 4 failing (22 min, from 1 h 24); the installed home's data audit looks for the tests'
+  residue before it is cleaned.
+
+## 2026-11-06 - A journaled branch delete read a broken ref as removed, and a moved branch as unknown (FIX8)
+
+- **Symptom:** `JudgedDeleteGitTests` and `ContentProofLossTests` (git gate) failed: a branch git refused to delete because its ref
+  was broken was recorded deleted, and a branch that moved after it was judged was said *Daoris could not tell whether git deleted it*.
+- **Root cause:** ONEWAY1r (99f298bc9) made every judged branch delete a journaled act. The act's check after a ref step lists refs
+  with `for-each-ref`, which skips a broken ref silently, so a refused delete of a broken ref read as done; and `JournaledDeletes`
+  dropped git's refusal, so the door could not say the branch had moved since it was judged.
+- **Fix:** where git refused, `ActSteps.ReadAsync` reads a ref gone only when `show-ref --exists` says it is missing;
+  `JournaledDeletes` hands the refusal to the door, which reads what stands.
+- **Verify:** `JudgedDeleteGitTests` 15 of 15, `ContentProofLossTests` 24 of 24, with `git.process.runsettings`.
+
 ## 2026-11-06 - A door id nobody knows in Build's order crashed every tick (FIX5)
 
 - **Symptom:** `IntakeTests` and `DrivenSessionInputTests` (Process) failed with `UnknownDoorException` out of the look: a driver
@@ -23,7 +97,7 @@ repository.
   `local/lyntai-local.props` belongs (`tools/lyntai-local.mjs` writes that one). The sensitive gate's private patterns named no
   development folder, so nothing refused the path.
 - **Fix:** the file is gone from every commit of main: on the owner's call the history was rewritten without it (`git filter-repo
-  --invert-paths --path lyntai-local.props --refs main`, 2026-11-06, a bundle of every ref kept first), and the owner force-pushes the
+  --invert-paths --path lyntai-local.props --refs main`, 2026-11-06, a bundle of every ref kept first), and the owner force-pushed the
   remote's main (`leak-repair`). Records citing a rewritten commit cite its new SHA. The private patterns refuse the development folder's
   absolute path. The path named a folder, no user, account or private name.
 - **Verify:** `node tools/test-map.mjs --check`; the sensitive gate over the tree, which names nothing.

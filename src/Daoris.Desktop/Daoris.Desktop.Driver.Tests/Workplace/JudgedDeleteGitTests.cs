@@ -273,7 +273,7 @@ public sealed class JudgedDeleteGitTests : LandedFixture
 
     /// <summary>
     /// 🔴 The third review's P1 (LandedCleanups.cs:276, :289; LandedProofs.cs:94): the line rewound between the proof and the recovery ref is
-    /// verified at the commit the proof read, never at the one read after the ref was made, so the landing's branch is kept.
+    /// verified at the commit the proof read, never at one read as the ref is named, so the landing's branch is kept, and no ref is made.
     /// </summary>
     [Fact]
     public async Task A_rewind_between_the_proof_and_the_recovery_ref_keeps_the_landing()
@@ -286,7 +286,7 @@ public sealed class JudgedDeleteGitTests : LandedFixture
         var rewound = false;
         WorkingTree.Started.Value = arguments =>
         {
-            if (!rewound && arguments is ["update-ref", "--create-reflog", var reference, ..] && reference == $"{ContentHolds.DiscardedPrefix}{b.Branch}")
+            if (!rewound && arguments is ["rev-parse", "--verify", "--quiet", var reference] && reference == $"{ContentHolds.DiscardedPrefix}{b.Branch}")
             {
                 rewound = true;
                 GitNow(root, "update-ref", "refs/heads/main", before);
@@ -316,21 +316,23 @@ public sealed class JudgedDeleteGitTests : LandedFixture
         var root = await RepositoryAsync("engine");
         var (branch, _, tip) = await MergedAsync(root, treeless: true);
         var refused = false;
-        WorkingTree.Answered.Value = arguments =>
+        // git refuses the transaction itself, the line its proof rested on rewound as the branch goes: the act's own git is no start this
+        // seam answers.
+        var trees = new SessionTrees(Home)
         {
-            if (arguments is ["update-ref", "--stdin"])
+            BeforeRefDeleted = async name =>
             {
+                await Rewinds(root)(name);
                 refused = true;
-                return (128, "", "fatal: simulated refusal");
-            }
-
-            return refused && arguments is ["rev-parse", "--verify", "--quiet", var reference] && reference == $"refs/heads/{branch}"
+            },
+        };
+        WorkingTree.Answered.Value = arguments =>
+            refused && arguments is ["rev-parse", "--verify", "--quiet", var reference] && reference == $"refs/heads/{branch}"
                 ? (128, "", "fatal: simulated read failure")
                 : null;
-        };
         try
         {
-            var removal = await new SessionTrees(Home).RemoveBranchAsync(root, "engine", branch);
+            var removal = await trees.RemoveBranchAsync(root, "engine", branch);
 
             Assert.True(refused, "the transaction was refused");
             Assert.False(removal.Removed, removal.Message);

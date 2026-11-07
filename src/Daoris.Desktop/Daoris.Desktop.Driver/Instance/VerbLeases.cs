@@ -87,6 +87,9 @@ public static class VerbLeases
             "chat" => false,
             "drive" or "--once" or "--until-idle" => false,
             "run-heavy" => false,
+            // EVENTHOOK1c (the event hook design §6.1 step 0): the relay waits for minutes and writes none of the home's records, so it
+            // holds nothing; --where lays its copy out under the lease, taken by its own console before the host's generic path.
+            "events" => args.Contains("--where"),
             // FABRIC-PIPELINE1d: writes only its run's binding, once; the running driver governs it.
             "verify" => false,
             // INTEGRATE1h: reads the integration record; its acts are the window's cards.

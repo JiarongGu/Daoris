@@ -60,7 +60,7 @@ export function limitWaitOf({ session, workspace, doors, answer, now }: {
   answer: AccountsAnswer | null | undefined;
   now: Date;
 }): LimitWait | null {
-  const door = doors.find((each) => each.harness === session.adapter);
+  const door = doors.find((each) => each.door === session.adapter);
   const agent = agentOf(answer, door ? toolOf(door) : session.adapter);
   if (!agent) return null;
   const scope = (workspace ? workspaceScope(agent, workspace) : null) ?? machineScope(agent);
