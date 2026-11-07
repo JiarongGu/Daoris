@@ -130,10 +130,7 @@ public sealed class SessionOpenDoors
         lock (_marks) return _opens >= 2;
     }
 
-    /// <summary>
-    /// Whether the host's keyed open moves the words it is asked to: its <c>opens</c> mark 2 or more. False for a host that does not answer
-    /// the protocol; never throws for it.
-    /// </summary>
+    /// <summary>Whether the host's keyed open moves the words it is asked to: its <c>opens</c> mark 2 or more; never throws.</summary>
     public async Task<bool> MovesAsync(CancellationToken ct = default)
     {
         await HeadAsync(ct).ConfigureAwait(false);

@@ -57,7 +57,7 @@ public sealed class ChatLimitCarryProcessTests : IDisposable
         Assert.DoesNotContain(Heard(), line => line["method"]!.GetValue<string>() == "session/new" && Text(line, "account") == Account("account-2"));
         var blocks = Blocks(Prompts("account-2").First());
         Assert.Contains("Make the port configurable.", blocks);
-        Assert.Contains(LimitCarried.Words, blocks);
+        Assert.Contains(LimitCarry.Words, blocks);
         Assert.DoesNotContain("You continue session", blocks);
         Assert.Null(Text(Prompts("account-2").First(), "compactAt"));
         Assert.True(File.Exists(Path.Combine(Home("account-2"), StubConversationHome.Folder, "conv-account-1")), Seen(ledger, next));

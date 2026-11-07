@@ -113,7 +113,6 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
                 goOn.Ask.Refused = ContinueWhy.Of(ContinueWhy.Exited);
             }
 
-            // A carried part's refused resume goes on in the brief on its own record once this run let go, so its record stays working.
             if (goOn?.Ask.Refused is { } refused)
             {
                 if (goOn.Carried is null) await goOnDoor.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);

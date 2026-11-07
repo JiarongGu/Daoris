@@ -69,7 +69,7 @@ public sealed class LimitCarryTickTests : IDisposable
         Assert.Single(heard, line => line["method"]!.GetValue<string>() == "session/new");
         var prompt = heard.Last(line => line["method"]!.GetValue<string>() == "session/prompt");
         var blocks = Blocks(prompt);
-        Assert.Contains(LimitCarried.Words, blocks);
+        Assert.Contains(LimitCarry.Words, blocks);
         Assert.DoesNotContain("carrying on quest", blocks);
         Assert.Null(prompt["compactAt"]?.GetValue<string>());
         Assert.True(File.Exists(Path.Combine(Home("account-2"), StubConversationHome.Folder, "conv-s1")), seen);

@@ -25,10 +25,7 @@ internal interface IChatRunning
         HelpPlaced placed, DriverConfig config, Func<CancellationToken, Task<HelpMachine?>> machine,
         Func<string, string, Task>? onEnded = null, CancellationToken ct = default);
 
-    /// <summary>
-    /// Run a conversation in a place: a new one's first message, or an ended one going on in its own conversation; <paramref name="working"/>
-    /// opens afresh a record that works already, a carried part whose resume its door refused.
-    /// </summary>
+    /// <summary>Run a conversation in a place: a new one's first message, an ended one going on in its own conversation, or a working record afresh.</summary>
     Task<ChatStart> RunAsync(
         string actor, string sessionId, string message, ChatAgent agent, HarnessSelection selection, DriverConfig config,
         ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn = null, ActorEffective? chosen = null,

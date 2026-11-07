@@ -18,13 +18,13 @@ internal sealed class ChatLimitCarry(
 
     private IChatRunning runner => wiring;
 
-    // What the carried run was handed: the brief's run on the same part is handed it again where the resume is refused.
+    // What the carried run is handed, which the brief's run on the same part takes again where the resume is refused.
     private (string To, ChatAgent Agent, DriverConfig Config, ChatPlace Place, Func<string, string, Task>? OnEnded, IReadOnlyList<MovedWord> Moved)? _ran;
 
     /// <summary>The carry as planned: whole, or compacted first.</summary>
     public CarryPlan.Carried Plan => carried;
 
-    /// <summary>Whether the new part runs as the carried resume; false where the move's fence held it, so nothing was handed there.</summary>
+    /// <summary>Whether the new part runs as the carried resume; false where the move's fence holds it, so nothing is handed there.</summary>
     public bool Resumed { get; private set; }
 
     /// <summary>
@@ -88,7 +88,7 @@ internal sealed class ChatLimitCarry(
 
         var ask = new ResumeAsk(
             carried.Conversation, words?.Words ?? [], CarriedNotes.From(prior.Session, prior.Adapter ?? agent.Name, prior.Profile, HandOverWhy.Limit, carried),
-            LimitCarried.Words, word => ChatFiles.Kept(context.Home, to, word.Files))
+            LimitCarry.Words, word => ChatFiles.Kept(context.Home, to, word.Files))
         {
             Resent = [.. refused.Select(word => new ChatMessage(word.Text ?? "", ChatFiles.Kept(context.Home, prior.Session, word.Files ?? []))), .. unkept],
         };

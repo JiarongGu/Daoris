@@ -6,6 +6,8 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class LimitCarry
 {
+    public const string Words = "Your account reached its limit, so this conversation goes on on another account. Go on with the work where you stopped.";
+
     /// <summary>The door's provider declares no carry.</summary>
     public const string Unable = "unable";
 

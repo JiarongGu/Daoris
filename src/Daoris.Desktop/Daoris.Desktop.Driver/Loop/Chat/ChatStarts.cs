@@ -49,10 +49,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
     /// which sends them only to a host whose <c>opens</c> mark is 2. What moved comes back on <see cref="ChatStart.Moved"/>. Null for every
     /// other start, which opens as before.
     /// </param>
-    /// <param name="carries">
-    /// A limit's move that carries its conversation to this part's account: the part runs as that conversation's resume once its record is
-    /// open (<see cref="ChatLimitCarry.RunAsync"/>). Null for every other start.
-    /// </param>
+    /// <param name="carries">A limit's carry: the part runs as its conversation's resume (<see cref="ChatLimitCarry.RunAsync"/>); null for every other start.</param>
     public Task<ChatStart> StartAsync(
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded = null, string? profile = null, bool? ownTree = null,

@@ -30,9 +30,6 @@ internal sealed class ChatRun(
     /// Its pending start: refused at the open, it is re-asked, and where the answer is not this same session the record ends
     /// <c>choice-not-offered</c> and the replacement opens with its words. Null for one going on, and for a start that asks nothing.
     /// </param>
-    /// <param name="working">
-    /// The record works already and its run opens a new conversation: a carried part whose resume its door refused, going on in the brief.
-    /// </param>
     public async Task<ChatStart> RunAsync(
         string actor, string sessionId, string message, ChatAgent agent, HarnessSelection selection, DriverConfig config,
         ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn = null, ActorEffective? chosen = null,
@@ -478,8 +475,7 @@ internal sealed class ChatRun(
         // Where its open is refused and the re-ask answered another session, the replacement opens once this run let its process, its files
         // and its turns go, in the same call as far as the person is concerned.
         if (pending is not null) _ = wiring.Of<ChatReplacement>().ReplaceAsync(watch, pending, sessionId, selection);
-        // A go-on whose wire refused the resume as lost goes on in a new part, once its watch let its process, its files and its turns go; a
-        // carried part's refused resume goes on in the brief on its own record.
+        // A go-on whose wire refused the resume as lost goes on in a new part, once its watch let its process, its files and its turns go.
         if (goOn is not null)
         {
             _ = AfterAsync(
