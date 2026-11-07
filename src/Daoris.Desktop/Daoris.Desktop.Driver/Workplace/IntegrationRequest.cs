@@ -96,6 +96,9 @@ public sealed record IntegrationRequester(string Kind, string Door)
 
     /// <summary>The person's press under a merge rule (INTEGRATE1g, §4.2's named legacy exception): their Accept or their merge.</summary>
     public static IntegrationRequester Press { get; } = new(Person, IntegrationDoors.Press);
+
+    /// <summary>A workflow's <c>land</c> merged by the standing automatic authority, with no press: Daoris's, carried by the transport as a press is.</summary>
+    public static IntegrationRequester Landing { get; } = new(Daoris, IntegrationDoors.Landing);
 }
 
 /// <summary>The doors a request comes through (§4.6).</summary>
@@ -115,6 +118,9 @@ public static class IntegrationDoors
 
     /// <summary>The person's press under a merge rule, carried by the transport (INTEGRATE1g).</summary>
     public const string Press = "press";
+
+    /// <summary>A workflow's automatic <c>land</c>, carried by the transport as the press is, with no press of the person's.</summary>
+    public const string Landing = "landing";
 }
 
 /// <summary>The routes into the line (§4.6): a unit's own landing by its provenance, a recorded landing, or a records branch.</summary>

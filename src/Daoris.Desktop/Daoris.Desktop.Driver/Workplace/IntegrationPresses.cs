@@ -15,14 +15,16 @@ internal static class IntegrationPresses
     /// </summary>
     /// <param name="delivered">A delivery's merge (LANDNODE1b2), admitted by its intent's method rather than the rule's.</param>
     /// <param name="message">A delivery's rendered message (LANDNODE1f), the merge commit's own with the maker's line; null makes today's <c>Merge branch</c>.</param>
+    /// <param name="automatic">A delivery the standing automatic authority lands: requested through its own door, never as the person's press.</param>
     public static async Task<(bool Merged, string? Refused)> MergeAsync(
         string home, DriverConfig config, string root, string repository, string? workspace, string line, string branch, string tip, CancellationToken ct,
-        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null, bool delivered = false, string? message = null)
+        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null, bool delivered = false, string? message = null, bool automatic = false)
     {
         try
         {
             var store = new IntegrationStore(home);
-            var admitted = new IntegrationRequests(new HomeIntegrationRecords(home), store, () => config, home).Press(repository, workspace, branch, tip, line, delivered);
+            var admitted = new IntegrationRequests(new HomeIntegrationRecords(home), store, () => config, home)
+                .Press(repository, workspace, branch, tip, line, delivered, automatic);
             if (admitted is not { Admitted: true, Request: { } request }) return (false, $"Nothing was merged: {admitted.Message}");
 
             var asks = new IntegrationSweepAsks(

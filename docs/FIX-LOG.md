@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-07 - A `dev-line` run held before its landing on the install, and its automatic merge was filed as the person's press (LANDAUTO1)
+
+- **Symptom:** on the owner's install, after its update to the build of 778dfe5d29, Lyntai's `dev-line` runs stopped landing by
+  themselves; their records read `landing` ready, attempt 0, no binding. Every automatic merge was kept as an integration request at the
+  `press` door and settled "merged on the person's press". Runs an older build bound to Current's stayed held for good.
+- **Root cause:** not found for the hold. The records show `content` reached through the hold's landed clause (evidence
+  `landings.json#<unit>`, its session branch's recorded merge), never through git as the run that landed on f3ebcb986 was
+  (`git#<unit>`); content was started at the pass of the quest's done, so the runs sat at `content.holds` while their trees stood, and
+  the ready landing with no binding is the state after the work was merged by hand and its tree tidied, which f6d1b8ddf mends. A run of
+  the shipped copy on a standing tree lands with no press on both f3ebcb986 and 778dfe5d29, with the line moved, a remote, ignored
+  build output and a quest taken back, so there was nothing to bisect. The press's door and words: `IntegrationRequests.Press` took
+  `IntegrationRequester.Press` for every merge, and `IntegrationSettles` said the person's press for every merge route, since
+  e6a5eafc31 carried a delivery's merge through the press. Runs bound to Current's: no migration step rebound them.
+- **Fix:** an automatic delivery's merge is requested at its own `landing` door (`IntegrationRequester.Landing`), admitted by its
+  delivery's standing authority, and settled "merged by its workflow's landing, with no press"; the migration's `run-rebinds` step
+  (`RunRebindsStep`) binds a run whose version does not read, and that has no node record, to the place's choice today.
+- **Verify:** `DevLineLandingTests` (five shapes, each landing and settled at the `landing` door) failed first to compile on
+  778dfe5d29 for the door; `RunRebindsStepTests`; the landing process classes pass.
+
 ## 2026-11-07 - A run merged by hand never left its landing, and its plan named an empty line (LANDAUTO1)
 
 - **Symptom:** on the owner's install, `dev-line` runs (no review before their `land`) sat with `landing` ready, attempt 0, no binding,
