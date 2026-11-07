@@ -1,27 +1,27 @@
 namespace Daoris.Driver;
 
-/// <summary>What one start came to (DEV3): a quest's session, or an ask's intake.</summary>
+/// <summary>What one start came to: a quest's session, or an ask's intake.</summary>
 /// <param name="Line">The console line a person reads, which the report carries.</param>
-/// <param name="Opened">Whether a session record was opened for it — what a look counts as progress.</param>
-/// <param name="Ended">What it ended as and whose decision that was, when it ended here; null for a hold, a refusal or a park.</param>
+/// <param name="Opened">Whether a session record is opened for it — what a look counts as progress.</param>
+/// <param name="Ended">What it ended as and whose decision that is, when it ended here; null for a hold, a refusal or a park.</param>
 /// <param name="Held">
-/// The hold's own sentence when it was held before a record opened, which the report carries as the quest's verdict, and a
+/// The hold's own sentence when it is held before a record opened, which the report carries as the quest's verdict, and a
 /// wait the start is among as its sentence: a quest's and an ask's intake's alike (UX6d1).
 /// </param>
-/// <param name="Cooling">The account's cool-off, when that is what held it (TOOL4d): what the report's waits are gathered from.</param>
+/// <param name="Cooling">The account's cool-off, when that is what held it: what the report's waits are gathered from.</param>
 internal sealed record StartRun(string Line, bool Opened, SessionEnded? Ended = null, string? Held = null, CoolingEntry? Cooling = null)
 {
-    /// <summary>The account this start was refused for its sign-in and marked, whose quest the same start tries once more on another (LIMITPICK2), or null.</summary>
+    /// <summary>The account this start is refused for its sign-in and marked, whose quest the same start tries once more on another, or null.</summary>
     public string? SignedOutOn { get; init; }
 
-    /// <summary>The agent and the model this start was refused for and marked, whose quest the same start tries once more on the walk's next answer (MODELREFUSE1), or null.</summary>
+    /// <summary>The agent and the model this start is refused for and marked, whose quest the same start tries once more on the walk's next answer, or null.</summary>
     public (string Agent, string Model)? ModelRefusedOn { get; init; }
 
-    /// <summary>The accounts a held start passed because they are not signed in (TOOL6g), or null.</summary>
+    /// <summary>The accounts a held start passed because they are not signed in, or null.</summary>
     public SignedOutAccounts? SignedOut { get; init; }
 
     /// <summary>
-    /// The agent a held quest's start asked, as its plan answered it (the foundation design §2.4's second row, FOUNDATION1j part ii): a
+    /// The agent a held quest's start asked, as its plan answered it: a
     /// continuation's record's own, a handed quest's or the walk's, which the report's wait names; null where the start says none.
     /// </summary>
     public string? Agent { get; init; }

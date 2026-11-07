@@ -6,61 +6,61 @@ using static Daoris.Driver.BriefReading;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The brief a new part is handed of the line it continues (SESSCTX1b, D189 points 4-5; the session-context design §3): a pure
+/// The brief a new part is handed of the line it continues: a pure
 /// function of that line's records, in Daoris's one English, composed with no model. It replaces <c>HandOverBriefing.Compose</c>
 /// and a carry-on's four facts, so a hand-over, an account move, a carry-on and a fallback keep every word the session took.
 /// </summary>
 /// <remarks>
-/// <para><b>What it carries</b> (§3.1): its opening, which says it is Daoris's record and not the agent's memory; the request as first
+/// <para><b>What it carries</b>: its opening, which says it is Daoris's record and not the agent's memory; the request as first
 /// written; every word the session took, one per id as its latest event says, a word taken back left out, each marked by who said it as
 /// the record marks it (the person's verbatim; another agent's findings and a channel's message as that agent's claim, told by their
 /// marks, a channel's from before its mark by the claim's opening); each turn's last message and one line of what it did; the work's
-/// state, the tree read now, the plan with the turn it was written in, the last check each part ran and the last failed one's kept
-/// output, what is still asked and the files attached; the line's course as Daoris counts it
-/// (CONTEXTDRIVE1b); the outgoing agent's note; the entry's other parts; what was left out.</para>
+/// state, the tree read now, the plan with the turn it is written in, the last check each part ran and the last failed one's kept
+/// output, what is still asked and the files attached; the line's course as Daoris counts it;
+/// the outgoing agent's note; the entry's other parts; what is left out.</para>
 ///
-/// <para><b>What it never carries</b> (§3.3): a thought, a tool's output but the last failed check's, Daoris's own composed words
+/// <para><b>What it never carries</b>: a thought, a tool's output but the last failed check's, Daoris's own composed words
 /// (an instruction, an earlier brief, its own words to a session), a summary any model wrote, or a machine path beyond where the
 /// person's attachments lie: a file a call touched is named relative to the tree.</para>
 ///
-/// <para><b>Its bound</b> (§3.2) is <see cref="Bound"/>, a Han character weighing <see cref="HanWeight"/>, both provisional until
-/// SESSCTX1a counts briefs on each harness. Each section fills under its own cap and every item is clipped on its own, each cut said;
+/// <para><b>Its bound</b> is <see cref="Bound"/>, a Han character weighing <see cref="HanWeight"/>, both provisional until
+/// briefs are counted on each harness. Each section fills under its own cap and every item is clipped on its own, each cut said;
 /// the words keep the newest under <see cref="WordsCap"/>, the turns the newest under what the rest leave, at least
 /// <see cref="TurnsFloor"/>. The caps choose what is kept, not where it stands: the brief reads in the conversation's order.</para>
 /// </remarks>
 public static class ContextBrief
 {
-    /// <summary>The most a brief weighs: about 11,000 tokens at 3.6 characters a token, provisional (§3.2).</summary>
+    /// <summary>The most a brief weighs: about 11,000 tokens at 3.6 characters a token, provisional.</summary>
     public const int Bound = 40_000;
 
-    /// <summary>What a Han character weighs toward the bound, provisional and on the safe side until measured (§3.2).</summary>
+    /// <summary>What a Han character weighs toward the bound, provisional and on the safe side until measured.</summary>
     public const int HanWeight = 3;
 
-    /// <summary>The opening and the request (items 1-2).</summary>
+    /// <summary>The opening and the request.</summary>
     public const int OpeningCap = 4_000;
 
-    /// <summary>The outgoing agent's note (item 6).</summary>
+    /// <summary>The outgoing agent's note.</summary>
     public const int NoteCap = 4_000;
 
     /// <summary>
     /// How a channel's claim opens: the page's <c>CHANNEL_CLAIM_OPENING</c>, and what a brief tells a claim by on a record from before the
-    /// event's own mark (SESSCTX1b, <see cref="SessionEvent.Channel"/>). The work orders' <c>ChannelText.ClaimOpening</c> is this.
+    /// event's own mark (<see cref="SessionEvent.Channel"/>). The work orders' <c>ChannelText.ClaimOpening</c> is this.
     /// </summary>
     internal const string ChannelClaimOpening = "Another session says, on the ask's channel";
 
-    /// <summary>The work's state (item 5).</summary>
+    /// <summary>The work's state.</summary>
     public const int StateCap = 4_000;
 
-    /// <summary>The entry's other parts (item 7).</summary>
+    /// <summary>The entry's other parts.</summary>
     public const int PartsCap = 1_000;
 
-    /// <summary>The line's course as Daoris counts it (CONTEXTDRIVE1b; the context-counters design §3 point 1).</summary>
+    /// <summary>The line's course as Daoris counts it.</summary>
     public const int CourseCap = 1_000;
 
-    /// <summary>The words the session took (item 3), the newest kept.</summary>
+    /// <summary>The words the session took, the newest kept.</summary>
     public const int WordsCap = 12_000;
 
-    /// <summary>The least the turns' outcomes keep (item 4): what the other caps leave them is never less.</summary>
+    /// <summary>The least the turns' outcomes keep: what the other caps leave them is never less.</summary>
     public const int TurnsFloor = 12_000;
 
     /// <summary>The most one item weighs: a word, the request, a turn's last message, the note.</summary>
@@ -78,7 +78,7 @@ public static class ContextBrief
     /// <summary>The most of the last failed check's output carried: the record's own bound on it.</summary>
     public const int OutputLimit = SessionEventText.RawLimit;
 
-    /// <summary>Room kept for what was left out (item 8).</summary>
+    /// <summary>Room kept for what is left out.</summary>
     private const int NoticeRoom = 800;
 
     /// <summary>The most files a turn's line names, and failed commands; the rest counted.</summary>
@@ -104,19 +104,18 @@ public static class ContextBrief
         var read = Read(line);
         var clipped = new Clips();
 
-        // Item 1 and 2.
         var opening = Opening(line, read, clipped);
         // Items 5, 6 and 7 fill under their own caps.
         var (state, stateLeft, planLeft) = State(line, read, clipped);
-        // In MIXAGENT1c's one wording for an outgoing agent's note (OutgoingNote), clipped by weight first.
+        // The outgoing agent's note in its one wording (OutgoingNote), clipped by weight first.
         var note = line.Note?.Trim() is { Length: > 0 } said && OutgoingNote.Said(clipped.Head(said, NoteCap - 200)) is { } claim
             ? "\n\n" + claim
-            // SESSCTX1c part B: a closing note asked and not written in its one turn is said absent, in the note's own section.
+            // A closing note asked and not written in its one turn is said absent, in the note's own section.
             : line.NoteAsked ? "\n\n" + OutgoingNote.Absent : null;
         var (others, othersLeft) = Others(line.Others);
         var course = Course(line.Counts);
 
-        // Item 3: the newest words under their cap, the oldest after the request left out first.
+        // The newest words under their cap, the oldest after the request left out first.
         var words = read.Turns.SelectMany(turn => turn.Words).ToList();
         foreach (var word in words)
         {
@@ -134,7 +133,7 @@ public static class ContextBrief
             wordsUsed += weight;
         }
 
-        // Item 4: the newest outcomes under what the rest leave.
+        // The newest outcomes under what the rest leave.
         foreach (var turn in read.Turns) turn.Outcome = Outcome(turn, line.Tree);
         var fixedWeight = Weight(opening) + Weight(state ?? "") + Weight(course.Text ?? "") + Weight(note ?? "") + Weight(others ?? "") + Weight(Intro)
                           + NoticeRoom;
@@ -220,7 +219,7 @@ public static class ContextBrief
 
     private static string TurnHead(Turn turn) => $"\n\n- Turn {turn.Number}:" + (turn.Request ? "\n\n  The request, above." : "");
 
-    /// <summary>A turn's outcome (§3.1 item 4): its last message, its end kept, and one line of what it did; null where it did nothing to say.</summary>
+    /// <summary>A turn's outcome: its last message, its end kept, and one line of what it did; null where it did nothing to say.</summary>
     private static string? Outcome(Turn turn, string? tree)
     {
         var last = turn.Last?.ToString().Trim() is { Length: > 0 } message ? message : null;
@@ -230,7 +229,7 @@ public static class ContextBrief
         turn.Clipped = cut;
         if (!turn.Ended)
         {
-            // A part stopped mid-turn has no last message for the turn: its outcome is its tool lines (§3.1 item 4), and the word the
+            // A part stopped mid-turn has no last message for the turn: its outcome is its tool lines, and the word the
             // turn took may still be owed an answer.
             return "\n\n  Its turn did not end before the session moved"
                    + (quoted is null ? "." : "; its last message so far:\n\n" + quoted)
@@ -314,7 +313,7 @@ public static class ContextBrief
             : $"{string.Join(", ", named.Take(named.Count - 1))} and {named[^1]}";
     }
 
-    /// <summary>The work's state (§3.1 item 5) under its cap: lists shortened, the longest first, until it fits, each entry left out counted.</summary>
+    /// <summary>The work's state under its cap: lists shortened, the longest first, until it fits, each entry left out counted.</summary>
     private static (string? Text, int ListsLeft, int PlanLeft) State(BriefLine line, LineRead read, Clips clipped)
     {
         var tree = line.State;
@@ -332,7 +331,7 @@ public static class ContextBrief
             fixedLines.Add($"\n- The last check session `{line.Parts[check.Part].Session}` ran: `{check.Gate}` ({TextBounds.Clip(TextBounds.OneLine(check.Title), StepLimit)}), {check.Status}.");
         }
 
-        // The last check that failed and was not since run green carries its kept output (§3.1 item 4): what failed is the work's state.
+        // The last check that failed and is not since run green carries its kept output: what failed is the work's state.
         var newest = read.Checks.GroupBy(check => check.Gate, StringComparer.Ordinal).Select(runs => runs.Last()).ToList();
         if (read.Checks.LastOrDefault(check => check.Status == "failed" && newest.Any(run => ReferenceEquals(run, check))) is { } failedCheck)
         {
@@ -427,7 +426,7 @@ public static class ContextBrief
     }
 
     /// <summary>
-    /// The line's course as Daoris counts it (CONTEXTDRIVE1b; the context-counters design §3 point 1) under <see cref="CourseCap"/>: one
+    /// The line's course as Daoris counts it under <see cref="CourseCap"/>: one
     /// line per count that is not zero or that Daoris acts on, as facts; those past the cap counted. None where nothing is said.
     /// </summary>
     private static (string? Text, int Shown, int Of) Course(IReadOnlyList<CountFact> counts)
@@ -462,7 +461,7 @@ public static class ContextBrief
     };
 
     /// <summary>
-    /// What a start whose line holds no brief carries of its course (§3 point 2): the brief's item, accounted as the brief accounts it, where
+    /// What a start whose line holds no brief carries of its course: the brief's item, accounted as the brief accounts it, where
     /// any count is not zero, as on a quest that failed here before; null where none is.
     /// </summary>
     public static ComposedBrief? Counted(IReadOnlyList<CountFact> counts)
@@ -513,7 +512,7 @@ public static class ContextBrief
         if (clips > 0) left.Add($"part of {clips} {(clips == 1 ? "item" : "items")} each clipped at its own bound");
         if (left.Count > 0)
         {
-            // The connector's `line_read` reads what was left out (SESSCTX1f, the design §3.5), so the gap is one call away, not a guess.
+            // The connector's `line_read` reads what is left out, so the gap is one call away, not a guess.
             pieces.Add(new(
                 HandedSections.BriefLeft,
                 $"\n\nLeft out to keep this brief bounded: {InstructionAccounting.Joined(left)}. Daoris's record of this line holds every one of them, "
@@ -622,7 +621,7 @@ public static class ContextBrief
 
     private static readonly Regex Rooted = new(@"^([A-Za-z]:[\\/]|[\\/])", RegexOptions.CultureInvariant);
 
-    /// <summary>A file a call touched, relative to the tree; one outside it by its name alone, never a machine path (§3.3).</summary>
+    /// <summary>A file a call touched, relative to the tree; one outside it by its name alone, never a machine path.</summary>
     private static string Relative(string path, string? tree)
     {
         var file = path.Replace('\\', '/');
@@ -646,14 +645,14 @@ public static class ContextBrief
     }
 
     /// <summary>
-    /// Every item clipped at its own bound, each cut said where it is (§3.2): the opening's, the state's and the note's counted here,
+    /// Every item clipped at its own bound, each cut said where it is: the opening's, the state's and the note's counted here,
     /// once each; a word's and a turn's by their own mark, counted only where the bound kept them.
     /// </summary>
     private sealed class Clips
     {
         public int Count { get; private set; }
 
-        /// <summary>The start of a text, at most <paramref name="cap"/> weighed, saying how much was left out.</summary>
+        /// <summary>The start of a text, at most <paramref name="cap"/> weighed, saying how much is left out.</summary>
         public string Head(string text, int cap)
         {
             var kept = Clip(text, cap, fromEnd: false, out var cut);
@@ -661,7 +660,7 @@ public static class ContextBrief
             return kept;
         }
 
-        /// <summary>The end of a text, at most <paramref name="cap"/> weighed, saying how much before it was left out.</summary>
+        /// <summary>The end of a text, at most <paramref name="cap"/> weighed, saying how much before it is left out.</summary>
         public string Tail(string text, int cap)
         {
             var kept = Clip(text, cap, fromEnd: true, out var cut);

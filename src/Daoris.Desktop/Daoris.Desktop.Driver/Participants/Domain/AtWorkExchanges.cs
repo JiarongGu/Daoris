@@ -3,9 +3,9 @@ using System.Text.Json.Serialization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One request of the attended line as <i>At work</i> draws it (COMMS1i, the comms design §7): a co-worker asked, a reviewer reading its
+/// One request of the attended line as <i>At work</i> draws it: a co-worker asked, a reviewer reading its
 /// work, a quest waited on, a successor asked for. Plain values the layer above maps from the exchanges' read (<c>Exchanges.Of</c>), so the
-/// composition names no work order (design §13 point 9). Delivery, what Daoris saw, and outcome, the protocol's own word, stay apart.
+/// composition names no work order. Delivery, what Daoris saw, and outcome, the protocol's own word, stay apart.
 /// </summary>
 /// <param name="Id">The exchange's id: <c>helper:h7</c>, <c>piece:p1</c>, <c>quest:q9</c>, <c>hand-over:&lt;id&gt;</c> or <c>opinion:&lt;id&gt;</c>.</param>
 /// <param name="Part">The part of the line it belongs to: after a hand-over, a predecessor's open request is the line's.</param>
@@ -44,5 +44,5 @@ public sealed record AtWorkExchanges(IReadOnlyList<AtWorkExchange> Rows, IReadOn
     public static AtWorkExchanges None { get; } = new([], []);
 }
 
-/// <summary>The exchanges half's port (COMMS1i), which the layer above fills: the attended line's requests. Null reads none.</summary>
+/// <summary>The exchanges half's port, which the layer above fills: the attended line's requests. Null reads none.</summary>
 public delegate AtWorkExchanges AtWorkExchanging(string attended);

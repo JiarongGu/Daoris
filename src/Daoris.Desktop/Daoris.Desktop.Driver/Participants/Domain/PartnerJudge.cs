@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What only the ask and its lead's record can say of a piece (COAGENT1b; the co-agent design §2.3 step 1): pure, so each refusal is a
+/// What only the ask and its lead's record can say of a piece: pure, so each refusal is a
 /// fast test. The rule, the choice and the reservation are judged after it.
 /// </summary>
 public static class PartnerJudge

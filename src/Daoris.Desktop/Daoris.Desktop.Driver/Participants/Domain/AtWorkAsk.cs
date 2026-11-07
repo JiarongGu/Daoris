@@ -25,7 +25,7 @@ public sealed record AtWorkAskEntry(string Entry, string Repository, string Open
 }
 
 /// <summary>
-/// What is at work on an ask (COWORKVIEW1d, the design §3.5): its lines of work, each folded to a count, and its quests. No attended part
+/// What is at work on an ask: its lines of work, each folded to a count, and its quests. No attended part
 /// and no subagents of its own: the entries' views are where those are.
 /// </summary>
 public sealed record AtWorkAskAnswer(AtWorkAskOf Of, IReadOnlyList<AtWorkAskEntry> Entries)
@@ -47,7 +47,7 @@ public sealed record AtWorkAskAnswer(AtWorkAskOf Of, IReadOnlyList<AtWorkAskEntr
 /// </summary>
 public static class AtWorkAsk
 {
-    /// <summary>Pending: the slices have judged and the asks hold no such ask (unknown, or deleted after it was opened).</summary>
+    /// <summary>Pending: the slices have judged and the asks hold no such ask (unknown, or deleted after it is opened).</summary>
     public const string WaitsAsk = "ask";
 
     /// <param name="ask">The ask.</param>

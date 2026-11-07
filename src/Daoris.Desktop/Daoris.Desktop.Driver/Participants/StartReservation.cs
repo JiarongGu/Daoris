@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A start of this machine's loop that has not yet opened its record (PARALLEL1b, D181 point 3): reserved by the look that began it,
+/// A start of this machine's loop that has not yet opened its record: reserved by the look that began it,
 /// which no longer waits for it, until the record opens or the start comes to nothing. No snapshot the service answers holds it, so
 /// the look hands it to the planner (<see cref="Snapshot.Starting"/>), which holds its quest, its place under the cap, the root of a
 /// repository whose sessions run there, and the tree it goes back into, as it holds a live session's.

@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Where one ask for a helper stands, one of <see cref="HelperStates.All"/> (MIXAGENT2a-i's shapes, D163 point 2).</summary>
+/// <summary>Where one ask for a helper stands, one of <see cref="HelperStates.All"/>.</summary>
 public static class HelperStates
 {
     public const string Waiting = "waiting";
@@ -11,7 +11,7 @@ public static class HelperStates
 
     /// <summary>
     /// An account's limit ended its helper's turn with no answer, and the ask stays open, with its account's reset in
-    /// <see cref="HelperState.Until"/> (LIMITRESUME1h, D206 design §3.8): run again by the look while the session that asked waits on it,
+    /// <see cref="HelperState.Until"/>: run again by the look while the session that asked waits on it,
     /// on another account or at the reset, and refused <see cref="HelperWhy.Limited"/> once that session no longer does.
     /// </summary>
     public const string Cooling = "cooling";
@@ -20,7 +20,7 @@ public static class HelperStates
 }
 
 /// <summary>One ask for a helper as <c>&lt;askId&gt;.ask.json</c> keeps it: written by the connector's <c>helper_ask</c> or the person's door, never changed.</summary>
-/// <param name="Agent">The agent the asker or the person named, one word; null where none was.</param>
+/// <param name="Agent">The agent the asker or the person named, one word; null where none is.</param>
 /// <param name="AskedBy"><c>agent</c> or <c>person</c>.</param>
 public sealed record HelperAsk(string Id, string Asker, string Question, string? Agent, string AskedBy, DateTimeOffset At)
 {
@@ -28,19 +28,19 @@ public sealed record HelperAsk(string Id, string Asker, string Question, string?
     public const string ByPerson = "person";
 
     /// <summary>
-    /// The asker asked for the answer at its next step (COWORK1d, D188 point 2; the message-urgency design §9): where its door takes
+    /// The asker asked for the answer at its next step: where its door takes
     /// words then, while it works. False for an ask with no level, every ask from before among them: today's delivery.
     /// </summary>
     public bool Urgent { get; init; }
 
     /// <summary>
-    /// The ask this one follows (COWORKUX1d, the co-worker design §4.3): the person's <i>Ask again…</i> names the helper's ask it asks
+    /// The ask this one follows: the person's <i>Ask again…</i> names the helper's ask it asks
     /// again after, whose question and answer its helper is handed as Daoris's record. Null for a first ask, every agent's among them.
     /// </summary>
     public string? After { get; init; }
 
     /// <summary>
-    /// Where the answer goes (§7): <see cref="ToPerson"/> keeps it for the person, reaching the lead only by their <i>Pass to the lead</i>;
+    /// Where the answer goes: <see cref="ToPerson"/> keeps it for the person, reaching the lead only by their <i>Pass to the lead</i>;
     /// null is the lead, today's one path. Only the person's doors write it.
     /// </summary>
     public string? To { get; init; }
@@ -53,7 +53,7 @@ public sealed record HelperAsk(string Id, string Asker, string Question, string?
 
 /// <summary>
 /// One ask's state as the driver keeps it, <c>&lt;askId&gt;.state.json</c> (the driver alone writes it; the service reads it as
-/// <c>HelperState</c> and finds an ask by the one <c>started</c> naming its helper): the shape MIXAGENT2a-i settled, with three
+/// <c>HelperState</c> and finds an ask by the one <c>started</c> naming its helper): the shape the service reads, with three
 /// driver-only marks it ignores: <see cref="LastWords"/>, <see cref="Handed"/> and <see cref="Agent"/>.
 /// </summary>
 /// <param name="Code">A refusal's code (<see cref="HelperWhy"/>), or why a waiting ask waits; null otherwise.</param>
@@ -66,30 +66,30 @@ public sealed record HelperState(string Id, string State, string? Code, string? 
     /// <summary>The word id the answer went to the asker as, once handed; <see cref="KeptForPerson"/> where it is the person's to pass.</summary>
     public string? Handed { get; init; }
 
-    /// <summary>The <see cref="Handed"/> mark of an answer kept for the person (COWORKUX1d): settled for the lead, which never waits on it.</summary>
+    /// <summary>The <see cref="Handed"/> mark of an answer kept for the person: settled for the lead, which never waits on it.</summary>
     public const string KeptForPerson = "person";
 
     /// <summary>
-    /// When the person pressed <i>Pass to the lead</i> on an answer kept for them (COWORKUX1d, the co-worker design §7): the look hands it to
+    /// When the person pressed <i>Pass to the lead</i> on an answer kept for them: the look hands it to
     /// the lead then, with the <c>answers.passed</c> note beside it, so the count reads the press as their word.
     /// </summary>
     public DateTimeOffset? Passed { get; init; }
 
     /// <summary>
-    /// When the driver began handing the answer (HELPERWAIT1; Codex's round-2 #2 on COWORKUX1): written before the hand door is asked and
+    /// When the driver began handing the answer: written before the hand door is asked and
     /// cleared where it refused, so one still on file with nothing <see cref="Handed"/> is an attempt whose outcome nobody wrote, which is
     /// never made again without evidence of where it went.
     /// </summary>
     public DateTimeOffset? Attempted { get; init; }
 
-    /// <summary>The agent that was started, for the notes.</summary>
+    /// <summary>The agent that is started, for the notes.</summary>
     public string? Agent { get; init; }
 
     /// <summary>The helper's last words, kept here for the delivery where it never used its tool (<see cref="LastWords"/>); no answer file holds them.</summary>
     public string? Words { get; init; }
 
     /// <summary>
-    /// When the account a limit ended the helper's turn on is ready again (LIMITRESUME1h): kept with <see cref="HelperStates.Cooling"/> and
+    /// When the account a limit ended the helper's turn on is ready again: kept with <see cref="HelperStates.Cooling"/> and
     /// a <see cref="HelperWhy.Limited"/> refusal, null where the limit named no cool-off this machine still holds.
     /// </summary>
     public DateTimeOffset? Until { get; init; }
@@ -99,8 +99,8 @@ public sealed record HelperState(string Id, string State, string? Code, string? 
 public sealed record HelperAnswer(string Id, string Helper, string Answer, DateTimeOffset At);
 
 /// <summary>
-/// A session that waited on its own helper, whose helper ended with no answer, and whose move back to the person the service refused
-/// (HELPERWAIT1c; the co-worker design §5 point 4, §12 row 11): <c>&lt;session&gt;.back.json</c>, the driver's alone, kept while the
+/// A session that waited on its own helper, whose helper ended with no answer, and whose move back to the person the service refused:
+/// <c>&lt;session&gt;.back.json</c>, the driver's alone, kept while the
 /// refusal stands so <i>What needs you</i> has a record to say it from. An unreachable service keeps none: that is a retry.
 /// </summary>
 /// <param name="Session">The session that waits, and the file's name.</param>

@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace Daoris.Driver;
 
-/// <summary>One part of an entry as the groups slice holds it: the strip's word for it and how it began (the design §R11.2 point 1).</summary>
+/// <summary>One part of an entry as the groups slice holds it: the strip's word for it and how it began.</summary>
 public sealed record AtWorkEntryPart(string Session, string? Quest, string Shown, string Began)
 {
     /// <summary>The session it follows: what it retried, resumed or carried on, or the session a hand-over continues.</summary>
@@ -41,7 +41,7 @@ public sealed record AtWorkQuest(string Id, string Status)
 
     public string? Here { get; init; }
 
-    /// <summary>A done held for the person's yes or its evidence (D133 §4, D144 §6): it stays on the open list, and what waits on it waits.</summary>
+    /// <summary>A done held for the person's yes or its evidence: it stays on the open list, and what waits on it waits.</summary>
     public bool Held { get; init; }
 
     /// <summary>Whether its take is this machine's; a list that names no holder or no machine reads as here.</summary>
@@ -54,7 +54,7 @@ public sealed record AtWorkQuest(string Id, string Status)
 }
 
 /// <summary>
-/// What the routing half reads beside the sessions (COWORKVIEW1b-i, the design §R11.2 points 1 and 3): the entry's parts as the groups
+/// What the routing half reads beside the sessions: the entry's parts as the groups
 /// slice holds them, each session's row, the quests slice's quests and how many each session published. Plain values and lookups, so
 /// the composition reads nothing itself.
 /// </summary>
@@ -67,14 +67,14 @@ public sealed record AtWorkRouting(
     IReadOnlyList<AtWorkEntryPart> Parts, Func<string, AtWorkRow?> Row, Func<string, AtWorkQuest?> Quest, Func<string, int> Published,
     SliceHealth Quests)
 {
-    /// <summary>The quests half's port (COWORKVIEW1b-ii); null reads no quests and no asker.</summary>
+    /// <summary>The quests half's port; null reads no quests and no asker.</summary>
     public AtWorkAsking? Asking { get; init; }
 
-    /// <summary>The exchanges half's port (COMMS1i): what the attended line waits on and its co-workers; null reads none.</summary>
+    /// <summary>The exchanges half's port: what the attended line waits on and its co-workers; null reads none.</summary>
     public AtWorkExchanging? Exchanging { get; init; }
 
     /// <summary>
-    /// The routing standing word of a repository on this machine (COWORKVIEW1e-iii): <see cref="RoutingStanding"/>'s, or <see cref="Unheard"/>
+    /// The routing standing word of a repository on this machine: <see cref="RoutingStanding"/>'s, or <see cref="Unheard"/>
     /// before the registry or the driver's choices have answered, or <see cref="Unnamed"/> for a repository the registry does not name.
     /// Asked only where the hint can be drawn; null reads no hint.
     /// </summary>
@@ -87,7 +87,7 @@ public sealed record AtWorkRouting(
     public const string Unnamed = "unnamed";
 }
 
-/// <summary>What a part waits on, as the strip places it: a quest (with the repository it was asked of and its lanes), or its helper.</summary>
+/// <summary>What a part waits on, as the strip places it: a quest (with the repository it is asked of and its lanes), or its helper.</summary>
 public sealed record AtWorkWait
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -103,7 +103,7 @@ public sealed record AtWorkWait
     public bool? Helper { get; init; }
 }
 
-/// <summary>How a part joined the entry (the design §3.4): the strip's word for its start, and the routing its record and quest say.</summary>
+/// <summary>How a part joined the entry: the strip's word for its start, and the routing its record and quest say.</summary>
 public sealed record AtWorkJoined(string Began)
 {
     /// <summary>The strip's number of the part it follows.</summary>
@@ -140,7 +140,7 @@ public sealed record AtWorkJoined(string Began)
     public string? Of { get; init; }
 }
 
-/// <summary>The routing half of <see cref="AtWork.Compose"/> (COWORKVIEW1b-i): each part's wait, how it joined, where it runs and which fold.</summary>
+/// <summary>The routing half of <see cref="AtWork.Compose"/>: each part's wait, how it joined, where it runs and which fold.</summary>
 internal static class AtWorkParts
 {
     private const string AwaitingReply = "awaiting-reply";

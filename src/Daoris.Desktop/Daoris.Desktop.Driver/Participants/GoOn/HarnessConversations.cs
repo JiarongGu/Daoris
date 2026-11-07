@@ -3,12 +3,12 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The harness's own conversation id per session (ANSWER1a, D131 §1): the desktop store's <c>bindings</c> row, kept the moment the wire
+/// The harness's own conversation id per session: the desktop store's <c>bindings</c> row, kept the moment the wire
 /// says it and read back when the person answers a park.
 /// </summary>
 /// <remarks>
 /// <para><b>Kept by Daoris, never read from the agent's own home.</b> The harness keeps its conversation inside the
-/// account's configuration home; reading there is a read inside an account's directory (D66 §3), which D125 rejected.
+/// account's configuration home; reading there is a read inside an account's directory, which Daoris does not make.
 /// The id is the one fact a resume needs, and the wire hands it over at the start of every session.</para>
 ///
 /// <para><b>This machine's, never the record's.</b> A conversation id is a harness detail of one machine's checkout, like
@@ -17,7 +17,7 @@ namespace Daoris.Driver;
 /// <para><b>A binding that does not read is no conversation</b>: the answer falls back to a carry-on, saying Daoris kept no
 /// id (<see cref="ContinueWhy.Unkept"/>), and never throws.</para>
 ///
-/// <para><b>The store alone</b> (FOUNDATION1 z-iii, D212; the design §13.6): the binding files an older build kept are imported once by the
+/// <para><b>The store alone</b>: the binding files an older build kept are imported once by the
 /// home's migration (<see cref="BindingFilesStep"/>), and nothing here reads or writes a file. A deleted record takes its binding with
 /// its files (<see cref="SessionHomeFiles"/>).</para>
 /// </remarks>
@@ -41,7 +41,7 @@ public sealed class HarnessConversations(string home, Func<StoreSettled>? settle
     public IReadOnlyList<string> ForgetBindings(IReadOnlyCollection<string> sessions) => _bindings.Forget(sessions);
 
     /// <summary>
-    /// Keep what the wire named this session's conversation, replacing what was kept. An id that is not a session's, or a
+    /// Keep what the wire named this session's conversation, replacing what is kept. An id that is not a session's, or a
     /// blank conversation, keeps nothing; a write that fails is lost, which costs a resume and never the session.
     /// </summary>
     public void Keep(string session, string adapter, string conversation)
@@ -60,7 +60,7 @@ public sealed class HarnessConversations(string home, Func<StoreSettled>? settle
     }
 
     /// <summary>
-    /// Keep that the person picked <paramref name="account"/> for this session (FOUNDATION1a-ii): a start they named an account for, never an
+    /// Keep that the person picked <paramref name="account"/> for this session: a start they named an account for, never an
     /// agent's ask or the curve's account. Kept in the desktop store beside the binding, never on the service's record or any wire, so
     /// the account rule reads it as its constraint. A write that fails is lost, which costs the wait and never the start: the conversation
     /// then walks its agent's accounts as a record from before does, and the log says so.
@@ -81,7 +81,7 @@ public sealed class HarnessConversations(string home, Func<StoreSettled>? settle
     }
 
     /// <summary>
-    /// Keep the role a start took and its revision on the session's binding (FOUNDATION1x). A write that fails is lost, which costs the newer
+    /// Keep the role a start took and its revision on the session's binding. A write that fails is lost, which costs the newer
     /// build's continuation its role and never the start: the record's <c>actor</c>, the seeded id, then says what it ran as.
     /// </summary>
     public void KeepRole(string session, string role, long revision)
@@ -134,14 +134,14 @@ public sealed class HarnessConversations(string home, Func<StoreSettled>? settle
     }
 
     /// <summary>
-    /// What a door tells the id its harness named to, for this session's record (MSG1c, D137 §4.2): a chat keeps its
+    /// What a door tells the id its harness named to, for this session's record: a chat keeps its
     /// conversation as a quest's session does, on the protocol door from <c>session/new</c>'s answer and on the native door
     /// from its <c>init</c> line, so an ended chat the person writes to goes on in it.
     /// </summary>
     public Action<string> Keeping(string session, string adapter) => conversation => Keep(session, adapter, conversation);
 
     /// <summary>
-    /// What was kept for this session, or null for nothing, a store that does not read, or an id that is not one.
+    /// What is kept for this session, or null for nothing, a store that does not read, or an id that is not one.
     /// </summary>
     public HarnessConversation? Read(string session)
     {

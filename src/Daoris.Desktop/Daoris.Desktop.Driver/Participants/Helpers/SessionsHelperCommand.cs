@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris session helper &lt;session&gt; "&lt;question&gt;" [--agent &lt;name&gt;]</c> (MIXAGENT2a-ii, D163 point 2; the mixed
-/// agents design §3, §5): the person's own door to a helper. It writes the ask a connector's <c>helper_ask</c> writes (the same file
+/// <c>daoris session helper &lt;session&gt; "&lt;question&gt;" [--agent &lt;name&gt;]</c>:
+/// the person's own door to a helper. It writes the ask a connector's <c>helper_ask</c> writes (the same file
 /// under the home's <c>helpers</c> folder), with <c>askedBy: person</c>, for the driver's look to take; the person is the one asking, so
 /// the rule's <c>ask</c> and <c>off</c> do not hold it and the driver starts it within the limits.
 /// </summary>
@@ -75,7 +75,7 @@ public static class SessionsHelperCommand
     }
 
     /// <summary>
-    /// <c>pass &lt;ask&gt;</c> (COWORKUX1d, the co-worker design §7): a helper's answer kept for the person handed to the session that
+    /// <c>pass &lt;ask&gt;</c>: a helper's answer kept for the person handed to the session that
     /// asked, by the judge the page's <i>Pass to the lead</i> uses (<see cref="HelperPassToLead"/>). The driver's look hands it at its
     /// next look. Exit 0 where it is passed, 1 where the judge refuses it.
     /// </summary>
@@ -135,7 +135,7 @@ public static class SessionsHelperCommand
         HelperPersonAsked asked;
         try
         {
-            // COWORKUX1d: the person's ask keeps `helper.person-asked` on the session, their word on the line, as the page's door does.
+            // The person's ask keeps `helper.person-asked` on the session, their word on the line, as the page's door does.
             asked = HelperPersonAsk.Write(
                 new HelperFiles(world.Home), WorkplaceEventRecords.Current.Open(DaorisHome.Entry(world.Home, HomeEntry.Sessions)),
                 id, question, agent, ask.After, ask.ToMe, DateTimeOffset.UtcNow);
@@ -151,7 +151,7 @@ public static class SessionsHelperCommand
     }
 
     /// <summary>
-    /// Why the start layer refuses <paramref name="asker"/> a helper (<see cref="StartAdmission.HelperAsker"/>, FOUNDATION1q), by its code
+    /// Why the start layer refuses <paramref name="asker"/> a helper (<see cref="StartAdmission.HelperAsker"/>), by its code
     /// and in the sentence the page and this verb both say, the connector's words; null where its work may ask.
     /// </summary>
     public static (string Why, string Sentence)? Unfit(string id, PriorSession asker) =>
@@ -167,7 +167,7 @@ public static class SessionsHelperCommand
         };
 
     /// <summary>
-    /// <c>helper --approve|--decline &lt;ask&gt;</c> (HELPERTERM1): the person's yes or no to an agent's ask that waits on it, by the
+    /// <c>helper --approve|--decline &lt;ask&gt;</c>: the person's yes or no to an agent's ask that waits on it, by the
     /// judge the page's presses use (<see cref="HelperPersonWord"/>). The driver's look reads the file at its next look; the loop
     /// is not nudged from here, and the line says so. Exit 0 where the word stands, 1 where the judge refuses it.
     /// </summary>

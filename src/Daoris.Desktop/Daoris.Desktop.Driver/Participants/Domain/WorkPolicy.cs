@@ -1,41 +1,41 @@
 namespace Daoris.Driver;
 
-/// <summary>A work's consent (FOUNDATION1q, D212; the foundation design §2.3): its rule's mode, or no rule yet.</summary>
+/// <summary>A work's consent: its rule's mode, or no rule yet.</summary>
 public static class WorkConsent
 {
     public const string On = "on";
     public const string Ask = "ask";
     public const string Off = "off";
 
-    /// <summary>A partner's, until COAGENT1d gives it a key: never <see cref="On"/>.</summary>
+    /// <summary>A partner's: never <see cref="On"/>.</summary>
     public const string NotARule = "not-a-rule";
 }
 
 /// <summary>What one work's policy requires beyond what every work has: a type of its own per work that has any.</summary>
 public abstract record WorkRequirement;
 
-/// <summary>A helper's: the default asks Daoris's own set-up agents alone (HELPERDEFAULT1, <see cref="HelperRule.SetUp"/>).</summary>
+/// <summary>A helper's: the default asks Daoris's own set-up agents alone (<see cref="HelperRule.SetUp"/>).</summary>
 public sealed record HelpRequirement(bool SetUp) : WorkRequirement;
 
-/// <summary>A second opinion's (D155): whether work waits with no reviewer, verifies and rechecks; its reviewers walked by maker (point 4).</summary>
+/// <summary>A second opinion's: whether work waits with no reviewer, verifies and rechecks; its reviewers walked by maker.</summary>
 public sealed record ReviewRequirement(bool Required, bool Verify, bool Recheck, bool MakerPasses) : WorkRequirement;
 
-/// <summary>A partner's: admitted only where its confinement was measured (D199 point 4).</summary>
+/// <summary>A partner's: admitted only where its confinement is measured.</summary>
 public sealed record PartnerRequirement(bool Measured) : WorkRequirement;
 
 /// <summary>A brainstorm's fan-out; its mode is listed and read by no start yet (<paramref name="ModeRead"/>).</summary>
 public sealed record BrainstormRequirement(int FanOut, bool ModeRead) : WorkRequirement;
 
-/// <summary>A working session's hand-over: the consent an agent's ask to hand over waits on, and where it was set.</summary>
+/// <summary>A working session's hand-over: the consent an agent's ask to hand over waits on, and where it is set.</summary>
 public sealed record HandOverRequirement(string Consent, string Source) : WorkRequirement;
 
 /// <summary>
-/// One work's resolved policy (FOUNDATION1q, D212; the foundation design §2.3): what every work has and its typed requirement.
+/// One work's resolved policy: what every work has and its typed requirement.
 /// </summary>
 /// <param name="Agents">The agents its rule permits, in order; none where its rule names none, the role's staffing deciding.</param>
 /// <param name="Concurrency">How many at once, in the unit its counter counts (an asker's helpers, a chain's pieces, the cap's slots); null for none.</param>
 /// <param name="Minutes">One turn's bound; null where it is watched and never timed out.</param>
-/// <param name="Source">Where its rule was set: <c>repository</c>, <c>workspace</c>, <c>machine</c> or <see cref="WorkPolicies.DefaultSource"/>.</param>
+/// <param name="Source">Where its rule is set: <c>repository</c>, <c>workspace</c>, <c>machine</c> or <see cref="WorkPolicies.DefaultSource"/>.</param>
 public sealed record WorkPolicy(
     string Work, string Consent, IReadOnlyList<string> Agents, int? Concurrency, int? Minutes, string Source, WorkRequirement? Requirement = null)
 {
@@ -43,8 +43,8 @@ public sealed record WorkPolicy(
 }
 
 /// <summary>
-/// The one reader of each work's policy (FOUNDATION1q, D212; the foundation design §2.3), from the keys <c>driver.json</c> has now, so no
-/// key moves and an older build reads its keys as before (D205 point 6). Each default is written once, in <see cref="Of"/>'s table.
+/// The one reader of each work's policy, from the keys <c>driver.json</c> has, so no
+/// key moves and an older build reads its keys unchanged. Each default is written once, in <see cref="Of"/>'s table.
 /// </summary>
 /// <remarks>
 /// Intake and Ask Daoris are on where their actor's first agent names one, the gate each start reads. The rules that resolve in a subdomain above this one
@@ -57,7 +57,7 @@ public static class WorkPolicies
 
     /// <summary>
     /// The policy standing for <paramref name="work"/> in a repository and its workspace (a brainstorm's, its workspace alone); with no
-    /// repository, the workspace's own (COMPANYVIEW1c), and with neither, the default.
+    /// repository, the workspace's own, and with neither, the default.
     /// </summary>
     /// <exception cref="ActorUnreadableException">Intake's actor does not read: its start holds with that sentence, as today.</exception>
     public static WorkPolicy Of(DriverConfig config, string work, string? repository, string? workspace)

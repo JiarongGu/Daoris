@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Daoris.Driver;
 
-/// <summary>What a helper is handed (MIXAGENT2a-ii): the question as its asker wrote it, and where and how long it reads.</summary>
+/// <summary>What a helper is handed: the question as its asker wrote it, and where and how long it reads.</summary>
 /// <param name="Asker">The session that asked.</param>
 /// <param name="Repository">The repository the asker works in.</param>
 /// <param name="Tip">The asker's last commit, which the helper's copy stands at.</param>
@@ -10,18 +10,18 @@ namespace Daoris.Driver;
 /// <param name="Minutes">The bound of its one turn.</param>
 public sealed record HelperPacket(string Asker, string Repository, string Tip, string Question, int Minutes)
 {
-    /// <summary>The asker's work in progress laid over the copy (COAGENT1a); null where the copy holds the last commit alone.</summary>
+    /// <summary>The asker's work in progress laid over the copy; null where the copy holds the last commit alone.</summary>
     public HelperCaptured? Capture { get; init; }
 
-    /// <summary>The ask this one asks again after (COWORKUX1d), quoted above the question; null for a first ask.</summary>
+    /// <summary>The ask this one asks again after, quoted above the question; null for a first ask.</summary>
     public HelperEarlier? Earlier { get; init; }
 
-    /// <summary>The answer goes to the person, not the session (COWORKUX1d, the co-worker design §7).</summary>
+    /// <summary>The answer goes to the person, not the session.</summary>
     public bool ForPerson { get; init; }
 }
 
 /// <summary>
-/// The helper's instruction (MIXAGENT2a-ii, D163 point 2; the mixed agents design §3): the question as its asker wrote it, what
+/// The helper's instruction: the question as its asker wrote it, what
 /// it may do and what never, and how it answers. Composed once, from facts, with no model; handed whole in one turn.
 /// </summary>
 /// <remarks>
@@ -49,7 +49,7 @@ public static class HelperInstruction
             .Append($"`{packet.Tip}`. ");
         if (packet.Capture is { } capture)
         {
-            // COAGENT1a (D199 point 5): the work in progress, laid over that commit, so git's status and diff in the copy show it.
+            // The work in progress, laid over that commit, so git's status and diff in the copy show it.
             text.Append(capture.Clean
                     ? $"It had nothing uncommitted when its work was captured at {Moment(capture)} (capture `{capture.Id}`), so the copy is its work as it stood then. "
                     : $"Its work in progress, as captured at {Moment(capture)} (capture `{capture.Id}`: {HelperCaptures.Counted(capture)}), is laid over that commit "
@@ -65,7 +65,7 @@ public static class HelperInstruction
 
         if (packet.Earlier is { } earlier)
         {
-            // COWORKUX1d (the co-worker design §7): talking to a helper is asking again, so the earlier exchange is Daoris's record, quoted.
+            // Talking to a helper is asking again, so the earlier exchange is Daoris's record, quoted.
             text.Append("\n## What was asked before\n\n")
                 .Append($"This asks again after an earlier question about the same work (`#{earlier.Id}`), which another turn answered. Daoris's record of it, quoted; the work may have moved since:\n\n")
                 .Append(Quoted(earlier.Question)).Append('\n')

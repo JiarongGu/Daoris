@@ -4,9 +4,9 @@ namespace Daoris.Driver;
 public delegate Task<(int Code, string Stdout, string Stderr)> CaptureGit(string tree, IReadOnlyList<string> arguments, CancellationToken ct);
 
 /// <summary>
-/// The asker's work in progress, captured for its helper (COAGENT1a, D199 point 5; the co-agent design §2.5): the bytes of every
+/// The asker's work in progress, captured for its helper: the bytes of every
 /// changed tracked file, the deletions and every untracked file not ignored, with their manifest, read at the asker's turn boundary;
-/// then laid over the helper's copy, which is removed as before with nothing read back from it.
+/// then laid over the helper's copy, which is removed with nothing read back from it.
 /// </summary>
 /// <remarks>
 /// <para><b>It changes nothing of the asker's.</b> git is asked with <c>--no-optional-locks</c> (and <c>GIT_OPTIONAL_LOCKS=0</c>),
@@ -19,7 +19,7 @@ public delegate Task<(int Code, string Stdout, string Stderr)> CaptureGit(string
 /// <para><b>Links are never followed out.</b> A carried path under a link is refused; a link itself is refused where it leads out
 /// of the tree and left out, said in the manifest, where it stays inside, since a copy is not handed a link.</para>
 ///
-/// <para>A top file, not the Domain's (FLAT1b-ii): it runs git and reads the asker's files. Its rules are
+/// <para>A top file, not the Domain's: it runs git and reads the asker's files. Its rules are
 /// <see cref="HelperCaptures"/>'.</para>
 /// </remarks>
 public static class HelperCapture
@@ -47,7 +47,7 @@ public static class HelperCapture
 
     /// <summary>
     /// Lay <paramref name="capture"/> over the helper's fresh copy: each deletion taken out, each file's bytes written, never through
-    /// a link. Null where it was laid; otherwise why not, in a sentence.
+    /// a link. Null where it is laid; otherwise why not, in a sentence.
     /// </summary>
     public static string? LayOver(string copy, HelperCaptured capture)
     {
@@ -161,7 +161,7 @@ public static class HelperCapture
             }
             catch (Exception error) when (error is FileNotFoundException or DirectoryNotFoundException)
             {
-                // Gone: a tracked path is a deletion; an untracked one went while it was read, and the capture is taken again.
+                // Gone: a tracked path is a deletion; an untracked one went while it is read, and the capture is taken again.
                 if (!isTracked) return new ReadFiles(null, null, Moved: true);
                 deleted.Add(path);
                 continue;

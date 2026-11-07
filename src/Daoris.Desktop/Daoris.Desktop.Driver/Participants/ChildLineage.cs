@@ -4,10 +4,10 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A session's lineage file, where its native children are bound to its part (FABRIC-C1a, D173): the connector writes a line
+/// A session's lineage file, where its native children are bound to its part: the connector writes a line
 /// per call with the lineage its harness carried, the hook this driver hands Claude Code writes what it says of each agent, and
-/// this driver writes each process's start and end (COWORKVIEW1a) and, through its part of the run's sink (<see cref="LineageReadings"/>),
-/// each child a door's readings say started or ended. Every line names the process it was written for where it has a token.
+/// this driver writes each process's start and end and, through its part of the run's sink (<see cref="LineageReadings"/>),
+/// each child a door's readings say started or ended. Every line names the process it is written for where it has a token.
 /// <see cref="ChildBindings"/> reads them.
 /// </summary>
 /// <remarks>
@@ -66,7 +66,7 @@ public static class ChildLineage
     }
 
     /// <summary>
-    /// A process's start, before its spawn (COWORKVIEW1a): it makes the file where there is none, so every line its process can
+    /// A process's start, before its spawn: it makes the file where there is none, so every line its process can
     /// write follows it.
     /// </summary>
     public static void Start(string home, string sessionId, string proc, string issuer, DateTimeOffset at)
@@ -97,7 +97,7 @@ public static class ChildLineage
     }
 
     /// <summary>
-    /// A process's end once its exit was read, where the session has lineage: clean, or killed, stopped or failed, naming the
+    /// A process's end once its exit is read, where the session has lineage: clean, or killed, stopped or failed, naming the
     /// process where it has a token. A session with no file gets none.
     /// </summary>
     public static void End(string home, string sessionId, bool clean, DateTimeOffset at, string? proc = null)
@@ -108,7 +108,7 @@ public static class ChildLineage
 
     /// <summary>
     /// The part's children, as its lineage says, read in this window: each process this window issued by its token's reading in this
-    /// flow's set (COWORKVIEW1a); none where it has no file.
+    /// flow's set; none where it has no file.
     /// </summary>
     /// <param name="kind">The record's kind, <see cref="ChildBindings.Chat"/> or driven, which null reads as.</param>
     public static ChildBindings Read(string home, string sessionId, string? kind = null)
@@ -128,7 +128,7 @@ public static class ChildLineage
     }
 
     /// <summary>
-    /// The part's lineage as a read finds it (COWORKVIEW1a, rule 9): no file, read up to its last full line, or unreadable with the
+    /// The part's lineage as a read finds it: no file, read up to its last full line, or unreadable with the
     /// error's kind, never an empty fold. Each process <paramref name="tokens"/> issued reads by its token there; none, as the
     /// terminal's verb holds, reads every generation as another Daoris process's.
     /// </summary>

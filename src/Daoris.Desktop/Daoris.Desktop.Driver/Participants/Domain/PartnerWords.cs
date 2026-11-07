@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The word a piece's answer is for its lead (COAGENT1b, D199 point 8; the co-agent design §2.3 step 9): Daoris's fixed words, no model,
+/// The word a piece's answer is for its lead: Daoris's fixed words, no model,
 /// in the shape a helper's answer is handed (<see cref="HelperWords"/>). Who answered on which account, the piece as the lead wrote it,
 /// the facts Daoris read from git itself, the partner's summary quoted as its claim, and the one line that takes it in.
 /// </summary>

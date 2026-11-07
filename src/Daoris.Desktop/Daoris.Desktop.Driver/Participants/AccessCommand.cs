@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris place access</c> was asked (AUTONOMY1a): a level, and the change to it, or none to say it.</summary>
+/// <summary>What <c>daoris place access</c> is asked: a level, and the change to it, or none to say it.</summary>
 public sealed record AccessAsk
 {
     /// <summary>The repository named, or null.</summary>
@@ -19,7 +19,7 @@ public sealed record AccessAsk
 public sealed record AccessPlace(string? Workspace, bool Known);
 
 /// <summary>
-/// <c>daoris place access</c> (AUTONOMY1a, D184 point 1, D50): a repository's session access setup from a terminal, its workspace's
+/// <c>daoris place access</c>: a repository's session access setup from a terminal, its workspace's
 /// with <c>--workspace</c>, or this machine's with neither: said pause by pause with where each came from, or set to full access, to the
 /// pauses named, or cleared. It reads and writes the driver's file alone, through <see cref="AccessRules"/>, the door the screen's
 /// <c>SET_ACCESS</c> goes through, so the two refuse alike.
@@ -97,9 +97,9 @@ public static class AccessCommand
     /// <summary>
     /// Say the setup at the level asked, each pause with its value and where it came from, or make the change, written to the driver's
     /// file at <paramref name="configPath"/>. A repository's is resolved with the workspace <paramref name="place"/> names; where the
-    /// registry was not read, a workspace's setup is left out, and said so.
+    /// registry is not read, a workspace's setup is left out, and said so.
     /// </summary>
-    /// <exception cref="DriverConfigUnreadableException">The file does not read, so nothing was written.</exception>
+    /// <exception cref="DriverConfigUnreadableException">The file does not read, so nothing is written.</exception>
     public static int Run(AccessAsk ask, string configPath, AccessPlace? place, TextWriter output)
     {
         var config = DriverConfig.Load(configPath);
@@ -119,7 +119,7 @@ public static class AccessCommand
 
             changed.Save(configPath);
             output.WriteLine($"access: {Said(ask, Own(changed, ask), level)}");
-            // ACCESSSWAP1b (D183's note): this process reaches no session's console, so it says how one already running takes the change.
+            // This process reaches no session's console, so it says how one already running takes the change.
             if (PermissionsOf(Own(config, ask)) != PermissionsOf(Own(changed, ask))) output.WriteLine($"access: {NextTurn}");
             return 0;
         }
@@ -153,7 +153,7 @@ public static class AccessCommand
     }
 
     /// <summary>
-    /// How a driven session already running takes a change of its permission prompts (ACCESSSWAP1b, D183's note): its run reads the file
+    /// How a driven session already running takes a change of its permission prompts: its run reads the file
     /// at its turn's end, so the change takes its next turn, never the one under way.
     /// </summary>
     internal const string NextTurn =
