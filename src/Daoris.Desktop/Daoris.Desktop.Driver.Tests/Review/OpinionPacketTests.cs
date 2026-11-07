@@ -373,7 +373,7 @@ public sealed class OpinionPacketTests : IDisposable
         File.WriteAllText(Path.Combine(outside, "notes.md"), "the person's own\n");
         File.SetAttributes(Path.Combine(outside, "notes.md"), FileAttributes.ReadOnly);
         Directory.CreateDirectory(Path.Combine(clone, "node_modules", "@fixture"));
-        TreeDependencies.Link(Path.Combine(clone, "node_modules", "@fixture", "web"), outside);
+        DependencyLinks.Link(Path.Combine(clone, "node_modules", "@fixture", "web"), outside);
 
         Assert.Null(OpinionTree.RemoveAsync(home, clone).GetAwaiter().GetResult());
 

@@ -57,6 +57,7 @@ public sealed partial class CheckoutWritersCensusTests
         ["TreeRemovals.cs"] = (Refs, "a session's tree removed; its branch deleted through the journal's act (JournaledDeletes)", ["worktree@?"]),
         ["TreeReturns.cs"] = (Refs, "a session's tree made again on its branch, through git's record of the trees", ["worktree@root"]),
         ["TreeSetAside.cs"] = (Refs, "a tree set aside, through git's record of the trees", ["worktree@root"]),
+        ["TreeFilesStage.cs"] = (Refs, "an unworked tree's files git tracks, which only Daoris's own install or hook changed, put back from its commit before anything is handed it", ["checkout@tree"]),
         ["TreeSweeps.cs"] = (Refs, "a pressed tree removed, through git's record of the trees", ["worktree@root"]),
         ["TreeStrays.cs"] = (Refs, "a stray tree's git lock let go and taken again", ["worktree@root"]),
         ["SessionLocks.cs"] = (Refs, "a session's tree locked and unlocked in git's record of the trees", ["worktree@root", "worktree@tree"]),
