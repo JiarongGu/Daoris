@@ -6,31 +6,30 @@ using static Daoris.Driver.AccountFileNodes;
 
 namespace Daoris.Driver;
 
-/// <summary>What one reading of a sign-in said, and when it was made (ROSTER1, D150 §5.3).</summary>
-/// <param name="Login">The agent's word: in, out, or unknown where its answer did not read or the question could not be asked.</param>
+/// <summary>What one reading of a sign-in says, and when it is made.</summary>
+/// <param name="Login">The agent's word: in, out, or unknown where its answer does not read or the question cannot be asked.</param>
 /// <param name="At">When the answer came.</param>
 public sealed record AccountRead(LoginState Login, DateTimeOffset At);
 
-/// <summary>An agent's readings: its own sign-in's, and each account's by its name; none where nothing was read.</summary>
+/// <summary>An agent's readings: its own sign-in's, and each account's by its name; none where nothing is read.</summary>
 public sealed record AgentReads(AccountRead? Own, IReadOnlyDictionary<string, AccountRead> Accounts);
 
 /// <summary>
-/// <c>reads.json</c> under the home (ROSTER1, D150 §5.3): what was last read of each account's sign-in, and of the tool's own,
-/// per agent (the accounts' owner, AGT7), with when. The roster reports from it, so a restart, a look and a view opening start
-/// from what was last read and ask nothing.
+/// <c>reads.json</c> under the home: what is last read of each account's sign-in, and of the tool's own,
+/// per agent (the accounts' owner), with when. The roster reports from it, so a restart, a look and a view opening start
+/// from what is last read and ask nothing.
 /// </summary>
 /// <remarks>
 /// <para><b>Written only by a reading</b>: the person's press, a sign-in's end, a start asking a signed-out account again
-/// once per sign-out (TOOL6g), and a start its agent refused for its sign-in, which reads that account signed out
-/// (ROSTER1b, <see cref="HarnessRoster.SignedOut"/>). A question that was never asked (an account a session of Daoris's runs on, an agent with no
+/// once per sign-out, and a start its agent refused for its sign-in, which reads that account signed out
+/// (<see cref="HarnessRoster.SignedOut"/>). A question never asked (an account a session of Daoris's runs on, an agent with no
 /// login question) writes nothing, so the last word stands with its own time. An older reading never replaces a newer one.</para>
-/// <para><b>A word and a time, never who</b>: who signed in is read fresh and written nowhere (D66 §3), so after a restart an
+/// <para><b>A word and a time, never who</b>: who signed in is read fresh and written nowhere, so after a restart an
 /// account says its state and when, and who once it is read again. Missing or unreadable is nothing known: never read, never
-/// signed in (D57). Beside <c>cooling.json</c> and <c>windows.json</c>, not in <c>harnesses.json</c>, which is the person's
-/// wiring. Written atomically, LF, keeping what it has no field for. No HTTP route reaches it (D47 §4).</para>
+/// signed in. Beside <c>cooling.json</c> and <c>windows.json</c>, not in <c>harnesses.json</c>, which is the person's
+/// wiring. Written atomically, LF, keeping what it has no field for. No HTTP route reaches it.</para>
 /// <para>Held, row for row, to one table, <c>fixtures/account-reads.json</c> among the driver's tests, which <c>AccountReadsTests</c>
-/// reads (AGENTREAD1b). The CLI's <c>accountreads.ts</c>, its twin, left with <c>daoris agent</c>'s TypeScript (PUSH1f2e): a terminal's
-/// reading is this program's.</para>
+/// reads. A terminal's reading is this program's.</para>
 /// <para>The file's shape: <c>{ "&lt;agent&gt;": { "own": { "login": "in", "read": "…Z" }, "accounts": { "&lt;account&gt;":
 /// { "login": "out", "read": "…Z" } } } }</c>; a door's binary's version reading sits beside them as its <c>binary</c> (<see cref="BinaryReads"/>).</para>
 /// </remarks>
@@ -48,7 +47,7 @@ public static class AccountReads
     /// <summary>Where the file is: beside <c>cooling.json</c>, under the home.</summary>
     public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Reads);
 
-    /// <summary>What was last read of <paramref name="agent"/>'s accounts and its own sign-in; nothing where nothing was.</summary>
+    /// <summary>What is last read of <paramref name="agent"/>'s accounts and its own sign-in; nothing where nothing is.</summary>
     public static AgentReads Of(string home, string agent)
     {
         if (Child(Load(home), agent) is not { } held) return Nothing;
@@ -99,8 +98,8 @@ public static class AccountReads
 
     private static void Save(string home, JsonObject root)
     {
-        // A name or a word beyond plain ASCII written as it is, as the CLI's `accountreads.ts` writes it (AGENTREAD1b), so the
-        // twins write the same bytes for a name in Chinese or one holding HTML's marks, not only the same JSON.
+        // A name or a word beyond plain ASCII written as it is, so the bytes are the same for a name in Chinese
+        // or one holding HTML's marks, not only the same JSON.
         JsonFile.Write(PathOf(home), root);
     }
 

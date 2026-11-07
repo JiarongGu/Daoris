@@ -25,7 +25,7 @@ internal sealed class AcpRender(ITurnWiring wiring) : ITurnStage
 
     /// <summary>
     /// A call this client refused ends on the wire as <c>failed</c>, and the record says <c>refused</c>: the person read Ask Daoris as
-    /// failing at a command it was never allowed to run. The console, the raw view, keeps the wire's word beside the refusal's own line.
+    /// failing at a command it is never allowed to run. The console, the raw view, keeps the wire's word beside the refusal's own line.
     /// </summary>
     private SessionEvent? Refused(SessionEvent? mapped) =>
         mapped is { Kind: SessionEventKind.Tool, Status: "failed", Id: { } id } && wiring.Refused.Contains(id)
@@ -165,7 +165,7 @@ internal sealed class AcpRender(ITurnWiring wiring) : ITurnStage
 
     /// <summary>
     /// The line the first location with a path names, when it is a whole number of zero or more: the one <see cref="Locations"/>'
-    /// first path pairs with, so a line never rides with a path it was not said of.
+    /// first path pairs with, so a line never rides with a path it is not said of.
     /// </summary>
     private static long? LocationLine(JsonElement update) =>
         Located(update).FirstOrDefault() is { ValueKind: JsonValueKind.Object } first

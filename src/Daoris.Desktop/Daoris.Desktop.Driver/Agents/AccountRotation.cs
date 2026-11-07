@@ -1,25 +1,24 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Which accounts a start may use, in the order it tries them, and which step chose the one it ran on (TOOL6b, D130 §16;
-/// D125 §3.3 under <c>use: order</c>). Pure: what Daoris knows of each account is handed in, and whether each is ready is
+/// Which accounts a start may use, in the order it tries them, and which step chose the one it ran on. Pure: what Daoris knows of each account is handed in, and whether each is ready is
 /// the roster's question, asked in this order.
 /// </summary>
 /// <remarks>
-/// <para><b>One scope, its list the whole set</b> (D130 §2 rules 1–2, §3.1): only a scope with a list is walked. A pick, a
+/// <para><b>One scope, its list the whole set</b>: only a scope with a list is walked. A pick, a
 /// scope that names one account, and the tool's own sign-in are that one account, and the roster asks nothing here.</para>
 ///
 /// <para><b>The goal</b> (<c>use: goal</c>, the default): every listed account is used toward the most work, the fewest
-/// stalls and no allowance left at a reset, with what Daoris knows of its own (§16.4) and what each account's agent last said
-/// about its windows (TOOL6c, §5.2), read against the scope's usage curve (D165 point 2): near and room. <b>Nothing counts
+/// stalls and no allowance left at a reset, with what Daoris knows of its own and what each account's agent last said
+/// about its windows, read against the scope's usage curve: near and room. <b>Nothing counts
 /// accounts</b>: every rule reads the list it is handed, and while every account is ready none runs more than ⌈K ÷ N⌉ of a
-/// cap of K (§7). Under <c>use: order</c> the first ready account of the list carries every start, as D125 built it, and
-/// rotation moves work off a ready account only where it is near, under every switch (SWITCH1b-ii).</para>
+/// cap of K. Under <c>use: order</c> the first ready account of the list carries every start, and
+/// rotation moves work off a ready account only where it is near, under every switch.</para>
 /// </remarks>
 public static class AccountRotation
 {
     /// <summary>
-    /// An account its own reading puts at 100% of a window still ahead of its reset (LIMITPICK1): cooling until the latest such reset, as
+    /// An account its own reading puts at 100% of a window still ahead of its reset: cooling until the latest such reset, as
     /// its agent said, so no walk picks it while another can run, and a start with none waits for it. Held in memory: the reading is the record.
     /// </summary>
     public static CoolingEntry? Spent(string owner, string? account, AccountFacts? fact, DateTimeOffset now) =>
@@ -30,30 +29,30 @@ public static class AccountRotation
             : null;
 
     /// <summary>
-    /// How near a week's reset must be for what would lapse there to rank its account first (D130 §16.3 step 4):
+    /// How near a week's reset must be for what would lapse there to rank its account first:
     /// <see cref="UsageCurves.LastDay"/>, which measures it.
     /// </summary>
     public static readonly TimeSpan LastDay = UsageCurves.LastDay;
 
     /// <summary>
-    /// The accounts of a scope's list, in the order a start tries them (TOOL6b, D130 §16.3; D125 §3.3 under <c>order</c>).
+    /// The accounts of a scope's list, in the order a start tries them.
     /// Pure: whether each is ready is the roster's question, asked in this order, and the first ready one runs.
     /// </summary>
     /// <remarks>
     /// <para>The sequence is the list begun where the scope begins (its default, else its first), wrapping: the account it
     /// begins at always, and every other only where the machine has it, since a start pointed at a directory nobody signed
-    /// in to would fail where it should have walked on. Then the kept account (§4.6): a driven start drops it; a
+    /// in to would fail where it should have walked on. Then the kept account: a driven start drops it; a
     /// conversation takes it last, or first where it is also the scope's default, and under <c>order</c> leaves it in its
     /// place.</para>
     /// <para>Under <c>goal</c> each step after keep is stable, so the order handed on stands where a step has no reason to
-    /// change it: an account near (its limit reached, credits, or over its curve, D165 point 2) goes last, the least over
+    /// change it: an account near (its limit reached, credits, or over its curve) goes last, the least over
     /// first; then fewest of Daoris's sessions running, within a week's <see cref="LastDay"/> the most of it that would lapse
-    /// per hour to its reset (<see cref="UsageCurves.Lapsing"/>, USAGERESET1), the most
+    /// per hour to its reset (<see cref="UsageCurves.Lapsing"/>), the most
     /// room under its curve on its tightest window (one that said no number between those with room and those over; under
-    /// <c>switch: off</c> furthest behind its week's pace, as D130 §16.3 wrote it), least recently started (never first, a
-    /// start this look chose last), then the sequence. Under <c>order</c> the sequence is the walk, as D125 built it, with a
+    /// <c>switch: off</c> furthest behind its week's pace), least recently started (never first, a
+    /// start this look chose last), then the sequence. Under <c>order</c> the sequence is the walk, with a
     /// near account last, and a conversation's kept account in its place. Near is read under every switch: <c>off</c> reads
-    /// the smart curve, since a start still passes an account over it (the switch design §2–§3, SWITCH1b-ii).</para>
+    /// the smart curve, since a start still passes an account over it.</para>
     /// </remarks>
     /// <param name="present">The agent's accounts on this machine.</param>
     public static IReadOnlyList<string> Order(
@@ -84,16 +83,15 @@ public static class AccountRotation
     }
 
     /// <summary>
-    /// Which step chose the account at <paramref name="at"/> of <paramref name="tried"/> (TOOL6b, D130 §13 as §16 amends
-    /// it): the log's <c>why</c>, and what the start's first line says.
+    /// Which step chose the account at <paramref name="at"/> of <paramref name="tried"/>: the log's <c>why</c>, and what the start's first line says.
     /// </summary>
     /// <remarks>
-    /// <para>A start that ran somewhere other than where its scope begins was moved off that account by a step: it was
-    /// kept for conversations, it was not ready (cooling, refused, signed out), or a step of the goal ranked the account it
-    /// ran on ahead of it. Where the first account was passed for itself, the step that chose among the rest is said too,
+    /// <para>A start that ran somewhere other than where its scope begins is moved off that account by a step: it is
+    /// kept for conversations, it is not ready (cooling, refused, signed out), or a step of the goal ranks the account it
+    /// ran on ahead of it. Where the first account is passed for itself, the step that chose among the rest is said too,
     /// unless the list's order did.</para>
-    /// <para>A start that ran where its scope begins was chosen by the step that ranked it ahead of the account it would
-    /// have run on next, or by the list's order where nothing else told them apart or nothing else was ready.</para>
+    /// <para>A start that ran where its scope begins is chosen by the step that ranks it ahead of the account it would
+    /// have run on next, or by the list's order where nothing else tells them apart or nothing else is ready.</para>
     /// </remarks>
     public static WalkChoice Chose(
         RotationScope scope, StartKind kind, IReadOnlyList<AccountState> tried, int at, IReadOnlyDictionary<string, AccountFacts> facts,
@@ -127,7 +125,7 @@ public static class AccountRotation
         var rest = Next(ran, begins) is { } runnerUp ? Ahead(ran, runnerUp) : new WalkChoice(WalkStep.List);
         return rest.Step == WalkStep.List ? step : step with { Rest = rest.Step, RestOver = rest.Over };
 
-        // The next ready account after the one it ran on, but the one it was moved off.
+        // The next ready account after the one it ran on, other than the one it moved off.
         string? Next(string after, string? but) =>
             tried.Skip(at + 1).FirstOrDefault(state => state.IsReady && (but is null || !Same(state.Account!, but)))?.Account;
 
@@ -138,16 +136,16 @@ public static class AccountRotation
     }
 
     /// <summary>
-    /// Which account the next start would take, the step that chose it, and what holds each other account (TOOL6e, D130
-    /// §3–§4 as §16.3 amends them): what the agent's page in Agents says, so a person sees why a start runs where it does.
+    /// Which account the next start would take, the step that chose it, and what holds each other account:
+    /// what the agent's page in Agents says, so a person sees why a start runs where it does.
     /// </summary>
     /// <remarks>
     /// <para>The account is the first ready one of <paramref name="tried"/>, as a start takes it. The reason is weighed as
     /// <see cref="Chose"/> weighs it, so the screen and the start's own first line name one step: against where the list
-    /// begins, when that account was ready and a step moved the start off it; otherwise against the next ready account, by
+    /// begins, when that account is ready and a step moved the start off it; otherwise against the next ready account, by
     /// the step that told the two apart or the list's order. An account not ready, or kept for conversations, is a hold and
     /// never the reason. With no account ready the start waits, until the first cool-off ends where one is cooling.</para>
-    /// <para>A scope with no list is its one account, or the tool's own sign-in where it names none (D125 §3.7), and no step
+    /// <para>A scope with no list is its one account, or the tool's own sign-in where it names none, and no step
     /// chose it. Every account of the agent's the scope does not use is said so, since none ever carries its starts.</para>
     /// </remarks>
     /// <param name="tried">The walk's order (<see cref="Order"/>), or a scope's one account, each as the roster finds it
@@ -207,7 +205,7 @@ public static class AccountRotation
         var reason = Rank(runs, against, facts, now, scope.Use) switch
         {
             { Order: >= 0 } => NextReason.List,
-            // Between two near accounts the one with less room goes last: the page says the same of it as of any near account (ACCTWALK3).
+            // Between two near accounts the one with less room goes last: the page says the same of it as of any near account.
             { Step: WalkStep.Near or WalkStep.Room } => NextReason.Near,
             { Step: WalkStep.Fewest } => NextReason.Fewest,
             { Step: WalkStep.Lapsing } => NextReason.Lapsing,
@@ -215,7 +213,7 @@ public static class AccountRotation
             { Step: WalkStep.LeastRecent } => Started(own).Tier == 0 ? NextReason.NotStarted : NextReason.LeastRecent,
             _ => NextReason.List,
         };
-        // NEXTLAPSE1: what would lapse, as the start's line says it (Lapses), from the one reading that ranked it.
+        // What would lapse, as the start's line says it (Lapses), from the one reading that ranked it.
         var lapse = reason == NextReason.Lapsing ? UsageCurves.Lapsing(scope.Use, own.Said, now)?.Window : null;
         return new NextStart(runs, reason, others)
         {
@@ -256,12 +254,12 @@ public static class AccountRotation
 
     /// <summary>
     /// The kept account a walk reads: the scope's, unless it would leave driven work none, which a door refuses and a file
-    /// edited by hand is read past, the list winning as it does over a default outside it (§3.1, §4.6).
+    /// edited by hand is read past, the list winning as it does over a default outside it.
     /// </summary>
     private static string? Keep(RotationScope scope, IReadOnlyList<string> among) =>
         scope.Use.Keep is { } keep && among.Any(name => Same(name, keep)) && among.Any(name => !Same(name, keep)) ? keep : null;
 
-    /// <summary>The account a scope keeps for conversations, as the walk reads it (§4.6); null where it keeps none (MSG1g).</summary>
+    /// <summary>The account a scope keeps for conversations, as the walk reads it; null where it keeps none.</summary>
     public static string? KeptOf(RotationScope scope) => Keep(scope, scope.List);
 
     /// <summary>
@@ -274,13 +272,12 @@ public static class AccountRotation
     {
         var (x, y) = (facts.GetValueOrDefault(a) ?? new AccountFacts(), facts.GetValueOrDefault(b) ?? new AccountFacts());
 
-        // Step 2, over its curve last (D165 point 2, the switch design §3, SWITCH1b-ii), with a limit reached and credits as
-        // before: read under every switch, `off` reading the smart curve, since a start still passes an account over it.
+        // Step 2, over its curve last, with a limit reached and credits: read under every switch, `off` reading the smart curve, since a start still passes an account over it.
         var (nearX, nearY) = (AccountReadings.Near(x.Said, use, now), AccountReadings.Near(y.Said, use, now));
         if (nearX != nearY) return (WalkStep.Near, nearX ? 1 : -1);
 
         // Both near under the goal: the one least over its curve first, as a start left on a 99% account would otherwise
-        // pass one at 60% (ACCTWALK3, D130 §3 point 3). Equal, or neither known, the later steps decide.
+        // pass one at 60%. Equal, or neither known, the later steps decide.
         if (nearX && use.Use == "goal"
             && Room(x.Said, use, now).CompareTo(Room(y.Said, use, now)) is var room and not 0) return (WalkStep.Room, room);
 
@@ -288,13 +285,13 @@ public static class AccountRotation
 
         if (x.Running != y.Running) return (WalkStep.Fewest, x.Running.CompareTo(y.Running));
 
-        // Step 4, what would lapse (USAGERESET1): within its week's last day, the most room under its curve per hour to its
+        // Step 4, what would lapse: within its week's last day, the most room under its curve per hour to its
         // reset first; nothing that is not known earns any, and a tie goes on to step 5's tightest room.
         var (lapseX, lapseY) = (UsageCurves.Lapsing(use, x.Said, now)?.Rate ?? 0, UsageCurves.Lapsing(use, y.Said, now)?.Rate ?? 0);
         if (lapseX != lapseY) return (WalkStep.Lapsing, lapseY.CompareTo(lapseX));
 
-        // Step 5. An account that said no number ranks as one on its curve, between those with room and those over, and as
-        // on pace under `off` (absent is never zero, D57).
+        // Step 5. An account that says no number ranks as one on its curve, between those with room and those over, and as
+        // on pace under `off` (absent is never zero).
         var (spareX, spareY) = use.Switch == "off"
             ? (AccountReadings.Behind(x.Said, now) ?? 0, AccountReadings.Behind(y.Said, now) ?? 0)
             : (UsageCurves.TightestSaid(use, x.Said, now)?.Room ?? 0, UsageCurves.TightestSaid(use, y.Said, now)?.Room ?? 0);
@@ -307,7 +304,7 @@ public static class AccountRotation
     }
 
     /// <summary>
-    /// How far over its curve a near account is, as the walk ranks it (ACCTWALK3, measured against the curve by SWITCH1b-ii):
+    /// How far over its curve a near account is, as the walk ranks it:
     /// one with a number below 100% by the points over its curve on its tightest window, the least over first, then one that
     /// said none (credits only), then one its word says reached or at 100%, which stays last whatever room its number leaves.
     /// </summary>

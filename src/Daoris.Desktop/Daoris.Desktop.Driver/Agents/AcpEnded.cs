@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A protocol-door run whose agent's process was ended from outside it (BGWAIT2): the stream's end that followed, said as that
+/// A protocol-door run whose agent's process is ended from outside it: the stream's end that followed, said as that
 /// cause by its own coded line (<see cref="AcpSession.Ending"/>), the timeout's among them, never as the agent having exited.
 /// </summary>
 /// <remarks>

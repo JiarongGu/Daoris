@@ -36,7 +36,7 @@ internal sealed class AcpMeasure(ITurnWiring wiring) : ITurnStage
         var update = frame.Update;
         Measure(update);
 
-        // A model it fell back to, a switch it made: what it says now replaces what was kept, as an answer to a change does.
+        // A model it fell back to, a switch it made: what it says now replaces what is kept, as an answer to a change does.
         if (AcpRender.Kind(update) == "config_option_update" && update.TryGetProperty("configOptions", out var changed)
             && changed.ValueKind == JsonValueKind.Array)
         {

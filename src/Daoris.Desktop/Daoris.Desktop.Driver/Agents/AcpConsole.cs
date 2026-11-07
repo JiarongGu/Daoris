@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The protocol door's console lines (UX5 U3): the agent's words as the lines it wrote, never as the chunks the wire carried them in.
+/// The protocol door's console lines: the agent's words as the lines it wrote, never as the chunks the wire carried them in.
 /// </summary>
 /// <remarks>
 /// <para>A message streams in pieces that break wherever the agent flushed, inside a word as often as not, so a piece joins the line it
@@ -13,13 +13,13 @@ namespace Daoris.Driver;
 /// says something and then waits sends nothing that would end it.</para>
 ///
 /// <para>The words are read from the event <see cref="AcpRender.Map"/> made, so the console and the record take them from one place.
-/// The reader drives it and the quiet timer ends a line, so one lock holds both, and every line leaves in the order it was said.</para>
+/// The reader drives it and the quiet timer ends a line, so one lock holds both, and every line leaves in the order it is said.</para>
 /// </remarks>
 internal sealed class AcpConsole : IDisposable
 {
     /// <summary>How long the words may go quiet before the line they left open is shown anyway.</summary>
     /// <remarks>
-    /// 🔴 <b>Measured, not chosen</b> (UX5 U3, 2026-09-26). Half a second broke real lines on the
+    /// 🔴 <b>Measured, not chosen</b>. Half a second broke real lines on the
     /// window (<c>al</c> / <c>pha: …</c>), because a real stream pauses that long mid-word. Across 13
     /// kept conversations, 2,968 gaps between one chunk and the next: median 48ms, p99 557ms, the
     /// longest 1,161ms, none over two seconds. So two seconds breaks no line that sample holds, and a
@@ -60,7 +60,7 @@ internal sealed class AcpConsole : IDisposable
         lock (_gate)
         {
             // A subagent's console is closed with its session while the reader may still hand it a
-            // late update (CONSOLE2); a closed timer would throw into the reader.
+            // late update; a closed timer would throw into the reader.
             if (_disposed) return;
 
             if (mapped is { Kind: SessionEventKind.Message or SessionEventKind.Thought, Text: { } words })
@@ -88,7 +88,7 @@ internal sealed class AcpConsole : IDisposable
         }
     }
 
-    /// <summary>A line of the door's own, after whatever the agent's words left open (CONSOLE2).</summary>
+    /// <summary>A line of the door's own, after whatever the agent's words left open.</summary>
     public void Line(string text)
     {
         lock (_gate)
