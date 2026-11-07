@@ -1,15 +1,15 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A conversation whose turn its account's limit refused goes on, not in its agent's own conversation but in a new part, on the next account: at that turn's end, a new part of its line on the account of the same agent the walk
-/// offers next, the cooling one passed, handed Daoris's brief and then the person's words the refused turns held, its record continuing
+/// A conversation whose turn its account's limit refused goes on in a new part on the next account: at that turn's end, a new part of its line on the account of the same agent the walk
+/// offers next, the cooling one passed, carrying its own conversation there, or handed Daoris's brief, then the person's words the refused turns held, its record continuing
 /// the old by <c>limit</c>, asked by <c>daoris</c>. A repository's chat opens it in the same tree; Ask Daoris's opens it in its
 /// workspace's room, the link kept in the room's history, since the room's record takes no <c>from</c>. Over the runner's context, as
 /// <see cref="CurveMove"/> and <see cref="BriefedMove"/> are.
 /// </summary>
 /// <remarks>
-/// <para><b>The carrier is the brief</b>: the agent's own conversation is in the cooling account's home, which Daoris never
-/// reads, copies or writes, so it cannot resume on the next account.</para>
+/// <para><b>Onto another account of its own agent it carries its own conversation</b> where its door can (<see cref="ChatLimitCarry"/>),
+/// and is briefed where it cannot, saying why.</para>
 /// <para><b>Never mid-turn, never during a take.</b> Judged once per turn's end with nothing running, opening or queued, as the curve's
 /// move is; the turns are held while it moves, so a word said as it begins either runs its turn first or waits for the new part.</para>
 /// <para><b>Where no other account has room</b> it stays where it is and its words with it: the next refused turn tries again. A teammate's
@@ -275,6 +275,15 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
                 return new StartedFrom(null, false, null, unasked);
             }
 
+            // Onto another account of its own agent its conversation is carried there, its files whole now its old part has ended.
+            var fence = new MoveFence(move);
+            var plan = isHelp || elsewhere is not null || !await context.Service.Opens.MovesAsync(ct).ConfigureAwait(false)
+                ? null
+                : ChatLimitCarry.Planned(context, agent, prior, selection, tree);
+            var carrier = plan is CarryPlan.Carried carried
+                ? new ChatLimitCarry(
+                    wiring, agent, prior, selection, carried, held.Words, [.. waited.Where(word => !word.Kept || word.Id is null)], held.Before, move, fence, read)
+                : null;
             var from = new ContinuedFrom(sessionId, HandOverWhy.Limit, HandOverBy.Daoris);
             // The waiting words leave the old record by their ids once the new part's turn is on the wire, named as taken by it.
             List<string> waitedIds = [.. waited.Where(word => word.Kept && word.Id is not null).Select(word => word.Id!)];
@@ -292,7 +301,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
                         .ConfigureAwait(false)
                     : await runner.StartAsync(
                             prior.Repository!, agent.Id.Value, config, onEnded, profile: null, ct: ct, tree: tree, from: from, settled: selection,
-                            moves: moves)
+                            moves: moves, carries: carrier)
                         .ConfigureAwait(false);
             if (started.SessionId is not { } to)
             {
@@ -306,12 +315,14 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
 
             // The open's answer, every word it moved by its id on the new part, read whatever
             // `Moves` says; then `delivering` and the prompt's mark, before any word is marked attempted or handed. A write the store refuses
-            // makes no hand, and the moved words wait on the new part, never attempted.
-            var fenced = move.Opened(to, started.Moved);
-            // The line's head is read before anything is handed, and where an older build has continued the new
-            // part, nothing is delivered there and the move is held for the person.
-            if (fenced is null && await move.SupersededAsync().ConfigureAwait(false)) fenced = "the line went on past its new part";
-            fenced ??= move.Delivering();
+            // makes no hand, and the moved words wait on the new part, never attempted. Where an older build has continued the new part,
+            // nothing is delivered there and the move is held for the person.
+            var fenced = await fence.AskAsync(to, started.Moved).ConfigureAwait(false);
+            if (carrier is { Resumed: true })
+            {
+                toWire = true;
+                return new StartedFrom(to, true, null, $"`{sessionId}` went on in its own conversation, carried to conversation `{to}` on the next account with your words.");
+            }
 
             // The agent and account the new part opened on: the walk's, which is another agent where its own had no account left.
             var opened = await context.Service.RecordAsync(to, ct).ConfigureAwait(false);
@@ -383,8 +394,9 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
 
             // Said once where the person wrote, naming the agent it moved to, and in the machine log, accounts by profile name.
             context.Note(sessionId, HandOverNotes.MovedOn(to, onto, account, HandOverWhy.Limit, high, brief.Text.Length));
+            if (ChatLimitCarry.NotCarried(plan) is { } notCarried) context.Note(to, CarriedNotes.NotCarried(notCarried));
             context.Service.AccountSaid(
-                Continuations.Moved(to, sessionId, ranOn, onto, prior.Profile, account, HandOverWhy.Limit, briefed: true));
+                Continuations.Moved(to, sessionId, ranOn, onto, prior.Profile, account, HandOverWhy.Limit, briefed: true, carry: ChatLimitCarry.NotCarried(plan)));
             if (!taken)
             {
                 context.Note(to, HandOverNotes.Unsaid());

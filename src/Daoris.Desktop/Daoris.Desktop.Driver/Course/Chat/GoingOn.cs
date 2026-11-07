@@ -27,6 +27,12 @@ internal sealed class GoingOn(PriorSession record, ResumeAsk ask)
     /// </summary>
     public string? Proc { get; init; }
 
+    /// <summary>
+    /// The limit move whose new part this run opens as its carried conversation's resume: told when the words are on the wire, and where the
+    /// door refuses the resume, the same part goes on in the brief. Null for every other going-on.
+    /// </summary>
+    public ChatLimitCarry? Carried { get; init; }
+
     /// <summary>The words are on the wire. True once, where they went now: at once, or where the harness already named it.</summary>
     /// <param name="named">Whether they went only once the harness has named its conversation too (the native door).</param>
     public bool Sent(bool named)

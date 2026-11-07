@@ -30,10 +30,13 @@ internal sealed class ChatRun(
     /// Its pending start: refused at the open, it is re-asked, and where the answer is not this same session the record ends
     /// <c>choice-not-offered</c> and the replacement opens with its words. Null for one going on, and for a start that asks nothing.
     /// </param>
+    /// <param name="working">
+    /// The record works already and its run opens a new conversation: a carried part whose resume its door refused, going on in the brief.
+    /// </param>
     public async Task<ChatStart> RunAsync(
         string actor, string sessionId, string message, ChatAgent agent, HarnessSelection selection, DriverConfig config,
         ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn = null, ActorEffective? chosen = null,
-        ChatPending? pending = null)
+        ChatPending? pending = null, bool working = false)
     {
         var home = Context.Home;
         var service = Context.Service;
@@ -77,7 +80,7 @@ internal sealed class ChatRun(
         try
         {
             // A conversation going on is working already: the ledger moved it there before anything is spawned.
-            if (goOn is null) await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
+            if (goOn is null && !working) await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
 
             // Ask Daoris's place under the mode the person chose, refused where its agent has none such.
             var ran = goOn is null ? null : HelpModes.Recorded(goOn.Record.HelpMode);
@@ -104,6 +107,7 @@ internal sealed class ChatRun(
                 Home = home,
             };
             var info = agent.Prepare(request, selection);
+            if (goOn?.Carried is { } carriedOn) LimitCarried.Compact(info, carriedOn.Plan);
 
             // Its standing block, on its harness, told with a new conversation's first message and never at a go-on, which resumes the same
             // conversation; a hand-over's adds the memory its brief hands on.
@@ -449,7 +453,7 @@ internal sealed class ChatRun(
 
         var watch = watching.WatchAsync(
             sessionId, run, transcript, onEnded, Measured, rules, mapper, chat, native, servers, Said,
-            new ChatWatched(agent.Name, place.Keeps, goOn) { Skills = skills, Preamble = modeSaid }, actorRun, actorLog,
+            new ChatWatched(agent.Name, place.Keeps, goOn) { Skills = skills, Preamble = modeSaid, Working = working }, actorRun, actorLog,
             // The native door's failed result read for the account's limit, concluded at its turn's end as a protocol conversation's refused
             // turn is: the account cools, its cooling line stands before the turn's end, and that end moves it to the next account.
             // And an open's refused model kept as the account's refusal before its re-ask walks on.
@@ -474,14 +478,16 @@ internal sealed class ChatRun(
         // Where its open is refused and the re-ask answered another session, the replacement opens once this run let its process, its files
         // and its turns go, in the same call as far as the person is concerned.
         if (pending is not null) _ = wiring.Of<ChatReplacement>().ReplaceAsync(watch, pending, sessionId, selection);
-        // A go-on whose wire refused the resume as lost goes on in a new part, once its watch let its process, its files and its turns go.
+        // A go-on whose wire refused the resume as lost goes on in a new part, once its watch let its process, its files and its turns go; a
+        // carried part's refused resume goes on in the brief on its own record.
         if (goOn is not null)
         {
             _ = AfterAsync(
                 watch,
-                () => goOn.Ask.Refused is { Lost: true } lost
-                    ? goOnDoor.LostAsync(goOn.Record, lost, agent.Name, config, onEnded, held: false, CancellationToken.None)
-                    : Task.FromResult(new ChatStart(null, "")));
+                () => goOn.Ask.Refused is not null && goOn.Carried is { } carried ? carried.FallBackAsync()
+                    : goOn.Ask.Refused is { Lost: true } lost
+                        ? goOnDoor.LostAsync(goOn.Record, lost, agent.Name, config, onEnded, held: false, CancellationToken.None)
+                        : Task.FromResult(new ChatStart(null, "")));
         }
 
         return new(sessionId, message);
