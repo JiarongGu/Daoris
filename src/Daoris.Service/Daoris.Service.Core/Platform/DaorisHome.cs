@@ -394,6 +394,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     // The keys of a terminal's sent presses, kept as long as a press's card lives; a file
     // that holds a key is a sign-in, never under run/, which anyone may clear while Daoris is closed.
     public static readonly HomeEntry PipeSent = new("pipe-sent", HomeCategory.Profiles, "profiles/pipe-sent", "profiles/pipe-sent");
+    public static readonly HomeEntry DepsSecret = new("deps-secret", HomeCategory.Profiles, "profiles/deps-secret", "profiles/deps-secret");
     public static readonly HomeEntry Trees = new("trees", HomeCategory.Work, "work/trees/*/*/*", "trees/*/*/*");
     public static readonly HomeEntry HelpRoom = new("help-room", HomeCategory.Work, "work/rooms/help", "help", "CLAUDE.md");
     public static readonly HomeEntry HelpRooms = new("help-rooms", HomeCategory.Work, "work/rooms/help-*", "help-*", "CLAUDE.md");
@@ -407,6 +408,8 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry BrainstormRooms = new("brainstorm-rooms", HomeCategory.Work, "work/brainstorm-rooms/*", "brainstorm-rooms/*");
     // A role holder's own folder, outside every repository, emptied at each appointment; the window alone writes there.
     public static readonly HomeEntry RoleRooms = new("role-rooms", HomeCategory.Work, "work/rooms/roles/*", "work/rooms/roles/*");
+    public static readonly HomeEntry Deps = new("deps", HomeCategory.Work, "work/deps/*", "work/deps/*");
+    public static readonly HomeEntry TreeFiles = new("tree-files", HomeCategory.Work, "work/files/trees/*", "work/files/trees/*");
     public static readonly HomeEntry Toolchain = new("toolchain", HomeCategory.Cache, "cache/toolchain", "toolchain");
     public static readonly HomeEntry ToolVersions = new("tool-versions", HomeCategory.Cache, "cache/tools", "tools");
     public static readonly HomeEntry Bin = new("bin", HomeCategory.Cache, "cache/bin", "bin");
@@ -442,7 +445,9 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         UsageHistory, Keeping, Notices, GitIdentities, StandingConfirmation, AgentOffers, PipeWaiting, ActFiles, PlaceReceipts, StewardDesk,
         LastBuild, Migration, Salvage,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, GitKeys, GitTokens, GitSshConfig, GitKnownHosts, GitConfig, Window, PipeSent,
+        DepsSecret,
         Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms, RoleRooms,
+        Deps, TreeFiles,
         Toolchain, ToolVersions, Bin,
         HomeLease, DriverLock, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord, Pipe, HomeMove,
         GitHeld, GitGrants, GitUsed, GitAsks, GitCheckouts, GitHome, GitSessions, Logs,

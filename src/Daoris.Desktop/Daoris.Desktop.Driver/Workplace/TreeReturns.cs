@@ -21,8 +21,7 @@ public enum TreeStand
 /// <param name="Stand">What it came to.</param>
 /// <param name="Branch">The session's branch, where the tree is one this home opened; null otherwise.</param>
 /// <param name="Said">What its record says of it: the remake, or why nothing goes on in it. Null where it stands.</param>
-/// <param name="Told">What the session's agent is told of the copies a remake made, as an opening's is; null otherwise.</param>
-public sealed record TreeStanding(TreeStand Stand, string? Branch, Noted? Said, string? Told = null);
+public sealed record TreeStanding(TreeStand Stand, string? Branch, Noted? Said);
 
 /// <summary>
 /// A session never runs with its tree gone: before a start or a resume goes on in a session's tree, the tree is
@@ -107,19 +106,16 @@ internal sealed class TreeReturns(TreeContext context, TreeFollows follows, Tree
 
         Directory.CreateDirectory(Path.GetDirectoryName(full)!);
         // Locked while it is made, as an opening is, so a kill leaves it for the look (TreeStrays) and a cancel takes
-        // it back below; the copies an opening makes are made here too, under that lock.
+        // it back below. Made with its hooks held and marked unworked before the lock goes, as an opening is.
         var ours = !Directory.Exists(full);
         var (code, _, stderr) = await WorkingTree.GitAsync(
-            root, ["worktree", "add", "--lock", "--reason", TreeOpenings.LockReason(Environment.ProcessId), full, branch], ct)
+            root, [.. TreeOpenings.HooksHeld(context.Home), "worktree", "add", "--lock", "--reason", TreeOpenings.LockReason(Environment.ProcessId), full, branch], ct)
             .ConfigureAwait(false);
         if (code != 0) return Unmade(branch, $"its tree at {full} is gone, and git would not make it again on `{branch}`: {Failure(stderr)}");
 
-        var dependencies = DependencyCopy.None;
-        var inputs = LocalCopy.None;
         try
         {
-            dependencies = await TreeDependencies.CopyAsync(root, full, ct).ConfigureAwait(false);
-            inputs = await TreeLocalInputs.CopyAsync(root, full, ct).ConfigureAwait(false);
+            TreeFilesRecord.Mark(context.Home, full);
             var (unlocked, _, unlockErr) = await WorkingTree.GitAsync(root, ["worktree", "unlock", full], ct).ConfigureAwait(false);
             if (unlocked != 0)
             {
@@ -129,7 +125,6 @@ internal sealed class TreeReturns(TreeContext context, TreeFollows follows, Tree
         }
         catch
         {
-            // Cut off while copying: the copies and the folder made go, never the branch, which holds the session's commits.
             await TreeOpenings.UndoAsync(root, full, branch, ours, keepBranch: true).ConfigureAwait(false);
             throw;
         }
@@ -145,16 +140,11 @@ internal sealed class TreeReturns(TreeContext context, TreeFollows follows, Tree
         var remade = Noted.Of(
             StartNoteCodes.TreeRemade,
             $"its tree at {full} was gone, so Daoris made it again there on its branch `{branch}`, where its commits are. Anything it had "
-            + "not committed went with the folder, and the tree holds what git tracks and what Daoris copies in again from your checkout, "
-            + "as an opened tree does: its installed dependencies and the machine-local files its gates read, read-only. What was copied, "
-            + "and what was not, follows.",
+            + "not committed went with the folder, and the tree holds what git tracks and what Daoris prepares again as an opened tree "
+            + "is prepared: its dependencies from Daoris's store or its own install, and the machine-local files its gates read, read-only. "
+            + "What was prepared, and what was not, follows.",
             ("branch", branch));
-        if (dependencies.Copied.Count > 0) remade = remade.Then($" Dependencies copied in: {dependencies.Listed}.");
-        foreach (var each in dependencies.Declined) remade = remade.Then(" ", each.Line());
-        if (inputs.Line() is { } copied) remade = remade.Then(" ", copied);
-        foreach (var each in inputs.Declined) remade = remade.Then(" ", each.Line());
-        var told = string.Join(" ", new[] { dependencies.Told, inputs.Told }.OfType<string>());
-        return new(TreeStand.Remade, branch, remade, told.Length == 0 ? null : told);
+        return new(TreeStand.Remade, branch, remade);
     }
 
     /// <summary>

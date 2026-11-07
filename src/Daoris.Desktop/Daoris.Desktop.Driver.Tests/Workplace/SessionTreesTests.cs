@@ -395,75 +395,45 @@ public sealed class SessionTreesTests : IDisposable
     }
 
     /// <summary>
-    /// A tree whose npm lockfile is its checkout's opens with the dependencies the checkout installed at it,
-    /// copied in and never linked, and its opening and its agent say so. Git ignores the copy in the tree as in the checkout.
+    /// A tree opens holding none of its checkout's installed dependencies, marked unworked with its hook held and owed.
     /// </summary>
     [Fact]
-    public async Task A_tree_whose_lockfile_matches_the_checkout_s_opens_with_its_dependencies_copied()
+    public async Task A_tree_opens_unworked_with_its_hook_held_and_none_of_the_checkout_s_dependencies()
     {
         var root = await MakeNodeRepositoryAsync("engine");
-
-        var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
-
-        // The opening first, whole in the failure: where nothing is copied, it says why.
-        Assert.True(opened.Sentence.Contains("copied in: `node_modules`.", StringComparison.Ordinal), opened.Sentence);
-        var copied = Path.Combine(opened.Path, "node_modules", "left-pad", "index.js");
-        Assert.Equal("module.exports = 'left-pad';\n", await File.ReadAllTextAsync(copied));
-        Assert.Contains("do not run `npm ci`", opened.Dependencies);
-        var (clean, _) = await WorkingTree.CleanAsync(opened.Path);
-        Assert.True(clean, "the copy is ignored in the tree as in the checkout");
-
-        await File.WriteAllTextAsync(copied, "changed in the tree\n");
-        Assert.Equal("module.exports = 'left-pad';\n", await File.ReadAllTextAsync(Path.Combine(root, "node_modules", "left-pad", "index.js")));
-    }
-
-    /// <summary>A checkout whose lockfile moved after its install holds another set; the tree copies none, and says why.</summary>
-    [Fact]
-    public async Task A_tree_whose_lockfile_moved_opens_without_dependencies_and_says_why()
-    {
-        var root = await MakeNodeRepositoryAsync("engine");
-        await File.WriteAllTextAsync(Path.Combine(root, "package-lock.json"), "{\n  \"lockfileVersion\": 3,\n  \"packages\": {}\n}\n");
+        var hooks = Path.Combine(root, ".git", "hooks");
+        Directory.CreateDirectory(hooks);
+        await File.WriteAllTextAsync(Path.Combine(hooks, "post-checkout"), "#!/bin/sh\necho \"$3\" > hook-ran.txt\n");
+        // The fixture's lockfile names no registry this test may reach: the person's restriction holds Daoris's install.
+        Directory.CreateDirectory(Path.GetDirectoryName(DaorisHome.Entry(_home, HomeEntry.Files))!);
+        await File.WriteAllTextAsync(DaorisHome.Entry(_home, HomeEntry.Files), """{ "machine": { "permissions": { "deny": ["run(*)"] } } }""");
 
         var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
 
         Assert.False(Directory.Exists(Path.Combine(opened.Path, "node_modules")));
+        Assert.False(File.Exists(Path.Combine(opened.Path, "hook-ran.txt")), "the hook is held while git makes the tree");
+        Assert.Equivalent(TreeFilesState.Made, TreeFilesRecord.Read(_home, opened.Path), strict: true);
         Assert.Contains("nothing git does not track", opened.Sentence);
-        Assert.Contains("`node_modules` was not copied from your checkout: this tree's lockfile beside it differs from the checkout's", opened.Sentence);
-        Assert.Null(opened.Dependencies);
-    }
 
-    /// <summary>An open cut off while it copies the checkout's dependencies leaves nothing, no half copy among it.</summary>
-    [Fact]
-    public async Task An_open_cancelled_while_it_copies_dependencies_leaves_nothing()
-    {
-        var root = await MakeNodeRepositoryAsync("engine");
-        using var closing = new CancellationTokenSource();
-        TreeDependencies.Copying.Value = _ => closing.Cancel();
-        try
-        {
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => new SessionTrees(_home).OpenAsync(root, "engine", "aurora", closing.Token));
-        }
-        finally
-        {
-            TreeDependencies.Copying.Value = null;
-        }
-
-        await AssertNothingLeftAsync(root);
-        Assert.Equal("module.exports = 'left-pad';\n", await File.ReadAllTextAsync(Path.Combine(root, "node_modules", "left-pad", "index.js")));
+        await TreeFilesStep.RunAsync(_home, root, opened.Path, "engine", _ => { }, CancellationToken.None);
+        Assert.Equal("1", (await File.ReadAllTextAsync(Path.Combine(opened.Path, "hook-ran.txt"))).Trim());
+        Assert.False(TreeFilesRecord.Read(_home, opened.Path)!.HookOwed);
+        TreeFilesStep.Hand(_home, opened.Path);
+        Assert.False(TreeFilesRecord.Read(_home, opened.Path)!.Unworked);
     }
 
     /// <summary>
-    /// A tree holding a copied workspace link is removed as any other, and git's removal takes the link, never
-    /// what the checkout's own link leads to.
+    /// A tree whose store placement holds a workspace link is removed as any other, and git's removal takes the link, never
+    /// what it leads to.
     /// </summary>
     [Fact]
-    public async Task Removing_a_tree_with_copied_dependencies_removes_their_workspace_link_not_what_it_points_at()
+    public async Task Removing_a_tree_with_placed_dependencies_removes_their_workspace_link_not_what_it_points_at()
     {
         var root = await MakeNodeRepositoryAsync("engine", workspace: true);
         var trees = new SessionTrees(_home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
-        Assert.True(new DirectoryInfo(Path.Combine(opened.Path, "node_modules", "ui")).Attributes.HasFlag(FileAttributes.ReparsePoint),
-            "the workspace is copied as a link");
+        Directory.CreateDirectory(Path.Combine(opened.Path, "node_modules"));
+        DependencyLinks.Link(Path.Combine(opened.Path, "node_modules", "ui"), Path.Combine(opened.Path, "packages", "ui"));
 
         var removal = await trees.RemoveAsync(opened.Path);
 
@@ -485,56 +455,35 @@ public sealed class SessionTreesTests : IDisposable
         await File.WriteAllTextAsync(Path.Combine(root, "local", "sensitive-patterns.txt"), "# private names\nquiltmark\n");
 
         var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
+        var said = (await TreeFilesStep.RunAsync(_home, root, opened.Path, "engine", _ => { }, CancellationToken.None)).Line()!.Note;
 
-        Assert.True(opened.Sentence.Contains("copied in from your checkout, read-only: `local/sensitive-patterns.txt`.", StringComparison.Ordinal), opened.Sentence);
+        Assert.True(said.Contains("copied in from your checkout, read-only: `local/sensitive-patterns.txt`.", StringComparison.Ordinal), said);
         var copy = Path.Combine(opened.Path, "local", "sensitive-patterns.txt");
         Assert.Equal(await File.ReadAllBytesAsync(Path.Combine(root, "local", "sensitive-patterns.txt")), await File.ReadAllBytesAsync(copy));
         Assert.True(File.GetAttributes(copy).HasFlag(FileAttributes.ReadOnly), "the copy is read-only");
         Assert.Equal("", (await GitAsync(opened.Path, "status", "--porcelain", "--untracked-files=all")).Trim());
         var (clean, _) = await WorkingTree.CleanAsync(opened.Path);
         Assert.True(clean, "the copy is ignored in the tree as in the checkout");
-        Assert.Contains("read-only, the machine-local files its gates read: `local/sensitive-patterns.txt`", opened.Dependencies);
 
-        var (code, said) = await DevkitAsync(opened.Path, "scan", "--tree");
-        Assert.True(code == 1, $"the scan in the tree exited {code}: {said}");
-        Assert.Contains("notes.md: private pattern", said);
+        var (code, scanned) = await DevkitAsync(opened.Path, "scan", "--tree");
+        Assert.True(code == 1, $"the scan in the tree exited {code}: {scanned}");
+        Assert.Contains("notes.md: private pattern", scanned);
     }
 
-    /// <summary>A declared input the checkout does not hold is said on the opening, and the tree holds none.</summary>
+    /// <summary>A declared input the checkout does not hold is said by the files stage, and the tree holds none.</summary>
     [Fact]
-    public async Task A_declared_input_the_checkout_lacks_is_said_on_the_tree_s_opening()
+    public async Task A_declared_input_the_checkout_lacks_is_said_by_the_tree_s_files_stage()
     {
         var root = await MakeLocalRepositoryAsync("engine", """{ "localInputs": ["local/allowed-hosts.txt"] }""");
 
         var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
+        var files = await TreeFilesStep.RunAsync(_home, root, opened.Path, "engine", _ => { }, CancellationToken.None);
 
-        Assert.Contains("nothing git does not track", opened.Sentence);
-        Assert.Contains("`local/allowed-hosts.txt` was not copied: the repository's gates read it, and your checkout does not hold it.", opened.Sentence);
+        Assert.Contains("`local/allowed-hosts.txt` was not copied: the repository's gates read it, and your checkout does not hold it.", files.Line()!.Note);
         // The devkit's default list, implied and absent from the checkout too, says nothing.
-        Assert.DoesNotContain("sensitive-patterns", opened.Sentence);
+        Assert.DoesNotContain("sensitive-patterns", files.Line()!.Note);
         Assert.False(Directory.Exists(Path.Combine(opened.Path, "local")));
-        Assert.Null(opened.Dependencies);
-    }
-
-    /// <summary>An open cut off while it copies the machine-local inputs leaves nothing, the checkout's untouched.</summary>
-    [Fact]
-    public async Task An_open_cancelled_while_it_copies_machine_local_inputs_leaves_nothing()
-    {
-        var root = await MakeLocalRepositoryAsync("engine", "{}");
-        await File.WriteAllTextAsync(Path.Combine(root, "local", "sensitive-patterns.txt"), "quiltmark\n");
-        using var closing = new CancellationTokenSource();
-        TreeLocalInputs.Copying.Value = _ => closing.Cancel();
-        try
-        {
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => new SessionTrees(_home).OpenAsync(root, "engine", "aurora", closing.Token));
-        }
-        finally
-        {
-            TreeLocalInputs.Copying.Value = null;
-        }
-
-        await AssertNothingLeftAsync(root);
-        Assert.Equal("quiltmark\n", await File.ReadAllTextAsync(Path.Combine(root, "local", "sensitive-patterns.txt")));
+        Assert.Null(files.Told);
     }
 
     /// <summary>A tree holding a read-only copy is removed as any other, the copy with it, and the checkout's file stays.</summary>
@@ -545,6 +494,7 @@ public sealed class SessionTreesTests : IDisposable
         await File.WriteAllTextAsync(Path.Combine(root, "local", "sensitive-patterns.txt"), "quiltmark\n");
         var trees = new SessionTrees(_home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
+        await TreeFilesStep.RunAsync(_home, root, opened.Path, "engine", _ => { }, CancellationToken.None);
         Assert.True(File.GetAttributes(Path.Combine(opened.Path, "local", "sensitive-patterns.txt")).HasFlag(FileAttributes.ReadOnly));
 
         var removal = await trees.RemoveAsync(opened.Path);
@@ -645,7 +595,7 @@ public sealed class SessionTreesTests : IDisposable
         var hidden = Path.Combine(root, "node_modules", ".package-lock.json");
         await File.WriteAllTextAsync(hidden, "{}\n");
         File.SetLastWriteTimeUtc(hidden, File.GetLastWriteTimeUtc(lockfile).AddMinutes(1));
-        if (workspace) TreeDependencies.Link(Path.Combine(root, "node_modules", "ui"), Path.Combine(root, "packages", "ui"));
+        if (workspace) DependencyLinks.Link(Path.Combine(root, "node_modules", "ui"), Path.Combine(root, "packages", "ui"));
         return root;
     }
 

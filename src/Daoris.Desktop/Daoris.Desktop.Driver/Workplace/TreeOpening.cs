@@ -118,8 +118,6 @@ internal sealed class TreeOpening(TreeContext context)
         var ours = !Directory.Exists(path);
 
         string? unrecorded = null;
-        var dependencies = DependencyCopy.None;
-        var inputs = LocalCopy.None;
         var refusedBound = false;
         try
         {
@@ -128,9 +126,10 @@ internal sealed class TreeOpening(TreeContext context)
             // workspace did, and every tick's `worktree add` failed. `WorkingTree.GitAsync` says
             // `core.longpaths` on every call, removal and status included.
             // Locked while it opens, the lock's reason naming this process, so a later look tells an open a kill cut
-            // off from a person's lock (TreeStrays); let go of below, once where its branch started is recorded.
+            // off from a person's lock (TreeStrays); let go of below, once where its branch started is recorded. Its hooks are
+            // held, so its `post-checkout` runs at the files stage, after its dependencies.
             var added = await AskAsync(
-                root, ["worktree", "add", "--lock", "--reason", TreeOpenings.LockReason(Environment.ProcessId), "-b", branch, path, start], ct)
+                root, [.. TreeOpenings.HooksHeld(context.Home), "worktree", "add", "--lock", "--reason", TreeOpenings.LockReason(Environment.ProcessId), "-b", branch, path, start], ct)
                 .ConfigureAwait(false);
             if (added.Code != 0)
             {
@@ -167,12 +166,8 @@ internal sealed class TreeOpening(TreeContext context)
                 }
             }
 
-            // The dependencies the checkout installed at this tree's lockfile, copied in while the tree is still locked as
-            // opening, so a cut-off open's undo takes a half copy with the tree. Copied, never linked.
-            dependencies = await TreeDependencies.CopyAsync(root, path, ct).ConfigureAwait(false);
-            // The machine-local files its gates read, as the checkout's gates file declares them, copied read-only under
-            // the same lock, so its gates run in the tree the checks they run in the checkout.
-            inputs = await TreeLocalInputs.CopyAsync(root, path, ct).ConfigureAwait(false);
+            // Marked before the lock goes: the files stage, outside the start's hold, places, installs and copies into it.
+            TreeFilesRecord.Mark(context.Home, path);
 
             var unlocked = await AskAsync(root, ["worktree", "unlock", path], ct).ConfigureAwait(false);
             if (unlocked.Code != 0)
@@ -196,49 +191,26 @@ internal sealed class TreeOpening(TreeContext context)
         RefMoves.Mine(context.Home, repository, workspace, root);
 
         // What it grew from as a fact: the branch it started at, never the sentence spelling it for a person.
-        var opening = OpeningOf(path, branch, basedOn, grewFrom ?? line.Branch ?? "HEAD", unrecorded, dependencies, inputs);
-        var told = string.Join(" ", new[] { dependencies.Told, inputs.Told }.OfType<string>());
-        return new(path, branch, basedOn, opening.Note, grewFrom) { Opening = opening, Dependencies = told.Length == 0 ? null : told };
+        var opening = OpeningOf(path, branch, basedOn, grewFrom ?? line.Branch ?? "HEAD", unrecorded);
+        return new(path, branch, basedOn, opening.Note, grewFrom) { Opening = opening };
     }
 
     /// <summary>
-    /// The opening's sentence, price included, with its codes: its branch and the
-    /// branch it started at as facts, never its path, which only the English names and the cleaner cuts where it travels. Where
-    /// its checkout's dependencies were copied in, its own code says them; each project that copied none says why. The
-    /// machine-local files its gates read, copied in read-only, are a line after those, and each declared one not copied
-    /// says why.
+    /// The opening's sentence, price included, with its codes: its branch and the branch it started at as facts, never its path,
+    /// which only the English names and the cleaner cuts where it travels.
     /// </summary>
     /// <param name="basedOn">What it grew from, spelled for a person.</param>
     /// <param name="startedAt">The branch it started at, or <c>HEAD</c>: the fact the page says.</param>
     /// <param name="unrecorded">Why where its branch started is not recorded, in the program's words; null where it is.</param>
-    /// <param name="dependencies">What is copied of the checkout's dependencies, and why not the rest; none by default.</param>
-    /// <param name="inputs">What is copied of the machine-local inputs the checkout's gates file declares, and why not the rest; none by default.</param>
-    internal static Noted OpeningOf(
-        string path, string branch, string basedOn, string startedAt, string? unrecorded, DependencyCopy? dependencies = null,
-        LocalCopy? inputs = null)
+    internal static Noted OpeningOf(string path, string branch, string basedOn, string startedAt, string? unrecorded)
     {
-        dependencies ??= DependencyCopy.None;
-        inputs ??= LocalCopy.None;
-        // 🔴 A stored shape is never changed in place: `started.tree` still says no installed dependencies, as every opening
-        // recorded earlier does, and a tree its checkout's were copied into says it under a code of its own.
-        var opening = dependencies.Copied.Count > 0
-            ? Noted.Of(
-                StartNoteCodes.StartedTreeCopied,
-                $"opened a session tree at {path} on `{branch}`, from {basedOn} — a fresh tree holds what git tracks, and here the "
-                + $"dependencies your checkout installed at the same lockfile, copied in: {dependencies.Listed}. `npm ci` is not "
-                + "needed there unless a lockfile changes; the rest of the repository's own setup cost, build outputs included, is "
-                + "paid here, and in exchange the root's uncommitted work holds nothing.",
-                ("branch", branch), ("basedOn", startedAt), ("copied", (IReadOnlyList<string>)[.. dependencies.Copied]))
-            : Noted.Of(
-                StartNoteCodes.StartedTree,
-                $"opened a session tree at {path} on `{branch}`, from {basedOn} — a fresh tree holds "
-                + "nothing git does not track: no installed dependencies, no build outputs. The "
-                + "repository's own setup cost is paid here, and in exchange the root's uncommitted work "
-                + "holds nothing.",
-                ("branch", branch), ("basedOn", startedAt));
-        foreach (var each in dependencies.Declined) opening = opening.Then(" ", each.Line());
-        if (inputs.Line() is { } copied) opening = opening.Then(" ", copied);
-        foreach (var each in inputs.Declined) opening = opening.Then(" ", each.Line());
+        var opening = Noted.Of(
+            StartNoteCodes.StartedTree,
+            $"opened a session tree at {path} on `{branch}`, from {basedOn} — a fresh tree holds "
+            + "nothing git does not track: no installed dependencies, no build outputs. The "
+            + "repository's own setup cost is paid here, and in exchange the root's uncommitted work "
+            + "holds nothing.",
+            ("branch", branch), ("basedOn", startedAt));
         if (unrecorded is null) return opening;
 
         var line = Noted.Of(

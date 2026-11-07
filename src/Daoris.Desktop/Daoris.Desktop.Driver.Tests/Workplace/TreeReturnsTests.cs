@@ -43,12 +43,10 @@ public sealed class TreeReturnsTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// A tree made again carries what an opened one does: the checkout's declared machine-local files, read-only,
-    /// with its bytes and a clean status, the dependencies its checkout installed, and a declared file the checkout lacks said; and the
-    /// agent is told what has been copied.
+    /// A tree made again is marked unworked as an opened one is, and its files stage copies and says what an opened one's does.
     /// </summary>
     [Fact]
-    public async Task A_remade_tree_holds_the_same_read_only_copies_and_dependencies_an_opened_one_does()
+    public async Task A_remade_tree_is_marked_unworked_and_its_files_stage_copies_what_an_opened_one_s_does()
     {
         var root = await DeclaringRepositoryAsync();
         var trees = new SessionTrees(_home);
@@ -59,47 +57,21 @@ public sealed class TreeReturnsTests : BranchTidyingFixture
         var remade = await trees.EnsureAsync(root, tree.Path);
 
         Assert.Equal((TreeStand.Remade, tree.Branch), (remade.Stand, remade.Branch));
+        Assert.Equivalent(TreeFilesState.Made, TreeFilesRecord.Read(_home, tree.Path), strict: true);
+        Assert.False(Directory.Exists(Path.Combine(tree.Path, "node_modules")), "the checkout's install never reaches a session");
+        Assert.Equal(head, (await GitAsync(tree.Path, "rev-parse", "HEAD")).Trim());
+        Assert.Equal("", (await GitAsync(root, "worktree", "list", "--porcelain")).Split('\n').FirstOrDefault(line => line.StartsWith("locked", StringComparison.Ordinal)) ?? "");
+        Assert.Contains(StartNoteCodes.TreeRemade.Code, remade.Said!.Parts.Select(part => part.Code));
+
+        Directory.CreateDirectory(Path.GetDirectoryName(DaorisHome.Entry(_home, HomeEntry.Files))!);
+        await File.WriteAllTextAsync(DaorisHome.Entry(_home, HomeEntry.Files), """{ "machine": { "permissions": { "deny": ["run(*)"] } } }""");
+        var files = await TreeFilesStep.RunAsync(_home, root, tree.Path, "engine", _ => { }, CancellationToken.None);
         var copy = Path.Combine(tree.Path, "local", "sensitive-patterns.txt");
         Assert.Equal(await File.ReadAllBytesAsync(Path.Combine(root, "local", "sensitive-patterns.txt")), await File.ReadAllBytesAsync(copy));
         Assert.True(File.GetAttributes(copy).HasFlag(FileAttributes.ReadOnly), "the copy is read-only");
         Assert.Equal("", (await GitAsync(tree.Path, "status", "--porcelain", "--untracked-files=all")).Trim());
-        Assert.Equal("module.exports = 'left-pad';\n", await File.ReadAllTextAsync(Path.Combine(tree.Path, "node_modules", "left-pad", "index.js")));
-        Assert.Equal(head, (await GitAsync(tree.Path, "rev-parse", "HEAD")).Trim());
-        Assert.Equal("", (await GitAsync(root, "worktree", "list", "--porcelain")).Split('\n').FirstOrDefault(line => line.StartsWith("locked", StringComparison.Ordinal)) ?? "");
-        var said = remade.Said!;
-        Assert.Contains(StartNoteCodes.TreeRemade.Code, said.Parts.Select(part => part.Code));
-        Assert.Contains(StartNoteCodes.StartedLocalCopied.Code, said.Parts.Select(part => part.Code));
-        Assert.Contains("`local/allowed-hosts.txt` was not copied: the repository's gates read it, and your checkout does not hold it.", said.Note, StringComparison.Ordinal);
-        Assert.DoesNotContain("installed again", said.Note, StringComparison.Ordinal);
-        Assert.Contains("`node_modules`", remade.Told, StringComparison.Ordinal);
-        Assert.Contains("read-only, the machine-local files its gates read: `local/sensitive-patterns.txt`", remade.Told, StringComparison.Ordinal);
+        Assert.Contains("`local/allowed-hosts.txt` was not copied: the repository's gates read it, and your checkout does not hold it.", files.Line()!.Note, StringComparison.Ordinal);
         Assert.Equal(TreeStand.Stands, (await trees.EnsureAsync(root, tree.Path)).Stand);
-    }
-
-    /// <summary>A remake cut off while it copies takes back its copies and its folder, and never the branch holding the session's commits.</summary>
-    [Fact]
-    public async Task A_remake_cancelled_while_it_copies_takes_back_the_folder_and_keeps_the_branch()
-    {
-        var root = await DeclaringRepositoryAsync();
-        var trees = new SessionTrees(_home);
-        var tree = await TreeWithWorkAsync(trees, root);
-        var head = (await GitAsync(tree.Path, "rev-parse", "HEAD")).Trim();
-        await GitAsync(root, "worktree", "remove", "--force", tree.Path);
-        using var closing = new CancellationTokenSource();
-        TreeLocalInputs.Copying.Value = _ => closing.Cancel();
-        try
-        {
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => trees.EnsureAsync(root, tree.Path, closing.Token));
-        }
-        finally
-        {
-            TreeLocalInputs.Copying.Value = null;
-        }
-
-        Assert.False(Directory.Exists(tree.Path), "the folder it made is left");
-        Assert.Equal(head, (await GitAsync(root, "rev-parse", tree.Branch)).Trim());
-        Assert.Single((await GitAsync(root, "worktree", "list", "--porcelain")).Split('\n'), line => line.StartsWith("worktree ", StringComparison.Ordinal));
-        Assert.Equal(TreeStand.Remade, (await trees.EnsureAsync(root, tree.Path)).Stand);
     }
 
     /// <summary>A repository whose gates file declares two machine-local inputs, one of them held, and whose checkout installed an npm project.</summary>
