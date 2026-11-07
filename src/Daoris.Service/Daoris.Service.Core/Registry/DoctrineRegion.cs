@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The doctrine region — where the always-loaded tier lives since D59, read from the file the
+/// The doctrine region — where the always-loaded tier lives, read from the file the
 /// repository owns rather than from a directory of its own.
 /// </summary>
 /// <remarks>
@@ -9,9 +9,9 @@ namespace Daoris.Knowledge;
 /// the LAYOUT are the contract, exactly as they are for the harness profiles: one side writes the
 /// markers and the provenance lines, the other reads them, and neither can see the other's types.</para>
 ///
-/// <para>🔴 <b>Why it exists at all.</b> `.claude/rules/` was read by exactly one of the three
+/// <para>🔴 <b>Why it exists at all.</b> `.claude/rules/` is read by exactly one of the three
 /// harnesses this family drives, so the tier moved into `AGENTS.md`. The scanner kept reading the
-/// directory, which was now empty, and <b>the eight canonical rules fell out of the index</b> — a
+/// directory, which is then empty, and <b>the eight canonical rules fell out of the index</b> — a
 /// search for one returned only a repository's own local rule. Cross-repository search and
 /// convergence are what this service is for, and they had lost the always-loaded tier silently,
 /// because nothing breaks at compile time when the other artefact changes a layout.</para>
@@ -37,7 +37,7 @@ public static class DoctrineRegion
         ReadAt(file).ToDictionary(rule => rule.Key, rule => rule.Value.Body, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// <see cref="Read"/>, with the lines of the file each rule's body is (ORIENT2e): from its first line that
+    /// <see cref="Read"/>, with the lines of the file each rule's body is: from its first line that
     /// holds anything after its provenance line to its last before the next.
     /// </summary>
     public static IReadOnlyDictionary<string, (string Body, LineSpan? Lines)> ReadAt(string file)

@@ -4,7 +4,7 @@ namespace Daoris.Knowledge;
 
 /// <summary>
 /// The one way the service core writes a file that something else may be reading: beside, then renamed, so a reader never
-/// meets half of it (DEDUP9a).
+/// meets half of it.
 /// </summary>
 /// <remarks>
 /// <para><b>The beside file is named per write, and the rename waits out a busy target.</b> Four writers here each wrote
@@ -15,7 +15,7 @@ namespace Daoris.Knowledge;
 ///
 /// <para>It does not make the folder, and it does not fix line endings: the caller owns both. Text is written as BOM-less
 /// UTF-8. Reflection-free, like <see cref="JsonFields"/>: nothing may stop working under AOT. The driver keeps a helper of
-/// its own; the two projects do not reference each other (D166).</para>
+/// its own; the two projects do not reference each other.</para>
 /// </remarks>
 internal static class AtomicFile
 {
@@ -73,7 +73,7 @@ internal static class AtomicFile
             {
                 try
                 {
-                    // Measured in the driver's twin (REV3): a rename over a file another rename is replacing is refused
+                    // Measured in the driver's twin: a rename over a file another rename is replacing is refused
                     // with "access denied" on Windows, and clears in milliseconds.
                     File.Move(beside, path, overwrite: true);
                     return;

@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The machine log's service writer (LOG1, D94): the HTTP host's and the MCP host's lines, one JSON line
+/// The machine log's service writer: the HTTP host's and the MCP host's lines, one JSON line
 /// per event, in the home's <c>logs/</c>.
 /// </summary>
 /// <remarks>
@@ -17,13 +17,13 @@ namespace Daoris.Knowledge;
 /// two processes appending to one file can overwrite each other's lines. Appended a line at a time, as a
 /// log is; kept thirty days; capped so a loop cannot fill a disk.</para>
 ///
-/// <para><b>Each line at the file's end</b> (MACHINELOGAPPEND2, the driver's MACHINELOGAPPEND1): a handle opened to
+/// <para><b>Each line at the file's end</b>: a handle opened to
 /// append on Windows writes at its own position, and every session starts a knowledge host writing the day's one
-/// <c>mcp</c> file, so their lines overwrote each other's. Each line is written at the end the file has now, under a
+/// <c>mcp</c> file, so their lines would overwrite each other's. Each line is written at the end the file has now, under a
 /// mutex named for the file that every writer of it takes; a writer that cannot open it still writes at the end.</para>
 ///
 /// <para><b>Never a reason to fail</b>: no home is no log, and a write that fails is dropped. What is
-/// never written here is D94's list — anyone's words, a file's contents, a secret, a URL's query — and a
+/// never written here is anyone's words, a file's contents, a secret, a URL's query — and a
 /// request is logged by its route and status, never its query or body.</para>
 /// </remarks>
 public sealed class MachineLog : IDisposable
@@ -34,7 +34,7 @@ public sealed class MachineLog : IDisposable
     /// <summary>Where a file stops growing.</summary>
     public const long CapBytes = 20L * 1024 * 1024;
 
-    /// <summary>How many strings of a collection a line keeps (LOGCOLLECTION1).</summary>
+    /// <summary>How many strings of a collection a line keeps.</summary>
     private const int MostWords = 64;
 
     /// <summary>Where a string of a collection is cut, as the page's strings are (design §4).</summary>
@@ -74,8 +74,8 @@ public sealed class MachineLog : IDisposable
         }
         catch (Exception error) when (error is HomeEntryTwiceException or IOException or UnauthorizedAccessException)
         {
-            // STARTLOG1: resolving a log's folder can fail before the write's guard. D94 keeps logging optional;
-            // D172 still refuses ambiguous entries, so write and prune neither place rather than choosing one.
+            // Resolving a log's folder can fail before the write's guard. Logging stays optional;
+            // ambiguous entries are still refused, so write and prune neither place rather than choosing one.
             _folder = null;
         }
         _source = source;
@@ -181,7 +181,7 @@ public sealed class MachineLog : IDisposable
     }
 
     /// <summary>
-    /// Write the exception that ends an async entry point holding this log in a <c>using</c> (HOSTSTART1, HOSTSTART2),
+    /// Write the exception that ends an async entry point holding this log in a <c>using</c>,
     /// which <see cref="WatchUnhandled"/> cannot: the <c>using</c> closes this log as the exception leaves the entry point,
     /// before the runtime raises it as unhandled, so that line is dropped and a process that died at start leaves nothing
     /// of why. The HTTP host and the MCP connector each call it beside their log's opening.
@@ -309,7 +309,7 @@ public sealed class MachineLog : IDisposable
     }
 
     /// <summary>
-    /// A collection of strings as a JSON array of strings (LOGCOLLECTION1), the twin of the driver's: the catalogue's words a line
+    /// A collection of strings as a JSON array of strings, the twin of the driver's: the catalogue's words a line
     /// carries several of, never nested and never an object's members. A null element is left out, and a list or a word past the
     /// bounds is cut so a line stays a line.
     /// </summary>
@@ -326,8 +326,8 @@ public sealed class MachineLog : IDisposable
 }
 
 /// <summary>
-/// The exception that ends an async entry point, written once that entry point's own log is closed (HOSTSTART1,
-/// HOSTSTART2): the <c>error</c> event, its <c>where</c> <c>start</c> until <see cref="Running"/> is called and
+/// The exception that ends an async entry point, written once that entry point's own log is closed:
+/// the <c>error</c> event, its <c>where</c> <c>start</c> until <see cref="Running"/> is called and
 /// <c>unhandled</c> after, <c>terminating</c> the runtime's word. Made by <see cref="MachineLog.WatchEntryPoint"/>.
 /// </summary>
 /// <remarks>
@@ -356,7 +356,7 @@ public sealed class EntryPointWatch
     /// <summary>The start is over: the host serves. An exception that ends the process from now on is <c>unhandled</c>.</summary>
     public void Running() => Volatile.Write(ref _running, 1);
 
-    /// <summary>Write <paramref name="error"/>, when it was raised on the thread this watch was made on.</summary>
+    /// <summary>Write <paramref name="error"/>, when it is raised on the thread this watch is made on.</summary>
     internal void Raised(Exception? error, bool terminating)
     {
         if (Environment.CurrentManagedThreadId != _thread) return;

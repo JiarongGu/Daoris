@@ -23,7 +23,7 @@ namespace Daoris.Knowledge;
 /// </remarks>
 public sealed class RegistrationStore
 {
-    /// <summary>The connection's gate: every command here runs inside it (SQLITETX1).</summary>
+    /// <summary>The connection's gate: every command here runs inside it.</summary>
     private readonly ConnectionGate _db;
 
     private RegistrationStore(SqliteConnection connection) => _db = ConnectionGate.For(connection);
@@ -112,34 +112,32 @@ public sealed class RegistrationStore
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        // What the held knowledge says, hashed (SYNC5a). NULL on every row from before it, which the
+        // What the held knowledge says, hashed. NULL on every row from before it, which the
         // ordering reads as "compare nothing, take the same commit once".
         await SchemaColumns.EnsureAsync(_db, "feed_provenance", "digest", "digest TEXT NULL", ct).ConfigureAwait(false);
 
-        // A store created before the driver existed has no root column — and one created before the
-        // remote existed has no declaration columns. Registrations must survive the upgrade: a schema
-        // that only works on a fresh database silently drops every repository that ever connected,
-        // which is exactly the failure this store was built to remove.
+        // An older store has no root column or declaration columns. Registrations must survive the
+        // upgrade: a schema that only works on a fresh database silently drops every repository that
+        // ever connected, which is exactly the failure this store exists to remove.
         foreach (var (column, definition) in new[]
         {
             ("root", "root TEXT NULL"),
             ("joined", "joined INTEGER NOT NULL DEFAULT 0"),
             ("shares_knowledge", "shares_knowledge INTEGER NOT NULL DEFAULT 0"),
-            // Workspaces arrived last (D48), and every registration that predates them belongs to the
-            // one group there was — which is what the default spells.
+            // A registration that predates workspaces belongs to the one group there is — which is
+            // what the default spells.
             ("workspace", $"workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'"),
-            // Adoption became a stored fact when the registry became the authority (D48 §3): before
-            // that it was derived from a scan, and every row here arrived by being pushed — which is
+            // Adoption is a stored fact: every row here arrived by being pushed — which is
             // what adoption looks like from a service. Hence the default.
             ("adopted", "adopted INTEGER NOT NULL DEFAULT 1"),
-            // The canonical line, told by the checkout that registered (D48 §6). NULL for every row
+            // The canonical line, told by the checkout that registered. NULL for every row
             // that predates it, which is exactly what "nobody said" means — and what makes any branch
             // feedable for a repository that never declared one.
             ("default_branch", "default_branch TEXT NULL"),
-            // What it says it uses (D91): part of the declaration, replaced with it on every
+            // What it says it uses: part of the declaration, replaced with it on every
             // registration like `owns`. Empty for every row from before it — nothing declared.
             ("uses", "uses TEXT NOT NULL DEFAULT '[]'"),
-            // The lanes it declares (D115 §2.2), as their words. NULL is unstated, which is every row
+            // The lanes it declares, as their words. NULL is unstated, which is every row
             // from before it and what a registration that says nothing of lanes preserves.
             ("lanes", "lanes TEXT NULL"),
         })
@@ -197,12 +195,12 @@ public sealed class RegistrationStore
     /// </summary>
     /// <remarks>
     /// The workspace is the one field a re-registration may leave alone. It is WIRING — set once when
-    /// the person adds the repository to a circle, and carried by no manifest (D48 §2) — while an
+    /// the person adds the repository to a circle, and carried by no manifest — while an
     /// ordinary `connect` runs on every sync tick and says nothing about it. So the statement wins when
     /// there is one, the existing row wins when there is not, and `default` closes it: exactly the
     /// COALESCE below, decided here in one statement rather than as a read-modify-write two callers
     /// would race on.
-    /// <para>A write transaction of its own, as every <c>RETURNING</c> write is (QUESTOPENLOCK1, ConnectionGate.InTransactionAsync says
+    /// <para>A write transaction of its own, as every <c>RETURNING</c> write is (ConnectionGate.InTransactionAsync says
     /// why).</para>
     /// </remarks>
     /// <returns>The row as it now stands, so the caller never has to guess which workspace took.</returns>
@@ -252,7 +250,7 @@ public sealed class RegistrationStore
                 : registration.DefaultBranch.Trim());
 
         // Every preserved field comes back, for the same reason: what is SERVED is what the store
-        // decided, never what arrived (D48 §2) — otherwise the row in memory and the row on disk
+        // decided, never what arrived — otherwise the row in memory and the row on disk
         // disagree until a restart.
         await using var reader = await command.ExecuteReaderAsync(inside).ConfigureAwait(false);
         if (!await reader.ReadAsync(inside).ConfigureAwait(false))
@@ -268,7 +266,7 @@ public sealed class RegistrationStore
         };
     }, ct);
 
-    /// <summary>What commit a repository's knowledge was last fed from, or null where nothing has fed.</summary>
+    /// <summary>What commit a repository's knowledge is last fed from, or null where nothing has fed.</summary>
     public Task<FeedProvenance?> ProvenanceAsync(string repository, CancellationToken ct = default) => _db.RunAsync<FeedProvenance?>(async () =>
     {
         await using var command = _db.Command();
@@ -281,7 +279,7 @@ public sealed class RegistrationStore
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
     }, ct);
 
-    /// <summary>What commit a repository's code map was last fed from, or null where none has fed (MAP3b).</summary>
+    /// <summary>What commit a repository's code map is last fed from, or null where none has fed.</summary>
     public Task<FeedProvenance?> CodeMapProvenanceAsync(string repository, CancellationToken ct = default) => _db.RunAsync<FeedProvenance?>(async () =>
     {
         await using var command = _db.Command();
@@ -294,7 +292,7 @@ public sealed class RegistrationStore
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
     }, ct);
 
-    /// <summary>The fed code map as held: which file it was, and its canonical text — both null when none is.</summary>
+    /// <summary>The fed code map as held: which file it is, and its canonical text — both null when none is.</summary>
     public Task<(string? File, string? Body)?> FedCodeMapAsync(string repository, CancellationToken ct = default) => _db.RunAsync<(string? File, string? Body)?>(async () =>
     {
         await using var command = _db.Command();
@@ -330,8 +328,8 @@ public sealed class RegistrationStore
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }, ct);
 
-    /// <summary>Stop holding a repository's code map, and the commit it was held at.</summary>
-    /// <returns>Whether there was one; false is an answer, not a failure.</returns>
+    /// <summary>Stop holding a repository's code map, and the commit it is held at.</summary>
+    /// <returns>Whether there is one; false is an answer, not a failure.</returns>
     public Task<bool> ForgetCodeMapAsync(string repository, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
         await using var command = _db.Command();
@@ -342,7 +340,7 @@ public sealed class RegistrationStore
 
     /// <summary>
     /// Stop holding what a repository fed — its knowledge's commit and its code map — while its
-    /// registration stays: it joined without sharing, or unjoined, and its knowledge is home now (REV3).
+    /// registration stays: it joined without sharing, or unjoined, and its knowledge is home now.
     /// </summary>
     public Task ForgetKnowledgeAsync(string repository, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
@@ -356,11 +354,11 @@ public sealed class RegistrationStore
     }, ct);
 
     /// <summary>
-    /// Forget the commit every repository's knowledge was fed at — the index that held it was rebuilt.
+    /// Forget the commit every repository's knowledge is fed at — the index that holds it is rebuilt.
     /// </summary>
     /// <remarks>
     /// Knowledge only. A code map and a declaration are held here with their bodies, so they survive a
-    /// rebuild of the index, and so does the commit each was taken at.
+    /// rebuild of the index, and so does the commit each is taken at.
     /// </remarks>
     public Task ForgetAllKnowledgeProvenanceAsync(CancellationToken ct = default) => _db.RunAsync(async () =>
     {
@@ -410,7 +408,7 @@ public sealed class RegistrationStore
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }, ct);
 
-    /// <summary>What commit a repository's declaration was registered at, or null where none named one (SYNC5b).</summary>
+    /// <summary>What commit a repository's declaration is registered at, or null where none named one.</summary>
     public Task<FeedProvenance?> RegistrationProvenanceAsync(string repository, CancellationToken ct = default) => _db.RunAsync<FeedProvenance?>(async () =>
     {
         await using var command = _db.Command();
@@ -444,7 +442,7 @@ public sealed class RegistrationStore
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }, ct);
 
-    /// <summary>The repositories this machine's checkouts took out of a circle that has not been told yet (SYNC5b).</summary>
+    /// <summary>The repositories this machine's checkouts took out of a circle that has not been told yet.</summary>
     public Task<IReadOnlyList<string>> RetiredAsync(string workspace, CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<string>>(async () =>
     {
         await using var command = _db.Command();
@@ -459,7 +457,7 @@ public sealed class RegistrationStore
     }, ct);
 
     /// <summary>The circle has been told, or no longer needs to be.</summary>
-    /// <returns>Whether there was a tombstone to clear; false is an answer, not a failure.</returns>
+    /// <returns>Whether there is a tombstone to clear; false is an answer, not a failure.</returns>
     public Task<bool> ClearRetiredAsync(string repository, string workspace, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
         await using var command = _db.Command();
@@ -482,16 +480,16 @@ public sealed class RegistrationStore
 
     /// <summary>
     /// Take a repository off the map. <b>Nothing on disk is touched</b>: this ends a registration, and
-    /// the repository's files are its own (D48 §3/§7).
+    /// the repository's files are its own.
     /// </summary>
-    /// <returns>Whether there was a row to retire; false is an answer, not a failure.</returns>
+    /// <returns>Whether there is a row to retire; false is an answer, not a failure.</returns>
     public Task<bool> DeleteAsync(string repository, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
         await using var command = _db.Command();
         // The provenance goes with the registration: a repository off the map holds no position in
         // anyone's history here, and a leftover row would refuse the first feed after it re-joined as
         // though this deployment still held a newer commit — which it would not. The declaration's
-        // commit goes for the same reason: a deployment keeps no tombstone of its own (SYNC5b).
+        // commit goes for the same reason: a deployment keeps no tombstone of its own.
         command.CommandText = """
             DELETE FROM feed_provenance WHERE repository = $repository COLLATE NOCASE;
             DELETE FROM fed_code_maps WHERE repository = $repository COLLATE NOCASE;
@@ -506,7 +504,7 @@ public sealed class RegistrationStore
     /// Whether this store has ever been managed — and marking that it now has.
     /// </summary>
     /// <remarks>
-    /// The bootstrap import runs exactly once (D48 §3). Running it again on every start would
+    /// The bootstrap import runs exactly once. Running it again on every start would
     /// resurrect every repository the person deliberately retired, which would make "remove" mean
     /// "until the next restart". The marker is set whether or not the import found anything: an empty
     /// root is still an answer, and asking again next time would re-open the same hole.

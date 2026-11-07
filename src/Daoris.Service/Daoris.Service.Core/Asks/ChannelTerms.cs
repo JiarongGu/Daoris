@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The channel's bounds (SESSONE2a; the co-working design §2.6). First values, read again at the canary: a message's text, how many
+/// The channel's bounds. First values, read again at the canary: a message's text, how many
 /// messages one part posts, and how many of the newest a next part is handed.
 /// </summary>
 public static class ChannelBounds
@@ -12,23 +12,23 @@ public static class ChannelBounds
     /// <summary>The most messages one part (one session record) posts.</summary>
     public const int MaxPerPart = 10;
 
-    /// <summary>The most messages a next part is handed on starting: the newest, within the instruction's share (SESSONE2b).</summary>
+    /// <summary>The most messages a next part is handed on starting: the newest, within the instruction's share.</summary>
     public const int HandedNewest = 20;
 
     /// <summary>
-    /// The most of one part's posts kept urgent (COWORK1d, D188 point 2; the message-urgency design §2.2, trap 10): a first value, a
+    /// The most of one part's posts kept urgent: a first value, a
     /// judgement, within the part's <see cref="MaxPerPart"/>. A further urgent post is kept ordinary, and its poster told so.
     /// </summary>
     public const int UrgentPerPart = 3;
 
-    /// <summary>The most members outside Daoris one channel holds at once (CHANNELJOIN1, the event-channel design §5.6).</summary>
+    /// <summary>The most members outside Daoris one channel holds at once.</summary>
     public const int MembersPerChannel = 3;
 
     /// <summary>The most members outside Daoris this machine holds at once, across its channels.</summary>
     public const int MembersHere = 8;
 }
 
-/// <summary>Why the channel did not do what was asked of it, by a code: a tool says it in a sentence, a door answers the code.</summary>
+/// <summary>Why the channel did not do what it is asked, by a code: a tool says it in a sentence, a door answers the code.</summary>
 public enum ChannelRefusal
 {
     None,
@@ -48,7 +48,7 @@ public enum ChannelRefusal
     /// <summary>The session's ask is not held on this machine, so its channel is not here.</summary>
     NoAsk,
 
-    /// <summary>A helper or a reviewer: each answers one question, and neither posts nor reads (D155, D163).</summary>
+    /// <summary>A helper or a reviewer: each answers one question, and neither posts nor reads.</summary>
     Helper,
 
     /// <summary>A <c>to</c> that is not one of the ask's repositories.</summary>
@@ -71,7 +71,7 @@ public enum ChannelRefusal
 }
 
 /// <summary>
-/// What an entry acknowledged of a channel message (COWORK1d, D188 point 6; the message-urgency design §6), one row per ask, entry and
+/// What an entry acknowledged of a channel message, one row per ask, entry and
 /// message, ranked so none moves back: <see cref="Partly"/>, <see cref="Taking"/>, <see cref="Sent"/>, <see cref="Read"/>,
 /// <see cref="Taken"/>.
 /// </summary>
@@ -106,8 +106,8 @@ public static class ChannelAcks
 public sealed record ChannelAck(string State, string? Session, DateTimeOffset At);
 
 /// <summary>
-/// What a message reached in one repository's line of work, as the person reads it (COWORK1d, the design §7, §8.4): never more than
-/// was observed. Answered is a reply from that repository, never obeyed.
+/// What a message reached in one repository's line of work, as the person reads it: never more than
+/// any part observed. Answered is a reply from that repository, never obeyed.
 /// </summary>
 public static class ChannelReceipts
 {

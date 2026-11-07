@@ -3,7 +3,7 @@ global using static Daoris.Knowledge.Clipped;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The one way the service core clips text it quotes back in a refusal or a log line (DEDUP9c).
+/// The one way the service core clips text it quotes back in a refusal or a log line.
 /// Five private copies each held the same cut with its limit baked in; a file that reads
 /// <c>using static Daoris.Knowledge.Clipped;</c> calls <c>Clip(text)</c> as before.
 /// </summary>
@@ -16,7 +16,7 @@ internal static class Clipped
     internal static string Clip(string text, int limit = DefaultLimit) =>
         text.Length <= limit ? text : text[..limit] + "…";
 
-    /// <summary>A commit id's first <paramref name="length"/> characters (DEDUP7b), the id itself when it is no longer; no mark, since an id is not prose.</summary>
+    /// <summary>A commit id's first <paramref name="length"/> characters, the id itself when it is no longer; no mark, since an id is not prose.</summary>
     internal static string ShortCommit(string commit, int length) =>
         commit.Length > length ? commit[..length] : commit;
 

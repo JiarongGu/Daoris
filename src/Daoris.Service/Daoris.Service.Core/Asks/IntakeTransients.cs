@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Whether an intake's ask is let go once more after its provider kept failing (AGENTERRORS1d, D210 point 8; the agent-errors design §7):
+/// Whether an intake's ask is let go once more after its provider kept failing:
 /// the first intake that ended <c>intake.transient</c> frees its ask for a fresh one, and an ask whose earlier intake already ended the
 /// same way stays bound to the failed record, so an outage costs two bounds before the person hears of it.
 /// </summary>

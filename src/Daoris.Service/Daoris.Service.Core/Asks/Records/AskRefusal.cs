@@ -1,6 +1,6 @@
 namespace Daoris.Knowledge;
 
-/// <summary>Why an ask did not do what was asked of it — or <see cref="None"/> when it did.</summary>
+/// <summary>Why an ask did not do what it is asked — or <see cref="None"/> when it did.</summary>
 public enum AskRefusal
 {
     None,
@@ -17,15 +17,15 @@ public enum AskRefusal
     /// <summary>No ask under that id.</summary>
     NotFound,
 
-    /// <summary>The ask was closed; it becomes nothing more.</summary>
+    /// <summary>The ask is closed; it becomes nothing more.</summary>
     Closed,
 
-    /// <summary>The quest it was to become was refused by the exchange — the ask itself is kept.</summary>
+    /// <summary>The quest it is to become is refused by the exchange — the ask itself is kept.</summary>
     QuestRefused,
 
     /// <summary>
     /// A delete that would remove a record something stands on — a quest asked by it that somebody took
-    /// or answered, or that a session was started for — so the ask stays whole (D95).
+    /// or answered, or that a session started for — so the ask stays whole.
     /// </summary>
     Kept,
 

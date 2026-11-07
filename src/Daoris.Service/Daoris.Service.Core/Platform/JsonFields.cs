@@ -5,7 +5,7 @@ namespace Daoris.Knowledge;
 
 /// <summary>
 /// JSON read and written by hand, as every store and wire here does: nothing may quietly stop working
-/// under AOT. Each of them had written these helpers for itself (REV3 CLEAN1).
+/// under AOT.
 /// </summary>
 /// <remarks>
 /// Every reader answers <i>absent</i> for a value of the wrong kind rather than throwing, and that

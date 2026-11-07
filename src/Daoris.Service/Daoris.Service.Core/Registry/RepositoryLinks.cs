@@ -1,8 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Links, and links held as text, in a repository the scanner reads (LAYOUT4; D117,
-/// `docs/2026-10-01-agent-layout-design.md` §5.5 and §5.4's last table).
+/// Links, and links held as text, in a repository the scanner reads (`docs/2026-10-01-agent-layout-design.md` §5.5 and §5.4's last table).
 /// </summary>
 /// <remarks>
 /// <para><b>Skipped, never followed.</b> A link in a repository points somewhere its own files are not:
@@ -45,7 +44,7 @@ public static class RepositoryLinks
     /// A probable, as the CLI's is: the reference's <c>CLAUDE.md</c> is the nine bytes <c>AGENTS.md</c>,
     /// which names its partner whether or not the partner exists, and a folder link reads
     /// <c>../.agents/skills</c>. A one-word file that names nothing beside it is prose, however short.
-    /// Skipping on a probable costs one document that was a single word naming a file; reading on one
+    /// Skipping on a probable costs one document that is a single word naming a file; reading on one
     /// puts a path in the index.
     /// </remarks>
     /// <param name="repositoryRoot">The repository, for what sits beside the file.</param>

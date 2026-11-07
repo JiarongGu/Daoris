@@ -1,10 +1,10 @@
 namespace Daoris.Knowledge;
 
-/// <summary>Deleting an ask made by mistake (D95), with every quest asked by it.</summary>
+/// <summary>Deleting an ask made by mistake, with every quest asked by it.</summary>
 internal sealed class AskDeletes(AskStore asks, QuestExchange exchange, QuestFiles? askFiles, AskStandings standings)
 {
     /// <summary>
-    /// Delete an ask made by mistake (D95), with every quest asked by it — or none of it, when any of
+    /// Delete an ask made by mistake, with every quest asked by it — or none of it, when any of
     /// those quests must stay. An ask that became nothing goes alone. The files it kept go with it.
     /// </summary>
     public async Task<AskOutcome> DeleteAsync(string id, DateTimeOffset now, CancellationToken ct)
@@ -38,7 +38,7 @@ internal sealed class AskDeletes(AskStore asks, QuestExchange exchange, QuestFil
                 continue;
             }
 
-            // It moved while the ask was being deleted — taken on another machine first, most likely.
+            // It moved during the delete — taken on another machine first, most likely.
             // The ask stays, with whatever is left of it, and the answer says what did go.
             return new(
                 AskRefusal.Kept,

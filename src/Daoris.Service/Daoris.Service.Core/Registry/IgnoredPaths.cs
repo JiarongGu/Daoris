@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Daoris.Knowledge;
 
-/// <summary>What git ignores in a checkout, by git's own answer (KNOWWALK1).</summary>
+/// <summary>What git ignores in a checkout, by git's own answer.</summary>
 /// <remarks>
 /// <para><b>Git's answer, not a list of names.</b> One <c>git ls-files --others --ignored --exclude-standard --directory</c>
 /// names each ignored folder once, with a trailing slash, and never what is in it, since git decides a folder is ignored
@@ -12,11 +12,11 @@ namespace Daoris.Knowledge;
 /// <c>obj/</c>, <c>.claude/worktrees/</c>), so a reader that asks git reads none of it and a repository with names of its
 /// own needs no list here.</para>
 ///
-/// <para><b>The cost</b> is one process, a tenth to a third of a second on a busy machine for this repository (measured,
-/// KNOWWALK1), against the one to two seconds a read of the checkout takes: asked once per read, never per folder.</para>
+/// <para><b>The cost</b> is one process, a tenth to a third of a second on a busy machine for this repository (measured),
+/// against the one to two seconds a read of the checkout takes: asked once per read, never per folder.</para>
 ///
 /// <para><b>Where git cannot answer, nothing is ignored</b>: a folder that is no checkout, a git that is not installed, an
-/// answer that does not come in time. The read is then the walk it was before; the answer narrows a read and never widens
+/// answer that does not come in time. The read is then the plain walk; the answer narrows a read and never widens
 /// what is missed.</para>
 /// </remarks>
 public sealed class IgnoredPaths
@@ -107,7 +107,7 @@ public sealed class IgnoredPaths
         foreach (var variable in new[] { "GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR" }) start.Environment.Remove(variable);
         start.Environment["GIT_CEILING_DIRECTORIES"] = Path.GetDirectoryName(Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, '/')) ?? string.Empty;
         if (path is not null) start.Environment["PATH"] = path;
-        // GITSTART2: one process where the launcher made two, with the variables it would have set, read after this
+        // One process where the launcher made two, with the variables it would have set, read after this
         // start's own are; any other git still starts by its bare name.
         GitForWindows.Past(start);
         return start;

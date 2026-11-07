@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The kind and workflow on an ask (WORKFLOW1e, D157 point 10; the workflow design §4.1 row 1, §4.3): the person's choice for every
+/// The kind and workflow on an ask: the person's choice for every
 /// chain the ask publishes, kept with when and their words, the latest standing; one naming neither clears it.
 /// </summary>
 /// <param name="Kind">A kind's id, which the ask's workspace declares on the machine that drives it; null for none.</param>
@@ -25,13 +25,13 @@ public sealed record QuestWorkflowChoice(string? Kind, string? Workflow)
     /// <summary>Their words with it, where they gave any.</summary>
     public string? Words { get; init; }
 
-    /// <summary>When it was made: the operation's time, set on the quest as the replay keeps it.</summary>
+    /// <summary>When it is made: the operation's time, set on the quest as the replay keeps it.</summary>
     public DateTimeOffset? At { get; init; }
 }
 
 /// <summary>
-/// What a kind and a workflow on an ask may be, by their shape alone (WORKFLOW1e): the service holds no workflow and no kind, which
-/// are the driving machine's (design §2.4), so whether the workspace declares the kind and the workflow reads is the door's to say.
+/// What a kind and a workflow on an ask may be, by their shape alone: the service holds no workflow and no kind, which
+/// are the driving machine's, so whether the workspace declares the kind and the workflow reads is the door's to say.
 /// The driver's <c>WorkflowSelection.IsKindId</c> and <c>WorkflowNamed.IsId</c> spell the same shapes.
 /// </summary>
 public static partial class WorkflowChoices
@@ -49,7 +49,7 @@ public static partial class WorkflowChoices
     public const int ReasonLimit = Reviews.ReasonLimit;
 
     /// <summary>
-    /// What is wrong with a kind proposal's own words, as a clause the sentence closes, or null (WORKFLOW1i): the kind's shape, a
+    /// What is wrong with a kind proposal's own words, as a clause the sentence closes, or null: the kind's shape, a
     /// reason said, and at most <see cref="ReasonLimit"/> characters. Whether the reason quotes the person is the exchange's.
     /// </summary>
     public static string? JudgeProposal(string? kind, string? reason) =>
@@ -75,7 +75,7 @@ public static partial class WorkflowChoices
 
     /// <summary>
     /// A quest's choice in its one shape in the log's payload and on the wire, and, <paramref name="standing"/>, in the quest's column,
-    /// which alone keeps when it was made (WORKFLOW1e2).
+    /// which alone keeps when it is made.
     /// </summary>
     internal static void Write(Utf8JsonWriter writer, QuestWorkflowChoice choice, bool standing = false)
     {

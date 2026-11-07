@@ -2,19 +2,19 @@ using System.Net;
 
 namespace Daoris.Knowledge;
 
-/// <summary>One service, two modes, chosen by configuration (D21) — never by build.</summary>
+/// <summary>One service, two modes, chosen by configuration — never by build.</summary>
 public enum ServiceMode
 {
     /// <summary>The default, silently: no account, no credential model, loopback trust.</summary>
     Local,
 
-    /// <summary>The team deployment (D47 §3): every route gated by minted keys, machine paths never served.</summary>
+    /// <summary>The team deployment: every route gated by minted keys, machine paths never served.</summary>
     Shared,
 }
 
 /// <summary>
-/// The deployment judgement (D47 §3): which mode the configuration names, and whether this host may
-/// start at all with the addresses it was given.
+/// The deployment judgement: which mode the configuration names, and whether this host may
+/// start at all with the addresses it is given.
 /// </summary>
 /// <remarks>
 /// The refusal is the sibling's fail-safe inversion (service design §5): a host bound beyond loopback
@@ -25,11 +25,11 @@ public static class Access
 {
     public const string ModeVariable = "DAORIS_MODE";
 
-    /// <summary>The circle a SHARED deployment serves (D48 §5). Meaningless on a local host, which
+    /// <summary>The circle a SHARED deployment serves. Meaningless on a local host, which
     /// holds every workspace the person wired — so setting it there is refused, not ignored.</summary>
     public const string WorkspaceVariable = "DAORIS_WORKSPACE";
 
-    /// <summary>Absence means local, silently (D21). An unknown value errors naming what exists (D23).</summary>
+    /// <summary>Absence means local, silently. An unknown value errors naming what exists.</summary>
     public static (ServiceMode Mode, string? Error) ParseMode(string? value) =>
         value?.Trim().ToLowerInvariant() switch
         {
@@ -40,15 +40,15 @@ public static class Access
 
     /// <summary>
     /// Why this host must not start — or null when it may. <paramref name="urls"/> is the bind list as
-    /// configured (semicolon-separated). There are exactly two trust shapes (D47 §7, as amended):
+    /// configured (semicolon-separated). There are exactly two trust shapes:
     /// local trusts the loopback and may bind nothing else; shared gates everything with minted keys
     /// and may bind anywhere.
     /// </summary>
     /// <param name="endpoints">
     /// The addresses Kestrel's own endpoint configuration names (`Kestrel:Endpoints:*:Url`). They
     /// OVERRIDE <paramref name="urls"/> at bind time, so a judgement that read only the urls passed a
-    /// host that then bound wherever an environment variable, an argument or an appsettings.json said
-    /// (REV3). Judged by the same rule.
+    /// host that then bound wherever an environment variable, an argument or an appsettings.json said.
+    /// Judged by the same rule.
     /// </param>
     public static string? RefuseStartup(ServiceMode mode, string urls, IEnumerable<string>? endpoints = null)
     {
@@ -72,8 +72,7 @@ public static class Access
     /// </summary>
     /// <remarks>
     /// <para>Silence is <see cref="Workspaces.Default"/> for a shared host, because silence is
-    /// `default` everywhere (D48 §2): a team that never named a circle runs exactly as it did before
-    /// workspaces existed.</para>
+    /// `default` everywhere: a team that never named a circle runs as if workspaces did not exist.</para>
     ///
     /// <para>A LOCAL host naming one is refused rather than ignored. A local deployment holds every
     /// circle the person wired, so an identity there would be a claim it cannot honour — and a
@@ -100,11 +99,11 @@ public static class Access
     /// when it may take it.
     /// </summary>
     /// <remarks>
-    /// One shared deployment serves one workspace (D48 §5), so a row declaring another is not a
+    /// One shared deployment serves one workspace, so a row declaring another is not a
     /// permission failure but a message delivered to the wrong building. The sentence names BOTH
     /// sides: a "no" that does not say which side is where leaves the person with the question they
     /// should be deciding. Silence is not a declaration — an ordinary registration says nothing about
-    /// wiring, and the receiving deployment's own identity decides where it lands (D48 §2).
+    /// wiring, and the receiving deployment's own identity decides where it lands.
     /// </remarks>
     public static string? RefuseForeignWorkspace(string? hostWorkspace, string repository, string? stated) =>
         hostWorkspace is null || string.IsNullOrWhiteSpace(stated) || Workspaces.Same(hostWorkspace, stated)
@@ -120,7 +119,7 @@ public static class Access
     /// <remarks>
     /// The registration door's boundary, plus one rule of its own: a re-wire must NAME a workspace.
     /// Silence is right for a registration, where the receiving host's wiring decides. For a re-wire
-    /// it became `default`, which on a shared host moved the row out of the one circle it serves (REV3).
+    /// it would be `default`, which on a shared host moves the row out of the one circle it serves.
     /// </remarks>
     public static string? RefuseRewire(string? hostWorkspace, string repository, string? stated) =>
         string.IsNullOrWhiteSpace(stated)

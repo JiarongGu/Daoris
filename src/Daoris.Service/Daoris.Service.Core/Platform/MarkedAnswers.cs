@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A read's answers, each kept with the <see cref="StoreMark"/> read before it was made: asked again while the mark holds, the kept
+/// A read's answers, each kept with the <see cref="StoreMark"/> read before the answer is made: asked again while the mark holds, the kept
 /// answer is the answer, and asked at a mark that moved, it is made again. Readers that ask at once at one mark share one making.
 /// </summary>
 /// <remarks>

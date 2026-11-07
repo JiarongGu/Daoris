@@ -13,7 +13,7 @@ public sealed record AddressedFor(ChannelMessage Message, ChannelAck? Ack);
 
 /// <summary>
 /// A line's own channel and the messages to one part, kept in <c>channel_addressed</c> beside the ask's <c>channel</c>. Older builds read
-/// <c>channel</c> and the sync carries it, so nothing here reaches an audience it was not for, and nothing here travels. Each part's
+/// <c>channel</c> and the sync carries it, so nothing here reaches an audience it is not for, and nothing here travels. Each part's
 /// receipt is its own row, by the session that wrote it and its entry.
 /// </summary>
 public sealed class ChannelAddressedStore
@@ -70,7 +70,7 @@ public sealed class ChannelAddressedStore
     /// Keep a message, unless its session has posted <paramref name="perPart"/> already across both tables; its level decided in the same
     /// statement, as an ask's message's is, so two posts at once cannot both pass a bound. A message of no session has no cap.
     /// </summary>
-    /// <returns>The message as kept; null when the cap refused it, and nothing was kept.</returns>
+    /// <returns>The message as kept; null when the cap refused it, and nothing is kept.</returns>
     public Task<ChannelMessage?> KeepAsync(
         ChannelMessage message, int perPart, CancellationToken ct = default, int urgentPerPart = ChannelBounds.UrgentPerPart) =>
         _db.InTransactionAsync<ChannelMessage?>(async (transaction, inside) =>
@@ -340,7 +340,7 @@ public sealed class ChannelParts(ChannelDesk desk, ChannelStore store, SessionLe
 
     /// <summary>
     /// What each message to one part reached in that part's line: the best that any part of the line observed, else it waits. Never more
-    /// than was observed.
+    /// than any part observed.
     /// </summary>
     public async Task<IReadOnlyDictionary<string, string>> ReceiptsAsync(string origin, IReadOnlyList<ChannelMessage> addressed, CancellationToken ct)
     {
