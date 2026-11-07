@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris notices</c> (NOTIFY2i, D196 point 8, the notification design §9): through the running Daoris, its <c>NOTIFICATIONS</c>
+/// <c>daoris notices</c>: through the running Daoris, its <c>NOTIFICATIONS</c>
 /// lines as it answers them, this process reading nothing; alone, the notices' record, the presses, what needs the person and the
 /// messages said not read; as text and as <c>--json</c>; and nothing changed either way.
 /// </summary>
@@ -38,7 +38,7 @@ public sealed class NoticesReadTests
 
     /// <summary>
     /// Alone, the record is all there is: the live groups said not read, an unread answer under <i>Messages</i>, each other notice under
-    /// <i>Done and failed</i> newest first, the unread marked; and the record left as it was, an unread notice still unread.
+    /// <i>Done and failed</i> newest first, the unread marked; and the record left as it is, an unread notice still unread.
     /// </summary>
     [Fact]
     public async Task Alone_the_record_is_read_and_the_live_groups_said_not_read()
@@ -94,7 +94,7 @@ public sealed class NoticesReadTests
     }
 
     /// <summary>
-    /// CONFIRMWAIT1a-i: a terminal's press has no time, so its line says it waits until the person answers, and its JSON names no
+    /// A terminal's press has no time, so its line says it waits until the person answers, and its JSON names no
     /// <c>expires</c>; the service door's keeps its time left. A terminal's is listed after every timed one.
     /// </summary>
     [Fact]

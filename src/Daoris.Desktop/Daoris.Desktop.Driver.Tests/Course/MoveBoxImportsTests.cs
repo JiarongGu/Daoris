@@ -4,11 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-i part 2 (D212; the foundation design §3.3, §13.5): the importers of the two boxes an older build writes, the ended limit
+/// The importers of the two boxes an older build writes, the ended limit
 /// move's <c>&lt;s&gt;.limit-move.json</c> and the conversation's hand-over <c>&lt;s&gt;.hand-over.json</c>. Each box is read once, its move
 /// written as the store's own row with the import's receipt in one transaction, and only then set aside, and only if the file is still the
 /// bytes it read; nothing is imported until the start's confirmation is settled, and a box whose record has a standing move waits behind it.
-/// Built and called from no production site until rows f-v and f-vi (<see cref="MoveStoreCensusTests"/>).
 /// </summary>
 /// <remarks>Every case has its own scratch home under <c>_fixtures/</c>; nothing here starts a process.</remarks>
 [Collection("agent operation ports")]
@@ -93,7 +92,7 @@ public sealed class MoveBoxImportsTests : IDisposable
     }
 
     /// <summary>
-    /// FOUNDATION1f-vi part a: a box that names its new part and moved no words (<c>moved</c> unwritten: an older host's open, the words still on
+    /// A box that names its new part and moved no words (<c>moved</c> unwritten: an older host's open, the words still on
     /// the old record) is imported as the live move's own record reads an open whose host moved none: opened with its destination and no word,
     /// since naming those words as the destination's would read them gone from it, <i>left</i>.
     /// </summary>
@@ -155,7 +154,7 @@ public sealed class MoveBoxImportsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Each hand-over box is imported by exactly one holder (FOUNDATION1f-v parts a and c): the same file name holds a conversation's, the
+    /// 🔴 Each hand-over box is imported by exactly one holder: the same file name holds a conversation's, the
     /// shell's, and a quest session's, the driven holder's, so each importer owns the sessions its filter names and the other's box is left in
     /// place, listed by it and imported by it never, and the quest's lands as a driven move.
     /// </summary>

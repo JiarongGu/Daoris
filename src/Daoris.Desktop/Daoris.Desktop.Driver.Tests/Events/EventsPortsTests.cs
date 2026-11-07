@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The ports the events declare where a lower reading names a higher type (FOUNDATION1 mod-vii): each is read through a stand-in that is
+/// The ports the events declare where a lower reading names a higher type: each is read through a stand-in that is
 /// nothing the agents or the context built, so the events' judgements hold on the port's members alone, and the agents' and the context's own
 /// types answer each as they did.
 /// </summary>

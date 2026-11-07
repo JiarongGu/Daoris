@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PARALLEL1a (D181 points 2-4): the machine's facts, kept by judges on background tasks and read as last judged. A reader takes
+/// The machine's facts, kept by judges on background tasks and read as last judged. A reader takes
 /// the snapshot as it stands and never waits on a judgement; a wake judges its own subject alone; a subject is never judged twice
 /// at once; a topic judges a few of its subjects together; and a judgement that does not answer in its bound holds no other.
 /// </summary>
@@ -17,7 +17,7 @@ public sealed class MachineFactsTests
 
     private static readonly FactRules Rules = new(Deadline: TimeSpan.FromMinutes(5), Bound: TimeSpan.FromSeconds(30), AtOnce: 2);
 
-    /// <summary>What a test's judge was asked, by subject, from any thread.</summary>
+    /// <summary>What a test's judge is asked, by subject, from any thread.</summary>
     private sealed class Asked
     {
         private readonly Dictionary<string, int> _counts = new(StringComparer.OrdinalIgnoreCase);
@@ -137,7 +137,7 @@ public sealed class MachineFactsTests
         Assert.Null(facts.Current.Of(Lines, "stuck"));
     }
 
-    /// <summary>FACTSLATE1: a judge cut at its own bound is late, said once and no error, and the fact stays as last judged.</summary>
+    /// <summary>A judge cut at its own bound is late, said once and no error, and the fact stays as last judged.</summary>
     [Fact]
     public async Task A_judge_cut_at_its_bound_is_said_once_as_late_and_never_as_an_error()
     {
@@ -284,7 +284,7 @@ public sealed class MachineFactsTests
     }
 
     /// <summary>
-    /// LOADFLAKE3: a rest counts from the moment the judgement answered, never from when the pool ran its ending, so a clock moved
+    /// A rest counts from the moment the judgement answers, never from when the pool runs its ending, so a clock moved
     /// the instant its fact lands (a reader of <c>Changed</c>) has rested the subject by the next wake.
     /// </summary>
     [Fact]
@@ -316,7 +316,7 @@ public sealed class MachineFactsTests
     }
 
     /// <summary>
-    /// OWNMOVES1: a wake afresh, a move Daoris made itself, is judged at once past the subject's rest and waits for nothing, while a
+    /// A wake afresh, a move Daoris makes itself, is judged at once past the subject's rest and waits for nothing, while a
     /// plain wake of another subject in the same moment is still held; the clock never moves, so no rest ends.
     /// </summary>
     [Fact]
@@ -346,7 +346,7 @@ public sealed class MachineFactsTests
     }
 
     /// <summary>
-    /// OWNMOVES1: a wake afresh that lands while its subject is judged is judged once more right after, past the rest the judgement
+    /// A wake afresh that lands while its subject is judged is judged once more right after, past the rest the judgement
     /// under way just began, since that one may have read the subject before the move.
     /// </summary>
     [Fact]

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The requests folder on the change watch (FABRIC-EVENT2, the design §A4.1, row 7): a request is taken when its folder says it
+/// The requests folder on the change watch: a request is taken when its folder says it
 /// moved, not at a second's look; a listing a few seconds apart stays behind it, inside the asking door's ten seconds; and what
 /// the loop itself writes there (a take, an answer, a press it read) wakes nothing. On the fake source; the same over a real
 /// watcher is <see cref="ChangeWatchProcessTests"/>.
@@ -57,7 +57,7 @@ public sealed class SessionRequestChangeTests : IDisposable
     }
 
     /// <summary>
-    /// The requests folder is the chain's link 7 (FABRIC-CHAIN2, the design §C6): its wake is a <c>home</c> event and its listing
+    /// The requests folder is the chain's link 7: its wake is a <c>home</c> event and its listing
     /// the topic's <c>timer</c>, both heard by the folder's reader alone, and a look that took a request writes <c>chain.fired</c>.
     /// </summary>
     [Fact]
@@ -94,7 +94,7 @@ public sealed class SessionRequestChangeTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-EVENT2c: a home with no <c>sessions/requests/</c> yet still has its folder watched at the loop's start, so the first
+    /// A home with no <c>sessions/requests/</c> yet still has its folder watched at the loop's start, so the first
     /// request after an install is taken within the debounce, not at the 3 s listing.
     /// </summary>
     [Fact]
@@ -115,7 +115,7 @@ public sealed class SessionRequestChangeTests : IDisposable
         Assert.Single(inbox.State.Queued);
     }
 
-    /// <summary>FABRIC-EVENT2d: a resume the shell heard reopens the folder's watcher and judges it, with no 30 s overrun to find it.</summary>
+    /// <summary>A resume the shell heard reopens the folder's watcher and judges it, with no 30 s overrun to find it.</summary>
     [Fact]
     public async Task A_resume_the_shell_heard_reopens_the_watcher()
     {
@@ -131,8 +131,8 @@ public sealed class SessionRequestChangeTests : IDisposable
 
     /// <summary>
     /// With the source silenced, the listing behind it takes the request inside the asking door's ten seconds (SessionsCommand's
-    /// <see cref="SessionsWorld.DefaultWait"/>): the watch's default, unchanged by the test. TESTCLOCK2: "inside" is the listing's
-    /// period against the door's wait, both the code's own, where the machine's clock timed a take against ten seconds.
+    /// <see cref="SessionsWorld.DefaultWait"/>): the watch's default, unchanged by the test. "Inside" is the listing's
+    /// period against the door's wait, both the code's own, never the machine's clock timed against ten seconds.
     /// </summary>
     [Fact]
     public async Task With_the_source_silenced_the_listing_takes_a_request_inside_the_asking_doors_wait()

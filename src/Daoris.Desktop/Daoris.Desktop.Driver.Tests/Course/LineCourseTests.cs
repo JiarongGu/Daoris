@@ -6,7 +6,7 @@ using T = Daoris.Driver.CourseTrigger;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1e part 2 (the foundation design §3.1, §3.2, §10 row 1e): <see cref="CourseDecision.Decide"/>, the one decision of how a line goes
+/// <see cref="CourseDecision.Decide"/>, the one decision of how a line goes
 /// on, read by nothing. Every case here is a case of today's suites, ported: its facts as the course reads them and its trigger, answered as
 /// the path answers it today, pinned in <c>course-cases.txt</c> beside this file as <c>line-account-cases.txt</c> pins the account rule's.
 /// </summary>
@@ -15,7 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// answers-alone hold; a standing move). Each names the case it is ported from, and a case of the paths' suites is either a row's or left
 /// out by why; each suite's count of cases is the table's too, so a case added to a suite is placed here as it lands.</para>
 /// <para>Where two paths answer the same facts two ways, the table holds both rows and the decision tells them apart by the trigger or a
-/// fact: the differences, each a decision for the row that adopts it (h for conversations, i for driven lines), in D212's note.</para>
+/// fact.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Census)]
 public sealed class LineCourseTests
@@ -227,7 +227,7 @@ public sealed class LineCourseTests
         ["E-24"] = new(T.LimitWake, Later(Ended(Chat(P()) with { Limited = true }, WaitsWalk()), "other", "2")),
         ["E-25"] = new(T.LimitWake, Later(Ended(Chat(P()) with { Limited = true }, WaitsPick(), picked: true), "other", "2")),
         ["E-26"] = new(T.LimitWake, Later(Ended(Chat(P()) with { Limited = true, Choice = "pick" }, WaitsWalk()), "other", "2")),
-        // FOUNDATION1g part c: a conversation the limit ended, as its end now writes it, `failed` with the flag.
+        // A conversation the limit ended, as its end writes it, `failed` with the flag.
         ["E-27"] = new(T.LimitWake, Ended(Chat(P()) with { State = "failed", Limited = true }, Goes("account-2"))),
 
         // ——— J: the briefed move, the person's and Daoris's on a lost conversation.
@@ -252,7 +252,7 @@ public sealed class LineCourseTests
         ["D-06"] = new(T.LimitEnd, Later(Live(Chat(P()) with { Limited = true, Choice = "pick" }, WaitsWalk()), "other", "2")),
         ["D-07"] = new(T.LimitEnd, Live(Chat(P()) with { Limited = true }, WaitsWalk())),
         ["D-08"] = new(T.LimitEnd, Earliest(Live(Chat(P()) with { Limited = true }, Goes(Own)), Cools(Own, 2))),
-        // STAFFPOLICY1d: the role that took the conversation's work is the added one, whose next choice the walk reads.
+        // The role that took the conversation's work is the added one, whose next choice the walk reads.
         ["D-09"] = new(T.LimitEnd, Later(Live(Chat(P()) with { Limited = true, Role = "night" }, WaitsWalk()), "other", "2")),
 
         // ——— A: the driven go-on.
@@ -507,7 +507,7 @@ public sealed class LineCourseTests
                 case "Left":
                 {
                     var parts = line.Split(' ');
-                    // REVIEW2 T8: a case left out as a reading (R) names the fact it reads, one of the course's own, so the letter alone is no excuse.
+                    // A case left out as a reading (R) names the fact it reads, one of the course's own, so the letter alone is no excuse.
                     Assert.True(parts is ["out", _, not "R"] or ["out", _, "R", _], $"a left-out line reads `out Suite.Method why`, and `out Suite.Method R <fact>` for a reading: {line}");
                     if (parts is [_, _, "R", var fact])
                     {
@@ -593,8 +593,8 @@ public sealed class LineCourseTests
     }
 
     /// <summary>
-    /// Every row names the case it was ported from, and that case is there: a suite's test method (a theory's case after a colon), a row of
-    /// the account rule's own table, or, for a reading no suite pins today, the source line the path answers at (named in D212's note).
+    /// Every row names the case it is ported from, and that case is there: a suite's test method (a theory's case after a colon), a row of
+    /// the account rule's own table, or, for a reading no suite pins today, the source line the path answers at.
     /// The standing move's rows are the design's, since no course reads a move record yet.
     /// </summary>
     [Fact]
@@ -616,7 +616,7 @@ public sealed class LineCourseTests
             {
                 var at = source["code:".Length..].Split(':');
                 var file = Path.Combine(driver, at[0].Replace('/', Path.DirectorySeparatorChar));
-                // The line is where the path answered when the row was ported, a pointer: the file's length is not pinned (CENSUSRULES1).
+                // The line is where the path answers, a pointer: the file's length is not pinned.
                 if (!File.Exists(file)) missing.Add($"{row.Id}: {source}");
             }
             else if (source.StartsWith("design:", StringComparison.Ordinal))
@@ -635,7 +635,7 @@ public sealed class LineCourseTests
 
     /// <summary>
     /// Each path's suites: every case (<c>[Fact]</c> or <c>[Theory]</c>) of each is a row's source or left out with its why, so a case added to
-    /// a path's suite is placed in the table as it lands. How many cases a suite has is not pinned (CENSUSRULES1): the case itself is.
+    /// a path's suite is placed in the table as it lands. How many cases a suite has is not pinned: the case itself is.
     /// </summary>
     [Fact]
     public void Every_case_of_the_paths_suites_is_ported_or_left_out_with_why()
@@ -680,7 +680,7 @@ public sealed class LineCourseTests
         return failures;
     }
 
-    /// <summary>A case added to a listed suite and placed nowhere fails the census; one placed as left out (or ported) passes, however many the suite has (CENSUSRULES1).</summary>
+    /// <summary>A case added to a listed suite and placed nowhere fails the census; one placed as left out (or ported) passes, however many the suite has.</summary>
     [Fact]
     public void A_case_added_to_a_listed_suite_fails_until_it_is_placed_and_the_count_of_cases_is_no_rule()
     {
@@ -727,7 +727,7 @@ public sealed class LineCourseTests
     }
 
     /// <summary>
-    /// Every answer carries the preconditions it was read on (§3.1, X): the record's revision, the ids of the words waiting, the quest's
+    /// Every answer carries the preconditions it is read on: the record's revision, the ids of the words waiting, the quest's
     /// status and a standing move's phase, and a wait the cool-off it waits for, so the executor asks again where one moved.
     /// </summary>
     [Fact]
@@ -758,7 +758,7 @@ public sealed class LineCourseTests
 
     /// <summary>
     /// A workflow's send-back (path L) is no decision of its own: an ended conversation's go-on from it answers as path B's words kept. And
-    /// SWITCHCTX1's carry (path M) has no code, so no case answers a carried move.
+    /// the carry (path M) has no code, so no case answers a carried move.
     /// </summary>
     [Fact]
     public void A_send_back_answers_as_an_ended_chat_s_go_on_and_no_case_answers_a_carry()
@@ -799,7 +799,7 @@ public sealed class LineCourseTests
 
     /// <summary>
     /// The test methods of a suite of the driver's tests: each method a <c>[Fact]</c> or <c>[Theory]</c> stands on. Every suite the table
-    /// counts is the driver's, so the read stays in this project, whose changes reach the driver's gate (MOD9's reach rule).
+    /// counts is the driver's, so the read stays in this project, whose changes reach the driver's gate.
     /// </summary>
     private static IReadOnlyList<string> Methods(string suite)
     {

@@ -7,11 +7,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-i part 2 (D212; the foundation design §3.3, §13.4, §19.1, §10's row 1f-i): the move record's claim across real processes,
+/// The move record's claim across real processes,
 /// one process being one run of <c>store_runs</c>. Two shells on one home deciding a move of one line make one row and one claim, and the
 /// second says once that another Daoris runs on its home; an executor paused after its effect's mark commits and before the effect keeps its
 /// move against another process's take, is said <c>move.quiet</c> once past ten minutes and never taken over, and once really killed its
-/// move is taken up at the next look and held, its effect never made. Part 3 adds a <c>--share</c> loop beside the instance, each keeping
+/// move is taken up at the next look and held, its effect never made. A <c>--share</c> loop runs beside the instance, each keeping
 /// the driven moves of the lines it runs, a dead instance's move the next lease holder's and never the share loop's; and a deliverer really
 /// killed after its <c>sent</c> committed and before its take, whose move the next look takes up and closes <c>delivered</c>.
 /// </summary>

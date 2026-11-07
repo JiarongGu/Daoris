@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONTEXTDRIVE1e's rest (the context counters design §4.7): the acts a look's plan made, read from the plan and the snapshot alone: a quest
+/// The acts a look's plan makes, read from the plan and the snapshot alone: a quest
 /// parked by its failed sessions, held on a transient episode, moved by a rule, held by the bound of moves; each as its rule's act on the
 /// quest's last session, and none where no rule acts by it.
 /// </summary>

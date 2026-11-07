@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1d-ii part 4 (the foundation design §3.4 rule 3): the moves that open a part and hand it words, over the real client and the
+/// The moves that open a part and hand it words, over the real client and the
 /// in-process ledger at its <c>opens</c> mark, with a start that opens the record through the keyed door and spawns nothing, so no part here
 /// holds the new conversation and its first hand fails. What the moved words come to then, and what a come-up does with a move's box once the
 /// open moved them, are read here; the delivered paths, which need an agent, are the Process classes'.
@@ -206,8 +206,7 @@ public sealed class MovedWordsTests : IDisposable
     private static IEnumerable<System.Text.Json.Nodes.JsonNode?> Said(ChatLedger ledger, string session) => ledger.Record(session)["said"]!.AsArray();
 
     /// <summary>
-    /// 🔴 FOUNDATION1d-ii part 4's recovery of the move's box (the foundation design §3.4 rules 3 and 5, O6-F13, O7-F4), read since
-    /// FOUNDATION1f-vi part a by the store's take-up of the box's import: a shell cut off after the new part showed each moved word under its
+    /// 🔴 The recovery of the move's box, read by the store's take-up of the box's import: a shell cut off after the new part showed each moved word under its
     /// id and before it wrote the prompt. Its words wait there marked attempted, so the display is no evidence that they went, and nothing
     /// says they did not reach the agent: at the come-up, and at the one after, nothing is delivered, which would take the words as taken, nor
     /// said again as a joined copy under the move's key; each attempted word is taken back off the new part, never sent again, with one

@@ -5,9 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT1c (D163 point 3; the mixed agents design §5): the hand-over rule, <c>handOver</c> and <c>workspaceHandOver</c> in
-/// <c>driver.json</c> — read, refused, resolved and edited, held cell for cell to ONE table, <c>fixtures/hand-over-rules.json</c>
-/// (the CLI's twin, <c>handover.ts</c>, left with the driver family's TypeScript in PUSH1f2b).
+/// The hand-over rule, <c>handOver</c> and <c>workspaceHandOver</c> in
+/// <c>driver.json</c> — read, refused, resolved and edited, held cell for cell to ONE table, <c>fixtures/hand-over-rules.json</c>.
 /// </summary>
 public sealed class HandOverRulesTests
 {

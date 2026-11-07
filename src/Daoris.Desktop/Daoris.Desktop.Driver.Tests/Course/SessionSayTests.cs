@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MSG1d (D137 §5.3): the person's words to a parked or ended session go to the service's say door (MSG1a), which keeps
+/// The person's words to a parked or ended session go to the service's say door, which keeps
 /// them on its record for it to go on with. The word comes back as kept, with the id the record's events say again where
 /// the session took it; a refusal is an answer by the service's word beside its sentence, and an older host has no door.
 /// </summary>
@@ -78,7 +78,7 @@ public sealed class SessionSayTests
     }
 
     /// <summary>
-    /// SAIDBACK1a (D137 §2.4): a word waiting on a record is taken back, or reworded, through the take-back door by its id; a
+    /// A word waiting on a record is taken back, or reworded, through the take-back door by its id; a
     /// reword's new word comes back with its new id. No text sends none.
     /// </summary>
     [Fact]
@@ -107,7 +107,7 @@ public sealed class SessionSayTests
     }
 
     /// <summary>
-    /// SAIDBACK1a: a word a session took already answers <c>taken</c>, never an error; what never goes on is the say door's word
+    /// A word a session took already answers <c>taken</c>, never an error; what never goes on is the say door's word
     /// beside its sentence; and a host from before the door says so, with no word.
     /// </summary>
     [Theory]
@@ -135,7 +135,7 @@ public sealed class SessionSayTests
         Assert.Contains("has no door for taking back words a session has not taken (404)", back.Message);
     }
 
-    /// <summary>A service standing in: each request recorded, then answered with the one status and body it was given.</summary>
+    /// <summary>A service standing in: each request recorded, then answered with the one status and body it is given.</summary>
     private sealed class StandIn(HttpStatusCode status, string body) : HttpMessageHandler
     {
         public List<(string Method, string Path, string Body)> Heard { get; } = [];

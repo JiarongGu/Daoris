@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-iv part b, sitting 2 (D212; the foundation design §3.4 rule 4, §13.4 step 5, §19.1, §19.3, row f-iv's proof): the cases where an
+/// The cases where an
 /// older build acts on a quest's line beside the driven carry-on's move, as <c>CurveMoveOlderBuildProcessTests</c> proves them beside the curve's:
 /// an older build opening a successor of the destination before it moved the destination's words; Codex's delayed older move; and an older
 /// shell's resume of the old part beside the newer open, in both orders.

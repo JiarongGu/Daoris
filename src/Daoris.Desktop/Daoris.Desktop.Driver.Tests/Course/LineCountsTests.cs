@@ -5,7 +5,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONTEXTDRIVE1a (the context-counters design §2.2, §2.4): every count of a line from the one pure read, over
+/// Every count of a line from the one pure read, over
 /// <c>fixtures/line-counts.json</c>. Equal named by any part of a line and read again; <i>at least</i> for a trimmed log, a cut walk and a
 /// store before its step; <i>unknown</i> for a service that does not answer; <c>failures-on-choice</c> absent for a conversation; a
 /// teammate's record left out; and each count the same as the reader that counts it today.
@@ -37,7 +37,7 @@ public sealed class LineCountsTests : IDisposable
             ? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase) { ["q1"] = mark.GetInt32() }
             : new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-        // COMMS1g: a row with its admission kept answers alone from it, read on over the events as the store's reader reads it.
+        // A row with its admission kept answers alone from it, read on over the events as the store's reader reads it.
         Func<LineHistory, AloneCount?>? alone = row.TryGetProperty("admission", out _)
             ? history => ContinuationAdmissions.CountOf(ContinuationAdmissions.ReadOn(LineCountsFixture.Admission(row, history.Line), history, LineCountsFixture.Seeded))
             : null;
@@ -45,7 +45,7 @@ public sealed class LineCountsTests : IDisposable
         return LineCounts.Of(session, evidence);
     }
 
-    /// <summary>COMMS1g: a line whose admission is kept counts answers alone from it, and every other from the events, as until it.</summary>
+    /// <summary>A line whose admission is kept counts answers alone from it, and every other from the events.</summary>
     [Fact]
     public void A_kept_admission_is_the_answers_alone_source()
     {
@@ -59,7 +59,7 @@ public sealed class LineCountsTests : IDisposable
     }
 
     /// <summary>
-    /// COMMS1g: the store's reader hands the admission's count only where one is kept, so a line not yet seeded counts from its events, and
+    /// The store's reader hands the admission's count only where one is kept, so a line not yet seeded counts from its events, and
     /// one seeded and read on in the store counts as the fixture's pure read does.
     /// </summary>
     [Fact]

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONTEXTDRIVE1p (the context drive read, R1): a line's role and place for its rules are resolved once, so the answers-alone hold, the
+/// A line's role and place for its rules are resolved once, so the answers-alone hold, the
 /// line's facts and the planner read one rule for a line under a scoped added role, whose record's <c>actor</c> is the seeded id.
 /// </summary>
 public sealed class RuledLineTests : IDisposable

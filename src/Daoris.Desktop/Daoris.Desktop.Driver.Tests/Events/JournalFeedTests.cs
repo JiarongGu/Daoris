@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 l-i (the foundation design §4.1, §4.5): a process reads the service's journal from its come-up, each batch told in order after
+/// A process reads the service's journal from its come-up, each batch told in order after
 /// the cursor, a cursor kept advancing after the teller took it, and a cursor the journal no longer covers said as missed.
 /// </summary>
 public sealed class JournalFeedTests

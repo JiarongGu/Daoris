@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONTEXTDRIVE1a (the context-counters design §2.3): the one line key, over <c>fixtures/line-counts.json</c> among the driver's tests, which
+/// The one line key, over <c>fixtures/line-counts.json</c> among the driver's tests, which
 /// the service's walk is held to as well (<c>LineKeysFixtureTests</c>). A driven line keys by its quest across a hand-over, a carry-on and
-/// D79's resume with no <c>from</c>; a conversation continued from a driven part is on its quest's line; a conversation alone keys by its first
+/// a resume with no <c>from</c>; a conversation continued from a driven part is on its quest's line; a conversation alone keys by its first
 /// part; a teammate's part ends the walk before it; a cycle and the bound key the line by the part itself and read at least.
 /// </summary>
 public sealed class LineKeysTests

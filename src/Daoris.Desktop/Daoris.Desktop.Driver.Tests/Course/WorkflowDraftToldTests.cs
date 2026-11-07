@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FLOWCHART2d (D223): the workflow draft open in the editor, told to Ask Daoris beside the person's words, bounded, and kept on the
+/// The workflow draft open in the editor, told to Ask Daoris beside the person's words, bounded, and kept on the
 /// conversation's record as told, where the draft door finds it again by its fingerprint.
 /// </summary>
 public sealed class WorkflowDraftToldTests
@@ -111,7 +111,7 @@ public sealed class WorkflowDraftToldTests
         Assert.Null(ChatRecorded.ToldDraft(new ChatMessage("hello", [])));
     }
 
-    /// <summary>REVIEW2 S7: a limit move opens a new part, and a draft told to an earlier part is still the conversation's.</summary>
+    /// <summary>A limit move opens a new part, and a draft told to an earlier part is still the conversation's.</summary>
     [Fact]
     public void A_draft_told_to_an_earlier_part_is_found_from_the_part_that_goes_on_from_it()
     {

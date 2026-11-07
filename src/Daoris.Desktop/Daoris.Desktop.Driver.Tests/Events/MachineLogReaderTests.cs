@@ -3,11 +3,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The machine log's reader (LOG1c, D94): every source's files under the home, merged by time, with the
+/// The machine log's reader: every source's files under the home, merged by time, with the
 /// same filters at both doors — `daoris logs` at a terminal, the Settings domain on the screen.
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>The parse table is a twin's</b> (<c>docs/2026-09-30-machine-log-design.md</c> §3): the
+/// <para>🔴 <b>The parse table is a twin's</b>: the
 /// usage report (<c>tools/usage-report.mjs</c>) reads the same lines with its own code, and its test
 /// (<c>usage-report.test.ts</c>) holds the same cases with the same answers. Change one table and the
 /// other changes with it.</para>
@@ -83,7 +83,7 @@ public sealed class MachineLogReaderTests : IDisposable
     }
 
     /// <summary>
-    /// LOGCOLLECTION1: a collection of names the driver's writer wrote, and the same line the service's writer writes (its twin test holds
+    /// A collection of names the driver's writer wrote, and the same line the service's writer writes (its twin test holds
     /// these bytes), come back from the reader as arrays of strings, and the terminal prints them as written.
     /// </summary>
     [Fact]

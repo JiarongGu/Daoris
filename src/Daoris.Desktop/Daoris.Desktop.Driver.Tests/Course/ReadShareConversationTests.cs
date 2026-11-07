@@ -6,7 +6,7 @@ using Daoris.Driver.Tests;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// READSHARE1: each reader of a record AtomicFile moves into place reads it while the move still holds it (MoveHold).
+/// Each reader of a record AtomicFile moves into place reads it while the move still holds it (MoveHold).
 /// </summary>
 public sealed class ReadShareConversationTests : IDisposable
 {
@@ -71,7 +71,7 @@ public sealed class ReadShareConversationTests : IDisposable
 
     // ——— The go-on files beside a session's transcript (GoOnFiles).
 
-    /// <summary>READSHARE1: <see cref="GoOnMarks.Read"/> (GoOnFiles.ReadMark) reads a mark while its move into place still holds it.</summary>
+    /// <summary><see cref="GoOnMarks.Read"/> (GoOnFiles.ReadMark) reads a mark while its move into place still holds it.</summary>
     [Fact]
     public void A_go_on_mark_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -85,7 +85,7 @@ public sealed class ReadShareConversationTests : IDisposable
         Assert.Equal(GoOnMarks.FailedTwice, mark.Why);
     }
 
-    /// <summary>READSHARE1: <see cref="NewSessionChoices.Read"/> (GoOnFiles.ReadChoice) reads a choice while its move into place still holds it.</summary>
+    /// <summary><see cref="NewSessionChoices.Read"/> (GoOnFiles.ReadChoice) reads a choice while its move into place still holds it.</summary>
     [Fact]
     public void A_new_session_choice_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -98,7 +98,7 @@ public sealed class ReadShareConversationTests : IDisposable
         Assert.Equal(["w1"], choice!.Said);
     }
 
-    /// <summary>READSHARE1: <see cref="ReopenMarks.Told"/> (GoOnFiles.ReadTold) reads the reopens told while their move into place still holds them.</summary>
+    /// <summary><see cref="ReopenMarks.Told"/> (GoOnFiles.ReadTold) reads the reopens told while their move into place still holds them.</summary>
     [Fact]
     public void A_told_reopen_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -114,7 +114,7 @@ public sealed class ReadShareConversationTests : IDisposable
 
     // ——— A hand-over's files (HandOverFiles, HandOverAskFiles).
 
-    /// <summary>READSHARE1: <see cref="HandOverBox.Read"/> (HandOverFiles.ReadBox) reads a box while its move into place still holds it.</summary>
+    /// <summary><see cref="HandOverBox.Read"/> (HandOverFiles.ReadBox) reads a box while its move into place still holds it.</summary>
     [Fact]
     public void A_hand_over_box_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -127,7 +127,7 @@ public sealed class ReadShareConversationTests : IDisposable
         Assert.Equal(("codex-acp", "work", HandOverWhy.Press, HandOverBy.Agent), (request!.Agent, request.Account, request.Why, request.AskedBy));
     }
 
-    /// <summary>READSHARE1: <see cref="HandedQuests.Read"/> (HandOverFiles.ReadHanded) reads a handed quest while its move into place still holds it.</summary>
+    /// <summary><see cref="HandedQuests.Read"/> (HandOverFiles.ReadHanded) reads a handed quest while its move into place still holds it.</summary>
     [Fact]
     public void A_handed_quest_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -140,7 +140,7 @@ public sealed class ReadShareConversationTests : IDisposable
         Assert.Equal(("codex-acp", "s1", "The parser is done."), (quest!.Agent, quest.From, quest.Note));
     }
 
-    /// <summary>READSHARE1: <see cref="HandOverAskFiles.ReadState"/> (HandOverAskFiles.Parse) reads an ask's state while its move into place still holds it.</summary>
+    /// <summary><see cref="HandOverAskFiles.ReadState"/> (HandOverAskFiles.Parse) reads an ask's state while its move into place still holds it.</summary>
     [Fact]
     public void A_hand_over_asks_state_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -155,7 +155,7 @@ public sealed class ReadShareConversationTests : IDisposable
 
     // ——— A helper's and a partner's files.
 
-    /// <summary>READSHARE1: <see cref="HelperFiles.ReadState"/> (HelperFiles.Parse) reads an ask's state while its move into place still holds it.</summary>
+    /// <summary><see cref="HelperFiles.ReadState"/> (HelperFiles.Parse) reads an ask's state while its move into place still holds it.</summary>
     [Fact]
     public void A_helpers_state_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -168,7 +168,7 @@ public sealed class ReadShareConversationTests : IDisposable
         Assert.Equal((HelperStates.Started, "h9helper", "codex-acp"), (state!.State, state.Helper, state.Agent));
     }
 
-    /// <summary>READSHARE1: <see cref="PartnerFiles.ReadState"/> (PartnerFiles.Parse) reads a piece's state while its move into place still holds it.</summary>
+    /// <summary><see cref="PartnerFiles.ReadState"/> (PartnerFiles.Parse) reads a piece's state while its move into place still holds it.</summary>
     [Fact]
     public void A_partners_state_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -183,7 +183,7 @@ public sealed class ReadShareConversationTests : IDisposable
 
     // ——— A chat's start.
 
-    /// <summary>READSHARE1: <see cref="StartRequests.RunAsync"/> (StartRequests.Read) answers a kept start while its move into place still holds it.</summary>
+    /// <summary><see cref="StartRequests.RunAsync"/> (StartRequests.Read) answers a kept start while its move into place still holds it.</summary>
     [Fact]
     public async Task A_kept_start_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -198,7 +198,7 @@ public sealed class ReadShareConversationTests : IDisposable
     }
 
     /// <summary>
-    /// READSHARE1: <see cref="StartFrom.RunAsync"/> (StartFrom.Files) hands on a file said with the words while the move that kept it
+    /// <see cref="StartFrom.RunAsync"/> (StartFrom.Files) hands on a file said with the words while the move that kept it
     /// still holds it.
     /// </summary>
     [Fact]
@@ -228,7 +228,7 @@ public sealed class ReadShareConversationTests : IDisposable
 
     // ——— Ask Daoris's files.
 
-    /// <summary>READSHARE1: <see cref="HelpConversations.Read"/> reads what the person kept of a conversation while its move into place still holds it.</summary>
+    /// <summary><see cref="HelpConversations.Read"/> reads what the person kept of a conversation while its move into place still holds it.</summary>
     [Fact]
     public void A_help_conversations_name_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -241,7 +241,7 @@ public sealed class ReadShareConversationTests : IDisposable
         Assert.Equal("Port check", kept.Name);
     }
 
-    /// <summary>READSHARE1: <see cref="HelpPublished.Read"/> (HelpPublished.Oldest) reads what an Apply published while its move into place still holds it.</summary>
+    /// <summary><see cref="HelpPublished.Read"/> (HelpPublished.Oldest) reads what an Apply published while its move into place still holds it.</summary>
     [Fact]
     public void A_help_conversations_published_list_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -255,7 +255,7 @@ public sealed class ReadShareConversationTests : IDisposable
         Assert.Equal(("p1", "ask", "work", "a1b2c3d4"), (entry.Proposal, entry.Kind, entry.Workspace, entry.Ask));
     }
 
-    /// <summary>READSHARE1: <see cref="HelpWired.Read"/> (HelpWired.Oldest) reads a start's receipts while their move into place still holds them.</summary>
+    /// <summary><see cref="HelpWired.Read"/> (HelpWired.Oldest) reads a start's receipts while their move into place still holds them.</summary>
     [Fact]
     public void A_help_conversations_receipts_are_read_while_their_move_into_place_still_holds_them()
     {
@@ -269,7 +269,7 @@ public sealed class ReadShareConversationTests : IDisposable
         Assert.Equal(("claude-code", "room", "work"), (receipt.Door, receipt.Folder, receipt.Account));
     }
 
-    /// <summary>READSHARE1: <see cref="ConfiguredAccess.Read"/> reads the person's configured access while its move into place still holds it.</summary>
+    /// <summary><see cref="ConfiguredAccess.Read"/> reads the person's configured access while its move into place still holds it.</summary>
     [Fact]
     public void Configured_access_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -282,7 +282,7 @@ public sealed class ReadShareConversationTests : IDisposable
     }
 
     /// <summary>
-    /// READSHARE1: <see cref="ConfiguredAccess.Choose"/> (ConfiguredAccess.Load) edits the file as it reads while its move into place
+    /// <see cref="ConfiguredAccess.Choose"/> (ConfiguredAccess.Load) edits the file as it reads while its move into place
     /// still holds it, so the grant chosen before is kept beside the one chosen now.
     /// </summary>
     [Fact]
@@ -316,7 +316,7 @@ public sealed class ReadShareConversationTests : IDisposable
         return path;
     }
 
-    /// <summary>READSHARE1: <see cref="HelpProposals.Pending"/> reads a conversation's proposals while their move into place still holds them.</summary>
+    /// <summary><see cref="HelpProposals.Pending"/> reads a conversation's proposals while their move into place still holds them.</summary>
     [Fact]
     public void A_pending_proposal_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -329,7 +329,7 @@ public sealed class ReadShareConversationTests : IDisposable
         Assert.Equal(("p1", "sync", "engine", "the person asked"), (proposal.Id, proposal.Kind, proposal.Target, proposal.Why));
     }
 
-    /// <summary>READSHARE1: <see cref="HelpProposals.Find"/> reads a proposal while its move into place still holds it.</summary>
+    /// <summary><see cref="HelpProposals.Find"/> reads a proposal while its move into place still holds it.</summary>
     [Fact]
     public void A_proposal_is_found_while_its_move_into_place_still_holds_it()
     {
@@ -341,7 +341,7 @@ public sealed class ReadShareConversationTests : IDisposable
         Assert.Equal(("sync", "engine", "h1", "proposed"), (proposal!.Kind, proposal.Target, proposal.Session, proposal.State));
     }
 
-    /// <summary>READSHARE1: <see cref="HelpProposals.Settle"/> reads the proposal it settles while its move into place still holds it, every other field kept.</summary>
+    /// <summary><see cref="HelpProposals.Settle"/> reads the proposal it settles while its move into place still holds it, every other field kept.</summary>
     [Fact]
     public async Task A_proposal_is_settled_from_the_file_its_move_into_place_still_holds()
     {
@@ -355,7 +355,7 @@ public sealed class ReadShareConversationTests : IDisposable
     }
 
     /// <summary>
-    /// READSHARE1: <see cref="HelpProposals.Drawn"/> (HelpClearProposals.Drawn) holds a clear card's units in the proposal's file it
+    /// <see cref="HelpProposals.Drawn"/> (HelpClearProposals.Drawn) holds a clear card's units in the proposal's file it
     /// reads while its move into place still holds it.
     /// </summary>
     [Fact]
@@ -379,7 +379,7 @@ public sealed class ReadShareConversationTests : IDisposable
     }
 
     /// <summary>
-    /// READSHARE1: a sync card's look (HelpSyncProposals.Keep) keeps the rows it listed in the proposal's file it reads while its move
+    /// A sync card's look (HelpSyncProposals.Keep) keeps the rows it listed in the proposal's file it reads while its move
     /// into place still holds it.
     /// </summary>
     [Fact]
@@ -404,7 +404,7 @@ public sealed class ReadShareConversationTests : IDisposable
 
     // ——— A brainstorm's files.
 
-    /// <summary>READSHARE1: <see cref="BrainstormFiles.PacketBytes"/> (BrainstormFiles.ReadBytes) reads a packet while its move into place still holds it.</summary>
+    /// <summary><see cref="BrainstormFiles.PacketBytes"/> (BrainstormFiles.ReadBytes) reads a packet while its move into place still holds it.</summary>
     [Fact]
     public void A_brainstorms_packet_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -417,7 +417,7 @@ public sealed class ReadShareConversationTests : IDisposable
         Assert.Equal([1, 2, 3], packet!);
     }
 
-    /// <summary>READSHARE1: <see cref="BrainstormFiles.ReadState"/> (BrainstormFiles.Parse) reads a brainstorm's state while its move into place still holds it.</summary>
+    /// <summary><see cref="BrainstormFiles.ReadState"/> (BrainstormFiles.Parse) reads a brainstorm's state while its move into place still holds it.</summary>
     [Fact]
     public void A_brainstorms_state_is_read_while_its_move_into_place_still_holds_it()
     {

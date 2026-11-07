@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A terminal's press reaches an open window (STATEHUB1e, D169 point 8): `daoris tree land|remove|clean|sync|hand` run in a
+/// A terminal's press reaches an open window: `daoris tree land|remove|clean|sync|hand` run in a
 /// process with no bus, so each tells what it pressed in the request folder every loop already watches, and the loop that hears
 /// them (the shell's) takes each once.
 /// </summary>

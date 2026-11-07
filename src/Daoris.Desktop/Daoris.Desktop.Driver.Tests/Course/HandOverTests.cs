@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT1a-i's door (D163, the mixed-agents design §2 and §5): a conversation goes on with another agent. The ask judges and
+/// The door by which a conversation goes on with another agent. The ask judges and
 /// keeps the box <c>&lt;home&gt;/sessions/&lt;id&gt;.hand-over.json</c>; what cannot be handed over is refused by a code with its
 /// sentence, before anything is kept; the briefing the new conversation's agent reads is a pure function of what Daoris kept.
 /// </summary>
@@ -45,7 +45,7 @@ public sealed class HandOverTests : IDisposable
         ["created"] = T0.ToString("O"), ["updated"] = T0.AddMinutes(5).ToString("O"), ["said"] = new JsonArray(), ["from"] = from,
     };
 
-    /// <summary>The home's move record, under the run that asks (FOUNDATION1f-v part a).</summary>
+    /// <summary>The home's move record, under the run that asks.</summary>
     private MoveStore Store() => new(_home, () => StoreSettled.Yes, run: "run-ask", kind: StoreProcess.Shell);
 
     private async Task<HandOverAnswer> AskAsync(Room room, string id, string agent = "codex-acp", string? account = null)
@@ -90,7 +90,7 @@ public sealed class HandOverTests : IDisposable
         { "c0nv0001", "codex-acp", "other", HandOver.NotItsAccount, "other is not an account of codex-acp." },
         { "c0nv0001", "claude-code", "account-1", HandOver.SameAgent, "c0nv0001 already runs on claude-code as account-1." },
         { "tr33g0n3", "codex-acp", null, HandOver.TreeGone, "the tree tr33g0n3 ran in is gone, so there is nothing to go on in." },
-        // HANDWORDS1: a conversation that went on in another is not handed over a second time from its tree.
+        // A conversation that went on in another is not handed over a second time from its tree.
         { "h4nd3d00", "codex-acp", null, WordsNever.Continued, "h4nd3d00 went on in conversation m0v3d000; hand that one over instead." },
     };
 
@@ -133,7 +133,7 @@ public sealed class HandOverTests : IDisposable
         return record;
     }
 
-    /// <summary>An ask as the door puts it, with the course's answer it heard (FOUNDATION1h branch 3).</summary>
+    /// <summary>An ask as the door puts it, with the course's answer it heard.</summary>
     private async Task<(HandOverAnswer Answer, List<LineCourse> Heard)> HeardAsync(
         Room room, string id, string agent = "codex-acp", string? account = null, string by = HandOverBy.Person, CourseRules? consent = null)
     {
@@ -147,7 +147,7 @@ public sealed class HandOverTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1h branch 3 (the foundation design §3.1, §14.2): whether a conversation is handed over is the course's one decision for
+    /// 🔴 Whether a conversation is handed over is the course's one decision for
     /// <see cref="CourseTrigger.HandOver"/>. Heard from the ask, its answer is the move (at the turn's end, the account named a pick only the
     /// person's press keeps) or the refusal by its code, each sentence still the ask's own.
     /// </summary>
@@ -203,7 +203,7 @@ public sealed class HandOverTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1h branch 3 (D212's note on the branches' order): the hand-over rule's consent stays in the door that judges an agent's ask
+    /// 🔴 The hand-over rule's consent stays in the door that judges an agent's ask
     /// and reaches the course as a fact, so the course never admits an agent's ask otherwise. Under <c>off</c> the ask is refused, under
     /// <c>ask</c> it is put to the person first and nothing is kept, under <c>on</c> it is kept; the person's press needs none.
     /// </summary>
@@ -259,7 +259,7 @@ public sealed class HandOverTests : IDisposable
         box.Clear("c0nv0001");
         Assert.Null(box.Read("c0nv0001"));
 
-        // STAFFPOLICY1d: the choice approved is kept with the ask; a box from before names none and reads as it did.
+        // The choice approved is kept with the ask; a box without one names none.
         var approved = new HandOverRequest("codex-acp", null, HandOverWhy.Press, HandOverBy.Person, T0, "gpt-5", "high");
         box.Write("c0nv0002", approved);
         Assert.Equal(approved, box.Read("c0nv0002"));
@@ -279,7 +279,7 @@ public sealed class HandOverTests : IDisposable
         Assert.Null(new HandOverBox(_home).Read("../escape"));
     }
 
-    // ——— Taking the box (D163 §3): end the old conversation, start the new in its tree, brief it, say where it went.
+    // ——— Taking the box: end the old conversation, start the new in its tree, brief it, say where it went.
 
     private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
@@ -293,10 +293,10 @@ public sealed class HandOverTests : IDisposable
 
         public ChatStart Started { get; set; } = new("n3w00001", "opened");
 
-        /// <summary>The session the start was told the new conversation continues (MIXAGENT1a-iii), with why and who asked.</summary>
+        /// <summary>The session the start is told the new conversation continues, with why and who asked.</summary>
         public ContinuedFrom? From { get; set; }
 
-        /// <summary>What the start was asked to move (FOUNDATION1f-v part a): the keyed open, nothing named and nothing read.</summary>
+        /// <summary>What the start is asked to move: the keyed open, nothing named and nothing read.</summary>
         public MoveWords? Keyed { get; set; }
     }
 
@@ -330,10 +330,10 @@ public sealed class HandOverTests : IDisposable
 
     /// <summary>
     /// 🔴 The old conversation ends first (its tree is held by one session at a time), the new starts in the same tree on the named
-    /// agent and account, and is told Daoris's brief of its line (SESSCTX1b, <see cref="ContextBrief"/>), never the person's words;
+    /// agent and account, and is told Daoris's brief of its line (<see cref="ContextBrief"/>), never the person's words;
     /// both records say where it went and where it came from, by code, and the box is gone. The brief keeps every word the session
-    /// took, where the briefing it replaced kept the request and the last words alone, and its record is the new conversation's first
-    /// prompt with its account (the design §3.4).
+    /// took, and its record is the new conversation's first
+    /// prompt with its account.
     /// </summary>
     [Fact]
     public async Task Taking_the_box_ends_the_old_starts_the_new_in_its_tree_and_briefs_it()
@@ -350,7 +350,7 @@ public sealed class HandOverTests : IDisposable
         var handed = await TakeAsync(new Room([Chat("c0nv0001")]), taken, Ask());
 
         Assert.Equal(["end c0nv0001", "start tree engine codex-acp work", "say n3w00001"], taken.Calls);
-        // The new record names the one it continues, why and who asked (MIXAGENT1a-iii): the box's, never the person's by default.
+        // The new record names the one it continues, why and who asked: the box's, never the person's by default.
         Assert.Equal(new ContinuedFrom("c0nv0001", HandOverWhy.Limit, HandOverBy.Daoris), taken.From);
         // The open is keyed by the move's key and asks the words kept on the old part meanwhile moved, none named.
         Assert.Equal(("c0nv0001", "chat-move/test"), (taken.Keyed!.From, taken.Keyed.Opens));
@@ -380,8 +380,8 @@ public sealed class HandOverTests : IDisposable
     }
 
     /// <summary>
-    /// SESSCTX1b: the brief is the new conversation's first prompt, but no person said it, so a conversation handed over is still
-    /// named by the first words the person said to it (RAIL1), and its first ask is theirs.
+    /// The brief is the new conversation's first prompt, but no person said it, so a conversation handed over is still
+    /// named by the first words the person said to it, and its first ask is theirs.
     /// </summary>
     [Fact]
     public void A_handed_over_conversation_is_named_by_the_person_s_first_words_after_its_brief()
@@ -396,9 +396,9 @@ public sealed class HandOverTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A move by the usage curve (SWITCH1c-ii, the switch design §4) is a take on the same agent and another account: the new
-    /// conversation's first line and the old one's last are the moved pair (SWITCH1c-i), naming the accounts and how far over its
-    /// curve the one it left was, in place of the hand-over's two; its record continues the old by `curve`, asked by `daoris`.
+    /// 🔴 A move by the usage curve is a take on the same agent and another account: the new
+    /// conversation's first line and the old one's last are the moved pair, naming the accounts and how far over its
+    /// curve the one it left is, in place of the hand-over's two; its record continues the old by `curve`, asked by `daoris`.
     /// </summary>
     [Fact]
     public async Task A_move_by_the_curve_is_said_by_the_moved_pair_in_place_of_the_hand_over_s_lines()
@@ -509,7 +509,7 @@ public sealed class HandOverTests : IDisposable
 
     /// <summary>
     /// A conversation handed over opens with one note in the record, never a message of the person's and never the browser's line;
-    /// SESSCTX1b keeps Daoris's brief after it as the first prompt, Daoris's, with its account (the design §3.4).
+    /// Daoris's brief follows it as the first prompt, Daoris's, with its account.
     /// </summary>
     [Fact]
     public void A_handed_over_conversation_records_its_note_in_place_of_a_person_s_message()
@@ -529,7 +529,7 @@ public sealed class HandOverTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c part B (D189's amendment, the session-context design §2.2): the outgoing agent is asked for one closing note only
+    /// 🔴 The outgoing agent is asked for one closing note only
     /// where the move is the person's press or a change of agent its own agent asked for and left no note with; never where the account
     /// forces it (<c>near</c>, <c>limit</c>, <c>curve</c>), nor for a reason no box takes (a resume, a carry-on, a fallback).
     /// </summary>
@@ -551,7 +551,7 @@ public sealed class HandOverTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c part B (the session-context design §2.2): the closing note is the agent's last message of its one turn, as a turn's
+    /// 🔴 The closing note is the agent's last message of its one turn, as a turn's
     /// outcome is read, kept as its claim; a turn with no message of the agent's leaves it absent.
     /// </summary>
     [Fact]
@@ -573,7 +573,7 @@ public sealed class HandOverTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c part B (the session-context design §2): a part that goes on from a lost conversation is handed the brief, then the
+    /// 🔴 A part that goes on from a lost conversation is handed the brief, then the
     /// person's words that waited on the part it continues, in one prompt: the record keeps the opening line, the brief as Daoris's, then
     /// the words as the person's, with the files said beside them.
     /// </summary>
@@ -594,7 +594,7 @@ public sealed class HandOverTests : IDisposable
         Assert.EndsWith("\n\nAlso log the port.", message.Prompt, StringComparison.Ordinal);
     }
 
-    // ——— The terminal's door (D50): `daoris session hand-over <id> --agent <adapter> [--account <name>]`.
+    // ——— The terminal's door: `daoris session hand-over <id> --agent <adapter> [--account <name>]`.
 
     [Fact]
     public void The_terminal_reads_an_id_an_agent_and_an_account_and_its_usage_says_the_verb()
@@ -604,7 +604,7 @@ public sealed class HandOverTests : IDisposable
         Assert.Equal(("hand-over", "s1", "codex-acp", "work"), (ask!.Verb, ask.Ids[0], ask.Agent, ask.Account));
         Assert.Null(SessionsCommand.Read(["hand-over", "s1", "--agent", "codex-acp"], out _)!.Account);
 
-        // Naming no agent is the press that goes on in a new session (ONEWAY1j).
+        // Naming no agent is the press that goes on in a new session.
         var bare = SessionsCommand.Read(["hand-over", "s1"], out problem);
         Assert.Null(problem);
         Assert.Equal(("hand-over", "s1", null), (bare!.Verb, bare.Ids[0], bare.Agent));
@@ -643,8 +643,8 @@ public sealed class HandOverTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 MIXAGENT1a-ii (D50): on a quest's session the verb opens no conversation in the terminal: it judges, decides the move in the store
-    /// (FOUNDATION1f-v part c) and says the driver's next look takes it. The host's conversation door is never asked.
+    /// 🔴 On a quest's session the verb opens no conversation in the terminal: it judges, decides the move in the store
+    /// and says the driver's next look takes it. The host's conversation door is never asked.
     /// </summary>
     [Fact]
     public async Task The_terminal_decides_a_quest_s_session_s_move_for_the_look_and_never_opens_a_conversation()
@@ -668,7 +668,7 @@ public sealed class HandOverTests : IDisposable
 
         Assert.False(asked);
         Assert.Equal("sessions: it is stopped at the driver's next look, then goes on in the same tree with codex-acp.\n", output.ToString().ReplaceLineEndings("\n"));
-        // FOUNDATION1f-v part c: the verb decides the driven move in the store, claimed by its own run, and writes no box.
+        // The verb decides the driven move in the store, claimed by its own run, and writes no box.
         var move = QuestMove("qu3st000")!;
         Assert.Equal((MoveExecutors.Driven, "decided", "codex-acp", "work", HandOverWhy.Press, HandOverBy.Person), (move.Executor, move.PhaseWord, move.Agent, move.Account, move.Why, move.By));
         Assert.Equal(StoreProcess.Run, move.ClaimRun);
@@ -676,7 +676,7 @@ public sealed class HandOverTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HANDOVERSAID1: the session's record names who asked, the person at a terminal, on a code of its own; a refused ask writes
+    /// 🔴 The session's record names who asked, the person at a terminal, on a code of its own; a refused ask writes
     /// nothing on it.
     /// </summary>
     [Fact]
@@ -723,7 +723,7 @@ public sealed class HandOverTests : IDisposable
         Assert.Equal(session is null ? exit : null, result);
     }
 
-    // ——— A quest's session (MIXAGENT1a-ii, D163 point 1): judged by the quest's state, whose take it is, the session's place
+    // ——— A quest's session: judged by the quest's state, whose take it is, the session's place
     // among the quest's runs here, and the named agent's door; kept as a box the driver's next look takes.
 
     /// <summary>The roster as the terminal reads it for a driven start: an agent's accounts and whether it drives an unadopted repository.</summary>
@@ -757,7 +757,7 @@ public sealed class HandOverTests : IDisposable
 
     private static JsonObject Repo(string name, bool adopted) => new() { ["repository"] = name, ["adopted"] = adopted, ["root"] = "root-of-" + name };
 
-    /// <summary>The quest's hand-over is decided through the driven holder (FOUNDATION1f-v part c): the lease holder's scope, the home's one store.</summary>
+    /// <summary>The quest's hand-over is decided through the driven holder: the lease holder's scope, the home's one store.</summary>
     private Task<HandOverAnswer> AskQuestAsync(Room room, string id, string agent = "codex-acp", string? account = null)
     {
         var client = room.Client();
@@ -767,7 +767,7 @@ public sealed class HandOverTests : IDisposable
 
     private MoveRecord? QuestMove(string session) => Store().Of(session).LastOrDefault();
 
-    /// <summary>A quest's ask as the door puts it, with the course's answer it heard (FOUNDATION1i path 2).</summary>
+    /// <summary>A quest's ask as the door puts it, with the course's answer it heard.</summary>
     private async Task<(HandOverAnswer Answer, List<LineCourse> Heard)> HeardQuestAsync(
         Room room, string id, string by = HandOverBy.Person, CourseRules? consent = null)
     {
@@ -781,8 +781,8 @@ public sealed class HandOverTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1i path 2 (the foundation design §10 row 1i, §3.1): whether a quest's session is handed over is the course's one decision
-    /// for <see cref="CourseTrigger.HandOver"/>, its old judge the adapter. Heard from the ask, a session that is handed over is a move now
+    /// 🔴 Whether a quest's session is handed over is the course's one decision
+    /// for <see cref="CourseTrigger.HandOver"/>. Heard from the ask, a session that is handed over is a move now
     /// by the person, on the agent named, at the turn's end where an agent asks of a session that runs; what the executor alone knows
     /// (a quest closed, a take lost) is refused before it and asks the course nothing.
     /// </summary>
@@ -802,7 +802,7 @@ public sealed class HandOverTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1i path 2 (D212's note on the branches' order): the hand-over rule's consent stays in the door that judges an agent's ask
+    /// 🔴 The hand-over rule's consent stays in the door that judges an agent's ask
     /// and reaches the course as a fact, one answer to each door: under <c>off</c> the ask is refused, under <c>ask</c> it is put to the person
     /// and nothing is kept, under <c>on</c> it is kept; none said is none, and the person's press needs none.
     /// </summary>
@@ -834,7 +834,7 @@ public sealed class HandOverTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A quest's session handed to another agent keeps its move in the store (FOUNDATION1f-v part c), decided at the ask, and says the driver's
+    /// 🔴 A quest's session handed to another agent keeps its move in the store, decided at the ask, and says the driver's
     /// next look takes it; no box is written.
     /// </summary>
     /// <summary>
@@ -906,7 +906,7 @@ public sealed class HandOverTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c (D189's amendment, the session-context design §2): a park whose own agent is no longer here waits with the
+    /// 🔴 A park whose own agent is no longer here waits with the
     /// hand-over's offer, since only the person can choose the agent it goes on with; so its hand-over is kept rather than refused as
     /// a question for the person, which nothing here could answer in its own conversation.
     /// </summary>
@@ -974,9 +974,9 @@ public sealed class HandOverTests : IDisposable
     }
 
     /// <summary>
-    /// MIXAGENT1a-iii (D165 point 3): `curve` is the reason a record continues another by the person's switching setting, said in
-    /// the briefing's and the record's English. SWITCH1c-i: the box takes it, since `chat.taken-over` now declares it, so the
-    /// automatic move (SWITCH1c-ii) asks the box as a press does.
+    /// `curve` is the reason a record continues another by the person's switching setting, said in
+    /// the briefing's and the record's English. The box takes it, since `chat.taken-over` declares it, so the
+    /// automatic move asks the box as a press does.
     /// </summary>
     [Fact]
     public void Curve_is_a_reason_a_record_continues_another_and_one_the_box_takes()
