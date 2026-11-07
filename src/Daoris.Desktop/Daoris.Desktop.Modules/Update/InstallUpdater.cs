@@ -105,7 +105,7 @@ public sealed class InstallUpdater(
     public TimeSpan Pace { get; init; } = TimeSpan.FromSeconds(2);
 
     /// <summary>The version this application runs, which a staged build below goes back from (<see cref="InstallRollback"/>).</summary>
-    public string? Running { get; init; } = InstallRollback.This;
+    public string? Running { get; init; } = UpdateRefusal.Running;
 
     /// <summary>The refusal's code for a going back while a delivery is unresolved.</summary>
     public const string Deliveries = "deliveries";

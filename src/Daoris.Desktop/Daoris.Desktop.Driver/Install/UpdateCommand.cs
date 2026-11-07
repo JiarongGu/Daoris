@@ -97,7 +97,7 @@ public static class UpdateCommand
 
         var what = build is null ? "whatever is staged" : $"build {build}";
         // The application's own refusal, checked here as it checks it, so the word is never answered as taken when nothing will close.
-        if (mode == UpdateMode.Now && install is not null && UpdateRefusal.Of(install, home, manifest?.Version, InstallRollback.This) is var (_, why))
+        if (mode == UpdateMode.Now && install is not null && UpdateRefusal.Of(install, home, manifest?.Version, UpdateRefusal.Running) is var (_, why))
         {
             output.AppendLine($"update: {what} is not installed now: {why}");
             output.AppendLine("  Nothing closes. `daoris update --now` tries again once that has moved.");

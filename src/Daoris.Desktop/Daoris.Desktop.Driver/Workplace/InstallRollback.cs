@@ -1,5 +1,3 @@
-using System.Reflection;
-
 namespace Daoris.Driver;
 
 /// <summary>
@@ -10,9 +8,6 @@ namespace Daoris.Driver;
 /// </summary>
 public static class InstallRollback
 {
-    /// <summary>The version this build carries, as stamped; null where none is.</summary>
-    public static string? This => typeof(InstallRollback).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-
     /// <summary>
     /// Why installing <paramref name="staged"/> over <paramref name="running"/> is refused, or null: a version that does not read, or one not
     /// below this one's, is no going back.
