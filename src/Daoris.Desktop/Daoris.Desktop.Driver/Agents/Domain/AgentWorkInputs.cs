@@ -10,8 +10,8 @@ public interface IAgentAskWords
 }
 
 /// <summary>
-/// What a part of an entry is handed from the ask's channel when it starts (SESSONE2b, design §2.3): the messages for its entry
-/// it has not acknowledged (COWORK1d), the newest within the bounds, each acknowledged once the part has started.
+/// What a part of an entry is handed from the ask's channel when it starts: the messages for its entry
+/// it has not acknowledged, the newest within the bounds, each acknowledged once the part has started.
 /// </summary>
 /// <param name="Ask">The ask the channel is.</param>
 /// <param name="Entry">The entry's key, whose acknowledgments are written.</param>

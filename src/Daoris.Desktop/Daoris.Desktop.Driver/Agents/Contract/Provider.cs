@@ -1,10 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// An agent with one or more doors (AGENTPROVIDER1; the agent-provider design §2.1, §2.3): one registration of a sealed record of
+/// An agent with one or more doors: one registration of a sealed record of
 /// parts. What is a fact about another program is declared data, each fact in one place; every part is required, and a part stated
-/// absent (<see cref="Known{T}.Absent"/>) reads as today's behaviour for an agent that says nothing (D53). Row a names the parts and
-/// fills the ones today's toolchains declare.
+/// absent (<see cref="Known{T}.Absent"/>) reads as the behaviour for an agent that says nothing.
 /// </summary>
 /// <param name="Id">The agent's id, unique among providers and never another provider's door's.</param>
 /// <param name="Identity">Product, maker, mark, stand-in, and the plugins that declared a provider made from declarations.</param>
@@ -13,16 +12,16 @@ namespace Daoris.Driver;
 /// <param name="Accounts">The account pool: its key and facts (see <see cref="AccountsPart"/>).</param>
 /// <param name="Tables">Limit, window, sign-in and refused words, and error words.</param>
 /// <param name="Usage">How an account's windows are asked between turns.</param>
-/// <param name="Lent">What a harness whose <c>accountOf</c> names this provider's id reads of it, one level (O4-F1).</param>
+/// <param name="Lent">What a harness whose <c>accountOf</c> names this provider's id reads of it, one level.</param>
 /// <param name="Models">The settings file: the account defaults' aliases and efforts, apart from what a session may carry.</param>
-/// <param name="Children">The child vocabulary port (a later row).</param>
+/// <param name="Children">The child vocabulary port.</param>
 /// <param name="Rules">How it takes the product's rules; absent where it takes none, so the person's denies reach none of its sessions.</param>
 /// <param name="Skills">How it lays out the skills a start is handed; absent where it is handed none.</param>
-/// <param name="Conversations">The conversation home port (a later row).</param>
-/// <param name="Reach">Where it may work; required, never absent, since absent would read as the widest answer (O1-F12).</param>
+/// <param name="Conversations">The conversation home port.</param>
+/// <param name="Reach">Where it may work; required, never absent, since absent would read as the widest answer.</param>
 /// <param name="Vocabulary">The variables, files and wire keys it names, which the census reads.</param>
 /// <param name="Unavailable">
-/// Known and never started: a name of a disabled plugin kept so turning the plugin off loses none of its wiring (C1-1.2), with no
+/// Known and never started: a name of a disabled plugin kept so turning the plugin off loses none of its wiring, with no
 /// door.
 /// </param>
 public sealed record Provider(
@@ -48,7 +47,7 @@ public sealed record Provider(
 }
 
 /// <summary>
-/// A way into a provider's agent, today an adapter keeping its id (the design §2.3): its transport, its identity as its declaration
+/// A way into a provider's agent, today an adapter keeping its id: its transport, its identity as its declaration
 /// says it, its home (the variable its spawn hands an account's home in, its own home and trust file, each its own), what a harness
 /// naming its id reads of it, its postures and abilities, and what a session on it may carry (<see cref="Offers"/>).
 /// </summary>

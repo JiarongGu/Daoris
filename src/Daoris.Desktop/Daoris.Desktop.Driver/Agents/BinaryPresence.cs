@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A door that asks no version question and is present by a look at its command's file (a declared door with no version arguments):
-/// the look is kept as its binary's reading (PERF3), so the sheet and the role structure say what the last report found of it, as
+/// the look is kept as its binary's reading, so the sheet and the role structure say what the last report found of it, as
 /// they say a version question's answer, and no look of their own is made.
 /// </summary>
 internal static class BinaryPresence

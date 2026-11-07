@@ -4,16 +4,16 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris agent</c> (D194, the alone-path design §1.2): the agents' rules, trust and settings from a terminal, what an agent runs as,
+/// <c>daoris agent</c>: the agents' rules, trust and settings from a terminal, what an agent runs as,
 /// and its pin taken back and its accounts (<see cref="AgentAccountsCommand"/>), and the list of this machine's agents, its bare word too
 /// (<see cref="AgentListCommand"/>), and an agent's install and an API key's account, the long verbs no route takes
 /// (<see cref="AgentLongCommand"/>), an agent's sign-in (<see cref="AgentLoginCommand"/>), and its pin and update
 /// (<see cref="AgentPinCommand"/>): the whole family. Each change a route
 /// takes is its route through <see cref="InstanceDoor.PressAsync"/> where the running Daoris answers, confirmed in its window; else its
-/// operation, on the terminal's word (D50), refused from a session's terminal (D194 point 5). The rules and their proposals are
+/// operation, on the terminal's word, refused from a session's terminal. The rules and their proposals are
 /// <c>DAORIS_HOME</c>'s whatever <c>DAORIS_HARNESS_CONFIG</c> names, so they keep the door on that home; an account's settings and a
 /// folder's trust are the wiring file's home's, acted on alone, sending nothing and holding nothing, where the variable names one. Its
-/// words are one function per verb on both paths, today's text kept (<c>fixtures/agents-text.json</c>).
+/// words are one function per verb on both paths, its text kept (<c>fixtures/agents-text.json</c>).
 /// </summary>
 /// <remarks>
 /// Exit codes are the CLI's, case by case: 0 said or set · 1 a trust asked without <c>--yes</c>, a grant a re-read does not show, the
@@ -28,7 +28,7 @@ public static class AgentsCommand
     public static IReadOnlyList<string> Verbs { get; } =
         ["list", "rules", "trust", "settings", "which", "unpin", "profile", "install", "key", "login", "update", "pin"];
 
-    /// <summary>The <c>profile</c> verbs this program has, each the CLI hands on: every one (PUSH1f2e2, <c>use</c> PUSH1f2e3).</summary>
+    /// <summary>The <c>profile</c> verbs this program has, each the CLI hands on: every one.</summary>
     public static IReadOnlyList<string> ProfileVerbs => AgentAccountsCommand.ProfileVerbs;
 
     public const string Usage =
@@ -69,7 +69,7 @@ public static class AgentsCommand
 
     /// <summary>
     /// Whether the words change a home, which holds its lease from the top: a rule's edit and a proposal's answer, a setting given a value,
-    /// and a trust granted. A read, a question, a dry run and the usage hold none, and so do the long verbs (the alone-path design §1.4):
+    /// and a trust granted. A read, a question, a dry run and the usage hold none, and so do the long verbs:
     /// <c>install</c> holds none at all, its installer writing the machine and not the home, and <c>key</c>, <c>login</c>, <c>pin</c> and a
     /// pinned <c>update</c> take it themselves to publish.
     /// </summary>
@@ -88,7 +88,7 @@ public static class AgentsCommand
     }
 
     /// <summary>
-    /// Whether the words act on a named wiring file's home alone (D194 point 2, the alone-path design §1.2): a verb that writes the wiring
+    /// Whether the words act on a named wiring file's home alone: a verb that writes the wiring
     /// file's home, with <c>DAORIS_HARNESS_CONFIG</c> set. The rules never do: they are <c>DAORIS_HOME</c>'s.
     /// </summary>
     public static bool Isolated(IReadOnlyList<string> args, Func<string, string?> environment) =>
@@ -96,7 +96,7 @@ public static class AgentsCommand
         && environment(HarnessSettings.PathVariable) is { Length: > 0 };
 
     /// <summary>
-    /// The verbs that only read, changing no home, so the verb table has no row for them: <c>list</c> (PUSH1f2e4), whose only write is the
+    /// The verbs that only read, changing no home, so the verb table has no row for them: <c>list</c>, whose only write is the
     /// readings <c>reads.json</c> keeps of each account it asked, as a probe's are, and <c>which</c>.
     /// </summary>
     public static IReadOnlyList<string> Reads { get; } = ["list", "which"];
@@ -111,7 +111,7 @@ public static class AgentsCommand
             return 0;
         }
 
-        // None named is `list`, as `daoris agent` alone always was (PUSH1f2e4).
+        // None named is `list`.
         var verb = args.Count > 0 ? args[0] : "list";
         if (!Verbs.Contains(verb, StringComparer.Ordinal))
         {
@@ -122,17 +122,17 @@ public static class AgentsCommand
 
         try
         {
-            // A read of what was read, said here, `--again` asking each agent anew: no lease, and from a session's terminal too.
+            // A read of the kept reading, said here, `--again` asking each agent anew: no lease, and from a session's terminal too.
             if (verb == "list") return await AgentListCommand.RunAsync(world, again: args.Contains("--again", StringComparer.Ordinal), ct).ConfigureAwait(false);
 
-            // The long verbs (PUSH1f2e5, the alone-path design §1.4): no route takes them, and each holds no lease at its top.
+            // The long verbs: no route takes them, and each holds no lease at its top.
             if (verb == "install") return await AgentLongCommand.InstallAsync(args, world, ct).ConfigureAwait(false);
             if (verb == "key") return await AgentLongCommand.KeyAsync(args, world, ct).ConfigureAwait(false);
             if (verb == "login") return await AgentLoginCommand.LoginAsync(args, world, ct).ConfigureAwait(false);
             if (verb == "pin") return await AgentPinCommand.PinAsync(args, world, ct).ConfigureAwait(false);
             if (verb == "update") return await AgentPinCommand.UpdateAsync(args, world, ct).ConfigureAwait(false);
 
-            // A person's grant from a session's terminal is refused before a word of it is said (D194 point 5): no route takes it.
+            // A person's grant from a session's terminal is refused before a word of it is said: no route takes it.
             if (verb == "trust" && Changes(args) && world.Instance.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 })
             {
                 await error.WriteLineAsync($"{Prefix}: {DriverChoicesCommand.SessionsTerminal}").ConfigureAwait(false);
@@ -149,7 +149,7 @@ public static class AgentsCommand
         }
         catch (DriverException refused)
         {
-            // A refusal of the operation a read or a grant made here, one line with its code (D194 point 6).
+            // A refusal of the operation a read or a grant made here, one line with its code.
             await error.WriteLineAsync($"{Prefix}: {refused.Message} ({ChoiceCodes.Of(refused)})").ConfigureAwait(false);
             return 2;
         }
@@ -179,8 +179,8 @@ public static class AgentsCommand
     // ——— which
 
     /// <summary>
-    /// <c>which &lt;agent&gt; [--workspace &lt;name&gt;] [--json]</c> (PUSH1f2e, the alone-path design §4): the program the agent runs as,
-    /// resolved as every start resolves it (<see cref="HarnessProbe.CommandOf"/>, D57 rule 4): the command <c>driver.json</c> names for
+    /// <c>which &lt;agent&gt; [--workspace &lt;name&gt;] [--json]</c>: the program the agent runs as,
+    /// resolved as every start resolves it (<see cref="HarnessProbe.CommandOf"/>): the command <c>driver.json</c> names for
     /// it, then its pin (the workspace's where it pins its own), then its binary on <c>PATH</c>. A read: it holds nothing and sends
     /// nothing. A pin with nothing installed at it answers <c>missing</c>, exit 0. With <c>--json</c> it is one object on the standard
     /// output, which the real-run tools read (<c>proof-kit.mjs</c>, <c>acp-trust-probe.mjs</c>).
@@ -248,7 +248,7 @@ public static class AgentsCommand
     /// <summary>
     /// The agent named after the verb, refused rather than defaulted: its toolchain, the settings file its accounts keep, and the roster
     /// it is read from. An agent is a door this machine runs that names a real program, or an agent a door runs as with no door here
-    /// (<see cref="ProviderRegistry.AgentNamed"/>, <c>codex</c>): the stubs name none (D46 §8), as the CLI's <c>TOOLCHAINS</c> named them.
+    /// (<see cref="ProviderRegistry.AgentNamed"/>, <c>codex</c>): the stubs name none.
     /// </summary>
     internal static (string Name, AccountAgent Toolchain, string? SettingsFile, HarnessRoster Roster) Agent(
         IReadOnlyList<string> args, string verb, string shape, AgentsWorld world, string path, int at = 1)
@@ -261,11 +261,11 @@ public static class AgentsCommand
         if (!named.Contains(name, StringComparer.Ordinal) || Of(name) is not { } toolchain)
         {
             // Never a silent fallback: a machine that installed another agent than the person named is the same failure as a
-            // repository that asked for one layout and received another (D23).
+            // repository that asked for one layout and received another.
             throw new AgentWords($"unknown agent '{name}' — one of: {string.Join(", ", named)}. An agent is added deliberately, never guessed.");
         }
 
-        // A door's accounts are its owner's (AGT7), and so is the file they keep their settings in.
+        // A door's accounts are its owner's, and so is the file they keep their settings in.
         return (name, toolchain, set.Names.Contains(name, StringComparer.OrdinalIgnoreCase) ? roster.AccountAgentOf(name)?.Accounts.SettingsFile : toolchain.Accounts.SettingsFile, roster);
     }
 
@@ -273,20 +273,20 @@ public static class AgentsCommand
     internal static IReadOnlyList<string> Named(AgentsWorld world, string path) => Named(world.Adapters(HarnessSettings.HomeOf(path)));
 
     /// <summary>
-    /// The agents whose accounts this terminal's set knows (POOLSTRAY1, <see cref="ProviderRegistry.Agents"/>): what every read and write of the
+    /// The agents whose accounts this terminal's set knows (<see cref="ProviderRegistry.Agents"/>): what every read and write of the
     /// wiring here hands <see cref="HarnessSettings"/>, so a stray folder under the account homes is never read as an agent.
     /// </summary>
     internal static IReadOnlyList<string> Agents(AgentsWorld world, string path) => world.Adapters(HarnessSettings.HomeOf(path)).Agents;
 
-    // The operands' rule (AGENTPROVIDER1 row b), read from the registry: a door, or the agent a door runs as, naming a binary.
+    // The operands' rule, read from the registry: a door, or the agent a door runs as, naming a binary.
     private static List<string> Named(ProviderRegistry set) => [.. set.Operands()];
 
-    /// <summary>An account by its id or its name (ACCT2): its id, or what was given where it names none, for the verb to refuse.</summary>
+    /// <summary>An account by its id or its name: its id, or what is given where it names none, for the verb to refuse.</summary>
     internal static string AccountNamed(string home, string owner, string given) =>
         AccountNames.Resolve(HarnessSettings.Profiles(home, owner), AccountNames.Of(home, owner), given) ?? given.Trim();
 
     /// <summary>
-    /// <c>settings &lt;agent&gt; [--account &lt;account&gt;] [model &lt;v&gt;] [effort &lt;v&gt; [--for &lt;model&gt;]]</c> (AGT6, D98): an
+    /// <c>settings &lt;agent&gt; [--account &lt;account&gt;] [model &lt;v&gt;] [effort &lt;v&gt; [--for &lt;model&gt;]]</c>: an
     /// account's own model and effort, in the tool's own settings file under that account. Given nothing to change it says what the file
     /// says; <c>unset</c> clears a key. Never the tool's own configuration home: with no account anywhere it refuses and says how.
     /// </summary>
@@ -311,14 +311,14 @@ public static class AgentsCommand
         }
 
         var given = FlagValue(args, "--account");
-        // With none named, the order's first (POOL1b, the account-pool design §5.1), where the machine's default was.
+        // With none named, the order's first.
         var account = (given is not null ? AccountNamed(home, owner, given) : null)
             ?? HarnessSettings.LoadSet(path, [owner]).FirstOf(owner)
             ?? throw new AgentWords(
                 $"`{owner}` has no Daoris account named here — Daoris never works in the tool's own configuration home. "
                 + "Name one of Daoris's accounts with `--account <name>` (`daoris agent list` shows them), sign in to one with "
                 + $"`daoris agent login {owner} --new`, or set the model with the tool itself.");
-        // Refused rather than made: a setting is not how an account comes to exist (D66 §3).
+        // Refused rather than made: a setting is not how an account comes to exist.
         var accounts = HarnessSettings.Profiles(home, owner);
         if (!accounts.Contains(account, StringComparer.Ordinal))
         {
@@ -435,9 +435,9 @@ public static class AgentsCommand
     }
 
     /// <summary>
-    /// A press as the alone-path design §1.1 takes it: its route through the instance that answers, its words read from the answer's
-    /// fields; else its operation here, refused from a session's terminal where it is the person's (D194 point 5), its refusal one line
-    /// with its code (D194 point 6). A change no route takes, and one a named wiring file's home holds, act here and send nothing.
+    /// A press: its route through the instance that answers, its words read from the answer's
+    /// fields; else its operation here, refused from a session's terminal where it is the person's, its refusal one line
+    /// with its code. A change no route takes, and one a named wiring file's home holds, act here and send nothing.
     /// </summary>
     private static async Task<int> PressAsync(AgentsWorld world, AgentPress press, CancellationToken ct)
     {
@@ -463,7 +463,7 @@ public static class AgentsCommand
             }
             catch (IOException held)
             {
-                // The file's edit lock, held by another writer for the whole of its wait: nothing was written.
+                // The file's edit lock, held by another writer for the whole of its wait: nothing is written.
                 await error.WriteLineAsync($"{Prefix}: {held.Message}").ConfigureAwait(false);
                 return 2;
             }

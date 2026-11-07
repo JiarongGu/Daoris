@@ -2,8 +2,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Where a harness's toolchain and accounts live under the Daoris home, and which folders are accounts. <b>The directories that
-/// exist are the accounts</b>: there is no register of them to disagree with the disk, the same reason the registry became the
-/// authority rather than a view over a scan (D48 §3). Both places of the account homes are read (D172 point 5, HOMELAYOUT2).
+/// exist are the accounts</b>: there is no register of them to disagree with the disk, the same reason the registry is the
+/// authority rather than a view over a scan. Both places of the account homes are read.
 /// </summary>
 public static class HarnessAccountFolders
 {
@@ -16,11 +16,11 @@ public static class HarnessAccountFolders
     /// installed at the pin.
     /// </summary>
     /// <remarks>
-    /// <b>Two layouts, the vendor's first</b> (AGT2b). A pin from a maker's own channel lands as
+    /// <b>Two layouts, the vendor's first</b>. A pin from a maker's own channel lands as
     /// <c>&lt;dir&gt;/bin/&lt;binary&gt;</c> — <c>.exe</c> on Windows — and is moved there only once it
     /// verified, so finding it is the proof. Then <b>npm's layout, for what ships only there</b>:
     /// <c>--prefix &lt;dir&gt;</c> puts the shims in <c>&lt;dir&gt;/node_modules/.bin</c>, with a
-    /// <c>.cmd</c> beside the shell script on Windows. A pin npm made before AGT2b still resolves. The
+    /// <c>.cmd</c> beside the shell script on Windows. A pin npm made earlier still resolves. The
     /// CLI's <c>managedBinary</c> is the twin.
     ///
     /// <para>🔴 A pin whose directory is not there answers null, and every caller falls back to
@@ -59,7 +59,7 @@ public static class HarnessAccountFolders
     /// <summary>
     /// The home, the agent and the account a profile's folder is, read back from the layout <see cref="ProfileHome"/> makes, at
     /// either place of <see cref="HomeEntry.AgentHomes"/>: <c>&lt;home&gt;/harnesses/&lt;agent&gt;/&lt;account&gt;</c> where an
-    /// account was made before HOMELAYOUT3, <c>&lt;Daoris folder&gt;/profiles/agents/&lt;agent&gt;/&lt;account&gt;</c> since. Null
+    /// older account lives, <c>&lt;Daoris folder&gt;/profiles/agents/&lt;agent&gt;/&lt;account&gt;</c> otherwise. Null
     /// for a folder outside both.
     /// </summary>
     public static (string Home, string Agent, string Account)? AccountAt(string profileHome)
@@ -74,24 +74,24 @@ public static class HarnessAccountFolders
 
     /// <summary>
     /// The profiles that exist for a harness, sorted. A lock's folder or a hidden one is no account
-    /// (<see cref="NotAnAccount"/>, HELPSTUCK1): <see cref="Strays"/> names them.
+    /// (<see cref="NotAnAccount"/>): <see cref="Strays"/> names them.
     /// </summary>
     public static IReadOnlyList<string> Profiles(string home, string harness) =>
         [.. Folders(home, harness).Where(name => !NotAnAccount(name))];
 
     /// <summary>
-    /// The folders beside a harness's accounts that are no account (HELPSTUCK1), sorted: never listed, chosen, walked or removed
-    /// as one, and never touched here either, since one may hold a sign-in a person made in it while it was listed. The
+    /// The folders beside a harness's accounts that are no account, sorted: never listed, chosen, walked or removed
+    /// as one, and never touched here either, since one may hold a sign-in a person made in it while it counted as an account. The
     /// roster's report names them (<see cref="HarnessReport.Strays"/>), and Ask Daoris's room says them.
     /// </summary>
     public static IReadOnlyList<string> Strays(string home, string harness) =>
         [.. Folders(home, harness).Where(NotAnAccount)];
 
     /// <summary>
-    /// Whether a folder beside the accounts is no account (HELPSTUCK1, twin rule 1): a lock's, its name ending <c>.lock</c> in
+    /// Whether a folder beside the accounts is no account: a lock's, its name ending <c>.lock</c> in
     /// any case, since a lockfile library locks a folder by making <c>&lt;folder&gt;.lock</c> beside it, and Claude Code locks
-    /// its configuration home so; or a hidden one, its name starting <c>.</c>. Listed as accounts, two such lock folders on the
-    /// owner's machine were walked to, signed in to and run in, and a lock of the account each is named after then met a home.
+    /// its configuration home so; or a hidden one, its name starting <c>.</c>. Listed as accounts, such a lock folder would be
+    /// walked to, signed in to and run in, and a lock of the account it is named after would meet a home.
     /// The CLI's <c>notAnAccount</c> is the twin, and the two <c>profiles</c> tables hold the same rows.
     /// </summary>
     public static bool NotAnAccount(string name) =>
@@ -120,14 +120,14 @@ public static class HarnessAccountFolders
             .OrderBy(name => name, StringComparer.Ordinal);
 
     /// <summary>
-    /// The folders under the account homes, in both places, that no agent in <paramref name="agents"/> names (POOLSTRAY1), sorted:
+    /// The folders under the account homes, in both places, that no agent in <paramref name="agents"/> names, sorted:
     /// a folder a start whose path carried an unexpanded variable left, say. Never read as an agent, never touched.
     /// </summary>
     public static IReadOnlyList<string> StrayAgents(string home, IReadOnlyCollection<string> agents) =>
         [.. AgentFolders(home).Where(name => !NotAnAccount(name) && !agents.Contains(name, StringComparer.OrdinalIgnoreCase))];
 
     /// <summary>
-    /// The agents Daoris knows on <paramref name="home"/> (POOLSTRAY1): the build's and every installed plugin's
+    /// The agents Daoris knows on <paramref name="home"/>: the build's and every installed plugin's
     /// (<see cref="ProviderRegistry.Agents"/>), for a writer or reader handed no set of its own.
     /// </summary>
     public static IReadOnlyList<string> AgentsKnown(string home)
@@ -137,8 +137,8 @@ public static class HarnessAccountFolders
     }
 
     /// <summary>
-    /// Each agent's accounts on this machine, for every agent Daoris knows that the wiring names or whose account homes exist
-    /// (POOLSTRAY1): a folder under the account homes no known agent names is no agent, and its folders no accounts.
+    /// Each agent's accounts on this machine, for every agent Daoris knows that the wiring names or whose account homes exist:
+    /// a folder under the account homes no known agent names is no agent, and its folders no accounts.
     /// </summary>
     /// <param name="agents">The agents Daoris knows (<see cref="ProviderRegistry.Agents"/>); the home's (<see cref="AgentsKnown"/>) where none is handed.</param>
     public static IReadOnlyDictionary<string, IReadOnlyList<string>> AccountsOf(
@@ -167,8 +167,8 @@ public static class HarnessAccountFolders
     internal static int FolderCount(string home, string harness) => Folders(home, harness).Count();
 
     /// <summary>
-    /// The id an account made by signing in, or by a key, gets (D66 §3, ACCT2): a fresh one, never reused
-    /// (<see cref="AccountNames.NewId"/>), where it was the first free <c>account-N</c>.
+    /// The id an account made by signing in, or by a key, gets: a fresh one, never reused
+    /// (<see cref="AccountNames.NewId"/>), not the first free <c>account-N</c>.
     /// </summary>
     /// <remarks>
     /// 🔴 <b>A neutral id, never who signed in.</b> It is needed before the sign-in starts, when nobody knows whose it is;
@@ -179,7 +179,7 @@ public static class HarnessAccountFolders
     public static string NextAccount(string home, string harness) => AccountNames.NewId(home, harness);
 
     /// <summary>
-    /// Delete an account: its directory, credentials included (D66 §3). True when there was one.
+    /// Delete an account: its directory, credentials included. True when one existed.
     /// </summary>
     /// <remarks>
     /// <para>The name is judged first (<see cref="ProfileHome"/>), so a name pointing anywhere else is
@@ -196,7 +196,7 @@ public static class HarnessAccountFolders
         var directory = ProfileHome(home, harness, profile);
         if (!Directory.Exists(directory))
         {
-            // A key whose directory someone removed by hand still goes: nothing is left behind here. Nor its name (ACCT2).
+            // A key whose directory someone removed by hand still goes: nothing is left behind here. Nor its name.
             HarnessKeys.Remove(home, harness, profile);
             AccountCooling.End(home, harness, profile, DateTimeOffset.UtcNow);
             AccountNames.Forget(home, harness, profile);
@@ -219,8 +219,8 @@ public static class HarnessAccountFolders
         }
 
         Directory.Delete(directory, recursive: true);
-        // An account that was a key goes with its key (AGT3): a removed account keeps nothing here. Nor its cool-off
-        // (TOOL4e): an account made later by `profile add` under its name starts afresh. Nor its name (ACCT2).
+        // An account that is a key goes with its key: a removed account keeps nothing here. Nor its cool-off:
+        // an account made later by `profile add` under its name starts afresh. Nor its name.
         HarnessKeys.Remove(home, harness, profile);
         AccountCooling.End(home, harness, profile, DateTimeOffset.UtcNow);
         AccountNames.Forget(home, harness, profile);

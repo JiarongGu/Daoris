@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris agent login</c> (PUSH1f2e6, D194, the alone-path design §1.1 and §1.4), the words <c>daoris agent login …</c> hands this
-/// program: the agent's own sign-in, run at this terminal into an account's folder, the person answering its prompts. No route takes it (§2),
-/// it is refused from a session's terminal (D194 point 5), and it holds no lease at its top: the folder is made before the flow and never
+/// <c>daoris agent login</c>, the words <c>daoris agent login …</c> hands this
+/// program: the agent's own sign-in, run at this terminal into an account's folder, the person answering its prompts. No route takes it,
+/// it is refused from a session's terminal, and it holds no lease at its top: the folder is made before the flow and never
 /// moved, and the sign-in's end (its mark, its cool-off ended, its name and its joins) is published under the home's lease, waited for and
-/// never refused. Today's text is kept (<c>fixtures/agents-text.json</c>).
+/// never refused. Its text is kept (<c>fixtures/agents-text.json</c>).
 /// </summary>
 /// <remarks>
 /// Exit codes are the CLI's: 0 signed in · 1 a session's terminal · 2 a refusal of the words, a sign-in that did not finish, and the
@@ -16,9 +16,9 @@ internal static class AgentLoginCommand
     private const string Prefix = "daoris";
 
     /// <summary>
-    /// <c>login &lt;agent&gt; [--account &lt;account&gt;] [--device-code]</c>, or <c>--new [--name &lt;name&gt;]</c> (D66 §3, ACCT1, ACCT2,
-    /// CODEXLOGIN1): every check that needs no flow is made first, the browser's ports tried once
-    /// where the agent waits on them, then the binary a start runs signs in (CODEXACCT1b, D57 rule 4), its pin before <c>PATH</c>'s.
+    /// <c>login &lt;agent&gt; [--account &lt;account&gt;] [--device-code]</c>, or <c>--new [--name &lt;name&gt;]</c>:
+    /// every check that needs no flow is made first, the browser's ports tried once
+    /// where the agent waits on them, then the binary a start runs signs in, its pin before <c>PATH</c>'s.
     /// </summary>
     internal static async Task<int> LoginAsync(IReadOnlyList<string> args, AgentsWorld world, CancellationToken ct)
     {
@@ -37,7 +37,7 @@ internal static class AgentLoginCommand
                 $"`{name}` declares no login flow — log in with its own tooling, pointing {toolchain.Home.Variable} at the profile directory.");
         }
 
-        // CODEXLOGIN1: the tool's own sign-in first, its device code where asked.
+        // The tool's own sign-in first, its device code where asked.
         var byCode = args.Contains("--device-code");
         if (byCode && toolchain.Accounts.DeviceLoginArguments is not { Count: > 0 })
         {
@@ -60,7 +60,7 @@ internal static class AgentLoginCommand
                 + $"account rename {name} <account> <name>`.");
         }
 
-        // CODEXACCT1b: the binary `agent list` asks, the pin before PATH's, refused before anything is made where the pin has nothing
+        // The binary `agent list` asks, the pin before PATH's, refused before anything is made where the pin has nothing
         // installed at it; the sign-in and its end's question both run it.
         var settings = HarnessSettings.LoadSet(path, AgentsCommand.Agents(world, path));
         var binary = HarnessProbe.CommandOf(name, toolchain, command: null, settings, home);
@@ -71,7 +71,7 @@ internal static class AgentLoginCommand
                 + $"`daoris agent pin {name} {binary.Pinned}` installs it, and `daoris agent unpin {name}` goes back to PATH.");
         }
 
-        // The same verb by the other way, said where one way did not sign in (CODEXLOGIN1): a workspace may refuse either.
+        // The same verb by the other way, said where one way did not sign in: a workspace may refuse either.
         var typed = string.Join(' ', ["daoris agent login", name, .. args.Skip(2).Where(word => word != "--device-code")]);
         string? otherWay = toolchain.Accounts.DeviceLoginArguments is not { Count: > 0 } ? null
             : byCode ? $"`{typed}` signs in through your browser instead."
@@ -118,9 +118,9 @@ internal static class AgentLoginCommand
         private void Told(string line) => world.Instance.Error.WriteLine(line);
 
         /// <summary>
-        /// A new account (D66 §3, ACCT2): the flow into a folder of a fresh id, kept only where the sign-in finished — the agent exited 0
-        /// and does not call that home signed out. A sign-in that did not finish, was stopped, or threw is removed in a <c>finally</c>, so the
-        /// list is as it was.
+        /// A new account: the flow into a folder of a fresh id, kept only where the sign-in finished — the agent exited 0
+        /// and does not call that home signed out. A sign-in that did not finish, stopped early, or threw is removed in a <c>finally</c>, so the
+        /// list is unchanged.
         /// </summary>
         public async Task<int> NewAsync(string? named)
         {
@@ -177,8 +177,8 @@ internal static class AgentLoginCommand
         }
 
         /// <summary>
-        /// An account that is here (ACCT1): the one named, by its id or its name, else the order's first (POOL1b, the account-pool design
-        /// §5.1) — never a new folder, and with no account of Daoris's refused, never the tool's own home.
+        /// An account that is here: the one named, by its id or its name, else the order's first — never a new folder, and with no account
+        /// of Daoris's refused, never the tool's own home.
         /// </summary>
         public async Task<int> ToAsync(string? named)
         {
@@ -203,14 +203,14 @@ internal static class AgentLoginCommand
             var code = await RunAsync(where).ConfigureAwait(false);
             if (code != 0) return code;
 
-            // Who signed in is read before the end is published (SIGNIN1), as the window's sign-in reads it.
+            // Who signed in is read before the end is published, as the window's sign-in reads it.
             return await EndAsync(account, await AskAsync(where, account).ConfigureAwait(false), wanted: null, fresh: false).ConfigureAwait(false)
                 ? 0
                 : 2;
         }
 
         /// <summary>
-        /// 🔴 LIVELOGIN1: never the real agent under a scratch home, which signs the person's browser in on their real account. Refused
+        /// 🔴 Never the real agent under a scratch home, which signs the person's browser in on their real account. Refused
         /// after the verb's own refusals, which start nothing and say the better reason, and before the account's folder is made.
         /// </summary>
         private void RefuseScratch(string where)
@@ -248,7 +248,7 @@ internal static class AgentLoginCommand
         }
 
         /// <summary>
-        /// Who signed in (D66 §3, ACCOUNTID1), asked of that one home under its probe lock (TOOL6g); unknown where the agent has no question
+        /// Who signed in, asked of that one home under its probe lock; unknown where the agent has no question
         /// or another holder kept the lock.
         /// </summary>
         private async Task<HarnessProbe.LoginAnswer> AskAsync(string where, string account) =>
@@ -257,9 +257,9 @@ internal static class AgentLoginCommand
                 .ConfigureAwait(false);
 
         /// <summary>
-        /// The sign-in's end, published under the home's lease (the alone-path design §1.4): the cool-off ended (D125 §2.3) and the mark
-        /// (TOOL6g), the reading kept (ROSTER1), its name where the person named it (ACCT2) and a new account placed last in the order (POOL1a);
-        /// then who signed in, and for a new account that it joined Daoris's accounts. A Ctrl+C while the publication waits keeps the account, signed in, and says what was not written and how to finish it.
+        /// The sign-in's end, published under the home's lease: the cool-off ended and the mark, the reading kept, its name where the
+        /// person named it and a new account placed last in the order;
+        /// then who signed in, and for a new account that it joined Daoris's accounts. A Ctrl+C while the publication waits keeps the account, signed in, and says what is not written and how to finish it.
         /// </summary>
         private async Task<bool> EndAsync(string account, HarnessProbe.LoginAnswer said, string? wanted, bool fresh)
         {
@@ -307,13 +307,13 @@ internal static class AgentLoginCommand
                         }
                     }
 
-                    // A new account goes last in the order, whatever its id (POOL1a, the account-pool design §2.2).
+                    // A new account goes last in the order, whatever its id.
                     if (fresh) HarnessSettings.Placed(path, agent, account, AgentsCommand.Agents(world, path));
                 }
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
-                // The order places it at the next change of the file (POOL1a1), so only a name is left to finish.
+                // The order places it at the next change of the file, so only a name is left to finish.
                 Told($"{Prefix}: stopped at your Ctrl+C — the account `{account}` was kept, signed in, and its end was not written"
                     + (wanted is null
                         ? "."
@@ -325,7 +325,7 @@ internal static class AgentLoginCommand
             var accounts = HarnessSettings.Profiles(home, agent);
             if (fresh)
             {
-                // ACCTNAME1, ACCOUNTID1c: the email offered as the name said once, and where it is another account's, what tells them apart.
+                // The email offered as the name said once, and where it is another account's, what tells them apart.
                 var apart = AccountNames.ApartWords(accounts, names, account, said.Account, said.Org, said.Plan);
                 Say($"{Prefix}: {AccountNames.SignedInSentence(said.Account, agent, called, account, apart)}");
             }
@@ -334,7 +334,7 @@ internal static class AgentLoginCommand
                 called = AccountNames.NameOf(home, agent, account);
             }
 
-            // ACCOUNTID1: who signed in offered as its name, with the organisation beside it where another account has the email, or none;
+            // Who signed in offered as its name, with the organisation beside it where another account has the email, or none;
             // offered only where it has no name of the person's.
             var offered = called is null ? AccountNames.Offered(accounts, names, account, said.Account, said.Org, said.Plan) : null;
             if (called is null && offered is { Length: > 0 })
@@ -347,7 +347,7 @@ internal static class AgentLoginCommand
                 Say($"  `daoris agent account rename {agent} {ShellWord.Of(account, ShellWord.Account)} <name>` gives it a name of yours.");
             }
 
-            // A new account's end says it joined, in the bridge's words for the page (POOL1a2, the account-pool design §4.4); a sign-back-in
+            // A new account's end says it joined, in the bridge's words for the page; a sign-back-in
             // says nothing of it.
             if (fresh) Say($"  {OneSetWords.Joined(AccountNames.Said(names, account))}");
             return true;

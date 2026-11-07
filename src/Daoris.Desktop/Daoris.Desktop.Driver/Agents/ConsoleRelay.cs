@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Live session output, batched for whoever is showing it (D49 §2): subscribes to every line and
+/// Live session output, batched for whoever is showing it: subscribes to every line and
 /// hands them out a window at a time.
 /// </summary>
 /// <remarks>
 /// <para><b>The mechanics are <see cref="BatchRelay{T}"/>'s</b>, shared with the conversation's
-/// <see cref="EventRelay"/> (D76): batched on a short timer, grouped by session, a failing reader
+/// <see cref="EventRelay"/>: batched on a short timer, grouped by session, a failing reader
 /// costing only its own view. The buffer holds the sequence numbers, so a reader that misses a batch
 /// asks the driver for the gap.</para>
 ///

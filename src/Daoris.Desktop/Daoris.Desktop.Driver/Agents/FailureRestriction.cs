@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Why a failure restricts a run (the agent-lyntai design §5.2, AGENTINFRA1's cause): the host's own, read from a normalized failure.</summary>
+/// <summary>Why a failure restricts a run: the host's own, read from a normalized failure.</summary>
 public enum FailureCause
 {
     Unknown,
@@ -24,7 +24,7 @@ public enum FailureSubject
 /// <summary>How a restriction ends.</summary>
 public enum RecoveryBasis
 {
-    /// <summary>Not stated: D125's default stands in.</summary>
+    /// <summary>Not stated: the default stands in.</summary>
     Unknown,
 
     /// <summary>At a stated reset.</summary>
@@ -37,11 +37,11 @@ public enum RecoveryBasis
     OwnerAction,
 }
 
-/// <summary>How a restriction ends, and when where it was stated.</summary>
+/// <summary>How a restriction ends, and when where it is stated.</summary>
 public sealed record FailureRecovery(RecoveryBasis Basis, DateTimeOffset? At = null);
 
 /// <summary>
-/// A normalized failure's restriction, on Daoris's own types (the agent-lyntai design §5.2, §5.3): read by its subject and cause before its
+/// A normalized failure's restriction, on Daoris's own types: read by its subject and cause before its
 /// recovery, so a limit or a capacity scoped to a model is never a refused model.
 /// </summary>
 public sealed record FailureRestriction(FailureCause Cause, FailureSubject Subject, FailureRecovery Recovery);

@@ -7,8 +7,8 @@ using Lyntai.Processes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The layer's runner is Daoris's launcher (the agent-lyntai design §5.5): every member a layer door uses starts through Platform's
-/// <see cref="AgentStarts"/>, which contains the process as it contains every agent (D201), with no fallback to the layer's own runner; a
+/// The layer's runner is Daoris's launcher: every member a layer door uses starts through Platform's
+/// <see cref="AgentStarts"/>, which contains the process as it contains every agent, with no fallback to the layer's own runner; a
 /// spawn's container is built over one. Its clock is Daoris's: a turn arms none, whatever window the layer hands it, since a turn ends at the
 /// agent's terminal or the person's stop and Daoris limits no session by time; a read is bounded by its agent's patience. It keeps the
 /// process the launcher answered, its exit (the layer's terminal carries none), what it wrote on stdin, and whether Daoris stopped it.
@@ -49,7 +49,7 @@ internal sealed class LauncherRunner(LauncherSeat seat, TimeSpan? patience = nul
         get { lock (_gate) return _stopped; }
     }
 
-    /// <summary>What was written on stdin, each write as written, in order.</summary>
+    /// <summary>What is written on stdin, each write as written, in order.</summary>
     public IReadOnlyList<string> Written
     {
         get { lock (_gate) return [.. _written]; }
@@ -148,8 +148,8 @@ internal sealed class LauncherRunner(LauncherSeat seat, TimeSpan? patience = nul
         string command, IReadOnlyList<string> args, string? workingDirectory, IReadOnlyDictionary<string, string?>? environment,
         CancellationToken ct)
     {
-        // Not the tools' environment (TOOLS5): the start's environment is the one its shell composed before the layer's door was registered
-        // (the agent-lyntai design §5.5), the tools' among it, handed whole in the seat.
+        // Not the tools' environment: the start's environment is the one its shell composed before the layer's door is registered
+        // the tools' among it, handed whole in the seat.
         var info = new ProcessStartInfo(seat.Program?.File ?? command)
         {
             UseShellExecute = false,
@@ -246,7 +246,7 @@ internal sealed class LauncherRunner(LauncherSeat seat, TimeSpan? patience = nul
         }
         catch (Exception error) when (error is IOException or ObjectDisposedException or OperationCanceledException)
         {
-            // The process ended while it was spoken to: its exit says what happened.
+            // The process ends while it is spoken to: its exit says what happened.
         }
     };
 

@@ -5,9 +5,9 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Detection (D49 §4): locate a harness, ask its version, and ask each profile whether it is logged
+/// Detection: locate a harness, ask its version, and ask each profile whether it is logged
 /// in. <b>Free and read-only</b> — it runs the tool's own reporting commands and writes nothing of the tool's; the version is asked
-/// once per binary, kept in <c>reads.json</c> (<see cref="BinaryVersion"/>, PERF3).
+/// once per binary, kept in <c>reads.json</c> (<see cref="BinaryVersion"/>).
 /// </summary>
 /// <remarks>
 /// Acting is the person's click: install, update and login spawn the harness's own mechanism and are
@@ -21,29 +21,29 @@ public static class HarnessProbe
 
     /// <summary>Probe one harness: present, version, and every profile's login state.</summary>
     /// <remarks>
-    /// <para>🔴 <b>One status question per account at a time</b> (TOOL6g): each is asked under that account's
+    /// <para>🔴 <b>One status question per account at a time</b>: each is asked under that account's
     /// <see cref="ProbeLock"/>, so two probes, two adapters onto one account, or the CLI's listing never ask one account at
     /// once. The agent may refresh an expired token to answer, and two refreshes with one single-use refresh token signed
     /// every account on the install out.</para>
     /// <para><b>Never an account a session of Daoris's runs on</b> (<paramref name="busy"/>): that session's own process
     /// refreshes its token, so the probe keeps out, and says what <paramref name="prior"/> said of it, or unknown.</para>
-    /// <para>🔴 <b>Never the tool's own sign-in</b> (POOL1a3, D197 point 3; Fable's F2): it is the person's own, which their
+    /// <para>🔴 <b>Never the tool's own sign-in</b>: it is the person's own, which their
     /// terminal and their other sessions run on, and the agent may refresh their token to answer. Every question runs in an
     /// account's home under the home; <paramref name="prior"/>'s word on the own sign-in stands, or unknown.</para>
     /// </remarks>
     /// <param name="busy">Whether a session of Daoris's runs on an account now, by its name.</param>
     /// <param name="prior">The last report of this harness, whose word on an account not asked, and on the own sign-in, stands.</param>
     /// <param name="asks">
-    /// Which accounts to ask, by name; null asks every one (ROSTER1). One not asked keeps <paramref name="prior"/>'s word and
-    /// when it was read, so the binary can be asked with no account asked at all.
+    /// Which accounts to ask, by name; null asks every one. One not asked keeps <paramref name="prior"/>'s word and
+    /// the time of its reading, so the binary can be asked with no account asked at all.
     /// </param>
     /// <param name="clock">When an answer came, for <see cref="ProfileReport.Read"/>; the system's, unless a roster's.</param>
     /// <param name="answered">
-    /// Told each question that was asked, the account's name, with what it said: the roster keeps
-    /// the state under the home and who, the organisation and the plan in memory (D66 §3, ACCOUNTID1).
+    /// Told each question asked, the account's name, with what it said: the roster keeps
+    /// the state under the home and who, the organisation and the plan in memory.
     /// </param>
     /// <param name="again">
-    /// Whether the binary is asked its version though what it answered of the same files is kept (<see cref="BinaryVersion"/>, PERF3):
+    /// Whether the binary is asked its version though what it answered of the same files is kept (<see cref="BinaryVersion"/>):
     /// a press, an install, an update or a pin; a look takes the reading.
     /// </param>
     public static async Task<HarnessReport> ProbeAsync(
@@ -61,7 +61,7 @@ public static class HarnessProbe
         string? accountOf = null,
         bool again = false)
     {
-        // Whose accounts it lists (AGT7): the key the registry answers (<c>ProviderRegistry.OwnerOfAgent</c>), the agent itself where none is given.
+        // Whose accounts it lists: the key the registry answers (<c>ProviderRegistry.OwnerOfAgent</c>), the agent itself where none is given.
         var owner = accountOf ?? adapter;
         var now = clock ?? (() => DateTimeOffset.UtcNow);
         // 🔴 Rule 4, applied HERE and not only where a session spawns: the explicit command, then the
@@ -96,12 +96,12 @@ public static class HarnessProbe
         var present = version.Ran;
         var profiles = new List<ProfileReport>();
 
-        // A door lists its OWNER's accounts (AGT7): the same directories, so one tool shows one list.
+        // A door lists its OWNER's accounts: the same directories, so one tool shows one list.
         foreach (var name in HarnessSettings.Profiles(home, owner))
         {
             var profileHome = HarnessSettings.ProfileHome(home, owner, name);
             var held = HarnessKeys.Of(home, owner, name);
-            // An account that is a key is asked WITH its key (AGT3), as a session would run it, so
+            // An account that is a key is asked WITH its key, as a session would run it, so
             // the roster says what the tool says — and names it by the key's handle, never the key.
             var key = toolchain.Accounts.KeyVariable is { Length: > 0 } variable && held is not null
                 ? new Dictionary<string, string> { [variable] = held }
@@ -118,7 +118,7 @@ public static class HarnessProbe
                 Moment(answer, kept, said?.Read, name), AccountNames.NameOf(home, owner, name), answer.Org, answer.Plan));
         }
 
-        // 🔴 The tool's own home is never asked (POOL1a3, D197 point 3): its kept word stands. Asked with the seam unset, the
+        // 🔴 The tool's own home is never asked: its kept word stands. Asked with the seam unset, the
         // tool answered for the person's own sign-in, and might refresh their token beside their terminal's to do it.
         var keptOwn = new LoginRead(prior?.OwnLogin ?? LoginState.Unknown, prior?.OwnAccount, prior?.OwnOrg, prior?.OwnPlan);
         var ownAnswer = !present ? new LoginAnswer(LoginState.Unknown, null, false) : LoginAnswer.Of(keptOwn, asked: false);
@@ -129,7 +129,7 @@ public static class HarnessProbe
             present ? FirstLine(version.Output) : null,
             present ? null : version.Problem,
             toolchain.Home.Variable,
-            // The order's first, where the machine's default was (POOL1a2, the account-pool design §2.2).
+            // The order's first.
             settings.FirstOf(owner),
             profiles,
             ownAnswer.Login,
@@ -138,7 +138,7 @@ public static class HarnessProbe
             ownAnswer.Org,
             ownAnswer.Plan);
 
-        // When an answer was read: now where the question was asked, and told; a word kept from before keeps its moment.
+        // The moment of an answer's reading: now where the question is asked, and told; a word kept from before keeps its moment.
         DateTimeOffset? Moment(LoginAnswer answer, LoginRead kept, DateTimeOffset? before, string? account)
         {
             if (!answer.Asked) return answer.Said == kept ? before : null;
@@ -153,17 +153,17 @@ public static class HarnessProbe
         said is null ? new LoginRead(LoginState.Unknown, null) : new LoginRead(said.Login, said.Account, said.Org, said.Plan);
 
     /// <summary>
-    /// One status question's outcome (ROSTER1): what the agent said — on a yes who, with the organisation and the plan beside
-    /// them (ACCOUNTID1) — and whether it was asked at all. One never asked (no login question, another holder kept the
+    /// One status question's outcome: what the agent said — on a yes who, with the organisation and the plan beside
+    /// them — and whether it is asked at all. One never asked (no login question, another holder kept the
     /// account's lock, a session of Daoris's runs on it) is no reading, and writes nothing.
     /// </summary>
     internal readonly record struct LoginAnswer(LoginState Login, string? Account, bool Asked, string? Org = null, string? Plan = null)
     {
-        /// <summary>What it said, without whether it was asked.</summary>
+        /// <summary>What it said, without whether it is asked.</summary>
         public LoginRead Said => new(Login, Account, Org, Plan);
 
         /// <summary>
-        /// Not asked because another holder kept the account's lock past the asker's patience (PARALLEL1c): a question may be in
+        /// Not asked because another holder kept the account's lock past the asker's patience: a question may be in
         /// flight on it, so a start's walk leaves the account unknown for that walk, never runs beside it.
         /// </summary>
         public bool Locked { get; init; }
@@ -175,10 +175,10 @@ public static class HarnessProbe
     /// <summary>
     /// What the harness says about logging in to ONE home — a profile's, or its own when
     /// <paramref name="profileHome"/> is null — asked of the binary a spawn would run. What a sign-in
-    /// asks when it ends (D66 §3), without probing every other account on the machine to learn it.
+    /// asks when it ends, without probing every other account on the machine to learn it.
     /// </summary>
-    /// <param name="lockPath">The account's <see cref="ProbeLock"/>, asked under it (TOOL6g); null asks with none.</param>
-    /// <param name="key">An account that is a key, asked with it as a session runs it (AGT3); null for a sign-in.</param>
+    /// <param name="lockPath">The account's <see cref="ProbeLock"/>, asked under it; null asks with none.</param>
+    /// <param name="key">An account that is a key, asked with it as a session runs it; null for a sign-in.</param>
     public static async Task<(LoginState Login, string? Account)> AskLoginAsync(
         string adapter, AccountAgent toolchain, IReadOnlyList<string>? command,
         HarnessSettings settings, string home, string? profileHome, CancellationToken ct = default, string? lockPath = null,
@@ -189,7 +189,7 @@ public static class HarnessProbe
     }
 
     /// <summary>
-    /// <see cref="AskLoginAsync"/>, saying whether the question was asked at all (ROSTER1): a pin with nothing installed at
+    /// <see cref="AskLoginAsync"/>, saying whether the question is asked at all: a pin with nothing installed at
     /// it, an agent with no login question, a lock another holder kept, or an account a session of Daoris's runs on
     /// (<paramref name="busy"/>, whose answer is then <paramref name="kept"/>) is no reading.
     /// </summary>
@@ -208,14 +208,14 @@ public static class HarnessProbe
     }
 
     /// <summary>
-    /// What one of a harness's own commands runs as (D57 rule 4, the order every spawn takes): the command <c>driver.json</c>
+    /// What one of a harness's own commands runs as (the order every spawn takes): the command <c>driver.json</c>
     /// names for <paramref name="adapter"/>, then this machine's pin of it (<paramref name="workspace"/>'s where it pins its own),
     /// then its declared binary on <c>PATH</c>. A pin with nothing installed at it is <see cref="HarnessCommand.Missing"/>: nobody
     /// to run, never <c>PATH</c>'s.
     /// </summary>
     /// <remarks>
-    /// The status question and a sign-in both take it (CODEXACCT1), so a sign-in runs the binary its end's question asks:
-    /// the screen's ran <c>PATH</c>'s, and a machine whose only <c>codex</c> is the pin could not sign one in.
+    /// The status question and a sign-in both take it, so a sign-in runs the binary its end's question asks:
+    /// a machine whose only <c>codex</c> is the pin can sign in.
     /// </remarks>
     public static HarnessCommand CommandOf(
         string adapter, AccountAgent toolchain, IReadOnlyList<string>? command, HarnessSettings settings, string home,
@@ -234,19 +234,19 @@ public static class HarnessProbe
 
     /// <summary>
     /// What the harness says about logging in here: the boolean, and — when the toolchain asks and the
-    /// answer is yes — <b>who</b> (D66 §3), with the organisation and the plan a real harness volunteers beside them
-    /// (ACCOUNTID1): what tells two sign-ins of one email apart. Read fresh and shown, and never written or logged.
+    /// answer is yes — <b>who</b>, with the organisation and the plan a real harness volunteers beside them:
+    /// what tells two sign-ins of one email apart. Read fresh and shown, and never written or logged.
     /// </summary>
     /// <param name="lockPath">
-    /// The home's <see cref="ProbeLock"/> (TOOL6g): asked only while holding it, and not at all, unknown, when another holder
+    /// The home's <see cref="ProbeLock"/>: asked only while holding it, and not at all, unknown, when another holder
     /// keeps it past its patience. Null asks with no lock.
     /// </param>
     /// <param name="busy">
     /// Whether a session of Daoris's runs on the home, asked once the lock is held, so a start that took the lock to count
-    /// itself is never asked about in between (TOOL6g); <paramref name="kept"/> is then the answer, and nothing runs.
+    /// itself is never asked about in between; <paramref name="kept"/> is then the answer, and nothing runs.
     /// </param>
     /// <param name="patience">How long the lock is waited for (<see cref="ProbeLock.Patience"/> where null).</param>
-    /// <returns>The answer, and whether the question was asked: none asked is no reading (ROSTER1).</returns>
+    /// <returns>The answer, and whether the question is asked: none asked is no reading.</returns>
     private static async Task<LoginAnswer> LoginAsync(
         IReadOnlyList<string> resolved, AccountAgent toolchain, string? profileHome, bool managed,
         CancellationToken ct, IReadOnlyDictionary<string, string>? account = null, string? lockPath = null,
@@ -254,7 +254,7 @@ public static class HarnessProbe
     {
         if (toolchain.Accounts.Login is not { } question) return new LoginAnswer(LoginState.Unknown, null, false);
 
-        // One status question per account at a time, in this process and across them (TOOL6g).
+        // One status question per account at a time, in this process and across them.
         await using var held = lockPath is null ? null : await ProbeLock.TakeAsync(lockPath, patience, ct).ConfigureAwait(false);
         if (lockPath is not null && held is null) return new LoginAnswer(LoginState.Unknown, null, false) { Locked = true };
         if (busy?.Invoke() == true) return LoginAnswer.Of(kept, asked: false);
@@ -298,8 +298,8 @@ public static class HarnessProbe
             FileName = resolved[0],
             RedirectStandardOutput = true,
             RedirectStandardError = true,
-            // Read as the tools write, not in the console's code page, which garbled a plugin's words on
-            // a Chinese-locale machine (PLUG8); a sign-in status can carry a name.
+            // Read as the tools write, not in the console's code page, which garbles a plugin's words on
+            // a Chinese-locale machine; a sign-in status can carry a name.
             StandardOutputEncoding = Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8,
             UseShellExecute = false,
@@ -307,9 +307,9 @@ public static class HarnessProbe
         };
         foreach (var part in resolved.Skip(1)) info.ArgumentList.Add(part);
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        // A probe is a child like a session (TOOLS5): asked on the PATH a session would be started on.
+        // A probe is a child like a session: asked on the PATH a session would be started on.
         Tools.Hand(info);
-        // A pinned binary is asked the way a session runs it (AGT2), so asking is not when it moves.
+        // A pinned binary is asked the way a session runs it, so asking is not when it moves.
         Shell.Equip(info, toolchain, profileHome, binary: managed ? resolved[0] : null, account: account);
         return info;
     }

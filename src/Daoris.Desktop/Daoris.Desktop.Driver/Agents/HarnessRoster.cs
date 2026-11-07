@@ -8,38 +8,38 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What this machine's harnesses are, and which account a spawn runs as (D49 §4) — <b>one judgement
+/// What this machine's harnesses are, and which account a spawn runs as — <b>one judgement
 /// for both doors</b>, driven and chat, for the same reason <see cref="Planner"/> is pure and the
 /// service has one ledger: two copies of "may this start" drift, and the drift is invisible.
 /// </summary>
 /// <remarks>
-/// <para><b>An account is read only on a press, one at a time, or as the result of something that ran</b> (ROSTER1, D150
-/// §5.3): never at the application's start, at a look, or when a view opens. A status question may refresh the account's
-/// token, and probing on its own is what signed the owner's accounts out (TOOL6g). So the report is what was last read
+/// <para><b>An account is read only on a press, one at a time, or as the result of something that ran</b>:
+/// never at the application's start, at a look, or when a view opens. A status question may refresh the account's
+/// token, and probing on its own is what signs the owner's accounts out. So the report is the last reading
 /// (<see cref="AccountReads"/>, kept under the home, so a restart starts from it), each account with when, and the accounts
 /// are the directories on disk now. Its binary is asked once per binary, never against an account's home: whether it is
 /// there and its version, kept in <see cref="BinaryReads"/> and asked again where its files changed, at a press, or after an
-/// install, an update or a pin (PERF3). A yes is trusted and a no is asked again: an absent agent's binary once it is there, and a signed-out
-/// account on its own once its word is <see cref="SignedOutAskedAgain"/> old or a sign-in marked it (TOOL6g), since a start
-/// held on it is tried at every look, or once after a refusal of a reading that said signed in (TOOL6h). An account's windows,
-/// where its agent's server is asked them, are read at a press and at a start's walk too (CODEXUSE1, Harnesses.Usage.cs).</para>
+/// install, an update or a pin. A yes is trusted and a no is asked again: an absent agent's binary once it is there, and a signed-out
+/// account on its own once its word is <see cref="SignedOutAskedAgain"/> old or a sign-in marked it, since a start
+/// held on it is tried at every look, or once after a refusal of a reading that said signed in. An account's windows,
+/// where its agent's server is asked them, are read at a press and at a start's walk too (Harnesses.Usage.cs).</para>
 ///
 /// <para><b>The wiring file is re-read, never held.</b> Same rule as `driver.json`: the file is the
-/// truth and the surfaces are editors over it (D50), so a profile default changed from a terminal
+/// truth and the surfaces are editors over it, so a profile default changed from a terminal
 /// takes effect on the next spawn without restarting anything.</para>
 /// </remarks>
 public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPath = null)
 {
-    // What an adapter's binary answered (ROSTER1): whether it is there, its version, why not.
+    // What an adapter's binary answered: whether it is there, its version, why not.
     internal sealed record Binary(bool Present, string? Version, string? Problem);
 
-    // Who each reading this process made said is signed in, with the organisation and the plan beside them (ACCOUNTID1), by
-    // owner and account (its moment beside it): read fresh and written nowhere (D66 §3), so a reading kept from before this
+    // Who each reading this process made said is signed in, with the organisation and the plan beside them, by
+    // owner and account (its moment beside it): read fresh and written nowhere, so a reading kept from before this
     // process says its state and when, and who once read again.
     internal readonly System.Collections.Concurrent.ConcurrentDictionary<string, (DateTimeOffset At, LoginRead Said)> _who =
         new(StringComparer.OrdinalIgnoreCase);
 
-    // Accounts a provider refused (AGT3b), by owner and profile — "" for the tool's own home — with
+    // Accounts a provider refused, by owner and profile — "" for the tool's own home — with
     // the sentence that says so. Held in memory until a person looks again; see `Refuse`.
     internal readonly System.Collections.Concurrent.ConcurrentDictionary<string, (string Reason, Noted? Note)> _refused =
         new(StringComparer.OrdinalIgnoreCase);
@@ -49,7 +49,7 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     internal IStartLedger? _startLedger;
 
     /// <summary>
-    /// The ledger this process's starts are written to (<c>StaffFor</c>, STAFFPOLICY1c): held here, beside the roster, because
+    /// The ledger this process's starts are written to (<c>StaffFor</c>): held here, beside the roster, because
     /// <see cref="Release"/> gives a refused start's reservation back with its account count. Set once, by the roles above this layer.
     /// </summary>
     public IStartLedger StartLedger(Func<IStartLedger> make)
@@ -57,38 +57,38 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
         lock (_load) return _startLedger ??= make();
     }
 
-    /// <summary>The ledger when one was made; null before any start asked for it.</summary>
+    /// <summary>The ledger when one is made; null before any start asked for it.</summary>
     public IStartLedger? StartLedgerMade => _startLedger;
 
     /// <inheritdoc cref="RosterCooling.Refuse"/>
     public void Refuse(string adapter, string? profile, string reason, Noted? note = null) => Cooling.Refuse(adapter, profile, reason, note);
 
-    /// <summary>What time it is, for reading and writing cool-offs (TOOL4d); the system's, unless a test's.</summary>
+    /// <summary>What time it is, for reading and writing cool-offs; the system's, unless a test's.</summary>
     public Func<DateTimeOffset> Clock { get; init; } = () => DateTimeOffset.UtcNow;
 
     /// <summary>
-    /// How a browser sign-in's port is tried before it starts (CODEXLOGIN1): taken for a moment on this machine
+    /// How a browser sign-in's port is tried before it starts: taken for a moment on this machine
     /// (<see cref="SignInPorts.Hold"/>), unless a test's, since the ports Codex waits on are this machine's and a test that
     /// held them would race the person's own sign-in. Settable, as the loop builds its roster itself.
     /// </summary>
     public Func<int, PortHold> Ports { get; set; } = SignInPorts.Hold;
 
     /// <summary>
-    /// How one account's status is asked on its own (TOOL6h): by owner and account, the agent's own status question under the
+    /// How one account's status is asked on its own: by owner and account, the agent's own status question under the
     /// account's lock, unless a test hands in an in-process stand-in, since every real question spawns the agent, which the
     /// suite's fast half may not. A stand-in's answer is a reading, kept as the agent's would be.
     /// </summary>
     internal Func<string, string, CancellationToken, Task<LoginState>>? Asking { get; init; }
 
     /// <summary>
-    /// How long a start's walk waits for an account's lock (TOOL6g), held by a question in flight, before it leaves that account
-    /// unknown for the walk (PARALLEL1c): its own status question's wait, and a counted start's wait to count the account it chose,
+    /// How long a start's walk waits for an account's lock, held by a question in flight, before it leaves that account
+    /// unknown for the walk: its own status question's wait, and a counted start's wait to count the account it chose,
     /// which then counts nothing there. <see cref="ProbeLock.Patience"/>, unless a test's.
     /// </summary>
     internal TimeSpan LockPatience { get; init; } = ProbeLock.Patience;
 
     /// <summary>
-    /// This machine's zone (D125 §2.1): it stands in for a zone a limit's sentence names that is not an IANA name, and
+    /// This machine's zone: it stands in for a zone a limit's sentence names that is not an IANA name, and
     /// every cool-off is said in it, with the zone named.
     /// </summary>
     public TimeZoneInfo Zone { get; init; } = TimeZoneInfo.Local;
@@ -104,11 +104,11 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     /// <inheritdoc cref="RosterCooling.SignedOut"/>
     public void SignedOut(string adapter, string? profile) => Cooling.SignedOut(adapter, profile);
 
-    // The accounts a refusal of a signed-in reading owes one fresh reading (TOOL6h), by owner and account: taken by the next walk
+    // The accounts a refusal of a signed-in reading owes one fresh reading, by owner and account: taken by the next walk
     // that reaches the account, then spent. Any other reading of the account settles it (`Keep`).
     internal readonly System.Collections.Concurrent.ConcurrentDictionary<string, bool> _owed = new(StringComparer.OrdinalIgnoreCase);
 
-    // The signed-in readings a fresh reading made (TOOL6h), by owner and account, with the time each was kept: a refusal of one
+    // The signed-in readings a fresh reading made, by owner and account, with the time each is kept: a refusal of one
     // owes none.
     internal readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTimeOffset> _fresh =
         new(StringComparer.OrdinalIgnoreCase);
@@ -144,24 +144,24 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     internal bool NewWait(string agent, string? account, DateTimeOffset? until, IReadOnlyList<string>? signedOut = null)
         => Cooling.NewWait(agent, account, until, signedOut);
 
-    /// <summary>The adapters this roster answers for — the build's, plus whatever plugins declare (D64).</summary>
+    /// <summary>The adapters this roster answers for — the build's, plus whatever plugins declare.</summary>
     public ProviderRegistry Adapters => adapters;
 
     /// <summary>
     /// Answer for a different set from now on — the built-in adapters plus the plugins a tick just
-    /// read. What each binary answered is keyed by harness name and survives: a harness that was there
-    /// before is the same harness, and one that just arrived has simply not been asked yet.
+    /// read. What each binary answered is keyed by harness name and survives: a harness already there
+    /// is the same harness, and one that just arrived has simply not been asked yet.
     /// </summary>
     public void Use(ProviderRegistry live) => adapters = live;
 
     /// <summary>Where the wiring lives. The profile tree sits beside it.</summary>
     public string SettingsPath { get; } = settingsPath ?? HarnessSettings.ResolvePath();
 
-    /// <summary>The directory profiles live under — the Daoris home (D63), which is the directory the wiring file sits in.</summary>
+    /// <summary>The directory profiles live under — the Daoris home, which is the directory the wiring file sits in.</summary>
     public string Home => HarnessSettings.HomeOf(SettingsPath);
 
     /// <summary>
-    /// The person's harness wiring as every reader takes it (POOL1a2, the account-pool design §2.4): the file on disk right now,
+    /// The person's harness wiring as every reader takes it: the file on disk right now,
     /// projected to one set of Daoris's accounts per agent (<see cref="HarnessSettings.LoadSet"/>), so a file an older build wrote
     /// meanwhile is read as the set too and no start reads a workspace's scope. The come-up folds the file itself (<see cref="Pool"/>),
     /// and every later write folds first.
@@ -169,7 +169,7 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     public HarnessSettings Settings => HarnessSettings.LoadSet(SettingsPath, Agents);
 
     /// <summary>
-    /// The agents whose accounts this roster answers for (POOLSTRAY1, <see cref="ProviderRegistry.Agents"/>): what every write of the wiring
+    /// The agents whose accounts this roster answers for (<see cref="ProviderRegistry.Agents"/>): what every write of the wiring
     /// through it hands <see cref="HarnessSettings.Change"/>, so a folder under the account homes none of them names is never folded.
     /// </summary>
     public IReadOnlyList<string> Agents => adapters.Agents;
@@ -177,7 +177,7 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     private bool _pooled;
 
     /// <summary>
-    /// The come-up's fold (the account-pool design §6.2): <see cref="HarnessSettings.FoldNow"/> at the first look, and at each next look
+    /// The come-up's fold: <see cref="HarnessSettings.FoldNow"/> at the first look, and at each next look
     /// while a held lock refused it, until one lands; nothing waits on it, since every reader reads the projection meanwhile.
     /// </summary>
     public void Pool(MachineLog? log)
@@ -193,13 +193,13 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     public AccountAgent? AgentOf(string adapter) => adapters.AgentNamed(adapter);
 
     /// <summary>
-    /// Whether this harness's door carries a conversation's STRUCTURE (D76 §1): the protocol door, or a
-    /// native door whose adapter reads the harness's own structured output (CONV3a).
+    /// Whether this harness's door carries a conversation's STRUCTURE: the protocol door, or a
+    /// native door whose adapter reads the harness's own structured output.
     /// </summary>
     /// <remarks>
     /// The page reads it to know what an empty record means — nothing said yet on a structured door, a
     /// conversation that lives in the console on a text one — rather than guessing from the emptiness,
-    /// which told a fresh chat on a structured door that its door carries only text (CONV3b).
+    /// which told a fresh chat on a structured door that its door carries only text.
     /// </remarks>
     public bool Structured(string adapter) => Structured(adapters.Door(adapter));
 
@@ -225,8 +225,8 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     internal void EndOwnCooling(string owner) => Cooling.EndOwnCooling(owner);
 
     /// <summary>
-    /// How long the agent's word that an account is signed out is believed when nothing says it changed (TOOL6g): a
-    /// backstop for a sign-in no door of Daoris's made. Before TOOL6g, a start held on a signed-out account asked every
+    /// How long the agent's word that an account is signed out is believed when nothing says it changed: a
+    /// backstop for a sign-in no door of Daoris's made, so that a start held on a signed-out account does not ask every
     /// account's status, and the tool's own sign-in's, at every look.
     /// </summary>
     public static readonly TimeSpan SignedOutAskedAgain = TimeSpan.FromHours(1);
@@ -326,7 +326,7 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
 
     internal readonly object _load = new();
 
-    // The last look's records, each with its adapter's owner (AGT7), and the starts chosen since, numbered as chosen.
+    // The last look's records, each with its adapter's owner, and the starts chosen since, numbered as chosen.
     internal IReadOnlyList<(string Owner, SessionStarted Session)> _looked = [];
     internal readonly List<(long Number, string Owner, string Account)> _chosen = [];
 
@@ -354,13 +354,13 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
         => Upcoming.WiringAsync(adapter, config, workspace, ct);
 
     /// <summary>
-    /// How an account's windows are asked in a test (CODEXUSE1): by owner and account, in place of the agent's server, asked
+    /// How an account's windows are asked in a test: by owner and account, in place of the agent's server, asked
     /// under the same lock and the same holds, since every real question spawns the agent, which the fast half may not. The
-    /// tool's own sign-in is asked as <see cref="AccountWindows.Own"/> (CODEXUSE3).
+    /// tool's own sign-in is asked as <see cref="AccountWindows.Own"/>.
     /// </summary>
     internal Func<string, string, CancellationToken, Task<IReadOnlyList<WindowReading>?>>? AskingUsage { get; init; }
 
-    // When a limit was last said of each account in this process, by owner and account (USAGEPROBE1): a cool-off the person
+    // The last time a limit is said of each account in this process, by owner and account: a cool-off the person
     // ended early leaves none in the file to say it.
     internal readonly ConcurrentDictionary<string, DateTimeOffset> _limitSaid = new(StringComparer.OrdinalIgnoreCase);
 

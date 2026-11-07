@@ -1,14 +1,14 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A plugin server that drives Daoris's own browser (D78): `${browser}` in its command or environment is
+/// A plugin server that drives Daoris's own browser: `${browser}` in its command or environment is
 /// the in-app browser's CDP endpoint, filled in when a session is handed its servers — never when the
 /// manifest is read, because the endpoint exists only while the shell runs.
 /// </summary>
 /// <remarks>
 /// <para><b>Asked only when needed.</b> The shell is asked for the endpoint only for a session whose servers name
-/// it, and the browser itself comes up at the person's press or the first connection to the endpoint
-/// (BROWSERSTART1), never at a session's start, so a machine with no such plugin, and a restart that takes
+/// it, and the browser itself comes up at the person's press or the first connection to the endpoint,
+/// never at a session's start, so a machine with no such plugin, and a restart that takes
 /// sessions up, never open a window nobody asked for.</para>
 ///
 /// <para><b>Withheld, and said.</b> Where no shell answers (the headless driver, a gate) or the browser
@@ -62,12 +62,12 @@ public static class InAppBrowserServers
 
     /// <summary>
     /// Resolve against the shell's browser endpoint, asked for when a server needs it — and the
-    /// sentence the transcript carries when one could not be handed, or null when nothing was withheld.
+    /// sentence the transcript carries when one could not be handed, or null when nothing is withheld.
     /// </summary>
     /// <returns>
-    /// And <c>Drives</c>: whether a server that drives Daoris's browser was handed, which puts the session's
-    /// hands on the page from its start until it ends (BRW8). The registry keeps it beside the process,
-    /// and the page says who is driving from it — what was handed, since whether the agent has touched a
+    /// And <c>Drives</c>: whether a server that drives Daoris's browser is handed, which puts the session's
+    /// hands on the page from its start until it ends. The registry keeps it beside the process,
+    /// and the page says who is driving from it — what is handed, since whether the agent has touched a
     /// page yet is its own and never reaches the driver.
     /// </returns>
     public static async Task<(IReadOnlyList<ServerEntry> Handed, string? Notice, bool Drives)> HandAsync(
@@ -78,12 +78,12 @@ public static class InAppBrowserServers
     }
 
     /// <summary>
-    /// <see cref="HandAsync"/> with its sentence as a note (CONVNOTE2c): the lead, the servers withheld a fact of it, and why as
-    /// a code where the host knows it, or the exception's words as written; the English is what it always was.
+    /// <see cref="HandAsync"/> with its sentence as a note: the lead, the servers withheld a fact of it, and why as
+    /// a code where the host knows it, or the exception's words as written.
     /// </summary>
     /// <returns>
     /// And <c>Drivers</c>: the names of the servers handed that drive Daoris's browser, found by <see cref="Needs"/> before the
-    /// endpoint was filled in (BRWHINT1a), for the line a chat's agent is told — never a literal name, which another plugin's
+    /// endpoint is filled in, for the line a chat's agent is told — never a literal name, which another plugin's
     /// server may also carry.
     /// </returns>
     public static async Task<(IReadOnlyList<ServerEntry> Handed, Noted? Notice, bool Drives, IReadOnlyList<string> Drivers)> HandNotedAsync(
@@ -101,7 +101,7 @@ public static class InAppBrowserServers
         {
             try
             {
-                // The endpoint only: the browser comes up at a press or the first connection, never at a start (BROWSERSTART1).
+                // The endpoint only: the browser comes up at a press or the first connection, never at a start.
                 endpoint = await browser.EndpointAsync(ct).ConfigureAwait(false);
                 if (endpoint is null) why = Noted.Of(ChatNoteCodes.BrowserNoneUp, "the shell answered that it has no browser to bring up");
             }
@@ -130,8 +130,8 @@ public static class InAppBrowserServers
     }
 
     /// <summary>
-    /// What a chat's agent is told of the browser it was handed (BRWHINT1a): each server that drives it by its own name, and
-    /// what the browser is. Daoris's one-copy English (D142 point 6). Null where none was handed, so nothing is said.
+    /// What a chat's agent is told of the browser it is handed: each server that drives it by its own name, and
+    /// what the browser is. Daoris's one-copy English. Null where none is handed, so nothing is said.
     /// </summary>
     public static string? Told(IReadOnlyList<string> drivers)
     {

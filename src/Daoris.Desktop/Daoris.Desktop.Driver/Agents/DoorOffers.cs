@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a door offers for one start, in two scopes kept apart (the agent-provider design §2.8, §4.2, row n): what a <b>session</b> may carry,
+/// What a door offers for one start, in two scopes kept apart: what a <b>session</b> may carry,
 /// which the door's open last listed on this account, and what the account's file may <b>default</b> to, which the provider's settings schema
 /// states. An effort a session may carry is not always one a default may hold (<c>max</c> lives for one session only), and neither list is
 /// the other's, so a caller names the scope it reads.
@@ -15,7 +15,7 @@ public sealed record DoorOffers(string Door, string? Version, string? Account, S
 
 /// <summary>
 /// The session scope: the values the door's open listed on the account, and the models it refused there, each only while it is this start's
-/// version, since an older or other-version reading is a hint and the account is tried (D205 §9.2).
+/// version, since an older or other-version reading is a hint and the account is tried.
 /// </summary>
 /// <param name="Models">The model values listed, or null where the open listed none or no reading stands at this version.</param>
 /// <param name="Efforts">The effort values listed, as <paramref name="Models"/>.</param>
@@ -31,7 +31,7 @@ public sealed record SessionOffers(IReadOnlyList<string>? Models, IReadOnlyList<
     /// <summary>
     /// Why this account passes <paramref name="model"/> (<see cref="AgentOffers.NotOffered"/> where its list lacks it, <see cref="AgentOffers.RefusedCode"/>
     /// where the list offered it and the open refused it anyway), or null where the account is tried. A list that lacks a model is never a pass
-    /// by itself (MODELROLE1a): only the agent's own refusal at an open passes an account.
+    /// by itself: only the agent's own refusal at an open passes an account.
     /// </summary>
     public string? Judge(string? model)
     {

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A door's sheet read from the contract (COAGENT1 §3; the agent-provider design §2.4): each capability from the door's declaration,
+/// A door's sheet read from the contract: each capability from the door's declaration,
 /// its transport's, an opening's negotiation or a measurement, in that order of strength, else absent with its fallback. Pure: it
 /// reads what it is handed and keeps nothing; the measurements table stays its own record.
 /// </summary>
