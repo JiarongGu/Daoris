@@ -282,7 +282,6 @@ public sealed class DriverModuleRoleTerminalTests : DriverModuleBridge
             object Form(string nonce) => new SupervisorDecideForm(
                 SupervisorSubject.Question("s1", "q-1"), generation, "", SupervisorKinds.Answer, "Monthly", reasons).Proved(key!, nonce).Payload();
 
-            // The page's door: refused, nothing kept.
             var page = await AnswerAsync(module, "SUPERVISOR_DECIDE", Form(SupervisorProof.Nonce()));
             Assert.Equal((false, "not-holder"), (page.GetProperty("kept").GetBoolean(), page.GetProperty("why").GetString()));
             Assert.Empty(loop.Supervisor.LiveOf("s1"));

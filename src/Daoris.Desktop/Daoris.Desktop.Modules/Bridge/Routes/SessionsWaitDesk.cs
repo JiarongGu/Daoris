@@ -4,9 +4,8 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What waits on the person or on a role across this machine's sessions, behind the sessions doors: a quiet session's row, the
-/// permission requests and third answers held for the person, the supervisor's decisions and the steward's desk. Each reads the
-/// driver's memory or its files in the home, or writes the one move its press names.
+/// What waits on the person or on a role across this machine's sessions, behind the sessions doors: a quiet session's row, the requests
+/// and third answers held for the person, the supervisor's decisions and the steward's desk, each read from the driver's memory or files.
 /// </summary>
 internal sealed class SessionsWaitDesk(DriverContext context)
 {

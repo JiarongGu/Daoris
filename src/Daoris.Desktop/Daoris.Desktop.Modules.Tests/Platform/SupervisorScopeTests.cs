@@ -193,9 +193,8 @@ public sealed class SupervisorScopeTests : IDisposable
     }
 
     /// <summary>
-    /// A terminal started again is a new hold with a new key, so the old holder's late answer is refused <c>role-changed</c>, and so is
-    /// a workspace holder's answer for a repository whose own supervisor acts there now.
-    /// </summary>
+    /// A terminal started again is a new hold with a new key, so the old holder's late answer is refused <c>role-changed</c>, as is a
+    /// workspace holder's answer for a repository whose own supervisor acts there now.</summary>
     [Fact]
     public void A_late_answer_of_an_earlier_holder_or_generation_is_refused_role_changed()
     {

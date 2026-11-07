@@ -4,10 +4,7 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// What a course decision did with its point, as its file and the page name it: went on, or held for the person, which is the course
-/// kind's leave.
-/// </summary>
+/// <summary>What a course decision did with its point, as its file and the page name it: went on, or held for the person (its leave).</summary>
 public static class SupervisorCourseActs
 {
     public const string GoOn = SupervisorKinds.GoOn;
@@ -17,10 +14,7 @@ public static class SupervisorCourseActs
     public static IReadOnlyList<string> All { get; } = [GoOn, Hold];
 }
 
-/// <summary>
-/// What a holder decides on a referred point (<c>SUPERVISOR_DECIDE</c>'s go-on, or <c>SUPERVISOR_LEAVE</c> as a <c>hold</c> with its
-/// <paramref name="Bound"/>, less the proof, which the door checks).
-/// </summary>
+/// <summary>What a holder decides on a referred point: a decide's go-on, or a leave as a <c>hold</c> with its bound.</summary>
 public sealed record SupervisorCourse(
     string Session, string Point, string Generation, string Do, IReadOnlyList<SupervisorReason> Reasons, SupervisorHolder Holder, string? Bound = null)
 {
@@ -145,8 +139,7 @@ internal sealed class SupervisorCourses(SupervisorBook book, IDecisionAdmission 
     public DateTimeOffset? NextGoesOn() =>
         book.Courses.Values.Where(each => each.State == SupervisorState.Held).Select(each => (DateTimeOffset?)each.GoesOnAt).Min();
 
-    // The act's form and its point: an act of the course's vocabulary, its reasons as an answer's are judged, and the point the one open;
-    // an earlier point of the line, which the line has passed, is answered, and one it never reached is not referred.
+    // The act, its reasons as an answer's, and the point the one open: one the line has passed is answered, one it never reached not referred.
     private static string? Judge(SupervisorCourse course, ReferredPoint point) =>
         SupervisorKeeping.Refused(course.Reasons, SupervisorCourseActs.All.Contains(course.Do, StringComparer.Ordinal), point.Counts)
         ?? (point.Open is { } open && open.Id == course.Point ? null

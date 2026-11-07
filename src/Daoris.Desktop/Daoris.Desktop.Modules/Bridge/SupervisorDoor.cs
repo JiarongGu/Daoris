@@ -3,10 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The roles' terminals' door as its routes share it: the
-/// holder's terminal's start, the sweep an ended hold runs after the judge's step, and the steward's <c>ROLE_ACT</c>.
-/// The routes are the person's <c>START_ROLE_TERMINAL</c> (<see cref="PersonRoutes"/>), the role door's presses, and the sessions'
-/// <c>ROLE_ACT</c> (<see cref="SessionsRoutes"/>); the supervisor's decisions have their own door (<see cref="SupervisorDecisionDoor"/>).
+/// The roles' terminals' door: the holder's terminal's start (<c>START_ROLE_TERMINAL</c>), the sweep an ended hold runs after the judge's
+/// step, and the steward's <c>ROLE_ACT</c>; the supervisor's decisions have their own door (<see cref="SupervisorDecisionDoor"/>).
 /// </summary>
 public static class SupervisorDoor
 {

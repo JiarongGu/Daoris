@@ -1,10 +1,7 @@
 namespace Daoris.Driver;
 
-/// <summary>
-/// The one check of a supervisor's grants, read by the admission and so by every step that asks it: the judge at a holder's decide, the
-/// keeping, the releases and the tickets. A supervisor covers an act where it decides the act's kind (a generic one decides every kind)
-/// and its <c>authority</c> lists the act. Leaving a decision to the person needs no grant, so a leave never asks.
-/// </summary>
+/// <summary>The one check of a supervisor's grants, read by the admission, the judge, the keeping, the releases and the tickets: an act
+/// is covered where the supervisor decides its kind (a generic one every kind) and its <c>authority</c> lists it; a leave needs none.</summary>
 public static class SupervisorGrants
 {
     /// <summary>Whether <paramref name="role"/> is a supervisor deciding <paramref name="kind"/>.</summary>

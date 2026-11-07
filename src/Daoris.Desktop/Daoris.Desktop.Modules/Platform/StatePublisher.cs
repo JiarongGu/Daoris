@@ -320,7 +320,6 @@ public static class StatePublisher
     private static string? SessionOf(StateChange change, IpcRequest request) => FieldOf(change.Session, request);
 
     /// <summary>The string the request's payload holds in <paramref name="field"/>, where a declaration names the field and it is there.</summary>
-    // A field of the payload by its name, or by a dotted path into nested objects (`subject.session`).
     private static string? FieldOf(string? field, IpcRequest request)
     {
         if (field is null || request.Payload is not { ValueKind: JsonValueKind.Object } named) return null;

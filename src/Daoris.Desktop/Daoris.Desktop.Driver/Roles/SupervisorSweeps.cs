@@ -97,10 +97,9 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log)
     }
 
     /// <summary>
-    /// The start's sweep, before the first look's carry-ons: every kind's decision file on disk read only to close it, <c>held</c> and
-    /// <c>released</c> to <c>stale</c> (<see cref="SupervisorWhy.Restarted"/>), <c>admitted</c> to <c>interrupted</c>; each subject final
-    /// to the owner remembered as closed by its kind and subject, so no list hands it to a supervisor again. A decision whose state line
-    /// was not written reads as held and is closed as the owner's too. Memory is empty, so nothing is live and nothing is handable.
+    /// The start's sweep, before the first look's carry-ons: every kind's decision file read only to close it, <c>held</c> and <c>released</c>
+    /// to <c>stale</c> (<see cref="SupervisorWhy.Restarted"/>), <c>admitted</c> to <c>interrupted</c>; each subject final to the owner,
+    /// one whose state line never reached its file among them, remembered as closed by its kind and subject. Memory is empty.
     /// </summary>
     /// <returns>The sessions with a decision the sweep closed, whose waiting supervisor's words the look takes back.</returns>
     public IReadOnlyList<string> SweepAtStart(DateTimeOffset now)
@@ -138,8 +137,7 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log)
         return swept;
     }
 
-    // A decision file of any kind as the sweep reads it: its subject and the state its lines reached; null for a file that is no
-    // supervisor's decision (a rule's act) or does not read.
+    // A decision file of any kind: its subject and the state its lines reached; null for a rule's act or a file that does not read.
     private (SupervisorSubject Subject, SupervisorState State)? Decided(string session, string id) =>
         book.Files.Earlier(session, id) is { } question ? (SupervisorSubject.Question(session, question.Question.Id), question.State)
         : SupervisorCourseView.Read(book.Files, session, id) is { } course ? (SupervisorSubject.Point(session, course.Point), course.State)

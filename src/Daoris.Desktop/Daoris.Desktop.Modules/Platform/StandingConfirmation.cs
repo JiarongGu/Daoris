@@ -69,7 +69,6 @@ public sealed record RoleJudgement(
 {
     internal static RoleJudgement Refused(string why) => new(false, why);
 
-    /// <summary>Who holds the judged role, as its catalogue record says (<see cref="RoleHolders"/>), which a supervisor's decision keeps.</summary>
     public string? HolderKind { get; init; }
 
     /// <summary>

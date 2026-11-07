@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../design/ui';
-import { type CourseRead, courseWhole } from './lineSupervision';
+import { type CourseRead, courseWhole, decisionKind } from './lineSupervision';
 
 /**
  * The supervisor's decision on a point a person's rule referred: which rule referred it, what the supervisor chose and when,
@@ -22,9 +22,10 @@ export function SupervisorCourseCard({ course, onOverrule, busy = false, said = 
 }) {
   const { t } = useTranslation();
   if (!course || course.state !== 'held') return null;
+  const title = t('work.supervision.cardTitleOn', { kind: decisionKind(t, course) });
   return (
-    <section aria-label={t('work.supervision.cardTitle')} className="rounded-card border border-line bg-raised px-[1.15rem] py-3.5">
-      <h3 className="m-0 text-small font-semibold">{t('work.supervision.cardTitle')}</h3>
+    <section aria-label={title} className="rounded-card border border-line bg-raised px-[1.15rem] py-3.5">
+      <h3 className="m-0 text-small font-semibold">{title}</h3>
       <p className="m-0 mt-1.5 text-small text-ink-soft">{courseWhole(t, course)}</p>
       {onOverrule && (
         <div className="mt-2.5 flex flex-wrap gap-2">

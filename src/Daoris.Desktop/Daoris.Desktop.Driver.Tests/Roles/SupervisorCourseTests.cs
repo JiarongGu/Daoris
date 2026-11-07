@@ -286,7 +286,7 @@ public sealed class SupervisorCourseTests : IDisposable
         var now = Points(book).PointOf(Asker, null);
         Assert.Equal([act.Id], now.Passed);
 
-        // The line moved on to a later point while the decide was on its way.
+        // The line moved on to a later point before the decide arrived.
         var later = act with { At = act.At.AddMinutes(5) };
         var moved = now with { Open = later, Passed = [act.Id, later.Id] };
         Assert.Equal(SupervisorWhy.Answered, (await decisions.CourseAsync(Course(act.Id), moved, At)).Why);

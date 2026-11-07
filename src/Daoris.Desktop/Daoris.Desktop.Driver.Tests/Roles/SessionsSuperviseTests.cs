@@ -121,7 +121,6 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
         // The old flags are gone, and a kind this build's door does not take is refused.
         Assert.Null(SessionsCommand.Read(["supervise", "s1", "--question", "q-1", "--generation", "g-1", "--choice", "Monthly", .. AnswerArgs[12..]], out _));
         Assert.Null(SessionsCommand.Read([.. AnswerArgs[..3], "limit", .. AnswerArgs[4..]], out _));
-        // An answer names its label, and only an answer does.
         Assert.Null(SessionsCommand.Read([.. AnswerArgs[..10], .. AnswerArgs[12..]], out var unlabelled));
         Assert.Contains("--choice", unlabelled, StringComparison.Ordinal);
         Assert.Null(SessionsCommand.Read([.. AnswerArgs[..9], "go-on", .. AnswerArgs[10..]], out var other));

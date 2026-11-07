@@ -87,6 +87,8 @@ describe('a line’s supervision', () => {
     const say = (state: string, over: Partial<CourseRead> = {}) =>
       String(courseRow(t, { counts: [], acts: [], courses: [course(state, over)] }).value);
     expect(courseRow(t, { counts: [], acts: [], courses: [] })).toEqual({ label: "Supervisor's decision", value: null });
+    expect(courseRow(t, { counts: [], acts: [], courses: [course('held', { kind: 'course' })] }).label).toBe("Supervisor's decision on the line's course");
+    expect(courseRow(t, { counts: [], acts: [], courses: [course('held', { kind: undefined })] }).label).toBe("Supervisor's decision on the line's course");
     expect(say('held')).toMatch(/^Your rule for answers alone in a row \(engine\) asked the supervisor at 2; it chose to go on 2m ago\. It goes on at .+ unless you overrule it\.$/);
     expect(say('went-on')).toMatch(/it chose to go on 2m ago\. It went on\.$/);
     expect(say('overruled')).toMatch(/\. You overruled it\.$/);
@@ -108,7 +110,7 @@ describe('a line’s supervision', () => {
     const zh = i18n.t.bind(i18n);
     render(<DetailsFold summary="" rows={[courseRow(zh, { counts: [], acts: [], courses: [course('held')] })]} />);
     await userEvent.click(screen.getByRole('button', { name: /详情/ }));
-    expect(screen.getByText('主管的决定')).toBeInTheDocument();
+    expect(screen.getByText('主管对这条线去向的决定')).toBeInTheDocument();
     expect(screen.getByText(/^你为连续仅靠回答继续（engine）设的规则在 2 时请主管判断；它决定继续，2 分钟前。到 .+ 时继续，除非你否决它。$/)).toBeInTheDocument();
   });
 

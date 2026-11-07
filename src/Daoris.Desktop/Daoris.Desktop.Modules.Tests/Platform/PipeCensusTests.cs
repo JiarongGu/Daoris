@@ -76,8 +76,7 @@ public sealed class PipeCensusTests
         Assert.Equal((DriverModule.Name, PipeClass.Role, Daoris.Driver.RouteClass.Role), (leave.Module, PipeCensus.Daoris.Of(leave.Module, leave.Route), leave.Class));
         Assert.Equal((PipeClass.Open, Daoris.Driver.RouteClass.Open), (PipeCensus.Daoris.Of(waiting.Module, waiting.Route), waiting.Class));
         Assert.Equal(PipeClass.Window, PipeCensus.Daoris.Of(DriverModule.Name, Daoris.Driver.RoleRoutes.StartTerminal));
-        // The supervisor's one door is two routes, the decide and the leave, beside the steward's one, and nothing else of the class:
-        // the answer, the defer and the course each went with the door that replaced them.
+        // The supervisor's one door is two routes beside the steward's one, and nothing else of the class.
         Assert.Equal(
             ["ROLE_ACT", "SUPERVISOR_DECIDE", "SUPERVISOR_LEAVE"],
             PipeCensus.Daoris.Routes.Where(route => route.Class == PipeClass.Role).Select(route => route.Route).Order());
