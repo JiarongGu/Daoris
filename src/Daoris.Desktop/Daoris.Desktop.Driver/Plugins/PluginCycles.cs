@@ -310,12 +310,13 @@ public static class PluginCycles
                 await life.Peer.PerformAsync(call(4, r2, later), ct).ConfigureAwait(false);
                 var fresh = await life.UntilAsync(Completion("i-4"), ct).ConfigureAwait(false);
                 var once = Effects().Count(line => line == "act k-4");
-                Step("stale", fresh?.Outcome.State == WorkStates.Reached && once == 1 && fresh.Outcome.Evidence?.Ref != reached!.Outcome.Evidence?.Ref,
+                var oldReceipt = fresh?.Outcome.Evidence?.Ref is { } got && got == reached!.Outcome.Evidence?.Ref;
+                Step("stale", fresh?.Outcome.State == WorkStates.Reached && once == 1 && !oldReceipt,
                     fresh is null
                         ? $"sent `i-4` at `{r2}`, and no outcome came within {Hearing.TotalSeconds:0}s."
                         : once != 1
                             ? $"sent `i-4` at `{r2}` under a new key, and its work was done {once} times."
-                            : fresh.Outcome.Evidence?.Ref == reached!.Outcome.Evidence?.Ref
+                            : oldReceipt
                                 ? $"sent `i-4` at `{r2}`, it answered with `i-1`'s receipt: evidence of `{r1}` is stale at `{r2}`."
                                 : $"sent `i-4` at `{r2}` under a new key: its own work, reached{Receipt(fresh)}, never `{r1}`'s.");
 
