@@ -343,7 +343,7 @@ describe("a workspace's page (UX6g)", () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'game' })).toBeInTheDocument();
   });
 
-  /** WSR2, WSR1, LANG1c, READ1: a workspace's line default, on the place's Workflow, the screen's half of `daoris driver <verb> --workspace`. */
+  /** WSR2, WSR1, LANG1c, READ1: a workspace's line default, on the place's Workflow, the screen's half of `daoris place <verb> --workspace`. */
   it("sets its line on the place's Workflow defaults, on DAORIS.DRIVER, and says what changed", async () => {
     machine();
     const notify = vi.fn();
@@ -1272,7 +1272,7 @@ describe('the shell-attached registry management', () => {
 
 /**
  * INT3c: an unadopted repository with a root here is drivable over the protocol door (D70), so the
- * screen offers what `daoris driver` already can: the same driving row an adopter's page carries
+ * screen offers what `daoris place` already can: the same driving row an adopter's page carries
  * (D50). One with no root here has nowhere to start, and is offered nothing. On a machine whose
  * door is direct, the page says a quest there will sit — the planner's own answer, said before it.
  */

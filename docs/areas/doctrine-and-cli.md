@@ -245,14 +245,15 @@ one `change` skill, and `co-working` as a pack.
    tells two canons apart and never orders them): the code reads right.
 4. D35 (`connect` is the CLI's one online command) vs `dogfood.test.ts:659` (no CLI module touches the network) and
    `Service/RegistryWords.cs`' mark (`connect` is the driver's `repository connect`): the code reads right.
-5. D194 point 1 (`daoris driver|agent|plugin|tool` families) vs its own 2026-11-03 note and the `[CommandGroup]` marks (one
+5. D194 point 1 (a `driver` family beside `agent`, `plugin` and `tool`) vs its own 2026-11-03 note and the `[CommandGroup]` marks (one
    tree of groups, no `driver` group): the note and the code read right.
 6. D117 point 7 and D124 point 5 (`daoris-driver setup [--workspace]`) vs `Setup/PlaceCommand.cs`' mark and
    `WorkspaceSetupCommand.cs:24` (`daoris place … --adoption`): the code reads right.
-7. `CommandWords.cs` (one name, `daoris`) vs about a hundred doc comments and the older `CHANGELOG.md` entries that still
-   spell `daoris driver …` (no such group): the code reads right. No taught word spells `daoris-driver`; it stays only as the
-   program's file and folder (`app/daoris-driver/`), the ACP and instance hello's client name, and the process an asker is named by.
-   `DaorisDriverWordsTests` holds that.
+7. `CommandWords.cs` (one name, `daoris`) vs the older `CHANGELOG.md` entries that still spell the retired `driver` group (no such
+   group): the code reads right. No comment, guide line or area sentence spells it (`RetiredDriverGroupCensusTests`), and no taught
+   word spells `daoris-driver`; it stays only as the program's file and folder (`app/daoris-driver/`), the ACP and instance hello's
+   client name, and the process an asker is named by. `DaorisDriverWordsTests` holds that, the page's catalogues and the canon's
+   skills among its files.
 8. D27 (the devkit verifies itself against the hash) vs `src/Daoris.Devkit/README.md:255` (deliberately not built; the
    installer verifies): the README reads right.
 9. `src/Daoris.Devkit/README.md:264` (the CLI's service client) and `AGENTS.md:23` (a service seam) vs `dogfood.test.ts:659`

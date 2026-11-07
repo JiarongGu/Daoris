@@ -19,7 +19,7 @@
 
 /** One door Daoris can hold a session over — an adapter, in `driver.json`'s vocabulary. */
 export interface ToolDoor {
-  /** The adapter id. Still shown, because `driver.json` and `daoris driver` name exactly this. */
+  /** The adapter id. Still shown, because `driver.json` and `daoris agent` name exactly this. */
   harness: string;
   present: boolean;
   version?: string | null;

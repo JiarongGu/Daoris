@@ -10,7 +10,7 @@ import type { PlaceDriving } from './PlacePage';
 
 /**
  * **A repository place's driving, for its head** (SETUPUX1h, the setup-UX design §2.1): the hold, and the ⋯'s drive and tree presses, each
- * the driver's own (`SET_DRIVABLE`, `SET_HOLD`, `SET_TREES`), the terminal's `daoris driver …` twin beside. It reads the driver's state and
+ * the driver's own (`SET_DRIVABLE`, `SET_HOLD`, `SET_TREES`), the terminal's `daoris place …` twin beside. It reads the driver's state and
  * the roster, which the application holds, and nothing a section reads; what it shows of the place is the row `PLACES` answered.
  *
  * An organism holding the bridge's hooks, handed in by the application so the place imports none of them. Driving is set only by these

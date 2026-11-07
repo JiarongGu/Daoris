@@ -22,7 +22,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `RoleRecord`, `RoleWork`, `RoleScope` | `Roles/RoleRecords.cs` | A role's record; the nine works; machine, workspace or repository scope |
 | The seed | `Defaults/roles.json` | The nine seeded roles, machine-wide; Design's order is `ActorChoices.DesignSeed` |
 | `RoleDoor` | `Roles/RoleDoor.cs` | The person's one door: judges a press, then writes role, staffing, policy and rules in one transaction |
-| `RoleVerb` | `Roles/RoleVerbs.cs` | `daoris driver role` and `role set/remove/default/policy/rules/supervisor/suggested` |
+| `RoleVerb` | `Roles/RoleVerbs.cs` | `daoris role` and `role set/remove/default/policy/rules/supervisor/suggested` |
 | `RoleStaffing` | `Roles/RoleStaffing.cs` | `role_staffing` in the desktop store: import, the one writer |
 | `StaffingProjection`, `StaffingStep` | `Roles/StaffingProjection.cs`, `Transitional/Migration/StaffingStep.cs` | The store's rows as a record's fields; the migration's staffing step |
 | `ActorChoices`, `ActorKey` | `Roles/ActorChoices.cs`, `Settings/ActorKey.cs` | An order of 1 to 4 choices, its effective entries, its judge, who may be off |
@@ -71,7 +71,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
    window 1 to 60 minutes; two of one kind never share a scope; the machine's supervisor may not be removed. (from D233)
 8. A start keeps its role and the role's revision on its binding, and a census holds the two to the work. Changing or
    removing a role touches no running session; a continuation reads the role that takes its work now. (from D212)
-9. One door changes roles: `RoleDoor`, reached by `SET_ROLE`, `SET_ROLES`, `daoris driver role` and `role_propose`
+9. One door changes roles: `RoleDoor`, reached by `SET_ROLE`, `SET_ROLES`, `daoris role` and `role_propose`
    applied by the person's press. Each answers the judge's closed codes alike. A press carries the revision it read. (from D212, D228)
 10. A batch is judged whole before anything is written. A role, its staffing, its policy and a place's rules land in one
     store transaction or not at all. (from D226, D229)

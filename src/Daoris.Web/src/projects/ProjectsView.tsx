@@ -43,7 +43,7 @@ import { buttonNamed, returnFocus } from '../lib/returnFocus';
  * branch's name in a repository's Branches, or a workspace's, opens the branch's page in the main area in its repository's
  * place (UX6h3b); it is page state of the view's, not remembered, and its way back is the repository's Branches.
  *
- * **A repository's Setup is every setting it holds on this machine** (UX6f), each the screen's half of `daoris driver
+ * **A repository's Setup is every setting it holds on this machine** (UX6f), each the screen's half of `daoris place
  * <verb> <repository>` or `daoris agent rules … --repository` (D50), from the answers the driver gives every door: the
  * driver's state, the lines, reading across, the rules, and the plugins that land work. What only Setup reads (reading
  * across, the plugins) is asked only while Setup shows, so holding the view on every view still asks nothing more.

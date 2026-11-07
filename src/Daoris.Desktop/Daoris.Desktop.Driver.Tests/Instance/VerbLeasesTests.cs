@@ -48,7 +48,7 @@ public sealed class VerbLeasesTests
     // FABRIC-CUTOVER1f: the person's skip and stop of a run's node keep a word on its record.
     [InlineData("workflow skip q7 go nobody raises it")]
     [InlineData("workflow stop q7 go")]
-    // The driver's standing choices, `daoris driver …` handed on (PUSH1f2a, D194 point 2): each a short change, held from the top.
+    // The driver's standing choices, `daoris settings …` handed on (PUSH1f2a, D194 point 2): each a short change, held from the top.
     [InlineData("driver drive engine")]
     [InlineData("driver undrive engine")]
     [InlineData("driver hold engine")]

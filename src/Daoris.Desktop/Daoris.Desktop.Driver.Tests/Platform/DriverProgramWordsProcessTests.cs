@@ -94,7 +94,7 @@ public sealed class DriverProgramWordsProcessTests(DriverProgramWordsProcessTest
         return (process.ExitCode, output.Result, error.Result);
     }
 
-    /// <summary>The terminal a person types <c>daoris driver …</c> in: this machine's own variables, the program named, and a home inside an install whose launchers' folder the tools' PATH would put first.</summary>
+    /// <summary>The terminal a person types <c>daoris …</c> in: this machine's own variables, the program named, and a home inside an install whose launchers' folder the tools' PATH would put first.</summary>
     private Dictionary<string, string?> Terminal(string program, string? exit = null)
     {
         var install = Path.Combine(_root, "install");

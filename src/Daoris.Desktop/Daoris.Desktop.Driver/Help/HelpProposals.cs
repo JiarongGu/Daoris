@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 
 /// <summary>One of Ask Daoris's proposals, as the connector wrote it (HELP1c, D89; HELP6; PLUG9; HELP10).</summary>
 /// <param name="Kind">Which kind it is, one <see cref="HelpProposalKinds"/> registers: `setting`, `ask`, `agent`, `delete`, `account`, `go`, `plugin`, `browser`, `sync`, `repository`, `session`, `pause`, `clear`, `workflow`, `setup` or `role`.</param>
-/// <param name="Door">Which of its kind's changes it is, as that kind's class says: a `daoris driver` verb for a setting, `update` or `pin` for an agent, and so on.</param>
+/// <param name="Door">Which of its kind's changes it is, as that kind's class says: a `daoris place`, `daoris settings`, `daoris quest` or `daoris git` verb for a setting, `update` or `pin` for an agent, and so on.</param>
 /// <param name="Target">What the change is for, as its kind's class says: a repository, an agent, a record's id, a view, a plugin or a session.</param>
 /// <param name="Value">What it is set to, where its kind takes one: a setting's value, a pin's version, a move's workspace.</param>
 /// <param name="Session">The conversation that proposed it.</param>

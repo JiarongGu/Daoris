@@ -32,7 +32,7 @@ public sealed class ActorChoicesTests
         { "build", [new("claude-code", "opus", "hi\u0007gh")], "control character" },
         { "brainstorm", [Opus, Codex], null },
         { "brainstorm", [Opus, Sonnet], "voices, one each" },
-        { "builder", [Opus], "is not an actor" },
+        { "builder", [Opus], "is not a role with an order" },
     };
 
     [Theory]

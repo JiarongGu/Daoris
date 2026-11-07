@@ -112,7 +112,7 @@ repository's work asks.
 
 ## When an events relay wakes you
 
-Where the person set one up, a session outside Daoris hears the work cycle through `daoris-driver events relay --once`: a
+Where the person set one up, a session outside Daoris hears the work cycle through `daoris events relay --once`: a
 background command that prints one batch of fixed lines and ends, and whose end wakes an idle session.
 
 - **Its end names a file: read the batch there.** The wake says the command ended and where its output is, not its lines,

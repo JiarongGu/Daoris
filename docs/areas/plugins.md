@@ -166,7 +166,7 @@ example's `node --test`.
   trial's case, `PluginsCommand.Cost`, Ask Daoris's sentence and the page's gloss in both catalogues; the driver's own conversations (an
   intake's, a helper's, a reviewer's park) told by their marks; an ending's adapter, which the record read here does not carry
   (`docs/2026-10-24-event-hook-design.md` §9). EVENTHOOK1c's rest: the `event-relay` example and its `node --test` proofs; the verb
-  `daoris-driver events relay --once` and `--where` (routed at the host's entry before the home's adoption, the generic lease and the
+  `daoris events relay --once` and `--where` (routed at the host's entry before the home's adoption, the generic lease and the
   machine log, out of `RoleTerminal.Runs`, classed in `VerbLeases`), the copy under the home's `bin` entry named by `RelayBuild.Of` with its
   `in-use` file and removal by rename, no junction followed, the pipe of two instances with `InstancePipe.Security` moved into the driver,
   step 3 by the holder's agents' job (a client it cannot check taken untold), the 30 s gathering, the 15-minute bound and

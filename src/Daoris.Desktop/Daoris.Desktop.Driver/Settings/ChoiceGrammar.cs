@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Which words of <c>daoris driver</c> change the home (PUSH1f2b; FOUNDATION1 mod-iii): the grammar the settings' command and the
+/// Which words of <c>daoris place</c> and <c>settings</c> change the home (PUSH1f2b; FOUNDATION1 mod-iii): the grammar the settings' command and the
 /// lease a change holds (<see cref="VerbLeases"/>) read before any verb is planned, kept with the settings so that it names no verb a
 /// subdomain above owns. A verb's own reading of the same words (<see cref="ChoiceVerb"/>) answers through these.
 /// </summary>
