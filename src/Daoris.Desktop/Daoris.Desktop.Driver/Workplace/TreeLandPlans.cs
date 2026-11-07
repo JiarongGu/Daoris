@@ -120,8 +120,9 @@ internal sealed class TreeLandPlans(TreeContext context, TreeLandSyncs syncs)
             : (1, "", "");
         var line = code == 0
             ? (await context.LineAsync(Path.GetDirectoryName(commonDir.Trim())!, repository, workspace, ct).ConfigureAwait(false)).Branch
-            : null;
-        return new(LandingForm.Merge, line ?? "", LandingSource.Default, Problem: subject.EnteredName is not null ? EnteredMerge : null);
+            : TreeGoneLines.Of(context, full, repository, workspace);
+        if (line is null) return new(LandingForm.Merge, TreeGoneLines.Unnamed, LandingSource.Default, TreeGoneLines.Problem(repository), AutoAccept: landing.AutoAccept);
+        return new(LandingForm.Merge, line, LandingSource.Default, Problem: subject.EnteredName is not null ? EnteredMerge : null, AutoAccept: landing.AutoAccept);
     }
 
     /// <summary>

@@ -82,8 +82,13 @@ internal static class NodeEvaluations
                 case RunSubject.Branch:
                     subjects[node.Id] = scope.Branch?.Id;
                     // A branch whose tip was not read (its tree tidied after its landing): a node bound there keeps its binding's own revision, so
-                    // only a moved subject lapses it.
-                    if (tip is null && scope.Branch is { } held && before[node.Id].Binding is { } bound && bound.Observes == held.Id) own[node.Id] = bound.SubjectRevision;
+                    // only a moved subject lapses it; one not bound yet takes the commit its session branch records the line holding, so work
+                    // merged outside the run is read where the line holds it rather than withheld for good.
+                    if (tip is null && scope.Branch is { } held)
+                    {
+                        if (before[node.Id].Binding is { } bound && bound.Observes == held.Id) own[node.Id] = bound.SubjectRevision;
+                        else if (before[node.Id].Binding is null && held.Records.Branch?.Held is { } merged) own[node.Id] = merged.Tip;
+                    }
                     break;
                 default:
                     // The run itself: left out, so it observes its record's unit, with no revision and no subject named on its binding.

@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-07 - A run merged by hand never left its landing, and its plan named an empty line (LANDAUTO1)
+
+- **Symptom:** on the owner's install, `dev-line` runs (no review before their `land`) sat with `landing` ready, attempt 0, no binding,
+  until the steward merged their work by hand; after the merge and the tidy, the run still never left `landing` and `line` stayed blocked,
+  and `daoris tree land <s> --plan` said it "would merge its work into `` (default)".
+- **Root cause:** two shapes older than today's builds. A run's step on its branch takes the branch's tip, and a tidied branch has none:
+  `NodeEvaluations.EvaluateRun` kept a step's own revision only for a step already bound, so a step never started there was withheld
+  (`no-revision`) for good, and `LandReading`'s merged clause, which reads the session branch's `held` merge, was never reached for it.
+  The merge plan found the line only through git in the tree (`TreeLandPlans.PlanRuleAsync`), so a tree gone read none and printed `""`;
+  both came with the moves of 95950acc69 and faae42db97, from code older than them. Why the two runs' `land` never started while their trees
+  stood, under the build staged at 778dfe5d29, is not found here: the fixture's passes start it, the shipped copy of *Merge automatically*
+  included (`GraphRunLandingTests`).
+- **Fix:** a step on a branch whose tip does not read, not bound yet, takes the commit its session branch records the line holding, so the
+  holds, the landing and the line read that merge reached and the run ends; the plan of a tree gone names the line its settings set, else
+  the one its session branch grew from, else says why it names none, and a merge plan carries whether its workflow lands it with no press.
+- **Verify:** `GraphRunLandingTests.A_run_merged_by_hand_before_its_land_started_reads_its_landing_and_line_reached_once_its_tree_is_tidied`
+  failed first on the empty plan, then on `content ready, landing blocked`, and passes; the landing process classes pass.
+
 ## 2026-11-07 - The window's landing press was dropped on a loaded machine, and the person was told nothing (LANDPRESS1)
 
 - **Symptom:** on the owner's install, on the build staged at 778dfe5d29, *Land* on a finished driven session reached the bridge
