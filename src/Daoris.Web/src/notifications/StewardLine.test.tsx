@@ -128,7 +128,7 @@ describe("Notifications' steward line", () => {
     const { unmount } = render(<StewardLine standing={did} onReverse={vi.fn()} />);
     await userEvent.click(line().getByRole('button', { name: "Show the steward's acts" }));
     expect(acts().map((row) => row.querySelector('[data-steward-act]')?.textContent)).toEqual([
-      'Landed the tree of', 'Installed the staged update', 'Paused',
+      'Paused', 'Installed the staged update', 'Landed the tree of',
     ]);
     for (const row of acts()) expect(within(row).queryByRole('button')).toBeNull();
     unmount();
@@ -136,7 +136,7 @@ describe("Notifications' steward line", () => {
     await i18n.changeLanguage('zh');
     render(<StewardLine standing={did} onReverse={vi.fn()} />);
     await userEvent.click(screen.getByRole('button', { name: '显示管家的操作' }));
-    expect([...document.querySelectorAll('[data-steward-act]')].map((each) => each.textContent)).toEqual(['合入了工作树：', '安装了备好的更新', '暂缓了']);
+    expect([...document.querySelectorAll('[data-steward-act]')].map((each) => each.textContent)).toEqual(['暂缓了', '安装了备好的更新', '合入了工作树：']);
   });
 
   it('offers the owner’s reverse press only while an act stands, and none for a finish or a Try again', async () => {

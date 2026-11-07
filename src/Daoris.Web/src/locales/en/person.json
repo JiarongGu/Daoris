@@ -123,6 +123,8 @@
   "person.route.SESSION_ANSWER_ALONE": "let a session's answer go on alone, or keep it",
   "person.route.SUPERVISOR_OVERRULE": "overrule the supervisor's answer to a session's question",
   "person.route.RETRY_QUEST": "try a parked quest again",
+  "person.route.QUEST_DONE": "mark a quest done",
+  "person.route.QUEST_DELETE": "delete a quest",
   "person.route.HELP_APPLY": "apply a proposal of Ask Daoris",
   "person.route.CHANNEL_POST": "post words to an ask's channel as yours",
   "person.route.CHANNEL_LINE_POST": "post words to a line of work's own channel as yours",
