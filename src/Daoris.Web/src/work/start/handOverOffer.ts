@@ -51,7 +51,7 @@ export function handOverOffer({ session, workspace, doors, answer, now, actor }:
   const until = coolingFor(session, doors, answer, now);
   let why: HandOverOffer['why'] | null = until ? 'limit' : null;
   if (!why && session.profile) {
-    const door = doors.find((each) => each.harness === session.adapter);
+    const door = doors.find((each) => each.door === session.adapter);
     const own = agentOf(answer, door ? toolOf(door) : session.adapter);
     const near = own?.speaks && scopeOf(own).near.some((each) => each.account === session.profile);
     if (near) why = 'near';
@@ -78,7 +78,7 @@ export function handOverOffer({ session, workspace, doors, answer, now, actor }:
       .find(roomy);
     if (taken === undefined) continue;
     return {
-      why, until: why === 'limit' ? until : null, agent: door.harness, account: taken,
+      why, until: why === 'limit' ? until : null, agent: door.door, account: taken,
       ...(from === 'roster' ? {} : { choice: { n: from, model, effort } }),
     };
   }
@@ -98,7 +98,7 @@ function switchesAway(
   scopeOf: (agent: NonNullable<ReturnType<typeof agentOf>>) => AccountScope,
 ): boolean {
   if (!session.profile) return false;
-  const door = doors.find((each) => each.harness === session.adapter);
+  const door = doors.find((each) => each.door === session.adapter);
   const own = agentOf(answer, door ? toolOf(door) : session.adapter);
   if (!own) return false;
   const scope = scopeOf(own);
@@ -115,7 +115,7 @@ const live = (cooling: { until: string } | null | undefined, now: Date): boolean
  * candidates Daoris's offer draws from and the hand-over's ask lists first.
  */
 export function otherToolDoors(session: Pick<Session, 'adapter'>, doors: readonly ToolDoor[]): ToolDoor[] {
-  const own = doors.find((each) => each.harness === session.adapter);
+  const own = doors.find((each) => each.door === session.adapter);
   const ownTool = own ? toolOf(own) : session.adapter;
   const seen = new Set<string>([ownTool]);
   const found: ToolDoor[] = [];
@@ -147,11 +147,11 @@ export function nextChoices(
   if (entries.length === 0 || entries.every((entry) => entry.from === 'before')) {
     return otherToolDoors(session, doors).map((door) => ({ door, model: null, effort: null, from: 'roster' }));
   }
-  const own = doors.find((each) => each.harness === session.adapter);
+  const own = doors.find((each) => each.door === session.adapter);
   const ownTool = own ? toolOf(own) : session.adapter;
   const found: NextChoice[] = [];
   for (const entry of entries) {
-    const door = doors.find((each) => each.present && each.harness === entry.agent);
+    const door = doors.find((each) => each.present && each.door === entry.agent);
     if (!door || toolOf(door) === ownTool) continue;
     found.push({ door, model: entry.model ?? null, effort: entry.effort ?? null, from: entry.from });
   }

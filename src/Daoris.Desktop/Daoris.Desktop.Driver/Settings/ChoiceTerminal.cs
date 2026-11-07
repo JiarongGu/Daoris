@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The terminal <c>daoris driver</c> is said on and pressed from (FOUNDATION1 mod-iii, the design §14.2: each verb stays in its own
+/// The terminal the setting verbs are said on and pressed from (FOUNDATION1 mod-iii, the design §14.2: each verb stays in its own
 /// subdomain and reaches the instance through the instance's door): the settings declare this port, the instance's world
 /// (<see cref="InstanceWorld"/>) implements it with the door, and every host and test that builds a <see cref="DriverChoicesWorld"/>
 /// hands it one, so the settings' command names neither the world nor the door.

@@ -283,7 +283,7 @@ public sealed class AgentsCommandTests : IDisposable
         Assert.Equal("ACCOUNT_USE", press.GetProperty("type").GetString());
         var payload = press.GetProperty("payload");
         Assert.Equal("order", payload.GetProperty("action").GetString());
-        Assert.Equal("claude-code", payload.GetProperty("harness").GetString());
+        Assert.Equal("claude-code", payload.GetProperty("door").GetString());
         Assert.Equal(["seat", "work"], payload.GetProperty("accounts").EnumerateArray().Select(each => each.GetString()));
         Assert.False(payload.TryGetProperty("workspace", out _));
         Assert.Contains("daoris: `claude-code`'s order is seat, then work.", running.Out.ToString(), StringComparison.Ordinal);
@@ -328,7 +328,7 @@ public sealed class AgentsCommandTests : IDisposable
         Assert.Equal("ACCOUNT_USE", press.GetProperty("type").GetString());
         var payload = press.GetProperty("payload");
         Assert.Equal("use", payload.GetProperty("action").GetString());
-        Assert.Equal("claude-code", payload.GetProperty("harness").GetString());
+        Assert.Equal("claude-code", payload.GetProperty("door").GetString());
         Assert.False(payload.TryGetProperty("workspace", out _));
         Assert.Equal("order", payload.GetProperty("use").GetString());
         Assert.Equal("seat", payload.GetProperty("keep").GetString());

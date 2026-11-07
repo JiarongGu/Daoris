@@ -400,7 +400,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         var owner = _loop.Harnesses.Adapters.OwnerOfAgent(harness).Value;
         await _events.EmitAsync("DAORIS", "HARNESS_ENDED", new
         {
-            Harness = harness, Action = action, Profile = profile, ExitCode = code, Problem = problem,
+            Door = harness, Action = action, Profile = profile, ExitCode = code, Problem = problem,
             // Who signed in (D66 §3) — the tool's own answer, from the reading the sign-in's end made, so
             // the sentence a person hears names the account the way they know it.
             Account = signedIn?.Account,

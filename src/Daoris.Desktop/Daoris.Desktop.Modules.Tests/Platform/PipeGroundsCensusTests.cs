@@ -285,9 +285,9 @@ public sealed class PipeGroundsCensusTests
         },
         {
             "HARNESS_ACTION", "HARNESSES",
-            """{"harnesses":[{"harness":"claude-code","present":true,"version":"2.0","profiles":[{"name":"work","login":"signed-in","read":"@@DAY@@","account":"@@WORDS@@"}]}]}""",
-            """{"harnesses":[{"harness":"claude-code","present":true,"version":"2.1","profiles":[{"name":"work","login":"signed-in"}]}]}""",
-            """{"action":"update","harness":"claude-code"}"""
+            """{"harnesses":[{"door":"claude-code","present":true,"version":"2.0","profiles":[{"name":"work","login":"signed-in","read":"@@DAY@@","account":"@@WORDS@@"}]}]}""",
+            """{"harnesses":[{"door":"claude-code","present":true,"version":"2.1","profiles":[{"name":"work","login":"signed-in"}]}]}""",
+            """{"action":"update","door":"claude-code"}"""
         },
         {
             "PLUGIN_ACTION", "PLUGINS",

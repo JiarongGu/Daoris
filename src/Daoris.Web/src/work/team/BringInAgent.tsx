@@ -11,7 +11,7 @@ export type BringInDoor = (typeof BRING_IN_DOORS)[number];
  * One choice of the dialog: its door, and what choosing it does, or why the rules turn it off. A choice with neither is not drawn, since
  * nothing on this session could open it.
  */
-export type BringInChoice = { door: BringInDoor; onChoose?: () => void; off?: string | null };
+export type BringInChoice = { door: BringInDoor; onChoose?: () => void; off?: string | null; note?: string };
 
 /**
  * *Bring in another agent…* (COWORKUX1f, the co-worker design §6.2): one dialog whose choices are the structures' doors, each opening its
@@ -21,7 +21,7 @@ export function BringInAgent({ choices, onClose }: { choices: readonly BringInCh
   const { t } = useTranslation();
   const shown = BRING_IN_DOORS
     .map((door) => choices.find((choice) => choice.door === door))
-    .filter((choice): choice is BringInChoice => Boolean(choice && (choice.onChoose || choice.off)));
+    .filter((choice): choice is BringInChoice => Boolean(choice && (choice.onChoose || choice.off || choice.note)));
   return (
     <section
       role="dialog"
@@ -33,7 +33,12 @@ export function BringInAgent({ choices, onClose }: { choices: readonly BringInCh
       <h3 id="bring-in-title" className="m-0 text-small font-semibold">{t('work.team.bringIn.title')}</h3>
       <p className="m-0 text-small text-ink-soft">{t('work.team.bringIn.lead')}</p>
       <ul className="m-0 grid list-none gap-1 p-0">
-        {shown.map((choice) => (
+        {shown.map((choice) => choice.note ? (
+          // A way that needs no press: the sentence says what already happens, so no button stands in for it.
+          <li key={choice.door} data-door={choice.door} className="min-w-0 text-small text-ink-soft wrap-anywhere">
+            <span className="font-semibold text-ink">{t(`work.team.door.${choice.door}`)}</span> {choice.note}
+          </li>
+        ) : (
           <li key={choice.door} data-door={choice.door} className="flex min-w-0 flex-wrap items-baseline gap-x-2">
             <Button
               disabled={!choice.onChoose || Boolean(choice.off)}

@@ -17,10 +17,10 @@
  * than a table somebody maintains.
  */
 
-/** One door Daoris can hold a session over — an adapter, in `driver.json`'s vocabulary. */
+/** One door Daoris can hold a session over. */
 export interface ToolDoor {
-  /** The adapter id. Still shown, because `driver.json` and `daoris driver` name exactly this. */
-  harness: string;
+  /** The door's id, which the terminal names. */
+  door: string;
   present: boolean;
   version?: string | null;
   problem?: string | null;
@@ -264,7 +264,7 @@ export interface Tool {
  * not name — and a surface then says nothing rather than guess.
  */
 export function doorOf(adapter: string | undefined, doors: readonly ToolDoor[]): 'protocol' | 'native' | null {
-  const transport = doors.find((door) => door.harness === adapter)?.transport;
+  const transport = doors.find((door) => door.door === adapter)?.transport;
   return transport === 'protocol' || transport === 'native' ? transport : null;
 }
 
@@ -276,7 +276,7 @@ export type AccountNamer = (owner: string, profile?: string | null) => string;
 
 /** Which tool this door belongs to: the account it borrows, or itself. */
 export function toolOf(door: ToolDoor): string {
-  return door.accountOf?.trim() || door.harness;
+  return door.accountOf?.trim() || door.door;
 }
 
 /**
@@ -285,11 +285,11 @@ export function toolOf(door: ToolDoor): string {
  * the start form listed bare ids where Settings named them so). A door with no product is its id.
  */
 export function doorLabel(t: (key: string, options?: Record<string, unknown>) => string, door: ToolDoor): string {
-  if (!door.product) return door.harness;
+  if (!door.product) return door.door;
   return t('settings.ai.intake.choice', {
     product: door.product,
     door: t(door.transport === 'protocol' ? 'harness.wire.acp' : 'harness.wire.pipe'),
-    agent: door.harness,
+    agent: door.door,
   });
 }
 
@@ -323,8 +323,8 @@ export function byTool(doors: readonly ToolDoor[], agents: readonly AgentSheet[]
     // The door whose name IS the tool's leads; the rest keep the roster's order behind it.
     const own = grouped.get(name)!;
     const doorsInOrder = [
-      ...own.filter((door) => door.harness === name),
-      ...own.filter((door) => door.harness !== name),
+      ...own.filter((door) => door.door === name),
+      ...own.filter((door) => door.door !== name),
     ];
 
     // One configuration home per tool by declaration, so the same account can be reported by more
@@ -342,7 +342,7 @@ export function byTool(doors: readonly ToolDoor[], agents: readonly AgentSheet[]
 
     // The agent the roster's sheet answers for this tool: by its id, else by any of its doors (COAGENT1e).
     const agent = agents.find((each) => each.id === name)
-      ?? agents.find((each) => each.doors.some((sheet) => doorsInOrder.some((door) => door.harness === sheet.door)));
+      ?? agents.find((each) => each.doors.some((sheet) => doorsInOrder.some((door) => door.door === sheet.door)));
 
     return {
       name,

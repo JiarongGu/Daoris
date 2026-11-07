@@ -10,7 +10,7 @@ import { said } from '../test/said';
 // registered, everything done, and a browser, which may learn nothing of a machine (D47 §4).
 
 const door = (over: Partial<ToolDoor> = {}): ToolDoor => ({
-  harness: 'claude-code', present: true, product: 'Claude Code', ownLogin: 'in',
+  door: 'claude-code', present: true, product: 'Claude Code', ownLogin: 'in',
   profiles: [{ name: 'work', home: 'h', login: 'in' }], ...over,
 });
 

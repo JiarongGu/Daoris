@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The helpers rule over the bridge (DOORS1b, D163 point 3, D164's amendment point 3): the screens' half of `daoris driver
+/// The helpers rule over the bridge (DOORS1b, D163 point 3, D164's amendment point 3): the screens' half of `daoris place
 /// helpers`, over the same file, for a repository or a workspace; each edit judged by the twin's table in its words; the state
 /// answering what is set as rows; and the lines answering what each repository resolves to and from where, the default's
 /// source `default` where nothing is set, which only the driver resolves.

@@ -28,7 +28,7 @@ public sealed class HelpRoomDoorsTests
             "daoris tree sync [--repository <name>] [--workspace <name>] [--all] [--yes]",
             // D107: reading and writing across, the CLI's `driver across` verbs.
             "daoris place across <repository> read on|off|--clear", "daoris place across <repository> write-to <other> [--clear]",
-            // HELP9: every `daoris driver` verb that changes something, and the doors Ask Daoris owes, named where they are.
+            // HELP9: every setting verb that changes something, and the doors Ask Daoris owes, named where they are.
             // SESSUX1b: and a stop's release, which names the session stopped.
             "daoris quest retry <quest>", "daoris quest retry <quest> --session <id>", "daoris settings cap <n>",
             // LEFT3's default and its clear left with POOL1b (D197 point 6).

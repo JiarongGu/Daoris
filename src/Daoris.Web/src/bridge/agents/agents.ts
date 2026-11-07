@@ -156,7 +156,7 @@ export const useHarnesses = ({ enabled = true }: { enabled?: boolean } = {}) => 
 export const useHarnessAction = () =>
   useMutation({
     mutationFn: (action: {
-      harness: string;
+      door: string;
       action: 'install' | 'update' | 'login' | 'login-new' | 'key-add' | 'key-replace' | 'pin' | 'unpin'
       | 'profile-add' | 'profile-remove' | 'profile-rename';
       profile?: string;
@@ -177,7 +177,7 @@ export const useHarnessAction = () =>
       /** Whether this sign-in takes the place of the same one running another way, which the driver stops first (CODEXLOGIN1). */
       switch?: boolean;
     }) => call('HARNESS_ACTION', action) as Promise<{
-      harness: string; action: string; exitCode?: number; started?: boolean;
+      door: string; action: string; exitCode?: number; started?: boolean;
       /**
        * For `key-add`: the account made, and the key's handle; for a sign-in, the account it reaches (ACCT1); for
        * `profile-rename`, the account named.
@@ -190,7 +190,7 @@ export const useHarnessAction = () =>
 
 /** How a process action ended — as news, after the request that started it was answered. */
 export type HarnessEnded = {
-  harness: string;
+  door: string;
   action: string;
   profile: string | null;
   exitCode: number;
@@ -228,7 +228,7 @@ export const useHarnessEnded = (handler: (ended: HarnessEnded) => void) => {
   const client = useQueryClient();
   useShenoraEvent('DAORIS', 'HARNESS_ENDED', (payload) => {
     const ended = payload as HarnessEnded | undefined;
-    if (!ended?.harness || !ended.action) return;
+    if (!ended?.door || !ended.action) return;
     // The roster; and the accounts beneath its key where they are pulled: where the shell pushes them (PUSH1e), the end wakes their
     // owner, whose push writes them.
     void client.invalidateQueries({ queryKey: keys.harnesses, predicate: notPushed(client) });
@@ -243,14 +243,14 @@ export const useHarnessEnded = (handler: (ended: HarnessEnded) => void) => {
  */
 export const useHarnessInput = () =>
   useMutation({
-    mutationFn: (input: { harness: string; action: string; text: string }) =>
+    mutationFn: (input: { door: string; action: string; text: string }) =>
       call('HARNESS_INPUT', input) as Promise<{ sent: boolean }>,
   });
 
 /** Stop a running harness action — a login the person is not going to finish. */
 export const useHarnessCancel = () =>
   useMutation({
-    mutationFn: (target: { harness: string; action: string }) =>
+    mutationFn: (target: { door: string; action: string }) =>
       call('HARNESS_CANCEL', target) as Promise<{ cancelled: boolean }>,
   });
 
@@ -281,13 +281,13 @@ export const useRefreshHarnesses = () =>
  */
 export const useSetAgentSettings = () =>
   useMutation({
-    mutationFn: ({ harness, profile, ...change }: { harness: string; profile: string } & AccountSettingsChange) =>
+    mutationFn: ({ door, profile, ...change }: { door: string; profile: string } & AccountSettingsChange) =>
       call('SET_AGENT_SETTINGS', {
-        harness, profile,
+        door, profile,
         ...('model' in change ? { model: change.model ?? null } : {}),
         ...('effort' in change ? { effort: change.effort ?? null } : {}),
         ...(change.perModel && Object.keys(change.perModel).length > 0 ? { perModel: change.perModel } : {}),
-      }) as Promise<AccountSettings & { harness: string; profile: string }>,
+      }) as Promise<AccountSettings & { door: string; profile: string }>,
   });
 
 /** What a start in each of these workspaces would take (MAP1b). Desktop-only: it is this machine's. */

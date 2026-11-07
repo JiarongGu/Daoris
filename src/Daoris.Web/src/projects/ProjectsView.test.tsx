@@ -243,7 +243,7 @@ describe("a workspace's page (UX6g)", () => {
     settingsPath: 'C:/somewhere/.daoris/harnesses.json',
     adapter: 'claude-code',
     harnesses: [{
-      harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: 'claude 9.9.9', problem: null,
+      door: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: 'claude 9.9.9', problem: null,
       machineDefault: 'personal', pinned: null, managed: null, pinnable: true, ownLogin: 'in',
       profiles: [{ name: 'personal', home: 'C:/somewhere/.daoris/harnesses/claude-code/personal', login: 'in' }],
     }],
@@ -343,7 +343,7 @@ describe("a workspace's page (UX6g)", () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'game' })).toBeInTheDocument();
   });
 
-  /** WSR2, WSR1, LANG1c, READ1: a workspace's line default, on the place's Workflow, the screen's half of `daoris driver <verb> --workspace`. */
+  /** WSR2, WSR1, LANG1c, READ1: a workspace's line default, on the place's Workflow, the screen's half of `daoris place <verb> --workspace`. */
   it("sets its line on the place's Workflow defaults, on DAORIS.DRIVER, and says what changed", async () => {
     machine();
     const notify = vi.fn();
@@ -1272,7 +1272,7 @@ describe('the shell-attached registry management', () => {
 
 /**
  * INT3c: an unadopted repository with a root here is drivable over the protocol door (D70), so the
- * screen offers what `daoris driver` already can: the same driving row an adopter's page carries
+ * screen offers what `daoris place` already can: the same driving row an adopter's page carries
  * (D50). One with no root here has nowhere to start, and is offered nothing. On a machine whose
  * door is direct, the page says a quest there will sit — the planner's own answer, said before it.
  */
@@ -1286,8 +1286,8 @@ describe('an unadopted repository on this machine (INT3c)', () => {
     settingsPath: 'C:/somewhere/data/harnesses.json',
     adapter,
     harnesses: [
-      { harness: 'claude-code', present: true, wire: 'pipe', version: '2.1.281', problem: null, machineDefault: null, pinned: null, managed: null, pinnable: true, profiles: [] },
-      { harness: 'claude-code-acp', present: true, wire: 'acp', accountOf: 'claude-code', version: '0.79.0', problem: null, machineDefault: null, pinned: null, managed: null, pinnable: true, profiles: [] },
+      { door: 'claude-code', present: true, wire: 'pipe', version: '2.1.281', problem: null, machineDefault: null, pinned: null, managed: null, pinnable: true, profiles: [] },
+      { door: 'claude-code-acp', present: true, wire: 'acp', accountOf: 'claude-code', version: '0.79.0', problem: null, machineDefault: null, pinned: null, managed: null, pinnable: true, profiles: [] },
     ],
   });
   const machine = (adapter: string) => {

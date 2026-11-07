@@ -137,7 +137,7 @@ export type DraftCard = {
 /** Who made a proposal: the conversation's agent as a person calls it, its product else its tool's else its id, and the models it reported. */
 export function makerOf(session: Pick<Session, 'adapter' | 'ran'> | undefined, doors: readonly ToolDoor[]): DraftCard['maker'] {
   if (!session) return null;
-  const found = byTool(doors).flatMap((tool) => tool.doors.map((door) => ({ tool, door }))).find((each) => each.door.harness === session.adapter);
+  const found = byTool(doors).flatMap((tool) => tool.doors.map((door) => ({ tool, door }))).find((each) => each.door.door === session.adapter);
   return { agent: found?.door.product || found?.tool.product || session.adapter, models: [...(session.ran?.models ?? [])] };
 }
 

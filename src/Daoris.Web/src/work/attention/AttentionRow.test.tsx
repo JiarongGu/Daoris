@@ -75,7 +75,7 @@ const ACCOUNT_WAIT: Attention = {
   id: 'wait:claude-code/account-2', kind: 'account-wait', title: 'Intake for 2 asks', where: 'work', circle: true,
   since: '2026-09-21T11:35:00Z', detail: 'home cools until Oct 6, 04:42; account-1 and account-3 read signed out at 10:42.',
   account: {
-    agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true,
+    agent: 'claude-code', product: 'Claude Code', door: 'claude-code', signsIn: true,
     named: [
       { id: 'account-2', label: 'home', state: 'cooling', read: null, until: '2026-10-06T04:42:00Z' },
       { id: 'account-1', label: 'account-1', state: 'out', read: '2026-09-21T10:42:00Z', until: null },
@@ -102,7 +102,7 @@ const SIGNED_OUT: Attention = {
   id: 'signed-out:claude-code/account-1', kind: 'signed-out', title: 'account-1', where: 'Claude Code',
   since: null, read: '2026-09-21T10:42:00Z', detail: null,
   account: {
-    agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true,
+    agent: 'claude-code', product: 'Claude Code', door: 'claude-code', signsIn: true,
     named: [{ id: 'account-1', label: 'account-1', state: 'out', read: '2026-09-21T10:42:00Z', until: null }],
   },
 };

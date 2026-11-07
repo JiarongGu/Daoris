@@ -47,12 +47,12 @@ const ROSTER = {
   adapter: 'claude-code',
   harnesses: [
     {
-      harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', transport: 'native',
+      door: 'claude-code', product: 'Claude Code', maker: 'Anthropic', transport: 'native',
       present: true, version: 'claude 9.9.9', problem: null, machineDefault: null,
       pinned: null, managed: null, pinnable: true, ownLogin: 'in', workspaceDefaults: [], profiles: [],
     },
     {
-      harness: 'claude-code-acp', product: 'Claude Code', maker: 'Anthropic', transport: 'protocol', accountOf: 'claude-code',
+      door: 'claude-code-acp', product: 'Claude Code', maker: 'Anthropic', transport: 'protocol', accountOf: 'claude-code',
       present: true, version: '0.9.1', problem: null, machineDefault: null,
       pinned: null, managed: null, pinnable: true, ownLogin: 'in', workspaceDefaults: [], profiles: [],
     },

@@ -6,7 +6,7 @@ import { GetStarted } from './GetStarted';
 // The setup guide (SETUP1a, D97), from the machines a first start meets: nothing at all, halfway with
 // Ask Daoris's agent named, everything required done, and a browser, which knows only the registry.
 
-const IN = { harness: 'claude-code', present: true, product: 'Claude Code', ownLogin: 'in' };
+const IN = { door: 'claude-code', present: true, product: 'Claude Code', ownLogin: 'in' };
 
 const meta = {
   title: 'Settings/GetStarted',

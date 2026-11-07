@@ -81,7 +81,7 @@ const READ = '2026-10-01T10:42:00Z';
 const ROSTER: HarnessRoster = {
   settingsPath: 'harnesses.json', adapter: 'claude-code',
   harnesses: [{
-    harness: 'claude-code', present: true, product: 'Claude Code', maker: 'Anthropic', signsIn: true, transport: 'native',
+    door: 'claude-code', present: true, product: 'Claude Code', maker: 'Anthropic', signsIn: true, transport: 'native',
     profiles: [
       { name: 'account-1', home: 'H/account-1', login: 'out', read: READ },
       { name: 'account-2', home: 'H/account-2', login: 'in', read: READ },
@@ -90,7 +90,7 @@ const ROSTER: HarnessRoster = {
   }],
 };
 const facts = (over: Partial<PushedAccountFacts> = {}): PushedAccountFacts => ({
-  agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true,
+  agent: 'claude-code', product: 'Claude Code', door: 'claude-code', signsIn: true,
   named: [
     { id: 'account-2', name: null, state: 'cooling', read: READ, until: '2026-10-02T04:42:00Z' },
     { id: 'account-1', name: null, state: 'out', read: READ, until: null },
@@ -135,11 +135,11 @@ function start(rows: PushedAttention[], props: {
       return asked.words === 'again' ? { ...asked, done: false, refused: 'worded' } : { ...asked, done: true };
     }
     if (type === 'HARNESSES') return roster;
-    if (type === 'HARNESS_ACTION' && request?.payload?.action === 'login') return { harness: 'claude-code', action: 'login', started: true };
-    if (type === 'HARNESS_ACTION' && request?.payload?.action === 'login-new') return { harness: 'claude-code', action: 'login-new', started: true };
+    if (type === 'HARNESS_ACTION' && request?.payload?.action === 'login') return { door: 'claude-code', action: 'login', started: true };
+    if (type === 'HARNESS_ACTION' && request?.payload?.action === 'login-new') return { door: 'claude-code', action: 'login-new', started: true };
     if (type === 'HARNESS_ACTION' && request?.payload?.action === 'profile-join') {
       // Its default there, and still no place marked first: *first* is a next start the join's answer never names (ACCTUX4b).
-      return { harness: 'claude-code', action: 'profile-join', profile: 'account-4', places: [{ workspace: 'default', list: true, default: true }] };
+      return { door: 'claude-code', action: 'profile-join', profile: 'account-4', places: [{ workspace: 'default', list: true, default: true }] };
     }
     if (type === 'RETRY_QUEST') return { drivable: [], holds: [], trees: [], running: [], notify: false, strikes: 3, forgiven: {}, retried: { quest: 'q1', did: 'marked' } };
     if (type === 'TRUST_FOLDER') return { folder: HOLD.folder, key: 'k', changed: true, verified: true, message: 'Trusted `C:/somewhere/engine` for the agent.' };
@@ -454,7 +454,7 @@ describe('What needs you on a machine', () => {
     await userEvent.click(within(item).getByRole('button', { name: 'Sign in to account-1' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
-      payload: { harness: 'claude-code', action: 'login', profile: 'account-1' },
+      payload: { door: 'claude-code', action: 'login', profile: 'account-1' },
     });
     expect(await within(item).findByRole('region', { name: 'Signing in to account-1' })).toBeInTheDocument();
   });
@@ -471,7 +471,7 @@ describe('What needs you on a machine', () => {
 
     await userEvent.click(within(item).getByRole('button', { name: 'Sign in for Daoris' }));
 
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', { payload: { harness: 'claude-code', action: 'login-new' } });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', { payload: { door: 'claude-code', action: 'login-new' } });
     expect(await within(item).findByRole('region', { name: 'Signing in to another Claude Code account' })).toBeInTheDocument();
   });
 

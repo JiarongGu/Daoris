@@ -40,6 +40,8 @@ public sealed class DaorisDriverWordsTests
         Assert.Equal(Named.OrderBy(pair => pair.Key, StringComparer.Ordinal), found.OrderBy(pair => pair.Key, StringComparer.Ordinal));
     }
 
+    // Scanned beyond the program: the page's catalogues and sources (not its tests or stories, where a process is named as the
+    // asker) and the canon's skills, which teach a session's words.
     private static IEnumerable<string> Scanned(string root)
     {
         var desktop = Path.Combine(root, "src", "Daoris.Desktop");
@@ -54,6 +56,14 @@ public sealed class DaorisDriverWordsTests
         }
 
         foreach (var guide in Directory.EnumerateFiles(Path.Combine(root, "docs", "guide"), "*.md", SearchOption.AllDirectories)) yield return guide;
+        foreach (var catalogue in Directory.EnumerateFiles(Path.Combine(root, "src", "Daoris.Web", "src", "locales"), "*.json", SearchOption.AllDirectories)) yield return catalogue;
+        foreach (var page in Directory.EnumerateFiles(Path.Combine(root, "src", "Daoris.Web", "src"), "*.ts*", SearchOption.AllDirectories))
+        {
+            var test = page.Contains(".test.", StringComparison.Ordinal) || page.Contains(".stories.", StringComparison.Ordinal);
+            if (!test && !page.Contains($"{Path.DirectorySeparatorChar}locales{Path.DirectorySeparatorChar}", StringComparison.Ordinal)) yield return page;
+        }
+
+        foreach (var skill in Directory.EnumerateFiles(Path.Combine(root, "canon"), "SKILL.md", SearchOption.AllDirectories)) yield return skill;
         foreach (var example in Directory.EnumerateFiles(Path.Combine(root, "examples"), "README.md", SearchOption.AllDirectories)) yield return example;
     }
 }

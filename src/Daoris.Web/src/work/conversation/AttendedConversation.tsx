@@ -130,7 +130,7 @@ export function AttendedConversation({
               from: attended.adapter,
               to: harnesses.data?.adapter,
               adapter: harnesses.data?.adapter,
-              agent: roster.find((row) => row.harness === attended.adapter)?.product || attended.adapter,
+              agent: roster.find((row) => row.door === attended.adapter)?.product || attended.adapter,
             }}
           />
         </div>

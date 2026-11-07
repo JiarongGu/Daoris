@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The port keeps today's text (PUSH1f2b, D194 point 6, the alone-path design §3): each case of <c>daoris driver</c>'s workflows and
+/// The port keeps today's text (PUSH1f2b, D194 point 6, the alone-path design §3): each case of the retired <c>driver</c> verb's workflows and
 /// <c>brainstorms</c>, as the CLI's TypeScript verb said it before it
 /// retired (<c>fixtures/driver-workflows-text.json</c>), said again by <see cref="DriverChoicesCommand"/> acting alone on a home of its
 /// own, the terminal in it: the same lines on each stream, the same exit, <c>driver.json</c> after it the same choices, and every other

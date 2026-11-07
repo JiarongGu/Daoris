@@ -35,7 +35,7 @@ describe('the accounts each agent may run in a workspace', () => {
       { agent: 'claude-code', product: 'Claude Code', accounts: [] },
     ]);
     const [signedIn] = byTool([{
-      harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: '2.1.4', wire: 'pipe', signsIn: true,
+      door: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: '2.1.4', wire: 'pipe', signsIn: true,
       installs: true, takesRules: true, ownLogin: 'in', ownAccount: null, ownRead: null,
       profiles: [{ name: 'acct-1', home: 'h/1', login: 'in' }],
     } as unknown as ToolDoor]);

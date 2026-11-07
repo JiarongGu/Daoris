@@ -144,7 +144,7 @@ describe('trusting a folder the driver is holding (D73)', () => {
   });
 
   /**
-   * RETRY1 (D50): a quest parked by its strikes was retried only from a terminal (`daoris driver
+   * RETRY1 (D50): a quest parked by its strikes was retried only from a terminal (`daoris quest
    * retry`). The page had the other half ready, and nothing rendered it. The retry is offered where
    * the parked quest's sentence is read, and nowhere a quest is not parked.
    */

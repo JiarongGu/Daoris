@@ -35,7 +35,7 @@ describe('the agent list, an agent Daoris has no installer for', () => {
   afterEach(cleanup);
 
   const rows = (installs?: boolean) => agentRows(toolsOf([
-    { harness: 'forge', product: 'Forge', maker: 'Acme', present: false, profiles: [], ...(installs === undefined ? {} : { installs }) },
+    { door: 'forge', product: 'Forge', maker: 'Acme', present: false, profiles: [], ...(installs === undefined ? {} : { installs }) },
   ]), undefined);
 
   it('offers How to install in the Install slot, and pressing it only chooses the agent', async () => {

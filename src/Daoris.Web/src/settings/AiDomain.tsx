@@ -54,7 +54,7 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
   // (HELPMODE1c4, each readable checkout the driver serves turned off or on by its repository's name) are chosen here; and the
   // browser's is its plugin's approval, drawn read only, its door that plugin's tab (the modes design §4.1's decided note).
   const served = Array.isArray(driver.data?.helpGrants) ? driver.data.helpGrants : null;
-  const helperDoor = harnesses.find((door) => door.harness === driver.data?.helperAgent);
+  const helperDoor = harnesses.find((door) => door.door === driver.data?.helperAgent);
   const built: Partial<Record<HelpGrantId, readonly string[]>> = Object.fromEntries(
     (served ?? []).filter((grant) => Array.isArray(grant.built)).map((grant) => [grant.id, grant.built!]));
   const chooseGrant = (grant: HelpGrantId, operation: string, chosen: boolean) => {

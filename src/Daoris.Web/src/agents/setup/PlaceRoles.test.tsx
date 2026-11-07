@@ -41,7 +41,7 @@ function Place() {
 const ROSTER = {
   settingsPath: 'x', adapter: 'claude-code',
   harnesses: [{
-    harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', transport: 'native', present: true, version: 'claude 9.9.9', problem: null,
+    door: 'claude-code', product: 'Claude Code', maker: 'Anthropic', transport: 'native', present: true, version: 'claude 9.9.9', problem: null,
     machineDefault: null, pinned: null, managed: null, pinnable: true, ownLogin: 'in', workspaceDefaults: [], profiles: [],
   }],
 };

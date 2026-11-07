@@ -440,13 +440,12 @@ Agents page, and `orient-index` and `code-map` once files move.
   opinion's, a memory operation's author's `adapter` and `harness`, the machine log's fields, a note's part, a plugin's `session.ended`,
   a brainstorm's and a meeting's files, `START_CHAT`'s press), kept because the record's one field runs across the service's store, the sync
   between hosts and some hundred and twenty reads on the page, so it is renamed `door` in a chunk of its own, the service's schema step,
-  the contract and the page together; **t-iii**, the `harness` word still on a wire or in a file: the account presses' and the
-  `HARNESSES` and `ACCOUNTS` answers' (the press payloads of `AccountUsePress`, `HarnessActionPress`, `HarnessInputPress`,
-  `HarnessCancelPress` and `AgentSettingsPress` and the terminal's senders of them, `PipeReads`' grounds, and the roster rows' and the
-  attention slice's `harness` key with the page's `ToolDoor.harness` and its some seven hundred reads), to be renamed `door` with the
-  contract regenerated in a chunk of its own; and the lineage's `harness` and `acp` signal, the service's `LineageFile`, which a plugin
+  the contract and the page together; **t-iii**, the lineage's `harness` and `acp` signal, the service's `LineageFile`, which a plugin
   may read, so its end waits on that contract (the page's catalogue keys `harness.wire.acp` and `harness.wire.pipe` keep their names).
-  Done: the binding files are imported
+  Done: the account presses (`AccountsReadPress`, `AccountUsePress`, `HarnessActionPress`, `HarnessInputPress`, `HarnessCancelPress`,
+  `AgentSettingsPress`), the `HARNESSES` and `ACCOUNTS` answers, the `HARNESS_ENDED` news and the attention slice's account row name their
+  door by `door`, as do the terminal's senders of the presses, `PipeReads`' grounds, the refusal log's read of a request and the page's
+  `ToolDoor.door` and its reads; the binding files are imported
   once by the `binding-files` step (a copy kept, the file and its `.imported` set-aside taken out), so a conversation is kept and read in
   the store alone and no look imports anything; Ask Daoris's receipts name the door by `door` and the transport by `transport`
   (`native` or `protocol`), the `wired-files` step renaming an older receipt's `harness` and `pipe`/`acp` `door`; the usage file's entries
