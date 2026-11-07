@@ -4,27 +4,27 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// **An account's own model and effort** (AGT6, D98), in the tool's own settings file.
+/// **An account's own model and effort**, in the tool's own settings file.
 /// </summary>
 /// <remarks>
 /// <para>The file is Claude Code's, in the account's configuration home: its <c>settings.json</c>, the
 /// user tier its ACP adapter reads at <c>CLAUDE_CONFIG_DIR/settings.json</c>. Daoris changes
 /// <c>model</c>, <c>effortLevel</c> and an effort per model under <c>modelSettings</c>, and leaves every
-/// other key the tool keeps there exactly as it was.</para>
+/// other key the tool keeps there unchanged.</para>
 ///
-/// <para>The file's one writer since the CLI's <c>agentsettings.ts</c>, its twin, left with <c>daoris agent
-/// settings</c> (PUSH1f2d), whose words are <c>AgentsTextTests</c>'. Its seven rules, case for case:</para>
+/// <para>The file's one writer is <c>daoris agent settings</c>, whose words are <c>AgentsTextTests</c>'.
+/// Its seven rules, case for case:</para>
 /// <list type="number">
 /// <item>The file is the tool's own <c>settings.json</c>, in the account's configuration home.</item>
 /// <item>No file is the tool's defaults: nothing set, and reading creates nothing.</item>
 /// <item>A file that is not a JSON object is a sentence to a read and a refusal to a write, which leaves
-/// it exactly as it was.</item>
+/// it unchanged.</item>
 /// <item>A write changes only what it names; every other key keeps its place and its value.</item>
 /// <item>An effort is low, medium, high or xhigh — <c>max</c> is refused, since the tool keeps it for
 /// one session only; a model is one word, and the tool's own aliases are offered first.</item>
 /// <item>Clearing removes the key; an entry per model left empty goes, and so does an empty
 /// <c>modelSettings</c>.</item>
-/// <item>A new file holds exactly what was written, in the tool's formatting: two-space indent, LF, and
+/// <item>A new file holds exactly what is written, in the tool's formatting: two-space indent, LF, and
 /// a final newline.</item>
 /// </list>
 /// <para>Every case runs in a temporary directory. No account's real file is read or written.</para>
@@ -64,7 +64,7 @@ public sealed class AgentSettingsTests : IDisposable
             .Order(StringComparer.Ordinal)
             .ToArray();
 
-        // The ACP door runs as Claude Code's accounts (AGT7), so its settings are its owner's file.
+        // The ACP door runs as Claude Code's accounts, so its settings are its owner's file.
         Assert.Equal(["claude-code"], declaring);
         Assert.Equal(AgentSettings.FileName, adapters.AgentNamed("claude-code")!.Accounts.SettingsFile);
     }

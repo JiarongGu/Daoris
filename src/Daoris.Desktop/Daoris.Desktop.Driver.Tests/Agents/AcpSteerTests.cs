@@ -6,10 +6,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STEER1 (D136): what the person tells a driven session reaches it at its next step where the agent says it takes a
+/// What the person tells a driven session reaches it at its next step where the agent says it takes a
 /// prompt during a turn, and at the turn's end where it does not — and the record says when the session took the words,
-/// in the order the wire said it. Against a fake agent over in-memory streams, shaped on what
-/// <c>claude-agent-acp</c> 0.84.0 did in the one measured session (docs/2026-10-03-steer-evidence.md §6): the earlier
+/// in the order the wire says it. Against a fake agent over in-memory streams, shaped on what
+/// <c>claude-agent-acp</c> 0.84.0 did in a measured session: the earlier
 /// prompt is answered <c>end_turn</c> the moment the words are taken, and the later one at the real end. No process and no
 /// model, so the fast half.
 /// </summary>
@@ -90,14 +90,14 @@ public sealed class AcpSteerTests
         """{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":"""
         + JsonSerializer.Serialize(text) + "}}}}";
 
-    /// <summary>What <c>claude-agent-acp</c> 0.84.0 answers at <c>initialize</c> about prompts during a turn (evidence §1).</summary>
+    /// <summary>What <c>claude-agent-acp</c> 0.84.0 answers at <c>initialize</c> about prompts during a turn.</summary>
     private const string Queues = """{"protocolVersion":1,"agentCapabilities":{"_meta":{"claudeCode":{"promptQueueing":true}}}}""";
 
     private const string Silent = """{"protocolVersion":1,"agentCapabilities":{}}""";
 
     /// <summary>
-    /// What <c>claude-agent-acp</c> 0.84.0 answers at <c>initialize</c> where it also offers the steering extension (evidence §2,
-    /// <c>acp-agent.js:1291-1307</c>): the top-level <c>_meta.steering.supported</c>.
+    /// What <c>claude-agent-acp</c> 0.84.0 answers at <c>initialize</c> where it also offers the steering extension
+    /// (<c>acp-agent.js:1291-1307</c>): the top-level <c>_meta.steering.supported</c>.
     /// </summary>
     private const string Steers =
         """{"protocolVersion":1,"_meta":{"steering":{"supported":true}},"agentCapabilities":{"_meta":{"claudeCode":{"promptQueueing":true}}}}""";
@@ -111,8 +111,8 @@ public sealed class AcpSteerTests
             @params = new { sessionId = "s-1", update = new { sessionUpdate = kind, toolCallId = id, title = "Read", kind = "read", status } },
         });
 
-    /// <summary>The run's record and what it was told, in one order: the events, each word said and each word taken.</summary>
-    /// <param name="receipts">Whether the receipts the record keeps under a word's id are among the lines (COWORK1c).</param>
+    /// <summary>The run's record and what it is told, in one order: the events, each word said and each word taken.</summary>
+    /// <param name="receipts">Whether the receipts the record keeps under a word's id are among the lines.</param>
     private sealed class Record(bool receipts = false)
     {
         private readonly List<string> _lines = [];
@@ -124,7 +124,7 @@ public sealed class AcpSteerTests
 
         private readonly List<SessionEvent> _notes = [];
 
-        /// <summary>Every note event, whole: its parts are what CONVNOTE2d1 holds.</summary>
+        /// <summary>Every note event, whole: its parts are what the tests hold.</summary>
         public IReadOnlyList<SessionEvent> Notes
         {
             get { lock (_lines) return [.. _notes]; }
@@ -158,7 +158,7 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
-    /// 🔴 The measured shape (evidence §6, turn A): an agent that says it takes prompts mid-turn is sent the person's words
+    /// 🔴 The measured shape: an agent that says it takes prompts mid-turn is sent the person's words
     /// the moment they are said, while its first prompt is still open. The first is answered when the words are taken, and
     /// the run goes on until the words' own prompt is answered — never closed while one is open — and the record reads: the
     /// words said, the turn the wire ended there, the words taken, and what the agent did after.
@@ -225,9 +225,9 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
-    /// 🔴 COWORK1c (the message-urgency design §6, §7, trap 8): a word kept on the record and held for the turn's end is marked
+    /// 🔴 A word kept on the record and held for the turn's end is marked
     /// attempted before its prompt is written, never after; once written it is <c>sent</c> and leaves the record; it is taken at the
-    /// first thing the agent does for it, never before the wire; and its turn ending <c>end_turn</c> is its <c>ended</c> (COMMS1h: what
+    /// first thing the agent does for it, never before the wire; and its turn ending <c>end_turn</c> is its <c>ended</c> (what
     /// Daoris saw, never an answer). Each receipt under the word's id, and <c>sent</c> is the write's return, never the prompt's answer.
     /// </summary>
     [Fact]
@@ -290,7 +290,7 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
-    /// A word said while the session was still opening is told the moment the door is known, and sent only once the task
+    /// A word said while the session is still opening is told the moment the door is known, and sent only once the task
     /// is on the wire: it never overtakes the prompt it follows.
     /// </summary>
     [Fact]
@@ -331,7 +331,7 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
-    /// An agent that does not say it takes a prompt during a turn is never sent one (evidence §5: <c>codex-acp</c> resets
+    /// An agent that does not say it takes a prompt during a turn is never sent one (<c>codex-acp</c> resets
     /// its running turn on a second prompt). The words wait for the turn's end, and the record says so when they are said.
     /// </summary>
     [Fact]
@@ -382,9 +382,9 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
-    /// ACCESSSWAP1b (D183's note): a driven session whose setup changed while its turn ran is asked so at that turn's end, before
+    /// A driven session whose setup changed while its turn ran is asked so at that turn's end, before
     /// the word held for it is prompted. Changed, the run ends there: every held word is handed back unprompted, in the order said,
-    /// none said unreached, and the inbox takes no more. Unchanged, the word goes as before. Never asked where nothing is held.
+    /// none said unreached, and the inbox takes no more. Unchanged, the word goes. Never asked where nothing is held.
     /// </summary>
     [Theory]
     [InlineData(true)]
@@ -447,7 +447,7 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
-    /// COWORK1b (the message-urgency design §4.3, trap 17): Daoris's word held for the turn's end is judged again where it is
+    /// Daoris's word held for the turn's end is judged again where it is
     /// delivered, by the key it carries. Its fact still holding, it goes as the next prompt and is told delivered; answered by a
     /// later submission meanwhile, it is dropped with a coded note naming it, never said late, and the run ends.
     /// </summary>
@@ -505,7 +505,7 @@ public sealed class AcpSteerTests
 
     /// <summary>
     /// The agent's own word decides, and only a <c>true</c> it gave: absent, false, a string, or the key elsewhere is an
-    /// agent never sent a prompt during a turn (ACP3's rule for the posture, again: null is never a licence to guess).
+    /// agent never sent a prompt during a turn (as for the posture: null is never a licence to guess).
     /// </summary>
     [Theory]
     [InlineData(Queues, true)]
@@ -524,7 +524,7 @@ public sealed class AcpSteerTests
 
     /// <summary>
     /// Words sent while the turn ran, which the session never took because it ended first, are said in the record — the
-    /// counterpart of what never left the inbox (SESS3) — rather than shown for ever as on their way.
+    /// counterpart of what never left the inbox — rather than shown for ever as on their way.
     /// </summary>
     [Fact]
     public async Task Words_on_their_way_when_the_session_ends_are_said_in_the_record()
@@ -561,7 +561,7 @@ public sealed class AcpSteerTests
         Assert.DoesNotContain(record.Lines, line => line.StartsWith("taken:", StringComparison.Ordinal));
         Assert.Contains(record.Lines, line => line.StartsWith("note:", StringComparison.Ordinal) && line.Contains("1 message(s)"));
 
-        // CONVNOTE2d1: the line is worded by its code, the reason a part of its own, the English unchanged.
+        // The line is worded by its code, the reason a part of its own, the English unchanged.
         var note = Assert.Single(record.Notes, e => e.Text!.Contains("message(s)"));
         Assert.Equal("— 1 message(s) the person sent while it worked never reached it: it ended first.", note.Text);
         var part = Assert.Single(note.Parts!);
@@ -570,7 +570,7 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
-    /// An agent that said it takes prompts mid-turn and then refuses one costs that word, said in the record in the
+    /// An agent that says it takes prompts mid-turn and then refuses one costs that word, said in the record in the
     /// agent's words, never the run: the session's own work goes on to its end.
     /// </summary>
     [Fact]
@@ -607,7 +607,7 @@ public sealed class AcpSteerTests
 
         Assert.Equal("end_turn", outcome.StopReason);
         Assert.Contains(record.Lines, line => line.StartsWith("note:", StringComparison.Ordinal) && line.Contains("Internal error: busy"));
-        // CONVNOTE2d1: Daoris's lead is coded, what the agent said rides as its words.
+        // Daoris's lead is coded, what the agent said rides as its words.
         var note = Assert.Single(record.Notes, e => e.Text!.Contains("would not take"));
         Assert.StartsWith("— the session would not take what the person added: ", note.Text);
         Assert.Equal(["words.refused", null], NoteAssert.Codes(note.Parts));
@@ -618,9 +618,9 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
-    /// 🔴 USERSHOWN1: a word sent mid-turn waits behind the prompt before it, and that prompt's answer hands the turn to it. An
-    /// answer that is an error hands nothing on: the door failed and the agent never read the word, which the install's record
-    /// kept as taken at the instant its connection dropped (2026-10-14). The run hands it back as never reached, for the driver
+    /// 🔴 A word sent mid-turn waits behind the prompt before it, and that prompt's answer hands the turn to it. An
+    /// answer that is an error hands nothing on: the door failed and the agent never read the word, which must not be
+    /// kept as taken at the instant the connection drops. The run hands it back as never reached, for the driver
     /// to keep waiting.
     /// </summary>
     [Fact]
@@ -662,7 +662,7 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
-    /// USERSHOWN1, a conversation's door, which goes on after a turn's error: the word behind the failed turn is taken by the
+    /// A conversation's door, which goes on after a turn's error: the word behind the failed turn is taken by the
     /// first thing the agent does for it, and said before that thing, so the answer never sits above the question.
     /// </summary>
     [Fact]
@@ -708,9 +708,9 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
-    /// FOUNDATION1 row p (the design §3.4 rule 5): a word said during a turn is written only once its record names it marked attempted. Where
-    /// the record names none (the commit failed, or its answer was lost), nothing is written for it: it is thrown <see cref="AcpWordsUnmarked"/>
-    /// before the wire and waits on its record, and the turn's own prompt is the only one the agent heard. Named, it is written as ever.
+    /// A word said during a turn is written only once its record names it marked attempted. Where
+    /// the record names none (the commit failed, or its answer is lost), nothing is written for it: it is thrown <see cref="AcpWordsUnmarked"/>
+    /// before the wire and waits on its record, and the turn's own prompt is the only one the agent heard. Named, it is written.
     /// </summary>
     [Fact]
     public async Task A_word_said_during_a_turn_is_written_only_once_the_record_names_it_marked()
@@ -750,7 +750,7 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
-    /// 🔴 A conversation on the next-step door (MSG1c, D137 §2.1): the session says so once it opens, and the person's word
+    /// 🔴 A conversation on the next-step door: the session says so once it opens, and the person's word
     /// said while a turn runs goes at once as a prompt of the same session. It is taken when the agent hands the turn before
     /// it off, and the record reads as the driven door's does: the turn the wire ended there, the words taken, the work after.
     /// </summary>
@@ -804,7 +804,7 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
-    /// 🔴 A conversation whose agent did not say it takes prompts during a turn is never sent one (evidence §5): the session
+    /// 🔴 A conversation whose agent does not say it takes prompts during a turn is never sent one: the session
     /// says so, and a word handed to it anyway is refused before anything reaches the wire.
     /// </summary>
     [Fact]
@@ -827,9 +827,9 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
-    /// STEER2a: *Send now* steers only where the agent said both that it takes words during a turn (the next-step door) and that
+    /// *Send now* steers only where the agent says both that it takes words during a turn (the next-step door) and that
     /// it offers the steering extension, each by its own <c>true</c>. Codex offers the extension without the first, and stays a
-    /// turn-end door until STEER3 measures its <c>turn/steer</c>.
+    /// turn-end door.
     /// </summary>
     [Theory]
     [InlineData(Steers, true)]
@@ -845,7 +845,7 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
-    /// 🔴 STEER2a, the measured shape (evidence §6, turn B): *Send now* while the task's first call is announced sends the words
+    /// 🔴 The measured shape: *Send now* while the task's first call is announced sends the words
     /// by <c>_session/steering</c>, in the adapter's own parameters, asking it never to start a turn of its own. Answered
     /// <c>injected</c>, they are taken there and the running turn goes on as their answer; the call the steer cut never hears
     /// again, and the record closes it as cut when the turn ends, before the turn's end, never leaving it running.
@@ -864,7 +864,7 @@ public sealed class AcpSteerTests
                 case "session/new":
                     return Ok(frame, """{"sessionId":"s-1"}""");
                 case "session/prompt":
-                    // The task's first call, its input not yet streamed (turn B at 34,668 ms).
+                    // The task's first call, its input not yet streamed.
                     self.Push(Call("tool_call", "read-1", "pending"));
                     first.SetResult(frame.GetProperty("id").GetInt32());
                     return null;
@@ -914,7 +914,7 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
-    /// 🔴 STEER2a (the owner's case): a word queued at the next step is on its way when the person, finding it urgent, presses
+    /// 🔴 A word queued at the next step is on its way when the person, finding it urgent, presses
     /// *Send now* with new words. Those are steered past it, the person's choice to go first; nothing is stopped, the queued
     /// word is still taken at its next step, and the record reads in the wire's order.
     /// </summary>
@@ -981,7 +981,7 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
-    /// 🔴 STEER2a (a second maker's review): a call that finished stays finished through an update that says no status, so a
+    /// 🔴 A call that finished stays finished through an update that says no status, so a
     /// later steer never closes it as cut.
     /// </summary>
     [Fact]
@@ -1025,7 +1025,7 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
-    /// STEER2a (D136 point 6): a steer the agent refuses, or answers with anything but <c>injected</c>, costs those words, said
+    /// A steer the agent refuses, or answers with anything but <c>injected</c>, costs those words, said
     /// in the record by its code and the words' id, so the page settles them; the run's own work goes on to its end.
     /// </summary>
     [Theory]
@@ -1072,8 +1072,8 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
-    /// STEER2d: a steer answered <c>promptRequired</c> (the turn ended between the press and the steer) is not lost: the adapter
-    /// left the words to the client, so they are handed back to the held queue and prompted next. They are said once and taken
+    /// A steer answered <c>promptRequired</c> (the turn ended between the press and the steer) is not lost: the adapter
+    /// leaves the words to the client, so they are handed back to the held queue and prompted next. They are said once and taken
     /// once, where they are finally taken, and no <c>words.not-reached</c> note is written.
     /// </summary>
     [Fact]
@@ -1127,7 +1127,7 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
-    /// STEER2a: a conversation's *Send now* is the same steer, taken through <see cref="AcpSession.OnTaken"/> where the agent
+    /// A conversation's *Send now* is the same steer, taken through <see cref="AcpSession.OnTaken"/> where the agent
     /// answered <c>injected</c>, before anything after the answer is read; an agent that never said it steers is sent nothing.
     /// </summary>
     [Fact]

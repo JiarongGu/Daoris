@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The agent card's doors (AGENTPROVIDER1 row s-ix o1 to o3): the page's next start speaks for the account's own door, and says one
+/// The agent card's doors: the page's next start speaks for the account's own door, and says one
 /// line for each other door onto the agent's accounts whose answer to *does a start run in its own home* differs, so it never says of
-/// a door what is another's. The walk's own question, a door's own toolchain, is unchanged (<c>provider-owner.json</c>'s
+/// a door what is another's. The walk's own question, a door's own toolchain, is separate (<c>provider-owner.json</c>'s
 /// <c>disagrees</c> cells name these doors).
 /// </summary>
 public sealed class AgentCardDoorsTests : IDisposable

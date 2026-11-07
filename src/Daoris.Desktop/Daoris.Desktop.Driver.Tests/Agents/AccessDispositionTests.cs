@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTLYNTAI1b-i, first (the agent-lyntai design §5.3, round 3 and round 4): an access failure carries how it was read as a typed
+/// An access failure carries its reading as a typed
 /// disposition, set by <see cref="AgentErrors.Read"/> from the entry that matched, so a refused resume's open reads it in place of
 /// <see cref="AgentError.By"/>'s suffix. The three values are today's three: a refused credential, a sign-in's words, and a code the door
 /// declares. Every other kind carries none.

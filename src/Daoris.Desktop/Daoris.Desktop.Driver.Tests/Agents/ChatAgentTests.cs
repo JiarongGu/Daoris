@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ONEWAY1h-iii (AGENTPROVIDER1m-i part 4): a conversation's agent reads its door as the adapter beneath it says it, prepares its process
+/// A conversation's agent reads its door as the adapter beneath it says it, prepares its process
 /// as that door makes it and equipped as every session's is, and makes the one run over its door, which a conversation goes on beside
 /// through a start of its own.
 /// </summary>
@@ -54,7 +54,7 @@ public sealed class ChatAgentTests : IDisposable
         Assert.Equal(TurnBinding.Of(ProviderRegistry.Built(), adapter, "account-1"), agent.Binding(ProviderRegistry.Built(), "account-1"));
     }
 
-    /// <summary>The conversation's process is its door's own, then equipped by the one call every session's is (D230 point 3).</summary>
+    /// <summary>The conversation's process is its door's own, then equipped by the one call every session's is.</summary>
     [Fact]
     public void Its_process_is_its_doors_own_equipped_as_every_sessions_is()
     {

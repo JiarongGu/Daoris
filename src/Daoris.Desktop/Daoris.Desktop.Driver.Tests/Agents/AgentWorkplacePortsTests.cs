@@ -56,7 +56,7 @@ public sealed class AgentWorkplacePortsTests : IDisposable
         Assert.Equal(expected.OrderBy(pair => pair.Key), actual.OrderBy(pair => pair.Key));
         Assert.Equal("user.name", actual["GIT_CONFIG_KEY_0"]);
         Assert.Equal("core.longpaths", actual["GIT_CONFIG_KEY_1"]);
-        // What it sets is Daoris's own, as names and as the numbered family; what it only clears is not (the design §4.6).
+        // What it sets is Daoris's own, as names and as the numbered family; what it only clears is not.
         Assert.All(actual.Keys.Where(key => key != "GH_TOKEN"), key => Assert.True(Spawning.Daoris(key), key));
         Assert.All(GitWiring.SessionTokens, token => Assert.False(Spawning.Daoris(token), token));
     }
@@ -103,7 +103,7 @@ public sealed class AgentWorkplacePortsTests : IDisposable
             Assert.Throws<InvalidOperationException>(() => Shell.Start(stand, SpawnRequests.Of(Target(), null)));
             Assert.Throws<InvalidOperationException>(() => TargetPrompt.Compose(Target()));
             AgentWorkplace.Current = actual;
-            // D212's bound: an unset session git throws before any spawn completes or any registration check passes a git name.
+            // The bound: an unset session git throws before any spawn completes or any registration check passes a git name.
             SessionGit.Current = null!;
             Assert.Throws<InvalidOperationException>(() => Shell.Start(stand, SpawnRequests.Of(Target(), null)));
             Assert.Throws<InvalidOperationException>(() => Spawning.Daoris("GIT_CONFIG_COUNT"));

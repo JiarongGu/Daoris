@@ -6,10 +6,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTERRORS1a (D210, the agent-errors design §5.1): a transient failure tried again inside <see cref="AcpSession.RunAsync"/>, on the
+/// A transient failure tried again inside <see cref="AcpSession.RunAsync"/>, on the
 /// same session, after 1, 2, 4, 8 and 16 minutes on a clock the test moves (<c>.claude/knowledge/held-clocks.md</c>), each try one prompt
 /// of the person's held words and then Daoris's go-on, never a word on the wire again. Against a fake agent over in-memory streams that
-/// answers its prompts with <c>claude-agent-acp</c>'s 529 frame, source-derived (§3.3, <c>acp-agent.js:4178-4180</c>): no process and no
+/// answers its prompts with <c>claude-agent-acp</c>'s 529 frame, source-derived (<c>acp-agent.js:4178-4180</c>): no process and no
 /// model, so the fast half.
 /// </summary>
 public sealed class AcpTransientTests
@@ -106,7 +106,7 @@ public sealed class AcpTransientTests
 
     private const string Silent = """{"protocolVersion":1,"agentCapabilities":{}}""";
 
-    /// <summary>What <c>claude-agent-acp</c> 0.84.0 answers at <c>initialize</c> about prompts during a turn (STEER1's evidence §1).</summary>
+    /// <summary>What <c>claude-agent-acp</c> 0.84.0 answers at <c>initialize</c> about prompts during a turn.</summary>
     private const string Queues = """{"protocolVersion":1,"agentCapabilities":{"_meta":{"claudeCode":{"promptQueueing":true}}}}""";
 
     /// <summary>The agent: it opens <c>s-1</c>, and answers its n-th prompt by <paramref name="prompt"/>, counted from one.</summary>
@@ -129,7 +129,7 @@ public sealed class AcpTransientTests
         });
     }
 
-    /// <summary>What the retry told, in order: the line once, each try with its next, each wait's start and end.</summary>
+    /// <summary>What the retry tells, in order: the line once, each try with its next, each wait's start and end.</summary>
     internal sealed class Told
     {
         private readonly List<string> _lines = [];
@@ -177,7 +177,7 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
-    /// 🔴 Shape 1 (the design §0): the prompt fails with the 529 twice, then the agent works. The run tries again in the SAME session,
+    /// 🔴 The prompt fails with the 529 twice, then the agent works. The run tries again in the SAME session,
     /// after 1 and then 2 minutes on the held clock, each try the go-on alone, and ends as its work does; the line said once.
     /// </summary>
     [Fact]
@@ -202,7 +202,7 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1f-iv part b (the foundation design §19.4, O8-F7): a driven carry-on's moved words are <c>sent</c> where the first prompt's
+    /// 🔴 A driven carry-on's moved words are <c>sent</c> where the first prompt's
     /// write returns and, where a transient failure opens an episode, where each try's write returns: the run tells its caller at the first
     /// prompt and again at each try, which the caller reads once.
     /// </summary>
@@ -223,9 +223,9 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
-    /// 🔴 RUNENDS1, second read (finding 6): the owner's check observes its caller's cut, and its cancellation is the caller's own: a check
+    /// 🔴 The owner's check observes its caller's cut, and its cancellation is the caller's own: a check
     /// that cancels on a token of its own, linked to the cut, never surfaces that token, so the end the cut serves swallows only its own
-    /// cancellation and lets every other through. A check cancelled on its own while nothing cut it is unread, and a yes, as before.
+    /// cancellation and lets every other through. A check cancelled on its own while nothing cut it is unread, and a yes.
     /// </summary>
     [Fact]
     public async Task The_owner_checks_cancellation_is_its_callers_own_and_its_own_is_an_unread_yes()
@@ -255,7 +255,7 @@ public sealed class AcpTransientTests
         Assert.True(await own.WantedAsync(CancellationToken.None));
     }
 
-    /// <summary>A run handed no retry keeps today's end: the refusal ends it (§5.1, round 3, R2-O6).</summary>
+    /// <summary>A run handed no retry keeps the plain end: the refusal ends it.</summary>
     [Fact]
     public async Task A_run_handed_no_retry_keeps_today_s_end()
     {
@@ -318,7 +318,7 @@ public sealed class AcpTransientTests
         Assert.Equal((1, TimeSpan.Zero), (retry.Episode!.Tries, retry.Episode.Waited));
     }
 
-    /// <summary>The owner's check (§5.5): a quest done before the try sends no try, and the run closes as at a turn's end.</summary>
+    /// <summary>The owner's check: a quest done before the try sends no try, and the run closes as at a turn's end.</summary>
     [Fact]
     public async Task No_try_goes_where_the_owner_s_check_says_no_more_turn_is_wanted()
     {
@@ -337,7 +337,7 @@ public sealed class AcpTransientTests
         Assert.Equal(0, retry.Episode!.Tries);
     }
 
-    /// <summary>An unreadable check answers yes (§5.1, round 3, R2-O6): a try costs a turn, and an unread look must not end the episode.</summary>
+    /// <summary>An unreadable check answers yes: a try costs a turn, and an unread look must not end the episode.</summary>
     [Fact]
     public async Task An_unreadable_check_answers_yes()
     {
@@ -354,7 +354,7 @@ public sealed class AcpTransientTests
         Assert.Equal(2, agent.Prompts.Count);
     }
 
-    /// <summary>A limit on a try leaves the episode as a limit, once (§5.1, §6.1): its refusal ends the run, the reading kept for the conclusion.</summary>
+    /// <summary>A limit on a try leaves the episode as a limit, once: its refusal ends the run, the reading kept for the conclusion.</summary>
     [Fact]
     public async Task A_limit_on_a_try_leaves_the_episode_as_a_limit()
     {
@@ -389,7 +389,7 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
-    /// 🔴 The wake gate (§5.1, round 3's read, R3-O1): a turn its harness wakes during a wait ends the wait, never the episode. Nothing is
+    /// 🔴 The wake gate: a turn its harness wakes during a wait ends the wait, never the episode. Nothing is
     /// prompted into it, and the go-on goes once, after it has ended.
     /// </summary>
     [Fact]
@@ -418,7 +418,7 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
-    /// 🔴 Nonacceptance (§5.1, round 3's read, R3-O2): a held word whose prompt meets the error before any update of its turn may or may
+    /// 🔴 Nonacceptance: a held word whose prompt meets the error before any update of its turn may or may
     /// not be in the agent's conversation. It is never sent again, and the <c>lost</c> note is said once under its id.
     /// </summary>
     [Fact]
@@ -461,7 +461,7 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
-    /// 🔴 A settling turn (§5.1, round 3's read, R3-O1): a word sent behind the failed turn runs its own turn, which answers. That ends the
+    /// 🔴 A settling turn: a word sent behind the failed turn runs its own turn, which answers. That ends the
     /// wait, never the episode, since it shows only that the agent answered that word: the go-on goes at once, with no wait, as a try.
     /// </summary>
     [Fact]
@@ -513,7 +513,7 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
-    /// The agent of shape 2 (the design §0): it queues prompts during a turn, holds its first prompt open, and answers the second by
+    /// The agent that queues prompts: it queues prompts during a turn, holds its first prompt open, and answers the second by
     /// <paramref name="second"/>, handed the first prompt's frame; a third or later prompt answers <c>end_turn</c>.
     /// </summary>
     private static Agent Queued(Action<JsonElement, JsonElement, Agent> second, List<int>? prompts = null)
@@ -550,10 +550,10 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
-    /// 🔴 AGENTERRORS1a2, shape 2 taken (the design §0, §4.2): a word the person said during the turn is taken when the prompt before it
+    /// 🔴 A word the person said during the turn is taken when the prompt before it
     /// answers <c>end_turn</c>; the provider's error streams in its turn and then refuses its prompt with the 529. That is the turn's prompt
     /// failing: tried again in the same session after a minute with the go-on, never left clean to park on the person, the word received
-    /// once and never sent again. Red before shape 2: the refusal was the word's note, and the run closed clean with two prompts.
+    /// once and never sent again. The refusal is not the word's note, and the run does not close clean with two prompts.
     /// </summary>
     [Fact]
     public async Task A_mid_turn_word_refused_after_it_was_taken_is_the_turn_s_prompt_failing_and_is_tried_again()
@@ -589,8 +589,8 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
-    /// AGENTERRORS1a2, shape 2 untaken (§4.2): a word refused while the turn before it still runs was never taken, so its refusal is that
-    /// word's, today's note under its id, and the running turn then ends well: no episode, the turn clean. Held both ways with the case above.
+    /// A word refused while the turn before it still runs is never taken, so its refusal is that
+    /// word's, the plain note under its id, and the running turn then ends well: no episode, the turn clean. Held both ways with the case above.
     /// </summary>
     [Fact]
     public async Task A_mid_turn_word_refused_before_it_was_taken_is_its_own_note_and_the_running_turn_ends_well()
@@ -618,7 +618,7 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
-    /// AGENTERRORS1a2 (§4.2, round 2, C3): attribution is by the word's taken mark as its error came, never by a later update. An update
+    /// Attribution is by the word's taken mark as its error came, never by a later update. An update
     /// the agent streams after the refusal of an untaken word changes nothing: still that word's note, no episode.
     /// </summary>
     [Fact]
@@ -644,7 +644,7 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
-    /// AGENTERRORS1a2 (§4.2): a steer the agent refuses with the 529 stays that word's note under a retry too. The steering lane answers
+    /// A steer the agent refuses with the 529 stays that word's note under a retry too. The steering lane answers
     /// <c>injected</c> at once and never carries the provider's error, so its refusal is never the turn's (<c>SteeredAsync</c>).
     /// </summary>
     [Fact]
@@ -685,7 +685,7 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
-    /// The agent of the open (§5.6): it refuses its opening operation, <paramref name="method"/>, by <paramref name="open"/> (the n-th
+    /// The agent of the open: it refuses its opening operation, <paramref name="method"/>, by <paramref name="open"/> (the n-th
     /// attempt counted from one, null to answer it), and answers every prompt <c>end_turn</c>.
     /// </summary>
     private static Agent Opening(string method, Func<int, JsonElement, string?> open)
@@ -707,9 +707,9 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
-    /// 🔴 AGENTERRORS1a2, the open (§5.6): <c>session/new</c> refused with the 529 twice, then answered. The SAME raw operation is repeated
-    /// on the schedule, never the handshake, and then the run's own first prompt goes once, with no go-on, since nothing was asked. Red
-    /// before the open's phase: the refusal ended the run.
+    /// 🔴 The open: <c>session/new</c> refused with the 529 twice, then answered. The SAME raw operation is repeated
+    /// on the schedule, never the handshake, and then the run's own first prompt goes once, with no go-on, since nothing is asked. The
+    /// refusal does not end the run.
     /// </summary>
     [Fact]
     public async Task A_transient_session_new_failure_repeats_the_raw_open_then_sends_the_original_prompt_once()
@@ -731,7 +731,7 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
-    /// 🔴 AGENTERRORS1a2, the open after a session id exists (§5.6): <c>session/resume</c> of the record's conversation refused with the 529
+    /// 🔴 The open after a session id exists: <c>session/resume</c> of the record's conversation refused with the 529
     /// twice, then answered; the resume's words then go once, in their one prompt, with no go-on.
     /// </summary>
     [Fact]
@@ -754,8 +754,8 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
-    /// 🔴 AGENTERRORS1a2: an open refused transient every try ends past the bound after five tries and 31 minutes of waits, with NOTHING
-    /// prompted (§5.1's nothing prompted end).
+    /// 🔴 An open refused transient every try ends past the bound after five tries and 31 minutes of waits, with NOTHING
+    /// prompted.
     /// </summary>
     [Fact]
     public async Task An_open_refused_every_try_ends_past_the_bound_with_nothing_prompted()
@@ -776,8 +776,8 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
-    /// AGENTERRORS1a2 (§5.6): the codes read before the open's transient reading pass through at once: a conversation the agent no longer
-    /// has (<c>resource_not_found</c>) is today's refused resume, with no wait, whatever its words.
+    /// The codes read before the open's transient reading pass through at once: a conversation the agent no longer
+    /// has (<c>resource_not_found</c>) is a refused resume, with no wait, whatever its words.
     /// </summary>
     [Fact]
     public async Task A_resume_refused_resource_not_found_is_today_s_refusal_with_no_wait()
@@ -795,7 +795,7 @@ public sealed class AcpTransientTests
         Assert.False(retry.Opened);
     }
 
-    /// <summary>The person's stop or Daoris's shutdown during a wait ends the run as that stop does today: the wait is cancelled with it.</summary>
+    /// <summary>The person's stop or Daoris's shutdown during a wait ends the run as that stop does: the wait is cancelled with it.</summary>
     [Fact]
     public async Task A_shutdown_during_a_wait_cancels_it_with_the_run()
     {
@@ -813,15 +813,15 @@ public sealed class AcpTransientTests
         Assert.False(session.WaitsOnTransient);
     }
 
-    // ——— Codex's owed read of D210's accepted text (docs/2026-10-24-agent-errors-reads.md, the section Codex, the accepted text).
+    // ——— Further cases of the retry episode.
 
     /// <summary>The prompts whose first block is Daoris's go-on: the tries.</summary>
     private static int Tries(Agent agent) => agent.Prompts.Count(blocks => blocks.Length > 0 && blocks[^1] == TransientRetry.GoOnText(Overloaded));
 
     /// <summary>
-    /// 🔴 Finding 1: a try answered only because a queued word took its turn over is no recovery. Every try is handed to a word the
+    /// 🔴 A try answered only because a queued word took its turn over is no recovery. Every try is handed to a word the
     /// person says mid-turn, whose own prompt then meets the 529: the episode and its count are kept through each hand-over, so the run
-    /// reaches ONE exhaustion after five tries. Red before: each hand-over's failure opened a fresh episode, and the run never ended.
+    /// reaches ONE exhaustion after five tries. A fresh episode per hand-over would never end the run.
     /// </summary>
     [Fact]
     public async Task A_try_handed_to_a_queued_word_that_fails_keeps_the_episode_to_one_exhaustion()
@@ -880,9 +880,9 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
-    /// 🔴 Finding 2, the words already on the wire: six words queued behind the turn the provider fails, each of whose own turns fails
+    /// 🔴 The words already on the wire: six words queued behind the turn the provider fails, each of whose own turns fails
     /// too. They consume what is left of the five tries and nothing past it: the run ends exhausted with five counted, the sixth settled
-    /// past the bound, and no go-on is sent. Red before: six tries counted, past the bound.
+    /// past the bound, and no go-on is sent; six tries counted would be past the bound.
     /// </summary>
     [Fact]
     public async Task More_than_five_words_already_on_the_wire_settle_within_the_bound_and_authorize_no_try_past_it()
@@ -927,9 +927,9 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
-    /// 🔴 Finding 2, a word said while the wire settles: dispatch is held from the episode's first failure, so it never goes alone
-    /// behind the settling turn as a turn of its own, and goes first in the next try's one prompt with the go-on. Red before: it went
-    /// at once, a fourth prompt the settling had to admit.
+    /// 🔴 A word said while the wire settles: dispatch is held from the episode's first failure, so it never goes alone
+    /// behind the settling turn as a turn of its own, and goes first in the next try's one prompt with the go-on, never at
+    /// once as a fourth prompt the settling would have to admit.
     /// </summary>
     [Fact]
     public async Task A_word_said_while_the_wire_settles_is_held_for_the_next_try()
@@ -988,9 +988,9 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
-    /// 🔴 Finding 3: a word written to the wire after the episode opened, whose stream is then lost before any answer, is uncertain:
+    /// 🔴 A word written to the wire after the episode opened, whose stream is then lost before any answer, is uncertain:
     /// said by the <c>lost</c> note under its id and never handed back as <see cref="AcpSession.Unreached"/>, which the driver keeps to go
-    /// again. Red before: the lost stream left it untaken, and it was kept for retransmission.
+    /// again, never kept for retransmission.
     /// </summary>
     [Fact]
     public async Task A_word_written_before_the_stream_is_lost_is_uncertain_and_never_unreached()
@@ -1044,10 +1044,10 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
-    /// 🔴 Finding 4: a kept word a try would carry goes to the wire only once its record acknowledged its attempt. Where the record
+    /// 🔴 A kept word a try would carry goes to the wire only once its record acknowledges its attempt. Where the record
     /// would not mark it (and would not take it off either), the try does not write it: it waits on its record, unmarked, for the next
     /// run, so a shell that came up after this one sends it once, never twice. Daoris's go-on, unmarked, goes as the try's plain block,
-    /// its kept copy settled without the wire. Red before: the unmarked word was written, and a restart would have sent it again.
+    /// its kept copy settled without the wire.
     /// </summary>
     [Fact]
     public async Task A_kept_word_whose_attempt_the_record_did_not_mark_is_never_written_by_a_try()
@@ -1085,9 +1085,8 @@ public sealed class AcpTransientTests
     }
 
     /// <summary>
-    /// 🔴 Finding 7: a turn its harness wakes while the owner's check is awaited is read again at the try's admission. No prompt enters
-    /// that turn, and the go-on follows once it has ended. Red before: the wake was read once, before the check, and the try went into
-    /// the woken turn.
+    /// 🔴 A turn its harness wakes while the owner's check is awaited is read again at the try's admission. No prompt enters
+    /// that turn, and the go-on follows once it has ended; the try never goes into the woken turn.
     /// </summary>
     [Fact]
     public async Task A_turn_woken_during_the_owner_s_check_holds_the_try_until_it_ends()

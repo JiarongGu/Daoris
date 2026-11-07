@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTERRORS1a (D210, the agent-errors design §3.2, §4.1, §4.4): the one reader of an agent's failure, its order and its tables held
+/// The one reader of an agent's failure, its order and its tables held
 /// both ways, read through the real adapter set, so <c>claude-code-acp</c> reads its owner's provider entries after its own and its own
-/// <c>-32000</c> declaration is never another door's. A fixture read from an adapter's source is marked source-derived (§3.3).
+/// <c>-32000</c> declaration is never another door's. A fixture read from an adapter's source is marked source-derived.
 /// </summary>
 public sealed class AgentErrorsTests
 {
@@ -23,7 +23,7 @@ public sealed class AgentErrorsTests
             adapters, adapters.Door(adapter), new DoorFailure("protocol", code, kind, status, words, DoorWhere.Prompt), Seen, TimeZoneInfo.Utc);
     }
 
-    /// <summary>Shape 1's frame, source-derived (the design §0, §4.4): <c>-32603</c> with <c>data.errorKind: "overloaded"</c>.</summary>
+    /// <summary>The overloaded frame, source-derived: <c>-32603</c> with <c>data.errorKind: "overloaded"</c>.</summary>
     [Fact]
     public void The_install_s_529_with_its_kind_reads_transient_on_claude_code_acp_from_its_owner_s_table()
     {
@@ -46,7 +46,7 @@ public sealed class AgentErrorsTests
         Assert.Equal(AgentErrorKind.Fatal, Read("claude-code-acp", -32603, "invalid_request", "Internal error: API Error: 400 bad request").Kind);
     }
 
-    /// <summary>§4.4's sentences, each read as its kind by its own words with no code, and the near ones that must not read transient.</summary>
+    /// <summary>The sentences, each read as its kind by its own words with no code, and the near ones that must not read transient.</summary>
     [Fact]
     public void Each_recorded_sentence_reads_as_its_kind_and_each_near_one_does_not_read_transient()
     {
@@ -64,7 +64,7 @@ public sealed class AgentErrorsTests
         static (AgentErrorKind, string) Kind(AgentError read) => (read.Kind, read.By);
     }
 
-    /// <summary>Every transient pattern stands on a recorded sentence, and every recorded sentence of the table is read by one (§3.3).</summary>
+    /// <summary>Every transient pattern stands on a recorded sentence, and every recorded sentence of the table is read by one.</summary>
     [Fact]
     public void Every_transient_pattern_has_a_recorded_sentence_and_every_recorded_sentence_a_pattern()
     {
@@ -77,7 +77,7 @@ public sealed class AgentErrorsTests
         Assert.All(ClaudeAcpErrors.Words.Recorded, recorded => Assert.True(recorded.SourceDerived));
     }
 
-    /// <summary>§3.2's step 1: a limit's sentence under <c>rate_limit</c> is limited by its words; <c>rate_limit</c> with none, an hour.</summary>
+    /// <summary>A limit's sentence under <c>rate_limit</c> is limited by its words; <c>rate_limit</c> with none, an hour.</summary>
     [Fact]
     public void A_limit_is_read_first_by_its_sentence_then_by_its_code_with_the_unstated_reset_and_never_transient()
     {
@@ -88,13 +88,13 @@ public sealed class AgentErrorsTests
         Assert.Equal((AgentErrorKind.Limit, "owner:kind:rate_limit"), (bare.Kind, bare.By));
         Assert.Equal((Seen + AccountLimits.DefaultCoolOff, false), (bare.Limit!.Until, bare.Limit.Stated));
 
-        // A 429 is a limit even beside a transient sentence (§3.1): step 1 reads it first.
+        // A 429 is a limit even beside a transient sentence: the limit is read first.
         var both = Read("claude-code-acp", -32603, null, Overloaded, status: 429);
         Assert.Equal((AgentErrorKind.Limit, "owner:status:429"), (both.Kind, both.By));
     }
 
     /// <summary>
-    /// <c>-32000</c> is access only where the door's own server declares it (§3.1): <c>claude-code-acp</c>'s *Please run /login*, and on
+    /// <c>-32000</c> is access only where the door's own server declares it:<c>claude-code-acp</c>'s *Please run /login*, and on
     /// the stub, which answers every failed turn <c>-32000</c>, an unrelated failure with the same code stays fatal.
     /// </summary>
     [Fact]
@@ -107,13 +107,13 @@ public sealed class AgentErrorsTests
         Assert.Equal(AgentErrorKind.Fatal, Read("acp-stub", -32000, null, "the stub's turn failed").Kind);
         // The stub's sign-in words still read access, by its words and never its code.
         Assert.Equal(AgentErrorKind.Access, Read("acp-stub", -32000, null, "Internal error: Authentication required").Kind);
-        // The stub mirrors the provider's codes alone: a kind reads transient, a sentence with no code keeps today's end.
+        // The stub mirrors the provider's codes alone: a kind reads transient, a sentence with no code keeps the plain end.
         Assert.Equal(AgentErrorKind.Transient, Read("acp-stub", -32603, "overloaded", Overloaded).Kind);
         Assert.Equal(AgentErrorKind.Fatal, Read("acp-stub", -32603, null, "Internal error: API Error: Connection dropped (ECONNRESET)").Kind);
     }
 
     /// <summary>
-    /// The tables compose (§4.1, round 3): own first, then the owner, never "own or owner", and <c>AuthRequiredCode</c> never inherited.
+    /// The tables compose: own first, then the owner, never "own or owner", and <c>AuthRequiredCode</c> never inherited.
     /// A plugin with <c>accountOf: claude-code</c> reads its owner's provider entries, never its <c>-32000</c>; one with no owner reads nothing.
     /// </summary>
     [Fact]
@@ -135,7 +135,7 @@ public sealed class AgentErrorsTests
     }
 
     /// <summary>
-    /// 🔴 CODEXCREDITS1: the workspace-credit refusal the install met, as the door carries it, is a limit with D125's unstated reset, read
+    /// 🔴 The workspace-credit refusal, as the door carries it, is a limit with an unstated reset, read
     /// by Codex's own table: never fatal (a strike) and never transient (a blind retry).
     /// </summary>
     [Fact]
@@ -150,7 +150,7 @@ public sealed class AgentErrorsTests
     }
 
     /// <summary>
-    /// 🔴 CODEXSTATUS1 (§4.3): <c>codex-acp</c>'s typed categories, read by the category alone and never by the words beside it:
+    /// 🔴 <c>codex-acp</c>'s typed categories, read by the category alone and never by the words beside it:
     /// <c>service</c> and <c>connection</c> are transient, <c>limit</c> a limit with the unstated reset, <c>access</c> access, <c>request</c>
     /// and a category nobody recorded fatal.
     /// </summary>
@@ -168,7 +168,7 @@ public sealed class AgentErrorsTests
         Assert.Equal(AgentErrorKind.Fatal, Read("codex-acp", null, null, "Selected model is at capacity. Please try a different model.").Kind);
     }
 
-    /// <summary>The harness's own lines are read for access alone (§3.3): a transient sentence there is no transient.</summary>
+    /// <summary>The harness's own lines are read for access alone: a transient sentence there is no transient.</summary>
     [Fact]
     public void The_harness_s_lines_are_read_for_access_alone()
     {
@@ -179,7 +179,7 @@ public sealed class AgentErrorsTests
         Assert.Equal(AgentErrorKind.Access, AgentErrors.Read(Built, Built.Door("claude-code-acp"), refused, Seen, TimeZoneInfo.Utc).Kind);
     }
 
-    /// <summary>The protocol stub's refused credential reads as access at the open, as a tick's stand-in says it (Codex's finding 6).</summary>
+    /// <summary>The protocol stub's refused credential reads as access at the open, as a tick's stand-in says it.</summary>
     [Fact]
     public void The_stub_s_refused_credential_reads_as_access_at_the_open()
     {
@@ -188,9 +188,9 @@ public sealed class AgentErrorsTests
     }
 
     /// <summary>
-    /// 🔴 Codex's owed read of D210, finding 8: the source is read before any kind. A harness-only line that matches a weekly limit's
+    /// 🔴 The source is read before any kind. A harness-only line that matches a weekly limit's
     /// sentence, or names a limit's code, is no limit, so it neither cools an account nor is tried again; only its credential's refusal
-    /// is read there. Red before the guard moved ahead of the limit's reading: <c>Limit</c>.
+    /// is read there, never <c>Limit</c>.
     /// </summary>
     [Fact]
     public void A_harness_line_never_reads_a_limit_by_its_sentence_or_its_code()

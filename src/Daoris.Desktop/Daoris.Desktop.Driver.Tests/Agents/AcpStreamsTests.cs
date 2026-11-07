@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORKVIEW1a rule 2, AGENTPROVIDER1l: what the protocol door says of each child, as the readings <see cref="AcpStreams"/> writes to the
+/// What the protocol door says of each child, as the readings <see cref="AcpStreams"/> writes to the
 /// sink it is handed. The recording sink here names no lineage type: it is all <see cref="AcpStreams"/> sees.
 /// </summary>
 public sealed class AcpStreamsTests
