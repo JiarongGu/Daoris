@@ -59,12 +59,13 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
             own = await TreeFollows.OwnBranchOfAsync(tree, ct).ConfigureAwait(false);
         }
 
-        var work = new TreeWork(await TreeFollows.UnlandedAsync(tree, judged ?? "HEAD", ct, own).ConfigureAwait(false), uncommitted) { Branch = own };
+        var counted = await TreeFollows.UnlandedAsync(tree, judged ?? "HEAD", ct, own).ConfigureAwait(false);
+        var work = new TreeWork(counted, uncommitted) { Branch = own, Unlanded = counted };
         // PROCESS1b-ii (point 3): a squashing landing's record holds them, as the branch a landing made holds its commits by ancestry.
         if (work.Commits is > 0 && judged is not null
             && await squashes.SquashedHolderAsync(tree, context.OwnerOf(Path.GetFullPath(tree)).Repository, judged, ct).ConfigureAwait(false) is not null)
         {
-            return work with { Commits = 0 };
+            return work with { Commits = 0, Unlanded = 0 };
         }
 
         // SQUASHTIDY1b: a squash merge or a cherry-pick holds commits ancestry cannot see, and landing them again would make a

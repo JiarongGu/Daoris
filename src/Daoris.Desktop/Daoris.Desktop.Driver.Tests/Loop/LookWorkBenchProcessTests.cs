@@ -141,12 +141,12 @@ public sealed class LookWorkBenchProcessTests(ITestOutputHelper output) : IAsync
         Assert.True(wholeMs <= StageBudget.TotalMilliseconds, $"a whole pass took {wholeMs} ms where nothing moved");
         var others = _trees.Select(each => each.Tree).Where(tree => tree != moved).Select(Path.GetFileName).ToList();
         Assert.DoesNotContain(one.Starts, start => others.Any(other => start.EndsWith(other!, StringComparison.Ordinal)));
-        Assert.True(one.Starts.Count <= MovedTreeStarts, one.Report("a whole pass after one tree moved"));
-    }
+        Assert.True(one.Starts.Count <= MovedTreeStarts, one.Report("a whole pass after one tree moved"));    }
 
-    // The moved tree's gates read again for its run's opinion and look, as a landing door reads them, with its repository's origin and
-    // refs: measured at 12, held there.
-    private const int MovedTreeStarts = 12;
+    // The moved tree's gates read again for its run's content, opinion and look, as a landing door reads them. Each fact is read once: its
+    // layout (one rev-parse), its status (the head and the branch it is on), the commits no branch holds (one log), the repository's line
+    // (two starts, origin's HEAD and the ref listing), then the content proof's merge-base, its files changed and the branches by date.
+    private const int MovedTreeStarts = 8;
 
     [Fact]
     public async Task A_staged_edit_is_read_at_the_next_look_and_one_not_staged_once_the_kept_read_is_old()
