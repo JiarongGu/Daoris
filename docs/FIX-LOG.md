@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-07 - Every `dev-line` run sat at `content.holds` after its done, with no reason said (LANDAUTO1)
+
+- **Symptom:** on the owner's install (main's 2925def910), Daoris's run 4f5f19f696a2, Shenora's d009d29af00c (its line not moved) and
+  Lyntai's baa0901d765c (its line moved) each sat at `content` (content.holds) after its quest's done; `tree land --plan` and
+  `workflow run` said only what the kind holds on, and the desktop log no reason. Each went on only when the steward merged it by hand,
+  the merge's record letting the hold go.
+- **Root cause:** the content read (`NodeGates.ContentAsync`) finds a run's tree through its branch unit's executors, and a branch with no
+  landing yet is executed only by the sessions whose records name its tree (OVERVIEWNOISE1b's recorded trees, cb2d8cac46). The node
+  runtime's unit read (`WorkUnits.ReadAsync`) gathered the inventory without those records, so such a branch named no executor, the read
+  found no tree, and the reading said "not read at the bound commit" at every pass. Introduced by a954361769 (LANDNODE1k), whose content
+  read chose the tree by executors the runtime's units never carried; the runtime's gates read (`NodeGates.ReadAsync`, f7e5e1f45b) shares
+  the cause. The landing tests stood the read in with the recorded trees, so none saw it; a moved line, files both sides changed and the
+  main checkout's edit were each read over real git and let the work go.
+- **Fix:** the unit read asks the service first and gathers the branches with the trees its sessions' records name; a hold that keeps its
+  step active keeps its reading's reason on the node's record (`NodeStatus.Holds`), said by the plan, `workflow run` and the run's view.
+- **Verify:** `WorkUnitsTests.A_branch_with_no_landing_is_executed_by_the_session_that_recorded_its_tree` failed first (no executor);
+  `HoldReasonTests` holds the reason kept, cleared by a move, and said by `workflow run` and the plan.
+
 ## 2026-11-07 - A run whose tree's agent moved onto a branch of its own sat at `content.holds`, or ended with its work off the line (LANDAUTO1)
 
 - **Symptom:** on the owner's install, after its update to the build of 778dfe5d29, finished sessions with commits beyond their line sat
