@@ -297,7 +297,7 @@ public sealed class DriverModule : ModuleBase
     private async Task<object?> OwnedAsync(Handler route, object handler, string type, IpcRequest request, IReadOnlyList<OwnerNamed> named, CancellationToken cancellationToken)
     {
         // No ConfigureAwait: the kit's pipeline keeps the caller's context, as the publisher's says.
-        await using var owned = await OwnerMarks.EnterAsync(_context.Loop.Pipe?.StandingConfirmation, _context.OwnerScopesOf(), named, PipeDoor.Standing, cancellationToken);
+        await using var owned = await OwnerMarks.EnterAsync(_context.Loop.Pipe?.StandingConfirmation, _context.OwnerScopesOf(), named, cancellationToken);
         return await HandleAsync(route, handler, type, request, cancellationToken);
     }
 

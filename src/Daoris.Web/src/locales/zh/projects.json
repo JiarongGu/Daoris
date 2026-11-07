@@ -413,7 +413,6 @@
   "projects.setup.clear": "清除",
   "projects.setup.twin.drive": "`daoris place drive|undrive {{repository}}`",
   "projects.setup.twin.hold": "`daoris place hold|resume {{repository}}`",
-  "projects.setup.heldStanding": "由终端按长期确认暂停",
   "projects.setup.stewardSet": "管家于 {{time}} 设置",
   "projects.setup.twin.trees": "`daoris place trees {{repository}} on|off`",
   "projects.setup.twin.line": "`daoris place line {{repository}} <branch>|--clear`",

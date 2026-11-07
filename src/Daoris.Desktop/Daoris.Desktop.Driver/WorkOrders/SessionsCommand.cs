@@ -118,7 +118,7 @@ public static class SessionsCommand
                 : 1,
             "stop" => await SessionsPresses.ThroughAsync(
                 world, PersonPresses.SessionStop, SessionsPresses.Body(("id", ask.Ids[0])),
-                () => SessionsEnding.StopAsync(world, ask.Ids[0], output, ct, ask.Standing), output, ct).ConfigureAwait(false),
+                () => SessionsEnding.StopAsync(world, ask.Ids[0], output, ct), output, ct).ConfigureAwait(false),
             "stop-turn" => await SessionsPresses.ThroughAsync(
                 world, PersonPresses.SessionStopTurn, SessionsPresses.Body(("id", ask.Ids[0]), ("keep", true)),
                 () => SessionsEnding.StopTurnAsync(world, ask.Ids[0], output, ct), output, ct).ConfigureAwait(false),

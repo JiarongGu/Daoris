@@ -34,13 +34,12 @@ public sealed class PipeStandingTests : Bridge
 
     private string HomeId => HomeIdentity.Read(Home)!;
 
-    private (InstancePipe Pipe, StandingConfirmationTests.Placed Caller) Pipe(IMessageDispatcher dispatcher, MachineLog log, bool grant = true)
+    private (InstancePipe Pipe, StandingConfirmationTests.Placed Caller) Pipe(IMessageDispatcher dispatcher, MachineLog log)
     {
         var caller = new StandingConfirmationTests.Placed(StandingPlace.Outside);
-        var standing = new StandingConfirmation(Home, log, caller, offered: true);
+        var standing = new StandingConfirmation(Home, log, caller);
         var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", standing: standing) { Grounds = new StubGrounds() };
         Assert.NotNull(pipe.Serve());
-        if (grant) Assert.True(standing.Set(StandingPresses.Built).Done);
         return (pipe, caller);
     }
 
@@ -49,135 +48,6 @@ public sealed class PipeStandingTests : Bridge
 
     private static bool Is(JsonElement each, string type) =>
         each.GetProperty("module").GetString() == InstancePipe.Module && each.GetProperty("type").GetString() == type;
-
-    [Fact]
-    public async Task A_covered_stop_runs_with_no_card_and_the_terminal_hears_it_ran_under_the_grant()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        using var log = new MachineLog(Home, "desktop");
-        var driver = new HeldModule(DriverModule.Name);
-        driver.Let.SetResult();
-        var (dispatcher, services) = Compose(log, driver);
-        using var composed = services;
-        var (pipe, _) = Pipe(dispatcher, log);
-        using var served = pipe;
-        var used = new List<EventMessage>();
-        using var heard = Bus.Subscribe(StatePublisher.Module, StandingConfirmation.UsedEvent, message =>
-        {
-            lock (used) used.Add(message);
-            return Task.CompletedTask;
-        });
-        await using var client = await PipeClient.ConnectAsync(pipe.Name!);
-        await client.HelloAsync(HomeId);
-
-        var id = await client.SendAsync(DriverModule.Name, "STOP_SESSION", new { id = "s1a2b3c4", said = true });
-        var answer = await client.AnswerAsync(id);
-
-        Assert.True(answer.GetProperty("success").GetBoolean(), answer.GetRawText());
-        Assert.Equal(1, driver.Ran);
-        var told = Each(client.Told).ToList();
-        Assert.DoesNotContain(told, each => Is(each, InstancePipe.Confirming));
-        var standing = Assert.Single(told, each => Is(each, InstancePipe.Standing));
-        Assert.Equal(id, standing.GetProperty("payload").GetProperty("id").GetString());
-        Assert.Empty(pipe.Confirmations.Now().Waiting);
-        Assert.Equal("answered", (await client.ResultAsync(id)).GetProperty("state").GetString());
-        Assert.Equal(1, pipe.StandingConfirmation.Now().Used);
-        await Until(() => { lock (used) return used.Count == 1; }, () => "no window was told the use");
-
-        // The log says it by codes: the state, the route and the door, never the session or the asker.
-        var lines = Lines(PipeConfirmations.LogEvent);
-        var line = Assert.Single(lines);
-        Assert.Equal(
-            """{"state":"standing","route":"DAORIS.DRIVER.STOP_SESSION","door":"terminal"}""", line.GetProperty("data").GetRawText());
-        Assert.DoesNotContain(lines, each => each.GetRawText().Contains("s1a2b3c4", StringComparison.Ordinal));
-    }
-
-    [Fact]
-    public async Task A_revoke_after_the_admission_lets_the_admitted_press_run_and_the_next_one_asks()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        using var log = new MachineLog(Home, "desktop");
-        var driver = new HeldModule(DriverModule.Name);
-        var (dispatcher, services) = Compose(log, driver);
-        using var composed = services;
-        var (pipe, _) = Pipe(dispatcher, log);
-        using var served = pipe;
-        await using var client = await PipeClient.ConnectAsync(pipe.Name!);
-        await client.HelloAsync(HomeId);
-
-        var admitted = await client.SendAsync(DriverModule.Name, "SET_HOLD", new { repository = "engine", held = true });
-        await driver.Started.Task.WaitAsync(Poll.Patience);
-        Assert.True(pipe.StandingConfirmation.Set([]).Done);
-        driver.Let.SetResult();
-
-        Assert.True((await client.AnswerAsync(admitted)).GetProperty("success").GetBoolean());
-        Assert.Equal(1, driver.Ran);
-
-        var next = await client.SendAsync(DriverModule.Name, "SET_HOLD", new { repository = "engine", held = true });
-        await Until(() => pipe.Confirmations.Now().Waiting.Count == 1, () => "the next press was not asked");
-        Assert.Equal(1, driver.Ran);
-        // Off, it says nothing of standing: the plain ask.
-        var asked = Lines(PipeConfirmations.LogEvent).Last();
-        Assert.Equal("asked", asked.GetProperty("data").GetProperty("state").GetString());
-        Assert.False(asked.GetProperty("data").TryGetProperty("standing", out _));
-        await pipe.Confirmations.AnswerAsync(pipe.Confirmations.Now().Waiting[0].Id, confirm: false);
-        Assert.False((await client.AnswerAsync(next)).GetProperty("success").GetBoolean());
-    }
-
-    [Fact]
-    public async Task A_press_asked_before_the_grant_keeps_its_card()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        using var log = new MachineLog(Home, "desktop");
-        var driver = new HeldModule(DriverModule.Name);
-        driver.Let.SetResult();
-        var (dispatcher, services) = Compose(log, driver);
-        using var composed = services;
-        var (pipe, _) = Pipe(dispatcher, log, grant: false);
-        using var served = pipe;
-        await using var client = await PipeClient.ConnectAsync(pipe.Name!);
-        await client.HelloAsync(HomeId);
-
-        var id = await client.SendAsync(DriverModule.Name, "STOP_SESSION", new { id = "s1a2b3c4", said = true });
-        await Until(() => pipe.Confirmations.Now().Waiting.Count == 1, () => "the press was not asked");
-        Assert.True(pipe.StandingConfirmation.Set(StandingPresses.Built).Done);
-
-        Assert.Single(pipe.Confirmations.Now().Waiting);
-        Assert.Equal(0, driver.Ran);
-        await pipe.Confirmations.AnswerAsync(pipe.Confirmations.Now().Waiting[0].Id, confirm: true);
-        Assert.True((await client.AnswerAsync(id)).GetProperty("success").GetBoolean());
-        Assert.Equal(0, pipe.StandingConfirmation.Now().Used);
-    }
-
-    [Fact]
-    public async Task A_press_the_grant_names_that_asks_anyway_says_why_to_the_terminal_and_in_the_log()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        using var log = new MachineLog(Home, "desktop");
-        var driver = new HeldModule(DriverModule.Name);
-        driver.Let.SetResult();
-        var (dispatcher, services) = Compose(log, driver);
-        using var composed = services;
-        var (pipe, caller) = Pipe(dispatcher, log);
-        using var served = pipe;
-        caller.Answer = StandingPlace.InAgentJob;
-        await using var client = await PipeClient.ConnectAsync(pipe.Name!);
-        await client.HelloAsync(HomeId);
-
-        await client.SendAsync(DriverModule.Name, "STOP_SESSION", new { id = "s1a2b3c4", said = true });
-
-        var told = await client.NotificationAsync(Poll.Patience);
-        var waits = Assert.Single(told!.Value.GetProperty("payload").EnumerateArray());
-        Assert.Equal(InstancePipe.Confirming, waits.GetProperty("type").GetString());
-        Assert.Equal(StandingWhy.InAgentJob, waits.GetProperty("payload").GetProperty("standing").GetString());
-        // Told before its grounds are read (CONFIRMWAIT1 §15.2 item 9): the card, and its line, come once they are.
-        await Until(() => Lines(PipeConfirmations.LogEvent).Any(), () => "the press was never asked");
-        var asked = Lines(PipeConfirmations.LogEvent).Single();
-        Assert.Equal(
-            """{"state":"asked","route":"DAORIS.DRIVER.STOP_SESSION","door":"terminal","standing":"in-agent-job"}""",
-            asked.GetProperty("data").GetRawText());
-        Assert.Equal(0, driver.Ran);
-    }
 
     /// <summary>
     /// INTEGRATE1d (D215 point 10: the owner accepts each declaration's blob): an agent's press accepting a repository's integration
@@ -205,7 +75,6 @@ public sealed class PipeStandingTests : Bridge
         Assert.Equal("INTEGRATION_GATES", Assert.Single(pipe.Confirmations.Now().Waiting).Route);
         Assert.Equal(PipeClass.Person, PipeCensus.Daoris.Of(DriverModule.Name, "INTEGRATION_GATES"));
         Assert.Equal(0, driver.Ran);
-        Assert.Equal(0, pipe.StandingConfirmation.Now().Used);
         await pipe.Confirmations.AnswerAsync(pipe.Confirmations.Now().Waiting[0].Id, confirm: false);
         Assert.False((await client.AnswerAsync(id)).GetProperty("success").GetBoolean());
         Assert.Equal(0, driver.Ran);
@@ -240,7 +109,6 @@ public sealed class PipeStandingTests : Bridge
 
         Assert.Equal("PLACE_APPLY", Assert.Single(pipe.Confirmations.Now().Waiting).Route);
         Assert.Equal(0, driver.Ran);
-        Assert.Equal(0, pipe.StandingConfirmation.Now().Used);
         await pipe.Confirmations.AnswerAsync(pipe.Confirmations.Now().Waiting[0].Id, confirm: false);
         Assert.False((await client.AnswerAsync(id)).GetProperty("success").GetBoolean());
         Assert.Equal(0, driver.Ran);
@@ -267,29 +135,6 @@ public sealed class PipeStandingTests : Bridge
         Assert.Equal(RoleWhy.NotRole, CodeOf(answer));
         Assert.Equal(0, probe.Ran);
         Assert.Empty(pipe.Confirmations.Now().Waiting);
-    }
-
-    /// <summary>§4.1, §8 case 9: a terminal cannot grant it, nor ask for a card that would; refused before it is dispatched.</summary>
-    [Fact]
-    public async Task A_terminal_is_refused_the_grant_before_it_is_dispatched()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        using var log = new MachineLog(Home, "desktop");
-        var driver = new HeldModule(DriverModule.Name);
-        driver.Let.SetResult();
-        var (dispatcher, services) = Compose(log, driver);
-        using var composed = services;
-        var (pipe, _) = Pipe(dispatcher, log, grant: false);
-        using var served = pipe;
-        await using var client = await PipeClient.ConnectAsync(pipe.Name!);
-        await client.HelloAsync(HomeId);
-
-        var answer = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, "SET_STANDING_CONFIRMATION", new { presses = new[] { "stop" } }));
-
-        Assert.Equal(InstancePipe.WindowOnly, answer.GetProperty("error").GetProperty("code").GetString());
-        Assert.Equal(0, driver.Ran);
-        Assert.Empty(pipe.Confirmations.Now().Waiting);
-        Assert.False(pipe.StandingConfirmation.Now().On);
     }
 
     /// <summary>Waits for <paramref name="condition"/>, bounded by the patience a signal that only fails to come when the code is wrong gets.</summary>
@@ -334,7 +179,7 @@ public sealed class PipeStandingTests : Bridge
         protected override Task<object?> RouteMessageAsync(IpcRequest request, IModuleContext context, CancellationToken cancellationToken)
         {
             lock (Seen) Seen.Add(PipeDoor.Role);
-            return Task.FromResult<object?>(new { Kept = true, Standing = PipeDoor.Standing });
+            return Task.FromResult<object?>(new { Kept = true });
         }
     }
 
@@ -345,7 +190,7 @@ public sealed class PipeStandingTests : Bridge
         IMessageDispatcher dispatcher, MachineLog log, IHolderWalk? walk = null)
     {
         var standing = new StandingConfirmation(
-            Home, log, new StandingConfirmationTests.Placed(StandingPlace.Outside), offered: true, walk: walk ?? new StandingConfirmationTests.Walked())
+            Home, log, new StandingConfirmationTests.Placed(StandingPlace.Outside), walk: walk ??new StandingConfirmationTests.Walked())
             .Staff(RoleKit.Supervisor(Engine, RoleKit.Repository("engine")));
         var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", standing: standing) { Grounds = new StubGrounds() };
         Assert.NotNull(pipe.Serve());
@@ -382,13 +227,10 @@ public sealed class PipeStandingTests : Bridge
         var nonce = NonceOf(await client.HelloAsync(HomeId));
         Assert.Equal(64, nonce!.Length);
 
-        // No press is granted: the role is judged on its own, never open.
-        Assert.False(pipe.StandingConfirmation.Now().On);
         var id = await client.SendAsync(DriverModule.Name, SupervisorRoutes.Answer, Proved(key, nonce, generation));
         var answer = await client.AnswerAsync(id);
 
         Assert.True(answer.GetProperty("success").GetBoolean(), answer.GetRawText());
-        Assert.False(answer.GetProperty("data").GetProperty("standing").GetBoolean());
         var role = Assert.Single(driver.Seen);
         Assert.Equal(("engine", generation), (role!.Repository, role.Generation));
         Assert.Empty(pipe.Confirmations.Now().Waiting);
@@ -462,7 +304,7 @@ public sealed class PipeStandingTests : Bridge
         using var darkLog = new MachineLog(Home, "dark");
         // The judge's caller is placed outside, so what refuses is that no role is staffed, not the test host's own look at the system.
         var darkStanding = new StandingConfirmation(
-            Path.Combine(Home, "dark-home"), darkLog, new StandingConfirmationTests.Placed(StandingPlace.Outside), offered: true, walk: new StandingConfirmationTests.Walked());
+            Path.Combine(Home, "dark-home"), darkLog, new StandingConfirmationTests.Placed(StandingPlace.Outside), walk: new StandingConfirmationTests.Walked());
         var dark = new InstancePipe(dispatcher, Bus, Path.Combine(Home, "dark-home"), darkLog, version: "9.9.9-test", standing: darkStanding);
         Directory.CreateDirectory(Path.Combine(Home, "dark-home"));
         if (dark.Serve() is { } name)
@@ -502,7 +344,7 @@ public sealed class PipeStandingTests : Bridge
         IMessageDispatcher dispatcher, MachineLog log, RoleKit.Probe probe, IHolderWalk? walk = null)
     {
         var standing = new StandingConfirmation(
-            Home, log, new StandingConfirmationTests.Placed(StandingPlace.Outside), offered: false, walk: walk ?? new StandingConfirmationTests.Walked())
+            Home, log, new StandingConfirmationTests.Placed(StandingPlace.Outside), walk: walk ??new StandingConfirmationTests.Walked())
             .Probing(probe).Staff(RoleKit.Supervisor(Engine, RoleKit.Repository("engine")));
         var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", standing: standing) { Grounds = new StubGrounds() };
         Assert.NotNull(pipe.Serve());
@@ -650,7 +492,6 @@ public sealed class PipeStandingTests : Bridge
     {
         var judge = new StandingConfirmation(home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside),
             walk: new StandingConfirmationTests.Walked()).Probing(new RoleKit.Probe());
-        judge.Load();
         var (_, key) = RoleKit.Start(judge, RoleKit.Stewarding(share: null));
         var nonce = SupervisorProof.Nonce();
         var admitted = RoleKit.JudgeAct(judge, RoleKit.Act(key!, nonce, RoleKit.GenerationOf(judge, AppointedRoles.Steward)), nonce);
@@ -875,7 +716,6 @@ public sealed class PipeStandingTests : Bridge
     {
         var judge = new StandingConfirmation(Home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside),
             walk: new HolderWalk(tree)).Probing(new RoleKit.Probe()).Staff(RoleKit.Supervisor(Engine, RoleKit.Repository("engine")));
-        judge.Load();
         judge.Ended = ended.Add;
         judge.Close = closed.Add;
         return judge;

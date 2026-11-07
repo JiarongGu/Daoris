@@ -46,6 +46,7 @@ public static class HomeMigration
         new WiredFilesStep(),
         new UsageFileStep(),
         new BrainstormFilesStep(),
+        new StandingGrantStep(),
     ];
 
     /// <summary>

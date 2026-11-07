@@ -271,14 +271,13 @@ public static class OwnerMarks
     /// and pending operation on them; the handler runs inside, and the gates are released as the answer is disposed. A judge whose steward
     /// no holder holds marks nothing and takes no gate, so an unstaffed steward changes nothing the owner uses.
     /// </summary>
-    /// <param name="standing">That the press runs under D201's standing confirmation, whose covered hold keeps its own memory.</param>
     public static async Task<IAsyncDisposable> EnterAsync(
-        StandingConfirmation? judge, IOwnerScopes? scopes, IReadOnlyList<OwnerNamed> named, bool standing, CancellationToken ct)
+        StandingConfirmation? judge, IOwnerScopes? scopes, IReadOnlyList<OwnerNamed> named, CancellationToken ct)
     {
         if (judge is not { StewardStaffed: true } || named.Count == 0) return Nothing.Held;
         var resolved = await ResolveAsync(named, scopes, ct).ConfigureAwait(false);
         var held = await judge.Gates.EnterAsync(resolved.Gates, alone: false, ct).ConfigureAwait(false);
-        judge.MarkOwner(resolved, standing);
+        judge.MarkOwner(resolved);
         return held;
     }
 

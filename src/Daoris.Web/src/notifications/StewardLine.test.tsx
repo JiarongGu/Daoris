@@ -38,7 +38,6 @@ const ACTS: StewardActNow[] = [
   act('a1', 'drive', '2026-10-25T10:01:00Z', { repository: 'engine' }),
 ];
 const STANDING: StandingConfirmationNow = {
-  offered: false, on: false, presses: [], built: [], since: null, unread: null, unwritten: false, used: 0, held: [],
   holds: [STEWARD], holders: [], stewardActs: ACTS, stewardDesk: [],
 };
 /** The steward's desk this run, newest first (STEWARDROLE1c): one waiting, one declined with a reason, one answered by an act. */
@@ -251,7 +250,7 @@ describe("Notifications' steward line", () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={client}>
-        <NotificationsStanding notify={() => {}} onOpen={() => {}} />
+        <NotificationsStanding notify={() => {}} />
       </QueryClientProvider>);
 
     await userEvent.click(await screen.findByRole('button', { name: "Show the steward's acts" }));
@@ -278,7 +277,7 @@ describe("Notifications' steward line", () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={client}>
-        <NotificationsStanding notify={() => {}} onOpen={() => {}} />
+        <NotificationsStanding notify={() => {}} />
       </QueryClientProvider>);
     await userEvent.click(await screen.findByRole('button', { name: "Show the steward's acts" }));
     await userEvent.click(screen.getByRole('button', { name: 'Resume' }));

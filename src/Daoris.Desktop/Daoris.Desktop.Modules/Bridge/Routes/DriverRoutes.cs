@@ -48,8 +48,6 @@ public sealed class DriverRoutes(DriverContext context)
     [Publishes("SET_HOLD", StateScopes.Driver)]
     private object? SetHold(SetHold press)
     {
-        // A hold changed by anything but the standing confirmation is no longer one a covered resume may release.
-        if (!PipeDoor.Standing) _loop.Pipe?.StandingConfirmation.Forget(press.Repository);
         _context.Change(config => config.WithHold(press.Repository, press.Held));
         return State(_loop);
     }

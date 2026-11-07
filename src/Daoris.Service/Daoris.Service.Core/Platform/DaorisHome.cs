@@ -357,7 +357,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Keeping = new("keeping", HomeCategory.Data, "data/keeping.json", "keeping.json");
     public static readonly HomeEntry Notices = new("notices", HomeCategory.Data, "data/notices.json", "notices.json");
     public static readonly HomeEntry GitIdentities = new("git-identities", HomeCategory.Data, "data/git-identities.json", "data/git-identities.json");
-    // TERMTRUST1a (D201 point 6): the person's standing confirmation, written only by the window's grant, read by the instance alone.
+    // D201's grant, deleted: named only so the home migration's `standing-grant` step finds a stored record to remove.
     public static readonly HomeEntry StandingConfirmation = new("standing-confirmation", HomeCategory.Data, "data/standing-confirmation.json", "data/standing-confirmation.json");
     // MODELROLE1c2 (D205 §9.2): what each agent, version and account last offered and refused, a reading the walk judges.
     public static readonly HomeEntry AgentOffers = new("agent-offers", HomeCategory.Data, "data/agent-offers.json", "data/agent-offers.json");

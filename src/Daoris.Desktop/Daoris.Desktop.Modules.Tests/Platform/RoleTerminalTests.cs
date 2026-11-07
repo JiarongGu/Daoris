@@ -17,8 +17,7 @@ public sealed class RoleTerminalTests : Bridge
     /// <summary>A judge whose catalogue staffs the supervisor with the terminal at the machine, and the steward where asked.</summary>
     private StandingConfirmation Staffed(StandingPlace place = StandingPlace.Outside, MachineLog? log = null, RoleKit.Probe? steward = null)
     {
-        var standing = new StandingConfirmation(Home, log, new StandingConfirmationTests.Placed(place), offered: true, walk: new StandingConfirmationTests.Walked());
-        standing.Load();
+        var standing = new StandingConfirmation(Home, log, new StandingConfirmationTests.Placed(place), walk: new StandingConfirmationTests.Walked());
         standing.Staff(RoleKit.Supervisor());
         return steward is null ? standing : standing.Probing(steward);
     }
@@ -64,7 +63,6 @@ public sealed class RoleTerminalTests : Bridge
     public void A_role_staffed_by_the_terminal_is_started_and_neither_its_key_nor_its_hash_reaches_a_file()
     {
         var standing = Staffed();
-        Assert.True(standing.Set([StandingPresses.Stop]).Done);
         var (change, key) = Start(standing);
         Assert.True(change.Answer.Done, change.Answer.Message);
         Assert.Empty(change.Ended);
@@ -73,7 +71,7 @@ public sealed class RoleTerminalTests : Bridge
         Assert.Equal((AppointedRoles.Supervisor, AppointedRoles.Supervisor), (hold.Role, hold.Kind));
         Assert.NotNull(GenerationOf(standing));
 
-        // Neither the key nor its hash in any file of the home; the standing confirmation's record keeps its presses alone.
+        // Neither the key nor its hash in any file of the home.
         var hash = Convert.ToHexStringLower(HolderKey.Hash(key)!);
         foreach (var file in Directory.EnumerateFiles(Home, "*", SearchOption.AllDirectories))
         {
@@ -82,13 +80,8 @@ public sealed class RoleTerminalTests : Bridge
             Assert.DoesNotContain(hash, written, StringComparison.OrdinalIgnoreCase);
         }
 
-        // The presses turned off keep the hold; the hold ended keeps the presses.
-        Assert.True(standing.Set([]).Done);
-        Assert.Single(standing.Now().Holds!);
-        Assert.True(standing.Set([StandingPresses.Hold]).Done);
         Assert.Single(TurnOff(standing));
-        Assert.Empty(standing.Now().Holds!);
-        Assert.Equal([StandingPresses.Hold], standing.Now().Presses);
+        Assert.Empty(standing.Now().Holds);
         Assert.Equal(SupervisorWhy.NotStaffed, standing.Admit(Engine).Why);
     }
 
@@ -138,9 +131,6 @@ public sealed class RoleTerminalTests : Bridge
         Assert.Equal(SupervisorWhy.Form, JudgeRole(standing, Answer(key!, nonce, generation, extra: "\"key\":\"x\""), nonce).Why);
         Assert.Equal(SupervisorWhy.RoleChanged, JudgeRole(standing, Answer(key!, nonce, "older"), nonce).Why);
         Assert.Equal(StandingWhy.NotNamed, standing.JudgeRole(Driver, "SESSION_INPUT", Answer(key!, nonce, generation), null, nonce).Why);
-
-        // A press granted or none changes nothing of it: judged on its own, never open.
-        Assert.False(standing.Now().On);
     }
 
     /// <summary>SUPERVISOR1b (§3.1 <c>SUPERVISOR_DEFER</c>): the defer is the role's second act, judged as the answer is, its proof over its own route's bytes.</summary>
@@ -180,8 +170,7 @@ public sealed class RoleTerminalTests : Bridge
     [Fact]
     public void A_role_not_staffed_by_the_terminal_or_one_that_cannot_start_keeps_nothing()
     {
-        var seeded = new StandingConfirmation(Home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), offered: true, walk: new StandingConfirmationTests.Walked());
-        seeded.Load();
+        var seeded = new StandingConfirmation(Home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), walk: new StandingConfirmationTests.Walked());
         Assert.False(seeded.StewardStaffed);
         Assert.Equal(StandingConfirmation.NotTerminal, Start(seeded).Change.Answer.Why);
         Assert.Equal(StandingConfirmation.NotTerminal, RoleKit.Start(seeded, RoleKit.Stewarding()).Change.Answer.Why);
