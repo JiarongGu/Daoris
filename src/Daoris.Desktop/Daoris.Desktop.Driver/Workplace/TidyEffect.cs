@@ -1,13 +1,13 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One unit link 2 is pending for (FABRIC-END4a): its id, its repository, the branches of it still standing that the line holds, the
+/// One unit link 2 is pending for: its id, its repository, the branches of it still standing that the line holds, the
 /// tree its session branch has here (null where none stands), and when the line was first found holding it.
 /// </summary>
 public sealed record TidyUnit(string Unit, string Repository, string Workspace, IReadOnlyList<string> Branches, string? Tree, DateTimeOffset Since);
 
 /// <summary>
-/// The look's automatic tidy as the chain's link 2 (FABRIC-END4a; the fabric events design §C3, §C6 and §D3): an effect, pending while a
+/// The look's automatic tidy as the chain's link 2: an effect, pending while a
 /// unit's end is held on the line and a branch of it still stands, tried when link 1 finds a repository's facts changed, again on the
 /// wakes that can unblock it (a session leaving its tree or ending, a press, the home's files, the <c>refs</c> deadline), and found
 /// again at the start from the persisted facts (<see cref="Chain.RecoverAsync"/>).
@@ -15,21 +15,21 @@ public sealed record TidyUnit(string Unit, string Repository, string Workspace, 
 /// <remarks>
 /// <para><b>The chain's subject is the repository</b> link 1 names; what is acted on is that repository's held units. A try is the
 /// repository's tidy (<see cref="SessionTrees.TidyEmptyAsync"/>), whose candidates are the kept facts alone, judged again inside its hold
-/// and once more right before each goes, with every guard (D88). A try that removes nothing is a refusal, never an outcome: the unit
+/// and once more right before each goes, with every guard. A try that removes nothing is a refusal, never an outcome: the unit
 /// stays pending.</para>
 ///
 /// <para><b>Pending is read from the inventory</b> (<see cref="WorkInventory.Derive"/>) over the records alone, with no git: a unit whose
 /// end is held, with a session or landing branch the records say still stands. A unit no record names is never ended, so it is never
-/// pending: an unknown owner blocks (§D3, canary 27). An empty branch whose tree stands is a conversation's place (D137), the press's, and
+/// pending: an unknown owner blocks. An empty branch whose tree stands is a conversation's place, the press's, and
 /// is not pending either, so no wake retries it for nothing.</para>
 ///
-/// <para><b>A busy unit costs no git</b> (canary 17): where every pending unit's tree is one a session running or waiting holds, the
+/// <para><b>A busy unit costs no git</b>: where every pending unit's tree is one a session running or waiting holds, the
 /// try is refused before the tidy starts, and the next unblocking wake tries it again.</para>
 ///
-/// <para><b>Dispositions are the records'</b> (§D3, MILESTONE1a): a removal leaves its entry a trace with <c>GoneAt</c> and its kept
+/// <para><b>Dispositions are the records'</b>: a removal leaves its entry a trace with <c>GoneAt</c> and its kept
 /// fact, which the inventory reads as <i>removed</i> with its proof; a guard that keeps a held session branch is written on its entry
 /// as <see cref="GrownBranch.Blocked"/>, which the inventory reads as <i>blocked</i> with why. A branch's removal never retires its unit:
-/// retirement stays derived at read (§D3, canary 35).</para>
+/// retirement stays derived at read.</para>
 /// </remarks>
 public sealed class TidyEffect : IChainEffect
 {
@@ -65,7 +65,7 @@ public sealed class TidyEffect : IChainEffect
 
     /// <summary>
     /// Every unit the tidy is pending for, read from the records through the inventory with no git: its end held on the line, a branch
-    /// of it standing, and not an empty branch whose tree stands (D137).
+    /// of it standing, and not an empty branch whose tree stands.
     /// </summary>
     public static IReadOnlyList<TidyUnit> Pending(string home, DateTimeOffset now)
     {
@@ -90,7 +90,7 @@ public sealed class TidyEffect : IChainEffect
                 ? Path.GetFullPath(Path.Combine(treesRoot, branch.Workspace, branch.Repository, name[TreeFollows.SessionPrefix.Length..]))
                 : null;
             if (tree is not null && !Directory.Exists(tree)) tree = null;
-            // D137: a tree whose branch never moved is a conversation's place, which the look leaves for the press.
+            // A tree whose branch never moved is a conversation's place, which the look leaves for the press.
             var conversation = branch?.Held?.By == EndBy.Empty && tree is not null;
             var branches = standing.Where(entry => !(conversation && entry.Kind == InventoryKind.SessionBranch)).Select(entry => entry.Resource).ToList();
             if (branches.Count == 0) continue;
@@ -118,7 +118,7 @@ public sealed class TidyEffect : IChainEffect
     public Task<ChainTry> TryAsync(string unit, CancellationToken ct) => TryAsync(unit, due: false, ct);
 
     /// <inheritdoc cref="TryAsync(string, CancellationToken)"/>
-    /// <param name="due">The <c>refs</c> deadline woke it: a real try, whatever the settle says (FABRIC-END4a, second review).</param>
+    /// <param name="due">The <c>refs</c> deadline woke it: a real try, whatever the settle says.</param>
     public async Task<ChainTry> TryAsync(string unit, bool due, CancellationToken ct)
     {
         var began = Clock();
@@ -131,9 +131,9 @@ public sealed class TidyEffect : IChainEffect
 
         if (await _where(unit, ct).ConfigureAwait(false) is not { } repository) return ChainTry.Refused;
 
-        // A refusal settles the repository (FABRIC-END4a review): while its units, their tips, what kept them, which trees sessions hold
+        // A refusal settles the repository: while its units, their tips, what kept them, which trees sessions hold
         // and those trees' own state are as they were, a wake tries nothing, so a burst of wakes over the three unblocking topics is one
-        // try, and an unchanged blocker starts no git. 🔴 Never for good (second review): what clears a blocker need not show in what it
+        // try, and an unchanged blocker starts no git. 🔴 Never for good: what clears a blocker need not show in what it
         // reads (a file reverted in place, a lock let go), so the settle lasts at most the `refs` deadline from the last real try's start,
         // the deadline's own wake always tries, and a settled answer is no try, so it never moves the chain's deadline.
         var busy = await _inUse(ct).ConfigureAwait(false);
@@ -223,7 +223,7 @@ public sealed class TidyEffect : IChainEffect
         foreach (var result in pass.Results.Where(result => !result.Removed))
         {
             var why = result.Kept ?? (result.Item.Unread ? TidyKept.Unread : result.Item.Kind);
-            // The sentence the tidy kept it with, beside its code (second review), so What needs you says why, not only which guard.
+            // The sentence the tidy kept it with, beside its code, so What needs you says why, not only which guard.
             Block([.. units.Where(each => each.Branches.Contains(result.Item.Branch, StringComparer.Ordinal))], why, result.Message, result.Item.Branch);
         }
     }

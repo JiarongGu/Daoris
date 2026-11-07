@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The size limits (KEEPSIZE1d, D195's keep-size note): a kind over its limit lets go of its oldest eligible units first, through the
+/// The size limits: a kind over its limit lets go of its oldest eligible units first, through the
 /// press's own removal (<see cref="SpaceFree.RunAsync"/>), so every guard each removal has holds as it does for the press. Beside them the
-/// allowance over the whole (§4.3's stopping rule): where the whole is still over it, the eligible units go in order, but only where all
+/// allowance over the whole: where the whole is still over it, the eligible units go in order, but only where all
 /// of them would bring the whole within it. Only what can be made again or is only a copy is ever taken: the set-aside folders whose record
 /// is kept and whose tip a recovery ref holds (judged again right before each goes), the browser's caches, and the downloads nothing uses,
 /// never under <c>never</c>. A kind whose size is not counted takes nothing, and asks to be counted.
@@ -45,7 +45,7 @@ public static class SpaceLimits
         var uncounted = false;
         try
         {
-            // The kinds in the allowance's order (§4.1): the set-aside folders, the browser's caches, the downloads.
+            // The kinds in the allowance's order: the set-aside folders, the browser's caches, the downloads.
             var plans = new[]
             {
                 (Plan: SetAside(world, policy, ct, ref uncounted), Limit: policy.Limits.SetAsideGb),
@@ -79,7 +79,7 @@ public static class SpaceLimits
     }
 
     /// <summary>
-    /// The stopping rule (§4.3): the whole is every kind's last count; it takes nothing where any is not counted or partial, and nothing
+    /// The stopping rule: the whole is every kind's last count; it takes nothing where any is not counted or partial, and nothing
     /// where all that may go would not bring the whole within the allowance, since emptying what can be made again with no hope of
     /// reaching the bound costs a fetch and gains nothing. Else the eligible units in the allowance's order until it is within.
     /// </summary>
@@ -149,7 +149,7 @@ public static class SpaceLimits
     }
 
     /// <summary>
-    /// The browser's caches, all of them together (KEEPSIZE1e), one unit; whether the browser runs is the press's own judgement, which keeps
+    /// The browser's caches, all of them together, one unit; whether the browser runs is the press's own judgement, which keeps
     /// them while it does. A count not made yet takes nothing, and a partial one within its limit is said.
     /// </summary>
     private static Plan? BrowserCache(SpaceFreeWorld world, KeepPolicy policy, ref bool uncounted)

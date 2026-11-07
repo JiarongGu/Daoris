@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The check of a repository's rooms (the tree-pool design's R5.4), deterministic and stack-agnostic: it reads the lanes
+/// The check of a repository's rooms, deterministic and stack-agnostic: it reads the lanes
 /// file's rooms, the gates file's classes and git's tracked paths, nothing else. It refuses two rooms holding one path, a tracked path
 /// no entry places, a unit that is not a tracked file of its room or whose folder holds another room's sources, a lockfile apart from
 /// the unit beside it, a file written from two rooms, and a read or a write naming nothing tracked or declared. It joins into one claim

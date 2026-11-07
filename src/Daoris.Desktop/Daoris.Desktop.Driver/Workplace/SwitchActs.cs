@@ -18,7 +18,7 @@ public sealed record SwitchPress(string Branch, string? From, string Head);
 public sealed record SwitchPlan(string? From, string? Head, string To, string? ToHead, bool Dirty, string? Elsewhere, string? Why, IReadOnlyList<string> Hooks);
 
 /// <summary>
-/// **Switch** (GITAPP2k, D204, the git-writes design §8). One <c>switch</c> step of the act journal, <c>git switch --no-guess &lt;branch&gt;</c>, never
+/// **Switch**. One <c>switch</c> step of the act journal, <c>git switch --no-guess &lt;branch&gt;</c>, never
 /// forced, in the act's job so a <c>post-checkout</c> hook and its children end with it. Refused where tracked files are changed, an operation is
 /// in progress, the branch is out in another tree or here already, or the branch is not a local one. It is undone by switching back: the next
 /// press names the branch this one left, and it is refused on the same terms.

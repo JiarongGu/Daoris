@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The coded machine-log lines of git's doors and grants (GITAUTH1b, D198 point 16; the git-auth design §11): <c>git.refused</c>,
-/// <c>git.granted</c>, <c>git.grant.used</c> and <c>git.wired</c>, beside GITAUTH1a's <c>git.held</c> and <c>git.lifted</c>
+/// The coded machine-log lines of git's doors and grants: <c>git.refused</c>,
+/// <c>git.granted</c>, <c>git.grant.used</c> and <c>git.wired</c>, beside <c>git.held</c> and <c>git.lifted</c>
 /// (<c>GitHolds</c>). Never a secret, an address's user-info or path, or a machine path: a remote is its name and its host.
 /// </summary>
 /// <remarks>
@@ -25,33 +25,32 @@ public static class GitLog
         : variable(SessionVariable) is { Length: > 0 } ? "session"
         : "daoris";
 
-    /// <summary>A door's refusal (§11 <c>git.refused</c>): its code, the act's class, the remote and host where known.</summary>
+    /// <summary>A door's refusal (<c>git.refused</c>): its code, the act's class, the remote and host where known.</summary>
     public static void Refused(
         string? home, Func<string, string?> variable, string code, GitAct? act, string? remote, string? host) =>
         Write(home, "git.refused", ("repository", variable("DAORIS_REPOSITORY")), ("remote", remote), ("host", host),
             ("class", act is { } known ? ClassName(known) : null), ("code", code), ("door", DoorOf(variable)),
             ("session", variable(SessionVariable)));
 
-    /// <summary>A grant written (§11 <c>git.granted</c>): the landing's, for its plugin's push to <paramref name="remote"/>.</summary>
+    /// <summary>A grant written (<c>git.granted</c>): the landing's, for its plugin's push to <paramref name="remote"/>.</summary>
     public static void Granted(string home, string repository, string remote, string? session, string by) =>
         Write(home, "git.granted", ("repository", repository), ("remote", remote), ("class", ClassName(GitAct.Write)),
             ("session", session), ("by", by), ("door", "landing"));
 
-    /// <summary>A grant taken by a door's write (§11 <c>git.grant.used</c>).</summary>
+    /// <summary>A grant taken by a door's write (<c>git.grant.used</c>).</summary>
     public static void GrantUsed(string home, Func<string, string?> variable, string? remote, string? host) =>
         Write(home, "git.grant.used", ("repository", variable("DAORIS_REPOSITORY")), ("remote", remote), ("host", host),
             ("class", ClassName(GitAct.Write)), ("door", DoorOf(variable)), ("session", variable(SessionVariable)));
 
-    /// <summary>A git go-ahead answered at a door (§11 <c>git.asked</c>): allowed or refused, or not answered in the bound.</summary>
+    /// <summary>A git go-ahead answered at a door (<c>git.asked</c>): allowed or refused, or not answered in the bound.</summary>
     public static void Asked(string home, Func<string, string?> variable, bool allowed, GitAct act, string? remote, string? host) =>
         Write(home, "git.asked", ("repository", variable("DAORIS_REPOSITORY")), ("remote", remote), ("host", host), ("class", ClassName(act)),
             ("allowed", allowed), ("door", DoorOf(variable)), ("session", variable(SessionVariable)));
 
     /// <summary>
-    /// How the driver's git is wired at its start (§11 <c>git.wired</c>): which git Tools runs (its way, and its version where Tools
+    /// How the driver's git is wired at its start (<c>git.wired</c>): which git Tools runs (its way, and its version where Tools
     /// records one, never its path: asking git would be one more start on every launch), how the ssh door is named (<c>command</c>,
-    /// <c>git-ssh</c>, or null where none is laid out) and whether the remote helper is. Identities and pointers join with
-    /// GITAUTH1c.
+    /// <c>git-ssh</c>, or null where none is laid out) and whether the remote helper is.
     /// </summary>
     public static void Wired(string home, string? way, string? version, string? sshForm, bool helper) =>
         Write(home, "git.wired", ("way", way), ("version", version), ("ssh", sshForm), ("helper", helper),

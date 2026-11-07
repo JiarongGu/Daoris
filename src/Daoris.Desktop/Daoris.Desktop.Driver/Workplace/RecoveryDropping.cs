@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>A recovery ref the person asked to delete, with the commit they were shown it at (RECOVERYDROP1); null where the terminal named it alone.</summary>
+/// <summary>A recovery ref the person asked to delete, with the commit they were shown it at; null where the terminal named it alone.</summary>
 public sealed record RecoveryDrop(string Ref, string? Commit);
 
 /// <summary>A recovery ref that was deleted, and the commit it named.</summary>
@@ -17,9 +17,9 @@ public sealed record RecoveryDrops(IReadOnlyList<RecoveryDropped> Dropped, IRead
 }
 
 /// <summary>
-/// The person's press to delete the recovery refs nothing holds (RECOVERYDROP1, amending D102's CLEANUP1 note): the one way past
-/// CLEANUP1's rule that a recovery ref whose commit no branch or tag of the person's holds is kept at any age. One act, two doors
-/// (D50): the screen's <c>RECOVERY_DROP</c> and the terminal's <c>daoris work recovery drop</c>.
+/// The person's press to delete the recovery refs nothing holds: the one way past
+/// the rule that a recovery ref whose commit no branch or tag of the person's holds is kept at any age. One act, two doors:
+/// the screen's <c>RECOVERY_DROP</c> and the terminal's <c>daoris work recovery drop</c>.
 /// </summary>
 /// <remarks>
 /// <para><b>Only what nothing holds, at the moment of the delete.</b> The refs are read again here (<see cref="RecoveryRetention.ReadAsync"/>),
@@ -31,9 +31,9 @@ public sealed record RecoveryDrops(IReadOnlyList<RecoveryDropped> Dropped, IRead
 /// kept. A holder appearing in the instant between the read and the delete is the one case nothing can verify (git cannot assert a ref's
 /// absence); the commit then stays reachable from that holder, and what the delete removed is the recovery ref alone.</para>
 ///
-/// <para><b>Only the lease's holder acts</b> (<see cref="WithoutHome"/>), as the end's keeping does (FABRIC-END2).</para>
+/// <para><b>Only the lease's holder acts</b> (<see cref="WithoutHome"/>), as the end's keeping does.</para>
 ///
-/// <para><b>Transitional (ONEWAY1r, D228):</b> the journal lists every delete with its Undo (<see cref="DeletedBranches"/>) and every keep goes
+/// <para><b>Transitional:</b> the journal lists every delete with its Undo (<see cref="DeletedBranches"/>) and every keep goes
 /// through an act it records (<see cref="RecoveryKeeps"/>), so this press is kept for the recovery refs no journal record names, which its
 /// plan counts (<see cref="RecoveryCensus"/>). It ends with <see cref="RecoveryRetention"/>'s reflog reader when that census reads zero in
 /// every repository on the install; ONEWAY1af deletes both.</para>

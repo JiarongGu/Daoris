@@ -1,15 +1,15 @@
 namespace Daoris.Driver;
 
-/// <summary>One file as a diff names it (GITAPP2b): its status letter, and the mode and blob id on each side, as git's raw form gives them.</summary>
+/// <summary>One file as a diff names it: its status letter, and the mode and blob id on each side, as git's raw form gives them.</summary>
 /// <param name="Status"><c>A</c>, <c>M</c>, <c>D</c> or <c>T</c> (a type change).</param>
 /// <param name="OldBlob">All zeros where the side holds none; the worktree side's blob is never hashed, so it is zeros too.</param>
 public sealed record ChangeEntry(string Path, char Status, string OldMode, string NewMode, string OldBlob, string NewBlob);
 
-/// <summary>A file the index holds in conflict (GITAPP2b): status's <c>u</c> entry, with the mode and blob id of stages 1, 2 and 3.</summary>
+/// <summary>A file the index holds in conflict: status's <c>u</c> entry, with the mode and blob id of stages 1, 2 and 3.</summary>
 /// <param name="Code">Status's two letters (<c>UU</c>, <c>AA</c>, <c>DU</c> and the like).</param>
 public sealed record UnmergedEntry(string Path, string Code, IReadOnlyList<string> Modes, IReadOnlyList<string> Blobs);
 
-/// <summary>What a checkout's changes are, as three observations made at <see cref="ReadAt"/> (the git-writes design §4).</summary>
+/// <summary>What a checkout's changes are, as three observations made at <see cref="ReadAt"/>.</summary>
 /// <param name="Head">The commit HEAD names, or null on a branch with no commit yet.</param>
 /// <param name="Staged">HEAD to index.</param>
 /// <param name="Unstaged">Index to worktree, with the index unrefreshed: a file whose stat data alone moved is no entry.</param>
@@ -19,8 +19,8 @@ public sealed record ChangesRead(
     IReadOnlyList<UnmergedEntry> Unmerged, DateTimeOffset ReadAt);
 
 /// <summary>
-/// **The Changes tab's read** (GITAPP2b, D204, the git-writes design §1 and §4). Three observations, each fresh, started through the
-/// counting seam as a question under REVIEWLOCK1's flags: HEAD to index (<c>diff --cached HEAD</c>), index to worktree (<c>diff</c>,
+/// **The Changes tab's read**. Three observations, each fresh, started through the
+/// counting seam as a question under its own flags: HEAD to index (<c>diff --cached HEAD</c>), index to worktree (<c>diff</c>,
 /// the index not refreshed) and status's untracked and unmerged entries (<c>--porcelain=v2</c>). Nothing is kept across calls and no
 /// memo of a landing or a judgement answers one; a staged addition whose file was then removed is in both diffs.
 /// </summary>
@@ -47,7 +47,7 @@ public static class GitChanges
         var tip = head.Code == 0 ? head.Stdout.Trim() : null;
 
         var staged = Run(root, [.. Quiet, "diff", "--cached", .. DiffFlags, .. (tip is null ? Array.Empty<string>() : ["HEAD"])], ct);
-        // diff.autoRefreshIndex=false keeps the diff from writing the stat data back (REVIEWLOCK1); --numstat names what changed.
+        // diff.autoRefreshIndex=false keeps the diff from writing the stat data back; --numstat names what changed.
         var unstaged = Run(root, [.. Quiet, "-c", "diff.autoRefreshIndex=false", "diff", .. DiffFlags, "--numstat"], ct);
         var status = Run(root, [.. Quiet, "status", "--porcelain=v2", "-z", "--untracked-files=all", "--no-renames"], ct);
         await Task.WhenAll(staged, unstaged, status).ConfigureAwait(false);

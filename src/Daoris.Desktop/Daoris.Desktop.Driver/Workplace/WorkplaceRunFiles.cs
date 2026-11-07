@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Where a run's files lie under a home and how a run's id reads, which the workplace's history, its clearing and a session's files
-/// name without the workflows (FOUNDATION1 mod-x; the design §14.2: the lowest subdomain that reads it owns it). A quest's run is
+/// name without the workflows (the lowest subdomain that reads it owns it). A quest's run is
 /// its binding under the home's workflows (<see cref="Runs"/>), a chat's run is keyed <see cref="ChatPrefix"/> and the first record of its
 /// line, with the opinion gate's file and the look's beside it. The workflows' <c>WorkflowRunBindings</c> and <c>ChatRuns</c> answer
 /// through these, so every other reader keeps its spelling and no path, id or sentence changes.
@@ -46,6 +46,6 @@ public static class WorkplaceRunFiles
     /// <summary>The folder of the opinion gates' files, by chain or by chat run.</summary>
     public static string GatesFolder(string home) => DaorisHome.Entry(home, HomeEntry.OpinionGates);
 
-    /// <summary>The folder of a chat run's look files (§5.3), apart from a quest's, which lives on its quest.</summary>
+    /// <summary>The folder of a chat run's look files, apart from a quest's, which lives on its quest.</summary>
     public static string LooksFolder(string home) => Path.Combine(DaorisHome.Entry(home, HomeEntry.Workflows), Looks);
 }

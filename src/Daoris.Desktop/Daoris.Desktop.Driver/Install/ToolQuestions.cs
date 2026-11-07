@@ -5,13 +5,13 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A tool asked one question and its answer read whole (TOOLS7, D121 §4.1): the version a file answers before it is
+/// A tool asked one question and its answer read whole: the version a file answers before it is
 /// named, the version each tool runs at, and git's own system configuration, which says how that git reads a checkout.
 /// </summary>
 /// <remarks>
 /// Asked of the resolved file by its whole path, with fixed arguments only, and handed the tools' environment as every
-/// child is (TOOLS5): a version is asked on the <c>PATH</c> a session would be started on. Bounded, since a file the
-/// person names may be any program, and one that waits for input answers nothing in time. The driver library's since PUSH1f2c, so
+/// child is: a version is asked on the <c>PATH</c> a session would be started on. Bounded, since a file the
+/// person names may be any program, and one that waits for input answers nothing in time. It lives in the driver library, so
 /// <c>daoris tool use … file</c> asks a named file its version as the window's route does (<see cref="ToolChoices"/>).
 /// </remarks>
 public static partial class ToolQuestions
@@ -20,7 +20,7 @@ public static partial class ToolQuestions
     public static readonly TimeSpan Patience = TimeSpan.FromSeconds(15);
 
     /// <summary>
-    /// The keys that make two gits read one checkout differently (§4.1), in the order a switch names them: line endings
+    /// The keys that make two gits read one checkout differently, in the order a switch names them: line endings
     /// twice, links, and long paths, which Daoris's own calls set and a session's git does not.
     /// </summary>
     public static readonly IReadOnlyList<string> CheckoutKeys = ["core.autocrlf", "core.eol", "core.symlinks", "core.longpaths"];
@@ -38,7 +38,7 @@ public static partial class ToolQuestions
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             RedirectStandardInput = true,
-            // Read as the tools write, not in the console's code page (PLUG8); nothing is typed, and the end is UTF-8 too.
+            // Read as the tools write, not in the console's code page; nothing is typed, and the end is UTF-8 too.
             StandardInputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
             StandardOutputEncoding = Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8,
@@ -46,7 +46,7 @@ public static partial class ToolQuestions
             CreateNoWindow = true, // a question from a window must not open a console (Adapters.Shell)
         };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        // Asked as a child is started (TOOLS5): on the PATH a session would be given.
+        // Asked as a child is started: on the PATH a session would be given.
         Tools.Hand(info);
 
         // Nothing is typed to it: a program that waits for input reads its end at once.
@@ -98,7 +98,7 @@ public static partial class ToolQuestions
         return keys;
     }
 
-    /// <summary>The checkout keys two gits read differently (§4.1), in <see cref="CheckoutKeys"/>' order; unset is null.</summary>
+    /// <summary>The checkout keys two gits read differently, in <see cref="CheckoutKeys"/>' order; unset is null.</summary>
     public static IReadOnlyList<(string Key, string? Now, string? Then)> Differences(
         IReadOnlyDictionary<string, string> now, IReadOnlyDictionary<string, string> then) =>
         [

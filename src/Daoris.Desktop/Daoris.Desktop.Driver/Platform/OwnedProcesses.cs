@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace Daoris.Driver;
 
-/// <summary>What a process Daoris starts is for (D249): its purpose names the job that holds it, or says why none does.</summary>
+/// <summary>What a process Daoris starts is for: its purpose names the job that holds it, or says why none does.</summary>
 public enum ProcessPurpose
 {
     /// <summary>
@@ -38,7 +38,7 @@ public enum ProcessPurpose
 public sealed record RunningPurpose(ProcessPurpose Purpose, IReadOnlyList<int> Ids);
 
 /// <summary>
-/// The one management of the processes this Daoris process starts (D249). Every start through the gate (<see cref="ProcessStarts"/>) is
+/// The one management of the processes this Daoris process starts. Every start through the gate (<see cref="ProcessStarts"/>) is
 /// handed here with its purpose and joined, as it returns, to that purpose's job: one job per purpose, made at its first start, ending what it
 /// holds when its handle closes, and held for this process's life, so nothing this process started, nor anything that started, outlives it,
 /// however it ends. A process ended early is ended here (<see cref="End"/>), and what is running is read here (<see cref="Census"/>).

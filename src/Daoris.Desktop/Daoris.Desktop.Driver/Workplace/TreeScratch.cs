@@ -4,14 +4,14 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The walk over a tree's shared ignored folders (TREEKEEP1): what a session wrote there that the checkout does not hold. It reads
+/// The walk over a tree's shared ignored folders: what a session wrote there that the checkout does not hold. It reads
 /// nothing of the trees' context, so it is static.
 /// </summary>
 internal static class TreeScratch
 {
     /// <summary>
-    /// The folders a build or an install writes and writes again (TREEKEEP1): an ignored path under one of these, which the
-    /// registered checkout holds too, goes with the tree unasked, as D102's SQUASHTIDY1c rule always let it. Matched by any
+    /// The folders a build or an install writes and writes again: an ignored path under one of these, which the
+    /// registered checkout holds too, goes with the tree unasked. Matched by any
     /// path segment, so <c>src/app/node_modules/</c> is one. Any other shared ignored folder is looked into
     /// (<see cref="WrittenSince"/>), since a session's own scratch (<c>devtools/.tmp</c>) lives in such a folder too.
     /// </summary>
@@ -22,14 +22,14 @@ internal static class TreeScratch
     };
 
     /// <summary>
-    /// The folders every build makes under these names, in any project (TIDYOUTPUT1): a path under one goes with the tree even where
+    /// The folders every build makes under these names, in any project: a path under one goes with the tree even where
     /// the checkout holds no such folder, since a tool names it, not a person. A narrower list than <see cref="BuildFolders"/>, whose
     /// other names (<c>out</c>, <c>dist</c>, <c>build</c>, <c>target</c>) are also what a session exports into, so those go only
     /// where the checkout builds there too.
     /// </summary>
     private static readonly HashSet<string> MadeFolders = new(StringComparer.OrdinalIgnoreCase) { "node_modules", "bin", "obj" };
 
-    /// <summary>The most files looked at under one shared ignored folder; past it the folder counts as the tree's own (TREEKEEP1).</summary>
+    /// <summary>The most files looked at under one shared ignored folder; past it the folder counts as the tree's own.</summary>
     internal const int ScratchWalkLimit = 5000;
 
     /// <summary>Whether an ignored path lies under a folder every build makes, whether or not the checkout holds one (<see cref="MadeFolders"/>).</summary>
@@ -37,8 +37,8 @@ internal static class TreeScratch
         path.Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries).Any(MadeFolders.Contains);
 
     /// <summary>
-    /// The globs a repository declares as its own output (TIDYOUTPUT1): <c>integration.scratch</c>, the key D215 reserves for what the
-    /// landing's tidy may take with a tree. A list of files the tidy deletes is accepted as a command is (INTEGRATE1d, D218's note), so
+    /// The globs a repository declares as its own output: <c>integration.scratch</c>, the key reserved for what the
+    /// landing's tidy may take with a tree. A list of files the tidy deletes is accepted as a command is, so
     /// it is read from the blob the owner accepted for <paramref name="repository"/>'s integration alone, and only where that blob is the
     /// declaration at <paramref name="line"/>'s tip: never the checkout's working file, nor the tree, which holds the session's own copy.
     /// None where nothing is accepted, the line's declaration changed since (it waits for the owner), or the line is not known.
@@ -55,7 +55,7 @@ internal static class TreeScratch
     /// The declared globs of a gates file's text, read through the declaration's one reader (<see cref="IntegrationDeclaration.Read"/>),
     /// each as a pattern over a repository-relative path (<c>/</c> separated, case-insensitive): <c>*</c> within one segment, <c>**</c>
     /// across any, and a trailing <c>/**</c> the folder as well as what is under it. A declaration that breaks any key's shape declares
-    /// none (INTEGRATE1d: nothing acts on half of one), and that reader refuses a glob that is absolute, leaves the repository (<c>..</c>)
+    /// none (nothing acts on half of one), and that reader refuses a glob that is absolute, leaves the repository (<c>..</c>)
     /// or opens with a wildcard, since that would cover folders the repository never named: an authored ignored file (a <c>local/</c>
     /// note) is never output by a pattern's reach alone.
     /// </summary>
@@ -103,7 +103,7 @@ internal static class TreeScratch
 
     /// <summary>
     /// The files under a folder of the tree that the checkout does not hold at all, which are neither declared output nor under a build's
-    /// own folder (TIDYOUTPUT1): what the session made there that nothing re-makes. No file of it is the checkout's, so no write time or
+    /// own folder: what the session made there that nothing re-makes. No file of it is the checkout's, so no write time or
     /// comparison is asked. Bounded as <see cref="WrittenSince"/> is, with the same answer past it.
     /// </summary>
     /// <param name="entry">The folder, relative to the tree, as git names it.</param>
@@ -145,7 +145,7 @@ internal static class TreeScratch
 
     /// <summary>
     /// The files under a shared ignored folder of a tree that were written after the tree opened and that the checkout
-    /// does not hold as written, absent or different (TREEKEEP1): what the session made or changed there, which no build re-makes. At most
+    /// does not hold as written, absent or different: what the session made or changed there, which no build re-makes. At most
     /// <see cref="ScratchWalkLimit"/> files are looked at; a folder with more is <paramref name="tooLarge"/>, and counts as the
     /// tree's own, since never removing it unasked is the conservative answer.
     /// </summary>
@@ -169,7 +169,7 @@ internal static class TreeScratch
 
             if (File.GetLastWriteTimeUtc(file) <= opened) continue;
             var relative = Path.GetRelativePath(treeRoot, file).Replace('\\', '/');
-            // TIDYOUTPUT1: a build's folder inside this folder, and a file the repository declares as output, are no session's own.
+            // A build's folder inside this folder, and a file the repository declares as output, are no session's own.
             if (UnderBuildFolder(relative) || (declared is not null && IsDeclared(declared, relative))) continue;
             if (!SameBytes(file, Path.Combine(checkoutRoot, relative))) found.Add(relative);
         }

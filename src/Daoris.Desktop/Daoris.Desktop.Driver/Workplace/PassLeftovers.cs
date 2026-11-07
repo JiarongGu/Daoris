@@ -4,7 +4,7 @@ using static Daoris.Driver.TreeGit;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a pass a kill cut off left under a repository's trees (STRAYOTHERS1, D88's note): an opinion's copy
+/// What a pass a kill cut off left under a repository's trees: an opinion's copy
 /// (<see cref="OpinionTree"/>, <c>o-</c>) or a replay's tree (<see cref="BranchReplays"/>, <c>r-</c>), each made by its own flow
 /// outside the repository's hold and removed at its end. The next pass of the same kind in that repository moves each such folder
 /// aside, as the look moves a tree's folder, once nothing running holds it and nothing in it was written for
@@ -13,8 +13,8 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>Who holds it.</b> A pass names its process where the next one reads it: a replay's tree in its lock's reason (<c>git
 /// worktree add --lock</c>), an opinion's copy in a file in its own <c>.git</c> (<see cref="CopyHolder"/>). A process that runs
-/// under the id named holds it, though the id may be another's since, and the folder waits until that one ends. A folder from
-/// before STRAYOTHERS1 names nobody and is judged by its quiet alone, as is a replay's tree git's own lock from an add a kill cut
+/// under the id named holds it, though the id may be another's since, and the folder waits until that one ends. A folder
+/// that names nobody is judged by its quiet alone, as is a replay's tree git's own lock from an add a kill cut
 /// off still holds; any other lock or holder is someone else's, and keeps it.</para>
 ///
 /// <para><b>Moved aside, never deleted here.</b> One rename on the same volume into the trees home's <c>.tidied</c>
@@ -85,7 +85,7 @@ internal sealed class PassLeftovers(TreeContext context, TreeSetAside setAside)
     /// <summary>
     /// The replays' trees a killed replay left in one repository's trees (<paramref name="trees"/>), moved aside and let go of by git:
     /// where each went. Asked at a replay's start, before its own tree is made. A list of the working trees git could not give is
-    /// never "no tree here" (AUTOTIDY1): nothing goes.
+    /// never "no tree here": nothing goes.
     /// </summary>
     /// <param name="running">Whether a process of that id runs (<see cref="TreeOpenings.Running"/>; a test's stand-in).</param>
     internal async Task<IReadOnlyList<string>> ClearReplaysAsync(
@@ -153,7 +153,7 @@ internal sealed class PassLeftovers(TreeContext context, TreeSetAside setAside)
 
     /// <summary>
     /// The folders under <paramref name="trees"/> whose names start with <paramref name="prefix"/>, links left out; null where the
-    /// repository's trees are not there, or are reached through a link (AUTOTIDY1: somewhere else, whatever the path says).
+    /// repository's trees are not there, or are reached through a link (somewhere else, whatever the path says).
     /// </summary>
     private List<string>? Folders(string trees, string prefix)
     {

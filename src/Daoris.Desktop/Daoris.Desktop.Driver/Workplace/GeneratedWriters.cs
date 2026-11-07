@@ -5,19 +5,19 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The commands a repository declares write its generated folders (GENREGEN1, D87's note): <c>daoris.gates.json</c>'s <c>generated</c>,
+/// The commands a repository declares write its generated folders: <c>daoris.gates.json</c>'s <c>generated</c>,
 /// each <c>{ "paths": folder, "run": command line }</c>, the declaration this repository's merge tool reads too. A landing's replay that
 /// took the line's copy of a generated file (<see cref="GeneratedPaths"/>) runs the writers of those files' folders in its own tree, so
 /// what it lands reads as its tree, rather than leaving them for whoever merges the work.
 /// </summary>
 /// <remarks>
 /// <para><b>Only under the person's acceptance.</b> A writer is a command read from the repository, which runs unasked only as the
-/// person accepted it (the pipeline design §4.2): an accepted blob of <c>daoris.gates.json</c> must be the declaration at the commit the
+/// person accepted it: an accepted blob of <c>daoris.gates.json</c> must be the declaration at the commit the
 /// replay builds on, and the command is read from that blob, never from the session's copy, so a session cannot declare a command and
-/// have its own landing run it. Either acceptance accepts them (INTEGRATE1d; D215 point 2, the integration design §4.1): the landed
+/// have its own landing run it. Either acceptance accepts them: the landed
 /// route's, or the integration's own (<see cref="IntegrationAcceptance"/>), so a repository with no verification pipeline has its
 /// generated files written again too. Without either, the replay leaves the line's copy, as before.</para>
-/// <para>Which files are generated stays <c>linguist-generated</c> (LANDREBASE1): <c>paths</c> names only which folder a command
+/// <para>Which files are generated stays <c>linguist-generated</c>: <c>paths</c> names only which folder a command
 /// writes.</para>
 /// </remarks>
 internal static class GeneratedWriters
@@ -31,7 +31,7 @@ internal static class GeneratedWriters
     /// <summary>One declared writer: the folder it writes, relative to the repository's top with no trailing slash, and its command line.</summary>
     internal sealed record Writer(string Folder, string Run)
     {
-        /// <summary>Whether <paramref name="path"/> lies in the folder it writes, or is the file a line rule's writer writes (INTEGRATE1d).</summary>
+        /// <summary>Whether <paramref name="path"/> lies in the folder it writes, or is the file a line rule's writer writes.</summary>
         public bool Holds(string path) => path == Folder || path.StartsWith(Folder + "/", StringComparison.Ordinal);
     }
 
@@ -94,7 +94,7 @@ internal static class GeneratedWriters
     /// so the session's commits stay as replayed. A writer that fails or outlasts the replay's bound commits nothing, and says why.
     /// </summary>
     /// <param name="commit">
-    /// False inside a merge not yet committed (INTEGRATE1e part e3b, the integration's resolve): each folder is staged and nothing is committed,
+    /// False inside a merge not yet committed (the integration's resolve): each folder is staged and nothing is committed,
     /// so what the writers wrote is part of the member's one merge commit; <see cref="Written.Paths"/> is then what they changed, read before staging.
     /// </param>
     internal static async Task<Written> WriteAsync(
@@ -170,7 +170,7 @@ internal static class GeneratedWriters
         info.RedirectStandardError = true;
         info.StandardOutputEncoding = Encoding.UTF8;
         info.StandardErrorEncoding = Encoding.UTF8;
-        // A writer is the repository's own command (node and its scripts), found as every child of the driver finds its tools (TOOLS5).
+        // A writer is the repository's own command (node and its scripts), found as every child of the driver finds its tools.
         Tools.Hand(info);
         return info;
     }

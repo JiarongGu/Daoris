@@ -7,8 +7,8 @@ public sealed record RecoveryRef(string Repository, string Ref)
     public string? Commit { get; init; }
 
     /// <summary>
-    /// When the ref was kept: the journal's act that kept it; for a ref no record names, its reflog's first entry (RECOVERYDATE1), else its
-    /// commit's date (<c>committerdate</c>, CLEANUP1), at or before it was made. Null where none was read.
+    /// When the ref is kept: the journal's act that kept it; for a ref no record names, its reflog's first entry, else its
+    /// commit's date (<c>committerdate</c>), at or before it is made. Null where none is read.
     /// </summary>
     public DateTimeOffset? Dated { get; init; }
 
@@ -16,13 +16,13 @@ public sealed record RecoveryRef(string Repository, string Ref)
     public bool Recorded { get; init; }
 
     /// <summary>
-    /// Whether a branch or a tag of the person's holds its commit by ancestry (CLEANUP1, <see cref="RecoveryRetention.Holds"/>): true where
+    /// Whether a branch or a tag of the person's holds its commit by ancestry (<see cref="RecoveryRetention.Holds"/>): true where
     /// one does, false where none does, null where git could not say.
     /// </summary>
     public bool? Held { get; init; }
 }
 
-/// <summary>A <c>daoris/*</c> branch standing in a repository (FABRIC-UNKNOWN1), whether or not a record names it.</summary>
+/// <summary>A <c>daoris/*</c> branch standing in a repository, whether or not a record names it.</summary>
 public sealed record StandingBranch(string Repository, string Branch);
 
 /// <summary>What the records, the disk and git said, gathered for <see cref="WorkInventory.Derive"/> to read: nothing here is judged.</summary>
@@ -38,44 +38,44 @@ public sealed record InventoryFacts(
     Func<string, bool> HasHistory, DateTimeOffset Now)
 {
     /// <summary>
-    /// The <c>daoris/*</c> branches standing in each repository read (FABRIC-UNKNOWN1, the design's §D3): one that no record names and
+    /// The <c>daoris/*</c> branches standing in each repository read: one that no record names and
     /// no tree holds is a unit of its own with an unknown owner, blocked. Read in the same git start as the recovery refs.
     /// </summary>
     public IReadOnlyList<StandingBranch> Standing { get; init; } = [];
 
     /// <summary>
-    /// The trees this machine's sessions recorded, from their records, in the order they list them (OVERVIEWNOISE1b): each tree is joined
+    /// The trees this machine's sessions recorded, from their records, in the order they list them: each tree is joined
     /// to the session that recorded it, so its unit is named by that session, and a tree no standing branch record names is that
     /// session's rather than an unknown owner's. None given, none is joined, as before.
     /// </summary>
     public IReadOnlyList<RecordedTree> Recorded { get; init; } = [];
 
     /// <summary>
-    /// How long a folder moved aside is kept, by the one effective policy (KEEP1a, <see cref="KeepPolicy"/>): its purge date is its move
+    /// How long a folder moved aside is kept, by the one effective policy (<see cref="KeepPolicy"/>): its purge date is its move
     /// and this. The table's default where none is given.
     /// </summary>
     public TimeSpan SetAsideFor { get; init; } = KeepKinds.SetAside.Days;
 
     /// <summary>
-    /// What each unit still owes beyond its branch records (FABRIC-PERFORM1d, <see cref="WorkObligations"/>), by its id: its plugins'
+    /// What each unit still owes beyond its branch records (<see cref="WorkObligations"/>), by its id: its plugins'
     /// receipts and its attempts not settled, joined to the unit of that id. None given, none joined.
     /// </summary>
     public IReadOnlyDictionary<string, IReadOnlyList<InventoryEntry>> Owed { get; init; } = new Dictionary<string, IReadOnlyList<InventoryEntry>>();
 
     /// <summary>
-    /// The quests the service says are closed, among those the landings name (LANDRETIRE1, <see cref="LandedStanding.ClosedAsync"/>): a
+    /// The quests the service says are closed, among those the landings name (<see cref="LandedStanding.ClosedAsync"/>): a
     /// landing the line has not held for a day whose quest is here is named to the person. None given, none is closed, as before.
     /// </summary>
     public IReadOnlySet<string> ClosedQuests { get; init; } = new HashSet<string>();
 
     /// <summary>
-    /// What the clean-up would keep each unfollowed tree for (CLEANUPADVICE1), by the tree's full path, read by <see cref="WorkInventories"/>
+    /// What the clean-up would keep each unfollowed tree for, by the tree's full path, read by <see cref="WorkInventories"/>
     /// with the judgement the press makes. A tree not here is one the clean-up would take, or one nothing was asked of.
     /// </summary>
     public IReadOnlyDictionary<string, TreeKeep> TreeKeeps { get; init; } = new Dictionary<string, TreeKeep>();
 }
 
-/// <summary>Why the clean-up keeps a tree (CLEANUPADVICE1): what its folder holds that no commit does, or that git could not say.</summary>
+/// <summary>Why the clean-up keeps a tree: what its folder holds that no commit does, or that git could not say.</summary>
 /// <param name="Said">The holds in a clause (<see cref="ContentHolds.TreeHolds.KeepSaid"/>); null where git could not say.</param>
 /// <param name="Uncommitted">How many uncommitted paths keep it.</param>
 /// <param name="Own">How many paths only the tree has keep it (ignored, written after it opened, or in a folder too large to look through).</param>

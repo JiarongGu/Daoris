@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The update's door back to an older build (LANDNODE1c2; the land node design §4, <i>Older builds</i>): a staged build whose version is below
+/// The update's door back to an older build (<i>Older builds</i>): a staged build whose version is below
 /// this one's is a going back, refused while any delivery is unresolved (<see cref="DeliveryStore.Rollback"/>), so an older door never lands, or
 /// calls a plugin without the key, behind a newer delivery. The launcher's own roll-back before a start confirms meets no delivery, since none
 /// starts in that window.

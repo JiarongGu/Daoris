@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a session is told about the <c>daoris::</c> rewrite in its Git section (GITAUTH1b, the git-auth design §4.4 and §5.3): what
+/// What a session is told about the <c>daoris::</c> rewrite in its Git section: what
 /// <c>git remote -v</c> shows for an HTTP or HTTPS remote under Daoris's doors, what to name a tool that reads remotes with, and that
-/// <c>gh</c> and <c>az</c> act as the person's own sign-ins (§10). Words alone: it reads no address, and is the one file besides the
+/// <c>gh</c> and <c>az</c> act as the person's own sign-ins. Words alone: it reads no address, and is the one file besides the
 /// reader that names that command (<c>GitRemotesTests</c>' scan excuses it for that).
 /// </summary>
 public static class GitRewriteWords

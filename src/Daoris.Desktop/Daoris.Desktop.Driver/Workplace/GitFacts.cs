@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One landing's planning asks git once per fact (LANDGIT1, after STARTGIT1): within it, a read whose answer an id or the layout
+/// One landing's planning asks git once per fact: within it, a read whose answer an id or the layout
 /// decides (a commit's `merge-base` or `log` by full ids, `--show-toplevel`, `--git-common-dir`, origin's HEAD) is asked of git once,
 /// and every later asker in the flow is handed the answer.
 /// <b>Nothing another process moves is kept</b>: a read naming `HEAD` or a ref is always git's, so a judgement, a replay's source
@@ -9,12 +9,12 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>Never kept across a write.</b> Every git this flow starts that may move a ref or an upstream
-/// (<see cref="RefSnapshot.MayWrite"/>, the same list PROC1d-ii's snapshot is dropped by) drops every fact before it starts and
+/// (<see cref="RefSnapshot.MayWrite"/>, the same list the snapshot is dropped by) drops every fact before it starts and
 /// after it ends, through <see cref="WorkingTree"/>'s one runner, so what a merge, a replay, a branch made or a worktree removed
 /// changed is asked again. A step that is not git (a plugin pushing) calls <see cref="Dropped"/> itself. A write in a flow beside
-/// this one drops nothing of it, as the snapshot's remark says: the judgement again right before an act is what guards it (D88).</para>
+/// this one drops nothing of it, as the snapshot's remark says: the judgement again right before an act is what guards it.</para>
 /// <para><b>Reads only, and nothing the files decide.</b> `status`, and a `diff` that reads the working tree or the index, are never
-/// kept: what the working tree holds is not a ref (a `diff` of two commits by their ids is, PROC1d-iv). A git that did not start
+/// kept: what the working tree holds is not a ref (a `diff` of two commits by their ids is). A git that did not start
 /// (code -1), a read that was cancelled and a question of commits git could not answer (<see cref="Answered"/>) are not kept, so
 /// the next asker asks again. A call with its own environment or bound (a fetch) and a test's stand-in answer
 /// (<see cref="WorkingTree.Answered"/>) are not touched. Outside a landing, a judgement keeps the same questions of commits for
@@ -41,7 +41,7 @@ internal sealed class GitFacts
     }
 
     /// <summary>
-    /// Until disposed, this flow holds no facts (GITAPP2a: the act journal's reconciler, run inside a writer's scopes): every ask is git's.
+    /// Until disposed, this flow holds no facts (the act journal's reconciler, run inside a writer's scopes): every ask is git's.
     /// The scope it stepped out of is this flow's again after, untouched.
     /// </summary>
     internal static IDisposable Outside()
@@ -124,7 +124,7 @@ internal sealed class GitFacts
             lock (facts._gate) folder = facts._pairs.GetValueOrDefault(folder, folder);
         }
 
-        // PROC1d-iv: a question of commits keeps only an answer git gave; a layout read, whatever git said, as before.
+        // A question of commits keeps only an answer git gave; a layout read, whatever git said, as before.
         return facts.AskAsync(folder + "\n" + string.Join('\0', arguments), wide, code => wide ? Answered(arguments, code) : code >= 0, ask);
     }
 
@@ -194,7 +194,7 @@ internal sealed class GitFacts
 
     /// <summary>
     /// A question of commits by their full ids alone (`rev-parse --verify`, `merge-base`, `log` of them or of a range between them;
-    /// PROC1d-iv: `rev-list --count`, and the files two commits differ in as `LandedProofs.NamesAsync` asks): no ref, no HEAD, no
+    /// `rev-list --count`, and the files two commits differ in as `LandedProofs.NamesAsync` asks): no ref, no HEAD, no
     /// path, and no option that reads the refs (`--branches`, `--remotes`, `--all`, `--tags`, `--glob`). Its answer is the
     /// repository's and does not move while the objects stay, so whichever working tree asked it, and when, it is one fact.
     /// </summary>
@@ -230,7 +230,7 @@ internal sealed class GitFacts
     /// <summary>
     /// Whether git gave an answer to a question of commits by their ids (<see cref="ById"/>), so it may be kept: 0, or the "no" (1) of
     /// `merge-base` (the one is not in the other; they share none) and of `rev-parse --verify --quiet`. Anything else (a missing
-    /// object's 128, a git that did not start) is a read not made, asked again and never read as "no" (RECORDUNREAD1, PROC1d-iv).
+    /// object's 128, a git that did not start) is a read not made, asked again and never read as "no".
     /// </summary>
     internal static bool Answered(IReadOnlyList<string> arguments, int code) =>
         code == 0 || (code == 1 && Command(arguments) is "merge-base" or "rev-parse");

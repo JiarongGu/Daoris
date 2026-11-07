@@ -3,7 +3,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A push as the remote helper sees it (D241 point 3; the git-auth design §6.5): git's conversation names refspecs, so the helper keeps the
+/// A push as the remote helper sees it: git's conversation names refspecs, so the helper keeps the
 /// remote's refs from the <c>list for-push</c> answer as it passes, resolves each source to its object once, judges the batch as the ssh
 /// door judges receive-pack's commands, and forwards the object ids it judged in place of the source names. A ref that moves after the
 /// judgement cannot change what is pushed.

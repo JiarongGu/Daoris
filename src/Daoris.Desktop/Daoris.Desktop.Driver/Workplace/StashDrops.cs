@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 public sealed record StashDropPress(string Id);
 
 /// <summary>
-/// **Stash Drop** (GITAPP2, D204, the git-writes design §8): the one act that removes an entry of the shared stash, and only one that a Save of
+/// **Stash Drop**: the one act that removes an entry of the shared stash, and only one that a Save of
 /// Daoris's own made, which its journal says by the commit saved; a message proves no ownership, so the stash of a person's terminal or a
 /// session's tree is never dropped here. One <c>stash</c> step by the commit's id, the place found as it runs and the commit git names read
 /// back (<see cref="StashDropSteps"/>). The commit it drops stays in the act's record and in its answer with the command that stores it again;

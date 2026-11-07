@@ -3,7 +3,7 @@ using System.Reflection;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Why a staged build is not installed now (D139 §4): its check, then a going back to an older build while a delivery is unresolved
+/// Why a staged build is not installed now: its check, then a going back to an older build while a delivery is unresolved
 /// (<see cref="GoingBackRefusals"/>). The application asks it before it closes for a build, and <c>daoris update --now</c> before it says
 /// the word is taken, so both doors answer one refusal in one sentence.
 /// </summary>

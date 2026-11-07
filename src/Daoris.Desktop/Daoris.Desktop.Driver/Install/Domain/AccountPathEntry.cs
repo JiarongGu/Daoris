@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Which entries of an account's <c>PATH</c> are the install's launcher folder (WIRING1e): the comparison, over paths already made whole.</summary>
+/// <summary>Which entries of an account's <c>PATH</c> are the install's launcher folder: the comparison, over paths already made whole.</summary>
 public static class AccountPathEntry
 {
     /// <summary>Whether a stored entry is the folder: both whole paths, or null where an entry is no path, compared by the machine's case rule.</summary>

@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a session is kept from holding of the person's or Daoris's credentials (D241 point 7, the git design §3.1 G5): the token
+/// What a session is kept from holding of the person's or Daoris's credentials: the token
 /// variables it inherited are taken out (<see cref="GitWiring.Untoken"/>), a grant is never handed (<see cref="GitWiring.Hand(System.Diagnostics.ProcessStartInfo, string?)"/>),
 /// its <c>gh</c> and <c>az</c> are pointed at folders of Daoris's that hold no sign-in, and the harness's rules deny reading
-/// <c>profiles/git/</c>, where Daoris keeps its keys. A session still runs as the person's account, so this is a door, not a wall (§10).
+/// <c>profiles/git/</c>, where Daoris keeps its keys. A session still runs as the person's account, so this is a door, not a wall.
 /// </summary>
 public static class GitSessionHolds
 {

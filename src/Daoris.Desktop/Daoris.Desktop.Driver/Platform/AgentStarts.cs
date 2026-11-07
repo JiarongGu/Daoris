@@ -3,14 +3,13 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The one route every agent, plugin process and piece starts by (TERMTRUST1a part (i); D201 point 4; the terminal-trust design §3.3 point
-/// 3): its start made the launcher's in place (<see cref="AgentJobs.Contain"/>), so its harness is born in this Daoris process's agents' job,
+/// The one route every agent, plugin process and piece starts by: its start made the launcher's in place (<see cref="AgentJobs.Contain"/>), so its harness is born in this Daoris process's agents' job,
 /// then started through the start gate (<see cref="ProcessStarts"/>), and said on the machine log (<c>agent.contained</c>). The
 /// <see cref="Process"/> answered is the launcher's, and the doors read it as the session's process: its streams are the harness's, its exit
 /// the harness's, and a kill of it ends the harness through the launcher's own job.
 /// </summary>
 /// <remarks>
-/// <para><b>Best effort</b> (Fable's F2): a start that cannot be contained is made as it was, logged <c>contained: false</c> with why, and
+/// <para><b>Best effort</b>: a start that cannot be contained is made as before, logged <c>contained: false</c> with why, and
 /// holds its process's open event until it ends. A piece is the exception: it is never started outside its own job.</para>
 /// <para><c>ProcessStartsCensusTests</c> holds every agent start to this route, and every other start through the gate to a named reason
 /// of Daoris's own.</para>
@@ -38,13 +37,13 @@ public static class AgentStarts
     }
 
     /// <summary>
-    /// Whose job holds the start (D249): the agents' job where the launcher took it, else its kind's job of the one management, joined as it
+    /// Whose job holds the start: the agents' job where the launcher took it, else its kind's job of the one management, joined as it
     /// starts, so an agent or a plugin's program the launcher could not take (a test's home lays out none) still ends with this process.
     /// </summary>
     internal static ProcessPurpose PurposeOf(AgentStart start) =>
         start.Contained ? ProcessPurpose.Launched : start.Kind == ContainedKind.Plugin ? ProcessPurpose.Plugin : ProcessPurpose.Agent;
 
-    /// <summary>The start's line (<c>agent.contained</c>, the machine log design §4): codes only, never a path, an id or a word.</summary>
+    /// <summary>The start's line (<c>agent.contained</c>): codes only, never a path, an id or a word.</summary>
     internal static void Said(AgentStart start, string? home, MachineLog? log)
     {
         (string, object?)[] data = start.Contained

@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 public sealed record GitFetchVerb(string Repository, bool Yes);
 
 /// <summary>
-/// <c>daoris git fetch &lt;repository&gt; [--plan|--yes]</c> (GITAPP2f, D204; the git-writes design §9): the terminal's twin of the Branches
+/// <c>daoris git fetch &lt;repository&gt; [--plan|--yes]</c>: the terminal's twin of the Branches
 /// tab's <i>Fetch</i>. Without <c>--yes</c> (or with <c>--plan</c>) it says what it would fetch and changes nothing. With <c>--yes</c> it is the
 /// running Daoris's client (<see cref="InstanceDoor.PressAsync"/>): the person's press, confirmed in the window; with no Daoris running it fetches
 /// itself, through the same act (<see cref="GitFetchActs"/>), refused from a session's terminal (<c>DAORIS_SESSION_ID</c>).
@@ -55,7 +55,7 @@ public static class GitFetchCommand
         return new GitFetchVerb(words[0], yes == true);
     }
 
-    /// <summary>The verb's payload: the route's own fields beside <c>said: true</c> (RPC1e).</summary>
+    /// <summary>The verb's payload: the route's own fields beside <c>said: true</c>.</summary>
     public static Dictionary<string, object?> Payload(GitFetchVerb verb) => InstanceDoor.Said(("repository", verb.Repository));
 
     public static async Task<int> RunAsync(IReadOnlyList<string> args, GitRefWorld world, InstanceWorld instance, CancellationToken ct)

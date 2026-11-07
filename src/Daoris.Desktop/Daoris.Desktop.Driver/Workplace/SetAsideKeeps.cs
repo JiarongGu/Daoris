@@ -2,7 +2,7 @@ using static Daoris.Driver.SetAsideDeleting;
 
 namespace Daoris.Driver;
 
-/// <summary>Why the purge keeps a folder moved aside: read and never written, the purge's own read and the inventory's (CLEANUP1, KEEP1a).</summary>
+/// <summary>Why the purge keeps a folder moved aside: read and never written, the purge's own read and the inventory's.</summary>
 internal sealed class SetAsideKeeps(TreeContext context)
 {
     /// <summary>A file in <paramref name="folder"/> created or written after <paramref name="since"/>, by its path from the folder; folders are passed over, since a delete changes their times.</summary>
@@ -35,19 +35,19 @@ internal sealed class SetAsideKeeps(TreeContext context)
     /// <summary>
     /// Why the purge keeps a folder moved aside at <paramref name="moved"/>, read and never written: reached through a link, a link in it
     /// outside a build folder, something in it written after the move, or a folder that cannot be read; null where the purge would delete
-    /// it. The purge's own read, and the inventory's (CLEANUP1, after review), so a folder its rule can no longer finish is said to the
+    /// it. The purge's own read, and the inventory's (after review), so a folder its rule can no longer finish is said to the
     /// person rather than retained for ever: the comparison is with the move, so a later write keeps it at every pass.
-    /// <para>KEEP1a (the cleanup design §5 step 4): the manifest beside it, where it reads, says what the slim removed, which the read
+    /// <para>The manifest beside it, where it reads, says what the slim removed, which the read
     /// passes over (<see cref="WrittenSince"/>). One that does not read says nothing, so the folder is read whole: kept more, never less.</para>
     /// </summary>
-    /// <param name="top">A finished tree's folder: its own top's time is read too (Codex's read of the design, finding 2), since a top-level
+    /// <param name="top">A finished tree's folder: its own top's time is read too, since a top-level
     /// entry deleted after the judgement's read leaves no later time on anything that stays. A folder from before, whose top was made when it
     /// was copied or moved, is read as before.</param>
     internal (string Code, string Sentence)? Kept(string folder, DateTimeOffset moved, bool top = false)
     {
         try
         {
-            // A link on the way to it, the folder itself included, makes it somewhere else: never walked into (TIDIEDLINK1).
+            // A link on the way to it, the folder itself included, makes it somewhere else: never walked into.
             return context.Worktrees.LinkBelowTreesRoot(folder) is { } link
                 ? (SetAsideKept.Linked, $"it is reached through a link, at {link}")
                 : WrittenSince(folder, moved, SlimManifest.Read(SlimManifest.PathFor(folder)).Manifest, top);
@@ -60,13 +60,13 @@ internal sealed class SetAsideKeeps(TreeContext context)
 
     /// <summary>
     /// Why a folder moved aside is kept: something in it written after <paramref name="moved"/>, or a link in it outside a build
-    /// folder; null where neither. A link under a build folder is a package manager's, which goes as a link (TIDIEDLINK1): its own
+    /// folder; null where neither. A link under a build folder is a package manager's, which goes as a link: its own
     /// write is read, never what it points at, and it is never walked into.
     /// </summary>
     /// <remarks>
-    /// <para>🔴 <b>Each entry's creation time too</b> (KEEP1a, Fable F1.1, as <see cref="TreeStrays"/> reads one): a copy keeps its source's
+    /// <para>🔴 <b>Each entry's creation time too</b> (as <see cref="TreeStrays"/> reads one): a copy keeps its source's
     /// write time and takes a new creation time, so a file copied in after the move is a write.</para>
-    /// <para>🔴 <b>What the slim removed</b> (the cleanup design §5 step 4, the steward's S1): removing a folder changes the time of the
+    /// <para>🔴 <b>What the slim removed</b>: removing a folder changes the time of the
     /// folder above it, which this read would take for a write after the move and keep for ever. So a path the manifest marks
     /// <c>removing</c> is passed over, never read into; the folder directly above a <c>removed</c> path has its own write time read
     /// against when that removal ended, and passed over while a path below it is still <c>removing</c>. Its creation time, and every
@@ -91,7 +91,7 @@ internal sealed class SetAsideKeeps(TreeContext context)
             {
                 // The manifest keeps a moment to the millisecond, floored, and the folder's own time to 100 ns: a removal that ended within
                 // the millisecond it is stamped with leaves the folder above later than its stamp, so the stamp is read as that millisecond's end
-                // (KEEPSIZE1b, seen once the read under `.going` met a folder's time the first read had not yet).
+                // (seen once the read under `.going` met a folder's time the first read had not yet).
                 var end = stamped.UtcDateTime.AddMilliseconds(1);
                 ended[above] = ended.TryGetValue(above, out var was) && was > end ? was : end;
             }
@@ -121,7 +121,7 @@ internal sealed class SetAsideKeeps(TreeContext context)
             }
         }
 
-        // A finished tree's own top, read last: an entry deleted there leaves no later time on anything that stays (Codex's read of the design, finding 2).
+        // A finished tree's own top, read last: an entry deleted there leaves no later time on anything that stays.
         if (top && !passedOver.Contains("") && new DirectoryInfo(folder).LastWriteTimeUtc > Since(""))
         {
             return (SetAsideKept.Written, "something at its top was added or removed after it was judged");

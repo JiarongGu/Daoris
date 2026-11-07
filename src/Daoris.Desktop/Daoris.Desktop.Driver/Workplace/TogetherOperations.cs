@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace Daoris.Driver;
 
-/// <summary>The phases of bringing sessions together (LINESTOGETHER1d, the review-flow design §4), as stored.</summary>
+/// <summary>The phases of bringing sessions together, as stored.</summary>
 public static class TogetherPhase
 {
     /// <summary>Recorded and its words said; the head's turn has not begun.</summary>
@@ -46,7 +46,7 @@ public static class TogetherWhy
     public const string HeadGone = "head-gone";
 }
 
-/// <summary>How a check accounted one path of a member's commit, as stored (the review-flow design §4, <i>Checking</i>).</summary>
+/// <summary>How a check accounted one path of a member's commit, as stored (<i>Checking</i>).</summary>
 public static class TogetherAccounts
 {
     /// <summary>The commit's change, held by the head's tip by content or patch.</summary>
@@ -101,7 +101,7 @@ public sealed record TogetherPath(string Session, string Commit, string Path, st
 
 /// <summary>
 /// One landing attempt of the combined Accept, written before anything is made, then told what came of it: what a restart settles
-/// <i>landing</i> by (the review-flow design §4, <i>Restart</i>).
+/// <i>landing</i> by (<i>Restart</i>).
 /// </summary>
 /// <param name="Form">One of <see cref="TogetherForms"/>.</param>
 /// <param name="Target">The ref the attempt moves or makes: a branch, or the line.</param>
@@ -120,7 +120,7 @@ public sealed record TogetherAttempt(string Form, string Target, string? Expecte
 }
 
 /// <summary>
-/// One operation bringing a repository's sessions together (LINESTOGETHER1d): the head, each member pinned, the phase, the last
+/// One operation bringing a repository's sessions together: the head, each member pinned, the phase, the last
 /// accounting and the landing attempt. The inclusion record of every form: a merge keeps no landing record of its own.
 /// </summary>
 public sealed record TogetherOperation(

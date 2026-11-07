@@ -4,8 +4,8 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The SSH host-key fingerprints the public hosts publish (GITAUTH1c; the git-auth design §3.5), which a test compares a host's offered
-/// key with before the person trusts it. Read from the tool resources' list (<c>resources.json</c>'s <c>hostKeys</c>, D121 §3), the
+/// The SSH host-key fingerprints the public hosts publish, which a test compares a host's offered
+/// key with before the person trusts it. Read from the tool resources' list (<c>resources.json</c>'s <c>hostKeys</c>), the
 /// install's copy in <c>app/</c> first, else the one beside the driver, so the list updates without a release; an older build's
 /// reader passes the key over. Each value is from its host's own documentation, read 2026-10-23.
 /// </summary>
@@ -69,8 +69,8 @@ public static class GitHostKeys
 }
 
 /// <summary>
-/// <c>driver.json</c> changed in place for a key <see cref="DriverConfig"/> does not model (GITAUTH1c's pointers): under the file's
-/// own lock (<see cref="KeepLock"/>, CONFIGLOCK1), read as it stands, changed, and written whole, every other key kept as written.
+/// <c>driver.json</c> changed in place for a key <see cref="DriverConfig"/> does not model: under the file's
+/// own lock (<see cref="KeepLock"/>), read as it stands, changed, and written whole, every other key kept as written.
 /// </summary>
 public static class DriverConfigFile
 {

@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One kind's rule as the person sets it (KEEP1d): its days, <c>never</c>, <c>whole</c> or not, or back to its default. What
+/// One kind's rule as the person sets it: its days, <c>never</c>, <c>whole</c> or not, or back to its default. What
 /// <c>SET_KEEP</c> carries and <c>daoris settings keep</c> reads from its words; <see cref="KeepRules.Apply"/> judges it.
 /// </summary>
 /// <param name="Kind">The kind's id: <c>set-aside</c>, <c>downloads</c>, <c>logs</c> or <c>history</c>.</param>
@@ -11,22 +11,22 @@ namespace Daoris.Driver;
 /// <param name="Never">The downloads' or history's <c>never</c>.</param>
 /// <param name="Whole">The set-aside folders kept whole (true) or slimmed (false), where given.</param>
 /// <param name="Default">Its default again: every other field is then none.</param>
-/// <param name="Gb">The floor's size in GB (KEEP1f, the kind <c>floor</c>).</param>
-/// <param name="Percent">The floor's share of each volume, in percent (KEEP1f).</param>
-/// <param name="Off">No floor (KEEP1f).</param>
+/// <param name="Gb">The floor's size in GB (the kind <c>floor</c>).</param>
+/// <param name="Percent">The floor's share of each volume, in percent.</param>
+/// <param name="Off">No floor.</param>
 public sealed record KeepSet(
     string Kind, int? Days = null, bool Never = false, bool? Whole = null, bool Default = false, int? Gb = null, int? Percent = null, bool Off = false)
 {
     /// <summary>
-    /// The size of the Daoris folder's volume in bytes, where the door read it (KEEP1f): a floor's size is judged against half of it. Null
+    /// The size of the Daoris folder's volume in bytes, where the door read it: a floor's size is judged against half of it. Null
     /// where it was not read; each volume's floor is then still at most half of that volume (<see cref="FloorPolicy.Of"/>).
     /// </summary>
     public long? Volume { get; init; }
 }
 
 /// <summary>
-/// The person's keep rules set (KEEP1d, D195 point 2; the cleanup design §2.2): the one judgement the window's <c>SET_KEEP</c>, the
-/// terminal's <c>daoris settings keep</c> and Ask Daoris's <c>keep</c> door make (D194 point 4), refusing a value out of its kind's bounds
+/// The person's keep rules set: the one judgement the window's <c>SET_KEEP</c>, the
+/// terminal's <c>daoris settings keep</c> and Ask Daoris's <c>keep</c> door make, refusing a value out of its kind's bounds
 /// with <see cref="ChoiceCodes.KeepOutOfRange"/>.
 /// </summary>
 public static class KeepRules
@@ -45,7 +45,7 @@ public static class KeepRules
         ?? throw new DriverException($"`{id}` is no kind whose rule you set here: name {string.Join(", ", Settable.Select(kind => $"`{kind.Id}`"))}, "
             + $"`{Allowance}` or `{Floor}`.");
 
-    /// <summary>The allowance over the whole's word (KEEPSIZE1): set beside the kinds' rules, though it keeps no kind of its own.</summary>
+    /// <summary>The allowance over the whole's word: set beside the kinds' rules, though it keeps no kind of its own.</summary>
     public const string Allowance = "allowance";
 
     /// <summary>Whether <paramref name="id"/> names the allowance rather than a kind.</summary>
@@ -80,7 +80,7 @@ public static class KeepRules
             ("unit", "gb"), ("context", "allowance"));
     }
 
-    /// <summary>The free-space floor's word (KEEP1f): set beside the kinds' rules, though it keeps no kind of its own.</summary>
+    /// <summary>The free-space floor's word: set beside the kinds' rules, though it keeps no kind of its own.</summary>
     public const string Floor = "floor";
 
     /// <summary>Whether <paramref name="id"/> names the floor rather than a kind.</summary>
@@ -124,7 +124,7 @@ public static class KeepRules
                     ? keep with { DownloadsGb = set.Gb }
                     : keep with { DownloadsNever = false, DownloadsDays = set.Days, DownloadsGb = set.Gb ?? keep.DownloadsGb },
             "browser-cache" => keep with { BrowserCacheGb = set.Gb },
-            // History's `never` is its default: no age, written as nothing (KEEP1g).
+            // History's `never` is its default: no age, written as nothing.
             "history" => keep with { HistoryDays = set.Never ? null : set.Days },
             _ => keep with { LogsDays = set.Days },
         };
@@ -199,13 +199,13 @@ public static class KeepRules
         return $"{string.Join(", ", choices)} or `default`";
     }
 
-    /// <summary>What the floor takes, in the words its refusal and its usage say (KEEP1f).</summary>
+    /// <summary>What the floor takes, in the words its refusal and its usage say.</summary>
     public static string FloorChoices(long? volume) =>
         $"a size from {FloorPolicy.MinGb} GB to {(volume is { } total ? $"{FloorPolicy.HalfGb(total)} GB, half its volume" : "half its volume")}, "
         + $"a share from {FloorPolicy.MinPercent}% to {FloorPolicy.MaxPercent}%, `off` or `default`";
 
     /// <summary>
-    /// The floor a word names (KEEP1f): <c>&lt;n&gt;GB</c>, <c>&lt;n&gt;%</c>, <c>off</c> or <c>default</c>, as
+    /// The floor a word names: <c>&lt;n&gt;GB</c>, <c>&lt;n&gt;%</c>, <c>off</c> or <c>default</c>, as
     /// <c>daoris settings keep floor</c> and Ask Daoris's door read it; its bounds are <see cref="Apply"/>'s to judge.
     /// </summary>
     private static KeepSet FloorAsked(string value)
@@ -225,7 +225,7 @@ public static class KeepRules
         };
     }
 
-    /// <summary>The floor set (KEEP1f), judged against its bounds: a size from 1 GB to half the Daoris folder's volume, a share from 1% to 50%.</summary>
+    /// <summary>The floor set, judged against its bounds: a size from 1 GB to half the Daoris folder's volume, a share from 1% to 50%.</summary>
     private static KeepChoices ApplyFloor(KeepChoices keep, KeepSet set)
     {
         var given = (set.Gb is not null ? 1 : 0) + (set.Percent is not null ? 1 : 0) + (set.Off ? 1 : 0);

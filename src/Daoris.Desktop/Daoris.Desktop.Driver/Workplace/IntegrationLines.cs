@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One event of a line's run (the integration design §5.2's last column): its code, the line, and the candidate, request and outcome it is of.
+/// One event of a line's run: its code, the line, and the candidate, request and outcome it is of.
 /// Told to the log by the transport; a code and its facts, never a sentence.
 /// </summary>
 public sealed record IntegrationEvent(string Code, string Repository, string Line)
@@ -15,7 +15,7 @@ public sealed record IntegrationEvent(string Code, string Repository, string Lin
     public string? Outcome { get; init; }
 }
 
-/// <summary>The codes a line's run tells (§5.2), one per step and its outcomes.</summary>
+/// <summary>The codes a line's run tells, one per step and its outcomes.</summary>
 public static class IntegrationEventCodes
 {
     public const string Queued = "integration.queued";
@@ -61,7 +61,7 @@ public static class IntegrationEventCodes
 internal sealed record IntegrationLineRun(IReadOnlyList<string> Said, IReadOnlyList<IntegrationEvent> Events, bool Closed);
 
 /// <summary>
-/// One line's run to rest (INTEGRATE1g; the integration design §5.1, §5.2): a candidate formed and replayed, then its verdict, promotion,
+/// One line's run to rest: a candidate formed and replayed, then its verdict, promotion,
 /// settle, tidy and close, and the next candidate after it, until the line has nothing it can move now (nothing queued, a candidate held or
 /// waiting, git unable to say). The transport runs it off the pass; nothing here waits on a timer.
 /// </summary>

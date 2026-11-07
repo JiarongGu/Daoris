@@ -5,11 +5,11 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The questions the driver asks a working tree: is it clean enough to spawn into, what landed while
-/// a session ran, and — since D48 §6 — where in the repository's history this checkout stands. Asked
+/// a session ran, and where in the repository's history this checkout stands. Asked
 /// of git itself, because git's answer is the one that matters.
 /// </summary>
 /// <remarks>
-/// <para>A session spawns only onto a clean tree (D46 §3): uncommitted changes are somebody's work in
+/// <para>A session spawns only onto a clean tree: uncommitted changes are somebody's work in
 /// flight — the lesson `reaching-in` was written from — and a tree that is not a git repository at
 /// all cannot make that promise, so it refuses too.</para>
 ///
@@ -51,7 +51,7 @@ public static class WorkingTree
     }
 
     /// <summary>
-    /// The branch this checkout stands on, by its short name: what the composer's tree chip says (NEW1e-a). Null where HEAD is
+    /// The branch this checkout stands on, by its short name: what the composer's tree chip says. Null where HEAD is
     /// detached, which is no branch at all; a branch with no commit yet answers its name. A git that fails is thrown, because a
     /// tree git cannot read has no head to name, and "detached" would be a claim about it.
     /// </summary>
@@ -62,14 +62,14 @@ public static class WorkingTree
         return ReviewChoices.Branch(code, stdout, stderr);
     }
 
-    /// <summary><see cref="BranchAsync"/>'s question: H, in Review's graph (GITAPP1a-ii).</summary>
+    /// <summary><see cref="BranchAsync"/>'s question: H, in Review's graph.</summary>
     internal static readonly string[] BranchAsk = ["symbolic-ref", "--short", "-q", "HEAD"];
 
-    /// <summary><see cref="DefaultBranchAsync"/>'s first question, origin's <c>HEAD</c>: G1, in Review's graph (GITAPP1a-ii).</summary>
+    /// <summary><see cref="DefaultBranchAsync"/>'s first question, origin's <c>HEAD</c>: G1, in Review's graph.</summary>
     internal static readonly string[] OriginHeadAsk = ["symbolic-ref", "--short", "refs/remotes/origin/HEAD"];
 
     /// <summary>
-    /// Which line this repository treats as canonical, as far as this checkout knows (D48 §6).
+    /// Which line this repository treats as canonical, as far as this checkout knows.
     /// </summary>
     /// <remarks>
     /// <para>Asked of the remote's own HEAD first, which is what a clone records and therefore the
@@ -85,11 +85,11 @@ public static class WorkingTree
         var (code, stdout, _) = await GitAsync(root, OriginHeadAsk, ct).ConfigureAwait(false);
         if (ReviewChoices.Guess(code, stdout, null, null) is { } pointed) return pointed;
 
-        // GITAPP1a-ii: the order is ReviewChoices.Guess's, which Review's graph asks all three together and chooses by.
+        // The order is ReviewChoices.Guess's, which Review's graph asks all three together and chooses by.
         int? main = null, master = null;
         foreach (var candidate in ReviewChoices.Conventional)
         {
-            // Spelled as every read of a branch's commit is (LANDGIT1c), so one ref is one command wherever it is asked.
+            // Spelled as every read of a branch's commit is, so one ref is one command wherever it is asked.
             var (exists, _, _) = await GitAsync(root, ReviewChoices.ConventionalAsk(candidate), ct).ConfigureAwait(false);
             if (candidate == "main") main = exists;
             else master = exists;
@@ -101,7 +101,7 @@ public static class WorkingTree
 
     /// <summary>
     /// How <paramref name="head"/> stands to <paramref name="held"/> — the question a deployment
-    /// cannot ask, because it has no checkout (SYNC5a).
+    /// cannot ask, because it has no checkout.
     /// </summary>
     /// <remarks>
     /// Whether the commit is here is asked first and on its own: `merge-base` fails the same way for a
@@ -154,7 +154,7 @@ public static class WorkingTree
     /// <summary>
     /// What a tree holds uncommitted, as git's own short lines (<c>M path</c>, <c>?? path</c>), at most
     /// <paramref name="limit"/> of them with a last line counting the rest. Empty when the tree is clean
-    /// or git cannot say. What a session carrying on after a cut-off is handed (D80): it may not run
+    /// or git cannot say. What a session carrying on after a cut-off is handed: it may not run
     /// <c>git status</c> itself, and a timeout lands mid-change.
     /// </summary>
     public static async Task<IReadOnlyList<string>> UncommittedAsync(
@@ -174,7 +174,7 @@ public static class WorkingTree
 
     /// <summary>
     /// Whether one file is exactly as HEAD has it — tracked, and nothing staged, changed or untracked
-    /// about it. What a registration asks of the manifest before it names the commit (SYNC5b).
+    /// about it. What a registration asks of the manifest before it names the commit.
     /// </summary>
     public static async Task<bool> UnmodifiedAsync(string root, string path, CancellationToken ct = default)
     {
@@ -191,7 +191,7 @@ public static class WorkingTree
 
     /// <summary>
     /// The commit <paramref name="name"/> points at in <paramref name="root"/>, by its full id; null where it names no commit there
-    /// (CONFIRMWAIT1a-i: a press's <c>branch</c> ground, read at its ask and again at its Confirm).
+    /// (a press's <c>branch</c> ground, read at its ask and again at its Confirm).
     /// </summary>
     public static async Task<string?> TipAsync(string root, string name, CancellationToken ct = default)
     {
@@ -202,8 +202,8 @@ public static class WorkingTree
     }
 
     /// <summary>
-    /// Every branch tip in <paramref name="root"/>, read by one <c>git for-each-ref</c> (CONFIRMWAIT1, the confirm-wait design §15.1 item
-    /// 1: a plan's branches bound by their full commits, not their count): each local branch by its name, each remote's as
+    /// Every branch tip in <paramref name="root"/>, read by one <c>git for-each-ref</c> (a plan's branches bound by their full
+    /// commits, not their count): each local branch by its name, each remote's as
     /// <c>&lt;remote&gt;/&lt;name&gt;</c>, each by its full commit id. Null where git cannot say.
     /// </summary>
     public static async Task<IReadOnlyDictionary<string, string>?> TipsAsync(string root, CancellationToken ct = default)
@@ -227,8 +227,8 @@ public static class WorkingTree
     }
 
     /// <summary>
-    /// What <paramref name="root"/>'s index holds staged against its head, by each entry's modes and full blob ids (CONFIRMWAIT1 §15.1
-    /// item 2: a discard binds its index, whose staged bytes can change while the working file stays the same). Empty where nothing is
+    /// What <paramref name="root"/>'s index holds staged against its head, by each entry's modes and full blob ids
+    /// (a discard binds its index, whose staged bytes can change while the working file stays the same). Empty where nothing is
     /// staged; null where git cannot say.
     /// </summary>
     public static async Task<string?> StagedAsync(string root, CancellationToken ct = default)
@@ -240,7 +240,7 @@ public static class WorkingTree
 
     /// <summary>
     /// The paths <paramref name="root"/> holds uncommitted, untracked files each by name, relative to it with <c>/</c>; null where git
-    /// cannot say (CONFIRMWAIT1a-i: a forced discard's ground, what it would lose).
+    /// cannot say (a forced discard's ground, what it would lose).
     /// </summary>
     public static async Task<IReadOnlyList<string>?> UncommittedAsync(string root, CancellationToken ct = default)
     {
@@ -260,7 +260,7 @@ public static class WorkingTree
         return paths;
     }
 
-    /// <summary>What landed since — the reviewable half of the record (D46 §4).</summary>
+    /// <summary>What landed since — the reviewable half of the record.</summary>
     public static async Task<string> CommitsSinceAsync(string root, string? before, CancellationToken ct = default)
     {
         var (code, stdout, _) = await GitAsync(root, ["log", "--oneline", Since(before)], ct).ConfigureAwait(false);
@@ -268,7 +268,7 @@ public static class WorkingTree
     }
 
     /// <inheritdoc cref="CommitsSinceAsync(string, string?, CancellationToken)"/>
-    /// <param name="git">How git is read: the review's seam (REVIEW3), through which the sweep reads a lost session's (EVID1b).</param>
+    /// <param name="git">How git is read: the review's seam, through which the sweep reads a lost session's.</param>
     internal static async Task<string> CommitsSinceAsync(string root, string? before, GitRead git, CancellationToken ct)
     {
         var stdout = new StringBuilder();
@@ -318,14 +318,14 @@ public static class WorkingTree
     internal static Task<TreeDiff?> RangeAsync(string root, string before, string range, string rest, GitRead git, CancellationToken ct) =>
         TreeDiffs.RangeAsync(root, before, range, rest, git, ct);
 
-    /// <summary>The files a tree holds, for a person to `@` one (CONV4d).</summary>
+    /// <summary>The files a tree holds, for a person to `@` one.</summary>
     /// <param name="Files">Tree-relative, with forward slashes, in ordinal order.</param>
     /// <param name="Unlisted">How many more the bound left out — counted, so the page can say so.</param>
     public sealed record TreeFiles(IReadOnlyList<string> Files, int Unlisted);
 
     /// <summary>How many paths a completion list is handed before the rest are only counted.</summary>
     /// <remarks>
-    /// The console's rule again (design §5): a tree has no upper size, so the bound is stated. A path
+    /// The console's rule again: a tree has no upper size, so the bound is stated. A path
     /// the list leaves out can still be typed, and both doors expand it as typed.
     /// </remarks>
     public const int FileLimit = 20_000;
@@ -389,8 +389,8 @@ public static class WorkingTree
     internal static Task<bool> IsTopLevelAsync(string root, CancellationToken ct) => IsTopLevelAsync(root, WholeAsync, ct);
 
     /// <inheritdoc cref="IsTopLevelAsync(string, CancellationToken)"/>
-    /// <param name="git">How git is read: the review's seam (REVIEW3), so its tests count this start with the range's, and
-    /// evidence's (EVID1b).</param>
+    /// <param name="git">How git is read: the review's seam, so its tests count this start with the range's, and
+    /// evidence's.</param>
     internal static async Task<bool> IsTopLevelAsync(string root, GitRead git, CancellationToken ct)
     {
         // A folder that is not there: git would refuse to start in it, and nothing here is asked of the one above.
@@ -470,7 +470,7 @@ public static class WorkingTree
         GitRuns.ReadGitAsync(root, arguments, take, ct);
 
     /// <summary>
-    /// How a review reads git (REVIEW3): <c>take</c> is handed git's answer as it comes and answers false once it has what
+    /// How a review reads git: <c>take</c> is handed git's answer as it comes and answers false once it has what
     /// it needs, and git is stopped there. The answer is git's exit code, 0 where the reader stopped it, -1 where git did
     /// not start or could not be read.
     /// </summary>

@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Where a landed session's branch stands now, for its review (REVIEW2, D113).</summary>
+/// <summary>Where a landed session's branch stands now, for its review.</summary>
 public static class LandedState
 {
     /// <summary>The branch stands and still holds the commit the landing made it at: its changes are read from it.</summary>
@@ -17,7 +17,7 @@ public static class LandedState
 }
 
 /// <summary>
-/// Whether a gone branch's work reads on the line (REVIEW2), by WSR5's proof by content on the commit the landing made
+/// Whether a gone branch's work reads on the line, by the proof by content on the commit the landing made
 /// it at, while git still holds that commit.
 /// </summary>
 /// <param name="Kind">
@@ -33,7 +33,7 @@ public sealed record LandedReads(string Kind, string? Where, IReadOnlyList<strin
     public const string CommitsGone = "commits-gone";
 }
 
-/// <summary>A landed session's review (REVIEW2, D113): its landing, where that branch stands, and what it holds.</summary>
+/// <summary>A landed session's review: its landing, where that branch stands, and what it holds.</summary>
 /// <param name="Entry">The landing record, standing or a trace.</param>
 /// <param name="State">One of <see cref="LandedState"/>.</param>
 /// <param name="Changes">Standing, where asked: the changes from where its work grew from up to the branch; null where git could not read them.</param>
@@ -43,12 +43,12 @@ public sealed record LandedReview(LandedBranch Entry, string State, TreeDiff? Ch
 {
     /// <summary>
     /// Whether the session's review reads as landed: its landed branch stands, or its tree is gone. Then accepting is
-    /// no door — a second landing is refused while the branch stands (D87), and there is no tree to land once it is
-    /// gone — and neither is sending it back; only the hand-off is, where one applies (WSR5b).
+    /// no door — a second landing is refused while the branch stands, and there is no tree to land once it is
+    /// gone — and neither is sending it back; only the hand-off is, where one applies.
     /// </summary>
     /// <remarks>
     /// A tree still here after its landed branch went is a session that may have carried on after its landing
-    /// (WSR6's replay keeps its own commits), so its review is the tree's again, as any other.
+    /// (a replay keeps its own commits), so its review is the tree's again, as any other.
     /// </remarks>
     public bool ReadsAsLanded(bool treeGone) => treeGone || State == LandedState.Standing;
 }

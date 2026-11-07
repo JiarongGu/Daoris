@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Where one repository of a workspace plan stands, read from the facts every time (WSSETUP6, D124 §4.1).</summary>
+/// <summary>Where one repository of a workspace plan stands, read from the facts every time.</summary>
 public enum SetupState
 {
     /// <summary>Registered from its line: adopted, and declaring what it owns.</summary>
@@ -12,7 +12,7 @@ public enum SetupState
     /// <summary>Its set-up quest is open or taken: a session sets it up, or will.</summary>
     Open,
 
-    /// <summary>Its set-up quest is open or taken and its failed sessions parked it (DRV6).</summary>
+    /// <summary>Its set-up quest is open or taken and its failed sessions parked it.</summary>
     Parked,
 
     /// <summary>Nothing asked yet: the plan publishes it in its turn.</summary>
@@ -24,14 +24,14 @@ public enum SetupState
     /// <summary>Its set-up closed declined: never asked again by the plan.</summary>
     Declined,
 
-    /// <summary>The set-up the plan published is gone, deleted by the person (D95): never asked again by the plan.</summary>
+    /// <summary>The set-up the plan published is gone, deleted by the person: never asked again by the plan.</summary>
     Deleted,
 }
 
 /// <summary>One repository's standing in a plan: its state, the set-up quest that says so, and the sentence a person reads.</summary>
 public sealed record SetupStanding(string Repository, SetupState State, string? Quest, string Said);
 
-/// <summary>Who paused a plan (D124 §4.1): the person, the pilot's close, or a doctrine tool this machine cannot run.</summary>
+/// <summary>Who paused a plan: the person, the pilot's close, or a doctrine tool this machine cannot run.</summary>
 public static class SetupPausedBy
 {
     public const string Person = "person";
@@ -44,14 +44,14 @@ public static class SetupPausedBy
 /// <summary>A plan's pause: who paused it, the sentence that says why, and when.</summary>
 public sealed record SetupPause(string By, string Said, DateTimeOffset At);
 
-/// <summary>A repository the press refused when its turn came (D124 §4.1): the refusal's code, its sentences, and when.</summary>
+/// <summary>A repository the press refused when its turn came: the refusal's code, its sentences, and when.</summary>
 public sealed record SetupSkip(string Code, string Said, DateTimeOffset At);
 
 /// <summary>
-/// A workspace's set-up plan, <c>&lt;home&gt;/setup/&lt;workspace&gt;.json</c> (WSSETUP6, D124 §4.1): the person's choices and
-/// the quests it published. <b>Nothing in it is a count</b> (D58): progress is read from the quests and the registry every time.
+/// A workspace's set-up plan, <c>&lt;home&gt;/setup/&lt;workspace&gt;.json</c>: the person's choices and
+/// the quests it published. <b>Nothing in it is a count</b>: progress is read from the quests and the registry every time.
 /// </summary>
-/// <param name="Order">The repositories, in §4.2's order, less the ones the person unticked.</param>
+/// <param name="Order">The repositories, in the set-up order, less the ones the person unticked.</param>
 /// <param name="AtOnce">How many of its set-ups may be open at once, as the person chose it; a tick holds it to the cap's <c>cap − 1</c>.</param>
 /// <param name="Pilot">How many go first: once they have all closed, the plan pauses itself until the person resumes it.</param>
 public sealed record WorkspaceSetupPlan(string Workspace, IReadOnlyList<string> Order, int AtOnce, int Pilot)
@@ -73,7 +73,7 @@ public sealed record WorkspaceSetupPlan(string Workspace, IReadOnlyList<string> 
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Each repository's index quest (ORIENT2c), by the repository's name, as the plan published it once the repository was
+    /// Each repository's index quest, by the repository's name, as the plan published it once the repository is
     /// set up: the plan asks it after the set-up, one at a time with the set-ups.
     /// </summary>
     public IReadOnlyDictionary<string, string> Indexed { get; init; } =
@@ -87,16 +87,16 @@ public sealed record WorkspaceSetupPlan(string Workspace, IReadOnlyList<string> 
     public bool Live => Stopped is null;
 }
 
-/// <summary>What other work touched a repository, from the facts this machine keeps (D124 §4.2).</summary>
+/// <summary>What other work touched a repository, from the facts this machine keeps.</summary>
 /// <param name="Asked">Quests addressed to it by anyone but itself: another repository, an ask, the person. A set-up is not one.</param>
-/// <param name="Read">Tool calls of other repositories' sessions that touched a file in its checkout, each call once (D76).</param>
+/// <param name="Read">Tool calls of other repositories' sessions that touched a file in its checkout, each call once.</param>
 /// <param name="Sessions">Sessions this machine ran in it.</param>
 public sealed record SetupTouches(int Asked, int Read, int Sessions)
 {
     public static SetupTouches None { get; } = new(0, 0, 0);
 }
 
-/// <summary>A file one tool call touched, as the conversation record names it (D76): the call's id and the path.</summary>
+/// <summary>A file one tool call touched, as the conversation record names it: the call's id and the path.</summary>
 public sealed record ToolTouch(string Call, string Path);
 
 /// <summary>The catalogue of <see cref="SetupLine"/> lines, which the owner of what they say keeps: each builder writes the fields its line gives it and nothing else.</summary>
@@ -127,7 +127,7 @@ public static class SetupLines
     }
 }
 
-/// <summary>The person's choices for a workspace press (D124 §4.5): each null or empty is the default.</summary>
+/// <summary>The person's choices for a workspace press: each null or empty is the default.</summary>
 public sealed record WorkspaceSetupOptions(
     int? AtOnce = null, int? Pilot = null, IReadOnlyList<string>? First = null, IReadOnlyList<string>? Skip = null);
 
@@ -171,7 +171,7 @@ public sealed record WorkspaceSetupOutcome(bool Written, string Message, Workspa
 /// <summary>What a pause, a resume or a stop came to.</summary>
 public sealed record WorkspaceSetupSteer(bool Ok, string Message, WorkspaceSetupPlan? Plan);
 
-/// <summary>Why a workspace press as a whole would not write a plan (D124 §4.1, §4.5), beside the tools' own refusals.</summary>
+/// <summary>Why a workspace press as a whole would not write a plan, beside the tools' own refusals.</summary>
 public static class WorkspaceSetupRefusals
 {
     /// <summary>No repository of the workspace has a checkout here.</summary>

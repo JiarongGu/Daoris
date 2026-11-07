@@ -28,7 +28,7 @@ public sealed record GitPushUpdate(string Old, string New, string Ref)
 }
 
 /// <summary>
-/// The updates a push holds, each judged by its kind (D233 choice 3, D241 point 3) at both doors, for every agent, whatever its harness's
+/// The updates a push holds, each judged by its kind at both doors, for every agent, whatever its harness's
 /// rules say. The ssh door reads receive-pack's commands from git's side before it forwards them; the remote helper builds the same
 /// updates from the remote's refs and its sources' objects (<see cref="GitHelperPush"/>). Each asks git whether an update keeps its
 /// ref's history.

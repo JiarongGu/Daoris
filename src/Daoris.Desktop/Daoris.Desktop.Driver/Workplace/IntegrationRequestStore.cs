@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The records the integration door reads (INTEGRATE1e part e1): the machine's landings and its session branches, standing and traces.
+/// The records the integration door reads: the machine's landings and its session branches, standing and traces.
 /// A seam, so the door's rules are judged over records a test holds; <see cref="HomeIntegrationRecords"/> reads a home's.
 /// </summary>
 public interface IIntegrationRecords
@@ -22,7 +22,7 @@ public sealed class HomeIntegrationRecords(string home) : IIntegrationRecords
 }
 
 /// <summary>
-/// Where admitted requests are kept (INTEGRATE1e): one open request per repository and branch, so no landing is requested twice.
+/// Where admitted requests are kept: one open request per repository and branch, so no landing is requested twice.
 /// <see cref="IntegrationStore"/> keeps them in the desktop store (part e2), judged by the store's own index in the write, so two doors at
 /// once, in one process or two, keep one.
 /// </summary>
@@ -32,7 +32,7 @@ public interface IIntegrationRequestStore
     IntegrationRequest? OpenFor(string repository, string branch);
 
     /// <summary>
-    /// The request made for a unit at the tip it froze, open or closed (INTEGRATE1n part n2: the <c>integrate</c> node's key), the newest
+    /// The request made for a unit at the tip it froze, open or closed (the <c>integrate</c> node's key), the newest
     /// where more than one was; null where none was. Reads closed requests too, so a node finds what became of its request whenever it asks.
     /// </summary>
     IntegrationRequest? FindByKey(string unit, string tip);

@@ -3,15 +3,15 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris place --workspace &lt;name&gt; --adoption …</c> (WSSETUP6, D124 §4.5; WORKFLOWCLEAN1 1f): the terminal's door to a
+/// <c>daoris place --workspace &lt;name&gt; --adoption …</c>: the terminal's door to a
 /// workspace's paced adoption, in <see cref="PlaceCommand"/>'s verb, since the plan's press reads each line with git as that press
 /// does. In the library rather than the host, so its words are held by a test.
 /// </summary>
 /// <remarks>
 /// <para><c>--plan</c> prints the list: each repository with a checkout here, in the order the plan would work them, with what
-/// touched each (§4.2), where it stands, and every refusal the press would meet now; then the pacing, the agent and the rule a
+/// touched each, where it stands, and every refusal the press would meet now; then the pacing, the agent and the rule a
 /// press adds. It writes, publishes and adds nothing. With a plan already working, it prints where that plan stands.</para>
-/// <para>A press writes the plan and adds the doctrine tool's verbs to the workspace's rules, once (§4.3). It publishes
+/// <para>A press writes the plan and adds the doctrine tool's verbs to the workspace's rules, once. It publishes
 /// nothing: the driver's loop does, one at a time. <c>--pause</c>, <c>--resume</c> and <c>--stop</c> steer a plan already
 /// made, and print where it stands.</para>
 /// <para>Exit codes keep the family contract: 0 written, steered, or a plan that would write · 1 refused · 2 a tool error,

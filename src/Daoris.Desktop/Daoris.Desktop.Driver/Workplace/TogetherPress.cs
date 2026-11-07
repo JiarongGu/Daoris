@@ -19,7 +19,7 @@ public sealed record TogetherCandidate(string Session, string Repository, string
     public string? Unit { get; init; }
     public string? Submission { get; init; }
 
-    /// <summary>Another person's session (D137): never brought in from here.</summary>
+    /// <summary>Another person's session: never brought in from here.</summary>
     public bool Teammate { get; init; }
 
     /// <summary>One of its parts is running.</summary>
@@ -36,7 +36,7 @@ public sealed record TogetherCandidate(string Session, string Repository, string
 public sealed record TogetherPressed(TogetherOperation? Operation, string? Refused);
 
 /// <summary>
-/// <i>Bring them together…</i> (LINESTOGETHER1d, the review-flow design §4): the press judges its refusals under the door's lock order,
+/// <i>Bring them together…</i>: the press judges its refusals under the door's lock order,
 /// pins every tip, records the operation at <i>asked</i>, then says the fixed words to the head through the say door under the
 /// operation's key. Words that reach nobody let it go, so nothing stays bound.
 /// </summary>

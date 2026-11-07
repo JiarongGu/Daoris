@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The words of a home reached with no credential of the person's (GITAUTH1e, D198 point 17; the git-auth design §6.8): a remote nothing
+/// The words of a home reached with no credential of the person's: a remote nothing
 /// serves has no key of Daoris's to reach it with; <see cref="GitMove"/> classes what follows.
 /// </summary>
 public static class GitMoved

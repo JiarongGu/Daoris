@@ -3,8 +3,7 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A start made the launcher's, the driver's half (COAGENT1b; D199's note on how a partner starts in its strict job; the co-agent design
-/// §2.3 step 5; generalized by TERMTRUST1a, D201 point 4): the harness's start, as <see cref="Driver.Prepare"/> or a plugin's
+/// A start made the launcher's, the driver's half: the harness's start, as <see cref="Driver.Prepare"/> or a plugin's
 /// <see cref="HookProcess.StartInfo"/> built it, is made the launcher's (<see cref="PieceLauncher"/>), which joins the jobs it is named before
 /// the harness runs. The environment, the folder, the streams and their encodings stay the harness's, so the doors read the launcher as they
 /// read any session's process. Every agent, plugin process and piece is made so through <see cref="AgentStarts"/>; a piece is never the

@@ -3,8 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A commit made on a unit's branch after its request froze, as the settle judges it against the promoted line (INTEGRATE1e part e2; the
-/// integration design §5.7, §5.2 step 9).
+/// A commit made on a unit's branch after its request froze, as the settle judges it against the promoted line.
 /// </summary>
 /// <param name="Disposition">One of <see cref="AfterLandingDispositions"/>.</param>
 public sealed record AfterLandingCommit(string Sha, string Subject, string Disposition)
@@ -19,7 +18,7 @@ public sealed record AfterLandingCommit(string Sha, string Subject, string Dispo
     public IReadOnlyList<string> Files { get; init; } = [];
 }
 
-/// <summary>The three judgements of §5.7.</summary>
+/// <summary>The three judgements of an after-landing replay.</summary>
 public static class AfterLandingDispositions
 {
     /// <summary>The line holds it by content or patch, or its replay is empty: said, and never offered again.</summary>
@@ -27,18 +26,18 @@ public static class AfterLandingDispositions
 
     /// <summary>
     /// Its replay conflicts, and in every conflicted hunk the line's side was changed after the frozen base by a commit outside the unit's work:
-    /// kept on a recovery ref and offered as superseded or rebase it, visible until one is answered (row e4's settle).
+    /// kept on a recovery ref and offered as superseded or rebase it, visible until one is answered.
     /// </summary>
     public const string Superseded = "superseded";
 
-    /// <summary>Anything else: offered by §4.6's rule for its request.</summary>
+    /// <summary>Anything else: offered by the rule for its request.</summary>
     public const string New = "new";
 }
 
 /// <summary>
-/// The settle's judgement of a branch's commits after its frozen tip (§5.7): judged against the promoted line by patch id and content (D87
-/// point 1, <see cref="LineHolds"/>), and by a replay over trees alone, never by the session branch's ancestry, since a replayed member's
-/// merge holds replayed commits (F27). Reads git and writes objects only, never a ref or a tree on disk. The settle
+/// The settle's judgement of a branch's commits after its frozen tip: judged against the promoted line by patch id and content
+/// (<see cref="LineHolds"/>), and by a replay over trees alone, never by the session branch's ancestry, since a replayed member's
+/// merge holds replayed commits. Reads git and writes objects only, never a ref or a tree on disk. The settle
 /// calls it.
 /// </summary>
 /// <remarks>

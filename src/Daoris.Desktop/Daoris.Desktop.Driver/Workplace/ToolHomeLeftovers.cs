@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>A working directory in which Daoris's own records show a session ran (OWNSPACE2), and what keeps its folder from a removal.</summary>
+/// <summary>A working directory in which Daoris's own records show a session ran, and what keeps its folder from a removal.</summary>
 /// <param name="Folder">The working directory, as the record holds it.</param>
 /// <param name="Source"><c>tree</c>, <c>help</c> or <c>intake</c>.</param>
 /// <param name="Keeps">Null, or why the folder it made must stay: <c>session</c> (live or waiting), <c>resumable</c> (a legacy conversation that goes on in the person's own home), <c>record-unread</c> (its conversation record is there and cannot be read).</param>
@@ -21,9 +21,9 @@ public sealed record ToolListing(IReadOnlyList<ToolFolder> Folders, string? Why,
 public sealed record ToolMeasure(long Bytes, DateTimeOffset? Newest, bool Partial);
 
 /// <summary>
-/// What Daoris's sessions left in the person's own tool home (OWNSPACE2, D175 point 3): the project folders Claude Code keyed
+/// What Daoris's sessions left in the person's own tool home: the project folders Claude Code keyed
 /// under <c>projects/</c> by the working directory of a session Daoris ran, LISTED as Daoris's with the record that names each.
-/// It removes nothing: the press is its own hardened row (OWNSPACE2e), so a person removes a folder by hand.
+/// It removes nothing: the press is its own hardened row, so a person removes a folder by hand.
 /// </summary>
 /// <remarks>
 /// <para><b>Ownership is provenance, never a pattern.</b> Claude Code names a project folder by the working directory with every
@@ -153,7 +153,7 @@ public static class ToolHomeLeftovers
     /// </summary>
     private static string? ConversationKeeps(string home, string session)
     {
-        // A binding the store holds (FOUNDATION1 z-iii) is a conversation kept as a file was, so the file's presence is no longer all of it.
+        // A binding the store holds is a conversation kept just as a file is, so the file's presence is no longer all of it.
         var (kept, reads) = WorkplaceHarnessBindings.Current.Open(home).Kept(session);
         return !kept ? null : reads ? "resumable" : "record-unread";
     }

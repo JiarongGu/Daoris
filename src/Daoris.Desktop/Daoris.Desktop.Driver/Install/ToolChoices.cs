@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The codes a tool's operation refuses in (PUSH1f2c, D194 point 4, the alone-path design §1.3): the page's catalogue keys, which the
+/// The codes a tool's operation refuses in: the page's catalogue keys, which the
 /// shell's <c>Refusals</c> declares as these, and the driver's verbatim refusal for every other. One table, read by the routes that
 /// answer the window (through the module's one mapping) and by <c>daoris tool</c> acting alone, so a refusal is one line both
 /// ways.
@@ -26,7 +26,7 @@ public static class ToolCodes
     /// <summary>A delete the system refused, since something still holds a file in that version's folder.</summary>
     public const string Held = "TOOL_HELD";
 
-    /// <summary>A git setting on a git older than the one that reads it (TOOLS6, D121 §2.5; GITAUTH1e).</summary>
+    /// <summary>A git setting on a git older than the one that reads it.</summary>
     public const string GitTooOld = "TOOL_GIT_TOO_OLD";
 
     /// <summary>The shell's <c>DRIVER_REFUSED</c>: any other refusal, said in its own sentence.</summary>
@@ -53,9 +53,9 @@ public static class ToolCodes
 }
 
 /// <summary>
-/// The routes <c>daoris tool</c> sends while Daoris runs (PUSH1f2c; RPC1f, the terminal RPC design §9), each the Tools place's
-/// press it is the twin of, and the verbs no route takes, each with why it acts alone (D171's PUSH1f note, kept by D194 point 5): the
-/// CLI's <c>TOOL_VERBS</c>, now this program's. Held to the census by <c>PipeCensusTests</c>.
+/// The routes <c>daoris tool</c> sends while Daoris runs, each the Tools place's
+/// press it is the twin of, and the verbs no route takes, each with why it acts alone: the
+/// CLI's <c>TOOL_VERBS</c>. Held to the census by <c>PipeCensusTests</c>.
 /// </summary>
 public static class ToolRoutes
 {
@@ -93,14 +93,14 @@ public static class ToolRoutes
 }
 
 /// <summary>
-/// The tools' operations (PUSH1f2c, D194 point 4, the alone-path design §1.3): each the judgement a Tools route made inside its handler,
+/// The tools' operations: each the judgement a Tools route made inside its handler,
 /// taken out over the facts it judges by, so the window's route and <c>daoris tool</c> acting alone call one implementation. The
 /// rest are already <see cref="Tools"/>' writers and <see cref="ToolInstall.Delete"/>.
 /// </summary>
 public static class ToolChoices
 {
     /// <summary>
-    /// A tool set to a file the person names (§4.1): one that is there, by its whole path, that starts and answers a version, since a
+    /// A tool set to a file the person names: one that is there, by its whole path, that starts and answers a version, since a
     /// program the person names runs as them on every call, so a wrong one is said now. The window's <c>TOOLS_USE</c> and the terminal
     /// alike.
     /// </summary>
@@ -133,7 +133,7 @@ public static class ToolChoices
     }
 
     /// <summary>
-    /// A setting Daoris's git carries, set or cleared (TOOLS6, D121 §2.5): a key on the allow-list, and a value set only where the git
+    /// A setting Daoris's git carries, set or cleared: a key on the allow-list, and a value set only where the git
     /// Tools resolves is not known older than <see cref="GitVersions.Setting"/>, asked its version once per change of it. Clearing is
     /// never refused. The file it travels in is written at the next start (<see cref="GitGlobalFile"/>).
     /// </summary>
@@ -160,7 +160,7 @@ public static class ToolChoices
         return version;
     }
 
-    /// <summary>A resource location added (§3.3), refused where it is no address Daoris reads from.</summary>
+    /// <summary>A resource location added, refused where it is no address Daoris reads from.</summary>
     /// <returns>False where it is already listed, and nothing is written.</returns>
     /// <exception cref="ToolRefusal"><see cref="ToolRefusal.Location"/>; nothing is written.</exception>
     public static bool AddLocation(string home, string address) =>

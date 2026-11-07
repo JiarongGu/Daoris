@@ -3,7 +3,7 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Whose a process start is (PARALLEL1d, D181 point 5): a person's never waits behind the background's.
+/// Whose a process start is: a person's never waits behind the background's.
 /// </summary>
 public enum StartClass
 {
@@ -18,13 +18,13 @@ public enum StartClass
 }
 
 /// <summary>
-/// Process starts, a few at a time and never on the caller's thread (UIFREEZE1), a person's first (PARALLEL1d).
+/// Process starts, a few at a time and never on the caller's thread, a person's first.
 /// </summary>
 /// <remarks>
 /// <para><b>Why.</b> .NET starts every process of this one under a single lock, held across <c>CreateProcess</c>, and on a
-/// machine whose antivirus hooks process creation that call is slow, slower under load. A start was made synchronously on
-/// whichever thread asked, so a sweep's git fan-out parked a thread per git on the lock (51 of 76 in the frozen window's
-/// stack), the window's own thread among them.</para>
+/// machine whose antivirus hooks process creation that call is slow, slower under load. A start made synchronously on
+/// whichever thread asked would park that thread on the lock: a sweep's git fan-out parked one per git (51 of 76 in the
+/// frozen window's stack), the window's own thread among them.</para>
 ///
 /// <para><b>The gate.</b> A start first takes one of <see cref="Bound"/> places, waiting asynchronously, so the rest of a
 /// fan-out queues as tasks rather than as threads; then it runs on the thread pool, so the caller's thread is free from the
@@ -34,14 +34,14 @@ public enum StartClass
 /// <para><b>Four.</b> The lock lets one start through at a time, so more places only park more threads on it; four keep the
 /// next starts ready the moment the lock frees, and a start hung in an antivirus scan holds one place, not every start.</para>
 ///
-/// <para><b>A person's place</b> (PARALLEL1d, D181 point 5). The four were shared, so an agent a person asked for queued
+/// <para><b>A person's place</b>. The four were shared, so an agent a person asked for queued
 /// behind a git fan-out of hundreds. Now a start says whose it is (<see cref="StartClass"/>): the background holds at most
 /// <see cref="BackgroundBound"/> places, so one is always free of it, and a place that frees goes to a person waiting before
 /// the background waiting. A reserved place, not only a priority: four background starts held in a scan would hold every
 /// place a priority alone could hand on. The total of four that protects the machine stays. The runtime's lock still makes a
 /// person's start wait for the starts already inside <c>CreateProcess</c>, at most three, never for the queue behind them.</para>
 ///
-/// <para><b>Every start of the desktop's</b> passes it (PROCSTART2): git's, a session's, a harness action's, a plugin's, the
+/// <para><b>Every start of the desktop's</b> passes it: git's, a session's, a harness action's, a plugin's, the
 /// host's, Edge's, and the file manager the window kit's launcher opens (<see cref="RunAsync(Action, CancellationToken)"/>).
 /// <c>ProcessStartsCensusTests</c> names the few that stay outside, each with why, and whose each start inside is.</para>
 /// </remarks>
@@ -59,7 +59,7 @@ public sealed class ProcessStarts
     // The stand-in a test's flow makes its starts with (Within); null in production.
     private static readonly AsyncLocal<Func<ProcessStartInfo, Process?>?> s_within = new();
 
-    // Whom a wait for a place in this flow is said to (LOOKWAIT1b): the stage whose work it is, set for that work alone by
+    // Whom a wait for a place in this flow is said to: the stage whose work it is, set for that work alone by
     // QueuedToAsync; null in a flow with none, and in work begun beside a stage.
     private static readonly AsyncLocal<Func<IDisposable>?> s_queue = new();
 
@@ -113,7 +113,7 @@ public sealed class ProcessStarts
 
     /// <summary>
     /// Start <paramref name="info"/> once a place is free for <paramref name="whose"/>, on the thread pool, and hand the process to the one
-    /// management as <paramref name="purpose"/>'s (<see cref="OwnedProcesses"/>, D249) before its caller holds it. Cancelling
+    /// management as <paramref name="purpose"/>'s (<see cref="OwnedProcesses"/>) before its caller holds it. Cancelling
     /// <paramref name="ct"/> while waiting for a place throws <see cref="OperationCanceledException"/>; once the start is under
     /// way it is seen through, since a process abandoned as it started would run on unowned. The runtime's refusal to start is
     /// thrown as it threw it.
@@ -162,7 +162,7 @@ public sealed class ProcessStarts
 
     /// <summary>
     /// Tell <paramref name="timed"/> the wait for a place and the creation inside it, in <see cref="Stopwatch"/> ticks, of each start this
-    /// flow makes through a gate until disposed (GITAPP1a-i, the git-app design §1.2: the gate's wait, the creation and the run apart).
+    /// flow makes through a gate until disposed (the gate's wait, the creation and the run apart).
     /// It changes nothing of the start: one the runtime refused or that threw is timed still, and one cancelled while it waited for its
     /// place, which never started, is not.
     /// </summary>
@@ -196,7 +196,7 @@ public sealed class ProcessStarts
             waiting = Queue(whose).AddLast(waiter);
         }
 
-        // LOOKWAIT1b: said to the stage whose work made this start, from here until it is handed its place or gives up its wait.
+        // Said to the stage whose work made this start, from here until it is handed its place or gives up its wait.
         using (s_queue.Value?.Invoke())
         using (ct.Register(() => Abandon(whose, waiting, ct)))
         {
@@ -263,7 +263,7 @@ public sealed class ProcessStarts
     private LinkedList<TaskCompletionSource> Queue(StartClass whose) => whose == StartClass.Person ? _persons : _background;
 
     /// <summary>
-    /// The test seam (PROCSTART2): until disposed, every start this flow makes through a gate is made by
+    /// The test seam: until disposed, every start this flow makes through a gate is made by
     /// <paramref name="start"/> instead of the runtime, still on the thread pool and inside its place, so a test sees where a
     /// site's start was made and answers it without a process. Production opens none.
     /// </summary>
@@ -280,8 +280,8 @@ public sealed class ProcessStarts
     }
 
     /// <summary>
-    /// Run <paramref name="work"/> with each wait for a place that a start of its flow makes said to <paramref name="queue"/>
-    /// (LOOKWAIT1b, D181 point 6): called as a wait begins, and what it returns disposed as the wait ends, handed its place or given
+    /// Run <paramref name="work"/> with each wait for a place that a start of its flow makes said to <paramref name="queue"/>:
+    /// called as a wait begins, and what it returns disposed as the wait ends, handed its place or given
     /// up. A look's stage hands its span, so its line says the wait as the stage's queue, apart from its hold. Null says them to
     /// nobody: work begun beside a stage, which the stage does not wait on, is never the stage's, until a stage of its own takes it.
     /// </summary>

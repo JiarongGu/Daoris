@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>One session archived on this machine, and when.</summary>
 public sealed record ArchiveMark(string Session, DateTimeOffset At);
 
-/// <summary>What an archive did with one session asked of it (D126 §5.2).</summary>
+/// <summary>What an archive did with one session asked of it.</summary>
 public enum ArchiveVerdict
 {
     /// <summary>Archived now, or already: its mark stands.</summary>
@@ -29,5 +29,5 @@ public sealed record ArchiveOutcome(string Session, ArchiveVerdict Verdict)
 /// <summary>An archive's outcomes, and the marks as they now stand.</summary>
 public sealed record ArchiveAnswer(IReadOnlyList<ArchiveOutcome> Outcomes, IReadOnlyList<ArchiveMark> Marks);
 
-/// <summary>The sessions an unarchive found not archived, said as information (D48 §6), and the marks as they now stand.</summary>
+/// <summary>The sessions an unarchive found not archived, said as information, and the marks as they now stand.</summary>
 public sealed record UnarchiveAnswer(IReadOnlyList<string> NotArchived, IReadOnlyList<ArchiveMark> Marks);

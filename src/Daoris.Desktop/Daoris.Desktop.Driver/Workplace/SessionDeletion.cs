@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Deleting a conversation that served no quest (SESSUX1f, D126 §5.4), the machine's half, which both doors call: the
+/// Deleting a conversation that served no quest, the machine's half, which both doors call: the
 /// screen's <c>SESSION_DELETE</c> and the terminal's <c>sessions delete</c>.
 /// </summary>
 /// <remarks>
@@ -12,19 +12,18 @@ namespace Daoris.Driver;
 /// which the ledger's doors cannot address.</para>
 ///
 /// <para><b>This machine's half: its tree, and a landing.</b> A tree of its own still here is discarded or cleaned up first,
-/// since D88's proof is the clean-up's and *Discard tree*'s; a landing that names it, standing or a trace (D113), keeps it.
+/// since that proof is the clean-up's and *Discard tree*'s; a landing that names it, standing or a trace, keeps it.
 /// Then the ledger deletes, judging the record again as it stands; and only after its yes are the files removed.</para>
 ///
-/// <para><b>What goes</b> is what <see cref="SessionHomeFiles"/> takes, the helper a clear of finished history calls too
-/// (HIST1c): its conversation, its transcript, its files, its conversation id, a leftover process marker, its go-on mark, its
-/// choice of a new session, its spawn files, its held words, its closed automatic landing and its archive mark (§5.1; the
-/// history-clearing design §2.2). <b>Never</b> a tree, a branch, its usage or the machine log, which gains
-/// <c>session.deleted</c> with no word of it (§7.4).</para>
+/// <para><b>What goes</b> is what <see cref="SessionHomeFiles"/> takes, the helper a clear of finished history calls too:
+/// its conversation, its transcript, its files, its conversation id, a leftover process marker, its go-on mark, its
+/// choice of a new session, its spawn files, its held words, its closed automatic landing and its archive mark. <b>Never</b> a tree, a branch, its usage or the machine log, which gains
+/// <c>session.deleted</c> with no word of it.</para>
 ///
-/// <para><b>What the disk would not let go of stays, and is said</b> (SESSDEL1): by name in <see cref="DeleteOutcome.Stayed"/>,
-/// and in the sentence, as a clear says what it left over (D153's HIST1j note). The record is gone all the same.</para>
+/// <para><b>What the disk would not let go of stays, and is said</b>: by name in <see cref="DeleteOutcome.Stayed"/>,
+/// and in the sentence, as a clear says what it left over. The record is gone all the same.</para>
 /// </remarks>
-/// <param name="remover">The disk, which a test hands one that refuses a path as a held file does (HIST1j's seam).</param>
+/// <param name="remover">The disk, which a test hands one that refuses a path as a held file does.</param>
 public sealed class SessionDeletion(string home, Action<string, bool>? remover = null)
 {
     public const string ByAsk = "ask";
@@ -71,7 +70,7 @@ public sealed class SessionDeletion(string home, Action<string, bool>? remover =
         var deleted = await service.DeleteSessionAsync(id, ct).ConfigureAwait(false);
         if (!deleted.Taken) return Refused(id, deleted);
 
-        // HIST1c: the one helper a clear also calls, so a delete takes every file §2.2 lists, the four it once left included.
+        // The one helper a clear also calls, so a delete takes every file a clear takes.
         var files = new SessionHomeFiles(home, remover).Remove([id], events);
         var stayed = files.Stayed[id];
 
@@ -86,7 +85,7 @@ public sealed class SessionDeletion(string home, Action<string, bool>? remover =
     }
 
     /// <summary>
-    /// A delete whose files the disk did not all let go of (SESSDEL1): which stayed, by the words for each name, and that they are
+    /// A delete whose files the disk did not all let go of: which stayed, by the words for each name, and that they are
     /// left over, as a clear says of its own; the next clear of a workspace is promised only where it takes every one of them.
     /// </summary>
     private static string LeftOver(string id, IReadOnlyList<string> stayed)
@@ -121,7 +120,7 @@ public sealed class SessionDeletion(string home, Action<string, bool>? remover =
     };
 
     /// <summary>
-    /// This machine's half (§5.4): its own tree still here, or a landing that names it. Null when neither holds it. A tree
+    /// This machine's half: its own tree still here, or a landing that names it. Null when neither holds it. A tree
     /// in the repository's checkout is no tree of its own, and a tree a tidy left empty is gone.
     /// </summary>
     private static DeleteOutcome? MachineHalf(SessionRecord record, SessionTrees trees)
@@ -160,7 +159,7 @@ public sealed class SessionDeletion(string home, Action<string, bool>? remover =
         NamedBy = answer.Refusal == "named" ? answer.Ask is not null ? ByAsk : ByQuest : null,
     };
 
-    /// <summary>The kind its open is logged by (LOG1b): Ask Daoris and an intake by their door, else the record's.</summary>
+    /// <summary>The kind its open is logged by: Ask Daoris and an intake by their door, else the record's.</summary>
     private static string KindOf(SessionRecord record) =>
         record.Repository == KnowledgeRoomIdentity.Repository ? SessionOpened.Help
         : record.Ask is not null ? SessionOpened.Intake

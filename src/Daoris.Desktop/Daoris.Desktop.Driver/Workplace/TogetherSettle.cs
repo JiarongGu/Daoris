@@ -36,7 +36,7 @@ internal sealed record CorrelatedRequest(string Id, bool Settled, bool Closed);
 internal sealed record LandingEvidence(bool Recorded, CorrelatedRequest? Request, bool RequestUnread, RefRead Target, bool? HoldsPinned);
 
 /// <summary>
-/// The restart's settlement of a landing attempt (the review-flow design §4, <i>Restart</i>): first by a record, advance or request
+/// The restart's settlement of a landing attempt (<i>Restart</i>): first by a record, advance or request
 /// correlated with it, else by its git effects, the target ref moved from the tip expected to one holding the pinned tip's work. Only a
 /// proved unmade attempt goes back to <i>ready to accept</i>; anything not proved stays <i>uncertain</i>.
 /// </summary>

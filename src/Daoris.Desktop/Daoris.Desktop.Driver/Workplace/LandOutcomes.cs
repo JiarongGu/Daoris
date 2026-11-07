@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the performer's landings came to, in memory (WORKFLOWCLEAN1 1c): the landing of each run's newest, by unit and tip, which the press that
+/// What the performer's landings came to, in memory: the landing of each run's newest, by unit and tip, which the press that
 /// asked for the pass reads to answer. The delivery and the landing record are the durable facts; this is only their words for a press that
 /// waited, so a restart loses it and the press then answers from them.
 /// </summary>

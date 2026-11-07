@@ -1,13 +1,13 @@
 namespace Daoris.Driver;
 
-/// <summary>The driver's half of LANDBACK1 part 2: the look a turn's end takes, and the words it carries a session on with.</summary>
+/// <summary>The driver's half of carrying a session on: the look a turn's end takes, and the words it carries a session on with.</summary>
 public static class TurnCarries
 {
     /// <summary>
-    /// The words that ask a session whose quest is done to clean its tree. Part 1's are an Accept's (<see cref="LandCarry.DirtyWords"/>:
-    /// "Your work is accepted"), which nobody has said here: nothing is accepted, the session simply has not finished. They keep part 1's
-    /// asks, that the session commits by its repository's conventions and creates, switches or pushes no branch, and say that Daoris
-    /// commits nothing for it (D164's rejection).
+    /// The words that ask a session whose quest is done to clean its tree. An Accept's are different (<see cref="LandCarry.DirtyWords"/>:
+    /// "Your work is accepted"), which nobody has said here: nothing is accepted, the session simply has not finished. They keep that
+    /// Accept's asks, that the session commits by its repository's conventions and creates, switches or pushes no branch, and say that Daoris
+    /// commits nothing for it.
     /// </summary>
     public static string WordsOf(int paths) =>
         $"Your quest is done, but your tree has {paths} uncommitted path(s). {LandCarry.CommitWords}. Daoris never runs `git add` or "

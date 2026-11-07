@@ -5,20 +5,19 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The machine log's desktop writer (LOG1, D94): what happens on this machine, one JSON line per event,
+/// The machine log's desktop writer: what happens on this machine, one JSON line per event,
 /// in the home's <c>logs/</c>, so Daoris can be improved from the owner's real use.
 /// </summary>
 /// <remarks>
 /// <para><b>One file per source per day</b> (<c>&lt;date&gt;.&lt;source&gt;.jsonl</c>, the date in UTC):
 /// the shell, the headless driver and the browser each write their own, and the HTTP host writes its own
 /// with its own code. Two processes appending to one file can overwrite each other's lines, and the
-/// artefacts share no code to hold a lock between them, so the format is the contract
-/// (<c>docs/2026-09-30-machine-log-design.md</c> §3, the twins rule).</para>
+/// artefacts share no code to hold a lock between them, so the format is the contract.</para>
 ///
 /// <para><b>Appended, not written whole.</b> A log grows a line at a time, as a session transcript does;
 /// the atomic write-beside-and-rename is for files that are replaced.</para>
 ///
-/// <para><b>Each line at the file's end</b> (MACHINELOGAPPEND1): a handle opened to append on Windows writes at
+/// <para><b>Each line at the file's end</b>: a handle opened to append on Windows writes at
 /// its own position, so two processes of one source on one day's file (a later launch beside the running
 /// desktop) overwrote each other's lines. Each line is written at the end the file has now, under a mutex
 /// named for the file that every writer of it takes; a writer that cannot open it still writes at the end.</para>
@@ -27,7 +26,7 @@ namespace Daoris.Driver;
 /// evidence of what happened, and a process that stopped because its evidence could not be written
 /// would be the worse outcome.</para>
 ///
-/// <para><b>What is never written here</b> is the caller's to keep out, and D94 lists it: anyone's words,
+/// <para><b>What is never written here</b> is the caller's to keep out: anyone's words,
 /// a file's contents, a secret, a URL's query. The one caller that passes someone else's fields — the
 /// page, over the bridge — is filtered by the module that takes them.</para>
 /// </remarks>
@@ -39,10 +38,10 @@ public sealed class MachineLog : IDisposable
     /// <summary>Where a file stops growing: a loop that logs without end cannot fill a disk.</summary>
     public const long CapBytes = 20L * 1024 * 1024;
 
-    /// <summary>How many strings of a collection a line keeps (LOGCOLLECTION1).</summary>
+    /// <summary>How many strings of a collection a line keeps.</summary>
     private const int MostWords = 64;
 
-    /// <summary>Where a string of a collection is cut, as the page's strings are (design §4).</summary>
+    /// <summary>Where a string of a collection is cut, as the page's strings are.</summary>
     private const int WordLength = 120;
 
     /// <summary>How long a line waits for another writer of its file; past it, it is written at the end regardless.</summary>
@@ -80,8 +79,8 @@ public sealed class MachineLog : IDisposable
         }
         catch (Exception error) when (error is HomeEntryTwiceException or IOException or UnauthorizedAccessException)
         {
-            // STARTLOG1: resolving a log's folder can fail before the write's guard. D94 keeps logging optional;
-            // D172 still refuses ambiguous entries, so write and prune neither place rather than choosing one.
+            // Resolving a log's folder can fail before the write's guard. Logging stays optional and ambiguous
+            // entries are refused, so write and prune neither place rather than choosing one.
             _folder = null;
         }
         _source = source;
@@ -105,7 +104,7 @@ public sealed class MachineLog : IDisposable
 
     /// <summary>
     /// The folder this log writes into, and every other process's beside it — the home's <c>logs/</c> —
-    /// or null with no home. What the Settings domain reads and opens (LOG1c).
+    /// or null with no home. What the Settings domain reads and opens.
     /// </summary>
     public string? Location => _folder;
 
@@ -161,9 +160,9 @@ public sealed class MachineLog : IDisposable
     public void Prune() => Prune(KeptDays);
 
     /// <summary>
-    /// Delete this machine's log files older than <paramref name="days"/>, today included (KEEP1d: the person's days, at most
+    /// Delete this machine's log files older than <paramref name="days"/>, today included (the person's days, at most
     /// <see cref="KeptDays"/>); files it did not name stay, and today's never goes. What went: how many files, and their bytes.
-    /// Each goes through <see cref="Remove"/>, the person's press's removal too (KEEP1e): one path for the rule and the press.
+    /// Each goes through <see cref="Remove"/>, the person's press's removal too: one path for the rule and the press.
     /// </summary>
     public (int Count, long Bytes) Prune(int days)
     {
@@ -196,7 +195,7 @@ public sealed class MachineLog : IDisposable
 
     /// <summary>
     /// The log files in <paramref name="folder"/> older than <paramref name="days"/> at <paramref name="now"/>, today included, at most
-    /// <see cref="KeptDays"/> (KEEP1d: the person's days), by name: what the prune takes, and what the person's press lists (KEEP1e).
+    /// <see cref="KeptDays"/> (the person's days), by name: what the prune takes, and what the person's press lists.
     /// Never today's, which its writer holds; a file it did not name is none of them. None where the folder cannot be read.
     /// </summary>
     public static IReadOnlyList<string> Due(string folder, DateTimeOffset now, int days)
@@ -243,7 +242,7 @@ public sealed class MachineLog : IDisposable
         && day < now.ToUniversalTime().Date.AddDays(1 - Math.Clamp(days, 1, KeptDays));
 
     /// <summary>
-    /// Write every exception nothing else caught (LOG1a): an unhandled one ends the process, and until
+    /// Write every exception nothing else caught: an unhandled one ends the process, and until
     /// now it ended it without a trace; an unobserved task's is written and the process runs on.
     /// </summary>
     public void WatchUnhandled()
@@ -253,7 +252,7 @@ public sealed class MachineLog : IDisposable
     }
 
     /// <summary>
-    /// Run a synchronous entry point's body (the desktop's <c>app.Run()</c>, MACHINELOGAPPEND1), writing the exception that
+    /// Run a synchronous entry point's body (the desktop's <c>app.Run()</c>), writing the exception that
     /// leaves it while this log is still open, and letting it go on as it was: the <c>using</c> that holds this log may close
     /// it before the runtime raises that exception as unhandled, and the line was dropped.
     /// </summary>
@@ -280,8 +279,8 @@ public sealed class MachineLog : IDisposable
     }
 
     /// <summary>
-    /// Write the exception that ends an async entry point holding this log in a <c>using</c> (HOSTSTART2, the HTTP host's
-    /// HOSTSTART1), which <see cref="WatchUnhandled"/> cannot: the <c>using</c> closes this log as the exception leaves the
+    /// Write the exception that ends an async entry point holding this log in a <c>using</c> (the HTTP host's
+    /// start), which <see cref="WatchUnhandled"/> cannot: the <c>using</c> closes this log as the exception leaves the
     /// entry point, before the runtime raises it as unhandled, so that line is dropped and a process that died at start
     /// leaves nothing of why. The headless driver calls it beside its log's opening.
     /// </summary>
@@ -298,15 +297,14 @@ public sealed class MachineLog : IDisposable
     internal EntryPointWatch ForEntryPoint() => new(_home, _source, _clock, _cap);
 
     /// <summary>
-    /// A task nobody awaits, observed (LOG2b): when it fails, its exception is written as the
+    /// A task nobody awaits, observed: when it fails, its exception is written as the
     /// <c>error</c> event with <paramref name="where"/>, and then <paramref name="failed"/> runs. A task
     /// that finishes or is cancelled writes nothing.
     /// </summary>
     /// <returns>The observation: it completes after <paramref name="task"/> does, and never faults.</returns>
     /// <remarks>
-    /// The first real log's one <c>error</c> in the browser was a task's exception the finalizer rethrew:
-    /// an AggregateException whose only place was "an unobserved task", written whenever a collection
-    /// happened to run. A task started and let go belongs here, so its failure is said where and when it
+    /// A task's exception left to the finalizer is rethrown there as an AggregateException whose only
+    /// place is "an unobserved task", written whenever a collection happens to run. A task started and let go belongs here, so its failure is said where and when it
     /// happened, and never left to the finalizer.
     /// </remarks>
     public Task Observe(Task task, string where, Action? failed = null) =>
@@ -445,8 +443,8 @@ public sealed class MachineLog : IDisposable
     }
 
     /// <summary>
-    /// A collection of strings as a JSON array of strings (LOGCOLLECTION1): the catalogue's words a line carries several of, such as
-    /// <c>actor.ran</c>'s models, never nested and never an object's members. D94 keeps anyone's words out, so the caller passes names
+    /// A collection of strings as a JSON array of strings: the catalogue's words a line carries several of, such as
+    /// <c>actor.ran</c>'s models, never nested and never an object's members. Anyone's words stay out, so the caller passes names
     /// and codes; a null element is left out, and a list or a word past the bounds is cut so a line stays a line.
     /// </summary>
     private static void Words(Utf8JsonWriter json, IEnumerable<string?> words)
@@ -462,7 +460,7 @@ public sealed class MachineLog : IDisposable
 }
 
 /// <summary>
-/// The exception that ends an async entry point, written once that entry point's own log is closed (HOSTSTART2): the
+/// The exception that ends an async entry point, written once that entry point's own log is closed: the
 /// <c>error</c> event, its <c>where</c> <c>start</c> until <see cref="Running"/> is called and <c>unhandled</c> after,
 /// <c>terminating</c> the runtime's word. Made by <see cref="MachineLog.WatchEntryPoint"/>.
 /// </summary>
@@ -470,7 +468,7 @@ public sealed class MachineLog : IDisposable
 /// Only the exception that leaves the entry point is raised on the entry point's own thread, and only once nothing
 /// writes through its log, so a writer of its own takes the line there; any other thread's is
 /// <see cref="MachineLog.WatchUnhandled"/>'s, through the log still open, and is never written twice.
-/// <b>A twin</b>: the service's <c>Daoris.Knowledge.EntryPointWatch</c> is the same with its own code (HOSTSTART1).
+/// <b>A twin</b>: the service's <c>Daoris.Knowledge.EntryPointWatch</c> is the same with its own code.
 /// </remarks>
 public sealed class EntryPointWatch
 {

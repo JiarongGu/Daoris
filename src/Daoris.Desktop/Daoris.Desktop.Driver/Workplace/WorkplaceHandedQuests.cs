@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The quests held on another agent, as history clearing reads and lets them go (MIXAGENT1a-ii): Course keeps the store, so the
+/// The quests held on another agent, as history clearing reads and lets them go: Course keeps the store, so the
 /// workplace names only these two operations, which the store implements directly.
 /// </summary>
 internal interface IWorkplaceHandedQuests

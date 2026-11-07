@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The integration run's steps over the store (INTEGRATE1e part e2, D215; the integration design §5.6): each step's start written before its
+/// The integration run's steps over the store: each step's start written before its
 /// effect and its end after, each in one <c>BEGIN IMMEDIATE</c> transaction under the candidate's claim, and the come-up's recovery, which
 /// judges a promotion by ancestry before anything is retried. The replay and the promotion make the steps' effects.
 /// </summary>
@@ -37,7 +37,7 @@ public sealed class IntegrationSteps(IntegrationStore store)
     }
 
     /// <summary>
-    /// Resume a candidate the claim holds, at the come-up or after a step's effect threw (§5.6's recovery): its promotion judged by ancestry
+    /// Resume a candidate the claim holds, at the come-up or after a step's effect threw: its promotion judged by ancestry
     /// first, in the registered checkout at <paramref name="root"/>, then its open step ended for its next attempt. What to do next is the
     /// answer's (<see cref="IntegrationResumes"/>).
     /// </summary>

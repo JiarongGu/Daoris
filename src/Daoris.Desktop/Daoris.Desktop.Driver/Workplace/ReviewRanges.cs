@@ -3,27 +3,25 @@ using static Daoris.Driver.TreeRefs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where a session tree's review is measured from, and how it stands against its line (REVIEWBASE1; PART10j, out of
-/// <c>SessionTrees.Sync.cs</c>, whose sync it is not): read-only, over the trees' context.
+/// Where a session tree's review is measured from, and how it stands against its line: read-only, over the trees' context.
 /// </summary>
 internal sealed class ReviewRanges(TreeContext context)
 {
-    /// <summary>The review's base for a session tree (WSR6, REVIEWBASE1): <see cref="ReviewRangeAsync"/>'s commit.</summary>
+    /// <summary>The review's base for a session tree: <see cref="ReviewRangeAsync"/>'s commit.</summary>
     internal async Task<string> ReviewBaseAsync(string tree, string recorded, CancellationToken ct = default) =>
         (await ReviewRangeAsync(tree, recorded, ct).ConfigureAwait(false)).From;
 
     /// <summary>
-    /// Where a session tree's review is measured from, and how its HEAD stands against its repository's line (REVIEWBASE1, D164's
-    /// note): the newest commit the work shares with the line, among the line's here, the line's on origin and the record's own.
+    /// Where a session tree's review is measured from, and how its HEAD stands against its repository's line: the newest commit the work shares with the line, among the line's here, the line's on origin and the record's own.
     /// </summary>
     /// <remarks>
-    /// <para>The record's base is the commit the session began at, unless bringing the branch up to date replayed it since (WSR6):
-    /// then it is no longer in the tree's history, and the branch's record says where it now grows from. That alone measured a tree
+    /// <para>The record's base is the commit the session began at, unless bringing the branch up to date replays it:
+    /// then it is no longer in the tree's history, and the branch's record says where it now grows from. That alone would measure a tree
     /// that took in newer line commits (merged them, rebased onto them, or checked the line out) from its old grow point, so the
-    /// line's own changes read as the session's work (seen 2026-10-13: 26 files, none its own). Each line's candidate is
+    /// line's own changes would read as the session's work. Each line's candidate is
     /// <c>merge-base HEAD &lt;ref&gt;</c>, so it is in the tree's history by construction; <see cref="ReviewBase.Newest"/> chooses.</para>
     ///
-    /// <para><b>A chain's step that merged the line</b> (REVIEWBASE3): its record's base is its parent's tip, which the line does not
+    /// <para><b>A chain's step that merged the line</b>: its record's base is its parent's tip, which the line does not
     /// hold, so neither base reaches the other. The line's is the base the review names, and the diff reads from a merge of the two
     /// (<see cref="ReviewRange.Against"/>), so the parent's work is not read as the step's either. Where they conflict, the line's
     /// alone, as before.</para>
@@ -44,7 +42,7 @@ internal sealed class ReviewRanges(TreeContext context)
             ? (await context.LineAsync(Path.GetDirectoryName(commonDir.Trim())!, repository, workspace, ct).ConfigureAwait(false)).Branch
             : null;
 
-        // By the refs' full names, never the short one (AUTOTIDY1): git reads a tag of that name first.
+        // By the refs' full names, never the short one: git reads a tag of that name first.
         string? here = null, onOrigin = null;
         var known = new List<string>();
         if (line is not null)
@@ -61,21 +59,21 @@ internal sealed class ReviewRanges(TreeContext context)
             }
         }
 
-        // GITAPP1a-ii: the selection is ReviewChoices.Choose, which Review's graph calls on the same answers.
+        // The selection is ReviewChoices.Choose, which Review's graph calls on the same answers.
         var candidates = ReviewBase.Candidates(here, onOrigin, record);
         var maximal = candidates.Count < 2 ? null : await IndependentAsync(full, candidates, ct).ConfigureAwait(false);
         var (from, merge) = ReviewChoices.Choose(candidates, maximal, record, recorded);
-        // REVIEWBASE3: one more git start, only where the line's base and the record's are incomparable.
+        // One more git start, only where the line's base and the record's are incomparable.
         var against = merge is var (lineBase, recordBase) ? await MergedAsync(full, lineBase, recordBase, ct).ConfigureAwait(false) : null;
 
         return new(from, line is null ? null : await BehindAsync(full, line, known, ct).ConfigureAwait(false), against);
     }
 
-    /// <summary>The line's two refs, by their full names (AUTOTIDY1), in the order the candidates are read: here, then origin's.</summary>
+    /// <summary>The line's two refs, by their full names, in the order the candidates are read: here, then origin's.</summary>
     internal static string[] LineRefs(string line) => [$"refs/heads/{line}", $"refs/remotes/origin/{line}"];
 
     /// <summary>
-    /// The tree a merge of <paramref name="lineBase"/> and <paramref name="recordBase"/> would make (REVIEWBASE3), by
+    /// The tree a merge of <paramref name="lineBase"/> and <paramref name="recordBase"/> would make, by
     /// <c>git merge-tree --write-tree</c>: objects only, no ref, no index and nothing on disk moved. Null where they conflict, since
     /// git's tree would then hold conflict markers neither side wrote, and where git cannot say (one older than 2.38): the review
     /// then reads from the line's base, as before.
@@ -87,7 +85,7 @@ internal sealed class ReviewRanges(TreeContext context)
     }
 
     /// <summary>
-    /// The record's base where the tree's history holds it; else where the branch's record says it now grows from (WSR6), where
+    /// The record's base where the tree's history holds it; else where the branch's record says it now grows from, where
     /// that is; else null. Each word becomes a git argument, so it must be a commit id and nothing else.
     /// </summary>
     private async Task<string?> RecordedBaseAsync(string tree, string repository, string recorded, CancellationToken ct)
@@ -108,7 +106,7 @@ internal sealed class ReviewRanges(TreeContext context)
     }
 
     /// <summary>
-    /// How many commits the line here and on origin together hold that HEAD does not, and HEAD that they do not (REVIEWBASE1): the
+    /// How many commits the line here and on origin together hold that HEAD does not, and HEAD that they do not: the
     /// newer of the two counts, and a line that moved both ways counts both. Null where neither ref is here or git cannot count.
     /// </summary>
     private static async Task<LineBehind?> BehindAsync(string tree, string line, IReadOnlyList<string> refs, CancellationToken ct)

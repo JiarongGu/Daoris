@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The harness conversations a home keeps, as the workplace reads and lets them go (FOUNDATION1 z-iii): Participants keeps the store, so the
+/// The harness conversations a home keeps, as the workplace reads and lets them go: Participants keeps the store, so the
 /// workplace names only these four operations, which the conversations implement directly.
 /// </summary>
 internal interface IWorkplaceHarnessBindings

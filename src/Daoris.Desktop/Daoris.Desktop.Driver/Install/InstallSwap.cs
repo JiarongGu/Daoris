@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A move a held file still refused when the wait for it ran out (SWAP2): the swap's <c>busy</c>, and the only one. Any
+/// A move a held file still refused when the wait for it ran out: the swap's <c>busy</c>, and the only one. Any
 /// other failure of a move is thrown as it was. Its message names each process found holding it, with when it started and
-/// its command line (DEPLOYBUSY1), for the journal's detail.
+/// its command line, for the journal's detail.
 /// </summary>
 public sealed class HeldMoveException(SwapHold hold, Exception refusal)
     : IOException($"{hold.Said} ({refusal.Message.TrimEnd('.')}){(hold.Holders is { } holders ? "; " + holders : "")}", refusal)
@@ -12,7 +12,7 @@ public sealed class HeldMoveException(SwapHold hold, Exception refusal)
 }
 
 /// <summary>
-/// The swap itself (D139 §5, §6), run by the launcher while nothing runs from <c>app/</c>: check, move with a journal,
+/// The swap itself, run by the launcher while nothing runs from <c>app/</c>: check, move with a journal,
 /// start the new application and wait for it to confirm, or put the build before it back.
 /// </summary>
 /// <remarks>
@@ -37,8 +37,8 @@ public sealed class InstallSwap(
 
     /// <summary>
     /// How long a move a held file refuses is tried, <see cref="HeldWait"/> apart, before the swap gives it up as
-    /// <c>busy</c>, by the clock, for each move. Two minutes (SWAP2, D139's note): ten seconds was outlasted twice by the
-    /// deployment rehearsal with a build beside it, and the publish's own staging needed more than ten; two minutes stays
+    /// <c>busy</c>, by the clock, for each move. Two minutes: a build beside the
+    /// deployment rehearsal outlasts ten seconds, and the publish's own staging needs more than ten; two minutes stays
     /// inside the three the launcher already waits for the application to close. Written here, not through the driver's
     /// <c>AtomicFile</c>, because the launcher compiles this file alone.
     /// </summary>
@@ -51,7 +51,7 @@ public sealed class InstallSwap(
     public Action<string, string, bool>? Mover { get; init; }
 
     /// <summary>
-    /// The home whose lease a roll-back from the journal holds while it moves (SWAPLEASE2, the terminal RPC design §5), as the
+    /// The home whose lease a roll-back from the journal holds while it moves, as the
     /// launcher holds it around <see cref="Run"/>: the install's <c>data/</c>. Null takes none, as a scratch install's tests do.
     /// </summary>
     public string? LeaseHome { get; init; }
@@ -65,7 +65,7 @@ public sealed class InstallSwap(
     /// </summary>
     public LeaseHolder? HeldBy { get; private set; }
 
-    /// <summary>Every move this swap found held, journalled with each write (SWAP2): the measurement the wait is sized by.</summary>
+    /// <summary>Every move this swap found held, journalled with each write: the measurement the wait is sized by.</summary>
     private readonly List<SwapHold> _holds = [];
 
     /// <summary>A folder or a file moved on the disk, as the swap moves it.</summary>
@@ -77,7 +77,7 @@ public sealed class InstallSwap(
 
     /// <summary>
     /// Whether a move's failure is a hold that may give way: access denied, which <c>Directory.Move</c> throws as an
-    /// <see cref="IOException"/> of <c>0x80070005</c> for a folder a file inside is held open in (measured, SWAP2), or a
+    /// <see cref="IOException"/> of <c>0x80070005</c> for a folder a file inside is held open in (measured), or a
     /// sharing, lock or busy refusal of a file. Anything else (a path missing, a target already there) no wait mends, and
     /// it fails at once. The codes are Win32's; elsewhere an <see cref="IOException"/> carries an errno, and no hold.
     /// </summary>
@@ -87,14 +87,14 @@ public sealed class InstallSwap(
             && error is IOException and not FileNotFoundException and not DirectoryNotFoundException
             && (error.HResult & 0xFFFF) is 5 or 32 or 33 or 170);
 
-    /// <summary>How often a hold under way is asked again what holds it (DEPLOYBUSY1).</summary>
+    /// <summary>How often a hold under way is asked again what holds it.</summary>
     public TimeSpan HeldAskEvery { get; init; } = TimeSpan.FromSeconds(5);
 
     /// <summary>
     /// A folder or a file moved, tried again while a held file refuses it, for <see cref="HeldWithin"/>; every hold met is
-    /// kept with how long it lasted, and what was found holding it (DEPLOYBUSY1): asked at the first refusal, every
+    /// kept with how long it lasted, and what is found holding it: asked at the first refusal, every
     /// <see cref="HeldAskEvery"/> after, and when the wait gives up, keeping the last answer, since what still holds it is
-    /// what the hold was; one moment's answer can be a passer-by. A hold that outlasts the wait throws
+    /// what the hold is; one moment's answer can be a passer-by. A hold that outlasts the wait throws
     /// <see cref="HeldMoveException"/>; any other failure throws at once.
     /// </summary>
     private void MoveHeld(string source, string target, bool overwrite = false)
@@ -153,14 +153,14 @@ public sealed class InstallSwap(
     private static string Under(params string[] segments) => string.Join('/', segments);
 
     /// <summary>
-    /// What a launcher that died left (D139 §6), put right before anything else: a journal still <c>swapping</c> is undone;
+    /// What a launcher that died left, put right before anything else: a journal still <c>swapping</c> is undone;
     /// one <c>started</c> and never confirmed, with nothing running from <c>app/</c>, is a new application that failed, and
     /// is undone too; one confirmed and never marked installed is installed. The phase it put right to, or null when there
     /// was nothing to put right; either way the launcher goes on as it would have. A roll-back that stopped part way left
-    /// its reason in the journal, and is finished with it (SWAP2).
+    /// its reason in the journal, and is finished with it.
     /// </summary>
     /// <remarks>
-    /// A roll-back moves <c>app/</c> as the swap does, so it holds <see cref="LeaseHome"/>'s lease as the swap does (SWAPLEASE2),
+    /// A roll-back moves <c>app/</c> as the swap does, so it holds <see cref="LeaseHome"/>'s lease as the swap does,
     /// and an act holding the home for the whole of the wait leaves it to the next start, said in <see cref="HeldBy"/>. Finishing
     /// a confirmed swap moves nothing, and waits for no one: the new application holds the home for its life. A start with
     /// nothing to put right takes no lease.
@@ -212,7 +212,7 @@ public sealed class InstallSwap(
     }
 
     /// <summary>
-    /// The update met an error (D139 §6; SWAP2): a swap under way is put right from its journal, as a launcher that died is,
+    /// The update met an error: a swap under way is put right from its journal, as a launcher that died is,
     /// keeping the reason it was undoing for; one started whose application runs is left to it. With no swap under way, an
     /// update asked for refuses the staged build as <c>error</c>, so the application is not closed for the same build
     /// again. Never a refusal written over a swap under way, and never <c>busy</c>.
@@ -272,7 +272,7 @@ public sealed class InstallSwap(
         }
         catch (HeldMoveException held)
         {
-            // `busy` is this and only this: a hold that outlasted the wait, and the moves before it put back (SWAP2).
+            // `busy` is this and only this: a hold that outlasted the wait, and the moves before it put back.
             Undo(record with { Moves = moves }, "busy", $"a file the swap had to move was held: {held.Message}; nothing was changed.");
             return new SwapOutcome(SwapPhase.RolledBack, "busy", StartOld: true);
         }
@@ -341,11 +341,11 @@ public sealed class InstallSwap(
     }
 
     /// <summary>
-    /// An update asked for while something still runs from <c>app/</c> once the wait is over (D139 §5): the staged build is
+    /// An update asked for while something still runs from <c>app/</c> once the wait is over: the staged build is
     /// refused, <c>busy</c>, and moved aside, so the application started again on the build before it does not drain and
     /// close for the same build again; <paramref name="code"/> names another reason, <c>error</c> for the launcher's.
     /// <see cref="SwapOutcome.Nothing"/> when nothing is staged, or when a swap is under way: its journal is what puts the
-    /// install right, and a refusal written over it would lose its moves (SWAP2).
+    /// install right, and a refusal written over it would lose its moves.
     /// </summary>
     public SwapOutcome Held(string detail, string code = "busy")
     {
@@ -383,11 +383,11 @@ public sealed class InstallSwap(
     }
 
     /// <summary>
-    /// Put the build before it back (D139 §6): the journal's moves undone in reverse, a staged file that had moved in going
+    /// Put the build before it back: the journal's moves undone in reverse, a staged file that had moved in going
     /// to <c>update/failed/</c> rather than back to <c>staged/</c>, so it is not tried again.
     /// </summary>
     /// <remarks>
-    /// The reason is journalled before the first move back, and the moves still to undo after each one (SWAP2): a move back
+    /// The reason is journalled before the first move back, and the moves still to undo after each one: a move back
     /// that a hold outlasts throws with the journal still under way, so the launcher's <see cref="AfterError"/>, or the next
     /// start, finishes it with the reason it was undoing for and never moves a file it already put back. A journal that
     /// already carries a reason is such a finish, and keeps what the first attempt moved to <c>update/failed/</c>.

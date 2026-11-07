@@ -7,16 +7,15 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One landing of one session's tree at a time, and one push of one landed branch, whichever door (LANDRACE1, D145 point 2, D173's
-/// FABRIC-END7 note and its review). The person's press, a terminal's <c>trees land</c>, an entry's Accept and the look's automatic
+/// One landing of one session's tree at a time, and one push of one landed branch, whichever door. The person's press, a terminal's <c>trees land</c>, an entry's Accept and the look's automatic
 /// landing each take the tree's hold around the whole landing (<c>TreeLands.LandAsync</c>); the landing's plugin step and a hand-off
 /// (<c>TreeHandOffs.HandAsync</c>) each take the branch's around the push. A discard and the press bringing sessions together take the
-/// tree's too (LINESTOGETHER1d). A hold is not re-entrant: a door that calls another taking the same key waits on itself, so the landing's
+/// tree's too. A hold is not re-entrant: a door that calls another taking the same key waits on itself, so the landing's
 /// own tidy tells the removal it holds it.
 /// </summary>
 /// <remarks>
 /// <para><b>Why.</b> Git's ref writes keep two landings of a made branch apart (a branch made once, an advance by compare-and-swap),
-/// but a tree on a branch of its own (TREEFOLLOW1) has no ref made for it, so both would land it and its plugin would push twice; a
+/// but a tree on a branch of its own has no ref made for it, so both would land it and its plugin would push twice; a
 /// hand-off of a branch whose landing is still pushing would push it again and open a second pull request; and a door that comes
 /// while another pushes is owed what happened, not git's refusal.</para>
 ///
@@ -31,15 +30,15 @@ namespace Daoris.Driver;
 /// keeps this process apart from another (a terminal's press beside the desktop's look): the handle is the lock, as
 /// <see cref="TreeLock"/>'s and <see cref="RecordLock"/>'s are, so a process that dies lets go with it.</para>
 ///
-/// <para><b>Swept once nobody can be owed them</b> (LANDHOLDSWEEP1). A hold stamps its file's written time when it is taken and when
+/// <para><b>Swept once nobody can be owed them</b>. A hold stamps its file's written time when it is taken and when
 /// it is let go, so the time says when a door last held it. A file no door has held for longer than <see cref="Wait"/> is owed to
 /// nobody: a door waiting behind its last holder took it within <see cref="Poll"/> of the release, and one that came later waited for
 /// nothing and clears it. <see cref="Sweep"/> removes such a file under its own handle, opened alone, after reading the time again
 /// through it, so a door that took and let go of it since is kept; a held file does not open, and stays. A taken hold sweeps its home
 /// at most once per <see cref="Wait"/> in a process. The age is the wall clock's, as the file's time is: a clock stepped forward past
-/// the bound can sweep a file a waiting door would have read, and that door judges the work as it stands, as before LANDRACE1.</para>
+/// the bound can sweep a file a waiting door would have read, and that door judges the work as it stands.</para>
 ///
-/// <para><b>Its holder named</b> (LANDHOLD3). On Windows the holder shares reading, never writing, so a door waiting in another process
+/// <para><b>Its holder named</b>. On Windows the holder shares reading, never writing, so a door waiting in another process
 /// reads who holds it; a sweep, which opens it to write, cannot take a held file. Elsewhere a shared read is a shared lock, so it is
 /// held alone and its holder goes unnamed.</para>
 ///
@@ -50,7 +49,7 @@ namespace Daoris.Driver;
 /// kept nothing of its own leaves it for the next. A write reaches the system's cache, which every process reads, and is not forced to
 /// the disk: it matters only to a door waiting now.</para>
 ///
-/// <para><b>Who holds it, named (LANDHOLD3).</b> A door that says who it is (<see cref="LandingHolder"/>) writes its session and branch
+/// <para><b>Who holds it, named.</b> A door that says who it is (<see cref="LandingHolder"/>) writes its session and branch
 /// beside what the file keeps the moment it takes the hold, and unwrites them as it lets go; this process keeps the same in its gate,
 /// written before the file is opened. A door waiting here reads the gate; one waiting in another process reads the file through a
 /// second handle, which the holder's sharing of reads allows on Windows. Both read again while they wait, so the wait names the holder
@@ -72,11 +71,11 @@ internal static class LandingHolds
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
-    // LANDHOLDSWEEP1: when this process last swept each home, by the monotonic clock; guarded by itself.
+    // When this process last swept each home, by the monotonic clock; guarded by itself.
     private static readonly Dictionary<string, long> Swept = new(StringComparer.Ordinal);
 
     /// <summary>Hold the tree for one landing, waiting while another landing of it holds it, here or in another process.</summary>
-    /// <param name="by">Who holds it, for a door that waits behind it to name (LANDHOLD3); null names nobody.</param>
+    /// <param name="by">Who holds it, for a door that waits behind it to name; null names nobody.</param>
     /// <returns>The hold, which knows whether it waited and what the one before kept; null where it was held for the whole of <paramref name="within"/>.</returns>
     public static Task<LandingHold?> TakeAsync(
         string home, string tree, CancellationToken ct = default, TimeSpan? within = null, LandingHolder? by = null) =>
@@ -84,7 +83,7 @@ internal static class LandingHolds
 
     /// <summary>Hold a landed branch for one push, waiting while another push of it holds it, here or in another process.</summary>
     /// <param name="root">A checkout of the repository, the main one or a linked worktree: its common git folder names the repository.</param>
-    /// <param name="by">Who holds it, for a door that waits behind it to name (LANDHOLD3); null names nobody.</param>
+    /// <param name="by">Who holds it, for a door that waits behind it to name; null names nobody.</param>
     public static Task<LandingHold?> BranchAsync(
         string home, string root, string branch, CancellationToken ct = default, TimeSpan? within = null, LandingHolder? by = null) =>
         HoldAsync(home, BranchKey(root, branch), ct, within, by);
@@ -115,7 +114,7 @@ internal static class LandingHolds
         var held = false;
         var said = false;
         LandingHolder? behind = null;
-        // LANDHOLD2: said before the first wait, and unsaid when the wait ends, whatever it came to. LANDHOLD3: said again once the
+        // Said before the first wait, and unsaid when the wait ends, whatever it came to. Said again once the
         // holder is named, or another holds it, so the step names who it waits behind; never again for a holder that went unnamed.
         void Say(LandingHolder? holder)
         {
@@ -136,7 +135,7 @@ internal static class LandingHolds
                 Interlocked.Increment(ref gate.Waiting);
                 try
                 {
-                    // In slices, so a holder that comes or changes while this waits is named (LANDHOLD3).
+                    // In slices, so a holder that comes or changes while this waits is named.
                     while (!await gate.Semaphore.WaitAsync(Slice(patience, waiting), ct).ConfigureAwait(false))
                     {
                         if (waiting.Elapsed >= patience) return null;
@@ -266,7 +265,7 @@ internal static class LandingHolds
     /// A sharing violation is another door holding it, or a sweep reading it: null. A refusal is a sweep's removal not yet complete,
     /// where the system keeps the name until its handle closes: null too, so a door asks again within its bound. A folder that cannot be
     /// made is thrown.
-    /// On Windows the holder shares reading, never writing, so a door waiting in another process reads who holds it (LANDHOLD3) and none
+    /// On Windows the holder shares reading, never writing, so a door waiting in another process reads who holds it and none
     /// can take it beside it. Elsewhere a shared read is a shared lock, which a second holder would take too, so it is held alone and its
     /// holder goes unnamed.
     /// </remarks>
@@ -314,7 +313,7 @@ internal static class LandingHolds
     }
 
     /// <summary>
-    /// Remove the home's landing holds no door has held for longer than <see cref="Wait"/> before <paramref name="now"/> (LANDHOLDSWEEP1).
+    /// Remove the home's landing holds no door has held for longer than <see cref="Wait"/> before <paramref name="now"/>.
     /// One held does not open and stays; one held since it was listed reads as recent through the sweep's own handle and stays.
     /// </summary>
     /// <returns>How many it removed. Never throws: a file that will not go is swept next time.</returns>
@@ -350,7 +349,7 @@ internal static class LandingHolds
     }
 
     /// <summary>
-    /// Who holds a key in another process (LANDHOLD3), read through a handle of its own that leaves the holder its writing; null where
+    /// Who holds a key in another process, read through a handle of its own that leaves the holder its writing; null where
     /// it named nobody, had not yet, or cannot be read.
     /// </summary>
     private static LandingHolder? Claimed(string path)
@@ -386,7 +385,7 @@ internal static class LandingHolds
 
     /// <summary>
     /// Keep an attempt's outcome, and who holds the key, in the hold's own file, through its own handle, as far as the system's cache.
-    /// The attempt's fields are the file's own, as before LANDHOLD3, and the holder one beside them.
+    /// The attempt's fields are the file's own, and the holder's sit beside them.
     /// </summary>
     internal static void Write(FileStream file, LandingAttempt? attempt, LandingHolder? holder)
     {
@@ -401,7 +400,7 @@ internal static class LandingHolds
 
     private const string HolderField = "holder";
 
-    /// <summary>A key's semaphore in this process, how many doors hold or wait for it, and who holds it (LANDHOLD3).</summary>
+    /// <summary>A key's semaphore in this process, how many doors hold or wait for it, and who holds it.</summary>
     private sealed class KeyGate
     {
         public readonly SemaphoreSlim Semaphore = new(1, 1);
@@ -413,7 +412,7 @@ internal static class LandingHolds
 
 /// <summary>A door's hold of a tree or a branch (<see cref="LandingHolds"/>), let go when disposed.</summary>
 /// <param name="release">Lets the key's gate in this process go.</param>
-/// <param name="by">Who holds it, written to its file while it does (LANDHOLD3); null names nobody.</param>
+/// <param name="by">Who holds it, written to its file while it does; null names nobody.</param>
 internal sealed class LandingHold(Action release, FileStream file, LandingHolder? by = null) : IDisposable
 {
     private int _gone;
@@ -444,12 +443,12 @@ internal sealed class LandingHold(Action release, FileStream file, LandingHolder
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or ObjectDisposedException)
         {
-            // Nothing is kept: the one behind judges the work as it stands, as before LANDRACE1.
+            // Nothing is kept: the one behind judges the work as it stands.
         }
     }
 
     /// <summary>
-    /// Write who holds it, once taken (LANDHOLD3), beside what the file keeps for the one behind. Never throws: a holder that cannot be
+    /// Write who holds it, once taken, beside what the file keeps for the one behind. Never throws: a holder that cannot be
     /// written goes unnamed, and the wait behind it says only that it waits.
     /// </summary>
     internal void Claim()
@@ -462,8 +461,8 @@ internal sealed class LandingHold(Action release, FileStream file, LandingHolder
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _gone, 1) == 1) return;
-        // LANDHOLD3: unnamed as it lets go, so a door that finds the file free a moment later never names one that has gone; then
-        // LANDHOLDSWEEP1: stamped held until now, so a sweep keeps it for a door that waits behind this one.
+        // Unnamed as it lets go, so a door that finds the file free a moment later never names one that has gone; then
+        // Stamped held until now, so a sweep keeps it for a door that waits behind this one.
         if (by is not null) Name(null);
         LandingHolds.Stamp(file);
         file.Dispose();
@@ -478,13 +477,13 @@ internal sealed class LandingHold(Action release, FileStream file, LandingHolder
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or ObjectDisposedException)
         {
-            // Unnamed: a door waiting behind it says only that it waits, as LANDHOLD2 did.
+            // Unnamed: a door waiting behind it says only that it waits.
         }
     }
 }
 
 /// <summary>
-/// What one landing or push came to, kept in its hold's file for the door waiting behind it (LANDRACE1's review): the commit, so the
+/// What one landing or push came to, kept in its hold's file for the door waiting behind it: the commit, so the
 /// one behind compares what it would land or push with what was, and the plugin's answer, so a failure is said rather than hidden.
 /// </summary>
 /// <param name="Branch">The branch the work is on.</param>

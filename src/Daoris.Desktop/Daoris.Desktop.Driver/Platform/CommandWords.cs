@@ -12,7 +12,7 @@ public sealed record TreeGroup(string Name, IReadOnlyList<string> Verbs, string?
 }
 
 /// <summary>
-/// The words of Daoris's one command tree (D228): <c>daoris …</c> for everything. This program's groups are declared by the code that runs
+/// The words of Daoris's one command tree: <c>daoris …</c> for everything. This program's groups are declared by the code that runs
 /// each, with <see cref="CommandGroupAttribute"/>, and collected here; the doctrine commands are the CLI's rows alone. Each program hands
 /// the other a word it does not own, once (<see cref="HandedVariable"/>); Loop's <c>CommandTree</c> routes by the groups.
 /// </summary>

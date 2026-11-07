@@ -1,8 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a door that would land, discard or rebase a tree reads of the operations bringing sessions together (LINESTOGETHER1d, the
-/// review-flow design §4): the binding, read under the record lock. A bound tree is refused, naming its operation, but to its own
+/// What a door that would land, discard or rebase a tree reads of the operations bringing sessions together: the binding, read under the record lock. A bound tree is refused, naming its operation, but to its own
 /// combined Accept; a binding that cannot be read refuses too, since "cannot tell" is never "go on".
 /// </summary>
 internal static class TogetherGuard
@@ -60,7 +59,7 @@ internal static class TogetherGuard
 }
 
 /// <summary>
-/// The door's lock order across processes (the review-flow design §4): (1) each bound tree's landing hold, ascending by its file; (2)
+/// The door's lock order across processes: (1) each bound tree's landing hold, ascending by its file; (2)
 /// the repository's tree lock, shared as a start takes it; (3) the record lock, which each read and write of the operations takes under
 /// these. Nothing holding (2) or (3) takes (1), and every wait is bounded.
 /// </summary>
@@ -89,7 +88,7 @@ internal sealed class TogetherLocks : IDisposable
                 holds.Add(hold);
             }
 
-            // The checkout's lock, named by any of its trees (GITLOCK1).
+            // The checkout's lock, named by any of its trees.
             var checkout = trees[0];
             if (TreeLock.TryStarting(home, checkout) is not { } shared) return (null, HeldWords.Holding(repository, TreeLock.HolderOf(home, checkout)).Why);
             var held = new TogetherLocks([.. holds], shared);

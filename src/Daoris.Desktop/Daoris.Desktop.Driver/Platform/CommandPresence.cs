@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>Whether a command would start, without starting it.</summary>
 /// <remarks>
-/// The shared kernel's (Platform, STRUCT3a): it asks the machine's PATH and files for the agents' doors, the tools, the
+/// The shared kernel's (Platform): it asks the machine's PATH and files for the agents' doors, the tools, the
 /// terminals, the trees, Setup and a plugin's tool checks alike.
 /// </remarks>
 public static class CommandPresence

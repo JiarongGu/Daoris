@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 public sealed record TreeHolder(string Tree, string Session);
 
 /// <summary>
-/// Whether a writer of a checkout waits for a session working there (GITLOCK1, GITAPP2's §3 <i>Beside a session</i>): the line's pull and a
+/// Whether a writer of a checkout waits for a session working there: the line's pull and a
 /// promotion move a checkout only where the ledger holds no session in it, running, waiting or held to go on, read inside the writer's hold;
 /// a ledger that cannot be read holds it too. Each wait is said, naming the session and where the person finds it, and the write goes on at
 /// the next look once the checkout is free.

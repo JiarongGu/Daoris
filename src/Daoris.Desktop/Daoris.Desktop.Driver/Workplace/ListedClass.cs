@@ -4,9 +4,8 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The class a set-aside folder is listed by (KEEPSIZE1b, the keep-size design §5): its <see cref="SetAsideClass"/>, but a stopped or refused
-/// folder whose check said its branch stands is <see cref="Stands"/>, and a finished folder unmarked by a failed check is <see cref="Unheld"/>
-/// (the second maker's read, finding 9).
+/// The class a set-aside folder is listed by: its <see cref="SetAsideClass"/>, but a stopped or refused
+/// folder whose check said its branch stands is <see cref="Stands"/>, and a finished folder unmarked by a failed check is <see cref="Unheld"/>.
 /// </summary>
 internal static class ListedClass
 {

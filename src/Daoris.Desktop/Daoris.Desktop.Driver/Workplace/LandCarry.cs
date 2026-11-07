@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the performer's carry-on tells a session (LANDBACK1 part 1, D87's note): where a landing is refused because the session's tree
+/// What the performer's carry-on tells a session: where a landing is refused because the session's tree
 /// holds uncommitted work or its replay onto the line conflicts, the session is told what to do about it, in Daoris's own words through
-/// the say door, once per tip and status. Daoris never commits for the session (D164's rejection): a claim is not an act, only a clean
+/// the say door, once per tip and status. Daoris never commits for the session: a claim is not an act, only a clean
 /// tree lands.
 /// </summary>
 public static class LandCarry
@@ -44,7 +44,7 @@ public static class LandCarry
         "Commit them on the tree's branch by this repository's conventions, or restore the ones you do not want and say which. "
         + "Do not create, switch or push branches";
 
-    /// <summary>The words for a carry-on: a conflict's are the rebase words (LANDREBASE1), a dirty tree's <see cref="DirtyWords"/>.</summary>
+    /// <summary>The words for a carry-on: a conflict's are the rebase words, a dirty tree's <see cref="DirtyWords"/>.</summary>
     public static string WordsOf(string why, LandingConflict? conflict, int paths) =>
         why == Conflicted && conflict is not null ? conflict.Words : DirtyWords(paths);
 

@@ -4,8 +4,7 @@ using static Daoris.Driver.TreeRefs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A judged branch's own commits replayed onto the line and proven before the branch moves (WSR6; PART10j, out of
-/// <c>SessionTrees.Sync.cs</c>), and the grown record's tidying after: over the trees' context, whose trees home a replay made
+/// A judged branch's own commits replayed onto the line and proven before the branch moves, and the grown record's tidying after: over the trees' context, whose trees home a replay made
 /// aside lives under and whose records say where each branch now grows from.
 /// </summary>
 internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers)
@@ -28,7 +27,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
     }
 
     /// <summary>
-    /// Replay one branch's own commits onto the line (WSR6), in a tree of Daoris's own, then prove its own work
+    /// Replay one branch's own commits onto the line, in a tree of Daoris's own, then prove its own work
     /// survived before the branch moves. A conflict aborts, and the branch is left as it was.
     /// </summary>
     /// <remarks>
@@ -36,7 +35,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
     /// tree is detached where it stands, a landing's branch is replayed in a tree made for it. Only once the new
     /// commit is proven does the ref move, so a refusal at any step leaves the branch where it was.</para>
     ///
-    /// <para>🔴 <b>The proof</b> (the first real post-merge run): between the old tip and the new one, only files the
+    /// <para>🔴 <b>The proof</b>: between the old tip and the new one, only files the
     /// line itself changed between the cut and where the branch now grows from may differ — everything else of the
     /// branch's must read exactly as before. Where the line brought nothing but the squash of the work the branch grew
     /// from, the two tips read the same.</para>
@@ -51,7 +50,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         var (baseCommit, upstream) = await WithinAsync(root, replayed, tip, cut, ct).ConfigureAwait(false) is { } within
             ? (within.NewTip, within.OldTip)
             : (onto, cut);
-        // LANDSYNC3: the commits the line holds beyond where the replay starts are skipped, the runs between them replayed; null for a
+        // The commits the line holds beyond where the replay starts are skipped, the runs between them replayed; null for a
         // plain replay. None left to replay is the line's commit itself, while the proof still reads from where its own work started.
         var stretches = StretchesBeyond(judged, upstream);
         var replayFrom = stretches is { Count: 0 } ? tip : upstream;
@@ -61,7 +60,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         var tree = judged.Tree;
         if (tree is not null)
         {
-            // 🔴 The session's own tree, read again immediately before: git's own working root for it (GITWORKTREECONFIG1), asked in the
+            // 🔴 The session's own tree, read again immediately before: git's own working root for it, asked in the
             // same start as its branch, then still on this branch, at the commit judged, clean. A tree git binds to another checkout is
             // left before its status is read: a switch or a rebase in it would rewrite that checkout's files.
             var (onCode, onOut, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--show-toplevel", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
@@ -115,7 +114,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
 
         replayed.Add(new Replayed(tip, now, cut));
         var kept = await CountAsync(root, $"{onto}..{now}", ct).ConfigureAwait(false);
-        // What the line holds is said apart from what became empty (LANDSYNC3): the one was judged before, the other found by the replay.
+        // What the line holds is said apart from what became empty: the one judged before, the other found by the replay.
         var message = kept == 0 && item.Commits == 0 && judged.LeftOut > 0
             ? $"moved `{item.Branch}` onto `{line}`: it holds nothing of its own beyond work that reached the line ({judged.LeftOut} commit(s) the line holds left out)."
             : $"replayed `{item.Branch}` onto `{line}`: {kept} commit(s) of its own"
@@ -183,12 +182,12 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
     }
 
     /// <summary>
-    /// A session's own tree, detached where it stands and replayed there (WSR6): the new commit, or null and git's
+    /// A session's own tree, detached where it stands and replayed there: the new commit, or null and git's
     /// words. The branch itself is not moved here, and on a failure the tree is left detached for
     /// <see cref="BackOnAsync"/> to put back.
     /// </summary>
     /// <param name="tip">The commit the tree stands on, detached from it here.</param>
-    /// <param name="stretches">The runs to replay where the line holds commits between them (LANDSYNC3); null replays all from <paramref name="upstream"/>.</param>
+    /// <param name="stretches">The runs to replay where the line holds commits between them; null replays all from <paramref name="upstream"/>.</param>
     private static async Task<(string? Commit, string Words)> ReplayDetachedAsync(
         string tree, string branch, string onto, string upstream, string tip, IReadOnlyList<(string From, string To)>? stretches, CancellationToken ct)
     {
@@ -205,7 +204,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
     }
 
     /// <summary>
-    /// The runs a replay from <paramref name="upstream"/> carries where the line holds commits between them (LANDSYNC3): null where it
+    /// The runs a replay from <paramref name="upstream"/> carries where the line holds commits between them: null where it
     /// skips none, so the replay is a plain one; empty where the line holds every one left.
     /// </summary>
     private static IReadOnlyList<(string From, string To)>? StretchesBeyond(RebaseJudged judged, string upstream)
@@ -236,7 +235,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
 
     /// <summary>
     /// The files that differ between the branch's old tip and its new one beyond those the line changed between where
-    /// its own commits started and what they were replayed onto (WSR6) — null where there are none; git unable to say
+    /// its own commits started and what they were replayed onto — null where there are none; git unable to say
     /// is itself a reason not to keep the replay.
     /// </summary>
     internal static async Task<string?> BeyondTheLineAsync(string root, string tip, string now, string upstream, string onto, CancellationToken ct)
@@ -249,7 +248,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
     }
 
     /// <summary>
-    /// A branch nobody has checked out, replayed in a tree made for it under the trees home and removed after (WSR6):
+    /// A branch nobody has checked out, replayed in a tree made for it under the trees home and removed after:
     /// the new commit, or null and git's words. The branch itself is not moved here.
     /// </summary>
     /// <remarks>
@@ -281,8 +280,8 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
     }
 
     /// <summary>
-    /// A tree of Daoris's own for one replay, under the trees home, detached at <paramref name="at"/> (WSR6, LANDSYNC1): what a
-    /// replay a kill cut off left in the repository's trees moved aside first (<see cref="PassLeftovers"/>, STRAYOTHERS1), then the
+    /// A tree of Daoris's own for one replay, under the trees home, detached at <paramref name="at"/>: what a
+    /// replay a kill cut off left in the repository's trees moved aside first (<see cref="PassLeftovers"/>), then the
     /// tree added locked under words naming this process for as long as the replay runs, so the next replay tells a tree in use
     /// from a leftover. Its path, or null and git's words.
     /// </summary>
@@ -305,7 +304,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
             .ConfigureAwait(false);
         if (added != 0) return (null, $"Daoris could not make a tree to replay it in: {Failure(addErr)}");
 
-        // GITWORKTREECONFIG1: where the repository's configuration binds its linked trees to another checkout, a rebase in this one would
+        // Where the repository's configuration binds its linked trees to another checkout, a rebase in this one would
         // rewrite that checkout's files, so nothing is replayed. This tree is Daoris's own, made a moment ago and holding nothing, so it goes
         // as every replay's own tree goes: git's removal names it by its record, never through it.
         if (await TreeBinding.RefusalAsync(aside, ct).ConfigureAwait(false) is { } bound)
@@ -319,31 +318,31 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
 
     /// <summary>
     /// A replay's own tree removed, its lock with it (<c>--force</c> twice), whatever the replay's token says, since a tree left
-    /// locked by a process that still runs would wait for that process to end (STRAYOTHERS1). Daoris's own tree, made a moment ago
+    /// locked by a process that still runs would wait for that process to end. Daoris's own tree, made a moment ago
     /// for this one replay and holding nothing of anyone's: its commits are in the repository, so removing it loses nothing.
     /// </summary>
     private static Task CloseAsideAsync(string root, string aside) =>
         WorkingTree.GitAsync(root, ["worktree", "remove", "--force", "--force", aside], CancellationToken.None);
 
-    /// <summary>What a landing's replay made (LANDSYNC1): the new tip, or null and git's words, and whether those name a conflict.</summary>
+    /// <summary>What a landing's replay made: the new tip, or null and git's words, and whether those name a conflict.</summary>
     internal sealed record KeptReplay(string? Now, string Words, bool Conflict)
     {
-        /// <summary>The generated files it took at the line's copy where only those conflicted (LANDREBASE1), in the order met.</summary>
+        /// <summary>The generated files it took at the line's copy where only those conflicted, in the order met.</summary>
         public IReadOnlyList<string> Generated { get; init; } = [];
 
-        /// <summary>Those written again from the replayed tree by the writers the person accepted (GENREGEN1); none where none ran.</summary>
+        /// <summary>Those written again from the replayed tree by the writers the person accepted; none where none ran.</summary>
         public GeneratedWriters.Written Written { get; init; } = GeneratedWriters.Written.None;
 
-        /// <summary>The declared backlog it settled by the merge base where it conflicted (LANDBACKLOG1); null where it settled none.</summary>
+        /// <summary>The declared backlog it settled by the merge base where it conflicted; null where it settled none.</summary>
         public BacklogMerge.Settled? Backlog { get; init; }
 
-        /// <summary>The declared row tables it settled the same way where they conflicted (INTEGRATE1c); none where it settled none.</summary>
+        /// <summary>The declared row tables it settled the same way where they conflicted; none where it settled none.</summary>
         public IReadOnlyList<BacklogMerge.Settled> Tables { get; init; } = [];
 
-        /// <summary>The joins union left that it set apart, in a commit on top (INTEGRATE1c); none where it set none.</summary>
+        /// <summary>The joins union left that it set apart, in a commit on top; none where it set none.</summary>
         public IReadOnlyList<UnionJoins.Set> Joined { get; init; } = [];
 
-        /// <summary>The files it settled by a line rule the owner accepted for integration (INTEGRATE1d), with their writers; none where none.</summary>
+        /// <summary>The files it settled by a line rule the owner accepted for integration, with their writers; none where none.</summary>
         public IReadOnlyList<LineRules.Settled> Lined { get; init; } = [];
 
         /// <summary>What those writers wrote again from the replayed tree, in a commit on top; nothing run where it settled none.</summary>
@@ -352,15 +351,15 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
 
     /// <summary>
     /// The commits a landing keeps replayed onto <paramref name="onto"/>, in order, in a tree of Daoris's own made for it under the
-    /// trees home and removed after (LANDSYNC1, D87's 2026-10-15 amendment point 2): <see cref="ReplayAsideAsync"/>'s shape, one
+    /// trees home and removed after: <see cref="ReplayAsideAsync"/>'s shape, one
     /// <c>git rebase --onto</c> per stretch of <paramref name="commits"/> it keeps, each onto the last one's new tip. A commit that
-    /// becomes empty is dropped by git as WSR6's replay drops one; a conflict aborts it, and nothing is moved. LANDREBASE1: a conflict
+    /// becomes empty is dropped by git as <see cref="ReplayAsideAsync"/>'s replay drops one; a conflict aborts it, and nothing is moved. A conflict
     /// only in files the repository marks generated is not the session's, so those take the line's copy and the replay goes on
-    /// (<see cref="GeneratedPaths"/>); one in any other file still aborts it. GENREGEN1: where it took any, the writers the person
+    /// (<see cref="GeneratedPaths"/>); one in any other file still aborts it. Where it took any, the writers the person
     /// accepted for their folders write them again from the replayed tree, in a commit on top (<see cref="GeneratedWriters"/>).
-    /// LANDBACKLOG1: the backlog the line declares at <paramref name="onto"/>, conflicted alone or beside generated files, is settled by
+    /// The backlog the line declares at <paramref name="onto"/>, conflicted alone or beside generated files, is settled by
     /// its merge base as the merge tool settles it (<see cref="BacklogMerge"/>); a base line both sides changed still aborts it.
-    /// INTEGRATE1d: a file of a line rule the owner accepted for integration, declared at <paramref name="onto"/>, is settled by its
+    /// A file of a line rule the owner accepted for integration, declared at <paramref name="onto"/>, is settled by its
     /// pattern and written again by its writer in a commit on top (<see cref="LineRules"/>); a writer that fails refuses the replay.
     /// </summary>
     /// <param name="commits">Every commit beyond the line, oldest first, which <paramref name="kept"/> is a subset of.</param>
@@ -373,7 +372,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         var stretches = Stretches([.. commits.Select(each => each.Sha)], commits.Select(each => each.Sha).Where(sha => !keeps.Contains(sha)).ToHashSet(StringComparer.Ordinal));
 
         var config = Config();
-        // INTEGRATE1d: the line rules the owner accepted for integration, read from the accepted blob alone where it is the one at `onto`.
+        // The line rules the owner accepted for integration, read from the accepted blob alone where it is the one at `onto`.
         var lines = config is null ? [] : await LineRules.AcceptedAsync(config, root, repository, onto, ct).ConfigureAwait(false);
         var (aside, notMade) = await OpenAsideAsync(root, workspace, repository, stretches[0].To, ct).ConfigureAwait(false);
         if (aside is null) return new(null, notMade, false);
@@ -382,7 +381,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
             var made = await RebaseStretchesAsync(aside, onto, stretches, switchFirst: false, ct, landing: new BacklogMerge.Stops(onto, lines)).ConfigureAwait(false);
             if (made.Now is null) return made;
 
-            // INTEGRATE1c: what union joined in the replay is set apart as the merge tool sets it, in a commit on top.
+            // What union joined in the replay is set apart as the merge tool sets it, in a commit on top.
             var joined = await UnionJoins.SetApartAsync(aside, onto, commits[^1].Sha, ct).ConfigureAwait(false);
             if (joined.Count > 0) made = made with { Now = await CommitOfAsync(aside, "HEAD", ct).ConfigureAwait(false) ?? made.Now, Joined = joined };
 
@@ -396,7 +395,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
             }
 
             if (made.Lined.Count == 0) return made;
-            // INTEGRATE1d: each file a line rule settled is written again by its accepted writer. No rule keeps one side's copy, so a
+            // Each file a line rule settled is written again by its accepted writer. No rule keeps one side's copy, so a
             // writer that fails refuses the replay as the conflict it was, for the session to settle in its own tree.
             var lineWriters = made.Lined.Select(each => new GeneratedWriters.Writer(each.Path, each.Run)).ToList();
             var lineWritten = await GeneratedWriters.WriteAsync(aside, lineWriters, [.. made.Lined.Select(each => each.Path)], ct).ConfigureAwait(false);
@@ -407,14 +406,14 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         }
         finally
         {
-            // Daoris's own tree, made a moment ago for this one replay and holding nothing of anyone's, as WSR6's is.
+            // Daoris's own tree, made a moment ago for this one replay and holding nothing of anyone's, as the replay aside's is.
             await CloseAsideAsync(root, aside).ConfigureAwait(false);
         }
     }
 
     /// <summary>
-    /// The person's choices a landing's replay reads its acceptances from, the generated folders' writers (GENREGEN1) and the line rules'
-    /// (INTEGRATE1d); null where the driver's settings could not be read, and the replay runs no writer, as it would with none accepted.
+    /// The person's choices a landing's replay reads its acceptances from, the generated folders' writers and the line rules';
+    /// null where the driver's settings could not be read, and the replay runs no writer, as it would with none accepted.
     /// </summary>
     private DriverConfig? Config()
     {
@@ -430,7 +429,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
 
     /// <summary>
     /// The runs of <paramref name="commits"/> (oldest first) between those <paramref name="skips"/> names, each as the commit before its
-    /// first and its last: what one <c>git rebase --onto</c> replays (LANDSYNC1; LANDSYNC3 for <i>Bring up to date</i>).
+    /// first and its last: what one <c>git rebase --onto</c> replays.
     /// </summary>
     internal static IReadOnlyList<(string From, string To)> Stretches(IReadOnlyList<string> commits, IReadOnlySet<string> skips)
     {
@@ -456,7 +455,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
 
     /// <summary>
     /// <paramref name="commits"/> (oldest first) replayed in <paramref name="tree"/>, detached at <paramref name="tip"/>, onto
-    /// <paramref name="onto"/>, skipping those the line holds (LANDSYNC3, a detached tree's <i>Bring up to date</i>): the answer
+    /// <paramref name="onto"/>, skipping those the line holds (a detached tree's <i>Bring up to date</i>): the answer
     /// <see cref="RebaseInAsync"/> gives, run by run. On a failure HEAD may stand anywhere, for the caller to put back.
     /// </summary>
     internal static async Task<(bool Failed, string Words)> RebaseRunsInAsync(
@@ -474,9 +473,9 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
     /// at its last commit first (the first only where <paramref name="switchFirst"/>: a tree opened there already stands on it).
     /// </summary>
     /// <param name="landing">
-    /// A landing's replay (LANDREBASE1, LANDBACKLOG1), with the backlog's settling over its stops: a stop whose every conflicted file the
+    /// A landing's replay, with the backlog's settling over its stops: a stop whose every conflicted file the
     /// repository marks generated, or is the declared backlog that its base settles, takes the line's copy of the generated ones and the
-    /// merge of the backlog, and goes on; the answer names them. Null stops at any conflict, as WSR6's replays do.
+    /// merge of the backlog, and goes on; the answer names them. Null stops at any conflict, as the replay aside does.
     /// </param>
     private static async Task<KeptReplay> RebaseStretchesAsync(
         string tree, string onto, IReadOnlyList<(string From, string To)> stretches, bool switchFirst, CancellationToken ct,
@@ -504,10 +503,10 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
 
     /// <summary>
     /// <see cref="RebaseInAsync"/>'s replay, where a stop whose every conflicted file the repository marks generated
-    /// (<see cref="GeneratedPaths"/>, LANDREBASE1) is not the session's conflict: those files take the line's side, the side the replay
+    /// (<see cref="GeneratedPaths"/>) is not the session's conflict: those files take the line's side, the side the replay
     /// builds on, and the replay goes on, a commit left empty by it skipped as git would drop one. Any other stop aborts as
     /// <see cref="RebaseInAsync"/> does, with git's <c>CONFLICT</c> lines. The files taken are added to <paramref name="generated"/>.
-    /// LANDBACKLOG1: the backlog the line declares, conflicted alone or beside generated files, is settled by its merge base in
+    /// The backlog the line declares, conflicted alone or beside generated files, is settled by its merge base in
     /// <paramref name="backlog"/>, which sums what each stop settled; a base line both sides changed aborts the replay as any conflict does.
     /// </summary>
     private static async Task<(bool Failed, string Words)> RebaseTakingGeneratedAsync(
@@ -525,7 +524,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
             if (listed != 0 || paths.Length == 0) break;
             // The backlog is asked of only where the generated files alone do not settle the stop, so a replay that meets none reads no
             // manifest; its other files must all be generated, and its own conflict must settle by its base.
-            // INTEGRATE1c: the declared row tables are settled by the merge base as the backlog is.
+            // The declared row tables are settled by the merge base as the backlog is.
             var settled = new HashSet<string>(StringComparer.Ordinal);
             if (await GeneratedPaths.AllAsync(tree, paths, ct).ConfigureAwait(false) is not true)
             {
@@ -597,18 +596,18 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         foreach (var entry in context.Grown.All()
                      .Where(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase) && !standing.Contains(entry.Branch)))
         {
-            // TREEFOLLOW1: a tree its agent moved onto a branch of its own outlives the session branch, and the entry is what says
+            // A tree its agent moved onto a branch of its own outlives the session branch, and the entry is what says
             // where its work is: it goes once the tree and that branch are gone too.
             if (entry.Now is { } now)
             {
                 if (Directory.Exists(context.TreeAt(entry.Workspace, entry.Repository, Path.GetFileName(entry.Branch)))) continue;
                 var (stands, _, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{now}"], ct).ConfigureAwait(false);
                 if (stands == 0) continue;
-                // RECORDUNREAD1: that branch unread (a broken ref) is not gone; only git's own "missing" says so.
+                // That branch unread (a broken ref) is not gone; only git's own "missing" says so.
                 if (!(await ContentHolds.MissingAsync(root, $"refs/heads/{now}", ct).ConfigureAwait(false)).Missing) continue;
             }
 
-            // RECORDUNREAD1: the list leaves a broken ref out with a warning, so a branch it did not name is gone only on git's own word.
+            // The list leaves a broken ref out with a warning, so a branch it did not name is gone only on git's own word.
             if (!(await ContentHolds.MissingAsync(root, $"refs/heads/{entry.Branch}", ct).ConfigureAwait(false)).Missing) continue;
             gone.Add(entry.Branch);
         }

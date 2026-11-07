@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The links in a tree, taken off as links before git removes the tree (TREELINK1, D51's note). Git for Windows'
-/// <c>worktree remove</c> follows a junction: TREEDEPS1's probe on git 2.53.0.windows.3 deleted the file a junction in a tree
+/// The links in a tree, taken off as links before git removes the tree. Git for Windows'
+/// <c>worktree remove</c> follows a junction: a probe on git 2.53.0.windows.3 deleted the file a junction in a tree
 /// pointed at, outside it, forced or not. So every path that has git delete a tree's folder (<see cref="TreeRemovals"/>, a
 /// landing's tidy in <see cref="TreeTidies"/>, the press of <see cref="TreeSweeps"/>, <see cref="TreeOpenings.UndoAsync"/>) first
 /// takes each link in it off as a link, its target never touched, and keeps the tree where it cannot. The look's own tidy moves a
-/// tree's folder aside whole and its purge never follows a link (TIDIEDLINK1), so it needs none of this.
+/// tree's folder aside whole and its purge never follows a link, so it needs none of this.
 /// </summary>
 internal static class TreeLinks
 {

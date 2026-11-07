@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// How long one git call may take, by its kind (PARALLEL1e, D181 point 4): every call has a bound, so one that never answers
+/// How long one git call may take, by its kind: every call has a bound, so one that never answers
 /// (a lock, a prompt nobody types, a scan that holds it) ends there, its tree stopped, and its subject is left unknown for the
 /// next wake rather than holding whoever waits. A caller that knows its call is long passes its own (<see cref="SyncBounds"/>).
 /// </summary>
@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// store in seconds; anything else may write a tree, run a repository's hooks or reach the network, and is given the longer
 /// bound. A command this does not name is work: a write cut short would be left half done, a question given long only ends
 /// later.</para>
-/// <para><b>Backstops, not waits.</b> A person's press never waits on git's reads (D181 point 1); these only end a git nobody
+/// <para><b>Backstops, not waits.</b> A person's press never waits on git's reads; these only end a git nobody
 /// should still be waiting for, so they are set well past what a large repository takes on a loaded machine, never at it.</para>
 /// </remarks>
 public static class GitBounds

@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The git Daoris runs, by its version (TOOLS6 inside GITAUTH1c; D121 §2.5, the git-auth design §4.1), asked of the resolved file once
+/// The git Daoris runs, by its version, asked of the resolved file once
 /// per change of it and judged against two floors. Below <see cref="Doors"/> git reads no command scope (<c>GIT_CONFIG_COUNT</c>), so
 /// Daoris's doors cannot stand and its own remote acts refuse; below <see cref="Setting"/> git reads no <c>GIT_CONFIG_GLOBAL</c>, so a
 /// git setting refuses and <see cref="GitGlobalFile"/> is not handed.
@@ -74,14 +74,14 @@ public static class GitVersions
     public static async Task<string?> AskAsync(string file, CancellationToken ct) =>
         await ToolQuestions.AskAsync(file, ["--version"], ct).ConfigureAwait(false) is { Started: true, Problem: null } answer ? answer.Output : null;
 
-    /// <summary>Why Daoris's own remote acts refuse on this git (§4.1), or null where it is new enough or not known.</summary>
+    /// <summary>Why Daoris's own remote acts refuse on this git, or null where it is new enough or not known.</summary>
     public static string? DoorsRefusal(Version? version) =>
         version is not null && version < Doors
             ? $"the git Daoris runs is {version}, older than the {Doors} Daoris's git doors need, so Daoris reaches no remote with it "
               + "(Settings → Tools sets a newer git, or `daoris tool use git managed` downloads one)"
             : null;
 
-    /// <summary>Why a git setting refuses on this git (D121 §2.5), or null where it is new enough or not known.</summary>
+    /// <summary>Why a git setting refuses on this git, or null where it is new enough or not known.</summary>
     public static string? SettingRefusal(Version? version) =>
         version is not null && version < Setting
             ? $"the git Daoris runs is {version}, and a git setting needs git {Setting} or newer: an older git does not read the file "

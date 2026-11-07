@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The key of the words an Accept says to a session it carries on (LANDBACK1 part 1, <see cref="LandCarry"/>): pure key vocabulary, which
+/// The key of the words an Accept says to a session it carries on (<see cref="LandCarry"/>): pure key vocabulary, which
 /// <see cref="DaorisKeys"/> keeps under its own names for the readers above the workplace.
 /// </summary>
 public static class CarryKeys

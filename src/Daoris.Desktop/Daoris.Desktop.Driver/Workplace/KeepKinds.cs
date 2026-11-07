@@ -1,18 +1,18 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The kinds of thing Daoris keeps, each with its rule (CLEANUP1, D195 point 1; the cleanup design §2.1): a table that describes each
+/// The kinds of thing Daoris keeps, each with its rule: a table that describes each
 /// kind and runs nothing. Each kind's removal is one typed operation in this library, which the look's pass, a route and the terminal
-/// alone call alike (D194 point 4); the table names it and never calls it. A kind joins the table in the change that builds its rule:
-/// KEEP1a's set-aside folders first, the downloads with KEEP1b, and the page's words for each id with the card that shows them (KEEP1c).
+/// alone call alike; the table names it and never calls it. A kind joins the table in the change that builds its rule,
+/// and the page's words for each id come with the card that shows them.
 /// </summary>
 public static class KeepKinds
 {
     /// <summary>
-    /// The trees the look moved aside (D88's AUTOTIDY1): its package folders, a <c>node_modules</c> beside a <c>package.json</c> git
-    /// tracks, can be made again and go an hour after the move (<see cref="SetAsideSettle"/>, the cleanup design §5); the rest, git's
+    /// The trees the look moved aside: its package folders, a <c>node_modules</c> beside a <c>package.json</c> git
+    /// tracks, can be made again and go an hour after the move (<see cref="SetAsideSettle"/>); the rest, git's
     /// own files, <c>bin/</c> and <c>obj/</c> among them, waits the folder's days. The person may set 1 to 90 days, or <c>whole</c>,
-    /// which keeps every folder whole as before (KEEP1d, <see cref="KeepRules"/>).
+    /// which keeps every folder whole as before (<see cref="KeepRules"/>).
     /// </summary>
     public static KeepKind SetAside { get; } = new(
         "set-aside", [HomeEntry.Trees.Name],
@@ -22,14 +22,14 @@ public static class KeepKinds
         DefaultGb = 8,
     };
 
-    /// <summary>How long a folder set aside waits after its move before its package folders go: a write by then keeps it whole (§5).</summary>
+    /// <summary>How long a folder set aside waits after its move before its package folders go: a write by then keeps it whole.</summary>
     public static readonly TimeSpan SetAsideSettle = TimeSpan.FromHours(1);
 
     /// <summary>
-    /// The versions the agents and the tools downloaded (KEEP1b, the cleanup design §2.1): every one is made again by its next pin or use,
-    /// and one nothing uses goes seven days into its current unused stretch (§2.3, <see cref="DownloadKeeping"/>), through CACHECLEAR1's
-    /// act, which Tools' delete of one version takes too (<see cref="DownloadClearing"/>). The person may set 0 to 365 days, or
-    /// <c>never</c>, which leaves them to the press alone (KEEP1d).
+    /// The versions the agents and the tools downloaded: every one is made again by its next pin or use,
+    /// and one nothing uses goes seven days into its current unused stretch (<see cref="DownloadKeeping"/>), through the
+    /// clearing act, which Tools' delete of one version takes too (<see cref="DownloadClearing"/>). The person may set 0 to 365 days, or
+    /// <c>never</c>, which leaves them to the press alone.
     /// </summary>
     public static KeepKind Downloads { get; } = new(
         "downloads", [HomeEntry.Toolchain.Name, HomeEntry.ToolVersions.Name],
@@ -41,9 +41,9 @@ public static class KeepKinds
     };
 
     /// <summary>
-    /// The machine log (D94): nothing of it is made again, and each day's file goes thirty days on, by each process's prune at its open
-    /// and by the look's pass once a day at the person's days (KEEP1d). The person may set 7 to 30 days: each process's own thirty stays
-    /// the ceiling, since the service would otherwise read the driver's choices (the cleanup design §2.1).
+    /// The machine log: nothing of it is made again, and each day's file goes thirty days on, by each process's prune at its open
+    /// and by the look's pass once a day at the person's days. The person may set 7 to 30 days: each process's own thirty stays
+    /// the ceiling, since the service would otherwise read the driver's choices.
     /// </summary>
     public static KeepKind Logs { get; } = new(
         "logs", [HomeEntry.Logs.Name], "nothing: each day's file is this machine's evidence",
@@ -51,8 +51,8 @@ public static class KeepKinds
         Remover: "the log's prune, each process's at its open and the look's daily at the person's days");
 
     /// <summary>
-    /// Finished history (KEEP1g, D195 point 7, decided by the owner; the cleanup design §3.6): nothing of it is made again, and by default
-    /// none goes by an age, the person's clear alone (the history clearing design §7). The person may set an age of 30 to 3,650 days: once a
+    /// Finished history (decided by the owner): nothing of it is made again, and by default
+    /// none goes by an age, the person's clear alone. The person may set an age of 30 to 3,650 days: once a
     /// day each workspace's finished units whose last move is older go through the clear itself, every refusal holding
     /// (<see cref="HistoryKeeping"/>); <c>never</c> is the default again.
     /// </summary>
@@ -65,7 +65,7 @@ public static class KeepKinds
     };
 
     /// <summary>
-    /// The browser's caches (KEEPSIZE1e, D195's keep-size note): made again by browsing, so only a size limit holds them, judged once a day
+    /// The browser's caches: made again by browsing, so only a size limit holds them, judged once a day
     /// while the browser does not run and at the browser's start; the engine's own rule ages them, so no days are set.
     /// </summary>
     public static KeepKind BrowserCache { get; } = new(
@@ -76,7 +76,7 @@ public static class KeepKinds
         SizeOnly = true,
     };
 
-    /// <summary>The most Daoris may use, in GB, by default: what it holds in all (the allowance over the whole, KEEPSIZE1).</summary>
+    /// <summary>The most Daoris may use, in GB, by default: what it holds in all (the allowance over the whole).</summary>
     public const int DefaultAllowanceGb = 48;
 
     /// <summary>Every kind with a rule that runs, in the order the card will show them.</summary>
@@ -86,9 +86,9 @@ public static class KeepKinds
     public static KeepKind? Named(string id) => Table.FirstOrDefault(kind => string.Equals(kind.Id, id, StringComparison.Ordinal));
 }
 
-/// <summary>One kind of thing Daoris keeps, as the table describes it (the cleanup design §2.1).</summary>
+/// <summary>One kind of thing Daoris keeps, as the table describes it.</summary>
 /// <param name="Id">Its id: <c>keeping.json</c>'s key, the card's row and the machine log's word.</param>
-/// <param name="Entries">The entries of D172's table it covers, by name.</param>
+/// <param name="Entries">The entries of the home's table it covers, by name.</param>
 /// <param name="MadeAgain">What of it can be made again, which alone goes before its days, in words.</param>
 /// <param name="Days">Its default: how long it is kept.</param>
 /// <param name="MinDays">The fewest days the person may set.</param>
@@ -98,24 +98,24 @@ public static class KeepKinds
 public sealed record KeepKind(
     string Id, IReadOnlyList<string> Entries, string MadeAgain, TimeSpan Days, int MinDays, int MaxDays, bool MaySetWhole, string Remover)
 {
-    /// <summary>Whether the person may set <c>never</c>: none by its days, the press alone (the downloads', KEEP1b).</summary>
+    /// <summary>Whether the person may set <c>never</c>: none by its days, the press alone (the downloads').</summary>
     public bool MaySetNever { get; init; }
 
-    /// <summary>Whether its default is <c>never</c>, the press alone, so <see cref="Days"/> is not read (history's, KEEP1g).</summary>
+    /// <summary>Whether its default is <c>never</c>, the press alone, so <see cref="Days"/> is not read (history's).</summary>
     public bool NeverByDefault { get; init; }
 
-    /// <summary>The most it may hold, in GB, by default (KEEPSIZE1d); null where it takes no size limit.</summary>
+    /// <summary>The most it may hold, in GB, by default; null where it takes no size limit.</summary>
     public int? DefaultGb { get; init; }
 
     /// <summary>Whether the person may set a size limit beside its days.</summary>
     public bool MayHavePart => DefaultGb is not null;
 
-    /// <summary>Whether it keeps no days, only a size: the browser's caches (KEEPSIZE1e), which the engine itself ages.</summary>
+    /// <summary>Whether it keeps no days, only a size: the browser's caches, which the engine itself ages.</summary>
     public bool SizeOnly { get; init; }
 }
 
 /// <summary>
-/// The size limits per kind, beside the days (KEEPSIZE1d, D195's keep-size note): a kind over its limit lets go of its oldest eligible
+/// The size limits per kind, beside the days: a kind over its limit lets go of its oldest eligible
 /// units first, whichever of its days and its limit comes first. Null is no limit, which an unreadable file gives.
 /// </summary>
 public sealed record LimitsPolicy(int? SetAsideGb, int? DownloadsGb, int? BrowserCacheGb = null, int? AllowanceGb = null)
@@ -129,10 +129,10 @@ public sealed record LimitsPolicy(int? SetAsideGb, int? DownloadsGb, int? Browse
 }
 
 /// <summary>
-/// The one effective policy (the cleanup design §2.1, Codex 5.2): the table's defaults under the person's choices, the only reader of a
+/// The one effective policy: the table's defaults under the person's choices, the only reader of a
 /// kind's days. Every place that says or acts on the set-aside folders' days reads it: the purge, the look's report, the work inventory
-/// and the terminal's trees list; the downloads' days, the look's pass and the Downloads row (KEEP1b); the logs' days, the look's daily
-/// prune and the card (KEEP1d); history's age, the look's daily clear and the card (KEEP1g).
+/// and the terminal's trees list; the downloads' days, the look's pass and the Downloads row; the logs' days, the look's daily
+/// prune and the card; history's age, the look's daily clear and the card.
 /// </summary>
 /// <param name="SetAside">The set-aside folders' rule.</param>
 public sealed record KeepPolicy(SetAsidePolicy SetAside)
@@ -141,32 +141,31 @@ public sealed record KeepPolicy(SetAsidePolicy SetAside)
     public static KeepPolicy Default { get; } = new(new SetAsidePolicy(KeepKinds.SetAside.Days, Whole: false));
 
     /// <summary>
-    /// The policy where the person's choices do not read (KEEP1d): what keeps the most, never the least, since a failure keeps (the
-    /// cleanup design §6 point 7): the set-aside folders whole for their most days, no download by its days, the logs their thirty, no
+    /// The policy where the person's choices do not read: what keeps the most, never the least, since a failure keeps: the set-aside folders whole for their most days, no download by its days, the logs their thirty, no
     /// history by an age.
     /// </summary>
     public static KeepPolicy Unread { get; } = new(new SetAsidePolicy(TimeSpan.FromDays(KeepKinds.SetAside.MaxDays), Whole: true))
     {
         Downloads = new(null),
         Logs = new(KeepKinds.Logs.Days),
-        // KEEP1f: no floor, so nothing goes early on a rule that could not be read.
+        // No floor, so nothing goes early on a rule that could not be read.
         Floor = FloorPolicy.None,
         Limits = LimitsPolicy.None,
     };
 
-    /// <summary>The size limit of each kind that takes one (KEEPSIZE1d): beside its days, whichever comes first.</summary>
+    /// <summary>The size limit of each kind that takes one: beside its days, whichever comes first.</summary>
     public LimitsPolicy Limits { get; init; } = LimitsPolicy.Default;
 
-    /// <summary>The free-space floor (KEEP1f): the smaller of 10% of each volume and 20 GB by default.</summary>
+    /// <summary>The free-space floor: the smaller of 10% of each volume and 20 GB by default.</summary>
     public FloorPolicy Floor { get; init; } = FloorPolicy.Default;
 
-    /// <summary>The downloads' rule (KEEP1b): seven days by default; null is the person's <c>never</c>.</summary>
+    /// <summary>The downloads' rule: seven days by default; null is the person's <c>never</c>.</summary>
     public DownloadsPolicy Downloads { get; init; } = new(KeepKinds.Downloads.Days);
 
-    /// <summary>The machine log's rule (KEEP1d): thirty days by default.</summary>
+    /// <summary>The machine log's rule: thirty days by default.</summary>
     public LogsPolicy Logs { get; init; } = new(KeepKinds.Logs.Days);
 
-    /// <summary>Finished history's rule (KEEP1g): no age by default, the person's clear alone.</summary>
+    /// <summary>Finished history's rule: no age by default, the person's clear alone.</summary>
     public HistoryPolicy History { get; init; } = new(null);
 
     /// <summary>The policy the person's <paramref name="choices"/> make over the table's defaults.</summary>
@@ -183,7 +182,7 @@ public sealed record KeepPolicy(SetAsidePolicy SetAside)
         };
 
     /// <summary>
-    /// The policy this home keeps by: the person's choices in <c>driver.json</c>'s <c>keep</c> (KEEP1d), at the path this home's loop
+    /// The policy this home keeps by: the person's choices in <c>driver.json</c>'s <c>keep</c>, at the path this home's loop
     /// resolves, over the table's defaults; <see cref="Unread"/> where that file does not read.
     /// </summary>
     public static KeepPolicy Of(string home)
@@ -204,22 +203,22 @@ public sealed record KeepPolicy(SetAsidePolicy SetAside)
 public sealed record SetAsidePolicy(TimeSpan Days, bool Whole);
 
 /// <summary>
-/// The downloads' rule (KEEP1b): how long into its current unused stretch a version nothing uses is kept; null is <c>never</c>, the press
-/// alone, below the floor too (KEEP1f).
+/// The downloads' rule: how long into its current unused stretch a version nothing uses is kept; null is <c>never</c>, the press
+/// alone, below the floor too.
 /// </summary>
 public sealed record DownloadsPolicy(TimeSpan? Days);
 
-/// <summary>The machine log's rule (KEEP1d): how many days of files are kept, today included.</summary>
+/// <summary>The machine log's rule: how many days of files are kept, today included.</summary>
 public sealed record LogsPolicy(TimeSpan Days);
 
 /// <summary>
-/// Finished history's rule (KEEP1g, decided by the owner): the age past a unit's last move at which the look's daily clear takes it; null,
-/// the default, is <c>never</c>: nothing clears it by itself (the history clearing design §7 as D195 amends it).
+/// Finished history's rule (decided by the owner): the age past a unit's last move at which the look's daily clear takes it; null,
+/// the default, is <c>never</c>: nothing clears it by itself.
 /// </summary>
 public sealed record HistoryPolicy(TimeSpan? Days);
 
 /// <summary>
-/// The free-space floor (KEEP1f, D195; the cleanup design §3.2): the free space at which Daoris frees early what it can make again and
+/// The free-space floor: the free space at which Daoris frees early what it can make again and
 /// says the rest. A trigger, not a reserve. Each volume's floor is computed from its own size: the person's size (at most half of it),
 /// their share, or by default the smaller of 10% of it and 20 GB; <c>off</c> frees nothing early and says nothing.
 /// </summary>
@@ -243,7 +242,7 @@ public sealed record FloorPolicy(int? Gb, int? Percent, bool Off)
     /// <summary>The default share of a volume.</summary>
     public const int DefaultPercent = 10;
 
-    /// <summary>The default's cap: 100 GB (KEEPSIZE1f), where the floor only warns.</summary>
+    /// <summary>The default's cap: 100 GB, where the floor only warns.</summary>
     public const long DefaultCap = 100L << 30;
 
     /// <summary>The margin above the floor at which a stretch below ends (<c>space.ok</c>): the smaller of 5 GB and 5% of the volume.</summary>
@@ -270,7 +269,7 @@ public sealed record FloorPolicy(int? Gb, int? Percent, bool Off)
         return Math.Min(total / 100 * DefaultPercent, DefaultCap);
     }
 
-    /// <summary>The margin above a volume's floor that ends a stretch below it (§3.2): the smaller of 5 GB and 5% of the volume.</summary>
+    /// <summary>The margin above a volume's floor that ends a stretch below it: the smaller of 5 GB and 5% of the volume.</summary>
     public static long Margin(long total) => Math.Min(MarginCap, total / 100 * 5);
 
     /// <summary>The rule in a clause: the terminal's and Ask Daoris's card's words.</summary>

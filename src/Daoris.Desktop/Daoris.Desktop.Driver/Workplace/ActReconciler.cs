@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 public sealed record ActHold(string Act, string Said);
 
 /// <summary>
-/// The act journal's reconciliation (GITAPP2a, D204; the git-writes design §5): at the driver's start and by every writer taking the checkout
+/// The act journal's reconciliation: at the driver's start and by every writer taking the checkout
 /// lock, before its judgement and outside its memo scopes, every act not closed in the checkout is taken from its dead run, one reconciler
 /// winning, and decided by its postconditions. Nothing is run again: no hook, commit, push or configuration write.
 /// </summary>
@@ -19,7 +19,7 @@ public sealed record ActHold(string Act, string Said);
 /// decide with the rest.</para>
 /// <para><b>Held, never taken</b>: an act whose run still lives, one written by a newer build (its format, phase or step kind unknown here), and
 /// one the store would not let this run write for now (busy, or stamped by a newer build). Each is said, and asked again at the next look.</para>
-/// <para><b>At the driver's start</b> (<see cref="StartAsync"/>) it never holds the come-up (D181 point 1): it runs beside the first looks, one
+/// <para><b>At the driver's start</b> (<see cref="StartAsync"/>) it never holds the come-up: it runs beside the first looks, one
 /// checkout at a time, each under its own lock alone, a checkout it cannot take left to the next look; and the closed acts whose recovery
 /// expired let go of their own refs, each in one transaction at its journaled id.</para>
 /// </remarks>

@@ -2,7 +2,7 @@ using Microsoft.Data.Sqlite;
 
 namespace Daoris.Driver;
 
-/// <summary>An act's phases (the git-writes design §5): each written before what it names begins, the record closed last.</summary>
+/// <summary>An act's phases: each written before what it names begins, the record closed last.</summary>
 public static class ActPhases
 {
     /// <summary>The fresh reads equal the plan: written with the record, before anything else.</summary>
@@ -27,7 +27,7 @@ public static class ActPhases
     public static IReadOnlyList<string> All { get; } = [Judged, Prepared, Started, Ended, Reconciled, Closed];
 }
 
-/// <summary>What an act's postconditions said, read after its effect and never from an exit code (§5).</summary>
+/// <summary>What an act's postconditions said, read after its effect and never from an exit code.</summary>
 public static class ActOutcomes
 {
     /// <summary>Every step's postconditions hold.</summary>
@@ -43,7 +43,7 @@ public static class ActOutcomes
     public const string Unknown = "unknown";
 }
 
-/// <summary>The effect steps an act takes, each with its own postconditions (§5, §6).</summary>
+/// <summary>The effect steps an act takes, each with its own postconditions.</summary>
 public static class ActStepKinds
 {
     /// <summary>One <c>update-ref --stdin</c> transaction, its git run in the act's job.</summary>
@@ -55,22 +55,22 @@ public static class ActStepKinds
     /// <summary>Index entries replaced under git's own <c>index.lock</c>, the replacement built on a copy.</summary>
     public const string Index = "index";
 
-    /// <summary>One <c>git commit</c>, its hooks and their children in the act's job (GITAPP2i).</summary>
+    /// <summary>One <c>git commit</c>, its hooks and their children in the act's job.</summary>
     public const string Commit = "commit";
 
-    /// <summary>A worktree file's bytes replaced where they still equal the plan's, the bytes it replaced kept as a file beside the record (GITAPP2j).</summary>
+    /// <summary>A worktree file's bytes replaced where they still equal the plan's, the bytes it replaced kept as a file beside the record.</summary>
     public const string Bytes = "file";
 
-    /// <summary>One <c>git switch</c> of the checkout to a local branch, its <c>post-checkout</c> hook in the act's job (GITAPP2k).</summary>
+    /// <summary>One <c>git switch</c> of the checkout to a local branch, its <c>post-checkout</c> hook in the act's job.</summary>
     public const string Switch = "switch";
 
-    /// <summary>One <c>git stash push</c>, which writes the stash shared by every linked tree (GITAPP2k).</summary>
+    /// <summary>One <c>git stash push</c>, which writes the stash shared by every linked tree.</summary>
     public const string Stash = "stash";
 
-    /// <summary>One <c>git fetch</c> of origin's branches into <c>refs/remotes/origin/*</c> alone, in the act's job (GITAPP2f).</summary>
+    /// <summary>One <c>git fetch</c> of origin's branches into <c>refs/remotes/origin/*</c> alone, in the act's job.</summary>
     public const string Fetch = "fetch";
 
-    /// <summary>One <c>git push</c> of one ref to origin under a grant bound to its address, ref and commits, in the act's job (GITAPP2g, n).</summary>
+    /// <summary>One <c>git push</c> of one ref to origin under a grant bound to its address, ref and commits, in the act's job (n).</summary>
     public const string Push = "push";
 
     /// <summary>Every kind this build runs and reads.</summary>
@@ -81,7 +81,7 @@ public static class ActStepKinds
 public sealed record ActStepPlan(string Kind, string Arguments, string Postconditions, string? Rollback = null);
 
 /// <summary>
-/// An act as it is judged, before anything of it is written (§5's fields): its id and kind, the press and its Confirm, the repository and the
+/// An act as it is judged, before anything of it is written: its id and kind, the press and its Confirm, the repository and the
 /// checkout (its top and its canonical common directory, the checkout lock's key), the plan it showed, its steps, and its recovery.
 /// </summary>
 public sealed record ActOpening(
@@ -162,8 +162,8 @@ public sealed class ActRefusedException(string act, string why) : Exception($"ac
 }
 
 /// <summary>
-/// The act journal (GITAPP2a, D204; the git-writes design §5): a desktop-store family, Workplace's, in <c>git_acts</c> and <c>git_act_steps</c>,
-/// machine-local and never synced (D212 point 17).
+/// The act journal: a desktop-store family, Workplace's, in <c>git_acts</c> and <c>git_act_steps</c>,
+/// machine-local and never synced.
 /// </summary>
 /// <remarks>
 /// <para><b>The integration store's claim and step shape</b> (<see cref="IntegrationStore"/>): a record is claimed by the run that judged it and

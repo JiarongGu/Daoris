@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One version an agent or a tool downloaded into the Daoris folder's <c>cache/</c> (CACHECLEAR1), and what keeps it.
+/// One version an agent or a tool downloaded into the Daoris folder's <c>cache/</c>, and what keeps it.
 /// </summary>
 /// <param name="Kind"><c>agent</c>, a pinned agent's version (<c>cache/toolchain/&lt;agent&gt;/&lt;version&gt;</c>), or <c>tool</c>, a
 /// managed tool's (<c>cache/tools/&lt;tool&gt;/&lt;version&gt;</c>).</param>
@@ -17,7 +17,7 @@ namespace Daoris.Driver;
 /// Null where nothing uses it, else why it stays: <c>pinned</c> (an agent's pin names it), <c>used</c> (Tools runs it), <c>named</c> (a
 /// setting names a file inside it), <c>unread</c> (a file that says what is used cannot be read, or the running sessions cannot be),
 /// <c>recent</c> (downloaded within <see cref="DownloadClearing.Settling"/>, so a pin or a use may be on its way), <c>running</c> (a running
-/// session was handed it, KEEP1b), or, at a removal, <c>in-use</c> (a program holds it).
+/// session is handed it), or, at a removal, <c>in-use</c> (a program holds it).
 /// </param>
 /// <param name="By">What keeps it: <c>machine</c> or <c>workspace:&lt;name&gt;</c> for a pin, <c>session:&lt;id&gt;</c> for a running
 /// session, <c>sessions</c> where they could not be read, else the file (<c>tools.json</c>, <c>driver.json</c>, <c>harnesses.json</c>).</param>
@@ -65,7 +65,7 @@ public sealed record DownloadUses(HarnessSettings Harnesses, ToolsRead Tools, Dr
 }
 
 /// <summary>
-/// How the act judges each version right before it goes (KEEP1b, the cleanup design §3.5): the use files read as they stand, the keep locks
+/// How the act judges each version right before it goes: the use files read as they stand, the keep locks
 /// of those files held per version from the judgement to the rename, the running sessions, and the first-unused time of a version's current
 /// stretch, which the start-time rule reads.
 /// </summary>
@@ -75,7 +75,7 @@ public sealed record DownloadJudge(Func<DownloadUses> Uses, Func<DateTimeOffset>
 {
     /// <summary>
     /// The use files whose keep locks are held, in this order, from a version's judgement to its rename, never across the removal that
-    /// follows (Fable F2.2 to F2.4): the harness file the roster reads, <c>tools.json</c>, and <c>driver.json</c> at the loop's path.
+    /// follows: the harness file the roster reads, <c>tools.json</c>, and <c>driver.json</c> at the loop's path.
     /// </summary>
     public IReadOnlyList<string> Locked { get; init; } = [];
 
@@ -125,10 +125,10 @@ public sealed record DownloadJudge(Func<DownloadUses> Uses, Func<DateTimeOffset>
 }
 
 /// <summary>
-/// Clearing downloads (CACHECLEAR1): the versions the agents and the tools downloaded into <c>cache/</c> that nothing uses, LISTED
-/// first with what keeps each of the rest, then removed by the person's press (D88's shape: listed, pressed, each judged again right
-/// before it goes). The screen's half is Settings → This Daoris's <i>Downloads</i> row. Since KEEP1b it is the downloads' one act
-/// (D195 point 6, the cleanup design §3.5, §6.6): the look's rule (<see cref="DownloadKeeping"/>) and Tools' delete of one version
+/// Clearing downloads: the versions the agents and the tools downloaded into <c>cache/</c> that nothing uses, LISTED
+/// first with what keeps each of the rest, then removed by the person's press (listed, pressed, each judged again right
+/// before it goes). The screen's half is Settings → This Daoris's <i>Downloads</i> row. It is the downloads' one act:
+/// the look's rule (<see cref="DownloadKeeping"/>) and Tools' delete of one version
 /// (<see cref="ToolInstall.DeleteAsync"/>) remove through it too.
 /// </summary>
 /// <remarks>
@@ -137,24 +137,24 @@ public sealed record DownloadJudge(Func<DownloadUses> Uses, Func<DateTimeOffset>
 /// workspace's pin first; a tool's where Tools runs it managed at that version. A version a setting names a file inside (a tool's
 /// <c>file</c>, a command in <c>driver.json</c>) is used too. A file that cannot be read keeps everything it would have said.</para>
 ///
-/// <para><b>And what a running session was handed</b> (KEEP1b, Fable F2.5): a version holding a file a running session's start was handed
-/// stays (<c>running</c>), both of an ACP session's; a record from before that field keeps the start-time rule, kept while a session that
+/// <para><b>And what a running session is handed</b>: a version holding a file a running session's start is handed
+/// stays (<c>running</c>), both of an ACP session's; a record without that field keeps the start-time rule, kept while a session that
 /// started before the version's current unused stretch began runs. A pin and an unpin between two passes leave no trace in that
-/// stretch (§2.3), which is why the session's own versions are the guard.</para>
+/// stretch, which is why the session's own versions are the guard.</para>
 ///
-/// <para><b>Judged under the use files' locks</b> (Fable F2.2 to F2.4): each version is judged holding the keep locks of the files that
+/// <para><b>Judged under the use files' locks</b>: each version is judged holding the keep locks of the files that
 /// say what uses it (<see cref="DownloadJudge.Locked"/>), from its judgement to its rename and never across its removal, so a pin written
 /// meanwhile waits and is then seen, and a pin waiting while another version is deleted is taken at once. A pin's writer looks again
 /// under its lock that its version is there (<see cref="HarnessSettings.Pin"/>).</para>
 ///
 /// <para><b>A download a moment old stays.</b> A pin and a use are written after their download lands (<see cref="HarnessActions"/>,
 /// <see cref="ToolInstall.DownloadAsync"/>), so a version downloaded within <see cref="Settling"/> is kept: it may be the one about to be
-/// pinned. A staged download (<c>.part</c>, and a tool's <c>.part-&lt;pid&gt;</c>, PUSH1f2c) is never listed: a tool's folder lists
+/// pinned. A staged download (<c>.part</c>, and a tool's <c>.part-&lt;pid&gt;</c>) is never listed: a tool's folder lists
 /// exact versions alone.</para>
 ///
 /// <para><b>Moved aside, then removed.</b> A version goes by one rename beside itself first, which fails while a program runs from it
 /// (Windows holds a running executable's folder), so a running session's old version is kept as <c>in-use</c> rather than half
-/// deleted; but a rename's success proves nothing (Codex 2.6), an agent run through npm's shims holding no file open. Once moved, nothing
+/// deleted; but a rename's success proves nothing, an agent run through npm's shims holding no file open. Once moved, nothing
 /// resolves it, and what a removal could not take is listed as unfinished and goes at the next press.</para>
 ///
 /// <para><b>Only what was listed.</b> A press names the rows the page showed; a version downloaded since, or one not listed, is never
@@ -176,7 +176,7 @@ public static class DownloadClearing
     private const int MoveWaitMs = 200;
 
     /// <summary>Every downloaded version under <paramref name="home"/>, agents' first then tools', each with what keeps it.</summary>
-    /// <param name="measure">Whether each version's folder is walked for its size; the look's rule lists without (§3.1) and measures what it removes.</param>
+    /// <param name="measure">Whether each version's folder is walked for its size; the look's rule lists without and measures what it removes.</param>
     public static DownloadListing List(
         string? home, DownloadUses uses, DateTimeOffset now, CancellationToken cancellationToken = default, bool measure = true)
     {
@@ -230,7 +230,7 @@ public static class DownloadClearing
     /// </summary>
     /// <param name="move">The rename aside; a test hands in one that refuses, as a running program makes Windows refuse.</param>
     /// <param name="door">Who removed it, for the machine log: <c>press</c>, <c>look</c> (the rule) or <c>tools</c> (Tools' delete).</param>
-    /// <param name="spent">Whether the caller's budget is spent (the look's pass, §3.1): asked between versions, never inside one, and the
+    /// <param name="spent">Whether the caller's budget is spent (the look's pass): asked between versions, never inside one, and the
     /// versions not reached are not in the answer.</param>
     public static async Task<IReadOnlyList<DownloadCleared>> ClearAsync(
         string? home, IReadOnlyList<DownloadAsked> asked, DownloadJudge judge, MachineLog? log = null,
@@ -286,7 +286,7 @@ public static class DownloadClearing
 
     /// <summary>
     /// One version judged and moved aside, holding the use files' locks from the judgement to the rename and letting them go before anything
-    /// is removed (F2.3): where it went, or the row as judged where it stays; neither where it was gone once the locks were held.
+    /// is removed: where it went, or the row as judged where it stays; neither where it is gone once the locks are held.
     /// </summary>
     private static (string? Aside, DownloadedVersion? Kept) MoveAside(
         DownloadedVersion row, DownloadJudge judge, LiveSessions sessions, Action<string, string>? move)
@@ -344,7 +344,7 @@ public static class DownloadClearing
         : [("kind", row.Kind), ("name", row.Name), ("version", row.Version), ("door", door)];
 
     /// <summary>Why a version stays, and what keeps it; null where nothing uses it.</summary>
-    /// <param name="sessions">The running sessions (KEEP1b); null judges by the files alone, as the list does.</param>
+    /// <param name="sessions">The running sessions; null judges by the files alone, as the list does.</param>
     /// <param name="firstUnused">When the version's current unused stretch began; null is now, for the start-time rule.</param>
     /// <param name="settles">Whether a version downloaded within <see cref="Settling"/> stays.</param>
     public static (string? Keeps, IReadOnlyList<string> By) Judge(
@@ -377,8 +377,8 @@ public static class DownloadClearing
         if (sessions is null) return (null, []);
         if (sessions.Problem is not null) return ("unread", ["sessions"]);
 
-        // A session that says what its starts were handed keeps exactly those; one from before that field keeps what went unused after it
-        // started, since its start may have resolved it (F2.5); one whose start is not known keeps everything.
+        // A session that says what its starts were handed keeps exactly those; one without that field keeps what went unused after it
+        // started, since its start may have resolved it; one whose start is not known keeps everything.
         var key = DownloadKeeping.Key(kind, name, version);
         var since = firstUnused ?? now;
         var running = sessions.Sessions
@@ -391,7 +391,7 @@ public static class DownloadClearing
     }
 
     /// <summary>
-    /// The downloaded versions a start was handed (KEEP1b, F2.5), read off the start itself: every path in what it runs, its arguments (a
+    /// The downloaded versions a start is handed, read off the start itself: every path in what it runs, its arguments (a
     /// shim's, where a command runs it) and its environment (an ACP adapter's <c>claude</c>, each managed tool's folder on its PATH) that
     /// lies inside a version under <c>cache/</c>, as <c>&lt;agent|tool&gt;/&lt;name&gt;/&lt;version&gt;</c>, in order. A path elsewhere is none.
     /// </summary>

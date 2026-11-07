@@ -5,7 +5,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Claude Code's release bucket over HTTP (AGT2b), and the verified install it writes to the disk (STRUCT3e): the
+/// Claude Code's release bucket over HTTP, and the verified install it writes to the disk: the
 /// newest-release pointer, the manifest and its signature, the binary streamed and hashed, and this machine's build. What
 /// it checks against is <see cref="ClaudeReleases"/>'s and <see cref="OpenPgp"/>'s; other modules call it by name
 /// (<c>InstallAsync</c>, <c>LatestAsync</c> and <c>Current</c>). The twin of the CLI's <c>channels.ts</c>.
@@ -31,7 +31,7 @@ public static class ClaudeReleaseDownloads
     }
 
     /// <summary>
-    /// The exact version the bucket names as its newest release (USE1a) — what Update pins.
+    /// The exact version the bucket names as its newest release — what Update pins.
     /// </summary>
     /// <remarks>
     /// 🔴 <b>The pointer only chooses a version; it vouches for nothing.</b> It is not signed, so it is
@@ -127,7 +127,7 @@ public static class ClaudeReleaseDownloads
                 + "deleted, and nothing was installed.");
         }
         write($"the binary's SHA-256 matches the signed manifest: {saved.Sha256}");
-        // STEWARDROLE1a-i (D209 §6.1): the hash that verified, kept beside the install it moves with, so a start that hands the binary a
+        // The hash that verified, kept beside the install it moves with, so a start that hands the binary a
         // role's key checks it is still these bytes.
         VerifiedBinary.Write(Path.Combine(staging, "package"), $"bin/{binary}", saved.Sha256);
 

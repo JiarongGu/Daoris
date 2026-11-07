@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A detached OpenPGP signature, verified against one PINNED key (AGT2b) — what stands between a
+/// A detached OpenPGP signature, verified against one PINNED key — what stands between a
 /// vendor's release manifest and the binary Daoris installs from it. The twin of the CLI's
 /// <c>openpgp.ts</c>; the two share no code, and their tests read the same vendor files.
 /// </summary>
@@ -365,7 +365,7 @@ public static class OpenPgp
 }
 
 /// <summary>
-/// Claude Code from Anthropic's own release bucket (AGT2b): the manifest, verified against its
+/// Claude Code from Anthropic's own release bucket: the manifest, verified against its
 /// detached signature under the PINNED release key, and only then its SHA-256 trusted for the binary,
 /// fetched directly. Never the bootstrap and never <c>claude install</c> — the bootstrap always fetches
 /// latest, and what the subcommand verifies is undocumented
@@ -388,7 +388,7 @@ public static class ClaudeReleases
     public const string Base = "https://downloads.claude.ai/claude-code-releases";
 
     /// <summary>
-    /// Where the bucket names its newest release, as plain text (USE1a, the channel evidence §1). The
+    /// Where the bucket names its newest release, as plain text. The
     /// undocumented <c>stable</c> pointer beside it is not used. The CLI's <c>CLAUDE_LATEST</c> is the twin.
     /// </summary>
     public const string Latest = Base + "/latest";

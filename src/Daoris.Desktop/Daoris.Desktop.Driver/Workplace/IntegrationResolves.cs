@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a member's resolve made of its merge (INTEGRATE1e part e3b; the integration design §5.2 step 4): the files it settled by the
+/// What a member's resolve made of its merge: the files it settled by the
 /// repository's own rules, said, and the ones it could not, which are conflicts of meaning (step 5).
 /// </summary>
 internal sealed record IntegrationResolved
@@ -53,7 +53,7 @@ internal sealed record IntegrationResolved
 }
 
 /// <summary>
-/// A member's resolve (INTEGRATE1e part e3b; the integration design §5.2 step 4), run inside the member's replay effect between its
+/// A member's resolve, run inside the member's replay effect between its
 /// <c>merge --no-commit</c> and its commit: each conflicted path judged by the rules the repository declares, never by any that its own work
 /// brings, and the merge left for the commit where every one is settled. The pieces are the landing's replay's (<see cref="BranchReplays"/>),
 /// called, not copied: <see cref="BacklogMerge.Stops"/> for the backlog, the declared row tables and the accepted line rules,

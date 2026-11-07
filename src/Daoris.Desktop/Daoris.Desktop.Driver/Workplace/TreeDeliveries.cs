@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The delivery a landing performs (LANDNODE1b2; the land node design §3 step 4): the store and the claim its phases are written under. The
+/// The delivery a landing performs: the store and the claim its phases are written under. The
 /// landing reads its intent from the store, and the intent chooses the method, the branch, the line and the pinned tip; no live rule does.
 /// </summary>
 public sealed record TreeDelivery(DeliveryStore Store, DeliveryClaim Claim)
@@ -14,19 +14,19 @@ public sealed record TreeDelivery(DeliveryStore Store, DeliveryClaim Claim)
     internal Func<string, Task>? Seam { get; init; }
 
     /// <summary>
-    /// Whether the standing automatic authority still stands (LANDNODE1h; the land node design §3), asked of an automatic delivery just before
+    /// Whether the standing automatic authority still stands, asked of an automatic delivery just before
     /// its first effect: a refusal in words, or null where it stands. Null judges nothing, and an automatic delivery with none lands nothing.
     /// </summary>
     public Func<DeliveryRecord, string?>? Standing { get; init; }
 
     /// <summary>
-    /// Written by a door from Current's live rule a moment before it lands (LANDNODE1c3, <see cref="CurrentDeliveries"/>): the landing keeps
+    /// Written by a door from Current's live rule a moment before it lands (<see cref="CurrentDeliveries"/>): the landing keeps
     /// that rule whole, its <c>integrate</c> and switch among it, and no land node names a template, so its commits say today's words.
     /// </summary>
     public bool Live { get; init; }
 
     /// <summary>
-    /// The bound graph version's <c>land</c> a door wrote it from a moment before it lands (LANDNODE1m, <see cref="CurrentDeliveries"/>): the
+    /// The bound graph version's <c>land</c> a door wrote it from a moment before it lands (<see cref="CurrentDeliveries"/>): the
     /// landing keeps the version's landing whole, as Current's keeps its rule, its commits say the land's message where it names one, and its
     /// merge is admitted by its method, never by the live rule.
     /// </summary>
@@ -44,7 +44,7 @@ internal sealed class DeliveryEntry : IDisposable
 }
 
 /// <summary>
-/// The deliveries this process is landing or settling now (LANDNODE1b3), one at a time each, by home and key: a restart's settlement never
+/// The deliveries this process is landing or settling now, one at a time each, by home and key: a restart's settlement never
 /// writes beside a landing of the delivery here, and a second starter of it lands only once the first has ended.
 /// </summary>
 internal static class DeliveryRuns
@@ -70,12 +70,12 @@ internal static class DeliveryRuns
 }
 
 /// <summary>
-/// A landing performing its delivery (LANDNODE1b2): the intent read once, and each git effect's entry written ahead of it and its outcome
+/// A landing performing its delivery: the intent read once, and each git effect's entry written ahead of it and its outcome
 /// after, read back and never assumed: <i>prepared</i> from the start of the landing's judgement to the commit its ref is written at,
-/// <i>ref written</i>, <i>recorded</i>. The branch's ref goes through one <see cref="RefTransaction"/> under the checkout's lock held alone
-/// (GITLOCK1), inside the tree's landing hold (LANDRACE1) the landing took first; a merge's line is moved by the promotion's effect, which
+/// <i>ref written</i>, <i>recorded</i>. The branch's ref goes through one <see cref="RefTransaction"/> under the checkout's lock held alone,
+/// inside the tree's landing hold the landing took first; a merge's line is moved by the promotion's effect, which
 /// takes that lock itself. The landing's ownership is its landing record: no act-journal mark is made. A delivery a restart settled by phase
-/// (LANDNODE1b3) goes on from its next phase: a done preparation is not written ahead again, and a ref it wrote is read, never written twice.
+/// goes on from its next phase: a done preparation is not written ahead again, and a ref it wrote is read, never written twice.
 /// </summary>
 internal sealed class TreeDelivering
 {
@@ -98,7 +98,7 @@ internal sealed class TreeDelivering
         _wrote = phases.LastOrDefault(each => each.Phase == DeliveryPhases.RefWritten && each.Outcome == DeliveryOutcomes.Done)?.Evidence;
     }
 
-    /// <summary>The git phase this landing goes on from: the first not done (the land node design §3, a restart's rule 1).</summary>
+    /// <summary>The git phase this landing goes on from: the first not done.</summary>
     public string? Next => GitPhases.FirstOrDefault(each => !_done.Contains(each));
 
     /// <summary>Where this delivery's own ref write left <c>refs/heads/<paramref name="name"/></c>, read back done before it stopped; null where it wrote none.</summary>
@@ -217,7 +217,7 @@ internal sealed class TreeDelivering
 
     /// <summary>
     /// What a landing says that waited for its tree behind its delivery's other starter, which delivered it meanwhile (a press and a pass at
-    /// once): where the work is, and that nothing more was landed. Kept as <see cref="LandingCode.Already"/>, as LANDRACE1's is.
+    /// once): where the work is, and that nothing more is landed. Kept as <see cref="LandingCode.Already"/>.
     /// </summary>
     public static TreeLanding Meanwhile(DeliveryRecord delivered)
     {
@@ -266,7 +266,7 @@ internal sealed class TreeDelivering
     /// <param name="old">The tip judged, which the ref moves from; null makes it where it is absent; equal to <paramref name="value"/>, it is verified there.</param>
     public async Task<(int Code, string Stdout, string Stderr)> WriteAsync(string root, string reference, string? old, string value, CancellationToken ct)
     {
-        // LANDNODE1b3: the ref this delivery wrote and read back before it stopped is read again where it stands, and never written twice.
+        // The ref this delivery wrote and read back before it stopped is read again where it stands, and never written twice.
         if (_done.Contains(DeliveryPhases.RefWritten))
         {
             var (known, at) = await StandsAsync(root, reference, ct).ConfigureAwait(false);
@@ -300,7 +300,7 @@ internal sealed class TreeDelivering
     public async Task<string?> BeginMergeAsync(string line, string commit)
     {
         await SeamAsync(DeliveryPhases.Prepared).ConfigureAwait(false);
-        // A merge going on after its press left its request waiting was prepared before (LANDNODE1c3).
+        // A merge going on after its press left its request waiting is prepared already.
         if (_open == DeliveryPhases.Prepared) End(DeliveryPhases.Prepared, DeliveryOutcomes.Done, commit, $"the commit merged into `{line}` is {commit}");
         return Begin(DeliveryPhases.RefWritten, $"`refs/heads/{line}` to hold {commit}");
     }
@@ -374,7 +374,7 @@ internal sealed class TreeDelivering
 
     /// <summary>
     /// Where <paramref name="reference"/> stands: read and absent (null), read at a commit, or not read. Asked as its commit, the one spelling
-    /// the landing reads a branch by (LANDGIT1c).
+    /// the landing reads a branch by.
     /// </summary>
     private static async Task<(bool Read, string? At)> StandsAsync(string root, string reference, CancellationToken ct)
     {

@@ -4,17 +4,17 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What Daoris's git carries (TOOLS6 inside GITAUTH1c; D121 §2.5, the git-auth design §4.1): <c>profiles/git/global.gitconfig</c>,
+/// What Daoris's git carries: <c>profiles/git/global.gitconfig</c>,
 /// handed as <c>GIT_CONFIG_GLOBAL</c> to every start that takes the tools' environment (<see cref="Tools.Hand(ProcessStartInfo, ToolsRead, string)"/>),
 /// never to the terminal's shells, which are the person's own. The person's own global files are included first by their paths, read
 /// and never written; the allow-listed keys of <c>tools.json</c>'s <c>git</c> follow between Daoris's markers, so the person's choice
 /// in Settings wins over their own file and a repository's own configuration still wins over both. It holds no identity and no address.
 /// </summary>
 /// <remarks>
-/// <para><b>Handed only where git carries a key</b> (D121 point 3), so with none an environment is the inherited one; and not to a git
+/// <para><b>Handed only where git carries a key</b>, so with none an environment is the inherited one; and not to a git
 /// known older than <see cref="GitVersions.Setting"/>, which would read none of it.</para>
 /// <para><b>Where Daoris's ssh door is laid out it carries no <c>core.sshCommand</c></b>: the door hands the choice to an identity's ssh
-/// itself (§4.2 step 3), and where the door is named by <c>GIT_SSH</c> a global <c>core.sshCommand</c> would outrank it and pass it by.</para>
+/// itself, and where the door is named by <c>GIT_SSH</c> a global <c>core.sshCommand</c> would outrank it and pass it by.</para>
 /// <para><b>A child's <c>git config --global</c> writes here</b>, not into the person's file. Everything after the end marker is kept;
 /// a key git adds inside Daoris's part (its <c>[core]</c>, the section git finds first) is moved after the marker at the next rewrite.
 /// Written by git's own lock (<c>global.gitconfig.lock</c>), so a rewrite and a child's write never cross.</para>
@@ -30,7 +30,7 @@ public static class GitGlobalFile
     /// <summary>The line after them; what follows it is kept.</summary>
     public const string End = "# daoris: end";
 
-    /// <summary>The ssh door's file in an install's <c>app/bin/</c> (the git-auth design §4.2).</summary>
+    /// <summary>The ssh door's file in an install's <c>app/bin/</c>.</summary>
     public const string SshDoor = "daoris-git-ssh.exe";
 
     private const string Header =

@@ -5,13 +5,13 @@ using static Daoris.Driver.TreeWorktrees;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A repository's line judged for its pull, and pulled (WSR6; PART10j, out of <c>SessionTrees.Sync.cs</c>): only ever a
+/// A repository's line judged for its pull, and pulled (out of <c>SessionTrees.Sync.cs</c>): only ever a
 /// fast-forward. Static, since none reads anything of the trees' context.
 /// </summary>
 internal static class LinePulls
 {
     /// <summary>What pulling the line would do, and whether the line is checked out in the repository's own checkout.</summary>
-    /// <param name="refs">The judgement's refs (PROC1d-ii); null asks git.</param>
+    /// <param name="refs">The judgement's refs; null asks git.</param>
     internal static async Task<(LinePull Pull, bool InRoot)> JudgePullAsync(
         string root, string repository, string workspace, string? line, string? fetched, CancellationToken ct, RefSnapshot? refs = null)
     {
@@ -44,11 +44,11 @@ internal static class LinePulls
     }
 
     /// <summary>
-    /// The fast-forward (WSR6): in the repository's own checkout, a <c>merge --ff-only</c> while it is clean and on the
+    /// The fast-forward: in the repository's own checkout, a <c>merge --ff-only</c> while it is clean and on the
     /// line, both read immediately before; where the line is checked out nowhere, the ref moved only from the commit
     /// it was judged at. Never a merge commit, never a force.
     /// </summary>
-    /// <param name="writing">The checkout held alone (GITLOCK1) since the pull was judged, until its move is read back.</param>
+    /// <param name="writing">The checkout held alone since the pull is judged, until its move is read back.</param>
     internal static async Task<PullResult> PullAsync(string root, LinePull pull, bool inRoot, TreeLock writing, CancellationToken ct)
     {
         if (!writing.Alone) throw new InvalidOperationException("a line's pull writes the checkout only with its repository held alone");

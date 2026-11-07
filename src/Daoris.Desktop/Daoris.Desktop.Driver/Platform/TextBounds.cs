@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The one way the driver clips text to a bound, makes it one line and quotes it (DEDUP7). About forty copies each wrote
+/// The one way the driver clips text to a bound, makes it one line and quotes it. About forty copies each wrote
 /// <c>text[..N] + "…"</c> with a limit of their own, the off-by-three differing, and a quoted block eleven times with the
 /// indent and the trim drifting. Each caller keeps its own limit and its own bytes: the parameters name what the copies
 /// differed in, so none of them moved.
@@ -34,7 +34,7 @@ public static class TextBounds
     }
 
     /// <summary>
-    /// A commit id's first <paramref name="length"/> characters (DEDUP7b: seventeen copies, of 7, 8 or 12), the id itself when
+    /// A commit id's first <paramref name="length"/> characters (seventeen copies, of 7, 8 or 12), the id itself when
     /// it is no longer. No mark: an id is not prose.
     /// </summary>
     public static string ShortCommit(string commit, int length) =>

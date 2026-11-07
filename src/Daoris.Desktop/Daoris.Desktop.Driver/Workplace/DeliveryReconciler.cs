@@ -2,7 +2,7 @@ using Microsoft.Data.Sqlite;
 
 namespace Daoris.Driver;
 
-/// <summary>What a delivery's settlement by phase came to (LANDNODE1b3), one of these words.</summary>
+/// <summary>What a delivery's settlement by phase came to, one of these words.</summary>
 public static class DeliveryStandings
 {
     /// <summary>Its method's reaching phase is done, and it is settled delivered: its <c>land</c> is reached.</summary>
@@ -27,7 +27,7 @@ public static class DeliveryStandings
     public const string Unknown = "unknown";
 }
 
-/// <summary>A unit's newest delivery as the landing's plan shows it (LANDNODE1c2): the record, and the phase an unresolved one last wrote ahead.</summary>
+/// <summary>A unit's newest delivery as the landing's plan shows it: the record, and the phase an unresolved one last wrote ahead.</summary>
 public sealed record LandingDelivery(DeliveryRecord Record, string? Phase)
 {
     /// <summary>The newest delivery of <paramref name="unit"/> in <paramref name="home"/>'s store, or null where it holds none or does not read.</summary>
@@ -58,7 +58,7 @@ public sealed record DeliveryReconciled(string Key, string Standing, string Said
 }
 
 /// <summary>
-/// A delivery's reconciliation by phase (LANDNODE1b3; the land node design §3, <i>A restart settles by phase, before any new start</i>):
+/// A delivery's reconciliation by phase (<i>A restart settles by phase, before any new start</i>):
 /// every unresolved delivery, or a unit's before its next start, taken from its dead run as <see cref="DeliveryStore.Take"/> allows and
 /// settled by its git phases. A phase's recorded outcome goes on from the next phase; an entry written ahead without its outcome is read from
 /// the ref and the landing record, done where they hold the intended tip and withdrawn where they hold nothing of it; anything else is
@@ -67,8 +67,8 @@ public sealed record DeliveryReconciled(string Key, string Standing, string Said
 /// <remarks>
 /// <para><b>A merge</b> keeps no landing record: the line holding its commit is its record. One whose press left its request waiting was
 /// withdrawn by its landing; the line may take it later, so it waits while the request does, and is reached once the line holds the commit.</para>
-/// <para><b>A plugin's phases</b> (<c>plugin-dispatched</c>, <c>plugin-answered</c>) are a delivery the retired <c>work/land</c> wire wrote before G8: they are
-/// read, never sent again, and a delivery whose git phases are done is left as it stands, said. G8-CONVERT1 deletes the reading.</para>
+/// <para><b>A plugin's phases</b> (<c>plugin-dispatched</c>, <c>plugin-answered</c>) are a delivery the retired <c>work/land</c> wire wrote: they are
+/// read, never sent again, and a delivery whose git phases are done is left as it stands, said.</para>
 /// </remarks>
 /// <param name="checkout">The checkout of a delivery's repository, which its refs are read in; null where it is not here.</param>
 public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<DeliveryRecord, string?> checkout)
@@ -106,7 +106,7 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
     }
 
     /// <summary>
-    /// After a line's run closed a request (LANDNODE1l): each merge into <paramref name="line"/> whose press left its request waiting settled by
+    /// After a line's run closed a request: each merge into <paramref name="line"/> whose press left its request waiting settled by
     /// phase now, so the one the line took is recorded reached as it is taken rather than at the next start. One still waiting, or a live run's,
     /// stands as it was.
     /// </summary>
@@ -186,7 +186,7 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
         }
     }
 
-    /// <summary>The delivery's phases settled under <paramref name="claim"/>: an open entry read and ended, then rule 1 from what is done.</summary>
+    /// <summary>The delivery's phases settled under <paramref name="claim"/>: an open entry read and ended, then every entry's outcome recorded from what is done.</summary>
     private async Task<DeliveryReconciled> SettleAsync(DeliveryRecord delivery, DeliveryClaim claim, bool look, CancellationToken ct)
     {
         var phases = store.Phases(delivery.Key);
@@ -229,7 +229,7 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
     }
 
     /// <summary>
-    /// Rule 1, every entry's outcome recorded: delivered where its method's reaching phase is done; a merge's line read where its press got as
+    /// Every entry's outcome recorded: delivered where its method's reaching phase is done; a merge's line read where its press got as
     /// far as the line; else its landing goes on from the first git phase not done, or its plugin's phases follow.
     /// </summary>
     private async Task<DeliveryReconciled> GoOnAsync(DeliveryRecord delivery, DeliveryClaim claim, IReadOnlyList<DeliveryPhase> phases, CancellationToken ct)
@@ -273,12 +273,12 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
         return Delivered(delivery, claim);
     }
 
-    /// <summary>Rule 2 for a preparation cut before any ref was written ahead: withdrawn, since nothing of it stands.</summary>
+    /// <summary>A preparation cut before any ref is written ahead: withdrawn, since nothing of it stands.</summary>
     private static readonly (string Outcome, string? Evidence, string Said) Cut =
         (DeliveryOutcomes.Withdrawn, null, "it stopped while it was prepared, before any ref was written ahead of it, so nothing of it stands");
 
     /// <summary>
-    /// Rule 2, the open entry of <paramref name="phase"/> after its preparation read: a ref done where it stands at the intended tip, withdrawn
+    /// The open entry of <paramref name="phase"/> after its preparation read: a ref done where it stands at the intended tip, withdrawn
     /// where it is absent or stands where its record had it or at the tip judged, else unknown; a record done where it holds the branch at the
     /// tip its ref was written at, else withdrawn, to be written again. Null where git cannot say.
     /// </summary>
@@ -318,7 +318,7 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
             return (DeliveryOutcomes.Done, stands, $"`{reference}` stands at {commit}, read after a stop");
         }
 
-        // A tree's own branch replayed in place is moved from the tip judged (LANDNODE1l), as an advance is from where its record had it.
+        // A tree's own branch replayed in place is moved from the tip judged, as an advance is from where its record had it.
         var stood = stands is null ? "absent"
             : string.Equals(stands, recorded, StringComparison.OrdinalIgnoreCase) ? $"at {stands}, where its landing record had it"
             : string.Equals(stands, intent.Tip, StringComparison.OrdinalIgnoreCase) ? $"at {stands}, the tip its landing was judged at"

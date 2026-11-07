@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What an advance of a standing branch is judged by (LAND2c, D149 points 2–3), read from git at the press or the look: the
+/// What an advance of a standing branch is judged by, read from git at the press or the look: the
 /// record's entry for it, where it stands, where it is checked out, whether the session's work grows from it, and whether its
 /// work already reads on the line.
 /// </summary>
@@ -14,7 +14,7 @@ namespace Daoris.Driver;
 /// <param name="Descends">Whether the session's work grows from the recorded tip: its tip has that commit in its history.</param>
 /// <param name="Ahead">How many commits the session's work holds beyond the recorded tip.</param>
 /// <param name="Completed">
-/// Where D102's proof found the recorded tip's work on the line — a form of it, such as <c>origin/main</c> — so its pull
+/// Where the end proof found the recorded tip's work on the line — a form of it, such as <c>origin/main</c> — so its pull
 /// request was merged; null where it does not read there.
 /// </param>
 public sealed record AdvanceFacts(LandedBranch? Recorded, string Tip, string? CheckedOutAt, bool Descends, int Ahead, string? Completed);

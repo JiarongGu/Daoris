@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The string a JSON field or node holds, declared where the clock is so that <see cref="Moments"/> names nothing of Store (FOUNDATION1 mod-ii):
+/// The string a JSON field or node holds, declared where the clock is so that <see cref="Moments"/> names nothing of Store:
 /// <see cref="Json.Text(JsonElement, string)"/> and <see cref="Json.Text(JsonNode?)"/> are these readers, spelled where every other reader of JSON finds them.
 /// </summary>
 /// <remarks>Absent (null) for a value of the wrong kind, and for an element that is not an object at all: <c>TryGetProperty</c> throws on one.</remarks>

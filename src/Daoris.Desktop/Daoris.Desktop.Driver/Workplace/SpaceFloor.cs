@@ -5,7 +5,7 @@ using Microsoft.Win32.SafeHandles;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One volume as the operating system reads it (KEEP1f; the cleanup design §3.2): its identity, the free bytes this account may use and
+/// One volume as the operating system reads it: its identity, the free bytes this account may use and
 /// its size. Two entries on one volume read the same <see cref="Id"/>.
 /// </summary>
 /// <param name="Id">The volume's identity as the system gives it: <c>\\?\Volume{…}\</c> on Windows, the mount's root elsewhere.</param>
@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 public sealed record VolumeReading(string Id, string Root, long Free, long Total);
 
 /// <summary>
-/// The free-space read (KEEP1f; the cleanup design §3.2, Fable F4.3): the volume that holds a folder, read for that folder's own path, so
+/// The free-space read: the volume that holds a folder, read for that folder's own path, so
 /// a folder reached through a junction, or a folder a volume is mounted at, answers for its own volume, never its drive letter's. Never a
 /// walk; one read took 0.3 ms on the install.
 /// </summary>
@@ -21,7 +21,7 @@ public static class SpaceVolumes
 {
     /// <summary>
     /// The volume holding <paramref name="path"/>, through any junction or mount on the way; the nearest folder that is there is read where
-    /// the path is not yet. Null where it cannot be read: a failed read runs no floor act (§6 point 7).
+    /// the path is not yet. Null where it cannot be read: a failed read runs no floor act.
     /// </summary>
     public static VolumeReading? Read(string path)
     {
@@ -119,7 +119,7 @@ public static class SpaceVolumes
 }
 
 /// <summary>
-/// A volume the floor judges (KEEP1f): its read, its floor by the person's rule and its own size, whether it is below, and the entries of
+/// A volume the floor judges: its read, its floor by the person's rule and its own size, whether it is below, and the entries of
 /// Daoris's that lie on it (<c>folder</c> for the Daoris folder itself, then <c>trees</c>, <c>toolchain</c>, <c>tool-versions</c>,
 /// <c>browser-engine</c>).
 /// </summary>
@@ -130,7 +130,7 @@ public sealed record FloorVolume(VolumeReading Read, long? Floor, IReadOnlyList<
 }
 
 /// <summary>
-/// One stretch below the floor on one volume (KEEP1f; the cleanup design §3.2): from the first pass that finds it below to the one that
+/// One stretch below the floor on one volume: from the first pass that finds it below to the one that
 /// finds it above its floor by the margin. What the floor's acts freed in it, when they last ran, whether the browser's caches were cleared
 /// in it, and whether it was said: <c>space.low</c> and the row in <i>What needs you</i>, once.
 /// </summary>
@@ -139,7 +139,7 @@ public sealed record FloorStretch(string Volume, DateTimeOffset Since)
     /// <summary>When the floor's acts last ran for it: at most once an hour while below.</summary>
     public DateTimeOffset? Acted { get; init; }
 
-    /// <summary>The browser's caches were cleared, or could never be asked, in this stretch: once a stretch (Fable F4.1).</summary>
+    /// <summary>The browser's caches were cleared, or could never be asked, in this stretch: once a stretch.</summary>
     public bool Caches { get; init; }
 
     /// <summary>What the floor's acts freed in this stretch, in bytes.</summary>
@@ -159,7 +159,7 @@ public sealed record FloorStretch(string Volume, DateTimeOffset Since)
 }
 
 /// <summary>
-/// The stretches below the floor this process knows, per home (KEEP1f): what the look's pass keeps across passes, and what the
+/// The stretches below the floor this process knows, per home: what the look's pass keeps across passes, and what the
 /// <i>Disk space</i> card and <i>What needs you</i> read. Kept for the process, as <see cref="SpaceRuns"/> keeps the press's runs; a new
 /// process meets a disk still low as a new stretch, and says it once again.
 /// </summary>
@@ -205,7 +205,7 @@ public sealed record FloorWorld(string Home)
     /// <summary>The rules kept by; the home's by default.</summary>
     public Func<string, KeepPolicy> Policy { get; init; } = KeepPolicy.Of;
 
-    /// <summary>How the downloads are judged right before each goes (KEEP1b's act).</summary>
+    /// <summary>How the downloads are judged right before each goes.</summary>
     public Func<DownloadJudge>? Judge { get; init; }
 
     /// <summary>The shell's browser host; null with no shell to say whether the browser runs, which keeps its caches.</summary>
@@ -220,7 +220,7 @@ public sealed record FloorWorld(string Home)
     /// <summary>The stretches kept across passes.</summary>
     public SpaceFloors Floors { get; init; } = SpaceFloors.Shared;
 
-    /// <summary>How long the acts remove for, at most (the cleanup design §3.1).</summary>
+    /// <summary>How long the acts remove for, at most.</summary>
     public TimeSpan Budget { get; init; } = SetAsideKeeping.DefaultBudget;
 
     /// <summary>What the person's press could free, in bytes, of what its list measures; null where it does not read.</summary>
@@ -247,15 +247,15 @@ public sealed record FloorPass(IReadOnlyList<FloorAct> Acts, IReadOnlyList<Floor
 }
 
 /// <summary>
-/// The free-space floor (KEEP1f, D195; the cleanup design §3.2): below it, Daoris frees early what it can make again, and says the rest.
+/// The free-space floor: below it, Daoris frees early what it can make again, and says the rest.
 /// </summary>
 /// <remarks>
-/// <para><b>Measured per volume</b> (Fable F4.3): the Daoris folder's own path and each entry the acts free from (the trees home, the
+/// <para><b>Measured per volume</b>: the Daoris folder's own path and each entry the acts free from (the trees home, the
 /// downloads, the browser's profile) are read for their own volume, since the trees home may sit on another through a junction; each
 /// volume's floor is computed from its own size, each act runs where its own entry's volume is below, and a volume two entries share is
 /// said once.</para>
-/// <para><b>Below it</b>, at most once an hour while below, these and only these, each through its own act with every guard of its own
-/// (§3.5): (1) the slims due (<see cref="SetAsideKeeping"/>: the hour's settle and nothing written since the move still hold); (2) unused
+/// <para><b>Below it</b>, at most once an hour while below, these and only these, each through its own act with every guard of its own:
+/// (1) the slims due (<see cref="SetAsideKeeping"/>: the hour's settle and nothing written since the move still hold); (2) unused
 /// downloads past the hour's settling, their days ignored, never one under <c>never</c> (<see cref="DownloadClearing.ClearAsync"/>: every
 /// use guard holds); (3) the browser's caches, once in each stretch below, only while the shell says its browser does not run
 /// (<see cref="BrowserCacheClearing"/>). Each runs holding the home's run lock, door <c>floor</c>.</para>
@@ -346,7 +346,7 @@ public static class SpaceFloor
         // A volume that did not read keeps its stretch as it stands: a failed read runs nothing and ends nothing.
         var acts = new List<FloorAct>();
         var due = volumes.Where(volume => volume.Below && (stretches[volume.Read.Id].Acted is not { } acted || now - acted >= Hourly)).ToList();
-        // KEEPSIZE1f: the floor is a warning and removes nothing; the allowance of each kind's limit lets go of what can be made again.
+        // The floor is a warning and removes nothing; the allowance of each kind's limit lets go of what can be made again.
         const bool slims = false, downloads = false, caches = false;
         var cachesOn = volumes.FirstOrDefault(volume => volume.Entries.Contains(HomeEntry.BrowserEngine.Name));
         var held = false;
@@ -447,9 +447,9 @@ public static class SpaceFloor
     }
 
     /// <summary>
-    /// The second act: every downloaded version nothing uses, its days ignored, through CACHECLEAR1's act, each judged again under the use
+    /// The second act: every downloaded version nothing uses, its days ignored, through the download clearing's act, each judged again under the use
     /// files' locks with a running session's versions kept and a version downloaded within the hour kept (<c>recent</c>). None under
-    /// <c>never</c>, which is the press alone, below the floor too (Codex 3.1); none while <c>keeping.json</c> does not read.
+    /// <c>never</c>, which is the press alone, below the floor too; none while <c>keeping.json</c> does not read.
     /// </summary>
     private static async Task<FloorAct> DownloadsAsync(FloorWorld world, KeepPolicy policy, KeepingRun run, Func<bool> spent, CancellationToken ct)
     {

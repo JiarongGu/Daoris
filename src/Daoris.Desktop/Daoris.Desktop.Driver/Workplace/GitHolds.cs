@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A remote that could not authenticate, held (GITAUTH1a, D198 point 7; the git-auth design §5.2): keyed by the repository's checkout,
+/// A remote that could not authenticate, held: keyed by the repository's checkout,
 /// the remote, its address, what served the act, what the hold covers and the git that ran.
 /// </summary>
 /// <param name="Root">The repository's main checkout: the key, never said.</param>
@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// <param name="Workspace">The workspace it is in, which scopes the row; null where the caller knew none.</param>
 /// <param name="Address">The remote's address with no user-info (<see cref="GitWords.Redact"/>).</param>
 /// <param name="Host">The address's host (<see cref="GitWords.HostOf"/>).</param>
-/// <param name="Served">What served the act: <see cref="GitHolds.Ambient"/> until git identities are built (GITAUTH1c).</param>
+/// <param name="Served">What served the act: <see cref="GitHolds.Ambient"/> until git identities are built.</param>
 /// <param name="Holds"><c>all</c> (reads and writes) or <c>writes</c>.</param>
 /// <param name="Class">The failure's class (<see cref="GitFailures.Code"/>).</param>
 /// <param name="Git">The git that ran (<c>WorkingTree.GitInUse</c>): a changed git is another key.</param>
@@ -22,7 +22,7 @@ public sealed record GitHold(
     string Class, string Git, string Words, DateTimeOffset Since);
 
 /// <summary>
-/// The holds on remotes that cannot authenticate (GITAUTH1a, D198 point 7; the git-auth design §5.2), kept in the home's
+/// The holds on remotes that cannot authenticate, kept in the home's
 /// <c>run/git/held.json</c> so a restart of Daoris tries each once more and no sooner.
 /// </summary>
 /// <remarks>
@@ -32,13 +32,13 @@ public sealed record GitHold(
 /// key, so the act is tried and the old hold goes (<see cref="Holding"/>); an act at the same key that passed (<see cref="Passed"/>).
 /// The identities', pointers' and host keys' changes join with the rows that build them.</para>
 /// <para><b>The network's failures and the unclassed hold nothing</b> (<see cref="GitFailures.Holds"/>): today's minute bounds the next
-/// try (D148).</para>
+/// try.</para>
 /// <para>Machine-local, as everything in <c>run/</c> is; its words passed <see cref="GitWords.Redact"/> before they were kept. Each
-/// hold and lift is a coded machine-log line (§11), with no address's user-info and no path beyond the repository's name.</para>
+/// hold and lift is a coded machine-log line, with no address's user-info and no path beyond the repository's name.</para>
 /// </remarks>
 public static class GitHolds
 {
-    /// <summary>What serves an act before git identities: whatever git finds ambient on this machine (the design §0.2).</summary>
+    /// <summary>What serves an act before git identities: whatever git finds ambient on this machine.</summary>
     public const string Ambient = "ambient";
 
     /// <summary>A hold over reads and writes.</summary>
@@ -163,14 +163,14 @@ public static class GitHolds
     }
 
     /// <summary>
-    /// A change to an identity, a pointer or a host's default (§5.2): every hold on the home lifted, so each remote is tried once at its
+    /// A change to an identity, a pointer or a host's default: every hold on the home lifted, so each remote is tried once at its
     /// next act with what now serves it. How many were.
     /// </summary>
     public static int LiftAll(string home, string why = "identity") =>
         Read(home).Select(each => each.Root).Distinct(StringComparer.OrdinalIgnoreCase).ToList().Sum(root => Lift(home, root, null, why));
 
     /// <summary>
-    /// A held remote in the words an act says in place of trying (the design §5.2): what the transport said, and what lifts it, naming
+    /// A held remote in the words an act says in place of trying: what the transport said, and what lifts it, naming
     /// the row in <i>What needs you</i> rather than repeating it. English, as the terminal's and the instruction's words are; the
     /// screen's row has its own catalogue.
     /// </summary>
@@ -197,19 +197,19 @@ public static class GitHolds
     }
 
     /// <summary>
-    /// A session's Git section for its repository's held remotes (the design §5.3), or null where none is held: what is held and why,
+    /// A session's Git section for its repository's held remotes, or null where none is held: what is held and why,
     /// and that it is not to try, beside the boundary of its instruction.
     /// </summary>
     public static string? Told(IReadOnlyList<GitHold> holds) => Told(holds, rewritten: false, origin: null);
 
     /// <summary>
-    /// A session's Git section (the design §5.3): where <paramref name="rewritten"/> says the remote helper is laid out for its start,
+    /// A session's Git section: where <paramref name="rewritten"/> says the remote helper is laid out for its start,
     /// what git shows a remote as under the <c>daoris::</c> rewrite and what to name a tool with (<see cref="GitRewriteWords"/>),
     /// <paramref name="origin"/>'s address (as <see cref="GitRemotes.AddressOf"/> reads it) as the example where it is an HTTP or HTTPS
     /// one; then its repository's held remotes. Null where there is neither.
     /// </summary>
     /// <param name="older">The session's git where it is older than the doors need (<see cref="GitWiring.OlderAsync"/>): then its
-    /// remote acts pass neither door, which is said in place of the rewrite's words (§4.1).</param>
+    /// remote acts pass neither door, which is said in place of the rewrite's words.</param>
     public static string? Told(IReadOnlyList<GitHold> holds, bool rewritten, string? origin, Version? older = null)
     {
         var rewrite = older is not null
@@ -240,7 +240,7 @@ public static class GitHolds
         "this repository names its own ssh command (`core.sshCommand`), which git runs in place of Daoris's ssh door on this install, "
         + "since the install's folder holds a space or another character git's shell would read";
 
-    /// <summary>Whether an <c>own-input</c> hold is the certificate's (GITAUTH1c, §3.3): its words name the key.</summary>
+    /// <summary>Whether an <c>own-input</c> hold is the certificate's: its words name the key.</summary>
     private static bool Certificate(GitHold hold) => hold.Words.StartsWith("http.", StringComparison.Ordinal);
 
     /// <summary>Why a remote is held as <c>own-input</c>: its ssh command, or the client certificate or key its words name, never its value.</summary>
@@ -312,7 +312,7 @@ public static class GitHolds
     }
 
     /// <summary>
-    /// A hold kept or lifted in this process, with the home it is in: <i>What needs you</i>'s slice hears it (GITAUTH1a). Raised off the
+    /// A hold kept or lifted in this process, with the home it is in: <i>What needs you</i>'s slice hears it. Raised off the
     /// store's lock, on the pool, so a handler that reads the holds again never waits on the write that told it.
     /// </summary>
     public static event Action<string>? Changed;

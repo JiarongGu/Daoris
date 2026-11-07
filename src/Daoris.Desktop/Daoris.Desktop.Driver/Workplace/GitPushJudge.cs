@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>A push batch's answer (D241 point 3): whether every update may pass, the code, the one line a refusal says, and whether the grant was used.</summary>
+/// <summary>A push batch's answer: whether every update may pass, the code, the one line a refusal says, and whether the grant is used.</summary>
 /// <param name="Allowed">Whether the whole batch may pass; one refused update refuses it all, before any ref moves.</param>
 /// <param name="Code"><c>access</c>, <c>granted</c>, or a refusal's code: <c>grant-bound</c>, <c>dangerous-denied</c>.</param>
 /// <param name="Line">The one line a refusal writes where git prints it; null where the batch passes.</param>
@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 public sealed record GitBatchVerdict(bool Allowed, string Code, string? Line, bool UsedGrant = false);
 
 /// <summary>
-/// The judge of a push's updates (D241 point 3): each update by its kind, and the batch as one. No person is waited on. The Write a grant
+/// The judge of a push's updates: each update by its kind, and the batch as one. No person is waited on. The Write a grant
 /// alone allowed reaches only the updates the grant names (<see cref="GitGrantRef.Names"/>); a Dangerous update the grant carries passes
 /// (<see cref="GitGrantRef.Carries"/>), and every other, a tag the grant names included, passes only where the place's Dangerous value is
 /// <c>allow</c>: <c>deny</c>, the default and a stale <c>ask</c> refuse it.

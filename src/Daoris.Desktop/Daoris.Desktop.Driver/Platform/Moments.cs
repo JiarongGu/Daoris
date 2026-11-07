@@ -5,8 +5,8 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The one way a moment is written and read in the driver (DEDUP2a), the twin of the service core's <c>Moments</c>
-/// (DEDUP9b; the projects share no code). Every store and wire had its own reader and writer, and they drifted: some read
+/// The one way a moment is written and read in the driver, the twin of the service core's <c>Moments</c>
+/// (the projects share no code). Every store and wire had its own reader and writer, and they drifted: some read
 /// in the machine's culture, some turned a stored offset into local time, and some writers left the culture out, so a
 /// calendar other than the Gregorian one would have written other digits.
 /// </summary>

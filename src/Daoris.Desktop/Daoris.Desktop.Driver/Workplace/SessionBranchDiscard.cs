@@ -1,18 +1,17 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Discarding a session branch on the person's word (LAND3, LAND3b, LAND3c): a failed or superseded attempt's, whose commits
+/// Discarding a session branch on the person's word: a failed or superseded attempt's, whose commits
 /// no branch of the person's holds, so no landing's tidy and no clean-up takes it. Its tree goes with it where it is still
-/// here. One act, two doors (D50): the screen's <c>DISCARD_SESSION_BRANCH</c> names the branch and its repository
+/// here. One act, two doors: the screen's <c>DISCARD_SESSION_BRANCH</c> names the branch and its repository
 /// (<see cref="DiscardAsync"/>); the terminal's <c>daoris tree remove &lt;session|branch&gt; [--repository &lt;name&gt;]
 /// [--force]</c> names the branch or the session (<see cref="DiscardNamedAsync"/>), and ends in the same call.
 /// </summary>
 /// <remarks>
 /// <para><b>A branch whose tree a session still running or waiting holds is kept</b>, whatever the press says, as the clean-up
-/// keeps it (D88): forced, <see cref="SessionTrees.RemoveBranchAsync"/> would take that tree with its branch. The tree's branch
+/// keeps it: forced, <see cref="SessionTrees.RemoveBranchAsync"/> would take that tree with its branch. The tree's branch
 /// is the one the layout names (<see cref="SessionTrees.BranchOfTree"/>), so the keep asks git nothing, and it is asked
-/// before the checkout. LAND3b built the keep into the screen's door alone, and the terminal's took a live session's tree
-/// forced; the act lives here so the two doors cannot part again (LAND3c).</para>
+/// before the checkout. The act lives here, so the screen's door and the terminal's cannot part on keeping a live session's tree.</para>
 ///
 /// <para>The service is asked for the sessions running or waiting and for the registry's checkout, where git removes the
 /// branch; the terminal's naming by a session asks it for that session's tree besides.</para>
@@ -26,7 +25,7 @@ public sealed class SessionBranchDiscard(SessionTrees trees)
     /// <summary>
     /// The branch by its name in its repository, the screen's door and where the terminal's ends: kept while a live session
     /// holds its tree, refused where its repository has no checkout here, else <see cref="SessionTrees.RemoveBranchAsync"/> in
-    /// that checkout. Unforced that is D88's proof; a refusal is an answer, never thrown.
+    /// that checkout. Unforced, git's own proof decides; a refusal is an answer, never thrown.
     /// </summary>
     public async Task<TreeRemoval> DiscardAsync(
         ServiceClient service, string repository, string branch, bool force, CancellationToken ct = default)
@@ -40,7 +39,7 @@ public sealed class SessionBranchDiscard(SessionTrees trees)
     }
 
     /// <summary>
-    /// The terminal's door (LAND3): a session branch named by the branch (<c>daoris/s-…</c>) or its tree's name (<c>s-…</c>),
+    /// The terminal's door: a session branch named by the branch (<c>daoris/s-…</c>) or its tree's name (<c>s-…</c>),
     /// found in the record of where branches grew from, or by the session, whose record names its tree. A session whose tree
     /// is still here has that tree removed by its path, as <see cref="SessionTrees.RemoveAsync"/> always did, under the same
     /// keep; every other name ends in <see cref="DiscardAsync"/>.
@@ -92,7 +91,7 @@ public sealed class SessionBranchDiscard(SessionTrees trees)
 
     /// <summary>
     /// Whether a tree a session running or waiting names is this branch's, by the layout or, where its agent moved it onto a
-    /// branch of its own, by that branch (TREEFOLLOW1): the ledger as it says now.
+    /// branch of its own, by that branch: the ledger as it says now.
     /// </summary>
     private async Task<bool> HeldAsync(ServiceClient service, string repository, string branch, CancellationToken ct)
     {

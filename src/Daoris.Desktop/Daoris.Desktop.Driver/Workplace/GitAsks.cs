@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>One git go-ahead (GITAUTH1f, the git-auth design §6.6): a door holding an act whose class is <c>ask</c>.</summary>
+/// <summary>One git go-ahead: a door holding an act whose class is <c>ask</c>.</summary>
 /// <param name="Id">Thirty-two lower-case hex digits.</param>
 /// <param name="Repository">The repository the act's working folder belongs to, where known.</param>
 /// <param name="Workspace">Its workspace, where known.</param>
@@ -20,7 +20,7 @@ public sealed record GitAsk(
     string Id, string? Repository, string? Workspace, string? Remote, string? Host, string Class, string? Session, string? Key, DateTimeOffset At, bool Gone);
 
 /// <summary>
-/// The git go-ahead (GITAUTH1f; the git-auth design §6.6), as files in the home's <c>run/git/asks/</c>: a door holding an act writes
+/// The git go-ahead, as files in the home's <c>run/git/asks/</c>: a door holding an act writes
 /// <c>{id}.json</c> and waits for <c>{id}.answer</c> up to a held call's bound; the person's <c>git answer</c> (or the window's press)
 /// writes it. Where the door has gone when the person answers, an <b>allow</b> is kept as <c>{id}.grant</c> for the same act (the
 /// session, the address, the class) until the bound, and the identical retry takes it once. A go-ahead is never shared with another

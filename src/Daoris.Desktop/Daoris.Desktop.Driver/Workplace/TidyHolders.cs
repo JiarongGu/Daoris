@@ -3,14 +3,14 @@ using static Daoris.Driver.BranchTidying;
 
 namespace Daoris.Driver;
 
-/// <summary>The trees sessions hold, which the look's tidy and a checkout's writer leave alone: running, waiting, spoken to, reviewed (AUTOTIDY2d, GITLOCK2).</summary>
+/// <summary>The trees sessions hold, which the look's tidy and a checkout's writer leave alone: running, waiting, spoken to, reviewed.</summary>
 internal static class TidyHolders
 {
     /// <summary>
     /// The trees the look's tidy keeps whatever they hold: a session running or waiting holds its tree; so does one that ended with the
-    /// person's words waiting on its record, which the next loop goes on with there (AUTOTIDY2d, D137 §2.2); one the person spoke to
-    /// within <see cref="SpokenWithin"/>, whose next word goes on there (TREEGONE2); and a review step in progress, by the folder it shows
-    /// from. The pass's and link 2's (FABRIC-END4a) alike.
+    /// person's words waiting on its record, which the next loop goes on with there; one the person spoke to
+    /// within <see cref="SpokenWithin"/>, whose next word goes on there; and a review step in progress, by the folder it shows
+    /// from. The pass's and link 2's alike.
     /// </summary>
     /// <param name="now">What time it is, for <see cref="SpokenWithin"/>; the system's where none is said.</param>
     public static async Task<IReadOnlySet<string>> InUseAsync(
@@ -37,7 +37,7 @@ internal static class TidyHolders
     }
 
     /// <summary>
-    /// The trees sessions hold, for every door that removes or rebases one (TREEKEEPRETRY1): a session running or waiting on the person, a
+    /// The trees sessions hold, for every door that removes or rebases one: a session running or waiting on the person, a
     /// record the person's words or its own helper wait on, and the newest part of each quest still open, whatever that part's state, since
     /// its line goes on in that tree (a retry waiting on a limit among them). A tree is judged by every session of its quest, never only by
     /// the run that opened it.
@@ -46,13 +46,13 @@ internal static class TidyHolders
         (await HoldersAsync(service, ct).ConfigureAwait(false)).Select(each => each.Tree).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// The trees sessions hold, as <see cref="HeldTreesAsync"/> reads them, each with a session that holds it (GITLOCK1): what a writer of
+    /// The trees sessions hold, as <see cref="HeldTreesAsync"/> reads them, each with a session that holds it: what a writer of
     /// a checkout names when it waits for the session working there. Thrown where the service does not answer, which a writer reads as held.
     /// </summary>
     public static Task<IReadOnlyList<TreeHolder>> HoldersAsync(ServiceClient service, CancellationToken ct) => ReadHoldersAsync(service, writing: false, ct);
 
     /// <summary>
-    /// The sessions a writer of a checkout waits for (GITLOCK2): <see cref="HoldersAsync"/>'s, except that a quest's newest part counts only
+    /// The sessions a writer of a checkout waits for: <see cref="HoldersAsync"/>'s, except that a quest's newest part counts only
     /// while it will go on (never one completed, declined, or failed with no limit to wait out), since deferring a write to the person's
     /// checkout is not keeping a tree from deletion.
     /// </summary>
@@ -88,11 +88,11 @@ internal static class TidyHolders
         || !(record.State.Equals("completed", StringComparison.OrdinalIgnoreCase) || record.State.Equals("declined", StringComparison.OrdinalIgnoreCase)
              || record.State.Equals("failed", StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>The tree of the newest part of each quest still open or taken (TREEKEEPRETRY1); a teammate's record is none here.</summary>
+    /// <summary>The tree of the newest part of each quest still open or taken; a teammate's record is none here.</summary>
     public static IEnumerable<string> LineTrees(IEnumerable<PriorSession> records, IEnumerable<QuestView> quests) =>
         LineHolders(records, quests).Select(each => each.Tree);
 
-    /// <summary>The trees of the newest part of each open or taken quest that will still go on (GITLOCK2): what <see cref="BesideAsync"/> adds to the running sessions.</summary>
+    /// <summary>The trees of the newest part of each open or taken quest that will still go on: what <see cref="BesideAsync"/> adds to the running sessions.</summary>
     public static IEnumerable<string> LineWaiters(IEnumerable<PriorSession> records, IEnumerable<QuestView> quests) =>
         LineHolders(records, quests, goingOn: true).Select(each => each.Tree);
 
@@ -108,12 +108,11 @@ internal static class TidyHolders
     }
 
     /// <summary>
-    /// The trees of this machine's sessions that ended waiting on their own helper while their quest is still taken (HELPERWAIT1; Codex's
-    /// #5 on COWORKUX1): each goes on in its tree with the answer, or parks for the person, so it keeps it as a park does. One whose quest
+    /// The trees of this machine's sessions that ended waiting on their own helper while their quest is still taken: each goes on in its tree with the answer, or parks for the person, so it keeps it as a park does. One whose quest
     /// closed meanwhile holds nothing.
     /// </summary>
     /// <remarks>
-    /// 🔴 HELPERWAIT1b (Codex's round-3 #3): never read off an ask being open. Its last ask refused and its move back to the person failed,
+    /// 🔴 Never read off an ask being open. Its last ask refused and its move back to the person failed,
     /// the record is still completed and waiting, with no ask open, and the look tries the move again; until that move lands (it is then
     /// active), it goes on, or its quest is no longer taken, its tree and its lock are kept. The service's holder reads the same
     /// (<c>SessionLedger.HolderAsync</c>), as the planner's does (<see cref="Planner.WaitingInTree"/>).

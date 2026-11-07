@@ -2,7 +2,7 @@ using static Daoris.Driver.TreeGit;
 
 namespace Daoris.Driver;
 
-/// <summary>What a session's tree came to when a start looked before going on in it (TREEGONE1).</summary>
+/// <summary>What a session's tree came to when a start looked before going on in it.</summary>
 public enum TreeStand
 {
     /// <summary>git lists it at its folder, which is there.</summary>
@@ -21,11 +21,11 @@ public enum TreeStand
 /// <param name="Stand">What it came to.</param>
 /// <param name="Branch">The session's branch, where the tree is one this home opened; null otherwise.</param>
 /// <param name="Said">What its record says of it: the remake, or why nothing goes on in it. Null where it stands.</param>
-/// <param name="Told">What the session's agent is told of the copies a remake made (TREELOCAL2), as an opening's is; null otherwise.</param>
+/// <param name="Told">What the session's agent is told of the copies a remake made, as an opening's is; null otherwise.</param>
 public sealed record TreeStanding(TreeStand Stand, string? Branch, Noted? Said, string? Told = null);
 
 /// <summary>
-/// A session never runs with its tree gone (TREEGONE1, D51, D131): before a start or a resume goes on in a session's tree, the tree is
+/// A session never runs with its tree gone: before a start or a resume goes on in a session's tree, the tree is
 /// asked for as git lists it, on the session's branch. A folder git no longer lists, while its branch stands, is made again at the
 /// same place on that branch, and the record says so; with the branch gone too, nothing holds the session's work, so nothing is made
 /// and the start is held for the person. A harness is never started anywhere else in its place: the repository's checkout, a folder
@@ -38,7 +38,7 @@ public sealed record TreeStanding(TreeStand Stand, string? Branch, Noted? Said, 
 /// (<see cref="TreeSetAside.MoveFolderAside"/>), so nothing in it is lost.</para>
 ///
 /// <para><b>The branch the session is on</b> is the one the layout names, or the one its agent moved its tree onto, as the ledger
-/// learned it (TREEFOLLOW1): a tree is made again on that, so the work goes on where it was.</para>
+/// learned it: a tree is made again on that, so the work goes on where it left off.</para>
 /// </remarks>
 internal sealed class TreeReturns(TreeContext context, TreeFollows follows, TreeSetAside setAside)
 {
@@ -58,7 +58,7 @@ internal sealed class TreeReturns(TreeContext context, TreeFollows follows, Tree
         var folder = Directory.Exists(full);
         if (listed is not null && folder && Path.Exists(Path.Combine(full, ".git")))
         {
-            // GITWORKTREECONFIG1: a tree git binds to another checkout is no place for a session to go on, since what its agent writes
+            // A tree git binds to another checkout is no place for a session to go on, since what its agent writes
             // through it git writes in that checkout: the start is held, said, until the configuration is put right.
             return await TreeBinding.RefusalAsync(full, ct).ConfigureAwait(false) is { } elsewhere
                 ? Unmade(listed.Branch, $"{elsewhere}.")
@@ -106,7 +106,7 @@ internal sealed class TreeReturns(TreeContext context, TreeFollows follows, Tree
         }
 
         Directory.CreateDirectory(Path.GetDirectoryName(full)!);
-        // TREELOCAL2 (D216): locked while it is made, as an opening is, so a kill leaves it for the look (TreeStrays) and a cancel takes
+        // Locked while it is made, as an opening is, so a kill leaves it for the look (TreeStrays) and a cancel takes
         // it back below; the copies an opening makes are made here too, under that lock.
         var ours = !Directory.Exists(full);
         var (code, _, stderr) = await WorkingTree.GitAsync(
@@ -135,7 +135,7 @@ internal sealed class TreeReturns(TreeContext context, TreeFollows follows, Tree
         }
 
         RefMoves.Mine(context.Home, layout.Repository, layout.Workspace, root);
-        // GITWORKTREECONFIG1: made again where the repository's configuration binds its linked trees to another checkout, the tree stands
+        // Made again where the repository's configuration binds its linked trees to another checkout, the tree stands
         // on its branch, and nothing goes on in it until that is put right; the next start asks again.
         if (await TreeBinding.RefusalAsync(full, ct).ConfigureAwait(false) is { } bound)
         {
@@ -158,7 +158,7 @@ internal sealed class TreeReturns(TreeContext context, TreeFollows follows, Tree
     }
 
     /// <summary>
-    /// Whether a part whose tree and branch are gone left nothing beyond the line (TREEKEEPRETRY1): it ended before it took its quest, so it
+    /// Whether a part whose tree and branch are gone left nothing beyond the line: it ended before it took its quest, so it
     /// made no commit, and its tree stood at a commit the line holds, so no part before it left one. Its next start opens a fresh tree.
     /// </summary>
     /// <param name="baseOnLine">Whether the line holds the commit its tree stood at when it opened; null where git could not say.</param>
@@ -166,7 +166,7 @@ internal sealed class TreeReturns(TreeContext context, TreeFollows follows, Tree
         baseOnLine == true && record.BaseCommit is { Length: > 0 }
         && record.NoteParts?.Any(part => part.Code == EndNoteCodes.EndedTurnFailedOpen.Code) == true;
 
-    /// <summary>What a part's record says where it went on in a fresh tree, its own gone with nothing beyond the line (TREEKEEPRETRY1).</summary>
+    /// <summary>What a part's record says where it went on in a fresh tree, its own gone with nothing beyond the line.</summary>
     internal static Noted Fresh(string branch) => Noted.Of(
         StartNoteCodes.TreeFresh,
         $"its tree and its branch `{branch}` were gone, and nothing on them was beyond the line: its last part ended before it took its "

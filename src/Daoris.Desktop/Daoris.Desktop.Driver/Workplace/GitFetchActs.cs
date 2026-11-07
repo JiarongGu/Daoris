@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>A fetch of origin into a repository's checkout (GITAPP2f): <paramref name="Workspace"/> names the hold's row, as the line fetch's does.</summary>
+/// <summary>A fetch of origin into a repository's checkout: <paramref name="Workspace"/> names the hold's row, as the line fetch's does.</summary>
 public sealed record FetchAsk(string Repository, string Checkout, string? Workspace = null);
 
 /// <summary>Whether a fetch is offered, and where not why: <paramref name="Reason"/> a word (<c>doors</c>, <c>no-origin</c>, <c>widened</c>, <c>unread</c>), <paramref name="Why"/> its sentence.</summary>
@@ -13,10 +13,10 @@ public sealed record FetchOffer(bool Offered, string? Reason, string? Why);
 public sealed record FetchPlan(bool Offered, string? Reason, string? Why, string? Address, string Command);
 
 /// <summary>
-/// **Fetch origin's branches** (GITAPP2f, D204, D198; the git-writes design §9, §12 row f). One <c>fetch</c> step of the act journal whose command
+/// **Fetch origin's branches**. One <c>fetch</c> step of the act journal whose command
 /// is fixed whatever the repository's configuration says of origin: its refspec is given, <c>--refmap=</c> turns the configured ones off, tags
 /// and submodules and maintenance are off, so only <c>refs/remotes/origin/*</c> moves, and <c>--prune</c> removes only what origin no longer has
-/// there. <c>FETCH_HEAD</c> is neither written nor emptied, as D109's own fetch keeps it. A fetch is a Read through D198's doors, which must be
+/// there. <c>FETCH_HEAD</c> is neither written nor emptied. A fetch is a Read through Daoris's doors, which must be
 /// installed; it is refused where the remote is set to run another program or to mirror. It writes refs and no file of the checkout, so it asks no
 /// checkout switch.
 /// </summary>

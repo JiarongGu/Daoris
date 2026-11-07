@@ -4,20 +4,20 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What one run of forming and replaying asks (INTEGRATE1e part e3a): the repository, its workspace, its registered checkout (where git is
+/// What one run of forming and replaying asks: the repository, its workspace, its registered checkout (where git is
 /// asked of the line, never worked in) and the line by name.
 /// </summary>
 internal sealed record IntegrationReplayAsk(string Repository, string Workspace, string Root, string Line)
 {
     /// <summary>
     /// The merge commit's message for a request, or null for a request it names none of. None takes the merge form's own,
-    /// <c>Merge branch '&lt;branch&gt;'</c>, as the landing's merge makes it (<c>TreeLands</c>): a request keeps no composed message (§5.2 step 1
-    /// freezes it, a later part writes it); a delivery's merge says its intent's (LANDNODE1f, <see cref="IntegrationPresses"/>).
+    /// <c>Merge branch '&lt;branch&gt;'</c>, as the landing's merge makes it (<c>TreeLands</c>): a request keeps no composed message (a later part
+    /// writes it); a delivery's merge says its intent's (<see cref="IntegrationPresses"/>).
     /// </summary>
     public Func<IntegrationRequest, string?>? Messages { get; init; }
 
     /// <summary>
-    /// The say door a member's session is told through where its conflict goes to it (§5.4's <c>session</c>, INTEGRATE1e part e3b); null where
+    /// The say door a member's session is told through where its conflict goes to it (its <c>session</c>); null where
     /// nothing here reaches a conversation, and the member is held for an act instead.
     /// </summary>
     public RebaseTelling.Say? Say { get; init; }
@@ -69,22 +69,22 @@ internal static class IntegrationReplayRuns
 }
 
 /// <summary>
-/// The integration run's form and replay steps over git (INTEGRATE1e part e3a, D215; the integration design §5.2 steps 2 and 3): a candidate
+/// The integration run's form and replay steps over git (3): a candidate
 /// made from a line's queued requests, and each member judged and replayed onto it in the line's integration tree, a warm tree of Daoris's own
 /// under the trees home. The line's run calls it (<see cref="IntegrationLines"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>The tree.</b> One per line, under <c>&lt;trees home&gt;/&lt;workspace&gt;/&lt;repository&gt;/i-&lt;line&gt;</c>: made as a replay's tree is
 /// (<c>worktree add --detach --lock --reason</c>, then the binding check), kept warm between candidates and never made in a person's checkout.
-/// It stays detached, so no ref but its own HEAD moves: the line is promotion's (row e4).</para>
+/// It stays detached, so no ref but its own HEAD moves: the line is promotion's.</para>
 /// <para><b>A member's replay</b> judges containment first, by the frozen tip (<see cref="IntegrationRequest.Tip"/>, never the branch's live
-/// tip): the line holds it, whole, by ancestry or by D87 point 1's judgement (<see cref="LineHolds"/>), and it is settled at once; an earlier
+/// tip): the line holds it, whole, by ancestry or by content, then patch (<see cref="LineHolds"/>), and it is settled at once; an earlier
 /// member's replay holds it, and it stays in the candidate, <c>contained</c> by that member and provisional. Otherwise the tip is merged
 /// <c>--no-ff</c> onto the candidate so far, as the merge tool's candidate merges it, so the merge commit's second parent is the frozen tip.
-/// Its conflicts are then resolved (<see cref="IntegrationResolves"/>, part e3b; §5.2 step 4) where the repository settles every conflicted
+/// Its conflicts are then resolved (<see cref="IntegrationResolves"/>, part e3b) where the repository settles every conflicted
 /// path by a rule it declares, inside the same effect, so the merge commit is made once with the settled files in it. Any path left is a
 /// conflict of meaning: the merge is aborted, the tree is put back at the candidate so far, and the member is <c>conflict</c>, then goes by the
-/// request's <c>conflicts</c> at its own step (§5.4): <c>session</c> tells its session to rebase, keyed by the session and the frozen tip, and
+/// request's <c>conflicts</c> at its own step: <c>session</c> tells its session to rebase, keyed by the session and the frozen tip, and
 /// hands the member back with its request closed; <c>hold</c>, and a session that cannot be told, sets it aside as <c>held</c> with its request
 /// standing open. The next member goes on either way.</para>
 /// <para><b>Crash safety.</b> Every effect begins by putting the tree back at its recorded start (the candidate's tip so far, or its base) and
@@ -116,7 +116,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
     }
 
     /// <summary>
-    /// Form a candidate on the line from its queued requests (§5.2 step 2) and replay each member onto it (step 3): <c>batch</c> requests in
+    /// Form a candidate on the line from its queued requests and replay each member onto it (step 3): <c>batch</c> requests in
     /// their arrival order, the line's commit read once. Answers the candidate that already stands for the line, with no claim, where one does.
     /// </summary>
     public async Task<IntegrationReplayRun> RunAsync(IntegrationReplayAsk ask, CancellationToken ct = default)
@@ -137,7 +137,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
 
         // The first request's policy is the candidate's, and only requests of its epoch join it (below).
         var batch = Math.Clamp(queued[0].Policy.Batch ?? 1, 1, LandingIntegrate.MaxBatch);
-        // A candidate the judge split (§5.3: its members run one at a time) is followed by one of a single member (INTEGRATE1e part e4a).
+        // A candidate the judge split (its members run one at a time) is followed by one of a single member.
         if (store.LastEnded(ask.Repository, ask.Line) is { } last && store.Steps(last.Id).LastOrDefault() is { Step: IntegrationStepNames.Judge, Outcome: IntegrationStepOutcomes.Split })
         {
             batch = 1;
@@ -146,7 +146,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
         IntegrationFormed formed;
         try
         {
-            // Only the first's epoch batches (LANDNODE1g): the arrivals after it that share it, up to the first of another; an older record has none and goes alone.
+            // Only the first's epoch batches: the arrivals after it that share it, up to the first of another; an older record has none and goes alone.
             var epoch = store.RequestEpoch(queued[0].Id);
             var members = new List<string> { queued[0].Id };
             foreach (var next in queued.Skip(1).Take(batch - 1))
@@ -291,7 +291,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
             if (added != 0) return $"Daoris could not make the integration tree: {ContentHolds.Said(addErr)}";
         }
 
-        // GITWORKTREECONFIG1: a configuration binding linked trees to another checkout would have a merge here rewrite that checkout's files.
+        // A configuration binding linked trees to another checkout would have a merge here rewrite that checkout's files.
         if (await TreeBinding.RefusalAsync(tree, ct).ConfigureAwait(false) is { } bound)
         {
             if (!found) await WorkingTree.GitAsync(ask.Root, ["worktree", "remove", "--force", "--force", tree], CancellationToken.None).ConfigureAwait(false);
@@ -416,8 +416,8 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
     }
 
     /// <summary>
-    /// A merge rule's press (INTEGRATE1g, §4.2's named legacy exception): one <c>merge --no-ff</c> with today's message, its repository's hooks run
-    /// as the checkout's merge ran them, nothing resolved. A conflict, or a merge the repository's own hook refused (HOOKMERGE1), is the press's
+    /// A merge rule's press (the legacy exception): one <c>merge --no-ff</c> with today's message, its repository's hooks run
+    /// as the checkout's merge ran them, nothing resolved. A conflict, or a merge the repository's own hook refused, is the press's
     /// refusal in today's words.
     /// </summary>
     private async Task<IntegrationStepEnd> PressedAsync(
@@ -460,18 +460,18 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
     }
 
     /// <summary>
-    /// The conflict step (§5.2 step 5; §5.4): a conflict of meaning goes by the member's request's <c>conflicts</c>, the word it carries as the
+    /// The conflict step: a conflict of meaning goes by the member's request's <c>conflicts</c>, the word it carries as the
     /// rule stood when it was asked, never read again. <c>session</c> tells the member's session to rebase onto the line in the landing's own
     /// words, through the say door under the key <see cref="RebaseKeys.Of"/> gives the session and the frozen tip, so a tip is told once, and
     /// hands the member back with its request closed, for the session's next landing to request again. <c>hold</c>, and a session that cannot be
     /// told (no session, no door, a door that kept nothing), sets the member aside as <see cref="IntegrationMemberStates.Held"/>: its request stays
-    /// open, shown with the conflict, and nothing else waits. The landing agent is a later design's (§5.4). The tree is put back again at the
+    /// open, shown with the conflict, and nothing else waits. The landing agent is a later design's. The tree is put back again at the
     /// candidate so far, since a conflict is only ever handed from it.
     /// </summary>
     /// <remarks>
     /// The telling is <see cref="RebaseTelling.TellAsync"/>, not <see cref="LandCarry"/>: the carry-on belongs to a person's kept Accept on the
-    /// session and counts against its bound, which a candidate's member has none of; the rebase words and their per-tip key are the ones §5.4
-    /// names. A crash after the words went and before the end is written runs this step again and says them again at the same key, which the door
+    /// session and counts against its bound, which a candidate's member has none of; the rebase words and their per-tip key are the telling's
+    /// own. A crash after the words went and before the end is written runs this step again and says them again at the same key, which the door
     /// keeps once.
     /// </remarks>
     private async Task<IntegrationStepEnd> HandBackEffectAsync(IntegrationClaim claim, IntegrationMember member, IntegrationReplayAsk ask, string tree, CancellationToken ct)
@@ -581,7 +581,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
 
     /// <summary>
     /// Whether <paramref name="commit"/> holds the work of <paramref name="tip"/>: by ancestry, as the merge tool's <c>containedBy</c> judges
-    /// it, else wholly by D87 point 1's judgement (content, then patch). git unable to say reads as not held: the merge would be tried.
+    /// it, else wholly by content, then patch. git unable to say reads as not held: the merge would be tried.
     /// </summary>
     private static async Task<bool> HoldsAsync(string tree, string tip, string commit, string line, bool ancestryOnly, CancellationToken ct)
     {

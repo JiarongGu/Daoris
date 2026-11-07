@@ -23,7 +23,7 @@ internal static class IntegrationSweptKinds
 }
 
 /// <summary>
-/// The come-up's sweep of the standing candidates (INTEGRATE1e part e4b, D215; the integration design §5.6's recovery at the come-up): each candidate <see cref="IntegrationStore.Standing"/> lists is taken from its dead run
+/// The come-up's sweep of the standing candidates: each candidate <see cref="IntegrationStore.Standing"/> lists is taken from its dead run
 /// (<see cref="IntegrationStore.Take"/>, refused from a live one), resumed first (<see cref="IntegrationSteps.ResumeAsync"/>, which asks git
 /// whether the line holds the tip before anything is retried), and gone on with from the step it names.
 /// </summary>
@@ -76,7 +76,7 @@ internal sealed class IntegrationSweeps(IntegrationStore store, string treesRoot
         return swept;
     }
 
-    /// <summary>Go on with a candidate <paramref name="claim"/> holds, from the step its resume names; the line's run calls it too (INTEGRATE1g).</summary>
+    /// <summary>Go on with a candidate <paramref name="claim"/> holds, from the step its resume names; the line's run calls it too.</summary>
     internal async Task<IntegrationSwept> GoOnAsync(IntegrationClaim claim, IntegrationSweepAsks ask, CancellationToken ct)
     {
         var resumed = await new IntegrationSteps(store).ResumeAsync(claim, ask.Promote.Root, ct).ConfigureAwait(false);

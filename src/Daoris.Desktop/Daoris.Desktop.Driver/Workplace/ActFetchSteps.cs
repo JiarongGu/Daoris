@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The fetch step (GITAPP2f, D204; the git-writes design §5, §9): its plan, its effect and its postconditions. The effect is one git run once in
+/// The fetch step: its plan, its effect and its postconditions. The effect is one git run once in
 /// the act's job, so its <c>reference-transaction</c> hook and the hook's children end with it; nothing runs it again. A fetch's end state is
 /// origin's, which no local read knows, so a step that ended with exit 0 is done, and a step with no end is read from the tracking refs against
 /// the ones the plan kept: unchanged is not done, changed is unknown, never done.
@@ -33,7 +33,7 @@ internal static class ActFetchSteps
         var (home, address) = (launch.Home, plan["address"]!.GetValue<string>());
         var remote = await GitRemotes.AddressOf(launch.Root, "origin").ConfigureAwait(false) ?? address;
         var git = WorkingTree.GitInUse(home);
-        // The hold is what the line fetch keeps (GITAUTH1a): a refusal of the sign-in holds origin; a fetch that passes lifts a hold over reads.
+        // The hold is what the line fetch keeps: a refusal of the sign-in holds origin; a fetch that passes lifts a hold over reads.
         if (run.Exit == 0)
         {
             GitHolds.Passed(home, launch.Root, "origin", GitAct.Read);

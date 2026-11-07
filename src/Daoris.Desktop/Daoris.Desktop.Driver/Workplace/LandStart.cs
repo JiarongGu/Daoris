@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A <c>land</c> the runtime starts (WORKFLOWCLEAN1 1c; the land node design §3): the run's record, the node, the branch unit the pass read it
+/// A <c>land</c> the runtime starts: the run's record, the node, the branch unit the pass read it
 /// bound to, the sessions that executed it and the tip the node is active at. Everything the landing needs beyond it is read by the door.
 /// </summary>
 /// <param name="Unit">The run's own unit, <c>run:&lt;run&gt;</c>, whose record holds the node.</param>
