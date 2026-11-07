@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A starting kind whose node is started on a port through the performer's attempt journal, as a plugin's step is (D247 §6 point 1): its attempts
+/// A starting kind whose node is started on a port through the performer's attempt journal, as a plugin's step is: its attempts
 /// name the kind as their sender, and are sent, asked after and stopped through the port its door is (<see cref="ICheckPort"/>). The other
 /// starting shape is a door started once per node and tip, writing a record the next pass reads back.
 /// </summary>

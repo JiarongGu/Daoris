@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// </summary>
 public abstract class BuiltInNode : INodeKind
 {
-    /// <summary>Who may report each of its outcomes (§E2's authority table): the one thing a node of it cannot change.</summary>
+    /// <summary>Who may report each of its outcomes: the one thing a node of it cannot change.</summary>
     public abstract NodeAuthority Row { get; }
 
     public NodeAuthority Authority(NodeDeclaration node) => Row;

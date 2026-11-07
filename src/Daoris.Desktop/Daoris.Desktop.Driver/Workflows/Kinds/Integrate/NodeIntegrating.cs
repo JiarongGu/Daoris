@@ -18,7 +18,7 @@ internal sealed class NodeIntegrating(
     public IReadOnlyList<IntegrationCardWait> CardWaits(IReadOnlyDictionary<string, GovernedUnit> governed) =>
         [.. _cards.Values.Where(each => governed.ContainsKey(each.Unit)).OrderBy(each => each.Since).ThenBy(each => each.Unit, StringComparer.Ordinal)];
 
-    /// <summary>A card wait is the unit's judgement now; one its evaluation no longer proposes to start is gone.</summary>
+    /// <summary>A card wait is the unit's judgement now; one its evaluation does not propose to start is gone.</summary>
     public void Forget(string unit) => _cards.TryRemove(unit, out _);
 
     /// <summary>
@@ -33,8 +33,8 @@ internal sealed class NodeIntegrating(
 
     /// <summary>
     /// An <c>integrate</c> the evaluation proposes to start: the landing's own branch at the tip <c>handed</c> recorded, asked of the door by
-    /// the unit and that tip, once the landing's acceptance was the request and nothing is unreconciled on the node. Left ready, saying why
-    /// once a pass, where the landing waits for the owner's card or the steward's act, or where no door is set; null where nothing was done.
+    /// the unit and that tip, once the landing's acceptance is the request and nothing is unreconciled on the node. Left ready, saying why
+    /// once a pass, where the landing waits for the owner's card or the steward's act, or where no door is set; null where nothing is done.
     /// </summary>
     public async Task<WorkPerformed?> IntegrateAsync(
         GovernedUnit governed, NodeDeclaration node, WireStart start, IReadOnlyDictionary<string, NodeStatus> statuses, List<string> said, CancellationToken ct)
@@ -54,7 +54,7 @@ internal sealed class NodeIntegrating(
             Unit = unit, Tip = landed.Tip, Request = NodeOptions.Text(node, "request"), Conflicts = NodeOptions.Text(node, "conflicts"),
         };
 
-        // The landing's acceptance read first, with no git and no write: where it was no request, the node waits ready for the owner's card
+        // The landing's acceptance read first, with no git and no write: where it is no request, the node waits ready for the owner's card
         // or the steward's act, and nothing is written (a line gaining a policy over standing landings requests none of them).
         var policy = settings.LinePolicyOf(repository, governed.Watched.Workspace);
         if (IntegrationRequests.NodeJudgement(ask, landed.Entry, policy).Refused is { } waits)

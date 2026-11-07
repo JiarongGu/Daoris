@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A plugin's step, <c>&lt;plugin&gt;/&lt;step&gt;</c>, as the kit reads it (D247 point 4): its contract row from its declaration (its plugin's
+/// A plugin's step, <c>&lt;plugin&gt;/&lt;step&gt;</c>, as the kit reads it: its contract row from its declaration (its plugin's
 /// believed answer reaches and fails it, a person rejects or skips it as declared), bound by its place after the landing, carried out by its
 /// plugin and titled by its step and its plugin. A step name Daoris has a half of reads as that half (<see cref="PullRequestStep"/>).
 /// </summary>
@@ -51,7 +51,7 @@ public record PluginStep : INodeKind, IStarts
     /// <summary>
     /// Observed, it is begun as a built-in is, ready to active with its firings written, and published to its plugin only after; performed, it is
     /// sent to its plugin within the pass's sends, once its process is up (a process not up yet is awaited, and the start made at a later pass:
-    /// never sent blind). Either waits where its branch's tip was not read this pass: nothing is bound or sent on a guess.
+    /// never sent blind). Either waits where its branch's tip is not read this pass: nothing is bound or sent on a guess.
     /// </summary>
     async Task<WorkPerformed?> IStarts.StartAsync(NodeStarting starting, CancellationToken ct)
     {

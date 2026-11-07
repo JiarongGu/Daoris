@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
-/// <summary>A <c>content.holds</c>' reading (LANDNODE1k): reached once nothing the line holds of the work holds it, else none.</summary>
+/// <summary>A <c>content.holds</c>' reading: reached once nothing the line holds of the work holds it, else none.</summary>
 internal static class ContentHoldsReading
 {
-    /// <summary>Whether work the line or a branch of the person's holds by content holds it (SQUASHTIDY1f).</summary>
+    /// <summary>Whether work the line or a branch of the person's holds by content holds it.</summary>
     public const string Line = "line";
 
-    /// <summary>Whether D88's proof holds it, where no commit is left that a branch of the person's lacks.</summary>
+    /// <summary>Whether the unlanded-commit proof holds it, where no commit is left that a branch of the person's lacks.</summary>
     public const string Proof = "proof";
 
     /// <summary>Its options, in the order an editor lists them; each is <c>true</c> or <c>false</c>, and true where it is not written.</summary>

@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the line already holds, as a step before the landing (LANDNODE1k, <see cref="HoldReading"/>): D88's proof that the work holds a commit no
-/// branch of the person's holds, and that neither the line nor such a branch holds it by content (SQUASHTIDY1f).
+/// What the line already holds, as a step before the landing (<see cref="HoldReading"/>): the proof that the work holds a commit no
+/// branch of the person's holds, and that neither the line nor such a branch holds it by content.
 /// </summary>
 [NodeKind(NodeKinds.ContentHolds, NodeGroup.Checks, NodeKinds.QuestHolds)]
 internal sealed class ContentHoldsNode : BuiltInNode, IObserves, IAsksReads

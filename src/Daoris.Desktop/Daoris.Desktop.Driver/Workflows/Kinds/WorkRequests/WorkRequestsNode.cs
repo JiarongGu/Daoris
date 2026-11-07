@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The work's requests held as a step (INTEGRATE1o; the integration design §17.3), read from the quests' records (<see cref="WorkRequestsReading"/>).
+/// The work's requests held as a step, read from the quests' records (<see cref="WorkRequestsReading"/>).
 /// </summary>
 [NodeKind(NodeKinds.WorkRequests, NodeGroup.Checks, NodeKinds.Opinion)]
 public sealed class WorkRequestsNode : BuiltInNode, IObserves
@@ -11,13 +11,13 @@ public sealed class WorkRequestsNode : BuiltInNode, IObserves
     public override bool EndsByTheLine => true;
 
     /// <summary>
-    /// INTEGRATE1o (§17.3, C28): reached by the quests' records, each the run's sessions published here done. A decline holds it active and waiting
+    /// Reached by the quests' records, each the run's sessions published here done. A decline holds it active and waiting
     /// on the person, so nothing fails it; the person's pass with words is the run's skip, and no record passes it over.
     /// </summary>
     public override NodeAuthority Row { get; } =
         new(NodeKinds.WorkRequests, NodeReach.Observed, NodeSource.Requests, null, false, PersonSkips: true, true, true);
 
-    /// <summary>INTEGRATE1o (§17.6 point 2): it reads the quests the run's sessions published here, so its subject is the run itself.</summary>
+    /// <summary>It reads the quests the run's sessions published here, so its subject is the run itself.</summary>
     public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Run;
 
     /// <summary>A graph-only kind, kept by its node's id for the comparison's graph part (<see cref="Involvement.Lowers"/>).</summary>

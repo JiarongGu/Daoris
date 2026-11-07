@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The port a <c>check</c>'s attempt is sent through by its kind, never by a plugin's name (FABRIC-PIPELINE1d; the pipeline design §4.2): the
+/// The port a <c>check</c>'s attempt is sent through by its kind, never by a plugin's name: the
 /// heavy executor takes it, runs it on its own task, and answers the performer's reconcile from the attempt's folder.
 /// </summary>
 public interface ICheckPort : INodeDoor

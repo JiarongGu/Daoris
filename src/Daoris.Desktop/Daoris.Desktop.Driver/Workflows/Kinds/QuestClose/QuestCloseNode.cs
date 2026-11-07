@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Daoris closing the quest at the work's end (§E5), through the close door. Never skipped: its override is the person's own done.
+/// Daoris closing the quest at the work's end, through the close door. Never skipped: its override is the person's own done.
 /// </summary>
 [NodeKind(NodeKinds.QuestClose, NodeGroup.Others, NodeKinds.WaitUnit)]
 internal sealed class QuestCloseNode : BuiltInNode, IStarts
@@ -13,7 +13,7 @@ internal sealed class QuestCloseNode : BuiltInNode, IStarts
 
     /// <summary>
     /// In a graph that holds it, it is the end, nothing comes after it but its failure's path, and nothing before it waits on the quest's own done,
-    /// which a closure graph never writes before its end (§E5, canary 40).
+    /// which a closure graph never writes before its end.
     /// </summary>
     public override IEnumerable<WireProblem> Problems(NodeGraph graph, NodeDeclaration node)
     {
@@ -49,7 +49,7 @@ internal sealed class QuestCloseNode : BuiltInNode, IStarts
 
     public override NodeLook Look => NodeLook.Other;
 
-    /// <summary>None from the wiring: its door is the close door the runtime was made with.</summary>
+    /// <summary>None from the wiring: its door is the close door the runtime holds.</summary>
     public INodeDoor? Door(NodeDoorWiring wiring) => null;
 
     /// <summary>

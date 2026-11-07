@@ -1,13 +1,13 @@
 namespace Daoris.Driver;
 
-/// <summary>A run waiting on a person's task (NODEKIT1 HUMAN): its <c>human</c> node active, with the presses it waits for.</summary>
+/// <summary>A run waiting on a person's task: its <c>human</c> node active, with the presses it waits for.</summary>
 /// <param name="Run">The run, as its binding names it: what the press is said on.</param>
 /// <param name="Node">The <c>human</c> node's id in the run's graph.</param>
 /// <param name="Repository">The run's repository.</param>
 /// <param name="Workspace">The run's workspace.</param>
 /// <param name="Acts">The presses it waits for: <c>done</c>, or <c>approve</c> and <c>reject</c>.</param>
 /// <param name="Work">The run's newest work quest here: what the row's door reads the run by; null where it has none.</param>
-/// <param name="Since">When the node became active: since when the task waits; null on a record written before it was clocked.</param>
+/// <param name="Since">When the node became active: since when the task waits; null on a record written before it carried a clock.</param>
 public sealed record HumanTask(string Run, string Node, string Repository, string Workspace, IReadOnlyList<string> Acts, string? Work, DateTimeOffset? Since = null);
 
 /// <summary>

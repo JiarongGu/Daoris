@@ -3,27 +3,27 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The <c>go-ahead</c> node read from D135's answers (FABRIC-NODE1b; the fabric events design §E4: a pressed node on D135's answer): reached
+/// The <c>go-ahead</c> node read from the go-ahead answers: reached
 /// by the person's yes to the act it names, rejected by their refusal in their words. Pure: the caller hands in the go-aheads the work's ask
 /// holds, and nothing is asked or written here.
 /// </summary>
 /// <remarks>
-/// <para><b>Its act names it.</b> The node's <c>act</c> option (a D157 go-ahead step's, as decoding keeps it) is matched to the act a go-ahead
-/// was asked for, word for word, and the newest such answers; a node naming no act is answered by none.</para>
+/// <para><b>Its act names it.</b> The node's <c>act</c> option (a go-ahead step's, as decoding keeps it) is matched to the act a go-ahead
+/// asks for, word for word, and the newest such answers; a node naming no act is answered by none.</para>
 /// <para><b>The person's word alone.</b> A yes reaches it by its reach authority, the person; a refusal rejects it with the words they gave,
 /// and one given with none waits, since a rejection is said with its reason. Asked and unanswered, another act's answer, or none read: it
-/// waits, never reached or rejected on a guess. Who raises the go-ahead to the person is the session's ask (D135) or HUMAN1's door.</para>
+/// waits, never reached or rejected on a guess. Who raises the go-ahead to the person is the session's ask or the human node's door.</para>
 /// </remarks>
 public static class GoAheadReading
 {
-    /// <summary>What D135's answers say of the reading's node for its unit's work: the person's yes or refusal, or none.</summary>
+    /// <summary>What the go-ahead answers say of the reading's node for its unit's work: the person's yes or refusal, or none.</summary>
     public static NodeObservation Observe(NodeReading reading)
     {
         var (node, binding, asked) = (reading.Node, reading.Binding, reading.GoAheads);
 
         NodeObservation Seen(string? outcome, string said) => NodeObserving.Seen(reading, outcome, said);
 
-        // FABRIC-CUTOVER1a: the unit its binding observes, on a run's record the run itself, projected as a unit for the evaluation.
+        // The unit its binding observes, on a run's record the run itself, projected as a unit for the evaluation.
         if (NodeObserving.NotBound(reading) is { } refused) return refused;
 
         if (ActOf(node) is not { } act) return Seen(null, "it names no act, so no go-ahead answers it");

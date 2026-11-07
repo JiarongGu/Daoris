@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The chain's parts ended on the line once its pull request merged (D245 point 1): each part's branch removed through the journal's delete, its
+/// The chain's parts ended on the line once its pull request merged: each part's branch removed through the journal's delete, its
 /// commits kept on a recovery ref, and what it ended written on the landing record, which the keeper and the press read. It starts only on a
 /// monitor's <c>when merged</c>, so a closed request never reaches it.
 /// </summary>
@@ -45,7 +45,7 @@ internal sealed class TidyNode : BuiltInNode, IObserves, IStarts
     public Task<WorkPerformed?> StartAsync(NodeStarting starting, CancellationToken ct) => Task.FromResult<WorkPerformed?>(starting.Begin());
 
     /// <summary>
-    /// A run's <c>tidy</c>, active at the tip the landing recorded, started once on the door (D245): the monitor before it read the pull request
+    /// A run's <c>tidy</c>, active at the tip the landing recorded, started once on the door: the monitor before it read the pull request
     /// merged, and the door ends the chain's parts. Idempotent by node and tip, and a landing the tidy already ended at that tip is not started again.
     /// </summary>
     public void Keep(NodeKept kept)

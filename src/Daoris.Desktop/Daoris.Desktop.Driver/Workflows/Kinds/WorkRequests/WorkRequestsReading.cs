@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The <c>work.requests</c> node read from the quests' records (INTEGRATE1o part o2; the integration design §17.3): the quests a run's sessions
+/// The <c>work.requests</c> node read from the quests' records: the quests a run's sessions
 /// published here, which the work holds on. Pure: the caller hands in the quests, and nothing is asked or written here.
 /// </summary>
 /// <remarks>

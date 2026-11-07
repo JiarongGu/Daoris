@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Another repository asked, as a step (INTEGRATE1p; the integration design §17.5): a quest published to <c>to</c> under the request's key and waited
+/// Another repository asked, as a step: a quest published to <c>to</c> under the request's key and waited
 /// on (<see cref="RequestStart"/>), reached and failed by that commitment as a <c>wait.unit</c> is.
 /// </summary>
 [NodeKind(NodeKinds.Request, NodeGroup.Others)]
@@ -43,14 +43,14 @@ internal sealed class RequestNode : BuiltInNode, IStarts, IPressed
         ? null
         : await starting.Requesting.StartAsync(starting.Governed, starting.Node, starting.Start, starting.Status, starting.Said, ct).ConfigureAwait(false);
 
-    /// <summary>Its send, and its asking again or going on without it when declined (INTEGRATE1p).</summary>
+    /// <summary>Its send, and its asking again or going on without it when declined.</summary>
     public IReadOnlyList<string> Takes { get; } = [NodeWordActs.Send, NodeWordActs.AskAgain, NodeWordActs.GoOn];
 
     public string Refusal => RunNodeWords.NotRequest;
 
     /// <summary>
     /// A ready request under <c>start: you</c> waits for the person's send; its decline waits on the person, unless its workflow said
-    /// <c>declined: stop</c> (C33).
+    /// <c>declined: stop</c>.
     /// </summary>
     public IReadOnlyList<string> Acts(NodeDeclaration node, NodeStatus status) =>
         status.State == NodeStates.Ready && NodeOptions.Text(node, "start") != RequestOptions.Automatic ? [NodeWordActs.Send]

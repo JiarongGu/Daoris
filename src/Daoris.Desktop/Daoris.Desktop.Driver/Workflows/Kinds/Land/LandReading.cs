@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A <c>land</c>'s or a <c>review</c>'s reading: the work handed on, reached by the source the kind names (LANDNODE1c: a land's reach is the
-/// landing record's, a review's the person's). LANDNODE1c2: a review is read as a land is, since the doors that accept the work land it in one press.
+/// A <c>land</c>'s or a <c>review</c>'s reading: the work handed on, reached by the source the kind names (a land's reach is the
+/// landing record's, a review's the person's). A review is read as a land is, since the doors that accept the work land it in one press.
 /// </summary>
 internal static class LandReading
 {
@@ -13,7 +13,7 @@ internal static class LandReading
         var branch = unit.Records.Branch;
         if (binding.Subject is not null)
         {
-            // FABRIC-CUTOVER1a (the cutover design §2.4.4, §11.2): a run's `land` is its session's work handed on, reached where the session
+            // A run's `land` is its session's work handed on, reached where the session
             // branch's landing holds the tip it is bound to, made at it or squashing it (LandedBranch.Squashed), so a squash, whose commit is
             // another, still reaches it. Its acceptance keeps the bound tip, which its binding lapses on and the one table checks; its evidence
             // names the landing's tip, which what follows binds. Merged into the line with no branch landed, as below.

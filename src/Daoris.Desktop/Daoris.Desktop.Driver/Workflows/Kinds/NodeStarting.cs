@@ -49,8 +49,8 @@ internal sealed record NodeStarting
     public WorkPerformed Begin() => Performer.Begin(Node, Start, Status);
 
     /// <summary>
-    /// The node started as its kind says (D247): on its door where it starts on one; begun where it observes, or where the evaluator reaches it on
-    /// its begun binding (an observed row of no reading: the join, the sink); else left ready for its press or its wait. Null where nothing was done.
+    /// The node started as its kind says: on its door where it starts on one; begun where it observes, or where the evaluator reaches it on
+    /// its begun binding (an observed row of no reading: the join, the sink); else left ready for its press or its wait. Null where nothing is done.
     /// </summary>
     public async Task<WorkPerformed?> StartAsync(CancellationToken ct) => NodeKit.Of(Node.Kind) switch
     {

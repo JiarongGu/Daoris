@@ -3,14 +3,13 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A saved graph that landed by a push or a pull request, as the steps it is now (G8; D241 point 4): the <c>land</c> a <c>branch</c>, then
-/// <c>push</c>, then the plugin's <c>&lt;plugin&gt;/pull-request</c> step where it opened one. This is the only reader of the old methods
-/// <c>push</c> and <c>pull-request</c>, of the old kinds <c>pushed</c> and <c>pull-request</c>, and of a <c>land</c>'s <c>plugin</c> option.
+/// A saved graph that landed by a push or a pull request, as the steps it is now: the <c>land</c> a <c>branch</c>, then
+/// <c>push</c>, then the plugin's <c>&lt;plugin&gt;/pull-request</c> step where it opened one. This is the only reader of the methods
+/// <c>push</c> and <c>pull-request</c>, of the kinds <c>pushed</c> and <c>pull-request</c>, and of a <c>land</c>'s <c>plugin</c> option.
 /// </summary>
 /// <remarks>
-/// The condition that ends it: no home that saved a workflow before the release that carries G8 can still be started, which is the release after
-/// the next one's migration replacing <see cref="HomeMigration.Steps"/>. The row that deletes it, and <see cref="PushStepsStep"/> with it, is
-/// G8-CONVERT1.
+/// The condition that ends it: no home that saved a workflow before the release that made push and pull request steps can still be started, which
+/// is the release after the next one's migration replacing <see cref="HomeMigration.Steps"/>. It goes, and <see cref="PushStepsStep"/> with it, then.
 /// </remarks>
 public static class PushedGraphs
 {
@@ -19,8 +18,8 @@ public static class PushedGraphs
     private const string OldPushed = "pushed";
 
     /// <summary>
-    /// The graph converted, or null where it holds nothing old. A <c>pull-request</c> whose <c>land</c> named a plugin becomes that plugin's
-    /// performed step; where none was named (the bind chose it from the remote's platform) the step is dropped, its wires joined, and
+    /// The graph converted, or null where it holds nothing to convert. A <c>pull-request</c> whose <c>land</c> named a plugin becomes that plugin's
+    /// performed step; where none is named (the bind chose it from the remote's platform) the step is dropped, its wires joined, and
     /// <paramref name="said"/> says the graph needs one named.
     /// </summary>
     public static JsonObject? Convert(JsonObject source, out string? said)

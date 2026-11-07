@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where a failure or a refusal stops the run short of its end (FABRIC-WORKFLOW2): a decoded D157 version's <c>stop</c>, §E7's synthetic sink, reached
+/// Where a failure or a refusal stops the run short of its end: a decoded version's <c>stop</c>, a synthetic sink, reached
 /// by the wire evaluation on the receipt of the path into it. It is the run stopped: never skipped, and never a graph's end.
 /// </summary>
 [NodeKind(NodeKinds.Stop, NodeGroup.Others, NodeKinds.All)]

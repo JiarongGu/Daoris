@@ -3,7 +3,7 @@ using Daoris.Contracts.Parts;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The node kinds this build knows (D247), built once from the driver's <see cref="NodeKindAttribute"/> marks with no runtime, so the save, the
+/// The node kinds this build knows, built once from the driver's <see cref="NodeKindAttribute"/> marks with no runtime, so the save, the
 /// palette, a run's binding and the run view read the one declaration each kind gives. <see cref="Find"/> is the one place a kind's name is split:
 /// a built-in's unit, or a plugin's step read as <see cref="PluginStep"/>, with Daoris's half where its step name has one.
 /// </summary>
@@ -86,7 +86,7 @@ public sealed class NodeKit
         : null;
 
     /// <summary>
-    /// This kit as an older build's reads, one that lacks <paramref name="kind"/> (the integration design §17.6 point 6): a declaration naming it is
+    /// This kit as an older build's reads, one that lacks <paramref name="kind"/>: a declaration naming it is
     /// no kind there.
     /// </summary>
     public NodeKit Without(string kind) => new(Order.Where(part => part.Name != kind).ToList(), [.. _built.Where(each => each.Declared.Name != kind)]);

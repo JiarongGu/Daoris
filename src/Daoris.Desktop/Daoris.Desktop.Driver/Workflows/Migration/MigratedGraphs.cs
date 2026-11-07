@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// How the old rules stood where a <c>handed</c> left its form or press open: the form and press over the place's rule, and the rule's ticket key
+/// How the rules stood where a <c>handed</c> left its form or press open: the form and press over the place's rule, and the rule's ticket key
 /// and squash, which the lifted <c>land</c> writes.
 /// </summary>
 public sealed record HandedResolution(string Form, bool AutoAccept, string? Key, bool Squash)
@@ -17,20 +17,20 @@ public sealed record HandedResolution(string Form, bool AutoAccept, string? Key,
 }
 
 /// <summary>
-/// The old shapes translated into graphs for the migration (D232 point 2). Pure: a graph in, a graph or a refusal out, the rules handed in as facts.
-/// A refusal names why the old version is left as it is.
+/// Shapes translated into graphs for the migration. Pure: a graph in, a graph or a refusal out, the rules handed in as facts.
+/// A refusal names why the version is left as it is.
 /// </summary>
 public static class MigratedGraphs
 {
-    /// <summary>The old landing step's kind, which a graph no longer holds.</summary>
+    /// <summary>The landing step's kind, which the migration lifts to <c>land</c>.</summary>
     public const string Handed = "handed";
 
-    /// <summary>The old <c>land</c> option that held the landing for a press.</summary>
+    /// <summary>The <c>land</c> option that held the landing for a press.</summary>
     public const string Accept = "accept";
 
     private const string Review = "review";
 
-    /// <summary>The graph a place's old rules drew, as the shipped defaults draw theirs: the chain, the landing's tail, the gates the rules asked for.</summary>
+    /// <summary>The graph a place's rules drew, as the shipped defaults draw theirs: the chain, the landing's tail, the gates the rules asked for.</summary>
     public static JsonObject OfRules(MigratedPlace place)
     {
         var rule = place.Rule;
@@ -158,7 +158,7 @@ public static class MigratedGraphs
     /// <summary>
     /// A graph holding a <c>handed</c> lifted to a <c>land</c>: the form and press over <paramref name="resolution"/>, the method from them and the
     /// tail the graph already holds, the pattern kept, the key written where the pattern says <c>{ticket}</c>, a <c>review</c> before it where the
-    /// press was the person's. Ids are kept.
+    /// press is the person's. Ids are kept.
     /// </summary>
     /// <returns>The graph, or null with why the version is left.</returns>
     public static JsonObject? LiftHanded(JsonObject source, HandedResolution resolution, out string? refusal)
@@ -190,7 +190,7 @@ public static class MigratedGraphs
             : LandNodes.Branch;
         var land = new JsonObject { ["method"] = method };
         if (method != LandNodes.Merge && pattern is not null) land["pattern"] = pattern;
-        // The plugin the old tail named, written once more for the conversion (PushedGraphs) that makes its steps.
+        // Kept for the conversion (PushedGraphs) that makes the plugin's steps.
         if (method == LandNodes.Branch && plugin is not null && plugin != "none") land["plugin"] = plugin;
         if (method != LandNodes.Merge && pattern?.Contains("{ticket}", StringComparison.Ordinal) == true && resolution.Key is { } key) land[LandNodes.KeyOption] = key;
         if (resolution.Squash && method is LandNodes.Branch) land["squash"] = true;

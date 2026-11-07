@@ -21,7 +21,7 @@ internal sealed class NodeRequesting(NodeRecordFiles records, Func<DateTimeOffse
 
     /// <summary>
     /// A <c>request</c> the evaluation proposes to start: sent only under <c>start: automatic</c>, the person's standing say-so, and never to
-    /// the run's own repository. Left ready, saying why once a look; null where nothing was done.
+    /// the run's own repository. Left ready, saying why once a look; null where nothing is done.
     /// </summary>
     public async Task<WorkPerformed?> StartAsync(
         GovernedUnit governed, NodeDeclaration node, WireStart start, NodeStatus status, List<string> said, CancellationToken ct)

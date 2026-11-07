@@ -18,7 +18,7 @@ internal sealed class NodeClosing(
     /// A <c>quest.close</c> the evaluation proposes to start: on a quest bound to this graph alone, sent once its chain's submissions are
     /// current and unheld and each other quest it names has reached its close in its own graph, taking one of the pass's
     /// <paramref name="sends"/>; reached without a send where its chain's close already closed its quest; left ready while it waits. Null
-    /// where nothing was done.
+    /// where nothing is done.
     /// </summary>
     public async Task<WorkPerformed?> CloseAsync(
         GovernedUnit unitGoverned, NodeDeclaration node, WireStart start, NodeStatus evaluated, WorkSends sends, List<string> said,
@@ -76,7 +76,7 @@ internal sealed class NodeClosing(
     }
 
     /// <summary>
-    /// Why a bound quest's unit, governed on the revision of the read before, no longer stands on it in <paramref name="again"/>, the units
+    /// Why a bound quest's unit, governed on the revision of the read before, does not stand on it in <paramref name="again"/>, the units
     /// read afresh: its quest, its binding, git's tips, or the chain's and its branches' revision. Null where it stands, so a close or a
     /// plugin's start made now rests on what is there.
     /// </summary>
@@ -180,7 +180,7 @@ internal sealed class NodeClosing(
     private static bool Closed(NodeAttempt attempt) => attempt is { State: AttemptStates.Settled, Outcome: WorkStates.Reached };
 
     /// <summary>
-    /// What a closure graph's unit owes before it is evaluated: a close found closed only in part since, said once, naming each quest no longer
+    /// What a closure graph's unit owes before it is evaluated: a close found closed only in part, said once, naming each quest not
     /// done on the submission it closed; and the person's own done, which ends the graph as overridden, stopping every live node, said once. A
     /// close still waiting for its answer is reconciled first, and a chain's close is never the person's.
     /// </summary>
@@ -239,7 +239,7 @@ internal sealed class NodeClosing(
         done.AddRange(stopped.Select(node => new WorkPerformed(unit, node, PerformedWhat.Applied, NodeStates.Stopped)));
         said.Add($"work  {unit}: #{quest.Id} closed by you before its end, so its graph ends as overridden; stopped: {string.Join(", ", stopped)}.");
 
-        // A quest the close named reads lost: not done, and no longer on the submission the close judged (a rebase forgot it with its take).
+        // A quest the close named reads lost: not done, and not on the submission the close judged (a rebase forgot it with its take).
         bool Lost(QuestCloseItem named) =>
             quests().TryGetValue(named.Id, out var standing) && standing.Status != "Done"
             && !(standing.Submission is { } current && current.Machine == named.Machine && current.Sequence == named.Sequence);

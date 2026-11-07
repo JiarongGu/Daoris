@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The declared gates Daoris runs itself (FABRIC-PIPELINE1a, D192 point 6; the pipeline design §4.1): performed with no agent session, bound by its
+/// The declared gates Daoris runs itself: performed with no agent session, bound by its
 /// place, and never skipped by its kind, since a skip would read as a verdict a stage and the line rest on.
 /// </summary>
 [NodeKind(NodeKinds.Check, NodeGroup.Checks)]
@@ -23,7 +23,7 @@ internal sealed class CheckNode : BuiltInNode, IJournalled
 
     public override NodeLook Look => NodeLook.Check;
 
-    /// <summary>The heavy executor's port (FABRIC-PIPELINE1d): its answer asks a pass, which reconciles it.</summary>
+    /// <summary>The heavy executor's port: its answer asks a pass, which reconciles it.</summary>
     public INodeDoor? Door(NodeDoorWiring wiring) => wiring.Executor is { } executor
         ? new CheckExecution(executor, (unit, attempt, node) => VerifyRuns.SendOf(wiring.Home, unit, attempt, node))
         : null;
@@ -37,7 +37,7 @@ internal sealed class CheckNode : BuiltInNode, IJournalled
             ? null
             : await starting.Performer.StartAsync(starting.Node, starting.Start, ct).ConfigureAwait(false);
 
-    /// <summary>Its kind's perform, and 7200 seconds where it declares no <c>timeoutSeconds</c> (the pipeline design §4.1).</summary>
+    /// <summary>Its kind's perform, and 7200 seconds where it declares no <c>timeoutSeconds</c>.</summary>
     public NodeDeclaration Performed(NodeDeclaration node) =>
         node with { Perform = Perform, TimeoutSeconds = node.TimeoutSeconds ?? (int)HeavyExecutor.DefaultBound.TotalSeconds };
 

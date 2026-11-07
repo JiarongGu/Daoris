@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The watch on the step it follows (D245's note; D247 §4): a task like any other whose state logic is observed, reached with the state that
+/// The watch on the step it follows: a task like any other whose state logic is observed, reached with the state that
 /// step reports as its outcome, so the graph routes on it with <c>when</c> wires. Its outcomes are its watched step's states, written in the file:
 /// a pull request's <c>merged</c> and <c>closed</c>, the one step that reports a state today.
 /// </summary>

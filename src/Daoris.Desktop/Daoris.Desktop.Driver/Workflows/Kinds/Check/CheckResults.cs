@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a run's checks' newest attempts left in its folder (FABRIC-PIPELINE1d; the pipeline design §4.4): each result as the executor wrote it,
+/// What a run's checks' newest attempts left in its folder: each result as the executor wrote it,
 /// read by the run's view and the line's read alike. A result that is not there or does not read is none.
 /// </summary>
 public static class CheckResults

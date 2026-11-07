@@ -5,9 +5,9 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What an <c>integrate</c> node's options say (INTEGRATE1n; the integration design §17.4): the unit's half of the install's policy, the
+/// What an <c>integrate</c> node's options say: the unit's half of the install's policy, the
 /// <c>request</c> it asks with and the <c>conflicts</c> its line's run takes it to. A node naming none, or a value that is no choice,
-/// reads the design's <i>Absent</i> column, as the rule's key does.
+/// reads as naming none, as the rule's key does.
 /// </summary>
 public static class IntegrateNodes
 {
@@ -23,7 +23,7 @@ public static class IntegrateNodes
         NodeOptions.Text(node, "conflicts") is { } conflicts && LandingIntegrate.ConflictChoices.Contains(conflicts) ? conflicts : LandingIntegrate.Session;
 
     /// <summary>
-    /// The key a unit's request at a landing's tip is found by (§17.4: <i>keyed by the unit and that tip</i>): the same for every start of
+    /// The key a unit's request at a landing's tip is found by: the same for every start of
     /// that unit at that tip, so a restart finds the request it made and never makes two.
     /// </summary>
     public static string Key(string unit, string tip) =>
@@ -36,7 +36,7 @@ public static class IntegrateNodes
             || record.Statuses.GetValueOrDefault(attempt.Node) is { } status && status.Unreconciled == attempt.Attempt);
 
     /// <summary>
-    /// The nodes of <paramref name="record"/> whose open request the integration record says promoted (§17.4, F50): their stop is refused,
+    /// The nodes of <paramref name="record"/> whose open request the integration record says promoted: their stop is refused,
     /// since nothing reverses the line, and the node reads its record's reach. A request that could not be read is not counted, so nothing is
     /// refused on a guess; it is judged again at the next ask.
     /// </summary>
@@ -64,22 +64,22 @@ public static class IntegrateNodes
 }
 
 /// <summary>
-/// What the <c>integrate</c> node asks of row e's one door (INTEGRATE1n part n2): the request kept for a unit at a tip, open or closed; the
+/// What the <c>integrate</c> node asks of the one door: the request kept for a unit at a tip, open or closed; the
 /// ask for a new one; and, of the member the line's run formed from it, whether it promoted. A port, so a node is judged over a stand-in;
 /// <see cref="HomeIntegrationDoor"/> is the home's.
 /// </summary>
 public interface IIntegrationDoor : INodeDoor
 {
-    /// <summary>The request kept for <paramref name="unit"/> at <paramref name="tip"/>, open or closed; null where none was made.</summary>
+    /// <summary>The request kept for <paramref name="unit"/> at <paramref name="tip"/>, open or closed; null where none exists.</summary>
     Task<IntegrationRequest?> FindAsync(string unit, string tip, CancellationToken ct);
 
     /// <summary>The ask for a request, answered by the door's rules as they stand under <paramref name="config"/>.</summary>
     Task<IntegrationAdmission> AskAsync(IntegrationAsk ask, DriverConfig config, CancellationToken ct);
 
-    /// <summary>Whether the request's member promoted onto the line, which no stop reverses (§17.4, F50).</summary>
+    /// <summary>Whether the request's member promoted onto the line, which no stop reverses.</summary>
     Task<bool> PromotedAsync(IntegrationRequest request, CancellationToken ct);
 
-    /// <summary>Drop a request standing in no candidate, as the person's stop does; whether it was dropped.</summary>
+    /// <summary>Drop a request standing in no candidate, as the person's stop does; whether the drop took.</summary>
     Task<bool> DropAsync(IntegrationRequest request, CancellationToken ct);
 }
 
@@ -103,22 +103,22 @@ public sealed class HomeIntegrationDoor(string home) : IIntegrationDoor
         }
         catch (IntegrationRefusedException)
         {
-            // It stands in a candidate, which closes it with its own step under its claim (row g); nothing is dropped here.
+            // It stands in a candidate, which closes it with its own step under its claim; nothing is dropped here.
             return Task.FromResult(false);
         }
     }
 }
 
 /// <summary>
-/// Daoris's own <c>integrate</c> (INTEGRATE1n part n2; §17.4): a waited node whose start asks row e's one door for its landed branch, keyed by
+/// Daoris's own <c>integrate</c>: a waited node whose start asks the one door for its landed branch, keyed by
 /// the unit and the landing's tip, and whose state is read from the integration record, never copied. Nothing here runs the integration: an
-/// admitted request's line is sent to the transport (<see cref="Lines"/>, INTEGRATE1g), which runs it off the pass.
+/// admitted request's line is sent to the transport (<see cref="Lines"/>), which runs it off the pass.
 /// </summary>
 /// <remarks>
 /// <para><b>The fence</b> mirrors the close's (<see cref="QuestCloser"/>): step 1 is one locked edit that judges the start on the record as the
 /// evaluation left it and writes the attempt, its key and the landing's tip; step 2 asks the door, which finds a request already made for the
 /// key before it makes one; step 3 keeps the answer on that attempt, only while it still waits for it. Nothing is awaited inside an edit.</para>
-/// <para><b>The attempt stays unreconciled until the record says how its request ended</b> (<see cref="NodeStatus.Unreconciled"/>, F41): an
+/// <para><b>The attempt stays unreconciled until the record says how its request ended</b> (<see cref="NodeStatus.Unreconciled"/>): an
 /// invalidation by a new landing tip keeps it, no new attempt starts while one is, so the second revision's request is made once the first is
 /// promoted, handed back or dropped. Each pass asks the door what became of every such request before any new start, and a request the door
 /// never took (a crash between steps 1 and 2) is withdrawn, its node judged again on what is there now.</para>
@@ -129,10 +129,10 @@ public sealed class IntegrateStart(NodeRecordFiles records, Func<IIntegrationDoo
 {
     private readonly List<string> _said = [];
 
-    /// <summary>The transport an open request's line is sent to, at each look that reads it open (INTEGRATE1g); none leaves it queued.</summary>
+    /// <summary>The transport an open request's line is sent to, at each look that reads it open; none leaves it queued.</summary>
     public Func<IIntegrationLines?> Lines { get; init; } = () => null;
 
-    /// <summary>What the node said since it was last asked: each refusal and each outcome, in words.</summary>
+    /// <summary>What the node said since the last ask: each refusal and each outcome, in words.</summary>
     public IReadOnlyList<string> TakeSaid()
     {
         var said = _said.ToList();
@@ -192,7 +192,7 @@ public sealed class IntegrateStart(NodeRecordFiles records, Func<IIntegrationDoo
     private static NodeDeclaration Declaration(NodeAttempt attempt) => new(attempt.Node, NodeKinds.Integrate, attempt.Call.StepVersion, NodeReach.Waited);
 
     /// <summary>
-    /// One look at the door for an attempt's key (step 2), or, with <paramref name="ask"/>, the ask for a request where none was made; and the
+    /// One look at the door for an attempt's key (step 2), or, with <paramref name="ask"/>, the ask for a request where none exists; and the
     /// answer kept on the attempt after the await (step 3), only while that attempt still waits for it. Unanswered, the attempt and its node
     /// are unknown, and it is asked after again.
     /// </summary>
@@ -214,7 +214,7 @@ public sealed class IntegrateStart(NodeRecordFiles records, Func<IIntegrationDoo
             }
             else if (request is { ClosedAt: null } open && StoppedBy(unit, attempt, node) && !await port.PromotedAsync(open, ct).ConfigureAwait(false))
             {
-                // The person's stop before promotion drops the request as `--drop` does (§17.4); the record then says it closed.
+                // The person's stop before promotion drops the request as `--drop` does; the record then says it closed.
                 dropped = await port.DropAsync(open, ct).ConfigureAwait(false);
                 if (dropped == true) request = await port.FindAsync(unit, tip, ct).ConfigureAwait(false) ?? open;
             }
@@ -244,7 +244,7 @@ public sealed class IntegrateStart(NodeRecordFiles records, Func<IIntegrationDoo
         records.Read(unit) is { } record && WorkPerformer.StatusOf(record, node.Id) is { State: NodeStates.Stopped } status && status.Unreconciled == attempt.Attempt;
 
     /// <summary>
-    /// No request was made for the key, so none ever will for this attempt: a refused ask fails the node with the door's code and words (a
+    /// No request exists for the key, so none ever will for this attempt: a refused ask fails the node with the door's code and words (a
     /// refusal is never transient, and a new tip is a new start); a door that never took the key settles the attempt as never started and
     /// judges the node again on what is there now.
     /// </summary>
@@ -285,8 +285,7 @@ public sealed class IntegrateStart(NodeRecordFiles records, Func<IIntegrationDoo
     }
 
     /// <summary>
-    /// The request the door holds, read onto the attempt and its node (§17.4, <i>its states are read from the integration record, never
-    /// copied</i>): open, the attempt settled as the door's and the node active, queued until the line's run takes it; closed settled, the
+    /// The request the door holds, read onto the attempt and its node: open, the attempt settled as the door's and the node active, queued until the line's run takes it; closed settled, the
     /// node reached on the request as its evidence; closed handed back or dropped, the node failed with that word. A node moved off the attempt
     /// (invalidated by a new tip, stopped) takes only the lift of the gate the attempt held (<see cref="NodeLifecycle.Reconciled"/>).
     /// </summary>
@@ -345,7 +344,7 @@ public sealed class IntegrateStart(NodeRecordFiles records, Func<IIntegrationDoo
         return (WorkPerformer.With(WorkPerformer.Kept(record, moved, outcome, now), attempt, settled), new(unit, node.Id, PerformedWhat.Applied, outcome));
     }
 
-    /// <summary>An attempt its node has moved off, settled with the record's outcome, the gate it held lifted (§D3).</summary>
+    /// <summary>An attempt its node has moved off, settled with the record's outcome, the gate it held lifted.</summary>
     private static NodeRecord Stale(NodeRecord record, NodeAttempt attempt, NodeAttempt settled, NodeStatus status)
     {
         var stale = WorkPerformer.With(record, attempt, settled);

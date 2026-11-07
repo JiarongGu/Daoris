@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Daoris's half of any plugin's <c>pull-request</c> step (G8, D241 point 4, D247 point 4): the performed step that opens the pull request of the
+/// Daoris's half of any plugin's <c>pull-request</c> step: the performed step that opens the pull request of the
 /// branch the run's <c>push</c> pushed. Its evidence address is the pull request's, which the runtime writes on the landing record
 /// (<see cref="Keep"/>), so the <c>work/state</c> asks have an address and the page one to show; a graph version's person part reads it as the
 /// person's merge on the platform, named by the plugin that opens it (<see cref="WorkflowGate.StepsOf"/>), and a <c>monitor</c> watches the state

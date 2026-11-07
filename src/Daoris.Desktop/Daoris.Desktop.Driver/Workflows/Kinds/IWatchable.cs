@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A kind whose node reports a settled state another node may watch (D245's note; D247 §4): a <c>monitor</c> wired straight after it reads the
+/// A kind whose node reports a settled state another node may watch: a <c>monitor</c> wired straight after it reads the
 /// state through <see cref="Read"/> and is reached with it as its outcome, so any step that reports a state can be monitored.
 /// </summary>
 public interface IWatchable

@@ -3,7 +3,7 @@ using System.Collections.Immutable;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The doors a runtime starts its nodes on, by kind (D247 §3.5): built from the kit and the loop's wiring, each starting kind building its own.
+/// The doors a runtime starts its nodes on, by kind: built from the kit and the loop's wiring, each starting kind building its own.
 /// None by default, so a runtime nobody wired starts nothing on a door and each such node waits. A test replaces one kind's door with
 /// <see cref="With"/>.
 /// </summary>

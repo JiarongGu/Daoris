@@ -4,10 +4,10 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A <c>land</c> node's options (LANDNODE1a; the land node design §2): <c>method</c>, <c>target</c>, <c>pattern</c>,
+/// A <c>land</c> node's options: <c>method</c>, <c>target</c>, <c>pattern</c>,
 /// <c>squash</c> and <c>message</c>, their resolution at the bind and the landing intent a run carries. Each is optional, since a version leaves
 /// some open and the bind resolves them; a written one is held to its choices by the declaration (<see cref="LandNode.Problem"/>). The person's
-/// Accept is a <see cref="NodeKinds.Review"/> before it (LANDNODE1c2), so an <c>accept</c> option is refused: a version 1a to 1h saved with one
+/// Accept is a <see cref="NodeKinds.Review"/> before it, so an <c>accept</c> option is refused: a stored version with one
 /// is held, never landed without the press it named.
 /// </summary>
 public static class LandNodes
@@ -16,10 +16,10 @@ public static class LandNodes
     public const string Branch = "branch";
     public const string Integrate = "integrate";
 
-    /// <summary>The option LANDNODE1a gave the Accept, refused by name since LANDNODE1c2.</summary>
+    /// <summary>The option that names the Accept, refused on a <c>land</c> by name.</summary>
     public const string AcceptOption = "accept";
 
-    /// <summary>The methods a <c>land</c> takes. A push and a pull request are steps after a <c>branch</c> (G8, D241 point 4).</summary>
+    /// <summary>The methods a <c>land</c> takes. A push and a pull request are steps after a <c>branch</c>.</summary>
     public static readonly IReadOnlyList<string> Methods = [Merge, Branch, Integrate];
 
     /// <summary>What a commit message template may say: the landing's own names, frozen before the landing.</summary>
@@ -30,15 +30,14 @@ public static class LandNodes
     /// <summary>The <c>land</c> option that is a ticket's key, and the name it takes among a run's resolved options.</summary>
     public const string KeyOption = "key";
 
-    /// <summary>The branch a landing names where its <c>pattern</c> is left open (the cleanup design §1.4): not a rule's, the default.</summary>
+    /// <summary>The branch a landing names where its <c>pattern</c> is left open: not a rule's, the default.</summary>
     public const string DefaultPattern = "feature/{quest}-{slug}";
 
     /// <summary>No option resolved: one instance, so a binding with none reads equal to one that never had any.</summary>
     public static readonly IReadOnlyDictionary<string, string> NoResolved = new Dictionary<string, string>();
 
     /// <summary>
-    /// The options a version's <paramref name="land"/> leaves open, resolved from derived defaults and never from a rule (WORKFLOWCLEAN1 1a; the
-    /// cleanup design §1.4): the <see cref="DefaultPattern"/> and the default key where the pattern says <c>{ticket}</c>. A merge has none to
+    /// The options a version's <paramref name="land"/> leaves open, resolved from derived defaults and never from a rule: the <see cref="DefaultPattern"/> and the default key where the pattern says <c>{ticket}</c>. A merge has none to
     /// resolve. Called once, at the run's bind, and kept; a written option stands.
     /// </summary>
     public static IReadOnlyDictionary<string, string> Resolve(NodeDeclaration land)
@@ -74,7 +73,7 @@ public static class LandNodes
     }
 
     /// <summary>
-    /// The landing intent a run bound to a version holding this <c>land</c> carries (WORKFLOWCLEAN1 1c; the cleanup design §13 point 3): the node's
+    /// The landing intent a run bound to a version holding this <c>land</c> carries: the node's
     /// written options, the open ones the bind resolved (<paramref name="resolved"/>), and its press from the graph. A squash is the node's own,
     /// and the ticket key is the bind's.
     /// </summary>
@@ -101,7 +100,7 @@ public static class LandNodes
         node.Options.TryGetValue(name, out var raw) && raw.TrimStart().StartsWith('"') ? NodeOptions.Value(raw) as string : null;
 
     /// <summary>
-    /// A <c>message</c> template rendered once (LANDNODE1f; the land node design §2), for the delivery's intent to freeze before the landing: each
+    /// A <c>message</c> template rendered once, for the delivery's intent to freeze before the landing: each
     /// placeholder replaced in one pass, so a title that says <c>{quest}</c> stays as written. The title is taken onto one line; a ticket the
     /// subject has none of is empty. Null where the template is not one <see cref="MessageProblem"/> accepts, which the node's judgement refused.
     /// </summary>
