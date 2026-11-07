@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-07 - The window's landing press was dropped on a loaded machine, and the person was told nothing (LANDPRESS1)
+
+- **Symptom:** on the owner's install, on the build staged at 778dfe5d29, *Land* on a finished driven session reached the bridge
+  (`bridge.asked`: presses 1, served 0) and made no integration request, no delivery and no refusal, while the trees' `git status`
+  took 22-70 s and the session's review 172 s to read. Nothing was said in the window; the branch was merged by hand.
+- **Root cause:** the press ran on the page's wait alone, and every read before its landing is git's or the service's (the records,
+  the gate, the subject, the pass it asks), so on a loaded machine it ended past the page's bound or with the window, and what it
+  came to reached nobody. Where it got as far as the Accept, the pass it asked took longer than its 20 s (`GraphPasses.Bound`), so it
+  was handed back the gate read before its own Accept and answered that gate's review hold as its refusal: it never forgot the land's
+  earlier refusal (`LandPerformer.Retry`), never nudged the loop, and logged nothing, since `PerformedPressAsync` writes no line on any
+  answer. Introduced by 7fb5ad71cb (WORKFLOWCLEAN1 1c), which put the gate's refusal before the press's wait.
+- **Fix:** `LandPresses` runs the press once per session under the loop's lifetime, answers it within 60 s with what it came to or
+  holds it in words while it goes on, holds a second press of a running session without running it, logs every answer as
+  `landing.pressed` (landed, accepted, held, refused, with its sentence), and tells the windows again when a held press ends. A gate
+  held only by the review the press just accepted holds nothing, and the press goes on to the landing's wait (4bd5a566f2).
+- **Verify:** `LandPressAnsweredTests` (six) failed to compile before the change and pass after it; the landing routes' classes
+  (`DriverModuleTreesWordsTests`, `DriverModuleBusyServiceTests`, `PluginRecordWiringTests`, `DriverModuleLandSyncTests`, the gate,
+  entries and pipe classes) pass, and their process tests pass alone. The installed window under load is not proven here.
+
 ## 2026-11-07 - The session record's rename left its fixtures on `adapter`, and three merged chunks went past their censuses (CI 10)
 
 - **Symptom:** CI run 10's fast half on 8863b15619: eight `SessionWordsWaitingTests` and two `SessionsCommandTests` found no cool-off
