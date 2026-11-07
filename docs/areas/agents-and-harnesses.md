@@ -397,10 +397,8 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   `get_usage` has answered the families' weeks null on every account read so far (`docs/2026-10-12-usage-read-evidence.md`).
   The listings and counts that show every cool-off of an account (`AccountsRoutes`, the terminal's agent list, `Offered`) read
   the whole of it by design: they ask no start.
-- The agent card's door (AGENTPROVIDER1d's last choice, no backlog row): s-ix on, whose three cells are named in the design (`p-claude-bare`, `p-dsh` and `p-b`, where the
-  page's own-home question reads the owner's first door and the walk the door's own), waits on the owner's choice: the page's agent
-  card is one per account key, so which door's home it speaks for where an owner's doors disagree is not yet chosen
-  (`RosterNext.OwnersToolchain` reads the owner's first door as before). `OwnerOf` of the old set is retired, every read asks
+- The agent card's door: the page's agent card is one per account key and speaks for the account's own door, saying one line
+  (`NextStart.Doors`) for each other door whose own-home answer differs (s-ix o1 to o3, built; `RosterNext.OwnersToolchain` reads the owner's first door for the page's own-home question and the walk the door's own). `OwnerOf` of the old set is retired, every read asks
   `ProviderRegistry.OwnerOfAgent` (whether an agent runs on another's accounts is its `BorrowedFrom`, which the hand-over
   roster, the agent list and the agents route ask, none reading `AccountOf` itself), and every read of an agent's program and accounts `ProviderRegistry.AgentNamed`, which answers an
   `AccountAgent` (a holder's included). The roster's `LimitsOf`, `SignInOf`, `WindowsOf` and `UsageOf` read through the registry.
@@ -423,8 +421,7 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   recipe is started and contained by Platform's launcher (`AgentStarts.StartAsync`, D201) through the run; h's rest:
   `containment.not-widened`, whose proof that a door's process is born in the agents' job needs the installed launcher, and the
   stand-ins preparing through the door rather than the seam (row t); the identity names are down (`AgentWorkVariables`, `ChildMarks`);
-  `HolderTerminal`'s program and home variable read from the registration, its binary's hash and path D209's; the installed proof that
-  a Codex and a dsh session start as before without Claude Code's seam (s-v) and with no other provider's credential (s-vi);
+  `HolderTerminal`'s program and home variable read from the registration, its binary's hash and path D209's; (s-v and s-vi, a Codex and a dsh session starting as before without Claude Code's seam and with no other provider's credential, are built);
   `ChildBindings`' fold names no agent: each line is learnt, and each call read as the child it came from (`ChildCall`), by the
   reader its agent's `IChildVocabulary` gives (`ClaudeChildLines`, joining a call by the hook's tool use; `CodexChildLines`, a thread
   with no parent the root), and whether a later line moves a reading is the vocabulary's `Wake`; each native line is read once
@@ -466,7 +463,7 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   account where the two doors are one agent (`AgentOfDoor.Same`), never between two providers sharing a pool. u is built: the plan's
   walk reads `Reach` (`ProviderReach`) with the pass code `not-opened`, a brainstorm voice by its workspace, Ask Daoris by the
   machine's room, and a meeting's participant and a role holder's harness refused; a chat's walk is handed its workspace, not its
-  repository, so it reads the workspace's opening until its place carries the repository. Left: the rest of D213's design.
+  repository, so it reads the workspace's opening until its place carries the repository. Left, as TASKS.md's AGENTPROVIDER1 row has it: h's `containment.not-widened` on the installed launcher, r's Stub Two partner exchange and the rest of t.
 - **AGENTPROVIDER1t**: the old seam ends. No provider reads an adapter class; `ClaudeAcpAdapter`, `CodexAcpAdapter`, `DshAdapter`,
   the two dialect bridges, `ClaudeCodeAdapter`, `StubAdapter` and `AcpStubAdapter` are gone, `SessionWire` is the contract's
   `Transport`, and the shell applies the seam a door's own spawn states (`ISpawn.PointAtClaude`), naming no provider; the census's
@@ -475,7 +472,7 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   (`DoorPorts`), and an agent's program and accounts are the `AccountAgent`'s, a value the registry answers per read; a plugin's door
   joins as a door the registry places (`JoinedProviders`), never a provider of the plugin's making. The desktop tests are on providers
   too: a test's door is `TestDoors.Door` over a `TestAgent`, its registry `TestDoors.Registry`, a shipped door's `TestDoors.Shipped`,
-  a holder `TestDoors.Holder`, and the census (`OldSeamNamesCensusTests`) pins none of the old names in any source, tests included.
+  a holder `TestDoors.Holder`, and the census (`OldSeamNamesCensusTests`) pins the old registry and toolchain names (`ISessionAdapter`, `HarnessToolchain`, `LegacyDoor`, `AdapterTable`, the `Adapter*` readers and the like) in every source, tests included; the adapter classes' own names are held by no census.
   The provider censuses' ids and words are the registrations' own: Claude Code, Codex and dsh declare their `Vocabulary` part,
   `ProviderVocabulary` reads every provider's id, its program's name, its doors' ids and those words, the driver's census and the
   service's (`ServiceProviderCensusTests`, in the driver's tests, which hold the registrations; a service change reaches them through
@@ -524,10 +521,10 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   `harness` (another agent's, `HelpWired.DoorHarness`).
 - The agent-layer adoption (D213's notes of 2026-10-29 and 2026-10-30, D248): Daoris's providers consumed from the sibling
   agent-provider library, built against its local build. The reference and its census are in (rule 47). The host's policy for a
-  layer door stands on Daoris's own types, read by Claude Code's driven door where the driver carries the layer: the access evidence each account reader reads (`AccessEvidence`), the
+  layer door stands on Daoris's own types, the access evidence each account reader reads (`AccessEvidence`), the
   trusted limit and sign-out entries that read no sentence (`HarnessRoster.LimitedTrusted`, `RefusedAccounts.SignOut`), which
   readers each door's site calls (`AccountReaders`), a refused model by its whole outcome and then by door and phase
-  (`ModelRefusals`), the retry table by door, phase and run (`RetryTable`) and what was hit (`LimitHit`). `Agents/Layer/` holds the
+  (`ModelRefusals`), the retry table by door, phase and run (`RetryTable`) and what was hit (`LimitHit`). Of these only `AccessEvidence`, `ModelRefusals` and the `SignOut` entry are read in production; `LimitedTrusted`, `AccountReaders`, `RetryTable` and `LimitHit` have tests and no caller yet (AGENTLYNTAI1d's account readers). `Agents/Layer/` holds the
   failure ingress (`LayerFailures`, a prompt's delivery read by `LayerDelivery` from what its own turn showed after the write, the
   layer's stamp standing only for a terminal that states no turn), the translations of claims (`LayerClaims`), accounts
   (`LayerAccounts`) and events (`LayerReadings`, each event into today's readings in today's order, a stop Daoris asked read as a
@@ -597,7 +594,7 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   remote APIs and hosted runtimes, with scoped availability and explicit recovery. Accepted, nothing built.
 - **AGENTERRORS1c**: the native door's failure reads and the measured `--resume`; **1e**: what remains of point 8 (the
   native door's live, driven and one-turn tries). 1d is built.
-- **LIMITRESUME1f** and **TOOL4n**: the native door's limit read, so a native session ended by a limit cools its account.
+- **LIMITRESUME1** (its parts 1f and TOOL4n, merged into it): the native door's limit read, so a native session ended by a limit cools its account.
   The session limit's sentence is recorded on the protocol door (2026-11-07), and a failed native `result` saying it reads as that
   limit; what waits is one native session seen ending on it, the owner's yes, which is all that remains of D210's row 1c. A failed native `result` is one
   `WireReading.Failed` (`native`, `DoorWhere.Result`, the result's own words) on the run's sink, and `NativeLimits`, a sink part composed in
@@ -606,11 +603,11 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   `AccountEndings.Limited` cools the account once, notes it and the record says `limit`, then parks or waits by its line's rules; a native
   conversation's cooling line is recorded before its turn's end, which `LimitHeld` reads limited (a failed result's subtype, never
   `end_turn` or `cancelled`), so `LimitMove` moves it to the next account and its end says `limited`.
-- Row s-ii of the agent-layer adoption: a driven Claude Code start denies or keeps the three tools a headless turn cannot
+- **AGENTLYNTAI1s-ii**, the agent-layer adoption's row s-ii: a driven Claude Code start denies or keeps the three tools a headless turn cannot
   answer. The measurement needs the owner's yes; until it is made, the layer's door denying them is a gap of row d's spawn.
-- Row d of the agent-layer adoption: its installed proof.
-- **CODEXTOOLS1**: Codex's first tool catalogue waits for the connector to be ready.
+- **AGENTLYNTAI1d**, the agent-layer adoption's row d: its installed proof, and the account readers on a layer failure (below).
+- **CODEXTOOLS1**: Codex's open and resume wait, bounded, for the connector (`McpStartupAwait`, `AcpProtocol.cs`); left, the installed proof that a first Codex turn uses it.
 - **STEER3**, **MSG1h**, **MSG1i**: steering and next-step words measured on other doors (Codex, native).
-- **BGWAIT2b**, **SESSCTX1a**, **HELPMODE1a3**, **FABRIC-C2b**: woken-turn words, resume and fresh part per door, full access
+- **BGWAIT2b** and **HELPMODE1a3** (which holds SESSCTX1a and FABRIC-C2b): woken-turn words, resume and fresh part per door, full access
   on the installed pins, the two-harness canary.
-- **MODELROLE1c4**, **MODELROLE1d3**: the installed proofs of a refused model passing an account and a chat's chosen model.
+- **MODELROLE1c4** (which holds 1d3): the installed proofs of a refused model passing an account and a chat's chosen model.
