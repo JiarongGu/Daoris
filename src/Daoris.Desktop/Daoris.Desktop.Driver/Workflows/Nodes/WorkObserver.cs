@@ -201,39 +201,51 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
 public sealed record WorkLagging(WorkStepHeard Heard, string Unit);
 
 /// <summary>
-/// Each named branch's tip in one checkout, read fresh (FABRIC-PERFORM1i, §C4's fourth rule; D88's PROC1d-ii): one <c>for-each-ref</c> of its
-/// refs for the whole judgement, a snapshot of its own, never one held across judgements, so a ref moved outside Daoris is read at the next.
-/// A pass asks it once a checkout, for its events and its observed nodes' bindings alike (<see cref="PassTips"/>, FABRIC-PERFORM1m).
+/// Each named branch's tip in one checkout, read fresh (FABRIC-PERFORM1i, §C4's fourth rule; D88's PROC1d-ii), never held across judgements,
+/// so a ref moved outside Daoris is read at the next: from git's own ref files with no process (<see cref="TreeTips.Named"/>), and one
+/// <c>for-each-ref</c> of the checkout for the branches those files cannot say. A pass asks it once a checkout, for its events and its
+/// observed nodes' bindings alike (<see cref="PassTips"/>, FABRIC-PERFORM1m).
 /// </summary>
 public static class NodeTips
 {
     /// <summary>The tip of each of <paramref name="branches"/> in <paramref name="root"/>; a branch not read (no such ref, a read that failed) is absent.</summary>
-    public static async Task<IReadOnlyDictionary<string, string>> ReadAsync(string root, IReadOnlyCollection<string> branches, CancellationToken ct)
-    {
-        var tips = new Dictionary<string, string>(StringComparer.Ordinal);
-        if (root.Length == 0 || !Directory.Exists(root)) return tips;
-        var refs = RefSnapshot.Take(root);
-        foreach (var branch in branches.Distinct(StringComparer.Ordinal))
-        {
-            if (await refs.CommitAsync("refs/heads/" + branch, ct).ConfigureAwait(false) is (true, { } commit)) tips[branch] = commit;
-        }
-
-        return tips;
-    }
+    public static Task<IReadOnlyDictionary<string, string>> ReadAsync(string root, IReadOnlyCollection<string> branches, CancellationToken ct) =>
+        RefsAsync(root, "refs/heads/", branches, absentIsEmpty: false, ct);
 
     /// <summary>
     /// The commit origin's remote-tracking ref holds for each of <paramref name="branches"/> in <paramref name="root"/> (FABRIC-RUN1b, NODE1's
-    /// choice 8: what <c>pushed</c> reads): <c>refs/remotes/origin/&lt;branch&gt;</c>, one <c>for-each-ref</c> for them all. Empty where git says
-    /// the ref is not there; absent where its read failed, which establishes nothing.
+    /// choice 8: what <c>pushed</c> reads): <c>refs/remotes/origin/&lt;branch&gt;</c>, read as the tips are. Empty where git says the ref is
+    /// not there; absent where its read failed, which establishes nothing.
     /// </summary>
-    public static async Task<IReadOnlyDictionary<string, string>> RemotesAsync(string root, IReadOnlyCollection<string> branches, CancellationToken ct)
+    public static Task<IReadOnlyDictionary<string, string>> RemotesAsync(string root, IReadOnlyCollection<string> branches, CancellationToken ct) =>
+        RefsAsync(root, "refs/remotes/origin/", branches, absentIsEmpty: true, ct);
+
+    private static async Task<IReadOnlyDictionary<string, string>> RefsAsync(
+        string root, string prefix, IReadOnlyCollection<string> branches, bool absentIsEmpty, CancellationToken ct)
     {
         var tips = new Dictionary<string, string>(StringComparer.Ordinal);
         if (root.Length == 0 || !Directory.Exists(root)) return tips;
-        var refs = RefSnapshot.Take(root);
+        var common = TreeTips.CommonDirectory(root);
+        var unread = new List<string>();
         foreach (var branch in branches.Distinct(StringComparer.Ordinal))
         {
-            if (await refs.CommitAsync("refs/remotes/origin/" + branch, ct).ConfigureAwait(false) is (true, var commit)) tips[branch] = commit ?? "";
+            if (common is not null && TreeTips.Named(common, prefix + branch) is { } filed) tips[branch] = filed;
+            else unread.Add(branch);
+        }
+
+        if (unread.Count == 0) return tips;
+        var refs = RefSnapshot.Take(root);
+        foreach (var branch in unread)
+        {
+            switch (await refs.CommitAsync(prefix + branch, ct).ConfigureAwait(false))
+            {
+                case (true, { } commit):
+                    tips[branch] = commit;
+                    break;
+                case (true, null) when absentIsEmpty:
+                    tips[branch] = "";
+                    break;
+            }
         }
 
         return tips;

@@ -175,11 +175,12 @@ public sealed class ChainTable
             ChainEvents.TimerOf(ChangeTopics.Update), ChainEvents.TimerOf(ChangeTopics.Help), ChainEvents.TimerOf(ChangeTopics.Gates),
             ChainEvents.TimerOf(ChangeTopics.Notices), ChainEvents.TimerOf(ChangeTopics.Accounts),
         ], []),
-        // FABRIC-RUN1: the evaluation runtime hears what the plan hears, its deadline the look's, and a plugin's step; it writes only the
-        // units' node records, which no link hears, and emits nothing. FABRIC-RUN1d: and its own wakes, which with a plugin's step it alone
-        // hears, so neither runs the local plan.
+        // FABRIC-RUN1: the evaluation runtime hears the look's deadline and a plugin's step; it writes only the units' node records, which no
+        // link hears, and emits nothing. FABRIC-RUN1d: and its own wakes, which with a plugin's step it alone hears, so neither runs the local
+        // plan. A ledger change is no pass of its own: a wake's pass judges the units as the last look read them, so it would find nothing the
+        // change moved, and a pass asked while one works runs again after it.
         new(ChainRanks.Nodes, "nodes", ChainKind.Reader,
-            [ChainEvents.Ledger, ChainEvents.PluginStep, ChainEvents.Nodes, ChainEvents.TimerOf(ChangeTopics.Look)], []),
+            [ChainEvents.PluginStep, ChainEvents.Nodes, ChainEvents.TimerOf(ChangeTopics.Look)], []),
     ]);
 
     /// <summary>

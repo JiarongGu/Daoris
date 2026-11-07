@@ -17,8 +17,9 @@ namespace Daoris.Driver;
 /// §5.3): never at the application's start, at a look, or when a view opens. A status question may refresh the account's
 /// token, and probing on its own is what signed the owner's accounts out (TOOL6g). So the report is what was last read
 /// (<see cref="AccountReads"/>, kept under the home, so a restart starts from it), each account with when, and the accounts
-/// are the directories on disk now. Its binary is asked once a process, never against an account's home: whether it is
-/// there and its version. A yes is trusted and a no is asked again: an absent agent's binary at once, and a signed-out
+/// are the directories on disk now. Its binary is asked once per binary, never against an account's home: whether it is
+/// there and its version, kept in <see cref="BinaryReads"/> and asked again where its files changed, at a press, or after an
+/// install, an update or a pin (PERF3). A yes is trusted and a no is asked again: an absent agent's binary once it is there, and a signed-out
 /// account on its own once its word is <see cref="SignedOutAskedAgain"/> old or a sign-in marked it (TOOL6g), since a start
 /// held on it is tried at every look, or once after a refusal of a reading that said signed in (TOOL6h). An account's windows,
 /// where its agent's server is asked them, are read at a press and at a start's walk too (CODEXUSE1, Harnesses.Usage.cs).</para>
@@ -29,11 +30,7 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPath = null)
 {
-    // What each adapter's binary answered when last asked (ROSTER1): whether it is there, its version, why not. Asked of the
-    // binary alone, once a process, and again at a press or where the binary may have changed.
-    internal readonly System.Collections.Concurrent.ConcurrentDictionary<string, Binary> _binaries =
-        new(StringComparer.OrdinalIgnoreCase);
-
+    // What an adapter's binary answered (ROSTER1): whether it is there, its version, why not.
     internal sealed record Binary(bool Present, string? Version, string? Problem);
 
     // Who each reading this process made said is signed in, with the organisation and the plan beside them (ACCOUNTID1), by

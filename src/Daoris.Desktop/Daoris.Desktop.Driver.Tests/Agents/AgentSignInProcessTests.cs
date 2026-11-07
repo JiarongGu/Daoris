@@ -282,7 +282,7 @@ public sealed class AgentSignInProcessTests : IDisposable
     }
 
     [Fact]
-    public async Task The_host_s_list_asks_no_account_another_process_holds_the_probe_lock_of_until_it_lets_go()
+    public async Task The_host_s_list_asked_again_asks_no_account_another_process_holds_the_probe_lock_of_until_it_lets_go()
     {
         var account = "account-1";
         var where = HarnessSettings.ProfileHome(Home, Agent, account);
@@ -290,7 +290,8 @@ public sealed class AgentSignInProcessTests : IDisposable
         File.WriteAllText(Path.Combine(where, "credentials.json"), "{}");
         var held = await ProbeLock.TakeAsync(ProbeLock.PathOf(Home, Agent, account));
         Assert.NotNull(held);
-        using var run = Typed("agent", "list");
+        // The terminal's press (PERF3): a bare list says what was read and asks no account.
+        using var run = Typed("agent", "list", "--again");
         var output = run.StandardOutput.ReadToEndAsync();
         var error = run.StandardError.ReadToEndAsync();
         try

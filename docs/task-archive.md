@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PERF3 — the agent sheet starts no process it read before (2026-11-07)
+
+> **PERF3** (driver, modules): `daoris agent list` took 3.5-5.5 s on the install, asking each binary its version and each account its sign-in on every read. Outcome: a binary's answer is kept in `reads.json` under the door's name with the path, size and last write of the files its question starts, and asked again only where they changed, at a press or after an install, update or pin (`BinaryVersion`, `BinaryReads`; the roster's in-memory map gone); `agent list` says each account's last reading as the page does and `list --again` asks; `reg.exe` and `docker` were the harness's own children, Daoris starting neither; `AgentSheetStartsTests` counts no start on a warm list and page read, one on a changed binary.
+
 ## MODELROLE1k2 — a model's cool-off read everywhere a start's model is known (2026-11-07)
 
 > **MODELROLE1k2** (driver): a limited line's wait, a carry-on's hold and the usage questions read any cool-off as the whole account's. Outcome: every reader that knows a line's model (`PriorSession.ModelOn`) reads the cool-offs that hold a start of it (`CoolingOf` and `CoolingsOf` with the model, over `AccountCooling.Holding`): the limit-wait stage, the sessions listing's hold, the hand-over press and the switch candidates; the family's recorded limit words are MODELROLE1k3.

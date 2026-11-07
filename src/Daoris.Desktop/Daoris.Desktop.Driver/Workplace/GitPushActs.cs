@@ -177,7 +177,7 @@ public static class GitPushActs
 
         if (ask.Kind == "branch" && (ask.Name == "daoris" || ask.Name.StartsWith("daoris/", StringComparison.Ordinal)))
         {
-            return new(null, null, null, $"`{ask.Name}` is under `daoris/`, Daoris's own for its sessions' branches, which their landing pushes, so nothing was pushed.");
+            return new(null, null, null, $"`{ask.Name}` is under `daoris/`, Daoris's own for its sessions' branches, which a workflow's `push` node pushes, so nothing was pushed.");
         }
 
         var (code, listed, err) = await WorkingTree.GitAsync(
