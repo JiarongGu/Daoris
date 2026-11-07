@@ -97,6 +97,9 @@ internal static class DriveUsageRecords
           integrate <repository> [--request <branch> | --drop <request> | --recheck | --decide <candidate> split|hand-back|land | --order <request> first|last]
               a repository's integration as the window's Integration view draws it: what waits to land, in what order, and what
               holds it. The acts (--request, --drop, --recheck, --decide, --order) are the owner's, Person routes in the window.
+          files <repository> [read | set <kind> <path>… [--copy|--no-copy] [--machine] | remove <path>… [--machine]]
+              what Daoris's trees do with each path git does not manage there: each one's rule and the layer that decided it, read
+              at the line's tip. read writes its found rules again; set and remove edit your own; none acts in a tree.
           logs [--since <30m|2h|3d>] [--source <name>] [--event <name>] [--level <warn|error>] [--json]
               the machine log, every source merged by time.
           notices [--json]

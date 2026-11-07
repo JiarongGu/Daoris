@@ -115,6 +115,8 @@ public static class VerbLeases
             "remote" => next is "add" or "remove",
             "browser" => next == "favorite" ? args.Count > 2 && args[2] is "add" or "remove" : args.Count > 2,
             "repository" => false,
+            // A read of the layers holds nothing; a reading written, and the person's rules edited, are short writes held from the top.
+            "files" => args.Count > 2 && args[2] is "read" or "set" or "remove",
             _ => true,
         };
     }

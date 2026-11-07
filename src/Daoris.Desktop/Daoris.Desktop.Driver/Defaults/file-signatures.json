@@ -1,0 +1,77 @@
+{
+  "_why": "The toolchains' signatures the file analysis reads (docs/2026-10-26-tree-pool-design.md §28.4, source 4): a row per toolchain, its signature files, and the rules of the folders beside each, in the rule file's own format, paths and keys relative to the signature's folder and a dependency's caches relative to it. Data, so no code names a stack. `local` lists the local signatures (source 2), a pattern with no '/' matched against a name at any depth; `scripts` the tracked files source 5 searches; `readsNothing` the packages whose own install script reads nothing of the tree.",
+  "local": [
+    "local/", ".env", ".env.*", "*.local.json", "local.settings.json", "appsettings.*.local.json", "*.pem", "*.key", "*.pfx",
+    ".claude/settings.local.json", ".vscode/settings.local.json"
+  ],
+  "settings": [".claude/settings.local.json", ".claude/settings.json", ".mcp.json", ".vscode/settings.json", ".vscode/settings.local.json"],
+  "scripts": [
+    "*.mjs", "*.cjs", "*.js", "*.ts", "*.ps1", "*.sh", "*.cmd", "*.bat", "*.py", "*.json", "*.csproj", "*.fsproj", "*.props",
+    "*.targets", "*.toml", "*.yml", "*.yaml", "Makefile", "*.mk", "*.gradle", "*.kts", "CMakeLists.txt"
+  ],
+  "rows": [
+    {
+      "toolchain": "npm", "signature": ["package-lock.json"], "manifest": "package.json", "workspaces": true, "readsNothing": ["esbuild"],
+      "rules": [
+        { "kind": "dependency", "paths": ["node_modules/"], "install": "npm ci", "key": ["package-lock.json", "package.json", ".npmrc"],
+          "toolchain": ["node --version", "npm --version", "npm config list --json"], "caches": [".cache/", ".vite/", ".vite-temp/"] }
+      ]
+    },
+    {
+      "toolchain": "pnpm", "signature": ["pnpm-lock.yaml"], "manifest": "package.json",
+      "rules": [
+        { "kind": "dependency", "paths": ["node_modules/"], "install": "pnpm install --frozen-lockfile",
+          "key": ["pnpm-lock.yaml", "package.json", "pnpm-workspace.yaml", ".npmrc", "patches/**"],
+          "toolchain": ["node --version", "pnpm --version", "pnpm config list --json"], "caches": [".cache/", ".vite/"] }
+      ]
+    },
+    {
+      "toolchain": "yarn", "signature": ["yarn.lock"], "manifest": "package.json", "workspaces": true,
+      "rules": [
+        { "kind": "dependency", "paths": ["node_modules/", ".pnp.cjs", ".pnp.loader.mjs"], "install": "yarn install --immutable",
+          "key": ["yarn.lock", "package.json", ".yarnrc.yml"], "toolchain": ["node --version", "yarn --version", "yarn config --json"] },
+        { "kind": "cache", "paths": [".yarn/cache/"] }
+      ]
+    },
+    {
+      "toolchain": ".NET", "signature": ["*.csproj", "*.fsproj", "*.vbproj"],
+      "rules": [
+        { "kind": "intermediate", "paths": ["obj/"], "toolchain": ["dotnet --version"] },
+        { "kind": "output", "paths": ["bin/"] }
+      ]
+    },
+    {
+      "toolchain": "cargo", "signature": ["Cargo.toml"],
+      "rules": [ { "kind": "intermediate", "paths": ["target/"], "toolchain": ["cargo --version", "rustc --version"] } ]
+    },
+    {
+      "toolchain": "uv", "signature": ["uv.lock"],
+      "rules": [
+        { "kind": "dependency", "paths": [".venv/"], "install": "uv sync --locked", "key": ["uv.lock", "pyproject.toml", ".python-version"],
+          "toolchain": ["uv --version", "uv python find --system"], "bound": true }
+      ]
+    },
+    {
+      "toolchain": "python", "signature": ["pyproject.toml", "setup.py", "requirements*.txt"],
+      "rules": [ { "kind": "cache", "paths": ["**/__pycache__/", ".pytest_cache/", ".mypy_cache/", ".ruff_cache/"] } ]
+    },
+    {
+      "toolchain": "Gradle", "signature": ["build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts"],
+      "rules": [
+        { "kind": "intermediate", "paths": [".gradle/"], "toolchain": ["gradle --version"] },
+        { "kind": "output", "paths": ["build/"] }
+      ]
+    },
+    { "toolchain": "Maven", "signature": ["pom.xml"], "rules": [ { "kind": "output", "paths": ["target/"] } ] },
+    { "toolchain": "CMake", "signature": ["CMakeLists.txt"], "rules": [ { "kind": "output", "paths": ["build/", "out/build/"] } ] },
+    {
+      "toolchain": "vcpkg", "signature": ["vcpkg.json"],
+      "rules": [
+        { "kind": "dependency", "paths": ["vcpkg_installed/"], "install": "vcpkg install", "key": ["vcpkg.json", "vcpkg-configuration.json"],
+          "toolchain": ["vcpkg version"] }
+      ]
+    },
+    { "toolchain": "vite", "signature": ["vite.config.ts", "vite.config.js", "vite.config.mjs"], "rules": [ { "kind": "output", "paths": ["dist/"] } ] },
+    { "toolchain": "go", "signature": ["go.mod"], "rules": [] }
+  ]
+}

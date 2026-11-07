@@ -4,12 +4,11 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What the room check found (<see cref="RoomCheck"/>): the rooms in the order declared, its claim groups (rooms whose build closures
-/// meet, one session in place per group), every reference across rooms, what is said to be in no room, the classes of ignored
-/// content, and why the declaration does not pass.
+/// meet, one session in place per group), the crossings, what lies in no room, the repository's rules and why it does not pass.
 /// </summary>
 internal sealed record RoomCheckReport(
     IReadOnlyList<string> Rooms, IReadOnlyList<IReadOnlyList<string>> Groups, IReadOnlyList<RoomCrossing> Crossings, IReadOnlyList<string> InNone,
-    TreeClasses Classes, IReadOnlyList<string> Problems)
+    IReadOnlyList<FileRule> Rules, IReadOnlyList<string> Problems)
 {
     internal bool Passes => Problems.Count == 0;
 
@@ -33,10 +32,9 @@ internal sealed record RoomCheckReport(
             }
         }
 
-        said.Append(Classes.Declares
-            ? $"Ignored content: {Count(Classes.Dependencies.Count, "dependency folder")}, {Count(Classes.Intermediates.Count, "intermediate")}, "
-              + $"{Count(Classes.Outputs.Count, "output")}, {Count(Classes.Prepare.Count, "prepare command")}.\n"
-            : "No ignored content is declared: none is carried.\n");
+        said.Append(Rules.Count > 0
+            ? $"The repository's rules for what git does not manage: {string.Join(", ", Rules.GroupBy(rule => rule.Kind).Select(group => $"{group.Count()} {group.Key.Word()}"))}.\n"
+            : "The repository states no rule for what git does not manage.\n");
         if (Problems.Count > 0)
         {
             said.Append("The declaration does not pass:\n");
