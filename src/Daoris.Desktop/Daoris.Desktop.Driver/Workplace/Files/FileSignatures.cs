@@ -2,9 +2,13 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>One toolchain's row: its signature files, the manifest beside them, and the rules of the folders beside each.</summary>
+/// <summary>
+/// One toolchain's row: its signature files, the manifest beside them, the file besides the manifest that names its workspace
+/// members where there is one, and the rules of the folders beside each.
+/// </summary>
 internal sealed record SignatureRow(
-    string Toolchain, IReadOnlyList<string> Signature, string? Manifest, bool Workspaces, IReadOnlyList<string> ReadsNothing, IReadOnlyList<FileRule> Rules);
+    string Toolchain, IReadOnlyList<string> Signature, string? Manifest, bool Workspaces, IReadOnlyList<string> ReadsNothing, IReadOnlyList<FileRule> Rules,
+    string? WorkspaceFile = null);
 
 /// <summary>A signature row reached by a tracked file: the file, its folder, and one of the row's rules made repository-relative.</summary>
 internal sealed record SignatureHit(SignatureRow Row, string File, string Folder, FileRule Rule);
@@ -54,7 +58,7 @@ internal sealed class FileSignatures
             var name = Json.Text(row, "toolchain") ?? "";
             rows.Add(new SignatureRow(
                 name, Json.Strings(row, "signature"), Json.Text(row, "manifest"), Json.Flag(row, "workspaces"), Json.Strings(row, "readsNothing"),
-                FileRuleFile.Rules(row, $"{name}.", problems)));
+                FileRuleFile.Rules(row, $"{name}.", problems), Json.Text(row, "workspaceFile")));
         }
 
         if (problems.Count > 0) throw new FormatException($"the file signatures do not read: {string.Join("; ", problems)}");

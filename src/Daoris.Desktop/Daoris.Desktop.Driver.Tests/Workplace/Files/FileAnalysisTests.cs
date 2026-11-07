@@ -103,6 +103,54 @@ public sealed class FileAnalysisTests : IDisposable
     }
 
     [Fact]
+    public async Task A_pnpm_workspace_s_members_are_named_in_the_root_dependency_from_pnpm_workspace_yaml_at_the_commit()
+    {
+        Write("pnpm-members", ".gitignore", "node_modules/\n");
+        Write("pnpm-members", "package.json", """{ "name": "root" }""");
+        Write("pnpm-members", "pnpm-lock.yaml", "lockfileVersion: '9.0'\n");
+        Write("pnpm-members", "pnpm-workspace.yaml", "# the members\npackages:\n  - 'packages/*'\n  - \"apps/web\"\n  - ./tools/cli/\n  - '!packages/legacy'\ncatalog:\n  left-pad: 1.3.0\n");
+        var commit = await Commit("pnpm-members");
+        File.WriteAllText(Path.Combine(_scratch, "pnpm-members", "pnpm-workspace.yaml"), "packages:\n  - 'working-file-only/*'\n");
+
+        var (reading, _) = await Read("pnpm-members", commit);
+
+        var dependency = Found(reading, "node_modules/");
+        Assert.Equal(["node_modules/", "packages/*/node_modules/", "apps/web/node_modules/", "tools/cli/node_modules/"], dependency.Paths);
+        Assert.DoesNotContain(dependency.Paths, path => path.Contains("legacy", StringComparison.Ordinal) || path.Contains("working-file-only", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_pnpm_workspace_below_the_top_and_one_whose_file_names_no_packages_name_members_beside_their_own_folder_only()
+    {
+        Write("pnpm-nested", ".gitignore", "node_modules/\n");
+        Write("pnpm-nested", "web/package.json", """{ "name": "web" }""");
+        Write("pnpm-nested", "web/pnpm-lock.yaml", "lockfileVersion: '9.0'\n");
+        Write("pnpm-nested", "web/pnpm-workspace.yaml", "packages: [ 'libs/*', \"ui\" ]\n");
+        Write("pnpm-nested", "plain/package.json", """{ "name": "plain" }""");
+        Write("pnpm-nested", "plain/pnpm-lock.yaml", "lockfileVersion: '9.0'\n");
+        Write("pnpm-nested", "plain/pnpm-workspace.yaml", "onlyBuiltDependencies:\n  - esbuild\n");
+        var commit = await Commit("pnpm-nested");
+
+        var (reading, _) = await Read("pnpm-nested", commit);
+
+        Assert.Equal(["web/node_modules/", "web/libs/*/node_modules/", "web/ui/node_modules/"], Found(reading, "web/node_modules/").Paths);
+        Assert.Equal(["plain/node_modules/"], Found(reading, "plain/node_modules/").Paths);
+    }
+
+    [Fact]
+    public async Task An_npm_workspace_given_as_an_object_names_its_members_without_a_leading_dot_slash_or_a_negation()
+    {
+        Write("npm-object", ".gitignore", "node_modules/\n");
+        Write("npm-object", "package.json", """{ "name": "root", "workspaces": { "packages": ["apps/*", "./tools/cli", "!apps/legacy"] } }""");
+        Write("npm-object", "package-lock.json", """{ "lockfileVersion": 3, "packages": { "": {} } }""");
+        var commit = await Commit("npm-object");
+
+        var (reading, _) = await Read("npm-object", commit);
+
+        Assert.Equal(["node_modules/", "apps/*/node_modules/", "tools/cli/node_modules/"], Found(reading, "node_modules/").Paths);
+    }
+
+    [Fact]
     public async Task A_dotnet_project_s_obj_is_an_intermediate_its_bin_an_output_and_a_tracked_entry_point_stays_git_s()
     {
         Write("dotnet", ".gitignore", "bin/\nobj/\n!src/Cli/bin/\nsrc/Cli/bin/Debug/\n");
