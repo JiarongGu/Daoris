@@ -4,12 +4,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// When the main window's splash comes down (SPLASHDATA1, D56; D22's SHEN3 note): once the page says its first screen
+/// When the main window's splash comes down: once the page says its first screen
 /// has its data, over the kit's <c>CLOSE_SPLASH</c> (<c>WindowCommandOptions.CloseSplash</c>, Shenora 0.21), or at
 /// <see cref="Bound"/>, whichever comes first.
 /// </summary>
 /// <remarks>
-/// <para>It came down as the page's browser was made, before the bundle had loaded, so the person saw the page's empty
+/// <para>Coming down as the page's browser is made, before the bundle has loaded, would show the page's empty
 /// frame fill in. The page knows when its screen has what it shows; the window does not, so the page says it.</para>
 ///
 /// <para><b>Never held forever.</b> A page that never says (a screen whose data never comes, a bundle without the call)
@@ -31,7 +31,7 @@ public sealed class SplashLift
     private readonly Stopwatch _up = Stopwatch.StartNew();
     private readonly StartStages? _stages;
 
-    /// <param name="stages">The start's timer (STARTFAST1), told the page's word and the lift; none by default.</param>
+    /// <param name="stages">The start's timer, told the page's word and the lift; none by default.</param>
     public SplashLift(StartStages? stages = null) => _stages = stages;
 
     /// <summary>The page's word: its first screen has its data. From any thread, any number of times.</summary>

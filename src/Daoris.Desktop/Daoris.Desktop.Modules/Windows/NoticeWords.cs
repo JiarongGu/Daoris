@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The words a main window's page handed the shell's notifier (NOTIFY2d, D196, the notification design §3.3): a headline and a body
+/// The words a main window's page handed the shell's notifier: a headline and a body
 /// per kind of notification and the acts of the <c>Person</c> routes, each by its catalogue key and in the page's language, their
 /// placeholders kept for the notifier to fill (<see cref="SessionBalloon"/>). The shell has no catalogue of its own, so the page hands
 /// these at its load and at each change of language over <c>SET_NOTICE_WORDS</c>, the way <c>SET_BADGE</c> takes its description.

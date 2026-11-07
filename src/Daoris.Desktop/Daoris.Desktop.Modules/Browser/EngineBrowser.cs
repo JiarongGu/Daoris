@@ -6,21 +6,21 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What starts Daoris's own browser on the engine it ships (D85, CHR3), and how it is told apart and
+/// What starts Daoris's own browser on the engine it ships, and how it is told apart and
 /// read, kept out of both processes so it is tested like everything else here: the shell writes these
 /// arguments, and `daoris-browser` parses them with the same code.
 /// </summary>
 /// <remarks>
 /// <para><b>A process of its own, by measurement.</b> The engine's debug port reaches every page in
 /// its process, the shell's page and its bridge included
-/// (`docs/2026-09-28-chromium-embedding-evidence.md` §1). So the browser is another process, and the
+/// (`docs/2026-09-28-chromium-embedding-evidence.md`). So the browser is another process, and the
 /// shell's process has no port.</para>
 ///
 /// <para><b>The engine's own window.</b> A tab an agent opens over CDP joins a Chromium window of the
-/// engine's own (§2 there), so the browser IS those windows, with their tabs, history and devtools,
+/// engine's own, so the browser IS those windows, with their tabs, history and devtools,
 /// rather than Daoris's chrome around a control.</para>
 ///
-/// <para><b>The application's own executable</b> (CHR8, D99). `daoris-browser` is no longer an
+/// <para><b>The application's own executable</b>. `daoris-browser` is no longer an
 /// executable of its own with a CEF of its own: it is `Daoris.Desktop.exe` started with
 /// <see cref="Argument"/> first, whose <c>Main</c> hands the process to the kit's
 /// <c>ChromiumBrowserProcess.Run</c>. So an install carries one Chromium.</para>
@@ -28,8 +28,8 @@ namespace Daoris.Desktop;
 public static class EngineBrowser
 {
     /// <summary>
-    /// The argument that makes the application's executable the browser, first on its command line
-    /// (CHR8). A twin of `tools/processes.mjs`'s <c>BROWSER_ARGUMENT</c>, which tells the browser from
+    /// The argument that makes the application's executable the browser, first on its command line.
+    /// A twin of `tools/processes.mjs`'s <c>BROWSER_ARGUMENT</c>, which tells the browser from
     /// the application and the engine's processes; `desktop-tool.test.ts` reads both.
     /// </summary>
     public const string Argument = "--daoris-browser";
@@ -43,7 +43,7 @@ public static class EngineBrowser
         arguments.Count > 0 && string.Equals(arguments[0], Argument, StringComparison.Ordinal);
 
     /// <summary>
-    /// Its profile, under the home (D63). Not the WebView2 window's `browser/profile`: a different
+    /// Its profile, under the home. Not the WebView2 window's `browser/profile`: a different
     /// engine's files, and the person signs in here once more.
     /// </summary>
     public static string ProfileFolder(string home) => DaorisHome.Entry(home, HomeEntry.BrowserEngine);
@@ -57,7 +57,7 @@ public static class EngineBrowser
     public static string ProfileDirectory(string profileFolder) => Path.Combine(profileFolder, "Default");
 
     /// <summary>
-    /// The home a profile folder is under — <see cref="ProfileFolder"/> undone, at its new place or its old (HOMELAYOUT3) — where
+    /// The home a profile folder is under — <see cref="ProfileFolder"/> undone, at its new place or its old — where
     /// the browser finds Daoris's favorites and its settings at each start.
     /// </summary>
     public static string HomeOf(string profileFolder) => DaorisHome.HomeOf(profileFolder, HomeEntry.BrowserEngine);
@@ -75,10 +75,10 @@ public static class EngineBrowser
     /// </summary>
     public const string LogName = "cef.log";
 
-    /// <summary>Where the machine log says a failure making the browser's first window happened (LOG2b).</summary>
+    /// <summary>Where the machine log says a failure making the browser's first window happened.</summary>
     public const string FirstWindowPlace = "the browser's first window";
 
-    /// <summary>Where it says a failure watching for the shell that started the browser happened (LOG2b).</summary>
+    /// <summary>Where it says a failure watching for the shell that started the browser happened.</summary>
     public const string ShellWatchPlace = "the browser's watch on the shell";
 
     /// <summary>
@@ -99,12 +99,12 @@ public static class EngineBrowser
 }
 
 /// <summary>What `daoris-browser` is started with. <see cref="Parse"/> and <see cref="ToArguments"/> are one contract.</summary>
-/// <param name="Profile">The engine's root folder, under the home. Required: with none it would pick one under the user profile (D63).</param>
+/// <param name="Profile">The engine's root folder, under the home. Required: with none it would pick one under the user profile.</param>
 /// <param name="Port">Its loopback debug port, which is the browser's endpoint.</param>
 /// <param name="Parent">The shell's process: the browser closes when it does, as the shell's window did.</param>
 /// <param name="Background">Open its first window without taking the person's focus, as a session asks.</param>
 /// <remarks>
-/// <b>The same four, spelled as Chromium reads a switch</b> (CHR8, D99): the browser is the
+/// <b>The same four, spelled as Chromium reads a switch</b>: the browser is the
 /// application's executable now, whose command line Chromium reads too, and it takes a switch's value
 /// only after <c>=</c>. So each is one argument, <c>--daoris-&lt;name&gt;=&lt;value&gt;</c>, behind
 /// <see cref="EngineBrowser.Argument"/>; a value given as the next word would reach Chromium as a loose
@@ -229,13 +229,13 @@ public sealed class EngineCdp(int port) : IDisposable
     }
 
     /// <summary>
-    /// The browser's first window (CHR3): made over this port once it answers, the way an agent's windows
+    /// The browser's first window: made over this port once it answers, the way an agent's windows
     /// are, in the background when a session asked. Throws what went wrong, a port that never answered
     /// within <paramref name="portLimit"/> as a <see cref="TimeoutException"/>; cancelled only when
     /// <paramref name="ct"/> is, because the shell or the engine went before there was a window to make.
     /// </summary>
     /// <remarks>
-    /// In the modules rather than in `daoris-browser`, so it is tested (LOG2b): the browser starts it and
+    /// In the modules rather than in `daoris-browser`, so it is tested: the browser starts it and
     /// does not await it, and hands it to the log to observe.
     /// </remarks>
     public async Task FirstWindowAsync(bool background, TimeSpan portLimit, CancellationToken ct = default)
@@ -274,7 +274,7 @@ public sealed class EngineCdp(int port) : IDisposable
         BrowserCallAsync("Target.createTarget", new { url, newWindow = true, background }, ct);
 
     /// <summary>
-    /// A new tab on <paramref name="url"/> in the window in front, as an agent's tab is made (BRW7), and
+    /// A new tab on <paramref name="url"/> in the window in front, as an agent's tab is made, and
     /// its target id, which <see cref="ActivateAsync"/> brings forward.
     /// </summary>
     public async Task<string> NewTabAsync(string url, CancellationToken ct = default)

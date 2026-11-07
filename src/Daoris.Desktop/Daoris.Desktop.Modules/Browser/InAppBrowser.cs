@@ -4,13 +4,13 @@ using System.Net.Sockets;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What Daoris's own browser is reached by, whichever engine shows it (D78): the endpoint and the port.
+/// What Daoris's own browser is reached by, whichever engine shows it: the endpoint and the port.
 /// Where it starts and what it runs on is
-/// <see cref="EngineBrowser"/>'s (D85, CHR3).
+/// <see cref="EngineBrowser"/>'s.
 /// </summary>
 /// <remarks>
 /// <para><b>Loopback, and said.</b> Any process on this machine can drive the browser while it
-/// runs, as with any browser started with a debugging port. The design says so (D78 §3.4).</para>
+/// runs, as with any browser started with a debugging port. The design says so.</para>
 /// </remarks>
 public static class InAppBrowser
 {

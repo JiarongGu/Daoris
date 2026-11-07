@@ -1,7 +1,7 @@
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Which window owns a picker (MAINWINDOWS2c, D171 point 2): the one whose page asked. The first main window owned them all,
+/// Which window owns a picker: the one whose page asked. The first main window owned them all,
 /// and is hidden while put away, so a dialog asked from another main window opened behind it or beside nobody.
 /// </summary>
 /// <remarks>

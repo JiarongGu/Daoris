@@ -1,12 +1,12 @@
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What an install's windows tell the Windows taskbar about themselves (TASKBAR1, D108): one application
+/// What an install's windows tell the Windows taskbar about themselves: one application
 /// id, and the command, name and icon a pin made from a running window is built from.
 /// </summary>
 /// <remarks>
 /// <para><b>Why a window has to say it.</b> The window belongs to <c>app/Daoris.Desktop.exe</c>, while the
-/// one thing a person runs is <c>Daoris.exe</c> at the install's root (D93), which starts it and exits.
+/// one thing a person runs is <c>Daoris.exe</c> at the install's root, which starts it and exits.
 /// Windows groups a taskbar button by its process's executable unless the window names an id, so a
 /// pinned launcher sat beside a second button for the running window, and pinning that window pinned
 /// the application in <c>app/</c>, which a republish replaces. A window that names an id is grouped by
@@ -34,11 +34,11 @@ public sealed record TaskbarIdentity(string AppId, string RelaunchCommand, strin
     /// <summary>
     /// The application id, in Windows' <c>Company.Product</c> form (no more than 128 characters, no
     /// spaces). No version in it, so a pin made before an upgrade is still the button after it, and it
-    /// never changes, because every pin a person has made carries it. The same for every install (D108).
+    /// never changes, because every pin a person has made carries it. The same for every install.
     /// </summary>
     public const string Id = "Daoris.Desktop";
 
-    /// <summary>The launcher at an install's root (D93), which a pin starts.</summary>
+    /// <summary>The launcher at an install's root, which a pin starts.</summary>
     public const string Launcher = "Daoris.exe";
 
     /// <summary>The name a pin made from the window wears: the product's, in every language.</summary>

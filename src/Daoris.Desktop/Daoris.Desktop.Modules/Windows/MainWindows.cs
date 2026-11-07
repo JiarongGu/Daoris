@@ -1,13 +1,13 @@
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The application ends with its last main window, not its first (MAINWINDOWS2, D171 point 2).
+/// The application ends with its last main window, not its first.
 /// </summary>
 /// <remarks>
 /// <para><b>Why the first is put away rather than closed.</b> The first main window is the kit's: its message loop runs until
 /// that form closes (<c>WindowsHostOptions.MainForm</c>), and the application's services are resolved as that one window (the
 /// folder and file pickers' owner, the tray, the update's close). A person's close of it while another
-/// main window (<c>main:&lt;n&gt;</c>, ONEINSTANCE1) is open hides it instead, its page and its services kept, as the kit's own
+/// main window (<c>main:&lt;n&gt;</c>) is open hides it instead, its page and its services kept, as the kit's own
 /// close-to-tray hides a window and keeps the loop. The last of the others closing then ends the application, the first
 /// closed for good. A utility window (the monitor, a detached session) keeps nothing alive.</para>
 ///
@@ -42,7 +42,7 @@ public sealed class MainWindows(Action? end = null, Daoris.Driver.MachineLog? lo
 
     /// <summary>
     /// Whether <paramref name="name"/> is a main window: the first, or another a later launch opened (<c>main:&lt;n&gt;</c>). A utility
-    /// window (the monitor, a detached session) is not. Each main window wears its own workspace's count (NOTIFY2c).
+    /// window (the monitor, a detached session) is not. Each main window wears its own workspace's count.
     /// </summary>
     public static bool IsMain(string name) => name == First || SecondaryWindow.IsMain(name);
 

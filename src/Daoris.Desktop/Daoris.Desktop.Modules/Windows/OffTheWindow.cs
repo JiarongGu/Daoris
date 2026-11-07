@@ -3,7 +3,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// A Daoris route runs on the window's thread until its first wait, and never after it (UIFREEZE1): the dispatcher's
+/// A Daoris route runs on the window's thread until its first wait, and never after it: the dispatcher's
 /// middleware (the kit's <c>UseMessageDispatcher</c>, after <see cref="UiStallWatch"/>) that hands a route no
 /// synchronization context, so each of its awaits goes on on the thread pool.
 /// </summary>

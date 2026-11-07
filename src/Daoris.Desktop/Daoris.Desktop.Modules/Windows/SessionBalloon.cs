@@ -40,7 +40,7 @@ public sealed record BalloonFacts(string? Kind, string? Headline = null, string?
 
     /// <summary>
     /// How many presses from a terminal a folded balloon names (<see cref="BalloonFold.FoldedKind"/>), or a restart's
-    /// (<see cref="PipeConfirmations.RestoredKind"/>, CONFIRMWAIT1a-ii).
+    /// (<see cref="PipeConfirmations.RestoredKind"/>).
     /// </summary>
     public int? Count { get; init; }
 }
@@ -49,16 +49,16 @@ public sealed record BalloonFacts(string? Kind, string? Headline = null, string?
 public sealed record BalloonWords(string Title, string Body, BalloonIcon Icon);
 
 /// <summary>
-/// What a session's attention balloon says and shows by the driver's kind (NOTIFY1d), worded in the window's language from the words
-/// its page handed the shell (NOTIFY2d, D196, the notification design §3.3, §9): the choice, here where it is tested, while the
+/// What a session's attention balloon says and shows by the driver's kind, worded in the window's language from the words
+/// its page handed the shell: the choice, here where it is tested, while the
 /// application's notifier shows the balloon.
 /// </summary>
 /// <remarks>
 /// <para><b>Each kind from its own words.</b> A headline and a body per kind, by the catalogue's keys under <see cref="Prefix"/>, filled
 /// with the event's facts; a terminal's press says its act by its route's own words (<see cref="PipeWording.Key"/>) and never the
-/// route's constant or a value it carries (CONFIRMSEEN1, NOTIFY2a). What a session wrote, a park's question, an ending's conclusion, a
+/// route's constant or a value it carries. What a session wrote, a park's question, an ending's conclusion, a
 /// held call's title, is its body as written: content is never translated. An ending is said by its state's own words, and a state no
-/// words name is an ending, so no state's code is ever in a sentence (§6).</para>
+/// words name is an ending, so no state's code is ever in a sentence.</para>
 ///
 /// <para><b>With no words handed, English</b>, the English catalogue's own words (<see cref="English"/>, held to them by a test), so a
 /// balloon raised before any page has told its words, or for a key an older page did not hand, still says something whole.</para>
@@ -104,7 +104,7 @@ public static partial class SessionBalloon
         [Prefix + "holding.title"] = "{{repository}}: a session holds a tool call for you",
         [Prefix + "holding.help"] = "Ask Daoris holds a tool call for you",
         [Prefix + "holding.body"] = "Open Daoris to answer it before it is refused by itself.",
-        // The tray menu's one item (PAGELOOP1 c, D217): said in the window's language like the balloons, English before a page hands words.
+        // The tray menu's one item: said in the window's language like the balloons, English before a page hands words.
         [Prefix + "reloadPage"] = "Reload the page of every window",
     };
 
@@ -142,24 +142,24 @@ public static partial class SessionBalloon
             "Ended" => (Fill(Word(Ending(facts.State)), named), Written(Prefix + "ended.body")),
             // The detail of a wait for accounts is Daoris's own English sentence, not a session's words: its body is the window's.
             "Waiting" => (Fill(Word(Prefix + "waiting.title"), named), Word(Prefix + "waiting.body")),
-            // Ask Daoris's room is no repository the person knows by name (NOTIFY1a): its answer is said by the room's.
+            // Ask Daoris's room is no repository the person knows by name: its answer is said by the room's.
             "Answered" => (repository == HelpRoom.Repository ? Word(Prefix + "answered.help") : Fill(Word(Prefix + "answered.title"), named),
                 Word(Prefix + "answered.body")),
             HeldCallAnnouncements.AttentionKind => (
                 repository == HelpRoom.Repository ? Word(Prefix + "holding.help") : Fill(Word(Prefix + "holding.title"), named),
                 Written(Prefix + "holding.body")),
-            // A terminal's press (CONFIRMSEEN1): its act by its route's words, never the route; the event's English is not said.
+            // A terminal's press: its act by its route's words, never the route; the event's English is not said.
             PipeConfirmations.AttentionKind => (Word(Prefix + "confirming.title"), Act(facts, handed) is { } act
                 ? Fill(Word(Prefix + "confirming.body"), new Dictionary<string, string>(StringComparer.Ordinal) { ["act"] = act })
                 : Word(Prefix + "confirming.plain")),
-            // CONFIRMWAIT1a-i (§8.2): the asks of one minute after its first, folded into one balloon naming how many came in it.
+            // The asks of one minute after its first, folded into one balloon naming how many came in it.
             BalloonFold.FoldedKind => (Word(Prefix + "confirmingMany.title"), Fill(
                 Word(Prefix + (facts.Count == 1 ? "confirmingMany.body_one" : "confirmingMany.body_other")),
                 new Dictionary<string, string>(StringComparer.Ordinal)
                 {
                     ["count"] = facts.Count?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "",
                 })),
-            // CONFIRMWAIT1a-ii (§7.2 step 7): a restart's one balloon for every press from a terminal waiting again, naming how many.
+            // A restart's one balloon for every press from a terminal waiting again, naming how many.
             PipeConfirmations.RestoredKind => (Word(Prefix + "restored.title"), Fill(
                 Word(Prefix + (facts.Count == 1 ? "restored.body_one" : "restored.body_other")),
                 new Dictionary<string, string>(StringComparer.Ordinal)
@@ -173,7 +173,7 @@ public static partial class SessionBalloon
     }
 
     /// <summary>
-    /// Warn for a park, for a terminal's press waiting for the window (CONFIRMSEEN1) and for a held tool call (NOTIFY2d): each is
+    /// Warn for a park, for a terminal's press waiting for the window and for a held tool call: each is
     /// WAITING on somebody. An ending, an answer or a wait for an account is news.
     /// </summary>
     public static BalloonIcon Icon(string? kind) =>
