@@ -1,5 +1,5 @@
 /**
- * D161: a branch-worker's edit through the shell is refused before it runs, by the same pattern that counts one.
+ * A branch-worker's edit through the shell is refused before it runs, by the same pattern that counts one.
  *
  *   node --test tools/shell-edit-guard.test.mjs
  *
@@ -52,8 +52,8 @@ test('a call it cannot read passes, so a broken input never blocks the work', ()
 /**
  * The guard's own exit is not the hook's: the harness reads the exit of the shell the definition names. Windows
  * PowerShell's `-Command` exits 1 when its last native command fails, whatever that command's code, and the harness
- * reads 1 as a non-blocking error: from SUBLOAD1c's first workers to WIRE1, the guard wrote its refusal and the command
- * ran (D161's guard note). So the hook is run here as the definition writes it, through its shell.
+ * reads 1 as a non-blocking error: the guard writes its refusal and the command runs. So the hook is run here as the
+ * definition writes it, through its shell.
  */
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const hook = (() => {

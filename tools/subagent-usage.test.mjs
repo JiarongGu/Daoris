@@ -1,5 +1,5 @@
 /**
- * D160: what a dispatched subagent's context cost, read from the harness's own transcripts.
+ * What a dispatched subagent's context cost, read from the harness's own transcripts.
  *
  *   node --test tools/subagent-usage.test.mjs
  *

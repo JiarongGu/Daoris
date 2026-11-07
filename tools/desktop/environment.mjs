@@ -28,7 +28,7 @@ export function scratchPlan(root = scratchDaoris) {
  * opted in.
  */
 export const REDIRECTED = [
-  // The home itself (D63): every machine-local default derives from it, so a scratch run points it
+  // The home itself: every machine-local default derives from it, so a scratch run points it
   // at scratch before anything else — a new file under the home is then scratch by construction.
   'DAORIS_HOME',
   'DAORIS_KNOWLEDGE_DB',
@@ -41,22 +41,22 @@ export const REDIRECTED = [
  * Variables a scratch run must UNSET, not override.
  *
  * The remote trio is an environment PAIR that replaces the whole machine's remotes map — that is what
- * makes the rehearsals hermetic (WSP3), and inherited by a dev run it does the opposite: the scratch
+ * makes the rehearsals hermetic, and inherited by a dev run it does the opposite: the scratch
  * shell's sync loop would feed a real deployment from a scratch store. A key is the same shape of
  * mistake one layer down. Redirecting them is not enough, because the file only governs when the
  * environment is silent.
  *
- * The rules home (PERM2, D74) is where a session's proposal to change the rules is written. The driver
+ * The rules home is where a session's proposal to change the rules is written. The driver
  * sets it on every connector it hands over, to its own home. A connector it did not hand, such as a
  * repository's own `.mcp.json` in a pipe-door session, inherits the environment instead, and an inherited
  * one would file a scratch session's proposal among the real machine's. Unset, it falls back to the
  * redirected `DAORIS_HOME`.
  *
- * The instance (RPC1b, the terminal RPC design §7.4) names the running Daoris's pipe that a verb sends its
+ * The instance names the running Daoris's pipe that a verb sends its
  * press to. Inherited, a `daoris` run from the scratch shell's terminal would press the real
  * instance's routes; unset, a workspace build reads no address file and acts alone on the scratch home.
  *
- * The machine's heavy-run admission (HEAVYQUEUE1) is read from two more. Its capacity override, inherited,
+ * The machine's heavy-run admission is read from two more. Its capacity override, inherited,
  * would size the scratch home's admission by the real machine's setting; the held place a driver hands a
  * heavy run's children, inherited, would let the scratch desktop's runs count themselves inside a place
  * the real machine's admission holds, and wait for nothing.
@@ -87,7 +87,7 @@ export const CLEARED = [
  */
 /* The script `click` sends. A script's element.click() moves no focus, while a pointer's click in
  * Chromium focuses the element or its nearest focusable ancestor first — so a focus judged after a
- * bare click is not a person's (DESKCLICK1; D161's corrected §2 note). Focus first, click, then say
+ * bare click is not a person's. Focus first, click, then say
  * where the focus is. `eval` stays raw: it runs any script, and a click inside it moves no focus. */
 export function clickScript(selector) {
   return `(() => {
@@ -111,7 +111,7 @@ export function clickScript(selector) {
 export function debugEnvironment(cdpPort) {
   if (!cdpPort) return {};
   return {
-    // Both halves are needed. The Chromium the shell ships (D92) opens the DevTools port the shell
+    // Both halves are needed. The Chromium the shell ships opens the DevTools port the shell
     // hands it only in development, which is how a shipped window has nothing to attach to. So dev
     // mode is not a preference here: it is the switch that lets the port through.
     DOTNET_ENVIRONMENT: 'Development',
@@ -143,11 +143,11 @@ export function scratchEnvironment({ home, family, serviceUrl, httpHost, mcpHost
     DAORIS_REMOTE_CONFIG: homeEntry(home, 'remotes'),
     DAORIS_HARNESS_CONFIG: homeEntry(home, 'harnesses'),
     DAORIS_HTTP_HOST: httpHost,
-    // The MCP host a driven session is handed over the protocol door (ACP4). Pinned for the same
+    // The MCP host a driven session is handed over the protocol door. Pinned for the same
     // reason the HTTP one is: the locator prefers an INSTALLED binary, so a scratch run would hand
     // the session the real machine every time this one is behind it.
     DAORIS_MCP_HOST: mcpHost,
-    // The driver's program a `daoris …` typed in this run's terminal is handed to (PUSH1f2a, D194 point 1): this checkout's
+    // The driver's program a `daoris …` typed in this run's terminal is handed to: this checkout's
     // build, never one the parent shell named; with none built, none, and the CLI says where the program is.
     DAORIS_DRIVER_PROGRAM: driverProgram ?? '',
     // Nothing in this repository reads these: the debug port is the runtime's and the loader's, which

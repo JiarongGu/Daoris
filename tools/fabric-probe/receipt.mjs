@@ -1,16 +1,16 @@
 /**
- * The fabric probe's receipt summariser (FABRIC-PROBE1; the C0 audit §2).
+ * The fabric probe's receipt summariser.
  *
  *   node tools/fabric-probe/receipt.mjs <run folder>
  *
  * Reads what programs wrote in one run folder (`launch.mjs`'s layout): the stand-in server's log, the hook log, the
  * harness's own event stream and `run.json`. Never the models' reports. It answers the audit's questions from them:
- * how many server processes and `initialize`s, which session each was started as, every call with the lineage its
+ * how many server processes and `initialize`s, which session each is started as, every call with the lineage its
  * `_meta` carried, each Claude call joined to its agent through the hook's `tool_use_id`, the subagents the stream and the
  * hooks announced, and what outlived a kill.
  *
  * 🔴 A receipt names ids, never a path: a `_meta` value that names a place on a disk (Codex's turn metadata carries the
- * workspace's) is counted as dropped, and not printed, so a receipt can be pasted into a decision (D46, D47).
+ * workspace's) is counted as dropped, and not printed, so a receipt can be pasted into a decision.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';

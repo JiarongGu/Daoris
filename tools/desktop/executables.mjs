@@ -22,7 +22,7 @@ export function assemblyExe(projectDir, { flavours = ['Debug', 'Release'] } = {}
     .exec(readFileSync(join(projectDir, project), 'utf8'))?.[1];
   if (!name) return null;
 
-  // On the Chromium the shell ships (D92), the exe is CEF's launcher, named from the assembly less
+  // On the Chromium the shell ships, the exe is CEF's launcher, named from the assembly less
   // `.App`, and the build lands in a runtime identifier's folder. 🔴 The launcher is copied with CEF's
   // own file date, older than any build of ours, so it counts only with the assembly it starts beside
   // it, and is dated by that assembly: dated by itself, a stale build in the folder above would win.
@@ -58,12 +58,10 @@ export function assemblyExe(projectDir, { flavours = ['Debug', 'Release'] } = {}
  * The launcher inside a published install, or null when that folder is not one.
  *
  * @remarks
- * 🔴 **The instrument the first deployment recorded as missing** (case study 2d): `shot`, `eval`
- * and `click` find a window by THIS checkout's executable path, so a deployed shell — a different
- * path, and no debug port — could only be looked at by a person. That was recorded rather than
- * fixed, because *"the honest options are a deliberate opt-in flag or nothing, and that is a
- * decision, not a patch"*. The owner made the decision on 2026-09-22: **develop against the
- * install**, because the desktop is where the capability is.
+ * 🔴 **The way to look at a deployed shell.** `shot`, `eval` and `click` find a window by THIS
+ * checkout's executable path, so a deployed shell — a different path, and no debug port — can
+ * only be looked at by a person, unless a deliberate opt-in flag addresses the install:
+ * **develop against the install**, because the desktop is where the capability is.
  *
  * **The launcher is at the ROOT, never guessed one level down.** An install shows one thing to
  * double-click and hides the rest under `app/` — so a folder with no launcher at its root is not an
@@ -73,8 +71,8 @@ export function assemblyExe(projectDir, { flavours = ['Debug', 'Release'] } = {}
  */
 export function installedExe(directory) {
   if (!directory) return null;
-  // The application the launcher starts (D93): what holds the window, the debug port and the files,
-  // so what every instrument addresses. An install published before D93 has the single-file shell at
+  // The application the launcher starts: what holds the window, the debug port and the files,
+  // so what every instrument addresses. An older install has the single-file shell at
   // its root instead, until its next publish replaces it.
   if (existsSync(join(directory, LAUNCHER))) {
     const shell = join(directory, ...SHELL_HOME, SHELL_EXE);
@@ -103,10 +101,10 @@ export function prune(entries, { keep = 25, maxBytes = 150 * 1024 * 1024 } = {})
 }
 
 /**
- * Wait for the debug port a run asked for, and say how the wait ended (LOOK4).
+ * Wait for the debug port a run asked for, and say how the wait ended.
  *
  * 🔴 The engine opens its port only in development, and when it cannot bind the port it runs on without
- * one. So a started window is no evidence of a port: `run` used to print the port it asked for and leave
+ * one. So a started window is no evidence of a port: printing the port asked for would leave
  * `shot` to find nothing listening there. The application ending before the port answered is said at
  * once, since nothing is left to wait for.
  *
@@ -130,7 +128,7 @@ export async function awaitDebugPort({
 
 /**
  * Where the engine's own log is for a run: CEF keeps it in the kit's `chromium` data area. For an install that is the
- * window's memory (D172 point 4, HOMELAYOUT4): the install's home's `window` entry, which `Program.cs` hands the kit as its
+ * window's memory: the install's home's `window` entry, which `Program.cs` hands the kit as its
  * data area: `profiles/window/` once moved, the install's `data/` while an older build's engine profile is still there.
  * A scratch run's is the same entry of its one root (`scratchPlan`), handed the kit the same way. Otherwise, for `--real`,
  * the kit's own `data/` under the built executable's folder.
@@ -141,7 +139,7 @@ export function engineLogOf({ install, real, exe }) {
   return join(dirname(exe), 'data', 'chromium', 'cef.log');
 }
 
-/** What `run` says when the debug port it asked for never answered (LOOK4), from `awaitDebugPort`'s outcome. */
+/** What `run` says when the debug port it asked for never answered, from `awaitDebugPort`'s outcome. */
 export function closedPortReport({ port, waitedMs, gone, pid, engineLog, home }) {
   if (gone) {
     const how = Number.isInteger(gone.code) ? `exited ${gone.code}` : `ended (${gone.signal ?? 'no exit code'})`;

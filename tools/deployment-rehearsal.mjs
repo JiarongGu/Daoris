@@ -2,41 +2,39 @@
 /**
  * Deployment rehearsal — publish the desktop shell to a folder and drive THAT, not this checkout.
  *
- * WHY THIS EXISTS (DEPLOY2). `rehearse` installs and drives the CLI *package*; `rehearse:family`
+ * WHY THIS EXISTS. `rehearse` installs and drives the CLI *package*; `rehearse:family`
  * drives the router, the driver and the remote — but both run inside the workspace, and the
- * workspace is what hid the two defects the first real deployment found
+ * workspace hides defects only an installed artefact shows
  * (`docs/2026-09-22-first-deployment-case-study.md`):
  *
- *   2a  `ServiceHostLocator` built only the FLAT candidate for an installed host, while the
+ *   2a  `ServiceHostLocator` builds only the FLAT candidate for an installed host, while the
  *       installer gives the HTTP host a directory of its own. Masked everywhere, because the next
- *       candidate is the workspace build and every machine it had run on had one. Fatal on the one
- *       machine it had never run on.
- *   4c  A transcript was written through the CONSOLE's codepage. `daoris` sets its own
- *       console to UTF-8 at startup, so the family rehearsal decoded correctly and papered it over;
- *       the SHELL has no console, and a session record lost every non-ASCII character it held.
+ *       candidate is the workspace build and every machine it runs on has one. Fatal on the one
+ *       machine it has never run on.
+ *   4c  A transcript written through the CONSOLE's codepage. `daoris` sets its own
+ *       console to UTF-8 at startup, so the family rehearsal decodes correctly and papers it over;
+ *       the SHELL has no console, and a session record loses every non-ASCII character it holds.
  *
- * Neither is exotic and neither needed a model, an account or a credential. What was missing was a
- * gate that installs and runs the ARTEFACT — which is what `rehearse` does for the CLI package and
- * nothing did for the desktop.
+ * Neither is exotic and neither needs a model, an account or a credential. What is needed is a
+ * gate that installs and runs the ARTEFACT — which is what `rehearse` does for the CLI package.
  *
- * And a third, held since DEPLOY5 (FIX-LOG, 2026-09-25): a chat open when the shell closed came back
- * ended by the next start's SWEEP, because the shell's own shutdown disposed the client the chat's
- * record concluded through before it stopped the chat. The driver tests at the runner passed; only
- * the window saw it. So phase 6 closes the shell with a conversation open, and phase 7 reads the note
- * the close wrote.
+ * A third: a chat open when the shell closes comes back ended by the next start's SWEEP, if the
+ * shell's own shutdown disposes the client the chat's record concludes through before it stops the
+ * chat. The driver tests at the runner pass; only the window sees it. So phase 6 closes the shell
+ * with a conversation open, and phase 7 reads the note the close wrote.
  *
- * And a fourth, held since UPDATE1 (D139): an install updated by hand, four times in a day, because a
- * republish waited on running sessions. Phase 9 stages a build beside the RUNNING install, lets a
+ * A fourth: a republish that waits on running sessions leaves an install to be updated by hand.
+ * Phase 9 stages a build beside the RUNNING install, lets a
  * working session hold the drain open while a newer quest waits, then watches the application close,
  * the launcher swap `app/` and the new build confirm; then stages one that cannot come up and watches
  * it rolled back, and one that fails its check refused with nothing closed. Only the artefact can
  * show it: the swap is the launcher's, run against the install's own folder.
  *
- * And a fifth, held since CONNECTOR1: an install carried its HTTP host and no knowledge connector, so
- * every session on it was handed the home's `bin/` copy, which no republish refreshed, and an old one
- * rebuilt the shared store at its own older schema. Phase 1 finds the connector under `app/`, phase 4
+ * A fifth: an install that carries its HTTP host and no knowledge connector hands every
+ * session the home's `bin/` copy, which no republish refreshes, and an old one
+ * rebuilds the shared store at its own older schema. Phase 1 finds the connector under `app/`, phase 4
  * plants a `bin/` decoy beside it, and phase 7 reads off the conversation's transcript which one the
- * agent was handed: the install's own, by its path.
+ * agent is handed: the install's own, by its path.
  *
  *   npm run rehearse:deploy
  *
@@ -44,21 +42,15 @@
  *
  * WHAT THIS GATE CANNOT CONTROL, stated rather than implied:
  *
- *  - **The machine's own installed host used to be the decoy, and now the gate plants one.** Before
- *    D63 a machine that had run `publish:service --install` offered the deployed shell a second host
- *    under the profile, and phase 4 asserted the host the shell started was the one UNDER THE
- *    INSTALL — the check that failed on this machine and could not fail on a clean one. The home is
- *    scratch now (`DAORIS_HOME` is redirected like every other file), so nothing of the machine's
- *    reaches the shell; the gate puts an installed-looking host under the scratch home's `bin/`
- *    itself, so the order is asserted on every machine. 🔴 The first version of this header said the
- *    opposite — that the installed home outranked the install deliberately — and this gate passed
- *    32/32 for as long as it was true, naming the machine's host in its own transcript. The second
- *    deployment is what read the line.
+ *  - **The gate plants the decoy host itself, so the machine's own installed host cannot be it.** The
+ *    home is scratch (`DAORIS_HOME` is redirected like every other file), so nothing of the
+ *    machine's reaches the shell; the gate puts an installed-looking host under the scratch home's
+ *    `bin/` itself, so the order (the host UNDER THE INSTALL wins) is asserted on every machine.
  *  - **A machine whose ANSI codepage is already UTF-8 cannot fail phase 5.** The mangling in 4c is a
  *    round trip through a single-byte page; with ACP 65001 there is no round trip to make. The check
  *    is still the right one — it goes red on every machine that *can* express the defect, which is
  *    every machine Daoris has so far been deployed on.
- *  - **This start has a debug port, and a person's does not** (DEPLOY5). A chat starts over the
+ *  - **This start has a debug port, and a person's does not**. A chat starts over the
  *    bridge, which only the page holds, so the gate reaches the page the way `run --install` does:
  *    `debugEnvironment`, through the environment, on a port picked for this run. The port needs the
  *    kit's development switch, and the window and everything it starts run with it. Nothing of
@@ -75,13 +67,13 @@ import { dirname, join, resolve, sep, win32 } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { copyTree, isMain } from './fsx.mjs';
-// Every home place is asked of D172's table (HOMELAYOUT2b), never joined here.
+// Every home place is asked of the home's table, never joined here.
 import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 import {
   ACP_STUB_AGENT, OWN_BUILD_SERVERS, STUB_COMMIT, makeChecker, openTranscript, ownBuild, ownBuildRoot, ownBuilt, portRefusal, rehearsalRun,
   takePorts,
 } from './rehearsal-kit.mjs';
-// The install's layout, from the script that makes it (REV3 CLEAN1) — never a second spelling of it.
+// The install's layout, from the script that makes it — never a second spelling of it.
 import {
   BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, DRIVER_EXE, DRIVER_HOME, CONNECTOR_EXE, CONNECTOR_HOME, GIT_DOORS, HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES,
   LAUNCHER, MARKER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RETIRED_BROWSER_EXE, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES,
@@ -125,8 +117,8 @@ export function insideWorkspace(path, repoRoot) {
 }
 
 /**
- * The knowledge connector a protocol-door session was handed, as the agent said it on `session/new` (CONNECTOR1): the
- * command the rehearsal kit's stub says for the `daoris-knowledge` server, or null when it said none. Read from the
+ * The knowledge connector a protocol-door session is handed, as the agent says it on `session/new`: the
+ * command the rehearsal kit's stub says for the `daoris-knowledge` server, or null when it says none. Read from the
  * agent's side because that is the session's side: what the driver meant to hand over is not what arrived.
  */
 export function offeredConnector(transcript) {
@@ -135,9 +127,9 @@ export function offeredConnector(transcript) {
 }
 
 /**
- * Whether `offered` is the connector published with the install, under its `app/daoris-knowledge/` (CONNECTOR1):
+ * Whether `offered` is the connector published with the install, under its `app/daoris-knowledge/`:
  * resolved, and compared without case as Windows compares paths. The home's `bin/` copy never is, which is what every
- * session on an install was handed while the install carried no connector of its own.
+ * session on an install is handed when the install carries no connector of its own.
  */
 export function isInstallsConnector(offered, install) {
   if (!offered) return false;
@@ -145,7 +137,7 @@ export function isInstallsConnector(offered, install) {
 }
 
 /**
- * What is wrong with the install's offers (PLUG9 d, D103), as sentences: an offered plugin the install does
+ * What is wrong with the install's offers, as sentences: an offered plugin the install does
  * not carry in `app/plugin-offers/`, and 🔴 one installed under a home, which a publish must never do — an
  * offer is installed only by a person's press. Empty when the offers are as the publish claims.
  */
@@ -161,7 +153,7 @@ export function offerProblems(install, homes) {
 }
 
 /**
- * What is wrong with the install's doctrine tool (WSSETUP2, D124 §1.2), as sentences: a launcher not in
+ * What is wrong with the install's doctrine tool, as sentences: a launcher not in
  * `app/bin/`; the package without its bin entry, its built dispatcher, its manifest or its canon; its
  * TypeScript sources, which only the source tree carries and the packed artefact never does; and a package or
  * canon at a version other than `version`. Empty when the install carries the release's package, laid out.
@@ -171,7 +163,7 @@ export function cliProblems(install, version) {
   for (const name of CLI_LAUNCHERS) {
     if (!existsSync(join(install, ...CLI_BIN, name))) problems.push(`${CLI_BIN.join('/')}/${name} is not there`);
   }
-  // DRIVERDOOR1: the driver's host the launchers run.
+  // The driver's host the launchers run.
   if (!existsSync(join(install, ...DRIVER_HOME, DRIVER_EXE))) problems.push(`${DRIVER_HOME.join('/')}/${DRIVER_EXE} is not there`);
   const pkg = join(install, ...CLI_PACKAGE);
   const where = CLI_PACKAGE.join('/');
@@ -194,7 +186,7 @@ export function cliProblems(install, version) {
 }
 
 /**
- * What is wrong with the install's git doors (GITAUTH1b, D198 point 2), as sentences: a door not in `app/bin/`, or the library both
+ * What is wrong with the install's git doors, as sentences: a door not in `app/bin/`, or the library both
  * load not beside them. Empty when the publish laid them out, which is what routes every process the install starts through them.
  */
 export function doorProblems(install) {
@@ -206,9 +198,9 @@ export function doorProblems(install) {
 }
 
 /**
- * Whether a door started with no arguments answered as itself (GITAUTH1b): git's exit for a refused remote, 128, and a refusal
+ * Whether a door started with no arguments answered as itself: git's exit for a refused remote, 128, and a refusal
  * naming the door by its own file's name, which is how the one program knows the ssh door from the remote helper. A copy that
- * answered as the other, or did not start, is not the door git would be handed.
+ * answers as the other, or did not start, is not the door git would be handed.
  */
 export function doorAnswered(door, { status, stderr }) {
   const name = door.replace(/\.exe$/i, '');
@@ -230,7 +222,7 @@ export function firstUnder(listing, folder) {
 /**
  * Git Bash: the `bash.exe` beside `git`, up to three folders up (`cmd\`, `bin\`, `mingw64\bin\`), or null.
  * Never whatever `bash` PATH finds first, which on Windows is usually WSL's launcher, a different shell in a
- * different filesystem. The rule the terminal's shell list keeps (`TerminalShells`, D96), so the gate
+ * different filesystem. The rule the terminal's shell list keeps (`TerminalShells`), so the gate
  * measures the shell a terminal and a session open.
  */
 export function gitBashBeside(git, exists = existsSync) {
@@ -261,7 +253,7 @@ export function transcriptHolds(bytes, text) {
 /**
  * The example plugin's hook processes among `pid|command line` rows — only those started from under
  * `scratch`. Filtered here rather than by PowerShell's `-like`, whose wildcards a path can contain;
- * compared case-blind because Windows reports a path in whichever case it was spawned with.
+ * compared case-blind because Windows reports a path in whichever case it spawned with.
  */
 export function hookLines(rows, scratch) {
   const under = scratch.toLowerCase();
@@ -276,7 +268,7 @@ export function hookLines(rows, scratch) {
 const SWAP_PHASES = Object.freeze(['swapping', 'started', 'confirmed', 'installed', 'rolled-back', 'refused']);
 
 /**
- * How the launcher's swap ended (UPDATE1, D139 §6), read from `update/swap.json`'s text: its phase, the build, the reason
+ * How the launcher's swap ended, read from `update/swap.json`'s text: its phase, the build, the reason
  * it rolled back or refused, and whether the new application confirmed — or null for a journal missing, torn, or in a
  * phase it does not know, which the gate waits through rather than passes on.
  */
@@ -309,9 +301,9 @@ export function loggedData(text, event) {
 }
 
 /**
- * Stage the install's own live build again (D139 §1's layout, by the publish's own writers), for the update's roll-back and
+ * Stage the install's own live build again (the publish's own layout, by its own writers), for the update's roll-back and
  * refusal: `application` replaces the application with another program, under a manifest that agrees, so the check passes
- * and the start fails; `tamper` changes one file after the manifest was written, so the check refuses it. The home is
+ * and the start fails; `tamper` changes one file after the manifest is written, so the check refuses it. The home is
  * never staged, and the live build is not touched. Answers the staged folder.
  */
 export function stageLiveBuild(install, { id, version, application = null, tamper = null }) {
@@ -344,12 +336,11 @@ export const SWEPT_NOTE =
   + 'started it, and the record had not been told.';
 
 /**
- * Whether a conversation's record was concluded by the shell's own close (DEPLOY5).
+ * Whether the shell's own close concluded a conversation's record.
  *
- * 🔴 By its note, never its state. The FIX-LOG entry of 2026-09-25 found this on the window after the
- * driver tests passed: a chat open at close came back `stopped`, but with the SWEEP's note, because
- * the close had written nothing and the next start found the record claiming a process. The state
- * alone passes on exactly that defect.
+ * 🔴 By its note, never its state: a chat open at close can come back `stopped`, but with the SWEEP's
+ * note, because the close wrote nothing and the next start found the record claiming a process. The
+ * state alone passes on exactly that defect.
  */
 export function concludedByTheClose(record) {
   return record?.state === 'stopped' && record.note === CLOSED_NOTE;
@@ -378,7 +369,7 @@ export function isMarkedProcess(marked, startedNow) {
 }
 
 /**
- * One call to a module of the shell, made from INSIDE its page, and its answer (DEPLOY5).
+ * One call to a module of the shell, made from INSIDE its page, and its answer.
  *
  * A chat starts over the bridge, and the bridge is the page's alone, so the gate calls it where the
  * page would: this function is sent over the debug port as source (`bridgeCall`) and runs in the page,
@@ -453,7 +444,7 @@ const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const cliBin = join(repoRoot, 'src', 'Daoris.Cli', 'bin', 'daoris.mjs');
 const examplesRoot = join(repoRoot, 'examples');
 const scratch = join(repoRoot, '_fixtures', 'deployment-rehearsal');
-// REHLANE2b: this rehearsal runs beside the driver's git half, which builds into and runs from the desktop projects' own
+// This rehearsal runs beside the driver's git half, which builds into and runs from the desktop projects' own
 // folders, so every publish it makes builds into an output of this rehearsal's own (`desktop-publish --artifacts-path`), and
 // so does its build of the driver's host. Outside the scratch, which each run wipes, so the next run's builds are incremental.
 const ownOutput = ownBuildRoot(repoRoot, 'deployment');
@@ -462,13 +453,13 @@ const home = join(scratch, 'home');
 const family = join(scratch, 'family');
 const newcomer = join(family, 'newcomer');
 
-/** What a person double-clicks, and the application it starts from `app/` (D93), which holds the window. */
+/** What a person double-clicks, and the application it starts from `app/`, which holds the window. */
 const launcherExe = join(install, LAUNCHER);
 const shellExe = join(install, ...SHELL_HOME, SHELL_EXE);
 const installedHost = join(install, ...HOST_HOME, HOST_EXE);
-/** The knowledge connector the install carries (CONNECTOR1), which a session on it is handed. */
+/** The knowledge connector the install carries, which a session on it is handed. */
 const installedConnector = join(install, ...CONNECTOR_HOME, CONNECTOR_EXE);
-/** Where the browser lived before CHR8, with an engine of its own: a republish removes it (D93, D99). */
+/** Where a retired browser lives, with an engine of its own: a republish removes it. */
 const retiredBrowser = join(install, ...SHELL_HOME, RETIRED_IN_APP[0]);
 
 /** The line the stub says, and the line phase 5 looks for on disk. Both halves, one constant. */
@@ -480,7 +471,7 @@ const EXAMPLES = ['engine', 'game'];
 // harness lookups at files that do not exist, so the machine's real map can never leak a deployment
 // or a credential directory into a gate run.
 const HERMETIC = {
-  // 🔴 The home (D63) before anything else: an installed shell with no DAORIS_HOME would make the
+  // 🔴 The home before anything else: an installed shell with no DAORIS_HOME would make the
   // install's own `data/` its home, set the variable in the user's environment and move the real
   // `~/.daoris` in — on the developer's machine, from a gate. Pointed at scratch, it does none of it.
   DAORIS_HOME: home,
@@ -491,11 +482,11 @@ const HERMETIC = {
 let shell = null;
 const children = [];
 
-// Every command this run makes, its git held to the repositories it made under its scratch (REHEARSEGIT1): git walks UP from
-// a folder that is not one, and the family rehearsal committed a worktree's uncommitted work that way.
+// Every command this run makes, its git held to the repositories it made under its scratch: git walks UP from
+// a folder that is not one, and would commit a worktree's uncommitted work that way.
 const run = rehearsalRun({ within: scratch });
 
-/** `publish:desktop` into `to` with `flags`, every build of it into this rehearsal's own output (REHLANE2b). */
+/** `publish:desktop` into `to` with `flags`, every build of it into this rehearsal's own output. */
 const publishDesktop = (to, flags, timeout) => run(
   `node "${join(repoRoot, 'tools', 'desktop-publish.mjs')}" --to "${to}" ${flags} --artifacts-path "${ownOutput}"`,
   repoRoot, {}, timeout);
@@ -513,9 +504,9 @@ const {
 const API_TIMEOUT = 30_000;
 
 /**
- * One HTTP call against whichever host is being asked. Local trust — no key on this door (D21).
+ * One HTTP call against whichever host is being asked. Local trust — no key on this door.
  *
- * Bounded (REV3 CLEAN1), as the family rehearsal's is: no answer in time is an answer a check fails
+ * Bounded, as the family rehearsal's is: no answer in time is an answer a check fails
  * on, where a bare `fetch` would hang the gate. A refused connection still throws, which is what
  * `answers` waits through.
  */
@@ -579,15 +570,15 @@ function hostProcesses() {
 
 /**
  * Every hook process a plugin has up, by command line — the plugin's own program, which the shell
- * starts with its loop and must stop with it (D64 §4: registrations are effects). Matched on the
+ * starts with its loop and must stop with it (registrations are effects). Matched on the
  * script's name because a plugin process is `node <script>`, and `node` alone is everybody's.
  */
 function hookProcesses() {
   // 🔴 `node.exe` only: the PowerShell process running this very query carries the pattern in its
-  // own command line and matched itself — one phantom hook process while the shell ran, and one
-  // "orphan" after it closed. Found by the first run of this check.
-  // 🔴 And only THIS install's (REV3): matched by the pattern alone, the check counted a hook of the
-  // same example plugin running anywhere on the machine — another rehearsal's, or the owner's own.
+  // own command line and would match itself — one phantom hook process while the shell runs, and one
+  // "orphan" after it closes.
+  // 🔴 And only THIS install's: matched by the pattern alone, the check counted a hook of the
+  // same example plugin running anywhere on the machine would count — another rehearsal's, or the owner's own.
   return hookLines(powershell(
     "Get-CimInstance Win32_Process -Filter \"Name = 'node.exe'\" -ErrorAction SilentlyContinue | "
     + 'ForEach-Object { "$($_.ProcessId)|$($_.CommandLine)" }'), scratch);
@@ -606,7 +597,7 @@ const bounded = (promise, ms, fallback) => Promise.race([promise, sleep(ms, fall
 /**
  * The shell's own page over the debug port this run opened, identified before anything is asked of
  * it (`isShell`): a port is not ours because a page answers on it, and a chat opened in the wrong page
- * would be a claim about a shell nobody started. `{ cdp: null, found }` says what was there instead.
+ * would be a claim about a shell nobody started. `{ cdp: null, found }` says what is there instead.
  */
 async function shellPage(port, serviceUrl) {
   let target = null;
@@ -643,7 +634,7 @@ function stopEverything() {
 }
 
 /**
- * Before a host of this run starts on `port` (REHEARSEPORT1): a port held since it was taken ends the run here, naming its
+ * Before a host of this run starts on `port`: a port held since it is taken ends the run here, naming its
  * holder. This run's readiness asks the port, not the process (`answers`), so a host that could not bind it would be read as
  * up with the holder's answers, and every check after would be about another run's host.
  */
@@ -659,8 +650,7 @@ async function startsClear(port) {
  *
  * 🔴 Inside a function, behind the entry guard below, for the reason `tools/desktop.mjs` states at
  * its own foot: the predicates above are imported by the test suite, and a module that ran its
- * phases at import time would publish a folder and start a window in the middle of `npm test`. It
- * did, once, before this was wrapped — a 70-second unit test and a real install in `_fixtures/`.
+ * phases at import time would publish a folder and start a window in the middle of `npm test`.
  */
 async function main() {
   if (process.platform !== 'win32') {
@@ -672,14 +662,13 @@ async function main() {
   openTranscript(repoRoot, 'deployment', { beforeExit: () => stopEverything() });
   const { totals, check, section } = makeChecker();
 
-  // REHLANE2b: every build this run makes, its publishes' and its driver host's, on build servers of its own, for every child
-  // inherits these. It joins no server a build before it left (one carried a broken environment into a publish on
-  // 2026-09-30, which the merge tool once answered by stopping every server on the machine before this gate), and leaves
+  // Every build this run makes, its publishes' and its driver host's, on build servers of its own, for every child
+  // inherits these. It joins no server a build before it left (one can carry a broken environment into a publish), and leaves
   // none behind, so it stops nothing of the git half's beside it nor anyone else's.
   Object.assign(process.env, OWN_BUILD_SERVERS);
 
-  // Each port this run starts something on, taken free before anything starts (REHEARSEPORT1): walked from a random port of
-  // the kit's band, so a run beside another takes ports apart, where a walk from a fixed one handed both runs the same port.
+  // Each port this run starts something on, taken free before anything starts: walked from a random port of
+  // the kit's band, so a run beside another takes ports apart, where a walk from a fixed one hands both runs the same port.
   // The debug port's band is clear of the dev loop's 9333 and the ports after it, which an install the owner looks at holds.
   let ports;
   try {
@@ -690,16 +679,16 @@ async function main() {
   }
   console.log(`ports: ${Object.entries(ports).map(([name, port]) => `${name} ${port}`).join(', ')}`);
 
-  /** The canon's version, which the install's doctrine tool answers (WSSETUP2): read, never spelled. */
+  /** The canon's version, which the install's doctrine tool answers: read, never spelled. */
   const canonVersion = JSON.parse(readFileSync(join(repoRoot, 'canon', 'canon.json'), 'utf8')).version;
 
   // -------------------------------------------------------------- 1. publish the artefact
 
   section('1. Publish the artefact');
-  stopAll(shellExe);      // a previous run's window would hold its own executable open
+  stopAll(shellExe);      // a previous run's window holds its own executable open
   await sleep(300);
   // A run that died leaves its processes winding down for a few seconds; the removal waits them out rather
-  // than refusing with EPERM (TEST1: the merge tool's re-run of a crashed rehearsal met exactly that).
+  // than refusing with EPERM.
   rmSync(scratch, { recursive: true, force: true, maxRetries: 20, retryDelay: 500 });
   mkdirSync(scratch, { recursive: true });
 
@@ -711,7 +700,7 @@ async function main() {
   const inApp = existsSync(join(install, ...SHELL_HOME)) ? readdirSync(join(install, ...SHELL_HOME)) : [];
   check('one executable at the root, and it is the launcher', launchers(atRoot).join() === LAUNCHER,
     `root holds: ${atRoot.join(', ')}`);
-  // A regular application's root (D93): the launcher, `app/` and the marker — `data/` arrives on the
+  // A regular application's root: the launcher, `app/` and the marker — `data/` arrives on the
   // first start — and nothing else.
   check('…and nothing at the root but what makes an install',
     atRoot.every((name) => OWN.includes(name)), `root holds: ${atRoot.join(', ')}`);
@@ -726,12 +715,12 @@ async function main() {
   check(`the host is under ${HOST_HOME.join('/')}/`, existsSync(installedHost), installedHost);
   check('…and its bundle travelled beside it',
     existsSync(join(install, ...HOST_HOME, 'wwwroot', 'index.html')));
-  // CONNECTOR1: and the connector a protocol-door session is handed, beside it and built with it. An install that
-  // carried none handed every session the home's `bin/` copy, which no republish refreshed. Phase 7 reads which one a
-  // session on this install was handed.
+  // And the connector a protocol-door session is handed, beside it and built with it. An install that
+  // carries none hands every session the home's `bin/` copy, which no republish refreshes. Phase 7 reads which one a
+  // session on this install is handed.
   check(`the knowledge connector is under ${CONNECTOR_HOME.join('/')}/`, existsSync(installedConnector), installedConnector);
 
-  // One Chromium (CHR8, D99): Daoris's browser is the application started with the browser's
+  // One Chromium: Daoris's browser is the application started with the browser's
   // argument, so no folder under `app/` carries an executable and an engine of its own.
   check('one Chromium: the browser has no folder and no engine of its own under app/',
     RETIRED_IN_APP.every((name) => !inApp.includes(name)) && !inApp.some((name) => /cefsharp/i.test(name)),
@@ -742,13 +731,13 @@ async function main() {
   check('the launcher is one small file, not a self-contained runtime',
     launcherSize > 0 && launcherSize < 5 * 1024 * 1024, `${Math.round(launcherSize / 1024)} KB`);
 
-  // The application on its own Chromium (D92, D93): CEF's launcher in `app/`, with the engine and the
-  // app beside it. Framework-dependent on purpose (D43's opposite case): no .NET this machine has.
+  // The application on its own Chromium: CEF's launcher in `app/`, with the engine and the
+  // app beside it. Framework-dependent on purpose: no .NET this machine has.
   check(`the application is ${[...SHELL_HOME, SHELL_EXE].join('/')}, with its engine beside it`,
     [SHELL_EXE, 'libcef.dll', 'icudtl.dat', 'resources.pak', 'Daoris.Desktop.App.dll'].every((name) => inApp.includes(name)),
     `app holds: ${inApp.join(', ')}`);
-  // What Task Manager and the taskbar call the window: a copied CEF launcher said "CEF Bootstrap
-  // Application" until Daoris's name was stamped onto it (D93; by the kit since Shenora 0.18, SHEN1).
+  // What Task Manager and the taskbar call the window: a copied CEF launcher says "CEF Bootstrap
+  // Application" unless Daoris's name is stamped onto it.
   const described = existsSync(shellExe)
     ? powershell(`(Get-Item -LiteralPath ${psQuote(shellExe)}).VersionInfo.FileDescription`).trim()
     : '';
@@ -764,8 +753,8 @@ async function main() {
   const recorded = existsSync(join(install, ...SHELL_FILES))
     ? readFileSync(join(install, ...SHELL_FILES), 'utf8').split('\n').filter(Boolean).sort()
     : [];
-  // Beside the application's own files: the host, the record itself, the offers (PLUG9 d), the list built
-  // in (TOOLS3) and the doctrine tool's two folders (WSSETUP2), which the publish lays out after the
+  // Beside the application's own files: the host, the record itself, the offers, the list built
+  // in and the doctrine tool's two folders, which the publish lays out after the
   // application's files.
   const besideIt = [
     HOST_HOME.at(-1), CONNECTOR_HOME.at(-1), SHELL_FILES.at(-1), PLUGIN_OFFERS.at(-1), RESOURCES.at(-1), CLI_HOME.at(-1), CLI_BIN.at(-1),
@@ -776,7 +765,7 @@ async function main() {
       && recorded.join() === inApp.filter((name) => !besideIt.includes(name)).sort().join(),
     `recorded: ${recorded.join(', ') || '(nothing)'}`);
 
-  // Daoris's own example plugins (PLUG9 d, D103): carried as offers beside the application, and none
+  // Daoris's own example plugins: carried as offers beside the application, and none
   // installed — the install's `data/` does not exist yet, and nothing a publish writes goes into it.
   const laidOut = existsSync(join(install, ...PLUGIN_OFFERS)) ? readdirSync(join(install, ...PLUGIN_OFFERS)).sort() : [];
   check(`the install carries Daoris’s own plugins as offers in ${PLUGIN_OFFERS.join('/')}/, and only those`,
@@ -785,14 +774,14 @@ async function main() {
   check('…and the publish installed none of them', !existsSync(join(install, HOME, 'plugins')),
     `${join(install, HOME, 'plugins')} exists`);
 
-  // The doctrine tool (WSSETUP2, D124 §1.2): the package the release publishes, laid out as npm lays one out
+  // The doctrine tool: the package the release publishes, laid out as npm lays one out
   // under app/cli/, at the canon's version, with a launcher for each shell in app/bin/; the packed artefact,
   // never the source tree. Phase 8 runs it.
   const toolProblems = cliProblems(install, canonVersion);
   check(`the install carries the doctrine tool: daoris ${canonVersion} in ${CLI_PACKAGE.join('/')}/, `
     + `with ${CLI_LAUNCHERS.join(' and ')} in ${CLI_BIN.join('/')}/`, toolProblems.length === 0, toolProblems.join('; '));
 
-  // The git doors (GITAUTH1b, D198 point 2): laid out in app/bin/, and each, started with nothing, answers as itself, so the copy
+  // The git doors: laid out in app/bin/, and each, started with nothing, answers as itself, so the copy
   // that is the remote helper is the same program and knows its name. No git and no remote: the door refuses before it reads either.
   const doorsLaid = doorProblems(install);
   check(`the install carries Daoris's git doors, ${GIT_DOORS.join(' and ')}, in ${CLI_BIN.join('/')}/`,
@@ -831,11 +820,9 @@ async function main() {
    * 🔴 A re-publish REPLACES the bundle rather than merging into it.
    *
    * A copy over the old directory leaves every previous hashed bundle in `wwwroot/assets`, and
-   * `index.html` names only the current one — so the folder is *correct* and unreadable. That is not
-   * a hypothetical cost: a real install reached **seven** bundles, and listing it produced a wrong
-   * answer about which build was live **twice** — once in the first-deployment case study, and once
-   * while re-publishing to this machine afterwards. `service-publish.mjs` already replaces for
-   * exactly this reason; its sibling did not, which is the whole of the bug.
+   * `index.html` names only the current one — so the folder is *correct* and unreadable, and listing
+   * it gives a wrong answer about which build is live. `service-publish.mjs` replaces for
+   * exactly this reason, and so must its sibling.
    *
    * This also proves the marker path at the same time: a second publish into a folder this script
    * wrote is accepted, where the phase above shows a foreign one refused.
@@ -847,14 +834,14 @@ async function main() {
   mkdirSync(assets, { recursive: true });
   writeFileSync(decoy, '// a bundle from a publish that is no longer current\n');
 
-  // The shell's own leftovers (CHR4), planted the same way: the single-file launcher an install from
-  // before CHR4 still has, and an engine file the last publish recorded that this build no longer
+  // The shell's own leftovers, planted the same way: the single-file launcher an older install
+  // still has, and an engine file the last publish recorded that this build no longer
   // ships — an engine upgrade that dropped a library. Both are this script's, so both must go, and a
   // neighbour's file beside them must not.
   const retired = join(install, RETIRED_LAUNCHERS[0]);
   writeFileSync(retired, '');
-  // …and the browser's own folder an install from before CHR8 has, with its executable and its second
-  // engine: this script wrote it once, and writes it no more (D99).
+  // …and the retired browser's own folder an older install has, with its executable and its second
+  // engine, which a republish removes.
   mkdirSync(join(retiredBrowser, 'locales'), { recursive: true });
   writeFileSync(join(retiredBrowser, RETIRED_BROWSER_EXE), '');
   writeFileSync(join(retiredBrowser, 'libcef.dll'), '');
@@ -864,15 +851,15 @@ async function main() {
     writeFileSync(join(install, ...SHELL_FILES),
       `${readFileSync(join(install, ...SHELL_FILES), 'utf8')}stale-engine.dll\n`);
   }
-  // …and a file in each of the doctrine tool's folders that its last layout had and this one does not
-  // (WSSETUP2): both folders are replaced whole.
+  // …and a file in each of the doctrine tool's folders that its last layout had and this one does not:
+  // both folders are replaced whole.
   const staleTool = [join(install, ...CLI_PACKAGE, 'stale-from-before.js'), join(install, ...CLI_BIN, 'daoris.ps1')];
   for (const path of staleTool) {
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, '// from the publish before\n');
   }
-  // …and one in the connector's folder (CONNECTOR1): a republish lays the connector down afresh, as it does the host,
-  // which is what the home's `bin/` copy never had.
+  // …and one in the connector's folder: a republish lays the connector down afresh, as it does the host,
+  // which the home's `bin/` copy never does.
   const staleConnector = join(install, ...CONNECTOR_HOME, 'stale-from-before.txt');
   mkdirSync(dirname(staleConnector), { recursive: true });
   writeFileSync(staleConnector, 'from the publish before\n');
@@ -944,9 +931,9 @@ async function main() {
     asset);
 
   // 🔴 The page is UNHASHED and names the hashed assets, so it is the page that decides what the
-  // window runs — and a browser told nothing reuses it without asking. Seen on the second
-  // deployment: a page loaded once from a stale host was the page on every start after, answered
-  // from the WebView2 profile's cache with the correct host running and never asked. A hashed
+  // window runs — and a browser told nothing reuses it without asking: a page loaded once from a
+  // stale host stays the page on every start after, answered from the profile's cache with the
+  // correct host running and never asked. A hashed
   // asset may be kept for good; the page must be asked about every time (the ETag makes that a 304).
   const pageCaching = page.headers.get('cache-control') ?? '(none)';
   check('…and it tells the browser to ask about the page again next time',
@@ -972,7 +959,7 @@ async function main() {
   // tracked examples are a gate's fixture and the shell can write a repository's own daoris.json.
   for (const name of EXAMPLES) copyTree(join(examplesRoot, name), join(family, name));
 
-  // The stub agent — real mechanics, no model (D46 §8). It says one line with an em-dash and two
+  // The stub agent — real mechanics, no model. It says one line with an em-dash and two
   // Chinese characters in it, which is the whole of what phase 5 reads back off the disk.
   const stubAgent = join(scratch, 'stub-agent.mjs');
   writeFileSync(stubAgent, `
@@ -1008,19 +995,19 @@ const done = await respond('done', 'Landed by the stub session.');
 if (!done.ok) throw new Error(done.text);
 `);
 
-  // The protocol stub the conversation in phase 6 runs on (DEPLOY5): the family rehearsal's, from the
+  // The protocol stub the conversation in phase 6 runs on: the family rehearsal's, from the
   // kit both gates share, so no model and no account. Named for `acp-stub` alone; the driven loop
   // stays on the pipe stub above.
   const acpAgent = join(scratch, 'acp-agent.mjs');
   writeFileSync(acpAgent, ACP_STUB_AGENT);
 
-  // A plugin that SPEAKS (D64), in the scratch home before the shell starts — the tracked example,
+  // A plugin that SPEAKS, in the scratch home before the shell starts — the tracked example,
   // as a person would have added it. The family rehearsal drives the headless host's loop with it;
   // this is the only gate that drives the SHELL's, which owns the processes differently (it starts
   // them in its loop and stops them in its Stop), and is what a deployed machine actually runs.
   copyTree(join(examplesRoot, 'plugins', 'hold-by-title'), homeEntry(home, 'plugins', 'hold-by-title'));
 
-  // A server that drives Daoris's own browser (D78 §3.5): before the deployed shell's driver hands a
+  // A server that drives Daoris's own browser: before the deployed shell's driver hands a
   // session its servers, it has to bring up the browser the INSTALL carries. The stub never runs the
   // server; what is measured is that the browser came up, from where, and on which profile.
   mkdirSync(homeEntry(home, 'plugins', 'drives-the-browser'), { recursive: true });
@@ -1047,7 +1034,7 @@ if (!done.ok) throw new Error(done.text);
 
   const shellPort = ports.shell;
   const base = `http://127.0.0.1:${shellPort}`;
-  // The debug port (DEPLOY5), taken with the rest: clear of the dev loop's 9333 and the ports after it, which an
+  // The debug port, taken with the rest: clear of the dev loop's 9333 and the ports after it, which an
   // install the owner is looking at through `run --install` may hold.
   const cdpPort = ports.debug;
 
@@ -1059,7 +1046,7 @@ if (!done.ok) throw new Error(done.text);
    * broke. Same for `--app-root`: the deployed shell's own default is `data/` beside the
    * executable, and the install is scratch, so the default already isolates this run.
    *
-   * What it is given that a person's start is not: the debug port (DEPLOY5), the dev loop's own
+   * What it is given that a person's start is not: the debug port, the dev loop's own
    * opt-in, so phase 6 can open a chat over the bridge.
    */
   const shellEnvironment = {
@@ -1084,17 +1071,17 @@ if (!done.ok) throw new Error(done.text);
   check('every machine-local file this run reads points into scratch', unredirected.length === 0,
     `${unredirected.join(', ')} would come from the machine's real home`);
 
-  // 🔴 The decoy, planted rather than hoped for. Before D63 it was whatever `publish:service
-  // --install` had left under the machine's profile, which a clean machine never has — so the check
-  // below was only ever a check on this machine. The home is scratch now, so the gate puts an
+  // 🔴 The decoy, planted rather than hoped for: whatever `publish:service
+  // --install` leaves under the machine's profile, a clean machine never has — so the check
+  // below would only be a check on this machine. The home is scratch, so the gate puts an
   // installed-looking host where the locator's next candidate looks: an empty file, because the
   // ORDER is the contract, and a shell that ranked it first would try to start it and fail here.
   const installedHome = homeEntry(home, 'bin', 'daoris-knowledge-http');
   mkdirSync(installedHome, { recursive: true });
   writeFileSync(join(installedHome, HOST_EXE), '');
-  // The connector's decoy, for the same reason (CONNECTOR1): an installed-looking connector where
-  // `publish:service --install` lands one, the copy every session on an install was handed while the install carried
-  // none. Phase 7 asserts the session was handed the install's own instead. The stub never runs a server, so an empty
+  // The connector's decoy, for the same reason: an installed-looking connector where
+  // `publish:service --install` lands one, the copy every session on an install is handed when the install carries
+  // none. Phase 7 asserts the session is handed the install's own instead. The stub never runs a server, so an empty
   // file is enough.
   const homeConnector = homeEntry(home, 'bin', CONNECTOR_EXE);
   writeFileSync(homeConnector, '');
@@ -1130,7 +1117,7 @@ if (!done.ok) throw new Error(done.text);
       : 'no new host process appeared');
   console.log(`        located: ${started.map((host) => host.path).join(', ') || '(none)'}`);
 
-  // The application, not the engine's own processes, which run from the same executable (CHR4).
+  // The application, not the engine's own processes, which run from the same executable.
   const window = eachApplicationAt(shellExe, '"$($_.MainWindowHandle)|$($_.MainWindowTitle)"').trim();
   check('the window is up', Boolean(window) && !window.startsWith('0|'), window || '(no process)');
   // The launcher hands over and is gone: a launcher that lingered would be a second process holding
@@ -1138,7 +1125,7 @@ if (!done.ok) throw new Error(done.text);
   check('…and the launcher that started it has exited', running(launcherExe).length === 0,
     running(launcherExe).map((pid) => `pid ${pid}`).join(', '));
 
-  // WHICH ENGINE answered (CHR4). A published shell opens no debug port (D78 §3.1) — this run's is
+  // WHICH ENGINE answered. A published shell opens no debug port — this run's is
   // the gate's own, for phase 6 — so the answer is read off the process tree, as it would be on a
   // person's start: the page renders in a renderer the INSTALL's own executable started,
   // and no WebView2 process is the shell's child. A shell that fell back to WebView2, or a page that
@@ -1161,12 +1148,12 @@ if (!done.ok) throw new Error(done.text);
   check('…and not on WebView2', webviews === '', `WebView2 processes under the shell: ${webviews}`);
 
   // INSTALLED.md tells whoever opens the folder that `data/` is this install's own state. Nothing
-  // read it back until now, and a deployed shell writing its WebView2 profile somewhere else is a
+  // read it back, and a deployed shell writing its WebView2 profile somewhere else is a
   // folder that cannot be deleted to uninstall.
-  // HOMELAYOUT3: the install's own state now sits in D172's category folders beside `${HOME}/`, so it is asked of the table:
+  // The install's own state sits in the home's category folders beside `${HOME}/`, so it is asked of the table:
   // the window's own Chromium profile, the table's `window` entry (`profiles/window/`), inside the install. Not the running
-  // record: this shell's home is the scratch's (`DAORIS_HOME`, HERMETIC above), so that record is never the install's
-  // (HOMEFIX3). The window is up, so its profile is written; waited for a little all the same.
+  // record: this shell's home is the scratch's (`DAORIS_HOME`, HERMETIC above), so that record is never the install's.
+  // The window is up, so its profile is written; waited for a little all the same.
   let windowAt = homeEntry(join(install, HOME), 'window');
   for (let attempt = 0; attempt < 10 && !existsSync(join(windowAt, 'chromium')); attempt += 1) {
     await sleep(1000);
@@ -1175,11 +1162,11 @@ if (!done.ok) throw new Error(done.text);
   check(`the install keeps its own state in its own folders (${HOME}/ and D172's)`,
     existsSync(join(windowAt, 'chromium')) && resolve(windowAt).toLowerCase().startsWith(resolve(install).toLowerCase()),
     `${windowAt} holds no chromium/; the install holds ${readdirSync(install).join(', ')}`);
-  // The application runs from `app/` and the home is still the install's (D93), never one beside it.
+  // The application runs from `app/` and the home is still the install's, never one beside it.
   check(`…at the install’s root, not beside the application in ${SHELL_HOME.join('/')}/`,
     !existsSync(join(install, ...SHELL_HOME, HOME)));
 
-  // The plugin's process, started by the DEPLOYED shell's own loop from the home it was told. The
+  // The plugin's process, started by the DEPLOYED shell's own loop from the home it is told. The
   // loop reconciles on its first tick, which follows the host coming up; waited for, never poked.
   let hooks = [];
   for (let attempt = 0; attempt < 30 && hooks.length === 0; attempt += 1) {
@@ -1256,8 +1243,8 @@ if (!done.ok) throw new Error(done.text);
     `${record?.transcript}\n          it decodes to: ${bytes.toString('utf8').split('\n')
       .find((line) => line.includes('stub:')) ?? '(no stub line at all)'}`);
 
-  // The plugin was asked before the start (it allowed — the title carries no `[hold]`) and told of
-  // the ending, by the shell's loop; what it kept landed beside its install, in ITS data folder.
+  // The plugin is asked before the start (it allows — the title carries no `[hold]`) and told of
+  // the ending, by the shell's loop; what it kept lands beside its install, in ITS data folder.
   const endedLog = homeEntry(home, 'plugins', '.data', 'hold-by-title', 'ended.log');
   let ended = '';
   for (let attempt = 0; attempt < 15 && !ended.includes(record?.id ?? '\0'); attempt += 1) {
@@ -1268,7 +1255,7 @@ if (!done.ok) throw new Error(done.text);
     Boolean(record?.id) && new RegExp(`${record.id} ${questId} newcomer completed stub`).test(ended),
     ended || '(no ended.log)');
 
-  // BROWSERSTART1: a session's start brings up no browser, and hands the server the shell's held endpoint, a loopback
+  // A session's start brings up no browser, and hands the server the shell's held endpoint, a loopback
   // port the shell listens on beyond its host's and its debug port. The browser comes up at the first connection to it,
   // as an agent's server connects to drive a page; that connection is made here, and the browser is judged after it.
   check('the session’s start brought up no browser from the install’s application',
@@ -1297,7 +1284,7 @@ if (!done.ok) throw new Error(done.text);
     reached !== null, `tried ${heldPorts.join(', ') || '(no port)'}`);
 
   // The browser that connection brought up: the install's own application, started with the browser's argument
-  // (CHR8, D99), on the profile under this run's home, and the session was handed its server rather than told it was
+  // on the profile under this run's home, and the session is handed its server rather than told it is
   // withheld.
   const browsers = browsersAt(shellExe);
   const browserLine = browsers.length
@@ -1323,8 +1310,8 @@ if (!done.ok) throw new Error(done.text);
 
   section('6. Closing the shell stops what the shell owns, a conversation open in it included');
 
-  // DEPLOY5. A conversation runs in the chat runner, beside the driven loop rather than in it, and
-  // the shutdown order that ends it was wrong twice — the second time visible on the window alone.
+  // A conversation runs in the chat runner, beside the driven loop rather than in it, and
+  // a wrong shutdown order can show on the window alone.
   // So one is open when the shell closes: on the protocol stub, in the newcomer (free since its
   // driven session completed, and a git tree of its own), started over the bridge as the page starts
   // one, from inside the page, over the debug port this run opened.
@@ -1338,12 +1325,12 @@ if (!done.ok) throw new Error(done.text);
         .catch((error) => ({ ok: false, error: { code: 'EVALUATE', message: error.message } })),
       45_000,
       { ok: false, error: { code: 'NO_ANSWER', message: 'the page did not answer within 45s' } });
-    // Only a page whose bridge is not up yet is asked again: nothing was posted to it.
+    // Only a page whose bridge is not up yet is asked again: nothing has been posted to it.
     if (opened?.error?.code !== 'NOT_READY') break;
     await sleep(500);
   }
 
-  // PLUG9 (d): the DEPLOYED driver finds the install's offers beside the application — this run's home is
+  // The DEPLOYED driver finds the install's offers beside the application — this run's home is
   // scratch, not the install's `data/` — and, after a whole run of its loop, has installed none of them.
   const catalogue = cdp
     ? await bounded(
@@ -1381,13 +1368,13 @@ if (!done.ok) throw new Error(done.text);
     isMarkedProcess(marked, startedTicks(marked?.pid)),
     marked ? `the marker names pid ${marked.pid}, and that process is not running` : `no marker at ${chatMarker}`);
 
-  // Closed the way a person closes it — the same path as before a conversation was open in it.
+  // Closed the way a person closes it — the same path as with no conversation open in it.
   stopAll(shellExe);
   shell = null;
   await sleep(1500);
 
   // The browser closes its windows when the shell ends (`--daoris-parent`), as the shell's own window
-  // did. Asked first, because since CHR8 it runs from the same executable as the application, and
+  // does. Asked first, because it runs from the same executable as the application, and
   // the check below would otherwise count it without naming it.
   let browsersLeft = browsersAt(shellExe);
   for (let attempt = 0; attempt < 20 && browsersLeft.length > 0; attempt += 1) {
@@ -1409,7 +1396,7 @@ if (!done.ok) throw new Error(done.text);
   const orphans = hostProcesses().filter((host) => !before.has(host.pid));
   check('and no host it started is orphaned', orphans.length === 0,
     orphans.map((host) => `pid ${host.pid} ${host.path}`).join(', '));
-  // Registrations are effects (D64 §4): the plugin's process is exactly as alive as the loop.
+  // Registrations are effects: the plugin's process is exactly as alive as the loop.
   const hooksLeft = hookProcesses();
   check('and the plugin’s process went with the loop', hooksLeft.length === 0,
     hooksLeft.map((pid) => `pid ${pid}`).join(', '));
@@ -1457,10 +1444,10 @@ if (!done.ok) throw new Error(done.text);
       ? `ended by the sweep's note, so the close wrote nothing: ${JSON.stringify(closedRecord)}`
       : JSON.stringify(closedRecord ?? afterClose.text));
 
-  // 🔴 CONNECTOR1: which connector binary the deployed shell handed that conversation, as the agent said it on
+  // 🔴 Which connector binary the deployed shell handed that conversation, as the agent said it on
   // `session/new`, read once the close has ended the conversation and its transcript holds all it said. An install
-  // that carried no connector handed every session the home's `bin/` copy, which one `publish:service --install` laid
-  // down and no republish refreshed, and an eight-day-old one rebuilt the shared store at its own older schema. The
+  // that carries no connector hands every session the home's `bin/` copy, which one `publish:service --install` lays
+  // down and no republish refreshes, and an old one rebuilds the shared store at its own older schema. The
   // decoy planted in phase 4 is that copy, so this goes red on every machine where the order is wrong.
   const conversationTranscript = closedRecord?.transcript ?? chatRecord?.transcript ?? '';
   const conversationSaid = existsSync(conversationTranscript) ? readFileSync(conversationTranscript, 'utf8') : '';
@@ -1480,7 +1467,7 @@ if (!done.ok) throw new Error(done.text);
 
   section('8. The doctrine tool the install carries, by its bare name from each shell (WSSETUP2)');
 
-  // D124 §1.2: the install's `app/bin/` first on the PATH, as WSSETUP3 is to put it for every child Daoris
+  // The install's `app/bin/` first on the PATH, as the shell puts it for every child Daoris
   // starts, and `daoris` asked for by its bare name from each shell a session's harness runs. Its own canon,
   // never an override: `DAORIS_CANON` is taken out, so the canon it reads is the one its package carries.
   // A repository of its own, adopted by it: init, sync and check, offline, as a set-up's session would.
@@ -1523,7 +1510,7 @@ if (!done.ok) throw new Error(done.text);
   const unknownVerb = prompt('daoris no-such-verb');
   check('…and a tool error comes back through the launcher as exit 2', unknownVerb.code === 2, unknownVerb.out);
 
-  // PowerShell has no launcher of its own: it finds the batch file by PATHEXT (D124 §1.2), which this measures.
+  // PowerShell has no launcher of its own: it finds the batch file by PATHEXT, which this measures.
   const fromPowerShell = shellRun('powershell.exe',
     ['-NoProfile', '-NonInteractive', '-Command', '(Get-Command daoris).Source; daoris --version; exit $LASTEXITCODE']);
   const powerShellLines = fromPowerShell.out.trim().split(/\r?\n/);
@@ -1551,7 +1538,7 @@ if (!done.ok) throw new Error(done.text);
     check('…and a tool error comes back through the script as exit 2', bashUnknown.code === 2, bashUnknown.out);
   }
 
-  // DRIVERDOOR1, ONEWAY1ai: a group of the one tree by the same bare name (D50's terminal door), on a scratch home of its own so
+  // A group of the one tree by the same bare name (the terminal door), on a scratch home of its own so
   // nothing of any install's is read: the shipped program, complete with its libraries, answers `tree list`.
   const driverHome = join(scratch, 'driver-door-home');
   mkdirSync(driverHome, { recursive: true });
@@ -1568,9 +1555,9 @@ if (!done.ok) throw new Error(done.text);
 
   section('9. The install updates when its work allows: staged, drained, swapped, started, rolled back (UPDATE1, D139)');
 
-  // The terminal's door to the update (D50): the headless host's `update`, built from this workspace and run on this
+  // The terminal's door to the update: the headless host's `update`, built from this workspace and run on this
   // run's home, naming the install, since a scratch home is no install's `data/`.
-  // REHLANE2b: into this rehearsal's own output, never the host's folders, which the driver's Process halves build and run.
+  // Built into this rehearsal's own output, never the host's folders, which the driver's Process halves build and run.
   const driverProject = join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Host');
   const driverDll = ownBuilt(ownOutput, driverProject, 'daoris-driver.dll');
   const builtHost = run(`${ownBuild(driverProject, ownOutput)} --nologo -v q`, repoRoot, {}, 10 * 60_000);
@@ -1732,7 +1719,7 @@ if (!done.ok) throw new Error(done.text);
   const launcherGone = await waitFor(async () => (running(launcherExe).length === 0 ? true : null), 30);
   check('…and the launcher that swapped it has exited', Boolean(launcherGone), running(launcherExe).join(', '));
   // The launcher cannot delete its own running launcher inside update/previous/, so the new application clears what the
-  // swap left once the launcher has gone (UPDATE1), at its next look.
+  // swap left once the launcher has gone, at its next look.
   check(`…and neither ${STAGED.join('/')}/ nor the build before it is left`,
     Boolean(await waitFor(async () => (!existsSync(join(install, ...STAGED)) && !existsSync(join(install, ...STAGE, 'previous')) ? true : null), 30)),
     readdirSync(join(install, ...STAGE)).join(', '));
@@ -1837,8 +1824,8 @@ if (!done.ok) throw new Error(done.text);
 }
 
 /**
- * Only when this file is what was run — the same guard `tools/desktop.mjs` carries, for the same
- * reason and after the same mistake.
+ * Only when this file is what runs — the same guard `tools/desktop.mjs` carries, for the same
+ * reason.
  */
 if (isMain(import.meta.url)) {
   await main();

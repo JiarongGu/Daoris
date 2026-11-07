@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Where each dispatched subagent's hours went, read from the harness's own transcripts (CONSOLIDATE1).
+ * Where each dispatched subagent's hours went, read from the harness's own transcripts.
  *
  *   node tools/subagent-time.mjs <transcripts-dir> [--since YYYY-MM-DDTHH:MM] [--type branch-worker] [--json <file>]
  *

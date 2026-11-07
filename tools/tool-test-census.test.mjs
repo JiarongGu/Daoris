@@ -1,5 +1,5 @@
 /**
- * TOOLTESTCENSUS1: the tool-test census (every tool test file is run by exactly one declared gate).
+ * The tool-test census (every tool test file is run by exactly one declared gate).
  *
  *   node --test tools/tool-test-census.test.mjs
  *

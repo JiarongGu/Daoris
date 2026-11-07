@@ -1,5 +1,5 @@
 /**
- * CODESHAPE1 (D231): a source file over the budget does not grow, and a new one does not start over it.
+ * A source file over the budget does not grow, and a new one does not start over it.
  *
  *   node tools/size-ratchet.mjs           check the tree against tools/size-ratchet.json (exit 0 clean, 1 breach, 2 tool error)
  *   node tools/size-ratchet.mjs --write   rewrite tools/size-ratchet.json from the tree (the first list, or after a split)

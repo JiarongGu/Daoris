@@ -1,17 +1,17 @@
 /**
- * The family rehearsal's set-up phase, in the parts a test can hold without a host or a driver (LAYOUT7a):
+ * The family rehearsal's set-up phase, in the parts a test can hold without a host or a driver:
  * the doctrine tool's launcher a child of Daoris finds by its bare name, the PATH that puts it first, and a
- * reading of what `daoris place <repository> --preset keep --adoption` prints (the one adoption door, WORKFLOWCLEAN1
- * 1f); for the registration that follows the landing (WSSETUP5a), a reading of what `daoris repository register` prints and of
- * the machine log's lines; and, for a workspace set up one repository at a time (WSSETUP6a), a reading of what
+ * reading of what `daoris place <repository> --preset keep --adoption` prints (the one adoption door);
+ * for the registration that follows the landing, a reading of what `daoris repository register` prints and of
+ * the machine log's lines; and, for a workspace set up one repository at a time, a reading of what
  * `daoris place --workspace` prints.
  *
  * ## Why the workspace's CLI, and a launcher of the rehearsal's own
  *
- * A set-up's session runs `daoris` by its bare name (D124 §1, §2.3), and the press refuses where a child of
- * Daoris would find none. The install's `app/bin/` launchers are the deployment rehearsal's to test (WSSETUP2),
+ * A set-up's session runs `daoris` by its bare name, and the press refuses where a child of
+ * Daoris would find none. The install's `app/bin/` launchers are the deployment rehearsal's to test,
  * so this phase puts the workspace's own CLI there instead: a launcher in scratch, first on the PATH the
- * driver is started with, which the driver hands every session it starts (TOOLS5's one environment).
+ * driver is started with, which the driver hands every session it starts.
  *
  * ## A reading of another program's words
  *
@@ -29,7 +29,7 @@ import { delimiter, join } from 'node:path';
 export const SETUP_TITLE = /^Set up this repository for every agent \(\d{4}-\d{2}-\d{2}\)$/;
 
 /**
- * The rule a press adds, verb for verb (D124 §2.4; `SetupPress.Verbs`): the doctrine tool's exact verbs as
+ * The rule a press adds, verb for verb (`SetupPress.Verbs`): the doctrine tool's exact verbs as
  * `Bash` allows, never a runner, never `upstream` or a management verb.
  */
 export const SETUP_RULES = [
@@ -72,7 +72,7 @@ export function withFirstOnPath(folder, env = process.env) {
   return { [key]: env[key] ? `${folder}${delimiter}${env[key]}` : folder };
 }
 
-/** A row of what was read (`  at once  …`): its label padded to `width` after two spaces. */
+/** A row of what is read (`  at once  …`): its label padded to `width` after two spaces. */
 const row = (lines, label, width = 9) => {
   const lead = `  ${label.padEnd(width)}`;
   const found = lines.find((line) => line.startsWith(lead));
@@ -114,7 +114,7 @@ export function readPlace(out) {
 }
 
 /**
- * What `daoris repository register [--repository <name>]` printed (`RegisterCommand`, WSSETUP5), read back: each
+ * What `daoris repository register [--repository <name>]` printed (`RegisterCommand`), read back: each
  * repository's line as its outcome's word, its name and the sentence its row says, and the counts the last line gives
  * (null where it gave none). A line per repository starts with two spaces, the outcome padded to sixteen, a space, the
  * name and two spaces; every other line starts `register: `.
@@ -133,7 +133,7 @@ export function readRegister(out) {
 }
 
 /**
- * The machine log's `registry.followed` lines (WSSETUP5, D124 §3.4), from what `daoris logs --json` printed: each
+ * The machine log's `registry.followed` lines, from what `daoris logs --json` printed: each
  * as its repository's name, its outcome's word and the names of every field the line carried, in order, so a reader can
  * hold that it carried nothing else. Other events, and lines that are not the log's, are skipped.
  */
@@ -143,8 +143,8 @@ export function readFollowed(out) {
 }
 
 /**
- * The data of every machine log line of `event` (D94), from what `daoris logs --json` printed, in the order the
- * lines were written. Other events, and lines that are not the log's, are skipped.
+ * The data of every machine log line of `event`, from what `daoris logs --json` printed, in the order the
+ * lines are written. Other events, and lines that are not the log's, are skipped.
  */
 export function readEvents(out, event) {
   return out.split(/\r?\n/).flatMap((line) => {
@@ -158,11 +158,11 @@ export function readEvents(out, event) {
   });
 }
 
-/** The words a workspace plan says a repository's state in (`WorkspaceSetup.Word`, D124 §4.4). */
+/** The words a workspace plan says a repository's state in (`WorkspaceSetup.Word`). */
 const SETUP_STATES = ['set up', 'waiting for your review', 'setting up', 'parked', 'to go', 'skipped', 'declined', 'deleted'];
 
 /**
- * What `daoris place --workspace <name> --adoption …` printed (`WorkspaceSetupCommand`, WSSETUP6), read back. `rows` is the
+ * What `daoris place --workspace <name> --adoption …` printed (`WorkspaceSetupCommand`), read back. `rows` is the
  * list a press works from (what touched each, its state now, and each refusal under it); `atOnce`, `pilot` and `agent`
  * the pacing rows; `rules` the ones a press would add or added; `refusals` the press's own, after `refused:`; `messages`
  * each `place: …` sentence that is not a head (a press's, a steer's); `standing` where each repository of a plan stands,

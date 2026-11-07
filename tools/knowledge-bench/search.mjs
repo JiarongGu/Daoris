@@ -28,8 +28,8 @@ export function tokenize(text) {
 }
 
 /**
- * BM25 over each document's frontmatter (name, applies_when, enforces, title: counted three times, a field
- * boost) and its body. `docs` is `[{ path, fields, body }]`; returns them scored, best first, zero scores out.
+ * Okapi ranking over each document's frontmatter (name, applies_when, enforces, title: a field
+ * boost, counted three times) and its body. `docs` is `[{ path, fields, body }]`; returns them scored, best first, zero scores out.
  */
 export function rankBm25(docs, query, k1 = 1.2, b = 0.75) {
   if (!docs.length) return [];

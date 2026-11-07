@@ -1,5 +1,5 @@
 /**
- * READSHARE1: the shared-read census (FIX-LOG 2026-10-22, BINDRACE1).
+ * The shared-read census (FIX-LOG 2026-10-22).
  *
  *   node --test tools/read-shares.test.mjs
  *

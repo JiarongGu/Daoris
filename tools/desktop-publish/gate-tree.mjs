@@ -34,7 +34,7 @@ function readTreeLock(file) {
   }
 }
 
-/** CI1: why a held gate tree is not staged, by who holds it: a CI run, another stage, or a full set beside. */
+/** Why a held gate tree is not staged, by who holds it: a CI run, another stage, or a full set beside. */
 function heldSaid(lock) {
   const since = `pid ${lock.pid}, since ${minuteOf(lock.at)}`;
   const sha = String(lock.commit ?? '').slice(0, 7);
@@ -44,13 +44,13 @@ function heldSaid(lock) {
 }
 
 /**
- * The gate tree to build `commit` from (GATEWT1), or the refusal that says why it cannot be: no gate tree under the
+ * The gate tree to build `commit` from, or the refusal that says why it cannot be: no gate tree under the
  * main checkout, one that holds another commit (main moved on, or a later run moved it), or one a run holds (a CI run or a
  * full set, whose verdicts are not in yet, or another stage). `home` is the main checkout, where its record is kept.
  *
- * CI1: `hold` takes the gate tree's lock for the stage (`holder: 'stage'`) and answers its `release`, so no CI run, which a
- * watch starts as main moves, moves the tree while it builds: a run started meanwhile is refused by the lock as a second run is
- * (the pipeline design's §4.6). It is taken only where none is held (`wx`), a dead process's taken over, and the commit read
+ * `hold` takes the gate tree's lock for the stage (`holder: 'stage'`) and answers its `release`, so no CI run, which a
+ * watch starts as main moves, moves the tree while it builds: a run started meanwhile is refused by the lock as a second run is.
+ * It is taken only where none is held (`wx`), a dead process's taken over, and the commit read
  * again under it, so a run that moved the tree between the look and the take is caught.
  */
 export function gatedSource(repoRoot, commit, { alive = pidAlive, hold = false, now = () => new Date().toISOString().replace(/\.\d+Z$/, 'Z') } = {}) {
@@ -116,7 +116,7 @@ export function childArgs(argv, to) {
   return out;
 }
 
-/** The record's note that the gate tree at `commit` was staged, which lets the next merge's prune remove it. The rest is kept. */
+/** The record's note that the gate tree at `commit` is staged, which lets the next merge's prune remove it. The rest is kept. */
 export function recordStaged(home, { commit, to, at }) {
   const file = join(home, ...GATE_TREE_RECORD.split('/'));
   let record = {};
@@ -130,7 +130,7 @@ export function recordStaged(home, { commit, to, at }) {
 }
 
 /**
- * CISCOPE1d (design §5.3): what a stage of `commit` brings since the last one, as lines, read from the main checkout's
+ * What a stage of `commit` brings since the last one, as lines, read from the main checkout's
  * `local/stage-history.jsonl`, which no CI run rewrites and no prune deletes (the gate tree's `staged` is no baseline). Where it
  * cannot say (no history yet, a last staged commit that is not an ancestor of this one), the range is said to be unknown;
  * nothing the stage decides depends on it.
@@ -144,7 +144,7 @@ export function stageReport(home, commit) {
 }
 
 /**
- * DRAINHOLD1: what a stage says of the drain it starts (D139), printed after it. Staged while the install is idle, the install
+ * What a stage says of the drain it starts, printed after it. Staged while the install is idle, the install
  * drains: it starts nothing new and holds the presses that would start work until every driven session ends; the terminal's
  * `update --cancel` stages the build *not now* instead.
  */
@@ -157,7 +157,7 @@ export function stagedAdvice() {
   ];
 }
 
-/** CISCOPE1d: a successful stage appended to the main checkout's history: the commit, its tree, where it went, when, forced or not. */
+/** A successful stage appended to the main checkout's history: the commit, its tree, where it went, when, forced or not. */
 export function recordStage(home, { commit, to, at, forced = false }) {
   const tree = gitIn(home, ['rev-parse', '--verify', '--quiet', `${commit}^{tree}`]).stdout?.trim() || null;
   appendStage(home, { commit, tree, to, at, forced });

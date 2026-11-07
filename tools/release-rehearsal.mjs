@@ -10,7 +10,7 @@
  * skill directory that does not survive packing.
  *
  * The one thing it cannot rehearse is the GitHub tag itself, which needs the
- * owner decision (TASKS.md REL1). Everything up to that point is real.
+ * owner decision. Everything up to that point is real.
  *
  *   node tools/release-rehearsal.mjs
  *
@@ -31,10 +31,8 @@ const scratch = join(repoRoot, '_fixtures', 'release-rehearsal');
 const consumer = join(scratch, 'consumer');
 const canonV2 = join(scratch, 'canon-v2');
 
-// REH1: every run leaves a transcript, outside the scratch tree a passing run deletes. The failure
-// this chases is intermittent — twice seen, always exactly the canon-upgrade phase, both times on a
-// run straight after canon files were edited and synced — and the one thing both sightings lacked was
-// the output. Capturing it by construction beats remembering to capture it before a re-run.
+// Every run leaves a transcript, outside the scratch tree a passing run deletes: a failure here can be
+// intermittent, and capturing the output by construction beats remembering to capture it before a re-run.
 openTranscript(repoRoot, 'release');
 const { totals, check, section } = makeChecker();
 
@@ -93,8 +91,8 @@ check('private material does not ship', ![...shipped].some((p) => p.startsWith('
 check('test fixtures do not ship', ![...shipped].some((p) => p.startsWith('_fixtures/')));
 
 // Belt and braces beyond postpack: whatever the pack lifecycle staged is removed here too, and the
-// removal is ASSERTED — a `dist/` outliving a pack is exactly how DRV5's remote landing ran month-old
-// code through every bin-driven gate while the source-level suites stayed green (FIX-LOG 2026-09-20).
+// removal is ASSERTED — a `dist/` outliving a pack would run stale code through every bin-driven gate
+// while the source-level suites stay green.
 execSync(`node "${join(repoRoot, 'tools', 'stage-package.mjs')}" --clean`, { stdio: 'pipe', windowsHide: true });
 check(
   'nothing staged outlives the pack — no dist/ to shadow the sources, no canon to shadow the tree',
@@ -122,8 +120,8 @@ check('`daoris --help` exits 0 and lists the commands', help.code === 0 && /init
 
 // The repo writes its own document BEFORE adopting, so the collision path is real.
 //
-// 🔴 A KNOWLEDGE document, because that tier is still files. Since D59 the always-loaded tier is a
-// span in `AGENTS.md`, so a repository's own `.claude/rules/x.md` is no longer at a path the canon
+// 🔴 A KNOWLEDGE document, because that tier is files. The always-loaded tier is a
+// span in `AGENTS.md`, so a repository's own `.claude/rules/x.md` is not at a path the canon
 // claims — it cannot collide, and `doctor` is what reports one restating a canonical rule.
 mkdirSync(join(consumer, '.claude', 'knowledge'), { recursive: true });
 writeFileSync(join(consumer, '.claude/knowledge/reaching-in.md'), '# Our own document\n\nWritten here first.\n');
@@ -153,11 +151,11 @@ check(
 rmSync(join(consumer, '.claude/knowledge/reaching-in.md'));
 const sync = daoris('sync');
 check('`sync` exits 0 once the collision is resolved', sync.code === 0, sync.out);
-// The always-loaded tier lands as a span in the file every harness reads (D59), with the pointer
+// The always-loaded tier lands as a span in the file every harness reads, with the pointer
 // beside it for the one that reads another name.
 check('the doctrine region is materialized', /<!-- daoris:rules /.test(read('AGENTS.md')));
 check('...carrying the rules themselves', /sensitive-info/.test(read('AGENTS.md')));
-// The pointer above them names the index of the on-demand tiers, and lists no document (WSSETUP14a, D128 §2).
+// The pointer above them names the index of the on-demand tiers, and lists no document.
 check('...and the pointer to the index above them',
   /## Read on demand\n\nThe knowledge and the skills, each with when it applies, are listed in \[\.claude\/INDEX\.md\]\(\.claude\/INDEX\.md\)/
     .test(read('AGENTS.md')) && !/house-deploy|## Invoke by name/.test(read('AGENTS.md')));
@@ -170,8 +168,8 @@ const skill = read('.claude/skills/change/SKILL.md');
 check('a skill still starts with its frontmatter', skill.startsWith('---\n'), skill.slice(0, 60));
 check('...with the provenance header beneath it', /---\n<!-- daoris: /.test(skill));
 
-// The knowledge and skills are listed in `<target>/INDEX.md`, which `sync` writes and the lock names
-// (WSSETUP14a, D128 §2.3): the rules stay in the region, and the list that grows with the repository
+// The knowledge and skills are listed in `<target>/INDEX.md`, which `sync` writes and the lock names:
+// the rules stay in the region, and the list that grows with the repository
 // is read on demand.
 const roster = has('.claude/INDEX.md') ? read('.claude/INDEX.md') : '';
 check('the index is written beside the tiers, and the lock names it',
@@ -189,7 +187,7 @@ check('`doctor` exits 0 (advisory, never fails)', doctor.code === 0, doctor.out)
 // ---------------------------------------------------- 4. drift and the return
 
 section('4. Drift, and the return path');
-// A rule is edited where it lives now (D59): inside the region, which is what keeps drift and the
+// A rule is edited where it lives: inside the region, which is what keeps drift and the
 // return path per RULE rather than per region.
 const regionFile = join(consumer, 'AGENTS.md');
 const editRule = (from, to) =>
@@ -206,7 +204,7 @@ check('`sync` refuses rather than discarding the edit', refused.code === 1, refu
 check('...and points at `upstream`', /upstream/.test(refused.out), refused.out);
 
 // A consumer never writes into the canon: outside the canon's own checkout `upstream` composes the request's words and
-// writes nothing (D230). Point at a writable copy, which plays the canon's repository, and take the request there as its
+// writes nothing. Point at a writable copy, which plays the canon's repository, and take the request there as its
 // maintainer would.
 copyTree(join(consumer, 'node_modules', 'daoris', 'canon'), canonV2);
 const edited = join(canonV2, 'core/rules/repository-owns-its-work.md');
@@ -287,7 +285,7 @@ check(
 );
 check('`check` is clean afterwards', withV2('check').code === 0);
 
-// (e) A pack switches a core row off (D71): offered with a reason, confirmed by the repository,
+// (e) A pack switches a core row off: offered with a reason, confirmed by the repository,
 //     named on every surface, and withdrawn again — through the packed bin, not the source tree.
 setCanonVersion('0.0.6');
 mkdirSync(join(canonV2, 'packs/checkpointing/rules'), { recursive: true });
@@ -340,7 +338,7 @@ check('withdrawing the confirmation brings the core row back', withdrawn.code ==
   withdrawn.out);
 check('`check` is clean after the withdrawal', withV2('check').code === 0);
 
-// (f) An older tool never rewrites a newer lock (WSSETUP4, D124 §1.4). The upgrades above moved the lock to
+// (f) An older tool never rewrites a newer lock. The upgrades above move the lock to
 //     canon 0.0.6, and the installed package still carries its own canon at `version`: the packed bin, run
 //     without the newer canon, is exactly `npx daoris@<older> sync` in a repository a newer tool synced.
 const lockedAt = JSON.parse(read('daoris.lock')).canonVersion;
@@ -362,7 +360,7 @@ check('`status` says the lock is newer and names that command, rather than sendi
 
 // --------------------------------------------------------- 6. move the layout
 
-// LAYOUT3 (D117 §5.6): the upgrade an adopter on the older layout makes by flipping its own manifest,
+// The upgrade an adopter on the older layout makes by flipping its own manifest,
 // through the packed bin. Every cell is a unit test already; this proves the ARTEFACT carries them —
 // the move, the refusals, the mirror and its return path, a room, and a link held as text.
 section('6. Moving the layout to agents (D117)');
@@ -393,7 +391,7 @@ check('`sync` refuses the move, naming each git mv', leftBehind.code === 1
   && /git mv \.claude\/skills\/house-deploy \.agents\/skills\/house-deploy/.test(leftBehind.out), leftBehind.out);
 check('...and writes nothing', !has('.agents') && has('.claude/knowledge/reaching-in.md'));
 
-// The repository's own act (D5): the consumer is not a git repository, so a rename plays the git mv.
+// The repository's own act: the consumer is not a git repository, so a rename plays the git mv.
 mkdirSync(join(consumer, '.agents', 'knowledge'), { recursive: true });
 mkdirSync(join(consumer, '.agents', 'skills'), { recursive: true });
 renameSync(join(consumer, '.claude/knowledge/house-notes.md'), join(consumer, '.agents/knowledge/house-notes.md'));
@@ -429,7 +427,7 @@ check('`sync` refuses, pointing at upstream from the mirror', mirrorRefused.code
 const mirrorUp = withV2('upstream .claude/skills/change/SKILL.md');
 check('`upstream` takes the mirror\'s path, its request carrying the edit', mirrorUp.code === 0
   && mirrorUp.out.includes('made in the mirror') && !mirrorUp.out.includes('<!-- daoris:'), mirrorUp.out);
-// The canon's repository takes the request (D230): the mirror's text without its header, which is the canon's file and the edit.
+// The canon's repository takes the request: the mirror's text without its header, which is the canon's file and the edit.
 const loader = join(canonV2, 'core/skills/change/SKILL.md');
 writeFileSync(loader, `${readFileSync(loader, 'utf8')}\nA local improvement, made in the mirror.\n`);
 check('...and the canon carries the edit without either header', (() => {
@@ -487,7 +485,7 @@ check('`check` is clean once the link is gone', withV2('check').code === 0);
 
 // ----------------------------------------------------- 7. declare the documents
 
-// DOC3 (D122 §2.7–§2.8): the consumer binds its records to paths in its own manifest, and the packed bin
+// The consumer binds its records to paths in its own manifest, and the packed bin
 // renders the table, holds it to the facts, reports the judgements, and refuses what it cannot honour.
 // Every case is a unit test already; this proves the ARTEFACT carries them. Declared, broken, repaired.
 section('7. Declaring the development documents (D122)');
@@ -557,7 +555,7 @@ writeFileSync(join(consumer, 'TASKS.md'), tasksText);
 rmSync(join(consumer, 'notes'), { recursive: true, force: true });
 check('`check` is clean once the backlog is a file again', withV2('check').code === 0);
 
-// Judged, never failed (D54): the backlog over its ceiling.
+// Judged, never failed: the backlog over its ceiling.
 writeFileSync(join(consumer, 'TASKS.md'), `${tasksText}\n${'- [ ] another row\n'.repeat(12)}`);
 const overCeiling = withV2('check');
 check('`check` reports a document over its ceiling in words, and exits 0', overCeiling.code === 0

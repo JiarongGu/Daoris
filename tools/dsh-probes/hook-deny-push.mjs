@@ -2,9 +2,8 @@
 // command that would push, and lets everything else through. Exit 2 + stderr is the block.
 //
 // The hook runs INSIDE dsh's sandbox (workspace-write), so its own evidence log must live inside the
-// workspace — the first version wrote beside this script, outside the workspace, and the sandbox
-// denied it, which the bridge folded as a non-blocking failure (exit 1 → "pass"). That was probe 4's
-// first lesson, and it is recorded in the evidence note.
+// workspace — beside this script, outside the workspace, the sandbox denies the write, which the
+// bridge folds as a non-blocking failure (exit 1 → "pass").
 import { appendFileSync } from 'node:fs'
 import { join } from 'node:path'
 

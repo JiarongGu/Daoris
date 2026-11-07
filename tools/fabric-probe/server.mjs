@@ -1,12 +1,12 @@
 /**
- * The fabric probe's stand-in MCP server (FABRIC-PROBE1; the C0 audit §2, `docs/2026-10-16-fabric-contract-audit.md`).
+ * The fabric probe's stand-in MCP server (`docs/2026-10-16-fabric-contract-audit.md`).
  *
  *   node tools/fabric-probe/server.mjs --log <file>
  *
  * A harness starts it from its MCP entry, over stdio, one JSON-RPC message a line. It offers four tools: `probe_read`
  * (a launcher's rules allow it), `probe_write` (denied), `probe_unlisted` (named by no rule) and `probe_wait` (it holds
  * a call open, for a kill to land on). Each answers a token no model would invent, `ochre-lattice-5287-<nonce>`, with a
- * nonce per process, so a reply that quotes it was read off this process.
+ * nonce per process, so a reply that quotes it is read off this process.
  *
  * 🔴 Every message it receives, its own start, its input's end and its exit are appended to the log SYNCHRONOUSLY, one
  * JSON object a line, before anything answers: a process killed a moment later loses nothing it had already received.
@@ -20,7 +20,7 @@ import { isMain } from '../fsx.mjs';
 /** The token's fixed part: the audit's, so a receipt reads the same either side of the rebuild. */
 export const TOKEN = 'ochre-lattice-5287';
 
-/** The variables a start line names, by value: who the process was started as, never where. */
+/** The variables a start line names, by value: who the process is started as, never where. */
 export const NAMED = ['DAORIS_SESSION_ID', 'DAORIS_ASK_ID'];
 
 /** The tools, as `tools/list` answers them. */

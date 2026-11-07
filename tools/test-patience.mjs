@@ -1,5 +1,5 @@
 /**
- * TESTPATIENCE3: the TypeScript tests wait on their signals by one shared patience (FIX-LOG 2026-10-28, TESTPATIENCE3).
+ * The TypeScript tests wait on their signals by one shared patience (FIX-LOG 2026-10-28).
  *
  *   node tools/test-patience.mjs          check the three test trees (exit 0 clean, 1 breach, 2 tool error)
  *   node tools/test-patience.mjs --list   the same, then each file's count of waits on the patience and of waits kept
@@ -7,7 +7,7 @@
  * A bound that waits on a signal (a stub's or a plugin's answer, a file or a process a child is to produce or end, a poll's
  * condition) elapses only when the code is wrong, so it costs a passing test nothing, and a few seconds of one's own failed
  * merge-queue gates beside a loaded machine. Such a wait reads `PATIENCE`, which `src/Daoris.Cli/test/_fixture.ts` exports,
- * as the desktop tests read `Poll.Patience` (TESTPATIENCE1-2). The census reads the CLI's tests, the tool-tests and the tools'
+ * as the desktop tests read `Poll.Patience`. The census reads the CLI's tests, the tool-tests and the tools'
  * own tests (`tools/*.test.mjs`) for a fixed wait of a second or more and under the patience, in the shapes a wait is written:
  *
  *   - a key: `timeout`, `timeoutMs`, `waitMs`, `wait`, `within`, `limitMs`, `bound`, `boundMs`, `patience`, `deadline` or `start`

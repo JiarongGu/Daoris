@@ -1,10 +1,10 @@
-// A scripted OpenAI-compatible chat-completions server for the DSH1 probes.
+// A scripted OpenAI-compatible chat-completions server for the probes.
 //
 // It is NOT a model. Each accepted request consumes the next step of a plan: either a tool call
 // (the first advertised tool whose name matches a pattern, with the given arguments) or a final
 // text. Every request body is logged verbatim-enough (model, tool roster, message tail) so the
 // evidence note can say what the harness actually sent. No key is involved anywhere; the tier
-// is "scripted", and the note says so (D24).
+// is "scripted", and the note says so.
 //
 // usage: node mock-llm.mjs --port <n> --plan <plan.json> --log <requests.jsonl>
 

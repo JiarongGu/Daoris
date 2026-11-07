@@ -7,16 +7,16 @@ export const MARKER = 'INSTALLED.md';
 export const MARKER_HEADER = '# Daoris — installed desktop';
 
 /**
- * The install's layout, stated once (REV3 CLEAN1): one launcher at the root, the application and the
- * host under `app/`, the home in `data/` (D63, D93). The deployment gate, the dev loop and the testbed
- * read these rather than spelling the names again, which four of them did.
+ * The install's layout, stated once: one launcher at the root, the application and the
+ * host under `app/`, the home in `data/`. The deployment gate, the dev loop and the testbed
+ * read these rather than spelling the names again.
  *
- * `Daoris.exe` since D93: the one thing to run is named for the application, as a regular one is.
+ * `Daoris.exe`: the one thing to run is named for the application, as a regular one is.
  */
 export const LAUNCHER = 'Daoris.exe';
 
 /**
- * Where the application sits, and its name there (D93): CEF's launcher, beside its Chromium. A twin
+ * Where the application sits, and its name there: CEF's launcher, beside its Chromium. A twin
  * of `Launcher.AppFolder` and `Launcher.ShellExe` (`Daoris.Desktop.Launcher`), which starts it, and of
  * the app's assembly name, which names it; `desktop-publish.test.ts` reads both.
  */
@@ -24,15 +24,15 @@ export const SHELL_HOME = Object.freeze(['app']);
 export const SHELL_EXE = 'Daoris.Desktop.exe';
 
 /**
- * Launchers an earlier publish wrote at the root: the single-file shell before D93. A publish into
+ * Launchers an earlier publish wrote at the root: the single-file shell. A publish into
  * its own install removes them, and the dev loop still finds an install not yet republished.
  */
 export const RETIRED_LAUNCHERS = Object.freeze(['daoris-desktop.exe']);
 
 /**
- * Folders an earlier publish wrote under `app/` and this one no longer does: Daoris's browser before
- * CHR8, an executable of its own (`daoris-browser.exe`) with a second Chromium beside it. The
- * application is the browser now (D99). A publish into its own install removes them by name, as it
+ * Folders an earlier publish wrote under `app/` and this one does not: Daoris's browser as
+ * an executable of its own (`daoris-browser.exe`) with a second Chromium beside it. The
+ * application is the browser. A publish into its own install removes them by name, as it
  * removes {@link RETIRED_LAUNCHERS}: exactly what it once wrote, never a folder it did not.
  */
 export const RETIRED_IN_APP = Object.freeze(['daoris-browser']);
@@ -54,7 +54,7 @@ export function retiredPaths(install) {
 }
 
 /**
- * The names the shell's last publish put in `app/`, one per line (D93). What makes a republish
+ * The names the shell's last publish put in `app/`, one per line. What makes a republish
  * remove the previous engine's files and nothing it did not write.
  */
 export const SHELL_FILES = Object.freeze(['app', 'shell-files.txt']);
@@ -62,8 +62,8 @@ export const SHELL_FILES = Object.freeze(['app', 'shell-files.txt']);
 /**
  * Where `--service` puts the HTTP host inside an install, as path segments.
  *
- * 🔴 One half of the counterpart set defect 2a was: this layout and `ServiceHostLocator`'s candidate
- * list must be the same layout, and until a deployment nothing read both.
+ * 🔴 One half of a counterpart set: this layout and `ServiceHostLocator`'s candidate
+ * list must be the same layout, and only a deployment reads both.
  * `deployment-rehearsal.test.ts` reads the locator for the other half.
  */
 export const HOST_HOME = Object.freeze(['app', 'daoris-knowledge-http']);
@@ -72,7 +72,7 @@ export const HOST_HOME = Object.freeze(['app', 'daoris-knowledge-http']);
 export const HOST_EXE = 'daoris-knowledge-http.exe';
 
 /**
- * Where `--service` puts the knowledge connector inside an install, as path segments (CONNECTOR1): the MCP host every
+ * Where `--service` puts the knowledge connector inside an install, as path segments: the MCP host every
  * protocol-door session is handed, beside the HTTP host and built with it.
  *
  * 🔴 An install that carried only its HTTP host handed every session the home's `bin/` copy, which one
@@ -92,7 +92,7 @@ export const CONNECTOR_EXE = 'daoris-knowledge.exe';
 export const INSTALL_RID = 'win-x64';
 
 /**
- * What `--service` lays out (CONNECTOR1), as a plan: each host `service-publish` makes, the folder under `app/` named for
+ * What `--service` lays out, as a plan: each host `service-publish` makes, the folder under `app/` named for
  * its binary, its executable there, and the command that builds it, which is that script's one recipe.
  */
 export function servicePlan(root, rid = INSTALL_RID) {
@@ -103,7 +103,7 @@ export function servicePlan(root, rid = INSTALL_RID) {
 }
 
 /**
- * The service hosts `install` carries under `app/` (CONNECTOR1b), as each one's folder relative to the install with `/`:
+ * The service hosts `install` carries under `app/`, as each one's folder relative to the install with `/`:
  * every host {@link servicePlan} lays out whose executable is there. Both locators run these ahead of the home's `bin/`,
  * so a publish in place that leaves them is one whose sessions run the build before it. A folder without its executable is
  * nothing either locator finds, and is not counted.

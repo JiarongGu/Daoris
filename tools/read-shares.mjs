@@ -1,5 +1,5 @@
 /**
- * READSHARE1: no plain read of a file the driver's AtomicFile writes (FIX-LOG 2026-10-22, BINDRACE1; `AtomicFile.ReadText`).
+ * No plain read of a file the driver's AtomicFile writes (FIX-LOG 2026-10-22; `AtomicFile.ReadText`).
  *
  *   node tools/read-shares.mjs        check the driver's sources (exit 0 clean, 1 breach, 2 tool error)
  *
@@ -17,7 +17,7 @@
  *
  * The census works per source, not per path, so a writer that also reads a file nothing moves into place (a git `HEAD`, a transcript
  * appended to) marks that read's line `// read-shares: <what it reads>`, as does a read whose refusal is its point (a take's
- * read of what it renamed aside, REQTAKE1), and the clean line counts the marks. A read inside a comment
+ * read of what it renamed aside), and the clean line counts the marks. A read inside a comment
  * or a string is not a read. A reader handed its path by its caller, naming no place, is not found: the census is a net under the
  * readers, and `AtomicFile.ReadText`'s own remarks are the rule. There is no .NET build.
  */

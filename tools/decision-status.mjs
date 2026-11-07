@@ -1,5 +1,5 @@
 /**
- * CONSOLIDATE1: the decisions' status, generated from the area documents' citations (`docs/decisions/README.md`).
+ * The decisions' status, generated from the area documents' citations (`docs/decisions/README.md`).
  *
  *   node tools/decision-status.mjs   write the table: each decision live in the areas citing it, superseded, or history
  */

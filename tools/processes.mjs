@@ -1,9 +1,8 @@
 /**
  * Which processes run from a given executable, asked of Windows — by PATH, never guessed by name.
  *
- * One home for the query (REV3 CLEAN1): the dev loop, the deployment gate and the desktop publish
- * each wrote their own `Where-Object { $_.Path -eq … }`, and the quoting that makes it match a path
- * with an apostrophe in it had been fixed in two of them.
+ * One home for the query: the dev loop, the deployment gate and the desktop publish
+ * share it, so the quoting that makes it match a path with an apostrophe in it is written once.
  */
 import { spawnSync } from 'node:child_process';
 
@@ -13,7 +12,7 @@ export const powershell = (script) =>
 
 /**
  * Text as a PowerShell single-quoted literal. Backslashes stay literal there (doubling them makes a
- * path never match), and the one character that needs escaping is `'`, doubled (REV3): a checkout
+ * path never match), and the one character that needs escaping is `'`, doubled: a checkout
  * under a folder with an apostrophe ended the string early, and the query matched nothing.
  */
 export const psQuote = (text) => `'${String(text).replaceAll("'", "''")}'`;
@@ -37,7 +36,7 @@ export const running = (exe) => {
 };
 
 /**
- * Whether a command line is one of the engine's own processes (CHR4). Chromium starts its renderer,
+ * Whether a command line is one of the engine's own processes. Chromium starts its renderer,
  * GPU and utility processes from the app's executable, told which with `--type=`. They go with the
  * browser process that started them, and one closed or killed on its own is a page that crashes,
  * not a window that closes.
@@ -45,7 +44,7 @@ export const running = (exe) => {
 export const isEngineProcess = (commandLine) => /(?:^|\s)--type=/.test(commandLine ?? '');
 
 /**
- * The argument that makes the application's executable Daoris's browser (CHR8, D99), first on its
+ * The argument that makes the application's executable Daoris's browser, first on its
  * command line. A twin of `EngineBrowser.Argument` (`Daoris.Desktop.Modules`), which the application
  * routes on and the shell starts the browser with; `desktop-tool.test.ts` reads both.
  */
@@ -59,7 +58,7 @@ const argumentsOf = (commandLine) => {
 };
 
 /**
- * Whether a command line is Daoris's browser (CHR8, D99): the application's own executable, started
+ * Whether a command line is Daoris's browser: the application's own executable, started
  * with {@link BROWSER_ARGUMENT} first — the rule the application routes on — and not one of the
  * engine's processes. A fourth kind from the same path: not the application, whose stop it follows on
  * its own, and not an engine process, because it holds windows of its own.
@@ -87,14 +86,14 @@ export function applicationsIn(rows) {
     .map(({ pid }) => pid);
 }
 
-/** The browsers among `pid|command line` rows (CHR8): {@link isBrowserProcess}, as pids. */
+/** The browsers among `pid|command line` rows: {@link isBrowserProcess}, as pids. */
 export function browsersIn(rows) {
   return rowsOf(rows).filter(({ commandLine }) => isBrowserProcess(commandLine)).map(({ pid }) => pid);
 }
 
 /**
  * Every process running from `exe`, as `pid|command line` rows: what the judgements above read. Exported
- * for `shot`, which reads both judgements from one query (SHOTPICK1): each costs a PowerShell start.
+ * for `shot`, which reads both judgements from one query: each costs a PowerShell start.
  */
 export const commandLinesAt = (exe) => powershell(
   'Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | '
@@ -104,7 +103,7 @@ export const commandLinesAt = (exe) => powershell(
 /** The pids of the applications running from `exe`: {@link running}, without the engine's own or the browser. */
 export const applicationsAt = (exe) => (exe ? applicationsIn(commandLinesAt(exe)) : []);
 
-/** The pids of Daoris's browsers running from `exe`, the application's own executable since CHR8. */
+/** The pids of Daoris's browsers running from `exe`, the application's own executable. */
 export const browsersAt = (exe) => (exe ? browsersIn(commandLinesAt(exe)) : []);
 
 /** {@link processesAt} for the applications only: `each` runs for every one {@link applicationsAt} finds. */
@@ -119,24 +118,23 @@ export const eachApplicationAt = (exe, each) => {
  * force as the backstop rather than the method.
  *
  * 🔴 That path is what stops the HTTP host the shell spawned and owns (`OnStopping`: the driver
- * loop, then the host). A forced kill used to orphan a `daoris-knowledge-http` that kept the port and
- * held the build's own DLLs. Measured: seven of them, after a session of restarts, failing the next
- * `build` with MSB3027. Since LOG2a the host a shell started reads a pipe whose other end only that
- * shell holds, and stops when it breaks, so a killed shell's host goes too (observed by hand, not gated);
+ * loop, then the host). A forced kill can orphan a `daoris-knowledge-http` that keeps the port and
+ * holds the build's own DLLs, failing the next `build`. The host a shell starts reads a pipe whose
+ * other end only that shell holds, and stops when it breaks, so a killed shell's host goes too (observed by hand, not gated);
  * the close is still the method, because it is what ends and records the loop's sessions. Nothing
  * here touches a host directly, because a host this tool did not start belongs to whoever did (the
  * shell's own supervisor makes exactly that distinction).
  *
- * 🔴 `CloseMainWindow` closes whichever window WINDOWS calls main, and since SURF8 that may be the
+ * 🔴 `CloseMainWindow` closes whichever window WINDOWS calls main, and that may be the
  * monitor rather than the application — closing it leaves the app running, the wait expires, and the
  * force kill lands. So this closes REPEATEDLY, re-reading the handle each time: the secondary
  * windows go first, the main window last, and the app exits on its own terms. Same trap as the one
  * `shot --window` exists for, in its third disguise.
  *
- * 🔴 The applications only (CHR4): on Chromium the engine's renderer, GPU and utility processes run
+ * 🔴 The applications only: on Chromium the engine's renderer, GPU and utility processes run
  * from the same executable with no window. Walked like the rest, each cost fifteen seconds of
  * waiting and then a forced kill that crashed a page; they exit with the application. The browser
- * runs from it too since CHR8, and is left alone for the same reason from the other side: it has
+ * runs from it too, and is left alone for the same reason from the other side: it has
  * windows, and closing them is the person's; it closes itself once the application has gone.
  */
 export const stopAll = (exe) => stopProcesses(applicationsAt(exe));
@@ -169,7 +167,7 @@ export function parseProcessRows(text, form) {
 }
 
 /**
- * Every process on the machine as `{ pid, ppid, command }`, read and changing nothing (PROCLEAK1's census). Null where the list
+ * Every process on the machine as `{ pid, ppid, command }`, read and changing nothing. Null where the list
  * could not be read, so a failed read is never taken for an empty machine.
  */
 /** The longest a read of the machine's process list may take: a loaded machine's CIM query took tens of seconds, and a census waits for it. */
@@ -187,7 +185,7 @@ export function processList({ platform = process.platform, run = spawnSync } = {
 }
 
 /**
- * End what a killed process left running (FAMILYFAIL1): every process `parent` started, at or after `since` (epoch
+ * End what a killed process left running: every process `parent` started, at or after `since` (epoch
  * milliseconds), each with everything it started in turn. Answers the pids it ended.
  *
  * 🔴 On Windows a kill reaches the one process it names. A command run in a shell and killed by its timeout loses the shell
@@ -208,7 +206,7 @@ export function endOrphans(parent, since) {
 }
 
 /**
- * End what a killed run's shells left running (CIPRIO1e): every process created at or after `since` (epoch milliseconds)
+ * End what a killed run's shells left running: every process created at or after `since` (epoch milliseconds)
  * whose command line names `folder` and whose parent no longer runs, each with its tree. Answers the pids it ended.
  *
  * 🔴 {@link endOrphans} lists by the dead run's pid, but a killed node's non-detached children end with it on Windows: a
@@ -235,7 +233,7 @@ export function endStranded(folder, since) {
 }
 
 /**
- * QUEUEDROPLEAK1: the roots of what a run's tests left running, from `processes` (`{ pid, ppid, created, command }`, `created` in
+ * The roots of what a run's tests left running, from `processes` (`{ pid, ppid, created, command }`, `created` in
  * epoch milliseconds): each process created at or after `since` whose parent is in no row (nothing holds it) and which, or something
  * under it, has `folder` in its command line (as a folder: the name ends there or goes on with a separator). The run's own end reaches
  * its steps by their parent ids, so what a test killed mid-way had already orphaned (a killed child, a detached runner, the gate it
@@ -288,7 +286,7 @@ export function parseCreatedRows(text) {
 }
 
 /**
- * End what a run's tests left running under `folder` (QUEUEDROPLEAK1): the {@link strandedRoots} created at or after `since` (epoch
+ * End what a run's tests left running under `folder`: the {@link strandedRoots} created at or after `since` (epoch
  * milliseconds), each with its tree. Answers the pids it ended, roots only. Only Windows ends any: there a kill reaches the one process
  * it names, and what a killed test had started runs on under a dead parent id, in no tree the run holds. Elsewhere the run's end walks
  * `ps` for what is under each step (`endTree`), and this ends nothing.

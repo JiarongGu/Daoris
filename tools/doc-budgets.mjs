@@ -4,16 +4,14 @@
  *
  * ## Why
  *
- * D28 put a byte budget on the always-loaded **canon**, and the discipline it created is the reason
- * that budget is worth having: when it goes red the answer is to split principle from detail, never to
- * raise the limit — and CANON6 found 126 bytes of genuine duplication rather than spending any.
+ * The always-loaded **canon** has a byte budget, and the discipline is what makes it worth having: when it
+ * goes red the answer is to split principle from detail, never to raise the limit.
  *
- * This repository's *own* standing orders had no such budget. `CLAUDE.md` is read at the start of every
- * session, the backlog's handover with it, and both had grown by accretion with nothing to say so. That
- * gap is what DOCS2 closes, adopting the discipline from deepseek-harness's `verify-doc-budgets`
- * (`docs/2026-09-21-dsh-evaluation.md` §3) — two ecosystems that arrived at the same rule from opposite
- * ends, which is the D17 bar for believing it. **Nothing was ported**, so no notice is owed: the
- * mechanism below is fifty lines of counting, and what converged is the *rule*.
+ * This repository's *own* standing orders need the same budget. `CLAUDE.md` is read at the start of every
+ * session, the backlog's handover with it, and both grow by accretion with nothing to say so. The
+ * discipline is the one in deepseek-harness's `verify-doc-budgets` (`docs/2026-09-21-dsh-evaluation.md` §3);
+ * nothing is ported, so no notice is owed: the mechanism below is fifty lines of counting, and what converged
+ * is the *rule*.
  *
  * ## What is budgeted, and what deliberately is not
  *
@@ -22,10 +20,10 @@
  *
  * ## Where a ceiling is written: once
  *
- * A document `daoris.json` declares with a ceiling (`documents`, D122 §2.7) is measured at that number,
- * which `check` reads too, so it is written in one place (DOC4). `tools/doc-budgets.json` keeps only the
+ * A document `daoris.json` declares with a ceiling (`documents`) is measured at that number,
+ * which `check` reads too, so it is written in one place. `tools/doc-budgets.json` keeps only the
  * documents no role names (the consuming story, the forward sequence, the contract) and the standing
- * orders, until they become the brief (LAYOUT6). A role bound to a ceiling alone, the brief or a room,
+ * orders, until they become the brief. A role bound to a ceiling alone, the brief or a room,
  * is `check`'s to measure, since only it knows where the region ends. A document with a ceiling in both
  * lists has two numbers, and that is a fact, so it fails.
  *
@@ -36,8 +34,7 @@
  *
  * ## It reports; it does not fail
  *
- * Over a ceiling prints loudly and exits 0 (D54, the owner's call, applied here for consistency with
- * the canon's own budget). A word count is a judgement, not a fact this tool established: 3,601 words
+ * Over a ceiling prints loudly and exits 0, as the canon's own budget does. A word count is a judgement, not a fact this tool established: 3,601 words
  * against a ceiling of 3,600 is not *wrong*, and a build that stops over a judgement gets its number
  * raised rather than read. A stale entry — a ceiling naming a document that moved — is the one thing
  * here that IS a fact, and it still fails, because a ceiling pointing at nothing has silently stopped

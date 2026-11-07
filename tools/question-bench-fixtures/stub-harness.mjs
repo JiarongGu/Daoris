@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * A stand-in for a deployment's harness, for the question bench's tests (KNOWUSE2). It reads the check's prompt on
+ * A stand-in for a deployment's harness, for the question bench's tests. It reads the check's prompt on
  * stdin and answers from a replies file: the first entry whose `when` the prompt contains. `{cwd}` in a reply is
- * replaced by the folder it was started in, and `{env:NAME}` by that variable or `(unset)`; `sleep` waits that many
+ * replaced by the folder it starts in, and `{env:NAME}` by that variable or `(unset)`; `sleep` waits that many
  * milliseconds first; `code` is its exit code.
  * It starts no model and reads no account.
  *

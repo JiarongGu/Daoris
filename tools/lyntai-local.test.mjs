@@ -1,5 +1,5 @@
 /**
- * LYNTAILOCAL1: the opt-in local Lyntai build.
+ * The opt-in local Lyntai build.
  *
  *   node --test tools/lyntai-local.test.mjs
  */

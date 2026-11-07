@@ -5,9 +5,9 @@
  *
  * ## Why
  *
- * A session pays for what it reads on every step after it reads it (D127). A ceiling on a document read
- * whole says when the document is long. It cannot say which kind of line made it long, and the backlog
- * here was trimmed twice and grew back both times, because its rows went on being written the same way
+ * A session pays for what it reads on every step after it reads it. A ceiling on a document read
+ * whole says when the document is long. It cannot say which kind of line made it long, and a trimmed
+ * backlog grows back while its rows go on being written the same way
  * (`docs/2026-10-02-session-economy-design.md` §1.5). So the canon gives each entry a shape
  * (`development-documents`: a row or a router row, 60 words; an archive outcome, 60), and this reports
  * the entries over theirs, by name, longest first, so the one to move is the one at the top.
@@ -50,12 +50,12 @@
  *
  * Entries headed before the cut-over stand as written (`set-up-documents`, step 4): they are counted
  * once and never measured. With no cut-over yet, every entry stands. The steward writes the date in the
- * merge that lands the hand-back's outcome line (SESSOPT1c, design §3.5), so every entry measured is one
- * the new shape asked for.
+ * merge that lands the hand-back's outcome line (design §3.5), so every entry measured is one
+ * the shape applies to.
  *
  * ## It reports; it fails only on what it cannot read
  *
- * Whether an entry says too much is a judgement, so a shape prints and exits 0 (D54). A configuration
+ * Whether an entry says too much is a judgement, so a shape prints and exits 0. A configuration
  * that does not read, names a key this tool does not know, gives a shape that is not a positive whole
  * number, or a cut-over that is not a date, fails: each is a shape that silently stopped applying. A role
  * declared with no file on disk is `check`'s failure already, so here it is one line and no second

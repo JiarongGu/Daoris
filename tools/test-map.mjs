@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * The census of every test unit: its reach and its subject, for every suite (CISCOPE1c, D207; design
+ * The census of every test unit: its reach and its subject, for every suite (design
  * `docs/2026-10-24-ci-scope-design.md` §3).
  *
  * ## Why
  *
- * A merge is to wait on what it reaches (D207), and that needs one map of what every test can see. PROCREACH1's census
+ * A merge is to wait on what it reaches, and that needs one map of what every test can see. The Process census
  * (`tools/process-reach.mjs`) reads it for the .NET Process halves only; the lane table (`REACH` in the merge tool) answers by
  * gate, by hand. This reads it for every suite from the sources, so a hand row becomes a check rather than a rule.
  *
@@ -15,7 +15,7 @@
  * solution gate), a `node --test` file of the CLI's suite or the tool-tests, a vitest file, a Playwright spec, a rehearsal.
  * Each has:
  *
- * - **its reach**. .NET: PROCREACH1's census unchanged (`censusOf`, the area grain, one level of naming, **not a closure**);
+ * - **its reach**. .NET: the Process census unchanged (`censusOf`, the area grain, one level of naming, **not a closure**);
  *   a fast half's filter is read from its command, and a solution gate's test projects each count. TypeScript: a closure over
  *   the repository: every relative import and literal `import(…)` followed wherever it leads, every string that names a
  *   tracked file or folder (from the root or the file), every basename string with an extension that names tracked files,
@@ -58,7 +58,7 @@ const READS = (path) => /^(src|tools|examples)\//.test(path) && /\.(cs|csproj|pr
   || ['daoris.gates.json', 'daoris.lanes.json', 'package.json', 'TASKS.md'].includes(path);
 
 /**
- * The repository's tracked files at `commit` (the working tree's when null) and a reader of each, as PROCREACH1's
+ * The repository's tracked files at `commit` (the working tree's when null) and a reader of each, as the Process census's
  * `repository` reads them, over every suite's sources: a commit's files by one `git cat-file --batch`.
  */
 export function treeOf(root, commit = null) {
@@ -419,7 +419,7 @@ export function census(files, read, { suites = null } = {}) {
   return { units, dotnet, problems, ts };
 }
 
-/** Whether a unit of the census reaches `path`, with why: a TypeScript unit by its closure, a .NET class by PROCREACH1's `pathReach`. */
+/** Whether a unit of the census reaches `path`, with why: a TypeScript unit by its closure, a .NET class by the Process census's `pathReach`. */
 export function unitReaches(unit, path, map) {
   if (unit.kind === 'dotnet') {
     const suite = map.dotnet.find((each) => each.suite === unit.suite && each.project === unit.project);
@@ -613,7 +613,7 @@ function trxClasses(trx) {
 }
 
 /**
- * REVIEW2 T1: a trx's classes with a test that did not execute (a skip), by full name. A proof that needs a machine's own tool
+ * A trx's classes with a test that did not execute (a skip), by full name. A proof that needs a machine's own tool
  * (an sshd) skips where the machine lacks it and reports green; the check names each such class so the skip is seen.
  */
 export function trxSkipped(trx) {
@@ -686,7 +686,7 @@ async function main(argv) {
       reports = {};
       for (const file of readdirSync(dir).filter((each) => each.endsWith('.trx'))) {
         const gate = file.replace(/\.trx$/, '');
-        // A half run by reach kept classes out by its own run settings (PROCREACH1's `reachSettings`): those did not run, by design.
+        // A half run by reach keeps classes out by its own run settings (`reachSettings`): those do not run, by design.
         const settings = join(dir, `${gate}.process.runsettings`);
         const kept = new Set(existsSync(settings) ? [...readFileSync(settings, 'utf8').matchAll(/FullyQualifiedName!~([^&<)]+?)\\?\.(?=&|<|\))/g)].map((match) => match[1].replace(/\\(.)/g, '$1')) : []);
         const trx = readFileSync(join(dir, file), 'utf8');

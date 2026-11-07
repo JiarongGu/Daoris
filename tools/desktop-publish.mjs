@@ -11,64 +11,64 @@
  *                                                           the repositories it drives, typically
  *   node tools/desktop-publish.mjs --to <install> --service --stage
  *                                                           …beside a running install, in update/staged/,
- *                                                           which the desktop installs when idle (D139): it drains
+ *                                                           which the desktop installs when idle: it drains
  *                                                           (starts nothing new, holds the presses that would start
  *                                                           work) until every driven session ends;
  *                                                           `daoris update --cancel` stages it *not now*
  *   … --force-ungated                                       …a tree the full set of gates has not passed
- *                                                           (GATE3, below): the person's call
+ *                                                           (see below): the person's call
  *   node tools/desktop-publish.mjs --to <install> --service --stage --from-gated <commit>
  *                                                           …the commit the full set gated in its own worktree
- *                                                           (GATEWT1, below), built there
+ *                                                           (see below), built there
  *   … --artifacts-path <folder>                             …every build of the publish into <folder>, none into a
- *                                                           project's own bin/ and obj/ (REHLANE2b): the deployment
+ *                                                           project's own bin/ and obj/: the deployment
  *                                                           rehearsal's, which runs beside the driver's git half
  *
  * 🔴 **`--to` is required and has no default.** A machine path in a tracked file is exactly what
  * `sensitive-info` forbids, and a default would be one — the same rule `testbed.mjs` follows, for the
  * same reason.
  *
- * 🔴 **It publishes only a tree the full set of gates passed** (GATE3). A merge runs only the gates its
+ * 🔴 **It publishes only a tree the full set of gates passed**. A merge runs only the gates its
  * lanes reach (`tools/merge-branch.mjs`), so this is where the rest is owed: before anything is built it
  * asks `merge-branch --passed`, and refuses, naming each gate that has not passed and the smallest command
- * that would pass it: `--stale`, `--rerun <gate>…`, or `--full`, which runs them all (GATE6b).
+ * that would pass it: `--stale`, `--rerun <gate>…`, or `--full`, which runs them all.
  * `--force-ungated` is the person's explicit override, and the publish says it is ungated. A folder under
  * the workspace's `_fixtures` is never asked: the deployment rehearsal publishes there, and it is one of the
  * gates being run.
  *
- * **A stage from the gate tree** (GATEWT1). `merge-branch --ci` (CI1, after each merge) and `--full --beside` gate a commit
+ * **A stage from the gate tree.** `merge-branch --ci` (after each merge) and `--full --beside` gate a commit
  * in a worktree of their own, `local/gate-tree` under the main checkout, while merges move main on, and record their
  * verdicts in the main checkout's store, keyed by tree. `--stage --from-gated <commit>` builds that tree, never this
  * checkout: it refuses when no gate tree stands, when it holds another commit, or while a run holds it; holds the tree's
- * lock itself through its build, so no CI run moves it meanwhile (CI1); asks the gates of the gate tree's own tree, here
+ * lock itself through its build, so no CI run moves it meanwhile; asks the gates of the gate tree's own tree, here
  * and again in the gate tree's own publish, which it runs there with the same arguments, a refusal naming
- * `--ci --stage <commit>` (CIFAST1: the CI's run that pays the rehearsals a plain run owes); and once that stages, notes it in the tree's record (`local/gate-tree.json`), so the next merge's prune removes the tree.
+ * `--ci --stage <commit>` (the CI's run that pays the rehearsals a plain run owes); and once that stages, notes it in the tree's record (`local/gate-tree.json`), so the next merge's prune removes the tree.
  *
  * **Framework-dependent on purpose.** The shell requires a Windows desktop runtime; a self-contained
- * publish would add ~150 MB to carry a .NET that this machine has. It carries its own Chromium (D92,
- * CHR4), so it no longer needs WebView2. The service hosts are the opposite case and are
- * self-contained — they are what a *server* runs, possibly without .NET at all (D43).
+ * publish would add ~150 MB to carry a .NET that this machine has. It carries its own Chromium,
+ * so it needs no WebView2. The service hosts are the opposite case and are
+ * self-contained — they are what a *server* runs, possibly without .NET at all.
  *
- * **The layout is a regular application's** (D93): `Daoris.exe` at the root is a small launcher and
+ * **The layout is a regular application's**: `Daoris.exe` at the root is a small launcher and
  * the one thing to run; the application is `app/Daoris.Desktop.exe`, CEF's launcher, beside its
  * Chromium and its libraries, with the HTTP host and the knowledge connector each in a folder of its own
  * under `app/`; `data/` is the
- * home. Daoris's browser is the application itself since CHR8 (D99), started with the browser's
- * argument, so the install carries one Chromium. The names the shell's publish put in `app/` are
+ * home. Daoris's browser is the application itself, started with the browser's
+ * argument, so the install carries one Chromium. The names the shell's publish puts in `app/` are
  * listed in `app/shell-files.txt`, so the next publish removes exactly those and nothing else. Daoris's
- * own example plugins sit beside them in `app/plugin-offers/`, offered and never installed (D103), and so
- * does the list of where each tool's versions download from, `app/resources.json` (D121). And Daoris's
- * doctrine tool (WSSETUP2, D124 §1.2): the CLI packed as the release packs it, unpacked under `app/cli/`,
- * with a launcher for each shell in `app/bin/`, beside Daoris's two git doors (GITAUTH1b, D198).
+ * own example plugins sit beside them in `app/plugin-offers/`, offered and never installed, and so
+ * does the list of where each tool's versions download from, `app/resources.json`. And Daoris's
+ * doctrine tool: the CLI packed as the release packs it, unpacked under `app/cli/`,
+ * with a launcher for each shell in `app/bin/`, beside Daoris's git doors.
  *
  * **What a deployed shell finds.** Nothing is wired into it: with no `DAORIS_*` overrides it makes
- * the install's `data/` the Daoris home (D63) — the machine's registry, quests, drivable set and profiles
+ * the install's `data/` the Daoris home — the machine's registry, quests, drivable set and profiles
  * live there, and nothing under the user profile — and locates the HTTP host through
  * `ServiceHostLocator`, and the connector it hands each protocol-door session through
  * `KnowledgeConnector`, both of which look beside the shell before the home's `bin/`. `--service`
- * publishes both there, by the service publish's one recipe (CONNECTOR1), so the folder is
+ * publishes both there, by the service publish's one recipe, so the folder is
  * self-sufficient and a republish refreshes both with the shell. A republish into an install that carries
- * either, without `--service`, is refused (CONNECTOR1b): it would leave an earlier build's hosts ranked first.
+ * either, without `--service`, is refused: it would leave an earlier build's hosts ranked first.
  */
 import { execSync, spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -95,8 +95,6 @@ export { STAGE, STAGED, BUILD_MANIFEST, SWAP_JOURNAL, MANIFEST_SCHEMA, STAGED_RE
 export { installedNote } from './desktop-publish/install-note.mjs';
 export { GATE_COMMAND, insideFixtures, askGates, ungatedRefusal } from './desktop-publish/gates.mjs';
 export { GATE_TREE, GATE_TREE_LOCK, GATE_TREE_RECORD, gatedSource, childArgs, recordStaged, stageReport, stagedAdvice, recordStage } from './desktop-publish/gate-tree.mjs';
-// The tar reader the CLI carries (AGT2b): what unpacks the doctrine tool's package (D124 §1.2).
-// The service hosts' one build recipe (CONNECTOR1): what `--service` lays under `app/`, built as the service publish builds it.
 
 // ---------------------------------------------------------------------------------------------
 // Everything above the divider is the guard, exported so `src/Daoris.Cli/test/desktop-publish.test.ts`
@@ -118,14 +116,14 @@ async function main() {
     process.exit(2);
   }
   const to = isAbsolute(toArg) ? toArg : resolve(process.cwd(), toArg);
-  // REHLANE2b: where every build of this publish goes, when told; each project's own folders otherwise.
+  // Where every build of this publish goes, when told; each project's own folders otherwise.
   const { artifacts, refusal: artifactsRefused } = artifactsOf(argv);
   if (artifactsRefused) {
     console.error(artifactsRefused);
     process.exit(2);
   }
 
-  // GATEWT1: a stage of the commit the full set gated in its own worktree is built there, by that tree's own publish,
+  // A stage of the commit the full set gated in its own worktree is built there, by that tree's own publish,
   // never from this checkout, which merges may have moved on since. Its gates are asked here first, and there again.
   if (flag('--from-gated')) {
     const commit = value('--from-gated');
@@ -133,7 +131,7 @@ async function main() {
       console.error('desktop-publish: --from-gated <commit> stages the commit the gate tree holds: give it with --stage and the commit.');
       process.exit(2);
     }
-    // CI1: the stage holds the gate tree's lock through its build, so a CI run (a watch starts one as main moves) waits for it.
+    // The stage holds the gate tree's lock through its build, so a CI run (a watch starts one as main moves) waits for it.
     const source = gatedSource(repoRoot, commit, { hold: true });
     if (source.refusal) {
       console.error(source.refusal);
@@ -160,7 +158,7 @@ async function main() {
     if (built.status === 0) {
       const at = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
       recordStaged(source.home, { commit: source.commit, to, at });
-      // CISCOPE1d: the stage's history, apart from the gate tree's record, which every run rewrites.
+      // The stage's history, apart from the gate tree's record, which every run rewrites.
       recordStage(source.home, { commit: source.commit, to, at, forced: flag('--force-ungated') });
       console.log('desktop-publish: the gate tree\'s stage is done; the next merge\'s prune removes the tree, or node tools/merge-branch.mjs --prune now.');
     }
@@ -171,7 +169,7 @@ async function main() {
 
   const run = (command) => execSync(command, { cwd: repoRoot, stdio: ['ignore', 'inherit', 'inherit'], windowsHide: true });
 
-  // `--stage` (UPDATE1, D139 §1): the same build, written beside the install into `update/staged/` instead of over it, for
+  // `--stage`: the same build, written beside the install into `update/staged/` instead of over it, for
   // the desktop to install when its work allows. Everything below writes under `root`, which is the install or the staging.
   const stage = flag('--stage');
   const refused = stage
@@ -181,7 +179,7 @@ async function main() {
     console.error(refused);
     process.exit(2);
   }
-  // GATE3: only a tree the full set passed is built into an install, before anything is built.
+  // Only a tree the full set passed is built into an install, before anything is built.
   const gated = ungatedRefusal(to, repoRoot, { force: flag('--force-ungated') });
   if (gated.refusal) {
     console.error(gated.refusal);
@@ -202,14 +200,14 @@ async function main() {
    * lines of `Microsoft.NET.HostModel.Bundle` internals for "close the app". Checked before anything
    * is built, so the answer arrives in a second rather than after the whole web bundle.
    */
-  // The application and the single-file shell an install from before D93 still has: the launcher at
+  // The application and the single-file shell an older install may still have: the launcher at
   // the root exits once it has started the application, so it is the application that holds files.
   const shells = [join(to, ...SHELL_HOME, SHELL_EXE), ...RETIRED_LAUNCHERS.map((name) => join(to, name))]
     .filter(existsSync);
-  // A stage writes nothing the running application holds, so it is never refused for one running (D139 §1).
+  // A stage writes nothing the running application holds, so it is never refused for one running.
   if (!stage && process.platform === 'win32' && shells.length > 0) {
-    // Everything from the application's executable, its browser (CHR8) and its engine's processes
-    // included; and the browser an install from before CHR8 still runs from its own folder, which
+    // Everything from the application's executable, its browser and its engine's processes
+    // included; and the browser an older install runs from its own folder, which
     // this publish removes. The browser follows the shell out, so a running one is a shell still
     // running, or just gone.
     const held = [
@@ -232,18 +230,18 @@ async function main() {
 
   // 🔴 ONE executable at the root, and nothing else that looks like one.
   //
-  // The first version published the default way: 24 entries, with the executable buried
-  // alphabetically among DLLs, `.pdb`s and three stray WebView2 `.xml` doc files. The root holds one
-  // small launcher now (D93), framework-dependent and single-file, wearing the application's icon, and
+  // Published the default way, the root holds 24 entries, with the executable buried
+  // alphabetically among DLLs, `.pdb`s and stray `.xml` doc files; here it holds one
+  // small launcher, framework-dependent and single-file, wearing the application's icon, and
   // everything it starts sits under `app/`.
   const stages = publishStages(repoRoot, artifacts);
   rmSync(stages, { recursive: true, force: true });
 
-  // The doctrine tool (WSSETUP2, D124 §1.2): `src/Daoris.Cli` packed as the release packs it, `npm pack` in
+  // The doctrine tool: `src/Daoris.Cli` packed as the release packs it, `npm pack` in
   // its own folder, whose `prepack` builds `dist/` and stages the canon, the licence and the readme. The
   // tarball is the artefact the release rehearsal installs and the release workflow publishes, never the
   // source tree. Packed before anything is published, so a package that will not pack stops the publish
-  // while the install is still as it was.
+  // while the install is still untouched.
   console.log('desktop-publish: packing the doctrine tool…');
   const cliStage = join(stages, 'cli');
   mkdirSync(cliStage, { recursive: true });
@@ -274,16 +272,16 @@ async function main() {
   const launcherStage = join(stages, 'launcher');
   run(launcherPublishCommand(launcherStage, artifacts));
 
-  // The application on its own Chromium (D92, D93): CEF's launcher beside the engine and the app's
-  // libraries, and Daoris's browser too since CHR8 (D99), which is the same executable started with
-  // the browser's argument — so there is one engine's `locales/` to keep, where there were two.
+  // The application on its own Chromium: CEF's launcher beside the engine and the app's
+  // libraries, and Daoris's browser too, which is the same executable started with
+  // the browser's argument — so there is one engine's `locales/` to keep.
   // `AllowedReferenceRelatedFileExtensions=none` is what stops the package doc files; they come from
   // the WebView2 package rather than from this compile, so `GenerateDocumentationFile` does not reach
   // them. `DebugType=none` drops the symbols an installed app has no use for.
   console.log('desktop-publish: publishing the application…');
   const shellStage = join(stages, 'shell');
   run(appPublishCommand(shellStage, artifacts));
-  // The kit lays out only the languages the app project names (SHEN1), each with three 18-byte
+  // The kit lays out only the languages the app project names, each with three 18-byte
   // grammatical-gender stubs beside it (`zh-CN_FEMININE.pak`, …); the install keeps the two plain
   // files, and refuses to ship without them.
   const locales = join(shellStage, 'locales');
@@ -295,14 +293,14 @@ async function main() {
   for (const file of readdirSync(locales)) {
     if (!KEPT_LOCALES.includes(file)) rmSync(join(locales, file));
   }
-  // The list built in is laid out below, by its one writer (TOOLS3). Whatever the build's publish carried
+  // The list built in is laid out below, by its one writer. Whatever the build's publish carried
   // of it leaves the stage, so `shell-files.txt` never records it as the application's.
   rmSync(join(shellStage, RESOURCES.at(-1)), { force: true });
 
   // What the last publish put in `app/` goes first, so an engine upgrade leaves none of its files
   // behind — only the recorded names, never the host beside them. Then what an earlier publish wrote
-  // and this one no longer does, by name (D93): the single-file shell's launcher at the root, which
-  // the launcher replaces, and the browser's own folder with its second engine (CHR8).
+  // and this one does not, by name: the single-file shell's launcher at the root, which
+  // the launcher replaces, and the browser's own folder with its second engine.
   const app = join(root, ...SHELL_HOME);
   const staged = readdirSync(shellStage);
   // The doctrine tool's two folders are laid out whole below, so an application file of either name would
@@ -321,7 +319,7 @@ async function main() {
   writeFileSync(join(root, ...SHELL_FILES), `${staged.sort().join('\n')}\n`);
   cpSync(join(launcherStage, LAUNCHER), join(root, LAUNCHER));
 
-  // The doctrine tool, beside the application (WSSETUP2, D124 §1.2): the package under `app/cli/`, as npm
+  // The doctrine tool, beside the application: the package under `app/cli/`, as npm
   // lays one out, and a launcher for each shell in `app/bin/`. Nothing goes on any PATH from here.
   try {
     const tool = await layCli(cliTarball, root);
@@ -332,7 +330,7 @@ async function main() {
     process.exit(1);
   }
 
-  // The driver's verbs (DRIVERDOOR1): the Host in a folder of its own, REPLACED whole as the service hosts are.
+  // The driver's verbs: the Host in a folder of its own, REPLACED whole as the service hosts are.
   console.log(`desktop-publish: publishing ${DRIVER_HOME.at(-1)} under ${DRIVER_HOME.join('/')}/…`);
   const driverFolder = join(root, ...DRIVER_HOME);
   rmSync(driverFolder, { recursive: true, force: true });
@@ -342,7 +340,7 @@ async function main() {
     process.exit(1);
   }
 
-  // The git doors (D198 point 2, D241 point 1), in `app/bin/` beside the launchers, laid after `layCli` replaced the folder: every
+  // The git doors, in `app/bin/` beside the launchers, laid after `layCli` replaces the folder: every
   // process Daoris starts is routed through them from the next start (`GitWiring.Hand`), and an install with all three has moved
   // (`GitMove.Moved`). Every publish lays all three.
   console.log(`desktop-publish: publishing the git doors into ${CLI_BIN.join('/')}/…`);
@@ -355,7 +353,7 @@ async function main() {
     process.exit(1);
   }
 
-  // The partner's launcher (COAGENT1b), beside the doors: a partner's start goes through it alone, and none starts until M2 admits one.
+  // The partner's launcher, beside the doors: a partner's start goes through it alone.
   console.log(`desktop-publish: publishing the partner's launcher into ${CLI_BIN.join('/')}/…`);
   const pieceStartStage = join(stages, 'piece-start');
   run(pieceStartPublishCommand(pieceStartStage, artifacts));
@@ -367,30 +365,28 @@ async function main() {
   }
   rmSync(stages, { recursive: true, force: true });
 
-  // Daoris's own example plugins, as offers beside the application (PLUG9 d, D103): the Plugins place
+  // Daoris's own example plugins, as offers beside the application: the Plugins place
   // lists them and installs one only when pressed, so the publish writes nothing under the home.
   const offered = layOffers(join(repoRoot, 'examples', 'plugins'), root);
   console.log(`desktop-publish: offering ${offered.join(', ')} in ${PLUGIN_OFFERS.join('/')}/ (none installed).`);
 
-  // The list of where each tool's versions download from (TOOLS3, D121 §3.1), beside the application.
-  // The driver's build carries it too, and the stage was cleared of it above: this is the one writer.
+  // The list of where each tool's versions download from, beside the application.
+  // The driver's build carries it too, and the stage is cleared of it above: this is the one writer.
   layResources(join(repoRoot, ...RESOURCES_SOURCE), root);
   console.log(`desktop-publish: the list built in is ${RESOURCES.join('/')}.`);
 
   if (flag('--service')) {
     // Supporting binaries go under `app/`, which is the shape the neighbouring applications on this
     // machine use: one launcher at the root, everything it needs out of sight, runtime state in `data/`.
-    // Both hosts (CONNECTOR1): the HTTP host the shell starts, and the knowledge connector its sessions are
+    // Both hosts: the HTTP host the shell starts, and the knowledge connector its sessions are
     // handed, each by the service publish's one recipe into the folder that script gives it.
     for (const step of servicePlan(root)) {
       console.log(`desktop-publish: publishing ${step.host.binary} under ${relative(root, step.folder).split(sep).join('/')}/…`);
 
       // 🔴 REPLACED, not published over. `dotnet publish` does not clear its output, so a re-publish
       // leaves every previous hashed bundle in `wwwroot/assets` — and `index.html` names only the
-      // current one, which makes the folder correct and unreadable. `service-publish.mjs` already does
-      // this, for this reason, and its sibling here did not: a real install reached SEVEN bundles, and
-      // listing it gave a wrong answer about which build was live twice — once in the first-deployment
-      // case study, and once while re-publishing to that same machine afterwards.
+      // current one, which makes the folder correct and unreadable: a real install reached SEVEN bundles,
+      // and listing it gave a wrong answer about which build is live. `service-publish.mjs` does this too.
       rmSync(step.folder, { recursive: true, force: true });
 
       if (!publishHost(repoRoot, step.host, INSTALL_RID, step.folder, 'desktop-publish', artifacts)) process.exit(1);
@@ -413,7 +409,7 @@ async function main() {
   writeFileSync(join(root, MARKER), installedNote());
 
   if (stage) {
-    // The build's manifest, which the application and the launcher check before anything is replaced (D139 §4), then
+    // The build's manifest, which the application and the launcher check before anything is replaced, then
     // the folder swapped into `update/staged/` whole, so the desktop never meets half a stage.
     const identity = {
       id: buildId(),
@@ -423,7 +419,7 @@ async function main() {
     };
     writeManifest(root, identity);
     promoteStage(root, to);
-    // CISCOPE1d: a stage built here is recorded here; the gate tree's child is recorded by its parent, and a rehearsal's
+    // A stage built here is recorded here; the gate tree's child is recorded by its parent, and a rehearsal's
     // stage under `_fixtures` is no stage of the owner's install.
     const home = mainCheckout(repoRoot);
     const child = samePath(repoRoot, join(home, ...GATE_TREE.split('/')));
@@ -437,7 +433,7 @@ async function main() {
     return;
   }
 
-  // A publish in place supersedes anything staged (D139 §1): left, it would replace this build at the next start.
+  // A publish in place supersedes anything staged: left, it would replace this build at the next start.
   unstage(to);
   console.log(`\ndesktop-publish: installed to ${to}`);
   console.log(`  Its home is ${join(to, HOME)} (D63) — starting it starts the driver loop.`);

@@ -1,21 +1,19 @@
 #!/usr/bin/env node
 /**
- * Runs a command so that git, inside it, reads HEAD as the commit an open merge would make (GATE1).
+ * Runs a command so that git, inside it, reads HEAD as the commit an open merge would make.
  *
  * ## Why
  *
  * `tools/merge-branch.mjs` merges `--no-ff --no-commit` and gates the tree before the parent commits it, so a check
- * that reads history from HEAD judged main as it was before the merge. The devkit's docs gate is that check: it dates
- * each tracked document and the code it describes by `git log -1 -- <path>`. On 2026-10-02 the merge of TOOL4e brought
- * CLI source changed that day past a README last changed the day before. Before the merge both sides were a day old,
- * so every gate passed; once committed, `verify` failed on main until the next merge edited the README
- * (`docs/FIX-LOG.md`, GATE1). The other docs checks (the budgets, shapes and duplicates, the orientation index, and the
- * devkit's other gates) read files or the index, and already saw the merge.
+ * that reads history from HEAD judges main as it is before the merge. The devkit's docs gate is that check: it dates
+ * each tracked document and the code it describes by `git log -1 -- <path>`. Source changed in the merge can sit past
+ * a README last changed the day before: both sides look a day old before the merge, so every gate passes, and once
+ * committed `verify` fails on main (`docs/FIX-LOG.md`). The other docs checks (the budgets, shapes and duplicates, the
+ * orientation index, and the devkit's other gates) read files or the index, and already see the merge.
  *
- * Since GATE1b the devkit's docs gate builds this same commit itself when a merge is open (`DocsGate.cs`), so it no
- * longer needs this tool. The gates still run it through this one, where it is handed a git folder with no merge open
- * and HEAD already the merge, and reaches the same verdict. This tool stays for any other command that reads history
- * from HEAD.
+ * The devkit's docs gate builds this same commit itself when a merge is open (`DocsGate.cs`). The gates still run it
+ * through this one, where it is handed a git folder with no merge open and HEAD already the merge, and reaches the
+ * same verdict. This tool serves any other command that reads history from HEAD.
  *
  * ## What it does
  *
@@ -27,7 +25,7 @@
  * copy of the index, and `commondir` naming the repository's own folder, so objects, refs and config stay the
  * repository's. The command runs with GIT_DIR at that folder and GIT_WORK_TREE at the checkout, so any git it starts
  * sees the merge as made, with nothing left open. The person's index, HEAD and open merge are never written, and the
- * folder goes when the command ends. A folder left by a run that was killed goes at the next run, once its process has
+ * folder goes when the command ends. A folder left by a killed run goes at the next run, once its process has
  * ended.
  *
  * A merge with unmerged paths has no commit yet, so it refuses rather than judge HEAD or conflict markers.

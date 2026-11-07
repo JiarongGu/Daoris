@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 /**
- * The knowledge bench (KNOW3): how well each knowledge design lets a real agent session find the document
+ * The knowledge bench: how well each knowledge design lets a real agent session find the document
  * that governs a task.
  *
  * ## Why
  *
- * D128 proposes moving the knowledge list out of the always-loaded region into a generated index read on
- * demand, and KNOW2 (D129) reviews the designs from the makers' documentation. Neither is a measurement. The
- * first real set-up made the region 53 KB with 169 documents, and real sessions at the owner's install found
- * knowledge mostly by searching. This bench puts one corpus behind six designs, asks the same questions of a
+ * Moving the knowledge list out of the always-loaded region into a generated index read on demand is a
+ * proposal reviewed from the makers' documentation, which is not a measurement. A real set-up puts 169
+ * documents and 53 KB in the region, and real sessions find knowledge mostly by searching. This bench puts one corpus behind six designs, asks the same questions of a
  * real headless session in each, and reads the stream for what the session opened and when.
  *
  * ## What it runs
@@ -18,8 +17,8 @@
  *   Each design document's frontmatter is written from its row in `docs/README.md`, the way a set-up session
  *   would write it; the canon's keep their own.
  * - **The designs** are one fixture each under `--root`: A, the table in the always-loaded `AGENTS.md`; B, a
- *   generated `INDEX.md` that `AGENTS.md` points to (D128); C, every document a skill; E, search-first with no
- *   index; G, a project prompt hook that prints a local BM25 ranking; 0, the files and no guidance. The brief is
+ *   generated `INDEX.md` that `AGENTS.md` points to; C, every document a skill; E, search-first with no
+ *   index; G, a project prompt hook that prints a local Okapi ranking; 0, the files and no guidance. The brief is
  *   one text in all six, and only each design's own part differs.
  * - **The isolation.** The harness reads instruction files from every folder above the one it runs in, so the
  *   root is refused when one sits above it, and the fixtures belong under the OS temp folder: generated test

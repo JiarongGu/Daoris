@@ -6,11 +6,11 @@
  * CLI — the canon (data the service and its clients will read too), the licence,
  * and the README. npm cannot reach outside a package directory: `files` is
  * package-relative, and README/LICENSE are only picked up from the package root.
- * Left alone, the restructure would have shipped a package with no licence text
- * and no readme, and D11's "the canon ships inside the package" would have
- * silently stopped being true.
+ * Left alone, the package would ship with no licence text
+ * and no readme, and "the canon ships inside the package" would
+ * silently stop being true.
  *
- * The changelog is the fourth (GITHUBDOCS1, D211): npm has no release-notes field, so the package
+ * The changelog is the fourth: npm has no release-notes field, so the package
  * carries the release-facing log itself, beside the README npm shows as its page.
  *
  * The root copies are the source of truth; these are gitignored and rebuilt at
@@ -22,9 +22,8 @@
  * The cleanup is not tidiness. `resolveCanonRoot` decides by `node_modules`, so a leftover canon can
  * no longer shadow the real tree in a dev checkout — but everything staged is gitignored build
  * output, invisible to `git status`, and `prepack` also runs `npm run build`, whose `dist/` the bin
- * PREFERS over the sources. A stale `dist/` outliving the pack is exactly how DRV5's remote landing
- * ran month-old code through every bin-driven gate while `node --test` stayed green (FIX-LOG
- * 2026-09-20) — so `postpack` removes everything a pack creates, dist/ included, and the dev loop
+ * PREFERS over the sources. A stale `dist/` outliving the pack runs
+ * old code through every bin-driven gate while `node --test` stays green — so `postpack` removes everything a pack creates, dist/ included, and the dev loop
  * goes back to needing no build at all.
  */
 import { copyFileSync, rmSync } from 'node:fs';

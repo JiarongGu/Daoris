@@ -1,8 +1,8 @@
 /**
- * QUEUELOCK1: what the merge queue says when a promotion is held on git's `index.lock` (FIX-LOG 2026-10-28, QUEUELOCK1).
+ * What the merge queue says when a promotion is held on git's `index.lock` (FIX-LOG 2026-10-28).
  *
- * A stale 0-byte `.git/index.lock` in the main checkout, left by a git that died, refused the queue's fast-forward for about
- * 1 h 45 min while the queue said only `index.lock: File exists`. The note here names the lock's age and whether a git process
+ * A stale 0-byte `.git/index.lock` in the main checkout, left by a git that died, refuses the queue's fast-forward
+ * while the queue says only `index.lock: File exists`. The note here names the lock's age and whether a git process
  * is running, so a person can tell a lock in use from one left behind. It only reads: the queue never removes the lock, which
  * only the person who knows no git is writing may do.
  *

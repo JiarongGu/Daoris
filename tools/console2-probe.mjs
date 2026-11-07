@@ -1,5 +1,5 @@
 /**
- * CONSOLE2a's measurement — what the protocol door carries when the client ASKS for the streams.
+ * Measurement: what the protocol door carries when the client ASKS for the streams.
  *
  * The console is one stream per session today. The owner wants a tab for each thing that is running:
  * the session, each sub-session it spawns, and each process it starts. Reading the Claude Code ACP
@@ -21,7 +21,7 @@
  * directions is logged, and the reader stays open after the turn to see what arrives between turns.
  *
  * 🔴 It spends one small real turn on the machine's own signed-in account (authorised 2026-09-24).
- * The enclosing agent session's `CLAUDE*` environment is stripped, as DRV4 notes. The adapter is the
+ * The enclosing agent session's `CLAUDE*` environment is stripped. The adapter is the
  * one the scratch machine pins, `_fixtures/dsh/npm` (the dsh probe's install).
  */
 import { spawn, spawnSync } from 'node:child_process';
@@ -45,7 +45,7 @@ if (!existsSync(entry)) {
   process.exit(2);
 }
 
-/** The environment without the enclosing agent session's markers (DRV4). */
+/** The environment without the enclosing agent session's markers. */
 const env = Object.fromEntries(Object.entries(process.env)
   .filter(([key]) => !/^CLAUDE/i.test(key) && key !== 'AI_AGENT'));
 
@@ -60,7 +60,7 @@ writeFileSync(join(room, 'README.md'), '# console2 room\n\nA scratch room for th
 spawnSync('git', ['add', '-A'], { cwd: room, windowsHide: true });
 spawnSync('git', ['commit', '-q', '-m', 'room'], { cwd: room, windowsHide: true });
 
-// The rules carrier the driver hands every session (PERM1), outside the room.
+// The rules carrier the driver hands every session, outside the room.
 const settingsFile = join(scratch, 'settings.json');
 writeFileSync(settingsFile, `${JSON.stringify({ permissions: { allow: ['Bash(node:*)', 'Read'], ask: [], deny: [] } }, null, 2)}\n`);
 
@@ -96,7 +96,7 @@ child.stdout.on('data', (chunk) => {
     log({ dir: 'in', frame, afterTurn: turnEnded !== null });
 
     if (frame.method === 'session/request_permission') {
-      // Refused, as Daoris refuses every one (D52).
+      // Refused, as Daoris refuses every one.
       const reject = (frame.params?.options ?? []).find((o) => o.kind === 'reject_once' || o.kind === 'reject_always');
       send({ id: frame.id, result: { outcome: reject ? { outcome: 'selected', optionId: reject.optionId } : { outcome: 'cancelled' } } });
     } else if (frame.id !== undefined && frame.method) {

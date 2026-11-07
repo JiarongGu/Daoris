@@ -1,5 +1,5 @@
 /**
- * PART1: the partial-types gate (D166's note "no partial type without generated code").
+ * The partial-types gate ("no partial type without generated code").
  *
  *   node --test tools/partials.test.mjs
  *

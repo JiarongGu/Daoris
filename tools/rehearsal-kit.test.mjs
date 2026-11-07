@@ -1,9 +1,9 @@
 /**
- * What a rehearsal keeps of a failed check (DEV3b): the print it read and the files it names, under a folder of the run's
+ * What a rehearsal keeps of a failed check: the print it read and the files it names, under a folder of the run's
  * own named for the check, so a rerun keeps the sighting it is rerun after. And how a phase waits on a session and restarts
- * the host it talks to (DEV3d): by the clock, and only between the session's requests. And the two things a run never
- * shares with another or with the checkout it runs in: its hosts' ports (REHEARSEPORT1) and its git (REHEARSEGIT1). And that a
- * command its timeout ends goes with what it started (FAMILYFAIL1).
+ * the host it talks to: by the clock, and only between the session's requests. And the two things a run never
+ * shares with another or with the checkout it runs in: its hosts' ports and its git. And that a
+ * command its timeout ends goes with what it started.
  *
  *   node --test tools/rehearsal-kit.test.mjs
  *
@@ -69,7 +69,7 @@ test("a run's folder sits beside the transcripts and is named for the rehearsal 
     join('/repo', '_fixtures', 'rehearsal-logs', 'family-2026-10-07T09-04-27-824Z'));
 });
 
-// REHLANE1: a rehearsal that runs beside the driver's git half builds the desktop's projects where no Process half builds or runs.
+// A rehearsal that runs beside the driver's git half builds the desktop's projects where no Process half builds or runs.
 test("a rehearsal's own build output is a folder of its own beside its scratch, and its build and its files are under it", () => {
   const root = ownBuildRoot('/repo', 'family');
   assert.equal(root, join('/repo', '_fixtures', 'rehearsal-builds', 'family'), 'kept across runs, which wipe the scratch, so a build is incremental');
@@ -193,9 +193,9 @@ test('a check with no evidence, or a checker with nowhere to keep it, keeps noth
   assert.deepEqual(readdirSync(keep), []);
 });
 
-// DEV3d: the family rehearsal's lost-claim phase restarted host b with the lingering stub's take still in flight. Its wait
-// for the stub's lingering was 160 asks, which ran out before a session that started 41 s into its run under load had said
-// it, and the phase went on to the restart; the stub crashed on the reset connection before the driver could stop it.
+// A phase restarting a host with a lingering stub's take still in flight crashes the stub on the reset connection, so the
+// wait for the stub's lingering is bounded by the clock: a count of asks runs out before a session that starts 41 s into
+// its run under load has said it.
 
 test('a wait answers what its ask found once it is ready, asking until then', async () => {
   let asks = 0;
@@ -284,8 +284,8 @@ test('a session never between requests within the bound: the host is restarted a
   assert.equal(restarted.host, 'host b');
 });
 
-// ——— the ACP stub's set-up step (REVIEWENV1h, D154): the family rehearsal's actor for a review, tried here against a service and
-// a connector that stand in, so a stub that stopped saying its set-up fails in a second rather than in an eight-minute gate.
+// ——— the ACP stub's set-up step: the family rehearsal's actor for a review, tried here against a service and
+// a connector that stand in, so a stub that stops saying its set-up fails in a second rather than in an eight-minute gate.
 
 /** A connector speaking MCP on stdio, as the driver hands one over the protocol: each tool call kept as a line in `CALLS`. */
 const STAND_IN_CONNECTOR = `
@@ -321,8 +321,7 @@ async function standInService() {
 /**
  * One process of the stub, as the driver runs one: `initialize`, then `opening` (a new session or a resumed one), then one prompt;
  * its input closed once the prompt is answered. The answer, and what it said on stderr. The child carries only the
- * `DAORIS_*` variables the test sets: one inherited from a driven session (a brainstorm's turn) turns the stub's branch
- * (ENVLEAK2).
+ * `DAORIS_*` variables the test sets: one inherited from a driven session (a brainstorm's turn) turns the stub's branch.
  */
 function stubTurn(stub, { cwd, env, opening, words }) {
   return new Promise((resolve, reject) => {
@@ -422,11 +421,11 @@ test("a set-up step's stub says what it showed through its connector and closes 
   assert.ok(readyAgain.arguments.shows.includes(words), readyAgain.arguments.shows);
 });
 
-// ——— the ACP stub's brainstorm turns (BRAINSTORM1a3, D176 points 3 and 4): the family rehearsal's maker, tried here against a
-// connector that stands in, so a stub that stopped answering through its tool fails in a second rather than in the gate.
+// ——— the ACP stub's brainstorm turns: the family rehearsal's maker, tried here against a
+// connector that stands in, so a stub that stops answering through its tool fails in a second rather than in the gate.
 
 /**
- * One brainstorm turn of the stub, as the driver runs one: a room holding what the turn was handed (`files`), the turn's variables
+ * One brainstorm turn of the stub, as the driver runs one: a room holding what the turn is handed (`files`), the turn's variables
  * on the agent's environment and its connector the only server. The calls the connector kept, the answer and what the stub said.
  */
 async function brainstormTurn(name, turn, files) {
@@ -514,8 +513,8 @@ test('the ACP stub with no connector fails a brainstorm turn as a failure, and w
   assert.equal(existsSync(join(at, 'a.json')), false, 'a stub answers only through its tool, never by writing the file itself');
 });
 
-// ——— REHEARSEPORT1: a run's hosts never answer another run's checks. The family rehearsal's hosts sat on fixed ports, and a
-// second run beside the first, the merge gate's beside a worktree's, read the first run's registry and failed ten checks.
+// ——— A run's hosts never answer another run's checks. On fixed ports, a second run beside the first, the merge gate's
+// beside a worktree's, would read the first run's registry.
 
 /** A port held as another run's host holds it: listening on the loopback, until `close`. */
 async function holdPort(port) {
@@ -581,8 +580,8 @@ test('the holder of a port is named by its process, as Windows tells it', { skip
   assert.match(portHolder(port), new RegExp(`^pid ${process.pid} node`));
 });
 
-// ——— REHEARSEGIT1: a rehearsal runs git only in a repository it made. git walks UP from a folder that is not one, and the
-// family rehearsal's fallback to its scratch committed a worktree's uncommitted work as "Family Rehearsal".
+// ——— A rehearsal runs git only in a repository it made. git walks UP from a folder that is not one, and a fallback to the
+// scratch would commit a worktree's uncommitted work as "Family Rehearsal".
 
 const ID = '-c user.name="Kit Test" -c user.email="kit@example.invalid"';
 
@@ -727,9 +726,9 @@ test('the ACP stub started in a folder that is not its own repository fails the 
     assert.equal(git(outer, 'rev-list', '--count', 'HEAD'), '1');
   });
 
-// ——— FAMILYFAIL1: what every phase runs a command through, `capture`. Its timeout ends what the command started too: on
-// Windows the kill reached the shell the command ran in and no further, and the family rehearsal's driver, a `dotnet` under
-// it, ran on past its bound holding its home's lease, so the 22 checks after it read or raced what it went on to do.
+// ——— What every phase runs a command through, `capture`. Its timeout ends what the command started too: on
+// Windows the kill reaches the shell the command runs in and no further, and the family rehearsal's driver, a `dotnet` under
+// it, would run on past its bound holding its home's lease, so the checks after it read or race what it goes on to do.
 
 /** Whether a process of this id still runs. */
 const alive = (pid) => {
@@ -795,7 +794,7 @@ test('a command that ends answers as it always did: standard output alone on suc
   assert.deepEqual(capture(`node "${sayer}" 0`, at, { env: { REHEARSAL_KIT_WORD: 'set' } }), { code: 0, out: 'outset' });
 });
 
-// ——— COAGENT1b's stand-ins (the co-agent design §8.1): the kit's queueing switch, the turn-end stand-in shaped on codex-acp, and a
+// ——— The stand-ins (the co-agent design §8.1): the kit's queueing switch, the turn-end stand-in shaped on codex-acp, and a
 // second maker declared by a file.
 
 /**

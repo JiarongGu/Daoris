@@ -6,7 +6,7 @@ import { HOST_EXE, HOST_HOME, LAUNCHER, MARKER, SHELL_EXE, SHELL_FILES, SHELL_HO
 import { HOME } from './lay.mjs';
 
 /**
- * Where `--stage` puts a build beside an install (UPDATE1, D139 §1), as path segments: `update/`, which the stage and the
+ * Where `--stage` puts a build beside an install, as path segments: `update/`, which the stage and the
  * launcher's swap own, and `update/staged/` inside it, renamed into place whole. A twin of `StagedBuild.Folder`,
  * `StagedBuild.Staged`, `StagedBuild.Manifest`, `StagedBuild.Journal` and `StagedBuild.Schema`
  * (the driver's `StagedBuild.cs`, which the launcher compiles); `desktop-publish.test.ts` finds that file by its name and
@@ -26,7 +26,7 @@ const SWAPPING = Object.freeze(['swapping', 'started', 'confirmed']);
 
 /**
  * Every name a publish writes at the root of an install — and the shell's own `data/`, which it
- * creates on first start, and `update/`, which `--stage` and the swap own (D139). Nothing else in
+ * creates on first start, and `update/`, which `--stage` and the swap own. Nothing else in
  * that folder is ever this script's to touch.
  */
 export const OWN = Object.freeze([LAUNCHER, SHELL_HOME[0], HOME, MARKER, STAGE[0]]);
@@ -38,7 +38,7 @@ export function buildId(at = new Date()) {
 }
 
 /**
- * The manifest of the build under `root` (D139 §1, §4): every file but the manifest itself, by its path with `/`, its size
+ * The manifest of the build under `root`: every file but the manifest itself, by its path with `/`, its size
  * and its SHA-256, in one order, under the build's identity. What the application and the launcher check before anything
  * is replaced.
  */
@@ -69,7 +69,7 @@ export function writeManifest(root, identity) {
 }
 
 /**
- * What stops `--stage` (D139 §1), as the sentence to print, or null: a folder that is no install this script published, a
+ * What stops `--stage`, as the sentence to print, or null: a folder that is no install this script published, a
  * swap the launcher has under way, and an install carrying its HTTP host staged without `--service`, which would leave the
  * install without one. A running install is not refused: staging beside it is what the flag is for.
  */
@@ -100,8 +100,8 @@ export function stageRefusal(to, { service = false } = {}) {
 }
 
 /**
- * The finished staging folder into `update/staged/`, replacing whatever was staged before, whole. A folder of fresh
- * executables: Windows refuses its rename while something still holds a file in it, the scanner most often (UPDATE1),
+ * The finished staging folder into `update/staged/`, replacing whatever is staged, whole. A folder of fresh
+ * executables: Windows refuses its rename while something still holds a file in it, the scanner most often,
  * so the rename is tried for half a minute, and then the build is copied into place with its manifest written last.
  * Whatever reads `update/staged/` reads the manifest first, so a half copy is nothing staged, never a broken build.
  */
@@ -139,7 +139,7 @@ export function promoteStage(staging, install, { rename, tries = 150, waitMs = 2
   return staged;
 }
 
-/** What was staged, removed: a publish in place supersedes it (D139 §1). The swap's journal stays to read. */
+/** What is staged, removed: a publish in place supersedes it. The swap's journal stays to read. */
 export function unstage(install) {
   rmSync(join(install, ...STAGED), { recursive: true, force: true });
 }
@@ -169,9 +169,9 @@ export function recordedShellFiles(install) {
  * `OWN`, so beside other things it refuses only when one of THOSE names is already taken by
  * something it did not write — the one case where "install next to it" would be "install over it".
  *
- * **Its own install, without `--service`, while it carries a service host** (CONNECTOR1b). Such a publish never touches
+ * **Its own install, without `--service`, while it carries a service host.** Such a publish never touches
  * the hosts' folders, so the hosts an earlier `--service` laid under `app/` would stay, from that build, and both
- * locators run them ahead of the home's `bin/`: the stale binary CONNECTOR1 fixed, by another road. It is
+ * locators run them ahead of the home's `bin/`: a stale binary, by another road. It is
  * refused, naming each and `--service`, as `--stage` refuses an install that carries its HTTP host. Removing them instead
  * would hand every session the home's `bin/` copy, which no publish refreshes: the same defect by the first road.
  *

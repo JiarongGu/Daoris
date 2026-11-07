@@ -7,7 +7,7 @@
  * Eighteen merges in three days collided most on records every branch appends to: the changelog, the
  * decision log, the task archive, the fix log, the documents' index, the twins table
  * (`docs/2026-09-30-parallel-development-design.md` §1). Nothing about the work collided, only the
- * insertion point. MOD1 (D106) marks those files `merge=union` in `.gitattributes`, so two branches adding
+ * insertion point. `.gitattributes` marks those files `merge=union`, so two branches adding
  * lines at one place keep both.
  *
  * Union has one cost, and this check is for it: when two branches CHANGE the same line, union keeps both
@@ -17,17 +17,17 @@
  * ## The decisions record, a file or a folder
  *
  * It is read where `daoris.json` declares it (`documents.decisions`). As one file it tore in 33 of 134
- * merges, so D134 makes it a folder of one file per decision, merged by union per file
- * (`docs/2026-10-03-decisions-record-design.md`). A file is checked as it always was, for a number twice. A
- * folder is checked for what union can still leave in one decision's file (§3.4, DOC8b): a file not named
+ * merges, so it is a folder of one file per decision, merged by union per file
+ * (`docs/2026-10-03-decisions-record-design.md`). A file is checked for a number twice. A
+ * folder is checked for what union can still leave in one decision's file (§3.4): a file not named
  * `D<n>.md`, a heading that is not exactly one and its own, a conflict marker, a note's label glued to the
- * line above it, a note held twice (DUPNOTE1: union keeps a note both sides carried, each copy set apart).
- * And the page the record left at its old path is checked for a decision or a note written into it, which a
+ * line above it, a note held twice (union keeps a note both sides carried, each copy set apart).
+ * And the page the record leaves at its old path is checked for a decision or a note written into it, which a
  * branch from before the migration would otherwise land there.
  *
  * ## It fails
  *
- * Unlike the doc budgets (D54: a judgement reports), a duplicated decision number or index row is a fact
+ * Unlike the doc budgets (a judgement reports), a duplicated decision number or index row is a fact
  * about the file, and a fact gates; so is each of the folder's. Exit 1 names every finding and its file.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
@@ -37,7 +37,7 @@ import { isMain } from './fsx.mjs';
 
 /**
  * The records marked `merge=union` besides the decisions record, and what a duplicate is in each. The router merges by
- * its rows since ROUTERMERGE1 (`merge=rows`, `tools/merge-rows.mjs`) and is checked still: a branch cut from an earlier
+ * its rows (`merge=rows`, `tools/merge-rows.mjs`) and is checked still: a branch cut from an earlier
  * union merge can carry a row twice, and the driver keeps a side's own duplicate.
  */
 const APPEND_ONLY = [
@@ -48,9 +48,9 @@ const APPEND_ONLY = [
 ];
 
 /**
- * The decisions record's old path. While the record is one file it is the record, and where it is looked for
+ * The decisions record's page. While the record is one file it is the record, and where it is looked for
  * when `daoris.json` declares none; once the record is a folder it is the page that says where the decisions
- * are, and holds none of them (D134 §3.2).
+ * are, and holds none of them (§3.2).
  */
 export const PAGE = 'docs/DECISIONS.md';
 
@@ -58,7 +58,7 @@ export const PAGE = 'docs/DECISIONS.md';
 const SEPARATOR = /^\|(\s*:?-+:?\s*\|)+\s*$/;
 
 /**
- * What appears twice in a record's text, by its kind: a decision's number (`## D106`), a second-level
+ * What appears twice in a record's text, by its kind: a decision's number (`## D<n>`), a second-level
  * heading, a table row's first cell (header rows skipped: several tables share one header), or a whole
  * list line in the changelog. Fenced examples are excluded. Each duplicate once, in the order first seen twice.
  */
@@ -98,7 +98,7 @@ function duplicateKeys(keys) {
 
 /**
  * Where `daoris.json` declares the decisions record, `/`-separated and without a trailing slash. The orientation
- * index's digest reads the record from here too (ORIENT1b).
+ * index's digest reads the record from here too.
  */
 export function declaredDecisions(root) {
   const manifest = join(root, 'daoris.json');
@@ -133,11 +133,11 @@ const lines = (text) => text.replace(/\r\n/g, '\n').split('\n');
  * Whether a fenced block holds each line, its fences too: a fence's lines are text, never a heading or a
  * label. `doc-shapes` and the orientation index read headings and notes by this one function.
  *
- * Read as CommonMark reads a fence (ORIENT2h4, after the service's ORIENT2h3 `MarkdownFence`): a fence opens on a
+ * Read as CommonMark reads a fence (as the service's `MarkdownFence` does): a fence opens on a
  * run of three or more backticks or tildes, after any indent, and closes only on a run of the same character at
  * least as long with nothing after it but spaces. A backtick run with a backtick after it on its line is code
- * inline and opens nothing. A fence never closed holds the rest of the file. Toggling on any line that opened with
- * three backticks closed a four-backtick fence on the example it quoted, so a label quoted there split a note.
+ * inline and opens nothing. A fence never closed holds the rest of the file. (Toggling on any line that opens with
+ * three backticks would close a four-backtick fence on the example it quotes, so a label quoted there would split a note.)
  * The service's `DecisionNotes` reads a decision's fences by the same rule with code of its own; both are held to
  * `orient-index-fixtures/decision-notes.json`.
  */
@@ -158,20 +158,20 @@ export function fenced(text) {
 }
 
 /**
- * A note's label, in the forms the record writes them (D134 §3.4). The design counted 178 notes in sixteen forms
+ * A note's label, in the forms the record writes them (§3.4). The design counted 178 notes in sixteen forms
  * (§1.3), each a bold or italic word naming a build, a fix, an amendment or a reading, with its date on the line;
- * and its per-file replay found the commonest left glued to the paragraph above (§2.1), which count with or
+ * the commonest come glued to the paragraph above (§2.1), and count with or
  * without a date. A rarer word counts only with a date, so an emphasised sentence that opens with one
  * (`**Proven without the rehearsal**`) is not taken for a note. The service's `DecisionNotes` copies these forms; the
- * digest that reads them and it are held to `orient-index-fixtures/decision-notes.json` (ORIENT1h).
+ * digest that reads them and it are held to `orient-index-fixtures/decision-notes.json`.
  */
 const NOTE_LABEL = [
   /^\*\*(As built|Built|Fixed|Read|Amended)\b/,
   /^\*(As built|Built|Amended)\b/,
   /^\*\*?(Corrected|Measured|Landed|Proved|Proven|Probed|Reviewed|Superseded|Noted|Note|Revised|Decided|Extended|Accepted)\b.*\d{4}-\d{2}-\d{2}/,
-  // A note named by its task first: `**DRIFT1a, built 2026-10-02: …**`.
+  // A note named by its task first: `**<task>, built 2026-10-02: …**`.
   /^\*\*[^*]*\b(built|landed|amended)\b[^*]*\d{4}-\d{2}-\d{2}/,
-  // The mark an older record keeps of a later one that supersedes it, dated or not (KNOWFRESH1a-i).
+  // The mark an older record keeps of a later one that supersedes it, dated or not.
   /^\*\*?Superseded by D[1-9]\d*\b/,
 ];
 
@@ -180,7 +180,7 @@ export const isNoteLabel = (line) => NOTE_LABEL.some((form) => form.test(line));
 /**
  * The lines, by index, that are a note's label straight after a non-blank line, outside a fence: what union leaves
  * when two notes written under one decision at once lose the blank line between them (§2.1). The one definition, so
- * the merge tool sets apart exactly what this check refuses (MERGEJOIN1). A line ending in `\r` is blank when the
+ * the merge tool sets apart exactly what this check refuses. A line ending in `\r` is blank when the
  * rest of it is.
  */
 export function gluedLabels(text) {
@@ -188,7 +188,7 @@ export function gluedLabels(text) {
   return text.flatMap((line, i) => (i > 0 && !inFence[i] && text[i - 1].trim() !== '' && isNoteLabel(line) ? [i] : []));
 }
 
-/** Each note label held more than once outside a fence, once, in the order first seen twice (DUPNOTE1). */
+/** Each note label held more than once outside a fence, once, in the order first seen twice. */
 function twiceLabels(text) {
   const inFence = fenced(text);
   return duplicateKeys(text.flatMap((line, i) => (!inFence[i] && isNoteLabel(line) ? [line.trimEnd()] : [])));
@@ -203,7 +203,7 @@ function decisionHeadings(text) {
   });
 }
 
-/** Decision files in their numbers' order (D2 before D10), any other name after them. */
+/** Decision files in their numbers' order (2 before 10), any other name after them. */
 export const byNumber = (a, b) => {
   const [m, n] = [/^D(\d+)\.md$/.exec(a), /^D(\d+)\.md$/.exec(b)];
   if (m && n) return Number(m[1]) - Number(n[1]) || a.localeCompare(b);
@@ -221,7 +221,7 @@ function markdownIn(root, folder) {
 
 /**
  * What union can leave in a folder of decisions, one file each, and in the page the record left behind
- * (D134 §3.4), as `{ file, fact, key }`: the file, what is wrong, and the line or name it is wrong at.
+ * (§3.4), as `{ file, fact, key }`: the file, what is wrong, and the line or name it is wrong at.
  */
 export function folderFacts(root, folder) {
   const found = [];
@@ -234,10 +234,10 @@ export function folderFacts(root, folder) {
     // Two notes written under one decision at once meet in its file, and union keeps both whole; in 12 of the
     // files replayed one lost the blank line above it, so a renderer reads it as the paragraph before (§2.1).
     for (const i of gluedLabels(text)) found.push({ file, fact: 'a note label after a non-blank line', key: text[i].trimEnd() });
-    // A note both sides carried is kept twice, each copy after its own blank line, so the glued check never sees it:
-    // D150 held PLUGTOOL1a's note twice (DUPNOTE1). A note is named by its label's line, which carries its task and date.
+    // A note both sides carried is kept twice, each copy after its own blank line, so the glued check never sees it.
+    // A note is named by its label's line, which carries its task and date.
     for (const key of twiceLabels(text)) found.push({ file, fact: 'a note twice', key });
-    // The path is the citation (§3.1): `D7.md` is D7, so a padded or slugged name would need a search to find.
+    // The path is the citation (§3.1): `D<n>.md` names decision n, so a padded or slugged name would need a search to find.
     if (!/^D[1-9]\d*\.md$/.test(name)) {
       found.push({ file, fact: 'not named D<n>.md', key: name });
       continue;

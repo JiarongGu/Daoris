@@ -1,11 +1,10 @@
 /**
- * MOVETOOL1: files moved with `git mv`, and every relative import of them respelled.
+ * Files moved with `git mv`, and every relative import of them respelled.
  *
  *   node tools/move-files.mjs [--plan] [--root <dir>] [--moves <file.json>] [--expect-moved N]
  *                             [--expect-rewritten N] [--expect-files N] [from=to ...]
  *
- * The CLI's and the page's restructures (STRUCT5c, STRUCT5d) each built a scratch script for this; this is the one that
- * stays. A move is `from=to` on the command line, or an entry of the JSON file: `{ "moves": [["a.ts", "b/a.ts"], ...],
+ * A move is `from=to` on the command line, or an entry of the JSON file: `{ "moves": [["a.ts", "b/a.ts"], ...],
  * "expect": { "moved": 1, "rewritten": 4, "files": 3 } }` (a bare array, or `{ "from": ..., "to": ... }` entries, work too).
  * A `from` that names a folder moves every tracked file under it. The root is the git work tree's top (default: the
  * current folder).
@@ -40,7 +39,7 @@ export class MoveRefused extends Error {}
 const extOf = (path) => posix.extname(path);
 const withoutExt = (path) => path.slice(0, path.length - extOf(path).length);
 
-/** The tracked file a specifier names from `importer`, and how it was spelled, or null. `files` is a Set of paths. */
+/** The tracked file a specifier names from `importer`, and how it is spelled, or null. `files` is a Set of paths. */
 export function resolveSpecifier(files, importer, specifier) {
   const joined = posix.join(posix.dirname(importer), specifier);
   if (files.has(joined)) return { target: joined, form: 'exact' };

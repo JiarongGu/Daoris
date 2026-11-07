@@ -70,7 +70,7 @@ test('CODESHAPE1: a file whose stamp is the hash is fresh; one missing, unstampe
   assert.deepEqual(Object.values(OUTPUTS), ['src/Daoris.Web/src/data/generated/service.ts', 'src/Daoris.Web/src/bridge/generated/routes.ts']);
 });
 
-/** A generator that is a test's: what it was asked to build, and the files as `look` reads them, stale or fresh. */
+/** A generator that is a test's: what it is asked to build, and the files as `look` reads them, stale or fresh. */
 const stand = (why) => {
   const asked = { builds: [], looks: [] };
   return { asked, look: (root) => { asked.looks.push(existsSync(join(root, LOCK))); return { hash: 'h', why }; }, build: (_, hash) => asked.builds.push(hash) > 0 };

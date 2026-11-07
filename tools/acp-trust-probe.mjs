@@ -1,9 +1,9 @@
 /**
- * DEPLOY1's measurement — does the protocol door need the harness's trust flag?
+ * Measurement: does the protocol door need the harness's trust flag?
  *
  * The pipe door does. Claude Code ignores a repository's own `permissions.allow` in a directory it
  * has never been told to trust, so a driven session there can work but cannot take or close its
- * quest, and the driver holds rather than spend a login on it (DEPLOY1's detection half). The ACP
+ * quest, and the driver holds rather than spend a login on it. The ACP
  * door runs the adapter's Agent SDK rather than the CLI's trust flow, so it may not have the problem
  * at all — and the driver currently holds it on the same check, which is a guess until measured.
  *
@@ -12,17 +12,16 @@
  * Two scratch rooms, both fresh and therefore untrusted, each a git repository. The CONTROL has no
  * allow-list; the MEASUREMENT's own `.claude/settings.json` allows `git commit`. Each gets one small
  * prompt over the wire — make one empty commit — and a permission request is answered the way Daoris
- * answers every one: refused (D52). What is recorded is whether a request arrived at all.
+ * answers every one: refused. What is recorded is whether a request arrived at all.
  *
- * 🔴 The command has to WRITE. The first version asked for `git status`, and the control ran it
- * unasked: Claude Code approves read-only commands on its own, so a read proves nothing about an
- * allow-list either way.
+ * 🔴 The command has to WRITE: Claude Code approves read-only commands on its own, so a read proves
+ * nothing about an allow-list either way.
  *
  * - The control asks        → the adapter gates Bash under `acceptEdits`, so the probe can see a gate.
- * - The measurement asks    → the room's allow-list was ignored: the ACP door has the trust problem.
- * - The measurement doesn't → the allow-list was honoured untrusted: the ACP door does not need it.
+ * - The measurement asks    → the room's allow-list is ignored: the ACP door has the trust problem.
+ * - The measurement doesn't → the allow-list is honoured untrusted: the ACP door does not need it.
  *
- * A third room measures PERM1's carrier (D72): no allow-list of its own, and the same `git commit`
+ * A third room measures the session-settings carrier: no allow-list of its own, and the same `git commit`
  * allowed in a settings file handed on `session/new` as `_meta.claudeCode.options.settings`, the
  * harness's command-line tier and the way the driver hands every session its rules. If it runs
  * unasked in an untrusted room, Daoris's rules reach a session without anybody's trust grant. If it
@@ -30,7 +29,7 @@
  *
  * 🔴 It spends three small prompts on the machine's own signed-in account. It writes nothing under the
  * account's configuration — the trust flag is the person's grant, and this measures its absence.
- * Run with the `CLAUDE*` environment of any enclosing agent session stripped, as DRV4 notes.
+ * Run with the `CLAUDE*` environment of any enclosing agent session stripped.
  */
 import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -104,7 +103,7 @@ async function probe(cwd, meta = null) {
       try { frame = JSON.parse(line); } catch { continue; }
 
       if (frame.method === 'session/request_permission') {
-        // Refused, as Daoris refuses every one (D52): the outcome the driver's door would give.
+        // Refused, as Daoris refuses every one: the outcome the driver's door would give.
         seen.permissions.push(frame.params?.toolCall?.title ?? frame.params?.toolCall?.kind ?? 'a tool');
         send({ id: frame.id, result: { outcome: { outcome: 'cancelled' } } });
       } else if (frame.method === 'session/update') {
@@ -143,7 +142,7 @@ async function probe(cwd, meta = null) {
     });
     if (init.error) { seen.problem = `initialize: ${init.error.message}`; return seen; }
 
-    // PERM1's carrier, exactly as the driver sends it (`ClaudeAcpAdapter.AcpSessionMeta`).
+    // The settings carrier, exactly as the driver sends it (`ClaudeAcpAdapter.AcpSessionMeta`).
     const created = await request('session/new', meta ? { cwd, mcpServers: [], _meta: meta } : { cwd, mcpServers: [] });
     if (created.error) { seen.problem = `session/new: ${created.error.message}`; return seen; }
     const sessionId = created.result.sessionId;
@@ -191,7 +190,7 @@ for (const where of [control, measured, flagged]) {
   }
 }
 
-// The rules file PERM1 hands a session, outside the room — the driver keeps it under the home.
+// The rules file the driver hands a session, outside the room — the driver keeps it under the home.
 const flagFile = join(scratch, 'flag-settings.json');
 writeFileSync(flagFile, `${JSON.stringify({ permissions: { allow: ['Bash(git commit:*)'], ask: [], deny: [] } }, null, 2)}\n`);
 
@@ -213,7 +212,7 @@ if (controlSeen.problem || measuredSeen.problem) {
   console.log('  the ACP door HONOURS an untrusted room\'s allow-list: it does not need the trust flag.');
 }
 
-// PERM1's carrier (D72), read against the same control.
+// The settings carrier, read against the same control.
 if (flaggedSeen.problem || controlSeen.permissions.length === 0) {
   console.log('  PERM1: inconclusive — see above.');
 } else if (flaggedSeen.permissions.length > 0) {

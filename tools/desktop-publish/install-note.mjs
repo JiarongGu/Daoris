@@ -10,7 +10,7 @@ import { STAGE, STAGED, SWAP_JOURNAL } from './staging.mjs';
  * also the marker {@link isInstall} reads, so it opens with {@link MARKER_HEADER}. Written by the publish
  * rather than tracked, because the file belongs to the install; it names no machine path.
  *
- * The pinning section is D108's §2 (LEFT1): the window names Daoris's taskbar id, so a pin made from
+ * The pinning section: the window names Daoris's taskbar id, so a pin made from
  * it starts the launcher here, and a pin made on the launcher in Explorer carries no id and stays a
  * button apart from the running window.
  */
@@ -98,4 +98,4 @@ Re-publishing over this folder with the application closed still works, with \`-
 }
 
 // ---------------------------------------------------------------------------------------------
-// GATE3: the full set before the install
+// The full set before the install

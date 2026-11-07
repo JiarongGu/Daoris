@@ -13,25 +13,25 @@ export function driverPublishCommand(folder, rid = INSTALL_RID, artifacts = null
   return builtInto(`dotnet publish "${DRIVER_PROJECT}" -c Release -r ${rid} --self-contained false -p:DebugType=none ${STAMPED} -o "${folder}"`, artifacts);
 }
 
-/** The launcher at an install's root (D93) and the application under `app/`, the two projects the shell's publish makes. */
+/** The launcher at an install's root and the application under `app/`, the two projects the shell's publish makes. */
 export const LAUNCHER_PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.Launcher';
 export const APP_PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.App';
 
-/** The launcher's publish into `folder` (D93; the publish's own comments say why each option), its builds into `artifacts` when given. */
+/** The launcher's publish into `folder` (the publish's own comments say why each option), its builds into `artifacts` when given. */
 export function launcherPublishCommand(folder, artifacts = null) {
   return builtInto(`dotnet publish "${LAUNCHER_PROJECT}" -c Release -r ${INSTALL_RID} --self-contained false `
     + '-p:PublishSingleFile=true -p:DebugType=none '
     + `-p:AllowedReferenceRelatedFileExtensions=none ${STAMPED} -o "${folder}" --nologo`, artifacts);
 }
 
-/** The application's publish into `folder` (D92, D93; the publish's own comments say why each option), its builds into `artifacts` when given. */
+/** The application's publish into `folder` (the publish's own comments say why each option), its builds into `artifacts` when given. */
 export function appPublishCommand(folder, artifacts = null) {
   return builtInto(`dotnet publish "${APP_PROJECT}" -c Release -r ${INSTALL_RID} --self-contained false `
     + `-p:DebugType=none -p:AllowedReferenceRelatedFileExtensions=none ${STAMPED} -o "${folder}" --nologo`, artifacts);
 }
 
 /**
- * Where a publish lays its parts out before an install takes them (REHLANE2b): under `artifacts` when the publish was given
+ * Where a publish lays its parts out before an install takes them: under `artifacts` when the publish is given
  * one, beside its builds; otherwise in the application project's `bin/`, as always.
  */
 export function publishStages(repoRoot, artifacts = null) {
@@ -39,10 +39,10 @@ export function publishStages(repoRoot, artifacts = null) {
 }
 
 /**
- * `--artifacts-path <folder>` (REHLANE2b): the folder every build of this publish goes into, made absolute against `cwd` as
- * `--to` is, or null when not given, the install's recipe as it always was: each project's own `bin/` and `obj/`. The
+ * `--artifacts-path <folder>`: the folder every build of this publish goes into, made absolute against `cwd` as
+ * `--to` is, or null when not given: each project's own `bin/` and `obj/`. The
  * deployment rehearsal gives one of its own, so it can run beside the driver's git half, which builds into and runs from
- * the desktop projects' folders (`tools/merge-branch.mjs`'s REHLANE2b section). Given with no folder, a refusal.
+ * the desktop projects' folders. Given with no folder, a refusal.
  */
 export function artifactsOf(argv, cwd = process.cwd()) {
   const at = argv.indexOf('--artifacts-path');
@@ -55,7 +55,7 @@ export function artifactsOf(argv, cwd = process.cwd()) {
 }
 
 /**
- * Daoris's three git doors (GITAUTH1b, D198 point 2, D241 point 6; the git-auth design §4.2-§4.3): one program, published framework-dependent and
+ * Daoris's three git doors: one program, published framework-dependent and
  * laid out in `app/bin/` whole (its executable, its library and the runtime's two files beside them), then its executable again
  * as the remote helper and as the credential door, which load the same library, since the apphost names its library inside. Twins of
  * `GitWiring.SshDoor`, `GitWiring.RemoteHelper` and `GitCredentialDoor.Exe`, which hand a start a door only where it is laid out here: until this lays them
@@ -84,7 +84,7 @@ export function layGitDoors(published, install) {
 }
 
 /**
- * The partner's launcher (COAGENT1b; D199's note on the strict start): one program, published framework-dependent and laid out in
+ * The partner's launcher: one program, published framework-dependent and laid out in
  * `app/bin/` whole beside the git doors. The driver starts it for a partner alone; it joins the piece's job, then starts the harness
  * inside it. A twin of `PieceLauncher.Program`, which `PieceLauncherTests` holds to this name.
  */

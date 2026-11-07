@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The failure reader and the signature (CISCOPE1c, D207; design `docs/2026-10-24-ci-scope-design.md` §4.1 point 4, §3.5).
+ * The failure reader and the signature (design `docs/2026-10-24-ci-scope-design.md` §4.1 point 4, §3.5).
  *
  * ## Why
  *
@@ -293,7 +293,7 @@ export function signatureOf(failure, read = null, root = null) {
 
 /**
  * A gate that names no failing test, signed by its step: for a build, the set of its compiler errors' codes with their files
- * (`CS0103 src/…/X.cs`), sorted, since MSBuild prints each project's errors as its node finishes; otherwise the step's first
+ * (`<code> src/…/X.cs`), sorted, because MSBuild prints each project's errors as its node finishes; otherwise the step's first
  * error line, normalised.
  */
 export function gateSignature(gate, step, output, root = null) {

@@ -62,9 +62,9 @@ export function filterHolds(filter, traits) {
 const filterValue = (text) => text.replace(/[\\()&|=!~]/g, (c) => `\\${c}`);
 
 /**
- * The run settings a half runs by reach with (PROCREACH1): the half's own, its filter ANDed with one `FullyQualifiedName!~`
+ * The run settings a half runs by reach with: the half's own, its filter ANDed with one `FullyQualifiedName!~`
  * condition per kept class, the class's full name and a dot, so a class whose name another's begins with is not kept with it.
- * In a file, not on the command line: VSTest ANDs the file's filter with one a re-run alone adds (the merge tool's FLAKE1),
+ * In a file, not on the command line: VSTest ANDs the file's filter with one a re-run alone adds (the merge tool's flake re-run),
  * and two hundred names pass cmd's 8,191 characters. A class kept out is the only one that does not run: one this census never
  * saw still runs.
  */

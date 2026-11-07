@@ -119,7 +119,7 @@ export function taskPrompt(question) {
   ].join('\n');
 }
 
-/** The canary's question: the session reports what it was handed, and the stream says the same. */
+/** The canary's question: the session reports what it holds, and the stream says the same. */
 export const CANARY_PROMPT = [
   'Without calling any tool, list what your context holds, one line per item: every instruction file (CLAUDE.md,',
   'AGENTS.md, rules, memory or any other) with its first heading; every tool; every MCP server; every skill; and',

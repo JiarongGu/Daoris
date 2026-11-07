@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * This workspace's knowledge server for agents (ORIENT1c): what `.mcp.json` starts, and the build it runs.
+ * This workspace's knowledge server for agents: what `.mcp.json` starts, and the build it runs.
  *
  *   node tools/knowledge-server.mjs              serve over stdio, as `.mcp.json` names it
  *   node tools/knowledge-server.mjs build        publish the MCP host under local/, when its sources changed
@@ -8,35 +8,35 @@
  *
  * ## Why
  *
- * `.mcp.json` named `dotnet run --project …Mcp`: a build at every session's start, once per worktree, failing
- * when two built at once, and with no Daoris home in a terminal's environment the host refused to start anyway.
- * The session that measured ORIENT1 had no server at all. So the server is built once, by `build` (which the
+ * `dotnet run --project …Mcp` would build at every session's start, once per worktree, failing
+ * when two built at once, and with no Daoris home in a terminal's environment the host refuses to start anyway.
+ * So the server is built once, by `build` (which the
  * merge tool runs after a merge's gates pass), into `local/knowledge-server/builds/<when>-<digest>/`, and
  * `current.json` beside the builds names the one to run. Serving never builds.
  *
  * ## What it serves
  *
  * A session started by hand, or a subagent's, gets the workspace's own server: the build's home under
- * `local/knowledge-server/home/` (D63: never the profile, and never the install's home, whose store a workspace
+ * `local/knowledge-server/home/` (never the profile, and never the install's home, whose store a workspace
  * build must not open), over this one checkout, its documents under `docs/` a section each and its index under
  * `docs/index/` a row each, by words only: each process re-reads the checkout once its reading is a minute old,
- * and embedding thousands of entries a minute is not a cost a workspace's instrument pays (D24: the deployment
+ * and embedding thousands of entries a minute is not a cost a workspace's instrument pays (the deployment
  * chooses, and every answer says the tier). A worktree reaches its main checkout's build and serves the main
  * checkout, unless it built one of its own. Git ignores the index, so before each tool call the relay writes it again
- * where the served checkout's `HEAD` has moved since it was last written (`tools/index-fresh.mjs`).
+ * where the served checkout's `HEAD` has moved since the last write (`tools/index-fresh.mjs`).
  *
- * A running session follows the build (KNOWHOLD1): when a merge makes a new one, the relay moves the session onto it at
+ * A running session follows the build: when a merge makes a new one, the relay moves the session onto it at
  * its next request with nothing owed, or within a minute while it is idle, and ends the server it left (`relayServer`),
  * so a fix to the host reaches a running session.
  *
  * A session a driver started (it names `DAORIS_REPOSITORY`) is the driver's: its environment is passed on whole,
- * so its connector speaks to the driver's store, as this file did for a pipe-door session before (D70). It runs
+ * so its connector speaks to the driver's store. It runs
  * the machine's own host first, where the driver would find it for the protocol door (`DAORIS_MCP_HOST`, then the
  * connector an install carries in `app/daoris-knowledge/` when the home is that install's `data/`, then `bin/` under
- * the home: `KnowledgeConnector.Candidates`, CONNECTOR1), and this workspace's build after.
+ * the home: `KnowledgeConnector.Candidates`), and this workspace's build after.
  *
  * With nothing to run, it answers the protocol itself: the handshake says why in the server's instructions,
- * no tool is listed, and the session works as it did before there was a server.
+ * no tool is listed, and the session works as if there were no server.
  *
  * Exit codes: 0 served or built (or nothing to build) · 1 a build failed · 2 a usage error.
  */
@@ -51,7 +51,7 @@ import { freshIndex } from './index-fresh.mjs';
 
 /** Where a checkout keeps the server: its builds, the pointer to the current one, and its home. */
 export const SERVER = 'local/knowledge-server';
-/** The file beside the builds naming the commit the served checkout's index was written from. */
+/** The file beside the builds naming the commit the served checkout's index reflects. */
 export const INDEX_STAMP = 'index-head';
 /** What marks a session a driver started: set on every session its spawn shell makes, and by nobody else. */
 export const DRIVEN = 'DAORIS_REPOSITORY';
@@ -148,7 +148,7 @@ export function serverEnvironment(env, located) {
 }
 
 /**
- * Where an install keeps the connector it carries, and what makes a folder an install with its home in it (CONNECTOR1).
+ * Where an install keeps the connector it carries, and what makes a folder an install with its home in it.
  * Copies of `CONNECTOR_HOME`, `MARKER` and `HOME` in `tools/desktop-publish.mjs`, not imports: this file starts with every
  * session, and that one carries the whole publish. `knowledge-server.test.ts` holds the copies to the originals.
  */
@@ -158,7 +158,7 @@ export const INSTALL_HOME = 'data';
 
 /**
  * The connector the install carries, when the home is an install's own `data/` — the home an install's shell gives every
- * session it starts (D63) — or null. It is the copy the driver hands a protocol-door session first
+ * session it starts — or null. It is the copy the driver hands a protocol-door session first
  * (`KnowledgeConnector.Candidates`), found there from the application's folder and here from the home above it.
  */
 export function installConnector(home, executable) {
@@ -169,7 +169,7 @@ export function installConnector(home, executable) {
 }
 
 /**
- * The home's `bin/` copy at each place D172's table gives it (HOMELAYOUT3): `cache/bin/` under the Daoris folder, then `bin/`
+ * The home's `bin/` copy at each place the home layout gives it: `cache/bin/` under the Daoris folder, then `bin/`
  * under the old home. A copy of the table's reading for this one entry, not an import, for the reason above;
  * `home-census.test.ts` holds it to `homePlaces(home, 'bin', …)`. The Daoris folder an install's `data/` names is the install.
  */
@@ -188,7 +188,7 @@ export function serverCommand(mode, env, located, platform = process.platform) {
   if (mode === 'driven') {
     const executable = platform === 'win32' ? 'daoris-knowledge.exe' : 'daoris-knowledge';
     const home = env.DAORIS_HOME?.trim();
-    // The driver's order (CONNECTOR1): the person's word, the install's own copy, then the home's `bin/` at either of its
+    // The driver's order: the person's word, the install's own copy, then the home's `bin/` at either of its
     // places, which no republish refreshes.
     const machine = [env.DAORIS_MCP_HOST?.trim(), installConnector(home, executable), ...homeBins(home, executable)]
       .filter(Boolean)
@@ -258,10 +258,10 @@ export const LOOK_EVERY_MS = 60_000;
 const RETIRE_WAIT_MS = 10_000;
 
 /**
- * The relay between a session and its server, which follows the current build (KNOWHOLD1).
+ * The relay between a session and its server, which follows the current build.
  *
  * A server on the session's own streams runs the build it started on until the session ends, so a fault fixed by a merge
- * stays in every running session (the fix log's KNOWHOLD1 entry has the case). So the relay reads the session's
+ * stays in every running session (the fix log has the case). So the relay reads the session's
  * messages a line at a time, and when the checkout's current build is not the one serving, it moves the session onto it:
  * at a request that arrives with none outstanding either way, or at its own look every minute while the session is idle.
  * The new server is handed the session's own handshake under an id of the relay's, then its `initialized`; once it has
@@ -453,7 +453,7 @@ async function serve(checkout) {
     await serveAbsence(process.stdin, process.stdout, absenceSentence(checkout, mode));
     process.exit(0);
   }
-  // The workspace's build is followed as merges replace it (KNOWHOLD1); the machine's host is the install's, and moves with it.
+  // The workspace's build is followed as merges replace it; the machine's host is the install's, and moves with it.
   const follows = located !== null && command.args[0] === located.entry;
   const say = (line) => process.stderr.write(`daoris-knowledge: ${line}\n`);
   const stamp = located ? join(located.folder, INDEX_STAMP) : null;
@@ -573,7 +573,7 @@ function build(checkout, { force }) {
   const folder = join(checkout, SERVER);
   const name = `${stamp()}-${digest.slice(0, 8)}`;
   const out = join(folder, 'builds', name);
-  // stdout kept and shown on failure: MSBuild writes its errors there (service-publish's lesson, REV3).
+  // stdout kept and shown on failure: MSBuild writes its errors there (service-publish's lesson).
   // Framework-dependent: a machine that builds the workspace has the runtime, and `dotnet` runs the result.
   const run = spawnSync('dotnet', ['publish', PROJECT, '-c', 'Release', '-r', rid(), '--self-contained', 'false', '-o', out, '--nologo'],
     { cwd: checkout, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, windowsHide: true });

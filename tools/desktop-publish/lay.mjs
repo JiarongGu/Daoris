@@ -4,18 +4,18 @@ import { copyTree, renameHeld, writeAtomic } from '../fsx.mjs';
 
 /**
  * The engine's locale files an install keeps, for the window and the browser alike, which share one
- * Chromium since CHR8: the two languages Daoris speaks, and the two `EngineBrowser.Locale` ever asks
+ * Chromium: the two languages Daoris speaks, and the two `EngineBrowser.Locale` ever asks
  * for. The kit lays out only these languages (`ShenoraChromiumLocales` names zh-CN; en-US is its
  * fallback), with grammatical-gender stubs beside each that the publish leaves out; the deployment
  * gate reads the two back off the install.
  */
 export const KEPT_LOCALES = Object.freeze(['en-US.pak', 'zh-CN.pak']);
 
-/** The shell's own home, which it creates on first start (D63). */
+/** The shell's own home, which it creates on first start. */
 export const HOME = 'data';
 
 /**
- * Where an install carries Daoris's own example plugins as offers (PLUG9 d, D103), as path segments:
+ * Where an install carries Daoris's own example plugins as offers, as path segments:
  * beside the application in `app/`, never under `data/plugins/`, so none is installed until a person
  * presses Install (or runs `daoris plugin add --offer <id>`). A twin of the CLI's `OFFERS_DIR` and the
  * driver's `PluginOffers.Layout`, which find them; `desktop-publish.test.ts` reads all three.
@@ -23,8 +23,8 @@ export const HOME = 'data';
 export const PLUGIN_OFFERS = Object.freeze(['app', 'plugin-offers']);
 
 /**
- * The tracked examples an install offers (D103): the two that land work (D100), and the one that hands a
- * session the install's own browser (D78). Not `hold-by-title`, which the rehearsals install as their
+ * The tracked examples an install offers: the two that land work, and the one that hands a
+ * session the install's own browser. Not `hold-by-title`, which the rehearsals install as their
  * fixture, and not `browser`, which launches a browser of its own for a machine without the shell and
  * claims the same server name as `in-app-browser`, so the second installed would contribute nothing.
  */
@@ -59,7 +59,7 @@ export function layOffers(examples, install, renameOptions = {}) {
 }
 
 /**
- * Where an install carries the list built in (TOOLS3, D121 §3.1), as path segments: beside the application
+ * Where an install carries the list built in, as path segments: beside the application
  * in `app/`, where the driver reads it from its own folder, never under `data/`, since a republish
  * replaces it whole and a newer list arrives as a resource location. A twin of the CLI's
  * `BUILT_IN_LAYOUT`, which finds it beside the home, and the driver's `ToolResources.Layout`;
@@ -69,7 +69,7 @@ export const RESOURCES = Object.freeze(['app', 'resources.json']);
 
 /**
  * The list's one source in the workspace: the driver's own, which every build carries beside itself. A resource, not a source
- * the driver's module folders take (STRUCT1, D166): the driver's project file copies it from the project's top, so it is
+ * the driver's module folders take: the driver's project file copies it from the project's top, so it is
  * named there, and `desktop-publish.test.ts` holds the two together.
  */
 export const RESOURCES_SOURCE = Object.freeze(['src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'resources.json']);

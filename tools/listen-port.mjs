@@ -1,8 +1,8 @@
 /**
- * Import-safe: a test server's listen on a port Node's fetch will reach (FLAKE1's sighting of 2026-10-24).
+ * Import-safe: a test server's listen on a port Node's fetch will reach.
  *
  * The system's port 0 hands out any free port, and the WHATWG Fetch standard refuses a list of them ("bad port",
- * https://fetch.spec.whatwg.org/#port-blocking), which Node's fetch follows: a stand-in once handed 2049 was never asked.
+ * https://fetch.spec.whatwg.org/#port-blocking), which Node's fetch follows: a stand-in handed 2049 is never asked.
  */
 
 /**
@@ -32,7 +32,7 @@ function listenOnce(server, port, host) {
 }
 
 /**
- * Listens `server` on `host`, on port 0, and listens again while the port it was handed is one fetch refuses; its url,
+ * Listens `server` on `host`, on port 0, and listens again while the port it is handed is one fetch refuses; its url,
  * `http://host:port`. `first` is the port the first listen asks for (a test hands a blocked one; 0 otherwise). A listen
  * that fails is the caller's error, never retried.
  */

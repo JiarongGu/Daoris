@@ -1,11 +1,11 @@
 /**
- * INT4f's proof — a real ask through a real intake harness (D65 §1b), over the protocol door.
+ * Proof of a real ask through a real intake harness, over the protocol door.
  *
- * INT4b proved the intake with a stub, which publishes over HTTP. What no gate has seen is the real
+ * The stub intake publishes over HTTP. What no gate sees is the real
  * path: a real agent in the circle's room, reading the declarations, and publishing through the MCP
  * host's `quest_publish` under the harness's own environment — which is what makes a quest asked BY
  * the ask and moves the ask's tier to `intake` (it does only for the ask's own session). That run
- * spends a login, so this script is built in ACP2's two halves, which fail differently.
+ * spends a login, so this script is built in two halves, which fail differently.
  *
  *   node tools/int4f-proof.mjs                 readiness + the keyless checks
  *   node tools/int4f-proof.mjs --drive         …and then the real intake
@@ -13,21 +13,21 @@
  *                                              the same, with an ask that carries no link and no file
  *
  * **Readiness is not a failure.** A machine that is not set up gets the commands that set it up, and
- * exit 0. What this script must never do is look like it proved something when the login was missing.
+ * exit 0. What this script must never do is look like it proved something when the login is missing.
  *
  * **Two honest endings, and the door is proven by either.** A real model decides; the proof is of the
  * door, not of the model's judgement. The expected ending is the PUBLISH: the ask reaches Published
  * with tier `intake`, and its quests are asked by `ask #<id>`. The other is the PARK: the intake said
  * the declarations do not settle it and asked the person, which is correct behaviour and leaves the
- * publish unproven — the verdict says so rather than calling it a pass for INT4f.
+ * publish unproven — the verdict says so rather than calling it a pass.
  *
- * 🔴 **Run it with the `CLAUDE*` environment of any enclosing agent session unset** (DRV4's note).
+ * 🔴 **Run it with the `CLAUDE*` environment of any enclosing agent session unset**.
  * This script strips nothing: what a real deployment's driver would inherit is what it inherits.
  *
- * 🔴 **The driver's home is the folder its `driver.json` sits in** (ACP2's lesson), so the intake's room
+ * 🔴 **The driver's home is the folder its `driver.json` sits in**, so the intake's room
  * and any rules live in this script's scratch folder. None are written here: Daoris's `connector`
  * default allows `quest_publish`, which is all an intake needs to publish, and it reaches an untrusted
- * room (D72, D73) — which is what this run also proves.
+ * room — which is what this run also proves.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
@@ -78,7 +78,7 @@ const SENTENCE = 'The iron sword costs 40 gold in the shop, but the design says 
 const LINK = 'https://tickets.example/T-41';
 const FILE = { name: 'design-note.txt', text: 'Design note: the iron sword costs 25 gold.\n' };
 
-// Its own port: ACP2's proof holds 5201, and two proofs must be able to share a machine.
+// Its own port: the ACP proof holds 5201, and two proofs must be able to share a machine.
 const {
   scratch, totals, check, section, missing, readiness, ask, post, born,
   freshScratch, startHost, stopHost, adopt, runDriver, verdict,
@@ -103,7 +103,7 @@ rmSync(keylessHome, { recursive: true, force: true });
 mkdirSync(keylessHome, { recursive: true });
 const rules = capture(`node "${cliBin}" agent rules`, repoRoot, { env: { DAORIS_HOME: keylessHome } });
 // It is also why the room's trust does not stand in the way: the driver holds an untrusted room only
-// where this allowance would not reach the session (D73).
+// where this allowance would not reach the session.
 check('an empty home hands every session the `connector` default, `quest_publish` included (D72)',
   rules.code === 0 && /connector\s+on\s+allow\s+[^\n]*mcp__daoris-knowledge__quest_publish/.test(rules.out),
   rules.out);
@@ -145,7 +145,7 @@ async function intakeRun() {
   const env = await startHost();
   if (!env) return;
 
-  // Adopted in a commit, not left dirty — and it is the baseline "nothing was written" is read against.
+  // Adopted in a commit, not left dirty — it is the baseline "nothing written" is read against.
   if (!adopt(repos, env)) return;
   const before = Object.fromEntries(repos.map((repo) => [repo.name, standing(repo.where)]));
 
@@ -188,7 +188,7 @@ async function intakeRun() {
     JSON.stringify(session));
   check('…whose record names the harness version', Boolean(session.doorVersion), session.doorVersion ?? 'absent');
 
-  // What the intake reached for and was refused: evidence either way, and the first thing to read if
+  // What the intake reached for and got refused: evidence either way, and the first thing to read if
   // it parked. Its transcript is machine-local; only the tool lines are shown.
   const transcript = session.transcript && existsSync(session.transcript)
     ? readFileSync(session.transcript, 'utf8')
@@ -199,8 +199,8 @@ async function intakeRun() {
   console.log(`        permission requests refused: ${refused.length}`);
   for (const line of refused.slice(0, 6)) console.log(`          ${line.trim().slice(0, 200)}`);
 
-  // 🔴 INT4j: the intake is handed a read of exactly its own ask's kept folder, so a Read of the file
-  // it carries is never asked, and never refused. The first real run was refused it twice.
+  // 🔴 The intake is handed a read of exactly its own ask's kept folder, so a Read of the file
+  // it carries is never asked, and never refused.
   if (carry) {
     const keptReads = refused.filter((line) => line.includes('"Read"') && line.includes(askId));
     check('…and it could read the file the ask carries, without being asked (INT4j)', keptReads.length === 0,
@@ -210,7 +210,7 @@ async function intakeRun() {
   const after = await ask(`/api/asks/${askId}`);
   const quests = ((await ask('/api/quests?includeClosed=true')) ?? []).filter((q) => q.from === `ask #${askId}`);
 
-  // Done is published with every quest already closed (USE1c): the service derives it from the quests.
+  // Done is published with every quest already closed: the service derives it from the quests.
   const publishedEnding = after?.state === 'Published' || after?.state === 'Done';
   if (publishedEnding) {
     // THE EXPECTED ENDING: the MCP host published as the ask, under the harness's own environment.
@@ -244,7 +244,7 @@ async function intakeRun() {
       JSON.stringify({ session: { state: session.state, note: session.note }, ask: after }));
   }
 
-  // D32: the intake publishes and never edits. Its room is Daoris's, and no repository is touched.
+  // The intake publishes and never edits. Its room is Daoris's, and no repository is touched.
   for (const repo of repos) {
     const now = standing(repo.where);
     check(`nothing was written into \`${repo.name}\``,

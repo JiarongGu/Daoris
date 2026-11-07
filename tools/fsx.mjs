@@ -11,8 +11,8 @@ import { fileURLToPath } from 'node:url';
 import { systemGit } from '../src/Daoris.Cli/src/tools/gitforwindows.ts';
 
 /**
- * The system's git for a start with `env`, past Git for Windows' launcher where PATH finds it (GITSTART4): the real
- * git and the launcher's variables over `env`, one process where it was two; elsewhere `git` and `env` as they were.
+ * The system's git for a start with `env`, past Git for Windows' launcher where PATH finds it: the real
+ * git and the launcher's variables over `env`, one process instead of two; elsewhere `git` and `env` unchanged.
  * Asked once per PATH and HOME a run starts git with, since a tool starts many.
  */
 const gitStarts = new Map();
@@ -47,8 +47,8 @@ export function execGit(args, options = {}) {
 }
 
 /**
- * Whether the module at `url` is the script node was asked to run — the runner guard every tool whose
- * helpers are also imported needs, in one place (REV3; it existed in three forms).
+ * Whether the module at `url` is the script node ran — the runner guard every tool whose
+ * helpers are also imported needs.
  *
  * Compared as REAL paths. Node resolves the main module's links, so through a junction or a symlink
  * `import.meta.url` is the real path and `process.argv[1]` the one typed: the guard read false, and a
@@ -97,7 +97,7 @@ export function repositoryFiles(root, { env = process.env } = {}) {
 const HELD = new Set(['EPERM', 'EACCES', 'EBUSY']);
 
 /**
- * A rename tried again while a held file refuses it (UPDATE1's stage). On Windows a folder of executables written a
+ * A rename tried again while a held file refuses it. On Windows a folder of executables written a
  * moment ago cannot be renamed while something still holds a file in it, the virus scanner most often, and the refusal
  * is EPERM; it gives way within seconds. Any other failure throws at once, and the last refusal throws after the tries.
  */
@@ -117,14 +117,12 @@ export function renameHeld(from, to, { tries = 50, waitMs = 200, rename = rename
 const besideName = (file, suffix) => `${file}.${process.pid}-${randomBytes(4).toString('hex')}${suffix}`;
 
 /**
- * A file replaced whole, the one way the tooling writes one (REFAC2; each tool had assembled it itself, one with a bare
- * rename). `data` is written beside the file under a name no other write shares, then renamed into place through
+ * A file replaced whole, the one way the tooling writes one. `data` is written beside the file under a name no other write shares, then renamed into place through
  * `renameHeld`, so a reader finds the old file or the new one, never half of one, and a held file is waited for. The
  * folder is made first. A string is written as UTF-8 with no BOM, bytes as they are; line endings are the caller's.
  *
- * When the write or the rename fails, what was written beside is removed and the failure thrown: the file stands as it
- * was, and nothing is left for a later run to trip over or for `git add -A` to stage (the merge tool left a rewritten
- * decision beside itself so). `tries`, `waitMs` and `rename` are `renameHeld`'s.
+ * When the write or the rename fails, what is written beside is removed and the failure thrown: the file stands
+ * unchanged, and nothing is left for a later run to trip over or for `git add -A` to stage. `tries`, `waitMs` and `rename` are `renameHeld`'s.
  */
 export function writeAtomic(file, data, { tries, waitMs, rename } = {}) {
   mkdirSync(dirname(file), { recursive: true });
@@ -143,8 +141,7 @@ export function writeAtomic(file, data, { tries, waitMs, rename } = {}) {
 }
 
 /**
- * The checkout's content as a tree id, as `git add -A` would stage it (REFAC2; the merge tool's verdicts and
- * `as-merged.mjs`'s commit each built it): tracked changes and deletions, and every untracked file that is not ignored,
+ * The checkout's content as a tree id, as `git add -A` would stage it: tracked changes and deletions, and every untracked file that is not ignored,
  * so an open merge's resolutions and an unstaged fix in it are in the tree. Nothing is committed and no ref names it.
  *
  * Staged through an index of its own: a copy of the one git uses here, named by `git rev-parse --git-path`, so a linked

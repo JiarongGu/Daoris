@@ -1,5 +1,5 @@
 /**
- * QUEUELOCK1: what the queue says of a promotion held on `index.lock` (FIX-LOG 2026-10-28, QUEUELOCK1).
+ * What the queue says of a promotion held on `index.lock` (FIX-LOG 2026-10-28).
  *
  *   node --test tools/index-lock.test.mjs
  *

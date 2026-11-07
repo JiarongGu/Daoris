@@ -1,6 +1,5 @@
 /**
- * REVIEWLOCK1: every `git status` and `git diff` the driver asks passes `--no-optional-locks` (FIX-LOG 2026-10-23, REVIEWLOCK1).
- * QUEUELOCK1: so does every one the tools ask (FIX-LOG 2026-10-28, QUEUELOCK1).
+ * Every `git status` and `git diff` the driver and the tools ask passes `--no-optional-locks`.
  *
  *   node tools/optional-locks.mjs        check the driver's sources and the tools' (exit 0 clean, 1 breach, 2 tool error)
  *
@@ -14,9 +13,8 @@
  * A status or a diff that means to write the index marks its command's line `// optional-locks: <why>`, and the clean line
  * counts the marks. A word inside a comment is not one. There is no .NET build.
  *
- * QUEUELOCK1: the same census reads the tools' own scripts (`tools/*.mjs`, their tests skipped), where the merge queue's runner
- * asks git of the main checkout: a stale `index.lock` there held a green candidate's promotion for about 1 h 45 min, and the
- * runner's own clean-checkout look took optional locks. In a script an array literal is the expression, its strings in single,
+ * The same census reads the tools' own scripts (`tools/*.mjs`, their tests skipped), where the merge queue's runner
+ * asks git of the main checkout: a stale `index.lock` there holds a green candidate's promotion. In a script an array literal is the expression, its strings in single,
  * double or plain template quotes, and `diff-index` and `diff-files` count beside `status` and `diff`: the commands that read a
  * tree and may write its index. A read of commits alone (`log`, `rev-parse`, `show`) is none.
  */
@@ -212,7 +210,7 @@ export function checkOptionalLocks(root, dir = DRIVER) {
   return breaches(read(root, dir), false);
 }
 
-/** The same census over the tools' scripts under `root`'s `dir` (QUEUELOCK1). */
+/** The same census over the tools' scripts under `root`'s `dir`. */
 export function checkToolLocks(root, dir = TOOLS) {
   return breaches(readTools(root, dir), true);
 }

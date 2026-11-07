@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { stubTwoManifest } from './rehearsal-kit.mjs';
 
-// The Stub Two phase of the family rehearsal (COAGENT1e; the co-agent design §8.4): the kit's second maker declared by a file, which
+// The Stub Two phase of the family rehearsal: the kit's second maker declared by a file, which
 // also names the two postures a manifest may carry beside `posture`, its words for asking and for full access.
 
 /** The kit's second-maker manifest with its asking and full postures named. */

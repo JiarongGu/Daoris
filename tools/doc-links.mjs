@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// GITHUBDOCS1 (D211): the links a reader is handed resolve, the agent rules are one text in three files,
+// The links a reader is handed resolve, the agent rules are one text in three files,
 // and the README the CLI package ships reads right on its registry.
 // Mirrors doc-system.mjs: a pure audit over a file inventory, an import-safe runner, no dependency and no
 // file writes. The universal `links` gate resolves a relative link's FILE on disk; this adds what it leaves:
@@ -20,7 +20,7 @@ export const AGENT_FILES = ['llms.txt', 'context7.json'];
 // Context7 skips a rule over 255 characters, said only in its own parse log.
 export const RULE_LIMIT = 255;
 
-// History by definition: an entry records what was true when it was written, links included, and is
+// History by definition: an entry records what held when written, links included, and is
 // never edited to follow a later move. Fixtures quote documents rather than being them.
 const HISTORY = /^(docs\/archive\/|docs\/decisions\/|docs\/task-archive\.md$|docs\/FIX-LOG\.md$|CHANGELOG\.md$|canon\/CHANGELOG\.md$)/;
 const FIXTURE = /(^|\/)(golden|[^/]*-fixtures|_fixtures)\//;
