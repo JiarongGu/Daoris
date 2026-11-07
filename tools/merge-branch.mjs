@@ -439,6 +439,7 @@ import {
 import { fenced, gluedLabels, records } from './doc-duplicates.mjs';
 import { isMain, renameHeld, spawnGit, stagedTree, writeAtomic } from './fsx.mjs';
 import { removeWorktree } from './worktree-remove.mjs';
+import { reachRows } from './reach-rows.mjs';
 import { indexLockNote,mentionsIndexLock, readIndexLock } from './index-lock.mjs';
 import { admissionLines, createAdmission, lookAt } from './machine-admission.mjs';
 import { censusOf, classesReached, halfOf, reachSettings, repository, withSettings } from './process-reach.mjs';
@@ -1154,26 +1155,7 @@ export const REACH = Object.freeze([
   { paths: ['tools/stand-ins.mjs'], gates: ['tool-tests', 'rehearse-family'], why: "the stand-ins' reader: its tool test (stand-ins.test.ts) and the family rehearsal, which finds the providers' stand-ins by it (AGENTPROVIDER1b)" },
   // The same row's files in each provider's folder: the driver's (its lane's readers, ProviderFilesTests among them), and the tool
   // test and the family rehearsal read them through `stand-ins.mjs`. A narrow rule, since the first rule decides.
-  {
-    paths: [
-      'src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/*/provider.json',
-      'src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/*/pending.json',
-      'src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/*/Program/**',
-    ],
-    gates: [...DRIVER_READERS, 'tool-tests'],
-    why: "a provider's declaration, its pending cases and its stand-in's program: the driver's own (ProviderFilesTests and the conformance suite), and the tools' stand-ins.test.ts and the family rehearsal read them by `stand-ins.mjs` (AGENTPROVIDER1b)",
-  },
-  // D251: the tools' provider census runs the contracts' generator, which reads each provider's own sources (the words its
-  // vocabulary names) and the registry's reader of them.
-  {
-    paths: [
-      'src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/*/*.cs',
-      'src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Registry/Providers.cs',
-      'src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Registry/ProviderVocabulary.cs',
-    ],
-    gates: [...DRIVER_READERS, 'tool-tests'],
-    why: "a provider's own sources and the registry's list and reader: the driver's own, and the tools' provider-census.test.ts runs the contracts' generator, which reads them (D251)",
-  },
+  ...reachRows(DRIVER_READERS),
   { paths: ['tools/setup-kit.mjs'], gates: ['tool-tests', 'rehearse-family'], why: "the family rehearsal's set-up kit, and its tool-tests, which run it for real in a scratch repository (GATESLIM1)" },
   {
     paths: ['tools/desktop-publish.mjs', 'tools/desktop-publish/**', 'tools/ci-background.mjs', 'tools/test-failures.mjs'],
