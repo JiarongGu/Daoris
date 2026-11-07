@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 public static class RolesBrief
 {
     /// <summary>The brief's revision, which every role act's answer names.</summary>
-    public const string Revision = "r4";
+    public const string Revision = "r5";
 
     /// <summary>The brief whole.</summary>
     public static string Text { get; } = string.Join('\n',
@@ -32,6 +32,9 @@ public static class RolesBrief
         "answers the session offered, each reason naming its source; or leaves it to the owner by one of the owner's bounds.",
         "  Verbs: `daoris session supervise` lists what waits; `session supervise <id>` prints a question; `--choice <label>`",
         "  answers it, `--leave <bound>` leaves it to the owner.",
+        "  Where the owner's rule asks the supervisor, the list names a point (answers alone in a row) and the command that decides it:",
+        "  `--point <p> --course go-on` lets the line go on once the owner's overrule window passes, between turns; `--course hold`",
+        "  leaves it to the owner. Each reason names its source. A course never stops, ends or moves a session.",
         "  Never: a go-ahead, a sign-in, access, spending, deleting the owner's data or rewriting history, the owner's own preference,",
         "  a question the records do not answer, or one that would contradict a decision.",
         "",

@@ -18,13 +18,17 @@ namespace Daoris.Driver;
 /// it. Where the service's records did not read, or the store holds no admissions (a start before its confirmation settled), nothing is
 /// held, and the next look judges again.</para>
 /// </remarks>
+/// <param name="referable">
+/// Whether a terminal holds the supervisor for a repository now, read where a <c>refer</c> rule holds a line: where none does, the hold says
+/// the point waits for the person. Null where the caller cannot ask, which says nothing more.
+/// </param>
 public sealed class AnswersAloneHold(
     SessionEvents events, GoOnMarks marks, ContinuationAdmissions admissions, SupervisorRuleBook? rules = null, SupervisorRuleActs? acts = null,
-    string? home = null)
+    string? home = null, Func<string?, bool>? referable = null)
 {
     /// <summary>The hold of <paramref name="home"/>, judged by the rules its store holds now, each hold kept as its rule's act.</summary>
-    public static AnswersAloneHold For(SessionEvents events, GoOnMarks marks, string home) =>
-        new(events, marks, new ContinuationAdmissions(home), SupervisorRuleBook.Read(home), new SupervisorRuleActs(home, events), home);
+    public static AnswersAloneHold For(SessionEvents events, GoOnMarks marks, string home, Func<string?, bool>? referable = null) =>
+        new(events, marks, new ContinuationAdmissions(home), SupervisorRuleBook.Read(home), new SupervisorRuleActs(home, events), home, referable);
 
     /// <summary>
     /// The answers alone in a row <paramref name="session"/>'s line goes on by: its line's effective rule, null where none holds it. A hold
@@ -68,19 +72,24 @@ public sealed class AnswersAloneHold(
         // A line already waiting is one hold: a new answer joins the mark, and the hold is said and kept once.
         if (held is not null) return true;
         events.Keep(record.Session, AnswersAloneNotes.Held(agent, answers), say: null);
-        Acted(record, records, refused.Count, at);
+        if (Acted(record, records, refused.Count, at) is { Do: SupervisorRules.Refer } && referable?.Invoke(record.Repository) == false)
+        {
+            events.Keep(record.Session, AnswersAloneNotes.Unreferred(answers), say: null);
+        }
+
         return true;
     }
 
     // The hold is the answers-alone rule's act at the count its admission read: said on the line by its rule and kept in the decision record.
-    private void Acted(PriorSession record, IReadOnlyDictionary<string, PriorSession> records, AloneCount count, DateTimeOffset at)
+    private SupervisorRule? Acted(PriorSession record, IReadOnlyDictionary<string, PriorSession> records, AloneCount count, DateTimeOffset at)
     {
-        if (acts is null) return;
+        if (acts is null) return null;
         var book = rules ?? SupervisorRuleBook.Seed;
         var line = LineKeys.Of(record.Session, records).Key;
         var effective = RuledLine.Of(home, records.GetValueOrDefault(record.Session) ?? record).In(book);
-        if (SupervisorRuleBook.Acting(effective, SupervisorRules.AnswersAlone, SupervisorRules.Hold) is not { } rule) return;
+        if (SupervisorRuleBook.AnswersAloneActing(effective) is not { } rule) return null;
         acts.Record(new RuleActed(line, record.Session, rule, book.RevisionOf(rule.Place), count.N, count.Known == LineCounts.Exact, "go-on", at));
+        return rule;
     }
 
     /// <summary>

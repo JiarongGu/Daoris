@@ -105,7 +105,8 @@ internal static class AnswersAlone
         e.Kind == SessionEventKind.User && e.Reaches is null && e.From != SupervisorHanded.From && e.Watcher is not true
             && (e.Origin is null or "person" || e.From == DaorisWords.From)
         || e.Kind == SessionEventKind.Note
-            && e.Parts?.Any(part => part.Code == HeldNoteCodes.AnswersPassed.Code || part.Code == PeerNoteCodes.HelperPersonAsked.Code) == true;
+            && e.Parts?.Any(part => part.Code == HeldNoteCodes.AnswersPassed.Code || part.Code == HeldNoteCodes.AnswersSupervised.Code
+                                    || part.Code == PeerNoteCodes.HelperPersonAsked.Code) == true;
 
     private static bool AsksHelper(SessionEvent e) =>
         e.Kind == SessionEventKind.Note && e.Parts?.Any(part => part.Code == PeerNoteCodes.HelperPersonAsked.Code) == true;
@@ -170,6 +171,14 @@ internal static class AnswersAloneNotes
     /// <summary>The person let the answer go on (<em>Go on with this answer</em>): their word on the line.</summary>
     public static SessionEvent Passed(IReadOnlyList<string> words) =>
         Note(Noted.Of(HeldNoteCodes.AnswersPassed, "You let this answer go on."), words);
+
+    /// <summary>The supervisor let the answer go on where the person's rule asked it to, its window past.</summary>
+    public static SessionEvent Supervised(IReadOnlyList<string> words) =>
+        Note(Noted.Of(HeldNoteCodes.AnswersSupervised, "The supervisor let this answer go on, as your rule asked it to."), words);
+
+    /// <summary>The rule asks the supervisor, and no terminal holds it for the line's place: the answer waits for the person.</summary>
+    public static SessionEvent Unreferred(IReadOnlyList<string> words) =>
+        Note(Noted.Of(HeldNoteCodes.SupervisorUnreferred, "Your rule asks the supervisor; none is started for this place, so this waits for you."), words);
 
     /// <summary>The person kept the answer (<em>Not now</em>): it goes on only beside words of theirs.</summary>
     public static SessionEvent Kept(IReadOnlyList<string> words) =>

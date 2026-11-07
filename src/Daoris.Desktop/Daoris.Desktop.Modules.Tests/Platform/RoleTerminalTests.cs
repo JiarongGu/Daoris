@@ -159,7 +159,7 @@ public sealed class RoleTerminalTests : Bridge
         Assert.Equal(SupervisorWhy.Form, Judge(Defer(key!, nonce, generation), SupervisorRoutes.Answer).Why);
         Assert.Equal(SupervisorWhy.Form, Judge(Defer(key!, nonce, generation, bound: "because")).Why);
         Assert.Equal(SupervisorWhy.NotHolder, Judge(Defer(HolderKey.Draw(), nonce, generation)).Why);
-        Assert.Equal(["SUPERVISOR_ANSWER", "SUPERVISOR_DEFER"], SupervisorRoutes.Acts);
+        Assert.Equal(["SUPERVISOR_ANSWER", "SUPERVISOR_DEFER", "SUPERVISOR_COURSE"], SupervisorRoutes.Acts);
     }
 
     [Theory]

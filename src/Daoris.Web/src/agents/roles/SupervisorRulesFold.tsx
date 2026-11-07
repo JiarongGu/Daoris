@@ -122,7 +122,7 @@ export function SupervisorRulesFold({ place, placeName, read, roles, busy, refus
                   <SelectField
                     value={row.do} disabled={locked} ariaLabel={t('settings.supervisor.doOf', { n })}
                     onChange={(action) => patch(row.key, (was) => reaction(was, action))}
-                    options={(count?.actions ?? [row.do]).filter((action) => action !== 'refer').map((action) => ({ value: action, label: t(`settings.supervisor.act.${action}`) }))}
+                    options={(count?.actions ?? [row.do]).map((action) => ({ value: action, label: t(`settings.supervisor.act.${action}`) }))}
                   />
                 </FormField>
                 <FormField label={t('settings.supervisor.field.for')} when="stacked">

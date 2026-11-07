@@ -32,12 +32,10 @@ public sealed record RuleRefusal(string Code, string Message, string? Place = nu
 
 /// <summary>What <see cref="SupervisorRules.Judge"/> weighs a write against besides the sets.</summary>
 /// <param name="Roles">The catalogue's working role ids.</param>
-/// <param name="ReferOffered">The agent supervisor's <c>refer</c> is offered.</param>
 /// <param name="Known">Whether a place is one Daoris drives (a line on this machine); none accepts every well-formed place.</param>
 /// <param name="Wider">The places a place's lines also read, narrow to wide and before the machine; none names only the place itself.</param>
 public sealed record SupervisorRuleWorld(
     IReadOnlyList<string> Roles,
-    bool ReferOffered = false,
     Func<string, bool>? Known = null,
     Func<string, IReadOnlyList<string>>? Wider = null);
 
@@ -81,18 +79,19 @@ public static class SupervisorRules
 
     /// <summary>The refusals, a closed set.</summary>
     public static IReadOnlyList<string> Codes { get; } =
-        ["count", "window", "at", "do", "upTo", "place", "roles", "ladder", "moves-unbounded", "tries-unbounded", "refer-not-offered", "revision"];
+        ["count", "window", "at", "do", "upTo", "place", "roles", "ladder", "moves-unbounded", "tries-unbounded", "revision"];
 
-    // The actions each count allows (§4.2); `off` is every ruled count's but tries'.
+    // The actions each count allows (§4.2); `off` is every ruled count's but tries'. `refer` is answers alone's, the one count whose
+    // release the agent supervisor's course act makes.
     private static readonly IReadOnlyDictionary<string, string[]> Allowed = new Dictionary<string, string[]>(StringComparer.Ordinal)
     {
         [AnswersAlone] = [Hold, Refer, Off],
-        [Failures] = [Hold, Refer, Off],
-        [FailuresOnChoice] = [Ask, Next, Weighted, Refer, Off],
-        [Tries] = [Hold, Ask, Next, Weighted, Refer],
-        [Quiet] = [Next, Weighted, Refer, Off],
-        [Limits] = [Ask, Wait, Next, Weighted, Refer, Off],
-        [Moves] = [Ask, Refer, Off],
+        [Failures] = [Hold, Off],
+        [FailuresOnChoice] = [Ask, Next, Weighted, Off],
+        [Tries] = [Hold, Ask, Next, Weighted],
+        [Quiet] = [Next, Weighted, Off],
+        [Limits] = [Ask, Wait, Next, Weighted, Off],
+        [Moves] = [Ask, Off],
     };
 
     /// <summary>
@@ -216,7 +215,6 @@ public static class SupervisorRules
         }
 
         if (!Allowed[rule.Count].Contains(rule.Do)) return Refuse("do", $"{rule.Count} does not allow `{rule.Do}`.");
-        if (rule.Do == Refer && !world.ReferOffered) return Refuse("refer-not-offered", "asking the supervisor is not offered yet.");
         if (rule.Do == Wait ? rule.UpTo is not (>= 5 and <= 600) : rule.UpTo is not null)
         {
             return Refuse("upTo", rule.Do == Wait ? "wait takes 5 to 600 minutes." : "only wait takes upTo.");
@@ -226,7 +224,7 @@ public static class SupervisorRules
         return rule.At < low || rule.At > high ? Refuse("at", $"{rule.Count} takes {low} to {high}.") : null;
     }
 
-    /// <summary>The actions <paramref name="count"/> allows (§4.2), <c>refer</c> among them though it is offered only once the actor is.</summary>
+    /// <summary>The actions <paramref name="count"/> allows (§4.2).</summary>
     public static IReadOnlyList<string> Actions(string count) => Allowed.TryGetValue(count, out var actions) ? actions : [];
 
     /// <summary>The <c>at</c> a rule on <paramref name="count"/> takes (§4.1); failures in a row on one choice below the failures rule's, judged apart.</summary>

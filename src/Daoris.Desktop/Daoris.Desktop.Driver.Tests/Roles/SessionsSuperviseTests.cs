@@ -249,6 +249,38 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
         Assert.DoesNotContain(Key, string.Concat(_standIn.Sent.Select(each => each.GetRawText())), StringComparison.OrdinalIgnoreCase);
     }
 
+    private static readonly string[] CourseArgs =
+    [
+        "supervise", "s1", "--point", "rule-1", "--generation", "g-1", "--course", "go-on",
+        "--reason", "The ticket says monthly.", "--source", "the quest's line 2",
+    ];
+
+    /// <summary>
+    /// CONTEXTDRIVE1j: a referred point is decided by <c>--point … --course go-on|hold</c>, sent as the role's third act,
+    /// <c>SUPERVISOR_COURSE</c>, its proof over its own route's bytes; a course takes no choice or bound, and no act but go-on or hold.
+    /// </summary>
+    [Fact]
+    public async Task A_course_on_a_referred_point_is_sent_as_its_own_act_and_takes_only_go_on_or_hold()
+    {
+        Assert.Equal(("supervise-course", "go-on"), (SessionsCommand.Read(CourseArgs, out _)!.Verb, SessionsCommand.Read(CourseArgs, out _)!.Supervised!.Course));
+        Assert.Null(SessionsCommand.Read([.. CourseArgs[..7], "stop", .. CourseArgs[8..]], out _));
+        Assert.Null(SessionsCommand.Read([.. CourseArgs, "--choice", "Monthly"], out _));
+        Assert.Null(SessionsCommand.Read([.. LeaveArgs[..6], "--course", "go-on", .. LeaveArgs[8..]], out _));
+        if (!OperatingSystem.IsWindows()) return;
+        _standIn = new InstanceStandIn(_pipe, _id) { Data = new { kept = true, decision = "d1", goesOnAt = "2026-11-07T09:01:00Z" } };
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        var (exit, said) = await RunAsync(CourseArgs, Instance(_ => true));
+        Assert.Equal(0, exit);
+        Assert.Contains("kept as decision d1", said, StringComparison.Ordinal);
+        var press = Assert.Single(_standIn.Presses);
+        Assert.Equal(SupervisorRoutes.Course, press.GetProperty("type").GetString());
+        var payload = press.GetProperty("payload");
+        Assert.Equal(["id", "point", "generation", "proof", "do", "reasons"], payload.EnumerateObject().Select(each => each.Name));
+        Assert.True(SupervisorProof.Verify(HolderKey.Hash(Key)!, _standIn.Nonce, SupervisorProof.Canonical(SupervisorRoutes.Course, "s1", "rule-1", "g-1", "go-on", Reasons), payload.GetProperty("proof").GetString()));
+        Assert.NotNull(SupervisorActs.Read(SupervisorRoutes.Course, payload));
+    }
+
     /// <summary>
     /// NOBLOCK1: the listing is told by event, so the instance answers at once from what it holds; the verb asks again past
     /// <c>pending</c> and past an answer computed before its first ask, and lists the one computed after it.

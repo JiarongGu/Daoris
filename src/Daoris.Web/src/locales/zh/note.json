@@ -249,6 +249,8 @@
   "note.answers.held": "{{agent}} 的回答在等你：它会让这项工作在无人参与的情况下第三次继续。",
   "note.answers.passed": "你选择了带着这个回答继续。",
   "note.answers.kept": "你保留了这个回答：它只会随你的话一起继续。",
+  "note.answers.supervised": "按你的规则，主管让这个回答继续了。",
+  "note.supervisor.unreferred": "你的规则请主管判断，但这个位置没有启动主管，所以这里在等你。",
   "note.supervisor.rule": "你为 {{place}} 设的规则在这条线上起了作用：{{counted}} 已到 {{n}}，规则在 {{bound}} 时执行 {{do}}。",
   "note.helper.why.off": "这个仓库的助手规则已关闭",
   "note.helper.why.asker-gone": "提问的会话不在本机上",

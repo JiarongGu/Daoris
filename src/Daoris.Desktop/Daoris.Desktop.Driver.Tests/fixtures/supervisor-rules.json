@@ -75,9 +75,9 @@
       "rules": [{ "id": "m-mv", "count": "moves", "at": 3, "do": "ask" }], "expect": "tries-unbounded", "expectPlace": "repository:daoris" },
     { "name": "a role's tries rule at a place does not leave the other roles unbounded: they inherit the machine's",
       "place": "repository:daoris", "revision": 0, "rules": [{ "id": "r-1", "count": "tries", "at": 2, "do": "hold", "roles": ["build"] }], "expect": null },
-    { "name": "refer before it is offered", "place": "machine", "revision": 1,
-      "rules": [{ "id": "x", "count": "answers-alone", "at": 2, "do": "refer" }, { "id": "t", "count": "tries", "at": 5, "do": "hold" }], "expect": "refer-not-offered" },
-    { "name": "refer once offered", "place": "machine", "revision": 1, "referOffered": true,
+    { "name": "refer on a count whose release the supervisor does not make", "place": "machine", "revision": 1,
+      "rules": [{ "id": "x", "count": "failures", "at": 3, "do": "refer" }, { "id": "t", "count": "tries", "at": 5, "do": "hold" }], "expect": "do" },
+    { "name": "refer on answers alone, with no flag", "place": "machine", "revision": 1,
       "rules": [{ "id": "x", "count": "answers-alone", "at": 2, "do": "refer" }, { "id": "t", "count": "tries", "at": 5, "do": "hold" }], "expect": null },
     { "name": "a revision that moved", "place": "machine", "revision": 0, "rules": "base", "expect": "revision" }
   ],

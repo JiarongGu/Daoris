@@ -73,7 +73,7 @@ internal sealed class SupervisorKeeping(SupervisorBook book, IDecisionAdmission 
     public Task<SupervisorKept> LeaveAsync(SupervisorDefer defer, SupervisedPark park, DateTimeOffset now, CancellationToken ct = default) =>
         book.UnderAsync(defer.Session, () =>
         {
-            var refused = Refused(defer.Reasons, SupervisorBounds.Known(defer.Bound), park) ?? Parked(defer.Question, park);
+            var refused = Refused(defer.Reasons, SupervisorBounds.Known(defer.Bound), park.Counts) ?? Parked(defer.Question, park);
             if (refused is null && book.Live.Values.FirstOrDefault(each => each.Session == defer.Session && each.Question.Id == defer.Question) is { } held)
             {
                 if (held.State == SupervisorState.Left && held.Bound == defer.Bound && held.Generation == defer.Generation
@@ -117,7 +117,7 @@ internal sealed class SupervisorKeeping(SupervisorBook book, IDecisionAdmission 
     /// <summary>§3.1's refusals the park and the form answer, before memory is read; null where none applies.</summary>
     private static string? Judge(SupervisorAnswer answer, SupervisedPark park)
     {
-        if ((Refused(answer.Reasons, answer.Choice.Length > 0, park) ?? Parked(answer.Question, park)) is { } refused) return refused;
+        if ((Refused(answer.Reasons, answer.Choice.Length > 0, park.Counts) ?? Parked(answer.Question, park)) is { } refused) return refused;
         var filed = park.Filed!;
         // The agent's mark, any at all, makes the question the owner's; checked again at the release.
         if (filed.Owner is not null) return SupervisorWhy.OwnerQuestion;
@@ -130,13 +130,13 @@ internal sealed class SupervisorKeeping(SupervisorBook book, IDecisionAdmission 
     }
 
     /// <summary>
-    /// The form's refusals both acts share: every reason naming its source, a count it cites one of those the park read (CONTEXTDRIVE1i),
+    /// The form's refusals every act shares: every reason naming its source, a count it cites one of those the keeping read (CONTEXTDRIVE1i),
     /// and their count and bounds.
     /// </summary>
-    private static string? Refused(IReadOnlyList<SupervisorReason> reasons, bool named, SupervisedPark park)
+    internal static string? Refused(IReadOnlyList<SupervisorReason> reasons, bool named, IReadOnlyList<CountFact>? counts)
     {
         // D135 point 4: a reason with no source is refused by name; Daoris checks that one is named, never what it says.
-        if (reasons.Any(reason => string.IsNullOrWhiteSpace(reason.Source) || CountTexts.NamesNone(reason.Source, park.Counts))) return SupervisorWhy.NoSource;
+        if (reasons.Any(reason => string.IsNullOrWhiteSpace(reason.Source) || CountTexts.NamesNone(reason.Source, counts))) return SupervisorWhy.NoSource;
         return reasons.Count is 0 or > QuestionSupervisorDecisions.MostReasons || !named
                || reasons.Any(reason => reason.Says.Trim().Length is 0 or > QuestionSupervisorDecisions.MaxSays || reason.Source.Length > QuestionSupervisorDecisions.MaxSource)
             ? SupervisorWhy.Form

@@ -43,8 +43,17 @@ public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
     /// <summary>The revision <paramref name="place"/>'s set was read at: 0 for a place holding none, or the seed read where none was written.</summary>
     public long RevisionOf(string place) => Sets.FirstOrDefault(set => set.Place == place)?.Revision ?? 0;
 
-    /// <summary>The answers alone in a row a line goes on by before it waits for the person; null where no rule holds it.</summary>
-    public static int? AnswersAloneAt(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective) => Lowest(effective, SupervisorRules.AnswersAlone, SupervisorRules.Hold);
+    /// <summary>
+    /// The answers alone in a row a line goes on by before it waits: for the person, or for the supervisor a <c>refer</c> asks, the line
+    /// held alike behind the count's door; null where no rule holds it.
+    /// </summary>
+    public static int? AnswersAloneAt(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective) => AnswersAloneActing(effective)?.At;
+
+    /// <summary>The answers-alone rule that holds a line, <c>hold</c> or <c>refer</c>, at its lowest <c>at</c>; none where neither does.</summary>
+    public static SupervisorRule? AnswersAloneActing(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective) =>
+        effective.TryGetValue(SupervisorRules.AnswersAlone, out var rules)
+            ? rules.Where(rule => rule.Do is SupervisorRules.Hold or SupervisorRules.Refer).MinBy(rule => rule.At)
+            : null;
 
     /// <summary>The failed sessions that park a quest; 0 where no rule holds it.</summary>
     public static int FailuresAt(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective) => Lowest(effective, SupervisorRules.Failures, SupervisorRules.Hold) ?? 0;

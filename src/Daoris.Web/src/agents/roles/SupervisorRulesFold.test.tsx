@@ -14,8 +14,8 @@ const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Toolt
 
 const COUNTS: SupervisorRulesRead['counts'] = [
   { count: 'answers-alone', window: 'in-a-row', actions: ['hold', 'refer', 'off'], least: 1, most: 20 },
-  { count: 'failures', window: 'since-try-again', actions: ['hold', 'refer', 'off'], least: 1, most: 20 },
-  { count: 'tries', window: 'episode', actions: ['hold', 'ask', 'next', 'weighted', 'refer'], least: 1, most: 5 },
+  { count: 'failures', window: 'since-try-again', actions: ['hold', 'off'], least: 1, most: 20 },
+  { count: 'tries', window: 'episode', actions: ['hold', 'ask', 'next', 'weighted'], least: 1, most: 5 },
 ];
 const READ: SupervisorRulesRead = {
   counts: COUNTS,
@@ -135,6 +135,25 @@ describe('The supervisor rules fold', () => {
 
     expect(form.getByRole('button', { name: 'Remove rule 3' })).toBeDisabled();
     expect(form.getByRole('button', { name: 'Remove rule 1' })).toBeEnabled();
+  });
+
+  it('offers asking the supervisor where the count takes it, in English and Chinese, and writes it back as read', async () => {
+    const read: SupervisorRulesRead = { counts: COUNTS, sets: [READ.sets[0]!, { place: 'repository:daoris', revision: 1, rules: [
+      { id: 'r-1', count: 'answers-alone', window: 'in-a-row', at: 2, do: 'refer' },
+    ] }] };
+    const onSave = vi.fn((_press, answered) => answered.done());
+    const { unmount } = render(<SupervisorRulesFold place="repository:daoris" placeName="daoris" read={read} roles={ROLES} busy={false} refused={null} onSave={onSave} />);
+    const form = within(screen.getByRole('form', { name: 'Supervisor: its rules for daoris' }));
+
+    expect(form.getByRole('combobox', { name: 'Rule 1: then' })).toHaveTextContent('Ask the supervisor');
+    fireEvent.change(form.getByRole('textbox', { name: 'Rule 1: reaches' }), { target: { value: '3' } });
+    fireEvent.click(form.getByRole('button', { name: 'Save' }));
+    expect(onSave.mock.calls[0]![0]).toMatchObject({ rules: [{ count: 'answers-alone', at: 3, do: 'refer' }] });
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<SupervisorRulesFold place="repository:daoris" placeName="daoris" read={read} roles={ROLES} busy={false} refused={null} onSave={vi.fn()} />);
+    expect(within(screen.getByRole('form', { name: '主管：daoris的规则' })).getByRole('combobox', { name: '第 1 条：就' })).toHaveTextContent('请主管判断');
   });
 
   it('is in Chinese', async () => {

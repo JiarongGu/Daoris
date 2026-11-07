@@ -17,6 +17,9 @@ internal sealed class SupervisorBook(string home, MachineLog? log)
     /// <summary>Every live decision by id.</summary>
     public ConcurrentDictionary<string, SupervisorLiveDecision> Live { get; } = new(StringComparer.Ordinal);
 
+    /// <summary>Every course decision on a referred point by id (<see cref="SupervisorCourses"/>).</summary>
+    public ConcurrentDictionary<string, SupervisorCourseDecision> Courses { get; } = new(StringComparer.Ordinal);
+
     /// <summary>Questions a decision closed as the owner's, by session then question (§3.1 <c>overruled</c>), across a restart too.</summary>
     public ConcurrentDictionary<(string Session, string Question), SupervisorState> Closed { get; } = new();
 

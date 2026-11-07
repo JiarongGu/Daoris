@@ -118,6 +118,9 @@ public static class SupervisorWhy
     /// <summary>The answer would take on a line one of the person's rules holds on any count but answers alone (CONTEXTDRIVE1e, the context counters design §4.6 point 2).</summary>
     public const string RuleHolds = "rule-holds";
 
+    /// <summary>A course act names no point a person's <c>refer</c> rule holds the line at now (CONTEXTDRIVE1j).</summary>
+    public const string NotReferred = "not-referred";
+
     // Why a decision went stale (§6.1's `supervisor.stale`).
     public const string Tampered = "tampered";
     public const string Forged = "forged";
