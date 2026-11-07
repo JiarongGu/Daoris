@@ -1,7 +1,7 @@
 {
   "version": 1,
   "canonVersion": "0.0.1",
-  "canonDigest": "cd4009e467abe424f1f2a90c9b28e42f79c0edd07a8aba8d9db07257f758f777",
+  "canonDigest": "dac80d2111361584b6d2c5427f11e50212f2f6be16e8342e37d495459e88ccf4",
   "source": "daoris@0.0.1",
   "entries": [
     {
@@ -79,7 +79,7 @@
       "source": "core/knowledge/rooms-and-classes.md",
       "target": "knowledge/rooms-and-classes.md",
       "canonVersion": "0.0.1",
-      "sha256": "073dd56b9e11239d340ea588d67ffafaa37835c52fc5d29070cbe8fd5c89a502"
+      "sha256": "a218cbe9b4aa1d8302507d2038774b83532cb9ec16b41a4be125cc877ab0f691"
     },
     {
       "pack": "core",

@@ -12,11 +12,14 @@ network.
 
 ## Unreleased
 
-- **A new core knowledge document, `rooms-and-classes`, says how to declare a repository's rooms and the classes of its
-  ignored files.** A lane that carries `builds` (its units, and what its builds read and write outside them) is a room, and
-  lanes that are one build name one `room`; the gates file's `trees` names the dependencies, intermediates and outputs, and
-  never a tracked path. It says how to propose both for a repository that has none and how to check them. **Adopting
-  repositories:** run `daoris sync`; declaring rooms is optional, and nothing declared carries nothing.
+- **A new core knowledge document, `rooms-and-classes`, says how to declare a repository's rooms and the rules for its
+  files git does not manage.** A lane that carries `builds` (its units, and what its builds read and write outside them) is a
+  room, and lanes that are one build name one `room`. Every file git does not manage is handled by a layered rule file: a
+  found layer the tool's analysis writes, the repository's tracked rule file, and the person's own layer, each rule naming its
+  kind (dependency, intermediate, output, cache, local, scratch, repository). It restricts nothing by default beyond a floor
+  that prevents losing work, and never names a tracked path. It says how to propose both for a repository that has none and how
+  to check them. **Adopting repositories:** run `daoris sync`; declaring rooms and rules is optional, and the analysis's found
+  rules act where a repository declares none.
 
 - **`no-global-memory` says a memory the repository owns is not global.** A memory written by the repository's own
   sessions, reviewed with their work and read by every other session there is repository knowledge, and a confirmed

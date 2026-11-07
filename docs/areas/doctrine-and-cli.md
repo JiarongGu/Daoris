@@ -181,7 +181,7 @@ as a pack.
     found. (from D117, D124, D151, D230)
 47. The whole set-up runs `init --harness agents`, `analyze`, `sync`, then writes the domain, the knowledge a neighbour
     needs, the brief, the documents, the safe work and the checks, and, where the repository declares none, proposes its
-    rooms and the classes of its ignored files by the canon's `rooms-and-classes`; a move proposes them too. It never
+    rooms and the rules for its files git does not manage by the canon's `rooms-and-classes`; a move proposes them too. It never
     pushes, publishes, runs `connect` or `upstream`, or changes code. (from D124, D214)
 48. The rule is exact `daoris` verbs as `Bash(…)`, never a runner: `--version`, `init --harness agents`, `analyze --json`,
     `sync` (plain, `--dry-run`, `--force`), `check`, `status --json`, `doctor`. A reconcile adds `reconcile` and
