@@ -464,6 +464,11 @@ try
         return Daoris.Driver.Host.BrowserConsole.Run(browserArgs);
     }
 
+    if (args is ["files", .. var filesArgs])
+    {
+        return await Daoris.Driver.Host.FilesConsole.RunAsync(filesArgs);
+    }
+
     if (args is ["repository", .. var repositoryArgs])
     {
         return await Daoris.Driver.Host.RepositoryConsole.RunAsync(repositoryArgs);

@@ -195,6 +195,30 @@ public sealed class FileAnalysisTests : IDisposable
     }
 
     [Fact]
+    public async Task The_verb_says_each_top_s_rule_and_its_layer_and_refuses_a_write_from_a_session_s_terminal()
+    {
+        Write("verb", ".gitignore", "node_modules/\nout/\n");
+        Write("verb", "package-lock.json", """{ "lockfileVersion": 3, "packages": { "": {} } }""");
+        Write("verb", "package.json", """{ "name": "verb" }""");
+        Write("verb", RepositoryFilesReader.FileName, """{ "rules": [ { "kind": "output", "paths": ["out/"] } ] }""");
+        var commit = await Commit("verb");
+        Write("verb", "out/app.js");
+        var home = Path.Combine(_scratch, "home");
+        Directory.CreateDirectory(home);
+
+        var said = await FilesCommand.SaidAsync(home, Path.Combine(_scratch, "verb"), "verb", commit, CancellationToken.None);
+
+        Assert.Contains(said, line => line.StartsWith("  node_modules/  dependency · by the analysis", StringComparison.Ordinal));
+        Assert.Contains(said, line => line.StartsWith("  out/  output · by the repository", StringComparison.Ordinal) && line.Contains("below: the analysis unknown", StringComparison.Ordinal));
+        Assert.Contains("never read", said[0], StringComparison.Ordinal);
+
+        var error = new StringWriter();
+        Assert.Equal(1, await FilesCommand.RunAsync(["verb", "set", "scratch", "tmp/"], home, Path.Combine(_scratch, "verb"), session: true, TextWriter.Null, error, CancellationToken.None));
+        Assert.Contains("DAORIS_SESSION_ID", error.ToString(), StringComparison.Ordinal);
+        Assert.False(File.Exists(PersonFiles.PathOf(home)));
+    }
+
+    [Fact]
     public async Task The_repository_s_layer_is_read_at_the_line_s_tip_and_a_working_file_s_change_acts_on_nothing()
     {
         Write("layer", ".gitignore", "out/\n");
