@@ -365,6 +365,12 @@ public sealed class DriverLoop(
     public Func<bool>? Draining { get; set; }
 
     /// <summary>
+    /// The install's word on a staged update as the steward says it (<see cref="InstallUpdater.SayAsync"/>, its mode): handed in once both
+    /// exist. Null, as in a workspace build, has nothing staged to say it of.
+    /// </summary>
+    public Func<string, CancellationToken, Task>? SayUpdate { get; set; }
+
+    /// <summary>
     /// What an update waits on (D139 §2): the driven sessions this loop runs — a quest's, a resume, a carry-on, an intake —
     /// and the conversations whose turn is in flight. A conversation between turns, a parked session and a terminal are idle.
     /// </summary>

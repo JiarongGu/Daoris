@@ -39,10 +39,10 @@ public static class StewardCommand
     /// <summary>What the verb's usage says.</summary>
     public const string Usage =
         "usage: daoris steward acts | drive <repo> | undrive <repo> | trees <repo> on | hold <repo> | resume <repo> | stop <id> | "
-        + "finish <id> | retry <quest> | workflow <repo> <workflow> | desk | desk decline <request> \"<reason>\" | request <act> <target> \"<why>\"";
+        + "finish <id> | retry <quest> | workflow <repo> <workflow> | pause <quest> | unpause <quest> | done <quest> | delete <quest> | land <id> | clean <id> | update now | update cancel | desk | desk decline <request> \"<reason>\" | request <act> <target> \"<why>\"";
 
     /// <summary>The acts a request may ask for: those the steward's verbs make.</summary>
-    public static IReadOnlyList<string> Requestable { get; } = ["drive", "undrive", "trees", "hold", "resume", "stop", "finish", "retry", "workflow"];
+    public static IReadOnlyList<string> Requestable { get; } = ["drive", "undrive", "trees", "hold", "resume", "stop", "finish", "retry", "workflow", "pause", "unpause", "done", "delete", "land", "clean", "updatenow", "updatecancel"];
 
     /// <summary>The one line the desk's print says before its first fence (D208 §4.4).</summary>
     public const string Header =
@@ -65,6 +65,14 @@ public static class StewardCommand
         ["finish", var id] when Named(id) => ("finish", new { id, state = "completed", said = true }),
         ["retry", var quest] when Named(quest) => ("retry", new { quest = quest.TrimStart('#') }),
         ["workflow", var repo, var workflow] when Named(repo) && Named(workflow) => ("workflow", new { repository = repo, workflow }),
+        ["pause", var quest] when Named(quest) => ("pause", new { quest = quest.TrimStart('#') }),
+        ["unpause", var quest] when Named(quest) => ("unpause", new { quest = quest.TrimStart('#') }),
+        ["done", var quest] when Named(quest) => ("done", new { quest = quest.TrimStart('#') }),
+        ["delete", var quest] when Named(quest) => ("delete", new { quest = quest.TrimStart('#') }),
+        ["land", var id] when Named(id) => ("land", new { id }),
+        ["clean", var id] when Named(id) => ("clean", new { id }),
+        ["update", "now"] => ("updatenow", new { }),
+        ["update", "cancel"] => ("updatecancel", new { }),
         _ => null,
     };
 

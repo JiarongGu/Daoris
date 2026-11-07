@@ -152,7 +152,9 @@ public static class WorkPausing
     /// stopped as the person's, each stop recorded as the pause's own.
     /// </summary>
     /// <param name="door">The machine log's <c>door</c>: <c>screen</c> or <c>terminal</c>.</param>
-    public static async Task<PauseOutcome> PauseAsync(WorkWorld world, WorkScope scope, string id, string door, CancellationToken ct = default)
+    /// <param name="byTheSteward">The pause is the steward's (a quest's): each stop it makes is the steward's in its record, in its own code and sentence.</param>
+    public static async Task<PauseOutcome> PauseAsync(
+        WorkWorld world, WorkScope scope, string id, string door, CancellationToken ct = default, bool byTheSteward = false)
     {
         var named = Named(id);
         if (await PlanAsync(world, scope, named, ct).ConfigureAwait(false) is not { } plan)
@@ -169,7 +171,7 @@ public static class WorkPausing
         WithPause(config, scope, named, new WorkPause(at, earlier?.Stopped ?? new Dictionary<string, string>())).Save(world.ConfigPath);
 
         // 2. Every live session of the work this machine runs, stopped as the person's; the rest named with why.
-        var note = new PausedBy(scope, named).Noted;
+        var note = new PausedBy(scope, named, byTheSteward).Noted;
         var stopped = new List<WorkStop>();
         var kept = new List<WorkKept>();
         foreach (var each in plan.Sessions)
@@ -211,7 +213,7 @@ public static class WorkPausing
             WithPause(now, scope, named, entry with { Stopped = stops }).Save(world.ConfigPath);
         }
 
-        world.Log?.Info("work.paused", ("scope", Word(scope)), ("stopped", stopped.Count), ("door", door));
+        world.Log?.Info("work.paused", ("scope", Word(scope)), ("stopped", stopped.Count), ("door", door), ("by", byTheSteward ? AppointedRoles.Steward : "person"));
         return new PauseOutcome(scope, named, PauseVerdict.Paused) { Already = earlier is not null, Stopped = stopped, Kept = kept };
     }
 
@@ -220,7 +222,9 @@ public static class WorkPausing
     /// the planner's verdict over the file as it now stands.
     /// </summary>
     /// <param name="door">The machine log's <c>door</c>: <c>screen</c> or <c>terminal</c>.</param>
-    public static async Task<ResumeOutcome> ResumeAsync(WorkWorld world, WorkScope scope, string id, string door, CancellationToken ct = default)
+    /// <param name="stewardOperation">The steward's act that resumes it: each stop is then released as the steward's own (<c>roleReleases</c>), never the person's.</param>
+    public static async Task<ResumeOutcome> ResumeAsync(
+        WorkWorld world, WorkScope scope, string id, string door, CancellationToken ct = default, string? stewardOperation = null)
     {
         var named = Named(id);
         var config = DriverConfig.Load(world.ConfigPath);
@@ -234,7 +238,13 @@ public static class WorkPausing
         }
 
         var resumed = WithPause(config, scope, named, null);
-        foreach (var (quest, session) in pause.Stopped) resumed = resumed.WithReleased(quest, session);
+        foreach (var (quest, session) in pause.Stopped)
+        {
+            resumed = stewardOperation is null
+                ? resumed.WithReleased(quest, session)
+                : resumed.WithRoleReleased(quest, new RoleRelease(RoleReleaseKinds.Stop, session, AppointedRoles.Steward, stewardOperation));
+        }
+
         resumed.Save(world.ConfigPath);
         var released = pause.Stopped.Select(stop => new WorkStop(stop.Value, stop.Key)).OrderBy(stop => stop.Quest, StringComparer.Ordinal).ToList();
         world.Log?.Info("work.resumed", ("scope", Word(scope)), ("released", released.Count), ("door", door));

@@ -163,6 +163,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // A stop.
   'stopped.paused-ask': { values: ['ask'] },
   'stopped.paused-quest': { values: ['quest'] },
+  'stopped.paused-quest-steward': { values: ['quest'] },
   'stopped.abandoned-ask': { values: ['ask'] },
   'stopped.abandoned-quest': { values: ['quest'] },
   'stopped.checkpoint-finished': { values: [] },

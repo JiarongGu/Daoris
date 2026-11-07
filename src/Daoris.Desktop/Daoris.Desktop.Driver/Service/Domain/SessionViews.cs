@@ -33,7 +33,8 @@ public sealed record PriorSession(
     /// stop that holds its quest the same way, for the steward's or the owner's <i>Try again</i>, and is said as the steward's.
     /// </summary>
     public bool StewardStopped => PersonStopped && NoteParts?.Any(part =>
-        part.Code == RecordNotes.EndedStoppedSteward || part.Code == RecordNotes.StoppedCheckpointStoppedSteward) == true;
+        part.Code == RecordNotes.EndedStoppedSteward || part.Code == RecordNotes.StoppedCheckpointStoppedSteward
+        || part.Code == RecordNotes.StoppedPausedQuestSteward) == true;
 
     /// <summary>
     /// The account it ran on, as its record names it, or null for the tool's own home (D49 §4): what a carry-on is

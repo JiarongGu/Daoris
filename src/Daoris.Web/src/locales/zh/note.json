@@ -114,6 +114,7 @@
   "note.intake.person-deleted": "需求 #{{ask}} 已被删除，它没有可等的了。",
   "note.stopped.paused-ask": "随需求 #{{ask}} 暂缓。",
   "note.stopped.paused-quest": "随委托 #{{quest}} 暂缓。",
+  "note.stopped.paused-quest-steward": "管家暂缓了委托 #{{quest}}。",
   "note.stopped.abandoned-ask": "需求 #{{ask}} 已放弃。",
   "note.stopped.abandoned-quest": "委托 #{{quest}} 已放弃。",
   "note.stopped.checkpoint-finished": "已在检查点手动完成。",

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Daoris.Driver;
+using Shenora.Core.Ipc;
 
 namespace Daoris.Desktop;
 
@@ -48,6 +49,18 @@ public interface IStewardWorld
 
     /// <summary>The planner's verdicts as <c>RETRY_QUEST</c> reads them: the last look's, else a fresh plan.</summary>
     Task<IReadOnlyList<Consideration>> VerdictsAsync(CancellationToken ct);
+
+    /// <summary>A quest's work paused as the steward's: each live session stopped in the steward's own code, never as the person's stop.</summary>
+    /// <exception cref="RoleActRefused">No such quest, or nothing of it to pause.</exception>
+    Task PauseQuestAsync(string quest, CancellationToken ct);
+
+    /// <summary>A quest's pause resumed, each stop it made released as the steward's own release under <paramref name="operation"/>.</summary>
+    /// <exception cref="RoleActRefused">No such quest, or it is not paused.</exception>
+    Task UnpauseQuestAsync(string quest, string operation, CancellationToken ct);
+
+    /// <summary>The word on a staged update, <see cref="UpdateMode.Now"/> or <see cref="UpdateMode.NotNow"/>, said as the steward's.</summary>
+    /// <exception cref="RoleActRefused">Nothing is staged, or the install refused the word.</exception>
+    Task UpdateAsync(string mode, CancellationToken ct);
 }
 
 /// <summary>The steward's acts over the driver bridge's own loop and service (STEWARDROLE1b).</summary>
@@ -100,6 +113,35 @@ public sealed class DriverStewardWorld(DriverContext context) : IStewardWorld
         return said;
     }
 
+    public async Task PauseQuestAsync(string quest, CancellationToken ct)
+    {
+        var outcome = await WorkPausing.PauseAsync(WorkRoutes.WorldOf(context), WorkScope.Quest, quest, PluginEvents.Terminal, ct, byTheSteward: true)
+            .ConfigureAwait(false);
+        if (outcome.Verdict != PauseVerdict.Paused) throw new RoleActRefused(outcome.Verdict == PauseVerdict.Unknown ? StewardWhy.NoQuest : StewardWhy.NothingToPause);
+        Loop.Nudge();
+    }
+
+    public async Task UnpauseQuestAsync(string quest, string operation, CancellationToken ct)
+    {
+        var outcome = await WorkPausing.ResumeAsync(WorkRoutes.WorldOf(context), WorkScope.Quest, quest, PluginEvents.Terminal, ct, operation)
+            .ConfigureAwait(false);
+        if (outcome.Verdict != ResumeVerdict.Resumed) throw new RoleActRefused(outcome.Verdict == ResumeVerdict.Unknown ? StewardWhy.NoQuest : StewardWhy.NotOwn);
+        Loop.Nudge();
+    }
+
+    public async Task UpdateAsync(string mode, CancellationToken ct)
+    {
+        if (Loop.SayUpdate is not { } say) throw new RoleActRefused(StewardWhy.NothingStaged);
+        try
+        {
+            await say(mode, ct).ConfigureAwait(false);
+        }
+        catch (ShenoraException)
+        {
+            throw new RoleActRefused(StewardWhy.NothingStaged);
+        }
+    }
+
     public async Task<IReadOnlyList<Consideration>> VerdictsAsync(CancellationToken ct)
     {
         var config = Config();
@@ -128,6 +170,11 @@ public static class StewardWhy
     public const string Ended = "ended";
     public const string Refused = "refused";
     public const string NoRoute = "no-route";
+    public const string NoQuest = "no-quest";
+    public const string AlreadyPaused = "already-paused";
+    public const string NothingToPause = "nothing-to-pause";
+    public const string NothingStaged = "nothing-staged";
+    public const string LandingPushes = "landing-pushes";
 }
 
 /// <summary>
@@ -148,6 +195,14 @@ public static class StewardActRows
         new FinishAct(),
         new RetryAct(),
         StewardRouteAct.Workflow,
+        new StewardPauseAct(pause: true),
+        new StewardPauseAct(pause: false),
+        StewardRouteAct.Done,
+        StewardRouteAct.Delete,
+        StewardRouteAct.Land,
+        StewardRouteAct.Clean,
+        new StewardUpdateAct(StewardActNames.UpdateNow, UpdateMode.Now),
+        new StewardUpdateAct(StewardActNames.UpdateCancel, UpdateMode.NotNow),
     ];
 
     /// <summary>
