@@ -356,6 +356,7 @@
   "agents.setup.roles.hold.act.updatecancel": "搁置已备好的更新",
   "agents.setup.roles.hold.act.land": "让会话的工作树落地，从不推送",
   "agents.setup.roles.hold.act.clean": "清理会话的工作树，从不强制",
+  "agents.setup.roles.hold.act.handover": "把会话转交给另一个智能体或账户",
   "agents.setup.roles.hold.act.setup": "设置",
   "agents.setup.sessions.title": "会话",
   "agents.setup.workflow.title": "工作流",

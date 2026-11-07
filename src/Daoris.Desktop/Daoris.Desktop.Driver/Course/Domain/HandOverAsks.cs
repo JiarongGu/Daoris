@@ -32,6 +32,9 @@ public static class HandOverAsker
 
     /// <summary>The person, by the window's press.</summary>
     public const string Window = "window";
+
+    /// <summary>The steward, by an act the person granted it, never as the person.</summary>
+    public const string Steward = "steward";
 }
 
 /// <summary>An agent's ask to hand its session over, as <c>&lt;session&gt;.hand-over-ask.json</c> keeps it: written by <c>handover_propose</c>, never changed.</summary>
@@ -247,12 +250,15 @@ public static class HandOverAskNotes
         Noted.Of(PeerNoteCodes.HandOverTaking, $"Its agent asked to hand this session over: it goes on with {agent} once its turn ends.", ("agent", agent));
 
     /// <summary>
-    /// The person asked to hand a quest's session over, by the path that made the ask: at a terminal or by the window's
-    /// press. The agent's own ask is <see cref="Asked"/>'s, which waits on their word; theirs is the word.
+    /// Who asked to hand a quest's session over, by the path that made the ask: the person at a terminal or by the window's
+    /// press, or the steward by its granted act. The agent's own ask is <see cref="Asked"/>'s, which waits on their word; theirs is the word.
     /// </summary>
-    public static Noted AskedBy(string by, string agent) => by == HandOverAsker.Terminal
-        ? Noted.Of(PeerNoteCodes.HandOverAskedTerminal, $"You asked at a terminal to hand this session over to {agent}: Daoris takes it at its next look.", ("agent", agent))
-        : Noted.Of(PeerNoteCodes.HandOverAskedWindow, $"You asked in the window to hand this session over to {agent}: Daoris takes it at its next look.", ("agent", agent));
+    public static Noted AskedBy(string by, string agent) => by switch
+    {
+        HandOverAsker.Terminal => Noted.Of(PeerNoteCodes.HandOverAskedTerminal, $"You asked at a terminal to hand this session over to {agent}: Daoris takes it at its next look.", ("agent", agent)),
+        HandOverAsker.Steward => Noted.Of(PeerNoteCodes.HandOverAskedSteward, $"The steward asked to hand this session over to {agent}: Daoris takes it at its next look.", ("agent", agent)),
+        _ => Noted.Of(PeerNoteCodes.HandOverAskedWindow, $"You asked in the window to hand this session over to {agent}: Daoris takes it at its next look.", ("agent", agent)),
+    };
 
     /// <summary>It comes to nothing before anyone's yes, and why: the rule, the person's no, or what the session or its quest is.</summary>
     public static Noted Refused(string why) =>

@@ -37,6 +37,9 @@ public sealed class StewardStandingTests : Bridge
         /// <summary>The plugin the landing's plan names as the one that pushes the branch, or none.</summary>
         public string? Pushing { get; set; }
 
+        /// <summary>What the hand-over's judge answers: kept, or refused with its code and its words.</summary>
+        public (string Why, string Message)? HandOverRefused { get; set; }
+
         public override string ModuleName => DriverModule.Name;
 
         protected override async Task<object?> RouteMessageAsync(IpcRequest request, IModuleContext context, CancellationToken cancellationToken)
@@ -44,6 +47,13 @@ public sealed class StewardStandingTests : Bridge
             if (request.Type == RoleRoutes.Act) return await SupervisorDoor.ActAsync(Pipe, request.Payload, cancellationToken, Scopes, World);
             lock (Ran) Ran.Add((request.Type!, PipeDoor.Role));
             if (request.Type == "LANDING") return new { Session = "s1", Form = "branch", Plugin = Pushing };
+            if (request.Type == "SESSION_HAND_OVER")
+            {
+                return HandOverRefused is { } refused
+                    ? new { SessionId = (string?)null, Kept = false, refused.Why, refused.Message }
+                    : new { SessionId = (string?)null, Kept = true, Why = (string?)null, Message = "it is stopped at the driver's next look, then goes on in the same tree with codex." };
+            }
+
             return Refuses ? new { Done = false, Refused = "reach", Message = "Nothing could start there." } : new { Done = true };
         }
     }
@@ -296,7 +306,139 @@ public sealed class StewardStandingTests : Bridge
         { StewardActNames.Delete, Quest, "QUEST_DELETE", null },
         { StewardActNames.Land, Tree, "LAND_SESSION_TREE", null },
         { StewardActNames.Clean, Tree, "DISCARD_SESSION_TREE", null },
+        { StewardActNames.HandOver, HandOver, "SESSION_HAND_OVER", null },
     };
+
+    private const string HandOver = """{"id":"s1","agent":"codex"}""";
+
+    [Fact]
+    public async Task A_hand_over_its_route_refuses_is_refused_with_the_route_s_words_and_is_not_the_steward_s()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new StewardModule { HandOverRefused = ("unknown-agent", "no agent here is called codex.") };
+        Seed(driver);
+        var (dispatcher, services) = Compose(log, driver);
+        using var composed = services;
+        var (pipe, judge, key, generation) = Appointed(dispatcher, log, StewardActNames.HandOver);
+        using var served = pipe;
+        driver.Pipe = pipe;
+
+        var (_, client, id) = await ActAsync(pipe, key, generation, StewardActNames.HandOver, HandOver);
+        await using var connected = client;
+        var data = (await client.AnswerAsync(id)).GetProperty("data");
+
+        Assert.False(data.GetProperty("done").GetBoolean(), data.GetRawText());
+        Assert.Equal(("unknown-agent", "no agent here is called codex."), (data.GetProperty("why").GetString(), data.GetProperty("message").GetString()));
+        Assert.Empty(judge.StewardActsNow());
+        Assert.Empty(pipe.Confirmations.Now().Waiting);
+    }
+
+    /// <summary>Outside the acts the person granted, a hand-over its route's judge refuses is refused with that judge's words, and no card is raised.</summary>
+    [Fact]
+    public async Task A_hand_over_not_granted_that_its_route_refuses_is_refused_before_any_card()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new StewardModule();
+        Seed(driver);
+        var (dispatcher, services) = Compose(log, driver);
+        using var composed = services;
+        var (pipe, judge, key, generation) = Appointed(dispatcher, log, StewardActNames.Hold);
+        using var served = pipe;
+        driver.Pipe = pipe;
+        ((StubGrounds)pipe.Grounds!).Held["hand-over"] = "no agent here is called codex.";
+
+        var (_, client, id) = await ActAsync(pipe, key, generation, StewardActNames.HandOver, HandOver);
+        await using var connected = client;
+        var answer = await client.AnswerAsync(id);
+
+        Assert.Equal(InstancePipe.NotAllowed, CodeOf(answer));
+        Assert.Contains("no agent here is called codex.", answer.GetProperty("error").GetProperty("message").GetString(), StringComparison.Ordinal);
+        Assert.Empty(pipe.Confirmations.Now().Waiting);
+        Assert.Empty(driver.Ran);
+        Assert.Empty(judge.StewardActsNow());
+    }
+
+    /// <summary>
+    /// A hand-over is itself a release of its quest's hold, so one of a quest held by what only the owner releases is refused
+    /// <c>owner-held</c> with nothing sent: the owner's stop, an outage past its tries, the strikes, a pause.
+    /// </summary>
+    [Theory]
+    [InlineData("stopped")]
+    [InlineData("transient")]
+    [InlineData("held-transient")]
+    [InlineData("exhausted")]
+    [InlineData("paused")]
+    public async Task A_hand_over_of_a_quest_held_for_the_owner_is_refused_owner_held(string held)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new StewardModule();
+        Seed(driver);
+        var record = held switch
+        {
+            "stopped" => new PriorSession("s1", driver.World.TreeOf("s1"), "stopped") { Quest = "q1", Repository = "engine" },
+            "transient" => new PriorSession("s1", driver.World.TreeOf("s1"), "failed")
+            {
+                Quest = "q1", Repository = "engine", NoteParts = Noted.Of(EndNoteCodes.EndedTransient, "It failed.", ("count", 5), ("minutes", 31)).Parts,
+            },
+            _ => new PriorSession("s1", driver.World.TreeOf("s1"), "failed") { Quest = "q1", Repository = "engine" },
+        };
+        driver.World.Records["s1"] = record;
+        var quest = new QuestView("q1", "Asker", "engine", "Ask q1", "Why.", "Taken");
+        driver.World.Verdicts = held switch
+        {
+            "held-transient" => [new Consideration(quest, StartVerdict.TransientHeld, "held") { HeldBy = record }],
+            "exhausted" => [new Consideration(quest, StartVerdict.Exhausted, "parked") { Failures = 3 }],
+            "paused" => [new Consideration(quest, StartVerdict.Paused, "paused") { PausedBy = new PausedBy(WorkScope.Quest, "q1") }],
+            _ => [],
+        };
+        var (dispatcher, services) = Compose(log, driver);
+        using var composed = services;
+        var (pipe, judge, key, generation) = Appointed(dispatcher, log, StewardActNames.HandOver);
+        using var served = pipe;
+        driver.Pipe = pipe;
+
+        var (_, client, id) = await ActAsync(pipe, key, generation, StewardActNames.HandOver, HandOver);
+        await using var connected = client;
+        var data = (await client.AnswerAsync(id)).GetProperty("data");
+
+        Assert.Equal((false, StewardWhy.OwnerHeld), (data.GetProperty("done").GetBoolean(), data.GetProperty("why").GetString()));
+        Assert.Empty(driver.Ran);
+        Assert.Empty(judge.StewardActsNow());
+    }
+
+    /// <summary>The steward's own stop of this run is its own to carry on, so a hand-over of it runs.</summary>
+    [Fact]
+    public async Task A_hand_over_of_the_steward_s_own_stop_runs()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new StewardModule();
+        Seed(driver);
+        driver.World.Records["s1"] = new PriorSession("s1", driver.World.TreeOf("s1"), "awaiting-person") { Quest = "q1", Repository = "engine" };
+        var (dispatcher, services) = Compose(log, driver);
+        using var composed = services;
+        var (pipe, judge, key, generation) = Appointed(dispatcher, log, StewardActNames.Stop, StewardActNames.HandOver);
+        using var served = pipe;
+        driver.Pipe = pipe;
+        var (_, stop, stopId) = await ActAsync(pipe, key, generation, StewardActNames.Stop, """{"id":"s1","said":true}""");
+        await using (stop) Assert.True((await stop.AnswerAsync(stopId)).GetProperty("data").GetProperty("done").GetBoolean());
+        var stopped = new PriorSession("s1", driver.World.TreeOf("s1"), "stopped")
+        {
+            Quest = "q1", Repository = "engine", NoteParts = SessionMoves.ByTheStewardNoted("stopped").Parts,
+        };
+        driver.World.Records["s1"] = stopped;
+        driver.World.Verdicts = [new Consideration(new QuestView("q1", "Asker", "engine", "Ask q1", "Why.", "Taken"), StartVerdict.Stopped, "stopped") { HeldBy = stopped }];
+
+        var (_, client, id) = await ActAsync(pipe, key, generation, StewardActNames.HandOver, HandOver);
+        await using var connected = client;
+        var data = (await client.AnswerAsync(id)).GetProperty("data");
+
+        Assert.True(data.GetProperty("done").GetBoolean(), data.GetRawText());
+        Assert.Contains(("SESSION_HAND_OVER", StewardActNames.HandOver), driver.Ran.Select(each => (each.Route, each.Role?.Act)));
+    }
 
     /// <summary>Quest <c>q1</c> and its session <c>s1</c> in a tree of the home's own, as the scopes stand-in names them.</summary>
     private void Seed(StewardModule driver)
@@ -474,7 +616,8 @@ public sealed class StewardStandingTests : Bridge
 
     public static TheoryData<string[]> Verbs => [["drive", "engine"], ["undrive", "engine"], ["trees", "engine", "on"], ["hold", "engine"],
         ["resume", "engine"], ["stop", "s1a2b3c4"], ["finish", "s1a2b3c4"], ["retry", "#q-1"], ["workflow", "engine", "review"],
-        ["pause", "q1"], ["unpause", "q1"], ["done", "q1"], ["delete", "q1"], ["land", "s1"], ["clean", "s1"]];
+        ["pause", "q1"], ["unpause", "q1"], ["done", "q1"], ["delete", "q1"], ["land", "s1"], ["clean", "s1"],
+        ["hand-over", "s1", "--agent", "codex"], ["hand-over", "s1", "--agent", "codex", "--account", "work"]];
 
     /// <summary>Each act the steward's verb makes asks outside its acts as a person's route that takes the verb's form as its own press.</summary>
     [Theory]

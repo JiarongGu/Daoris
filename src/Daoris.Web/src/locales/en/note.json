@@ -347,6 +347,7 @@
   "note.handover.why.waiting": "another hand-over of it already waits",
   "note.handover.asked-terminal": "You asked at a terminal to hand this session over to {{agent}}: Daoris takes it at its next look.",
   "note.handover.asked-window": "You asked in the window to hand this session over to {{agent}}: Daoris takes it at its next look.",
+  "note.handover.asked-steward": "The steward asked to hand this session over to {{agent}}: Daoris takes it at its next look.",
   "note.handover.not-taken": "The hand-over to {{agent}} was not taken: {{why}}. This session goes on with its own agent.",
   "note.handover.not-taken-ends": "The hand-over to {{agent}} was not taken: {{why}}. Nothing goes on with this session.",
   "note.browser.withheld": "— {{servers}} drives Daoris's own browser, and was not handed:",

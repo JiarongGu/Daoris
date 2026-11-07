@@ -24,7 +24,8 @@ public static class AppointedRoles
         StewardActNames.Drive, StewardActNames.Undrive, StewardActNames.Trees, StewardActNames.Hold, StewardActNames.Resume,
         StewardActNames.Stop, StewardActNames.Finish, StewardActNames.Retry, StewardActNames.Workflow,
         StewardActNames.Pause, StewardActNames.Unpause, StewardActNames.Done, StewardActNames.Delete,
-        StewardActNames.UpdateNow, StewardActNames.UpdateCancel, StewardActNames.Land, StewardActNames.Clean, StewardActNames.Setup,
+        StewardActNames.UpdateNow, StewardActNames.UpdateCancel, StewardActNames.Land, StewardActNames.Clean, StewardActNames.HandOver,
+        StewardActNames.Setup,
     ];
 
     /// <summary>The acts <paramref name="kind"/> may hold; none for a kind this build does not know.</summary>
@@ -69,6 +70,7 @@ public static class StewardActNames
     /// <summary>A session's tree landed on its line, or cleaned unforced; neither pushes.</summary>
     public const string Land = "land";
     public const string Clean = "clean";
+    public const string HandOver = "handover";
     public const string Setup = "setup";
 }
 

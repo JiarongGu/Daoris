@@ -13,6 +13,7 @@ public static class PeerNoteCodes
     // its reason and what the session does next, never as refused.
     public static readonly NoteCode HandOverAskedTerminal = new("handover.asked-terminal", ["agent"]);
     public static readonly NoteCode HandOverAskedWindow = new("handover.asked-window", ["agent"]);
+    public static readonly NoteCode HandOverAskedSteward = new("handover.asked-steward", ["agent"]);
     public static readonly NoteCode HandOverNotTaken = new("handover.not-taken", ["agent", "why"]) { Why = NoteCodes.HandOver };
     public static readonly NoteCode HandOverNotTakenEnds = new("handover.not-taken-ends", ["agent", "why"]) { Why = NoteCodes.HandOver };
 

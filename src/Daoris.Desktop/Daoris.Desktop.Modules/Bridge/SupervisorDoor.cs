@@ -176,7 +176,7 @@ public static class SupervisorDoor
             }
             catch (RoleActRefused kept)
             {
-                return Acted(false, kept.Why, judged.Roles);
+                return Acted(false, kept.Why, judged.Roles, kept.Words);
             }
 
             return new { Done = true, Why = (string?)null, Answer = answer, Roles = judged.Roles ?? [], Brief = RolesBrief.Revision };
@@ -216,8 +216,9 @@ public static class SupervisorDoor
         }
     }
 
-    private static object Acted(bool done, string? why, IReadOnlyList<string>? roles) =>
-        new { Done = done, Why = why, Answer = (object?)null, Roles = roles ?? [], Brief = RolesBrief.Revision };
+    private static object Acted(bool done, string? why, IReadOnlyList<string>? roles, string? message = null) => message is null
+        ? new { Done = done, Why = why, Answer = (object?)null, Roles = roles ?? [], Brief = RolesBrief.Revision }
+        : new { Done = done, Why = why, Answer = (object?)null, Roles = roles ?? [], Brief = RolesBrief.Revision, Message = message };
 
     /// <summary>
     /// The holder's answer, on the role's door alone: the session's repository the supervisor's, the park read, and the decision

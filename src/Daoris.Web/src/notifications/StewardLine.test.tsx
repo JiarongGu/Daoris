@@ -138,6 +138,22 @@ describe("Notifications' steward line", () => {
     expect([...document.querySelectorAll('[data-steward-act]')].map((each) => each.textContent)).toEqual(['暂缓了', '安装了备好的更新', '让工作树落地了：']);
   });
 
+  it("says a session the steward handed over in English and Chinese, with no reverse press: the owner hands back with their own", async () => {
+    const did = { ...STANDING, stewardActs: [act('c1', 'handover', '2026-10-25T10:20:00Z', { quest: 'q1', session: 's1' })] };
+    const { unmount } = render(<StewardLine standing={did} onReverse={vi.fn()} />);
+    await userEvent.click(line().getByRole('button', { name: "Show the steward's acts" }));
+    const [row] = acts();
+    expect(row.querySelector('[data-steward-act]')?.textContent).toBe('Handed over');
+    expect(row.textContent).toContain('session s1 of #q1');
+    expect(within(row).queryByRole('button')).toBeNull();
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<StewardLine standing={did} onReverse={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: '显示管家的操作' }));
+    expect(document.querySelector('[data-steward-act]')?.textContent).toBe('转交了：');
+  });
+
   it('offers the owner’s reverse press only while an act stands, and none for a finish or a Try again', async () => {
     const onReverse = vi.fn();
     render(<StewardLine standing={STANDING} onReverse={onReverse} />);
