@@ -172,7 +172,6 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 // The harness the part before it ran on and the models its door reported, so a carry-on of another maker credits what that
                 // part left uncommitted.
                 LeftBy = carryingOn ? wiring.LeftBy(start.Resumes!) : null,
-                // What its start did against the line in the tree it goes on in.
                 InSync = inSync?.Told,
                 // Its repository's remotes Daoris holds, so it does not try them: read after its start's own fetch. And, where the remote
                 // helper is laid out for it, what `git remote -v` shows under the rewrite; or, on a git older than the doors need, that its

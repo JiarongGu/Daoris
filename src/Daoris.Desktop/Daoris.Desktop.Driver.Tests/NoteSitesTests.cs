@@ -284,7 +284,6 @@ public sealed class NoteSitesTests
         Assert.Equal(
             ["started.local-copied", "started.local-missing", "started.local-refused", "started.local-failed", null],
             NoteAssert.Codes(opening.Parts));
-        // The files as a list, each set as code and joined the reader's way; one not copied as itself.
         Assert.Equal(["local/sensitive-patterns.txt", "local/hosts.txt"], Assert.IsAssignableFrom<IReadOnlyList<string>>(opening.Parts[0].Value("inputs")));
         Assert.Equal("secrets/token.txt", opening.Parts[2].Value("input"));
         Assert.Equal(NoteBy.Program, opening.Parts[4].By);

@@ -70,7 +70,6 @@ internal sealed class TreeReturns(TreeContext context, TreeFollows follows, Tree
             return Unmade(null, $"the tree at {full} is gone, and it is not one this machine's Daoris opened, so it is not made again.");
         }
 
-        // The branch its agent moved it onto, as the ledger learned it, else the layout's.
         var branch = context.Grown.Following(layout.Repository, layout.Branch)?.Now ?? layout.Branch;
         var (stands, _, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct)
             .ConfigureAwait(false);
@@ -105,8 +104,7 @@ internal sealed class TreeReturns(TreeContext context, TreeFollows follows, Tree
         }
 
         Directory.CreateDirectory(Path.GetDirectoryName(full)!);
-        // Locked while it is made, as an opening is, so a kill leaves it for the look (TreeStrays) and a cancel takes
-        // it back below. Made with its hooks held and marked unworked before the lock goes, as an opening is.
+        // Locked and its hooks held while it is made, as an opening is: a kill leaves it for the look (TreeStrays), a cancel undoes it.
         var ours = !Directory.Exists(full);
         var (code, _, stderr) = await WorkingTree.GitAsync(
             root, [.. TreeOpenings.HooksHeld(context.Home), "worktree", "add", "--lock", "--reason", TreeOpenings.LockReason(Environment.ProcessId), full, branch], ct)

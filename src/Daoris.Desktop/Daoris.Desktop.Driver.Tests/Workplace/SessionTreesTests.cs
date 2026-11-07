@@ -58,17 +58,13 @@ public sealed class SessionTreesTests : IDisposable
 
         Assert.StartsWith(DaorisHome.Entry(_home, HomeEntry.Trees,"aurora", "engine"), opened.Path);
         Assert.StartsWith("daoris/", opened.Branch);
-        // The canonical line where one is declared — and a fresh `git init` fixture
-        // HAS one (its own main/master, found by the local-branch fallback) — and it SAYS which it
-        // used, because a branch based on the wrong point is invisible until merge time.
+        // A fresh `git init` has a line (its own branch), and the opening says it: a wrong base is invisible until merge time.
         Assert.Contains("canonical line", opened.BasedOn);
-        // The price, stated by the act that incurs it: a fresh tree holds nothing git does not track.
         Assert.Contains("nothing git does not track", opened.Sentence);
 
         Assert.True(Directory.Exists(opened.Path));
         var (clean, _) = await WorkingTree.CleanAsync(opened.Path);
         Assert.True(clean, "a fresh tree is clean by construction");
-        // …and it is a real linked worktree of the root, not a copy: one history, two trees.
         Assert.True(File.Exists(Path.Combine(opened.Path, ".git")), ".git is a FILE in a linked worktree");
     }
 
@@ -285,9 +281,8 @@ public sealed class SessionTreesTests : IDisposable
             var home = Path.Combine(shortRoot, "daoris-home");
             Directory.CreateDirectory(home);
             var root = await MakeRepositoryAsync("engine", under: shortRoot);
-            // At most 240 characters under the root: inside Windows' 248 for a folder and 260 for a
-            // file. The tree's prefix is 36 longer (`daoris-home/trees/aurora/` and `/s-xxxxxxxx`),
-            // so the same path crosses 260 under it.
+            // At most 240 characters under the root, inside Windows' 248 for a folder and 260 for a file; the tree's prefix is 36
+            // longer (`daoris-home/trees/aurora/` and `/s-xxxxxxxx`), so the same path crosses 260 under it.
             const string segment = "component/";
             var room = 240 - (root.Length + 1) - "x.ts".Length;
             Assert.True(room >= 5 * segment.Length, $"the short root is too long to fit a deep path under: {root}");
