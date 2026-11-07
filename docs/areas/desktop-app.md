@@ -12,13 +12,13 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 
 ## Its parts
 
-`Modules/` is `src/Daoris.Desktop/Daoris.Desktop.Modules/`, `App/` is `src/Daoris.Desktop/Daoris.Desktop.App/`, and
-web paths are under `src/Daoris.Web/src/`.
+`Modules/` is `src/Daoris.Desktop/Daoris.Desktop.Modules/`, `App/` is `src/Daoris.Desktop/Daoris.Desktop.App/`, `Driver/` is
+`src/Daoris.Desktop/Daoris.Desktop.Driver/`, and web paths are under `src/Daoris.Web/src/`.
 
 | Unit | File | Its job |
 |---|---|---|
 | `Program` | `App/Program.cs` | Composes the shell: the browser argument first, home, log, host start, engine, modules, dispatcher middleware |
-| `MainForm`, `SecondaryForm` | `App/MainForm.cs`, `App/SecondaryForm.cs`, `App/SecondaryWindowHost.cs` | The frameless main window; framed secondary windows (`monitor`, `session:<id>`) |
+| `MainForm`, `SecondaryForm` | `App/MainForm.cs`, `App/SecondaryForm.cs`, `App/SecondaryWindowHost.cs` | The frameless main window, and another main window (`main:<n>`) for a later launch; framed secondary windows (`monitor`, `session:<id>`) |
 | `DriverModule` and the route classes | `Modules/Bridge/DriverModule.cs`, `Modules/Bridge/Routes/<Domain>Routes.cs` | `DAORIS.DRIVER`: one handler class per domain, each route `[DriverRoute]`, each press `[Publishes]` |
 | Route-class helpers | `Modules/Bridge/Routes/GitRefDesk.cs`, `GitAnswers.cs`, `LinesWires.cs`, `WorkWires.cs`, `SweepWires.cs`, `TreesTidyDesk.cs`, `WorkflowAnswers.cs`, `DriverStateAnswer.cs`, `HelpScreenDoors.cs`, `HelpMachineDesk.cs`, `HelpProposalFacts.cs`, `TreesLandDesk.cs`, `LandPresses.cs`, `TreesReviewWires.cs`, `SessionsMoveDesk.cs`, `SessionsAskDesk.cs`, `SessionsWaitDesk.cs`, `SessionsRecordDesk.cs`, `SessionsGroupsDesk.cs`, `SessionsGroupsWires.cs` | A route class keeps its marks and one-line doors (so callers and the page's bridge file are unchanged); the bodies and wire shapes of git's ref acts, the lines, work and sweep answers, the clean-up and sync, the workflow answers, the driver's state, Ask Daoris's Apply doors, room judges and proposal facts, the landing press, answered once per session and held in words while it goes on (`LandPresses`), with the review and preview wires, and a session's moves, asks, waits, record and groups sit in types of their own beside it (D231) |
 | `SessionWords` and its parts | `Modules/Loop/SessionWords.cs`, `HeldWordsQueue.cs`, `HeldWordsDisk.cs`, `HeldSay.cs`, `WordsAnswer.cs`, `WordsRead.cs`, `WordsReach.cs`, `WordsQueueEdits.cs`, `WordsShown.cs` | The person's words to a session: `SessionWords` judges and says them; the words held for a record to end wait in `HeldWordsQueue` (its pump) and in the held file `HeldWordsDisk` writes whole; the record read, the reach a word would have, the take-back and move of a waiting word and the lines shown in the conversation each have a type of their own |
@@ -32,13 +32,13 @@ web paths are under `src/Daoris.Web/src/`.
 | `InstancePipe`, `PipeCensus`, `RouteMarks`, `PipeConfirmations` | `Modules/Platform/` | A terminal's verbs into the running Daoris; each route classed `Open`, `Person`, `Window` or `Role` by its mark, read at start |
 | `InstancePipe`'s parts | `Modules/Platform/PipeState.cs`, `PipeWaitingKeep.cs`, `PipeListener.cs`, `PipeConnection.cs`, `PipeAdmission.cs`, `PipeAsking.cs`, `PipeTakeBacks.cs`, `PipeRestore.cs`, `PipeReserved.cs`, `PipeLimits.cs`, `PipeHolding.cs`, `PipeHold.cs`, `PipeForwarding.cs` | The presses and connections under one gate; the waiting records under their own lock, never taken inside it; the listening, a connection, a request's admission, a person's press from its reservation to its ending, `CANCEL`/`RESULT`/`WITHDRAW`, the restart's restore; a terminal's hold of a conversation (`HOLD`, `LET_GO`) and the bounded forwarding of its lines. The pipe keeps the wire's words, the serve, the close and the run |
 | `WindowsModule` | `Modules/Windows/WindowsModule.cs` | `DAORIS.WINDOWS`: `OPEN`, `OPEN_BROWSER`, `SET_THEME`, `SET_BADGE`, `SET_TITLE`, `SET_NOTICE_WORDS` |
-| Notifier | `App/SessionNotifier.cs`, `Modules/Windows/SessionBalloon.cs`, `MainWindowScopes.cs` | OS balloons in the window's language; which window a click brings forward |
+| Notifier | `App/SessionNotifier.cs`, `Modules/Windows/SessionBalloon.cs`, `Modules/Windows/MainWindowScopes.cs` | OS balloons in the window's language; which window a click brings forward |
 | Taskbar | `App/TaskbarBadge.cs`, `Modules/Windows/WaitingCount.cs`, `WaitingBadge.cs` | Each main window's count on its button and in its title |
 | Browser | `Modules/Browser/` (`BrowserModule`, `EngineBrowser`, `EdgeBrowser`, `InAppBrowser`), `App/EngineBrowserHost.cs`, `App/BrowserProcess.cs` | Daoris's own browser, its profile, favorites and CDP endpoint |
 | `TerminalModule`, `LogModule` | `Modules/Windows/TerminalModule.cs`, `Modules/Platform/LogModule.cs` | The person's own shells; the page's report into the machine log |
 | `App` | `app/App.tsx` composes; `app/shell/` holds its hooks (state, feeds, figures, opener, commands, shortcuts, doors, views, attention doors, context doors) and `app/shellHelpers.ts` its constants | The window's frame: places, strip, menus, views, dock, drawers |
-| Frame regions | `work/frame/` (`frame.tsx`, `ViewFrame`, `ListPane`, `ViewMain`, `RightDock`, `placements.ts`) | Activity bar, strip, status bar, list pane, main area, side bar and panel, and where views stand |
-| `WorkFrame` | `work/WorkFrame.tsx` (31 KB: outline only) | Sessions: the rail, the attended session's page, its head, waits and review, composed from its hooks |
+| Frame regions | `work/frame/` (`frame.tsx`, `ViewFrame.tsx`, `ListPane.tsx`, `ViewMain.tsx`, `RightDock.tsx`, `placements.ts`) | Activity bar, strip, status bar, list pane, main area, side bar and panel, and where views stand |
+| `WorkFrame` | `work/WorkFrame.tsx` (30 KB: outline only) | Sessions: the rail, the attended session's page, its head, waits and review, composed from its hooks |
 | `WorkFrame`'s hooks | `work/frame/useFrameLayout.ts`, `useDockViews.ts`, `layoutMemory.ts`; `work/head/useAttendedSession.ts`, `useAttendedRecord.ts`, `useHeadAsks.ts`, `useAttendedHead.tsx`; `work/conversation/useAttendedBox.ts`, `useWords.ts`, `useBoxWords.ts`; `work/start/useNewStart.ts`, `StartPane.tsx`; `work/review/useSessionLanding.ts`; `work/waits/useAttendedWaits.ts` | One part each of what the frame reads and presses (D231): the columns and regions, the attended session and its record, its box and words, a new conversation, the header and its questions, the landing, and what waits on the person; each that reaches the bridge is a named organism of the presentational boundary |
 | `WorkFrame`'s composed parts | `work/frame/regionSurface.tsx`, `OutputPanel.tsx`; `work/rail/useSessionsList.tsx`; `work/start/agentRoster.ts`; `work/head/AttendedPane.tsx`, `partRows.ts`, `HeadNote.tsx`, `headRows.tsx`; `work/conversation/AttendedConversation.tsx`, `AttendedBoxes.tsx`, `useSeekPart.ts`, `NoteLines.tsx`, `BlockLines.tsx`, `saidDoors.ts`; `work/attention/AskOnce.tsx`, `rowRules.ts` | What the frame composes from those hooks (D231): each region's surface and the streams, Sessions' list, the agent roster, the record, the conversation and its boxes; the frame holds the hooks and the layout, each part takes the hooks' results as typed objects. `ConversationView`, `AttentionRow`, `frame.tsx` and `SessionHead` each keep their component and hand their leaf lines, rules and panel to files of their own, all under 40 KB |
 | A session's note | `work/Note.tsx`, `work/noteLines.ts`, `work/notes/noteCodes.ts`; the home migration's `note-records` step | Drawn from its coded parts only (D142): a record with no parts draws nothing, a part the page cannot word is shown marked as recorded, and the migration clears the note of a finished session record that has no parts; `Note`, `Said`, the waiting cards and `NoteRecord` take parts alone, no `note` prop |
@@ -46,8 +46,8 @@ web paths are under `src/Daoris.Web/src/`.
 | Notifications | `notifications/`, `work/attention/` | The bell, the view and its four groups; *What needs you* |
 | Bridge and state hub | `bridge/<domain>.ts` (or `bridge/<domain>/` for `agents`, `repositories`, `sessions`), `bridge/state/stateHub.ts`, `app/ShellSignals.tsx`, `data/api.ts` | The page's calls; scope invalidation; pushed slices fed to the query cache; the person key on writes |
 | Design language | `tokens.css`, `design/ui.tsx`, `design/atoms/`, `design/theme.ts`, `design/phases.tsx` | Tokens as the Tailwind theme; the atoms, one file per family under `design/atoms/` and re-exported by `design/ui.tsx` (`Pill`, `Drawer`, `Toasts`, `SettingList`, `FormGrid`); `PhaseList` is `design/phases.tsx`'s |
-| Flows and canvas | `design/canvas/LifeFlow.tsx`, `design/FlowNodeBox.tsx`, `design/RankedFlow.tsx`, `design/flowTypes.ts`, `design/flowParts.tsx`, `design/flowLayout.ts`, `design/canvas/` | The flowchart engine (ranked layout, ink, folds, rail) and one viewport for every graph (`Canvas`, `PositionedCanvas`, `SuppliedCanvas`); the landing, quest, parts and session life-flows and a workflow's routes draw through `LifeFlow` and the chart through `FlowChart`, both in the canvas's viewport; there is no `Flow.tsx` |
-| Translation | `locales/<lang>/<area>.json`, `locales/i18n.ts`, `languages.ts`, `authored.ts`, `glossary.json`; `scripts/i18n-check.mjs`, `scripts/names-check.mjs` | Catalogues per shipped language, authored text, the glossary and its checks |
+| Flows and canvas | `design/canvas/LifeFlow.tsx`, `design/FlowNodeBox.tsx`, `design/RankedFlow.tsx`, `design/flowTypes.ts`, `design/flowParts.tsx`, `design/flowLayout.ts`, `design/canvas/` | The flowchart engine (ranked layout, ink, folds, rail) and one viewport for every graph (`Canvas`, `PositionedCanvas`, `SuppliedCanvas`); the landing, quest, parts and session life-flows and a workflow's routes draw through `LifeFlow` and the chart through `FlowChart` (`workflow/chart/FlowChart.tsx`), both in the canvas's viewport |
+| Translation | `locales/<lang>/<area>.json`, `locales/i18n.ts`, `locales/languages.ts`, `locales/authored.ts`, `locales/glossary.json`; `scripts/i18n-check.mjs`, `scripts/names-check.mjs` | Catalogues per shipped language, authored text, the glossary and its checks |
 | Views | `overview/`, `quests/`, `projects/`, `map/`, `knowledge/`, `agents/` (`setup/`, `roles/`), `plugins/`, `settings/domains.ts` | Each place's view, list and pages |
 | Setup guide | `help/setup.ts` | Get started's steps, read off the machine |
 
@@ -97,7 +97,7 @@ web paths are under `src/Daoris.Web/src/`.
     binds that one connection to that one conversation, in memory alone. The connection's words in the verb's form, turn stops
     and finish for it then run with no card, and the pipe forwards it the conversation's lines, events and end, bounded, with a
     `GAP`. `LET_GO`, the head's *Let go of the terminal* (`SESSION_LET_GO`), the conversation's end and the connection closing
-    end the hold, each told and logged `person.hold`. The host's own held asks (`PersonConfirmations`) are bounded: five for asks naming a
+    end the hold, each told and logged `person.hold`. The host's own held asks (`PersonConfirmations`, in `src/Daoris.Service/Daoris.Service.Http/`) are bounded: five for asks naming a
     session, one more for the terminal's, two to an asker; an ask naming no session is bound by its process, read from the loopback
     connection (`AskerProcess`, Windows), one place each, so an agent leaving its session off cannot hold both of the terminal's.
     (from D156, D196, D238)
@@ -161,8 +161,8 @@ web paths are under `src/Daoris.Web/src/`.
     The acts hold still. The id moves to ⋯ and *Details*. (from D152, D162)
 38. Every wait shows in the head and in the foot's panel above the composer. Both places get the same press from the
     frame, and a press in one disables the other. One pure rule (`work/waits/waits.ts`) says which waits stand. (from D168, D185)
-39. There is no text editor. A file's preview is a read-only side-bar tab from the session's tree (`SESSION_FILE`).
-    It shows at most 256 KiB, and a path outside the tree is refused. (from D55, D111)
+39. There is no text editor. A file's preview is a read-only side-bar tab from the session's tree, or from the branch it landed on once its tree is gone
+    (`SESSION_FILE`). It shows at most 256 KiB, and a path outside the tree is refused. (from D55, D111)
 40. *New conversation* starts from the person's words in a repository they pick, with tree, agent and account chips.
     `START_CHAT` carries a request id, and one id never starts twice. (from D162)
 
@@ -300,9 +300,9 @@ a probe, git through a counting seam, a source that only names a start, a proces
   glossary row for a name. **A movable view** goes in `work/frame/placements.ts`; **a verb** in `menus/commands.ts`.
 - **Tests that pin it.** Modules: `DriverModuleRoutesTests`, `StatePublisherTests`, `StateSlicesTests`,
   `PipeCensusTests`, `PipeWordingTests`, `RefusalCatalogueTests`, `ChromePaletteTests`, `WindowsModuleTests`,
-  `WaitingBadgeTests`, `SessionBalloonTests`, `EngineBrowserTests`. Web: `test/structure.test.ts`, `design/tokens.test.ts`,
-  `presentational.test.ts`, `siblingKeys.test.ts`, `pageMeasure.test.tsx`, `locales/{i18n,names,note,glossary,
-  shippedNames}.test.ts`, `menus/commands.test.ts`, `ContextMenu.test.tsx`, `bridge/state/{stateHub,slices}.test.*`,
+  `WaitingBadgeTests`, `SessionBalloonTests`, `EngineBrowserTests`. Web: `test/structure.test.ts`, `design/{tokens,presentational,siblingKeys}.test.ts`,
+  `design/pageMeasure.test.tsx`, `locales/{i18n,names,note,glossary,
+  shippedNames}.test.ts`, `menus/commands.test.ts`, `menus/ContextMenu.test.tsx`, `bridge/state/{stateHub,slices}.test.*`,
   `app/pushedState.test.tsx`; `e2e/platform.spec.ts`; `measured/*.spec.ts`.
 - **The gates that bite:** `web-types`; `web-rules` (tokens, structure, provider census, presentational, page measure);
   `web-unit`; `web`, whose build runs `i18n-check`, `names-check --strict`, `tsc` and `vite build` before Playwright
@@ -311,23 +311,23 @@ a probe, git through a counting seam, a source that only names a start, a proces
 
 ## Contradictions
 
-1. D55 (two frames, Manage ⇄ Work) vs D66 §1 (one frame): D66 is right; `menus/commands.ts:28` has one list of views.
-2. D56 (six domains in the bar) and D66 §1 (a six-item bar with Convergence and Search) vs D150 §2 (nine places): D150 is right, per `menus/commands.ts:28-48`.
-3. D75 §1 (menus Daoris · Workspace · Agents · View) vs D152 §1: D152 is right, per `menus/commands.ts:57-66`.
+1. D55 (two frames, Manage ⇄ Work) vs D66 §1 (one frame): D66 is right; `menus/commands.ts` has one list of views (`VIEWS`).
+2. D56 (six domains in the bar) and D66 §1 (a six-item bar with Convergence and Search) vs D150 §2 (nine places): D150 is right, per `VIEWS` in `menus/commands.ts`.
+3. D75 §1 (menus Daoris · Workspace · Agents · View) vs D152 §1: D152 is right, per `MENUS` in `menus/commands.ts`.
 4. D150 §2 (refresh and language move to "the Daoris menu") vs D152 §1 (there is no Daoris menu): D152 is right.
-5. D75 §2 and D150 §2 (seven Settings domains, without This Daoris or Git) vs `settings/domains.ts:51` (nine): the code is right.
-6. Code vs code: Ask Daoris's twins (`help/places.ts:46`, `Help/Proposals/HelpGoProposals.cs:344`) omit `tools`, so no go opens Settings → Tools. Intent unclear.
-7. D150 §6 (*What needs you* leads Overview) vs D196 §5 (Overview keeps a summary): D196 is right (`overview/OverviewView.tsx:79`, `app/shell/useViewLayouts.tsx:86`).
-8. D30 (convergence is the knowledge half's primary view) vs `knowledge/modes.ts:21` (Search is the default) and D40 (Overview is the landing): the code is right.
+5. D75 §2 and D150 §2 (seven Settings domains, without This Daoris or Git) vs `SETTINGS_DOMAINS` in `settings/domains.ts` (nine): the code is right.
+6. Code vs code: Ask Daoris's twins (`PLACE_DOMAINS` in `help/places.ts`, `HelpPlaces.Domains` in `Driver/Help/Proposals/HelpGoProposals.cs`) omit `tools`, so no go opens Settings → Tools. Intent unclear.
+7. D150 §6 (*What needs you* leads Overview) vs D196 §5 (Overview keeps a summary): D196 is right (`overview/OverviewView.tsx`, which draws a summary line per group, and `app/shell/useViewLayouts.tsx`).
+8. D30 (convergence is the knowledge half's primary view) vs `knowledge/modes.ts` (`readKnowledgeMode` falls back to Search) and D40 (Overview is the landing): the code is right.
 9. D41 (a right drawer is the single detail-and-form surface; global state sits in the sidebar) vs D118 §3 (a record opens in the main area) and D56 (the status bar): D118 and D56 are right.
 10. D41 and D42 (toasts carry the service's sentence verbatim) vs D142, D182 §2 and D185 R3 (coded verdicts worded by the page, said where the action started): the later ones are right. An unknown code still shows the driver's sentence.
 11. D42 (TanStack invalidation after every mutation) vs D169 §6 and D182 §7 (one state hub by declared scope, plus pushed slices): D169 and D182 are right (`bridge/state/stateHub.ts`).
 12. D169 §3 (an event never says what a thing is) vs D182 §2 (pushed with its data): both run. D182 governs the 16 slices, and `STATE_CHANGED` covers the scopes not yet moved.
-13. D78 (a framed WebView2 window of the shell) and D84 (Daoris's UI stays on WebView2; the engine is fetched like a harness) vs D85, D92 and D99: D99 is right (`App/Program.cs:44-49`; the kit pins CEF, `App/Daoris.Desktop.App.csproj:40`).
-14. D85 (the browser renders inside Daoris's windows under Shenora's frame) vs D99 (a process of its own in Chromium's windows): D99 is right (`App/Program.cs:251-253`).
-15. D186 §2 and §9 (no pan, no zoom, laid out by hand) vs D224 (one canvas with pan, zoom and a minimap): D224 is right (`design/canvas/Canvas.tsx`, `design/FlowCanvas.tsx:1-3`).
+13. D78 (a framed WebView2 window of the shell) and D84 (Daoris's UI stays on WebView2; the engine is fetched like a harness) vs D85, D92 and D99: D99 is right (`App/Program.cs` hands a browser start to `BrowserProcess` first; the kit pins CEF in `App/Daoris.Desktop.App.csproj`).
+14. D85 (the browser renders inside Daoris's windows under Shenora's frame) vs D99 (a process of its own in Chromium's windows): D99 is right (`App/Program.cs` registers `EngineBrowserHost`, a process of its own).
+15. D186 §2 and §9 (no pan, no zoom, laid out by hand) vs D224 (one canvas with pan, zoom and a minimap): D224 is right (`design/canvas/Canvas.tsx`, `design/FlowCanvas.tsx`, which draws `RankedFlow` in the canvas's viewport).
 16. D185's and D186's heads say "proposed"; their notes record acceptance on 2026-10-20: the notes are right.
-17. D97 (six steps, with "what is driven" and "how work lands" apart) vs `help/setup.ts:5` (five steps; both are one `setUp` step): the code is right.
+17. D97 (six steps, with "what is driven" and "how work lands" apart) vs `SetupStepId` in `help/setup.ts` (five steps; both are one `setUp` step): the code is right.
 18. D116 (names and budgets in English and Chinese only) vs D222 §3 (any number of catalogues): D222 is right. `names:check` holds every catalogue and each `term.<tag>`.
 
 ## Open
