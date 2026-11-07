@@ -27,16 +27,16 @@ public sealed record Answer(int Status, string Body, string? ContentType)
     /// <summary>The error sentence of a refusal — every refusal's one field.</summary>
     public string Error => Json.GetProperty("error").GetString()!;
 
-    /// <summary>The answer's headers, read case-blind: the host's run among them (<c>x-daoris-run</c>, FOUNDATION1 row d-i).</summary>
+    /// <summary>The answer's headers, read case-blind: the host's run among them (<c>x-daoris-run</c>).</summary>
     public IReadOnlyDictionary<string, string> Headers { get; init; } = new Dictionary<string, string>();
 }
 
 /// <summary>
-/// Sets the process environment for one host's lifetime and puts back what was there — including the
+/// Sets the process environment for one host's lifetime and puts back what it found — including the
 /// variables this host must NOT inherit from the machine running the tests.
 /// </summary>
 /// <remarks>
-/// A developer's machine may carry an installed Daoris's <c>DAORIS_HOME</c> for the account (D63), and
+/// A developer's machine may carry an installed Daoris's <c>DAORIS_HOME</c> for the account, and
 /// a remote's URL and key. Inherited, a test host would write into that home and a delete would push to
 /// that remote — so every variable the host reads is named here, set or cleared, never left to chance.
 /// </remarks>
@@ -80,11 +80,11 @@ public class DaorisHost : IDisposable
 
     /// <param name="environment">Variables to set over the host's own, for a test of what the host reads at start.</param>
     /// <param name="input">
-    /// What the host's starter writes on its standard input, the person key first (PERSONDOOR1a): given, the host is asked
+    /// What the host's starter writes on its standard input, the person key first: given, the host is asked
     /// to read its key there (<see cref="Daoris.Knowledge.Http.PersonKey.InputVariable"/>), as the shell will ask it.
     /// </param>
     /// <param name="clock">
-    /// The time the host's services read (PERSONDOOR1b), for a test that moves it instead of waiting; the system's when none is given.
+    /// The time the host's services read, for a test that moves it instead of waiting; the system's when none is given.
     /// </param>
     public DaorisHost(
         ServiceMode mode, IReadOnlyDictionary<string, string?>? settings = null, Action<string>? seed = null,
@@ -109,7 +109,7 @@ public class DaorisHost : IDisposable
             [DaorisHome.Variable] = Home,
             [ServiceOptions.DatabaseVariable] = Database,
             [ServiceOptions.RootVariable] = Repositories,
-            // No model: every answer here is the lexical tier's, as a model-less deployment's is (D24).
+            // No model: every answer here is the lexical tier's, as a model-less deployment's is.
             [ServiceOptions.ModelVariable] = null,
             [ServiceOptions.UrlVariable] = null,
             [ServiceOptions.WindowVariable] = null,
@@ -122,9 +122,9 @@ public class DaorisHost : IDisposable
             [IntakeScope.SessionVariable] = null,
             ["DAORIS_WEB_ORIGIN"] = null,
             ["ASPNETCORE_URLS"] = null,
-            // An in-process host would watch the test runner's own input (LOG2a).
+            // An in-process host would watch the test runner's own input.
             [Daoris.Knowledge.Http.InputEndStop.Variable] = null,
-            // Nor read a key from it (PERSONDOOR1a), unless this host's starter writes one.
+            // Nor read a key from it, unless this host's starter writes one.
             [Daoris.Knowledge.Http.PersonKey.InputVariable] = input is null ? null : "1",
         };
         foreach (var (name, value) in environment ?? new Dictionary<string, string?>()) variables[name] = value;
@@ -181,7 +181,7 @@ public class DaorisHost : IDisposable
             .ThenBy(route => route.method, StringComparer.Ordinal)
             .ToList();
 
-    /// <summary>One request, from <paramref name="from"/>, with a bearer key, the person key (PERSONDOOR1a) and a JSON body when given.</summary>
+    /// <summary>One request, from <paramref name="from"/>, with a bearer key, the person key and a JSON body when given.</summary>
     public async Task<Answer> SendAsync(
         string method, string pathAndQuery, IPAddress from, string? key = null, string? json = null, string? person = null, int? port = null)
     {

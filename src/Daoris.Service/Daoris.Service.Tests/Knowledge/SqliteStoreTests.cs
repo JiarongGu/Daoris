@@ -113,9 +113,9 @@ public sealed class SqliteStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A repository filter compares names the way every other door does, case-insensitively (REV3
-    /// service F14). The parsed set was `OrdinalIgnoreCase`, and the SQL beneath it compared BINARY, so
-    /// `repositories=Alpha` found nothing here and everything in the in-memory search.
+    /// A repository filter compares names the way every other door does, case-insensitively. A
+    /// parsed set of `OrdinalIgnoreCase` over SQL that compares BINARY would make
+    /// `repositories=Alpha` find nothing here and everything in the in-memory search.
     /// </summary>
     [Fact]
     public async Task The_repository_filter_ignores_case_like_every_other_door()
@@ -131,8 +131,8 @@ public sealed class SqliteStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A kind nobody has is refused, naming what there is (REV3 service F14). It used to parse to no
-    /// kinds, and no kinds means every kind — a typo widened the search it meant to narrow.
+    /// A kind nobody has is refused, naming what there is. Parsing to no
+    /// kinds would mean every kind — a typo would widen the search it means to narrow.
     /// </summary>
     [Fact]
     public void A_mistyped_kind_is_refused_rather_than_widening_the_search()
@@ -146,11 +146,11 @@ public sealed class SqliteStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 <b>Found on the deployed application, on the first real index.</b> `记录` and `会话` each
-    /// returned forty-one hits in the same order with the rules TEMPLATE first and the term in no
-    /// excerpt — every Chinese query was returning the whole corpus. The tokeniser's floor drops
+    /// 🔴 <b>On a real index,</b> `记录` and `会话` must not each
+    /// return forty-one hits in the same order with the rules TEMPLATE first and the term in no
+    /// excerpt — every Chinese query returning the whole corpus. The tokeniser's floor drops
     /// anything of two characters or fewer, which is right for "of" and "a" and wrong for a script
-    /// in which two characters is a whole word; with no terms left, the query fell through to the
+    /// in which two characters is a whole word; with no terms left, the query falls through to the
     /// browse that an EMPTY query is meant to get. The platform ships 简体中文.
     /// </summary>
     [Fact]
@@ -180,7 +180,7 @@ public sealed class SqliteStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// FTS5 treats quotes, colons, parentheses and bare OR/NOT as query syntax, so an ordinary
+    /// The full-text engine treats quotes, colons, parentheses and bare OR/NOT as query syntax, so an ordinary
     /// sentence is a syntax error unless every term is quoted. A search that throws on a normal
     /// question is worse than one that finds nothing.
     /// </summary>
@@ -205,14 +205,14 @@ public sealed class SqliteStoreTests : IAsyncLifetime
         Assert.Null(SqliteKnowledgeSearch.BuildMatchExpression("a of to"));
         Assert.Null(SqliteKnowledgeSearch.BuildMatchExpression(""));
         // The adjacent words joined as well, as an identifier spells them, and asked once for each word the
-        // join stands for: bm25 adds a phrase each time the expression names it (ORIENT1f).
+        // join stands for: bm25 adds a phrase each time the expression names it.
         Assert.Equal(
             "\"drift\" OR \"lock\" OR \"driftlock\" OR \"driftlock\"",
             SqliteKnowledgeSearch.BuildMatchExpression("drift lock"));
     }
 
     /// <summary>
-    /// An index written before ORIENT1f holds its identifiers as one token each, so a question in words would
+    /// An index from an older build holds its identifiers as one token each, so a question in words would
     /// still miss them there: opening it rebuilds it, as every schema bump does, rather than serving old rows.
     /// </summary>
     [Fact]
@@ -236,7 +236,7 @@ public sealed class SqliteStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The FTS row is fed by <see cref="Text.Segment"/> (ORIENT1f): an identifier is indexed whole and by its
+    /// The FTS row is fed by <see cref="Text.Segment"/>: an identifier is indexed whole and by its
     /// words, so the question in words finds it, and a body read back is still the body as written.
     /// </summary>
     [Fact]

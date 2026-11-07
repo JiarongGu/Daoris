@@ -3,8 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The service reads the layout the CLI writes (LAYOUT4; D117, `docs/2026-10-01-agent-layout-design.md`
-/// §5.5): the lock's root before the manifest's, mirrors skipped, rooms indexed, both roots for a
+/// The service reads the layout the CLI writes: the lock's root before the manifest's, mirrors skipped, rooms indexed, both roots for a
 /// repository with no lock, and a link or a link held as text skipped, never followed.
 /// </summary>
 /// <remarks>
@@ -269,7 +268,7 @@ public sealed class RepositoryLayoutTests : IDisposable
         Assert.Empty(Scan());
     }
 
-    /// <summary>D18 for the region: the file a lock entry names is read inside the repository or not at all.</summary>
+    /// <summary>For the region: the file a lock entry names is read inside the repository or not at all.</summary>
     [Fact]
     public void A_region_file_the_lock_names_outside_the_repository_is_not_read()
     {
@@ -280,7 +279,7 @@ public sealed class RepositoryLayoutTests : IDisposable
     }
 
     /// <summary>
-    /// D18, read side: the CLI refuses a lock whose target leaves the repository. The service reads it
+    /// Read side: the CLI refuses a lock whose target leaves the repository. The service reads it
     /// as no lock, everything local, and never reads outside the repository.
     /// </summary>
     [Fact]
@@ -381,7 +380,7 @@ public sealed class RepositoryLayoutTests : IDisposable
         Assert.Equal(Provenance.Local, found.Provenance);
     }
 
-    /// <summary>A room is declared on either descriptor (the CLI's LAYOUT3 choice 2), so it is read on either.</summary>
+    /// <summary>A room is declared on either descriptor, so it is read on either.</summary>
     [Fact]
     public void A_room_declared_on_the_older_layout_is_indexed_too()
     {
@@ -397,7 +396,7 @@ public sealed class RepositoryLayoutTests : IDisposable
     // ── the twin tables ────────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// The layout a lock was written under: the CLI's <c>lockLayout</c>, row for row, then the roots
+    /// The layout a lock is written under: the CLI's <c>lockLayout</c>, row for row, then the roots
     /// this side reads there. <c>null</c> for the lock means none is on disk; a <c>-</c> target means
     /// the service reads the lock as none.
     /// </summary>

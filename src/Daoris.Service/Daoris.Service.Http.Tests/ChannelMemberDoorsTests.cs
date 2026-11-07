@@ -1,7 +1,7 @@
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// CHANNELJOIN1 (D244 points 9 to 11): on a host holding the person's key, an outside agent is admitted by the person's door alone, and
+/// On a host holding the person's key, an outside agent is admitted by the person's door alone, and
 /// then reads, posts and leaves at its three agent doors without the key, each message its own and never the person's; the person's key at
 /// the leave is their <i>Remove</i>.
 /// </summary>
@@ -43,7 +43,7 @@ public sealed class ChannelMemberDoorsTests(KeyedHost host) : IClassFixture<Keye
     }
 
     /// <summary>
-    /// CHANNELJOIN1c: the listing of a channel's members is the driver's read, with the key alone, naming only those still on it; the
+    /// The listing of a channel's members is the driver's read, with the key alone, naming only those still on it; the
     /// look's end of one is the key's leave with <c>expired</c>, and a member's own leave cannot say it.
     /// </summary>
     [Fact]

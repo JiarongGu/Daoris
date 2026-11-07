@@ -4,13 +4,13 @@ using Daoris.Knowledge.Http;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// A local host handed its person key, as <see cref="KeyedHost"/>, on a clock that stands still (TESTCLOCK3): a change stream's
-/// wait never ends by itself, so an answer came at once or was woken.
+/// A local host handed its person key, as <see cref="KeyedHost"/>, on a clock that stands still: a change stream's
+/// wait never ends by itself, so an answer comes at once or is woken.
 /// </summary>
 public sealed class HeldChangesHost() : DaorisHost(ServiceMode.Local, seed: LocalHost.Seed, input: KeyedHost.Key + "\n", clock: new MovableClock());
 
 /// <summary>
-/// The change stream's door (FABRIC-EVENT3b, the fabric events design §A4.2): a read every caller may make on a local host, the key's
+/// The change stream's door: a read every caller may make on a local host, the key's
 /// host included, answering families and a cursor, woken by a write through the host's own doors; and no door at all on a shared
 /// host, which serves no machine's waits. The host's clock stands still, so "at once" and "woken" are each an answer at all.
 /// </summary>
@@ -69,7 +69,7 @@ public sealed class ChangeStreamHostTests(HeldChangesHost host) : IClassFixture<
     }
 
     /// <summary>
-    /// FOUNDATION1 row k part 2 (§4.1): the family <c>journal</c> and the journal's place are answered to a reader that asks with
+    /// The family <c>journal</c> and the journal's place are answered to a reader that asks with
     /// <c>journal=1</c> and to none else, so a read as every client from before it makes names no more than it always did and carries no new
     /// member.
     /// </summary>

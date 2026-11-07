@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// EVENTHOOK1d-i (D244 point 1, the event channel design §3.1): the <c>quests</c> cache journals what the replay says the quest became,
+/// The <c>quests</c> cache journals what the replay says the quest became,
 /// one <c>opened</c> row where a quest begins and one <c>state</c> row for each move of its status, whoever's operation moved it: this
 /// machine's, a remote's integrated by sync, or a rebase that finds this machine's close lost. An operation kept that moves nothing and a
 /// cache written again with the same status journal nothing. Three stores synced through a remote's, as <see cref="QuestSyncTests"/> does.

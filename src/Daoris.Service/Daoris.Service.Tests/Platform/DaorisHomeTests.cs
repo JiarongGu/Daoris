@@ -3,10 +3,10 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// Where every machine-local file lives (D63): one home, named by <c>DAORIS_HOME</c>, and no default
+/// Where every machine-local file lives: one home, named by <c>DAORIS_HOME</c>, and no default
 /// under the user profile. This is the service side's copy of a three-way twin — the CLI and the
 /// driver hold the same contract in their own languages, sharing no code, the way the remotes map's
-/// three copies do (WSP3). The install rows (SERVICEHOME2) are the driver's <c>DaorisHomeTests</c>' FINDDAORIS1 rows, case
+/// three copies do. The install rows are the driver's <c>DaorisHomeTests</c>' install rows, case
 /// for case, with the service's own folders.
 /// </summary>
 public sealed class DaorisHomeTests
@@ -42,7 +42,7 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// 🔴 D172 point 2 (HOMELAYOUT3): a home names its Daoris folder, and the old home its entries were under. The driver's
+    /// 🔴 A home names its Daoris folder and the entries under it. The driver's
     /// <c>A_home_names_its_folder</c>, whose summary says each column, row for row; the CLI's <c>home.test.ts</c> holds both.
     /// </summary>
     [Theory]
@@ -123,7 +123,7 @@ public sealed class DaorisHomeTests
         }
     }
 
-    /// <summary>🔴 D172 §3 switched on (HOMELAYOUT3): every new place is under the top folder its category names, as the driver's.</summary>
+    /// <summary>🔴 Every new place is under the top folder its category names, as the driver's.</summary>
     [Fact]
     public void Each_new_place_is_under_its_categorys_folder()
     {
@@ -155,7 +155,7 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// 🔴 D172 point 5 (HOMELAYOUT2, the install layout design §6.2) with its review note: the driver's
+    /// 🔴 The driver's
     /// <c>An_entry_is_where_it_is</c>, whose summary says each column, row for row. The CLI's <c>home.test.ts</c> holds these
     /// rows and the driver's to its own, cell for cell.
     /// </summary>
@@ -247,7 +247,7 @@ public sealed class DaorisHomeTests
             DaorisHome.Places(home, entry, asked.Split('/', StringSplitOptions.RemoveEmptyEntries)));
     }
 
-    /// <summary>D172's table, one entry each: a name says one entry, and an entry is found by it.</summary>
+    /// <summary>The table, one entry each: a name says one entry, and an entry is found by it.</summary>
     [Fact]
     public void Each_entry_is_named_once_and_found_by_its_name()
     {
@@ -256,7 +256,7 @@ public sealed class DaorisHomeTests
         Assert.Null(HomeEntry.Named("nothing"));
     }
 
-    /// <summary>USAGECAP1a1 (D179 point 2): the driver's usage history, a data folder the service's table names as its twin does.</summary>
+    /// <summary>The driver's usage history, a data folder the service's table names as its twin does.</summary>
     [Fact]
     public void The_usage_history_is_a_data_folder_of_its_own()
     {
@@ -264,7 +264,7 @@ public sealed class DaorisHomeTests
         Assert.Equal(HomeCategory.Data, HomeEntry.UsageHistory.Category);
     }
 
-    /// <summary>KEEP1a (D195 point 2): the record of the keeping rules' runs, a data file the service's table names as its twins do.</summary>
+    /// <summary>The record of the keeping rules' runs, a data file the service's table names as its twins do.</summary>
     [Fact]
     public void The_keeping_record_is_a_data_file()
     {
@@ -272,7 +272,7 @@ public sealed class DaorisHomeTests
         Assert.Equal((HomeCategory.Data, "data/keeping.json"), (HomeEntry.Keeping.Category, HomeEntry.Keeping.New));
     }
 
-    /// <summary>NOTIFY2f (D196 point 6): the notices' record, a data file the service's table names as its twins do.</summary>
+    /// <summary>The notices' record, a data file the service's table names as its twins do.</summary>
     [Fact]
     public void The_notices_record_is_a_data_file()
     {
@@ -280,7 +280,7 @@ public sealed class DaorisHomeTests
         Assert.Equal((HomeCategory.Data, "data/notices.json"), (HomeEntry.Notices.Category, HomeEntry.Notices.New));
     }
 
-    /// <summary>TERMTRUST1a (D201 point 6): the standing confirmation, a data file the service's table names as its twins do, and never reads.</summary>
+    /// <summary>The standing confirmation, a data file the service's table names as its twins do, and never reads.</summary>
     [Fact]
     public void The_standing_confirmation_is_a_data_file()
     {
@@ -290,7 +290,7 @@ public sealed class DaorisHomeTests
             (HomeEntry.StandingConfirmation.Category, HomeEntry.StandingConfirmation.New));
     }
 
-    /// <summary>MODELROLE1c2 (D205 §9.2): what each agent last offered, a data file the service's table names as its twins do, and never reads.</summary>
+    /// <summary>What each agent last offered, a data file the service's table names as its twins do, and never reads.</summary>
     [Fact]
     public void The_agent_offers_are_a_data_file()
     {
@@ -299,7 +299,7 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// FOUNDATION1 z-i (D212, the design §13.2): the desktop's own store, a data file the service's table names as its twins do, and
+    /// The desktop's own store, a data file the service's table names as its twins do, and
     /// never opens (the service keeps its own store), after the knowledge index.
     /// </summary>
     [Fact]
@@ -312,7 +312,7 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// CONFIRMWAIT1a-ii (the confirm-wait design §7.1): a terminal's presses waiting for the person, a data folder the service's table
+    /// A terminal's presses waiting for the person, a data folder the service's table
     /// names as its twins do, and never reads; kept in <c>data/</c>, never under <c>run/</c>.
     /// </summary>
     [Fact]
@@ -332,7 +332,7 @@ public sealed class DaorisHomeTests
         Assert.Equal((HomeCategory.Data, "data/place-receipts"), (HomeEntry.PlaceReceipts.Category, HomeEntry.PlaceReceipts.New));
     }
 
-    /// <summary>COMMS1l: the steward desk's history, a data file the service's table names as its twins do, and never reads.</summary>
+    /// <summary>The steward desk's history, a data file the service's table names as its twins do, and never reads.</summary>
     [Fact]
     public void COMMS1l_the_steward_desk_is_a_data_file()
     {
@@ -340,7 +340,7 @@ public sealed class DaorisHomeTests
         Assert.Equal((HomeCategory.Data, "data/steward-desk.json"), (HomeEntry.StewardDesk.Category, HomeEntry.StewardDesk.New));
     }
 
-    /// <summary>D233 choice 6: the newest build that has run on the home, a data file the service's table names as its twins do, and never reads.</summary>
+    /// <summary>The newest build that has run on the home, a data file the service's table names as its twins do, and never reads.</summary>
     [Fact]
     public void The_last_build_is_a_data_file()
     {
@@ -349,7 +349,7 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): the keys of a terminal's sent presses, a profiles folder the service's table names
+    /// The keys of a terminal's sent presses, a profiles folder the service's table names
     /// as its twins do, and never reads; a sign-in's place, never under <c>run/</c>.
     /// </summary>
     [Fact]
@@ -359,7 +359,7 @@ public sealed class DaorisHomeTests
         Assert.Equal((HomeCategory.Profiles, "profiles/pipe-sent"), (HomeEntry.PipeSent.Category, HomeEntry.PipeSent.New));
     }
 
-    /// <summary>HELPMODE1c2a (D183's note): Ask Daoris's configured access, a data file the service's table names as its twin does.</summary>
+    /// <summary>Ask Daoris's configured access, a data file the service's table names as its twin does.</summary>
     [Fact]
     public void Ask_Daoris_configured_access_is_a_data_file()
     {
@@ -368,7 +368,7 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// 🔴 SERVICEHOME2 (D171 point 1), the driver's FINDDAORIS1 rows: a connector a person's own agent starts from its
+    /// 🔴 The driver's install rows: a connector a person's own agent starts from its
     /// <c>.mcp.json</c>, or the HTTP host started from a terminal, is handed no variable, so a program the install carries
     /// finds its home where it runs: the install's own <c>data</c> folder, beside the <c>app</c> folder it runs from, however
     /// deep inside it (the connector is <c>app/daoris-knowledge/</c>). A workspace build is no install, and finds none.
@@ -407,8 +407,8 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// A host takes the install's home as its own process's <c>DAORIS_HOME</c> where none is named, as the desktop does
-    /// (D63), so its index, its machine log and every file it keeps read the same machine; a home already named is left.
+    /// A host takes the install's home as its own process's <c>DAORIS_HOME</c> where none is named, as the desktop does,
+    /// so its index, its machine log and every file it keeps read the same machine; a home already named is left.
     /// </summary>
     [Fact]
     public void Adopting_the_installs_home_sets_it_only_where_none_is_named()
@@ -448,7 +448,7 @@ public sealed class DaorisHomeTests
         Assert.True(adopt > 0 && read > adopt, $"the home taken at {adopt}, first read at {read}");
     }
 
-    /// <summary>An install's shape on disk (D93): the marker at its root, and the service's hosts under <c>app/</c>.</summary>
+    /// <summary>An install's shape on disk: the marker at its root, and the service's hosts under <c>app/</c>.</summary>
     private static string Install()
     {
         var install = Path.Combine(Path.GetTempPath(), "daoris-install-tests", Guid.NewGuid().ToString("N")[..8]);

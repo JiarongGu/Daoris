@@ -80,9 +80,9 @@ public sealed class QuestStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// "The quest state machine is the only lock" (D46) — which means the SECOND take must lose in
+    /// "The quest state machine is the only lock" — which means the SECOND take must lose in
     /// the store itself, not in a check the caller ran a moment earlier. Two machines' drivers watching
-    /// one quest is exactly this call arriving twice (D47).
+    /// one quest is exactly this call arriving twice.
     /// </summary>
     [Fact]
     public async Task A_second_take_loses_and_changes_nothing()
@@ -98,7 +98,7 @@ public sealed class QuestStoreTests : IAsyncLifetime
         Assert.Equal(Now.AddHours(1), second.Quest.Updated);
     }
 
-    /// <summary>One title is one quest forever (D46 §3) — reopening a closed quest would break that.</summary>
+    /// <summary>One title is one quest forever — reopening a closed quest would break that.</summary>
     [Fact]
     public async Task A_closed_quest_does_not_move()
     {
@@ -117,7 +117,7 @@ public sealed class QuestStoreTests : IAsyncLifetime
     /// <summary>
     /// The remote's arbitration in miniature: two hosts are two connections over one file, and they
     /// must agree on one taker because the file's own write serialization plus the guarded UPDATE
-    /// decide — not because either host checked first (D47 §5).
+    /// decide — not because either host checked first.
     /// </summary>
     [Fact]
     public async Task Two_connections_over_one_file_agree_on_one_taker()
@@ -210,7 +210,7 @@ public sealed class QuestStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A quest carries addresses and files beside its words (D65 §2) — in the order they were given,
+    /// A quest carries addresses and files beside its words — in the order they were given,
     /// because "the ticket, then the screenshot of it" is an order a person chose.
     /// </summary>
     [Fact]
@@ -266,7 +266,7 @@ public sealed class QuestStoreTests : IAsyncLifetime
         Assert.Null(elder.Parent);
     }
 
-    // ——— A chain (D65 §4): `then` on a quest, published at the moment it closes done.
+    // ——— A chain: `then` on a quest, published at the moment it closes done.
 
     private Task<Quest> Chained(string title = "Develop the media config") =>
         _quests.PublishAsync(

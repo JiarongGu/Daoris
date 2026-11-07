@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// FABRIC-CLOSE1i (D173's CLOSE1b note, choice 4; the fabric events design §E5's cutover): the workspace's handshake through its remote.
+/// The workspace's handshake through its remote.
 /// Each push declares its machine knows a bound quest, the remote answers which of the machines it has heard from did not, and a quest of
 /// a workspace synced through it binds to a closure graph only where every one did. Three machines' stores and the remote's, synced by the
 /// real pass through the real wire.
@@ -69,7 +69,7 @@ public sealed class QuestClosureHandshakeTests : IAsyncLifetime
     private Task<QuestSyncReport> SyncAsync(QuestStore machine, IRemote? through = null) =>
         QuestSync.RunAsync(machine, _ => true, through ?? new StoreRemote(_remote), Workspaces.Default);
 
-    /// <summary>A machine of a build before FABRIC-CLOSE1i: the same pass, its pushes declaring nothing, as that build's wire writes them.</summary>
+    /// <summary>A machine of an older build: the same pass, its pushes declaring nothing, as that build's wire writes them.</summary>
     private Task<QuestSyncReport> OlderSyncAsync(QuestStore machine) => SyncAsync(machine, new UndeclaringRemote(new StoreRemote(_remote)));
 
     private async Task<Quest> PublishAsync(string title) => (await _exchange.PublishAsync("checker", "reports", title, "Through the bridge.", Now)).Quest!;
@@ -125,7 +125,7 @@ public sealed class QuestClosureHandshakeTests : IAsyncLifetime
         _exchange = Exchange(_a);
         Assert.True(_a.ClosureOf(Workspaces.Default)!.All);
 
-        // A remote before FABRIC-CLOSE1i answers no handshake: the pass hears none.
+        // An older remote answers no handshake: the pass hears none.
         Assert.Null((await SyncAsync(_a, new OlderRemote(_remote))).Closure);
 
         // A wall says nothing of the machines either.
@@ -218,7 +218,7 @@ public sealed class QuestClosureHandshakeTests : IAsyncLifetime
         Assert.Null(QuestWire.ReadRetired("""{ "retired": true, "closure": { "all": true, "undeclared": ["m2"] } }"""));
     }
 
-    /// <summary>The wire of a build before FABRIC-CLOSE1i: its pushes name no machine and declare nothing.</summary>
+    /// <summary>The wire of an older build: its pushes name no machine and declare nothing.</summary>
     private sealed class UndeclaringRemote(IRemote remote) : IRemote
     {
         public Task<QuestFetch> FetchQuestsAsync(long since, CancellationToken ct = default) => remote.FetchQuestsAsync(since, ct);

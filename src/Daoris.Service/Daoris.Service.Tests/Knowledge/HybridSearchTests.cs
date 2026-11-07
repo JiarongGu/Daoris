@@ -138,7 +138,7 @@ public class HybridSearchTests
         Assert.Equal("Survivor", fused[0].Entry.Title);
     }
 
-    // ——— TIER1: which tier ANSWERED, per answer (D24) — never the configured one.
+    // ——— Which tier ANSWERED, per answer — never the configured one.
 
     [Fact]
     public async Task An_answer_names_both_halves_when_both_answered()

@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// Per-person, per-machine keys for a shared deployment (D47 §7, service design §5b): minted once and
+/// Per-person, per-machine keys for a shared deployment: minted once and
 /// shown once, stored only as a hash beside a short non-secret prefix kept for audit and revocation,
 /// expiring by default. What a leaked STORE costs is the design's own test — a copied database must
 /// not contain anything a caller could present.

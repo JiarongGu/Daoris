@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// XAGENT1c (D155 points 5, 7, 8, 10 and 11; the second agent design §5.4, §6.1–§6.2, §6.4): a second opinion on the record.
+/// A second opinion on the record.
 /// The local host keeps each pass beside the session records, with its reviewer's record a chat that names it; the reviewer
 /// says its opinion once, within the rule's minutes; its findings reach the working session as another agent's words, never
 /// the person's; the working session answers each; and the bounds hold: one pass the rule starts, one recheck. A shared host
@@ -281,12 +281,12 @@ public sealed class OpinionStoreTests : IAsyncLifetime
         var (slow, _) = await AskedAsync(Ask(working.Id, Opinions.Asked, clone: "clone-slow"));
         var (stopped, stoppedReviewer) = await AskedAsync(Ask(working.Id, Opinions.Asked, clone: "clone-stopped"));
         await _sessions.SetStateAsync(stoppedReviewer.Id, SessionState.Stopped, null, null, null, Now.AddMinutes(21));
-        // LIMITRESUME1h (D206 design §3.8): one an account's limit ended is `limited`, which the driver's gate re-asks after the reset,
+        // One an account's limit ended is `limited`, which the driver's gate re-asks after the reset,
         // however late its record moved.
         var (limited, limitedReviewer) = await AskedAsync(Ask(working.Id, Opinions.Asked, clone: "clone-limited"));
         await _sessions.SetStateAsync(limitedReviewer.Id, SessionState.Failed, "the account's limit", null, null, Now.AddMinutes(25), limit: true);
 
-        // AGENTERRORS1d: one whose provider kept failing carries the driver's `opinion.transient` line and reads `transient`.
+        // One whose provider kept failing carries the driver's `opinion.transient` line and reads `transient`.
         var (transient, transientReviewer) = await AskedAsync(Ask(working.Id, Opinions.Asked, clone: "clone-transient"));
         await _sessions.SetStateAsync(
             transientReviewer.Id, SessionState.Failed, "The opinion of stub is unavailable.", null, null, Now.AddMinutes(4),
@@ -431,7 +431,7 @@ public sealed class OpinionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// D155 point 7: the say door refuses words to a reviewer's record with its own word, `opinion`: a pass takes one turn
+    /// The say door refuses words to a reviewer's record with its own word, `opinion`: a pass takes one turn
     /// and no words, and the person asks again instead.
     /// </summary>
     [Fact]
@@ -451,7 +451,7 @@ public sealed class OpinionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 A shared host keeps no opinion (design §6.2, D47 §4): every door refuses with one sentence, and nothing is kept or
+    /// 🔴 A shared host keeps no opinion: every door refuses with one sentence, and nothing is kept or
     /// opened.
     /// </summary>
     [Fact]

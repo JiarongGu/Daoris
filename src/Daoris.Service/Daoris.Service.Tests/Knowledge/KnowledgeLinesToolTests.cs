@@ -5,7 +5,7 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The agent's door over a repository's declared index (ORIENT2e; the orientation design §3.1–§3.2, §3.5): a hit
+/// The agent's door over a repository's declared index: a hit
 /// names its kind, its file and lines and the line its excerpt starts on, the tier line still closes every answer,
 /// and <c>knowledge_get</c> reads the lines a hit names rather than the entry whole.
 /// </summary>
@@ -73,8 +73,8 @@ public sealed partial class KnowledgeLinesToolTests : IAsyncLifetime
 
     /// <summary>
     /// The row's proof at the door: the hit is an index entry naming <c>path:first-last</c> and its excerpt's line,
-    /// and with no model the answer still says it matched on words only (TIER1, the design's §3.5 tier line). A
-    /// table's row is the hit, naming its own line (ORIENT2h).
+    /// and with no model the answer still says it matched on words only. A
+    /// table's row is the hit, naming its own line.
     /// </summary>
     [Fact]
     public async Task A_hit_names_its_kind_its_lines_and_its_excerpt_s_line_and_the_tier_line_closes_the_answer()
@@ -119,7 +119,7 @@ public sealed partial class KnowledgeLinesToolTests : IAsyncLifetime
         Assert.Contains("- 9-12 Widget()", item);
         Assert.DoesNotContain("CountAsync", item);
 
-        // A row is one line, and its range reads it (ORIENT2h).
+        // A row is one line, and its range reads it.
         var row = await _tools.GetAsync("atlas:docs/index/routes.md#Bridge routes › DAORIS.DRIVER › Route: SESSION_GO_ON_NEW", lines: "7");
         Assert.Contains("`docs/index/routes.md:7`", row);
         Assert.Contains("| `SESSION_GO_ON_NEW` | `DriverModule.Sessions.cs:97` |", row);

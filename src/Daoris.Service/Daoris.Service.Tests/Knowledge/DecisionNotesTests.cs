@@ -5,14 +5,14 @@ namespace Daoris.Service.Tests;
 
 /// <summary>
 /// A decision's dated notes, each found where the decisions digest finds it and labelled as the digest labels it
-/// (ORIENT1g; D134 §5 as amended). D125 is one file and twenty-two notes, and a question about one note was
-/// answered with the whole file, or not at all: the note was buried under every other.
+/// A decision's file can hold twenty-two notes, and a question about one note is answered with that note,
+/// not the whole file: the note is not buried under every other.
 /// </summary>
 /// <remarks>
 /// The service's half of a TWIN with the digest, <c>tools/orient-index.mjs</c>: the two read a decision with code
 /// of their own, and both are held to one table, <c>tools/orient-index-fixtures/decision-notes.json</c>, row for
-/// row (ORIENT1h). <c>tools/orient-index.test.mjs</c> holds the digest to it. Before ORIENT1h this side was held
-/// to rows the digest wrote once, inline here, so a note's form changed on the digest's side alone passed every gate.
+/// row. <c>tools/orient-index.test.mjs</c> holds the digest to it, so a note's form changed on the digest's side
+/// alone fails a gate.
 /// </remarks>
 public sealed class DecisionNotesTests
 {
@@ -20,12 +20,12 @@ public sealed class DecisionNotesTests
     private static readonly JsonElement MarkTable = ReadTable("note-marks.json");
 
     /// <summary>
-    /// The table's first decision, D7: every form a note takes, a fence, a glued label and a label twice. The
+    /// The table's first decision: every form a note takes, a fence, a glued label and a label twice. The
     /// scanner's tests write it as a decision's file.
     /// </summary>
     internal static string Decision => Text(Decided("D7"));
 
-    /// <summary>The digest's rows for <see cref="Decision"/>: <c>D7:&lt;first&gt;-&lt;last&gt; &lt;label&gt;</c>.</summary>
+    /// <summary>The digest's rows for <see cref="Decision"/>: <c>&lt;id&gt;:&lt;first&gt;-&lt;last&gt; &lt;label&gt;</c>.</summary>
     internal static IReadOnlyList<string> DigestRows => Rows(Decided("D7"), "notes");
 
     /// <summary>
@@ -44,7 +44,7 @@ public sealed class DecisionNotesTests
         Assert.Equal(decision.GetProperty("entry").GetString(), $"{id}:1-{LastWritten(entry)}");
     }
 
-    /// <summary>The digest's title row says the entry's own lines before its notes: D7:1-5.</summary>
+    /// <summary>The digest's title row says the entry's own lines before its notes.</summary>
     [Fact]
     public void The_entry_is_the_decision_before_its_first_note()
     {
@@ -94,10 +94,10 @@ public sealed class DecisionNotesTests
     }
 
     /// <summary>
-    /// A decision's marks (KNOWFRESH1a-i; the knowledge-freshness design's §3.1) as the second table gives them,
+    /// A decision's marks as the second table gives them,
     /// <c>tools/orient-index-fixtures/note-marks.json</c>, which <c>tools/orient-index.test.mjs</c> holds the
-    /// digest's reader to row for row: the actual text of D107.md:123, D117.md:131, D84.md:41, a <c>Superseded by</c>
-    /// and a <c>replacing</c> note read as marks, D33.md:53's parenthetical as none, and a quote matched against the
+    /// digest's reader to row for row: the actual text of three real decisions' notes, a <c>Superseded by</c>
+    /// and a <c>replacing</c> note read as marks, a real parenthetical as none, and a quote matched against the
     /// note's full label, never the 80 characters the digest keeps.
     /// </summary>
     [Theory]
@@ -115,7 +115,7 @@ public sealed class DecisionNotesTests
     }
 
     /// <summary>
-    /// KNOWFRESH1a-ii: a host that holds a decision as entries (a fed one has no file) reads the same marks from its note
+    /// A host that holds a decision as entries (a fed one has no file) reads the same marks from its note
     /// entries as the file's text gives, so a mark needs no field of its own on the wire. The entries are made as the
     /// scanner makes them: each note's label line first in its body, its lines in the file.
     /// </summary>

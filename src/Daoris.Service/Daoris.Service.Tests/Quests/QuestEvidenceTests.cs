@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// EVID1a (D144; the evidence design §2, §3 and §6): a requirement may name evidence Daoris reads itself, and a met
+/// A requirement may name evidence Daoris reads itself, and a met
 /// answer on one closes the quest done and held until it is read. The service is spawn-free and a step publishes in the
 /// done's own transaction, so the done itself sets the hold; the driver reads the commit and posts a verdict, which the
 /// exchange judges and keeps as an <c>Evidenced</c> operation. Found, it lets go what the done held, in the same
@@ -175,7 +175,7 @@ public sealed class QuestEvidenceTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 A gate is refused until the landing queue reads gates (D144 point 5, EVID1d), naming the queue it waits for and the
+    /// 🔴 A gate is refused until the landing queue reads gates, naming the queue it waits for and the
     /// path evidence that is read today — the same refusal at every door, a remote's judgement of a pushed quest included.
     /// </summary>
     [Fact]
@@ -276,8 +276,8 @@ public sealed class QuestEvidenceTests : IAsyncLifetime
 
     /// <summary>
     /// 🔴 Missing: the verdict is kept and the quest stays held, now for <c>evidence-missing</c>: its step is not published
-    /// and the answer names what was not found and both of the person's doors. A check at a later commit that finds it
-    /// lets the done go on, and says it was found later than the done's own commit.
+    /// and the answer names what is not found and both of the person's doors. A check at a later commit that finds it
+    /// lets the done go on, and says it is found later than the done's own commit.
     /// </summary>
     [Fact]
     public async Task Evidence_missing_keeps_the_done_held_until_a_later_check_finds_it()
@@ -331,7 +331,7 @@ public sealed class QuestEvidenceTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 The person's yes is reused unchanged (D144 §6): it accepts a done whose evidence is unread or missing as it
+    /// 🔴 The person's yes is reused unchanged: it accepts a done whose evidence is unread or missing as it
     /// stands, publishes its step, and no verdict applies after it.
     /// </summary>
     [Theory]
@@ -356,7 +356,7 @@ public sealed class QuestEvidenceTests : IAsyncLifetime
 
     /// <summary>
     /// A verdict is taken only on a done that waits on evidence: a taken quest, a done whose requirements name none, a
-    /// done whose evidence was found, and an unknown quest each say why not.
+    /// done whose evidence is found, and an unknown quest each say why not.
     /// </summary>
     [Fact]
     public async Task A_verdict_is_taken_only_on_a_done_waiting_on_its_evidence()
@@ -427,7 +427,7 @@ public sealed class QuestEvidenceTests : IAsyncLifetime
         Assert.DoesNotContain(await _quests.HistoryAsync(quest.Id), operation => operation.Kind == QuestOperationKind.Evidenced);
     }
 
-    // ——— REFAC3: one judge of a verdict's shape, which both doors call.
+    // ——— One judge of a verdict's shape, which both doors call.
 
     private static QuestEvidenceVerdict Verdict(
         IReadOnlyList<QuestEvidenceRead> items, string commit = Commit, string how = "session-end") => new(commit, how, items);
@@ -440,7 +440,7 @@ public sealed class QuestEvidenceTests : IAsyncLifetime
     private static readonly QuestEvidenceRead Cased = new(1, "docs/report-bridge.md", null, "case");
 
     /// <summary>
-    /// REFAC3's table: each verdict shape, whether both doors take it, the field the one judge of its shape faults (none
+    /// The table: each verdict shape, whether both doors take it, the field the one judge of its shape faults (none
     /// for a whole verdict, whether or not it reads what the done waits on), and words the exchange's refusal holds. Read
     /// against <see cref="Built"/>'s quest, done meeting both requirements, the first naming <c>docs/report-bridge.md</c>.
     /// </summary>
@@ -460,7 +460,7 @@ public sealed class QuestEvidenceTests : IAsyncLifetime
         ["a commit not hex"] = (Verdict([Reported], commit: new string('g', 40)), false, QuestVerdictField.Commit, "full id"),
         ["an unknown how"] = (Verdict([Reported], how: "guessed"), false, QuestVerdictField.How, "`session-end`, `sweep` or `terminal`"),
         ["a session not an id"] = (Verdict([Reported]) with { Session = "s1 a2" }, false, QuestVerdictField.Session, "session"),
-        // The submission it was read for, half named (FABRIC-CLOSE1e).
+        // The submission it is read for, half named.
         ["a submission with no machine"] = (Verdict([Reported]) with { Submission = new QuestOperationRef(" ", 3) }, false, QuestVerdictField.Submission, "machine and the sequence"),
         ["a submission numbered 0"] = (Verdict([Reported]) with { Submission = new QuestOperationRef("m1", 0) }, false, QuestVerdictField.Submission, "machine and the sequence"),
         ["requirement 0"] = (Verdict([Reported with { Requirement = 0 }]), false, QuestVerdictField.Requirement, "numbered from 1"),
@@ -473,7 +473,7 @@ public sealed class QuestEvidenceTests : IAsyncLifetime
         ["a gate's result on a path"] = (Verdict([Reported with { Result = "no-queue" }]), false, QuestVerdictField.Result, "`no-queue`"),
         ["an object not an id"] = (Verdict([Reported with { Object = "D:/checkouts/reports/blob" }]), false, QuestVerdictField.Object, "full object id"),
 
-        // `spelled` is a `case` read's alone, and names the path in another case (D144 §3).
+        // `spelled` is a `case` read's alone, and names the path in another case.
         ["spelled on a missing read"] = (Verdict([Unfound with { Spelled = "docs/Report-Bridge.md" }]), false, QuestVerdictField.Spelled, "only a `case` read"),
         ["spelled on a found read"] = (Verdict([Reported with { Spelled = "docs/Report-Bridge.md" }]), false, QuestVerdictField.Spelled, "only a `case` read"),
         ["spelled as a machine's path"] = (Verdict([Cased with { Spelled = "/srv/checkouts/reports/docs/Report-Bridge.md" }]), false, QuestVerdictField.Spelled, "starts with `/`"),
@@ -492,9 +492,9 @@ public sealed class QuestEvidenceTests : IAsyncLifetime
     public static IEnumerable<object[]> VerdictShapes => Shapes.Keys.Select(shape => new object[] { shape });
 
     /// <summary>
-    /// 🔴 REFAC3: each verdict shape is taken or refused alike at both doors that read one: the exchange, which the
-    /// evidence door hands what was posted, and the wire, which reads another machine's verdict from its push and
-    /// replays it. Before REFAC3 they disagreed on <c>spelled</c>, which only the exchange kept to a <c>case</c> read.
+    /// 🔴 Each verdict shape is taken or refused alike at both doors that read one: the exchange, which the
+    /// evidence door hands what is posted, and the wire, which reads another machine's verdict from its push and
+    /// replays it.
     /// A shape fault is the one judge's, so the wire refuses it as not whole; a whole verdict that reads something else
     /// is the coverage's, so the wire reads it and the replay does not apply it.
     /// </summary>

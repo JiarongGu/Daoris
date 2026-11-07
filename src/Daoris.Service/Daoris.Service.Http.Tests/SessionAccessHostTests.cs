@@ -3,8 +3,8 @@ using System.Text.Json;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// AUTONOMY1a (D184 point 1): a driven session's record keeps the access setup its start resolved. The driver names it at the open, and
-/// the record answers it to a caller on this machine only (D47 §4), as a reviewer's <c>opinion</c> is; a record told none carries none,
+/// A driven session's record keeps the access setup its start resolved. The driver names it at the open, and
+/// the record answers it to a caller on this machine only, as a reviewer's <c>opinion</c> is; a record told none carries none,
 /// and a setup that is not a short map of words is refused before any record opens.
 /// </summary>
 public sealed class SessionAccessHostTests(LocalHost host) : IClassFixture<LocalHost>
@@ -42,7 +42,7 @@ public sealed class SessionAccessHostTests(LocalHost host) : IClassFixture<Local
     }
 
     /// <summary>
-    /// AUTONOMY1b2 (D184 point 1): a resumed record keeps the setup it now runs under through its own door, which knows this machine's
+    /// A resumed record keeps the setup it now runs under through its own door, which knows this machine's
     /// driven records alone; a malformed or missing map is a 400, an unknown or other record a 404.
     /// </summary>
     [Fact]

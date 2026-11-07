@@ -3,9 +3,9 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// SYNCMERGE1a (D178 points 3 and 5): bringing a lost take forward is an ordinary take of the step and a dismissal of its conflict,
+/// Bringing a lost take forward is an ordinary take of the step and a dismissal of its conflict,
 /// marked with the take it made. The mark makes the dismissal the taker's own: it applies only while its machine's claim holds, only
-/// on that machine's own take conflict still standing on the quest, and a plain dismissal stays as it was. These are the replay's
+/// on that machine's own take conflict still standing on the quest, and a plain dismissal stays plain. These are the replay's
 /// rules alone; the two machines and the remote are <see cref="QuestSyncTests"/>' and <see cref="QuestReopenSyncTests"/>'.
 /// </summary>
 public sealed class QuestBringForwardTests
@@ -44,7 +44,7 @@ public sealed class QuestBringForwardTests
 
     /// <summary>
     /// A marked dismissal applies only to its own machine's take conflict, standing on the quest when it lands: a conflict already settled
-    /// authorizes no take (D178 point 5). A plain one applies to any quest there is, settled or not, as it always did.
+    /// authorizes no take. A plain one applies to any quest there is, settled or not, as it always did.
     /// </summary>
     [Fact]
     public void A_marked_dismissal_applies_only_on_its_own_take_conflict_still_standing()
@@ -70,7 +70,7 @@ public sealed class QuestBringForwardTests
     }
 
     /// <summary>
-    /// The mark is made on its take (D69, WAITCLAIM2): where its machine's claim reads lost on a taken quest, the marked dismissal is
+    /// The mark is made on its take: where its machine's claim reads lost on a taken quest, the marked dismissal is
     /// judged lost with it, as a done or a wait is; a plain dismissal is no move on the take and never is.
     /// </summary>
     [Fact]
@@ -92,7 +92,7 @@ public sealed class QuestBringForwardTests
     public void A_lost_marked_dismissal_is_forgotten() =>
         Assert.Equal(QuestLoss.Forgotten, QuestLog.Lost(QuestOperationKind.Dismissed));
 
-    // ——— SYNCMERGE1b0 (D178 points 3, 7 and 8): the log read for who holds the step and how each lost take stands or ended.
+    // ——— The log read for who holds the step and how each lost take stands or ended.
 
     /// <summary>
     /// Brought forward, the conflict reads settled by the mark, with the take it made: held once a remote numbered it, unconfirmed while it
@@ -117,7 +117,7 @@ public sealed class QuestBringForwardTests
     }
 
     /// <summary>
-    /// The first choice stands (D178's traps): dropped by a plain dismissal first, the conflict reads dropped, and a mark landing after it
+    /// The first choice stands: dropped by a plain dismissal first, the conflict reads dropped, and a mark landing after it
     /// settles nothing, so no take holds the step by a bring-forward. A second plain dismissal changes nothing either.
     /// </summary>
     [Fact]
@@ -132,7 +132,7 @@ public sealed class QuestBringForwardTests
     }
 
     /// <summary>
-    /// Lost again: the log forgot the mark with its take, now a conflict of its own, and only this machine's press still says it was a
+    /// Lost again: the log forgot the mark with its take, now a conflict of its own, and only this machine's press still says it is a
     /// bring-forward. The first conflict stands, naming that take, lost; the step is held by the take that won. Read on another machine,
     /// which has no press, the two are two conflicts.
     /// </summary>

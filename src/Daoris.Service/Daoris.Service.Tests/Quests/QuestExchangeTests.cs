@@ -25,7 +25,7 @@ public sealed class QuestExchangeTests : IAsyncLifetime
     {
         // The family this exchange sees: one declared adopter, one adopter that has said nothing,
         // and one repository that has not adopted at all. Written as manifests and IMPORTED, because
-        // the registry is an explicit list now (D48 §3) — and because reading a real manifest is what
+        // the registry is an explicit list — and because reading a real manifest is what
         // makes "adopted" and "declared" the same two facts the running system distinguishes.
         Repo("Declared", """
             {
@@ -47,7 +47,7 @@ public sealed class QuestExchangeTests : IAsyncLifetime
         await _service.ImportAsync(_root, Now);
 
         // The home is beside the family, never inside a repository: a quest's files are the
-        // machine's, and a repository is exactly where they must not land (D32).
+        // machine's, and a repository is exactly where they must not land.
         _files = new QuestFiles(Path.Combine(_root + "-home"));
         _exchange = new QuestExchange(_service, _quests, files: _files);
     }
@@ -79,7 +79,7 @@ public sealed class QuestExchangeTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Registered is addressable; adopted is disciplined (D70). A repository registered here with a
+    /// Registered is addressable; adopted is disciplined. A repository registered here with a
     /// root and no manifest can be asked, because over the protocol door the driver hands its session a
     /// connector on the wire. The asker is told who can answer it: only such a session, since a person
     /// working there by hand has no connector to see it.
@@ -116,7 +116,7 @@ public sealed class QuestExchangeTests : IAsyncLifetime
 
     /// <summary>
     /// An unadopted row with no root on this machine has neither a client nor a tree to drive, so
-    /// nothing here could answer a quest (D70).
+    /// nothing here could answer a quest.
     /// </summary>
     [Fact]
     public async Task An_unadopted_repository_with_no_root_here_is_not_addressable()
@@ -131,7 +131,7 @@ public sealed class QuestExchangeTests : IAsyncLifetime
         Assert.Contains("no root", outcome.Message);
     }
 
-    /// <summary>Adoption gates addressing; declaration does not — but the asker is warned (D34).</summary>
+    /// <summary>Adoption gates addressing; declaration does not — but the asker is warned.</summary>
     [Fact]
     public async Task Publishing_to_an_undeclared_adopter_succeeds_with_a_caution()
     {
@@ -191,11 +191,11 @@ public sealed class QuestExchangeTests : IAsyncLifetime
         Assert.Equal(QuestStatus.Done, done.Quest!.Status);
     }
 
-    // ——— Ask and wait (D79): a session that needs another repository asks it, and its quest waits.
+    // ——— Ask and wait: a session that needs another repository asks it, and its quest waits.
 
     /// <summary>
     /// A taken quest waits on a question its session asked — and stays TAKEN, because its work in
-    /// progress is in that machine's tree, and nothing moves back to open (D46 §3).
+    /// progress is in that machine's tree, and nothing moves back to open.
     /// </summary>
     [Fact]
     public async Task A_taken_quest_waits_on_a_question_and_stays_taken()
@@ -211,11 +211,11 @@ public sealed class QuestExchangeTests : IAsyncLifetime
         Assert.Equal(QuestStatus.Taken, waited.Quest!.Status);
         Assert.Equal(question.Id, waited.Quest.Awaits);
         Assert.Contains($"#{question.Id}", waited.Message);
-        // It is the log's, so it replays — and syncs — like every other move (D68).
+        // It is the log's, so it replays — and syncs — like every other move.
         Assert.Equal(question.Id, (await _quests.FindAsync(work.Id))!.Awaits);
     }
 
-    /// <summary>A quest names the question it waits on only while taken; a close clears it and the history keeps the wait (AWAITSTALE1, D79).</summary>
+    /// <summary>A quest names the question it waits on only while taken; a close clears it and the history keeps the wait.</summary>
     [Theory]
     [InlineData("done")]
     [InlineData("decline")]
@@ -300,7 +300,7 @@ public sealed class QuestExchangeTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The cross-machine race, at the layer where it resolves (D47 §5): the second take is refused
+    /// The cross-machine race, at the layer where it resolves: the second take is refused
     /// naming the state, and the message tells the losing session what to do — stand down.
     /// </summary>
     [Fact]
@@ -316,7 +316,7 @@ public sealed class QuestExchangeTests : IAsyncLifetime
         Assert.Contains("stand down", second.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>One title is one quest forever (D46 §3): closed means immovable, in both directions.</summary>
+    /// <summary>One title is one quest forever: closed means immovable, in both directions.</summary>
     [Fact]
     public async Task A_closed_quest_refuses_every_move()
     {
@@ -332,7 +332,7 @@ public sealed class QuestExchangeTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Outside work is first-class (D46): someone who just did the thing closes the quest without
+    /// Outside work is first-class: someone who just did the thing closes the quest without
     /// ever having taken it, and the table must allow that.
     /// </summary>
     [Fact]
@@ -346,12 +346,12 @@ public sealed class QuestExchangeTests : IAsyncLifetime
         Assert.Equal(QuestStatus.Done, done.Quest!.Status);
     }
 
-    // ——— An ask asks (D65 §1a): a sender that is not a repository names the circle it asks from.
+    // ——— An ask asks: a sender that is not a repository names the circle it asks from.
 
     /// <summary>
-    /// An ask has no registry row, so nothing but the ask can say which circle it was made in — and
-    /// the workspace is still the unit of sharing (D48 §4): named, its quest lands there; unnamed, the
-    /// sender is placed where any unregistered sender always was.
+    /// An ask has no registry row, so nothing but the ask can say which circle it is made in — and
+    /// the workspace is still the unit of sharing: named, its quest lands there; unnamed, the
+    /// sender is placed where any unregistered sender always is.
     /// </summary>
     [Fact]
     public async Task A_sender_that_is_not_a_repository_asks_from_the_circle_it_names()
@@ -370,7 +370,7 @@ public sealed class QuestExchangeTests : IAsyncLifetime
         Assert.Equal(QuestPublishRefusal.CrossWorkspace, unnamed.Refusal);
     }
 
-    // ——— A chain (D65 §4): judged when composed, published at the moment the quest closes done.
+    // ——— A chain: judged when composed, published at the moment the quest closes done.
 
     private Task<QuestPublishOutcome> Chain(params QuestStep[] then) =>
         _exchange.PublishAsync(
@@ -409,7 +409,7 @@ public sealed class QuestExchangeTests : IAsyncLifetime
         Assert.Empty(await _quests.ListAsync());
     }
 
-    /// <summary>A step may ask a registered repository that has not adopted, as a quest may (D70).</summary>
+    /// <summary>A step may ask a registered repository that has not adopted, as a quest may.</summary>
     [Fact]
     public async Task A_step_to_a_registered_non_adopter_is_accepted_when_composed()
     {
@@ -460,7 +460,7 @@ public sealed class QuestExchangeTests : IAsyncLifetime
         Assert.Empty(await _quests.ListAsync(receiver: "Quiet", includeClosed: true));
     }
 
-    // ——— What a quest carries (D65 §2): links travel with it; files are kept here, by content.
+    // ——— What a quest carries: links travel with it; files are kept here, by content.
 
     private static QuestUpload Upload(string name, string content) =>
         new(name, System.Text.Encoding.UTF8.GetBytes(content));
@@ -560,7 +560,7 @@ public sealed class QuestExchangeTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 No home, no files (D63): a host with nowhere of Daoris's to keep bytes refuses them with the
+    /// 🔴 No home, no files: a host with nowhere of Daoris's to keep bytes refuses them with the
     /// home's own sentence rather than writing somewhere nobody pointed it. Links need no home.
     /// </summary>
     [Fact]
@@ -577,8 +577,8 @@ public sealed class QuestExchangeTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// One title is one quest (D46 §3): publishing it again answers the quest as it stands, and must
-    /// SAY that what this call carried was not added — an ignored attachment is otherwise invisible.
+    /// One title is one quest: publishing it again answers the quest as it stands, and must
+    /// SAY that what this call carried is not added — an ignored attachment is otherwise invisible.
     /// </summary>
     [Fact]
     public async Task Publishing_again_says_what_it_did_not_add()

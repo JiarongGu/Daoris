@@ -3,8 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The declared index of where things are (ORIENT2e; D151 §6, `docs/2026-10-04-orientation-everywhere-design.md`
-/// §3.1–§3.2): every markdown file in the folder the declared README is in, split at its headings, as entries of
+/// The declared index of where things are: every markdown file in the folder the declared README is in, split at its headings, as entries of
 /// the kind <see cref="EntryKind.Index"/>, each keeping the lines of its file it is.
 /// </summary>
 /// <remarks>
@@ -81,7 +80,7 @@ public sealed class IndexEntriesTests : IDisposable
     }
 
     /// <summary>
-    /// ORIENT2e's proof, with ORIENT2h's rows and ORIENT2h2's items: each heading of each file in the index's folder,
+    /// The proof, with rows and items: each heading of each file in the index's folder,
     /// and below it, is an entry of the index's own kind, the repository's own, titled by the headings above it and
     /// keeping the lines its text is; each table row is an entry of its own, titled by its section's headings and its
     /// label named by its column, naming its line; each list item too, titled by its parents' labels and its own. A
@@ -199,7 +198,7 @@ public sealed class IndexEntriesTests : IDisposable
 
     /// <summary>
     /// An undeclared folder named like an index is not the index: the role is declared, never guessed, as the
-    /// router is (DOC5).
+    /// router is.
     /// </summary>
     [Fact]
     public void An_undeclared_index_is_not_guessed()
@@ -211,7 +210,7 @@ public sealed class IndexEntriesTests : IDisposable
     }
 
     /// <summary>
-    /// One file is one place in the index (REV3): a deployment's documents folder never reads the declared index
+    /// One file is one place in the index: a deployment's documents folder never reads the declared index
     /// again, as a document or as anything else.
     /// </summary>
     [Fact]
@@ -227,7 +226,7 @@ public sealed class IndexEntriesTests : IDisposable
     }
 
     /// <summary>
-    /// A deployment that names the declared index's folder as its own index (ORIENT1c) reads it a row at a time,
+    /// A deployment that names the declared index's folder as its own index reads it a row at a time,
     /// as it chose for that folder, still as the index's kind; every file once, so no section is read beside the
     /// rows.
     /// </summary>
@@ -268,7 +267,7 @@ public sealed class IndexEntriesTests : IDisposable
         Assert.Contains("task, index", Assert.Throws<ArgumentException>(() => KnowledgeQuery.ParseKinds("indexes")).Message);
     }
 
-    // ── a long table, a row at a time (ORIENT2h) ────────────────────────────────────────────────
+    // ── a long table, a row at a time ────────────────────────────────────────────────
 
     /// <summary>
     /// Routes in the shape of this repository's own index: short sections of a few routes each, as its log,
@@ -332,9 +331,9 @@ public sealed class IndexEntriesTests : IDisposable
 
     /// <summary>
     /// The row's proof: a declared index with one long table and several short sections answers a route question
-    /// with the route's row first, by words alone (BM25, as a deployment with no model answers), naming its line.
-    /// Read at its headings, the 102-row section lost to the short sections: one matching row weighed against a
-    /// long section (ORIENT2e's measurement, ORIENT1c's finding).
+    /// with the route's row first, by words alone (as a deployment with no model answers), naming its line.
+    /// Read at its headings, the 102-row section loses to the short sections: one matching row weighs against a
+    /// long section.
     /// </summary>
     [Fact]
     public async Task A_route_question_lands_on_the_route_s_row_in_a_long_table_naming_its_line()
@@ -372,7 +371,7 @@ public sealed class IndexEntriesTests : IDisposable
     /// <summary>
     /// A question that names what a row is, in its column's word, reaches the row: the header is no line of the row,
     /// so the title names the label's column. Without it, <i>sync verb</i> ranked outlines that say both words above
-    /// the <c>sync</c> row, which says one (measured on this repository's index, D151's ORIENT2h note).
+    /// the <c>sync</c> row, which says one.
     /// </summary>
     [Fact]
     public async Task A_question_in_the_column_s_word_reaches_the_row_its_title_names_by_that_column()
@@ -417,7 +416,7 @@ public sealed class IndexEntriesTests : IDisposable
 
     /// <summary>
     /// The prose around a table stays prose, each run of it an entry of its own since an entry is one run of lines,
-    /// and a second run before any heading is anchored apart from the file's opening, so no two share an id (REV3).
+    /// and a second run before any heading is anchored apart from the file's opening, so no two share an id.
     /// </summary>
     [Fact]
     public void Prose_around_a_table_is_a_run_each_and_every_entry_has_its_own_id()
@@ -538,9 +537,9 @@ public sealed class IndexEntriesTests : IDisposable
     }
 
     /// <summary>
-    /// The row's proof (ORIENT2h2): a declared index with one long list and several short sections answers a
+    /// The row's proof: a declared index with one long list and several short sections answers a
     /// question about one item with that item first, by words alone, naming its line. Read at its headings, the
-    /// answer was the list's whole section, 61 lines for one.
+    /// answer would be the list's whole section, 61 lines for one.
     /// </summary>
     [Fact]
     public async Task An_item_question_lands_on_the_item_in_a_long_list_naming_its_line()
@@ -701,8 +700,8 @@ public sealed class IndexEntriesTests : IDisposable
     /// ORIENT2h5's proof: an item that leads with the lines it names keeps its id when an edit above those lines moves
     /// them, in the declared index and in a deployment's index read a row at a time alike, since an id is how a hit is
     /// fetched again and how a refresh replaces an entry rather than adding one. Its title still names the lines, which
-    /// a person reads. Anchored on the title whole, every such item took a new id at every edit: between two commits of
-    /// this repository's index, 1,259 items whose lines moved, and none kept its id (D151's ORIENT2h5 note).
+    /// a person reads. Anchored on the title whole, every such item would take a new id at every edit: between two commits of
+    /// a repository's index, 1,259 items whose lines moved, and none kept its id.
     /// </summary>
     [Theory]
     [InlineData(false)]
@@ -857,10 +856,10 @@ public sealed class IndexEntriesTests : IDisposable
     }
 
     /// <summary>
-    /// ORIENT2h5: an item is anchored by its title with the lines each label leads with taken out, its parents'
+    /// An item is anchored by its title with the lines each label leads with taken out, its parents'
     /// included, since a class's range moves with every edit inside it; two that are then alike are told apart by
-    /// their count, as two titles alike always were. An item that leads with no lines is anchored by its title, as it
-    /// always was.
+    /// their count, as two titles alike are. An item that leads with no lines is anchored by its title, as
+    /// always.
     /// </summary>
     [Fact]
     public void An_item_is_anchored_past_the_lines_its_labels_lead_with_and_titled_with_them()
@@ -917,9 +916,9 @@ public sealed class IndexEntriesTests : IDisposable
     }
 
     /// <summary>
-    /// ORIENT2h3: a title that is literally another title's counted anchor is anchored past it. Counting titles alone
-    /// gave <c>A</c>, <c>A (2)</c> and <c>A (2)</c>, two entries shared an id, and the store's insert failed the whole
-    /// refresh. The anchors a title had while every id was unique are kept.
+    /// A title that is literally another title's counted anchor is anchored past it. Counting titles alone
+    /// would give <c>A</c>, <c>A (2)</c> and <c>A (2)</c>, two entries sharing an id, and the store's insert would fail the whole
+    /// refresh. The anchors a title has while every id is unique are kept.
     /// </summary>
     [Fact]
     public async Task A_title_that_is_another_s_counted_anchor_gets_the_next_free_one_and_the_refresh_succeeds()

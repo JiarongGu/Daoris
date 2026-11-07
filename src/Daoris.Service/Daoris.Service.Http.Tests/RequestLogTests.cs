@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// The host's half of the machine log (LOG1a, D94): a request that failed is one <c>request.failed</c>
+/// The host's half of the machine log: a request that failed is one <c>request.failed</c>
 /// line, by its route's pattern and status — never the id in its path, never its query — in the home's
 /// <c>logs/</c>, beside the host's own start.
 /// </summary>
@@ -29,7 +29,7 @@ public sealed class RequestLogTests : IDisposable
             await drop.ExecuteNonQueryAsync();
         }
 
-        // The host answers the throw itself (HOSTLOG1): a 500 with its sentence, and the line on the way out.
+        // The host answers the throw itself: a 500 with its sentence, and the line on the way out.
         var failed = await _host.GetAsync("/api/asks/secret-id-in-the-path?workspace=secret-words-in-the-query");
         Assert.Equal(500, failed.Status);
         Assert.Equal(Daoris.Knowledge.Http.UnhandledRequests.Logged, failed.Error);

@@ -3,8 +3,8 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The <c>workflow</c> kind's writer (WORKFLOW1h-a, D157, design §8.1): a whole version of a workflow for a repository or a
-/// workspace, and optionally its choice. The box judges the shape only; the driver judges the rest. Since WORKFLOWCLEAN1 1b the version is its
+/// The <c>workflow</c> kind's writer: a whole version of a workflow for a repository or a
+/// workspace, and optionally its choice. The box judges the shape only; the driver judges the rest. The version is its
 /// graph, and a list of steps is refused.
 /// </summary>
 public sealed class HelpWorkflowProposalTests : HelpProposalBoxFixture
@@ -32,7 +32,7 @@ public sealed class HelpWorkflowProposalTests : HelpProposalBoxFixture
         Assert.Contains($"Proposed `#{id}`", message);
     }
 
-    /// <summary>WORKFLOWCLEAN1 1b: a list of steps is no longer proposed, alone or beside a graph, and nothing is written.</summary>
+    /// <summary>A list of steps is refused, alone or beside a graph, and nothing is written.</summary>
     [Theory]
     [InlineData(Steps, null)]
     [InlineData(Steps, Graph)]
@@ -56,7 +56,7 @@ public sealed class HelpWorkflowProposalTests : HelpProposalBoxFixture
         Assert.True(written.GetProperty("choose").GetBoolean());
     }
 
-    /// <summary>FABRIC-PIPELINE1i: a verification pipeline's graph is written as nested JSON, beside the route it is for.</summary>
+    /// <summary>A verification pipeline's graph is written as nested JSON, beside the route it is for.</summary>
     [Fact]
     public void A_graph_is_written_with_its_route()
     {
@@ -69,7 +69,7 @@ public sealed class HelpWorkflowProposalTests : HelpProposalBoxFixture
         Assert.False(written.TryGetProperty("steps", out _));
     }
 
-    /// <summary>FABRIC-PIPELINE1i: a route with no version is written alone, with no steps and no graph; the driver judges the workflow.</summary>
+    /// <summary>A route with no version is written alone, with no steps and no graph; the driver judges the workflow.</summary>
     [Fact]
     public void A_route_with_no_version_is_written_alone()
     {
@@ -120,7 +120,7 @@ public sealed class HelpWorkflowProposalTests : HelpProposalBoxFixture
         Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 
-    /// <summary>WORKFLOW1h-name: a new workflow's name is the person's words, trimmed, written only when given.</summary>
+    /// <summary>A new workflow's name is the person's words, trimmed, written only when given.</summary>
     [Fact]
     public void A_new_workflow_s_name_is_trimmed_and_written_only_when_given()
     {
@@ -161,7 +161,7 @@ public sealed class HelpWorkflowProposalTests : HelpProposalBoxFixture
         """{"schemaVersion":2,"entries":["work"],"end":"line","nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"}],"wires":[]}""";
 
     /// <summary>
-    /// FLOWCHART2e (the flowchart design §4, §8.4): a change to the draft open in the editor is its fingerprint and the whole graph; the
+    /// A change to the draft open in the editor is its fingerprint and the whole graph; the
     /// workflow it names may be none yet, and nothing it carries saves or chooses.
     /// </summary>
     [Fact]
@@ -181,7 +181,7 @@ public sealed class HelpWorkflowProposalTests : HelpProposalBoxFixture
         Assert.Equal("release-flow", Written(named!).GetProperty("workflow").GetString());
     }
 
-    /// <summary>FLOWCHART2e (§8.4): a draft mixed with what saves or chooses is refused, with nothing written.</summary>
+    /// <summary>A draft mixed with what saves or chooses is refused, with nothing written.</summary>
     [Theory]
     [InlineData(null, DraftGraph, 2, false, null, null, "g1-1", "`base`")]
     [InlineData(null, DraftGraph, null, true, null, null, "g1-1", "`choose`")]

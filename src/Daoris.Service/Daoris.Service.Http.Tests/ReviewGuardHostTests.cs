@@ -3,9 +3,9 @@ using System.Text.Json;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// REVIEWENV1b3 (D154's REVIEWENV1b3 note; the review environment design §3.3, §3.5): what the local host's doors refuse of
-/// a review on the record. Each was seen failing before its fix: a verdict whose set-up reference was absent or half given
-/// approved the newest set-up, which the person may never have looked at, and a chain sent with a null step answered 500.
+/// What the local host's doors refuse of
+/// a review on the record: a verdict whose set-up reference is absent or half given
+/// must not approve the newest set-up, which the person may never have looked at, and a chain sent with a null step must not answer 500.
 /// </summary>
 public sealed class ReviewGuardHostTests(LocalHost host) : IClassFixture<LocalHost>
 {
@@ -33,7 +33,7 @@ public sealed class ReviewGuardHostTests(LocalHost host) : IClassFixture<LocalHo
         (setUp.GetProperty("machine").GetString()!, setUp.GetProperty("sequence").GetInt64());
 
     /// <summary>
-    /// 🔴 The person looked at the first set-up; a second was posted after. A `reviewed` or a `not-yet` that names no set-up,
+    /// 🔴 The person looks at the first set-up; a second is posted after. A `reviewed` or a `not-yet` that names no set-up,
     /// or names one by half its reference, is refused 400 with a sentence, and one naming the first is refused 409 as stale:
     /// none approves the second unseen. Named in full, the second is reviewed.
     /// </summary>

@@ -3,10 +3,10 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// GOAHEAD2, the owner's case on the install (2026-10-08): a driven session asked two go-aheads on its ask and parked, the
-/// person answered both on the ask, and the session stayed waiting on them until the same words were said to it. The
+/// A driven session asks two go-aheads on its ask and parks, the
+/// person answers both on the ask, and the session must not stay waiting on them until the same words are said to it. The
 /// answers to the go-aheads a parked session asked are its answer: the one that answers the last still waiting keeps the
-/// park's blank answer (ANSWER1b), which the driver's next look goes on with, in the same session (D131).
+/// park's blank answer, which the driver's next look goes on with, in the same session.
 /// </summary>
 public sealed class GoAheadGoesOnTests : GoAheadFixture
 {
@@ -125,7 +125,7 @@ public sealed class GoAheadGoesOnTests : GoAheadFixture
 
     /// <summary>
     /// The park goes on once: a park the person already answered goes on with their words, and is handed these answers too,
-    /// so nothing is kept beside them; and an answer changed after its first wakes nothing, since the session was waiting
+    /// so nothing is kept beside them; and an answer changed after its first wakes nothing, since the session is waiting
     /// on none.
     /// </summary>
     [Fact]

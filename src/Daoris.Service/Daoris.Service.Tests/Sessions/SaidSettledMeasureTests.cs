@@ -8,18 +8,18 @@ using Xunit.Abstractions;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// FOUNDATION1 row p's landing measurement (D212, the design §10's row 1p, §19.13; O5-F8): the say door's p95 and the <c>sessions</c> write's
-/// p95 within a tenth of before, and what a week's takes make of the settlement table, on a scratch service seeded at the scale the row names
-/// (more than 50,000 settlements in a week), never the install and never its home.
+/// The landing measurement: the say door's p95 and the <c>sessions</c> write's
+/// p95 within a tenth of before, and what a week's takes make of the settlement table, on a scratch service seeded at a week's scale
+/// (more than 50,000 settlements), never the install and never its home.
 /// </summary>
 /// <remarks>
 /// <para>It is written against the surface both sides have, so one copy of this file runs before the row's change and after it, on a
 /// database file of its own under the repository's gitignored <c>_fixtures/</c>, which keeps the service's own default (a rollback journal,
-/// <c>synchronous = FULL</c>) and so a commit is a sync to the disk, as the install's is. Where the table the row adds exists the seed fills
+/// <c>synchronous = FULL</c>) and so a commit is a sync to the disk, as the install's is. Where the settlement table exists the seed fills
 /// it to a week's scale, so the same reads and writes run beside it; where it does not, they run without it. The retry after a take is
 /// asked with <c>settled</c> where the say door has that parameter, through reflection, which the base lacks.</para>
-/// <para>A measurement: it asserts that every call landed and none was pathological, and says the percentiles in the test's output for
-/// D212's note. Held to where it is asked for: <c>DAORIS_MEASURE_SAID</c> set, as <c>DAORIS_MEASURE_GITDOOR</c> holds the GitDoor's;
+/// <para>A measurement: it asserts that every call landed and none is pathological, and says the percentiles in the test's output for
+/// the measurement's note. Held to where it is asked for: <c>DAORIS_MEASURE_SAID</c> set, as <c>DAORIS_MEASURE_GITDOOR</c> holds the GitDoor's;
 /// elsewhere each case holds nothing. <c>DAORIS_MEASURE_SESSIONS</c> sets the records seeded (5,000 by default) and
 /// <c>DAORIS_MEASURE_SETTLED</c> the settlements (60,000). No variable of the process's environment is set.</para>
 /// </remarks>
@@ -433,8 +433,8 @@ public sealed class SaidSettledMeasureTests : IDisposable
     }
 
     /// <summary>
-    /// Row d-ii's landing limit, prepared on a scratch service (D212, the design §19.13, *C5-1.13*): the say door's p95 with the head walked
-    /// inside its step against the same door with none, paired as p and d-i are, on two copies of one seeded file, alternated call by call.
+    /// The head walk's landing limit, prepared on a scratch service: the say door's p95 with the head walked
+    /// inside its step against the same door with none, paired as the other measurements are, on two copies of one seeded file, alternated call by call.
     /// The walk is code, not schema, so the copy before is the ledger with <c>WalksHead</c> off over the same file. Each branch of the walk is
     /// measured: a chat with no successor (one probe on <c>sessions_from</c>), a driven part with no successor (a second, its quest's last run
     /// here, on <c>sessions_quest</c>), and a chain of three parts said to at its first (before the row kept there, after it refused

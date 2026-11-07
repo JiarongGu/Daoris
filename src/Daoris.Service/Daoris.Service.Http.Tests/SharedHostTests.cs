@@ -4,19 +4,19 @@ using Daoris.Knowledge;
 
 namespace Daoris.Service.Http.Tests;
 
-/// <summary>A shared host: the team's deployment, fed and never scanned (D47 §4).</summary>
+/// <summary>A shared host: the team's deployment, fed and never scanned.</summary>
 public sealed class SharedHost() : DaorisHost(ServiceMode.Shared)
 {
-    /// <summary>A key for one person on one machine, live for a month (D47 §7).</summary>
+    /// <summary>A key for one person on one machine, live for a month.</summary>
     public async Task<MintedKey> MintAsync(string name = "someone@a-machine", TimeSpan? lifetime = null, DateTimeOffset? minted = null) =>
         await Composed.Keys.MintAsync(name, lifetime ?? TimeSpan.FromDays(30), minted ?? DateTimeOffset.UtcNow);
 }
 
 /// <summary>
-/// The shared host's doors (HTTP1, D47 §7): every route under the gate and none outside it; a valid
+/// The shared host's doors: every route under the gate and none outside it; a valid
 /// minted key answered, anything else refused with a sentence that names an expired or revoked key by
-/// its prefix and never repeats what was presented; no page; no machine path in any answer, to any
-/// caller; and no delete door, because a person deletes on their own machine (D95).
+/// its prefix and never repeats what the call presented; no page; no machine path in any answer, to any
+/// caller; and no delete door, because a person deletes on their own machine.
 /// </summary>
 public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
 {
@@ -52,7 +52,7 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
         Assert.All(routes, route => Assert.StartsWith("/api/", route.Pattern));
     }
 
-    /// <summary>🔴 Reads included (D47 §7): a remote serving the family's knowledge to an unkeyed GET is the leak with no key leaked.</summary>
+    /// <summary>🔴 Reads included: a remote serving the family's knowledge to an unkeyed GET is the leak with no key leaked.</summary>
     [Fact]
     public async Task Every_api_route_refuses_a_caller_without_a_key()
     {
@@ -104,7 +104,7 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
     }
 
     /// <summary>
-    /// A key nobody minted is refused without a word about what was presented — and so is a near miss on
+    /// A key nobody minted is refused without a word about what the call presented — and so is a near miss on
     /// a real key's prefix, which must look exactly like a stranger's, or guessing would teach something.
     /// </summary>
     [Fact]
@@ -171,7 +171,7 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
     }
 
     /// <summary>
-    /// The remote is an API until person-auth exists (D47 §7): the page a local host serves from the very
+    /// The remote is an API until person-auth exists: the page a local host serves from the very
     /// same web root is not served here, keyed or not.
     /// </summary>
     [Theory]
@@ -190,7 +190,7 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
 
     /// <summary>
     /// 🔴 No machine path in any answer, to any caller — the loopback included, because in shared mode the
-    /// answer is no for everyone (D47 §4). A registration that arrived carrying a root is stored without
+    /// answer is no for everyone. A registration that carries a root is stored without
     /// it, and every read this host maps is searched for any path under the scratch this machine made.
     /// </summary>
     [Fact]
@@ -236,7 +236,7 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
     }
 
     /// <summary>
-    /// FLOWCHART1a2 (D186; the flowchart design §2.1): quests are service-visible (D47 §4), so a shared host answers a quest's moves
+    /// Quests are service-visible, so a shared host answers a quest's moves
     /// as a local one does, and a browser reading the team's deployment draws the flow too: its publish, applied, and nothing of
     /// what it asked.
     /// </summary>
@@ -262,7 +262,7 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
     }
 
     /// <summary>
-    /// A shared deployment has no door that removes a record (D95): a person deletes on their own machine,
+    /// A shared deployment has no door that removes a record: a person deletes on their own machine,
     /// and the tombstone travels. Keyed, the verb finds no route — and the quest is still there after it.
     /// </summary>
     [Fact]
@@ -283,7 +283,7 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
         var routes = host.Routes();
         Assert.DoesNotContain(("DELETE", "/api/quests/{id}"), routes);
         Assert.DoesNotContain(("DELETE", "/api/asks/{id}"), routes);
-        // SESSUX1f (D126 §5.4): nor a session's, nor its judgement; a delete is a person's on their own machine.
+        // Nor a session's, nor its judgement; a delete is a person's on their own machine.
         Assert.DoesNotContain(("DELETE", "/api/sessions/{id}"), routes);
         Assert.DoesNotContain(("GET", "/api/sessions/{id}/deletable"), routes);
         foreach (var path in new[] { $"/api/quests/{id}", $"/api/asks/{id}", "/api/sessions/ab12cd34" })
@@ -297,7 +297,7 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
     }
 
     /// <summary>
-    /// HIST1b (D153; the history-clearing design §3.5): a person clears finished history on their own machine, and a
+    /// A person clears finished history on their own machine, and a
     /// remote's history is the team's, so a shared host has neither the listing nor the press. Keyed, each finds no route.
     /// </summary>
     [Fact]
@@ -315,23 +315,23 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
     }
 
     /// <summary>
-    /// DRIFT1d (D133 §4): the person's yes to a departure is said on their own machine, and travels from there as an
+    /// The person's yes to a departure is said on their own machine, and travels from there as an
     /// operation, as a delete does — a shared host has no accept door.
     /// </summary>
     [Fact]
     public void The_accept_door_does_not_exist_on_a_shared_host()
     {
         Assert.DoesNotContain(("POST", "/api/quests/{id}/accept"), host.Routes());
-        // Nor the person's done (QUESTCLOSE1): it is said on their own machine and travels from there as a done.
+        // Nor the person's done: it is said on their own machine and travels from there as a done.
         Assert.DoesNotContain(("POST", "/api/quests/{id}/done"), host.Routes());
-        // Nor the reopen and the word to go on (FABRIC-CLOSE1c): the seal is judged on the take's machine, and travels from there.
+        // Nor the reopen and the word to go on: the seal is judged on the take's machine, and travels from there.
         Assert.DoesNotContain(("POST", "/api/quests/{id}/reopen"), host.Routes());
         Assert.DoesNotContain(("POST", "/api/quests/{id}/continue"), host.Routes());
-        // Nor the bring-forward of a lost take (SYNCMERGE1a): its take is the machine's whose take lost, and travels from there.
+        // Nor the bring-forward of a lost take: its take is the machine's whose take lost, and travels from there.
         Assert.DoesNotContain(("POST", "/api/quests/{id}/conflicts/forward"), host.Routes());
-        // Nor the go-ahead's (KNOWUSE1a): asks are a local host's, and the yes to a production act is the person's.
+        // Nor the go-ahead's: asks are a local host's, and the yes to a production act is the person's.
         Assert.DoesNotContain(("POST", "/api/asks/{id}/go-aheads/{number}"), host.Routes());
-        // Nor an ask's channel (SESSONE2a): asks are this machine's; the channel travels as a feed once SESSONE2d builds it.
+        // Nor an ask's channel: asks are this machine's; the channel travels as a feed.
         Assert.DoesNotContain(("GET", "/api/asks/{id}/channel"), host.Routes());
         Assert.DoesNotContain(("POST", "/api/asks/{id}/channel"), host.Routes());
         Assert.DoesNotContain(("POST", "/api/asks/{id}/channel/read"), host.Routes());
@@ -339,7 +339,7 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
     }
 
     /// <summary>
-    /// REVIEWENV1b (D154 points 8–9): a set-up is posted on the machine whose tree holds its commit, the verdict is the person's
+    /// A set-up is posted on the machine whose tree holds its commit, the verdict is the person's
     /// on their own machine, and both travel from there as operations — so a shared host has none of the review's doors. A
     /// pushed set-up step, its set-up and a verdict are kept and answered; a set-up step that reads as production is not whole.
     /// </summary>
@@ -381,7 +381,7 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1i: the remote's doors answer the workspace's handshake. A push declaring its machine marks it declared; one declaring
+    /// The remote's doors answer the workspace's handshake. A push declaring its machine marks it declared; one declaring
     /// nothing, as an older build pushes, marks every machine its operations name undeclared; a page and a push's answer both say which.
     /// </summary>
     [Fact]
@@ -427,7 +427,7 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
     }
 
     /// <summary>
-    /// EVID1a (D144 §3): a done's evidence is read on the machine whose tree holds the commit, and the verdict travels from
+    /// A done's evidence is read on the machine whose tree holds the commit, and the verdict travels from
     /// there as an operation — a shared host has no evidence door. What a push carries is names and codes: a requirement
     /// whose evidence names a machine's path, or a verdict that does, is not whole, 400, and nothing of it is kept.
     /// </summary>
@@ -435,7 +435,7 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
     public async Task The_evidence_door_does_not_exist_and_a_machine_path_never_crosses_a_push()
     {
         Assert.DoesNotContain(("POST", "/api/quests/{id}/evidence"), host.Routes());
-        // FABRIC-CLOSE1a: a closure graph's bind and close are the machine's, under its driver's lock; their Done travels as an
+        // A closure graph's bind and close are the machine's, under its driver's lock; their Done travels as an
         // operation, so a shared host maps neither.
         Assert.DoesNotContain(("POST", "/api/quests/{id}/bind"), host.Routes());
         Assert.DoesNotContain(("POST", "/api/quests/{id}/close"), host.Routes());
@@ -465,9 +465,9 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
     }
 
     /// <summary>
-    /// MSG1a (D137 §2.3): the person's words wait on a record of their own machine's, and only there does it go on — so a
+    /// The person's words wait on a record of their own machine's, and only there does it go on — so a
     /// shared host, which holds the team's records and runs no session, has neither the say door nor the taken door, nor
-    /// SAIDBACK1a's take-back door.
+    /// the take-back door.
     /// </summary>
     [Fact]
     public void The_say_and_taken_doors_do_not_exist_on_a_shared_host()
@@ -480,7 +480,7 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
     }
 
     /// <summary>
-    /// XAGENT1c (D155 point 11; the second agent design §6.2): a second opinion is kept on the machine whose work it read, so a
+    /// A second opinion is kept on the machine whose work it read, so a
     /// shared host has none of its doors, keyed or not, and its desk refuses with the sentence that says why.
     /// </summary>
     [Fact]
@@ -499,7 +499,7 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
     }
 
     /// <summary>
-    /// BRAINSTORM1a3 (D176 point 8): a brainstorm is kept on the machine that asked it, served to this machine only and never on a
+    /// A brainstorm is kept on the machine that asked it, served to this machine only and never on a
     /// shared host, so a shared host maps none of its doors, keyed or not, and writes nothing under any home.
     /// </summary>
     [Fact]

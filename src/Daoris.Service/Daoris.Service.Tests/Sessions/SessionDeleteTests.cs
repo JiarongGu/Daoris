@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// SESSUX1f (D126 §5.4): the record's half of deleting a session, judged by the ledger. Only a conversation that served no
+/// The record's half of deleting a session, judged by the ledger. Only a conversation that served no
 /// quest may go: ended, this machine's, named by no ask's intake and no quest's publisher, and held by no remote. The
 /// tree and a landing are the machine's half, the driver's to judge.
 /// </summary>
@@ -81,7 +81,7 @@ public sealed class SessionDeleteTests : IAsyncLifetime
         Assert.NotNull(await _sessions.FindAsync(chat.Id));
     }
 
-    /// <summary>A teammate's record ran on their machine (SYNC4): it is refused naming the machine, before anything else.</summary>
+    /// <summary>A teammate's record runs on their machine: it is refused naming the machine, before anything else.</summary>
     [Fact]
     public async Task A_teammates_record_is_refused_naming_its_machine()
     {
@@ -114,7 +114,7 @@ public sealed class SessionDeleteTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// CHATTAKE1: a chat that took a quest through its own connector worked that quest, so its record is that work's as a
+    /// A chat that takes a quest through its own connector works that quest, so its record is that work's as a
     /// driven session's is. It is refused, kept, and left out of a list's answer.
     /// </summary>
     [Fact]
@@ -136,7 +136,7 @@ public sealed class SessionDeleteTests : IAsyncLifetime
         Assert.DoesNotContain(chat.Id, deletable);
     }
 
-    /// <summary>An intake is named by its ask, which a reader follows to what it read and decided (D65 §1b).</summary>
+    /// <summary>An intake is named by its ask, which a reader follows to what it read and decided.</summary>
     [Fact]
     public async Task An_intake_is_refused_naming_its_ask()
     {
@@ -155,7 +155,7 @@ public sealed class SessionDeleteTests : IAsyncLifetime
         Assert.NotNull(await _sessions.FindAsync(intake.Id));
     }
 
-    /// <summary>A conversation that published a quest is named by it (SESS1): that quest's page says what caused it.</summary>
+    /// <summary>A conversation that published a quest is named by it: that quest's page says what caused it.</summary>
     [Fact]
     public async Task A_conversation_that_published_a_quest_is_refused_naming_the_quest()
     {
@@ -210,7 +210,7 @@ public sealed class SessionDeleteTests : IAsyncLifetime
         Assert.NotNull(await _sessions.FindAsync(chat.Id));
     }
 
-    /// <summary>A list's answer says which records the ledger would delete, as D95's quests say theirs, judged by the same rule.</summary>
+    /// <summary>A list's answer says which records the ledger would delete, as a quest's list says its own, judged by the same rule.</summary>
     [Fact]
     public async Task Deletable_answers_for_a_whole_list_by_the_same_rule()
     {

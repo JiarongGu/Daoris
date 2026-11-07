@@ -3,8 +3,8 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// KNOWCENTRAL2b: the stand-in the memory tools and the coordinator's record are proved over repeats what Lyntai's engine does that
-/// Daoris must settle around (the memory coordinator design §6 C), and a confirmation's revision bump, so a proof over it meets the
+/// The stand-in the memory tools and the coordinator's record are proved over repeats what Lyntai's engine does that
+/// Daoris must settle around, and a confirmation's revision bump, so a proof over it meets the
 /// engine's effects rather than an engine that has none.
 /// </summary>
 public sealed class StandInMemoryTests

@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A session note's parts name a door by <c>door</c> (AGENTPROVIDER1t-ii): a part kept with <c>adapter</c> among its values, or the reason
+/// A session note's parts name a door by <c>door</c>: a part kept with <c>adapter</c> among its values, or the reason
 /// <c>adapter</c>, has both renamed as the store opens, a part that names neither is left as kept, and a second open changes nothing.
 /// </summary>
 public sealed class NotePartDoorTests : IAsyncLifetime

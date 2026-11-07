@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// INTEGRATE1l (the integration design §9 point 1): an ask and a quest may carry <c>paths</c>, the repository-relative globs the work
+/// An ask and a quest may carry <c>paths</c>, the repository-relative globs the work
 /// declares it touches. Written by the publisher, kept in the publish operation and on the wire; an intake's draft adds to the ask's and
 /// never removes them. None is every quest from before and one that declared none.
 /// </summary>

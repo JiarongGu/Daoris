@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// HANDBACK1 (D219): a quest's handback is the note its session closes it with through the connector, written once at that act. The
+/// A quest's handback is the note its session closes it with through the connector, written once at that act. The
 /// exchange refuses a session's close whose note only points elsewhere, before anything moves; every other door keeps its words, the
 /// person's among them.
 /// </summary>
@@ -23,7 +23,7 @@ public sealed class QuestHandbackTests : McpToolsFixture
 
     /// <summary>
     /// 🔴 A done and a decline through the connector whose note only points elsewhere are refused in the refusal's words, and the
-    /// quest stays taken: nothing was written.
+    /// quest stays taken: nothing is written.
     /// </summary>
     [Theory]
     [InlineData("done", "Details are in my last message")]

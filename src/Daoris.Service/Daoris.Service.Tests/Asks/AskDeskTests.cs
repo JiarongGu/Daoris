@@ -5,8 +5,8 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// An ask (D65 §1a): a sentence, with links and files, entered at a WORKSPACE rather than at a
-/// repository — held as a record of what was asked and what became of it. With no intake harness
+/// An ask: a sentence, with links and files, entered at a WORKSPACE rather than at a
+/// repository — held as a record of what is asked and what comes of it. With no intake harness
 /// the declarations tier proposes and says so; a named receiver is published to at once; a person
 /// turns a proposal into a quest. Nothing is ever published on a guess.
 /// </summary>
@@ -82,8 +82,8 @@ public sealed class AskDeskTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// ASKNAME1: the ask reaches the tier with every registration, so a repository registered here with a
-    /// root and no manifest (D70) that the sentence names is proposed first, ahead of the adopted one its
+    /// The ask reaches the tier with every registration, so a repository registered here with a
+    /// root and no manifest that the sentence names is proposed first, ahead of the adopted one its
     /// words overlap — said in the answer, and kept on the ask's record.
     /// </summary>
     [Fact]
@@ -107,8 +107,8 @@ public sealed class AskDeskTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// HEAD2e (D162 point 4): an ask carries the asker's short title, as a quest does (SESSUX1j) — trimmed, kept on the
-    /// record, and null where none was given, which every ask from before is.
+    /// An ask carries the asker's short title, as a quest does — trimmed, kept on the
+    /// record, and null where none is given.
     /// </summary>
     [Fact]
     public async Task A_short_title_is_kept_trimmed_on_the_ask_and_none_is_null()
@@ -122,7 +122,7 @@ public sealed class AskDeskTests : IAsyncLifetime
         Assert.Null((await _desk.FindAsync(plain.Ask.Id))!.Short);
     }
 
-    /// <summary>HEAD2e: a short title past the quest's bound is refused in the quest's own sentence and nothing is kept.</summary>
+    /// <summary>A short title past the quest's bound is refused in the quest's own sentence and nothing is kept.</summary>
     [Fact]
     public async Task A_short_title_past_forty_characters_is_refused_and_no_ask_is_kept()
     {
@@ -207,7 +207,7 @@ public sealed class AskDeskTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// TITLEONE1: one piece of work, one name. A quest an ask publishes takes the ask's short title where the intake gives none,
+    /// One piece of work, one name. A quest an ask publishes takes the ask's short title where the intake gives none,
     /// and keeps the intake's where it gives one.
     /// </summary>
     [Fact]
@@ -239,10 +239,8 @@ public sealed class AskDeskTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// ASKAGAIN1, found asking a ticket again after its first run failed: a person who CLOSED an ask
-    /// ended it, so the same words afterwards are a fresh intent, not a repeat. The door used to hand
-    /// the closed record back for good, and the only way through was rewording. The closed one stays,
-    /// as it was.
+    /// A person who CLOSED an ask ended it, so the same words afterwards are a fresh intent, not a
+    /// repeat. The closed one stays untouched.
     /// </summary>
     [Fact]
     public async Task The_same_sentence_after_the_person_closed_the_ask_asks_anew()
@@ -303,9 +301,8 @@ public sealed class AskDeskTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// An ask's quests are appended where they are kept, never rewritten from what one caller read
-    /// (REV3 service F10). The intake's connector and the person's page publish from two processes, and
-    /// each used to save the whole record it had read — so of two publishes at once, one quest vanished
+    /// An ask's quests are appended where they are kept, never rewritten from what one caller read.
+    /// The intake's connector and the person's page publish from two processes, and each saving the whole record it had read would make one of two publishes at once vanish
     /// from the ask. A close written whole the same way could drop a quest published meanwhile.
     /// </summary>
     [Fact]
@@ -327,9 +324,9 @@ public sealed class AskDeskTests : IAsyncLifetime
         Assert.Equal("Handled.", held.Note);
     }
 
-    // ——— USE1c: an ask whose work is finished is DONE, derived from its quests rather than stored.
+    // ——— An ask whose work is finished is DONE, derived from its quests rather than stored.
 
-    /// <summary>An ask that became no quest has no work to finish — it stays what it was.</summary>
+    /// <summary>An ask that yields no quest has no work to finish — it stays unchanged.</summary>
     [Fact]
     public async Task An_ask_that_became_no_quest_is_never_done()
     {
@@ -353,7 +350,7 @@ public sealed class AskDeskTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 USE1c, the owner's list: every quest from the ask closed — done or declined, a decline is an
+    /// 🔴 The owner's list: every quest from the ask closed — done or declined, a decline is an
     /// answer too — makes the ask DONE, and the default list hides it as it hides a closed one. With
     /// closed ones included it is there, done.
     /// </summary>
@@ -373,7 +370,7 @@ public sealed class AskDeskTests : IAsyncLifetime
 
     /// <summary>
     /// A chain's next step is published in the same move that closes the step before it, asked BY the
-    /// ask (D65 §4) — so the ask is not done while a step is still to come.
+    /// ask — so the ask is not done while a step is still to come.
     /// </summary>
     [Fact]
     public async Task An_ask_whose_chain_has_a_step_still_open_is_not_done()
@@ -396,7 +393,7 @@ public sealed class AskDeskTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A step waiting on another repository (D79) is taken, and its work is in its taker's tree — so
+    /// A step waiting on another repository is taken, and its work is in its taker's tree — so
     /// the ask is not done, even once the question it waits on is answered.
     /// </summary>
     [Fact]
@@ -427,7 +424,7 @@ public sealed class AskDeskTests : IAsyncLifetime
 
     /// <summary>
     /// Derived, not stored: a quest closed on ANOTHER machine and synced in is reflected with no write
-    /// to the ask — the sync knows nothing of asks, which stay on this machine (D68 §2).
+    /// to the ask — the sync knows nothing of asks, which stay on this machine.
     /// </summary>
     [Fact]
     public async Task A_quest_closed_on_another_machine_and_synced_in_makes_the_ask_done()
@@ -448,7 +445,7 @@ public sealed class AskDeskTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A finished ask ended as surely as a closed one (ASKAGAIN1's reason): the same words afterwards
+    /// A finished ask ended as surely as a closed one: the same words afterwards
     /// ask anew, rather than answering with a record the default list no longer shows.
     /// </summary>
     [Fact]

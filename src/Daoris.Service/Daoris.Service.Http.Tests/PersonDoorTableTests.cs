@@ -3,7 +3,7 @@ using Daoris.Knowledge.Http;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// The class table (PERSONDOOR1a; the person-door design §3.2, D156 point 3): every route either host maps, by its class,
+/// The class table: every route either host maps, by its class,
 /// listed here whole, as <c>docs/index/routes.md</c> lists them, and held to <see cref="PersonDoors.Table"/> and to the
 /// routes each host maps, which that index is generated from. A route added tomorrow fails here until it is classed; until
 /// then the gate refuses it without the key, as the person's. The hosts' tables are read rather than the index: a change to
@@ -18,9 +18,8 @@ public sealed class PersonDoorTableTests
     private const DoorClass Shared = DoorClass.Shared;
 
     /// <summary>
-    /// Every route at PERSONDOOR1b, written out: the design's 59 at <c>4004d041</c>, XAGENT1c's four, and the window's
-    /// confirmation's five (design §4.2): what waits and one of them are reads, asking is any caller's, and confirming and
-    /// refusing are the person's.
+    /// Every route, written out. The confirmation's five: what waits and one of them are reads, asking is any caller's,
+    /// and confirming and refusing are the person's.
     /// </summary>
     private static readonly (string Method, string Pattern, DoorClass Class)[] Routes =
     [
@@ -47,11 +46,11 @@ public sealed class PersonDoorTableTests
         ("GET", "/api/sessions/changes", Open),
         ("GET", "/api/sessions/{id}/deletable", Open),
         ("GET", "/api/sessions/{id}/record", Open),
-        // KNOWCENTRAL2d: a session's memory changes for its record's page; a local host's read.
+        // A session's memory changes for its record's page; a local host's read.
         ("GET", "/api/sessions/{id}/memory", Open),
-        // KNOWCENTRAL2e: every memory wait on the person; a local host's read.
+        // Every memory wait on the person; a local host's read.
         ("GET", "/api/memory/waits", Open),
-        // HANDBACK1: one quest's handback whole, by the quest's id or its session's; a local host's read.
+        // One quest's handback whole, by the quest's id or its session's; a local host's read.
         ("GET", "/api/handbacks/{id}", Open),
         ("GET", "/api/history", Open),
         ("GET", "/api/registry", Open),
@@ -60,12 +59,12 @@ public sealed class PersonDoorTableTests
         ("GET", "/api/sync", Open),
         ("GET", "/api/opinions", Open),
         ("GET", "/api/opinions/{id}", Open),
-        // BRAINSTORM1a3 (D176 point 8): the brainstorms on this machine, and one of them, answered to loopback only.
+        // The brainstorms on this machine, and one of them, answered to loopback only.
         ("GET", "/api/brainstorms", Open),
         ("GET", "/api/brainstorms/{id}", Open),
         ("GET", "/api/confirmations", Open),
         ("GET", "/api/confirmations/{id}", Open),
-        // NOTIFY2j: what waits, held until it moves.
+        // What waits, held until it moves.
         ("GET", "/api/confirmations/waiting", Open),
         ("GET", "/api/changes", Open),
         ("GET", "/api/journal", Open),
@@ -74,14 +73,14 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/quests", Agent),
         ("POST", "/api/asks/{id}/publish", Agent),
         ("POST", "/api/confirmations", Agent),
-        // ONEWAY1n-i: an asker's withdrawal of its own ask, by the token its ask was answered with.
+        // An asker's withdrawal of its own ask, by the token its ask got.
         ("POST", "/api/confirmations/{id}/withdraw", Agent),
 
         ("POST", "/api/quests/{id}/evidence", Driver),
         ("POST", "/api/quests/{id}/set-up", Driver),
-        // FABRIC-CLOSE1a: a closure graph's bind and close, the driver's under the unit's lock; a local host's alone.
+        // A closure graph's bind and close, the driver's under the unit's lock; a local host's alone.
         ("POST", "/api/quests/{id}/close", Driver),
-        // FABRIC-CLOSE1u: what became of a close's key, the driver's question before it ever sends that close again.
+        // What became of a close's key, the driver's question before it ever sends that close again.
         ("POST", "/api/quests/{id}/close/outcome", Driver),
         ("POST", "/api/sessions", Driver),
         ("POST", "/api/sessions/chat", Driver),
@@ -89,22 +88,22 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/sessions/help", Driver),
         ("POST", "/api/sessions/{id}/state", Driver),
         ("POST", "/api/sessions/{id}/taken", Driver),
-        // KNOWCENTRAL2f: what a line read, rechecked for its brief and kept as read at the revision answered.
+        // What a line read, rechecked for its brief and kept as read at the revision answered.
         ("POST", "/api/sessions/{id}/memory/read", Driver),
-        // COWORK1c: a word's attempt, marked by the dispatcher that writes it to the harness, before the wire.
+        // A word's attempt, marked by the dispatcher that writes it to the harness, before the wire.
         ("POST", "/api/sessions/{id}/attempt", Driver),
         // HELPMODE1a2: the mode an Ask Daoris conversation going on runs under, which the driver that spawns it knows.
         ("POST", "/api/sessions/{id}/help-mode", Driver),
         // AUTONOMY1b2: the setup a resumed driven record now runs under, which the driver that spawns it knows.
         ("POST", "/api/sessions/{id}/access", Driver),
-        // KEEP1b: the downloaded versions a start of the record was handed, which the driver that spawns it knows.
+        // The downloaded versions a start of the record is handed, which the driver that spawns it knows.
         ("POST", "/api/sessions/{id}/resolved", Driver),
         ("POST", "/api/sessions/{id}/actor", Driver),
-        // KEEPSIZE1b: a finished tree's record, posted by the driver that moved it aside.
+        // A finished tree's record, posted by the driver that moved it aside.
         ("POST", "/api/trees/record", Driver),
         ("POST", "/api/trees/record/age", Driver),
         ("POST", "/api/sessions/{id}/restore", Driver),
-        // COWORK1d: an entry's acknowledgment of a channel message, the driver's as it hands one to a part.
+        // An entry's acknowledgment of a channel message, the driver's as it hands one to a part.
         ("POST", "/api/asks/{id}/channel/ack", Driver),
         ("POST", "/api/channel/addressed/ack", Driver),
         ("POST", "/api/sync", Driver),
@@ -115,9 +114,9 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/opinions/{id}/hand", Driver),
         ("POST", "/api/helpers", Driver),
         ("POST", "/api/helpers/{helper}/hand", Driver),
-        // COAGENT1b: a partner's record, opened by the driver for one piece.
+        // A partner's record, opened by the driver for one piece.
         ("POST", "/api/partners", Driver),
-        // COAGENT1b: a piece's answer, handed to its lead's line by the driver.
+        // A piece's answer, handed to its lead's line by the driver.
         ("POST", "/api/partners/{partner}/hand", Driver),
 
         ("POST", "/api/quests/{id}/review", Person),
@@ -129,7 +128,7 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/quests/{id}/workflow", Person),
         ("POST", "/api/asks/{id}/channel", Person),
         ("POST", "/api/channel/line", Person),
-        // CHANNELJOIN1: the person's admission of an outside agent, and that member's read, post and leave, judged as its own.
+        // The person's admission of an outside agent, and that member's read, post and leave, judged as its own.
         ("POST", "/api/channel/members", Person),
         ("GET", "/api/channel/members", Driver),
         ("GET", "/api/channel/members/{id}/messages", Agent),
@@ -138,16 +137,16 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/asks/{id}/channel/read", Person),
         ("POST", "/api/quests/{id}/accept", Person),
         ("POST", "/api/quests/{id}/done", Person),
-        // FABRIC-CLOSE1c: a sealed submission's reopen, and the word to go on with the step it held; a local host's alone.
+        // A sealed submission's reopen, and the word to go on with the step it held; a local host's alone.
         ("POST", "/api/quests/{id}/reopen", Person),
         ("POST", "/api/quests/{id}/continue", Person),
         ("POST", "/api/asks/{id}/go-aheads/{number}", Person),
         ("POST", "/api/sessions/{id}/added", Person),
         ("POST", "/api/sessions/{id}/say", Person),
         ("POST", "/api/sessions/{id}/take-back", Person),
-        // LINESTOGETHER1b: the person's held word moved to the head; a local host's alone.
+        // The person's held word moved to the head; a local host's alone.
         ("POST", "/api/sessions/{id}/move", Person),
-        // KNOWCENTRAL2d: a memory end's approval, and an ended session's staged changes kept or dropped; a local host's alone.
+        // A memory end's approval, and an ended session's staged changes kept or dropped; a local host's alone.
         ("POST", "/api/memory/{id}/decide", Person),
         ("POST", "/api/sessions/{id}/memory", Person),
         ("POST", "/api/asks/{id}/close", Person),
@@ -155,13 +154,13 @@ public sealed class PersonDoorTableTests
         ("DELETE", "/api/quests/{id}", Person),
         ("DELETE", "/api/sessions/{id}", Person),
         ("POST", "/api/history/clear", Person),
-        // BRAINSTORM1a3 (D176 point 9): only the person starts one, sends its packet and clears it; an agent asks them instead.
+        // Only the person starts one, sends its packet and clears it; an agent asks them instead.
         ("POST", "/api/brainstorms", Person),
         ("POST", "/api/brainstorms/{id}/send", Person),
         ("POST", "/api/brainstorms/{id}/stop", Person),
         ("DELETE", "/api/brainstorms/{id}", Person),
         ("POST", "/api/quests/{id}/conflicts/dismiss", Person),
-        // SYNCMERGE1a (D178 point 3): the person's bring-forward of their machine's lost take; a local host's alone.
+        // The person's bring-forward of their machine's lost take; a local host's alone.
         ("POST", "/api/quests/{id}/conflicts/forward", Person),
         ("POST", "/api/sync/machines/{machine}/retire", Person),
         ("DELETE", "/api/registry/{repository}", Person),
@@ -191,36 +190,13 @@ public sealed class PersonDoorTableTests
         Assert.Equal(Routes, PersonDoors.Table.Select(door => (door.Method, door.Pattern, door.Class)));
         Assert.Equal(PersonDoors.Table.Count, PersonDoors.Table.Select(door => (door.Method, door.Pattern)).Distinct().Count());
 
-        // The design's counts (§3.2), with XAGENT1c's two reads and two driver's posts (and MIXAGENT2a-ii's two: a helper's record
-        // and its answer's return), the set-up door, which is the
-        // driver's naming a session and the person's own with where to look, and the confirmation's two reads, its ask and
-        // the person's two answers (PERSONDOOR1b), an ask's kind and workflow, the person's (WORKFLOW1e), and an ask's channel: a read, the
-        // person's post (which an agent makes through the connector's tool instead) and an entry's read mark (SESSONE2a), and the list of
-        // the asks held elsewhere (SESSONE2h), and the person's taking back of words a session has not taken (SAIDBACK1a), and the
-        // change stream (FABRIC-EVENT3b), a read of which families moved, and a closure graph's bind and close, the driver's two
-        // posts (FABRIC-CLOSE1a), and its question of what became of a close (FABRIC-CLOSE1u), and the person's reopen of a sealed
-        // submission and their word to go on with the step it held (FABRIC-CLOSE1c), and a brainstorm's two reads and the person's
-        // four presses: its question, its send, its stop and its clear (BRAINSTORM1a3, ONEWAY1t), and the person's bring-forward of a lost take (SYNCMERGE1a),
-        // and the mode an Ask Daoris conversation going on runs under, the driver's (HELPMODE1a2), and the setup a resumed driven record now runs under (AUTONOMY1b2),
-        // and a quest's moves, a read (FLOWCHART1a2), and a word's attempt, the driver's (COWORK1c), and an entry's acknowledgment of a
-        // channel message, the driver's (COWORK1d), and a quest's own kind and workflow, the person's (WORKFLOW1e2), and the downloaded
-        // versions a start of a record was handed, the driver's (KEEP1b), and what waits for confirmation held until it moves, a read
-        // (NOTIFY2j), and a machine's retirement at a workspace's remote, the person's (FABRIC-CLOSE1i2), and a park the driver could
-        // not hand put back, the driver's (SUPERVISOR1a-i), and a finished tree's record and its age, the driver's (KEEPSIZE1b), and the host's protocol, a read (FOUNDATION1 row p),
-        // and one quest's handback, a read (HANDBACK1), and the event journal's rows after a position, a read (FOUNDATION1 l-i), and a session's finished tree's record, a read (KEEPSIZE1),
-        // and the person's move of a held word to the head (LINESTOGETHER1b), and a session's memory changes, a read, and the person's
-        // decision of a memory end and Keep or Drop of an ended session's staged changes (KNOWCENTRAL2d), and an asker's withdrawal of
-        // its own confirmation (ONEWAY1n-i); less the park's answer route, whose job is the say door's alone (ONEWAY1k); and what waits
-        // for one part on its line's channel, a read, and that part's acknowledgment, the driver's (COMMS1k); and one session's record
-        // as the list answers it, and the list's change since a mark, reads (PERF1).
         Assert.Equal(39, Routes.Count(route => route.Class == Open));
-        // The person's post on a line's own channel (COMMS1k); CHANNELJOIN1: an outside agent's read, post and leave, and the person's
-        // admission of it.
+        // An outside agent's read, post and leave, and the person's admission of it.
         Assert.Equal(8, Routes.Count(route => route.Class == Agent));
-        // CHANNELJOIN1c: the listing of a channel's members, which holds the ids only the key may read.
+        // The listing of a channel's members, which holds the ids only the key may read.
         Assert.Equal(32, Routes.Count(route => route.Class == Driver));
         Assert.Equal(38, Routes.Count(route => route.Class == Person));
-        // And a shared host's two channel doors, a feed and a page (SESSONE2d), and its retirement of a machine (FABRIC-CLOSE1i2).
+        // A shared host's two channel doors, a feed and a page, and its retirement of a machine.
         Assert.Equal(10, Routes.Count(route => route.Class == Shared));
     }
 
@@ -249,7 +225,7 @@ public sealed class PersonDoorTableTests
     }
 
     /// <summary>
-    /// STEWARDROLE1a-ii (D209 §5.4): every person's door and form declares what its effect marks on a quest's records, one of the four
+    /// Every person's door and form declares what its effect marks on a quest's records, one of the four
     /// kinds with its evidence or none with why; no other door declares one; a publication, an ask's own added words and a session's
     /// delete never mark; the person's done, answer and words do.
     /// </summary>
@@ -272,7 +248,7 @@ public sealed class PersonDoorTableTests
         Assert.Equal(OwnerMarkKinds.None, PersonDoors.Find("POST", "/api/quests/{id}/set-up-step")!.Marks!.Kind);
         Assert.Equal(OwnerMark.Of(OwnerMarkKinds.Status, "note:quest.person-done"), PersonDoors.Find("POST", "/api/quests/{id}/done")!.Marks);
         Assert.Equal(OwnerMarkKinds.SessionWord, PersonDoors.Find("POST", "/api/sessions/{id}/say")!.Marks!.Kind);
-        // ONEWAY1k (the oneway design §4 M1): a park is answered through the say door alone; its own answer route is gone.
+        // A park is answered through the say door alone; its own answer route is gone.
         Assert.Null(PersonDoors.Find("POST", "/api/sessions/{id}/answer"));
         Assert.Equal("instance:WORK_ABANDON", PersonDoors.Respond.Form!.Marks!.Evidence);
     }
@@ -298,9 +274,9 @@ public sealed class PersonDoorTableTests
             Sorted(PersonDoors.Table.Select(door => (door.Method, door.Pattern))));
     }
 
-    /// <summary>The gate's judgement (design §3.1), row by row, without a host.</summary>
+    /// <summary>The gate's judgement, row by row, without a host.</summary>
     [Theory]
-    // A read is answered whatever was presented.
+    // A read is answered whatever is presented.
     [InlineData("GET", "/api/quests", Presented.None, null)]
     [InlineData("GET", "/api/quests", Presented.Stale, null)]
     // An agent's door answers a keyless call; a key from another start is never taken as an agent's.

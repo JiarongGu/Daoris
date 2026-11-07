@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The intake's floor (D65 §1b, <c>model-decoupling</c>): with no harness at all, an ask is still
+/// The intake's floor: with no harness at all, an ask is still
 /// read against what each repository DECLARED it owns and accepts, and the best overlaps are
 /// PROPOSED — ranked, with the words that matched as the evidence, never published unasked.
 /// </summary>
@@ -15,7 +15,7 @@ public sealed class DeclarationsTierTests
         new(name, adopted, summary, owns, accepts, [], 0, Root: root, Workspace: workspace);
 
     /// <summary>
-    /// A repository registered here with a root and no manifest (D70): askable, and declaring nothing a
+    /// A repository registered here with a root and no manifest: askable, and declaring nothing a
     /// sentence's words could overlap.
     /// </summary>
     private static Registration Unadopted(string name, string workspace = "work") =>
@@ -59,7 +59,7 @@ public sealed class DeclarationsTierTests
 
     /// <summary>
     /// Only a DECLARATION is matched on words: a repository in another circle would be a proposal the
-    /// exchange then refuses — the workspace is the unit of sharing (D48 §4) — and one that has not
+    /// exchange then refuses — the workspace is the unit of sharing — and one that has not
     /// adopted has declared nothing to match. Its summary here is the test: it is never read.
     /// </summary>
     [Fact]
@@ -106,10 +106,10 @@ public sealed class DeclarationsTierTests
     }
 
     /// <summary>
-    /// ASKNAME1: an ask opened by naming its repository proposes THAT repository first, adopted or not,
-    /// with its name as the evidence. On the owner's install the named one was registered and askable
-    /// (D70) but declared nothing, so a different, adopted repository was proposed alone on words — the
-    /// one word that settles the receiver counted for nothing.
+    /// An ask opened by naming its repository proposes THAT repository first, adopted or not,
+    /// with its name as the evidence. A named one that is registered and askable but declares nothing must not
+    /// lose to a different, adopted repository proposed alone on words — the
+    /// one word that settles the receiver counts.
     /// </summary>
     [Fact]
     public void A_repository_the_sentence_names_is_proposed_first_over_a_richer_word_overlap()
@@ -165,9 +165,9 @@ public sealed class DeclarationsTierTests
     }
 
     /// <summary>
-    /// Naming does not cross a circle (D48 §4): a repository of another workspace named in the sentence
+    /// Naming does not cross a circle: a repository of another workspace named in the sentence
     /// would be a proposal the exchange refuses. Nor does it reach one nobody here can ask — no manifest
-    /// and no root (D70) — for the same reason.
+    /// and no root — for the same reason.
     /// </summary>
     [Fact]
     public void A_repository_named_in_another_circle_or_unaskable_is_never_proposed()

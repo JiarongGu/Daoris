@@ -5,7 +5,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// DEDUP9b: a moment is written and read one way in the core, whatever the machine's culture, and an offset
+/// A moment is written and read one way in the core, whatever the machine's culture, and an offset
 /// written is an offset read (not turned local). Stored moments are kept on machines, so the readings the
 /// stores already hold (seconds-only <c>+00:00</c>, seven fraction digits) stay readable.
 /// </summary>

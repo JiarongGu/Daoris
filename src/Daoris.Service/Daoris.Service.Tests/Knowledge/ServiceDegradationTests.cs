@@ -53,9 +53,9 @@ public class ServiceDegradationTests
     }
 
     /// <summary>
-    /// SEM1: a restart over an index already on disk. The rows persist and the vectors do not, and the
-    /// start skipped the refresh because the rows were there — so the semantic half found nothing
-    /// until somebody pressed *rebuild*, while every door still said the tier was semantic.
+    /// A restart over an index already on disk. The rows persist and the vectors do not, and the
+    /// start must not skip the refresh because the rows are there — else the semantic half finds nothing
+    /// until somebody presses *rebuild*, while every door still says the tier is semantic.
     /// </summary>
     [Fact]
     public async Task After_a_restart_over_an_index_on_disk_the_semantic_half_still_answers()
@@ -93,8 +93,8 @@ public class ServiceDegradationTests
     }
 
     /// <summary>
-    /// The reason has to reach the caller. On the first real run the tool reported only "an error
-    /// occurred", for a problem whose fix was a single server flag.
+    /// The reason has to reach the caller, not only "an error
+    /// occurred", for a problem whose fix is a single server flag.
     /// </summary>
     [Fact]
     public async Task The_reason_reaches_the_caller()

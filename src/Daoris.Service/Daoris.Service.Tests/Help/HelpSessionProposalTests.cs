@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The <c>session</c> kind's writer (SESSUX1h2a, D161's SESSUX1h1 note): sessions archived or unarchived by id, or
+/// The <c>session</c> kind's writer: sessions archived or unarchived by id, or
 /// every ended one archived, as the terminal's <c>sessions archive</c> does; and the <c>delete</c> kind's <c>session</c> door.
 /// </summary>
 public sealed class HelpSessionProposalTests : HelpProposalBoxFixture
@@ -97,7 +97,7 @@ public sealed class HelpSessionProposalTests : HelpProposalBoxFixture
         Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 
-    /// <summary>A teammate's session is <c>&lt;origin&gt;/&lt;id&gt;</c> (SYNC4), and §5.2 lets it be archived here.</summary>
+    /// <summary>A teammate's session is <c>&lt;origin&gt;/&lt;id&gt;</c>, and may be archived here.</summary>
     [Fact]
     public void A_teammates_session_id_is_written_as_it_is_listed()
     {

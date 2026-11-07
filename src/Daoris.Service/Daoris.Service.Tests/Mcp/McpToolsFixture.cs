@@ -5,8 +5,8 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// What every MCP door test class stands on (PART6): a family of three repositories, an in-memory quest store and a connector
-/// for the Asker, as its tool classes (PART10a). xunit builds one per test, so a class that derives from it shares the setup
+/// What every MCP door test class stands on: a family of three repositories, an in-memory quest store and a connector
+/// for the Asker, as its tool classes. xunit builds one per test, so a class that derives from it shares the setup
 /// and none of the state.
 /// </summary>
 public abstract class McpToolsFixture : IAsyncLifetime

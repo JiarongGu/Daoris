@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// LINESTOGETHER1b (the review-flow design §2): a word held on a part's record moves to the head in one step, taken off the part and kept at
+/// A word held on a part's record moves to the head in one step, taken off the part and kept at
 /// the head inside one transaction, under the key <c>move:&lt;part&gt;:&lt;word&gt;</c>, so a retry after a lost answer answers moved and
 /// nothing is said twice.
 /// </summary>

@@ -4,7 +4,7 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// KNOWCENTRAL2d (the memory coordinator design §1, §3): the memory tools over Lyntai's engine and the machine's log of record. A connector
+/// The memory tools over Lyntai's engine and the machine's log of record. A connector
 /// stages and reads; a session's commit point releases; the service applies. Only a session and a session continuing it see what it staged.
 /// </summary>
 public sealed class MemoryEngineTests : IAsyncLifetime
@@ -33,7 +33,7 @@ public sealed class MemoryEngineTests : IAsyncLifetime
 
     private MemoryApplier Applier => new(_machine.Memory, _lyntai.Memory);
 
-    /// <summary>🔴 A connector's write and end are kept as staged rows of its session alone; Lyntai's engine is left as it was.</summary>
+    /// <summary>🔴 A connector's write and end are kept as staged rows of its session alone; Lyntai's engine is left unchanged.</summary>
     [Fact]
     public async Task A_connector_writes_only_staged_rows()
     {

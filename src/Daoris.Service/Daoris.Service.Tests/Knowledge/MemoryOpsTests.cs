@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// KNOWCENTRAL2c (the memory coordinator design §1, §3): an operation is staged by its session and released in the transaction that
+/// An operation is staged by its session and released in the transaction that
 /// records the session's commit point, the ledger's advance to <c>completed</c> for a session in the main tree and the post of a finished
 /// tree's record naming a landing for one in a tree; its models are read at that point from the turn lines the driver hands.
 /// </summary>
@@ -119,7 +119,7 @@ public sealed class MemoryOpsTests : IAsyncLifetime
 
     /// <summary>
     /// 🔴 A chat stopped mid-turn and continued: the stopped turn kept no line, the continued one names no start, and the person's ask between
-    /// the row and that turn says the row was not the continued turn's, so it takes no later turn's model.
+    /// the row and that turn says the row is not the continued turn's, so it takes no later turn's model.
     /// </summary>
     [Fact]
     public async Task A_chat_stopped_mid_turn_and_continued_names_unknown() =>

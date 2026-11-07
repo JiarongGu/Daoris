@@ -4,9 +4,9 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// COMMS1a (the comms design §3.3): who said a kept word, read once from its marks by <see cref="Senders.Of"/>. It is held to
+/// Who said a kept word, read once from its marks by <see cref="Senders.Of"/>. It is held to
 /// <c>fixtures/senders.json</c> beside this suite, which the driver's <c>SendersTests</c> and the page's <c>sender.test.ts</c> read as
-/// well, row for row; a reader's old answer that differs is named and decided there.
+/// well, row for row; a reader's answer that differs is named and decided there.
 /// </summary>
 public sealed class SendersTests
 {

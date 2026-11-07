@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// FLOWCHART1a2 (D186; the flowchart design §2.1, §7 traps 13 and 20): a quest's history read as its moves, which its page draws
+/// A quest's history read as its moves, which its page draws
 /// on its flowchart and a trace says. Each move in the order the history replays, never by time; whether the replay applied it,
 /// as the service's replay decides; the status it reached the quest at; and its fields by allow-list, never a payload, a note's
 /// body, the answers or a path.
@@ -95,7 +95,7 @@ public sealed class QuestMovesTests
 
     /// <summary>
     /// The hold a move left the quest under, where it changed it: a departing done holds it for the person's yes, their yes lets it
-    /// go (<c>none</c>), and a move that leaves the hold as it was says nothing of one.
+    /// go (<c>none</c>), and a move that leaves the hold unchanged says nothing of one.
     /// </summary>
     [Fact]
     public void A_move_says_the_hold_it_set_or_let_go_and_nothing_where_it_left_it()
@@ -134,8 +134,8 @@ public sealed class QuestMovesTests
     }
 
     /// <summary>
-    /// The codes an evidence read, a set-up and a verdict answer: what was found, where it was shown, and what the person said.
-    /// A commit read with nothing to find (a submission's commit, FABRIC-CLOSE1c6) is neither found nor missing.
+    /// The codes an evidence read, a set-up and a verdict answer: what is found, where it is shown, and what the person said.
+    /// A commit read with nothing to find (a submission's commit) is neither found nor missing.
     /// </summary>
     [Fact]
     public void An_evidence_read_a_set_up_and_a_verdict_answer_their_codes()

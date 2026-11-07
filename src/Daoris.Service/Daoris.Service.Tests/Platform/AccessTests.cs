@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The startup judgement for a deployment (D47 §3): a host asked to bind beyond loopback without
+/// The startup judgement for a deployment: a host asked to bind beyond loopback without
 /// shared mode's credential model refuses to START — the sibling's fail-safe inversion, where the
 /// insecure configuration is unreachable exactly where it would matter, not merely discouraged.
 /// </summary>
@@ -23,7 +23,7 @@ public sealed class AccessTests
         Assert.Equal(expected, mode);
     }
 
-    /// <summary>An unknown mode errors naming what exists — never a silent fallback (D23's rule).</summary>
+    /// <summary>An unknown mode errors naming what exists — never a silent fallback.</summary>
     [Fact]
     public void An_unknown_mode_is_refused_naming_what_exists()
     {
@@ -67,7 +67,7 @@ public sealed class AccessTests
     }
 
     /// <summary>
-    /// 🔴 REV3: Kestrel's own endpoint configuration OVERRIDES the urls at bind time. With the urls at
+    /// 🔴 Kestrel's own endpoint configuration OVERRIDES the urls at bind time. With the urls at
     /// their loopback default and `Kestrel__Endpoints__Http__Url=http://0.0.0.0:5177` set, the judgement
     /// passed and the host bound every interface with loopback trust.
     /// </summary>
@@ -83,14 +83,14 @@ public sealed class AccessTests
 }
 
 /// <summary>
-/// A shared deployment is a WORKSPACE's deployment (D48 §5): it carries one circle's identity and
+/// A shared deployment is a WORKSPACE's deployment: it carries one circle's identity and
 /// refuses anything that declares another. The alternative — one multi-tenant host holding many
 /// workspaces — puts the sharing boundary inside one store and one key space, which is exactly where
 /// a scoping bug becomes a disclosure.
 /// </summary>
 public sealed class HostWorkspaceTests
 {
-    /// <summary>Silence is `default`, everywhere (D48 §2) — including a host that never named itself.</summary>
+    /// <summary>Silence is `default`, everywhere — including a host that never named itself.</summary>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -135,7 +135,7 @@ public sealed class HostWorkspaceTests
         Assert.Null(workspace);
     }
 
-    /// <summary>Silence takes the host's own circle: the receiving deployment's wiring decides (D48 §2).</summary>
+    /// <summary>Silence takes the host's own circle: the receiving deployment's wiring decides.</summary>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -166,7 +166,7 @@ public sealed class HostWorkspaceTests
     }
 
     /// <summary>
-    /// A re-wire that names no workspace is refused, on either kind of host (REV3 service F12).
+    /// A re-wire that names no workspace is refused, on either kind of host.
     /// </summary>
     /// <remarks>
     /// Silence is right for a registration: the receiving host's wiring decides. For a re-wire,

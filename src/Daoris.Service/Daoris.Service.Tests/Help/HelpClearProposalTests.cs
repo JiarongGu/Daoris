@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The <c>clear</c> kind's writer (HIST1f-a, D153): a quest's, an ask's or a workspace's finished history cleared, naming
+/// The <c>clear</c> kind's writer: a quest's, an ask's or a workspace's finished history cleared, naming
 /// exactly one. What would be cleared and what kept is the driver's to judge.
 /// </summary>
 public sealed class HelpClearProposalTests : HelpProposalBoxFixture

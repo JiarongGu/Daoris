@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// Session records both ways, by cursor (SYNC4): a machine's own records go up when they change, not
+/// Session records both ways, by cursor: a machine's own records go up when they change, not
 /// every tick; the team's come down read-only, keyed `origin/id`; nothing that stays home — transcript,
 /// tree, profile — has a field on the wire; and a teammate's session is never this machine's lock.
 /// </summary>
@@ -54,7 +54,7 @@ public sealed class SessionSyncTests : IAsyncLifetime
         File.WriteAllText(Path.Combine(dir, "daoris.json"), manifest);
     }
 
-    /// <summary>Each machine's quests, on its own connection: what holds the quests it forgot (HIST1b).</summary>
+    /// <summary>Each machine's quests, on its own connection: what holds the quests it forgot.</summary>
     private readonly Dictionary<SessionStore, QuestStore> _quests = [];
 
     private async Task<SessionStore> OpenAsync(SqliteConnection? connection = null)
@@ -106,8 +106,8 @@ public sealed class SessionSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// SESSUX1f (D126 §5.4): a record that went up is marked pushed, so a delete here can say the team's copy would stay;
-    /// one of a repository that has not joined stayed home and is not.
+    /// A record that goes up is marked pushed, so a delete here can say the team's copy would stay;
+    /// one of a repository that has not joined stays home and is not.
     /// </summary>
     [Fact]
     public async Task A_record_that_went_up_is_marked_pushed_and_one_that_stayed_home_is_not()
@@ -121,7 +121,7 @@ public sealed class SessionSyncTests : IAsyncLifetime
         Assert.False((await _a.FindAsync(home.Id))!.Pushed);
     }
 
-    /// <summary>Silence means local (D47 §4): a record of a repository that has not joined never leaves.</summary>
+    /// <summary>Silence means local: a record of a repository that has not joined never leaves.</summary>
     [Fact]
     public async Task A_record_of_a_repository_that_has_not_joined_stays_home()
     {
@@ -134,7 +134,7 @@ public sealed class SessionSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 ASKSCOPE1a (D158's ASKSCOPE1 note, point 2): an Ask Daoris record stays home whatever its workspace. It is skipped by
+    /// 🔴 An Ask Daoris record stays home whatever its workspace. It is skipped by
     /// its kind, not by having no workspace (it has one now) nor by its repository never joining: a named workspace's help
     /// record is not pushed beside the joined repository's chat of the same workspace, and the rule refuses it even where its
     /// name were joined.
@@ -160,7 +160,7 @@ public sealed class SessionSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 The strip, on the wire (D47 §4, D49 §4, D51): a record made with a transcript, a profile and a
+    /// 🔴 The strip, on the wire: a record made with a transcript, a profile and a
     /// tree crosses with none of the three — there is no field for any of them.
     /// </summary>
     [Fact]
@@ -199,7 +199,7 @@ public sealed class SessionSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 REV3: the wire had no FIELD for a tree or a profile, and the driver wrote both into the NOTE —
+    /// 🔴 The wire has no FIELD for a tree or a profile, and a driver may write both into the NOTE —
     /// "opened a session tree at C:/…", "its provider refused the `claude-code` account `jane`", an
     /// exception's own text. A note crosses; what is machine-local in it does not.
     /// </summary>
@@ -231,7 +231,7 @@ public sealed class SessionSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// LANG1a (D142 point 2): the note's parts cross with it, every string in them cleaned as the note is, so a teammate's
+    /// The note's parts cross with it, every string in them cleaned as the note is, so a teammate's
     /// page words the lines in its own language and still learns no path and no account.
     /// </summary>
     [Fact]
@@ -263,7 +263,7 @@ public sealed class SessionSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Every machine sees the team's (SYNC4): b's record comes down to a keyed `origin/id`, carrying its
+    /// Every machine sees the team's: b's record comes down to a keyed `origin/id`, carrying its
     /// origin and nothing machine-local — and a's own, which the remote also holds, never comes back.
     /// </summary>
     [Fact]
@@ -291,7 +291,7 @@ public sealed class SessionSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// TOOL4c (D125 §5.2): a limit names no account, so it travels, up with this machine's own record and
+    /// A limit names no account, so it travels, up with this machine's own record and
     /// down to a teammate's machine. The account the session ran as still stays home.
     /// </summary>
     [Fact]
@@ -332,7 +332,7 @@ public sealed class SessionSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 Never this machine's lock (D47 §6): a teammate's WORKING session on a repository both machines
+    /// 🔴 Never this machine's lock: a teammate's WORKING session on a repository both machines
     /// have holds a tree on their machine, not here — the one-session-per-tree check does not see it.
     /// </summary>
     [Fact]
@@ -351,7 +351,7 @@ public sealed class SessionSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// MSG1a (D137 §2.3): a record that went on with the person's words travels as a move does. Its revision after going
+    /// A record that goes on with the person's words travels as a move does. Its revision after going
     /// on goes up with the next push; the remote takes it, since its feed judges no state and a record leaving an ended
     /// state is not refused; and a teammate sees it go from ended back to working, its note saying when. The words never
     /// travel, and keeping them alone pushes nothing.
@@ -392,9 +392,9 @@ public sealed class SessionSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 HIST1a (D153 point 4, H2): a push sends what was written past its cursor, so a revision handed out twice is one
-    /// the cursor already passed. Here D126's delete takes the newest record, a conversation that stayed home but that a
-    /// pass examined, its close the newest write, and the conversation opened after it still goes up, though it has
+    /// 🔴 A push sends what is written past its cursor, so a revision handed out twice is one
+    /// the cursor already passed. Here a delete takes the newest record, a conversation that stays home but that a
+    /// pass examines, its close the newest write, and the conversation opened after it still goes up, though it has
     /// written less than the one deleted had.
     /// </summary>
     [Fact]
@@ -478,7 +478,7 @@ public sealed class SessionSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 SESSONE1a (D167 point 3): the entry's key rides the wire. A record from before it, which holds none, goes up with the
+    /// 🔴 The entry's key rides the wire. A record from before it, which holds none, goes up with the
     /// key derived by the rule from the quest it serves, and comes down to a teammate carrying it — and the sender's own record
     /// is not rewritten.
     /// </summary>
@@ -497,7 +497,7 @@ public sealed class SessionSyncTests : IAsyncLifetime
         Assert.Null((await _a.FindAsync(old.Id))!.Entry);
     }
 
-    /// <summary>🔴 CHATTAKE1: the quest a chat took goes up with its record and comes down to a teammate; a record without it reads as before.</summary>
+    /// <summary>🔴 The quest a chat took goes up with its record and comes down to a teammate; a record without it reads as before.</summary>
     [Fact]
     public async Task The_quest_a_chat_took_goes_up_and_comes_down_to_a_teammate()
     {
@@ -523,7 +523,7 @@ public sealed class SessionSyncTests : IAsyncLifetime
         Assert.Equal("q9", SessionWire.ReadPage(page)!.Records.Single().TookQuest);
     }
 
-    /// <summary>A record the key was written for goes up as stored, and the wire's reader hands it back with the record.</summary>
+    /// <summary>A record the key is written for goes up as stored, and the wire's reader hands it back with the record.</summary>
     [Fact]
     public void The_wires_feed_and_page_carry_the_entry_and_a_feed_without_it_reads_as_before()
     {

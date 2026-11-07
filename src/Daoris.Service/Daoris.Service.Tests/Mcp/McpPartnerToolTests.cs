@@ -4,7 +4,7 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// COAGENT1b (D199 point 8; the co-agent design §2.3 step 8): the connector's `partner_answer`, for the partner the driver started for a
+/// The connector's `partner_answer`, for the partner the driver started for a
 /// piece, over the ledger's record: the record's `piece` is what the box finds the piece by, and a working session or a helper is refused.
 /// </summary>
 public sealed class McpPartnerToolTests : McpToolsFixture

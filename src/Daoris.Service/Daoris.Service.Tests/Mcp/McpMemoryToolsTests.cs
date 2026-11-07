@@ -11,7 +11,7 @@ using ModelContextProtocol.Server;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// KNOWCENTRAL2b (the memory coordinator design §2): the memory tools over a stand-in engine. Every door that takes or yields a reference
+/// The memory tools over a stand-in engine. Every door that takes or yields a reference
 /// answers from the repositories the registry places in the caller's workspace, read again at each call: a named session's from its
 /// record, an unnamed caller's from where it runs, and none resolved refuses. A read changes nothing, and until the engine lands no tool
 /// keeps anything.
@@ -63,7 +63,7 @@ public sealed class McpMemoryToolsTests : McpToolsFixture
 
     /// <summary>
     /// 🔴 Another workspace's reference is refused at every door, and never yielded by a search, for a build, a chat, a helper, Ask Daoris
-    /// bound to its workspace and an unnamed caller; the stand-in is left as it was.
+    /// bound to its workspace and an unnamed caller; the stand-in is left unchanged.
     /// </summary>
     [Theory]
     [InlineData("build")]
@@ -143,7 +143,7 @@ public sealed class McpMemoryToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// 🔴 A search, a read and an expansion leave every effect the stand-in counts as it was: the engine is opened with no reinforcement,
+    /// 🔴 A search, a read and an expansion leave every effect the stand-in counts unchanged: the engine is opened with no reinforcement,
     /// so a read touches, co-activates and logs nothing of the owner's.
     /// </summary>
     [Fact]
@@ -167,7 +167,7 @@ public sealed class McpMemoryToolsTests : McpToolsFixture
 
     /// <summary>
     /// 🔴 Where memory is off every tool says so and keeps nothing; where it is on, a write and an end are kept staged under the session
-    /// (KNOWCENTRAL2d) and the engine is left as it was.
+    /// and the engine is left unchanged.
     /// </summary>
     [Fact]
     public async Task Where_memory_is_off_each_tool_says_so_and_where_on_a_change_is_only_staged()
@@ -271,7 +271,7 @@ public sealed class McpMemoryToolsTests : McpToolsFixture
 
     /// <summary>
     /// 🔴 Through the connector's lineage guard: a build's subagent is served the memory reads, answered from the stand-in, and refused the
-    /// write, the end and the proposal before they run; the stand-in is left as it was.
+    /// write, the end and the proposal before they run; the stand-in is left unchanged.
     /// </summary>
     [Fact]
     public async Task A_child_is_served_the_memory_reads_alone()
@@ -305,7 +305,7 @@ public sealed class McpMemoryToolsTests : McpToolsFixture
     }
 
     /// <summary>
-    /// 🔴 Over Lyntai's engine (KNOWCENTRAL2d): a search, a read and an expansion, by a build's own call and by its subagent's, leave each
+    /// 🔴 Over Lyntai's engine: a search, a read and an expansion, by a build's own call and by its subagent's, leave each
     /// entry's decay state and revision, its links and the review rows as they were. A reinforcing recall would move them, which the
     /// reading sees.
     /// </summary>

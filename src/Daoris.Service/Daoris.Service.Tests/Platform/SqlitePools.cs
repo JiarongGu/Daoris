@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// How a test lets go of its own SQLite file (FLAKE3). A store's closed connection goes back to its pool, and the pool keeps
+/// How a test lets go of its own SQLite file. A store's closed connection goes back to its pool, and the pool keeps
 /// the file open, so a test clears that pool before it deletes the file: the pool of the database it names, never every pool.
 /// </summary>
 /// <remarks>

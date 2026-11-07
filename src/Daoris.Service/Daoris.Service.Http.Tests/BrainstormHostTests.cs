@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// BRAINSTORM1a3 (D176 points 1, 2 and 8): the local host's brainstorm door, which a terminal's <c>daoris brainstorm</c> reaches. It
+/// The local host's brainstorm door, which a terminal's <c>daoris brainstorm</c> reaches. It
 /// writes the request the driver's look takes under the home, and answers show, send, clear and list from the home's records. It
 /// is this machine's alone: answered to a caller on this machine only, as a second opinion's doors are.
 /// </summary>
@@ -77,7 +77,7 @@ public sealed class BrainstormHostTests(LocalHost host) : IClassFixture<LocalHos
         Assert.True(Directory.Exists(Folder(id)));
     }
 
-    /// <summary>BRAINSTORM-RESERVED1: a clear named `meetings` is refused, and the meetings' records stay.</summary>
+    /// <summary>A clear named `meetings` is refused, and the meetings' records stay.</summary>
     [Fact]
     public async Task Clearing_the_reserved_id_meetings_is_refused_and_every_meeting_stays()
     {
@@ -92,7 +92,7 @@ public sealed class BrainstormHostTests(LocalHost host) : IClassFixture<LocalHos
         Assert.True(File.Exists(Path.Combine(meeting, "request.json")));
     }
 
-    /// <summary>ONEWAY1t: the caller's own id and named sources reach the desk, and a stop is its own door; the same id again is the same brainstorm.</summary>
+    /// <summary>The caller's own id and named sources reach the desk, and a stop is its own door; the same id again is the same brainstorm.</summary>
     [Fact]
     public async Task An_ask_with_an_id_and_sources_is_idempotent_and_a_stop_writes_its_file()
     {
@@ -118,7 +118,7 @@ public sealed class BrainstormHostTests(LocalHost host) : IClassFixture<LocalHos
         Assert.True(File.Exists(Path.Combine(Folder("host-daily"), "stop.json")));
     }
 
-    /// <summary>ONEWAY1t: `kind=meeting` reaches the meeting's records, apart from the brainstorms', through the same doors.</summary>
+    /// <summary>`kind=meeting` reaches the meeting's records, apart from the brainstorms', through the same doors.</summary>
     [Fact]
     public async Task A_meeting_is_asked_sent_by_round_stopped_and_cleared_through_the_same_doors()
     {

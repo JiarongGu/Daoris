@@ -5,12 +5,10 @@ using Microsoft.Extensions.Hosting;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// LOG2a: the first real machine log held a host <c>app.started</c> for every start and no
-/// <c>app.stopped</c> at all, because the shell ended the host it started by killing it. The shell now
-/// starts it with its standard input redirected and <see cref="InputEndStop.Variable"/> set, and closes
+/// The shell starts the host with its standard input redirected and <see cref="InputEndStop.Variable"/> set, and closes
 /// that input to stop it: the host reads its input to the end, reading nothing from it, and then stops
 /// as it would on Ctrl+C, so its lifetime runs and the log says so. A host nobody asked (a terminal's) is
-/// as it was.
+/// unchanged.
 /// </summary>
 public sealed class InputEndStopTests : IDisposable
 {
@@ -50,10 +48,10 @@ public sealed class InputEndStopTests : IDisposable
     }
 
     /// <summary>
-    /// FLAKE2: the one wait in a host's stop that runs long by design is the framework's drain of the requests in flight, 30
+    /// The one wait in a host's stop that runs long by design is the framework's drain of the requests in flight, 30
     /// seconds by default, six times the five the shell waits before it kills the host it started (<c>HostSupervisor.StopWithin</c>)
     /// and twice what a test waits. A host the shell started bounds it under the shell's wait; one started from a terminal
-    /// keeps the framework's. The shell's tests hold its five (TWINSTOP1, <c>HostSupervisorTests</c>).
+    /// keeps the framework's. The shell's tests hold its five (<c>HostSupervisorTests</c>).
     /// </summary>
     [Theory]
     [InlineData("1", true)]
@@ -164,7 +162,7 @@ public sealed class InputEndStopTests : IDisposable
 
     /// <summary>
     /// The same host from a terminal, not asked: its input closing is nothing to it. The stop that misses says so, which is
-    /// what a stop that missed its bound under load says of where it sat (FLAKE2).
+    /// what a stop that missed its bound under load says of where it sat.
     /// </summary>
     [Fact]
     public async Task The_real_host_not_asked_keeps_serving_when_its_input_closes()
@@ -185,7 +183,7 @@ public sealed class InputEndStopTests : IDisposable
     private Task<RealHost> StartHostAsync(bool asked) =>
         RealHost.StartAsync(_scratch, new Dictionary<string, string?> { [InputEndStop.Variable] = asked ? "1" : null });
 
-    /// <summary>What the host's lifetime is asked: how many times it was told to stop.</summary>
+    /// <summary>What the host's lifetime is asked: how many times it is told to stop.</summary>
     private sealed class Lifetime : IHostApplicationLifetime
     {
         private readonly CancellationTokenSource _stopping = new();

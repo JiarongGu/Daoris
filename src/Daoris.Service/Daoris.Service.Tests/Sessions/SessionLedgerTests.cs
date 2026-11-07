@@ -9,7 +9,7 @@ namespace Daoris.Service.Tests;
 /// drift into a session that is finished through one door and still active through the other.
 ///
 /// The deeper rule under test: the ledger never writes QUEST state. The spawned session claims its
-/// own quest through its own connector (D46), so driven and outside work stay indistinguishable at
+/// own quest through its own connector, so driven and outside work stay indistinguishable at
 /// the quest layer — the ledger only guards the records the driver acts on.
 /// </summary>
 public sealed class SessionLedgerTests : IAsyncLifetime
@@ -31,12 +31,12 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         _sessions = await SessionStore.OpenAsync(_connection);
 
         // A registry too, because a chat names its repository directly rather than inheriting it from
-        // a quest (D49 §3) — and a repository nobody registered has no working tree to talk in.
+        // a quest — and a repository nobody registered has no working tree to talk in.
         var store = new InMemoryKnowledgeStore();
         var service = new KnowledgeService(
             store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource(),
             DisclosurePolicy.LocalOnly, registry: new Registry());
-        // With a ROOT, because since D51 the lock keys on the tree a session runs in and an open that
+        // With a ROOT, because the lock keys on the tree a session runs in and an open that
         // names none resolves the registration's — so the fixture has to have one for that path to be
         // exercised at all.
         await service.RegisterAsync(
@@ -51,7 +51,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         foreach (var machine in _machines) await machine.DisposeAsync();
     }
 
-    /// <summary>Another machine's store, or a remote's: each its own connection, so each is a machine of its own (D68 §2).</summary>
+    /// <summary>Another machine's store, or a remote's: each its own connection, so each is a machine of its own.</summary>
     private readonly List<SqliteConnection> _machines = [];
 
     private async Task<QuestStore> MachineAsync()
@@ -62,7 +62,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         return await QuestStore.OpenAsync(connection);
     }
 
-    /// <summary>One machine's pass against the remote, the real one the driver runs (D68 §3).</summary>
+    /// <summary>One machine's pass against the remote, the real one the driver runs.</summary>
     private static Task<QuestSyncReport> SyncAsync(QuestStore machine, QuestStore remote) =>
         QuestSync.RunAsync(machine, _ => true, new StoreRemote(remote), Workspaces.Default);
 
@@ -83,7 +83,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// TERMTRUST1a (D201 point 2, the terminal-trust design §2.1 and §8 case 7): a finish under the standing confirmation is moved only
+    /// A finish under the standing confirmation is moved only
     /// from <c>awaiting-person</c>, the expected state compared inside the store's step, so a session the driver resumed between the
     /// verb's read and the move is not finished; an advance naming no expected state moves as before.
     /// </summary>
@@ -131,7 +131,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// MIXAGENT1a-iii (D163 point 4): both opens record the session the new one continues, why and who asked, as the driver says
+    /// Both opens record the session the new one continues, why and who asked, as the driver says
     /// them; an open that says none records none.
     /// </summary>
     [Fact]
@@ -151,7 +151,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// AUTONOMY1a (D184 point 1): a driven open records the access setup its start resolved, as the driver says it. A setup that is not
+    /// A driven open records the access setup its start resolved, as the driver says it. A setup that is not
     /// a short map of words is the caller's mistake, refused before any record opens.
     /// </summary>
     [Fact]
@@ -172,7 +172,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// AUTONOMY1b2 (D184 point 1): a resumed driven record keeps the setup it now runs under, on this machine's driven records alone; a
+    /// A resumed driven record keeps the setup it now runs under, on this machine's driven records alone; a
     /// mirror, any other kind, an unknown id or a setup that is no short map of words moves nothing.
     /// </summary>
     [Fact]
@@ -198,8 +198,8 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// KEEP1b (D195 point 6; the cleanup design §3.5, Fable F2.5): a record of this machine's keeps the downloaded versions each start of it
-    /// was handed, a go-on's added to the first's, of any kind; one told none reads none, a record from before. Its state, its last move and
+    /// A record of this machine's keeps the downloaded versions each start of it
+    /// is handed, a go-on's added to the first's, of any kind; one told none reads none, a record from before. Its state, its last move and
     /// its revision stay. A version that is no <c>&lt;agent|tool&gt;/&lt;name&gt;/&lt;version&gt;</c>, none, or too many moves nothing.
     /// </summary>
     [Fact]
@@ -266,7 +266,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A resume (D79): a taken quest whose taker waited on a question may take a session again once the
+    /// A resume: a taken quest whose taker waited on a question may take a session again once the
     /// question is answered — and not while it is still asked, when the quest is waiting, not stuck.
     /// </summary>
     [Fact]
@@ -288,8 +288,8 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// D80, found on FG5's second run: the session took its quest, worked half an hour, and the timeout
-    /// killed it. The quest stayed taken with its work in the tree and nothing would ever start on it.
+    /// A session takes its quest, works half an hour, and the timeout kills it. The quest stays
+    /// taken with its work in the tree and nothing would ever start on it.
     /// A taken quest whose last session HERE failed is this machine's to carry on.
     /// </summary>
     [Fact]
@@ -309,8 +309,8 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// D104, found running the owner's ticket: the orphan sweep and a shutdown both ended the record
-    /// `stopped`, and a take ended so sat taken with nothing to move it. A stop that says it was
+    /// The orphan sweep and a shutdown both end the record
+    /// `stopped`, and a take ended so sits taken with nothing to move it. A stop that says it is
     /// interrupted — not the person's — is carried on like a failure.
     /// </summary>
     [Fact]
@@ -330,10 +330,10 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// SESSUX1b2 (D126 §3.3): the person's stop holds its quest in the driver until Try again releases it,
+    /// The person's stop holds its quest in the driver until Try again releases it,
     /// and a released take is carried on in the stop's tree, so the ledger opens it. The take is this
     /// machine's when a session here took it: the one stopped, or the one before it whose take the stopped
-    /// one was carrying on, since a carry-on takes nothing itself.
+    /// one is carrying on, since a carry-on takes nothing itself.
     /// </summary>
     [Theory]
     [InlineData(false)]
@@ -417,7 +417,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1c26 (D173's CLOSE1c2 note): the person's reopen of the work a step grew from stops the step's session, which
+    /// The person's reopen of the work a step grew from stops the step's session, which
     /// ends <c>completed</c> with its quest still taken, saying why by its note's code alone (<c>ended.source-reopened</c>), and
     /// their go-on carries it on in its tree (the driver's <c>Planner.CarriesOn</c>). The ledger opens that carry-on. A completed
     /// record with no answer and no such code finished its work, and nothing carries it on.
@@ -445,7 +445,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(carried ? SessionOpenRefusal.None : SessionOpenRefusal.QuestNotOpen, opened.Refusal);
     }
 
-    // ——— CARRY2 (D80, D126's SESSUX1b2 note): a carry-on goes on with this machine's take, so it asks whose the take is.
+    // ——— A carry-on goes on with this machine's take, so it asks whose the take is.
 
     /// <summary>
     /// 🔴 A session here that failed before its take (an account's limit at its first turn) leaves no take here. Taken
@@ -494,7 +494,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
 
     /// <summary>
     /// 🔴 Taken on this machine after its last session on the quest ended, the take is not that session's: a chat took
-    /// it through its own connector (CHATTAKE1), whose record names no quest, or work outside Daoris did, which leaves no
+    /// it through its own connector, whose record names no quest, or work outside Daoris did, which leaves no
     /// record. Either has the quest, and nothing carries the session on over it.
     /// </summary>
     [Theory]
@@ -520,7 +520,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// CARRY2 asks whose the take is, and this machine's is still carried on: taken by its session and confirmed by the
+    /// A carry-on asks whose the take is, and this machine's is still carried on: taken by its session and confirmed by the
     /// remote, beside a teammate's record on the quest that stood down because of it. A teammate's record is no take.
     /// </summary>
     [Fact]
@@ -544,9 +544,9 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// CARRY2 reads whose take stands, so a take this machine made offline and lost to another machine's (D68 §5) is theirs
+    /// A carry-on reads whose take stands, so a take this machine made offline and lost to another machine's is theirs
     /// too: neither a cut-off of the session that took it nor the person's stop of it, released, is carried on over the
-    /// winner's. The stop's case is the one D126's SESSUX1b2 note left open.
+    /// winner's.
     /// </summary>
     [Theory]
     [InlineData("failed")]
@@ -576,11 +576,11 @@ public sealed class SessionLedgerTests : IAsyncLifetime
             refused.Message);
     }
 
-    // ——— SYNCMERGE1b0 (D178 point 3): a lost take's session goes on once the person brings its work forward.
+    // ——— A lost take's session goes on once the person brings its work forward.
 
     /// <summary>
     /// A quest this machine's take lost, as a fetch leaves one: published by another machine, and this machine's take kept on the open
-    /// step as a conflict. Its last session here stood down when the take lost, as the driver ends one (D68 §5).
+    /// step as a conflict. Its last session here stood down when the take lost, as the driver ends one.
     /// </summary>
     private async Task<(Quest Quest, Session StoodDown, QuestOperationRef Conflict)> LostTakeAsync()
     {
@@ -601,9 +601,9 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 Its take lost, a session here stood down, and the person brought the work forward (D178 point 3): the quest is taken here again
+    /// 🔴 Its take lost, a session here stood down, and the person brought the work forward: the quest is taken here again
     /// by a fresh take, which settles the conflict. The stood-down session is carried on over that take, which is this machine's own for it
-    /// though no session here marked it and it was made after the session ended, whether or not a remote confirmed it. Once: the session
+    /// though no session here marked it and it is made after the session ends, whether or not a remote confirmed it. Once: the session
     /// carried on stands down in its turn, and the same take carries nothing on again.
     /// </summary>
     [Fact]
@@ -642,7 +642,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 A bring-forward that lost again (D178 point 3): another machine's take reached the remote before the fresh take, which the
+    /// 🔴 A bring-forward that lost again: another machine's take reached the remote before the fresh take, which the
     /// rebase keeps as a conflict, and its mark goes with it. Nothing goes on: the quest is the other machine's.
     /// </summary>
     [Fact]
@@ -658,7 +658,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Interrupted says whose decision a STOP was, so only a stop carries it: a move anywhere else asking
+    /// Interrupted says whose decision a STOP is, so only a stop carries it: a move anywhere else asking
     /// for it is refused, and the record does not move.
     /// </summary>
     [Theory]
@@ -680,8 +680,8 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// TOOL4c (D125 §5.2): the driver says a failure was an account's limit, and the record keeps it. The
-    /// ledger still opens the carry-on (D80); waiting for the reset is the driver's, at spawn (TOOL4d).
+    /// The driver says a failure is an account's limit, and the record keeps it. The
+    /// ledger still opens the carry-on; waiting for the reset is the driver's, at spawn.
     /// </summary>
     [Fact]
     public async Task A_failure_may_say_it_was_an_accounts_limit_and_the_record_keeps_it()
@@ -743,7 +743,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// STANDDOWN2: only a running session's own quest is marked as its take — a different quest, or a
+    /// Only a running session's own quest is marked as its take — a different quest, or a
     /// session that has already ended, changes nothing.
     /// </summary>
     [Fact]
@@ -766,7 +766,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// CHATTAKE1 (D126 §5.4): a chat has no quest of its own, so whatever quest it takes through its own connector is the
+    /// A chat has no quest of its own, so whatever quest it takes through its own connector is the
     /// work it served, and the take is written on its record as a driven session's is. Only while it runs, and only this
     /// machine's record: an ended chat and a teammate's change nothing.
     /// </summary>
@@ -789,7 +789,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.False(await _ledger.MarkTookAsync("bob-laptop/ab12cd34", quest.Id));
     }
 
-    /// <summary>A driven session that took its quest and parked to ask the person, as the driver parks one (STANDDOWN2).</summary>
+    /// <summary>A driven session that took its quest and parked to ask the person, as the driver parks one.</summary>
     private async Task<(Quest Quest, Session Parked)> Parked(string? asked = "needs a merge, a sign-in and a go-ahead.")
     {
         var quest = await Publish();
@@ -800,9 +800,9 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// ANSWER1b (D131 §5), through the say door alone since ONEWAY1k: the person's answer keeps the park. Its record stays
+    /// Through the say door alone, the person's answer keeps the park. Its record stays
     /// `awaiting-person` with their words kept and said on its note beneath what it asked, and the say replies with it, so the
-    /// driver's next look goes on with this same record and its conversation (D131 §1). Nothing new opens on its quest meanwhile:
+    /// driver's next look goes on with this same record and its conversation. Nothing new opens on its quest meanwhile:
     /// the park still holds it. A running record is told its words reach it through its driver.
     /// </summary>
     [Fact]
@@ -831,8 +831,8 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// ONEWAY1k: a park that said nothing is noted as having asked beneath its answer; an answer with no words is no answer, refused by the
-    /// say door as any say with none, where the retired answer door kept "carry on.".
+    /// A park that said nothing is noted as having asked beneath its answer; an answer with no words is no answer, refused by the
+    /// say door as any say with none.
     /// </summary>
     [Fact]
     public async Task An_answer_beneath_a_park_that_said_nothing_and_none_without_words()
@@ -848,7 +848,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// MSG1a (D137 §6, amending ANSWER1b): a second answer before the driver looks joins the first, on the record and on
+    /// A second answer before the driver looks joins the first, on the record and on
     /// its note, each its own word with its own id, so the session goes on with everything the person said, in order,
     /// and reads a correction as a correction.
     /// </summary>
@@ -871,10 +871,10 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// ANSWER1b (D131 §5): a move into `awaiting-person` clears the answer, so a session that goes on and parks again
+    /// A move into `awaiting-person` clears the answer, so a session that goes on and parks again
     /// asks anew and is never taken up with the words it already heard. A move to working keeps it while the answer is
-    /// worked on, and so does a move to `completed`, which the driver's fallback makes (D131 §2): the quest is then
-    /// carried on in a new session, handed the answer, as STANDDOWN2's carry-on always was.
+    /// worked on, and so does a move to `completed`, which the driver's fallback makes: the quest is then
+    /// carried on in a new session, handed the answer, as any carry-on is.
     /// </summary>
     [Fact]
     public async Task A_new_park_clears_the_answer_and_an_ending_keeps_it_for_the_carry_on()
@@ -900,7 +900,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(SessionOpenRefusal.None, (await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(6))).Refusal);
     }
 
-    /// <summary>ANSWER1b: once the driver has taken the park up, a word to its record is refused, naming the state it is in.</summary>
+    /// <summary>Once the driver has taken the park up, a word to its record is refused, naming the state it is in.</summary>
     [Fact]
     public async Task An_answer_to_a_park_already_going_on_is_refused()
     {
@@ -915,7 +915,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(["Port 8080."], (await _sessions.FindAsync(parked.Id))!.Said.Select(word => word.Text));
     }
 
-    // ——— MSG1a (D137 §2.3, §2.4): the person's words wait on the record, and an ended record goes on with them.
+    // ——— The person's words wait on the record, and an ended record goes on with them.
 
     /// <summary>A driven session on a quest of its own, brought to working and then ended as <paramref name="ending"/>.</summary>
     private async Task<Session> Ended(string ending, string note = "it ended so.", bool interrupted = false, bool limit = false)
@@ -932,8 +932,8 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         (await _sessions.OwnChangedSinceAsync(0, Workspaces.Default)).Single(changed => changed.Session.Id == id).Revision;
 
     /// <summary>
-    /// MSG1a (D137 §2.4): words said to an ended session wait on its record, in order, each with its own id, when, its
-    /// files' names (never a path) and that it was said after the record ended. The record does not move: the driver
+    /// Words said to an ended session wait on its record, in order, each with its own id, when, its
+    /// files' names (never a path) and that it is said after the record ends. The record does not move: the driver
     /// takes it up. Nothing that travels changes, since the words are this machine's alone, so no revision is written.
     /// Every ended state but a stand-down takes them.
     /// </summary>
@@ -966,7 +966,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// MSG1a (D137 §2.3): the ledger's one move out of an ended state is to working, with the person's words waiting. The
+    /// The ledger's one move out of an ended state is to working, with the person's words waiting. The
     /// record's history stays: its note keeps what ended it and gains when it went on, and its evidence stays. It forgives
     /// what ended it, so a stop the sweep made or a failure a limit made never reads as the new run's ending. The words
     /// stay until the run takes them.
@@ -996,10 +996,10 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// XAGENT1e2 (D155's XAGENT1e note, D137 §2.4): what an ended record went on with is read from its waiting words' <c>by</c>.
-    /// The person's words alone keep the ledger's coded line as it was; another agent's findings alone are never "your words",
+    /// What an ended record went on with is read from its waiting words' <c>by</c>.
+    /// The person's words alone keep the ledger's coded line as it is; another agent's findings alone are never "your words",
     /// since the person said nothing; both say both, as the driver's opening line does. Each is a coded line with its moment
-    /// since the page words them (XAGENT1g), so a reader in either language reads it in theirs.
+    /// since the page words them, so a reader in either language reads it in theirs.
     /// </summary>
     [Theory]
     [InlineData(true, false, "Went on with your words at 2026-09-19 10:30 UTC.", "ledger.went-on", "the person's words")]
@@ -1031,7 +1031,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// MIXAGENT2a-ii (D163 point 4): a helper's answer waiting among the words is the helper's, not findings and never "your
+    /// A helper's answer waiting among the words is the helper's, not findings and never "your
     /// words": alone it has its own coded line, beside the person's words it says both.
     /// </summary>
     [Theory]
@@ -1054,7 +1054,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(code, parts.RootElement[1].GetProperty("code").GetString());
     }
 
-    /// <summary>MSG1a: a note the driver passes with the reopen follows the line that says it went on, so nothing is lost.</summary>
+    /// <summary>A note the driver passes with the reopen follows the line that says it went on, so nothing is lost.</summary>
     [Fact]
     public async Task A_note_passed_with_the_reopen_follows_the_line_that_says_it_went_on()
     {
@@ -1067,7 +1067,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// MSG1a: an ended chat goes on too — a conversation the person writes to again — and says so in a conversation's
+    /// An ended chat goes on too — a conversation the person writes to again — and says so in a conversation's
     /// words, since a chat is taken up by its runner rather than the driver's look.
     /// </summary>
     [Fact]
@@ -1084,7 +1084,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// MSG1a: a finished record with no words waiting still does not move, and with words waiting it moves only to
+    /// A finished record with no words waiting still does not move, and with words waiting it moves only to
     /// working: the one way out of an ended state is going on with them.
     /// </summary>
     [Fact]
@@ -1105,14 +1105,14 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(SessionState.Completed, (await _sessions.FindAsync(ended.Id))!.State);
     }
 
-    /// <summary>The driver's line for a session that ended its turn on its own open helper ask (HELPERWAIT1), by its code.</summary>
+    /// <summary>The driver's line for a session that ended its turn on its own open helper ask, by its code.</summary>
     private const string AwaitsHelperParts = """[{"code":"ended.awaits-helper","values":{},"text":"It asked a helper."}]""";
 
     private const string BackParts =
         """[{"code":"helper.refused-by","values":{"agent":"codex-acp","why":"no-answer"},"text":"Helper codex-acp did not answer."},"""
         + """{"code":"ended.parked-transcript","values":{},"text":"It stopped to ask you."}]""";
 
-    /// <summary>A session that took its quest and ended waiting on its own helper, as the driver concludes one (HELPERWAIT1).</summary>
+    /// <summary>A session that took its quest and ended waiting on its own helper, as the driver concludes one.</summary>
     private async Task<Session> WaitingOnHelper(bool taken = true)
     {
         var quest = await Publish(title: taken ? "Waits on its helper" : "Waits on its helper, untaken");
@@ -1125,7 +1125,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 HELPERWAIT1 (D131's and D188's notes): the second move out of an ended state. A session that ended waiting on its own helper parks
+    /// 🔴 The second move out of an ended state. A session that ended waiting on its own helper parks
     /// for the person when that helper ended with no answer, as its turn's end would have parked it: its note the driver's, its evidence
     /// kept, and the person's answer then resumes its one conversation as any park's does.
     /// </summary>
@@ -1149,7 +1149,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// HELPERWAIT1: only that ending parks again, and only to a park. Any other completed record, and the waiting one to any state but a park,
+    /// Only that ending parks again, and only to a park. Any other completed record, and the waiting one to any state but a park,
     /// stay finished; one its helper's answer already waits on goes on with it instead; and one whose tree another session holds waits.
     /// </summary>
     [Fact]
@@ -1173,14 +1173,14 @@ public sealed class SessionLedgerTests : IAsyncLifetime
             (words.Refusal, words.Message));
         Assert.Equal(SessionState.Completed, (await _sessions.FindAsync(waiting.Id))!.State);
 
-        // A park holds its quest (D83): one no longer taken has nothing to park for.
+        // A park holds its quest: one not taken has nothing to park for.
         var untaken = await _ledger.AdvanceAsync(open.Id, "awaiting-person", "It stopped to ask you.", null, null, Now.AddMinutes(20));
         Assert.Equal(SessionAdvanceRefusal.Terminal, untaken.Refusal);
         Assert.Contains("no longer taken", untaken.Message);
     }
 
     /// <summary>
-    /// 🔴 HELPERWAIT1 (Codex's #5 on COWORKUX1): a session waiting on its own helper keeps its tree, as a park does, though it is completed:
+    /// 🔴 A session waiting on its own helper keeps its tree, as a park does, though it is completed:
     /// no other session opens there while its helper reads, and it goes on there itself with the answer, or parks for the person. Once its
     /// quest is no longer taken it holds nothing.
     /// </summary>
@@ -1207,7 +1207,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 MSG1a (D137 §2.2): a stood-down session never goes on — its quest is someone else's, so it has nothing to go on
+    /// 🔴 A stood-down session never goes on — its quest is someone else's, so it has nothing to go on
     /// with. Words to it are refused naming the quest, and words that reach its record anyway do not move it.
     /// </summary>
     [Fact]
@@ -1232,7 +1232,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 MSG1a (D137 §2.2): a teammate's record is never written to and never goes on here — its process and its
+    /// 🔴 A teammate's record is never written to and never goes on here — its process and its
     /// conversation are on their machine and account. Words are refused naming whose machine, and a teammate's record
     /// holding words, which no door here writes, still does not move.
     /// </summary>
@@ -1268,7 +1268,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// MSG1a (INT4h): an intake is answered through its ask, so it takes no words in any state, and an ended intake
+    /// An intake is answered through its ask, so it takes no words in any state, and an ended intake
     /// holding words does not go on.
     /// </summary>
     [Fact]
@@ -1290,8 +1290,8 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// MSG1a (D137 §5.3): the record keeps words only for a parked or ended session. A running one hears them through the
-    /// driver that runs it (D136), so the record refuses them, naming its state; no words at all are refused; and a
+    /// The record keeps words only for a parked or ended session. A running one hears them through the
+    /// driver that runs it, so the record refuses them, naming its state; no words at all are refused; and a
     /// session nobody holds is not found.
     /// </summary>
     [Fact]
@@ -1319,8 +1319,8 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// COWORK1c (the message-urgency design §6, §9): words for a running session's run are kept on its record where the driver that
-    /// runs it asks so (<c>running</c>), each with the level it was said at, before its run is handed them: never a park's answer nor a
+    /// Words for a running session's run are kept on its record where the driver that
+    /// runs it asks so (<c>running</c>), each with the level it is said at, before its run is handed them: never a park's answer nor a
     /// word that reopens it, and nothing that travels changes. Kept once by its key, as on an ended record. Asked without it, a running
     /// record refuses as before; a level this build does not know is refused before anything is kept; and a park asked so is answered
     /// as a park, since it runs no turn.
@@ -1357,7 +1357,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
             (SessionState.Working, before.Note, before.Updated, revision),
             (record.State, record.Note, record.Updated, await RevisionOf(session.Id)));
 
-        // COWORK1c (the design §6): the dispatcher marks a word's attempt before the wire, once; a word no longer waiting is named
+        // The dispatcher marks a word's attempt before the wire, once; a word no longer waiting is named
         // unmarked, never an error; none named is refused, and so is a record this machine does not hold.
         var attempted = await _ledger.MarkAttemptAsync(session.Id, [word.Id, "zz99zz99"], Now.AddMinutes(5));
         var marked = await _ledger.MarkAttemptAsync(session.Id, [word.Id], Now.AddMinutes(9));
@@ -1377,7 +1377,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// FOUNDATION1o (the foundation design §3.4 rule 4, §19.11): a word for a record that winds up or moves, its dispatcher closed, asked by the
+    /// A word for a record that winds up or moves, its dispatcher closed, asked by the
     /// shell with <c>ending</c>, is kept on the record as a word said once it ended, so its next part goes on with it and its take keeps it on the
     /// ask; once by its key, nothing that travels changed. Asked without it, a running record refuses as before.
     /// </summary>
@@ -1405,8 +1405,8 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// MSG1a (D137 §2.2, §5.3): words said to a parked session are its answer — kept with their line on its note, the park
-    /// kept, joining what was said before — the one door that answers a park (ONEWAY1k).
+    /// Words said to a parked session are its answer — kept with their line on its note, the park
+    /// kept, joining what is said before — the one door that answers a park.
     /// </summary>
     [Fact]
     public async Task Words_said_to_a_parked_session_are_its_answer()
@@ -1428,7 +1428,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// COWORK1b (D188's COWORK1b note; the message-urgency design §9, trap 6): Daoris's own words are kept with <c>from</c> and their
+    /// Daoris's own words are kept with <c>from</c> and their
     /// producer's key, never as the person's: <c>answer</c>, which every reader takes as theirs, joins none of them, and the door's
     /// sentence, the ledger's line and its message say whose words the session goes on with.
     /// </summary>
@@ -1456,7 +1456,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// COWORK1b: Daoris's words to a park are its answer as the person's are (the design §5's parked row), the note's words part
+    /// Daoris's words to a park are its answer as the person's are, the note's words part
     /// saying they are Daoris's, never the person's.
     /// </summary>
     [Fact]
@@ -1477,7 +1477,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// COWORK1b (the design §6, trap 19): a word is kept once by its producer's key. A say whose key the record already holds keeps
+    /// A word is kept once by its producer's key. A say whose key the record already holds keeps
     /// nothing new and is answered as the word kept, so a producer's retry, a crash between its say and its own mark, keeps one word;
     /// another key keeps another word. An author this build does not know is refused before anything is kept.
     /// </summary>
@@ -1489,7 +1489,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         var first = await _ledger.SayAsync(ended.Id, "Daoris: reopened.", null, Now.AddMinutes(20), from: SaidFrom.Daoris, key: "reopen/q1/desk/44");
         var again = await _ledger.SayAsync(ended.Id, "Daoris: reopened.", null, Now.AddMinutes(21), from: SaidFrom.Daoris, key: "reopen/q1/desk/44");
         var other = await _ledger.SayAsync(ended.Id, "Daoris: reopened again.", null, Now.AddMinutes(22), from: SaidFrom.Daoris, key: "reopen/q1/desk/47");
-        // COWORK1d made `agent` an author this build knows (a claim the person passed on): a stranger is any other word.
+        // `agent` is an author this build knows (a claim the person passed on): a stranger is any other word.
         var stranger = await _ledger.SayAsync(ended.Id, "Hello.", null, Now.AddMinutes(23), from: "teammate");
 
         Assert.Equal((SessionSayRefusal.None, SessionSayRefusal.None), (again.Refusal, other.Refusal));
@@ -1502,7 +1502,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 One session per working tree holds for going on too (D51): an ended record whose tree another session now holds
+    /// 🔴 One session per working tree holds for going on too: an ended record whose tree another session now holds
     /// does not go on there, and the refusal names the holder, never the path. Once that one ends, it goes on.
     /// </summary>
     [Fact]
@@ -1524,7 +1524,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// MSG1a (D137 §2.4): taken words leave the record by their ids — the resumed run's first prompt went, or a fallback's
+    /// Taken words leave the record by their ids — the resumed run's first prompt went, or a fallback's
     /// session took them — so a word said after the driver read the record stays for the next run. A word already gone
     /// is passed over, and the last one taken leaves nothing waiting. A teammate's record, and a taker nobody holds, are
     /// refused.
@@ -1553,11 +1553,11 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(SessionSayRefusal.NotOurs, (await _ledger.TakeSaidAsync("alice-laptop/ab12cd34", ["ab12cd34"], by: null)).Refusal);
     }
 
-    // ——— SAIDBACK1a (D137 §2.4): the person takes back, or rewords, words that wait on a record before it goes on with them.
+    // ——— The person takes back, or rewords, words that wait on a record before it goes on with them.
 
     /// <summary>
-    /// SAIDBACK1a: a word waiting on an ended record is taken back by its id, the others staying in order, and nothing that
-    /// travels changes, as nothing did when it was kept. The last one taken back leaves nothing waiting, so the planner no
+    /// A word waiting on an ended record is taken back by its id, the others staying in order, and nothing that
+    /// travels changes, as nothing does when it is kept. The last one taken back leaves nothing waiting, so the planner no
     /// longer goes on with the record.
     /// </summary>
     [Fact]
@@ -1584,7 +1584,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// SAIDBACK1a: a reword takes the old word out and keeps the new words last, under a new id, said now, with the old
+    /// A reword takes the old word out and keeps the new words last, under a new id, said now, with the old
     /// word's files and its <c>reopens</c>, in one step. Order among several waiting words is not kept.
     /// </summary>
     [Fact]
@@ -1610,7 +1610,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// SAIDBACK1a: a word no longer on the record, or one on a record that runs again (its run may already have read it),
+    /// A word no longer on the record, or one on a record that runs again (its run may already have read it),
     /// answers <c>taken</c>, and the words stay as they were.
     /// </summary>
     [Fact]
@@ -1634,7 +1634,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// SAIDBACK1a (D137 §2.2): what never goes on refuses a take-back as it refuses words: a teammate's record, an intake, a
+    /// What never goes on refuses a take-back as it refuses words: a teammate's record, an intake, a
     /// stand-down, each naming what it names. Words put on such a record past the ledger stay.
     /// </summary>
     [Fact]
@@ -1660,7 +1660,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// SAIDBACK1a: a reword with no words is refused before anything moves, so the old word waits as it was; so is a take-back
+    /// A reword with no words is refused before anything moves, so the old word waits unchanged; so is a take-back
     /// that names no word, and one of a session nobody holds is not found.
     /// </summary>
     [Fact]
@@ -1685,7 +1685,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// SAIDBACK1a: a park's answer can be taken back while it waits, and the record stays parked, waiting on the person again.
+    /// A park's answer can be taken back while it waits, and the record stays parked, waiting on the person again.
     /// Its note keeps the answer's line, which travelled already, as history.
     /// </summary>
     [Fact]
@@ -1714,7 +1714,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(SessionOpenRefusal.QuestNotOpen, outcome.Refusal);
     }
 
-    /// <summary>One session per working tree — the unit of exclusion (D51, D46 before it).</summary>
+    /// <summary>One session per working tree — the unit of exclusion.</summary>
     [Fact]
     public async Task A_busy_tree_refuses_a_second_session_and_names_the_first()
     {
@@ -1728,13 +1728,13 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Contains(opened.Session!.Id, outcome.Message);
     }
 
-    // ——— The tree is the unit of exclusion (D51). What was two claims welded together — "two agents
-    // in one working tree corrupt it" and "a repository has one working tree" — is now one claim and
-    // a fact about the registry. Nothing here creates a tree; that is SURF3.
+    // ——— The tree is the unit of exclusion. Two claims — "two agents
+    // in one working tree corrupt it" and "a repository has one working tree" — are one claim and
+    // a fact about the registry. Nothing here creates a tree.
 
     /// <summary>
     /// The refusal names the SESSION holding the tree, never the tree's PATH. A path is machine-local
-    /// material (D47 §4), and a message is the one surface with no strip on it: it is composed here
+    /// material, and a message is the one surface with no strip on it: it is composed here
     /// and rendered verbatim wherever it lands, including a browser over a keyed remote.
     /// </summary>
     [Fact]
@@ -1775,7 +1775,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The point of D51, testable before a tree is ever created: two sessions in ONE repository, in
+    /// The point of the per-tree lock, testable before a tree is ever created: two sessions in ONE repository, in
     /// two trees, is not the corruption the lock exists to prevent.
     /// </summary>
     [Fact]
@@ -1793,7 +1793,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     /// <summary>
     /// …and the half that keeps it safe: an open that STATES the root and one that leaves it unsaid
     /// are the same tree, so the second is refused. They converge because the ledger resolves both
-    /// through the registry rather than comparing what it was handed.
+    /// through the registry rather than comparing what it is handed.
     /// </summary>
     [Fact]
     public async Task A_stated_root_and_an_unstated_one_are_the_same_tree()
@@ -1823,7 +1823,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
 
     /// <summary>
     /// A chat holds a tree exactly as driven work does — and a chat in a SECOND tree is the thing
-    /// D51 was decided for: the person and the driver working in one repository at once.
+    /// the per-tree lock is for: the person and the driver working in one repository at once.
     /// </summary>
     [Fact]
     public async Task A_chat_opens_beside_a_driven_session_when_it_has_a_tree_of_its_own()
@@ -1839,14 +1839,14 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The conservative half: a record that never said which tree it was in holds the WHOLE
+    /// The conservative half: a record that never says which tree it is in holds the WHOLE
     /// repository. Unknown means "possibly yours", and the lock errs toward refusing — the cost of
     /// being wrong the other way is two agents in one tree.
     /// </summary>
     [Fact]
     public async Task A_session_with_no_tree_recorded_holds_every_tree()
     {
-        // Straight to the store, because the ledger always resolves one: this is the pre-D51 record,
+        // Straight to the store, because the ledger always resolves one: this is a record from before trees,
         // or one mirrored from a machine that knew better than to send a path.
         await _sessions.CreateAsync("abc123", "Owner", "stub", Now);
         var quest = await Publish();
@@ -2014,7 +2014,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(SessionAdvanceRefusal.None, resumed.Refusal);
     }
 
-    // ——— Chats (D49 §3). The same entity, entered by a person instead of planned from a quest: the
+    // ——— Chats. The same entity, entered by a person instead of planned from a quest: the
     // same record, the same observed lifecycle, and above all the same lock.
 
     [Fact]
@@ -2102,7 +2102,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     private Task<SessionAdvanceOutcome> Advance(string id, string state) =>
         _ledger.AdvanceAsync(id, state, null, null, null, Now);
 
-    // ---- FOUNDATION1 row d-ii: words follow the line's head (D212; the foundation design §3.4 rule 2, §19.13) ----
+    // ---- Words follow the line's head ----
 
     /// <summary>A part of a line as an open writes one: its kind, its quest and the record it continues, ended unless a state is named.</summary>
     private async Task<Session> PartAsync(string? quest = null, string? from = null, SessionKind? kind = null, SessionState state = SessionState.Completed)

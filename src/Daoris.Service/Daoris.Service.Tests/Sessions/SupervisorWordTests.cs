@@ -4,7 +4,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// SUPERVISOR1a-i (D208; the supervisor design §3.4, §4.5, §6.1, §6.3): the supervisor's word on the record, the service's half. Its
+/// The supervisor's word on the record, the service's half. Its
 /// release is one conditional say whose text the service composes from the choice, whose key is the release's receipt and whose every
 /// check is made in the store's one step; it writes no answered line and is never the person's. Every door that keeps the owner's
 /// words takes a waiting supervisor's word back in the same step; a move to working names the supervisor's words it admits, exactly;
@@ -150,7 +150,7 @@ public sealed class SupervisorWordTests : GoAheadFixture
         foreach (var id in new[] { asking.Id, working.Id, onNoAsk.Id, third.Id }) Assert.Empty((await Record(id)).Said);
     }
 
-    /// <summary>An open go-ahead on the ask holds the release for a session on a quest a sibling of the ask published (COMMS1c).</summary>
+    /// <summary>An open go-ahead on the ask holds the release for a session on a quest a sibling of the ask published.</summary>
     [Fact]
     public async Task The_release_is_refused_for_a_sibling_published_quest_where_the_asks_go_ahead_is_open()
     {
@@ -167,8 +167,8 @@ public sealed class SupervisorWordTests : GoAheadFixture
     }
 
     /// <summary>
-    /// SUPERVISOR1b (D208; the supervisor design §3.1, §4.1): the question's <c>owner</c> mark is checked again at the release, from the
-    /// file the service reads inside the say's step, so a question marked the owner's after a decision was admitted is never answered
+    /// The question's <c>owner</c> mark is checked again at the release, from the
+    /// file the service reads inside the say's step, so a question marked the owner's after a decision is admitted is never answered
     /// by the supervisor: refused <c>owner-question</c>, keeping nothing, its wire word the route's.
     /// </summary>
     [Fact]
@@ -189,8 +189,7 @@ public sealed class SupervisorWordTests : GoAheadFixture
     }
 
     /// <summary>
-    /// §6.3: the owner's words win at every door that keeps them, in one step. The say (the one door a park is answered by since
-    /// ONEWAY1k) and a reword each take a waiting supervisor's word back as they keep the owner's, so no read sees both; another agent's
+    /// The owner's words win at every door that keeps them, in one step. The say (the one door a park is answered by) and a reword each take a waiting supervisor's word back as they keep the owner's, so no read sees both; another agent's
     /// word takes none.
     /// </summary>
     [Fact]
@@ -225,7 +224,7 @@ public sealed class SupervisorWordTests : GoAheadFixture
     {
         var core = Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core");
         HashSet<string> covered = ["SaidKeeping.KeepOwnersWordAsync"];
-        // A helper's, a partner's or an opinion's answer is the asker's solicited word, not the person's: its one door keeps it (COMMS1b).
+        // A helper's, a partner's or an opinion's answer is the asker's solicited word, not the person's: its one door keeps it.
         HashSet<string> exempt = ["Sessions.KeepSaidAsync", "SessionSaidStore.KeepSaidAsync", "SessionSays.SuperviseAsync", "SolicitedAnswers.*"];
         var member = new Regex(@"^\s*(?:public|private|internal|protected)\b[^=;]*?\b(\w+)\s*(?:<[^>]*>)?\s*\(");
 

@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// DRIFT1c (D133 §3): a quest's requirements quote the person. Each requirement is the person's own words,
+/// A quest's requirements quote the person. Each requirement is the person's own words,
 /// quoted, with the check that proves it; the service refuses a quote found in neither the ask nor what they
 /// said on it since, naming the words, and a chain step inherits its parent's requirements. The intake's
 /// paraphrase kept the word "bridge" and lost what the receiving repository's own documents said it meant
@@ -98,12 +98,12 @@ public sealed class QuestRequirementTests : IAsyncLifetime
         var published = await Publish(ask, new QuestRequirement("  This WILL need\n the  V3   bridge ", "  It opens through the bridge.\n"));
 
         Assert.Equal(AskRefusal.None, published.Refusal);
-        // Kept as given, trimmed at the ends: the quote is what was checked, and nothing rewrites it.
+        // Kept as given, trimmed at the ends: the quote is what is checked, and nothing rewrites it.
         Assert.Equal(new QuestRequirement("This WILL need\n the  V3   bridge", "It opens through the bridge."), Assert.Single(published.Quest!.Requirements));
     }
 
     /// <summary>
-    /// What the person said after the ask is theirs too (DRIFT1a): an answer to a parked session and a message
+    /// What the person said after the ask is theirs too: an answer to a parked session and a message
     /// added to a running one may each be quoted.
     /// </summary>
     [Fact]
@@ -285,7 +285,7 @@ public sealed class QuestRequirementTests : IAsyncLifetime
             ],
         })).Quest!;
 
-        // Each done answers the requirement it carries (DRIFT1d): met, so nothing holds the chain.
+        // Each done answers the requirement it carries: met, so nothing holds the chain.
         QuestAnswer[] met = [new(1, Met: "It opens through the bridge's route.")];
         await _exchange.RespondAsync(built.Id, "take", null, Now);
         Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(built.Id, "done", "Built.", Now, answers: met)).Refusal);
@@ -334,7 +334,7 @@ public sealed class QuestRequirementTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A remote holds no asks, so it cannot check a quote — that was judged where the ask is — but a
+    /// A remote holds no asks, so it cannot check a quote — that is judged where the ask is — but a
     /// requirement with half its words is no requirement, and a record naming one would lie.
     /// </summary>
     [Fact]
@@ -348,9 +348,9 @@ public sealed class QuestRequirementTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// An ask from before its words were kept (DRIFT1a) holds its sentence, and nothing the person said on
+    /// An ask from before its words were kept holds its sentence, and nothing the person said on
     /// it before then: the refusal says from when its words are kept, rather than reading as though nothing
-    /// more was said.
+    /// more were said.
     /// </summary>
     [Fact]
     public async Task A_refusal_on_an_ask_from_before_its_words_were_kept_says_from_when()

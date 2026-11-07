@@ -63,7 +63,7 @@ internal static class PageRequests
 }
 
 /// <summary>
-/// ORIGIN1: no website can press a door on the local host. CORS keeps a page from READING an answer, not from sending
+/// No website can press a door on the local host. CORS keeps a page from READING an answer, not from sending
 /// the request: a <c>POST</c> with no body, or a text or form body, is a simple request a browser sends without asking
 /// first, so before this a page on any site, open in any browser on this machine, could accept a departure at
 /// <c>/accept</c>. A write whose <c>Origin</c> is not one this host allows, or that names no origin and that its browser
@@ -79,7 +79,7 @@ public sealed class CrossSiteWriteTests(LocalHost host) : IClassFixture<LocalHos
         Assert.Equal(BrowserOrigins.Code, answer.Json.GetProperty("code").GetString());
     }
 
-    /// <summary>A quest done with a departure, held for the person's yes at <c>/accept</c> (D133 §4).</summary>
+    /// <summary>A quest done with a departure, held for the person's yes at <c>/accept</c>.</summary>
     private async Task<string> HeldForTheYesAsync()
     {
         var asked = await host.PostAsync("/api/asks", new
@@ -129,7 +129,7 @@ public sealed class CrossSiteWriteTests(LocalHost host) : IClassFixture<LocalHos
             "a POST with a form body");
         Assert.True((await QuestAsync(quest)).GetProperty("held").GetBoolean());
 
-        // The shell's page lives on its engine's app origin and calls the loopback (D92): another site, by its browser's
+        // The shell's page lives on its engine's app origin and calls the loopback: another site, by its browser's
         // reckoning, and allowed by its name.
         var pressed = await PageRequests.SendAsync(host, "POST", accept, new Dictionary<string, string>
         {
@@ -161,8 +161,8 @@ public sealed class CrossSiteWriteTests(LocalHost host) : IClassFixture<LocalHos
             // Another port on the loopback is the same site to a browser: any local server's page.
             ("a page on another loopback port", new() { ["Origin"] = "http://localhost:3000", ["Sec-Fetch-Site"] = "same-site" }, "localhost:5177"),
             ("a page on another loopback port that names no origin", new() { ["Sec-Fetch-Site"] = "same-site" }, "localhost:5177"),
-            // A name rebound to the loopback is refused by its name before this gate is asked, reads included (ORIGIN2,
-            // ReboundHostTests); that the host's own origin is never one is held there too.
+            // A name rebound to the loopback is refused by its name before this gate is asked, reads included
+            // (ReboundHostTests); that the host's own origin is never one is held there too.
         };
 
         var executed = new List<string>();
@@ -246,7 +246,7 @@ public sealed class CrossSiteWriteTests(LocalHost host) : IClassFixture<LocalHos
     }
 }
 
-/// <summary>ORIGIN1's other hosts: the development UI's origin when one is named, and a shared host.</summary>
+/// <summary>The other hosts: the development UI's origin when one is named, and a shared host.</summary>
 public sealed class CrossSiteWriteHostTests
 {
     private static JsonElement Parse(string line) => JsonDocument.Parse(line).RootElement;
@@ -334,7 +334,7 @@ public sealed class CrossSiteWriteHostTests
             Assert.True(elsewhere.Status == 403, $"{method} {pattern} answered a page elsewhere {elsewhere.Status}");
             Assert.Equal(BrowserOrigins.Code, elsewhere.Json.GetProperty("code").GetString());
 
-            // The shell's page is a local host's caller only (D92): a shared host allows it nothing.
+            // The shell's page is a local host's caller only: a shared host allows it nothing.
             var shell = await PageRequests.SendAsync(
                 host, method, path, new Dictionary<string, string>(keyed) { ["Origin"] = DesktopPage.Origin });
             Assert.True(shell.Status == 403, $"{method} {pattern} answered the shell's page {shell.Status}");

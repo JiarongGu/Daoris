@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// An opinion's reviewer names its door by <c>door</c> (AGENTPROVIDER1t-ii): a row kept with <c>adapter</c> in its asking JSON has it
+/// An opinion's reviewer names its door by <c>door</c>: a row kept with <c>adapter</c> in its asking JSON has it
 /// renamed as the store opens, every other part of the reviewer kept, and a second open changes nothing.
 /// </summary>
 public sealed class OpinionReviewerDoorTests : IAsyncLifetime

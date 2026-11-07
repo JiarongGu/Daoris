@@ -1,7 +1,7 @@
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
-/// KEEPSIZE1b (D195's keep-size note; the keep-size design §2.2): a finished tree's record through its door, <c>POST /api/trees/record</c>.
+/// A finished tree's record through its door, <c>POST /api/trees/record</c>.
 /// The driver posts it on loopback; it names the sessions whose row names the tree, is kept once whatever the retries, and is answered to
 /// nothing off this machine.
 /// </summary>

@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// INTEGRATE1p (the integration design §17.5, R5's C32): a workflow's <c>request</c> node publishes its quest under the request's key,
+/// A workflow's <c>request</c> node publishes its quest under the request's key,
 /// <c>&lt;run&gt;/&lt;node&gt;/&lt;n&gt;</c>. The key widens the quest's id, as a chain step's parent does, so one transaction dedups: two runs
 /// asking in the same words make two quests, and the same key sent again, after a restart or a lost answer, is its own quest back.
 /// </summary>
@@ -81,7 +81,7 @@ public sealed class QuestRequestKeyTests : IAsyncLifetime
         Assert.NotEqual(other.Id, again.Id);
     }
 
-    /// <summary>C32: a publish whose answer was lost is sent again under the same key, and the store holds one quest, never two.</summary>
+    /// <summary>A publish whose answer is lost is sent again under the same key, and the store holds one quest, never two.</summary>
     [Fact]
     public async Task A_lost_publish_answer_sent_again_makes_no_duplicate()
     {
@@ -137,7 +137,7 @@ public sealed class QuestRequestKeyTests : IAsyncLifetime
         var keyed = (await Ask("run-a/ask-engine/1")).Quest!;
 
         Assert.Null(await _quests.ForgottenIdAsync("game", "engine", "Expose the frame cap", null, default, request: "run-a/ask-engine/1"));
-        // As a clear does where a remote numbered it (HIST1b): its id kept as forgotten.
+        // As a clear does where a remote numbered it: its id kept as forgotten.
         await using (var forget = _connection.CreateCommand())
         {
             forget.CommandText = "INSERT INTO quest_forgotten (id, at) VALUES ($id, '2026-10-31T10:00:00Z')";

@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The registry is the authority, and the folder scan is a bootstrap (D48 §3).
+/// The registry is the authority, and the folder scan is a bootstrap.
 /// </summary>
 /// <remarks>
 /// The ghost-repository fix already showed scan-as-authority failing: what a scan does not say governs
@@ -53,7 +53,7 @@ public sealed class RegistryImportTests : IDisposable
         Assert.Equal(Path.Combine(_root, "Cognition"), proposed.Root);
     }
 
-    /// <summary>D91: what a repository says it uses is read from its own manifest, by the one rule.</summary>
+    /// <summary>What a repository says it uses is read from its own manifest, by the one rule.</summary>
     [Fact]
     public void An_import_reads_what_a_repository_says_it_uses()
     {
@@ -67,7 +67,7 @@ public sealed class RegistryImportTests : IDisposable
     }
 
     /// <summary>
-    /// The manifest's remote declaration is read here too (D47 §4) — and knowledge without join is
+    /// The manifest's remote declaration is read here too — and knowledge without join is
     /// narrowed, because an import reads manifests the CLI never validated.
     /// </summary>
     [Fact]
@@ -108,7 +108,7 @@ public sealed class RegistryImportTests : IDisposable
     }
 
     /// <summary>
-    /// JSON of the wrong SHAPE is as broken as JSON that will not parse (REV3 service F15). A manifest
+    /// JSON of the wrong SHAPE is as broken as JSON that will not parse. A manifest
     /// that is an array, or a lock whose entries are numbers, threw past the `JsonException` catch
     /// and took down the whole import — and, from the lock, the whole refresh.
     /// </summary>
@@ -146,9 +146,9 @@ public sealed class RegistryImportTests : IDisposable
     }
 
     /// <summary>
-    /// The workspace is NOT proposed (D48 §2): it is wiring, and an import knows nothing about circles.
+    /// The workspace is NOT proposed: it is wiring, and an import knows nothing about circles.
     /// Leaving it unstated is what makes importing over an existing registry safe — every row keeps the
-    /// workspace it was wired to.
+    /// workspace it is wired to.
     /// </summary>
     [Fact]
     public void An_import_proposes_no_workspace_at_all()
@@ -160,7 +160,7 @@ public sealed class RegistryImportTests : IDisposable
 }
 
 /// <summary>
-/// Setting a folder up as a workspace (D77): the import, with the person's word for which circle.
+/// Setting a folder up as a workspace: the import, with the person's word for which circle.
 /// </summary>
 public sealed class WorkspaceImportTests : IAsyncLifetime
 {
@@ -197,9 +197,9 @@ public sealed class WorkspaceImportTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A PERSON may name the circle (D77): "set this folder up as a workspace" is one statement, where
-    /// it was an import and then a re-wiring per repository — twenty-nine of them for the first real
-    /// workspace. The scan still proposes none; the person's word is what wires.
+    /// A PERSON may name the circle: "set this folder up as a workspace" is one statement, where
+    /// an import and then a re-wiring per repository would be many.
+    /// The scan still proposes none; the person's word is what wires.
     /// </summary>
     [Fact]
     public async Task An_import_that_names_a_workspace_wires_every_row_it_registers_to_it()
@@ -302,7 +302,7 @@ public sealed class ManagedRegistryTests : IAsyncLifetime
         Assert.False(await _store.DeleteAsync("Nobody"));
     }
 
-    /// <summary>The registry serves what it was told, with no folder anywhere in the answer.</summary>
+    /// <summary>The registry serves what it is told, with no folder anywhere in the answer.</summary>
     [Fact]
     public void The_registry_is_the_list_it_was_given()
     {
@@ -397,7 +397,7 @@ public sealed class FirstRunImportTests : IDisposable
 
     /// <summary>
     /// A deployment that is fed rather than scanned never imports anything — the same condition that
-    /// keeps a shared host off its own disk (D47 §4). Otherwise the first run would register whatever
+    /// keeps a shared host off its own disk. Otherwise the first run would register whatever
     /// happened to sit beside the server binary.
     /// </summary>
     [Fact]
@@ -412,11 +412,11 @@ public sealed class FirstRunImportTests : IDisposable
     /// Minting a key scans nothing.
     /// </summary>
     /// <remarks>
-    /// The console verb used to compose the whole service, which bootstrapped a registry from the
-    /// configured root — so `keys mint` on a server registered whatever sat beside the binary, machine
-    /// paths included, into the deployment that must be FED and never scanned (D47 §4). The family
-    /// rehearsal caught it: a workspace's deployment answered a registry full of the operator's own
-    /// repositories, in a workspace it does not serve. Key administration opens the key store alone.
+    /// Key administration opens the key store alone: composing the whole service would bootstrap a registry from the
+    /// configured root, so `keys mint` on a server would register whatever sat beside the binary, machine
+    /// paths included, into the deployment that must be FED and never scanned. A workspace's deployment
+    /// would then answer a registry full of the operator's own
+    /// repositories, in a workspace it does not serve.
     /// </remarks>
     [Fact]
     public async Task Key_administration_never_bootstraps_a_registry()
@@ -429,7 +429,7 @@ public sealed class FirstRunImportTests : IDisposable
         }
 
         // Read back as a FED deployment, which imports nothing itself — so anything registered here
-        // was registered by the mint above.
+        // is registered by the mint above.
         await using (var fed = await ServiceFactory.CreateAsync(options, source: new EmptyKnowledgeSource()))
         {
             Assert.Empty(await fed.Service.RegistryAsync());
@@ -444,11 +444,11 @@ public sealed class FirstRunImportTests : IDisposable
 
     /// <summary>
     /// Two hosts over one store — the machine's HTTP host and a session's MCP host, opened at spawn —
-    /// see each other's registrations. The store is the authority (D48 §3), never a process's memory.
+    /// see each other's registrations. The store is the authority, never a process's memory.
     /// </summary>
     /// <remarks>
-    /// REV3 service F2: each host loaded the registry once, at start. A repository retired from the
-    /// desktop stayed addressable and indexed in every session already running, and one added was
+    /// A host that loads the registry once, at start, leaves a repository retired from the
+    /// desktop addressable and indexed in every session already running, and one added
     /// refused as unknown there — and swept from the index by that session's refresh.
     /// </remarks>
     [Fact]
@@ -475,8 +475,8 @@ public sealed class FirstRunImportTests : IDisposable
     }
 
     /// <summary>
-    /// The index reads the REGISTERED paths (D48 §3) — so a repository that is merely present in the
-    /// folder, and never registered, contributes nothing. The folder stopped being the authority.
+    /// The index reads the REGISTERED paths — so a repository that is merely present in the
+    /// folder, and never registered, contributes nothing. The folder is not the authority.
     /// </summary>
     [Fact]
     public async Task A_folder_nobody_registered_is_not_indexed()
@@ -499,7 +499,7 @@ public sealed class FirstRunImportTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Seen on the owner's install (POLISH5): every registration retired, and 1,052 entries from 17
+    /// 🔴 Every registration retired, and 1,052 entries from 17
     /// repositories still charted, searched and compared. The ghost rule prunes only when the scan saw
     /// something — right for a folder, where nothing means a mis-set path — and with the last
     /// registration gone the scan sees nothing by construction. A local host is fed by nobody, so a
@@ -541,8 +541,8 @@ public sealed class FirstRunImportTests : IDisposable
     }
 
     /// <summary>
-    /// A registered path that no longer exists is REPORTED, never silently skipped (D48 §3). The ghost
-    /// fix taught the other half of this: a repository that quietly stops contributing looks exactly
+    /// A registered path that no longer exists is REPORTED, never silently skipped. The other half
+    /// of the ghost rule: a repository that quietly stops contributing looks exactly
     /// like one with nothing to say, and the index will happily report a healthy-looking count while a
     /// checkout has been moved or deleted underneath it.
     /// </summary>
@@ -567,9 +567,9 @@ public sealed class FirstRunImportTests : IDisposable
     }
 
     /// <summary>
-    /// A foreign registration — a teammate's repository mirrored down from a remote (D47 §9) — has no
+    /// A foreign registration — a teammate's repository mirrored down from a remote — has no
     /// checkout here by construction, and must not be reported as missing. Absence is about a path that
-    /// was named and is gone, not about a row that never named one.
+    /// is named and is gone, not about a row that never named one.
     /// </summary>
     [Fact]
     public async Task A_registration_with_no_path_is_not_an_absence()

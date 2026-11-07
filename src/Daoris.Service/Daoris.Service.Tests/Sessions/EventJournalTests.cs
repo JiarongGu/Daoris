@@ -6,7 +6,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// FOUNDATION1 row k part 1 (D212; the foundation design §4.1, §19.12): the service keeps an event journal of the ledger's raw transitions,
+/// The service keeps an event journal of the ledger's raw transitions,
 /// minted by triggers on <c>sessions</c> in the statement that writes the record, so every writer mints it, a connector built before the
 /// table included, and read by nothing yet. Every case runs on a database file of its own under the repository's gitignored
 /// <c>_fixtures/</c>, as <see cref="SaidSettledTests"/> does.

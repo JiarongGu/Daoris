@@ -8,11 +8,11 @@ namespace Daoris.Service.Tests;
 /// fence reader here is held to.
 /// </summary>
 /// <remarks>
-/// The service's half of a TWIN (ORIENT2h6b, <c>.claude/knowledge/twins.md</c>'s fence row) with the CLI's
+/// The service's half of a TWIN (<c>.claude/knowledge/twins.md</c>'s fence row) with the CLI's
 /// <c>markdownFence</c>, the tools' <c>fenced</c> and the driver's <c>SelfDescription.Fence</c>: each reads a fence with
 /// code of its own, and all four read the CLI's <c>test/fixtures/fence-cases.json</c>, row for row, each case's lines and
-/// the lines a fence holds, from 1, its opening and closing lines included. Before ORIENT2h6b the service was held to the
-/// others only through the digest's note table, which asks a fence's question by way of a decision's notes.
+/// the lines a fence holds, from 1, its opening and closing lines included. The digest's note table asks a fence's
+/// question only by way of a decision's notes.
 /// </remarks>
 public sealed class MarkdownFenceTests
 {

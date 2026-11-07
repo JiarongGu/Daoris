@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// REVIEWENV1b (D154; the review environment design §1.4–§1.5, §2.1, §2.5–§2.6, §3.5): the review on the record. A chain
+/// The review on the record. A chain
 /// carries the person's review choice, an intake's only on their quoted words; a set-up step is a chain step in the same
 /// repository as the work it shows; its session says what it showed, its driver posts each set-up with the commit it read,
 /// and its done waits, held, for the person's verdict. A yes accepts a departure or its evidence and never a review.
@@ -403,7 +403,7 @@ public sealed class ReviewStepTests : ReviewStepFixture
 
     /// <summary>
     /// A skip lets a set-up step go with the person's words, kept as a `skipped` word; on the chain's last quest where no set-up
-    /// step was composed, it is recorded on that quest, which nothing held. A second skip, a `reviewed` on a quest that is no
+    /// step is composed, it is recorded on that quest, which nothing held. A second skip, a `reviewed` on a quest that is no
     /// set-up step, and a verdict nobody says are refused.
     /// </summary>
     [Fact]

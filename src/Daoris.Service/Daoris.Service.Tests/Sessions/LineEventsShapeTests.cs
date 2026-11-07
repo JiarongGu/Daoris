@@ -3,7 +3,7 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// SESSCTX1f (D189's SESSCTX1f note; the session-context design §3.5): a session's event file is the contract between the driver's
+/// A session's event file is the contract between the driver's
 /// <c>SessionEvents</c>, which writes it, and this reader of a line's history, which shares no code with it, so each side holds the
 /// shape. Here, the file as the driver writes it, read as entries; the driver's suite (<c>LineEventFilesTests</c>) writes the same
 /// text from its side.
@@ -39,7 +39,7 @@ public sealed class LineEventsShapeTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The driver's file reads as a reader reads a conversation: each word where it was taken, the agent's chunks joined into one
+    /// 🔴 The driver's file reads as a reader reads a conversation: each word where it is taken, the agent's chunks joined into one
     /// message across a usage reading, a tool call with its updates as one entry at its first number, the plan, the turn's end and
     /// Daoris's note. A thought, a usage reading, a word shown while it waited and a receipt are no entry, and a torn line costs itself.
     /// </summary>
@@ -68,7 +68,7 @@ public sealed class LineEventsShapeTests : IDisposable
     }
 
     /// <summary>
-    /// SUPERVISOR1a-i (D208; the supervisor design §6.1): a supervisor's word read from the log after a restart is marked by its event's
+    /// A supervisor's word read from the log after a restart is marked by its event's
     /// <c>from</c>, said as the supervisor's on the owner's behalf, never the person's nor Daoris's, whatever origin the line claims.
     /// </summary>
     [Fact]
