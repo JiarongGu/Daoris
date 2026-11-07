@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A door's sheet as <c>daoris agent list</c> says it (COAGENT1e; the agent-provider design §6): one line under an installed agent,
+/// A door's sheet as <c>daoris agent list</c> says it: one line under an installed agent,
 /// each capability with its value and, where it is not known, that it is not: a fallback applies there, and silence is never read as
 /// support. The door's own row is the name the list already prints, so it is left out.
 /// </summary>

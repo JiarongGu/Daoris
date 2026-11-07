@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>What became of a proposal to change the rules (PERM2).</summary>
+/// <summary>What became of a proposal to change the rules.</summary>
 public enum ProposalState
 {
     /// <summary>Written by a session's connector; the driver has not read it yet.</summary>
@@ -16,7 +16,7 @@ public enum ProposalState
     /// <summary>It widens what agents may do, so it waits for the person.</summary>
     Waiting,
 
-    /// <summary>The person said yes, and it was applied.</summary>
+    /// <summary>The person said yes, and it is applied.</summary>
     Accepted,
 
     /// <summary>The person said no.</summary>
@@ -48,7 +48,7 @@ public sealed record RuleProposal(
     string Id, DateTimeOffset Proposed, string? Session, string? Ask, ProposedChange Change, string Why,
     ProposalState State)
 {
-    /// <summary>When it was settled, by whom (`the driver` or `the person`), and the note that says why.</summary>
+    /// <summary>When it is settled, by whom (`the driver` or `the person`), and the note that says why.</summary>
     public DateTimeOffset? Settled { get; init; }
 
     public string? SettledBy { get; init; }
@@ -57,23 +57,23 @@ public sealed record RuleProposal(
 }
 
 /// <summary>
-/// An agent's proposals to change what agents may do (PERM2, D74), as the driver and the person settle
+/// An agent's proposals to change what agents may do, as the driver and the person settle
 /// them.
 /// </summary>
 /// <remarks>
-/// <para><b>🔴 A widening never applies without the person</b> — the owner's answer, 2026-09-24. A
-/// narrowing needs no one (a better approval surface must not widen autonomy, D37/D52, and narrowing
+/// <para><b>🔴 A widening never applies without the person</b>. A
+/// narrowing needs no one (a better approval surface must not widen autonomy, and narrowing
 /// cannot), so the tick applies it at once; a widening is held as <see cref="ProposalState.Waiting"/>
-/// until the person answers from either door (D50).</para>
+/// until the person answers from either door.</para>
 ///
-/// <para><b>Narrowing is judged against the rules as they stand.</b> Removing a rule narrows when it was
-/// an allow and widens when it was an ask or a deny; making a denied rule an ask loosens it, because
+/// <para><b>Narrowing is judged against the rules as they stand.</b> Removing a rule narrows when it is
+/// an allow and widens when it is an ask or a deny; making a denied rule an ask loosens it, because
 /// another scope's allow is then asked rather than denied. A default that allows narrows when it goes off;
 /// one that denies or guards widens.</para>
 ///
 /// <para><b>THE FILE is the contract</b>: one file per proposal under <c>&lt;home&gt;/proposals/</c>, written
 /// by the connector (the service's <c>RuleProposalBox</c>) and settled here alone, the window's and
-/// <c>daoris agent rules accept|decline</c>'s answer among it (PUSH1f2d). Settling rewrites only <c>state</c> and <c>settled</c>; everything the
+/// <c>daoris agent rules accept|decline</c>'s answer among it. Settling rewrites only <c>state</c> and <c>settled</c>; everything the
 /// session wrote is kept.</para>
 /// </remarks>
 public static class RuleProposals
@@ -156,7 +156,7 @@ public static class RuleProposals
 
     /// <summary>
     /// The tick's part: every proposal not yet read is applied if it narrows, held if it widens, and
-    /// settled either way. Answered as the lines the tick reports, each classed as it is made (NOTIFY2h2): a widening held is its row
+    /// settled either way. Answered as the lines the tick reports, each classed as it is made: a widening held is its row
     /// of <i>What needs you</i>, an unreadable file the next tick's, the rest what the proposals' list says.
     /// </summary>
     /// <param name="look">The look's classing; none classes and keeps nothing.</param>
@@ -167,14 +167,14 @@ public static class RuleProposals
         {
             var path = PathOf(home, proposal.Id);
             ChangeEffect effect;
-            // 🔴 Read afresh for each proposal, and saved at once (REV3): one copy read before the loop
-            // and saved after each narrowing wrote back whatever the person had changed meanwhile —
-            // a deny they had just added could be undone by the driver applying something else.
+            // 🔴 Read afresh for each proposal, and saved at once: one copy read before the loop
+            // and saved after each narrowing would write back whatever the person changed meanwhile —
+            // a deny they just added could be undone by the driver applying something else.
             var rules = PermissionRules.Load(home);
             if (rules.Problem is not null)
             {
                 // Nothing is settled over a file the driver could not read: a narrowing written now
-                // would replace every rule in it (REV3). The proposals stay as they are, to be settled
+                // would replace every rule in it. The proposals stay as they are, to be settled
                 // on the first tick after the file is fixed.
                 said.Retry($"rules  no proposal settled: {rules.Problem}");
                 break;
@@ -213,7 +213,7 @@ public static class RuleProposals
     }
 
     /// <summary>
-    /// The person's answer (D50: `daoris agent rules accept|decline`, and the screen's): a yes applies
+    /// The person's answer (`daoris agent rules accept|decline`, and the screen's): a yes applies
     /// the change whatever it does, a no changes nothing. Only a proposal not yet settled is answered.
     /// </summary>
     /// <exception cref="DriverException">No such proposal, one already settled, or one the rules cannot take.</exception>
@@ -233,7 +233,7 @@ public static class RuleProposals
 
     /// <summary>
     /// A proposal not yet settled, read from its file: what the person answers, and what <c>daoris agent rules accept|decline</c> says
-    /// before it sends anything (PUSH1f2d).
+    /// before it sends anything.
     /// </summary>
     /// <exception cref="DriverException">No proposal by that id (a path is no id), or one already settled, which is history.</exception>
     public static RuleProposal Open(string home, string id)

@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What one start's walk learned across its passes (PARALLEL1c): what its own status questions answered, by account, and the
+/// What one start's walk learned across its passes: what its own status questions answered, by account, and the
 /// accounts left unknown for it, whose lock another question kept past its patience.
 /// </summary>
 internal sealed class WalkMemory

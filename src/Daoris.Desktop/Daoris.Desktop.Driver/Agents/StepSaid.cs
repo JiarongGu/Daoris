@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One step of the walk as a start's record says it (UX7d-1, D152's UX7d-1 note): the clause in English, as
+/// One step of the walk as a start's record says it: the clause in English, as
 /// <see cref="RotationWords.Clause"/> joins it, and the same step by code, a reason of <see cref="NoteCodes.Opening"/> with its
 /// own values, so the page words the line in the reader's language. Machine-local: its values may name an account.
 /// </summary>

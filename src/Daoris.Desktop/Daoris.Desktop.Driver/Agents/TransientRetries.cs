@@ -1,15 +1,15 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The transient retry every run the hold makes on the protocol door is handed (D210 points 3 and 8, the agent-errors design §5.1, §5.5,
-/// §7): the one reader over the adapter set, the owner's check, Daoris's go-on kept through the say door, the conversation's one line, the
+/// The transient retry every run the hold makes on the protocol door is handed: the one reader over the adapter set,
+/// the owner's check, Daoris's go-on kept through the say door, the conversation's one line, the
 /// machine log's lines and the watch's heard stamp, with the line's tries and the pass's own minutes as its bound.
 /// </summary>
 internal static class TransientRetries
 {
     /// <param name="questId">The quest the session works.</param>
     /// <param name="wanted">
-    /// The owner's check: the driven check, <see cref="WantedAsync"/>, read against the quest as the run's start was planned (finding 5).
+    /// The owner's check: the driven check, <see cref="WantedAsync"/>, read against the quest as the run's start is planned.
     /// </param>
     /// <param name="profile">The account the run is on, for the machine log; null for the tool's own sign-in.</param>
     internal static TransientRetry For(
@@ -45,12 +45,12 @@ internal static class TransientRetries
                     ("session", sessionId), ("door", adapter.Id.Value), ("account", profile), ("by", episode.First.By), ("try", number),
                     ("next", next),
                 ]);
-                // AGENTERRORS1a2 (§5.1, §8): the record's quiet event, a try going, which the head says nothing for.
+                // The record's quiet event, a try going, which the head says nothing for.
                 events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Transient, Try = number }, say: null);
             },
             // And a wait beginning, with when it ends: the head's *Trying again at* while it runs.
             WaitsUntil = (_, until) => events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Transient, Next = until }, say: null),
-            // The wait's end stamps the session heard (round 3, R2-O7): a try's quiet counts from its prompt, never from the last line.
+            // The wait's end stamps the session heard: a try's quiet counts from its prompt, never from the last line.
             Waits = waiting =>
             {
                 if (!waiting) watch.Heard(sessionId);
@@ -59,20 +59,20 @@ internal static class TransientRetries
     }
 
     /// <summary>
-    /// The driven check (§5.5, round 3, R2-O6, <c>TransientRetry.Wanted</c>): no try where this run's quest reached a new authoritative
+    /// The driven check (<c>TransientRetry.Wanted</c>): no try where this run's quest reached a new authoritative
     /// end, read from the quest as the ledger answers it now against the run's start: done, submitted, a new question asked of another
     /// repository, stood down, closed or deleted. An Open quest goes on, and so does one Taken by this session; a check that throws is
     /// the retry's yes.
     /// </summary>
     /// <remarks>
-    /// 🔴 <b>The run's intent, never the quest's history</b> (Codex's owed read of D210, finding 5). <c>Awaits</c> stays set once its
-    /// question is answered (<c>Quests.cs</c>), so a D79 resume would read its own answered question as a wait: only a question this run
+    /// 🔴 <b>The run's intent, never the quest's history.</b> <c>Awaits</c> stays set once its
+    /// question is answered (<c>Quests.cs</c>), so a resume would read its own answered question as a wait: only a question this run
     /// asked, one other than <paramref name="awaitsBefore"/>, is one, as <see cref="Observation.Conclude"/>'s <c>Asks</c> reads it. And a
     /// quest already closed when the person's word began (<paramref name="startedOn"/>) is that word's run, which no close can have
     /// completed since: it is tried again while its quest exists.
     /// </remarks>
     /// <param name="startedOn">The quest's status as the look planned the run.</param>
-    /// <param name="awaitsBefore">The question the quest named as the run started (D79), or null.</param>
+    /// <param name="awaitsBefore">The question the quest named as the run started, or null.</param>
     internal static async Task<bool> WantedAsync(
         ServiceClient service, string questId, string sessionId, string startedOn, string? awaitsBefore, CancellationToken ct)
     {
@@ -81,7 +81,7 @@ internal static class TransientRetries
         if (startedOn is not ("Open" or "Taken")) return true;
         if (QuestSubmissions.Current(quest)) return false;
         if (quest.Awaits is { Length: > 0 } awaits && !string.Equals(awaits, awaitsBefore, StringComparison.Ordinal)) return false;
-        // A quest Taken as the run started is the run's to carry on, a D79 resume's new session included, which holds no take of its own
+        // A quest Taken as the run started is the run's to carry on, a resume's new session included, which holds no take of its own
         // (the conclusion's `Parks` reads `resumed` so); one taken since the start is this session's only where it took it.
         return quest.Status switch
         {
@@ -92,7 +92,7 @@ internal static class TransientRetries
     }
 
     /// <summary>
-    /// The fallback at both conclusions (§5.1, R3-O5): Daoris's go-on, where its take-off did not land, comes off the record by its key, so
+    /// The fallback at both conclusions: Daoris's go-on, where its take-off did not land, comes off the record by its key, so
     /// none waits on a record the run then parked and none reaches a new part. Never faults.
     /// </summary>
     internal static Task GoOnOffAsync(ServiceClient service, string sessionId, CancellationToken ct) =>

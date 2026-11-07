@@ -4,7 +4,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The transports' one shell (the agent-provider design §4.6): a door's <see cref="ProcessRecipe"/> completed into the process every
+/// The transports' one shell: a door's <see cref="ProcessRecipe"/> completed into the process every
 /// kind of session starts, in one order for every door. First the session's half (<see cref="Start"/>, <see cref="Chat"/>): the role
 /// variables cleared, other providers' registered variables stripped, the repository and service set, the tools' environment, the
 /// session's git, the identity variables, then the recipe's own. Then the account's half (<see cref="Equip"/>): the account's variables,
@@ -26,7 +26,7 @@ internal static class Shell
         return Own(info, recipe);
     }
 
-    /// <summary>A conversation's process (D49 §3), its stdin open so the person's messages reach the agent.</summary>
+    /// <summary>A conversation's process, its stdin open so the person's messages reach the agent.</summary>
     public static ProcessStartInfo Chat(ProcessRecipe recipe, SpawnRequest request, IReadOnlyCollection<string>? strip = null)
     {
         var info = Base(recipe, request, strip);
@@ -39,7 +39,7 @@ internal static class Shell
     /// can start it, Claude Code's seam and the account's home. <b>Creating the home is part of choosing it</b>: an agent may refuse to
     /// start when its home variable names a path that is not there, and Daoris owns that location by design.
     /// </summary>
-    /// <param name="binary">The managed executable in place of what the recipe resolved (TOOL2/D57), or null for <c>PATH</c>.</param>
+    /// <param name="binary">The managed executable in place of what the recipe resolved, or null for <c>PATH</c>.</param>
     /// <param name="seam">What the door's own spawn does to its process for its program (<see cref="ISpawn.PointAtClaude"/>), or null.</param>
     /// <remarks>
     /// 🔴 Every session's process, a probe's and a usage question's come through here, which is why the pin, the shim and the home are
@@ -49,7 +49,7 @@ internal static class Shell
         ProcessStartInfo info, AccountAgent toolchain, string? profileHome, string? binary = null,
         Action<ProcessStartInfo>? seam = null, IReadOnlyDictionary<string, string>? account = null)
     {
-        // What the account itself carries — an API key in the tool's own variable (AGT3), so no spawn of a key account goes out without it.
+        // What the account itself carries — an API key in the tool's own variable, so no spawn of a key account goes out without it.
         foreach (var (name, value) in account ?? new Dictionary<string, string>()) info.Environment[name] = value;
 
         // The arguments the recipe built stay exactly as they are: same tool, different location.
@@ -57,21 +57,21 @@ internal static class Shell
         {
             info.FileName = binary;
 
-            // 🔴 And the version it was pinned at (AGT2): a pinned Claude Code reported its own auto-updates enabled, and would have moved
+            // 🔴 And the version it is pinned at: a pinned Claude Code reports its own auto-updates enabled, and would move
             // itself under the pin.
             foreach (var (name, value) in toolchain.Program.PinnedEnvironment ?? new Dictionary<string, string>()) info.Environment[name] = value;
         }
 
         // An agent npm installed starts as the node and script its `.cmd` shim would run, so no `cmd` stands before it and its arguments
-        // are never read again by one (LAUNCHCHAIN1).
+        // are never read again by one.
         PackageStarts.Direct(info, toolchain.Program.Package);
 
-        // 🔴 USE1f: what Windows can START, on the PATH the tools put first. A bare name from PATH starts only as an `.exe`, so an agent npm
-        // installed globally (a `.cmd` shim) probed absent and every start on it was held, though the CLI found it.
+        // 🔴 What Windows can START, on the PATH the tools put first. A bare name from PATH starts only as an `.exe`, so an agent npm
+        // installs globally (a `.cmd` shim) would probe absent and every start on it be held, though the CLI finds it.
         info.FileName = HarnessActions.WindowsShim(
             info.FileName, info.ArgumentList, info.Environment.TryGetValue("PATH", out var path) ? path : null);
 
-        // A door whose program needs a seam gets its own applied here (a door running Claude Code's program finds its CLI so, ACP2, §1a).
+        // A door whose program needs a seam gets its own applied here (a door running Claude Code's program finds its CLI so).
         seam?.Invoke(info);
 
         if (profileHome is null) return;
@@ -84,7 +84,7 @@ internal static class Shell
         }
 
         // 🔴 Created, not assumed to exist: `codex-acp` exits 1 before `initialize` completes when `CODEX_HOME` names a path that is not
-        // there, while the Claude adapter creates its own, so every managed home is made here, for every door (ACP3).
+        // there, while the Claude adapter creates its own, so every managed home is made here, for every door.
         Directory.CreateDirectory(profileHome);
         info.Environment[variable] = profileHome;
     }
@@ -106,7 +106,7 @@ internal static class Shell
             CreateNoWindow = true,
 
             // 🔴 A transcript is read as UTF-8 or it is not the transcript. .NET defaults a redirected stream to the console's code page
-            // (CP936 here), and the first real deployment recorded an em-dash decoded as GBK and re-encoded: still valid UTF-8, so nothing
+            // (GBK here), and a real deployment recorded an em-dash decoded as GBK and re-encoded: still valid UTF-8, so nothing
             // downstream could tell, and a session in 简体中文 lost every Chinese character. The protocol door parses JSON-RPC off it too.
             StandardOutputEncoding = Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8,
@@ -118,13 +118,13 @@ internal static class Shell
         foreach (var name in strip ?? []) info.Environment.Remove(name);
         info.Environment["DAORIS_REPOSITORY"] = request.Repository;
         info.Environment["DAORIS_SERVICE_URL"] = request.ServiceUrl;
-        // TOOLS5 (D121 §2.4): every session finds the tools the person chose first on its PATH, so its own `git push` is the git the
+        // Every session finds the tools the person chose first on its PATH, so its own `git push` is the git the
         // driver's fetch ran, and an agent npm put under a managed node is found the same way when the program is resolved (Equip). The
-        // tools are the home's the start was handed (ENVSEAM1), this process's where it was handed none.
+        // tools are the home's the start is handed, this process's where it is handed none.
         Tools.Hand(info, home);
         SessionGit.Current.Hand(info.Environment, home, request.Root);
 
-        // Whose work it serves, each name set by the start for its role and the rest absent (ENVLEAK1).
+        // Whose work it serves, each name set by the start for its role and the rest absent.
         foreach (var (name, value) in request.Identity)
         {
             if (value is null) info.Environment.Remove(name);
