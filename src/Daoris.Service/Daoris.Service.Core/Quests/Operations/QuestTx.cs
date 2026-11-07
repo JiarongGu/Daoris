@@ -16,6 +16,8 @@ internal sealed class QuestTx(QuestStore store, SqliteTransaction transaction, C
 
     internal Task<Quest?> FindAsync(string id) => store.FindAsync(id, transaction, ct);
 
+    internal async Task<bool> IsForgottenAsync(string id) => (await store.ForgottenAsync(transaction, ct).ConfigureAwait(false)).Contains(id);
+
     internal Task<IReadOnlyList<QuestOperation>> HistoryAsync(string id) => store.HistoryAsync(id, transaction, ct);
 
     /// <summary>A quest's history from its row, for a quest the log never saw.</summary>

@@ -84,6 +84,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `ConnectorPlans`, `PluginRegistry` | `Agents/ConnectorPlans.cs`, `Plugins/PluginRegistry.cs` | The one composer of a start's plan per workspace, and where the plugins' doors join the registry (`WithPlugins`, over `ProviderRegistry.Joined`) |
 | `DeclaredDoor`, `DeclaredDoors`, `DeclaredSpawn` | `Contract/DeclaredDoor.cs`, `DeclaredDoors.cs`, `DeclaredSpawn.cs` | A plugin's door: Plugins (`PluginDoors`) converts a manifest's named fields into the `DeclaredDoor`, which has no field for steering, resume, rules, words, lineage or confinement (a manifest naming one reaches nothing); the factory (`DeclaredDoors.Door`) makes it a protocol-transport contract door with its own `Identity` (plugin, product, maker), own `Home` (variable, own home) and own program, interactive and no settings file stated here and its resume the transport's (eligibility to negotiate at the open), a door that reads none of its provider's identity, home, program, rule language or skill layout (`Declared`: no rules, Claude Code's skill layout); its provider is the registry's, placed by the door's `accountOf` when it joins (`JoinedProviders`) |
 | `ClaudeRules`, `ClaudeSkills`, `ClaudeServers`, `ClaudeLineageHook`, `LineageHook`, `ClaudeConversationHome` | `Providers/ClaudeCode/` | Claude Code's: its settings file with its hooks and hard denials; its per-session plugin copies; the servers file its native door names; the lineage hook's script (`hooks/lineage-hook.mjs`), installed for the lineage file Loop hands; its conversation home, whose project-folder layout (the home variable, its default place, the `projects` folder, a directory's flat name) is what the tool-home leftovers list reads, so Codex, which files by date, is unlisted |
+| `IConversationCarry`, `CarriedFiles`, `ClaudeConversationCarry`, `CodexConversationHome`, `StubConversationHome` | `Contract/`, `Providers/<Name>/` | How a provider's conversation goes from one of its account homes to another, declared on its conversation home (`IConversationHome.Carry`, null where it cannot): the context it carries whole (`WholeBound`), the spawn variables that make its harness compact a context past that, and the copy of its files, each written beside its place and moved over it. Claude Code copies `projects/<tree's flat name>/<id>.jsonl` and the `<id>/` folder for both doors (`--resume`, `session/load`), its bound 200,000 and its compaction `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` at the bound's share of the window; Codex copies the rollout under `sessions/` named by the thread id, its bound 200,000 and no compaction it can be asked for; the stand-in copies `stub-sessions/<id>`, its bound 100,000 and `DAORIS_STUB_COMPACT_AT`; dsh and `alt-stub` declare none |
 | `SpawnSkills`, `SpawnFiles`, `DshProfile` | same names; the last in `Providers/Dsh/` | A session's skills laid out by its door's provider (`ProviderRegistry.SkillLayout`) and handed by its spawn; what a spawn wrote, removed with the session; the dsh home Daoris made |
 | `SessionEquipment.Prepare`, `SessionRules.Hand` | `Loop/Session/SessionEquipment.cs`, `Loop/Session/SessionRules.cs` | The spawn's assembly, shared by every kind of start, equipped through `SpawnEquipment`, and the rules it is handed; the driver's `Prepare` and `HandRules` are one-line doors to them |
 | `daoris agent …` verbs | `AgentsCommand.cs` (with `AgentRulesVerb`, `AgentTrustVerb`, `AgentRoutes`, `AgentsWorld`), `AgentListCommand.cs`, `AgentAccountsCommand.cs`, `AgentLoginCommand.cs`, `AgentPinCommand.cs`, `AgentLongCommand.cs` | The terminal's doors: list, accounts, sign-in, key, install, pin, update, rules, trust, settings. `list` says each account's last reading, as the page does, and `list --again` asks each binary and account |
@@ -197,9 +198,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     machine or workspace lists. The person's pick at a start is the one exception. (from D197)
 28. The person's own sign-in is outside the set. Daoris never signs it in or out, never asks it anything and never starts work
     in it. (from D197, D175)
-29. The walk: under `goal` (the default) a near account goes last, then fewest of Daoris's sessions running, then a week about to
-    lapse, then most room under the curve, then least recently started, then the order. Under `order` the first ready
-    account runs. The cap stays one number per machine. (from D130, D165, D197)
+29. The walk: under `goal` (the default) a near account goes last, then the most room in the tightest window the account's
+    provider reported (any window it declares, by what is left under the curve, or of the window where the curve table has none;
+    rooms within a five-point band tie; an account with no number ranks as one with no room; not under `switch: off`), then
+    fewest of Daoris's sessions running, then a week about to lapse, then most room under the curve, then least recently
+    started, then the order. Under `order` the first ready account runs. The cap stays one number per machine.
+    (from D130, D165, D197)
 30. A cooling account is held first, by a file read, before any probe. A model family's cool-off holds a start whose model
     names that family as a word of its id (`opus`, `claude-opus-4-5`), or one at account default, and passes a start naming
     another, its hold naming the family's limit (`held.cooling-model`). Every reader that knows a line's model reads it the
@@ -239,8 +243,18 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     family's week (`seven_day_opus`, `seven_day_sonnet`) at 100% with its reset ahead, cool the account plus that family alone
     until the reset, under the account's `models` in `cooling.json` (`ModelLimits`); every other limit cools the whole
     account. *Try now* and a sign-in end both. (from D125, D205)
-38. A limited line resumes by itself at the look: its own conversation on its own account when ready, else a briefed resume on
-    another account or choice, else it waits showing the earliest reset. (from D206)
+38. A limited line resumes by itself at the look: its own conversation on its own account when ready; else a driven line goes on
+    on another account of the same agent in a new part that carries its own conversation there (`LimitCarried` in the start's
+    hand, the plan `LimitCarry`), its files copied to that account's home, resumed by its id with Daoris's word and no brief:
+    whole at or under its provider's `WholeBound`, compacted first past it where the harness can be asked to, else briefed; it is
+    briefed on another choice of agent, from or to the tool's own home, and where its door declares no carry or the copy fails,
+    the new part saying why (`moved.not-carried`, its code `unable`, `unkept`, `unhomed`, `too-large`, `missing`, `copy-failed`) and
+    `session.moved` saying `carry` (`whole`, `compacted` or that code) beside `briefed`; else it waits showing the earliest reset.
+    Measured on the install (a Sonnet session on the protocol door cut off at 155,233 tokens of a 1,000,000 window): a driven
+    session starts at about 64,500 tokens and its briefed successor at 67,838, so a carry writes about 87,400 more tokens to the
+    new account's cache at its first request and reads them back at each later one, about 200,000 input tokens' worth over the
+    ten or so requests that successor's first turn made; past about 200,000 a compaction's one read and summary cost less than
+    carrying whole. (from D206)
 39. A transient failure is tried again in the same conversation after 1, 2, 4, 8 and 16 minutes, up to the line's tries
     rule. It is never a strike, park, cool-off or walk. Past the bound the quest is held until the person's word or
     *Try again*. Every run on the protocol door takes that one retry (`TransientRetries.For` at the hold, `ChatRetry` for a
@@ -374,11 +388,6 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
 
 ## Open
 
-- A start's account by the allowance left on its five-hour window: the smart curve holds that window flat at 90% (D165 point 2),
-  so an account at 75% of it is not near, and rule 29 puts fewest before room, so concurrent starts spread onto it while another
-  stands at 10%. Weighing it waits on a choice against D165: a pace-aware smart session curve, as the week's is, which moves the
-  shared curve table (`fixtures/usage-curves.json`, read by the driver, the modules and the page), the page's words for the smart
-  curve and every running conversation's switch; or a walk step that ranks session room before fewest for a start alone.
 - A model family's cool-off: no sentence naming a family's limit is recorded yet (`ClaudeLimits.Words.Recorded`), and
   `get_usage` has answered the families' weeks null on every account read so far (`docs/2026-10-12-usage-read-evidence.md`).
   The listings and counts that show every cool-off of an account (`AccountsRoutes`, the terminal's agent list, `Offered`) read

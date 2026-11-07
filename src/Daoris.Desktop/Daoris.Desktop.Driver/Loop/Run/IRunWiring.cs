@@ -73,8 +73,8 @@ internal interface IRunWiring
     /// <summary>The role a start took and its revision, as the binding names them; null for a continuation.</summary>
     (string Role, long Revision)? RoleTaken(Consideration start, string? named);
 
-    /// <summary>The process a session starts as, with the notice its harness leaves.</summary>
-    (ProcessStartInfo Info, string? Notice) Prepare(AgentDoor adapter, SessionTarget target, HarnessSelection selection);
+    /// <summary>The process a session starts as, with the notice its harness leaves; <paramref name="prepared"/> a resume's own spawn, where it is one.</summary>
+    (ProcessStartInfo Info, string? Notice) Prepare(AgentDoor adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo? prepared = null);
 
     /// <summary>The rules one session may run under, composed for its circle and repository and handed as the harness's own settings tier.</summary>
     (string? File, object? Meta, HandedSection Handed) HandRules(
@@ -88,8 +88,10 @@ internal interface IRunWiring
     Task<SessionParts> PartsAsync(
         EntryParts entry, string? joinedIn, string? entryTree, TreeOpened? opened, string repository, CancellationToken ct);
 
-    /// <summary>The note a carry-on's brief leaves on the record it goes on from.</summary>
-    void SayMoved(PriorSession prior, string sessionId, string agent, string? account, string why, ComposedBrief brief);
+    /// <summary>The note a carry-on's brief leaves on the record it goes on from; <paramref name="notCarried"/> why a limit's move could not carry its conversation.</summary>
+    void SayMoved(PriorSession prior, string sessionId, string agent, string? account, string why, ComposedBrief brief, string? notCarried = null);
+
+    void SayCarried(PriorSession prior, string sessionId, string agent, string? account, string why, CarryPlan.Carried carried);
 
     /// <summary>The re-ask of a start whose agent refused the model it asked at the open, on the walk's later entries.</summary>
     Task<(ActorAsked Asked, string Choice)?> ReaskAsync(

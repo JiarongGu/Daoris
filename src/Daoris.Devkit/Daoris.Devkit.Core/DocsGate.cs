@@ -49,7 +49,7 @@ public sealed class DocsGate(IGitHistory history) : IGate
 
             foreach (var described in entry.Describes)
             {
-                var codeAt = history.LastCommitDate(described);
+                var codeAt = history.LastBehaviourDate(described);
                 if (codeAt is null) continue;
 
                 // Compared by DAY, not by instant. Within one working session a document and the code
@@ -81,6 +81,9 @@ public interface IGitHistory
     /// <summary>The author date of the last commit touching this path, or null if it has never been committed.</summary>
     DateTimeOffset? LastCommitDate(string relativePath);
 
+    /// <summary>The last commit that may have changed what the path does: a <c>docs</c> or <c>style</c> commit claims none.</summary>
+    DateTimeOffset? LastBehaviourDate(string relativePath) => LastCommitDate(relativePath);
+
     /// <summary>What the dates were read from when it is not HEAD, in words for the verdict; null when it is HEAD.</summary>
     string? Basis => null;
 }
@@ -95,11 +98,16 @@ public sealed class CommandLineGitHistory(string repositoryRoot) : IGitHistory
 {
     private readonly Lazy<ProposedMerge?> _merge = new(() => ProposedMerge.Build(repositoryRoot));
 
-    public DateTimeOffset? LastCommitDate(string relativePath)
+    public DateTimeOffset? LastCommitDate(string relativePath) => Logged([], relativePath);
+
+    public DateTimeOffset? LastBehaviourDate(string relativePath) =>
+        Logged(["--no-merges", "--invert-grep", "-E", "--grep=^(docs|style)(\\(|:|!)"], relativePath);
+
+    private DateTimeOffset? Logged(string[] filters, string relativePath)
     {
         string[] arguments = _merge.Value is { } merge
-            ? ["log", "-1", "--format=%aI", merge.Commit, "--", relativePath]
-            : ["log", "-1", "--format=%aI", "--", relativePath];
+            ? ["log", "-1", "--format=%aI", .. filters, merge.Commit, "--", relativePath]
+            : ["log", "-1", "--format=%aI", .. filters, "--", relativePath];
         var result = GitStart.Run(arguments, repositoryRoot);
 
         if (result.ExitCode != 0) return null;

@@ -173,4 +173,44 @@ public sealed class DocsGateMergeTests : IDisposable
             "README.md last changed 2026-01-01, but src changed 2026-01-09 (8 days later) — the document is supposed to describe it",
             stale.Detail);
     }
+
+    /// <summary>The README and its source from day 1, then a commit on day 9 touching only the source, under <paramref name="message"/>.</summary>
+    private void SourceChangedLater(string message)
+    {
+        Git("init", "-q", "-b", "main");
+        Git("config", "user.name", "Fixture");
+        Git("config", "user.email", "fixture@example.invalid");
+        Git("config", "core.autocrlf", "false");
+        _fx.Write("README.md", "# Fixture\n\nWhat src does.\n");
+        _fx.Write("src/a.txt", "one\n");
+        Commit(1, "one");
+        _fx.Write("src/a.txt", "one // a comment\n");
+        Commit(9, message);
+    }
+
+    [Theory]
+    [InlineData("docs(src): the comments say why")]
+    [InlineData("style: wrap the long lines")]
+    [InlineData("docs!: the comments say why")]
+    public void A_source_changed_only_by_a_docs_or_style_commit_leaves_its_document_current(string message)
+    {
+        SourceChangedLater(message);
+
+        var result = RunDocs();
+
+        Assert.True(result.Passed, result.Detail);
+    }
+
+    [Theory]
+    [InlineData("fix(src): count from one")]
+    [InlineData("a docs change that is not typed docs")]
+    public void A_source_changed_by_any_other_commit_makes_its_document_stale(string message)
+    {
+        SourceChangedLater(message);
+
+        var result = RunDocs();
+
+        Assert.False(result.Passed);
+        Assert.Contains("src changed 2026-01-09", result.Detail);
+    }
 }

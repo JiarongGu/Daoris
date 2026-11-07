@@ -50,6 +50,6 @@
   ],
   "notDecisions": [
     { "path": "L", "why": "A workflow's send-back is a word between turns that the dispatcher owns; an ended conversation's go-on from it is path B, with B's own-account rule." },
-    { "path": "M", "why": "SWITCHCTX1's carry is a move's `how`, not a decision; it has no code yet, so the census reserves it and fails the day a source writes a carried move." }
+    { "path": "M", "why": "The carry is a move's `how`, not a decision: a driven line's limit move carries its conversation in the start's hand (`LimitCarried`), its lines coded in `StartNoteCodes` alone, which the census holds." }
   ]
 }

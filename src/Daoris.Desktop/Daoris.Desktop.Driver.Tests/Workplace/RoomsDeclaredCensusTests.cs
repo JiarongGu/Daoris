@@ -16,11 +16,11 @@ public sealed class RoomsDeclaredCensusTests(ITestOutputHelper output)
     [Fact]
     public void This_repositorys_declaration_passes_and_says_its_claim_groups()
     {
-        var root = GitSeed.RepoRoot();
+        var checkout = GitSeed.RepoRoot();
         var report = RoomCheck.Of(
-            File.ReadAllText(Path.Combine(root, LineRegistration.LanesFile)),
-            File.ReadAllText(Path.Combine(root, GeneratedWriters.DeclarationFile)),
-            Tracked(root));
+            File.ReadAllText(Path.Combine(checkout, LineRegistration.LanesFile)),
+            File.ReadAllText(Path.Combine(checkout, GeneratedWriters.DeclarationFile)),
+            Tracked(checkout));
         output.WriteLine(report.Said());
 
         Assert.Empty(report.Problems);
@@ -29,9 +29,9 @@ public sealed class RoomsDeclaredCensusTests(ITestOutputHelper output)
             report.Groups.Select(group => group.ToArray()).ToArray());
     }
 
-    private static IReadOnlyList<string> Tracked(string root)
+    private static IReadOnlyList<string> Tracked(string checkout)
     {
-        var start = new ProcessStartInfo("git") { WorkingDirectory = root, RedirectStandardOutput = true, UseShellExecute = false };
+        var start = new ProcessStartInfo("git") { WorkingDirectory = checkout, RedirectStandardOutput = true, UseShellExecute = false };
         foreach (var each in new[] { "ls-files", "-z" }) start.ArgumentList.Add(each);
         using var git = Process.Start(TestGit.Past(start)) ?? throw new InvalidOperationException("git did not start");
         var listed = git.StandardOutput.ReadToEnd();

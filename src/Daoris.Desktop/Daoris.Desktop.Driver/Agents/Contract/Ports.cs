@@ -163,6 +163,9 @@ public interface IConversationHome
     /// directory, as <see cref="ProjectFolders"/> says); null for an agent that files its sessions another way (Codex, by date).
     /// </summary>
     ProjectFolders? Projects => null;
+
+    /// <summary>How a conversation goes from one of the agent's account homes to another; null where it cannot.</summary>
+    IConversationCarry? Carry => null;
 }
 
 /// <summary>
