@@ -3,7 +3,7 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a <see cref="TransportRun"/> asks of the loop, answered from the driver that holds it (AGENTPROVIDER1m-i): the run's wait, its bounded
+/// What a <see cref="TransportRun"/> asks of the loop, answered from the driver that holds it: the run's wait, its bounded
 /// capture, its watch's reading, its kept conversations and downloads and its processes' lineage brackets are the driver's own, so the run
 /// repeats none of them. The run sits in Agents and the driver above it, so this port is where the two meet.
 /// </summary>

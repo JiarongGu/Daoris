@@ -10,8 +10,8 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
     private readonly Driver _driver = driver;
 
     /// <summary>
-    /// The helper's pass (MIXAGENT2a-ii; the reviewer's machinery, <see cref="PassAsync"/>): a read-only clone of the asker's
-    /// repository at its tree's last commit with the asker's captured work in progress laid over it (COAGENT1a), its record a chat
+    /// The helper's pass (the reviewer's machinery, <see cref="PassAsync"/>): a read-only clone of the asker's
+    /// repository at its tree's last commit with the asker's captured work in progress laid over it, its record a chat
     /// that serves the asker, one turn under the reviewer's read-only rules with its one tool <c>helper_answer</c>, and the clone
     /// removed however it ended, nothing read back from it. A choice with no agent starts nothing.
     /// </summary>
@@ -42,7 +42,7 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
             return new HelperPassRun(null, $"held  helper for ask `{ask.Ask.Id}`: {error.Message}") { Code = HelperWhy.Unreadable };
         }
 
-        // COAGENT1a: the asker's work in progress laid over the fresh copy; a copy it cannot be laid over whole is removed, and no
+        // The asker's work in progress laid over the fresh copy; a copy it cannot be laid over whole is removed, and no
         // helper reads part of it.
         if (ask.Capture is { } capture && HelperCapture.LayOver(copy.Path, capture) is { } unlaid)
         {
@@ -59,7 +59,7 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
         {
             var reask = ask.Reask is { } walk ? new OneTurnReask(choice, walk) : null;
             run = await ReadHelperInCopyAsync(ask, choice, adapter, selection, helper, copy, reask, ct).ConfigureAwait(false);
-            // D205 §3.5(f): its agent refused the entry's model at the open, so the refused record has ended `choice-not-offered` and this
+            // Its agent refused the entry's model at the open, so the refused record has ended `choice-not-offered` and this
             // call walks its candidates on with it passed, then opens the replacement and calls `Opened` again with it, before it
             // publishes an ordinary outcome; with none left, `not-started` with the pass reasons.
             while (run is { NotOffered: true } && reask is not null && !ct.IsCancellationRequested)
@@ -110,7 +110,7 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
         }
 
         var sessionId = opened.Session!;
-        // Marked as this process's start until its spawn's marker replaces it (QUEUED1).
+        // Marked as this process's start until its spawn's marker replaces it.
         _context.Processes.MarkOpening(sessionId);
         // The state names the helper now, before its turn (helper_answer finds its ask by it).
         ask.Opened?.Invoke(sessionId);
@@ -128,7 +128,7 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
             var packet = new HelperPacket(ask.Ask.Asker, ask.Repository, ask.Tip, ask.Ask.Question, bound)
             {
                 Capture = ask.Capture,
-                // COWORKUX1d: a follow-up is handed the ask it follows as Daoris's record, and says where its answer goes.
+                // A follow-up is handed the ask it follows as Daoris's record, and says where its answer goes.
                 Earlier = new HelperFiles(home).EarlierOf(ask.Ask),
                 ForPerson = ask.Ask.ForPerson,
             };
@@ -138,9 +138,9 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
                 Helper = ask.Ask.Id,
                 Session = sessionId,
                 Prompt = HelperInstruction.Compose(packet),
-                // CONTEXTONE1c: its standing block, its copy's facts and the person's choices for its repository.
+                // Its standing block, its copy's facts and the person's choices for its repository.
                 Block = StandingBlocks.OnMachine(StandingBlocks.OfTree(ask.Repository, copy.Path), ParticipantWork.Help, _context.Config, [], null),
-                // MODELROLE1e (D205 §3.2, §4.4): the entry's model and effort, carried on either door, and the choice its record keeps.
+                // The entry's model and effort, carried on either door, and the choice its record keeps.
                 Asked = choice.Effective?.Asked,
                 Choice = choice.Effective?.From,
             };
@@ -160,7 +160,7 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
                 handed = handing.Hand(info, home, ConnectorPlans.For(sessionId, ask.Workspace, connector is null ? [] : [connector], ConnectorPlans.ConnectorOnly));
             }
 
-            // HELPPLUG1c (D170 point 4): the skills plugins hand sessions, as a reviewer's are handed them: words, never a tool.
+            // The skills plugins hand sessions, as a reviewer's are handed them: words, never a tool.
             var (skills, skillPlugins) = SpawnSkills.Hand(_context.Adapters, adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
             using var skilled = new Disposer(() => SpawnFiles.RemoveFolder(skills));
 
@@ -183,7 +183,7 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
                 transientWanted: TransientOwners.Helper(_context.Processes, sessionId, new HelperFiles(home), ask.Ask.Id),
                 noConnector: HelperPass.NoConnector,
                 stopMade: stop => stoppedFirst = stop,
-                // D205 §3.5(f): its agent's refusal of the entry's model at the open is kept as the account's reading and asked again in
+                // Its agent's refusal of the entry's model at the open is kept as the account's reading and asked again in
                 // this call: a later entry of the same agent on the same account is set on this session, anything else ends the record.
                 offers: new OpenOffers(selection.Version, selection.Profile, reask is null ? null : _ => reask.SameAccountAsync()),
                 conclude: async (exitCode, used, turnFailed, ended) =>
@@ -218,7 +218,7 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
 
                     await service.AdvanceAsync(
                         sessionId, conclusion.State, note: conclusion.Note, ct: ct, limit: limited, parts: conclusion.Parts).ConfigureAwait(false);
-                    // Its last words stand as the answer only where its turn completed and it used no tool (design §3).
+                    // Its last words stand as the answer only where its turn completed and it used no tool.
                     var lastWords = conclusion.State == "completed" ? SessionLastWords.ParkedWords(_context.Events, sessionId, transcript) : null;
                     return Ended(conclusion.State, conclusion.Note, lastWords) with { Limit = limited, Transient = transient };
                 }).ConfigureAwait(false);
@@ -239,7 +239,7 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
         }
         catch (Exception) when (stoppedFirst is not null)
         {
-            // A wire that broke after a stop is that stop's end, not a failure (STOPRACE1), as a quest's session reads it.
+            // A wire that broke after a stop is that stop's end, not a failure, as a quest's session reads it.
             var stopped = await _driver.EndStoppedAsync(sessionId, stoppedFirst).ConfigureAwait(false);
             return Ended(stopped.State, stopped.Note);
         }
@@ -264,7 +264,7 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
     }
 
     /// <summary>
-    /// How a helper's turn ended, from its exit and its door (D46 §4): a clean exit is <c>completed</c>, whatever it said; a refused
+    /// How a helper's turn ended, from its exit and its door: a clean exit is <c>completed</c>, whatever it said; a refused
     /// turn or another exit is <c>failed</c>. Whether it answered is the answer file's, which the settling reads.
     /// </summary>
     internal static SessionConclusion ReadHelper(string asker, int exitCode, string? turnFailed) =>

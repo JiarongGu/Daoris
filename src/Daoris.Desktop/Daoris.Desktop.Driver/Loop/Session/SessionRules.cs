@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 internal static class SessionRules
 {
     /// <summary>
-    /// The file, which goes when the session does, what the protocol door carries, and what was handed, for the instruction's account,
+    /// The file, which goes when the session does, what the protocol door carries, and what is handed, for the instruction's account,
     /// which outlives the file. A harness a Claude Code rule means nothing to is handed nothing, and no file is written. Shared by a
     /// quest's session and an ask's intake, so neither forgets it.
     /// </summary>
@@ -58,7 +58,7 @@ internal static class SessionRules
         if (across is not null) composed = composed.Joined(AcrossRules.Rules(across, [tree, kept ?? "", said ?? "", .. folders]));
 
         // 🔴 What the session's job needs, beside the person's rules: an intake's room names its tools in its own settings file, and over
-        // the protocol door only what is handed at spawn counts. The first real intake was refused `WebFetch` that way. A deny the
+        // the protocol door only what is handed at spawn counts. A deny the
         // person wrote still wins.
         if (job is { Count: > 0 })
         {
@@ -79,7 +79,7 @@ internal static class SessionRules
         if (heavy is { Deny.Count: > 0 }) composed = composed with { Deny = [.. composed.Deny.Union(heavy.Deny, StringComparer.Ordinal)] };
         IReadOnlyList<string> heavyTold = heavy?.HardDeny is { } sentence ? [sentence] : [];
 
-        // What Daoris keeps for git is no session's to read (D241 point 7), whatever shape its rules took.
+        // What Daoris keeps for git is no session's to read, whatever shape its rules take.
         composed = composed with { Deny = [.. composed.Deny.Union([GitSessionHolds.ProfileDeny(home)], StringComparer.Ordinal)] };
 
         var file = language.Write(home, sessionId, new HandedRules(
@@ -118,7 +118,7 @@ internal static class SessionRules
         target.Brainstorm is not null ? BrainstormPermissions.Posture(adapter) : null;
 
     /// <summary>
-    /// The permission rules a session was handed, kept in its instruction's account: how many in each list, the scopes they were composed
+    /// The permission rules a session is handed, kept in its instruction's account: how many in each list, the scopes they were composed
     /// for, the hard denials and the tree guard. The rules file goes when the run does, and the account keeps what it held by count.
     /// </summary>
     /// <param name="takes">Whether the session's agent takes Daoris's rules at all (<see cref="AgentDoor.TakesSettings"/>).</param>

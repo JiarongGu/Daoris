@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The brainstorm at the look (BRAINSTORM1a, D176 points 1-4 and 8): a request the person's verb wrote is frozen into one packet from
+/// The brainstorm at the look: a request the person's verb wrote is frozen into one packet from
 /// Daoris's own knowledge and waits for the person's send; sent, each named agent's generator answers once in a room holding that
 /// packet, Daoris validates every answer with no model and gives a failed one its one repair, the synthesis ranks the proposals
 /// under anonymous ids, and Daoris re-attaches who gave which and keeps the document. Nothing is published, nothing travels, and
@@ -13,11 +13,11 @@ namespace Daoris.Driver;
 /// <para><b>The state file is the driver's alone</b> (<see cref="BrainstormFiles"/>): <c>frozen</c> naming the packet's digest,
 /// <c>running</c>, and <c>ended</c>. The person's send and stop are files of their own.</para>
 ///
-/// <para><b>Bounded, and never hanging</b> (BRAINSTORM1b, D176 points 6, 7 and 9): the person's policy names the agents and the
+/// <para><b>Bounded, and never hanging</b>: the person's policy names the agents and the
 /// minutes. The generators run side by side, each taking a slot under the cap and waiting for one within the deadline; the
 /// generators end at the request's deadline less the synthesis's and the challenge's minutes, reserved from the start; a pass past
 /// its own minutes, or past that deadline, is stopped, and what answered is kept. A crash fails its pass alone. A limit cools its
-/// account (D125) and starts the pass once more on the next ready account, as its one repair. The person's stop ends every pass,
+/// account and starts the pass once more on the next ready account, as its one repair. The person's stop ends every pass,
 /// and a restart ends what ran as <c>interrupted</c>; nothing runs again by itself.</para>
 /// </remarks>
 /// <param name="driver">The driver whose run machinery a turn goes through: the spawn's preparation, the rules handed and the hold.</param>
@@ -27,10 +27,10 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
 
     private readonly Driver _driver = driver;
 
-    /// <summary>The most generators one request runs (D176 point 9's proposed default: at most four makers).</summary>
+    /// <summary>The most generators one request runs (at most four makers).</summary>
     internal const int MostAgents = DriverBrainstormLimits.MostAgents;
 
-    /// <summary>The code of a turn not started because this machine has no connector to hand it, so no result tool (BRAINSTORM1a2).</summary>
+    /// <summary>The code of a turn not started because this machine has no connector to hand it, so no result tool.</summary>
     internal const string NoConnector = "no-connector";
 
     /// <summary>A pass stopped at its own minutes.</summary>
@@ -42,13 +42,13 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// <summary>A pass that found no slot under the cap before its deadline: never started.</summary>
     internal const string CapFull = "cap-full";
 
-    /// <summary>A turn whose account met its limit (D125): the account cools, and the pass starts once more on the next one.</summary>
+    /// <summary>A turn whose account met its limit: the account cools, and the pass starts once more on the next one.</summary>
     internal const string Limit = "limit";
 
     /// <summary>A turn that ended by a failure of its own, with no answer.</summary>
     internal const string Crashed = "crashed";
 
-    /// <summary>An agent the request named that the policy does not list (D176 point 9): never run.</summary>
+    /// <summary>An agent the request named that the policy does not list: never run.</summary>
     internal const string NotInPolicy = "not-in-policy";
 
     /// <summary>Guards the slots this driver's brainstorm passes hold, and what else held the cap at the last look.</summary>
@@ -100,16 +100,16 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                         events.Add(_context.Said.Own("brainstorm", $"brainstorm `{request.Id}` stopped by the person before it ran: nothing went to any agent."));
                         break;
                     case null when _context.Beside:
-                        // PARALLEL1b (D181 point 3): under the watch, as the `freeze` topic's judge beside the look, a request frozen
+                        // Under the watch, as the `freeze` topic's judge beside the look, a request frozen
                         // once however many looks meet it while it freezes, so a checkout or a search slow to answer holds no start.
                         Freezing(request.Id, token => FreezeAsync(request, snapshot, files, token), ct);
                         break;
                     case null:
-                        // A packet frozen waits for the person's send (NOTIFY2h).
+                        // A packet frozen waits for the person's send.
                         events.Add(_context.Said.Wait("brainstorm", await FreezeAsync(request, snapshot, files, ct).ConfigureAwait(false)));
                         break;
                     case BrainstormStates.Frozen when files.Sent(request.Id) == state.Packet:
-                        // DRAINHOLD1: a sent brainstorm's turns are sessions the drain waits on; it stays frozen and sent, and runs at the first
+                        // A sent brainstorm's turns are sessions the drain waits on; it stays frozen and sent, and runs at the first
                         // look that does not drain.
                         if (_context.Config.Draining)
                         {
@@ -149,11 +149,11 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         return held + begun;
     }
 
-    /// <summary>How many packets are frozen at once beside the looks (PARALLEL1b; a topic bounded, the events design §A3).</summary>
+    /// <summary>How many packets are frozen at once beside the looks (a topic bounded).</summary>
     internal const int FreezesAtOnce = 2;
 
     /// <summary>
-    /// A request's packet frozen as the <c>freeze</c> topic's judge beside the look (PARALLEL1b), a brainstorm's or a meeting's: one
+    /// A request's packet frozen as the <c>freeze</c> topic's judge beside the look, a brainstorm's or a meeting's: one
     /// judgement per request, its line joining a later look's report, and what stops it said as the look would have said it.
     /// </summary>
     internal void Freezing(string id, Func<CancellationToken, Task<string>> freeze, CancellationToken ct, string kind = "brainstorm") =>
@@ -169,7 +169,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                                               or UnauthorizedAccessException
                                               || (error is OperationCanceledException && !token.IsCancellationRequested))
             {
-                // Said once until it is frozen (PARALLEL1b2): its line wakes the next look, which asks it again, so a freeze that keeps
+                // Said once until it is frozen: its line wakes the next look, which asks it again, so a freeze that keeps
                 // failing would spin the loop (LookFacts.Failed).
                 return _context.Runs.Facts.Failed($"freeze/{kind}:{id}")
                     ? [$"{kind} `{id}` could not be looked at this look, and is looked at again at the next: {error.Message}"]
@@ -178,14 +178,14 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         }, ct);
 
     /// <summary>
-    /// The policy standing for a request (D176 point 9): its repository's workspace's whole, else this machine's. A meeting's is the
-    /// same (AGENTROOM1a, D177 point 6: the brainstorm's bounds and policy are the meeting's).
+    /// The policy standing for a request: its repository's workspace's whole, else this machine's. A meeting's is the
+    /// same: the brainstorm's bounds and policy are the meeting's.
     /// </summary>
     internal BrainstormRule RuleOf(string? asked, Snapshot snapshot) => BrainstormRules.Resolve(_context.Config, WorkspaceOf(asked, snapshot)).Rule;
 
     /// <summary>
     /// The workspace of the repository a request asks about, as the registry says it, else the default one; null for a request on no repository.
-    /// Its policy is read there (D176 point 9), and each of its passes asks its accounts there, for the version it pins (FOUNDATION1j part ii).
+    /// Its policy is read there, and each of its passes asks its accounts there, for the version it pins.
     /// </summary>
     private static string? WorkspaceOf(string? asked, Snapshot snapshot) =>
         asked is { } repository
@@ -194,7 +194,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             : null;
 
     /// <summary>
-    /// The packet frozen (D176 point 2): the question, and for a repository its sources from the knowledge search in more than one
+    /// The packet frozen: the question, and for a repository its sources from the knowledge search in more than one
     /// wording, else from its declared index's files; written once, named by its digest, and shown before anything goes.
     /// </summary>
     private async Task<string> FreezeAsync(BrainstormRequest request, Snapshot snapshot, BrainstormFiles files, CancellationToken ct)
@@ -207,14 +207,14 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             + $"and send it with `daoris brainstorm send {request.Id}`.";
     }
 
-    /// <summary>The packet's assembly (D176 point 2), by <see cref="BrainstormAssembly"/>; a meeting's first packet is this assembly too.</summary>
+    /// <summary>The packet's assembly, by <see cref="BrainstormAssembly"/>; a meeting's first packet is this assembly too.</summary>
     internal Task<BrainstormPacket> AssembleAsync(
         string question, string? asked, Snapshot snapshot, CancellationToken ct, IReadOnlyList<string>? named = null) =>
         new BrainstormAssembly(_context).AssembleAsync(question, asked, snapshot, ct, named);
 
 
     /// <summary>
-    /// A brainstorm a driver that stopped left running (D176 point 6): each pass it was running ends as <c>interrupted</c>, what
+    /// A brainstorm a driver that stopped left running: each pass still running ends as <c>interrupted</c>, what
     /// answered is kept as the unranked document, and nothing runs again by itself.
     /// </summary>
     private static string Interrupted(BrainstormRequest request, BrainstormState state, BrainstormFiles files)
@@ -279,7 +279,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             {
                 files.WriteState(new BrainstormState(request.Id, BrainstormStates.Ended, digest, "failed", DateTimeOffset.UtcNow));
                 files.RemoveRooms(request.Id);
-                // Stopped by a failure, not by the person: an end nobody pressed and nobody must answer (NOTIFY2h2).
+                // Stopped by a failure, not by the person: an end nobody pressed and nobody must answer.
                 return new StartRun($"brainstorm `{request.Id}` stopped: {error.Message}", Opened: true)
                 {
                     Look = LookClassed.Noticed("brainstorm", new LookNews(LookSaid.BrainstormFailed, request.Id)),
@@ -292,22 +292,22 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         });
 
     /// <summary>
-    /// The generators a request runs, by pass, in its order (D176 point 9: a request's flags choose within the policy, never beyond
+    /// The generators a request runs, by pass, in its order (a request's flags choose within the policy, never beyond
     /// it): the agents it names that the policy lists, or every one it names where the policy lists none; with none named, the
-    /// policy's, else Brainstorm's voices (D205 §4.4, MODELROLE1c: its actor's agents, <c>adapter</c>'s as before, at account default).
+    /// policy's, else Brainstorm's voices (its actor's agents, at account default).
     /// One the policy does not list keeps its pass, never run.
     /// </summary>
-    /// <param name="workspace">The request's workspace, which a scoped role is found by (FOUNDATION1x); null for the machine's.</param>
+    /// <param name="workspace">The request's workspace, which a scoped role is found by; null for the machine's.</param>
     /// <exception cref="DriverException">The role catalogue does not read, or two roles take brainstorming in one scope.</exception>
     internal List<(string Pass, string Agent, bool Allowed, ActorEffective Entry)> Generators(
         BrainstormRequest request, BrainstormRule rule, string? workspace = null)
     {
-        // FOUNDATION1x: the role that takes brainstorming at the request's workspace; the seeded catalogue answers Brainstorm.
+        // The role that takes brainstorming at the request's workspace; the seeded catalogue answers Brainstorm.
         var found = RoleCatalog.ReadHome(_context.Harnesses.Home).RoleFor(ParticipantWork.Brainstorm, new RolePlace(workspace));
         if (found.Held is { } held) throw new DriverException(held);
         var role = found.Role?.Id ?? "brainstorm";
         var named = request.Agents.Select(agent => agent.Trim()).Where(agent => agent.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-        // D205 §4.4 (MODELROLE1e): the request's and the policy's agents decide who, each taking the actor's entry for it, else account
+        // The request's and the policy's agents decide who, each taking the actor's entry for it, else account
         // default (rule-default); with none named, the actor's entries are the voices, one each. The plan is read once and frozen for the
         // brainstorm: a later change of the actor never reaches a run begun, and a voice that cannot run is dropped, never replaced.
         var voices = found.Role is null ? []
@@ -329,7 +329,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// <summary>
     /// The passes of one sent brainstorm: the generators side by side within the generators' deadline, then the synthesis within
     /// its own minutes, the challenge's kept in reserve, then the document; the person's stop watched throughout, and the rooms
-    /// removed however it ended. Its line is classed here (NOTIFY2h2): the person's stop their own, an end its page says.
+    /// removed however it ended. Its line is classed here: the person's stop their own, an end its page says.
     /// </summary>
     /// <param name="workspace">The workspace of the repository it asks about, which each pass's accounts are asked for; null for none.</param>
     private async Task<StartRun> RunAsync(
@@ -383,10 +383,10 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             }
             else
             {
-                // The synthesizer: the first agent of the request whose generator answered (D176 point 9's proposed default), within its
+                // The synthesizer: the first agent of the request whose generator answered, within its
                 // own minutes and before the challenge's reserve.
                 var synthesizer = answered[0].By.Adapter;
-                // D205 §4.2: the synthesis takes its generator's asked choice, not the actor as it stands now, and its record says so.
+                // The synthesis takes its generator's asked choice, not the actor as it stands now, and its record says so.
                 var generated = plan.First(each => each.Pass == answered[0].By.Pass).Entry;
                 var (record, synthesis) = await PassAsync<BrainstormSynthesized>(
                     id, "s1", synthesizer, BrainstormPassRecord.Synthesize, bytes, BrainstormInstruction.Synthesizer(digest),
@@ -418,10 +418,10 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         }
     }
 
-    /// <summary>A run's line, classed where it is made (NOTIFY2h2).</summary>
+    /// <summary>A run's line, classed where it is made.</summary>
     private static StartRun Ran(LookClass @class, string line) => new(line, Opened: true) { Look = new LookClassed(@class, "brainstorm") };
 
-    /// <summary>The person's stop (D176 point 6): every pass ended, and what answered kept as the unranked document.</summary>
+    /// <summary>The person's stop: every pass ended, and what answered kept as the unranked document.</summary>
     private static string Stopped(
         string id, BrainstormPacket packet, IReadOnlyList<BrainstormPassRecord> passes, IReadOnlyList<(BrainstormBy By, BrainstormAnswer Answer)> answered,
         IReadOnlyList<string> needs, BrainstormFiles files, string digest)
@@ -437,7 +437,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
 
     /// <summary>
     /// The person's stop, looked for while a brainstorm runs: its file, written by their verb, ends every pass at once. A meeting's
-    /// round is watched the same, through its turns' files (AGENTROOM1a).
+    /// round is watched the same, through its turns' files.
     /// </summary>
     internal async Task WatchAsync(string id, BrainstormFiles files, CancellationTokenSource stop, CancellationToken done)
     {
@@ -469,7 +469,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         return (record, null);
     }
 
-    /// <summary>A slot under the machine's cap (D176 point 7, D130), taken by a pass as a reviewer's is; false where the cap is full.</summary>
+    /// <summary>A slot under the machine's cap, taken by a pass as a reviewer's is; false where the cap is full.</summary>
     private bool TrySlot()
     {
         lock (_slots)
@@ -486,11 +486,11 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     }
 
     /// <summary>
-    /// One pass (D176 points 3, 6 and 7): a slot under the cap, waited for until <paramref name="until"/>; then its turn in a fresh
+    /// One pass: a slot under the cap, waited for until <paramref name="until"/>; then its turn in a fresh
     /// room within its own minutes from its slot, cut at <paramref name="until"/>; its answer validated by <paramref name="check"/>,
     /// and where that failed its one repair, handed the codes, within the same minutes. A limit starts it once more instead, as that
     /// repair; a crash is a turn with no answer; the person's stop ends it. Its record is written at each turn's start, so a restart
-    /// knows what ran, and whatever it came to. A meeting's turn is one such pass (AGENTROOM1a, D177 point 4), run by
+    /// knows what ran, and whatever it came to. A meeting's turn is one such pass, run by
     /// <paramref name="run"/>: a meeting's runner, never the brainstorm's.
     /// </summary>
     /// <param name="run">How its turns run; null for a brainstorm's: its test stand-in, else <see cref="TurnAsync"/>.</param>
@@ -506,7 +506,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         var family = AgentFamily.Of(_context.Adapters, agent);
         var maker = family.Maker ?? family.Owner;
         string? account = null;
-        // The accounts this voice passed for its model (D205 §4.4): its one bounded restart leaves them out, never a cool-off.
+        // The accounts this voice passed for its model: its one bounded restart leaves them out, never a cool-off.
         var passedAccounts = new List<string>();
         (BrainstormPassRecord, T?) Ended(string state, IReadOnlyList<string> codes, int turns, T? valid = null, string? why = null)
         {
@@ -590,8 +590,8 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
 
                 if (ran.Code is Limit or AgentOffers.NotOffered && !restart && !cut)
                 {
-                    // D125: the account cooled where the turn ran, no strike is counted, and the pass starts once more on the next
-                    // ready account of that agent's walk, as its one repair, within its minutes. D205 §4.4: so does an account whose agent
+                    // The account cooled where the turn ran, no strike is counted, and the pass starts once more on the next
+                    // ready account of that agent's walk, as its one repair, within its minutes. So does an account whose agent
                     // refused the voice's model at the open, that account passed for the voice and judged by the next account's reading;
                     // with none that offers it, the voice is dropped (below), never replaced by another entry or agent.
                     codes = [ran.Code];
@@ -624,18 +624,18 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
 
     private BrainstormTurnRunner Turns => new(this, _context, _driver);
 
-    /// <summary>A voice's start plan (the foundation design §2.4's table).</summary>
+    /// <summary>A voice's start plan.</summary>
     internal static StartPlan Voice(BrainstormTurn turn, DriverConfig config, HarnessRoster roster) => BrainstormTurnRunner.Voice(turn, config, roster);
 
     internal static Task<HarnessSelection> VoiceAsync(BrainstormTurn turn, DriverConfig config, HarnessRoster roster, CancellationToken ct) =>
         BrainstormTurnRunner.VoiceAsync(turn, config, roster, ct);
 
-    /// <summary>A room measurement of <paramref name="agent"/> (BRAINSTORM1c), by <see cref="BrainstormTurnRunner"/>.</summary>
+    /// <summary>A room measurement of <paramref name="agent"/>, by <see cref="BrainstormTurnRunner"/>.</summary>
     internal Task<RoomMeasure> MeasureRoomAsync(string agent, bool spend, CancellationToken ct) => Turns.MeasureRoomAsync(agent, spend, ct);
 
-    /// <summary>The code a pass is <c>unavailable</c> with where its voice's walk found no ready account (BRAINSTORM1c, D176 point 7).</summary>
+    /// <summary>The code a pass is <c>unavailable</c> with where its voice's walk found no ready account.</summary>
     internal static string PassCode(HarnessSelection selection) => BrainstormTurnRunner.PassCode(selection);
 
-    /// <summary>One real turn (BRAINSTORM1a, BRAINSTORM1a2), by <see cref="BrainstormTurnRunner"/>.</summary>
+    /// <summary>One real turn, by <see cref="BrainstormTurnRunner"/>.</summary>
     internal Task<BrainstormTurnRun> TurnAsync(BrainstormTurn turn, CancellationToken ct) => Turns.TurnAsync(turn, ct);
 }

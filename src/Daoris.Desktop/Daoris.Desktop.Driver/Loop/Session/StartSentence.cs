@@ -11,7 +11,7 @@ internal static class StartSentence
     /// <param name="resumes">The record it carries on or resumes after, or null.</param>
     /// <param name="written">The record the person's words were written to, as the look read it, or null.</param>
     /// <param name="elsewhere">Whether it runs on another account than the record it carries on.</param>
-    /// <param name="handedOver">The quest was handed over from <paramref name="resumes"/>: said by the agent it came from.</param>
+    /// <param name="handedOver">The quest is handed over from <paramref name="resumes"/>: said by the agent it came from.</param>
     /// <param name="walked">The account the hand-over named could not run it, and another account of the named agent did.</param>
     /// <param name="joinedSession">The earlier part's session whose free tree this start went into, or null.</param>
     /// <param name="broughtForward">It carries on a stand-down whose lost take the person brought forward: said as that.</param>
@@ -34,7 +34,7 @@ internal static class StartSentence
                     StartNoteCodes.StartedInAskingTree, $"in the tree session `{resumes!.Session}` asked from.", ("session", resumes.Session)));
         }
 
-        // A further part gone into a free tree of its entry is said, as a start in the root is not. A part whose tree was removed grows
+        // A further part gone into a free tree of its entry is said, as a start in the root is not. A part whose tree is removed grows
         // again, and its opening (`started.tree`) already says whose tree went.
         if (!carryingOn)
         {

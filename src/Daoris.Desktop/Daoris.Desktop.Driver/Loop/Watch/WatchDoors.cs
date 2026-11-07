@@ -18,15 +18,15 @@ internal sealed class WatchDoors
 {
     private volatile NodeRuntime? _nodes;
 
-    // Fires link 8 alone on the loop's chain (FABRIC-RUN1d): set while the loop runs with a hook set, null before and after.
+    // Fires link 8 alone on the loop's chain: set while the loop runs with a hook set, null before and after.
     private Action<ChainEvent>? _nodesWake;
 
-    // The doors' asks for a whole pass of link 8 (FABRIC-CUTOVER1d): set while the runtime runs, null otherwise.
+    // The doors' asks for a whole pass of link 8: set while the runtime runs, null otherwise.
     private PassAsks? _passAsks;
 
     /// <summary>
-    /// The window's focus told to the due moments of a pull request's ask (FABRIC-END6); one that comes before the loop starts them is kept
-    /// until they exist (FABRIC-END6c), since a start's window takes the focus first.
+    /// The window's focus told to the due moments of a pull request's ask; one that comes before the loop starts them is kept
+    /// until they exist, since a start's window takes the focus first.
     /// </summary>
     internal PendingFocus Focus { get; } = new();
 

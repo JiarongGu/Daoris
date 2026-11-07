@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A source's reopen (FABRIC-CLOSE1c8, §E5): the session that said the reopened ready is told once, with the person's words, and the
-/// planner's go-on resumes it at the next look; a running one this loop runs at its next step, through its inbox (COWORK1b). Read
+/// A source's reopen: the session that said the reopened ready is told once, with the person's words, and the
+/// planner's go-on resumes it at the next look; a running one this loop runs at its next step, through its inbox. Read
 /// from the quests this look read. The words it took off a record because what they said no longer holds are off the snapshot the
-/// plan reads too (LIMITSWITCH3).
+/// plan reads too.
 /// </summary>
 [LookPass("reopens", LookPhase.Read, "channel")]
 internal sealed class ReopensLook(ILookStagesWiring wiring) : ILookPass

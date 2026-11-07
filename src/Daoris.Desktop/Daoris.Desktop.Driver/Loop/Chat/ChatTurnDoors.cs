@@ -75,11 +75,11 @@ internal sealed class ChatTurnDoors(ChatContext context, AttentionWatch answers)
         context.Turned.TryGetValue(sessionId, out var chat) ? chat.Turns.EditQueuedAsync(id, text, level, ct) : Task.FromResult(QueueEdit.Taken);
 
     /// <summary>
-    /// Stop the turn a conversation is taking and keep the conversation: what was waiting is withdrawn and handed back, and the turn in flight
+    /// Stop the turn a conversation is taking and keep the conversation: what is waiting is withdrawn and handed back, and the turn in flight
     /// ends on the harness's own word.
     /// </summary>
     /// <param name="keep">
-    /// Keep what was waiting for the next turn rather than withdraw it: the turn-end door's <i>Send now</i>, nothing handed back.
+    /// Keep what is waiting for the next turn rather than withdraw it: the turn-end door's <i>Send now</i>, nothing handed back.
     /// </param>
     /// <returns><see cref="TurnStop.Nothing"/> when nothing here holds the conversation, or nothing ran.</returns>
     /// <exception cref="DriverException">The conversation's door carries only text, so it has no turn to stop.</exception>

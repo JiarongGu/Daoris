@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The person's stops of a conversation's turn (<see cref="ChatTurns"/>, CONV4a, STEER2a): what waits withdrawn or kept, the turn in
+/// The person's stops of a conversation's turn (<see cref="ChatTurns"/>): what waits withdrawn or kept, the turn in
 /// flight marked stopped, and the stop decided for that one turn and sent once it is on the wire, or dropped where it ended. Its state is
 /// <see cref="TurnState"/>'s; the door's interrupt is called with the gate released.
 /// </summary>
@@ -9,8 +9,8 @@ namespace Daoris.Driver;
 internal sealed class TurnStops(TurnState state, Func<Task> interrupt)
 {
     /// <summary>
-    /// Stop the turn in flight and keep what waits (STEER2a, <c>CANCEL_TURN</c> with <c>keep</c>): nothing is withdrawn, and the
-    /// words waiting are the next turn once it ends (D90), where <see cref="StopAsync"/> hands them back (CONV4a). A stop already
+    /// Stop the turn in flight and keep what waits (<c>CANCEL_TURN</c> with <c>keep</c>): nothing is withdrawn, and the
+    /// words waiting are the next turn once it ends, where <see cref="StopAsync"/> hands them back. A stop already
     /// asked is not asked again. <see cref="TurnStop.Nothing"/> when no turn is in flight.
     /// </summary>
     public async Task<TurnStop> StopKeepingAsync()
@@ -39,7 +39,7 @@ internal sealed class TurnStops(TurnState state, Func<Task> interrupt)
         return state.OnWire && !asked ? Decide() : null;
     }
 
-    /// <summary>A stop decided for one turn (STEER2a), and what tells the next turn it is on the wire or dropped.</summary>
+    /// <summary>A stop decided for one turn, and what tells the next turn it is on the wire or dropped.</summary>
     private sealed record Stop(int Turn, TaskCompletionSource Sent);
 
     /// <summary>Decide a stop for the turn in flight, which the next turn waits for (<see cref="PumpAsync"/>). Called under the lock.</summary>
@@ -51,7 +51,7 @@ internal sealed class TurnStops(TurnState state, Func<Task> interrupt)
     }
 
     /// <summary>
-    /// Send a stop to the turn it was decided for, or drop it where that turn has ended (STEER2a); either way the next turn may
+    /// Send a stop to the turn it is decided for, or drop it where that turn has ended; either way the next turn may
     /// then go, never before. Called outside the lock: the door's interrupt is its own.
     /// </summary>
     private async Task SendStopAsync(Stop stop)
@@ -70,7 +70,7 @@ internal sealed class TurnStops(TurnState state, Func<Task> interrupt)
 
     /// <summary>
     /// Withdraw what is waiting, then stop the turn in flight. <see cref="TurnStop.Nothing"/> when there
-    /// was neither.
+    /// is neither.
     /// </summary>
     public async Task<TurnStop> StopAsync()
     {
@@ -87,27 +87,27 @@ internal sealed class TurnStops(TurnState state, Func<Task> interrupt)
 
             withdrawn.AddRange(state.Waiting);
             state.Waiting.Clear();
-            // COWORK1c: the person's words handed back to them, so off the record too; a helper's answer stays there (below).
+            // The person's words handed back to them, so off the record too; a helper's answer stays there (below).
             state.TakeOff([.. withdrawn.Where(message => !message.OnRecord)]);
             cancelled = state.InFlight;
             if (state.InFlight) state.Stopped = true;
             // Taken but not yet on the wire: the interrupt goes the moment it is (see `take`). A word said after the stop waits
-            // for it, so it too is sent for this turn alone (STEER2a).
+            // for it, so it too is sent for this turn alone.
             stop = state.InFlight && state.OnWire ? Decide() : null;
             if (state.InFlight && !state.OnWire) state.StopPending = true;
             state.Publish();
         }
 
         if (stop is not null) await SendStopAsync(stop).ConfigureAwait(false);
-        // The words a conversation goes on with are not handed back (MSG1c): the page never listed them, and they stay on
-        // the record, which takes them off only once they went. Nor is a helper's answer (MIXAGENT2a-iii): it is no word of the
-        // person's to put back in the composer, and it stays on the record for a later turn. Nor is Daoris's own word (ASKQUESTS1):
+        // The words a conversation goes on with are not handed back: the page never listed them, and they stay on
+        // the record, which takes them off only once they go. Nor is a helper's answer: it is no word of the
+        // person's to put back in the composer, and it stays on the record for a later turn. Nor is Daoris's own word:
         // the stop takes it with the turn.
         withdrawn.RemoveAll(message => !message.Theirs);
         return !cancelled && withdrawn.Count == 0 ? TurnStop.Nothing : new TurnStop(cancelled, withdrawn);
     }
 
-    /// <summary>The turn is on the wire — and a stop that arrived while it was on its way goes now.</summary>
+    /// <summary>The turn is on the wire — and a stop that arrives while it is on its way goes now.</summary>
     internal void Sent()
     {
         Stop? late;

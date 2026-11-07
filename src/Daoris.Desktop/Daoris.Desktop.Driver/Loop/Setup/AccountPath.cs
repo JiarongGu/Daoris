@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// *Put on my PATH* and *Take off my PATH* (WIRING1e, the this-Daoris design §4): the install's <c>app/bin</c> added to, or removed
+/// *Put on my PATH* and *Take off my PATH*: the install's <c>app/bin</c> added to, or removed
 /// from, <b>the account's</b> <c>PATH</c>, never the machine's, so a terminal opened afterwards finds <c>daoris</c>.
 /// Daoris never does it by itself: it is the person's press, said first and undone by the next.
 /// </summary>
