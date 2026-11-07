@@ -27,7 +27,11 @@ F1 to F3. Codex's read of round 6 is owed.
 **Round 7, for rows 3 and 4** (2026-11-08), is written from main at `a94a922745` and answers, in the design's §27, Codex's read of round 6
 for rows 3 and 4 and the round-6 independent read's F1 and F9 where they meet row 4. The independent Opus reader's read of round 7 is
 below, under *Opus (independent), round 7*: another round, narrowly, for row 3 on its F3 and for row 4 on its F1 and F2. Codex's read of
-round 7 is owed.
+round 7 is below too, under *Codex, round 7*: another round for row 3 and, narrowly, for row 4.
+
+**Round 9, the rule file** (2026-11-08), is written from main at `5651fdda5a`. Round 8 was written before either read of round 7 was
+seen; on the owner's choice of that day, round 9 replaces its inventory with a rule file and answers both reads of round 7 in the
+design's §29, one row each. Both makers' reads of round 9 are owed before rows 6a, 3 and 4 are built.
 
 ## Codex, round 1
 
