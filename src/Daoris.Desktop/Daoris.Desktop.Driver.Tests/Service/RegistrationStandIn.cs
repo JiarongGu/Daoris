@@ -53,6 +53,14 @@ internal class RegistrationStandIn : IRegistrationWorld
         return Task.FromResult(RefreshFails);
     }
 
+    public List<(string Repository, string Commit)> Looked { get; } = [];
+
+    public Task FilesAsync(RegistrationRow row, string commit, CancellationToken ct)
+    {
+        Looked.Add((row.Repository, commit));
+        return Task.CompletedTask;
+    }
+
     public void Followed(RegistrationFollowed what) => Said.Add(what);
 
     /// <summary>A row with nothing declared: <paramref name="adopted"/> or not, at <paramref name="root"/>.</summary>

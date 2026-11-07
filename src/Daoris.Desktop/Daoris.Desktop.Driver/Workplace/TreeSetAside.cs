@@ -108,7 +108,7 @@ internal sealed class TreeSetAside(TreeContext context)
         IReadOnlyList<string> links;
         try
         {
-            (nested, links) = NestedRepositories(tree);
+            (nested, links) = await NestedRepositoriesAsync(tree, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

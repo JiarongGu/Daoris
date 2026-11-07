@@ -47,6 +47,18 @@ public sealed class RegistrationWorld(ServiceClient service, string home, Driver
 
     public Task<string?> RefreshAsync(CancellationToken ct) => service.RefreshAsync(ct);
 
+    public async Task FilesAsync(RegistrationRow row, string commit, CancellationToken ct)
+    {
+        try
+        {
+            await FoundReads.LookAsync(home, row.Repository, row.Root!, commit, DateTimeOffset.UtcNow, FoundReads.AskAsync, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
+        {
+            // The layer is the analysis's to write again, and the next look is as good a moment as this one.
+        }
+    }
+
     public void Followed(RegistrationFollowed what)
     {
         RegistryFollowing.Remember(home, what, DateTimeOffset.UtcNow);
