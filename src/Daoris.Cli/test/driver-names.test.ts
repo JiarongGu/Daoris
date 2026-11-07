@@ -94,7 +94,6 @@ test('each name a reader reads a desktop source by is one file under its project
   }
   assert.deepEqual(problems, [], 'each a name that does not name one file');
   assert.ok(names.size >= 40, `the scan found only ${names.size} names: its patterns no longer match how the readers read by name`);
-  // PluginIconTests.cs left the list with the CLI's plugins.ts, its last reader (PUSH1f2f).
   for (const read of [`${DRIVER}/NoteCodes.cs`, `${DRIVER}/TreesPlanWords.cs`, `${DRIVER}/DriverCommand.cs`]) {
     assert.ok(names.has(read), `the scan does not see ${read} read by name`);
   }

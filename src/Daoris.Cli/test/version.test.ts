@@ -116,7 +116,7 @@ test('release-prep reports the git ref, and a README that names no install line'
 
 /**
  * The tree and the document that enumerates it are a counterpart set, and counterpart sets rot: `harness` and `driver` shipped,
- * the README's table grew two rows, and a sentence nothing read went on naming the old count for two whole landings.
+ * the README's table grew two rows, and a sentence nothing read kept naming a count that no longer held.
  *
  * Asserted as a SET rather than a count, because a count agrees with itself while naming the wrong command, and a renamed verb is
  * exactly the change that would keep the number right. The set is the one tree's: the doctrine commands, the dispatcher's own

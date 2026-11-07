@@ -12,7 +12,7 @@ import { makeFixture } from '../_fixture.ts';
  * `fixtures/cli-usage/` holds the usage and the refusals the CLI says itself, so a change to them is proven by bytes rather than by
  * a reviewer comparing two long texts. A change that means to alter the usage or a refusal updates the fixture in the same change,
  * and the diff is then the one place a reviewer sees what a person will read. Every word outside the doctrine commands is the
- * desktop's program's (ONEWAY1ai-i), so its usage and refusals are that program's tests'.
+ * desktop's program's, so its usage and refusals are that program's tests'.
  */
 const golden = join(dirname(dirname(fileURLToPath(import.meta.url))), 'fixtures', 'cli-usage');
 const HELP = readText(join(golden, 'help.txt')).replace(/\n$/, '');
@@ -69,7 +69,7 @@ test('every refusal the CLI says itself says it, with its exit code, and hands n
 });
 
 /**
- * ONEWAY1ai-i (the oneway design §11): every word outside the doctrine commands goes to the desktop's program whole, its `--help` and
+ * Every word outside the doctrine commands goes to the desktop's program whole, its `--help` and
  * a word it has no command for among them, nothing written before the start, and the program's exit the run's.
  */
 test('a word outside the doctrine goes to the desktop\'s program whole, with nothing written first, and its exit is the run\'s', async () => {
@@ -83,7 +83,7 @@ test('a word outside the doctrine goes to the desktop\'s program whole, with not
     ['browser', 'favorite', 'add', 'https://example.com', '--title', 'R&D'],
     ['repository', 'import', 'C:/Work Trees', '--workspace', 'Work & play'],
     ['brainstorm', 'why is it slow?', '--agents', 'codex,claude-code'],
-    // ONEWAY1ae: `daoris convert` is the home's one conversion door, a group of the tree, a leave among its words.
+    // `daoris convert` is the home's one conversion door, a group of the tree, a leave among its words.
     ['convert', '--apply', 'a'.repeat(64), '--leave', 'quests'],
     ['tool', '--help'],
     ['driver', 'drive', 'engine'],

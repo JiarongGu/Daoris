@@ -29,7 +29,7 @@ import { DRIVER_PROGRAM_FILE, DRIVER_PROGRAM_HOME } from '../src/platform/driver
 import { INSTALL_APP, INSTALL_DATA, INSTALL_MARKER, installOf } from '../src/platform/home.ts';
 import { makeFixture } from '../test/_fixture.ts';
 
-/** The address file the running desktop leaves in its home (the driver's `RunningAddress.FileName`); the CLI reads it no more (ONEWAY1ai-i). */
+/** The address file the running desktop leaves in its home (the driver's `RunningAddress.FileName`); the CLI does not read it. */
 const RUNNING_FILE = 'running.json';
 import { TAR_END, tarEntry } from '../test/_tar.ts';
 
@@ -894,8 +894,7 @@ test('the offers are the examples meant for people, never a rehearsal fixture', 
   assert.deepEqual([...OFFERED_PLUGINS], ['github-pull-request', 'azure-devops-pull-request', 'in-app-browser']);
   assert.ok(!OFFERED_PLUGINS.includes('hold-by-title'), 'the family and deployment rehearsals install hold-by-title');
   assert.ok(!OFFERED_PLUGINS.includes('browser'), 'a second `browser` server would contribute nothing beside in-app-browser');
-  // Each is a plugin's folder; that each reads sound, by the catalogue's rules, is the driver's `PluginOfferTests`' (the CLI's
-  // reader left with `daoris plugin`'s TypeScript, PUSH1f2f).
+  // Each is a plugin's folder; that each reads sound, by the catalogue's rules, is the driver's `PluginOfferTests`'.
   const examples = join(here, '..', '..', '..', 'examples', 'plugins');
   for (const id of OFFERED_PLUGINS) assert.ok(existsSync(join(examples, id, 'plugin.json')), id);
 });

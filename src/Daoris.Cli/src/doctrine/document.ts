@@ -122,8 +122,7 @@ export function firstHeading(text: string): string | null {
  * closing lines included, so a fence's text is never a heading.
  *
  * @remarks
- * Read as CommonMark reads a fence (ORIENT2h6, after the service's ORIENT2h3 `MarkdownFence` and the tools' ORIENT2h4
- * `fenced`): a run of three or more backticks or tildes after any indent opens one, and only a run of the same
+ * Read as CommonMark reads a fence (as the service's `MarkdownFence` and the tools' `fenced` do): a run of three or more backticks or tildes after any indent opens one, and only a run of the same
  * character at least as long, with nothing after it but spaces, closes it. A backtick run with a backtick later on its
  * line is code inline and opens nothing. A fence never closed holds the rest of the file. Toggling on any three of
  * either closed a four-backtick fence on the example it quoted, so the example's heading named the document. The

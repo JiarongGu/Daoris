@@ -109,7 +109,7 @@ test('an archive entry is a second-level heading, dated by the last date it name
 });
 
 test('a fence is read as markdown reads one: a longer fence quoting a shorter one, and a tilde fence, hold their headings', () => {
-  // ORIENT2h4: a three-backtick line inside a four-backtick fence closes nothing, and a tilde fence fences.
+  // A three-backtick line inside a four-backtick fence closes nothing, and a tilde fence fences.
   const text = [
     '# Archive', '',
     '## LONG1 — quotes an example (2026-10-07)', '', '**Outcome.** Quoted.', '',

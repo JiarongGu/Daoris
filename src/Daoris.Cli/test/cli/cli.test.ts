@@ -28,7 +28,7 @@ test('--version prints the package version', () => {
 });
 
 /**
- * ONEWAY1ai-i: a word that is no doctrine command is the desktop's program's, which says the command is unknown; with no program
+ * A word that is no doctrine command is the desktop's program's, which says the command is unknown; with no program
  * found, the CLI says where it is, a tool error (exit 2), and does nothing.
  */
 test('a word outside the doctrine with no desktop program to hand it to is a tool error (exit 2) saying where the program is', () => {

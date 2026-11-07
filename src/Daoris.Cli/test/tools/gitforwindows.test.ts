@@ -238,8 +238,7 @@ test('a PATH that finds the launcher starts the git behind it; one that finds no
   at.fx.cleanup();
 });
 
-// The toolchain's children: an agent's probe, which started the system's git past the launcher, left with `daoris agent`'s
-// TypeScript (PUSH1f2e); the driver's `WorkingTree.GitStart` holds the same start.
+// The toolchain's children: the driver's `WorkingTree.GitStart` holds the same start of the system's git past the launcher.
 
 // ——— The twin, held: the driver's tables are these tables, row for row and in this order.
 

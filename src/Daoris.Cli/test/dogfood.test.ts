@@ -732,7 +732,7 @@ function reachableFrom(entry: string): Set<string> {
 }
 
 /**
- * ONEWAY1ai-i (the oneway design §11): every word outside the doctrine commands is the desktop program's, handed by the dispatcher
+ * Every word outside the doctrine commands is the desktop program's, handed by the dispatcher
  * alone. No row reaches the seam, so every row is a doctrine command, offline and spawning nothing; the dispatcher is the one module
  * that does.
  */

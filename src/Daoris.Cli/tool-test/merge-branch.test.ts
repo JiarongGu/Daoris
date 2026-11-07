@@ -1545,20 +1545,19 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the integration declarations' table", [INTEGRATION_DECLARATIONS], [...BASE, 'tool-tests', 'driver']],
     // The person's order's table sits among the driver's tests, and the page's twin reads it too.
     ["the hand-over order's table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/hand-over-order.json'], [...BASE, 'driver', 'web-unit']],
-    // REVIEWENV1c4: the review rules' table sits among the driver's tests, and the service's tool test reads its gate rows.
+    // The review rules' table sits among the driver's tests, and the service's tool test reads its gate rows.
     ["the review rules' table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/review-rules.json'], [...BASE, 'service', 'driver']],
-    // XAGENT1f4: the second-opinion rules' table, whose gate rows the service's tool test reads too.
+    // The second-opinion rules' table, whose gate rows the service's tool test reads too.
     ["the second-opinion rules' table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/opinion-rules.json'], [...BASE, 'service', 'driver']],
-    // BRAINSTORM1a2: the brainstorm answers' table, which the service's twin validator reads too; and the posture's list of the
+    // The brainstorm answers' table, which the service's twin validator reads too; and the posture's list of the
     // connector's tools, which the service's registration test holds to its host's.
     ["the brainstorm answers' table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/brainstorm-answers.json'], [...BASE, 'service', 'driver']],
-    // BRAINSTORM1a3: the brainstorm files' table, which the service's brainstorm desk reads too.
+    // The brainstorm files' table, which the service's brainstorm desk reads too.
     ["the brainstorm files' table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/brainstorm-files.json'], [...BASE, 'service', 'driver']],
     ["the brainstorm posture", ['src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/Domain/BrainstormPermissions.cs'],
       [...BASE, 'service', 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']],
     ["the service's tests", ['src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs'], [...BASE, 'service', 'service-process']],
-    // ORIENT2h6: the fence table sits among the CLI's fixtures, and the driver's SelfDescription twin reads it too, and
-    // since ORIENT2h6b the service's MarkdownFence twin.
+    // The fence table sits among the CLI's fixtures, and the driver's SelfDescription twin and the service's MarkdownFence twin read it too.
     ['the fence table', ['src/Daoris.Cli/test/fixtures/fence-cases.json'], [...BASE, 'service', 'driver']],
     // The rotation-use table, among the driver's fixtures, which its twin reads, and the
     // page's curve rules.
@@ -1599,10 +1598,10 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
       [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'tool-tests', 'deployment']],
     ['release tooling', ['tools/release-rehearsal.mjs'], [...BASE, 'rehearse']],
     ['the CLI',['src/Daoris.Cli/src/platform/args.ts'], [...BASE, 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
-    // PUSH1f2a: the driver's DriverProgramWordsProcessTests runs the CLI's entry, dispatcher, driver row and seam under node.
+    // The driver's DriverProgramWordsProcessTests runs the CLI's entry, dispatcher, driver row and seam under node.
     ["the CLI's seam", ['src/Daoris.Cli/src/cli.ts'], [...BASE, 'driver', 'driver-process', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     ["the CLI's seam's module", ['src/Daoris.Cli/src/platform/driverprogram.ts'], [...BASE, 'driver', 'driver-process', 'rehearse', 'rehearse-family', 'web', 'deployment']],
-    // ORIENT2e2: the service's roles twin reads the CLI's ROLES from its file, so that file reaches the service too; by its
+    // The service's roles twin reads the CLI's ROLES from its file, so that file reaches the service too; by its
     // name in whichever module folder it sits.
     ["the CLI's roles", ['src/Daoris.Cli/src/layout/documents.ts'], [...BASE, 'service', 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     ["the CLI's roles, at the sources' top", ['src/Daoris.Cli/src/documents.ts'], [...BASE, 'service', 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
@@ -2692,7 +2691,7 @@ test('a folder searched for one name at any depth reads that file wherever it li
   // A name found nowhere is still that name's read, and a pattern is no name: the folder is read whole, as before.
   assert.deepEqual(srcReads(byName.replace('"documents.ts"', '"gone.ts"'), files), ['src/Daoris.Cli/src/gone.ts']);
   assert.deepEqual(srcReads(byName.replace('"documents.ts"', '"*.ts"'), files), ['src/Daoris.Cli/src/probe.txt']);
-  // What the scan then asks of the lane table: a change to the roles' file runs the service's suite (ORIENT2e2).
+  // What the scan then asks of the lane table: a change to the roles' file runs the service's suite.
   assert.ok(runs(['src/Daoris.Cli/src/layout/documents.ts']).includes('service'));
 });
 
