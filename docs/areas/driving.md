@@ -190,12 +190,18 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     line (which is also whether the line holds its tip), its tree and its files, from five: D88's question of every session
     branch is one `rev-list` of the judgement's refs (`UnheldTips`); on the benchmark's two dozen trees the tidy is 6 starts, on
     six trees with work 26 from 38 (the git area's *Git's starts, counted*). An ended session's offer reads each question of git once (`GitReadOnce` over the tree's walk), and a
-    line still where the branch left it is neither walked nor compared again (17 starts of a tree of work, 12). A reader of the running ones asks the open ones, and every
-    other reader of the session list (the window's sessions slice, the parks a look says, the readers that need a line's other
-    parts and the per-session doors) reads the list kept by its change since the last mark (`SessionListKept`): its text and its
-    typed records are made once for each state of the list, one record is typed alone, and a host from before the change door is
-    read whole each time. The page merges a pushed change into the list it holds (`sessionsComposer`) where it sorted the whole
-    list at every change. (from D68, D181)
+    line still where the branch left it is neither walked nor compared again (17 starts of a tree of work, 12). A reader of the running ones asks the open ones
+    (the open hold's candidates, `SessionOpenDoors.HoldAsync`; the accounts' running counts, `AccountsRoutes`), a reader of one
+    session asks for it alone (`GET /api/sessions/{id}`; the sessions routes' doors), and every other reader of the session list
+    reads the list kept by its change since the last mark (`SessionListKept`): its text and its typed records are made once for
+    each state of the list, one record is typed alone, and a host from before the change door is read whole each time. A look
+    reads the open ones and every record once each, in its snapshot; what it tells takes the open ones from that snapshot
+    (`LookTold`), and the parks it says, only where they moved, from the kept list. A landing's plan and its press each read
+    every record once, the session's tree and quest, its line's parts and a chat's run all read from it (`TreesLandDesk`). The
+    window's sessions slice reads the change since its mark and pushes the records it moved, and the groups' slice reads every
+    record once over the look's verdicts; the page merges a pushed change into the list it holds (`sessionsComposer`). A reader
+    that asks one record of every record in the list's text reads them from one parse of that text (`ListedPriors`), so the
+    groups' words waiting on 3,000 ended chats take milliseconds where a parse for each took 37 s. (from D68, D181)
 31. A working session has no time limit: a driven run, a resumed run, a go-on and an intake wait for their exit. Only a
     pass with minutes of its own is bounded (a helper 15, a partner 45, a second opinion 20 within 5 to 120).
     `timeoutMinutes` is no setting: nothing reads or says it, a save keeps it as it keeps any key it does not own, and the
@@ -285,7 +291,7 @@ look and the run, the lazily built parts and the settables, and grows by a one-l
 | a part of a quest's start | a stage of its own in its phase's subdomain of `Loop/Run/`, marked `[RunStage]`; what it reaches of the driver goes on `IRunWiring`; what it reads of an earlier stage or leaves for a later one goes on `RunState`, written by one stage | `Loop/DriverRunPartsTests`, and the tests of the stage it moves |
 | a kind of quest operation, or a verb of one | a module of its own in `Service/Quests/Operations/`, marked `[QuestOperation(kind, Log)]`, its payload on `IQuestOperation` and its verbs on `QuestTx`; the store gains only the verb's door | `Quests/QuestsPartsTests`, and the tests of the verb it moves |
 | when a look runs | `Loop/Watch/WatchRun.cs` | `Loop/LookStagesTests`, `Loop/DriverWatchLookTests`, `Loop/LookParallelTests`, `Loop/SessionsOutliveTheirLookTests` |
-| what a read costs at a home's size | the read's own unit: whole lists asked at once, git once per repository rather than per tree, the session list read as its change | `Loop/HomeSizeBenchProcessTests` over `Loop/BenchHome` (3,000 records, two dozen trees, one with 12,000 ignored files), each read's time and its git starts and session-record requests held to its budget (the look 0 starts and 2 requests, the tidy 8 starts, a tree's walk 17); `Workplace/TidyGitCountTests` and `Workplace/OfferGitCountTests` hold the starts per branch and per offer; `Loop/SessionChangeBenchProcessTests`, one change read as its change |
+| what a read costs at a home's size | the read's own unit: whole lists asked at once, git once per repository rather than per tree, the session list read as its change | `Loop/HomeSizeBenchProcessTests` over `Loop/BenchHome` (3,000 records, two dozen trees, one with 12,000 ignored files), each read's time and its git starts and session-record requests held to its budget (the look 0 starts and 2 requests, the tidy 8 starts, a tree's walk 17); `Workplace/TidyGitCountTests` and `Workplace/OfferGitCountTests` hold the starts per branch and per offer; `Loop/SessionChangeBenchProcessTests`, one change read as its change; the modules' `Loop/SessionReadsBenchProcessTests` over the same home, a slice's push and a landing's plan and press each reading every record once, as its change, and the look's snapshot the open ones and every record once each |
 | quiet sessions | `Events/SessionWatch.cs`, `Loop/Run/Conclude/QuietWord.cs`, `Settings/QuietSetting.cs` | `Events/SessionWatchTests`, `Events/SessionWatchQuietSettingTests`, `Events/SessionWatchProcessTests`, `Loop/QuietEndProcessTests`, `Loop/QuietWordTests`, `Course/AnswersAloneTests`, `Settings/QuietSettingTests` |
 | a machine setting, or a door onto one | an entry in `Settings/List/MachineSettings.cs`, each door spelled by its key: the verb in `DriverChoicesCommand` and `ChoiceRoutes`, `SET_<KEY>` in the modules, Ask Daoris's door, the page's `settings.<key>.*` words | the modules' `Platform/MachineSettingsCensusTests`, the page's `settings/everySetting.test.tsx`, and each door's own tests |
 | transient failures | `Agents/TransientRetry.cs` | `Loop/TransientRetryTickTests` |
