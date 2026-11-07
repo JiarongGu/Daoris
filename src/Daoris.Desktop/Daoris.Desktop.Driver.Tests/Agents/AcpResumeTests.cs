@@ -6,10 +6,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The protocol door's resume (ANSWER1a, D131 §1), against a fake agent over in-memory streams: <c>session/resume</c>
+/// The protocol door's resume, against a fake agent over in-memory streams: <c>session/resume</c>
 /// where the agent advertises it, <c>session/load</c> with its replay not kept again where it advertises only that, and
 /// a refusal by code where it offers neither or refuses. Read from <c>claude-agent-acp</c> 0.84.0 and the ACP SDK 1.5.1 it
-/// pins (design §0). No process and no model, so the fast half.
+/// pins. No process and no model, so the fast half.
 /// </summary>
 public sealed class AcpResumeTests
 {
@@ -137,7 +137,7 @@ public sealed class AcpResumeTests
         Assert.Contains(lines, line => line.Contains("carrying on with port 8080"));
     }
 
-    /// <summary>CODEXTOOLS1: a resumed session handed servers asks the adapter to wait for their start, and one handed none asks for nothing.</summary>
+    /// <summary>A resumed session handed servers asks the adapter to wait for their start, and one handed none asks for nothing.</summary>
     [Fact]
     public async Task A_resumed_session_asks_the_adapter_to_wait_for_the_servers_it_is_handed()
     {
@@ -190,7 +190,7 @@ public sealed class AcpResumeTests
     }
 
     /// <summary>
-    /// The adapter refuses a conversation it no longer has with <c>resource_not_found</c> (-32002, design §0): it is gone,
+    /// The adapter refuses a conversation it no longer has with <c>resource_not_found</c> (-32002): it is gone,
     /// and the agent's own words are kept beside the code, never in the line a note carries.
     /// </summary>
     [Fact]
@@ -220,7 +220,7 @@ public sealed class AcpResumeTests
 
     /// <summary>
     /// 🔴 <c>codex-acp</c> refuses a thread another Codex client holds with <c>invalidRequest</c> and
-    /// <c>data.reason: "thread_active_writer"</c> (D137 §1.1): read from that structured data, it is <c>elsewhere</c>, and the
+    /// <c>data.reason: "thread_active_writer"</c>: read from that structured data, it is <c>elsewhere</c>, and the
     /// agent's own sentence stays beside it, never in the line.
     /// </summary>
     [Fact]
@@ -251,7 +251,7 @@ public sealed class AcpResumeTests
     }
 
     /// <summary>
-    /// Words to an ended or parked record go on as one prompt, each its own text block, in the order said (D137 §2.2): the
+    /// Words to an ended or parked record go on as one prompt, each its own text block, in the order said: the
     /// conversation reads a correction as a correction.
     /// </summary>
     [Fact]
@@ -267,7 +267,7 @@ public sealed class AcpResumeTests
     }
 
     /// <summary>
-    /// FOUNDATION1 row p (the design §3.4 rule 5): the resumed first prompt is written only once the record names its words marked attempted,
+    /// The resumed first prompt is written only once the record names its words marked attempted,
     /// and carries the words it names, each its own block: an answer naming fewer than asked sends only those. The blocks are read again after
     /// the mark, so a word the person took back in the moment between the look and the mark never goes.
     /// </summary>
@@ -317,7 +317,7 @@ public sealed class AcpResumeTests
     }
 
     /// <summary>
-    /// XAGENT1e (D155 point 7, design §6.3): another agent's findings, waiting on an ended record beside the person's words,
+    /// Another agent's findings, waiting on an ended record beside the person's words,
     /// go on in the session's own conversation as their own text block, in Daoris's fixed words exactly as the host composed
     /// them: quotes, backticks and line breaks unchanged, and after the person's word in the order they were kept.
     /// </summary>
@@ -346,7 +346,7 @@ public sealed class AcpResumeTests
     }
 
     /// <summary>
-    /// MSG1d3 (D137 §2.4): the files said with the words ride the resumed first prompt as a conversation's message carries
+    /// The files said with the words ride the resumed first prompt as a conversation's message carries
     /// them, a <c>resource_link</c> to where each is kept, after the words' own blocks: on a driven record's resumed run and
     /// on a conversation that goes on alike.
     /// </summary>
@@ -377,7 +377,7 @@ public sealed class AcpResumeTests
     }
 
     /// <summary>
-    /// 🔴 A conversation that goes on (MSG1c, D137 §2.2): resumed on the id it kept, never opened anew, and its first turn
+    /// 🔴 A conversation that goes on: resumed on the id it kept, never opened anew, and its first turn
     /// the person's words waiting, each its own text block in the order said, told once the prompt is on the wire.
     /// </summary>
     [Fact]
@@ -401,7 +401,7 @@ public sealed class AcpResumeTests
         session.Release();
     }
 
-    /// <summary>The posture is set on the resume's answer as on a new session's (D81): the adapter's first offered mode.</summary>
+    /// <summary>The posture is set on the resume's answer as on a new session's: the adapter's first offered mode.</summary>
     [Fact]
     public async Task The_posture_is_set_on_the_resumed_conversation()
     {
@@ -417,8 +417,8 @@ public sealed class AcpResumeTests
     }
 
     /// <summary>
-    /// 🔴 HELPMODE1a4 (D183 point 3): a resume the agent answers with no object names no modes, so a posture marked required (Ask
-    /// Daoris's full access) fails the open plainly, as it does on a new session; it was skipped, and the conversation went on in
+    /// 🔴 A resume the agent answers with no object names no modes, so a posture marked required (Ask
+    /// Daoris's full access) fails the open plainly, as it does on a new session; skipping it would leave the conversation going on in
     /// the agent's own narrower mode under the full label. Nothing is prompted.
     /// </summary>
     [Fact]
@@ -435,7 +435,7 @@ public sealed class AcpResumeTests
         Assert.DoesNotContain("session/set_mode", agent.Methods);
     }
 
-    /// <summary>A posture not marked required keeps its leniency on such a resume (D81): left alone, and the conversation goes on.</summary>
+    /// <summary>A posture not marked required keeps its leniency on such a resume: left alone, and the conversation goes on.</summary>
     [Fact]
     public async Task A_resume_answered_with_no_object_leaves_a_posture_not_required_alone()
     {
@@ -448,7 +448,7 @@ public sealed class AcpResumeTests
     }
 
     /// <summary>
-    /// The id a new session's answer names is told the moment it arrives (D131 §1), so it is kept before the first turn can
+    /// The id a new session's answer names is told the moment it arrives, so it is kept before the first turn can
     /// fail or park.
     /// </summary>
     [Fact]

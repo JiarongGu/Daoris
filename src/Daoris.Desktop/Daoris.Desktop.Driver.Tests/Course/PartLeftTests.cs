@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1g: what the old part's line says of what it left running at a hand-over, by its code and count, and that a part with no job
+/// What the old part's line says of what it left running at a hand-over, by its code and count, and that a part with no job
 /// to read says nothing. The wait itself, on real processes, is <see cref="HandOverLeftProcessTests"/>.
 /// </summary>
 public sealed class PartLeftTests

@@ -7,7 +7,7 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>Which version a download, a use or an update means, whether it is fetched, or why not (§3.7).</summary>
+/// <summary>Which version a download, a use or an update means, whether it is fetched, or why not.</summary>
 /// <param name="Action"><c>download</c>, <c>use</c> or <c>update</c>.</param>
 /// <param name="Version">The version downloaded or used; null when there is nothing to do, or a refusal.</param>
 /// <param name="Current">The version the tool is managed at now, or null.</param>
@@ -20,30 +20,27 @@ public sealed record ToolPlan(
     ToolLicence? Licence, string? Nothing, string? Check, string? Problem);
 
 /// <summary>
-/// A version downloaded and verified into its run's staging, not yet the version (PUSH1f2c, the alone-path design §1.4):
+/// A version downloaded and verified into its run's staging, not yet the version:
 /// <see cref="ToolInstall.Publish"/> makes it one, or <see cref="ToolInstall.Discard(ToolStaged)"/> removes it.
 /// </summary>
 /// <param name="Staging">The staging folder, <c>&lt;version&gt;.part-&lt;pid&gt;</c>.</param>
 /// <param name="Exe">The executable inside the package, as the list names it.</param>
 public sealed record ToolStaged(string Home, string Tool, string Version, string Staging, string Exe);
 
-/// <summary>One resource location, looked at (§3.7).</summary>
+/// <summary>One resource location, looked at.</summary>
 /// <param name="Outcome"><c>fetched</c> (its copy is the list just fetched), <c>unread</c> (it answered no list this build
 /// reads) or <c>failed</c>.</param>
 /// <param name="Added">What the copy names now that the one before did not, for this platform: <c>&lt;tool&gt; &lt;version&gt;</c>.</param>
 public sealed record LocationLook(string Address, string Outcome, string Sentence, IReadOnlyList<string> Added, IReadOnlyList<string> Dropped);
 
 /// <summary>
-/// A managed version of a tool: downloaded, verified, unpacked and laid out (TOOLS4, D121;
-/// <c>docs/2026-10-01-tools-design.md</c> §3.6, §3.7).
+/// A managed version of a tool: downloaded, verified, unpacked and laid out.
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>The one implementation since PUSH1f2c</b> (D194): the CLI's <c>toolinstall.ts</c> was its twin, held row for row
-/// to <c>ToolInstallTests</c>' tables, until <c>daoris tool</c> became <c>daoris tool</c> (<see cref="ToolsCommand"/>); a
-/// member's note naming the CLI names the function it was the twin of. Its rules:</para>
+/// <para>Its rules:</para>
 /// <list type="number">
-/// <item>A download is staged at <c>&lt;home&gt;/tools/&lt;tool&gt;/&lt;version&gt;.part-&lt;pid&gt;/</c>, its own process's
-/// (PUSH1f2c; a bare <c>.part</c> before it): the archive lands there and is held to the list's size and SHA-256, it is unpacked
+/// <item>A download is staged at <c>&lt;home&gt;/tools/&lt;tool&gt;/&lt;version&gt;.part-&lt;pid&gt;/</c>, its own process's:
+/// the archive lands there and is held to the list's size and SHA-256, it is unpacked
 /// into <c>package/</c>, the executable is found at <c>exe</c>, and <c>tool.json</c> is written. Then, published, the whole folder
 /// is renamed to <c>&lt;version&gt;/</c>, unless another run published that version meanwhile. A refusal, or the person's stop,
 /// removes the staging; a staging whose process is gone is swept at the next run's start.</item>
@@ -56,7 +53,7 @@ public sealed record LocationLook(string Address, string Outcome, string Sentenc
 /// <item>A version in use is never deleted.</item>
 /// <item>A look fetches each location in order, each bounded, and keeps a copy only of a list that reads.</item>
 /// </list>
-/// <para>The machine log gets a line an event (D94) — a download started, verified, refused by its check or stopped,
+/// <para>The machine log gets a line an event — a download started, verified, refused by its check or stopped,
 /// and a location fetched or failed — naming a tool and a version, or a location's place in the list, and never an
 /// address the person typed.</para>
 /// </remarks>
@@ -68,14 +65,14 @@ public static class ToolInstall
     /// </summary>
     public const string Staging = ".part";
 
-    /// <summary>A record's keys, in the order both twins write them (§3.6). The CLI's <c>RECORD_KEYS</c>.</summary>
+    /// <summary>A record's keys, in the order both twins write them. The CLI's <c>RECORD_KEYS</c>.</summary>
     public static readonly IReadOnlyList<string> RecordKeys =
         ["tool", "version", "platform", "sha256", "size", "archive", "url", "lists", "exe", "paths", "at"];
 
     /// <summary>How many redirects one fetch follows. The CLI's <c>REDIRECTS</c>.</summary>
     public const int Redirects = 10;
 
-    /// <summary>How long one location may take to answer a look (§3.7). The CLI's <c>LOOK_BOUND_MS</c>.</summary>
+    /// <summary>How long one location may take to answer a look. The CLI's <c>LOOK_BOUND_MS</c>.</summary>
     public static readonly TimeSpan LookBound = TimeSpan.FromSeconds(30);
 
     /// <summary>A version's folder under the home: <c>&lt;home&gt;/tools/&lt;tool&gt;/&lt;version&gt;</c>.</summary>
@@ -108,7 +105,7 @@ public static class ToolInstall
         $"{System.Runtime.InteropServices.RuntimeInformation.OSDescription} {System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture}";
 
     /// <summary>
-    /// Which version a download, a use or an update means, and whether it is fetched (§3.7, rule 4). It reads the home's
+    /// Which version a download, a use or an update means, and whether it is fetched. It reads the home's
     /// file and what is downloaded, and the lists as last fetched; it fetches nothing. The CLI's <c>planTool</c>.
     /// </summary>
     /// <param name="action"><c>download</c>, <c>use</c> or <c>update</c>.</param>
@@ -174,8 +171,8 @@ public static class ToolInstall
     }
 
     /// <summary>
-    /// Download one version, verify it, unpack it and lay it out (§3.6, rules 1–3): <see cref="StageAsync"/>, then
-    /// <see cref="Publish"/>, in a process that already holds its home (the window's loop, PUSH1f2c). Nothing switches: using it is
+    /// Download one version, verify it, unpack it and lay it out (rules 1–3): <see cref="StageAsync"/>, then
+    /// <see cref="Publish"/>, in a process that already holds its home (the window's loop). Nothing switches: using it is
     /// <see cref="Tools.UseManaged"/>'s, once this has answered.
     /// </summary>
     /// <param name="ct">The person's stop: it ends the download, and the staging goes with it.</param>
@@ -192,7 +189,7 @@ public static class ToolInstall
     }
 
     /// <summary>
-    /// A download's first half (PUSH1f2c, D194 point 3, the alone-path design §1.4): fetched, verified, unpacked and its record
+    /// A download's first half: fetched, verified, unpacked and its record
     /// written into its own staging, <c>&lt;version&gt;.part-&lt;pid&gt;</c>, where no reader takes it for a version and no other run
     /// meets it. It holds nothing while it waits on the network; <see cref="Publish"/> makes it the version. Null where the version is
     /// already downloaded: nothing was fetched. Its start sweeps the tool's stagings whose process no longer runs.
@@ -262,7 +259,7 @@ public static class ToolInstall
     }
 
     /// <summary>
-    /// A download's second half (PUSH1f2c, the alone-path design §1.4): the staging made the version by one folder move, after a look
+    /// A download's second half: the staging made the version by one folder move, after a look
     /// again at what is there now. A version another run published meanwhile is kept and this run's staging removed; a folder holding
     /// nothing that runs, judged now, is replaced. A terminal's run calls it holding the home's lease, which it waited for; the window's
     /// loop holds its home already.
@@ -287,7 +284,7 @@ public static class ToolInstall
                 Directory.Delete(folder, recursive: true);
             }
 
-            // The scanner opens the executable just unpacked, and the folder cannot move until it lets go (FIX-LOG 2026-10-07).
+            // The scanner opens the executable just unpacked, and the folder cannot move until it lets go.
             AtomicFile.MoveFolder(staged.Staging, folder);
             write($"  unpacked into {Path.Combine(folder, Tools.Package)}");
             (log ?? MachineLog.None).Info("tool.download.verified", ("tool", staged.Tool), ("version", staged.Version));
@@ -303,13 +300,13 @@ public static class ToolInstall
     public static void Discard(ToolStaged staged) => Discard(staged.Home, staged.Tool, staged.Staging);
 
     /// <summary>
-    /// Where a run stages a version (PUSH1f2c): <c>&lt;version&gt;.part-&lt;pid&gt;</c>, its own process's, so two runs of one
+    /// Where a run stages a version: <c>&lt;version&gt;.part-&lt;pid&gt;</c>, its own process's, so two runs of one
     /// version never touch each other's staging and nothing waits.
     /// </summary>
     public static string StagingOf(string folder, int process) => $"{folder}{Staging}-{process.ToString(CultureInfo.InvariantCulture)}";
 
     /// <summary>
-    /// The tool's stagings whose process no longer runs, removed (PUSH1f2c): a crash between a staging and its publication leaves
+    /// The tool's stagings whose process no longer runs, removed: a crash between a staging and its publication leaves
     /// nothing for good. A process id the system gave another process since keeps its staging only until that process ends.
     /// </summary>
     public static void Sweep(string home, string tool, Func<int, bool> running)
@@ -383,7 +380,7 @@ public static class ToolInstall
         JsonFile.Write(path, record);
     }
 
-    /// <summary>The archive, from the first address whose bytes are the list's (rule 3).</summary>
+    /// <summary>The archive, from the first address whose bytes are the list's.</summary>
     /// <returns>That address.</returns>
     private static async Task<string> FetchVerifiedAsync(
         HttpClient http, ToolDeclaration tool, OfferedVersion offered, string to, Action<string> write, CancellationToken ct)
@@ -431,10 +428,9 @@ public static class ToolInstall
     }
 
     /// <summary>
-    /// Delete a downloaded version nothing uses (§3.6, rule 5), through the downloads' one act (KEEP1b, D195 point 6; the cleanup design
-    /// §3.5, §6.6): judged as CACHECLEAR1's press and the look's rule judge it, under the use files' locks and against the running sessions,
+    /// Delete a downloaded version nothing uses, through the downloads' one act: judged as the press and the look's rule judge it, under the use files' locks and against the running sessions,
     /// then moved aside before anything of it goes, so a refusal leaves it whole. The person names this one version, so one downloaded within
-    /// the hour is theirs to delete. The CLI's <c>deleteVersion</c> was its twin.
+    /// the hour is theirs to delete.
     /// </summary>
     /// <param name="sessions">The running sessions, read right before the judgement (<see cref="LiveSessions.ReadAsync"/>).</param>
     /// <param name="harnesses">The harness file the roster reads; this home's resolution where null.</param>
@@ -498,7 +494,7 @@ public static class ToolInstall
             ("tool", declared.Name), ("version", version));
 
     /// <summary>
-    /// Fetch each resource location, in order, each bounded (§3.7, rule 6). A list that reads replaces its copy, the bytes
+    /// Fetch each resource location, in order, each bounded. A list that reads replaces its copy, the bytes
     /// as fetched; anything else keeps the last copy and says its age. Downloads nothing. The CLI's <c>lookLocations</c>.
     /// </summary>
     /// <param name="ct">The person's stop.</param>

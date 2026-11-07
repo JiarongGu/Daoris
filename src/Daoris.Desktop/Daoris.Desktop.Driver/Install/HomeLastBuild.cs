@@ -4,14 +4,14 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The newest build that has run on a home (D233 choice 6, D232): <c>data/last-build.json</c>, <c>{ "version": "…" }</c>, kept by the
+/// The newest build that has run on a home: <c>data/last-build.json</c>, <c>{ "version": "…" }</c>, kept by the
 /// application once its start is settled and read by the launcher, which refuses to start an older build. A home keeps no reader of an
-/// older build's records (D232), so an older build is never started on one a newer build has written.
+/// older build's records, so an older build is never started on one a newer build has written.
 /// </summary>
 /// <remarks>
 /// <para><b>Kept once the start is settled</b> (<c>StartConfirmation</c>): a build the launcher can still roll back has not
 /// written the home as its own, and its build before it must still start. It is never lowered.</para>
-/// <para><b>A file that is absent or does not read refuses nothing</b>: the launcher's last act is starting Daoris (D139), and a home
+/// <para><b>A file that is absent or does not read refuses nothing</b>: the launcher's last act is starting Daoris, and a home
 /// it cannot read is no reason to keep the person out.</para>
 /// <para>The base library alone: the launcher compiles it in.</para>
 /// </remarks>

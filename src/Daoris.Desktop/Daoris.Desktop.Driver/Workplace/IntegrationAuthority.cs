@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Whether a steward act's appointment still stands (the integration design §8, D209), asked at promotion: its generation live and the owner
-/// having acted on none of the act's repository, quest or session since (D209's owner-set). The registry that knows an appointment lives in the
-/// modules, above the driver, so the driver reads it through this seam, which the modules install when the role is active (STEWARDROLE1d).
+/// Whether a steward act's appointment still stands, asked at promotion: its generation live and the owner
+/// having acted on none of the act's repository, quest or session since. The registry that knows an appointment lives in the
+/// modules, above the driver, so the driver reads it through this seam, which the modules install when the role is active.
 /// </summary>
 internal interface IIntegrationAppointments
 {
@@ -13,7 +13,7 @@ internal interface IIntegrationAppointments
 
 /// <summary>
 /// The seam's default: nothing in this build reads an appointment's liveness yet, since no part has activated the steward's role, so a
-/// steward's request cannot be shown to stand and is held at promotion. An authority that cannot be read is no authority (§8).
+/// steward's request cannot be shown to stand and is held at promotion. An authority that cannot be read is no authority.
 /// </summary>
 internal sealed class IntegrationAppointments : IIntegrationAppointments
 {
@@ -26,7 +26,7 @@ internal sealed class IntegrationAppointments : IIntegrationAppointments
 }
 
 /// <summary>
-/// The requester's authority, judged again at promotion (INTEGRATE1e part e4b, D215; the integration design §5.2 step 8, §8): the door judged it
+/// The requester's authority, judged again at promotion: the door judged it
 /// at admission, and the line moves only after it is read again, since the steward's appointment may have been revoked, the owner may have acted,
 /// or the rule may have changed since the request was kept. A request that fails it is held and the candidate formed again without it.
 /// </summary>
@@ -50,7 +50,7 @@ internal static class IntegrationAuthority
         // An automatic land's merge stands as a press does: its delivery judged the standing authority again just before its first effect.
         if (requester.Door == IntegrationDoors.Landing) return null;
 
-        // INTEGRATE1g: a node's request is its landing's acceptance (§17.4). The person's Accept stands as their card does; a version's own step,
+        // A node's request is its landing's acceptance. The person's Accept stands as their card does; a version's own step,
         // its gate proof naming the version, stands whatever the place follows now, since a bound version is never edited; an automatic landing
         // with no version behind it stands while the place's workflow says `request: done`, as the sweep's does.
         if (requester.Door == IntegrationDoors.Node && request.Proof is { } proof

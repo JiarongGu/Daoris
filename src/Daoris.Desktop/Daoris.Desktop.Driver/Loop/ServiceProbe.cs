@@ -2,14 +2,14 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What a service's status door last said, as This Daoris shows it (WIRING1b, the this-Daoris design §3.2).</summary>
+/// <summary>What a service's status door last said, as This Daoris shows it.</summary>
 /// <param name="Answers">Whether a Daoris host answered.</param>
-/// <param name="Asked">When it was asked.</param>
+/// <param name="Asked">When it is asked.</param>
 /// <param name="Why">Why it did not answer, a code: <c>no-answer</c>, <c>foreign</c>, <c>no-host</c>, <c>unstartable</c>, <c>exited</c>, <c>never-answered</c>.</param>
 /// <param name="Tier">Its search tier, as it says it.</param>
-/// <param name="Version">Its version, as it says it (<c>/api/status</c>'s <c>version</c>, WIRING1b); null from a host older than that.</param>
-/// <param name="Home">The id of the home it serves (HOMEID1), as <see cref="RunningService.ReadStatus"/> reads it; null where it names none.</param>
-/// <remarks>Discovery's own reading is <see cref="ServiceStatus"/>: this one keeps when it was asked, why not, and the version.</remarks>
+/// <param name="Version">Its version, as it says it (<c>/api/status</c>'s <c>version</c>); null from a host older than that.</param>
+/// <param name="Home">The id of the home it serves, as <see cref="RunningService.ReadStatus"/> reads it; null where it names none.</param>
+/// <remarks>Discovery's own reading is <see cref="ServiceStatus"/>: this one keeps when it is asked, why not, and the version.</remarks>
 public sealed record ServiceProbe(bool Answers, DateTimeOffset Asked, string? Why, string? Tier, string? Version, string? Home = null)
 {
     /// <summary>The longest tier or version kept: a status is the service's words, and a host is not trusted to keep them short.</summary>
@@ -30,7 +30,7 @@ public sealed record ServiceProbe(bool Answers, DateTimeOffset Asked, string? Wh
 
     /// <summary>
     /// Ask <paramref name="url"/>'s status door within two seconds and with redirects off, as a terminal finding the running
-    /// service does (HOMEID1: where an address sends its asker is no answer).
+    /// service does (where an address sends its asker is no answer).
     /// </summary>
     /// <param name="handler">A test's host; null asks over the network.</param>
     public static ServiceProbe Ask(string url, HttpMessageHandler? handler = null)

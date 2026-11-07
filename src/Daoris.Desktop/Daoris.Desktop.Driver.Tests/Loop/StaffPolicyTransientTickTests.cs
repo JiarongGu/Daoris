@@ -159,7 +159,7 @@ public sealed class StaffPolicyTransientTickTests : IAsyncLifetime
         Assert.True(service.SessionCount == 2, seen);
         Assert.Equal(["q1:moved:s1:transient"], Moves());
         var second = service.Record("s2");
-        Assert.Contains("\"adapter\":\"acp-other\"", second, StringComparison.Ordinal);
+        Assert.Contains("\"door\":\"acp-other\"", second, StringComparison.Ordinal);
         Assert.Equal("Done", service.Status("q1"));
         // The part after was handed D189's brief by the second choice's agent, and the first choice's agent was not asked again.
         var prompts = Prompts();
@@ -187,14 +187,14 @@ public sealed class StaffPolicyTransientTickTests : IAsyncLifetime
         Assert.Empty(Moves());
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.True(service.SessionCount == 2 && service.State("s2") == "failed", Seen(service));
-        Assert.Contains("\"adapter\":\"acp-stub\"", service.Record("s2"), StringComparison.Ordinal);
+        Assert.Contains("\"door\":\"acp-stub\"", service.Record("s2"), StringComparison.Ordinal);
         Assert.Empty(Moves());
 
         // Failure two on the one choice: the look's course moves the line, once, to choice 2.
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.True(service.SessionCount == 3, Seen(service));
         Assert.Equal(["q1:moved:s2:failed"], Moves());
-        Assert.True(service.Record("s3").Contains("\"adapter\":\"acp-other\"", StringComparison.Ordinal), Seen(service) + "\ns3: " + service.Record("s3"));
+        Assert.True(service.Record("s3").Contains("\"door\":\"acp-other\"", StringComparison.Ordinal), Seen(service) + "\ns3: " + service.Record("s3"));
         Assert.Equal("Done", service.Status("q1"));
     }
 

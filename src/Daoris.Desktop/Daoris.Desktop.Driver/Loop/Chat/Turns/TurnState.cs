@@ -30,17 +30,17 @@ internal sealed class TurnState(Action<ChatQueue> changed)
 {
     internal readonly object Gate = new();
     internal readonly List<ChatMessage> Waiting = [];
-    // The words handed to the turn in flight at its next step (MSG1c), each until the agent answered it: the turn lasts as long.
+    // The words handed to the turn in flight at its next step, each until the agent answers it: the turn lasts as long.
     internal readonly List<Task> Steered = [];
-    // Of those, the words sent at its next step and not yet answered: on their way, which no stop and no steer may overtake
-    // (D136 point 4, STEER2a). Pruned as they are answered.
+    // Of those, the words sent at its next step and not yet answered: on their way, which no stop and no steer may overtake.
+    // Pruned as they are answered.
     internal readonly List<Task> OnWay = [];
-    // Each turn put in flight, counted (STEER2a): a stop is decided for one turn, and the next turn waits until that stop is
-    // on the wire or dropped, so a stop that lands late never cuts the turn after the one it was meant for.
+    // Each turn put in flight, counted: a stop is decided for one turn, and the next turn waits until that stop is
+    // on the wire or dropped, so a stop that lands late never cuts the turn after the one it is meant for.
     internal int Turn;
     internal Task Stopping = Task.CompletedTask;
     internal ChatMessage? Holding;
-    // The ids this queue gave the words that wait (QUEUEEDIT1a): the page's handle on one, never carried into the turn it
+    // The ids this queue gave the words that wait: the page's handle on one, never carried into the turn it
     // becomes, which a conversation's record has always shown without.
     internal readonly HashSet<string> Stamps = [];
     internal int IdsGiven;
@@ -49,35 +49,35 @@ internal sealed class TurnState(Action<ChatQueue> changed)
     internal bool InFlight;
     internal bool OnWire;
     internal bool StopPending;
-    // The person stopped the turn in flight: what they say next waits for it to end, never joins a turn winding up (MSG1c).
+    // The person stopped the turn in flight: what they say next waits for it to end, never joins a turn winding up.
     internal bool Stopped;
     internal bool Finishing;
-    // Held for a hand-over's take (SWITCH1c-ii): no word starts a turn the take's end would cut.
+    // Held for a hand-over's take: no word starts a turn the take's end would cut.
     internal bool Held;
-    // FOUNDATION1o: held for a move whose open moves the old part's words, so a word said meanwhile is kept on the record and waits here, behind
+    // Held for a move whose open moves the old part's words, so a word said meanwhile is kept on the record and waits here, behind
     // the hold, for a release that did not end the conversation; gone, it stays on the record for the open.
     internal bool KeepsHeld;
     internal readonly List<ChatMessage> HeldBack = [];
     internal bool CloseHeld;
-    // Waiting for its account's limit to reset (LIMITRESUME1c, D206 §3.5): a word is kept and waits, and starts no turn on a process
+    // Waiting for its account's limit to reset: a word is kept and waits, and starts no turn on a process
     // whose account would refuse it, until the wake hands them all over in one (WakeFromLimit) or a move takes them (HoldLimited).
     internal bool Limited;
-    // Reserved for the person's press on a chat run's work (CHATFLOW1d, the chat-flow design §5.2 point 1): a word is kept and waits, shown
+    // Reserved for the person's press on a chat run's work: a word is kept and waits, shown
     // queued, and starts no turn, as under Limited, until the press answers, landed or refused.
     internal bool Pressing;
-    // Its open refused before any prompt, its words moved to the replacement opening for it (MODELROLE1d2, D205 §3.5(b)): every word
+    // Its open refused before any prompt, its words moved to the replacement opening for it: every word
     // said to it since joins them, never this queue.
     internal Func<ChatMessage, bool>? Onward;
-    // Reserved for a second opinion's send-back (CHATFLOW1e, the chat-flow design §6.1 (b)): from the reservation until the service's hand
+    // Reserved for a second opinion's send-back: from the reservation until the service's hand
     // answers, a word is kept and waits, starting no turn, so the findings word the hand kept becomes the next turn ahead of it.
     internal bool SendingBack;
-    // The turn in flight's message (CHATFLOW1e): a word of the person's on the wire counts in their turn count before its event is read.
+    // The turn in flight's message: a word of the person's on the wire counts in their turn count before its event is read.
     internal ChatMessage? Current;
-    // A word of the person's handed to the turn in flight at its next step or by *Send now* (CHATFLOW1e, §6.1 (c)): the answering turn's
+    // A word of the person's handed to the turn in flight at its next step or by *Send now*: the answering turn's
     // reading then holds their work too.
     internal bool TheirsSteered;
     internal bool Gone;
-    // A transient episode is waiting, or settling its wire, on the turn in flight (AGENTERRORS1b, the agent-errors design §5.1, §7): every word
+    // A transient episode is waiting, or settling its wire, on the turn in flight: every word
     // is kept and waits, handed to no turn alongside it, and a word of the person's that waits ends the wait at once as the next try.
     internal bool Retrying;
     internal TaskCompletionSource Woke = Completed();
@@ -85,7 +85,7 @@ internal sealed class TurnState(Action<ChatQueue> changed)
     internal TaskCompletionSource Drained = Completed();
     internal DateTimeOffset? LastEnded;
 
-    // COWORK1c (the message-urgency design §6): the conversation's one dispatcher. Words are kept on its record one at a time, so the
+    // The conversation's one dispatcher. Words are kept on its record one at a time, so the
     // order they wait in is the record's; each kept word leaves the record by its id, in order, once its turn is on the wire or it is
     // handed to the turn there, and before the turns finish.
     internal readonly SemaphoreSlim Keeping = new(1, 1);
@@ -94,19 +94,19 @@ internal sealed class TurnState(Action<ChatQueue> changed)
     internal readonly List<string> Untaken = [];
     internal readonly HashSet<string> Known = new(StringComparer.Ordinal);
 
-    // COWORK1e (D188 point 4; the message-urgency design §2.3): the answers-alone bound's judge, named by whoever says a helper's answer.
+    // The answers-alone bound's judge, named by whoever says a helper's answer.
     internal Func<ChatMessage, Task<bool>>? Alone;
 
     /// <summary>
-    /// Told how many words a turn left waiting on their record because the record did not name them marked attempted (FOUNDATION1 row p, the
-    /// design §3.4 rule 5): nothing was written for them, and the conversation says so. Null says nothing.
+    /// Told how many words a turn left waiting on their record because the record did not name them marked attempted:
+    /// nothing is written for them, and the conversation says so. Null says nothing.
     /// </summary>
     internal Action<int>? Unsent { get; set; }
 
     /// <summary>Whether the shell is closing: asked as a held take is asked for, and before each turn is taken.</summary>
     internal Func<bool>? Closing { get; set; }
 
-    /// <summary>The take-offs on their way (COWORK1c), in order: what completes once every kept word that left so far is off the record. Never faults.</summary>
+    /// <summary>The take-offs on their way, in order: what completes once every kept word that left so far is off the record. Never faults.</summary>
     internal Task TakingOff
     {
         get
@@ -121,16 +121,16 @@ internal sealed class TurnState(Action<ChatQueue> changed)
         : Waiting.FirstOrDefault(message => message.Theirs && message.Id == id);
 
     /// <summary>
-    /// Whether a word that asks for the turn's next step waits (COWORK1a): the person's urgent or now words, never an ordinary one
-    /// nor a helper's answer, which is ordinary (the design §5). An urgent word goes past ordinary ones, never past an urgent one
+    /// Whether a word that asks for the turn's next step waits: the person's urgent or now words, never an ordinary one
+    /// nor a helper's answer, which is ordinary. An urgent word goes past ordinary ones, never past an urgent one
     /// said before it. Called under the lock.
     /// </summary>
     internal bool UrgentWaiting(int? before = null) =>
         Waiting.Take(before ?? Waiting.Count).Any(message => !Answer(message) && message.Level != MessageLevel.Ordinary);
 
     /// <summary>
-    /// A helper's answer that waits for the turn's end as a turn of its own (MIXAGENT2a-iii): every one but an urgent ask's, which
-    /// goes at the next step where the door takes words then (COWORK1d, the message-urgency design §5).
+    /// A helper's answer that waits for the turn's end as a turn of its own: every one but an urgent ask's, which
+    /// goes at the next step where the door takes words then.
     /// </summary>
     internal static bool Answer(ChatMessage message) => message.Helped is { } helped && helped.Level != MessageLevel.Urgent;
 
@@ -139,7 +139,7 @@ internal sealed class TurnState(Action<ChatQueue> changed)
         message.Id is { } stamped && Stamps.Remove(stamped) ? message with { Id = null } : message;
 
     /// <summary>
-    /// Whether a word waiting is one a transient try carries (AGENTERRORS1b, the agent-errors design §5.1): the person's own, which the
+    /// Whether a word waiting is one a transient try carries: the person's own, which the
     /// record has not shown waiting already. A helper's answer, Daoris's word and the words a conversation goes on with are turns of their
     /// own, kept for after the turn that failed.
     /// </summary>
@@ -152,7 +152,7 @@ internal sealed class TurnState(Action<ChatQueue> changed)
         return OnWay.Count > 0;
     }
 
-    /// <summary>The queue's id for a word that has none (QUEUEEDIT1a): the page's handle on it while it waits. Called under the lock.</summary>
+    /// <summary>The queue's id for a word that has none: the page's handle on it while it waits. Called under the lock.</summary>
     internal ChatMessage Stamped(ChatMessage message)
     {
         if (message.Id is not null || message.OnRecord) return message;
@@ -163,8 +163,8 @@ internal sealed class TurnState(Action<ChatQueue> changed)
 
     internal ChatQueue Now() => new(Pumping, Snapshot(), LastEnded, Opening, Pressing);
 
-    // The words a conversation goes on with are left out (MSG1c): its record shows them waiting already, at its foot. So is Daoris's
-    // own word (ASKQUESTS1): the queue is the person's, which the composer draws with its edits.
+    // The words a conversation goes on with are left out: its record shows them waiting already, at its foot. So is Daoris's
+    // own word: the queue is the person's, which the composer draws with its edits.
     internal List<ChatMessage> Snapshot()
     {
         List<ChatMessage> now = Holding is { Theirs: true } ? [Holding] : [];
@@ -172,7 +172,7 @@ internal sealed class TurnState(Action<ChatQueue> changed)
         return now;
     }
 
-    /// <summary>Tell where the turns stand when it differs from what was last told. Called under the gate, so told in order.</summary>
+    /// <summary>Tell where the turns stand when it differs from what is last told. Called under the gate, so told in order.</summary>
     internal void Publish()
     {
         var now = Now();
@@ -189,7 +189,7 @@ internal sealed class TurnState(Action<ChatQueue> changed)
         }
     }
 
-    /// <summary>A word as these turns hand it to the door at its next step (COWORK1c): a kept one to be attempted before the wire and taken off once written.</summary>
+    /// <summary>A word as these turns hand it to the door at its next step: a kept one to be attempted before the wire and taken off once written.</summary>
     internal ChatMessage Dispatched(ChatMessage message) =>
         SaidDoor.Dispatched(message, Door, word =>
         {
@@ -197,8 +197,8 @@ internal sealed class TurnState(Action<ChatQueue> changed)
         });
 
     /// <summary>
-    /// Kept words on their way to the wire, handed back to the person or taken back (COWORK1c): off the record by their ids, after
-    /// every take-off before them, awaited in order and never fired and forgotten (the design §6). One that fails is tried again with
+    /// Kept words on their way to the wire, handed back to the person or taken back: off the record by their ids, after
+    /// every take-off before them, awaited in order and never fired and forgotten. One that fails is tried again with
     /// the next. Called under the lock.
     /// </summary>
     internal void TakeOff(IReadOnlyList<ChatMessage> words)

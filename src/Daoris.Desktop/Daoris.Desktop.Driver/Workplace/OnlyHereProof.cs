@@ -4,27 +4,27 @@ using static Daoris.Driver.TreeLeftovers;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Abandon's proof (PAUSE1d, D132 point 7, design §3.3; PART10k, out of <c>SessionTrees.OnlyHere.cs</c>): a tree and its branch are
+/// Abandon's proof: a tree and its branch are
 /// discarded only when none of their work has left Daoris's own branches on this machine, so what goes is exactly the abandoned
-/// work and nothing anyone else may have. D88's proof turned around: the clean-up removes what is proven elsewhere, abandon what
+/// work and nothing anyone else may have. The clean-up's proof turned around: the clean-up removes what is proven elsewhere, abandon what
 /// is proven nowhere else.
 /// </summary>
 /// <remarks>
 /// <para><b>The commits judged</b> are those after the session's base up to the branch's tip; with no base, the merge-base
-/// with the repository's line (D86) stands in. <b>Anywhere else</b> is any branch but this machine's local
+/// with the repository's line stands in. <b>Anywhere else</b> is any branch but this machine's local
 /// <c>refs/heads/daoris/*</c>, any remote-tracking branch (a pushed <c>daoris/*</c> included: pushed means somebody may have
-/// it), and any tag. D88's <see cref="TreeFollows.UnlandedAsync"/> leaves <c>*/daoris/*</c> out, rightly for a clean-up, since a pushed
+/// it), and any tag. <see cref="TreeFollows.UnlandedAsync"/> leaves <c>*/daoris/*</c> out, rightly for a clean-up, since a pushed
 /// session branch has not landed.</para>
 ///
 /// <para><b>Partly elsewhere is kept whole</b>, as the clean-up keeps it: which half the person meant is its review's to
 /// decide. A count git cannot give keeps it. 🔴 git walks UP: a tree is asked only when it is a repository of its own, and a
-/// checkout only when it is the top of one (FIX-LOG).</para>
+/// checkout only when it is the top of one.</para>
 ///
 /// <para>Its discard removes a tree through the removal (<see cref="TreeRemovals"/>).</para>
 /// </remarks>
 internal sealed class OnlyHereProof(TreeContext context, TreeRemovals removals)
 {
-    /// <summary>How many uncommitted paths the first press names (design §3.2).</summary>
+    /// <summary>How many uncommitted paths the first press names.</summary>
     internal const int FilesNamed = 5;
 
     /// <summary>
@@ -32,7 +32,7 @@ internal sealed class OnlyHereProof(TreeContext context, TreeRemovals removals)
     /// </summary>
     /// <param name="tree">The session's tree, under this home's trees; its folder may be gone.</param>
     /// <param name="branch">Its branch, <c>daoris/</c> and the tree's folder name.</param>
-    /// <param name="baseCommit">The base of the tree's first session (SURF6); null takes the merge-base with the line.</param>
+    /// <param name="baseCommit">The base of the tree's first session; null takes the merge-base with the line.</param>
     /// <param name="root">The repository's registered checkout, which answers for a branch whose tree is gone.</param>
     internal async Task<TreeOnlyHere> OnlyHereAsync(
         string tree, string branch, string? baseCommit, string? root, CancellationToken ct = default)
@@ -103,7 +103,7 @@ internal sealed class OnlyHereProof(TreeContext context, TreeRemovals removals)
     }
 
     /// <summary>
-    /// Discard what <see cref="OnlyHereAsync"/> cleared (design §3.3): the tree and its branch, the person saying it again and
+    /// Discard what <see cref="OnlyHereAsync"/> cleared: the tree and its branch, the person saying it again and
     /// meaning it (<see cref="TreeRemovals.RemoveAsync"/> with force), or the branch alone where the tree is gone. Reached only behind the
     /// proof, which the caller made a moment ago; anything it did not clear is refused here.
     /// </summary>
@@ -131,7 +131,7 @@ internal sealed class OnlyHereProof(TreeContext context, TreeRemovals removals)
 
     /// <summary>
     /// The arguments that list the commits after <paramref name="from"/> up to <paramref name="tip"/> that no branch but this
-    /// machine's local <c>daoris/*</c>, no remote-tracking branch and no tag holds (design §3.3). <c>--exclude</c> applies to
+    /// machine's local <c>daoris/*</c>, no remote-tracking branch and no tag holds. <c>--exclude</c> applies to
     /// the <c>--branches</c> after it only, so a pushed <c>daoris/*</c> counts as elsewhere.
     /// </summary>
     internal static IReadOnlyList<string> OnlyHereRange(string tip, string from) =>

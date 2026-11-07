@@ -3,9 +3,9 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The indexes a repository keeps for its own documents (KNOWUSE1c, D135 §4), found in the tree a session runs in so the
+/// The indexes a repository keeps for its own documents, found in the tree a session runs in so the
 /// look before asking can name them: the router its manifest declares, then every file named as an index in the folders
-/// where documents and doctrine are kept. Read to frame the instruction, never written (D32).
+/// where documents and doctrine are kept. Read to frame the instruction, never written.
 /// </summary>
 /// <remarks>
 /// <para><b>Generic on purpose.</b> The instruction travels to repositories that know nothing of this one, so nothing here

@@ -4,10 +4,10 @@ namespace Daoris.Driver;
 public sealed record RecoveryCount(string Repository, IReadOnlyList<string>? Unrecorded, string? Unread);
 
 /// <summary>
-/// **The census that ends the old recovery list** (ONEWAY1r, D228): the refs under <c>refs/daoris/discarded/</c> no act of the journal names,
+/// **The census of recovery refs the journal does not name**: the refs under <c>refs/daoris/discarded/</c> no act of the journal names,
 /// which a door kept before every keep went through the journal (<see cref="RecoveryKeeps"/>). <see cref="RecoveryRetention"/>'s dating from a
-/// ref's reflog and <see cref="RecoveryDropping"/> stay for those alone; once every repository on the install reads zero, ONEWAY1af deletes
-/// both, and this with them. It reads and changes nothing, so it needs no lease: <c>daoris work recovery drop --unheld --plan</c> says it.
+/// ref's reflog and <see cref="RecoveryDropping"/> stay for those alone; once every repository on the install reads zero, both
+/// go, and this with them. It reads and changes nothing, so it needs no lease: <c>daoris work recovery drop --unheld --plan</c> says it.
 /// </summary>
 public static class RecoveryCensus
 {

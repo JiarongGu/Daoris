@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A session's structure, kept as typed events on the machine (D76 §1–2, CONV1).
+/// A session's structure, kept as typed events on the machine.
 /// </summary>
 /// <remarks>
 /// The console is a window that forgets; this is the record the page reads a conversation back
@@ -28,7 +28,7 @@ public sealed class SessionEventsTests : IDisposable
         new() { Kind = SessionEventKind.User, Origin = origin, Text = text };
 
     /// <summary>
-    /// ASKHIST1d: when a record was last written, read from its end as a whole read finds it, since Ask Daoris's list orders
+    /// When a record is last written, read from its end as a whole read finds it, as Ask Daoris's list orders
     /// every conversation by it. A torn last line costs itself, and a line longer than the first read from the end is read whole
     /// all the same.
     /// </summary>
@@ -50,7 +50,7 @@ public sealed class SessionEventsTests : IDisposable
     }
 
     /// <summary>
-    /// ACCEPTFOOT1b: whether a conversation's last turn has ended with nothing said since, read from its record's end: the newest
+    /// Whether a conversation's last turn has ended with nothing said after it, read from its record's end: the newest
     /// event that says where its turns stand is a turn's end. A note or a usage after it says nothing of a turn; a word said, or an
     /// agent's words, a call or a plan after it (a turn its harness woke) are a turn under way; no turn yet, or no record, is none.
     /// </summary>
@@ -83,7 +83,7 @@ public sealed class SessionEventsTests : IDisposable
         Assert.True(events.TurnEnded("rest1"));
     }
 
-    /// <summary>ASKHIST1d: one Han character is a word to search for, within a session as in Ask Daoris's list; one other letter is not.</summary>
+    /// <summary>One Han character is a word to search for, within a session as in Ask Daoris's list; one other letter is not.</summary>
     [Fact]
     public void One_han_character_is_enough_to_search_with()
     {
@@ -98,9 +98,9 @@ public sealed class SessionEventsTests : IDisposable
     }
 
     /// <summary>
-    /// PARK1: what a session that parks to ask the person last said, whole — joined from the chunks it was
-    /// streamed in, indented lists and all. Its record holds the message as it was written; the transcript
-    /// read it as console lines and stopped at the first indented one, so a question's list was lost.
+    /// What a session that parks to ask the person last said, whole — joined from the chunks it is
+    /// streamed in, indented lists and all. Its record holds the message as written; the transcript
+    /// reads it as console lines and stops at the first indented one, so a question's list would be lost.
     /// </summary>
     [Fact]
     public void The_last_thing_said_is_the_agents_last_message_whole()
@@ -119,7 +119,7 @@ public sealed class SessionEventsTests : IDisposable
     }
 
     /// <summary>
-    /// PARK1: a parked session's card quotes its record's last message, and reads the transcript only
+    /// A parked session's card quotes its record's last message, and reads the transcript only
     /// where the record has none — a harness that keeps no structure, or a record that could not be kept.
     /// </summary>
     [Fact]
@@ -137,7 +137,7 @@ public sealed class SessionEventsTests : IDisposable
         Assert.Equal("Shall I go on?", SessionLastWords.ParkedWords(events, "bare1", bare));
     }
 
-    /// <summary>PARK1: a turn that said nothing after the person's words has no last words, never an older turn's.</summary>
+    /// <summary>A turn that said nothing after the person's words has no last words, never an older turn's.</summary>
     [Fact]
     public void Nothing_said_after_the_persons_words_is_no_last_words()
     {
@@ -152,8 +152,8 @@ public sealed class SessionEventsTests : IDisposable
     }
 
     /// <summary>
-    /// RAIL1: a conversation's identity is the first thing the person said in it (working-surface design
-    /// §3), read from this machine's record — it never rides the session record, which travels (D47 §4).
+    /// A conversation's identity is the first thing the person said in it,
+    /// read from this machine's record — it never rides the session record, which travels.
     /// A driven session's composed target is not the person speaking, and a session with no record here
     /// is simply absent.
     /// </summary>
@@ -177,7 +177,7 @@ public sealed class SessionEventsTests : IDisposable
     }
 
     /// <summary>
-    /// RAIL1: search what sessions said — the person's words and the agent's — with a snippet around the
+    /// Search what sessions said — the person's words and the agent's — with a snippet around the
     /// match. An agent's message is streamed in chunks, so a word split across two is still found; case
     /// does not count; a tool's output is not what anyone said, and is not searched.
     /// </summary>
@@ -202,7 +202,7 @@ public sealed class SessionEventsTests : IDisposable
     }
 
     /// <summary>
-    /// RAILSRCH1: the rail's search takes one Han character, as Ask Daoris's list does (ASKHIST1d1), and reads every record, so a
+    /// The rail's search takes one Han character, as Ask Daoris's list does, and reads every record, so a
     /// conversation older than the newest 200 is found; one other letter is still no word to search for.
     /// </summary>
     [Fact]
@@ -225,8 +225,8 @@ public sealed class SessionEventsTests : IDisposable
     }
 
     /// <summary>
-    /// STEER1 (D136): what a person told a driven session is kept twice — the moment it was said, with when it reaches the
-    /// session, and again where the session took it, paired by one id — and a search finds it once, where it was taken.
+    /// What a person told a driven session is kept twice — the moment it is said, with when it reaches the
+    /// session, and again where the session took it, paired by one id — and a search finds it once, where it is taken.
     /// </summary>
     [Fact]
     public void Words_told_to_a_working_session_are_kept_waiting_then_taken_and_found_once()
@@ -247,7 +247,7 @@ public sealed class SessionEventsTests : IDisposable
     }
 
     /// <summary>
-    /// MSG1d (D137 §3.1, §3.3): words said to a session that ended are kept the moment they are said, with the reach
+    /// Words said to a session that ended are kept the moment they are said, with the reach
     /// <c>resume</c> and the door they were said at. The door of the first of them is read back by their ids, for the machine
     /// log's <c>session.reopened</c>; the words where the session took them name no door; and words shown waiting are never
     /// a session's opening, so a driven session the person wrote to after it ended still has none.
@@ -280,7 +280,7 @@ public sealed class SessionEventsTests : IDisposable
     }
 
     /// <summary>
-    /// MSG1d (D137 §3.1): where a fallback handed the person's words to a new session, the driver's note keeps their ids, that
+    /// Where a fallback hands the person's words to a new session, the driver's note keeps their ids, that
     /// session and the reason's code beside its line, so the page links the session and says the reason in its own words.
     /// </summary>
     [Fact]
@@ -310,7 +310,7 @@ public sealed class SessionEventsTests : IDisposable
         Assert.Equal(["said-1"], lost.Words!);
     }
 
-    /// <summary>RAILPAGE1a: a page is a page of sessions, whole; the total counts every session past the page, and next says where it goes on.</summary>
+    /// <summary>A page is a page of sessions, whole; the total counts every session past the page, and next says where it goes on.</summary>
     [Fact]
     public void Search_pages_by_sessions_and_counts_past_the_page()
     {
@@ -341,7 +341,7 @@ public sealed class SessionEventsTests : IDisposable
         Assert.Empty(events.Search("budget", offset: 9, limit: 2).Hits);
     }
 
-    /// <summary>RAILPAGE1a: a caller naming no page gets the rail's old page, and the total goes past it.</summary>
+    /// <summary>A caller naming no page gets the rail's default page, and the total goes past it.</summary>
     [Fact]
     public void Search_with_no_page_named_reads_the_default_page_and_counts_the_rest()
     {
@@ -375,10 +375,10 @@ public sealed class SessionEventsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A page reading the record never costs the record an event (CONV3b, 2026-09-25). The reader
-    /// opened the file denying writers, so an append that landed mid-read failed with a sharing
-    /// violation, and its caller — rightly unwilling to fail a session over its record — dropped the
-    /// event. Seen as an agent's answer missing from a conversation whose turn had ended.
+    /// 🔴 A page reading the record never costs the record an event. A reader
+    /// that opens the file denying writers makes an append that lands mid-read fail with a sharing
+    /// violation, and its caller — rightly unwilling to fail a session over its record — drops the
+    /// event: an agent's answer missing from a conversation whose turn has ended.
     /// </summary>
     [Fact]
     public async Task Every_append_lands_while_the_record_is_being_read()
@@ -437,7 +437,7 @@ public sealed class SessionEventsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The whole point (D76 §2): the console's window was gone after a restart, and the page said
+    /// 🔴 The whole point: the console's window is gone after a restart, and the page would say
     /// "nothing from this session is held here". A new instance reads the record back, and carries
     /// the sequence on rather than starting again at one.
     /// </summary>
@@ -460,7 +460,7 @@ public sealed class SessionEventsTests : IDisposable
     }
 
     /// <summary>
-    /// CONV5: a turn's tokens are read back after a restart as they were written — and a count the wire
+    /// A turn's tokens are read back after a restart as written — and a count the wire
     /// never gave stays unknown on the way back, rather than becoming a zero.
     /// </summary>
     [Fact]
@@ -498,7 +498,7 @@ public sealed class SessionEventsTests : IDisposable
     }
 
     /// <summary>
-    /// SESS1 S1: what the session was asked comes with every page it is not already in, so a long run
+    /// What the session is asked comes with every page it is not already in, so a long run
     /// reads from its ask rather than from the middle — and a page that holds it carries none twice.
     /// </summary>
     [Fact]
@@ -518,7 +518,7 @@ public sealed class SessionEventsTests : IDisposable
     }
 
     /// <summary>
-    /// SESS1 S9: a jump to the first failure needs to know where it began, wherever it is in the run —
+    /// A jump to the first failure needs to know where it began, wherever it is in the run —
     /// the call's first event, since the failure itself is an update to it.
     /// </summary>
     [Fact]
@@ -536,7 +536,7 @@ public sealed class SessionEventsTests : IDisposable
         Assert.Null(events.Page("clean1").FirstFailure);
     }
 
-    /// <summary>SESS1 S9: one session searched — what was said and the calls by their titles, in order.</summary>
+    /// <summary>One session searched — what is said and the calls by their titles, in order.</summary>
     [Fact]
     public void Within_one_session_finds_its_words_and_its_calls_in_order()
     {
@@ -639,7 +639,7 @@ public sealed class SessionEventsTests : IDisposable
 
     /// <summary>
     /// One event is one line, and a line is bounded: a tool that printed a megabyte must not make the
-    /// record unreadable a page at a time. What was cut is said, never silently lost.
+    /// record unreadable a page at a time. What is cut is said, never silently lost.
     /// </summary>
     [Fact]
     public void A_huge_field_is_cut_and_says_it_was()
@@ -661,7 +661,7 @@ public sealed class SessionEventsTests : IDisposable
     }
 
     /// <summary>
-    /// SESSCTX1d (the session-context design §7): what a part spent, its turns' counts summed. A turn whose door said nothing is
+    /// What a part spent, its turns' counts summed. A turn whose door said nothing is
     /// counted as a turn and adds no count; a count no turn said stays null, never zero; no record, or no id, spent nothing.
     /// </summary>
     [Fact]

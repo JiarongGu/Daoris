@@ -7,16 +7,16 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MSG1b (D137 §2.1–§2.3) through REAL ticks. On the protocol door: a session closes its quest, the person writes to it,
+/// Through REAL ticks. On the protocol door: a session closes its quest, the person writes to it,
 /// and at the next look the same record goes on, its own conversation resumed with every word as its own block, its quest
 /// staying as it closed; where the agent's other client holds the conversation, the record goes back to how it ended, its
 /// words waiting and marked, and no later look tries them again until more are said. On the native door: words said while
 /// the run works go on in its own conversation (<c>--resume</c>) before the record concludes.
 /// </summary>
 /// <remarks>
-/// The stand-in service models MSG1a: words kept on a parked or ended record (<c>say</c>), taken off by their ids
+/// The stand-in service models words kept on a parked or ended record (<c>say</c>), taken off by their ids
 /// (<c>taken</c>), and the ledger's one move out of an ended state, to working with words waiting. Where a case sets its
-/// <c>opens</c> mark it answers the keyed open too (FOUNDATION1d-ii), and the ask a case asks it to keep. Every case has its own
+/// <c>opens</c> mark it answers the keyed open too, and the ask a case asks it to keep. Every case has its own
 /// scratch home under <c>_fixtures/</c>.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
@@ -44,7 +44,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     private IReadOnlyList<SessionEvent> Events(string session) => new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(session, 0).Events;
 
     /// <param name="command">What the protocol door runs in place of the stand-in agent: a file that is no program, so its spawn fails.</param>
-    /// <param name="goesOnLost">The shell's chat runner's seam a closed quest's lost session goes on through (SESSCTX1c part B); none headless.</param>
+    /// <param name="goesOnLost">The shell's chat runner's seam a closed quest's lost session goes on through; none headless.</param>
     private Daoris.Driver.Driver Protocol(
         SaidStandIn service, string mode, SessionProcesses? processes = null, IReadOnlyList<string>? command = null,
         Func<string, ContinueReason, CancellationToken, Task<StartedFrom>>? goesOnLost = null)
@@ -67,11 +67,11 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c part B (D189 point 3; the steward's choice: a closed quest opens no driven record): a closed quest's session whose
+    /// 🔴 A closed quest opens no driven record: a closed quest's session whose
     /// agent no longer has its conversation (<c>resource_not_found</c>) has lost it, so it goes on by itself as a conversation in its tree,
     /// handed to the shell's chat runner, which conversations are; its words are not marked and its conversation says nothing of waiting.
-    /// A host with no runner (the headless one) has no conversation to open, so there it waits for the person, marked by the reason, as
-    /// before, the page's press ready.
+    /// A host with no runner (the headless one) has no conversation to open, so there it waits for the person, marked by the reason,
+    /// the page's press ready.
     /// </summary>
     [Theory]
     [InlineData(true)]
@@ -161,7 +161,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// ANSWER2b (D131's ANSWER2 note, "no real resumed run met a second look"), the install's case through real ticks: a session
+    /// Through real ticks: a session
     /// takes its quest and parks to ask, the person answers through the say door, and the next look resumes its conversation. That
     /// run is still in its turn, its record working with the answer still on it, when another look comes. That look begins nothing
     /// on it: the conversation is resumed once, the record moves to working once, and it ends as its run does, its quest done and
@@ -203,10 +203,9 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 SAYHELD1 (A), the owner's case on the install (2026-10-21): the quest's session asked another repository and ended waiting
-    /// on its answer (D79); the person wrote to it meanwhile, and the words waited with the quest. Once the answer came the quest
-    /// resumed in a new session, which was never handed them: they stayed on the first record, unread. Now the resume's session is
-    /// handed them beneath the answer, its conversation shows each under its id, and they leave the first record naming it, which
+    /// 🔴 The quest's session asks another repository and ends waiting on its answer; the person writes to it meanwhile, and the
+    /// words wait with the quest. Once the answer comes the quest resumes in a new session, which must not leave them unread on
+    /// the first record: the resume's session is handed them beneath the answer, its conversation shows each under its id, and they leave the first record naming it, which
     /// says where they went.
     /// </summary>
     [Fact]
@@ -242,10 +241,9 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 SAYHELD1 (B), the owner's case on the install (2026-10-21): the quest resumed in a new session once its question was answered,
-    /// and that session parked to ask the person. Their answer sat for hours: the service keeps naming the question while the quest is
-    /// taken, so the look read the quest as still waiting on it, planned its resume again, and found the park itself holding the
-    /// quest. The answer goes on at the next look in the park's own conversation, and the session ends as its run does.
+    /// 🔴 The quest resumes in a new session once its question is answered, and that session parks to ask the person. The service
+    /// keeps naming the question while the quest is taken, so the look must not read the quest as still waiting on it and plan its
+    /// resume again against the park itself holding the quest. The person's answer goes on at the next look in the park's own conversation, and the session ends as its run does.
     /// </summary>
     [Fact]
     public async Task The_persons_answer_to_a_park_its_resume_made_goes_on_though_the_quest_still_names_its_question()
@@ -309,8 +307,8 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 TREEGONE1 (D51, D131; GOONTREE1 before it): a session's tree removed while its branch stands, as a repository's merge tool
-    /// did to a driven session, is made again in its place on that branch before the person's words go on, and the record says so.
+    /// 🔴 A session's tree removed while its branch stands, as a repository's merge tool
+    /// does to a driven session, is made again in its place on that branch before the person's words go on, and the record says so.
     /// The words go on in the same record, its harness running in the tree made again; no other tree or branch is made.
     /// </summary>
     [Fact]
@@ -346,7 +344,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// TREEGONE1: a folder left where the tree was, which git no longer lists as one (a removal that could not delete everything),
+    /// A folder left where the tree stood, which git no longer lists as one (a removal that could not delete everything),
     /// is no tree to go on in: it is moved aside, never deleted, and the tree is made again in its place on its branch.
     /// </summary>
     [Fact]
@@ -374,7 +372,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 TREEGONE1: a session whose tree and branch are both gone is held for the person, and said: no harness starts, neither in
+    /// 🔴 A session whose tree and branch are both gone is held for the person, and said: no harness starts, neither in
     /// the repository's checkout nor in a fresh tree, the words stay waiting on the record, and no tree or branch is made. Each later
     /// look holds it again without saying it twice.
     /// </summary>
@@ -436,7 +434,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 A native session never concludes while words are held (D137 §2.1): the person writes while it works, its process
+    /// 🔴 A native session never concludes while words are held: the person writes while it works, its process
     /// exits, and the driver resumes its own conversation (<c>claude -p &lt;words&gt; --resume &lt;kept id&gt;</c>) under the same
     /// record, which concludes once that run ends with nothing held. The words show at once with their reach, and again under
     /// the same id where the resumed run took them.
@@ -480,13 +478,13 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         Assert.Contains(events, e => e is { Kind: SessionEventKind.User, Origin: "person", Id: "said-1", Reaches: "turn-end" });
         Assert.Contains(events, e => e is { Kind: SessionEventKind.User, Origin: "person", Id: "said-1", Reaches: null, Text: "Also log the port." });
         Assert.Null(processes.InboxOf("s1"));
-        // AGENTLYNTAI1s-i: both runs read their prompt from the input, and the arguments carry none of it.
+        // Both runs read their prompt from the input, and the arguments carry none of it.
         Assert.All(runs, run => Assert.DoesNotContain(
             run["args"]!.AsArray().Select(a => a!.GetValue<string>()), argument => argument.Contains("Also log the port.")));
     }
 
     /// <summary>
-    /// AGENTLYNTAI1s-i: a driven native session's prompt goes on its standard input as BOM-less UTF-8 and the input is closed (the
+    /// A driven native session's prompt goes on its standard input as BOM-less UTF-8 and the input is closed (the
     /// stand-in reads it to its end), never in its arguments, which any process on the machine can read. A Chinese prompt and one
     /// with an astral character (U+1F600, a surrogate pair) arrive byte for byte on a start, on the run that carries words said
     /// while it worked, and on a resume of its ended record.
@@ -552,7 +550,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// TURNFAIL3, the failed door end to end (D137's TURNFAIL1 note): a first run's turn fails (<c>door.failed</c>) while the
+    /// The failed door end to end: a first run's turn fails (<c>door.failed</c>) while the
     /// person's word, said mid-turn, is held. The record ends `failed` with the word waiting on <c>said</c>, kept through the say
     /// door, and the next look resumes the same conversation carrying it, which takes it off the record.
     /// </summary>
@@ -590,10 +588,9 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 SAIDBACK1e (D137 §2.4): a word the person takes back between the look and the ledger's move to working never goes. The
+    /// 🔴 A word the person takes back between the look and the ledger's move to working never goes. The
     /// look reads two words, and the take-back lands just before the move, as the ledger orders the two: the resumed run is handed
-    /// the one the move left, and only that one is taken off the record. While the move followed the spawn, the prompt was built
-    /// from the words read before it, and the word taken back went.
+    /// the one the move left, and only that one is taken off the record: the prompt is built after the move, not from the words read before it.
     /// </summary>
     [Fact]
     public async Task A_word_taken_back_between_the_look_and_the_move_never_goes()
@@ -617,7 +614,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c (D189's amendment, the session-context design §2): a resumed run whose process could not start is a start failure,
+    /// 🔴 A resumed run whose process could not start is a start failure,
     /// never a move. The record the move to working took up ends <c>failed</c> with the spawn's words, as a first start's failed spawn
     /// does, so the strikes count it; its words wait on it to go again, said beside them; no new session opens and nothing is handed
     /// on. Failing again at the next look, its words failed twice running and wait for the person, marked, as a failed turn's do.
@@ -655,7 +652,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c (D189's amendment): a driven record whose resume another client of its agent refuses (<c>elsewhere</c>) waits for
+    /// 🔴 A driven record whose resume another client of its agent refuses (<c>elsewhere</c>) waits for
     /// the person, even with its quest taken, since a second writer in its tree could redo its work: no new session opens, its words
     /// stay waiting and marked, its note says why, and no later look carries its quest on meanwhile. A word said since tries it again.
     /// </summary>
@@ -686,7 +683,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c (D189's amendment, the session-context design §2): the native door's harness that ends on a failed exit before it
+    /// 🔴 The native door's harness that ends on a failed exit before it
     /// names its conversation proves nothing of its loss, so the same resume is tried once more; where that one opens it, the words
     /// go on in the same record and its own conversation. Where it ends the same way again, the reason is <c>exited</c>, never
     /// <c>gone</c>, and a closed quest's session waits with its words marked by it.
@@ -725,7 +722,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         Assert.True(service.SessionCount == 1, seen);
         Assert.True(runs.Count(run => run["resume"]?.GetValue<string>() == "native-1") == 2, seen);
         Assert.True(runs.Count(run => run["exited"] is not null) == exits, seen);
-        // AGENTLYNTAI1s-i: the retry writes the same words on its input as the resume it repeats, and none in its arguments.
+        // The retry writes the same words on its input as the resume it repeats, and none in its arguments.
         var resumed = runs.Where(run => run["resume"]?.GetValue<string>() == "native-1").ToList();
         Assert.True(resumed.Select(run => run["sent"]!.GetValue<string>()).Distinct().Count() == 1, seen);
         Assert.True(resumed.All(run => !run["args"]!.AsArray().Any(argument => argument!.GetValue<string>().Contains("Also log the port."))), seen);
@@ -757,10 +754,9 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 SAIDBACK1f (D137 §2.4): a fallback hands its new session the words the record holds now. The resume of the failed
-    /// record is refused, so the words go to a new session; one of the two is taken back after the look and after the resume put
-    /// the record back, and only the other is handed on and taken off the record by the new session. While the look's words were
-    /// handed, the word taken back went too.
+    /// 🔴 A fallback hands its new session the words the record holds now. The resume of the failed
+    /// record is refused, so the words go to a new session; one of the two is taken back after the look and after the resume puts
+    /// the record back, and only the other is handed on and taken off the record by the new session, never the word taken back.
     /// </summary>
     [Fact]
     public async Task A_word_taken_back_before_a_fallbacks_open_is_never_handed_to_the_new_session()
@@ -771,7 +767,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         Assert.Equal("w2", await service.SayAsync("s1", "And use 9090."));
         service.TakeBackAtMoveBack("s1", "w1");
 
-        // A refusal on the wire carries a driven record on (SESSCTX1c); another client holding it would hold it instead.
+        // A refusal on the wire carries a driven record on; another client holding it would hold it instead.
         var look = await Protocol(service, "refuses").RunOnceAsync().WaitAsync(Poll.Patience);
 
         var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\ntaken: {string.Join(" | ", service.Taken)}";
@@ -781,7 +777,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// SAIDBACK1f: every word taken back before the fallback's open, so nothing is sent: no new session opens, no word is taken,
+    /// Every word taken back before the fallback's open, so nothing is sent: no new session opens, no word is taken,
     /// and the fresh tree the look made for the start it will not make is let go.
     /// </summary>
     [Fact]
@@ -805,7 +801,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1d-ii part 5 (the foundation design §3.4 rule 3; the pre-mortem's first case): against a host whose open moves the words (its
+    /// 🔴 Against a host whose open moves the words (its
     /// <c>opens</c> mark 2), a word the person said to the record a fallback carries on, after the look and the fallback read it and before the
     /// new session's open, moves with that open, in its own step, beside the word they read. The new session's agent is handed each exactly once,
     /// in its instruction, the ask keeping both as words that reopened the work, said to the new session, as a take of the old record's words
@@ -835,14 +831,14 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         Assert.Empty(service.Said("s2"));
         Assert.Equal([("Also log the port.", "s2"), ("And use 9090.", "s2")], service.AskWords);
 
-        // What its agent was handed, its instruction and any turn after: the late word once, and the word read with it.
+        // What its agent is handed, its instruction and any turn after: the late word once, and the word read with it.
         var handed = string.Join("\n", Heard()
             .Where(line => line["session"]?.GetValue<string>() == "s2" && line["method"]!.GetValue<string>() == "session/prompt")
             .SelectMany(line => line["blocks"]!.AsArray().Select(block => block!.GetValue<string>())));
         Assert.True(handed.Split("And use 9090.").Length - 1 == 1, handed);
         Assert.Contains("Also log the port.", handed, StringComparison.Ordinal);
 
-        // Shown under their ids, before the instruction its run was written with.
+        // Shown under their ids, before the instruction its run is written with.
         var events = Events("s2").Where(e => e.Kind == SessionEventKind.User).ToList();
         var shown = events.Where(e => e.Id is not null).ToList();
         Assert.Equal([("w1", "person"), ("w2", "person")], shown.Select(e => (e.Id, e.Origin)));
@@ -854,9 +850,9 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1d-ii part 5: against a host whose keyed open moves nothing (its <c>opens</c> mark 1, a d-i host), the fallback's open sends its
-    /// key and asks no words to move, and the carry-on reads, hands and takes the old record's words as before: the word the fallback read leaves
-    /// the old record, named as taken by the new session; a word said there after that read stays where it was said.
+    /// 🔴 Against a host whose keyed open moves nothing (its <c>opens</c> mark 1), the fallback's open sends its
+    /// key and asks no words to move, and the carry-on reads, hands and takes the old record's words: the word the fallback read leaves
+    /// the old record, named as taken by the new session; a word said there after that read stays where it is said.
     /// </summary>
     [Fact]
     public async Task Against_a_host_whose_open_moves_nothing_a_carry_on_takes_the_old_records_words_as_before()
@@ -878,9 +874,9 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1f-iv part a (the foundation design §3.3, §13.4; D212): the carry-on keeps its move record in the store. A fallback that moves
+    /// 🔴 The carry-on keeps its move record in the store. A fallback that moves
     /// the old record's word with its open is decided <c>old-ended</c> as a driven move of the session it goes on from, <c>retry</c> by Daoris;
-    /// its <c>opens</c> is the very key the open was sent with; it names the new session and the word the open moved by its id; and its take
+    /// its <c>opens</c> is the very key the open is sent with; it names the new session and the word the open moved by its id; and its take
     /// returned, the word has <c>sent</c> and the move is <c>delivered</c>, the word reaching its agent once.
     /// </summary>
     [Fact]
@@ -909,7 +905,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1f-iv part b (the foundation design §19.4, O7-F5): the protocol door's first prompt is where the moved word is <c>sent</c>, and
+    /// 🔴 The protocol door's first prompt is where the moved word is <c>sent</c>, and
     /// the take is made after it: when the take reaches the service the word already has <c>sent</c> and the prompt's outcome is recorded, the
     /// move not yet delivered; the agent is handed the word once, in the instruction the take had not yet kept on the ask.
     /// </summary>
@@ -945,7 +941,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1f-iv part a: a carry-on that hands no word keeps its record too, its open asked under its key through the keyed door and
+    /// 🔴 A carry-on that hands no word keeps its record too, its open asked under its key through the keyed door and
     /// asking no word to move; the move closes <c>delivered</c> on its prompt's outcome, a move of no word. Against a host whose open moves
     /// nothing (its <c>opens</c> mark 1) the record is the same.
     /// </summary>
@@ -1068,9 +1064,9 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     /// <summary>
     /// A stand-in for Claude Code's native door: it answers its version and its login question; run with a prompt it speaks
     /// <c>stream-json</c>, naming its conversation <c>native-1</c> on its <c>init</c> line. A first run takes the quest, says so
-    /// in a file, waits for the test's word to go on, and closes it; a resumed run logs what it was resumed with.
-    /// AGENTLYNTAI1s-i: as the real binary does under a bare <c>-p</c>, it reads its prompt from its input to the end (never
-    /// from its arguments), and logs it with the raw bytes it read (<c>sent</c>, hex) and the arguments it was given.
+    /// in a file, waits for the test's word to go on, and closes it; a resumed run logs what it is resumed with.
+    /// As the real binary does under a bare <c>-p</c>, it reads its prompt from its input to the end (never
+    /// from its arguments), and logs it with the raw bytes it read (<c>sent</c>, hex) and the arguments it is given.
     /// </summary>
     private string NativeHarness()
     {
@@ -1130,7 +1126,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The service as MSG1a has it, as far as these ticks reach: sessions with their adapter, account, tree, base and take; the
+    /// The service as far as these ticks reach: sessions with their adapter, account, tree, base and take; the
     /// ledger's moves, with the one move out of an ended state to working where words wait; words kept on a parked or ended
     /// record, each with its id, joined as <c>answer</c>; words taken off by their ids; a move into <c>awaiting-person</c>
     /// clearing them.
@@ -1149,35 +1145,35 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
 
         public string Url { get; }
 
-        /// <summary>Each of Daoris's own words kept (COWORK1b; LIMITRESUME1b): the session, and its key.</summary>
+        /// <summary>Each of Daoris's own words kept: the session, and its key.</summary>
         public List<(string Session, string? Key)> DaorisSaid { get; } = [];
 
-        /// <summary>Each take of words: the session, the ids joined, and the session that took them where it was another.</summary>
+        /// <summary>Each take of words: the session, the ids joined, and the session that took them where it is another.</summary>
         public List<(string Session, string Ids, string? By)> Taken { get; } = [];
 
-        /// <summary>The words taken back off a record by the take-back door (DRIVENATTEMPT1), as session and word.</summary>
+        /// <summary>The words taken back off a record by the take-back door, as session and word.</summary>
         public List<(string Session, string Word)> TakenBack { get; } = [];
 
         /// <summary>Called with the record as a take reaches the stand-in, before it is answered: what a case reads of the move at that moment.</summary>
         public Action<string>? BeforeTake { get; set; }
 
         /// <summary>
-        /// The host's <c>opens</c> mark (FOUNDATION1d-ii): 0 answers no protocol door, as a host before row d-i; 1 a d-i host, whose keyed open moves
+        /// The host's <c>opens</c> mark: 0 answers no protocol door, as a host without keyed opens; 1 a host whose keyed open moves
         /// nothing; 2 a host whose keyed open also moves the words its <c>moves</c> names and the person's kept since its read, in their order, each
-        /// keeping its id, its key and its fields, its attempt left behind (row d-ii part 3).
+        /// keeping its id, its key and its fields, its attempt left behind.
         /// </summary>
         public int Opens { get; set; }
 
-        /// <summary>Each keyed open's key and the moves it was asked, in order: none for an unkeyed open.</summary>
+        /// <summary>Each keyed open's key and the moves it is asked, in order: none for an unkeyed open.</summary>
         public List<(string Key, JsonObject? Moves)> Opened { get; } = [];
 
         /// <summary>
-        /// Whether the stand-in keeps the quest's ask (DRIFT1a): the person's words taken off a record that reopened it kept there as
+        /// Whether the stand-in keeps the quest's ask: the person's words taken off a record that reopened it kept there as
         /// <c>reopened</c>, said to the session that took them, as the service's take door keeps them, and answered at <c>/api/asks/a1</c>.
         /// </summary>
         public bool Asks { get; set; }
 
-        /// <summary>The words the ask keeps, in order, each with the session it was said to.</summary>
+        /// <summary>The words the ask keeps, in order, each with the session it is said to.</summary>
         public List<(string Text, string Session)> AskWords { get; } = [];
 
         private (string Session, string Text, string[] Files)? _atOpen;
@@ -1191,7 +1187,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
             lock (_sessions) _atOpen = (id, text, files);
         }
 
-        /// <summary>The first quest's title and body, set before its first look (AGENTLYNTAI1s-i: words a prompt must carry byte for byte).</summary>
+        /// <summary>The first quest's title and body, set before its first look (words a prompt must carry byte for byte).</summary>
         public void Retell(string title, string body)
         {
             lock (_sessions)
@@ -1234,8 +1230,8 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         public int SessionCount { get { lock (_sessions) return _sessions.Count; } }
 
         /// <summary>
-        /// SAYHELD1: the question <c>q1</c>'s session asks (D79), <c>q2</c> to <c>backend</c>, which this machine does not hold: open
-        /// until <see cref="Close"/>. Served only once called, so the tests that never ask read as they did.
+        /// The question <c>q1</c>'s session asks, <c>q2</c> to <c>backend</c>, which this machine does not hold: open
+        /// until <see cref="Close"/>. Served only once called, so the tests that never ask are unaffected.
         /// </summary>
         public void Question()
         {
@@ -1303,18 +1299,18 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         }
 
         /// <summary>
-        /// Take <paramref name="word"/> back off the record the moment before its next move out of working: the resume was
-        /// tried and put the record back, so the words a fallback hands on were read before this and are now fewer (SAIDBACK1f).
+        /// Take <paramref name="word"/> back off the record the moment before its next move out of working: the resume is
+        /// tried and puts the record back, so the words a fallback hands on are read before this and are now fewer.
         /// </summary>
         public void TakeBackAtMoveBack(string id, string word)
         {
             lock (_sessions) _takenBackAtMoveBack[id] = word;
         }
 
-        /// <summary>What the person says to a session, through the say door as the page's box will (MSG1d): the word's id.</summary>
+        /// <summary>What the person says to a session, through the say door as the page's box will: the word's id.</summary>
         public Task<string> SayAsync(string id, string text) => SayAsync(id, text, null, null);
 
-        /// <summary>Daoris's own word, as its producer says it through the say door: marked as Daoris's under its fact's key (COWORK1b).</summary>
+        /// <summary>Daoris's own word, as its producer says it through the say door: marked as Daoris's under its fact's key.</summary>
         public async Task<string> SayAsync(string id, string text, string? from, string? key)
         {
             using var http = new HttpClient();
@@ -1353,7 +1349,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
                 try { context = await _listener.GetContextAsync(); }
                 catch (Exception error) when (error is HttpListenerException or ObjectDisposedException or InvalidOperationException) { return; }
 
-                // 🔴 One request never ends the serving (AGENTERRORS1, the tick tests' determinism): an answer that throws is a 500 kept in
+                // 🔴 One request never ends the serving (the tick tests' determinism): an answer that throws is a 500 kept in
                 // Faults, and a client gone before its answer is written costs that answer alone. Escaping the loop, either left every
                 // later request of the case unanswered, a hang its patience said as anything but this.
                 (int Status, string Body) answer;
@@ -1386,8 +1382,8 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         public List<string> Faults { get; } = [];
 
         /// <summary>
-        /// A record as the wire answers it to this machine: its words waiting, keyed (ONEWAY1m: no joined `answer`); and, where the stand-in
-        /// keeps the quest's ask, the entry its line is keyed by, which names that ask (COMMS1c), as the service keys a quest's sessions.
+        /// A record as the wire answers it to this machine: its words waiting, keyed (no joined `answer`); and, where the stand-in
+        /// keeps the quest's ask, the entry its line is keyed by, which names that ask, as the service keys a quest's sessions.
         /// </summary>
         private JsonObject Wire(JsonObject session)
         {
@@ -1414,7 +1410,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
                 ["profile"] = body["profile"]?.GetValue<string>(),
                 ["created"] = DateTimeOffset.UtcNow.AddMinutes(_sessions.Count).ToString("O"),
                 ["said"] = new JsonArray(),
-                // AUTONOMY1a: the setup it started under, as the service keeps it (ACCESSSWAP1b reads it back).
+                // The setup it started under, as the service keeps it.
                 ["access"] = body["access"]?.DeepClone(),
             };
             _sessions.Add(session);
@@ -1422,7 +1418,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         }
 
         /// <summary>
-        /// A keyed open (FOUNDATION1d-ii), under the stand-in's lock: the record the words leave, the open's <c>from</c> or its moves' own, refused
+        /// A keyed open, under the stand-in's lock: the record the words leave, the open's <c>from</c> or its moves' own, refused
         /// while it runs; then the open, and at a mark of 2 the move: each word the moves name that still waits, and each of the person's kept there
         /// since the read and never attempted, off that record and onto the new one in their order, each keeping its id, its key and its fields,
         /// its attempt left behind, as the service's one step moves them.
@@ -1472,7 +1468,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         }
 
         /// <summary>
-        /// HELPERWAIT1: a helper's record that serves <paramref name="serves"/>, as the host opened it for a pass (the pass itself is the
+        /// A helper's record that serves <paramref name="serves"/>, as the host opened it for a pass (the pass itself is the
         /// test's stand-in), so its answer can be handed to the session it serves.
         /// </summary>
         public void Helper(string id, string serves)
@@ -1487,7 +1483,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
             }
         }
 
-        /// <summary>The states a record moved to, every one, in order (HELPERWAIT1).</summary>
+        /// <summary>The states a record moved to, every one, in order.</summary>
         public IReadOnlyList<string> States(string id)
         {
             lock (_sessions) return [.. _states.GetValueOrDefault(id) ?? []];
@@ -1495,7 +1491,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
 
         private readonly Dictionary<string, List<string>> _states = [];
 
-        /// <summary>Each helper's answer handed, by the helper's session, with the words as the driver composed them (HELPERWAIT1).</summary>
+        /// <summary>Each helper's answer handed, by the helper's session, with the words as the driver composed them.</summary>
         public List<(string Helper, string Text)> HelperHands { get; } = [];
 
         private (int, string) Answer(HttpListenerRequest request)
@@ -1531,11 +1527,11 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
                             .Where(s => all || Live.Contains(s["state"]!.GetValue<string>()))
                             .Select(Wire)]).ToJsonString());
 
-                    // FOUNDATION1d-ii: the marks a host answers, none before row d-i.
+                    // The marks a host answers.
                     case ("GET", "/api/protocol") when Opens > 0:
                         return (200, new JsonObject { ["run"] = "said-stand-in", ["marks"] = new JsonObject { ["opens"] = Opens } }.ToJsonString());
 
-                    // DRIFT1a: the quest's ask, its person's words as the take door kept them.
+                    // The quest's ask, its person's words as the take door kept them.
                     case ("GET", "/api/asks/a1") when Asks:
                         return (200, new JsonObject
                         {
@@ -1594,7 +1590,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
 
                         if (!Live.Contains(from))
                         {
-                            // MSG1a's one move out of an ended state: to working, with words waiting.
+                            // The one move out of an ended state: to working, with words waiting.
                             if (to != "working" || session["said"]!.AsArray().Count == 0)
                             {
                                 return (409, $$"""{"error":"Session `{{id}}` is {{from}} — a finished session does not move."}""");
@@ -1610,7 +1606,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
                         else if (note is not null)
                         {
                             session["note"] = note;
-                            // Its lines by code, as the service keeps them beside the note (LANG1a): what a second failed start reads.
+                            // Its lines by code, as the service keeps them beside the note: what a second failed start reads.
                             session["noteParts"] = body["noteParts"]?.DeepClone();
                         }
 
@@ -1618,7 +1614,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
                         session["interrupted"] = to == "stopped" && body["interrupted"]?.GetValue<bool>() == true;
                         // The ledger's limit flag, on the failed end that carries it, as the service keeps it: never a null.
                         if (to == "failed" && body["limit"]?.GetValue<bool>() == true) session["limit"] = true; else session.Remove("limit");
-                        // When it moved, as the service keeps it (HELPERWAIT1: a park made before its helper's ask was asked is not one made on it).
+                        // When it moved, as the service keeps it: a park made before its helper's ask is asked is not one made on it.
                         session["updated"] = DateTimeOffset.UtcNow.ToString("O");
                         if (to == "awaiting-person") session["said"] = new JsonArray();
                         if (_moves.TryGetValue(id, out var since)) since.Add(to);
@@ -1627,7 +1623,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
                         return (200, new JsonObject { ["session"] = Wire(session), ["message"] = "moved" }.ToJsonString());
                     }
 
-                    // HELPERWAIT1: a helper's answer, handed to the session its record serves as a word marked `helper`, once, and refused as
+                    // A helper's answer, handed to the session its record serves as a word marked `helper`, once, and refused as
                     // the desk refuses it where the asker is parked, running or stood down.
                     case ("POST", _) when path.StartsWith("/api/helpers/", StringComparison.Ordinal) && path.EndsWith("/hand", StringComparison.Ordinal):
                     {
@@ -1635,7 +1631,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
                         var served = Find(id)["serves"]!.GetValue<string>();
                         var asker = Find(served);
                         var state = asker["state"]!.GetValue<string>();
-                        // A park the person answered takes it beside their answer (HELPERWAIT1), as the desk lets it; any other live record waits.
+                        // A park the person answered takes it beside their answer, as the desk lets it; any other live record waits.
                         var answeredPark = state == "awaiting-person" && Persons(asker).Count > 0;
                         if (Live.Contains(state) && !answeredPark) return (409, $$"""{"error":"Session `{{served}}` is {{state}}. Nothing was kept."}""");
                         if (asker["said"]!.AsArray().Any(word => word!["helper"]?.GetValue<string>() == id)) return (409, """{"error":"it goes once"}""");
@@ -1661,7 +1657,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
                             return (409, $$"""{"error":"Session `{{id}}` is {{state}}.","refusal":"running"}""");
                         }
 
-                        // COWORK1b: Daoris's own words under its producer's key, kept once by that key (LIMITRESUME1b's limit word).
+                        // Daoris's own words under its producer's key, kept once by that key.
                         var said = Body();
                         var from = said["from"]?.GetValue<string>();
                         var key = said["key"]?.GetValue<string>();
@@ -1682,7 +1678,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
                         return (200, new JsonObject { ["session"] = Wire(session), ["message"] = "kept", ["said"] = word.DeepClone() }.ToJsonString());
                     }
 
-                    // COWORK1c: a word marked attempted on the record before the wire, and (FOUNDATION1 row p) the answer names the words that no
+                    // A word marked attempted on the record before the wire, and the answer names the words that no
                     // longer wait as `unmarked`, as the service's attempt door does: a word it does not name as marked does not go.
                     case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/attempt", StringComparison.Ordinal):
                     {
@@ -1705,7 +1701,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
                         return (200, new JsonObject { ["session"] = Wire(Find(id)), ["message"] = "attempted", ["unmarked"] = unmarked }.ToJsonString());
                     }
 
-                    // The take-back door, as the come-up's uncertain settlement and a move's use it (DRIVENATTEMPT1): a waiting word leaves its record,
+                    // The take-back door, as the come-up's uncertain settlement and a move's use it: a waiting word leaves its record,
                     // kept nowhere as taken by a session; one that no longer waits answers `taken` as the service's door does.
                     case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/take-back", StringComparison.Ordinal):
                     {
@@ -1768,7 +1764,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
                                 quest["status"] = "Done";
                                 quest["note"] = body["reason"]?.GetValue<string>();
                                 break;
-                            // SAYHELD1: the taker waits on a question (D79), named while the quest is taken, as the service keeps it.
+                            // The taker waits on a question, named while the quest is taken, as the service keeps it.
                             case "wait" when quest["status"]!.GetValue<string>() == "Taken":
                                 quest["awaits"] = body["on"]!.GetValue<string>();
                                 break;

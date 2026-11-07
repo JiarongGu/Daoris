@@ -49,7 +49,7 @@ internal sealed class ProtocolHeld(IExecutorWiring wiring, Action<string, IReadO
                 switch (error)
                 {
                     case AcpResumeRefused refused when chat.GoOn is { } goOn:
-                        // Not a turn that failed: nothing was prompted. The agent's own words stay in this machine's record of the conversation;
+                        // Not a turn that failed: nothing is prompted. The agent's own words stay in this machine's record of the conversation;
                         // the reason goes back to the record, which goes back to how it ended. Its reason by code, the agent's words its own.
                         goOn.Refused = refused.Why;
                         chat.Opened(null, run.Say, Record);
@@ -59,7 +59,7 @@ internal sealed class ProtocolHeld(IExecutorWiring wiring, Action<string, IReadO
                         break;
                     case AcpChoiceNotOffered refused when chat.Pending is { } pending:
                         // Its agent refused the choice before any prompt, and the re-ask answered another session. Its words move to the pending
-                        // start before the queue lets them go, each said meanwhile joining them, so the replacement takes each once; nothing was
+                        // start before the queue lets them go, each said meanwhile joining them, so the replacement takes each once; nothing is
                         // prompted, and the record ends `choice-not-offered`.
                         chat.NotOffered = refused.Refusal;
                         pending.Moving(chat.Turns.MoveOut(word => pending.Join(word) || wiring.Of<ChatReplacement>().Onward(pending, sessionId, word)));
@@ -72,8 +72,8 @@ internal sealed class ProtocolHeld(IExecutorWiring wiring, Action<string, IReadO
                         var notOpen = DoorNotes.NotOpen(error.Message);
                         run.Say($"— {notOpen.Note}");
                         Record(new SessionEvent { Kind = SessionEventKind.Note, Text = notOpen.Note, Parts = notOpen.Parts });
-                        // A refused sign-in may come at `session/new` as well as at a prompt: which one Claude Code's adapter answers with was
-                        // not seen, so both are read.
+                        // A refused sign-in may come at `session/new` as well as at a prompt: which one Claude Code's adapter answers with is
+                        // not known, so both are read.
                         chat.ReadSignIn(error);
                         break;
                 }

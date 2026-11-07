@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ACCESSSWAP1 (D183 point 2 and its ACCESSSWAP1 note, after HELPMODE1a5): every change of Ask Daoris's access applies at its running
+/// Every change of Ask Daoris's access applies at its running
 /// conversation's next turn. A mode widened or narrowed, or a housekeeping grant given or taken back, ends the conversation's agent at its
 /// turn's end, never mid-turn, and at once where it is idle; its next words resume the same conversation under the access chosen, its
-/// history kept (D131). Its console says when, and the conversation counts as pending until its agent has ended. A fake door and the
+/// history kept. Its console says when, and the conversation counts as pending until its agent has ended. A fake door and the
 /// real turn queue, so nothing is spawned.
 /// </summary>
 public sealed class HelpAccessSwapTests : IDisposable
@@ -114,7 +114,7 @@ public sealed class HelpAccessSwapTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 ACCESSSWAP1: a widening no longer waits for a next start. Restricted to full while a turn runs ends the conversation at its
+    /// A widening does not wait for a next start. Restricted to full while a turn runs ends the conversation at its
     /// turn's end, never mid-turn, and its console says its next words resume it under the new access.
     /// </summary>
     [Fact]
@@ -138,7 +138,7 @@ public sealed class HelpAccessSwapTests : IDisposable
         Assert.Equal(1, chat.Finished);
     }
 
-    /// <summary>🔴 ACCESSSWAP1: a housekeeping grant given while a turn runs takes its next turn the same way, naming what it grants.</summary>
+    /// <summary>A housekeeping grant given while a turn runs takes its next turn the same way, naming what it grants.</summary>
     [Fact]
     public async Task A_grant_given_ends_a_running_conversation_at_its_turn_s_end()
     {
@@ -157,7 +157,7 @@ public sealed class HelpAccessSwapTests : IDisposable
         await Poll.Until(() => chat.Finished == 1, () => "the turn's end never ended it");
     }
 
-    /// <summary>🔴 ACCESSSWAP1: a grant taken back ends an idle conversation at once (D183's HELPMODE1c2a note's "a revoke ends no conversation" overturned).</summary>
+    /// <summary>A grant taken back ends an idle conversation at once.</summary>
     [Fact]
     public async Task A_grant_taken_back_ends_an_idle_conversation_at_once()
     {
@@ -239,7 +239,7 @@ public sealed class HelpAccessSwapTests : IDisposable
         Assert.Equal(0, chat.Finished);
     }
 
-    /// <summary>ACCESSSWAP1: a grant taken back again before the turn ends withdraws the end, but a mode still changed keeps it.</summary>
+    /// <summary>A grant taken back again before the turn ends withdraws the end, but a mode still changed keeps it.</summary>
     [Fact]
     public async Task A_grant_taken_back_again_withdraws_the_end_only_where_nothing_else_changed()
     {
@@ -261,7 +261,7 @@ public sealed class HelpAccessSwapTests : IDisposable
         Assert.Equal(0, same.Finished);
     }
 
-    /// <summary>ACCESSSWAP1: a conversation already under the access chosen is told nothing and goes on.</summary>
+    /// <summary>A conversation already under the access chosen is told nothing and goes on.</summary>
     [Fact]
     public async Task A_conversation_under_the_access_chosen_is_told_nothing_and_not_ended()
     {
@@ -276,8 +276,8 @@ public sealed class HelpAccessSwapTests : IDisposable
     }
 
     /// <summary>
-    /// ACCESSSWAP1: what the page's pending marks read. A conversation running under another access than the one chosen is pending, and
-    /// a grant is pending while any running conversation was handed another choice of it, each grant on its own; neither is, once each
+    /// What the page's pending marks read. A conversation running under another access than the one chosen is pending, and
+    /// a grant is pending while any running conversation is handed another choice of it, each grant on its own; neither is, once each
     /// runs under the access chosen.
     /// </summary>
     [Fact]

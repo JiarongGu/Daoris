@@ -6,18 +6,17 @@ internal sealed class ContinuationLimits(LoopContext context)
     private readonly LoopContext _context = context;
 
     /// <summary>
-    /// The record a start goes on in with the person's words, where its resume asks for that record's own account (MSG1g, D137 §2.2), by the
+    /// The record a start goes on in with the person's words, where its resume asks for that record's own account, by the
     /// one rule the sessions' groups report it by (<see cref="OwnResume"/>), on the agent the start runs on.
     /// </summary>
     internal PriorSession? ResumesOwn(Consideration start, string agent) =>
         OwnResume.Of(start, agent, session => _context.Conversations.Read(session)?.Adapter);
 
     /// <summary>
-    /// Whether a record an account's limit ended could resume its own conversation on <paramref name="agent"/> (LIMITRESUME1b, D206; the
-    /// limit-resume design §3.3 step 1): the judge passing as if words waited, since with none it answers <c>ended</c> (the same agent and
+    /// Whether a record an account's limit ended could resume its own conversation on <paramref name="agent"/>: the judge passing as if words waited, since with none it answers <c>ended</c> (the same agent and
     /// account, its tree, a kept id, a door that resumes), on a door whose resume of a missing conversation is known to fail closed. The
-    /// protocol door refuses one with <c>resource_not_found</c> before any prompt; the native door goes by the brief until row 1f has
-    /// recorded what its <c>--resume</c> of a missing id does.
+    /// protocol door refuses one with <c>resource_not_found</c> before any prompt; the native door goes by the brief, since what
+    /// its <c>--resume</c> of a missing id does is not recorded.
     /// </summary>
     internal bool LimitResumes(PriorSession limited, string agent)
     {
@@ -31,15 +30,15 @@ internal sealed class ContinuationLimits(LoopContext context)
     }
 
     /// <summary>
-    /// Daoris's limit word kept on the ended record through the say door (LIMITRESUME1b, the design §3.3 step 1), as
+    /// Daoris's limit word kept on the ended record through the say door, as
     /// <see cref="RebaseTelling"/> keeps its own, under the key of the cool-off that held it, so a later look's start keeps one; then the
     /// record as it stands now, its words the person's first and Daoris's last, as the say door keeps them. Null where the door refused
-    /// it, and the line goes on as the carry-on it was planned.
+    /// it, and the line goes on as the carry-on it is planned.
     /// </summary>
     internal async Task<(PriorSession Record, string Word)?> KeepLimitWordAsync(PriorSession limited, CancellationToken ct)
     {
         SayAnswer said;
-        // AGENTERRORS1a2 (the agent-errors design §5.1): a record Try again released from its transient hold takes the same step, with the
+        // A record Try again released from its transient hold takes the same step, with the
         // episode's go-on under the key of the end released.
         var (text, key) = Planner.EndedTransient(limited) ? LimitResume.TransientWord(limited)
             : LimitResume.UpdateBuild(limited) is { } build ? (ShellClose.Words, DaorisKeys.Restart(limited.Session, build))
@@ -60,7 +59,7 @@ internal sealed class ContinuationLimits(LoopContext context)
     }
 
     /// <summary>
-    /// Daoris's limit words taken off a record by their ids (LIMITRESUME1b): at every conclusion of the run they went with, and where its
+    /// Daoris's limit words taken off a record by their ids: at every conclusion of the run they went with, and where its
     /// own conversation could not take them, the record's own session named as the one that took them. A refusal costs nothing more:
     /// the next attempt keeps its own under its own cool-off's key.
     /// </summary>

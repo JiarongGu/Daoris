@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// USAGECAP1a1 (D179 point 2): every usage reading kept, appended to a bounded log under the home's <c>usage-history/</c>,
+/// Every usage reading kept, appended to a bounded log under the home's <c>usage-history/</c>,
 /// beside a small file of each account's binding epoch. History first, so data gathers while the estimator is built: what a
 /// reading carries, an exact duplicate written once, the epoch a plan change or a sign-out and in bumps, the bound of 90 days
 /// and 64 MiB pruned oldest first with the gap said where a reader meets it, and a write that never fails its caller.
@@ -66,7 +66,7 @@ public sealed class UsageHistoryTests : IDisposable
         Assert.Equal("2026-10-19T12:00:00.000Z", (string)first["written"]!);
         Assert.Equal("2026-10-23T16:00:00.000Z", (string)first["reset"]!);
 
-        // Absent is never zero (D57): a window that said no use and no reset says null, never 0.
+        // Absent is never zero: a window that said no use and no reset says null, never 0.
         var second = JsonNode.Parse(lines[1])!.AsObject();
         Assert.Null(second["used"]);
         Assert.True(second.ContainsKey("used") && second.ContainsKey("reset") && second.ContainsKey("precision"));
@@ -113,7 +113,7 @@ public sealed class UsageHistoryTests : IDisposable
         Keep(From(seen: Now.AddMinutes(3), plan: "team"), Week);
         Assert.Equal(2, UsageHistory.EpochOf(_home, "claude-code", "account-1"));
 
-        // Where no plan was read the epoch is the last one, and the reading's plan is null.
+        // Where no plan is read the epoch is the last one, and the reading's plan is null.
         Keep(From(seen: Now.AddMinutes(4)), Week);
 
         Assert.Equal(
@@ -135,7 +135,7 @@ public sealed class UsageHistoryTests : IDisposable
         UsageHistory.Login(_home, "claude-code", "account-1", LoginState.In, "max", Now.AddMinutes(4));
         Assert.Equal(2, UsageHistory.EpochOf(_home, "claude-code", "account-1"));
 
-        // Signed out, then a reading: it ran again, so it signed in again, wherever that was.
+        // Signed out, then a reading: it ran again, so it signed in again, wherever that happened.
         UsageHistory.Login(_home, "claude-code", "account-1", LoginState.Out, null, Now.AddMinutes(5));
         Keep(From(seen: Now.AddMinutes(6)), Week);
         Assert.Equal(3, UsageHistory.EpochOf(_home, "claude-code", "account-1"));
@@ -276,7 +276,7 @@ public sealed class UsageHistoryTests : IDisposable
         Assert.Null(UsageHistory.EpochOf(_home, "claude-code", "account-1"));
     }
 
-    // ——— What is never written (D179 point 2): a prompt, a word, a raw frame, a key, an email, an organisation, who signed in.
+    // ——— What is never written: a prompt, a word, a raw frame, a key, an email, an organisation, who signed in.
 
     [Fact]
     public void A_maker_s_name_that_is_not_a_plain_name_never_reaches_the_file()

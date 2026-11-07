@@ -71,7 +71,7 @@ public sealed class AgentPluginPortsTests : IDisposable
             Assert.Same(built.Door("stub"), direct.Door("stub"));
             Assert.Null(direct.DeclaredBy("stub"));
             Assert.Equal("stand.plugin", direct.DeclaredBy("stand-agent"));
-            // A plugin's adapter declares no layout, so it is handed the copies every such adapter was: in the order the catalogue gave.
+            // A plugin's adapter declares no layout, so it is handed the copies every such adapter gets: in the order the catalogue gives.
             Plugin("acme.second", "second-agent", "second-owner");
             Plugin("acme.first", "first-agent", "first-owner");
             catalog.Sources = [Source("acme.second"), Source("acme.first")];

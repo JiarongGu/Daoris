@@ -13,7 +13,7 @@ internal static class ProviderRegistration
             .Append(provider.KeyOf().Value)
             .Concat(provider.Doors.Select(door => door.AccountOf?.Value).OfType<string>());
 
-    /// <summary>A name kept for a plugin turned off: no door, so no provider of its own, but known with its id (POOLSTRAY1).</summary>
+    /// <summary>A name kept for a plugin turned off: no door, so no provider of its own, but known with its id.</summary>
     internal static Provider Descriptor(string agent)
     {
         var id = new ProviderId(agent);

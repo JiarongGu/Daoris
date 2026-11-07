@@ -3,7 +3,7 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Why a row's pull request was not asked about at an occasion (PLUGHOOK1c, the plugin hooks design §2.1): no plugin to ask, the
+/// Why a row's pull request is not asked about at an occasion: no plugin to ask, the
 /// plugin not ready, or the occasion's bound reached first. Nothing goes on any of them, and none is kept: the next look asks again.
 /// </summary>
 /// <param name="Code"><see cref="PullRequestCodes.NoPlugin"/>, <see cref="PullRequestCodes.Unready"/> or <see cref="PullRequestCodes.NotAsked"/>.</param>
@@ -11,13 +11,13 @@ namespace Daoris.Driver;
 public sealed record PullRequestNotAsked(string Code, string Sentence);
 
 /// <summary>
-/// What <i>Ask again</i> came to (PLUGHOOK1c, design §2.1 occasion 4): the landing as kept after it, whether its plugin answered
+/// What <i>Ask again</i> came to: the landing as kept after it, whether its plugin answered
 /// this time, why nothing new is known where nothing is, and what the kept answer proves here.
 /// </summary>
 /// <param name="Entry">The landing entry, standing or a trace, as the record keeps it after the ask.</param>
 public sealed record PullRequestAskedAgain(LandedBranch Entry)
 {
-    /// <summary>What the kept answer proves on this machine (design §2.3); null where nothing is kept.</summary>
+    /// <summary>What the kept answer proves on this machine; null where nothing is kept.</summary>
     public PullRequestVerdict? Verdict { get; init; }
 
     /// <summary>Whether the plugin answered this time.</summary>
@@ -37,14 +37,14 @@ public sealed record PullRequestAskedAgain(LandedBranch Entry)
 }
 
 /// <summary>
-/// The kept answer about a landed branch's pull request in the driver's words (PLUGHOOK1c, D148 point 6, design §2.5): one way for
+/// The kept answer about a landed branch's pull request in the driver's words: one way for
 /// every terminal door that reads it — the clean-up's rows and bringing up to date's, <c>trees land --plan</c>, <c>trees state</c>,
 /// <c>git branches</c>, <c>trace</c> and Ask Daoris's room — so they never say it two ways. The page says the same in its own
-/// catalogue (PLUGHOOK1d).
+/// catalogue.
 /// </summary>
 public static class PullRequestWords
 {
-    /// <summary>Why nothing was asked where no plugin pushed the branch and the rule names none (design §2.1).</summary>
+    /// <summary>Why nothing is asked where no plugin pushed the branch and the rule names none.</summary>
     public const string NoPlugin = "no plugin pushed it and its repository's landing rule names none, so its pull request was not asked about.";
 
     /// <summary>
@@ -65,12 +65,12 @@ public static class PullRequestWords
         return $"{said}, as {by} answered" + (kept.AskedAt == DateTimeOffset.MinValue ? "" : $" at {When(kept.AskedAt)}");
     }
 
-    /// <summary>A failed ask (design §2.4), which never overwrote the answer kept: <paramref name="again"/> where one is kept.</summary>
+    /// <summary>A failed ask, which never overwrote the answer kept: <paramref name="again"/> where one is kept.</summary>
     public static string Failed(PullRequestAskFailed failed, bool again) =>
         $"asking `{failed.Plugin}` {(again ? "again " : "")}at {When(failed.At)} failed (`{failed.Code}`)";
 
     /// <summary>
-    /// Why a completed answer does not clear the branch, beyond its state (design §2.3), or null where the state says it:
+    /// Why a completed answer does not clear the branch, beyond its state, or null where the state says it:
     /// <c>open</c>, <c>abandoned</c> and <c>unknown</c> are their own codes.
     /// </summary>
     public static string? Code(string? code, PullRequestState? kept) => code switch
@@ -96,7 +96,7 @@ public static class PullRequestWords
     }
 
     /// <summary>
-    /// <c>trees state</c>'s lines (design §2.1 occasion 4): what came of the ask, what is kept with its address, and what the kept
+    /// <c>trees state</c>'s lines: what came of the ask, what is kept with its address, and what the kept
     /// answer proves here. The plugin's own sentence is said under its name as it answers, not here.
     /// </summary>
     public static IReadOnlyList<string> AskedAgain(PullRequestAskedAgain asked)
@@ -123,7 +123,7 @@ public static class PullRequestWords
         return lines;
     }
 
-    /// <summary>What a kept answer proves here (design §2.3), as <c>trees state</c> says it.</summary>
+    /// <summary>What a kept answer proves here, as <c>trees state</c> says it.</summary>
     private static string Proves(PullRequestVerdict verdict, PullRequestState kept) => verdict switch
     {
         { Code: null, Clears: true } => $"its merge commit is on `{verdict.Form}` here and the branch stands at or under the commit it merged, so it "

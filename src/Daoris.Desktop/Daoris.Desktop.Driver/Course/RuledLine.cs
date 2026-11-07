@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A line as the supervisor's rules read it (CONTEXTDRIVE1p; the context counters design §4.4): the role it goes on under and its place.
+/// A line as the supervisor's rules read it: the role it goes on under and its place.
 /// Every reader of a line's rules resolves it here: the answers-alone hold, the line's facts and the supervisor's print, a conversation's
 /// rules, the planner's park and course, a run's tries and the rule acts.
 /// </summary>
-/// <param name="Role">The role the line's start was bound to while the catalogue holds it, else the role taking its work at its place now.</param>
+/// <param name="Role">The role the line's start is bound to while the catalogue holds it, else the role taking its work at its place now.</param>
 /// <param name="Repository">The line's repository; null for a line at none.</param>
 /// <param name="Workspace">The repository's workspace, as the record names it, else as the registry places the quest's repository.</param>
 internal sealed record RuledLine(string Role, string? Repository, string? Workspace)

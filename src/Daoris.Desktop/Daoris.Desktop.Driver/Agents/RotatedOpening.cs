@@ -1,14 +1,14 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a start says once its record is open (TOOL4f, D125 §3.3, §3.6, §5.4; TOOL6b, D130 §16.4): its record's first line,
+/// What a start says once its record is open: its record's first line,
 /// naming the account it opened on and why, and <c>account.rotated</c> in the machine log when it ran somewhere other than
 /// where its scope begins. One home for a driven start, a carry-on, an intake, a conversation and Ask Daoris's opening, so
 /// none says it differently.
 /// </summary>
 public static class RotatedOpening
 {
-    /// <summary>The cut-off session a rotated carry-on carries on (D80), with its refused turn and context after a limit.</summary>
+    /// <summary>The cut-off session a rotated carry-on carries on, with its refused turn and context after a limit.</summary>
     /// <param name="Session">The cut-off session's record.</param>
     /// <param name="Turn">Its refused turn (the turns its record ended, plus one), where a limit cut it off; else null.</param>
     /// <param name="Used">Its context at its high-water, where a limit cut it off and its door reported one; else null.</param>
@@ -16,8 +16,8 @@ public static class RotatedOpening
 
     /// <summary>
     /// Say it: under the goal, every start whose list offered a choice names the step that chose its account, then what each
-    /// account of its list said about its windows, or that none has said what it has left (TOOL6c); under <c>order</c>, a
-    /// start that rotated says why, as D125 built it, and what each account said where one has; otherwise nothing. The
+    /// account of its list said about its windows, or that none has said what it has left; under <c>order</c>, a
+    /// start that rotated says why, and what each account said where one has; otherwise nothing. The
     /// record's failure costs its line, never the start.
     /// </summary>
     internal static void Say(
@@ -25,8 +25,8 @@ public static class RotatedOpening
     {
         if (selection.Profile is not { } to || Line(selection, carried) is not { } line) return;
 
-        // The conversation record is the machine's (D76 §2: its events never sync and never cross HTTP), so this line may name
-        // both accounts, in its English and in its parts' values (UX7d-1); the note, which travels, never does (§3.6).
+        // The conversation record is the machine's (its events never sync and never cross HTTP), so this line may name
+        // both accounts, in its English and in its parts' values; the note, which travels, never does.
         events.Keep(
             sessionId,
             new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts.Count > 0 ? line.Parts : null },
@@ -40,7 +40,7 @@ public static class RotatedOpening
     }
 
     /// <summary>
-    /// The record's first line (UX7d-1, D152's UX7d-1 note): its English, byte for byte what the record has always kept, and its
+    /// The record's first line: its English, and its
     /// lines by code where the walk handed its steps by code (<see cref="HarnessSelection.Steps"/>): the account it opened on
     /// with the first step's reason, the rest's step and a refused turn riding inside it, then what each account said. A line
     /// whose steps are not the ones its English says is kept with no parts, so the page draws the English whole rather than
@@ -60,7 +60,7 @@ public static class RotatedOpening
         }
         else if (selection.Rotated is { } rotated)
         {
-            // Under `order` the line says the step that moved it off where its scope begins, never the rest's (D125 §3.3).
+            // Under `order` the line says the step that moved it off where its scope begins, never the rest's.
             (clause, steps) = (rotated.Why, selection.Steps is { Count: > 0 } all ? [all[0]] : null);
             said = selection.AccountsSaid;
         }
@@ -97,8 +97,8 @@ public static class RotatedOpening
     }
 
     /// <summary>
-    /// A session's context at its high-water (D125 §3.6): what this machine's usage record kept of it, else the highest its
-    /// own record's usage reports reached; null where neither says, never zero (TOOL3).
+    /// A session's context at its high-water: what this machine's usage record kept of it, else the highest its
+    /// own record's usage reports reached; null where neither says, never zero.
     /// </summary>
     internal static long? ContextOf(SessionUsage? usage, ISessionEventHistory events, string session)
     {

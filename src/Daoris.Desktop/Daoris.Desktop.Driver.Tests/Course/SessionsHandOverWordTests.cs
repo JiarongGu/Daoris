@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT1c (D163 point 3): the person's yes and no at a terminal to an agent's ask to hand its session over, waiting under the
+/// The person's yes and no at a terminal to an agent's ask to hand its session over, waiting under the
 /// `handOver` rule's `ask`: <c>daoris session hand-over &lt;id&gt; --approve|--decline</c>, the page's judge
 /// (<see cref="HandOverAskWord"/>). A yes is the state the look takes; a no is the look's own refusal `declined` with its note, once.
 /// </summary>
@@ -88,7 +88,7 @@ public sealed class SessionsHandOverWordTests : IDisposable
         Assert.Equal(["handover.refused"], NoteAssert.Codes(note.Parts!));
     }
 
-    /// <summary>Each answer the judge gives as data is a refusal at the terminal, with its sentence, and the state is left as it was.</summary>
+    /// <summary>Each answer the judge gives as data is a refusal at the terminal, with its sentence, and the state is left as it is.</summary>
     [Theory]
     [InlineData("--approve", "none", null, "holds no ask")]
     [InlineData("--approve", HandOverAskStates.Taken, null, "past your word")]

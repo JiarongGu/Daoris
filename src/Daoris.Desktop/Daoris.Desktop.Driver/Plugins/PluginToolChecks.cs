@@ -8,20 +8,20 @@ internal sealed record CheckRun(bool Started, int? ExitCode, string Stdout, stri
 
 /// <summary>
 /// What starts a program for a check and reads its answer, bounded: a stand-in in the fast tests, a real start otherwise
-/// (<see cref="PluginToolRuns.RunAsync"/>). The module's port for its tool checks (STRUCT3a).
+/// (<see cref="PluginToolRuns.RunAsync"/>). The module's port for its tool checks.
 /// </summary>
 internal delegate Task<CheckRun> CheckRunner(ProcessStartInfo info, TimeSpan patience, CancellationToken ct);
 
 /// <summary>
-/// A plugin's tools, found and checked (PLUGTOOL1a, D150 point 7; the UX6 design §7.2–§7.3): each where the tools say, its
+/// A plugin's tools, found and checked: each where the tools say, its
 /// version against its range, then each of its checks, one at a time, with <see cref="PluginTools.CheckPatience"/> each.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>Only on a press or at a trial.</b> Nothing here runs at a load, at a look or on a timer: a check may reach the
-/// platform or read another tool's sign-in, and that is the person's to ask for (§7.2). Its callers are the kit's trial
-/// (<see cref="PluginKit"/>) and, with PLUGTOOL1c, the plugin page's <i>Check</i>.</para>
+/// platform or read another tool's sign-in, and that is the person's to ask for. Its callers are the kit's trial
+/// (<see cref="PluginKit"/>) and the plugin page's <i>Check</i>.</para>
 ///
-/// <para><b>Where a tool is found is D121's, unchanged</b> (§7.3): a known tool is the file its way in <c>tools.json</c>
+/// <para><b>Where a tool is found</b>: a known tool is the file its way in <c>tools.json</c>
 /// resolves, which never falls back to <c>PATH</c>; one Daoris does not know is its <c>command</c> on the tools'
 /// <c>PATH</c>. A check's first word is found as a hook's is: the tool's file where a tool answers for it, else the
 /// <c>PATH</c>'s. Every start is handed the tools' environment, runs in the folder it is given with git told no repository
@@ -48,7 +48,7 @@ public static partial class PluginToolChecks
         var name = declared?.Name ?? tool.Name ?? tool.Id!;
         var notRun = tool.Ready.Count > 0 ? " Its checks were not run." : "";
 
-        // Where it is found (§7.3): its way for a known tool, the tools' PATH for any other.
+        // Where it is found: its way for a known tool, the tools' PATH for any other.
         string file;
         ToolWay way;
         if (declared is not null)
@@ -69,7 +69,7 @@ public static partial class PluginToolChecks
                 $"`{tool.Command}` is not on this machine's PATH: a tool Daoris does not know is found there, and never downloaded.{notRun}", []);
         }
 
-        // Its version, where there is a question to ask, against its range (§7.2).
+        // Its version, where there is a question to ask, against its range.
         var question = declared?.Version ?? tool.VersionArguments;
         var range = tool.Versions is { } written ? VersionRange.Parse(written) : null;
         string? version = null;
@@ -84,7 +84,7 @@ public static partial class PluginToolChecks
             }
             catch (DriverException)
             {
-                // A question a Windows command shim would read again is not asked (the shim rule, USE1f).
+                // A question a Windows command shim would read again is not asked.
                 answer = new CheckRun(false, null, "", "");
             }
 
@@ -120,7 +120,7 @@ public static partial class PluginToolChecks
         var says = check.Says.TrimEnd().TrimEnd('.');
         ReadyAnswer Not(string why) => new(check, false, $"not ready: {says}. {why}");
 
-        // Its first word as a hook's is found (TOOLS5): the file a tool answers with, else the PATH's.
+        // Its first word as a hook's is found: the file a tool answers with, else the PATH's.
         var first = check.Run[0];
         string file;
         if (Tools.ResolveCommand(read, home, first, path) is { } tool)
@@ -144,7 +144,7 @@ public static partial class PluginToolChecks
         }
         catch (DriverException error)
         {
-            // An argument a Windows command shim would read again (the shim rule, USE1f): refused, never passed.
+            // An argument a Windows command shim would read again: refused, never passed.
             return Not(error.Message);
         }
 
@@ -166,8 +166,7 @@ public static partial class PluginToolChecks
 
     /// <summary>
     /// The version a program said: its first dotted number, the way each tool says it (<c>git version 2.51.0.windows.1</c>,
-    /// <c>v22.11.0</c>). <see cref="ToolQuestions.VersionIn"/> reads Settings → Tools' versions by the same rule; it was the
-    /// modules' when this was written, and is the driver library's since PUSH1f2c.
+    /// <c>v22.11.0</c>). <see cref="ToolQuestions.VersionIn"/> reads Settings → Tools' versions by the same rule.
     /// </summary>
     internal static string? VersionIn(string said) => DottedNumber().Match(said) is { Success: true } found ? found.Value : null;
 

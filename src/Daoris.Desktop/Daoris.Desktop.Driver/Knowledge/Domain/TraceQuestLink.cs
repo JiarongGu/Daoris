@@ -8,7 +8,7 @@ public sealed record TraceQuestLink(string Id)
     /// <summary>Its store: <see cref="TraceStores.Quests"/>.</summary>
     public string Source => TraceStores.Quests;
 
-    /// <summary>Why it could not be read, <see cref="TraceLinkGaps.Unread"/> or <see cref="TraceLinkGaps.NotFound"/>; null where it was.</summary>
+    /// <summary>Why it could not be read, <see cref="TraceLinkGaps.Unread"/> or <see cref="TraceLinkGaps.NotFound"/>; null where it is.</summary>
     public string? Missing { get; init; }
 
     public TraceNamedBy? NamedBy { get; init; }
@@ -25,31 +25,31 @@ public sealed record TraceQuestLink(string Id)
 
     public DateTimeOffset? Moved { get; init; }
 
-    /// <summary>The ask it was asked by, or null where no ask asked it.</summary>
+    /// <summary>The ask it is asked by, or null where no ask asked it.</summary>
     public string? Ask { get; init; }
 
     /// <summary>Its sender, as the record names it: who asked it where no ask did.</summary>
     public string? From { get; init; }
 
-    /// <summary>The quest whose close published it (D65 §4).</summary>
+    /// <summary>The quest whose close published it.</summary>
     public string? Parent { get; init; }
 
-    /// <summary>The session whose connector published it (SESS1).</summary>
+    /// <summary>The session whose connector published it.</summary>
     public string? PublishedBy { get; init; }
 
-    /// <summary>The quest its taker waits on (D79).</summary>
+    /// <summary>The quest its taker waits on.</summary>
     public string? Awaits { get; init; }
 
     /// <summary>Held: its done waits for the person's yes, or for its evidence (<see cref="Hold"/> says which).</summary>
     public bool Held { get; init; }
 
     /// <summary>
-    /// Why it is held (EVID1a, D144 §6): <c>departed</c>, <c>evidence-unread</c>, <c>evidence-missing</c> or, a set-up step's,
-    /// <c>unreviewed</c> (REVIEWENV1b); null where nothing holds it or a host said none.
+    /// Why it is held: <c>departed</c>, <c>evidence-unread</c>, <c>evidence-missing</c> or, a set-up step's,
+    /// <c>unreviewed</c>; null where nothing holds it or a host said none.
     /// </summary>
     public string? Hold { get; init; }
 
-    /// <summary>What Daoris last read of its evidence (EVID1b, D144 §5), or null while nothing was.</summary>
+    /// <summary>What Daoris last read of its evidence, or null while nothing is.</summary>
     public TraceEvidenceRead? Evidence { get; init; }
 
     /// <summary>When the person said yes to its departure.</summary>
@@ -58,7 +58,7 @@ public sealed record TraceQuestLink(string Id)
     /// <summary>What its close said, as written.</summary>
     public string? Note { get; init; }
 
-    /// <summary>Its close's lines by code, which the page words in its own language (QUESTCLOSE1b5); null for a quest from before parts.</summary>
+    /// <summary>Its close's lines by code, which the page words in its own language; null for a quest from before parts.</summary>
     public IReadOnlyList<NotePart>? NoteParts { get; init; }
 
     public IReadOnlyList<TraceRequirement> Requirements { get; init; } = [];
@@ -70,7 +70,7 @@ public sealed record TraceQuestLink(string Id)
     public IReadOnlyList<TraceRecordRef>? Records { get; init; }
 
     /// <summary>
-    /// Its moves, in the order its history replays (FLOWCHART1a2; D186, the flowchart design §2.1), from the service's
+    /// Its moves, in the order its history replays, from the service's
     /// <c>GET /api/quests/{id}/moves</c>: what the quest's page draws on its flowchart. Null where they were not read, and
     /// <see cref="MovesMissing"/> says why.
     /// </summary>
@@ -78,7 +78,7 @@ public sealed record TraceQuestLink(string Id)
 
     /// <summary>
     /// Why its moves are not here: <see cref="TraceMovesGaps.NoDoor"/>, a host from before the door, so its path is not kept there; or
-    /// <see cref="TraceMovesGaps.Unread"/>, the door did not answer. Null where they were read, or the quest was not.
+    /// <see cref="TraceMovesGaps.Unread"/>, the door did not answer. Null where they were read, or the quest is not.
     /// </summary>
     public string? MovesMissing { get; init; }
 
@@ -88,8 +88,8 @@ public sealed record TraceQuestLink(string Id)
 }
 
 /// <summary>
-/// One move of a quest (FLOWCHART1a2), as the service answers it by allow-list: its kind as the wire spells it, when and on which
-/// machine it was made, its sequence there, and whether the replay applied it. Every other field is absent where the move keeps
+/// One move of a quest, as the service answers it by allow-list: its kind as the wire spells it, when and on which
+/// machine it is made, its sequence there, and whether the replay applied it. Every other field is absent where the move keeps
 /// none, and a reader says it is not recorded.
 /// </summary>
 public sealed record TraceMove(string Kind, DateTimeOffset At, string Machine, long Sequence, bool Applied)
@@ -121,7 +121,7 @@ public sealed record TraceMove(string Kind, DateTimeOffset At, string Machine, l
     /// <summary>A verdict's: <c>reviewed</c>, <c>not-yet</c> or <c>skipped</c>.</summary>
     public string? Verdict { get; init; }
 
-    /// <summary>The hold it set (its code) or let go (<c>none</c>); null where it left the hold as it was.</summary>
+    /// <summary>The hold it set (its code) or let go (<c>none</c>); null where it left the hold as it is.</summary>
     public string? Hold { get; init; }
 }
 
@@ -131,7 +131,7 @@ public sealed record TraceMoveRef(string Machine, long Sequence);
 /// <summary>One requirement: the person's words, its check, and how the done answered it (one of <see cref="TraceAnswers"/>).</summary>
 public sealed record TraceRequirement(int Number, string Quote, string Check, string Answer)
 {
-    /// <summary>How it was met, in the done's words.</summary>
+    /// <summary>How it is met, in the done's words.</summary>
     public string? Met { get; init; }
 
     /// <summary>Why the done departed, in its words.</summary>
@@ -140,12 +140,12 @@ public sealed record TraceRequirement(int Number, string Quote, string Check, st
     /// <summary>The person's words a departure relied on.</summary>
     public string? On { get; init; }
 
-    /// <summary>What Daoris reads itself to tell its check was met (EVID1a), each with what was last read of it (EVID1b).</summary>
+    /// <summary>What Daoris reads itself to tell its check is met, each with what is last read of it.</summary>
     public IReadOnlyList<TraceEvidenceItem> Evidence { get; init; } = [];
 }
 
 /// <summary>
-/// One evidence item a requirement names (EVID1a, D144 §2), with what was last read of it (EVID1b, §5): its kind and what it
+/// One evidence item a requirement names, with what is last read of it: its kind and what it
 /// names, and its code with the object, whether the work changed it and a <c>case</c> read's spelling; the code null while unread.
 /// </summary>
 public sealed record TraceEvidenceItem(string Kind, string Named)
@@ -160,8 +160,8 @@ public sealed record TraceEvidenceItem(string Kind, string Named)
 }
 
 /// <summary>
-/// What Daoris last read of a done's evidence (EVID1b, D144 §5), as the quest keeps it: the commit and how it was chosen, the
-/// session whose end was read (null for the terminal's), the machine that read it and when, and how many items were found.
+/// What Daoris last read of a done's evidence, as the quest keeps it: the commit and how it is chosen, the
+/// session whose end is read (null for the terminal's), the machine that read it and when, and how many items were found.
 /// </summary>
 public sealed record TraceEvidenceRead(string Commit, string How, int Items, int Found)
 {

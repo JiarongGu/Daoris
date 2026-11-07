@@ -1,17 +1,17 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The work's and the clean-up's halves of <see cref="HelpFacts"/> (FACTSPLIT1a, PUSH1c4a): each repository's part of the work and of
+/// The work's and the clean-up's halves of <see cref="HelpFacts"/>: each repository's part of the work and of
 /// the clean-up's list as the service's answers name it, what moves a part's judgement, its judge and its reading, and the merged
 /// reads the room and the slices take. It holds no state; the topic names and the parts' order live on <see cref="HelpFacts"/>.
 /// </summary>
 internal static class HelpWorkFacts
 {
     /// <summary>
-    /// What <paramref name="subject"/>'s part of the work reads from the service's answers (FACTSPLIT1a): a repository's, its own
+    /// What <paramref name="subject"/>'s part of the work reads from the service's answers: a repository's, its own
     /// checkout; the rest's, which repositories have one. Each with the trees the sessions still running or waiting hold, as
     /// <c>/api/sessions</c> answered them. Null for a repository not named with a checkout. With the sessions' look, the trees its
-    /// repositories' sessions recorded (OVERVIEWNOISE1b), each of which joins its session.
+    /// repositories' sessions recorded, each of which joins its session.
     /// </summary>
     public static HelpWorkPart? PartOf(HelpMachineWhole whole, string subject, IKnowledgeSessionLook? look = null)
     {
@@ -76,9 +76,9 @@ internal static class HelpWorkFacts
     }
 
     /// <summary>
-    /// One part of the work read from <paramref name="home"/> (FACTSPLIT1a), as the module's judge reads it: the trees, the records
+    /// One part of the work read from <paramref name="home"/>, as the module's judge reads it: the trees, the records
     /// and the checkout's refs of the part's repositories alone, read-only, as `work state` reads the whole; each tree joined to the
-    /// session that recorded it (OVERVIEWNOISE1b).
+    /// session that recorded it.
     /// </summary>
     public static async Task<HelpWork> ReadAsync(string home, HelpWorkPart part, CancellationToken ct)
     {
@@ -86,7 +86,7 @@ internal static class HelpWorkFacts
     }
 
     /// <summary>
-    /// What <paramref name="subject"/>'s part of the clean-up's list reads from the service's answers (PUSH1c4a): the work's reading of
+    /// What <paramref name="subject"/>'s part of the clean-up's list reads from the service's answers: the work's reading of
     /// its checkout and the trees in use (<see cref="PartOf"/>), and the workspace its line is read under. Null for the rest's part and
     /// for a repository not named with a checkout here.
     /// </summary>
@@ -117,7 +117,7 @@ internal static class HelpWorkFacts
     }
 
     /// <summary>
-    /// One part of the clean-up's list read from <paramref name="home"/> (PUSH1c4a), as the module's judge reads it: its repository's
+    /// One part of the clean-up's list read from <paramref name="home"/>, as the module's judge reads it: its repository's
     /// session branches and landings' branches judged by the answers the landing record keeps (<see cref="SessionTrees.SweepPartAsync"/>),
     /// asking no plugin and changing nothing.
     /// </summary>
@@ -125,8 +125,8 @@ internal static class HelpWorkFacts
         KnowledgeWorkplace.Current.ReadSweepAsync(home, part, ct);
 
     /// <summary>
-    /// The work as the room reads it (FACTSPLIT1a), merged from the parts the service's answers name, in their order: by repository,
-    /// each part's own order kept, the rest's last. Null while any part was never judged, which the room says not read yet, as it
+    /// The work as the room reads it, merged from the parts the service's answers name, in their order: by repository,
+    /// each part's own order kept, the rest's last. Null while any part is never judged, which the room says not read yet, as it
     /// said the whole: a part alone would read as all the work there is.
     /// </summary>
     public static HelpWork? Merged(MachineFactsSnapshot facts, HelpMachineWhole whole)
@@ -143,9 +143,9 @@ internal static class HelpWorkFacts
     }
 
     /// <summary>
-    /// The work's parts the service's answers name, as a slice pushes them (PUSH1c2a, D182): each by its subject in the merge's order
+    /// The work's parts the service's answers name, as a slice pushes them: each by its subject in the merge's order
     /// (each repository with a checkout here by name, <see cref="HelpFacts.NoCheckout"/> last), with its part as last judged, or null
-    /// where it never was, so a part never judged differs from one judged empty. Null where the answers were never judged.
+    /// where it never is, so a part never judged differs from one judged empty. Null where the answers were never judged.
     /// </summary>
     public static IReadOnlyList<(string Part, HelpWork? Work)>? Parts(MachineFactsSnapshot facts) =>
         facts.Value<HelpMachineWhole>(HelpFacts.Machine, HelpFacts.Whole) is { } whole ? Parts(facts, whole) : null;
@@ -154,8 +154,8 @@ internal static class HelpWorkFacts
         [.. HelpFacts.Parts(whole).Select(subject => (subject, facts.Value<HelpWork>(HelpFacts.Work, subject)))];
 
     /// <summary>
-    /// The clean-up's list's parts the service's answers name, as a slice pushes them (PUSH1c4a, D182): each repository with a checkout
-    /// here by name, with its plan as last judged, or null where it never was, so a part never judged differs from one judged empty.
+    /// The clean-up's list's parts the service's answers name, as a slice pushes them: each repository with a checkout
+    /// here by name, with its plan as last judged, or null where it never is, so a part never judged differs from one judged empty.
     /// Null where the service's answers were never judged.
     /// </summary>
     public static IReadOnlyList<(string Part, IKnowledgeSweep? Plan)>? SweepParts(MachineFactsSnapshot facts) =>

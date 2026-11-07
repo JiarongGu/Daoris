@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The git words and path comparisons the session trees' parts share (PART10i): what git's answers say, and one location under
+/// The git words and path comparisons the session trees' parts share: what git's answers say, and one location under
 /// two spellings. They read nothing of the trees' context, so they are static; the parts import them with <c>using static</c>.
 /// </summary>
 internal static class TreeGit
@@ -11,20 +11,20 @@ internal static class TreeGit
 
     /// <summary>
     /// The reference git compares <paramref name="branch"/> by here, by its full name: the local branch, else origin's copy,
-    /// else null — a line this checkout has nowhere. Never the short name (AUTOTIDY1): git reads a tag of that name first.
+    /// else null — a line this checkout has nowhere. Never the short name: git reads a tag of that name first.
     /// </summary>
     internal static async Task<string?> ComparableAsync(string root, string branch, CancellationToken ct, RefSnapshot? refs = null)
     {
         foreach (var reference in new[] { $"refs/heads/{branch}", $"refs/remotes/origin/{branch}" })
         {
-            // PROC1d-ii: from the judgement's refs where they hold the answer.
+            // From the judgement's refs where they hold the answer.
             if (refs is not null && await refs.HasAsync(reference, ct).ConfigureAwait(false) is { } there)
             {
                 if (there) return reference;
                 continue;
             }
 
-            // LANDGIT1c: spelled as the reads of its commit are, so one ref fact is one command.
+            // Spelled as the reads of its commit are, so one ref fact is one command.
             var (code, _, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference + "^{commit}"], ct).ConfigureAwait(false);
             if (code == 0) return reference;
         }
@@ -40,17 +40,17 @@ internal static class TreeGit
     internal sealed record CommonDirAndBranch(int Code, string CommonDir, string Err, string Branch, bool Once)
     {
         /// <summary>
-        /// The working root git reports for the tree, read in the one start (GITWORKTREECONFIG1), which <see cref="TreeBinding"/>
+        /// The working root git reports for the tree, read in the one start, which <see cref="TreeBinding"/>
         /// compares with the tree's folder before a door writes through it; empty where the two asks ran instead, and the check asks it.
         /// </summary>
         public string TopLevel { get; init; } = "";
     }
 
     /// <summary>
-    /// A tree's repository and branch in one git start (PROC1d-iii): a landing, a removal and an update asked
+    /// A tree's repository and branch in one git start: a landing, a removal and an update asked
     /// <c>--git-common-dir</c> and then <c>--abbrev-ref HEAD</c>, a start each. Where the one start fails (a branch with no
     /// commit yet, a folder git does not know), the two are asked as before, one at a time, so each answer and each failure
-    /// is the one they gave: the branch is asked only where the common dir was read. GITWORKTREECONFIG1: the one start asks the
+    /// is the one they gave: the branch is asked only where the common dir is read. The one start asks the
     /// tree's working root too, which the doors that write through the tree compare with its folder, and which costs them no start.
     /// </summary>
     internal static async Task<CommonDirAndBranch> CommonDirAndBranchAsync(string tree, CancellationToken ct)
@@ -73,7 +73,7 @@ internal static class TreeGit
     }
 
     /// <summary>
-    /// One git start of the open and undo boundary, as it answered (TREEOPENERR1): its answer and what ran. A git that exits non-zero
+    /// One git start of the open and undo boundary, as it answered: its answer and what ran. A git that exits non-zero
     /// with nothing on its error stream has no reason to quote, so the sentence says what was seen of the run instead.
     /// </summary>
     /// <param name="Elapsed">From the call to the answer, the gate's wait for a place included.</param>
@@ -113,8 +113,8 @@ internal static class TreeGit
     }
 
     /// <summary>
-    /// <see cref="WorkingTree.GitAsync(string, IReadOnlyList{string}, CancellationToken)"/> with what it ran kept beside its answer
-    /// (TREEOPENERR1): git's code, how long the call took, the folder and the arguments.
+    /// <see cref="WorkingTree.GitAsync(string, IReadOnlyList{string}, CancellationToken)"/> with what it ran kept beside its answer:
+    /// git's code, how long the call took, the folder and the arguments.
     /// </summary>
     internal static async Task<GitSaid> AskAsync(string root, IReadOnlyList<string> arguments, CancellationToken ct)
     {
@@ -154,7 +154,7 @@ internal static class TreeGit
         OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
 
     /// <summary>
-    /// A path as it is on disk (AUTOTIDY1): full, with each link on the way resolved, so a tree a session names through a link
+    /// A path as it is on disk: full, with each link on the way resolved, so a tree a session names through a link
     /// and the same tree git names where it is compare as one. Where a link cannot be read, the path is kept as written.
     /// </summary>
     internal static string Normal(string path)

@@ -3,21 +3,20 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The conversations that wait for an account to be ready, and the look's <c>limits</c> stage that wakes them (LIMITRESUME1c; D206
-/// §3.4, §3.5): one its account's limit cut off with no other account of its agent to go on on, live or ended, and an ended one whose
-/// person's words wait for its own cooling account (D137 point 7). Over the runner's context, as <see cref="LimitMove"/> is.
+/// The conversations that wait for an account to be ready, and the look's <c>limits</c> stage that wakes them: one its account's limit cut off with no other account of its agent to go on on, live or ended, and an ended one whose
+/// person's words wait for its own cooling account. Over the runner's context, as <see cref="LimitMove"/> is.
 /// </summary>
 /// <remarks>
-/// <para><b>The wake is the look, and nothing beside it</b> (§3.4): no timer and no loop of its own. The stage keeps the held
-/// conversations' earliest wait in memory with a stamp of what it was computed from (the cooling store, the harness settings, the
+/// <para><b>The wake is the look, and nothing beside it</b>: no timer and no loop of its own. The stage keeps the held
+/// conversations' earliest wait in memory with a stamp of what it is computed from (the cooling store, the harness settings, the
 /// agents' account folders and <c>driver.json</c>), so a look with none due reads a few file times and asks nothing; a changed stamp
 /// (<i>Try now</i>, a sign-in, an added account) recomputes the wait at that look.</para>
 ///
-/// <para><b>Own first</b> (§3.5): its own account ready, the same conversation goes on, the next turn on the same process where it
+/// <para><b>Own first</b>: its own account ready, the same conversation goes on, the next turn on the same process where it
 /// still runs, else its agent's own resume on that account (<see cref="ChatGoOn"/>), handed the refused turns' words, the words said
 /// while it waited and Daoris's word last, each once. Otherwise another account of its agent ready, it moves there handed the brief
 /// (<see cref="LimitMove"/>). An ended chat whose words wait for its own account never met a limit: another account of its agent ready, it
-/// goes on there now, and otherwise it is woken at the earliest reset of any account of its agent (LIMITSWITCH2, D206 point 2); Ask
+/// goes on there now, and otherwise it is woken at the earliest reset of any account of its agent; Ask
 /// Daoris's room alone keeps its own account's.</para>
 ///
 /// <para><b>Who leaves the wait</b>: one that went on or moved; one the person stopped, or told to stop waiting; one whose refusal waits
@@ -40,18 +39,18 @@ internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
     private string? _stamp;
     private DateTimeOffset? _due;
 
-    /// <summary>What the course answered each wake, by session (FOUNDATION1h branch 6): a test hears it; no person reads it.</summary>
+    /// <summary>What the course answered each wake, by session: a test hears it; no person reads it.</summary>
     internal event Action<string, LineCourse>? Decided;
 
     /// <summary>How many times the stage asked the service anything: a test holds that a look with no wait come asks nothing.</summary>
     internal int Asked { get; private set; }
 
     /// <summary>
-    /// A live conversation whose move found no other account (LIMITGOON1's <i>stays</i>, written as a wait): its turns wait, its words
+    /// A live conversation whose move found no other account (its <i>stays</i>, written as a wait): its turns wait, its words
     /// with them, and its conversation says when the first account is ready again. False where its turns would not wait.
     /// </summary>
-    /// <param name="picked">The account the person picked for it (FOUNDATION1a-ii): its own reset is what it waits for, not the agent's first.</param>
-    /// <param name="model">The model its line asks (MODELROLE1k2): the accounts it waits for are those a cool-off of that model holds.</param>
+    /// <param name="picked">The account the person picked for it: its own reset is what it waits for, not the agent's first.</param>
+    /// <param name="model">The model its line asks: the accounts it waits for are those a cool-off of that model holds.</param>
     public bool Wait(string session, ITurnedChat chat, string adapter, string? picked = null, string? model = null)
     {
         if (!chat.Turns.WaitForLimit()) return false;
@@ -77,8 +76,8 @@ internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
     public bool Holds(string session) => _held.ContainsKey(session);
 
     /// <summary>
-    /// The look's <c>limits</c> stage (§3.4): each held conversation whose wait has come goes on, or moves, in the record's order. Asks
-    /// nothing where no wait has come and nothing it was computed from moved. One at a time; never once the runner is closing.
+    /// The look's <c>limits</c> stage: each held conversation whose wait has come goes on, or moves, in the record's order. Asks
+    /// nothing where no wait has come and nothing it is computed from moved. One at a time; never once the runner is closing.
     /// </summary>
     /// <returns>What became of each conversation it woke.</returns>
     public async Task<IReadOnlyList<ChatStart>> LookAsync(DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct)
@@ -112,7 +111,7 @@ internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
                 if (waits is { } until && (next is null || until < next)) next = until;
             }
 
-            // A held id the records no longer list leaves.
+            // A held id the records do not list any more leaves.
             foreach (var gone in _held.Keys.Where(id => records.All(record => !string.Equals(record.Id, id, StringComparison.OrdinalIgnoreCase))))
             {
                 _held.TryRemove(gone, out _);
@@ -144,7 +143,7 @@ internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
     {
         if (context.GoingOn.ContainsKey(session)) return (null, null);
 
-        // FOUNDATION1f-vi part a (§3.3, §13.5): an older build's box for the record's ended limit move still in place is its `Never`: the wake
+        // An older build's box for the record's ended limit move still in place is its `Never`: the wake
         // neither goes on in its own conversation nor moves it, and the record stays held, asked again at the next look, which imports the box
         // once the start's confirmation is settled or the standing move behind which it waited has ended.
         if (new LimitBoxes(context.Home).Read(session) is not null)
@@ -161,7 +160,7 @@ internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
         }
 
         var events = context.Events.After(session, 0).Events;
-        // FOUNDATION1g part c: an ended record's flag decides; a live one, and one an older build ended, by its events.
+        // An ended record's flag decides; a live one, and one an older build ended, by its events.
         var limited = LimitHeld.Waiting(events, record.Limit);
         var live = context.Turned.TryGetValue(session, out var chat);
         if (live && chat!.Turns.Limited is false)
@@ -188,21 +187,21 @@ internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
         }
         catch (DriverException)
         {
-            // An adapter no longer here: nothing of it is ready again by itself.
+            // An adapter not here: nothing of it is ready again by itself.
             _held.TryRemove(session, out _);
             return (null, null);
         }
 
-        // 🔴 Own first (§3.5): its own account ready, the same conversation goes on, whatever else is ready. The rule reads it with no walk: the
-        // wake's move and its ended move walk for themselves, and the one walk this stage judges is the go-on's (FOUNDATION1a-i).
-        // An account the person picked is the rule's constraint (FOUNDATION1a-ii): it waits for that account alone (D205 §3.5(d)).
+        // 🔴 Own first: its own account ready, the same conversation goes on, whatever else is ready. The rule reads it with no walk: the
+        // wake's move and its ended move walk for themselves, and the one walk this stage judges is the go-on's.
+        // An account the person picked is the rule's constraint: it waits for that account alone.
         var picked = context.Conversations.PickedOn(session, record.Profile);
         var answer = LineAccount.Decide(
             LineOwn.Of(own), new LineTrigger(Limited: limited is not null), picked ? LineConstraint.Pick(record.Profile!) : LineConstraint.None,
             LineKind.Conversation(carries: false),
             ask => throw new InvalidOperationException($"the wake asks no {ask.Place} walk of the account rule"));
 
-        // FOUNDATION1h branch 6 (the foundation design §3.1): the wake is the course's answer for CourseTrigger.LimitWake, read over the rule's
+        // The wake is the course's answer for CourseTrigger.LimitWake, read over the rule's
         // answer as above. Its own account ready, it resumes; a picked account cooling, it waits for that account alone. Where another account
         // might free first, the course reads no walk, so the executor goes on to the move, which walks for itself (a reading, not a change).
         var until = context.Harnesses.Clock();
@@ -235,12 +234,12 @@ internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
             return (start, null);
         }
 
-        // The account it was picked on cools: its wait is that account's reset, never another account's, and it moves nowhere.
+        // The account it is picked on cools: its wait is that account's reset, never another account's, and it moves nowhere.
         if (picked) return (null, own!.Until);
 
-        // An ended chat whose person's words wait for its own account never met a limit (§3.5, N5). LIMITSWITCH2 (D137's note of 2026-10-25): it
-        // goes on now in a new part where another account of its agent is ready, and otherwise waits for the earliest reset of any of them
-        // (D206 point 2), never its own account's alone.
+        // An ended chat whose person's words wait for its own account never met a limit: it
+        // goes on now in a new part where another account of its agent is ready, and otherwise waits for the earliest reset of any of them,
+        // never its own account's alone.
         if (limited is null)
         {
             ResumeChoice? judged;
@@ -276,8 +275,8 @@ internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// The wake of a live conversation on its own account (§3.5): Daoris's word kept on its record first, then every word that waited,
-    /// with the refused turns' words before them and Daoris's last, one turn on the same process. Nothing is sent where it no longer waits.
+    /// The wake of a live conversation on its own account: Daoris's word kept on its record first, then every word that waited,
+    /// with the refused turns' words before them and Daoris's last, one turn on the same process. Nothing is sent where it waits no more.
     /// </summary>
     private async Task<ChatStart> WakeLiveAsync(
         string session, string adapter, ITurnedChat chat, LimitHeld? held, DateTimeOffset until, CancellationToken ct)
@@ -370,12 +369,12 @@ internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
 
     private static bool Ended(PriorSession record) => record.State is "completed" or "declined" or "failed" or "stopped";
 
-    /// <summary>The person ended it (D206 §3.7, <i>Stop</i>): the wake leaves it, and their next word goes on as any does.</summary>
+    /// <summary>The person ended it (<i>Stop</i>): the wake leaves it, and their next word goes on as any does.</summary>
     private static bool PersonStopped(PriorSession record) =>
         record.PersonStopped && record.Note?.StartsWith(ChatEnded.EndedByPersonNote, StringComparison.Ordinal) == true;
 
     /// <summary>
-    /// What the wait was computed from, by file times alone (§3.4, Codex 5): the cooling store, the harness settings, the agents' account
+    /// What the wait is computed from, by file times alone: the cooling store, the harness settings, the agents' account
     /// folders and the machine's <c>driver.json</c>. <i>Try now</i> and a sign-in end a cool-off in the store; an added account changes
     /// the settings or its agent's folder.
     /// </summary>

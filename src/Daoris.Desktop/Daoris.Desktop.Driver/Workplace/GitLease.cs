@@ -3,10 +3,10 @@ using System.Runtime.CompilerServices;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The workplace's answer to the reading the instance's leases ask of the git verb's own command (FOUNDATION1 mod-vi, the design §14.3):
+/// The workplace's answer to the reading the instance's leases ask of the git verb's own command:
 /// <c>git branches</c>, <c>git identity list</c> and <c>public-key</c> are reads; an identity's change, a default and a pointer write the
-/// home's identities or the driver's file and hold the lease (GITAUTH1c); <c>git branch|tag … --yes</c> and <c>git pick|revert|rebase … --yes</c>
-/// journal an act in the home's store and do too (GITAPP2c, GITAPP2m), their plans not. Installed when the driver's assembly loads, before any host reads
+/// home's identities or the driver's file and hold the lease; <c>git branch|tag … --yes</c> and <c>git pick|revert|rebase … --yes</c>
+/// journal an act in the home's store and do too, their plans not. Installed when the driver's assembly loads, before any host reads
 /// a lease.
 /// </summary>
 internal static class GitLease

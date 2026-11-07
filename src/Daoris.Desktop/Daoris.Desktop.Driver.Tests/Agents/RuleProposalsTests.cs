@@ -5,13 +5,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// An agent's proposal to change what agents may do (PERM2, D74), as the driver settles it: a change
-/// that NARROWS is applied at the next tick, one that WIDENS waits for the person — the owner's answer,
-/// 2026-09-24: a widening never applies without the person — and every settling says who did it.
+/// An agent's proposal to change what agents may do, as the driver settles it: a change
+/// that NARROWS is applied at the next tick, one that WIDENS waits for the person — a widening never
+/// applies without the person — and every settling says who did it.
 /// </summary>
 /// <remarks>
 /// Whether a change narrows is read against the rules AS THEY STAND, which is why the connector's door
-/// cannot decide it and this can: removing a rule narrows when it was an allow and widens when it was a
+/// cannot decide it and this can: removing a rule narrows when it is an allow and widens when it is a
 /// deny, and making a denied rule an ask loosens it.
 /// </remarks>
 public sealed class RuleProposalsTests : IDisposable
@@ -112,7 +112,7 @@ public sealed class RuleProposalsTests : IDisposable
         Assert.Equal(ChangeEffect.Widens, RuleProposals.Effect(file, new ProposedChange("default", RuleScope.Machine, null, null, null, "commit", true)));
     }
 
-    /// <summary>ONEWAY1q: <c>no-push</c> has no switch to propose; git access's Write says whether a session pushes.</summary>
+    /// <summary><c>no-push</c> has no switch to propose; git access's Write says whether a session pushes.</summary>
     [Fact]
     public void A_proposal_to_switch_no_push_is_refused_naming_git_access()
     {
@@ -145,7 +145,7 @@ public sealed class RuleProposalsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 REV3 CLEAN1: over a rules file the driver could not read, even a narrowing would have been
+    /// Over a rules file the driver could not read, even a narrowing would have been
     /// written as the whole file, dropping every rule the person had. Nothing is settled, the file is
     /// kept, and the proposal waits for the tick after the file is fixed.
     /// </summary>

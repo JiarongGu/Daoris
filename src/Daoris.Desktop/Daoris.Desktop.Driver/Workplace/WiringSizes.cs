@@ -34,7 +34,7 @@ public sealed class SizeReading
     /// <summary>How many files were counted.</summary>
     public required int Counted { get; init; }
 
-    /// <summary>Each entry of D172's table, by name, and its bytes where it is found (its new place or its old one).</summary>
+    /// <summary>Each entry of the table, by name, and its bytes where it is found (its new place or its old one).</summary>
     public required IReadOnlyDictionary<string, long> Entries { get; init; }
 
     /// <summary>Each name at the home's top that no entry holds, and its bytes.</summary>
@@ -46,17 +46,17 @@ public sealed class SizeReading
     /// <summary>The entries, names and folders a part of which could not be read: their bytes are as far as the walk got.</summary>
     public required IReadOnlySet<string> Unreadable { get; init; }
 
-    /// <summary>Each project folder Daoris left in the person's tool home, by name, measured with the home (OWNSPACE2); null where none was asked.</summary>
+    /// <summary>Each project folder Daoris left in the person's tool home, by name, measured with the home; null where none is asked.</summary>
     public IReadOnlyDictionary<string, ToolMeasure>? Tool { get; init; }
 }
 
 /// <summary>
-/// The sizes This Daoris shows (WIRING1b, the this-Daoris design §3.1 and its second opinion's point 3): measured, never
+/// The sizes This Daoris shows: measured, never
 /// guessed; never walked on a page's open, only when asked, in the background, one walk per folder at a time; kept for the
 /// process, so every window reads the last measure; cancellable; bounded by a budget, answering what it counted past it.
 /// </summary>
 /// <remarks>
-/// <para><b>Each file is counted once, for the entry that holds it.</b> D172's places nest (a kept file under a session's
+/// <para><b>Each file is counted once, for the entry that holds it.</b> The places nest (a kept file under a session's
 /// folder is <c>work</c>'s, the session's record <c>data</c>'s), so a file is given to the entry whose place matches it most
 /// closely, a named part outranking a <c>*</c>; a file no entry holds is its top name's, a name the table does not hold.</para>
 ///
@@ -74,11 +74,11 @@ public sealed class WiringSizes
     /// <summary>The names an earlier build of Daoris wrote at the home's top, which no entry holds now.</summary>
     public static IReadOnlySet<string> EarlierBuild { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
-        // The window's engine before D92.
+        // The window's engine of an earlier build.
         "webview2",
     };
 
-    /// <summary>The top folders of the Daoris folder beside the home, walked whole where they are there (D172 point 1).</summary>
+    /// <summary>The top folders of the Daoris folder beside the home, walked whole where they are there.</summary>
     public static IReadOnlyList<string> TopFolders { get; } = ["app", "update", "data", "profiles", "work", "cache", "run", "logs"];
 
     /// <summary>The last measure of <paramref name="home"/>, or null where none has ended.</summary>
@@ -92,7 +92,7 @@ public sealed class WiringSizes
     /// when it ends.
     /// </summary>
     /// <param name="root">The Daoris folder the home is in, whose other top folders are walked whole; null walks the home alone.</param>
-    /// <param name="tool">The project folders in the person's tool home to measure with it (OWNSPACE2); none measures none.</param>
+    /// <param name="tool">The project folders in the person's tool home to measure with it; none measures none.</param>
     public bool Start(string home, string? root, WiringBudget budget, IReadOnlyList<ToolFolder>? tool = null)
     {
         var key = Key(home);
@@ -190,7 +190,7 @@ public sealed class WiringSizes
 
     /// <summary>
     /// One folder's bytes and its newest file's time, walked as the home is (no link followed, the same budget), nothing read
-    /// inside a file (OWNSPACE2). <c>Partial</c> says any read failed: the walk stopped short, a folder or a file's size or time
+    /// inside a file. <c>Partial</c> says any read failed: the walk stopped short, a folder or a file's size or time
     /// could not be read, so the bytes are as far as it got and the newest time may be older than the truth.
     /// </summary>
     public static (long Bytes, DateTimeOffset? Newest, bool Partial) MeasureFolder(string folder, WiringBudget budget, CancellationToken cancellationToken)
@@ -218,7 +218,7 @@ public sealed class WiringSizes
     }
 
     /// <summary>
-    /// One kind's places walked together under one budget (KEEP1c, the cleanup design §4.3): each a folder or a file, none followed
+    /// One kind's places walked together under one budget: each a folder or a file, none followed
     /// through a link, a place under <paramref name="skip"/> passed over (another kind's), so one large kind never starves the rest.
     /// Where <paramref name="groupDepth"/> is more than none, each file's bytes are kept too under its first parts below its place,
     /// joined by <c>/</c>: the set-aside kind's folders, which its <i>next</i> reads.
@@ -277,7 +277,7 @@ public sealed class WiringSizes
 
     private static IReadOnlyList<Pattern>? _patterns;
 
-    /// <summary>Every place of every entry of D172's table, new and old; an entry known by the names it holds, each of them.</summary>
+    /// <summary>Every place of every entry of the table, new and old; an entry known by the names it holds, each of them.</summary>
     private static IReadOnlyList<Pattern> Patterns() => _patterns ??= [.. Build()];
 
     private static IEnumerable<Pattern> Build()
@@ -290,7 +290,7 @@ public sealed class WiringSizes
                 foreach (var each in places)
                 {
                     yield return Of(entry.Name, each);
-                    // A database's journal and its write-ahead log are the database's (design §3.8).
+                    // A database's journal and its write-ahead log are the database's.
                     if (each.EndsWith(".db", StringComparison.Ordinal))
                     {
                         foreach (var beside in new[] { "-wal", "-shm", "-journal" }) yield return Of(entry.Name, each + beside);
@@ -354,10 +354,10 @@ public sealed class WiringSizes
 
         public string? Stopped { get; private set; }
 
-        /// <summary>Told each file counted, for a walk that wants more of it than its size (OWNSPACE2's newest file).</summary>
+        /// <summary>Told each file counted, for a walk that wants more of it than its size (the newest file, say).</summary>
         public Action<FileInfo>? Seen { get; init; }
 
-        /// <summary>A path the walk passes over, folder or file, by its full path (KEEP1c: another kind's place).</summary>
+        /// <summary>A path the walk passes over, folder or file, by its full path (another kind's place).</summary>
         public Func<string, bool>? Skip { get; init; }
 
         /// <summary>A file counted outside <see cref="Files"/>, a place that is itself a file.</summary>

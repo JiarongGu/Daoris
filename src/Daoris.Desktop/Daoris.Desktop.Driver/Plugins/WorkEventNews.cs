@@ -1,8 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The session kinds of <c>work/event</c> read from the news the lease's teller claims (EVENTHOOK1b; D244's note on the session kinds'
-/// source): a park and an end told once across restarts by the said-set, as the person is told them, and a quest's park from the look's
+/// The session kinds of <c>work/event</c> read from the news the lease's teller claims: a park and an end told once across restarts by the said-set, as the person is told them, and a quest's park from the look's
 /// own news. Where that teller's place is a gap, one <see cref="WorkEventKinds.Missed"/> says so.
 /// </summary>
 public static class WorkEventNews

@@ -6,20 +6,20 @@ namespace Daoris.Driver;
 internal sealed record ChatChecked(string Checks, int? Minutes, string Repository);
 
 /// <summary>
-/// A conversation's chat run bound (CHATFLOW1c; the chat-flow design §4.3): when its tree opens, beside where it is told its process, and
+/// A conversation's chat run bound: when its tree opens, beside where it is told its process, and
 /// at a turn's end for a chat whose tree grew before this build or whose bind failed, by the same code. A graph version binds as a steps
-/// version does (CHATFLOW1f, WORKFLOWCLEAN1 row 1d).
+/// version does.
 /// </summary>
 /// <remarks>
 /// <para><b>Said once.</b> Under a named workflow, the conversation's first Daoris line says which and who chose it, as the look says a
 /// start's; under Current nothing is said. A bind the home could not keep is said once a run, and the next turn's end tries again: the
 /// conversation goes on, and only the landing waits.</para>
 ///
-/// <para><b>Nothing of its checks</b> is told here: each execution's hold tells them (CHATFLOW1h, §4.4; <c>ChatRunner.HeldChecksAsync</c>).</para>
+/// <para><b>Nothing of its checks</b> is told here: each execution's hold tells them (<c>ChatRunner.HeldChecksAsync</c>).</para>
 /// </remarks>
 internal sealed class ChatRunBinds(string home, ServiceClient service, ISessionEvents events)
 {
-    // Each conversation's run once its key was read, and each run whose failed bind was said, so a turn's end asks the service once.
+    // Each conversation's run once its key is read, and each run whose failed bind is said, so a turn's end asks the service once.
     private readonly ConcurrentDictionary<string, string> _runs = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, bool> _failedSaid = new(StringComparer.Ordinal);
 
@@ -68,7 +68,7 @@ internal sealed class ChatRunBinds(string home, ServiceClient service, ISessionE
     }
 
     /// <summary>
-    /// Whether a chat run's conversation is handed <c>opinion_answer</c> at its spawn (CHATFLOW1e, the chat-flow design §6): its run's process
+    /// Whether a chat run's conversation is handed <c>opinion_answer</c> at its spawn: its run's process
     /// names a second opinion, whose findings may come back to it. A live conversation's rules are fixed at its spawn.
     /// </summary>
     public static bool AnswersFindings(IWorkplaceProcess process) => process.Opinion is { Rule.IsNone: false };
@@ -76,7 +76,7 @@ internal sealed class ChatRunBinds(string home, ServiceClient service, ISessionE
     /// <summary>
     /// <see cref="AnswersFindings(IWorkplaceProcess)"/> for a record its spawn starts or resumes in <paramref name="tree"/> (a hand-over's next
     /// record, an ended conversation going on): its chat run read from the service's records, as a turn's end reads it. False where it is no
-    /// chat run's, or nothing could be read; it is then handed what a conversation always was.
+    /// chat run's, or nothing could be read; it is then handed what a conversation always is.
     /// </summary>
     public async Task<bool> AnswersAsync(string session, string tree, DriverConfig config)
     {
@@ -103,7 +103,7 @@ internal sealed class ChatRunBinds(string home, ServiceClient service, ISessionE
     }
 
     /// <summary>
-    /// The checks a chat run's conversation is held to at an execution (CHATFLOW1h, the chat-flow design §4.4): its run's, read from the service's
+    /// The checks a chat run's conversation is held to at an execution: its run's, read from the service's
     /// records as a turn's end reads them, as the checks the process hands (<see cref="SessionChecks.Of"/>); null where it is no chat run's, its
     /// run sets none, or nothing could be read.
     /// </summary>

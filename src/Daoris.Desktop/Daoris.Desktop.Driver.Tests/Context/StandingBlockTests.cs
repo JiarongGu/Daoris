@@ -4,7 +4,7 @@ using Xunit.Abstractions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONTEXTONE1c (D230 point 3; the context-one design §3 C): the standing block, one section composed by the driver for every kind of
+/// The standing block, one section composed by the driver for every kind of
 /// session. Where things are, the routing, the person's choices on this machine, the repository's and workspace's facts and the memory
 /// the line read; the workspace's part alone where there is no repository; its own section of the composer's account; and a whole first
 /// prompt kept under the native door's single argument, the block going through its file past it.
@@ -27,7 +27,7 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
     private static string Routed(DriverConfig config, RepoView repository, string work = ParticipantWork.Build) =>
         StandingBlock.Compose(StandingBlocks.OnMachine(new StandingFacts { Repository = "engine" }, work, config, [repository], "work")).Text;
 
-    // ——— The routing, moved here from the routing line (ROUTEQUEST1's words).
+    // ——— The routing.
 
     [Fact]
     public void The_routing_names_the_lanes_by_their_addresses_where_there_are_some()
@@ -179,7 +179,7 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
     }
 
     /// <summary>
-    /// D233 choice 3: a harness that takes no rules file (Codex) holds none of the person's denies, and its block says so with what the git
+    /// A harness that takes no rules file (Codex) holds none of the person's denies, and its block says so with what the git
     /// doors still refuse; one that takes the rules is told nothing of it.
     /// </summary>
     [Fact]

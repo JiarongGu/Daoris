@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The rule for a pipe's name that the running Daoris's address file is read by (RPC1a, D171 point 3, the terminal RPC design §4.1):
+/// The rule for a pipe's name that the running Daoris's address file is read by:
 /// <c>daoris-&lt;the home's id&gt;-&lt;the Windows session's id&gt;</c>. The address file names the pipe (<see cref="RunningEntry.Pipe"/>), so
 /// the service's reader tests a name against it before it takes one; the instance's <see cref="PipeName"/> builds a name and answers
 /// this rule through here.

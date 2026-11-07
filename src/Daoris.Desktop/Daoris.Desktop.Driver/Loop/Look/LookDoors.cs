@@ -73,7 +73,7 @@ internal sealed class LookDoors(Driver driver) : ILandingWiring, IPluginWiring, 
         Context.Servers = catalog.Servers;
         Context.Catalog = catalog;
         Context.Harnesses.Use(Context.Adapters);
-        // The accounts are one set (D197): the wiring folded at the come-up, and again at a next look a held lock refused.
+        // The accounts are one set: the wiring folded at the come-up, and again at a next look a held lock refused.
         Context.Harnesses.Pool(driver.Log);
     }
 

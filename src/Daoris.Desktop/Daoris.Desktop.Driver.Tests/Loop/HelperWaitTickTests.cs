@@ -5,10 +5,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HELPERWAIT1 (D163's and D188's notes; the owner's install, 2026-10-23) through REAL ticks on the protocol door. A driven session that
+/// Through REAL ticks on the protocol door. A driven session that
 /// asks a helper and ends its turn so the helper can read is waiting on that helper, not on the person: its record ends <c>completed</c>
 /// by <c>ended.awaits-helper</c>, the helper's answer is handed to it, and at the next look its own conversation goes on with the answer
-/// as its next turn, with no press of the person's. A session the install parked so before the rule is handed its answer the same way.
+/// as its next turn, with no press of the person's. A session an older install parked so is handed its answer the same way.
 /// </summary>
 /// <remarks>
 /// The stand-in service is <see cref="SessionMessagesTickTests.SaidStandIn"/>, which models the ledger's one move out of an ended state
@@ -28,7 +28,7 @@ public sealed class HelperWaitTickTests : IDisposable
 
     private readonly string _repository;
 
-    /// <summary>The asker's state as each helper started (HELPERWAIT1b): at a cap of one, the slot its run held is free by then.</summary>
+    /// <summary>The asker's state as each helper started: at a cap of one, the slot its run held is free by then.</summary>
     private readonly List<string> _askerAtHelperStart = [];
 
     public HelperWaitTickTests()
@@ -64,7 +64,7 @@ public sealed class HelperWaitTickTests : IDisposable
             Drivable = ["engine"],
             Trees = ["engine"],
             Actors = StaffedRoles.On("acp-stub"),
-            // HELPERWAIT1b (Codex's round-3 #5 on COWORKUX1): one running slot, as the design's cap-one claim says; the default is two.
+            // One running slot; the default is two.
             Cap = 1,
             TestBound = 1,
             PollSeconds = 1,
@@ -97,7 +97,7 @@ public sealed class HelperWaitTickTests : IDisposable
     /// <summary>
     /// 🔴 The owner's case: the session asks a helper and ends its turn. It reads as waiting on the helper, never on the person; the
     /// helper answers; the same record goes on in its own conversation with the helper's answer as its next prompt and closes its quest,
-    /// and nothing of the person's was asked or pressed.
+    /// and nothing of the person's is asked or pressed.
     /// </summary>
     [Fact]
     public async Task A_session_that_asked_a_helper_and_ended_its_turn_waits_on_it_and_goes_on_with_its_answer()
@@ -115,7 +115,7 @@ public sealed class HelperWaitTickTests : IDisposable
 
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.True(Files.ReadState(AskId) is { State: HelperStates.Answered, Handed: not null }, service.Record("s1"));
-        // 🔴 HELPERWAIT1b (Codex's round-3 #5): at a cap of one, the helper started once the asker had ended its turn waiting on it, in the
+        // At a cap of one, the helper starts once the asker has ended its turn waiting on it, in the
         // one slot its run freed; the waiting asker holds none.
         Assert.Equal(["completed"], _askerAtHelperStart);
         var (helper, text) = Assert.Single(service.HelperHands);
@@ -136,8 +136,8 @@ public sealed class HelperWaitTickTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A session the install parked before the rule, on the clean-exit park, while its own helper read (Codex's round-2 #1 and #4 on
-    /// COWORKUX1): nothing proves it asked the person nothing, so it stays parked and its helper's answer waits, the look not trying it
+    /// A session an older install parked, on the clean-exit park, while its own helper read:
+    /// nothing proves it asked the person nothing, so it stays parked and its helper's answer waits, the look not trying it
     /// again; once the person answers, the next look hands the answer beside theirs and the same record goes on with both in one prompt.
     /// </summary>
     [Fact]

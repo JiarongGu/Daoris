@@ -3,7 +3,7 @@ using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
 
-/// <summary>Ask Daoris's <c>setting</c> proposal (HELP1c): one of the setting verbs, judged by the config's own edits.</summary>
+/// <summary>Ask Daoris's <c>setting</c> proposal: one of the setting verbs, judged by the config's own edits.</summary>
 public sealed class HelpSettingProposalsTests : HelpProposalsFixture
 {
     [Theory]
@@ -13,7 +13,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("line", "engine", null, "develop", "daoris place line engine develop", "`engine`'s line to `develop`")]
     [InlineData("line", null, "work", "--clear", "daoris place line --workspace work --clear", "Clear workspace `work`'s line")]
     [InlineData("notify", null, null, "off", "daoris settings notify off", "Stop saying")]
-    // HELP9: reading and writing across (D107), and the two dials the terminal alone had.
+    // Reading and writing across, and two dials.
     [InlineData("across", "engine", null, "read off", "daoris place across engine read off", "read by no agent outside it")]
     [InlineData("across", "engine", null, "read on", "daoris place across engine read on", "never a write")]
     [InlineData("across", null, "work", "read off", "daoris place across --workspace work read off", "Each checkout in workspace `work` that sets none of its own")]
@@ -21,10 +21,10 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("across", "game", null, "write-to engine", "daoris place across game write-to engine", "your standing say-so")]
     [InlineData("across", "game", null, "write-to engine --clear", "daoris place across game write-to engine --clear", "no longer write into `engine`")]
     [InlineData("cap", null, null, "3", "daoris settings cap 3", "at most 3 sessions at once")]
-    // TOOL4l-b: how long an account cools when its limit names no time, as `daoris settings cooloff` takes it.
+    // How long an account cools when its limit names no time, as `daoris settings cooloff` takes it.
     [InlineData("cooloff", null, null, "90", "daoris settings cooloff 90", "cools for 90 minutes")]
     [InlineData("cooloff", null, null, "1", "daoris settings cooloff 1", "cools for 1 minute before")]
-    // KEEP1d: each kind's keep rule, as `daoris settings keep <kind> <rule>` takes it, judged by the one judgement.
+    // Each kind's keep rule, as `daoris settings keep <kind> <rule>` takes it, judged by the one judgement.
     [InlineData("keep", null, null, "set-aside 30", "daoris settings keep set-aside 30", "kept 30 days; its package folders go an hour after the move")]
     [InlineData("keep", null, null, "set-aside whole", "daoris settings keep set-aside whole", "kept 14 days, whole")]
     [InlineData("keep", null, null, "downloads never", "daoris settings keep downloads never", "stays until you remove it")]
@@ -32,10 +32,10 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("keep", null, null, "logs default", "daoris settings keep logs default", "machine log is kept 30 days")]
     [InlineData("keep", null, null, "history 365", "daoris settings keep history 365", "records go 365 days after their last move")]
     [InlineData("keep", null, null, "history never", "daoris settings keep history never", "records stay until you clear them")]
-    // HELP10: a quest its strikes parked, started again as the drawer's Retry and `daoris quest retry` do, `#` or not.
+    // A quest its strikes parked, started again as the drawer's Retry and `daoris quest retry` do, `#` or not.
     [InlineData("retry", "q1a2b3c4", null, null, "daoris quest retry q1a2b3c4", "`#q1a2b3c4` may be started again")]
     [InlineData("retry", "#q1a2b3c4", null, null, "daoris quest retry q1a2b3c4", "what already happened is still in the records")]
-    // SESSUX1b (D126 §3.4): a quest the person's stop holds, released from that stop as Try again releases it.
+    // A quest the person's stop holds, released from that stop as Try again releases it.
     [InlineData("retry", "q2taken0", null, null, "daoris quest retry q2taken0 --session s7a8b9c0", "released from your stop of session `s7a8b9c0`")]
     public void A_setting_is_planned_as_what_it_changes_and_the_command_that_does_the_same(
         string door, string? target, string? workspace, string? value, string terminal, string says)
@@ -49,7 +49,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// KNOWUSE1b (D135 §3): a standing answer for a registered repository, planned in the person's words with the terminal's
+    /// A standing answer for a registered repository, planned in the person's words with the terminal's
     /// spelling, and applied as `SET_STANDING` and `daoris place standing` make it; cleared with `--clear`. One for a
     /// repository this machine does not hold, and blank words, are refused in the driver's own sentences.
     /// </summary>
@@ -74,9 +74,9 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// LANG1c (D142 point 7): a session language for a registered repository or a workspace, judged by the closed table and
+    /// A session language for a registered repository or a workspace, judged by the closed table and
     /// the registry, planned with the terminal's spelling and applied as `SET_LANGUAGE` and `daoris place language` make it.
-    /// One of the kind's doors since LANG1c2, once the service's setting writer listed it.
+    /// One of the kind's doors, listed by the service's setting writer.
     /// </summary>
     [Fact]
     public void A_session_language_is_judged_by_the_table_and_the_registry_and_applied_as_the_terminal_makes_it()
@@ -107,9 +107,9 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// REVIEWENV1a (D154 point 2, design §1.7): a review rule for a registered repository or a workspace, in the terminal's
+    /// A review rule for a registered repository or a workspace, in the terminal's
     /// words with a quoted command kept whole, judged by the twin's table and planned with what it lets a step do and what the
-    /// landing's gate does with it (REVIEWENV1c2), nothing of it after none; the procedure looked for in each checkout it
+    /// landing's gate does with it, nothing of it after none; the procedure looked for in each checkout it
     /// reaches, as the screen and the terminal look.
     /// </summary>
     [Theory]
@@ -206,9 +206,9 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// XAGENT1a (D155 point 3, the second-agent design §2.5): a second-opinion rule for a registered repository or a workspace,
+    /// A second-opinion rule for a registered repository or a workspace,
     /// in the terminal's words, judged by the twin's table and planned with what it lets a reviewer do, the working agent's
-    /// own family named among its reviewers, and what the gate does with it (XAGENT1f4), nothing of it after none.
+    /// own family named among its reviewers, and what the gate does with it, nothing of it after none.
     /// </summary>
     [Theory]
     [InlineData("engine", null, "--agents codex-acp --on landing,steps --verify --minutes 30",
@@ -230,7 +230,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.Null(plan.Refusal);
         Assert.Equal(terminal, plan.Terminal);
         Assert.Contains(says, plan.Describe);
-        // XAGENT1f4: what the gate does with it, as every door says it; nothing waits where a repository has none, and a clear
+        // What the gate does with it, as every door says it; nothing waits where a repository has none, and a clear
         // says what it hands back to.
         if (value is not ("--clear" or "none")) Assert.Contains(OpinionRules.Waiting, plan.Describe);
         else Assert.DoesNotContain(OpinionRules.Waiting, plan.Describe);
@@ -241,7 +241,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// XAGENT1b2 (design §3.1): the door judges a plugin's agent by what its plugin declares, from this machine's plugins, so a
+    /// The door judges a plugin's agent by what its plugin declares, from this machine's plugins, so a
     /// reviewer whose plugin declares the working agent's maker is named its family, as the terminal names it and the
     /// reviewer's choice judges it.
     /// </summary>
@@ -308,7 +308,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// DOORS1a (D163 point 3, MIXAGENT2a-i): a helpers rule for a registered repository or a workspace, in the terminal's words,
+    /// A helpers rule for a registered repository or a workspace, in the terminal's words,
     /// judged by the twin's table and planned with the rule it leaves and what an agent's ask then does, in `driver helpers`'
     /// own sentences.
     /// </summary>
@@ -374,7 +374,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// DOORS1a (D164's amendment points 1 and 5, PROCESS1a): a commit rule for a registered repository or a workspace, in the
+    /// A commit rule for a registered repository or a workspace, in the
     /// terminal's words, a quoted convention kept whole, judged by the twin's table and planned with how work is then committed,
     /// in `driver commits`' own sentences, and the convention quoted as it will be kept.
     /// </summary>
@@ -456,7 +456,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// LANG1c2: the service's setting writer shape-checks a language against a deliberate copy of the table's codes
+    /// The service's setting writer shape-checks a language against a deliberate copy of the table's codes
     /// (<c>HelpSettingProposalWriter.Languages</c>), read here as text since the two share no code, so a language added to the table is
     /// one the box takes, and the box takes none the table does not hold.
     /// </summary>
@@ -481,7 +481,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.Contains("engine", config.Drivable);
     }
 
-    /// <summary>HELP9: across (D107) and a cap, applied as `SET_READ_ACROSS`, `SET_WRITE_ACROSS` and the terminal make them.</summary>
+    /// <summary>Across and a cap, applied as `SET_READ_ACROSS`, `SET_WRITE_ACROSS` and the terminal make them.</summary>
     [Fact]
     public void Applying_across_and_a_cap_makes_the_edit_the_terminal_makes()
     {
@@ -504,7 +504,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// HELP10: a retry is the edit <c>RETRY_QUEST</c> and <c>daoris quest retry</c> make — a park carrying no count forgiven at
+    /// A retry is the edit <c>RETRY_QUEST</c> and <c>daoris quest retry</c> make — a park carrying no count forgiven at
     /// the number its line's failures rule parked it at, as the look read the rules, not erased, so as many more failures park it again.
     /// </summary>
     [Fact]
@@ -521,7 +521,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// RETRY1b: a quest parked a second time is marked at its failures as the last look counted them, as <c>RETRY_QUEST</c>
+    /// A quest parked a second time is marked at its failures as the last look counted them, as <c>RETRY_QUEST</c>
     /// marks it, and said from that count: marked at the limit, six failures less a mark of three left it parked.
     /// </summary>
     [Fact]
@@ -538,8 +538,8 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// SESSUX1b: a retry of a quest the person's stop holds is the release <c>RETRY_QUEST</c> writes, against the session the
-    /// last look named, and never a mark: a stop is not a strike (D58), so nothing about the strikes moves.
+    /// A retry of a quest the person's stop holds is the release <c>RETRY_QUEST</c> writes, against the session the
+    /// last look named, and never a mark: a stop is not a strike, so nothing about the strikes moves.
     /// </summary>
     [Fact]
     public void Applying_a_retry_of_a_held_quest_releases_its_stop_as_the_route_does()
@@ -553,7 +553,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// HELP9: every door the kind names is one it plans, so a door the room says it proposes is one a proposal can take, and none
+    /// Every door the kind names is one it plans, so a door the room says it proposes is one a proposal can take, and none
     /// is named that falls to the refusal.
     /// </summary>
     [Fact]
@@ -582,7 +582,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("drive", "nowhere", null, null, "`nowhere` is not registered")]
     [InlineData("line", null, "elsewhere", "develop", "no workspace `elsewhere`")]
     [InlineData("line", "engine", null, "bad..name", "not a branch name git would take")]
-    // HELP9: what `daoris place across` refuses, in its words, and the names a helper can invent.
+    // What `daoris place across` refuses, in its words, and the names a helper can invent.
     [InlineData("across", "engine", null, "write-to engine", "`engine` writes in its own tree already")]
     [InlineData("across", "engine", null, "write-to nowhere", "`nowhere` is not registered")]
     [InlineData("across", "engine", null, "write-to", "a relationship names the repository it may write into")]
@@ -594,15 +594,15 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("cap", null, null, "0", "`cap 0` is not a change the driver makes")]
     [InlineData("cooloff", null, null, "0", "`cooloff 0` is not a change the driver makes")]
     [InlineData("cooloff", null, null, "soon", "`cooloff soon` is not a change the driver makes")]
-    // KEEP1d: out of its kind's bounds, a choice its kind does not take, a kind not the person's, and words that are no rule.
+    // Out of its kind's bounds, a choice its kind does not take, a kind not the person's, and words that are no rule.
     [InlineData("keep", null, null, "logs 60", "`logs` keeps 7 to 30 days or `default`; 60 days is out of its bounds")]
     [InlineData("keep", null, null, "logs never", "never is out of its bounds")]
     [InlineData("keep", null, null, "trees 30", "`trees` is no kind whose rule you set here")]
     [InlineData("keep", null, null, "history 10", "`history` keeps 30 to 3650 days")]
     [InlineData("keep", null, null, "set-aside soon", "`soon` is no rule of `set-aside`")]
     [InlineData("keep", null, null, "set-aside", "`keep` takes a kind and its rule")]
-    // HELP10: a quest id a helper can invent, or one not parked, which forgiven would run past its strikes (D110).
-    // SESSUX1b: or one no stop of the person's holds; the refusal names what the last look parked and what it held.
+    // A quest id a helper can invent, or one not parked, which forgiven would run past its strikes;
+    // or one no stop of the person's holds; the refusal names what the last look parked and what it held.
     [InlineData("retry", "q9none00", null, null, "`#q9none00` is neither parked nor held by your stop on this machine")]
     [InlineData("retry", "q9none00", null, null, "it parked `#q1a2b3c4` and held `#q2taken0`")]
     [InlineData("retry", "engine", null, null, "`#engine` is neither parked nor held by your stop")]

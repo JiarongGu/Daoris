@@ -44,9 +44,8 @@ public sealed record MoveDelivered(MoveRecord Move, MoveDeliveryOutcome Outcome)
 }
 
 /// <summary>
-/// The moved words' delivery and the one reading of a crash at <c>delivering</c> (FOUNDATION1f-i part 3, D212; the foundation design §3.3,
-/// §13.4 step 4, §13.5's <c>opened</c> and <c>delivering</c> rows, §19.4). Rows f-ii to f-vi adopt it, each where its door's write returns:
-/// the live limit move first (FOUNDATION1f-ii part a, through <see cref="ConversationMoves"/>).
+/// The moved words' delivery and the one reading of a crash at <c>delivering</c>. Each executor adopts it where its door's write returns:
+/// the live limit move through <see cref="ConversationMoves"/>.
 /// </summary>
 /// <remarks>
 /// <para><b>The order.</b> The prompt's mark and the service's acknowledged attempt, then the write; <b>as the write returns, one
@@ -63,7 +62,7 @@ public sealed record MoveDelivered(MoveRecord Move, MoveDeliveryOutcome Outcome)
 /// <param name="said">The destinations' <c>said</c>.</param>
 public sealed class MoveDelivery(MoveStore store, IMoveSaid said)
 {
-    /// <summary>The phases the reading reads a move's words at: from the open's answer to the delivery (§13.5's <c>opened</c>, <c>copied</c>, <c>verified</c> and <c>delivering</c> rows).</summary>
+    /// <summary>The phases the reading reads a move's words at: from the open's answer to the delivery (<c>opened</c>, <c>copied</c>, <c>verified</c> and <c>delivering</c>).</summary>
     public static readonly IReadOnlyList<MoveRecordPhase> Reads =
         [MoveRecordPhase.Opened, MoveRecordPhase.Copied, MoveRecordPhase.Verified, MoveRecordPhase.Delivering];
 
@@ -88,7 +87,7 @@ public sealed class MoveDelivery(MoveStore store, IMoveSaid said)
 
     /// <summary>
     /// The delivery's tail as the door's write returns: <c>sent</c> (<see cref="Wrote"/>); then the take of the written words off the
-    /// destination, made whether or not <c>sent</c> was written, since the turn took them; then the reading, which closes <c>delivered</c> only
+    /// destination, made whether or not <c>sent</c> is written, since the turn took them; then the reading, which closes <c>delivered</c> only
     /// once every word has <c>sent</c>, and holds the move where a <c>sent</c> failed.
     /// </summary>
     /// <exception cref="MoveClaimLostException">The claim no longer holds the move.</exception>
@@ -102,11 +101,11 @@ public sealed class MoveDelivery(MoveStore store, IMoveSaid said)
     }
 
     /// <summary>
-    /// The one reading of a move's delivery under its claim, at the take's return or at a come-up's take-up (§13.4 step 4; §13.5's <c>opened</c>
-    /// and <c>delivering</c> rows): <c>sent</c> and the destination's <c>said</c> alone. A word sent and still waiting is taken off as taken,
+    /// The one reading of a move's delivery under its claim, at the take's return or at a come-up's take-up:
+    /// <c>sent</c> and the destination's <c>said</c> alone. A word sent and still waiting is taken off as taken,
     /// what the destination holds after read again; the move is then closed <c>delivered</c> where every word it moved has <c>sent</c>, none waits
     /// and, for a move of no word, its effect's outcome is recorded; held, naming its words <i>left</i> and uncertain and its begun effect, where
-    /// a word is <i>left</i> or uncertain or an effect it marked has no outcome, its uncertain words then settled and said and §3.3's one rule
+    /// a word is <i>left</i> or uncertain or an effect it marked has no outcome, its uncertain words then settled and said and a hold's one rule
     /// read; and otherwise the caller's to go on with. A move held or ended is answered by its phase, a hold read by the one rule.
     /// </summary>
     /// <exception cref="MoveClaimLostException">The claim no longer holds the move.</exception>
@@ -127,7 +126,7 @@ public sealed class MoveDelivery(MoveStore store, IMoveSaid said)
                 return new MoveDelivered(move, MoveDeliveryOutcome.GoesOn);
         }
 
-        // §13.4 step 5: before anything is delivered, in every phase, the line's head is read.
+        // Before anything is delivered, in every phase, the line's head is read.
         if (await HeldPastAsync(claim, ct).ConfigureAwait(false) is { } past) return past;
 
         var words = store.WordsOf(move.Id);
@@ -166,12 +165,12 @@ public sealed class MoveDelivery(MoveStore store, IMoveSaid said)
     }
 
     /// <summary>
-    /// Where the line's head has moved past the move's destination before everything was delivered there (§13.4 step 5, §19.3), which only an
+    /// Where the line's head has moved past the move's destination before everything is delivered there, which only an
     /// older build makes: nothing is delivered, and the move is held <see cref="MoveHoldWhy.Superseded"/>. It names the person's own words still
     /// waiting never attempted there, <see cref="MoveWordDispositions.Held"/>, for the person to take back and say at the head; the words gone
     /// without <c>sent</c>, <i>left</i>; and the attempted ones, uncertain, settled and said as before. Another author's waiting words stay on
     /// the destination as claims and are named by nothing. A word with <c>sent</c> that still waits is taken off as taken, since its agent
-    /// was written. Null where nothing is left to deliver, the destination is the head, or the head cannot be told now.
+    /// has been written. Null where nothing is left to deliver, the destination is the head, or the head cannot be told now.
     /// </summary>
     /// <exception cref="MoveClaimLostException">The claim no longer holds the move.</exception>
     public async Task<MoveDelivered?> HeldPastAsync(MoveClaim claim, CancellationToken ct = default)

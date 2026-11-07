@@ -61,14 +61,14 @@ internal sealed class RunState : IDisposable, IAsyncDisposable
         set => _stepRole.Set(value);
     }
 
-    /// <summary>The role whose policy this start answers to: its step's, else the one its line was bound to, else the work's at its place.</summary>
+    /// <summary>The role whose policy this start answers to: its step's, else the one its line is bound to, else the work's at its place.</summary>
     public string PolicyRole
     {
         get => _policyRole.Get(nameof(PolicyRole), "agent");
         set => _policyRole.Set(value);
     }
 
-    /// <summary>Whether this start carries on from the very session the quest was handed over from.</summary>
+    /// <summary>Whether this start carries on from the very session the quest is handed over from.</summary>
     public bool HandedFrom
     {
         get => _handedFrom.Get(nameof(HandedFrom), "agent");

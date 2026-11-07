@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MSG1f3 (D137 §3.2, its MSG1f2 note): what the listing reads from this home where the planner cannot say what holds the
+/// What the listing reads from this home where the planner cannot say what holds the
 /// person's words. An ended chat they wait on goes on, its runner taking them up at once, unless its conversation's last line
 /// is the runner's *it does not go on yet*; and where no loop has looked, a driven record whose words resume on its own account
 /// waits for that account's reset, which a fresh plan cannot see.
@@ -152,7 +152,7 @@ public sealed class SessionWordsWaitingTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITSWITCH2 (D137's note of 2026-10-25): a chat whose runner held its words because every account of its agent cools is held until the
+    /// A chat whose runner held its words because every account of its agent cools is held until the
     /// earliest reset of any, naming that account, never its own account's alone; Ask Daoris's room alone keeps its own.
     /// </summary>
     [Fact]
@@ -179,7 +179,7 @@ public sealed class SessionWordsWaitingTests : IDisposable
             (look.Held["he1p0000"].Why, look.Held["he1p0000"].Until, look.Held["he1p0000"].Account));
     }
 
-    /// <summary>ASKHIST1: Ask Daoris's own conversation goes on with the words waiting on it, as a chat does, so it is listed so.</summary>
+    /// <summary>Ask Daoris's own conversation goes on with the words waiting on it, as a chat does, so it is listed so.</summary>
     [Fact]
     public void Ask_daoris_s_conversation_whose_words_wait_is_waiting()
     {
@@ -228,9 +228,9 @@ public sealed class SessionWordsWaitingTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITSWITCH1 (D137's note of 2026-10-25): where no loop has looked, a taken quest's record whose own account cools is held by
+    /// Where no loop has looked, a taken quest's record whose own account cools is held by
     /// nothing while another account of its agent is ready, since the loop's look carries its words on there; with every account
-    /// cooling it is held for the earliest reset of any, naming that account. LIMITSWITCH2: a closed quest's session is read the same, its
+    /// cooling it is held for the earliest reset of any, naming that account. A closed quest's session is read the same, its
     /// door out of the wait the conversation with the words.
     /// </summary>
     [Fact]
@@ -264,7 +264,7 @@ public sealed class SessionWordsWaitingTests : IDisposable
         Assert.StartsWith(ResumeWords.Waits(Cooling, TimeZoneInfo.Utc, AccountNames.Of(_home, "claude")), own.Reason);
     }
 
-    /// <summary>A record with a word of Daoris's own on it, said under its fact's key (COWORK1b).</summary>
+    /// <summary>A record with a word of Daoris's own on it, said under its fact's key.</summary>
     private static JsonObject WithDaoris(JsonObject record, string id, string key)
     {
         record["said"]!.AsArray().Add(new JsonObject
@@ -276,10 +276,10 @@ public sealed class SessionWordsWaitingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITSWITCH3 (D137's note of 2026-10-26): the install's case as the listing reads it. A closed quest's session holding Daoris's own
+    /// 🔴 As the listing reads it, a closed quest's session holding Daoris's own
     /// rebase word is held as one holding the person's words is: by nothing while another account of its agent is ready, since the loop's
     /// look hands it to the runner; for the earliest reset of any, naming that account, with every account cooling. Its resume words
-    /// alone (a limit's) carry nothing to a new part, so they wait for the own account's reset as before.
+    /// alone (a limit's) carry nothing to a new part, so they wait for the own account's reset.
     /// </summary>
     [Fact]
     public void A_fresh_plan_reads_a_closed_quests_rebase_word_as_it_reads_the_persons_and_its_resume_words_as_the_own_accounts()
@@ -341,8 +341,8 @@ public sealed class SessionWordsWaitingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1j part ii (the foundation design §2.4, §7 row 5; D205 point 1): a driven record's words resume on its own agent, the one
-    /// its choice was asked of, never the machine's <c>adapter</c>, so where no loop has looked and that agent's account cools, the words wait
+    /// 🔴 A driven record's words resume on its own agent, the one
+    /// its choice names, never the machine's <c>adapter</c>, so where no loop has looked and that agent's account cools, the words wait
     /// for its reset as the loop's start would.
     /// </summary>
     [Fact]

@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 
 namespace Daoris.Driver;
 
-/// <summary>A lineage token's reading in the Daoris process that issued it (COWORKVIEW1a).</summary>
+/// <summary>A lineage token's reading in the Daoris process that issued it.</summary>
 public enum TokenReading
 {
     /// <summary>Issued, its process not yet handed, or handed and not one this set can watch.</summary>
@@ -18,7 +18,7 @@ public enum TokenReading
 }
 
 /// <summary>
-/// The lineage tokens this Daoris process issued (COWORKVIEW1a, the design §3.6 <i>who holds the token</i>): one set per process,
+/// The lineage tokens this Daoris process issued: one set per process,
 /// shared as <see cref="AgentJobs.Shared"/> is, so every registry's runs read the same tokens. A token is held from its issue, watched
 /// once handed its process, and leaves once that process's exit is seen, by its own handle or by Loop's word, or once no process ran
 /// under it. Each move of a reading is told: no line may say it.
@@ -134,7 +134,7 @@ public sealed class LineageTokens
     /// <summary>Its process's exit, which Loop read itself: the token leaves.</summary>
     public void Exited(string token) => Leave(token);
 
-    /// <summary>No process ran under it: its spawn made none, or its run was put back before its spawn.</summary>
+    /// <summary>No process runs under it: its spawn made none, or its run is put back before its spawn.</summary>
     public void Unspawned(string token) => Leave(token);
 
     private void Leave(string token)

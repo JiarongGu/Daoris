@@ -4,12 +4,11 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What <see cref="SessionHomeFiles.Remove"/> took (HIST1j): each session's names that went, in the inventory's order, and the
-/// bytes that went with them, by kind; and each path the disk would not let go of, which stays, left over (the history-clearing
-/// design §2.3).
+/// What <see cref="SessionHomeFiles.Remove"/> took: each session's names that went, in the inventory's order, and the
+/// bytes that went with them, by kind; and each path the disk would not let go of, which stays, left over.
 /// </summary>
 /// <param name="Stayed">
-/// Each session's names the disk kept, in the same order and words as <paramref name="Went"/> (SESSDEL1), so a delete can say which
+/// Each session's names the disk kept, in the same order and words as <paramref name="Went"/>, so a delete can say which
 /// stayed. A file several sessions share (the held words, the closed automatic landings, the archive marks) that would not be read
 /// or written again is named for each session it was asked of, since what it held of each stays.
 /// </param>
@@ -20,24 +19,23 @@ public sealed record SessionFilesRemoved(
     IReadOnlyDictionary<string, IReadOnlyList<string>> Stayed);
 
 /// <summary>
-/// Every file the home keeps of one session (HIST1c, D153 point 6, the history-clearing design §2.2), held in one inventory that
-/// measures them, removes them and reads a left-over one by its name (HIST1j): the one helper both a clear and D126's delete call
+/// Every file the home keeps of one session, held in one inventory that
+/// measures them, removes them and reads a left-over one by its name: the one helper both a clear and a delete call
 /// once the service has said yes, so a delete and a clear take the same files, and a clear says the bytes that went.
 /// </summary>
 /// <remarks>
 /// <para><b>What goes, by name</b>, in this order: its conversation, its transcript, its files (the whole
 /// <c>sessions/&lt;id&gt;/</c>, its native children's lineage among them, <see cref="ChildLineage"/>), its harness conversation id, a leftover process marker, its go-on mark, its reopen mark (<see cref="ReopenMarks"/>), its park's question (<see cref="QuestionFiles"/>) and the supervisor's decisions on it (<see cref="QuestionSupervisorDecisions"/>), each named <c>mark</c>, its choice of a new
-/// session, its hand-over boxes (<see cref="HandOverBox"/>, its agent's ask and that ask's state, and a limit's move) and its move records in the desktop store under the same name (FOUNDATION1f-i), the spawn files a crash left, Ask Daoris's name and pin for it (ASKHIST1), its receipts (HELPWIRED1) and what it published (ASKQUESTS1), its held words, its closed automatic
-/// landing and its archive mark. Until HIST1c the
-/// delete took the first five and the mark, and left the mark, the choice, the held words and the landing behind.</para>
+/// session, its hand-over boxes (<see cref="HandOverBox"/>, its agent's ask and that ask's state, and a limit's move) and its move records in the desktop store under the same name, the spawn files a crash left, Ask Daoris's name and pin for it, its receipts and what it published, its held words, its closed automatic
+/// landing and its archive mark.</para>
 ///
-/// <para><b>Never</b> a tree, a branch, the usage, the machine log, the harness's own conversation in an account's home
-/// (§1.3), or an automatic landing still trying, which a clear refuses before it (<c>HISTORY_LIVE</c>). An id that is not a
+/// <para><b>Never</b> a tree, a branch, the usage, the machine log, the harness's own conversation in an account's home,
+/// or an automatic landing still trying, which a clear refuses before it (<c>HISTORY_LIVE</c>). An id that is not a
 /// session's (a teammate's, <c>origin/id</c>) removes no file, since this machine keeps none of it; only its archive mark.</para>
 ///
 /// <para><b>A file the disk will not let go of is left</b>, named in what failed, and none of its bytes count as gone: it is
-/// left over (§2.3), and the next clear of a workspace takes it. A folder the disk let go of only in part counts the part that
-/// went. Until HIST1j a clear measured each session before the removal and counted it whole, whatever failed.</para>
+/// left over, and the next clear of a workspace takes it. A folder the disk let go of only in part counts the part that
+/// went.</para>
 /// </remarks>
 public sealed class SessionHomeFiles(string home, Action<string, bool>? remover = null)
 {
@@ -49,20 +47,20 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     public const string Mark = "mark";
     public const string Choice = "choice";
 
-    /// <summary>A conversation's ask to go on with another agent (MIXAGENT1a-i, <see cref="HandOverBox"/>).</summary>
+    /// <summary>A conversation's ask to go on with another agent (<see cref="HandOverBox"/>).</summary>
     public const string HandOver = "hand-over";
     public const string Spawn = "spawn";
 
     /// <summary>
-    /// Ask Daoris's conversation's name, pin and start (ASKHIST1, <see cref="HelpConversations"/>), what each of its starts handed
-    /// (HELPWIRED1, <see cref="HelpWired"/>), and what its Applies published (ASKQUESTS1, <see cref="HelpPublished"/>).
+    /// Ask Daoris's conversation's name, pin and start (<see cref="HelpConversations"/>), what each of its starts handed
+    /// (<see cref="HelpWired"/>), and what its Applies published (<see cref="HelpPublished"/>).
     /// </summary>
     public const string Help = "help";
     public const string Held = "held";
     public const string Landing = "landing";
     public const string Archived = "archived";
 
-    /// <summary>A chat run's binding, opinion gate and look (CHATFLOW1c), named by the record its key names, <c>chat-&lt;id&gt;</c>.</summary>
+    /// <summary>A chat run's binding, opinion gate and look, named by the record its key names, <c>chat-&lt;id&gt;</c>.</summary>
     public const string Run = "run";
 
     /// <summary>Where a session's file lies under the home.</summary>
@@ -75,7 +73,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         Spawn,
 
         /// <summary>
-        /// A session's kept files: <see cref="HomeEntry.SessionFiles"/>, in <c>work/files/sessions/</c> since HOMELAYOUT3, and its
+        /// A session's kept files: <see cref="HomeEntry.SessionFiles"/>, in <c>work/files/sessions/</c>, and its
         /// folder under <c>sessions/</c> where an older home keeps them.
         /// </summary>
         Files,
@@ -125,10 +123,10 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     internal const string SupervisorPointerSuffix = ".supervisor.json";
 
     /// <summary>
-    /// The inventory (§2.2), in the order the files go, written once (HIST1j): what a reading measures, what a clear and a delete
+    /// The inventory, in the order the files go, written once: what a reading measures, what a clear and a delete
     /// remove, and what a left-over file is read by. A per-session file a later change adds is named here, and every door takes it.
     /// A new name is a word a delete's <c>stayed</c> carries, which the page says from its own catalogues (<c>KeptNamesTwinTests</c>,
-    /// <c>kept-names.json</c>), so a file an existing name already covers goes under that name, as HELPWIRED1's receipts go under
+    /// <c>kept-names.json</c>), so a file an existing name already covers goes under that name, as <see cref="HelpWired"/>'s receipts go under
     /// <see cref="Help"/>.
     /// </summary>
     private static readonly SessionFile[] Inventory =
@@ -138,44 +136,44 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Files, Place.Files, "", true, bytes => HistoryBytes.None with { Files = bytes }),
         new(Marker, Place.Pids, ".pid", false, Beside),
         new(Mark, Place.Sessions, GoOnMarkSuffix, false, Beside),
-        // FABRIC-CLOSE1c8: the reopens it was told of, a mark too, which goes with its record.
+        // The reopens it is told of, a mark too, which goes with its record.
         new(Mark, Place.Sessions, ReopenMarkSuffix, false, Beside),
-        // PARKVIEW1: the question its park asked (QuestionFiles), a mark of the park as the others are, which goes with its record.
+        // The question its park asked (QuestionFiles), a mark of the park as the others are, which goes with its record.
         new(Mark, Place.Sessions, QuestionSuffix, false, Beside),
-        // SUPERVISOR1a-i: the supervisor's decisions on its questions and the current one's pointer (QuestionSupervisorDecisions),
+        // The supervisor's decisions on its questions and the current one's pointer (QuestionSupervisorDecisions),
         // kept for its history as long as its record, and going with it, never before.
         new(Mark, Place.Sessions, SupervisorDecisionsSuffix, true, Beside),
         new(Mark, Place.Sessions, SupervisorPointerSuffix, false, Beside),
         new(Choice, Place.Sessions, NewSessionChoiceSuffix, false, Beside),
         new(HandOver, Place.Sessions, HandOverBoxSuffix, false, Beside),
-        // SESSFILES1: the agent's ask to hand its session over and the driver's state of it (MIXAGENT1c, HandOverAskFiles), and an ended
-        // conversation's move at its limit's wake (LIMITRESUME1c, LimitBoxes): each a box of a record that goes with it, under the name
+        // The agent's ask to hand its session over and the driver's state of it (HandOverAskFiles), and an ended
+        // conversation's move at its limit's wake (LimitBoxes): each a box of a record that goes with it, under the name
         // its sibling box has, since each is a hand-over's file and the page says no new word for it.
         new(HandOver, Place.Sessions, HandOverAskSuffix, false, Beside),
         new(HandOver, Place.Sessions, HandOverStateSuffix, false, Beside),
         new(HandOver, Place.Sessions, LimitMoveSuffix, false, Beside),
-        // FOUNDATION1f-vi part a: that box once the come-up imports it into the move record, set aside beside it (MoveBoxImport), which goes
+        // That box once the come-up imports it into the move record, set aside beside it (MoveBoxImport), which goes
         // with its record's delete as the box did, under the same name.
         new(HandOver, Place.Sessions, LimitMoveSuffix + ImportedSuffix, false, Beside),
-        // FOUNDATION1f-v part a: a conversation's hand-over box once the come-up imports it, set aside beside it the same way.
+        // A conversation's hand-over box once the come-up imports it, set aside beside it the same way.
         new(HandOver, Place.Sessions, HandOverBoxSuffix + ImportedSuffix, false, Beside),
         new(Spawn, Place.Spawn, ClaudeServers.FileSuffix, false, Beside),
         new(Spawn, Place.Spawn, ClaudeRules.FileSuffix, false, Beside),
-        // FABRIC-PIPELINE1b: the checks its run took, which `run-heavy` reads by the session its tree's lock names.
+        // The checks its run took, which `run-heavy` reads by the session its tree's lock names.
         new(Spawn, Place.Spawn, ChecksSuffix, false, Beside),
-        // CONTEXTONE1c: the folder a standing block past what its first prompt carries went through, which its session read.
+        // The folder a standing block past what its first prompt carries went through, which its session read.
         new(Spawn, Place.Spawn, StandingFacts.FolderSuffix, true, Beside),
         new(Help, Place.Sessions, HelpConversationsSuffix, false, Beside),
-        // HELPWIRED1: what each of its starts handed, Ask Daoris's too, so it goes under the same name.
+        // What each of its starts handed, Ask Daoris's too, so it goes under the same name.
         new(Help, Place.Sessions, HelpWiredSuffix, false, Beside),
-        // ASKQUESTS1: the asks and quests its Applies published, Ask Daoris's too.
+        // The asks and quests its Applies published, Ask Daoris's too.
         new(Help, Place.Sessions, HelpPublishedSuffix, false, Beside),
-        // CHATFLOW1c (the chat-flow design §4.3): a chat run's three files, which go with the record its key names, the line's first
+        // A chat run's three files, which go with the record its key names, the line's first
         // in its tree; a later record of the line names none of them.
         new(Run, Place.Runs, ".json", false, Beside),
         new(Run, Place.Gates, ".json", false, Beside),
         new(Run, Place.Looks, ".json", false, Beside),
-        // CHATFLOW1f: the candidates a graph-bound chat run's presses submitted.
+        // The candidates a graph-bound chat run's presses submitted.
         new(Run, Place.Candidates, ".json", false, Beside),
     ];
 
@@ -211,7 +209,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         .. Inventory.Where(file => places.Contains(file.Place) && !file.Folder).Select(file => file.Suffix).OrderByDescending(suffix => suffix.Length),
     ];
 
-    /// <summary>Each path a session's file may be at, once each: one, but two for what has its own place since HOMELAYOUT3.</summary>
+    /// <summary>Each path a session's file may be at, once each: one, but two for what has its own place.</summary>
     private IReadOnlyList<string> PathsOf(SessionFile file, string id) => file.Place switch
     {
         Place.Spawn => [Path.Combine(SpawnFolder, id + file.Suffix)],
@@ -237,7 +235,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     /// <summary>
     /// Remove what the home keeps of each session, once its record is gone: each name that went, per id, in the inventory's
     /// order, and the bytes that went with them; what the disk would not let go of stays, named in what failed, and only what
-    /// went is counted (HIST1j). The held words, the closed automatic landings and the archive marks are each one file, written
+    /// went is counted. The held words, the closed automatic landings and the archive marks are each one file, written
     /// once.
     /// </summary>
     /// <param name="events">The loop's record of conversations, so it forgets their numbering too; null removes the files alone.</param>
@@ -276,10 +274,10 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         if (sessions.Count > 0)
         {
             Each(HeldWordsFile.PathOf(home), sessions, () => HeldWordsFile.Forget(home, sessions), Held);
-            // LANDBACK1 part 1: the person's Accept kept on a session goes with its record: a deleted session's tree is never landed.
+            // The person's Accept kept on a session goes with its record: a deleted session's tree is never landed.
             Each(new CarriedAccepts(home).FilePath, sessions, () => new CarriedAccepts(home).Forget(sessions), Landing);
 
-            // FOUNDATION1 z-iii: the binding in the desktop store goes with its record, under the name its file went by. A store that
+            // The binding in the desktop store goes with its record, under the name its file went by. A store that
             // will not take the delete (busy, or written by a newer Daoris) leaves the binding, named as a file the disk would not let go.
             var bindings = WorkplaceHarnessBindings.Current.Open(home);
             try
@@ -305,7 +303,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
                 foreach (var id in held) Named(stayed[id], Binding);
             }
 
-            // FOUNDATION1f-i: the record's move records go with it, under the name the boxes they replace went by. A store that will not
+            // The record's move records go with it, under the name the boxes they replace went by. A store that will not
             // take the delete leaves them, named among what stayed, its path once among what failed.
             var moves = WorkplaceMoveRecords.Current.Open(home);
             try
@@ -332,7 +330,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
             }
         }
 
-        // Every id, a teammate's included: this machine marks their records archived too (D126 §5.2), by the record's id.
+        // Every id, a teammate's included: this machine marks their records archived too, by the record's id.
         var all = removed.Keys.ToList();
         if (all.Count > 0)
         {
@@ -365,21 +363,21 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
                 failed.Add(file);
-                // SESSDEL1: the file is shared, so what it held of each session asked of it stays.
+                // The file is shared, so what it held of each session asked of it stays.
                 foreach (var id in asked) Named(stayed[id], name);
             }
         }
     }
 
     /// <summary>
-    /// Whether a workspace's clear takes a file by this name once it is left over (SESSDEL1): the inventory's own files, which the
-    /// left-over scan finds by the names they carry (the history-clearing design §2.3). Not a shared file's entries, which no scan
+    /// Whether a workspace's clear takes a file by this name once it is left over: the inventory's own files, which the
+    /// left-over scan finds by the names they carry. Not a shared file's entries, which no scan
     /// reads.
     /// </summary>
     internal static bool TakenWhenLeftOver(string name) => Inventory.Any(file => file.Name == name);
 
     /// <summary>
-    /// Remove one path of the home, a file or a folder whole, through this home's remover (HIST1j): whether it went, and the bytes
+    /// Remove one path of the home, a file or a folder whole, through this home's remover: whether it went, and the bytes
     /// that went with it. Where the disk will not let go of it, the path is named in <paramref name="failed"/>, and only what it
     /// let go of before refusing counts. Nothing, for a path that is not there.
     /// </summary>
@@ -408,9 +406,9 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
 }
 
 /// <summary>
-/// The words a shell holds for a session winding up, kept across a restart (MSG1d4): <c>&lt;home&gt;/sessions/held-words.json</c>,
+/// The words a shell holds for a session winding up, kept across a restart: <c>&lt;home&gt;/sessions/held-words.json</c>,
 /// written whole by the shell's <c>SessionWords</c>. The driver library reads its place from here, and takes a cleared or
-/// deleted session's entries out of it (HIST1c), since a word held for a record that is gone has nothing to reach.
+/// deleted session's entries out of it, since a word held for a record that is gone has nothing to reach.
 /// </summary>
 public static class HeldWordsFile
 {

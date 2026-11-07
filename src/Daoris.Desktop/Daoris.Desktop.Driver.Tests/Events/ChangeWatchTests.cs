@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The change watch (FABRIC-EVENT2, the design §A3 and §A4.1) on its fake source, stepped by hand on a clock that stands still:
-/// the design's canaries 1-3. A hint is debounced into its topic's queue and judged once per subject, never twice at once; a
+/// The change watch on its fake source, stepped by hand on a clock that stands still:
+/// a hint is debounced into its topic's queue and judged once per subject, never twice at once; a
 /// silenced source still judges by the topic's deadline; an overflow, a lost handle, a replaced or absent folder and a resume
 /// each judge their root at once and reopen it, and a callback from an old generation is dropped.
 /// </summary>

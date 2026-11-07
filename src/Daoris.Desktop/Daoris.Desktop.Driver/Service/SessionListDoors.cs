@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The reads of the service's session list (<c>GET /api/sessions</c>, the service's session routes): a class over the client, reached as its
 /// <see cref="ServiceClient.SessionList"/> and by the client's own doors of the same names. <c>/api/sessions</c> alone means ACTIVE; a session
-/// is reviewed, merged or discarded once it has ended, so a read of one asks the closed records too (GROUND1).
+/// is reviewed, merged or discarded once it has ended, so a read of one asks the closed records too.
 /// </summary>
 public sealed class SessionListDoors
 {
@@ -51,12 +51,12 @@ public sealed class SessionListDoors
         ? await Kept.ListedAsync(ct).ConfigureAwait(false)
         : (await _service.SendAsync(new ListSessions(IncludeClosed: includeClosed ? true : null), ct).ConfigureAwait(false)).Answered();
 
-    /// <summary>How many sessions failed on each quest (DRV6), without the rest of a snapshot.</summary>
+    /// <summary>How many sessions failed on each quest, without the rest of a snapshot.</summary>
     public async Task<IReadOnlyDictionary<string, int>> StrikesAsync(CancellationToken ct = default) =>
         SessionReads.Strikes(await ListedAsync(true, ct).ConfigureAwait(false));
 
     /// <summary>
-    /// Every session record this machine keeps, closed ones included, with the repository it ran in (WSSETUP6, D124 §4.2). A teammate's
+    /// Every session record this machine keeps, closed ones included, with the repository it ran in. A teammate's
     /// record says nothing of this machine's work, and is left out as the strikes leave it.
     /// </summary>
     public async Task<IReadOnlyList<SessionRun>> RunsAsync(CancellationToken ct = default) =>
@@ -67,7 +67,7 @@ public sealed class SessionListDoors
             .Where(run => run.Session.Length > 0 && run.Repository.Length > 0),
     ];
 
-    /// <summary>One session record as it stands, an ended one included (FOUNDATION1 m-ii); null where the service has none.</summary>
+    /// <summary>One session record as it stands, an ended one included; null where the service has none.</summary>
     public async Task<SessionView?> FindAsync(string id, CancellationToken ct = default) =>
         await OneAsync(id, ct).ConfigureAwait(false) is { } one ? SessionReads.Views([one]).FirstOrDefault() : null;
 
@@ -75,7 +75,7 @@ public sealed class SessionListDoors
     private Task<SessionResponse?> OneAsync(string id, CancellationToken ct) => Kept.OneAsync(id, ct);
 
     /// <summary>
-    /// The asking session and every other session of its repository with a tree and a base here, chats included (LINESTOGETHER1c); an active
+    /// The asking session and every other session of its repository with a tree and a base here, chats included; an active
     /// session is taken as running. Null where the service has no such session or it holds no tree.
     /// </summary>
     public async Task<(RelatedCandidate Mine, IReadOnlyList<RelatedCandidate> Others)?> RelatedCandidatesAsync(string id, CancellationToken ct = default)
@@ -91,16 +91,16 @@ public sealed class SessionListDoors
     public async Task<IReadOnlyList<SessionView>> ActiveAsync(CancellationToken ct = default) =>
         SessionReads.Views(await ListedAsync(false, ct).ConfigureAwait(false));
 
-    /// <summary>Whether this session took its own quest through its own connector (STANDDOWN2), read at its end.</summary>
+    /// <summary>Whether this session took its own quest through its own connector, read at its end.</summary>
     public async Task<bool> TookAsync(string id, CancellationToken ct = default) =>
         (await OneAsync(id, ct).ConfigureAwait(false))?.Took == true;
 
-    /// <summary>The quest a session serves, or null for a conversation's or an intake's (WSR1: what a landing names).</summary>
+    /// <summary>The quest a session serves, or null for a conversation's or an intake's (what a landing names).</summary>
     public async Task<string?> QuestAsync(string id, CancellationToken ct = default) =>
         (await OneAsync(id, ct).ConfigureAwait(false))?.Quest is { Length: > 0 } quest ? quest : null;
 
     /// <summary>
-    /// Where one session ran and what it started from — the two machine-local facts a review needs (SURF6). Both come back only over
+    /// Where one session ran and what it started from — the two machine-local facts a review needs. Both come back only over
     /// loopback: a caller on another machine reads nulls and has nothing to diff, which is the honest answer rather than a refusal.
     /// </summary>
     public async Task<(string? Tree, string? BaseCommit)> GroundAsync(string id, CancellationToken ct = default)
@@ -109,27 +109,27 @@ public sealed class SessionListDoors
         return (session?.Tree, session?.BaseCommit);
     }
 
-    /// <summary>The tree a session of this machine's held (D51), closed records included; null where the service holds no such record or says no tree.</summary>
+    /// <summary>The tree a session of this machine's holds, closed records included; null where the service holds no such record or says no tree.</summary>
     public async Task<string?> TreeAsync(string session, CancellationToken ct = default) =>
         (await OneAsync(session, ct).ConfigureAwait(false))?.Tree is { Length: > 0 } tree ? tree : null;
 
-    /// <summary>The downloads' rule's read of this machine's active sessions (KEEP1b, D195 point 6): each id, when it was opened, and the versions its starts were handed.</summary>
+    /// <summary>The downloads' rule's read of this machine's active sessions: each id, when it opened, and the versions its starts are handed.</summary>
     public async Task<IReadOnlyList<LiveSession>> LiveAsync(CancellationToken ct = default) =>
         SessionReads.Running(await ListedAsync(false, ct).ConfigureAwait(false));
 
-    /// <summary>One record as a run that goes on reads it (MSG1c); null when no record of this machine has that id.</summary>
+    /// <summary>One record as a run that goes on reads it; null when no record of this machine has that id.</summary>
     public async Task<PriorSession?> RecordAsync(string id, CancellationToken ct = default) =>
         await OneAsync(id, ct).ConfigureAwait(false) is { } one ? SessionReads.Record([one], id) : null;
 
-    /// <summary>The trees of this machine's records the person's words wait on (AUTOTIDY2d, MSG1b, D137 §2.2).</summary>
+    /// <summary>The trees of this machine's records the person's words wait on.</summary>
     public async Task<IReadOnlyList<string>> WaitingTreesAsync(CancellationToken ct = default) =>
         SessionReads.WaitingTrees(await ListedAsync(true, ct).ConfigureAwait(false));
 
-    /// <summary>This machine's records, open and closed, by id: what the person's <i>Send to its session</i> finds a line's newest part among (COWORK1d).</summary>
+    /// <summary>This machine's records, open and closed, by id: what the person's <i>Send to its session</i> finds a line's newest part among.</summary>
     public async Task<IReadOnlyCollection<PriorSession>> RecordsAsync(CancellationToken ct = default) =>
         [.. SessionReads.Records(await ListedAsync(true, ct).ConfigureAwait(false)).Values];
 
-    /// <summary>Every session record, closed ones included, as the service answers them (SESSUX1a, SESSUX1f).</summary>
+    /// <summary>Every session record, closed ones included, as the service answers them.</summary>
     public async Task<IReadOnlyList<SessionRecord>> AllAsync(CancellationToken ct = default) =>
         SessionRecords.Parse(await JsonAsync(true, ct).ConfigureAwait(false));
 }

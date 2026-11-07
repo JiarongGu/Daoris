@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// D233 choice 6: the newest build that has run on a home, which the launcher refuses an older one by. Kept only upward; an older build
+/// The newest build that has run on a home, which the launcher refuses an older one by. Kept only upward; an older build
 /// is refused in one sentence naming both versions; the same version, a newer one, or a home with nothing kept or unreadable, starts.
 /// </summary>
 public sealed class HomeLastBuildTests : IDisposable

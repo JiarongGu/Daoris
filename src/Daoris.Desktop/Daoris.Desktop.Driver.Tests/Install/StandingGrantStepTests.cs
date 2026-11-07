@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TERMTRUST1 (D201's note of 2026-11-07): the person's standing confirmation grant is gone, so the record an older build stored for it is
+/// The person's standing confirmation grant is gone, so the record an older build stored for it is
 /// removed at the start as one step of the home's migration; the data beside it stays, and a home with no such record is left alone.
 /// </summary>
 public sealed class StandingGrantStepTests : IDisposable

@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A press's run (KEEP1e, the cleanup design §3.3, Codex 5.3): its id, its door, when it started and ended, how it ended, and each kind
+/// A press's run: its id, its door, when it started and ended, how it ended, and each kind
 /// waiting, running or done. The page reads it in <c>SYSTEM_SPACE</c>'s <c>run</c>, the current or last run of the process, and the
 /// terminal reads it until it ends. Each kind's end is told (<see cref="KindEnded"/>), the whole's end completes <see cref="Finished"/>.
 /// </summary>

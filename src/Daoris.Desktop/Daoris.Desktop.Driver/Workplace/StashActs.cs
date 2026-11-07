@@ -29,7 +29,7 @@ public sealed record StashPlan(
     IReadOnlyList<StashEntry> Entries, string? ApplyWhy);
 
 /// <summary>
-/// **Stash Save** (GITAPP2k, D204, the git-writes design §8). One <c>stash</c> step of the act journal, <c>git stash push</c>, tracked files only
+/// **Stash Save**. One <c>stash</c> step of the act journal, <c>git stash push</c>, tracked files only
 /// unless the press asks for untracked ones too, never forced. The stash is <c>refs/stash</c>, shared by every linked tree, the sessions' included,
 /// so the plan says so and the press is refused where the stash moved since the page read it. Apply and Drop are acts of their own
 /// (<see cref="StashDrops"/>); the answer names the commit saved so the person can put it back by id.
@@ -61,7 +61,7 @@ public sealed class StashActs(ActJournal journal)
     }
 
     /// <summary>
-    /// <b>Stash Apply</b> (GITAPP2l, D204, the git-writes design §8): <c>git stash apply &lt;id&gt;</c> by the stash commit's id, never <c>pop</c>, to a
+    /// <b>Stash Apply</b>: <c>git stash apply &lt;id&gt;</c> by the stash commit's id, never <c>pop</c>, to a
     /// checkout with no tracked change and no untracked file in the way. A conflict stays in the index for Resolve; the stash is kept either way.
     /// </summary>
     public async Task<ActRun> ApplyAsync(StageContext context, StashApplyPress press, CancellationToken ct)

@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What a delete did with the session asked of it (SESSUX1f, D126 §5.4).</summary>
+/// <summary>What a delete did with the session asked of it.</summary>
 public enum DeleteVerdict
 {
     /// <summary>Its record and what this machine kept of it are gone.</summary>
@@ -9,7 +9,7 @@ public enum DeleteVerdict
     /// <summary>No record here is this session.</summary>
     Unknown,
 
-    /// <summary>A teammate's record (SYNC4): it ran on their machine, and the record is theirs.</summary>
+    /// <summary>A teammate's record: it ran on their machine, and the record is theirs.</summary>
     NotOurs,
 
     /// <summary>It still runs or waits: stopped first, it ends.</summary>
@@ -55,7 +55,7 @@ public sealed record DeleteOutcome(string Session, DeleteVerdict Verdict, string
     public IReadOnlyList<string> Removed { get; init; } = [];
 
     /// <summary>
-    /// What the disk would not let go of, by the same names, in the same order (SESSDEL1): left over, and said in
+    /// What the disk would not let go of, by the same names, in the same order: left over, and said in
     /// <see cref="Message"/>. Empty when everything went. The record's removal never waits on it: the ledger has already said yes.
     /// </summary>
     public IReadOnlyList<string> Stayed { get; init; } = [];

@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONTEXTONE1e (D230 point 3; the context-one design §3 E): a session Daoris runs on Claude Code holds the tree's skills and Daoris's
+/// A session Daoris runs on Claude Code holds the tree's skills and Daoris's
 /// per-session plugin copy, and none of the vendor's account-synced skills, plugins or connectors, with its auto-memory off, all through
 /// the session's own settings file. Which account runs it changes none of that, and its home is never written.
 /// </summary>

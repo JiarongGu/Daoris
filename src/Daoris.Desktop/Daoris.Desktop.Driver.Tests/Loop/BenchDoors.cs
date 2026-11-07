@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The service's doors with each request counted by its path, the query left out, and the milliseconds it waited (PERF1b): what a read of
+/// The service's doors with each request counted by its path, the query left out, and the milliseconds it waited: what a read of
 /// the benchmark asked of the service, said beside what it cost.
 /// </summary>
 internal sealed class BenchDoors(IServiceDoors inner) : IServiceDoors
@@ -26,7 +26,7 @@ internal sealed class BenchDoors(IServiceDoors inner) : IServiceDoors
     /// <summary>How many requests each path had at the last <see cref="Take"/>.</summary>
     public IReadOnlyDictionary<string, int> LastTaken { get; private set; } = new Dictionary<string, int>();
 
-    /// <summary>What was asked since the last take, the most costly first, and let go.</summary>
+    /// <summary>What is asked since the last take, the most costly first, and let go.</summary>
     public string Take()
     {
         lock (_gate)

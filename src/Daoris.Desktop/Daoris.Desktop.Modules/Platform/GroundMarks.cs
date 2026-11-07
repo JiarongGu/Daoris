@@ -57,6 +57,12 @@ internal sealed class GroundWaitAttribute(string route, string wait, params stri
     public override IEnumerable<PipeGround> Grounds() => [LoopGround.Wait(wait, fields)];
 }
 
+/// <summary>The route's own refusal of the state it acts on (<see cref="LoopGround.Refusal"/>), by the payload's fields.</summary>
+internal sealed class GroundRefusalAttribute(string route, string wait, params string[] fields) : RouteGroundAttribute(route)
+{
+    public override IEnumerable<PipeGround> Grounds() => [LoopGround.Refusal(wait, fields)];
+}
+
 /// <summary>
 /// What the press's files are (<see cref="LoopGround.Files"/>), by the payload's fields: within the page's bound, or with
 /// <see cref="Quick"/> a state's, for one file.

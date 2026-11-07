@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The words a shell gone before attempted and never took off (COWORK1c, D188 point 6; the message-urgency design §6, §14's trap 8):
+/// The words a shell gone before attempted and never took off:
 /// written to a harness, or about to be, when the shell went, so the agent may hold them, and no harness drops a repeated prompt by its
 /// id. Read as a shell comes up, from every record of this machine's that no run holds: each such word leaves its record, and nothing
 /// sends it again. Where its conversation never showed it taken, it says so there under the word's id, by the <c>lost</c> code the page
-/// words as <i>It may have read this; its answer was not kept</i>, and offers the person's own words again; one it showed taken leaves
+/// words as a line that the agent may have read this, its answer not kept, and offers the person's own words again; one it showed taken leaves
 /// without the line.
 /// </summary>
 /// <remarks>
@@ -18,8 +18,8 @@ namespace Daoris.Driver;
 public static class UncertainWords
 {
     /// <returns>
-    /// A line for the loop's report per record settled, classed as it is made (NOTIFY2h2): what moved, which the session's conversation
-    /// says where it never showed the words taken; none where nothing was, or the service did not answer.
+    /// A line for the loop's report per record settled, classed as it is made: what moved, which the session's conversation
+    /// says where it never showed the words taken; none where nothing moved, or the service did not answer.
     /// </returns>
     /// <param name="said">The look's classing; none classes and keeps nothing.</param>
     public static async Task<IReadOnlyList<string>> SettleAsync(ServiceClient service, SessionEvents? events, CancellationToken ct, LookSaid? said = null)
@@ -62,7 +62,7 @@ public static class UncertainWords
     {
         if (record.Running || record.Teammate) return 0;
         List<string> attempted = [.. (record.Said ?? []).Where(word => word.Attempt is not null).Select(word => word.Id).OfType<string>()];
-        // SESSWATCH1b: the watcher's word left on an ended record (a crash, a withdrawal that failed) speaks of a quiet that is over, so it
+        // The watcher's word left on an ended record (a crash, a withdrawal that failed) speaks of a quiet that is over, so it
         // leaves here before the first look plans and is said, and is never a conversation's word to show lost or a go-on's release.
         List<string> watching = [.. (record.Said ?? []).Where(word => DaorisKeys.IsWatch(word.Key)).Select(word => word.Id).OfType<string>()];
         if (attempted.Count == 0 && watching.Count == 0) return 0;

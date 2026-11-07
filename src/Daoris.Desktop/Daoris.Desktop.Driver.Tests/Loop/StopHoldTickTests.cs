@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSUX1b (D126 §3.3, §3.4) through REAL ticks: the person stops a driven session, its quest is held across the looks
+/// Through REAL ticks: the person stops a driven session, its quest is held across the looks
 /// that follow with nothing spawned, and *Try again* releases it, after which it runs. A real process (node) and the
 /// stand-in service <see cref="AskAndWaitTickTests.StandIn"/>, as the ask-and-wait ticks use them; no model and no account.
 /// </summary>
@@ -17,7 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para>🔴 The stand-in opens a session on any quest it is asked about. The service's ledger does not: it opens one on a
 /// taken quest only to resume or carry it on, and its carry-on does not yet include a person's stop
 /// (<c>SessionLedger.OpenAsync</c>'s <c>carriesOn</c>). So the taken case here proves the driver's half; against a real
-/// host the carry-on is refused until the service's half lands (D126's SESSUX1b note).</para>
+/// host the carry-on is refused until the service's half lands.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class StopHoldTickTests : IDisposable
@@ -103,7 +103,7 @@ public sealed class StopHoldTickTests : IDisposable
         Assert.Equal("stopped", service.Session("s1")["state"]!.GetValue<string>());
         Assert.Equal("Open", service.Status("q1"));
 
-        // 2. It was planned again at the next look before SESSUX1b; now each look holds it, and nothing starts.
+        // 2. Each look holds it, and nothing starts.
         for (var look = 0; look < 2; look++)
         {
             var held = await Driver(service, config).TickAsync().WaitAsync(Poll.Patience);
@@ -130,7 +130,7 @@ public sealed class StopHoldTickTests : IDisposable
         Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent(), log, first] },
     };
 
-    // A driver per look, sharing the processes, as the watch builds one per look (DEV3).
+    // A driver per look, sharing the processes, as the watch builds one per look.
     private Daoris.Driver.Driver Driver(AskAndWaitTickTests.StandIn service, DriverConfig config)
     {
         var adapters = ProviderRegistry.Built();
@@ -140,7 +140,7 @@ public sealed class StopHoldTickTests : IDisposable
     }
 
     /// <summary>
-    /// The stand-in harness: it writes down what it was handed, then on its first run takes the quest (<c>take</c>) or not
+    /// The stand-in harness: it writes down what it is handed, then on its first run takes the quest (<c>take</c>) or not
     /// (<c>wait</c>) and works until it is stopped; on any later run it takes the quest unless it is carrying it on, and
     /// closes it done.
     /// </summary>

@@ -3,7 +3,7 @@ using static Daoris.Driver.TreeGit;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A tree git let go of whose folder stayed on disk (found in the first real post-merge run, 2026-09-30).
+/// A tree git let go of whose folder stayed on disk.
 /// </summary>
 /// <remarks>
 /// <para><c>git worktree remove</c> deletes a tree's files, then its registration, and carries on past a folder that
@@ -63,7 +63,7 @@ internal sealed class TreeLeftovers(TreeContext context)
     }
 
     /// <summary>
-    /// The clean-up's retry (the first real post-merge run): every empty folder where a tree was, under the trees home,
+    /// The clean-up's retry: every empty folder where a tree stood, under the trees home,
     /// deleted — and a sentence for each one removed or still held.
     /// </summary>
     internal IReadOnlyList<string> EmptyFoldersGone()
@@ -85,7 +85,7 @@ internal sealed class TreeLeftovers(TreeContext context)
                 catch (DirectoryNotFoundException) { continue; }
                 catch (Exception error) when (error is IOException or UnauthorizedAccessException)
                 {
-                    // TREECLEANFREE1: a handle that shares nothing (a scanner's read, a holder's child) fails the look itself; passed over
+                    // A handle that shares nothing (a scanner's read, a holder's child) fails the look itself; passed over
                     // in silence, the folder stayed and the press said nothing of it, where every held one is said.
                     said.Add($"the folder a tree left at {tree} stays: it could not be looked into, and something on this machine "
                         + $"may hold it open ({error.Message}). The clean-up looks again once nothing does.");

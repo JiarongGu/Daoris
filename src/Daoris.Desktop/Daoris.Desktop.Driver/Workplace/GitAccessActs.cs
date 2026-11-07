@@ -15,14 +15,14 @@ public sealed record GitAccessEdit
     public bool Machine { get; init; }
     public IReadOnlyList<KeyValuePair<string, string?>>? Set { get; init; }
 
-    /// <summary>One value for Read and Write at this level (§6.2, <i>use one value for both</i>).</summary>
+    /// <summary>One value for Read and Write at this level (<i>use one value for both</i>).</summary>
     public string? OneValue { get; init; }
 
     public bool Clear { get; init; }
 }
 
 /// <summary>
-/// The edits of git access (GITAUTH1f, D198 points 8, 10 and 12; the git-auth design §6.2, §6.4 and §8): one typed operation called by
+/// The edits of git access (10 and 12): one typed operation called by
 /// <c>SET_GIT_ACCESS</c> and by <c>daoris git access</c> alone, writing only the key paths it changes in <c>driver.json</c>, so
 /// every other key, a key this build does not know included, is kept as written.
 /// </summary>
@@ -129,7 +129,7 @@ public static class GitAccessActs
     }
 
     /// <summary>
-    /// The classes the edit loosens in the view of the level it changes (§8's widenings: a class loosened, or a level cleared where the
+    /// The classes the edit loosens in the view of the level it changes (a class loosened, or a level cleared where the
     /// level above is looser; <i>one value for both</i> where it loosens). Narrowing and no change are none.
     /// </summary>
     public static IReadOnlyList<string> Widened(GitAccessLevels before, GitAccessEdit edit)

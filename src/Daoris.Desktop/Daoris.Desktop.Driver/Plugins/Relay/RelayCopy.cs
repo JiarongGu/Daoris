@@ -9,7 +9,7 @@ public sealed class RelayStop(string code) : Exception(code)
 }
 
 /// <summary>
-/// The relay's copy of its build (EVENTHOOK1c; the event hook design §6.1 step 0, C2.3, P8): laid out by <c>--where</c> under the home's
+/// The relay's copy of its build: laid out by <c>--where</c> under the home's
 /// <c>bin</c> entry, named by <see cref="RelayBuild.Of"/> of the running build's folder, staged beside and moved whole, so a copy appears
 /// whole or not at all; each whole copy holds its <see cref="InUse"/> file, which every relay running from it holds open for its life and
 /// which keeps it. A build none holds is removed by a rename first, so no relay runs from one being removed and no half-removed folder is

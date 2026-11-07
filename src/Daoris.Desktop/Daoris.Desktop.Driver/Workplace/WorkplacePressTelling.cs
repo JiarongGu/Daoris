@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The note a terminal's press leaves for the loops watching the home (STATEHUB1e): Course keeps the note's store and folder, so the
+/// The note a terminal's press leaves for the loops watching the home: Course keeps the note's store and folder, so the
 /// workplace tells through this required operation, which Course installs when the driver loads.
 /// </summary>
 internal interface IWorkplacePressTelling

@@ -16,7 +16,7 @@ public static class DeliveryMethods
     public static IReadOnlyList<string> All { get; } = [Merge, Branch, Push, PullRequest, Integrate];
 }
 
-/// <summary>A delivery's phases, in their order (the land node design §3): each effect's entry is written ahead of it and its outcome after.</summary>
+/// <summary>A delivery's phases, in their order: each effect's entry is written ahead of it and its outcome after.</summary>
 public static class DeliveryPhases
 {
     /// <summary>The intent prepared for its effects: nothing of the landing written yet.</summary>
@@ -79,7 +79,7 @@ public static class DeliveryAuthorities
 }
 
 /// <summary>
-/// What a delivery lands, frozen at its start (the land node design §3): the unit, its repository, the bound tip, the method and the target
+/// What a delivery lands, frozen at its start: the unit, its repository, the bound tip, the method and the target
 /// (the key's four), the line, the expanded branch name with its ticket key, the rendered message, the plugin, and the policy epoch's reference.
 /// </summary>
 public sealed record DeliveryIntent(
@@ -161,7 +161,7 @@ public sealed class DeliveryRefusedException(string key, string why) : Exception
 }
 
 /// <summary>
-/// The delivery record (LANDNODE1b; the land node design §3, §4): a desktop-store family, Workplace's, in <c>deliveries</c> and
+/// The delivery record: a desktop-store family, Workplace's, in <c>deliveries</c> and
 /// <c>delivery_phases</c>, machine-local and never synced: a landing's frozen intent, its authorization, and each of its effects written
 /// ahead and its outcome after.
 /// </summary>
@@ -245,7 +245,7 @@ public sealed class DeliveryStore(
             MapDelivery, ("$repository", repository), ("$tip", tip)), []);
 
     /// <summary>
-    /// Whether this home may go back to a build older than the delivery record (the land node design §4): refused while any delivery is
+    /// Whether this home may go back to a build older than the delivery record: refused while any delivery is
     /// unresolved, so an older door never lands, or calls a plugin without the key, behind a newer delivery.
     /// </summary>
     public DeliveryRollback Rollback()

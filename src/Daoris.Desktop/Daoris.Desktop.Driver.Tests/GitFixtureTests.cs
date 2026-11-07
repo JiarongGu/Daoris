@@ -1,7 +1,7 @@
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The fixture's one git runner (TESTGIT1), against the run that held the merge's real-process half for 1 h 33 m (FIX-LOG
+/// The fixture's one git runner, against the run that held the merge's real-process half for 1 h 33 m (FIX-LOG
 /// 2026-10-04): git writing more to stderr than a pipe holds before its stdout ends.
 /// </summary>
 /// <remarks>

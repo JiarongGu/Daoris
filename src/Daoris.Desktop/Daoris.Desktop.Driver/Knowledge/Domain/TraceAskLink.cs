@@ -2,13 +2,13 @@ using System.Text.Json.Serialization;
 
 namespace Daoris.Driver;
 
-/// <summary>The ask a chain names (D133, D135), from the service's ask record.</summary>
+/// <summary>The ask a chain names, from the service's ask record.</summary>
 public sealed record TraceAskLink(string Id)
 {
     /// <summary>Its store: <see cref="TraceStores.Asks"/>.</summary>
     public string Source => TraceStores.Asks;
 
-    /// <summary>Why it could not be read, <see cref="TraceLinkGaps.Unread"/> or <see cref="TraceLinkGaps.NotFound"/>; null where it was.</summary>
+    /// <summary>Why it could not be read, <see cref="TraceLinkGaps.Unread"/> or <see cref="TraceLinkGaps.NotFound"/>; null where it is.</summary>
     public string? Missing { get; init; }
 
     [JsonIgnore]
@@ -21,7 +21,7 @@ public sealed record TraceAskLink(string Id)
     /// <summary>Open, Proposed, Published or Closed, as the record spells it.</summary>
     public string? State { get; init; }
 
-    /// <summary>Which tier answered it (D24).</summary>
+    /// <summary>Which tier answered it.</summary>
     public string? Tier { get; init; }
 
     public TraceIntake? Intake { get; init; }
@@ -54,7 +54,7 @@ public sealed record TraceIntake(string Session)
     public TraceAgent? Agent { get; init; }
 }
 
-/// <summary>A go-ahead on an ask (KNOWUSE1a): its act, the person's answer, and who first asked it.</summary>
+/// <summary>A go-ahead on an ask: its act, the person's answer, and who first asked it.</summary>
 /// <param name="Kind">write, release, push, sign-in or run, as the service spells it.</param>
 /// <param name="On">Where it lands, in the session's words.</param>
 /// <param name="Act">What it touches, in the session's words.</param>
@@ -72,6 +72,6 @@ public sealed record TraceGoAhead(int Number, string Kind, string On, string Act
 
     public DateTimeOffset? FirstAskedAt { get; init; }
 
-    /// <summary>The go-ahead whose words it shared, when that is why it was asked again.</summary>
+    /// <summary>The go-ahead whose words it shared, when that is why it is asked again.</summary>
     public int? Near { get; init; }
 }

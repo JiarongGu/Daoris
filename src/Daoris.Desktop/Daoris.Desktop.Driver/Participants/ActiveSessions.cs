@@ -2,14 +2,14 @@ namespace Daoris.Driver;
 
 public static class ActiveSessions
 {
-    /// <summary>A record's kind where a person's quest is planned into a session (D49 §3): what a host that answers none is read as.</summary>
+    /// <summary>A record's kind where a person's quest is planned into a session: what a host that answers none is read as.</summary>
     public const string DrivenKind = SessionKinds.Driven;
 
-    /// <summary>A record's kind where a person opened a conversation, and the kind the driver's own intakes, helpers and reviewers keep (D65, D155, D163).</summary>
+    /// <summary>A record's kind where a person opened a conversation, and the kind the driver's own intakes, helpers and reviewers keep.</summary>
     public const string ChatKind = SessionKinds.Chat;
 
     /// <summary>
-    /// Whether an active session takes a place under the machine's cap (CAPCOUNT1, D130's note): what the driver starts does, a
+    /// Whether an active session takes a place under the machine's cap: what the driver starts does, a
     /// conversation the person holds does not. The one place the cap's count is told, so every site that spends a slot (the planner's
     /// starts, a look's intakes, helpers, brainstorms and meetings) counts the same records.
     /// </summary>
@@ -28,7 +28,7 @@ public static class ActiveSessions
             new WorkMarks(Mirror: false, session.Kind, session.Repository, session.Ask, session.Serves, session.Piece, session.Opinion)));
 
     /// <summary>
-    /// The same rule over a record's fields as the service answers them (SESSBADGE1): what the Sessions badge and the status bar count
+    /// The same rule over a record's fields as the service answers them: what the Sessions badge and the status bar count
     /// the sessions the driver runs by, from the records every window holds, so the count a person reads is the one the cap spends.
     /// A null <paramref name="kind"/> is a host that answers none, read as driven work, as <see cref="SessionView.Kind"/> reads it.
     /// </summary>
@@ -40,8 +40,8 @@ public static class ActiveSessions
 
     /// <summary>
     /// Which sessions are active and where each stands, as one string — equal when the same ones stand
-    /// in the same states, whatever the order. The shell forwards a tick to the page when this changes
-    /// (UX5 U13), as it does for <see cref="Asks.Signature"/>: a conversation started or ended from the
+    /// in the same states, whatever the order. The shell forwards a tick to the page when this changes,
+    /// as it does for <see cref="Asks.Signature"/>: a conversation started or ended from the
     /// main window moves nothing else a tick reports, so the other windows never heard of it.
     /// </summary>
     public static string Signature(IEnumerable<SessionView> sessions) =>

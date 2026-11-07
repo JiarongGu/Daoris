@@ -6,27 +6,27 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>What a grant did: the key it wrote under, whether the file moved, and whether a re-read says yes.</summary>
-/// <param name="Key">The project key the flag lives under — the harness's own, where it had one.</param>
-/// <param name="Changed">False when the folder was already trusted, and nothing was written.</param>
+/// <param name="Key">The project key the flag lives under — the harness's own, where it has one.</param>
+/// <param name="Changed">False when the folder is already trusted, and nothing is written.</param>
 /// <param name="Verified">The hold's own question, asked again of the file after the write.</param>
 public sealed record TrustGrant(string Key, bool Changed, bool Verified);
 
 /// <summary>
-/// A start held because the harness has not trusted where it would run (DEPLOY1) — as a fact a screen
-/// can act on, beside the sentence a person reads (D73).
+/// A start held because the harness has not trusted where it would run — as a fact a screen
+/// can act on, beside the sentence a person reads.
 /// </summary>
 /// <param name="Folder">Where the session would have run: the repository's tree, or an intake's room.</param>
 /// <param name="TrustFile">The harness's own file the hold read — the account's, which a grant writes.</param>
-/// <param name="Quest">The quest it held, when it was a quest's start.</param>
-/// <param name="Ask">The ask it held, when it was an intake's.</param>
+/// <param name="Quest">The quest it held, when it is a quest's start.</param>
+/// <param name="Ask">The ask it held, when it is an intake's.</param>
 /// <param name="Own">
-/// Whether its file is the tool's own home's (POOL1a3, D197 point 3): a conversation going on in the person's own sign-in, with
+/// Whether its file is the tool's own home's: a conversation going on in the person's own sign-in, with
 /// no account of Daoris's. Daoris writes nothing there, so a screen offers no grant of it and <c>TRUST_FOLDER</c> refuses one.
 /// </param>
 public sealed record TrustHold(string Folder, string TrustFile, string? Quest = null, string? Ask = null, bool Own = false);
 
 /// <summary>
-/// The trust holds the loop's last tick reported — what a screen may offer the person to grant (D73).
+/// The trust holds the loop's last tick reported — what a screen may offer the person to grant.
 /// </summary>
 /// <remarks>
 /// 🔴 <b>Never wider than the hold.</b> A screen's confirmation grants a folder only while the driver
@@ -37,7 +37,7 @@ public sealed class TrustHolds
 {
     private volatile IReadOnlyList<TrustHold> _latest = [];
 
-    /// <summary>What the last tick held for trust. Replaced whole: a hold the driver no longer meets is gone.</summary>
+    /// <summary>What the last tick held for trust. Replaced whole: a hold the driver does not meet is gone.</summary>
     public IReadOnlyList<TrustHold> Latest => _latest;
 
     public void Record(IReadOnlyList<TrustHold> holds) => _latest = [.. holds];
@@ -50,8 +50,8 @@ public sealed class TrustHolds
 }
 
 /// <summary>
-/// Whether the harness has been told it may work in a tree (DEPLOY1) — and, on the person's word, the
-/// telling (D73).
+/// Whether the harness has been told it may work in a tree — and, on the person's word, the
+/// telling.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>The step that is the person's.</b> Claude Code ignores a repository's
@@ -59,20 +59,20 @@ public sealed class TrustHolds
 /// trusted"* — so a driven session there does the work, cannot reach its connector, and cannot take
 /// or close the quest it exists to serve. Measured: three real runs, nine minutes and a real login
 /// each, all recorded `failed` for exactly this. Both doors: the protocol door ignores an untrusted
-/// room's allow-list too (`docs/2026-09-24-deploy1-acp-trust-evidence.md`).</para>
+/// room's allow-list too.</para>
 ///
-/// <para><b>It gates driving only where Daoris's own rules do not reach the session</b> (D73). The rules
-/// handed over at spawn (PERM1) are honoured untrusted on both doors, measured, so a session carried the
+/// <para><b>It gates driving only where Daoris's own rules do not reach the session</b>. The rules
+/// handed over at spawn are honoured untrusted on both doors, measured, so a session carried the
 /// `connector` default is never held here; trust then decides only whether a repository's OWN
 /// allow-list counts.</para>
 ///
-/// <para><b>Asked, then written — never silently</b> (D73). That flag <em>is</em> the person's grant.
+/// <para><b>Asked, then written — never silently</b>. That flag <em>is</em> the person's grant.
 /// The driver only ever READS it and refuses on the answer, which turns a silent nine-minute failure
 /// into an immediate sentence. <see cref="Grant"/> writes it, and is reached only by a person's
 /// explicit act naming the folder: the terminal's <c>daoris agent trust … --yes</c>, or the screen's
 /// confirmation of a hold the driver is showing. Nothing writes it at adoption, sync or spawn.</para>
 ///
-/// <para><b>Only a definite NO refuses</b>, the same rule SES3 gives the login question. No file, an
+/// <para><b>Only a definite NO refuses</b>, the same rule the login question follows. No file, an
 /// unreadable one, or a shape this build does not recognise are all <c>null</c> — unknown, and
 /// permissive. The cost of a wrong refusal is higher than the cost of a run.</para>
 /// </remarks>
@@ -135,14 +135,14 @@ public static class ClaudeTrust
 
     /// <summary>
     /// The key a folder the harness never recorded is written under: forward slashes, as Claude Code
-    /// writes its own entries today (the older backslash form is still read, and kept where it exists).
+    /// writes its own entries (a backslash form is also read, and kept where it exists).
     /// </summary>
     public static string Key(string folder) =>
         folder.Replace('\\', '/').TrimEnd('/');
 
     /// <summary>
     /// Set <c>hasTrustDialogAccepted</c> for <paramref name="folder"/> in the harness's own
-    /// <paramref name="configPath"/> — and nothing else in that file (D73).
+    /// <paramref name="configPath"/> — and nothing else in that file.
     /// </summary>
     /// <remarks>
     /// <para><b>One flag moves.</b> The file is the harness's: its counters, its other projects and the
@@ -225,7 +225,7 @@ public static class ClaudeTrust
 
     // The harness's own formatting, as near as a re-serialisation comes: two-space indent, LF, and text left as text
     // rather than escaped (JsonFile.Options) — a folder named in any script stays readable. The write is AtomicFile's
-    // (DEDUP3a): same bytes, same target, a beside file of its own name that a retry waits out.
+    // (same bytes, same target, a beside file of its own name that a retry waits out).
     private static void WriteBeside(string path, string text)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
@@ -243,9 +243,9 @@ public static class ClaudeTrust
     /// machine's default, and the same hold does not come straight back.
     /// </param>
     /// <remarks>
-    /// 🔴 OWNSPACE1a (D175): a hold on a Daoris account names Daoris's door alone. A `claude` run at the person's terminal reads
+    /// 🔴 A hold on a Daoris account names Daoris's door alone. A `claude` run at the person's terminal reads
     /// their own home, never the account's, so it would trust the folder where no session of Daoris's runs, and the hold would
-    /// come straight back. 🔴 POOL1a3 (D197 point 3): a hold with no account is a conversation going on in the person's own
+    /// come straight back. 🔴 A hold with no account is a conversation going on in the person's own
     /// sign-in, whose file Daoris never writes, so it names the tool itself at their terminal, never Daoris's door.
     /// </remarks>
     public static string Refusal(string tree, string? profile = null) =>
@@ -259,9 +259,9 @@ public static class ClaudeTrust
               + "the Daoris account the session runs as. Daoris sets that flag only when you tell it to: it is your grant to give.");
 
     /// <summary>
-    /// The trust file a hold reads (OWNSPACE1a, D175): the one the session's harness reads, in the account's configuration home,
+    /// The trust file a hold reads: the one the session's harness reads, in the account's configuration home,
     /// else in the tool's own home as the session inherits it, the configuration-home variable where the person set one, else
-    /// their profile folder. Before, the own home was always the profile folder, whatever the variable said.
+    /// their profile folder. The own home is not the profile folder when the variable names another.
     /// </summary>
     /// <param name="profileHome">The Daoris account's home the session runs in, or null for the tool's own home.</param>
     /// <param name="variable">The harness's configuration-home variable, <see cref="AccountAgent.ProfileVariable"/>.</param>

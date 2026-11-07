@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// An ended chat going on (MSG1c): its record as it ended, what its resumed run carries and learns (<see cref="ResumeAsk"/>),
+/// An ended chat going on: its record as it ended, what its resumed run carries and learns (<see cref="ResumeAsk"/>),
 /// and whether its words went, which on the native door needs its line on stdin and its harness naming the conversation. The
 /// runner's run takes one in and its watch tells it when the words went (<see cref="ChatGoOn.WentOnAsync"/>).
 /// </summary>
@@ -16,13 +16,13 @@ internal sealed class GoingOn(PriorSession record, ResumeAsk ask)
     public ResumeAsk Ask => ask;
 
     /// <summary>
-    /// The completion of its first turn where that turn answers another agent's findings (CHATFLOW1e, the chat-flow design §6.1 (c), (f)):
+    /// The completion of its first turn where that turn answers another agent's findings:
     /// its reading frozen before another word is taken. Null for every other going-on.
     /// </summary>
     public Func<bool, Task>? Answering { get; init; }
 
     /// <summary>
-    /// Its process's lineage token, issued as its move returned with its <c>start</c> (COWORKVIEW1a), which the runner carries to the
+    /// Its process's lineage token, issued as its move returned with its <c>start</c>, which the runner carries to the
     /// spawn; null for its one retry, which the runner brackets anew.
     /// </summary>
     public string? Proc { get; init; }

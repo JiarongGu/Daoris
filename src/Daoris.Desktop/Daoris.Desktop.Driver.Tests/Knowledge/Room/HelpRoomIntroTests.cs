@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// The room's <see cref="HelpRoomIntro"/>: whose room it is, and, first, the mode its conversation runs in (HELPMODE1a1, D183
-/// point 3), so the agent knows it too.
+/// The room's <see cref="HelpRoomIntro"/>: whose room it is, and, first, the mode its conversation runs in,
+/// so the agent knows it too.
 /// </summary>
 public sealed class HelpRoomIntroTests
 {
@@ -23,7 +23,7 @@ public sealed class HelpRoomIntroTests
     }
 
     /// <summary>
-    /// In full access the room opens saying it may act on this machine itself, and the doctrine still speaks (D183 point 5): a
+    /// In full access the room opens saying it may act on this machine itself, and the doctrine still speaks: a
     /// repository's work is asked for through a quest, and Daoris's own housekeeping, its trees and its home, is its to do.
     /// </summary>
     [Fact]

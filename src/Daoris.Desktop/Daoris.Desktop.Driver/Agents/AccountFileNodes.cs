@@ -5,12 +5,12 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What the four per-account files (<c>cooling.json</c>, <c>names.json</c>, <c>windows.json</c>, <c>reads.json</c>) share when
-/// they read and shape their JSON root (DEDUP5, duplication survey §5): each had copied the load, the case-blind key, the child
-/// object and the strict moment. The bytes each writes are its own and unchanged; the CLI's twins read the same files.
+/// they read and shape their JSON root: the load, the case-blind key, the child
+/// object and the strict moment. The bytes each writes are its own; the CLI's twins read the same files.
 /// </summary>
 internal static class AccountFileNodes
 {
-    /// <summary>The file's root, and whether it was there and did not read; a missing file is an empty root.</summary>
+    /// <summary>The file's root, and whether it is there and does not read; a missing file is an empty root.</summary>
     public static (JsonObject Root, bool Unreadable) Read(string path)
     {
         if (!File.Exists(path)) return (new JsonObject(), false);

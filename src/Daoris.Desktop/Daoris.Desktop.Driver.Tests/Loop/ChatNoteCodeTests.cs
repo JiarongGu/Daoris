@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONVNOTE2c: the conversation's notes of where the person is and of a browser withheld are worded by code, the English each
+/// The conversation's notes of where the person is and of a browser withheld are worded by code, the English each
 /// has always been (the transcript and Ask Daoris read it), the agent's and the program's words riding as parts of their own.
 /// </summary>
 public sealed class ChatNoteCodeTests
@@ -73,7 +73,7 @@ public sealed class ChatNoteCodeTests
             [Elsewhere, Attached with { Name = "daoris-web" }], new Browser(() => "http://127.0.0.1:4810"), CancellationToken.None);
         Assert.Null(notice);
         Assert.True(drives);
-        // By what drives Daoris's browser, never by the literal name another plugin's server also carries (BRWHINT1a).
+        // By what drives Daoris's browser, never by the literal name another plugin's server also carries.
         Assert.Equal(["daoris-web"], drivers);
 
         var (_, _, _, left) = await InAppBrowserServers.HandNotedAsync([Attached], null, CancellationToken.None);
@@ -103,7 +103,7 @@ public sealed class ChatNoteCodeTests
         Assert.Equal($"{line}\n\nWhere the person is now: the Sessions view.\n\nopen the board", message.Prompt);
         Assert.Equal("open the board", new ChatMessage("open the board", []).Prompt);
 
-        // The preface's note is as it was, and the line's is its own (the person sees what the agent was told).
+        // The preface keeps no note of its own, and the line has one (the person sees what the agent is told).
         Assert.Null(ChatRunner.Told(new ChatMessage("open the board", []) { Briefing = line }));
         var told = ChatRunner.ToldBrowser(message)!;
         Assert.Equal(SessionEventKind.Note, told.Kind);
@@ -118,9 +118,9 @@ public sealed class ChatNoteCodeTests
             new ResolvedCommits(new CommitRule(mode, null), source), new LandingPlan(LandingForm.Merge, "main", LandingSource.Default));
 
     /// <summary>
-    /// PROCESS1d-ii: a conversation in a tree of its own is told its repository's process in its first message, after the browser's
+    /// A conversation in a tree of its own is told its repository's process in its first message, after the browser's
     /// line and before where the person is, in a field of its own: its words are <see cref="ProcessWords.Conversation"/>'s, its
-    /// facts the mode and where the rule was set.
+    /// facts the mode and where the rule is set.
     /// </summary>
     [Fact]
     public void The_process_rides_the_first_prompt_after_the_browser_and_before_where_the_person_is()
@@ -138,8 +138,8 @@ public sealed class ChatNoteCodeTests
     }
 
     /// <summary>
-    /// TREEDEPS1b: a conversation whose tree had its dependencies copied is told so after its process, in the same field, so
-    /// it does not run the install that would delete the copy; where nothing was copied the words are as they were.
+    /// A conversation whose tree has its dependencies copied is told so after its process, in the same field, so
+    /// it does not run the install that would delete the copy; where nothing is copied the process words stand alone.
     /// </summary>
     [Fact]
     public void A_copy_of_the_dependencies_is_told_after_the_process_and_otherwise_nothing_changes()
@@ -188,14 +188,14 @@ public sealed class ChatNoteCodeTests
         Assert.Equal(["chat.told-browser", "chat.told-process", "chat.told-where", "person"], codes);
     }
 
-    /// <summary>The standing block a chat in `engine` is told, its routing one at a time (CONTEXTONE1c).</summary>
+    /// <summary>The standing block a chat in `engine` is told, its routing one at a time.</summary>
     private static StandingBlockTold Block() =>
         StandingBlock.Compose(StandingBlocks.OnMachine(
             new StandingFacts { Repository = "engine" }, ParticipantWork.Chat, DriverConfig.Empty.WithDrivable("engine", true),
             [new RepoView("engine", true, "/work/engine") { Lanes = ["core"] }], "work"));
 
     /// <summary>
-    /// CONTEXTONE1c (D230 point 3): the standing block rides the first prompt last, after the person's words, in a field of its own, the
+    /// The standing block rides the first prompt last, after the person's words, in a field of its own, the
     /// routing among it, and is kept as a note of its own in the prompt's order, beside a hand-over's brief too.
     /// </summary>
     [Fact]
@@ -208,7 +208,7 @@ public sealed class ChatNoteCodeTests
             Briefing = InAppBrowserServers.Told(["browser"]), Process = Process(), Block = block,
             Preface = "Where the person is now: the Sessions view.",
         };
-        // The block is the last thing the agent reads, after the person's words, where the routing standing was (COWORKVIEW1e-i's fix).
+        // The block is the last thing the agent reads, after the person's words.
         Assert.Equal(
             $"{message.Briefing}\n\n{message.Process!.Words}\n\nWhere the person is now: the Sessions view.\n\nopen the board\n\n{block.Text}", message.Prompt);
         Assert.Equal($"open the board\n\n{block.Text}", new ChatMessage("open the board", []) { Block = block }.Prompt);

@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>A session of one repository with a tree here, as the comparison takes it (LINESTOGETHER1c).</summary>
+/// <summary>A session of one repository with a tree here, as the comparison takes it.</summary>
 /// <param name="Id">The session's id.</param>
 /// <param name="Kind">Its record's kind, <c>driven</c> or <c>chat</c>.</param>
 /// <param name="Tree">The tree it holds.</param>
@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 public sealed record RelatedCandidate(
     string Id, string Kind, string Tree, string BaseCommit, bool Running, IReadOnlyList<string> Declared, string? Quest = null);
 
-/// <summary>Which sessions a look compares (SESSRELATED1).</summary>
+/// <summary>Which sessions a look compares.</summary>
 public static class RelatedCandidates
 {
     /// <summary>

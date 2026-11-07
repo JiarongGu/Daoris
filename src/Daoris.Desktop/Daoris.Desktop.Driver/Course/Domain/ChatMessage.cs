@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>A file a person attached to a message, with its bytes, as it arrived at a door.</summary>
-/// <param name="Name">The name it was given, which is not yet safe to keep — <see cref="ChatFiles.SafeName"/> is.</param>
+/// <param name="Name">The name it is given, which is not yet safe to keep — <see cref="ChatFiles.SafeName"/> is.</param>
 public sealed record ChatUpload(string Name, byte[] Content);
 
-/// <summary>One message of a conversation: the person's words and the files they attached (CONV4c).</summary>
+/// <summary>One message of a conversation: the person's words and the files they attached.</summary>
 public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : IAgentWord
 {
     bool IAgentWord.IsDaoris => Daoris is not null;
@@ -21,111 +21,109 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
     public const int PrefaceLimit = 1200;
 
     /// <summary>
-    /// Where the person is, handed to the agent ahead of their words (HELP1b) — what the screen already
-    /// shows, said when it changed. Never the person's words: the record keeps it as what the agent was told.
+    /// Where the person is, handed to the agent ahead of their words — what the screen already
+    /// shows, said when it changed. Never the person's words: the record keeps it as what the agent is told.
     /// </summary>
     public string? Preface { get; init; }
 
     /// <summary>
-    /// When the sender asked it to reach a working agent (COWORK1a, D188 point 1): urgent unless said, which is every path's reach
-    /// from before (the person's default, D136; another session's claim at its next step until COWORK1d). The door gives what it
+    /// When the sender asks it to reach a working agent: urgent unless said (the person's default; another session's claim
+    /// at its next step). The door gives what it
     /// can and says so; no level stops a turn.
     /// </summary>
     public MessageLevel Level { get; init; } = MessageLevel.Urgent;
 
     /// <summary>
-    /// The level the record keeps beside the person's words while they wait (COWORK1a): spelled for the person's own, null for
-    /// another session's claim, whose level its own row carries (COWORK1d), so nothing reads a claim's default as one stated.
+    /// The level the record keeps beside the person's words while they wait: spelled for the person's own, null for
+    /// another session's claim, whose level its own row carries, so nothing reads a claim's default as one stated.
     /// </summary>
     internal string? LevelSaid => Channel is { ByThisPerson: false } || Helped is not null ? null : MessageLevels.Spelled(Level);
 
     /// <summary>
-    /// The words' id in a driven session's record (STEER1, D136), stamped by its inbox: it pairs the words shown at once,
+    /// The words' id in a driven session's record, stamped by its inbox: it pairs the words shown at once,
     /// while they wait, with the same words where the session took them. Null for a conversation's message. A word kept on the
-    /// record's <c>said</c> (COWORK1c) carries the record's own id for it.
+    /// record's <c>said</c> carries the record's own id for it.
     /// </summary>
     public string? Id { get; init; }
 
     /// <summary>
-    /// Its producer's key (COWORK1c, the message-urgency design §6): one per press of the person's, so a press that arrives twice keeps
+    /// Its producer's key: one per press of the person's, so a press that arrives twice keeps
     /// one word. Daoris's words carry their fact's key on <see cref="Daoris"/>. Null for a word kept with none.
     /// </summary>
     public string? Key { get; init; }
 
     /// <summary>
-    /// Kept on the session's record before anything held it (COWORK1c), under <see cref="Id"/>: taken off it by that id once on the
-    /// wire. False for words held in this process alone (a channel message, a word a service from before would not keep).
+    /// Kept on the session's record before anything holds it, under <see cref="Id"/>: taken off it by that id once on the
+    /// wire. False for words held in this process alone (a channel message, a word a service would not keep).
     /// </summary>
     internal bool Kept { get; init; }
 
     /// <summary>
-    /// Marks this kept word attempted on its record (COWORK1c, the message-urgency design §6), set by its dispatcher as it hands the word
+    /// Marks this kept word attempted on its record, set by its dispatcher as it hands the word
     /// to a door: the door awaits it before it writes the word, so a shell that comes up again never sends it twice. Null for a word
     /// kept nowhere, which needs none. Never faults.
     /// </summary>
     /// <remarks>
-    /// <b>The attempt is acknowledged before the wire</b> (FOUNDATION1 row p, the design §3.4 rule 5): it answers the ids the record named
-    /// marked, none where the record did not answer, refused, or the answer was lost. A door writes only a word whose id is named, and
-    /// one it does not name is left waiting on its record and said (<see cref="SaidDoor.AcknowledgedAsync"/>). The mark once failed open here, and a
-    /// transient try alone read its answer (Codex's owed read of D210, finding 4).
+    /// <b>The attempt is acknowledged before the wire</b>: it answers the ids the record named
+    /// marked, none where the record does not answer, refuses, or the answer is lost. A door writes only a word whose id is named, and
+    /// one it does not name is left waiting on its record and said (<see cref="SaidDoor.AcknowledgedAsync"/>).
     /// </remarks>
     internal Func<Task<IReadOnlyList<string>>>? Attempting { get; init; }
 
     /// <summary>
     /// Told once the door wrote this kept word to the wire, or settled it without the wire (a word of Daoris's dropped): its dispatcher
-    /// takes it off the record by its id, after every take-off before it (COWORK1c). Null for a word kept nowhere.
+    /// takes it off the record by its id, after every take-off before it. Null for a word kept nowhere.
     /// </summary>
     internal Action? Went { get; init; }
 
     /// <summary>
-    /// The person's words a conversation goes on with (MSG1c, D137 §2.2), kept on its record while it had ended: its first
+    /// The person's words a conversation goes on with, kept on its record while it has ended: its first
     /// turn, each word its own block on the protocol door and said again under its id as the door takes it. The record
     /// already shows them waiting, so the queue a page is told never lists them. Null for every other message.
     /// </summary>
     internal ResumeAsk? GoesOn { get; init; }
 
     /// <summary>
-    /// What Daoris has handed the agent that it should know before the person speaks (BRWHINT1a): the browser it was given,
+    /// What Daoris has handed the agent that it should know before the person speaks: the browser it is given,
     /// said once with a new conversation's first message. A field of its own, never the preface — that is recorded as where
     /// the person is and bounded — and never the person's words, which the record keeps as written.
     /// </summary>
     public string? Briefing { get; init; }
 
     /// <summary>
-    /// Daoris's brief of the line a handed-over conversation continues (SESSCTX1b, <see cref="ContextBrief"/>), handed first, ahead of
-    /// what <see cref="Briefing"/> tells; the record keeps it as the conversation's first prompt with its account (the design §3.4).
+    /// Daoris's brief of the line a handed-over conversation continues (<see cref="ContextBrief"/>), handed first, ahead of
+    /// what <see cref="Briefing"/> tells; the record keeps it as the conversation's first prompt with its account.
     /// Null for every other message.
     /// </summary>
     internal ComposedBrief? Brief { get; init; }
 
     /// <summary>
-    /// The repository's process a conversation in a tree of its own is told with its first message (PROCESS1d-ii, D164's amendment
-    /// point 4), after the browser's line: a field of its own, so the record keeps it as its own note, never under the browser's.
+    /// The repository's process a conversation in a tree of its own is told with its first message, after the browser's line: a field of its own, so the record keeps it as its own note, never under the browser's.
     /// Null for every other message.
     /// </summary>
     public ProcessBriefing? Process { get; init; }
 
     /// <summary>
-    /// The standing block a conversation is told with its first message (CONTEXTONE1c, D230 point 3), handed after the person's words:
+    /// The standing block a conversation is told with its first message, handed after the person's words:
     /// a field of its own, so the record keeps it as its own note. Null for every other message.
     /// </summary>
     public StandingBlockTold? Block { get; init; }
 
     /// <summary>
-    /// The workflow draft open in the person's editor (FLOWCHART2d, D223), handed after where the person is: a field of its own, bounded as
+    /// The workflow draft open in the person's editor, handed after where the person is: a field of its own, bounded as
     /// a whole, never the preface, which is a few lines. The record keeps it as told. Null for every other message.
     /// </summary>
     public WorkflowDraftTold? Draft { get; init; }
 
     /// <summary>
-    /// The line a conversation handed over from another agent opens with (MIXAGENT1a-i, D163 §3): its first message is Daoris's
+    /// The line a conversation handed over from another agent opens with: its first message is Daoris's
     /// briefing, never the person's words, so the record keeps this note in place of the person's message and of the browser's
     /// line. Null for every other message.
     /// </summary>
     internal Noted? TakenOver { get; init; }
 
     /// <summary>
-    /// A helper's answer an open conversation says as its next turn (MIXAGENT2a-iii, D163): Daoris's words around another agent's
+    /// A helper's answer an open conversation says as its next turn: Daoris's words around another agent's
     /// claim, kept on the record as that helper's while it waits. Never the person's: recorded as Daoris's (<c>target</c>) under
     /// the word's id, never handed to a turn on the wire, never listed as queued, and taken off the record once on the wire
     /// (<see cref="Delivered"/>). Null for every other message.
@@ -134,55 +132,55 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
 
     /// <summary>
     /// Whether these are the person's own words: not Daoris's, not another session's claim on the ask's channel, not a helper's answer
-    /// (SESSWATCH1a: a quiet row says their words wait, which ending it hands on), nor the supervisor's.
+    /// (a quiet row says their words wait, which ending it hands on), nor the supervisor's.
     /// </summary>
     public bool Persons => Sender == Senders.Person;
 
-    /// <summary>Who said these words (COMMS1a), by the marks <see cref="Words"/> records them with.</summary>
+    /// <summary>Who said these words, by the marks <see cref="Words"/> records them with.</summary>
     internal string Sender => Senders.Of(
         Daoris is not null || Supervised is not null || Helped is not null || Channel is { ByThisPerson: false } ? Senders.Target : null,
         Daoris is not null ? DaorisWords.From : Supervised is not null ? SupervisorHanded.From : null,
         null, Helped?.Helper, null, Channel is { ByThisPerson: false } ? "channel" : null);
 
-    /// <summary>Told once this message's turn is on the wire: a helper's answer comes off the record then (MIXAGENT2a-iii).</summary>
+    /// <summary>Told once this message's turn is on the wire: a helper's answer comes off the record then.</summary>
     internal Action? Delivered { get; init; }
 
     /// <summary>
-    /// A send-back's turn's own completion (CHATFLOW1e, the chat-flow design §6.1 (c)): called once that turn has ended and before the
-    /// turns take another word, told whether a word of the person's was handed to it at a step, so the answers it froze are read as theirs
+    /// A send-back's turn's own completion: called once that turn has ended and before the
+    /// turns take another word, told whether a word of the person's is handed to it at a step, so the answers it froze are read as theirs
     /// too. Its task is awaited, so nothing queued behind the answering turn runs before the reading is kept. Null for every other message.
     /// </summary>
     internal Func<bool, Task>? Answering { get; init; }
 
     /// <summary>
-    /// The message on the ask's channel these words carry to a running part (SESSONE2b, D167 point 7): the person's, as their
+    /// The message on the ask's channel these words carry to a running part: the person's, as their
     /// words; another session's, in Daoris's words around that agent's claim, which the record keeps as Daoris's, never the
     /// person's (<see cref="Words"/>). Null for every other message.
     /// </summary>
     public ChannelItemView? Channel { get; init; }
 
     /// <summary>
-    /// Another agent's claim held only to ride a prompt the run sends anyway (COWORK1d, D188 point 4; the message-urgency design §4.2):
+    /// Another agent's claim held only to ride a prompt the run sends anyway:
     /// an ordinary claim, or any claim on a door that takes words only at its turn's end. Alone at a turn's end it makes no turn and is
     /// let go for the entry's next part; beside a word that makes one, it goes with it, in the order said. Never listed as the person's.
     /// </summary>
     internal bool Rides { get; init; }
 
     /// <summary>
-    /// Tells the entry the channel message these words carry (COWORK1d, the design §6) reached a state: <c>sent</c> once written,
+    /// Tells the entry the channel message these words carry reached a state: <c>sent</c> once written,
     /// <c>taken</c> on the door's word, <c>released</c> when a part let its claim go unsent. Null for every other message. Never faults.
     /// </summary>
     internal Action<string>? Acknowledge { get; init; }
 
     /// <summary>
-    /// Daoris's own words to a running session (COWORK1b, D188): a reopen told, a step's go-on, at urgent. The record keeps them as
+    /// Daoris's own words to a running session: a reopen told, a step's go-on, at urgent. The record keeps them as
     /// Daoris's, never the person's (<see cref="Words"/>); the page's queue never lists them, and the run judges them again by their
     /// key where they leave a hold for the wire (<see cref="DaorisWords.GoesAsync"/>). Null for every other message.
     /// </summary>
     public DaorisWord? Daoris { get; init; }
 
     /// <summary>
-    /// The supervisor's decision these words claim (SUPERVISOR1a-i, D208; the supervisor design §6.1): carried as the supervisor's
+    /// The supervisor's decision these words claim: carried as the supervisor's
     /// through every door, never dropped to no author, so the service refuses a say of them that is not the release's own. Null for
     /// every other message.
     /// </summary>
@@ -195,16 +193,16 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
     internal bool OnRecord => GoesOn is not null || Helped is not null || Said;
 
     /// <summary>
-    /// Whether this is the person's own word waiting (ASKQUESTS1): listed in the queue the page is told, edited and taken back by its
+    /// Whether this is the person's own word waiting: listed in the queue the page is told, edited and taken back by its
     /// id, and handed back to their composer by a stop. Neither what the record shows waiting already (<see cref="OnRecord"/>) nor
     /// Daoris's own word (<see cref="Daoris"/>), which a stop takes with what it withdraws and never puts in their box.
     /// </summary>
     internal bool Theirs => !OnRecord && Daoris is null;
 
     /// <summary>
-    /// Words the record already shows as said under <see cref="Id"/> and what was told beside them, handed back to be the next
-    /// turn because the agent answered their steer <c>promptRequired</c> (STEER2d): that turn records them only as taken under
-    /// the same id, once, and never says them or what was told again.
+    /// Words the record already shows as said under <see cref="Id"/> and what is told beside them, handed back to be the next
+    /// turn because the agent answered their steer <c>promptRequired</c>: that turn records them only as taken under
+    /// the same id, once, and never says them or what is told again.
     /// </summary>
     internal bool Said { get; init; }
 
@@ -212,12 +210,12 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
     public string Prompt => Composed("");
 
     /// <summary>
-    /// <see cref="Prompt"/> for a door that names a file by its path (CONV4c): the path lines follow the person's words, so the standing
+    /// <see cref="Prompt"/> for a door that names a file by its path: the path lines follow the person's words, so the standing
     /// block is still the last thing the agent reads.
     /// </summary>
     public string PromptWithFiles => Composed(ChatFiles.PathLines(Files));
 
-    /// <summary>Whether this is the watcher's word to a quiet session (SESSWATCH1b), which resets no answers-alone count and is never left waiting.</summary>
+    /// <summary>Whether this is the watcher's word to a quiet session, which resets no answers-alone count and is never left waiting.</summary>
     public bool IsWatch => DaorisKeys.IsWatch(Daoris?.Key);
 
     private string Composed(string afterWords) => string.Join(
@@ -231,24 +229,24 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
         preface?.Trim() is { Length: > 0 } said ? said.Length > PrefaceLimit ? said[..PrefaceLimit] : said : null;
 
     /// <summary>
-    /// What the person told a driven session, as its record keeps it (SESS3, STEER1): theirs, under the id that pairs the
+    /// What the person told a driven session, as its record keeps it: theirs, under the id that pairs the
     /// words shown while they wait with the same words where the session took them, and the names of what they attached.
-    /// The message's own, so a conversation records it as the loop does without naming the loop (LOOPOUT1). Another session's
-    /// message on the ask's channel is Daoris's words around that agent's claim (SESSONE2b), never the person's, and Daoris's own
-    /// words are Daoris's (COWORK1b).
+    /// The message's own, so a conversation records it as the loop does without naming the loop. Another session's
+    /// message on the ask's channel is Daoris's words around that agent's claim, never the person's, and Daoris's own
+    /// words are Daoris's.
     /// </summary>
     internal static SessionEvent Words(ChatMessage message) => new()
     {
         Kind = SessionEventKind.User,
-        // SESSWATCH1b: the watcher's word to a quiet session, which resets no answers-alone count.
+        // The watcher's word to a quiet session, which resets no answers-alone count.
         Watcher = message.IsWatch ? true : null,
-        // COWORK1d: a helper's answer taken at a step of a turn is Daoris's words around that helper's claim too.
+        // A helper's answer taken at a step of a turn is Daoris's words around that helper's claim too.
         Origin = message.Persons ? "person" : Senders.Target,
-        // SUPERVISOR1a-i: the supervisor's, on the owner's behalf, never the person's.
+        // The supervisor's, on the owner's behalf, never the person's.
         From = message.Daoris is not null ? DaorisWords.From : message.Supervised is not null ? SupervisorHanded.From : null,
-        // COWORK1e: a helper's answer by its mark (AnswersAlone): taken at a step, it is no go-on and counts nothing.
+        // A helper's answer by its mark (AnswersAlone): taken at a step, it is no go-on and counts nothing.
         Helper = message.Helped?.Helper,
-        // SESSCTX1b: the channel's message these words carry, marked by its id, so a reader never tells it by Daoris's English.
+        // The channel's message these words carry, marked by its id, so a reader never tells it by Daoris's English.
         Channel = message.Channel?.Id is { Length: > 0 } channel ? channel : null,
         Id = message.Id,
         Text = message.Text,
@@ -257,7 +255,7 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
 }
 
 /// <summary>
-/// The process a conversation is told at its start (PROCESS1d-ii): the words, <see cref="ProcessWords.Conversation"/>'s one-copy
-/// English (D142 point 6), and the facts its note carries, the commit rule's mode and where it was set.
+/// The process a conversation is told at its start: the words, <see cref="ProcessWords.Conversation"/>'s one-copy
+/// English, and the facts its note carries, the commit rule's mode and where it is set.
 /// </summary>
 public sealed record ProcessBriefing(string Words, string Mode, string Source);

@@ -4,16 +4,16 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The git a test's own fixture starts (GITSTART1): a start that names <c>git</c> bare is pointed at the git this
+/// The git a test's own fixture starts: a start that names <c>git</c> bare is pointed at the git this
 /// process's <c>PATH</c> finds, by its whole path, and past Git for Windows' launcher where that is what <c>PATH</c>
 /// finds, with the launcher's variables (<see cref="GitForWindows.Direct"/>), as Daoris's own git starts
 /// (<c>WorkingTree.GitStart</c>). One process per git where the launcher made two. Each such start is also capped
-/// (<see cref="Ceiling"/>, GITISOLATE1) so a fixture that is no repository never climbs into the checkout's.
+/// (<see cref="Ceiling"/>) so a fixture that is no repository never climbs into the checkout's.
 /// </summary>
 /// <remarks>
 /// Called just before the start, after the start's own variables are set: the launcher reads <c>HOME</c> and
-/// <c>PATH</c> from the environment it is given, and so does this. A start that names any other file is left as it was.
-/// The lookup is kept while this process's <c>PATH</c> is the one it was made on.
+/// <c>PATH</c> from the environment it is given, and so does this. A start that names any other file is left alone.
+/// The lookup is kept while this process's <c>PATH</c> is the one it is made on.
 /// </remarks>
 internal static class TestGit
 {
@@ -34,7 +34,7 @@ internal static class TestGit
     }
 
     /// <summary>
-    /// Cap <paramref name="info"/>'s git at its fixture (GITISOLATE1): git looks for its repository in the working folder and each
+    /// Cap <paramref name="info"/>'s git at its fixture: git looks for its repository in the working folder and each
     /// folder above it, and a fixture that is no repository (yet) sits under the checkout, whose repository it would act on, a
     /// worktree's config shared with every other. The ceiling is the parent of the fixture's repository, found from the working
     /// folder up but never past the checkout or the OS temp folder, or of the working folder itself where none is found; git

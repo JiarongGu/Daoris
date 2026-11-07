@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-v part b (D212; the foundation design §3.4 rule 4, §13.4 step 5, §19.1, §19.3, row f-v's proof): the cases where an older build acts
+/// The cases where an older build acts
 /// on a line beside a conversation's hand-over, as <c>EndedLimitMoveOlderBuildProcessTests</c> proves them beside the ended limit move's: an older
 /// build opening a successor of the hand-over's destination before the words it moved were carried; an older build's own hand-over of the old
 /// part, opened unkeyed beside the newer move that stood decided; an older shell's resume of the old record beside the newer open, in both orders.
@@ -45,7 +45,7 @@ public sealed class HandOverMoveOlderBuildProcessTests : IAsyncLifetime
         var word = Assert.Single(_h.Store("run-probe").WordsOf(move.Id));
         Assert.Equal(("k1", MoveWordDispositions.Held), (word.Word, word.Disposition));
 
-        // Nothing was delivered to the destination, by the move or by its go-on, which a record that went on elsewhere never restarts.
+        // Nothing is delivered to the destination, by the move or by its go-on, which a record that went on elsewhere never restarts.
         Assert.Equal((0, 0, 0), (LiveLimitHarness.Wrote(shell, LiveLimitHarness.Word), _h.Heard(LiveLimitHarness.Word), _h.Briefed(shell)));
         Assert.Equal(["c2:k1"], _h.Waiting());
 
@@ -63,7 +63,7 @@ public sealed class HandOverMoveOlderBuildProcessTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 An older build took its own hand-over of the old part before this build's move, decided by the person's press, was taken: its unkeyed
+    /// 🔴 An older build takes its own hand-over of the old part before this build's move, decided by the person's press, is taken: its unkeyed
     /// open made a part continuing the old record. This build, back, finds the head gone on past the old part: the move that stood decided is closed
     /// <c>superseded</c> and opens nothing, and the word the older build left on the old record is never sent, by the move or by a go-on.
     /// </summary>

@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A build's version is the release's (D233 choice 6): <c>canon/canon.json</c>'s, which the publish writes into a stage's
+/// A build's version is the release's: <c>canon/canon.json</c>'s, which the publish writes into a stage's
 /// <c>build.json</c> and every desktop assembly carries. The rollback's running build, the launcher's product version and a stage's
 /// manifest read one number, so a stage of the same release is no going back while a delivery is unresolved, and a lower one is.
 /// </summary>

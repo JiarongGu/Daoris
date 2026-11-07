@@ -241,7 +241,7 @@ internal static class LayerTestProvider
             switch (Text("t"))
             {
                 case "start":
-                    // A start the agent did not announce is a later frame that only carries an id (AG35).
+                    // A start the agent did not announce is a later frame that only carries an id.
                     yield return new SessionStarted(Text("id")!)
                     {
                         Announced = !frame.TryGetProperty("announced", out var announced) || announced.ValueKind != JsonValueKind.False,
@@ -270,7 +270,7 @@ internal static class LayerTestProvider
                         {
                             Restriction = Text("restricts") switch
                             {
-                                // A model the agent refused (AG12), and the same subject under a limit or a capacity, which are not one.
+                                // A model the agent refused, and the same subject under a limit or a capacity, which are not one.
                                 "model" => new AgentRestriction(RestrictionCause.Unknown, RestrictionSubject.Model, RestrictionRecovery.OwnerAction),
                                 "model-quota" => new AgentRestriction(RestrictionCause.Quota, RestrictionSubject.Model, RestrictionRecovery.Unknown),
                                 "model-capacity" => new AgentRestriction(RestrictionCause.Capacity, RestrictionSubject.Model, RestrictionRecovery.Unknown),
@@ -293,7 +293,7 @@ internal static class LayerTestProvider
             }
         }
 
-        /// <summary>What a result frame reports before its terminal: the usage, the denials, the tokens by model (AG33), as the layer's Claude door orders them.</summary>
+        /// <summary>What a result frame reports before its terminal: the usage, the denials, the tokens by model, as the layer's Claude door orders them.</summary>
         private static IEnumerable<AgentStreamEvent> Closing(JsonElement frame)
         {
             long Count(JsonElement of, string name) => of.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number ? value.GetInt64() : 0;

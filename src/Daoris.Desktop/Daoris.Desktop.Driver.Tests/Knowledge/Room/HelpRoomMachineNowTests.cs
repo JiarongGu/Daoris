@@ -7,8 +7,8 @@ namespace Daoris.Driver.Tests;
 public sealed class HelpRoomMachineNowTests
 {
     /// <summary>
-    /// PLUG9: the plugins installed here, by id and state, so a switch names one the catalogue holds — and
-    /// since PLUG9 (c) where each came from, by kind and never by path, so an update is proposed only where
+    /// The plugins installed here, by id and state, so a switch names one the catalogue holds — and
+    /// where each came from, by kind and never by path, so an update is proposed only where
     /// there is something to read.
     /// </summary>
     [Fact]
@@ -45,7 +45,7 @@ public sealed class HelpRoomMachineNowTests
             File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName),
                 """{ "id": "example.lands", "hooks": { "command": ["node", "${plugin}/h.mjs"], "points": ["work/perform"] } }""");
             PluginState.Disable(home, "example.lands");
-            // PLUGDIST1a: a plugin from a package is said by its kind, never by the folder that held the file.
+            // A plugin from a package is said by its kind, never by the folder that held the file.
             PluginSource.Write(folder, PluginSource.FromPackage(new PluginPackageOrigin(
                 "Example.Lands", "1.0.0", Convert.ToBase64String(new byte[64]), Path.Combine(home, "feed"))));
 
@@ -64,7 +64,7 @@ public sealed class HelpRoomMachineNowTests
     }
 
     /// <summary>
-    /// WSR5b: the room lists the branches landings made here, and the terminal's hand-off of one.
+    /// The room lists the branches landings made here, and the terminal's hand-off of one.
     /// </summary>
     [Fact]
     public void The_room_lists_the_branches_landings_made_and_how_one_is_handed_on()
@@ -99,7 +99,7 @@ public sealed class HelpRoomMachineNowTests
     }
 
     /// <summary>
-    /// ACCESSWORDS1b (D184's AUTONOMY1c2 note): a landing the access setup accepted says so, with the level that set it, as the review's
+    /// A landing the access setup accepted says so, with the level that set it, as the review's
     /// note and the trace do; one the rule's own switch accepted says nothing of it, nor one the person's press made under the setup,
     /// whose record keeps the level too.
     /// </summary>
@@ -122,7 +122,7 @@ public sealed class HelpRoomMachineNowTests
     }
 
     /// <summary>
-    /// HELP10: the quests the driver's last look parked by their failed sessions, by id and repository, so a retry
+    /// The quests the driver's last look parked by their failed sessions, by id and repository, so a retry
     /// names one the drawer would offer Retry on; and none said as none, so the helper does not guess one parked.
     /// </summary>
     [Fact]
@@ -140,7 +140,7 @@ public sealed class HelpRoomMachineNowTests
     }
 
     /// <summary>
-    /// SESSUX1b: the quests the driver's last look held by the person's stop, each with the session stopped, so a retry
+    /// The quests the driver's last look held by the person's stop, each with the session stopped, so a retry
     /// names one *Try again* would release; and none said as none.
     /// </summary>
     [Fact]
@@ -157,8 +157,8 @@ public sealed class HelpRoomMachineNowTests
     }
 
     /// <summary>
-    /// ENTRY1f2 (D161's ENTRY1f note): the sessions waiting on the person, by id and where each runs, so a go names one it
-    /// was shown; an intake by the ask it answers. The count is the list's, and none is said as none.
+    /// The sessions waiting on the person, by id and where each runs, so a go names one it
+    /// is shown; an intake by the ask it answers. The count is the list's, and none is said as none.
     /// </summary>
     [Fact]
     public void The_room_lists_the_sessions_waiting_on_the_person()
@@ -173,8 +173,8 @@ public sealed class HelpRoomMachineNowTests
     }
 
     /// <summary>
-    /// ENTRY1f2: the room's waiting sessions are the Sessions list's *Waiting on you* (SessionGroups): a park not answered,
-    /// since an answered one goes on at the driver's next look (ANSWER1c), and less Ask Daoris's own conversation. Read from
+    /// The room's waiting sessions are the Sessions list's *Waiting on you* (SessionGroups): a park not answered,
+    /// since an answered one goes on at the driver's next look, and less Ask Daoris's own conversation. Read from
     /// the records as the service answers them, the answer with them.
     /// </summary>
     [Fact]
@@ -201,7 +201,7 @@ public sealed class HelpRoomMachineNowTests
     }
 
     /// <summary>
-    /// SESSUX1h3: this machine's sessions counted by the Sessions list's groups, and the ended ones by id and repository,
+    /// This machine's sessions counted by the Sessions list's groups, and the ended ones by id and repository,
     /// newest first, so Ask Daoris can name one to archive or delete; past the cap, how many more; unread, said so.
     /// </summary>
     [Fact]
@@ -221,7 +221,7 @@ public sealed class HelpRoomMachineNowTests
     }
 
     /// <summary>
-    /// SESSUX1h3: the counts are the list's (SessionGroups.Read) over this machine's records, less a teammate's and Ask
+    /// The counts are the list's (SessionGroups.Read) over this machine's records, less a teammate's and Ask
     /// Daoris's own; an archived one is in no count and no list; the ended are the newest first, ten at most.
     /// </summary>
     [Fact]
@@ -256,8 +256,8 @@ public sealed class HelpRoomMachineNowTests
     }
 
     /// <summary>
-    /// PAUSE1f-b (D132 §7.4): what is paused on this machine, each ask and quest by its id, so a resume names one the room was
-    /// shown; and none said as none, so the helper does not guess one paused.
+    /// What is paused on this machine, each ask and quest by its id, so a resume names one the room
+    /// shows; and none said as none, so the helper does not guess one paused.
     /// </summary>
     [Fact]
     public void The_room_lists_what_is_paused_on_this_machine()
@@ -271,7 +271,7 @@ public sealed class HelpRoomMachineNowTests
         Assert.Contains("- Paused on this machine until resumed: none.", HelpRoom.Render(HelpRoomFixture.Machine));
     }
 
-    /// <summary>PAUSE1f-b: read from <c>driver.json</c>'s pauses, where the pause and the resume write them (design §2.5), asks first.</summary>
+    /// <summary>Read from <c>driver.json</c>'s pauses, where the pause and the resume write them, asks first.</summary>
     [Fact]
     public void The_paused_work_is_described_from_the_drivers_file()
     {
@@ -289,7 +289,7 @@ public sealed class HelpRoomMachineNowTests
     }
 
     /// <summary>
-    /// HIST1f-b (design §2.4, §6.4): what each workspace keeps of finished work, what a clear would take now and how many units
+    /// What each workspace keeps of finished work, what a clear would take now and how many units
     /// stay by the word that keeps them, so a clear names a workspace that keeps something; the home's left-over files once, and
     /// a room written without the readings says so.
     /// </summary>
@@ -343,8 +343,8 @@ public sealed class HelpRoomMachineNowTests
     }
 
     /// <summary>
-    /// HELP10: Daoris's browser as its two files hold it, so a browser proposal names a favorite kept; said only where
-    /// the desktop read them, since the files are its own.
+    /// Daoris's browser as its two files hold it, so a browser proposal names a favorite kept; said only where
+    /// the desktop reads them, since the files are its own.
     /// </summary>
     [Fact]
     public void The_room_says_how_Daoris_browser_is_set_and_what_it_keeps()

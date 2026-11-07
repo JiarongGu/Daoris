@@ -3,8 +3,8 @@ using System.ComponentModel;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A piece's later acts, done by the driver's look (COAGENT1b2, D199; the co-agent design §2.3 step 10, §2.4, §6.1): the person's
-/// <i>Discard…</i> and <i>Hand over what it left</i> taken from the act's file, and whether a handed piece was taken in. The look is the one
+/// A piece's later acts, done by the driver's look: the person's
+/// <i>Discard…</i> and <i>Hand over what it left</i> taken from the act's file, and whether a handed piece is taken in. The look is the one
 /// writer of a piece's state; each side effect is made before the state that names it, so a look that is cut redoes the act from what stands.
 /// </summary>
 /// <param name="keep">Keep and import a piece whose state is <see cref="PartnerStates.Ending"/>, then answer and hand it.</param>
@@ -95,7 +95,7 @@ internal sealed class PartnerActRunner(
 
     /// <summary>
     /// The repository's checkout the piece's ref is in: read from the lead's tree while it stands, else from the registry by the lead's
-    /// repository, since a landed lead's tree is tidied away (<see cref="PieceLandedReads"/>). Null where neither is here.
+    /// repository, because a landed lead's tree is tidied away (<see cref="PieceLandedReads"/>). Null where neither is here.
     /// </summary>
     private async Task<string?> CheckoutAsync(PriorSession? lead, CancellationToken ct)
     {
@@ -120,7 +120,7 @@ internal sealed class PartnerActRunner(
     }
 
     /// <summary>
-    /// Whether a handed piece was taken in (the design §2.3 step 10): its frozen commit read as an ancestor of the lead's branch by
+    /// Whether a handed piece is taken in: its frozen commit read as an ancestor of the lead's branch by
     /// <c>merge-base --is-ancestor</c>, recorded with the lead's commit and never unset. A lead whose record ended <c>completed</c>
     /// and whose tree's branch does not hold the commit leaves the piece <see cref="PartnerStates.NotTakenIn"/>. Where the lead's tree is
     /// gone, the piece is read at its landing: against the commit the lead's landing recorded, in the repository's checkout. Null where

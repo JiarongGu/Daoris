@@ -4,7 +4,7 @@ using static Daoris.Driver.TreeLeftovers;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A session tree's removal (D51 rule 7, D88, SQUASHTIDY1c; PART10l-ii, out of <c>SessionTrees.cs</c>): only a tree under the
+/// A session tree's removal: only a tree under the
 /// trees home, unforced only behind the clean-up's proof, its branch deleted only while it is the commit judged. Over the trees'
 /// context, the layout's answer of a tree's branch, the content proof's keep and delete, and the squash's record. The tidy, the
 /// landing's tidy and abandon's discard take it; the front keeps its public call.
@@ -29,7 +29,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
         {
             return new(false, $"{path} is not a session tree — this removes only trees Daoris opened, "
                 + $"under {context.TreesRoot}. A checkout is never a side effect's to delete."
-                // LANDRETIRE1: a branch a landing made is not a tree, and has a door of its own.
+                // A branch a landing made is not a tree, and has a door of its own.
                 + (context.Recorded.All().Any(entry => string.Equals(entry.Branch, path, StringComparison.Ordinal))
                     ? $" `{path}` names a branch a landing made: `trees remove {path} --why \"…\"` withdraws it where the line will never hold its work."
                     : ""));
@@ -42,7 +42,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
 
         // The main root, from git itself: the common dir is the main repository's .git, wherever the
         // registered root is — nothing here guesses a layout it does not own.
-        // With its branch, in one start (PROC1d-iii), and the working root git reports for the tree (GITWORKTREECONFIG1): read
+        // With its branch, in one start, and the working root git reports for the tree: read
         // before anything is written, the session lock a forced removal lets go of below included, since a tree git binds to
         // another checkout stays, said, forced or not.
         var here = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
@@ -51,12 +51,12 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             return new(false, $"the tree at {path} stays: {bound}.");
         }
 
-        // LINESTOGETHER1d: the tree's landing hold first, as the door's lock order takes it, so a press cannot bind it mid-removal; a
+        // The tree's landing hold first, as the door's lock order takes it, so a press cannot bind it mid-removal; a
         // landing's own tidy holds it already.
         using var landingHold = landing ? null : await LandingHolds.TakeAsync(context.Home, full, ct, DiscardWait).ConfigureAwait(false);
         if (!landing && landingHold is null) return new(false, $"the tree at {path} stays: a landing of it was still under way.");
 
-        // TREELOCK2: keep the repository's starts out from the ledger read through the removal. A stale lock can name an ended
+        // Keep the repository's starts out from the ledger read through the removal. A stale lock can name an ended
         // session while a later one holds the same tree, so the live-tree check precedes the lock owner's record.
         var owner = context.OwnerOf(full);
         using var removing = service is null ? null : TreeLock.TryReplaying(context.Home, full, owner.Repository, TreeLock.Tidying);
@@ -86,27 +86,27 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
         var detached = branch is "" or "HEAD";
         // The name a recovery ref is kept under: the branch, or for a detached tree the one its layout names.
         var named = detached ? follows.BranchOfTree(full)?.Branch ?? "HEAD" : branch;
-        // The branch the session's agent made where the tree is on one (TREEFOLLOW1): it goes with no tree, whatever force says.
+        // The branch the session's agent made where the tree is on one: it goes with no tree, whatever force says.
         var madeBy = detached ? null : await TreeFollows.OwnBranchOfAsync(full, ct).ConfigureAwait(false);
         ContentHold? held = null;
         LandedBranch? squashedOn = null;
         string? judged = null;
         string? kept = null;
         RecoveryName? keep = null;
-        // DETACHTX1: a detached tree's commit kept while its tree goes, until what its proof rested on is shown standing.
+        // A detached tree's commit kept while its tree goes, until what its proof rested on is shown standing.
         string? recovery = null;
-        // What the proof that clears the branch rests on (FABRIC-END4a, third review), each ref at the commit it read: returned by that proof
+        // What the proof that clears the branch rests on, each ref at the commit it read: returned by that proof
         // and verified exactly by the delete, never looked for again.
         IReadOnlyList<(string Ref, string Commit)> rests = [];
 
         if (!force)
         {
-            // Nothing deletes itself (D51 rule 7). Two different kinds of work can be lost here, and
+            // Nothing deletes itself. Two different kinds of work can be lost here, and
             // the refusal names the kind, because they are fixed differently: uncommitted changes are
-            // committed or abandoned IN the tree; unmerged commits are merged FROM it (SURF6's surface).
-            // Asked so no setting hides one (SQUASHTIDY1c): an untracked file `status.showUntrackedFiles=no` hides,
+            // committed or abandoned IN the tree; unmerged commits are merged FROM it.
+            // Asked so no setting hides one: an untracked file `status.showUntrackedFiles=no` hides,
             // and an ignored one only this tree holds, which `git worktree remove` deletes without asking.
-            // INTEGRATE1d (D218's note): the output the repository declares counts only as the owner accepted it for integration.
+            // The output the repository declares counts only as the owner accepted it for integration.
             var declared = await context.ScratchAsync(root, owner.Repository, owner.Workspace, ct).ConfigureAwait(false);
             var holds = await ContentHolds.HoldsAsync(full, root, declared, ct).ConfigureAwait(false);
             if (holds is null)
@@ -129,11 +129,11 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                     + "of yours, or say it again with --force, meaning it.");
             }
 
-            // TREEFOLLOW1: a tree on a branch its agent made loses no commit when it goes, since that branch stays and holds them: only
+            // A tree on a branch its agent made loses no commit when it goes, since that branch stays and holds them: only
             // what no commit holds is asked of it (above), and the branch is never taken with it.
             if (madeBy is null)
             {
-                // The commit judged, read once (SQUASHTIDY1c): every question below is asked of it, and the branch goes only while
+                // The commit judged, read once: every question below is asked of it, and the branch goes only while
                 // it is still that commit.
                 var (tipCode, tipOut, tipErr) = await WorkingTree.GitAsync(full, ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], ct)
                     .ConfigureAwait(false);
@@ -148,7 +148,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                 var (workspace, repository) = context.OwnerOf(full);
                 var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
                 var canonical = line ?? "HEAD";
-                // Landed (D88): a branch of the person's holds every commit — the line, a branch the branch form
+                // Landed: a branch of the person's holds every commit — the line, a branch the branch form
                 // made, one they pushed. Asked of the tree's own HEAD, so a detached tree is judged by what it
                 // holds. 🔴 A comparison git could not make keeps the tree: an empty answer is not "landed".
                 var (logCode, unmerged, logErr) = await TreeFollows.UnlandedLogAsync(full, judged, ct).ConfigureAwait(false);
@@ -159,13 +159,13 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                         + "The tree stays; say it again with --force to discard it.");
                 }
 
-                // SQUASHTIDY1: a squash merge or a cherry-pick holds the work under commits of its own, which ancestry cannot see;
-                // the content can. Before it, a squashing landing's record, which vouches as ancestry would (PROCESS1b-ii point 3).
+                // A squash merge or a cherry-pick holds the work under commits of its own, which ancestry cannot see;
+                // the content can. Before it, a squashing landing's record, which vouches as ancestry would.
                 // Work held nowhere still refuses, and force stays its door.
                 ContentProof? proof = null;
                 if (string.IsNullOrWhiteSpace(unmerged))
                 {
-                    // FABRIC-END4a, third review: the branch of the person's holding it, at the commit read, is what the delete verifies; one
+                    // The branch of the person's holding it, at the commit read, is what the delete verifies; one
                     // gone since the judgement read none is a refusal.
                     if (await ContentHolds.HoldersAsync(root, judged, named, ct).ConfigureAwait(false) is not { } holders)
                     {
@@ -188,7 +188,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                 }
                 else if ((held = (proof = await ContentHolds.HeldByContentAsync(full, judged, line, content.LandedHere(repository), ct).ConfigureAwait(false)).Hold) is null)
                 {
-                    // PROOF-UNREAD1: a proof git could not read is not "held nowhere"; the refusal says it could not tell.
+                    // A proof git could not read is not "held nowhere"; the refusal says it could not tell.
                     if (proof!.Unread is { } unread)
                     {
                         return new(false,
@@ -196,13 +196,13 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                             + "The tree stays; say it again with --force to discard it.");
                     }
 
-                    // REVIEWLANDED1: where the line holds some of them under ids of their own, only those it lacks are named.
+                    // Where the line holds some of them under ids of their own, only those it lacks are named.
                     return new(false,
                         $"the tree at {path} holds commits `{canonical}` has not taken, and no other branch of yours holds "
                         + $"them:\n{proof.Lacking(unmerged)}\nLand them from the review, or say it again with --force to discard them.");
                 }
 
-                // SQUASHTIDY1c: the proof compared files, so the commits themselves are kept on a ref of their own: in the delete's own act
+                // The proof compared files, so the commits themselves are kept on a ref of their own: in the delete's own act
                 // for a branch, and in an act of its own before the tree goes for a detached tree, which deletes no branch.
                 if (held is not null)
                 {
@@ -225,7 +225,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                     }
                 }
 
-                // DETACHTX1: a detached tree's commit is held by the tree's own HEAD, which goes with it, and by what its proof rested on,
+                // A detached tree's commit is held by the tree's own HEAD, which goes with it, and by what its proof rested on,
                 // which may move as it goes. No branch is deleted to verify that in, so the commit is kept on a recovery ref first, dropped
                 // only in a transaction that verifies what the proof rested on once the tree went.
                 if (detached && kept is null)
@@ -249,7 +249,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             return new(false, said);
         }
 
-        // TREELINK1: git's removal follows a junction out of the tree and deletes what it points at, so each link in it goes as a
+        // Git's removal follows a junction out of the tree and deletes what it points at, so each link in it goes as a
         // link first, forced or not; a tree whose links cannot all go stays.
         if (TreeLinks.Unlinked(full) is { } linked) return await KeptAsync($"the tree at {path} stays: {linked}.").ConfigureAwait(false);
 
@@ -270,13 +270,13 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             left = why;
         }
 
-        // The branch goes with its tree — where this call's proof cleared it (D88), only while it is still the commit judged
-        // (SQUASHTIDY1c), or where the person forced it. Never git's own -d, which asks only whether the checkout's HEAD holds
+        // The branch goes with its tree — where this call's proof cleared it, only while it is still the commit judged,
+        // or where the person forced it. Never git's own -d, which asks only whether the checkout's HEAD holds
         // it and kept every branch the branch form had landed. A branch left behind would resurrect "never reused" as a pile.
         string? stays = null;
         if (madeBy is not null)
         {
-            // TREEFOLLOW1: never a branch the session's agent made, which is the pull request's and the only copy of its commits.
+            // Never a branch the session's agent made, which is the pull request's and the only copy of its commits.
             return new(true, $"removed the session tree at {path}, and kept its branch `{madeBy}`, which the session made and which holds its "
                 + "commits; delete it with git where you no longer want it." + (left is null ? "" : $" {left}"));
         }
@@ -292,13 +292,13 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                 stays = await content.DeleteJudgedAsync(root, context.OwnerOf(full).Repository, branch, judged, rests, ct, keep).ConfigureAwait(false);
             }
 
-            // The record drops what is gone (LAND3): a name no branch has is never judged by a start it no longer has.
+            // The record drops what is gone: a name no branch has is never judged by a start it no longer has.
             if (stays is null) Forget(context.OwnerOf(full).Repository, branch);
         }
         else if (recovery is not null
                  && !await ContentHolds.DropKeptVerifiedAsync(root, recovery, judged!, rests, CancellationToken.None).ConfigureAwait(false))
         {
-            // DETACHTX1: not cancelled, as a judged delete is not: the ref goes only where the transaction showed the holder standing.
+            // Not cancelled, as a judged delete is not: the ref goes only where the transaction showed the holder standing.
             return new(true, $"removed the session tree at {path}. The commit it had out stays at `{recovery}` until you delete that ref: git "
                 + "would not show what its proof rested on standing where the proof read it, once the tree went." + (left is null ? "" : $" {left}"));
         }
@@ -309,7 +309,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                 + (stays == ContentHolds.MovedSince ? ", so it holds work this removal did not judge." : ".") + (left is null ? "" : $" {left}"));
         }
 
-        // How the work was found held, where ancestry could not say (SQUASHTIDY1), and where its commits stay (SQUASHTIDY1c): the
+        // How the work is found held, where ancestry could not say, and where its commits stay: the
         // sentence the review's Discard shows as it is.
         return new(true, $"removed the session tree at {path} (branch `{branch}`)"
             + (held is not null ? $": {held.Said}." : squashedOn is not null ? $": {TreeSquashes.SquashedSaid(squashedOn)}." : ".")

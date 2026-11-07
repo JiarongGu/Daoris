@@ -33,6 +33,9 @@ internal interface ITurnRunWiring : ITurnPromptWiring, ITurnReadWiring
     /// <summary>Asked at a turn's end before a held word is prompted: whether the setup the session opened under changed since.</summary>
     Func<bool>? SetupChanged { get; }
 
+    /// <summary>Asked at a turn's end of its agent's last message: whether the one reader reads it as its account's limit.</summary>
+    Func<string, bool>? LimitSaid { get; }
+
     /// <summary>The background work still running as the run ended, kept for the driver.</summary>
     void Left(IReadOnlyList<string> running);
 }

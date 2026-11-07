@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A door's go-ahead (GITAUTH1f; the git-auth design §6.6): an act whose class says <c>ask</c> is held at the door for the person's answer,
+/// A door's go-ahead: an act whose class says <c>ask</c> is held at the door for the person's answer,
 /// but only while Daoris runs. The go-ahead is shown in <i>What needs you</i> by an instance (the desktop, or a headless driver), so with
 /// none holding the home nothing would show it, and the door refuses at once rather than wait out the bound.
 /// </summary>

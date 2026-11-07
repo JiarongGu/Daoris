@@ -5,11 +5,10 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a union merge joins that a reader takes for one paragraph, set apart in a landing's replay (INTEGRATE1c; the merge tool's
-/// MERGEJOIN1 and UNIONGLUE1): two branches that each append a note to one decision, or an entry to the task archive, both open it with a
+/// What a union merge joins that a reader takes for one paragraph, set apart in a landing's replay: two branches that each append a note to one decision, or an entry to the task archive, both open it with a
 /// blank line; git's union merge keeps that line once and then both, so the second's label or heading lands straight under the first's last
-/// line. The merge tool sets one blank line before it; the replay of a landing did not, so a landing that rode a union record left the join
-/// for whoever merged it, and <c>doc-duplicates</c> refuses a note label so joined.
+/// line. The merge tool sets one blank line before it, and so does the replay of a landing, so a landing that rides a union record leaves no join
+/// for whoever merges it, where <c>doc-duplicates</c> would refuse a note label so joined.
 /// </summary>
 /// <remarks>
 /// <para><b>A twin</b> of the merge tool's <c>setApart</c>, <c>setApartHeadings</c>, <c>gluedLabels</c>, <c>gluedHeadings</c> and the files it
@@ -97,7 +96,7 @@ internal static partial class UnionJoins
         return (string.Join('\n', output), set);
     }
 
-    /// <summary>A decision's text with one blank line set before each note label glued to the line above (MERGEJOIN1).</summary>
+    /// <summary>A decision's text with one blank line set before each note label glued to the line above.</summary>
     internal static (string Text, IReadOnlyList<(int Line, string Label)> Set) SetApart(string text)
     {
         var lines = text.Split('\n');
@@ -106,7 +105,7 @@ internal static partial class UnionJoins
 
     /// <summary>
     /// A union record's text with one blank line set before each heading the merge joined to the line above, a join either of
-    /// <paramref name="sides"/> already held excepted (UNIONGLUE1).
+    /// <paramref name="sides"/> already held excepted.
     /// </summary>
     internal static (string Text, IReadOnlyList<(int Line, string Label)> Set) SetApartHeadings(string text, IReadOnlyList<string> sides)
     {
@@ -228,7 +227,7 @@ internal static partial class UnionJoins
 
     /// <summary>
     /// The set-apart of <see cref="SetApartAsync"/>, written and staged and not committed: the joins in the files a merge in progress changed
-    /// against <paramref name="onto"/> (the index, read as <c>--cached</c>), for the merge's own commit to take (INTEGRATE1e part e3b's resolve,
+    /// against <paramref name="onto"/> (the index, read as <c>--cached</c>), for the merge's own commit to take,
     /// as the merge tool's <c>setApartJoins</c> runs before its commit). Where <paramref name="merging"/> is false the files are the replay's,
     /// <paramref name="onto"/> to HEAD. <paramref name="declaredAt"/> is the commit whose <c>.gitattributes</c> and <c>daoris.json</c> say which
     /// files are union records and where the decisions are: the line's, never the work's.

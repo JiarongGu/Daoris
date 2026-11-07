@@ -4,7 +4,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The look's own news told once across restarts (FOUNDATION1 m-iv, the foundation design §4.5): a wait for an account and a quest's park, which
+/// The look's own news told once across restarts: a wait for an account and a quest's park, which
 /// the attention watch finds from a look's verdicts, each claimed in the said-set by its key before it is shown. The watch's first-look baseline
 /// gives way to the said-set: only a home with no said-set yet takes what stands as said, and one claimed before is never told again.
 /// </summary>

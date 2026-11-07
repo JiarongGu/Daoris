@@ -17,7 +17,7 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
             return await owner.RefuseAsync(ask, HelperWhy.Unreadable, null, files, ct).ConfigureAwait(false);
         }
 
-        // D205 §4.4 and §3.5(f): the actor gives each agent its model, and a refusal at the open is asked again inside this call.
+        // The actor gives each agent its model, and a refusal at the open is asked again inside this call.
         Task<ReviewerChoice> Walk(IReadOnlyList<ReviewerPassed>? passed) =>
             _context.HelperChoices is { } choose
                 ? choose(ask, rule, asker, ct)
@@ -32,7 +32,7 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
 
         var agent = choice.Reviewer!;
 
-        // COAGENT1a (D199 point 5; the co-agent design §2.5): the asker's work in progress, captured whole with its manifest at this
+        // The asker's work in progress, captured whole with its manifest at this
         // turn boundary, or refused in its code; its manifest kept before the helper starts, and its commit the copy's.
         var read = await owner.CaptureAsync(asker.Tree!, ct).ConfigureAwait(false);
         if (read.Captured is not { } capture)
@@ -50,7 +50,7 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
             Opened = helper =>
             {
                 // 🔴 Started, naming the helper, BEFORE its turn: `helper_answer` finds its ask by this state. A pass whose agent refused the
-                // entry's model at the open calls this again with the replacement (D205 §3.5(f)), so the state names the session that runs.
+                // entry's model at the open calls this again with the replacement, so the state names the session that runs.
                 files.WriteState(new HelperState(ask.Id, HelperStates.Started, null, helper, DateTimeOffset.UtcNow) { Agent = agent });
                 var asked = HelperNotes.Asked(agent, helper);
                 _context.Output?.Append(ask.Asker, $"— {asked.Note}");
@@ -72,10 +72,10 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
     /// <summary>
     /// What the helper said, settled once its turn ended: the answer <c>helper_answer</c> wrote, else its last words bounded as a
     /// parked session's are (only where the turn completed), else, where an account's limit ended it, <c>cooling</c> with that account's
-    /// reset (LIMITRESUME1h), else <c>refused</c> with <c>no-answer</c>; then delivered.
+    /// reset, else <c>refused</c> with <c>no-answer</c>; then delivered.
     /// </summary>
     /// <param name="limited">An account's limit ended the helper's turn: its record's flag.</param>
-    /// <param name="transient">Its provider kept failing past the retry's bound (AGENTERRORS1d): refused <see cref="HelperWhy.Transient"/>.</param>
+    /// <param name="transient">Its provider kept failing past the retry's bound: refused <see cref="HelperWhy.Transient"/>.</param>
     private async Task<LookLine> SettleHelperAsync(
         HelperAsk ask, HelperFiles files, string? ended, string? lastWords, CancellationToken ct, bool limited = false, bool transient = false)
     {
@@ -92,7 +92,7 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
         }
         else if (limited)
         {
-            // LIMITRESUME1h (D206 design §3.8): never refused here, so a lead that waits on it keeps waiting (`HelperWaits.Open` counts it
+            // Never refused here, so a lead that waits on it keeps waiting (`HelperWaits.Open` counts it
             // open). The next look runs it again while its asker waits, the walk passing the cooling account, and refuses it once not.
             var until = AccountCooling.OfSession(_context.Home, helper)?.Until;
             files.WriteState(state with { State = HelperStates.Cooling, At = DateTimeOffset.UtcNow, Until = until });
@@ -127,16 +127,16 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
     }
 
     /// <summary>
-    /// Hand an answered ask's answer to the asker (design §3), once, through the local host's door, as the opinion's findings are:
+    /// Hand an answered ask's answer to the asker, once, through the local host's door, as the opinion's findings are:
     /// a word marked as the helper's, Daoris's words around the claim. A running or parked quest asker takes it at its turn's end,
-    /// never into a step in flight, so it waits; one that never goes on is refused with its code. A conversation asker (MIXAGENT2a-iii)
+    /// never into a step in flight, so it waits; one that never goes on is refused with its code. A conversation asker
     /// takes it open between turns, and ended: a shown event is left for the shell's chat runner, which says the word as its next
     /// turn, or goes the ended one on with it.
     /// </summary>
     /// <param name="seen">How the look's own list showed the asker (<see cref="Seen"/>), kept with a hand held; null from a pass's own settling.</param>
     internal async Task<LookLine?> DeliverHelperAsync(HelperAsk ask, HelperState state, HelperFiles files, CancellationToken ct, string? seen = null)
     {
-        // COWORKUX1d (the co-worker design §7): an answer kept for the person reaches no part of the line until they pass it. The helper's
+        // An answer kept for the person reaches no part of the line until they pass it. The helper's
         // own conversation holds it, and nothing counts it, since it never reached the lead by itself.
         if (ask.ForPerson && state.Passed is null)
         {
@@ -146,9 +146,9 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
         }
 
         var service = _context.Service;
-        // COMMS1b (the comms design §4.2): the host's one door for solicited answers keys the hand and walks the line to the store's bound
+        // The host's one door for solicited answers keys the hand and walks the line to the store's bound
         // itself, and the look reads the head as that door does (SolicitedHand).
-        // HELPERWAIT1 (D189 point 6): the newest record of the asker's line, as the hand door resolves it, so a left conversation is never
+        // The newest record of the asker's line, as the hand door resolves it, so a left conversation is never
         // reopened and the answer goes to the part that continues it.
         var (asker, record, _, beyond) = Walked(SolicitedHand.Walk(await service.RecordsAsync(ct).ConfigureAwait(false), ask.Asker), ask.Asker);
         if (beyond is not null)
@@ -173,20 +173,20 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
 
         var to = record!.Session;
 
-        // Never into a step in flight (D136): a running turn takes another agent's claim at its end, and a park after the person's
-        // answer. Said once (HELPERWAIT1, point 6), and not tried again until the asker moves; the next look after it ended hands it.
-        // 🔴 HELPERWAIT1 (Codex's round-2 #1 and #4 on COWORKUX1): a park the person answered takes it now, beside their answer, so its
+        // Never into a step in flight: a running turn takes another agent's claim at its end, and a park after the person's
+        // answer. Said once, and not tried again until the asker moves; the next look after it ended hands it.
+        // 🔴 A park the person answered takes it now, beside their answer, so its
         // go-on hands both in one prompt; an unanswered park holds it, a park made before the rule included, since nothing on it proves
         // it asked the person nothing (its question may stand in its closing words alone): the person's answer moves it, never the helper's.
         // A conversation open between turns is `working` and takes it (its runner says it as the next turn); one still starting waits.
-        // 🔴 COWORK1d (the message-urgency design §5): an urgent ask's answer reaches a running asker this loop runs at its next step,
+        // 🔴 An urgent ask's answer reaches a running asker this loop runs at its next step,
         // where its door takes words then, kept on its record for its run and held in its inbox under the record's id.
         var open = record.Kind == "chat" && string.Equals(record.State, "working", StringComparison.OrdinalIgnoreCase);
         var inbox = owner.NextStepInbox(ask, record);
         var nextStep = inbox is not null;
         if (!open && !nextStep && (record.Running || record is { Parked: true, AnsweredPark: false })) return owner.Held(ask, record, seen);
 
-        // 🔴 One hand per ask (HELPERWAIT1, D188 point 4; COMMS1b §13 point 3): the attempt mark, written before the door, says a hand
+        // 🔴 One hand per ask: the attempt mark, written before the door, says a hand
         // began; through the one door it is keyed, and an attempt is asked again under the key inside the settlement's horizon, never read
         // back here. Past the horizon it is settled as uncertain for the person, the answer kept in the helper's conversation.
         var now = DateTimeOffset.UtcNow;
@@ -207,7 +207,7 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
         var answer = await service.Helpers
             .HandAsync(state.Helper!, composed, ct, running: nextStep, level: ask.Urgent ? MessageLevels.Spelled(MessageLevel.Urgent) : null)
             .ConfigureAwait(false);
-        // HELPERWAIT1: a hand the host refused kept nothing, so its mark goes; it is said once, and asked again only once the look shows
+        // A hand the host refused kept nothing, so its mark goes; it is said once, and asked again only once the look shows
         // its asker moved, never at every look.
         if (answer.Fate == SolicitedFate.Refused)
         {
@@ -215,7 +215,7 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
             return owner.Unhanded(ask, seen, Helper(LookClass.Retry, $"helper  ask `{ask.Id}` is answered, and waits to be handed to session {to}: {answer.Message}"));
         }
 
-        // 🔴 HELPERWAIT1b (Codex's round-3 #2 on COWORKUX1): an answer lost after the door may have kept the word, so the mark stays and the
+        // 🔴 An answer lost after the door may have kept the word, so the mark stays and the
         // outcome is uncertain until the next look: the one door is asked again under the key, which answers the word waiting or settled. It
         // is never handed again.
         if (answer.Fate == SolicitedFate.Uncertain)
@@ -225,8 +225,8 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
                 $"helper  ask `{ask.Id}`'s hand to session {to} is uncertain: {answer.Message}. The next look asks again under its key, which answers it once.");
         }
 
-        // FOUNDATION1 row p (the design §3.4 rule 5): the host answered the hand settled, its key's word left a record of the asker's line and
-        // was kept and dispatched by an earlier hand whose answer this look lost. Nothing is dispatched and no event is recorded, as for a
+        // The host answered the hand settled: its key's word left a record of the asker's line and
+        // is kept and dispatched by an earlier hand whose answer this look lost. Nothing is dispatched and no event is recorded, as for a
         // word handed already: the ask is marked handed, never handed again.
         if (answer.Fate == SolicitedFate.Settled)
         {
@@ -235,11 +235,11 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
             return Helper(LookClass.Progress, $"helper  ask `{ask.Id}`'s answer was handed to session {to} already: its word is settled, and it is not handed again.");
         }
 
-        // HELPERWAIT1b2: dispatched before the state's mark, so a mark that fails to write leaves a word the next look completes, idempotently,
-        // rather than one marked handed that nothing here was told of. COMMS1b (§13 point 4): on the record the one door kept it on, or found it
+        // Dispatched before the state's mark, so a mark that fails to write leaves a word the next look completes, idempotently,
+        // rather than one marked handed that nothing here is told of. On the record the one door kept it on, or found it
         // waiting on, which a hand-over may have made another part than the look read; a word already waiting is dispatched as it waits.
         var holder = answer.Holder is { } held && held.Session != record.Session ? held : record;
-        // COWORKUX1d: a passed answer goes with the person's press beside it, before the turn that takes it, so the count reads their word.
+        // A passed answer goes with the person's press beside it, before the turn that takes it, so the count reads their word.
         if (state.Passed is not null && answer.Fate != SolicitedFate.Waiting)
         {
             _context.Events.Keep(holder.Session, AnswersAloneNotes.Passed(answer.Word is { } passed ? [passed] : []), say: null);
@@ -262,7 +262,7 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
     }
 
     /// <summary>
-    /// The asker, the head of its line and the line as the one door walks it (COMMS1b, <see cref="SolicitedHand.Walk"/>), with why no part is
+    /// The asker, the head of its line and the line as the one door walks it (<see cref="SolicitedHand.Walk"/>), with why no part is
     /// handed the answer where the walk read no head: a line that loops, or one past the store's bound.
     /// </summary>
     private static (PriorSession? Asker, PriorSession? Newest, IReadOnlyList<PriorSession> Line, string? Beyond) Walked(SolicitedLine line, string asker) =>

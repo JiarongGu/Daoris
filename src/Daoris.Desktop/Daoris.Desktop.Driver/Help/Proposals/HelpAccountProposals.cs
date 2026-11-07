@@ -5,9 +5,9 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's <c>account</c> proposal (HELP6): an account's own model and effort — its door <c>settings</c>,
+/// Ask Daoris's <c>account</c> proposal: an account's own model and effort — its door <c>settings</c>,
 /// its target the agent, and its own <c>account</c>, <c>model</c> and <c>effort</c> — judged by
-/// <c>SET_AGENT_SETTINGS</c>'s rules: a tool whose settings Daoris knows (D98), one of Daoris's accounts for
+/// <c>SET_AGENT_SETTINGS</c>'s rules: a tool whose settings Daoris knows, one of Daoris's accounts for
 /// it, and values the tool reads — its own aliases or a full model id, and an effort its settings keep, never
 /// `max`. Applied as <c>SET_AGENT_SETTINGS</c>'s own write.
 /// </summary>
@@ -38,7 +38,7 @@ internal sealed class HelpAccountProposals : IHelpProposalKind
         }
 
         var owner = door.AccountsOf;
-        // ACCTQUOTE1b: the account spelled for any shell, as every command the driver names spells it.
+        // The account spelled for any shell, as every command the driver names spells it.
         var terminal = $"daoris agent settings {owner} --account {ShellWord.Of(account, ShellWord.Account)}"
             + (model is null ? "" : $" model {model}") + (effort is null ? "" : $" effort {effort}");
         HelpPlan Refused(string why) => new(why, "", terminal, null);

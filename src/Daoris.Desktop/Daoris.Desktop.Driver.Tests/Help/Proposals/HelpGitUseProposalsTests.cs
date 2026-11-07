@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// Ask Daoris's <c>git-use</c> door (GITAUTH1e, D198 point 15; the git-auth design §9): a repository's remote or a workspace's host pointed
+/// Ask Daoris's <c>git-use</c> door: a repository's remote or a workspace's host pointed
 /// at an identity that exists, or taken back; never the person's own sign-ins, never an identity made up, never one for another host.
 /// </summary>
 public sealed class HelpGitUseProposalsTests : HelpProposalsFixture

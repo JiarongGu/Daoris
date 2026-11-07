@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// The machine the scoped room's tests describe (ASKSCOPE1b, D158's ASKSCOPE1 note point 4): workspaces <c>alpha</c> and
+/// The machine the scoped room's tests describe: workspaces <c>alpha</c> and
 /// <c>beta</c> and the default one, each with repositories, sessions, asks, quests, finished work, work and landings of its own,
 /// read through <see cref="HelpRoom.Describe"/> as the module reads the facts, so a room projected to one workspace is judged
 /// from the same facts as the machine's. <c>beta</c> holds more ended sessions than the room lists, all newer than
@@ -24,7 +24,7 @@ internal static class HelpRoomScopeFixture
     ];
 
     /// <summary>
-    /// The machine whole, as the facts say it; <paramref name="unread"/> names the repositories whose line was not judged yet
+    /// The machine whole, as the facts say it; <paramref name="unread"/> names the repositories whose line is not judged yet
     /// (<c>console</c>'s where none are named, so only <c>beta</c>'s room has anything not read yet; empty for none).
     /// </summary>
     internal static HelpMachine Machine(IReadOnlyList<string>? unread = null) => Describe(unread ?? ["console"]);

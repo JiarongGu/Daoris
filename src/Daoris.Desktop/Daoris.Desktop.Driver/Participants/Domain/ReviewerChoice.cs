@@ -1,19 +1,19 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One agent's family (XAGENT1b, D155 point 4, the second-agent design §3.1): whose accounts it runs as (AGT7's owner), and the
+/// One agent's family: whose accounts it runs as (its owner), and the
 /// product and maker it declares. Two agents are one family when they run as one owner's accounts or declare one maker, so
 /// Claude Code by either door is one family, and another account of an agent is that agent's family: an account is a
 /// credential, not a second reader.
 /// </summary>
-/// <param name="Agent">The adapter it was read for, as the set spells it; trimmed as given where the set has none of that name.</param>
+/// <param name="Agent">The adapter it is read for, as the set spells it; trimmed as given where the set has none of that name.</param>
 /// <param name="Owner">Whose accounts it runs as: its <c>accountOf</c>, else itself.</param>
 /// <param name="Product">What a person calls the tool, as declared; null where it declares none.</param>
 /// <param name="Maker">
 /// Who makes it, as declared, trimmed; null where it declares none. A maker not declared is not known, so it is never taken as
-/// another maker's (§3.1). Independence is by maker, never by model (D24).
+/// another maker's. Independence is by maker, never by model.
 /// </param>
-/// <param name="Plugin">The plugin that declared the agent (D64), whose word its product and maker are; null for one this build carries.</param>
+/// <param name="Plugin">The plugin that declared the agent, whose word its product and maker are; null for one this build carries.</param>
 public sealed record AgentFamily(string Agent, string Owner, string? Product, string? Maker, string? Plugin = null)
 {
     /// <summary>
@@ -38,8 +38,8 @@ public sealed record AgentFamily(string Agent, string Owner, string? Product, st
         || (Maker is not null && other.Maker is not null && string.Equals(Maker, other.Maker, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
-    /// The family as a person reads it: its product, else its name, with its maker; a plugin's maker said as its plugin's word
-    /// (§3.1), and one not declared said so.
+    /// The family as a person reads it: its product, else its name, with its maker; a plugin's maker said as its plugin's word,
+    /// and one not declared said so.
     /// </summary>
     public string Said()
     {
@@ -52,7 +52,7 @@ public sealed record AgentFamily(string Agent, string Owner, string? Product, st
 
 
 /// <summary>
-/// Why no other maker's agent could read the work (§3.3), the code a choice carries wherever another maker's agent did not
+/// Why no other maker's agent could read the work, the code a choice carries wherever another maker's agent did not
 /// read it: when it is unavailable, and when a reviewer of another standing read it in that one's place.
 /// </summary>
 public static class ReviewerUnavailable
@@ -79,28 +79,28 @@ public static class ReviewerHeld
     /// <summary>Nothing of it is installed, or this machine has no agent of that name.</summary>
     public const string NotInstalled = "not-installed";
 
-    /// <summary>Pinned to a version nothing is installed at (D57).</summary>
+    /// <summary>Pinned to a version nothing is installed at.</summary>
     public const string PinNotInstalled = "pin-not-installed";
 
-    /// <summary>Its accounts wait for a cool-off (D125).</summary>
+    /// <summary>Its accounts wait for a cool-off.</summary>
     public const string Cooling = "cooling";
 
-    /// <summary>The accounts it may use are not signed in (ROSTER1).</summary>
+    /// <summary>The accounts it may use are not signed in.</summary>
     public const string SignedOut = "signed-out";
 
     /// <summary>
-    /// Every account that may run it was passed for the model its actor's entry names, by the agent's own refusal (D205 §4.1, MODELROLE1e):
+    /// Every account that may run it is passed for the model its actor's entry names, by the agent's own refusal:
     /// the next alternative of the agent is tried, else the next agent.
     /// </summary>
     public const string NotOffered = "not-offered";
 
-    /// <summary>Refused for anything else, its provider's refusal among them (AGT3b).</summary>
+    /// <summary>Refused for anything else, its provider's refusal among them.</summary>
     public const string Refused = "refused";
 
     /// <summary>
-    /// The code of the start plan's one vocabulary a reviewer's hold is passed by (FOUNDATION1j part ii, <see cref="StartPasses"/>), which
+    /// The code of the start plan's one vocabulary a reviewer's hold is passed by (<see cref="StartPasses"/>), which
     /// the opening note's actor line and the machine log say: an agent not installed, or not at its pin, cannot run here at all and is
-    /// <c>unavailable</c> (D205 point 4); a refusal of anything else is <c>held</c>, its own sentence saying what. The reviewer's own code stays
+    /// <c>unavailable</c>; a refusal of anything else is <c>held</c>, its own sentence saying what. The reviewer's own code stays
     /// on its try, for its sentence and its <see cref="ReviewerUnavailable"/> code.
     /// </summary>
     public static string Pass(string held) => held switch
@@ -123,12 +123,12 @@ public sealed record ReviewerTried(string Reviewer, string Label, string Held, s
     /// <summary>The cool-off that holds it, when that is why.</summary>
     public CoolingEntry? Cooling { get; init; }
 
-    /// <summary>The actor's entry for the agent that was tried, with its model (D205 §4.4, MODELROLE1e); null where a caller named none.</summary>
+    /// <summary>The actor's entry for the agent that is tried, with its model; null where a caller named none.</summary>
     public ActorEffective? Entry { get; init; }
 }
 
 /// <summary>
-/// One (entry, account) a one-turn owner already passed in its own call (D205 §3.5(f), MODELROLE1e): the account refused the entry's model at
+/// One (entry, account) a one-turn owner already passed in its own call: the account refused the entry's model at
 /// the open, so the walk asks for it again with that account left out. Never a cool-off, never stored, gone when the owner's call ends.
 /// </summary>
 public sealed record ReviewerPassed(ActorEffective Entry, string? Account) : IActorPassed<ReviewerPassed>
@@ -137,20 +137,20 @@ public sealed record ReviewerPassed(ActorEffective Entry, string? Account) : IAc
 }
 
 /// <summary>
-/// The reviewer chosen for a second opinion (XAGENT1b, D155 point 4, the second-agent design §3), or why none could be: the walk
+/// The reviewer chosen for a second opinion, or why none could be: the walk
 /// over agents that comes before the account walk and calls it, unchanged, for each.
 /// </summary>
 /// <remarks>
-/// <para><b>The walk</b> (§3.2): the rule's reviewers, in the person's order, never one it does not name (D23). Another maker's
+/// <para><b>The walk</b>: the rule's reviewers, in the person's order, never one it does not name. Another maker's
 /// agent first; then one whose maker is not declared, which is never taken as independent; then one of the work's own families,
 /// taken only because the person listed it, and labelled. Each is asked of <see cref="HarnessRoster.SelectAsync"/> as a driven
-/// start, so its account comes from its agent's scope for the workspace (D130), past its cool-offs (D125), its sign-ins
-/// (ROSTER1), the account kept for conversations (D130 §4.6) and its pin (D57). The first allowed is the reviewer, its start
-/// counted as chosen; nothing is counted for an entry that was refused.</para>
-/// <para><b>Never downgraded silently</b> (§3.3): wherever another maker's agent did not read the work, the choice carries a
+/// start, so its account comes from its agent's scope for the workspace, past its cool-offs, its sign-ins,
+/// the account kept for conversations and its pin. The first allowed is the reviewer, its start
+/// counted as chosen; nothing is counted for an entry that is refused.</para>
+/// <para><b>Never downgraded silently</b>: wherever another maker's agent did not read the work, the choice carries a
 /// code (<see cref="ReviewerUnavailable"/>) and says why, each entry passed with its own sentence.</para>
-/// <para>The look asks for one (XAGENT1f), and the recheck for its first pass's reviewer again (XAGENT1e), each with every agent
-/// the line ran on as the work's (<see cref="OpinionWriters"/>, LIMITRESUME1j).</para>
+/// <para>The look asks for one, and the recheck for its first pass's reviewer again, each with every agent
+/// the line ran on as the work's (<see cref="OpinionWriters"/>).</para>
 /// </remarks>
 /// <param name="Reviewer">The adapter that reads the work, or null when none can.</param>
 /// <param name="Label">How it stands to the work's families (<see cref="ReviewerLabels"/>), or null when none can.</param>
@@ -158,22 +158,22 @@ public sealed record ReviewerPassed(ActorEffective Entry, string? Account) : IAc
 /// <param name="Sentence">What a person reads: who reads it and how it stands, or that none can, and why. Machine-local.</param>
 public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Code, string Sentence) : IActorChoice<ReviewerChoice>
 {
-    /// <summary>Whether a reviewer was chosen.</summary>
+    /// <summary>Whether a reviewer is chosen.</summary>
     public bool Chosen => Reviewer is not null;
 
     /// <summary>The account walk's answer for the reviewer, which its start runs on; null when none can.</summary>
     public HarnessSelection? Selection { get; init; }
 
-    /// <summary>The reviewer's family: its product and maker, as every opinion carries them (§3.4); null when none can.</summary>
+    /// <summary>The reviewer's family: its product and maker, as every opinion carries them; null when none can.</summary>
     public AgentFamily? Family { get; init; }
 
     /// <summary>
-    /// The actor's entry that read, its model and effort and what the record keeps as its choice (D205 §4.0, §4.4, MODELROLE1e): one entry of
+    /// The actor's entry that read, its model and effort and what the record keeps as its choice: one entry of
     /// the actor for the agent the rule or the ask names, else <c>rule-default</c> at account default. Null only for a choice a caller built by hand.
     /// </summary>
     public ActorEffective? Effective { get; init; }
 
-    /// <summary>The families that wrote the work, each once, in the order first named (§3.4).</summary>
+    /// <summary>The families that wrote the work, each once, in the order first named.</summary>
     public IReadOnlyList<AgentFamily> Working { get; init; } = [];
 
     /// <summary>Each reviewer tried and passed, in the order tried.</summary>
@@ -182,7 +182,7 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
     IReadOnlyList<IActorTried> IActorChoice<ReviewerChoice>.Tried => Tried;
 
     /// <summary>
-    /// The role whose start plan walked it (FOUNDATION1j part ii): <c>opinion</c>, <c>helper</c> or <c>partner</c>; null for a choice built
+    /// The role whose start plan walked it: <c>opinion</c>, <c>helper</c> or <c>partner</c>; null for a choice built
     /// by hand or refused before any walk.
     /// </summary>
     public string? Role { get; init; }
@@ -194,8 +194,8 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
     public IReadOnlyList<BuildPass> Passes { get; init; } = [];
 
     /// <summary>
-    /// The plan's settled selection the start opens on (the foundation design §2.4): the role, the entry taken, its selection and what was
-    /// passed before it. Its reservation is the start's one count, taken by the account walk at the selection; null where none was chosen.
+    /// The plan's settled selection the start opens on: the role, the entry taken, its selection and what is
+    /// passed before it. Its reservation is the start's one count, taken by the account walk at the selection; null where none is chosen.
     /// </summary>
     public SettledSelection? Settled =>
         Role is { } role && Selection is { } selection && Effective is { } entry ? new SettledSelection(role, selection, entry, Passes) : null;
@@ -219,7 +219,7 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
     }
 
     /// <summary>
-    /// The walk's order by maker, each pass in the rule's order (§3.2, §3.3): another maker's agent, with each name this machine has no agent
+    /// The walk's order by maker, each pass in the rule's order: another maker's agent, with each name this machine has no agent
     /// of, which is said and asks nothing; then an agent whose maker is not declared; then the work's own family.
     /// </summary>
     private static readonly Func<Entry, bool>[] ByMaker =
@@ -234,7 +234,7 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
     /// repository in <paramref name="workspace"/>.
     /// </summary>
     /// <remarks>
-    /// <b>The actor says with which model</b> (D205 §4.0, §4.4, MODELROLE1e): the rule's reviewers decide who and the passes keep the order, and
+    /// <b>The actor says with which model</b>: the rule's reviewers decide who and the passes keep the order, and
     /// each named agent expands, in place, into the <paramref name="actor"/>'s entries for it, in their order, else one entry at account default
     /// (<c>rule-default</c>). A model never makes a reviewer independent: an entry is labelled by its agent's family alone.
     /// </remarks>
@@ -243,19 +243,19 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
     /// <param name="actor">The actor whose entries give each agent its model: <c>opinion</c>, <c>helper</c> or <c>partner</c>.</param>
     /// <param name="passed">The (entry, account) this owner's call already passed at an open's refusal, asked again without them.</param>
     /// <param name="order">
-    /// The entries to walk where the caller has them already (a helper with no rule list takes its actor's entries, §4.4); else the rule's
+    /// The entries to walk where the caller has them already (a helper with no rule list takes its actor's entries); else the rule's
     /// reviewers expanded by <paramref name="actor"/>.
     /// </param>
     /// <param name="catalogue">
-    /// The role catalogue (FOUNDATION1x), read when the choice is made: a store that will not read refuses the choice, as a role that does not
+    /// The role catalogue, read when the choice is made: a store that will not read refuses the choice, as a role that does not
     /// read does. Null reads the seeded role of the work.
     /// </param>
     /// <param name="role">
-    /// The role a workflow's opinion step names (ROLESTEP1b), whose entries give each reviewer its model in place of the work's role; it holds
+    /// The role a workflow's opinion step names, whose entries give each reviewer its model in place of the work's role; it holds
     /// the choice by its own sentence where it cannot take the work, and no other role is read. Null reads the work's role.
     /// </param>
     /// <param name="repository">The repository the work is in, where a named role is judged as the run's bind judged it.</param>
-    /// <returns>The choice; an actor whose stored entry does not read (§6.4) chooses nothing, saying so, and is read again at the next ask.</returns>
+    /// <returns>The choice; an actor whose stored entry does not read chooses nothing, saying so, and is read again at the next ask.</returns>
     public static async Task<ReviewerChoice> ChooseAsync(
         HarnessRoster roster, OpinionRule rule, IReadOnlyCollection<string> working, DriverConfig config, string? workspace,
         CancellationToken ct = default, string actor = "opinion", IReadOnlyList<ReviewerPassed>? passed = null,
@@ -264,10 +264,10 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
         StartPlan plan;
         try
         {
-            // FOUNDATION1j part ii (the foundation design §2.4): the start plan of the actor's work, its order the rule's reviewers each
+            // The start plan of the actor's work, its order the rule's reviewers each
             // expanded into the actor's entries for it, or the entries the caller holds; its account walk the plan's, for the workspace.
-            // FOUNDATION1x: the role is the catalogue's for the work at the workspace; the seeded catalogue answers the seeded role.
-            // ROLESTEP1b: a named role is judged at the repository too, where its bind judged it; the work's role stays the workspace's.
+            // The role is the catalogue's for the work at the workspace; the seeded catalogue answers the seeded role.
+            // A named role is judged at the repository too, where its bind judged it; the work's role stays the workspace's.
             plan = new StartPlan(
                 WorkOf(actor), config, roster, roster.Adapters, new PassMemory(), fence: rule.Reviewers.Count == 0 ? null : rule.Reviewers,
                 order: order ?? (rule.Reviewers.Count == 0 ? Array.Empty<ActorEffective>() : null), catalogue: catalogue?.Invoke(),
@@ -286,7 +286,7 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
             return new ReviewerChoice(null, null, ReviewerUnavailable.Refused, $"No second opinion: {error.Message}");
         }
 
-        // STAFFPOLICY1d: the walk's agents are the rule's (another maker first, the asker's list, the named partner); the role's policy arranges
+        // The walk's agents are the rule's (another maker first, the asker's list, the named partner); the role's policy arranges
         // only each agent's own alternatives.
         var arranged = RoleOrders.WithinAgents(plan.Order, RoleOrders.Arranged(roster.StaffFor(roster.Home), plan.Role, plan.Work, plan.Order));
         return await WalkAsync(roster.Adapters, arranged, working, entry => TryAsync(plan, entry, passed, ct), plan.Role).ConfigureAwait(false);
@@ -302,10 +302,10 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
 
     /// <summary>
     /// The walk over the reviewer of work the <paramref name="working"/> agents wrote, from the <paramref name="order"/>'s entries, in
-    /// its passes' order (§3.2, §3.3): each entry asked of <paramref name="tryEntry"/>, the account walk, until one may run.
+    /// its passes' order: each entry asked of <paramref name="tryEntry"/>, the account walk, until one may run.
     /// </summary>
     /// <remarks>
-    /// The walk is the start plan's one loop (FOUNDATION1j part ii, <see cref="StartPlan.LoopAsync{TEntry}"/>) under this type's own rule
+    /// The walk is the start plan's one loop (<see cref="StartPlan.LoopAsync{TEntry}"/>) under this type's own rule
     /// over it: its order by maker and its held agents. The account walk it asks is the world's, handed in, and <see cref="ChooseAsync"/>
     /// hands it as the plan's one ask over the machine's agents.
     /// </remarks>
@@ -332,10 +332,10 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
             .ToList();
 
         var tried = new List<ReviewerTried>();
-        // An agent held as a whole (not installed, cooling, signed out, its pin) holds each of its entries alike: a cool-off is its account's
-        // (§4.1), so its later entries are not asked. A model refused is an entry's alone, and the next entry of the agent is.
+        // An agent held as a whole (not installed, cooling, signed out, its pin) holds each of its entries alike: a cool-off is its account's,
+        // so its later entries are not asked. A model refused is an entry's alone, and the next entry of the agent is.
         var heldAgents = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        // FOUNDATION1j part ii: the plan's one loop, under this walk's own rule over it: the entries by maker, each pass of the rule's in turn,
+        // The plan's one loop, under this walk's own rule over it: the entries by maker, each pass of the rule's in turn,
         // and an agent held as a whole skipped. Each entry it passes is said in the plan's vocabulary; its own code stays on its try.
         var walked = await StartPlan.LoopAsync(
                 ByMaker.SelectMany(pass => entries.Where(pass)), entry => entry.Effective,
@@ -373,7 +373,7 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
         IReadOnlyList<AgentFamily> working)
     {
         var (family, label) = (entry.Family, entry.Label);
-        // The label names the model (D205 §4.4): the same agent on a stronger model is *fresh: opus*, never independent.
+        // The label names the model: the same agent on a stronger model is *fresh: opus*, never independent.
         var model = entry.Effective.Model;
         var reads = $"`{family.Agent}` reads it{(model is null ? "" : $" on `{model}`")}: {family.Said()}";
         var code = label == ReviewerLabels.AnotherMaker ? null : Why(entries, tried);
@@ -398,7 +398,7 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
     }
 
     /// <summary>
-    /// Why no other maker's agent read the work (§3.3), over the listed reviewers that may be another maker's, each of which was
+    /// Why no other maker's agent read the work, over the listed reviewers that may be another maker's, each of which is
     /// tried in the first pass: none listed is <c>not-independent</c>; none installed is <c>no-reviewer</c>; then the one hold
     /// every installed one shares, cooling or signed out; else <c>refused</c>, each named.
     /// </summary>
@@ -443,7 +443,7 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
         StartPlan plan, Entry entry, IReadOnlyList<ReviewerPassed>? passed, CancellationToken ct)
     {
         var (name, label) = (entry.Family.Agent, entry.Label);
-        // Named, never guessed (D23): a name this machine has no agent of is said, and nothing is asked.
+        // Named, never guessed: a name this machine has no agent of is said, and nothing is asked.
         if (!entry.Known)
         {
             return (null, new ReviewerTried(
@@ -451,7 +451,7 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
                 $"`{name}` is no agent on this machine: neither this build nor an installed plugin declares it."));
         }
 
-        // An entry passed whole, on the agent's own sign-in (no account of Daoris's to leave out), is not asked again (§3.5(f)).
+        // An entry passed whole, on the agent's own sign-in (no account of Daoris's to leave out), is not asked again.
         if (passed?.Any(each => each.Entry == entry.Effective && each.Account is not { Length: > 0 }) == true)
         {
             return (null, new ReviewerTried(
@@ -462,9 +462,9 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
         HarnessSelection selection;
         try
         {
-            // D205 §4.1: each account is judged by its reading for the entry's model, and an account this owner's call already passed for
+            // Each account is judged by its reading for the entry's model, and an account this owner's call already passed for
             // the entry at an open's refusal is left out.
-            // FOUNDATION1j part ii: the plan's one ask, a driven start's for the repository's workspace, counted where it chooses an account.
+            // The plan's one ask, a driven start's for the repository's workspace, counted where it chooses an account.
             var left = passed?.Where(each => each.Entry == entry.Effective && each.Account is { Length: > 0 }).Select(each => each.Account!).ToList();
             selection = await plan.AccountsAsync(name, entry.Effective.Model, left is { Count: > 0 } ? left : null, ct).ConfigureAwait(false);
         }

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The look's pass over the operations bringing sessions together (LINESTOGETHER1d, the review-flow design §4): one whose sessions
+/// The look's pass over the operations bringing sessions together: one whose sessions
 /// were deleted is dropped; one at <i>landing</i> or <i>uncertain</i> is settled under its head tree's landing hold, which a landing
 /// under way keeps, then the record lock; every other open one is stepped (<see cref="TogetherLook"/>) by what the records say of its
 /// head now.

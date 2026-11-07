@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1b (D199 points 2 to 4; the co-agent design §2.3, §8.3): a partner's whole piece on the real path, with no model. The person's
+/// A partner's whole piece on the real path, with no model. The person's
 /// ask on file is taken at a look, judged, admitted by a stand-in's measured row, and started in a clone made by real git at the ask's
 /// exact base. The partner is a real process (node, a stand-in shaped on codex-acp, named as <c>codex-acp</c>'s command) started through
 /// the built <c>daoris-piece-start</c> launcher laid out beside the home, in its strict job. Its files are kept by the real keeper as one
@@ -15,7 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// Real git, a real job and real processes against a stand-in service on a loopback port, so the class is in the real-process half
-/// (MOD8), and a strict job is Windows': elsewhere the cases return at once. Mirrors <see cref="HelperProcessTests"/>.
+/// and a strict job is Windows': elsewhere the cases return at once. Mirrors <see cref="HelperProcessTests"/>.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class PartnerProcessTests : IDisposable
@@ -216,7 +216,7 @@ public sealed class PartnerProcessTests : IDisposable
     }
 
     /// <summary>
-    /// STOPRACE1: a stop made while the partner's protocol handshake is still open is the person's end, not a failed wire. An agent
+    /// A stop made while the partner's protocol handshake is still open is the person's end, not a failed wire. An agent
     /// that never answers makes that moment certain.
     /// </summary>
     [Fact]

@@ -1,13 +1,13 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Which words of <c>daoris place</c> and <c>settings</c> change the home (PUSH1f2b; FOUNDATION1 mod-iii): the grammar the settings' command and the
+/// Which words of <c>daoris place</c> and <c>settings</c> change the home: the grammar the settings' command and the
 /// lease a change holds (<see cref="VerbLeases"/>) read before any verb is planned, kept with the settings so that it names no verb a
 /// subdomain above owns. A verb's own reading of the same words (<see cref="ChoiceVerb"/>) answers through these.
 /// </summary>
 public static class ChoiceGrammar
 {
-    /// <summary>The brainstorm policy's minutes' flags (BRAINSTORM1b), which set what they name: <c>brainstorms</c> naming one changes the home.</summary>
+    /// <summary>The brainstorm policy's minutes' flags, which set what they name: <c>brainstorms</c> naming one changes the home.</summary>
     public static IReadOnlyList<string> BrainstormMinuteFlags { get; } = ["--pass-minutes", "--synthesis-minutes", "--challenge-minutes", "--request-minutes"];
 
     /// <summary>The sub-verbs of <c>workflow</c> that write a workflow or the choice; with <c>--plan</c> each only says what it would write.</summary>

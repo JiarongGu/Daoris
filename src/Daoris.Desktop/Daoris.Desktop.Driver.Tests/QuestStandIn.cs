@@ -22,8 +22,8 @@ internal sealed class QuestStandIn(Func<HttpRequestMessage, (HttpStatusCode Stat
 
     /// <summary>
     /// One quest as the service's list carries it: its words and status, the hold and whether it waits on evidence, each
-    /// requirement with its evidence (a path or a gate, <c>[]</c> where none, as EVID1a writes it), each answer, and what was
-    /// last read of its evidence where something was.
+    /// requirement with its evidence (a path or a gate, <c>[]</c> where none), each answer, and what is
+    /// last read of its evidence where something is.
     /// </summary>
     public static JsonNode Json(QuestView quest)
     {

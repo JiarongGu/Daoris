@@ -7,13 +7,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ANSWER1a (D131) through REAL ticks on the protocol door. A driven session takes its quest and parks to ask which port;
+/// Through REAL ticks on the protocol door. A driven session takes its quest and parks to ask which port;
 /// the person answers; at the next look the same record goes on and the stub's own conversation is resumed with the
 /// answer as its next prompt — one record, no second session. Where the agent no longer has the conversation, or the
 /// start runs on another account, the park ends saying why and a new session carries the answer on in the same tree.
 /// </summary>
 /// <remarks>
-/// The stand-in service models ANSWER1b (design §5): an answer keeps the record parked, and a move into
+/// The stand-in service models the real one: an answer keeps the record parked, and a move into
 /// <c>awaiting-person</c> clears it. The real service still ends the record as it takes the answer.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
@@ -157,12 +157,12 @@ public sealed class AnswerContinuesTickTests : IDisposable
         var handed = heard.Last(line => line["method"]!.GetValue<string>() == "session/prompt")["prompt"]!.GetValue<string>();
         Assert.Contains("You are carrying on quest", handed);
         Assert.Contains("Port 8080.", handed);
-        // The answer sits beneath its question in the park's own record once, though a resume was tried there first.
+        // The answer sits beneath its question in the park's own record once, though a resume is tried there first.
         Assert.Single(Events("s1"), e => e is { Kind: SessionEventKind.User, Origin: "person", Text: "Port 8080." });
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c (D189's amendment): a driven record whose resume its agent refused on the wire, proving no loss, carries on by
+    /// A driven record whose resume its agent refused on the wire, proving no loss, carries on by
     /// itself, since a driven session runs without a person: the park ends saying why, and a new session in the same tree is handed
     /// the brief, its record continuing the park `from` why <c>retry</c>. The move is said on both parts, with the brief's size, and
     /// in the machine log as <c>session.moved</c>.
@@ -203,7 +203,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c (D189's amendment, the session-context design §2): an adapter no longer installed proves nothing of the conversation,
+    /// An adapter no longer installed proves nothing of the conversation,
     /// and only the person can choose the agent it goes on with: the answered park stays parked with its answer, nothing is spawned and
     /// no session opens, and its conversation says so once with the hand-over's offer, never ending the park for a carry-on that could
     /// not start there either.
@@ -233,13 +233,13 @@ public sealed class AnswerContinuesTickTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A different account never resumes (D131 §1): the park ran on stub account 1, and the person removed account 1 before
-    /// answering, so it has left Daoris's accounts (D197 point 1: only a removal takes an account out of the set; MSG1g asks for
-    /// the park's own account, and finds it gone) and the stub is never asked to resume. The park ends saying why, the reason's
+    /// 🔴 A different account never resumes: the park ran on stub account 1, and the person removed account 1 before
+    /// answering, so it has left Daoris's accounts (only a removal takes an account out of the set; the park's own
+    /// account is asked for, and found gone) and the stub is never asked to resume. The park ends saying why, the reason's
     /// line then its own, naming no account, and the carry-on runs on account 2 in the same tree.
     /// </summary>
     /// <remarks>
-    /// A default moved to account 2 takes no account out (POOL1a1; D197 points 1 and 2): it is the set's first, account 1 stays in
+    /// A default moved to account 2 takes no account out: it is the set's first, account 1 stays in
     /// the set, and the park would rightly resume there.
     /// </remarks>
     [Fact]
@@ -279,9 +279,9 @@ public sealed class AnswerContinuesTickTests : IDisposable
     }
 
     /// <summary>
-    /// AUTONOMY1b (D184 point 3): a driven start under asking runs in its agent's asking mode, set on the wire, and its note names the
+    /// A driven start under asking runs in its agent's asking mode, set on the wire, and its note names the
     /// mode it got; answered after the person moved its repository to unrestricted, the same record resumes in the agent's mode that
-    /// asks nothing and says the change first, as HELPMODE1a2 says Ask Daoris's.
+    /// asks nothing and says the change first, as Ask Daoris's does.
     /// </summary>
     [Fact]
     public async Task A_resume_under_a_changed_setup_runs_in_the_mode_set_now_and_says_the_change()
@@ -303,12 +303,12 @@ public sealed class AnswerContinuesTickTests : IDisposable
         Assert.Equal("bypassPermissions", heard.Skip(resumedAt).Single(line => line["method"]!.GetValue<string>() == "session/set_mode")["mode"]!.GetValue<string>());
         Assert.Contains(Events("s1"), e => e is { Kind: SessionEventKind.Note, Text: { } text }
             && text.StartsWith("Permission prompts changed since `s1` started: it started under `asking`, and this run goes on under `unrestricted`.", StringComparison.Ordinal));
-        // AUTONOMY1b2 (D184 point 1): and its record names the setup it now runs under.
+        // And its record names the setup it now runs under.
         Assert.Equal(AccessRules.Unrestricted, service.Session("s1")["access"]![AccessRules.Permissions]!.GetValue<string>());
     }
 
     /// <summary>
-    /// AUTONOMY1b (D184 point 2, D183 point 1): unrestricted on a harness with no mode that asks nothing is held before any record
+    /// Unrestricted on a harness with no mode that asks nothing is held before any record
     /// opens, naming the harness and the way on; nothing is spawned, and it never runs in its own mode under that label.
     /// </summary>
     [Fact]
@@ -358,8 +358,8 @@ public sealed class AnswerContinuesTickTests : IDisposable
     /// The protocol door's stand-in: it names its conversation <c>conv-&lt;session&gt;</c>, takes the quest and asks which
     /// port; told the answer on a resumed conversation it closes the quest; told a carry-on it closes it too. The mode is
     /// how it resumes: <c>resumes</c> advertises and honours <c>session/resume</c>, <c>gone</c> refuses it
-    /// <c>resource_not_found</c>; <c>modes</c> resumes too, and offers Claude's modes on each session, a mode set going to the log
-    /// (AUTONOMY1b). Each frame it acts on goes to the log, with where it ran and on which account.
+    /// <c>resource_not_found</c>; <c>modes</c> resumes too, and offers Claude's modes on each session, a mode set going to the log.
+    /// Each frame it acts on goes to the log, with where it ran and on which account.
     /// </summary>
     private string Agent()
     {
@@ -443,7 +443,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
     }
 
     /// <summary>
-    /// The service as ANSWER1b would have it (design §5): sessions with their adapter, account, tree, base and take; the
+    /// The service as it would have it: sessions with their adapter, account, tree, base and take; the
     /// ledger's moves, a finished record refusing any; an answer kept on a park that stays parked; and a move into
     /// <c>awaiting-person</c> clearing it.
     /// </summary>
@@ -585,9 +585,9 @@ public sealed class AnswerContinuesTickTests : IDisposable
                             ["baseCommit"] = body["baseCommit"]?.GetValue<string>(),
                             ["profile"] = body["profile"]?.GetValue<string>(),
                             ["created"] = DateTimeOffset.UtcNow.AddMinutes(_sessions.Count).ToString("O"),
-                            // The setup the start resolved (AUTONOMY1a), kept and answered as the service does on loopback.
+                            // The setup the start resolved, kept and answered as the service does on loopback.
                             ["access"] = body["access"]?.DeepClone(),
-                            // The session it continues and why (MIXAGENT1a-iii, SESSCTX1b), as the service keeps them.
+                            // The session it continues and why, as the service keeps them.
                             ["from"] = body["from"]?.DeepClone(),
                             ["fromWhy"] = body["fromWhy"]?.DeepClone(),
                         };
@@ -609,10 +609,10 @@ public sealed class AnswerContinuesTickTests : IDisposable
 
                         session["state"] = to;
                         if (body["note"] is { } note) session["note"] = note.GetValue<string>();
-                        // APIREFUSAL1: the note's parts, kept as the ledger keeps them, so a test reads an ending by its code.
+                        // The note's parts, kept as the ledger keeps them, so a test reads an ending by its code.
                         if (body["noteParts"] is { } parts) session["noteParts"] = parts.DeepClone();
                         if (to == "starting") _startNotes[id] = session["note"]?.GetValue<string>() ?? "";
-                        // ANSWER1b: a session that parks again asks anew.
+                        // A session that parks again asks anew.
                         if (to == "awaiting-person")
                         {
                             session.Remove("said");
@@ -623,7 +623,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "moved" }.ToJsonString());
                     }
 
-                    // AUTONOMY1b2: the setup a resumed record now runs under, kept as the service does.
+                    // The setup a resumed record now runs under, kept as the service does.
                     case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/access", StringComparison.Ordinal):
                     {
                         var id = path["/api/sessions/".Length..^"/access".Length];
@@ -632,8 +632,8 @@ public sealed class AnswerContinuesTickTests : IDisposable
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "kept" }.ToJsonString());
                     }
 
-                    // ONEWAY1k: a park is answered through the say door alone; its word is kept on `said` and the record stays parked,
-                    // for the driver's next look (ANSWER1b).
+                    // A park is answered through the say door alone; its word is kept on `said` and the record stays parked,
+                    // for the driver's next look.
                     case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/say", StringComparison.Ordinal):
                     {
                         var id = path["/api/sessions/".Length..^"/say".Length];
@@ -660,7 +660,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
                         }.ToJsonString());
                     }
 
-                    // COWORK1c: a word's attempt is marked before its dispatcher writes it, so a restart never writes it twice.
+                    // A word's attempt is marked before its dispatcher writes it, so a restart never writes it twice.
                     case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/attempt", StringComparison.Ordinal):
                     {
                         var id = path["/api/sessions/".Length..^"/attempt".Length];
@@ -674,7 +674,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "marked", ["unmarked"] = new JsonArray() }.ToJsonString());
                     }
 
-                    // MSG1a: the words a session took come off its record by their ids.
+                    // The words a session took come off its record by their ids.
                     case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/taken", StringComparison.Ordinal):
                     {
                         var id = path["/api/sessions/".Length..^"/taken".Length];
@@ -696,7 +696,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
                         {
                             case "take" when quest["status"]!.GetValue<string>() == "Open":
                                 quest["status"] = "Taken";
-                                // The connector marks the take on the session it speaks for (STANDDOWN2).
+                                // The connector marks the take on the session it speaks for.
                                 foreach (var session in _sessions.Where(s => Live.Contains(s["state"]!.GetValue<string>())))
                                 {
                                     session["took"] = true;

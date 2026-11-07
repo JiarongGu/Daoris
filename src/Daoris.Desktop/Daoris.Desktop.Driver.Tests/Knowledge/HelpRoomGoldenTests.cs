@@ -5,8 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// Ask Daoris's room rendered whole (MOD6), against the text it rendered before its sections were split
-/// into files of their own: three machines between them take every branch a section has. A section moved,
+/// Ask Daoris's room rendered whole, against its golden text:
+/// three machines between them take every branch a section has. A section moved,
 /// reordered or reworded shows here as the whole room's difference, byte for byte.
 /// </summary>
 /// <remarks>
@@ -23,12 +23,12 @@ public sealed class HelpRoomGoldenTests
         Intake = "claude-code-acp",
         Helper = "claude-code-acp",
         Cap = 4,
-        // ENTRY1f2: a session waiting on the person, by id and repository.
+        // A session waiting on the person, by id and repository.
         Waiting = [new("s9c0d1e2", "console-ui")],
-        // SESSUX1h3: past the cap, so the golden shows the "and N more" too.
+        // Past the cap, so the golden shows the "and N more" too.
         Sessions = new(1, 1, 2, 1, 12, [.. Enumerable.Range(1, 10).Select(n => new HelpEndedSession($"s{n}e0f1a2", n % 2 == 0 ? "engine" : "console-ui"))]),
         Asks = 2,
-        // FABRIC-MILESTONE1b: one unit ended with its cleanup waiting on a tree a session holds and a folder kept, one cleaned.
+        // One unit ended with its cleanup waiting on a tree a session holds and a folder kept, one cleaned.
         Work =
         [
             new WorkMilestone("u-held", "console-ui", "daoris/s1c2d3e4", "s1c2d3e4",
@@ -43,7 +43,7 @@ public sealed class HelpRoomGoldenTests
                 [], []),
         ],
         WorkUnread = ["`reports-db` has no checkout here, so its recovery refs were not read"],
-        // COMMS1i: two lines waiting on what they asked of others, one source not read.
+        // Two lines waiting on what they asked of others, one source not read.
         Waits = new HelpWaits(
             [
                 new("s1c2d3e4", "console-ui", "default", "helper h7 · codex-acp · asked 16:29 · asked · delivery kept"),
@@ -56,31 +56,31 @@ public sealed class HelpRoomGoldenTests
             {
                 Checkout = true, Drivable = true, OwnTree = true,
                 Line = new Line("feature/app", LineSource.Repository),
-                // REVIEWENV1a: a workspace's required review rule, its one environment local.
+                // A workspace's required review rule, its one environment local.
                 Review = new ResolvedReview(
                     new ReviewRule([new("dev", "local", "README.md", "http://localhost:4200")], Required: true), ReviewSource.Workspace),
-                // XAGENT1a: a workspace's required second opinion, another maker's agent first.
+                // A workspace's required second opinion, another maker's agent first.
                 Opinion = new ResolvedOpinion(new OpinionRule(["codex-acp", "dsh"], ["landing"], Required: true), OpinionSource.Workspace),
-                // WORKFLOW1h-b: a named workflow chosen for it, with a kind of its own mapped.
+                // A named workflow chosen for it, with a kind of its own mapped.
                 Workflow = new HelpWorkflowFollowed("docs-to-pr", WorkflowLevels.Repository)
                 {
                     Name = "Documentation to a pull request", Version = 2, Kinds = [("feature", "current")],
-                    // WORKFLOWCLEAN1 1i: it lands as its version's `land` step says, not by a landing rule.
+                    // It lands as its version's `land` step says, not by a landing rule.
                     LandMethod = "pull-request", LandPattern = "docs/{slug}",
                 },
             },
             new("reports-db", "work")
             {
                 Checkout = true, Drivable = true, Held = true, Line = new Line("main", LineSource.Checkout),
-                // WORKFLOW1h-b: its workspace's choice, which is not saved here.
+                // Its workspace's choice, which is not saved here.
                 Workflow = new HelpWorkflowFollowed("release-flow", WorkflowLevels.Workspace) { Problem = "not saved here" },
             },
             new("engine", "default")
             {
                 Checkout = false,
-                // REVIEWENV1a: none here, whatever its workspace says.
+                // None here, whatever its workspace says.
                 Review = new ResolvedReview(ReviewRule.None, ReviewSource.Repository),
-                // XAGENT1a: no second opinion here, whatever its workspace says.
+                // No second opinion here, whatever its workspace says.
                 Opinion = new ResolvedOpinion(OpinionRule.None, OpinionSource.Repository),
             },
             new("tools", "default")
@@ -88,13 +88,13 @@ public sealed class HelpRoomGoldenTests
                 Checkout = true, Drivable = true, Line = new Line("develop", LineSource.Workspace),
             },
         ],
-        // WORKFLOW1h-b (design §8.4): the kinds a workspace declares, one mapped and one left to the default.
+        // The kinds a workspace declares, one mapped and one left to the default.
         WorkflowKinds =
         [
             new HelpWorkflowKind("work", "docs", "Documentation", ["docs/**", "**/*.md"], "docs-to-pr"),
             new HelpWorkflowKind("work", "feature", "Feature", [], null),
         ],
-        // Reading across (D107): `reports-db` switched off, the rest on, one path that git needs quoted.
+        // Reading across: `reports-db` switched off, the rest on, one path that git needs quoted.
         Reads = [new("console-ui", "work", "/work/console-ui"), new("tools", "default", "/src/my tools")],
         Agents =
         [
@@ -106,7 +106,7 @@ public sealed class HelpRoomGoldenTests
             new("codex") { Present = false },
             new("dsh") { Present = true, Accounts = [new("home", "in")] },
         ],
-        // STAFFPOLICY1g: a role under a set policy with its week, one whose policy went stale, one with none, and one scoped to a workspace.
+        // A role under a set policy with its week, one whose policy is stale, one with none, and one scoped to a workspace.
         Roles =
         [
             new HelpRole("build", "Build", ["build", "design"], HelpRole.MachineScope, null, 7)
@@ -124,7 +124,7 @@ public sealed class HelpRoomGoldenTests
             },
             new HelpRole("helper", "Helper", ["help"], HelpRole.MachineScope, null, 0) { ChoiceState = "off" },
             new HelpRole("steward", "Steward", ["steward"], HelpRole.MachineScope, null, 0) { ChoiceState = "unreadable" },
-            // REVIEW2 S3: a repository's role stays in a workspace's room only where the repository is one of its own.
+            // A repository's role stays in a workspace's room only where the repository is one of its own.
             new HelpRole("auditor", "Auditor", ["review"], HelpRole.RepositoryScope, "no-such-repository", 1) { Choices = ["claude-code opus high"] },
             new HelpRole("designer", "Designer", ["design"], HelpRole.WorkspaceScope, "work", 2)
             {
@@ -147,11 +147,11 @@ public sealed class HelpRoomGoldenTests
             new HelpPlugin("example.quiet", Enabled: true, []) { Source = "folder" },
         ],
         Parked = [new ParkedQuest("q5e6f7a8", "engine"), new ParkedQuest("q6b7c8d9", "tools")],
-        // SESSUX1b: a quest the person's stop holds, with the session stopped.
+        // A quest the person's stop holds, with the session stopped.
         Held = [new HeldQuest("q7c8d9e0", "console-ui", "s8b9c0d1")],
-        // PAUSE1f-b: an ask's work paused, and one quest on its own.
+        // An ask's work paused, and one quest on its own.
         Paused = [new PausedBy(WorkScope.Ask, "a1b2c3d4"), new PausedBy(WorkScope.Quest, "q6b7c8d9")],
-        // HIST1f-b: a workspace keeping finished work, some of it kept, and one keeping none; the home's left-over files once.
+        // A workspace keeping finished work, some of it kept, and one keeping none; the home's left-over files once.
         History =
         [
             new HistoryReading("work")
@@ -166,9 +166,9 @@ public sealed class HelpRoomGoldenTests
         Browser = new HelpBrowser("edge", "daoris", "refuse", ["https://site.example/board", "https://docs.example/"]),
         Landed =
         [
-            // ACCESSWORDS1b: this machine's access setup accepted it, which the room says with the level.
+            // This machine's access setup accepts it, which the room says with the level.
             new HelpLanded("engine", "feature/q2-second", "s2a3b4c5", Pushed: false, PullRequest: null) { Access = "machine" },
-            // PLUGHOOK1c: the kept answer about its pull request, which the helper reads rather than asks.
+            // The kept answer about its pull request, which the helper reads rather than asks.
             new HelpLanded("game", "feature/q3-third", "s3", Pushed: true, PullRequest: "https://example.test/pr/3")
             {
                 State = new PullRequestState(PullRequestStates.Completed)
@@ -202,16 +202,16 @@ public sealed class HelpRoomGoldenTests
     internal static readonly HelpMachine Empty = new();
 
     /// <summary>
-    /// A workspace's room (ASKSCOPE1b): <c>alpha</c>'s, projected from a machine with <c>beta</c>'s and the default's facts beside
+    /// A workspace's room: <c>alpha</c>'s, projected from a machine with <c>beta</c>'s and the default's facts beside
     /// it, so its first lines say its scope and every list and count is its own. <c>full</c>, <c>sparse</c> and <c>empty</c> are
-    /// <c>default</c>'s room, the whole machine, as before.
+    /// <c>default</c>'s room, the whole machine.
     /// </summary>
     internal static HelpMachine Scoped => HelpRoomScopeFixture.Machine().Within("alpha");
 
     internal static HelpMachine Named(string name) => name switch
     {
         "full" => Full,
-        // HELPMODE1a1 (D183): every section speaking, in full access, so review reads the room as the helper does there.
+        // Every section speaking, in full access, so review reads the room as the helper does there.
         "full-access" => Full with { Mode = HelpModes.Full },
         "sparse" => Sparse,
         "scoped" => Scoped,
@@ -228,7 +228,7 @@ public sealed class HelpRoomGoldenTests
     internal static string GoldenPath(string file) =>
         Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "Knowledge", "golden", "help-room", file);
 
-    /// <summary>GOLDEN1: set to 1, the tests write each golden from the render instead of comparing; unset, they compare.</summary>
+    /// <summary>Set to 1, the tests write each golden from the render instead of comparing; unset, they compare.</summary>
     internal const string WriteSwitch = "DAORIS_GOLDEN_WRITE";
 
     internal static bool WriteRequested => Environment.GetEnvironmentVariable(WriteSwitch) == "1";
@@ -262,7 +262,7 @@ public sealed class HelpRoomGoldenTests
         Settle(GoldenPath($"{machine}.md"), HelpRoom.Render(Named(machine)), WriteRequested);
     }
 
-    /// <summary>GOLDEN1: the switch writes the render, byte for byte and without a byte-order mark; without it a difference fails.</summary>
+    /// <summary>The switch writes the render, byte for byte and without a byte-order mark; without it a difference fails.</summary>
     [Fact]
     public void The_switch_writes_the_render_and_without_it_a_difference_fails()
     {

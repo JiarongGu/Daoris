@@ -12,7 +12,7 @@ public sealed record ToolEnd(
     string Tool, string Action, string? Version, int ExitCode, string? Check, string? Problem, bool Stopped, string? Nothing);
 
 /// <summary>
-/// A tool's download, use or update while it runs (TOOLS4, D121 §3.6): followed by the page and stopped by the person,
+/// A tool's download, use or update while it runs: followed by the page and stopped by the person,
 /// as <see cref="HarnessRun"/> is for an agent's install.
 /// </summary>
 public sealed class ToolRun
@@ -50,14 +50,14 @@ public sealed class ToolRun
 }
 
 /// <summary>
-/// The driver's download as an action the page starts and follows (TOOLS4, D121 §3.6): <see cref="Start"/> answers once
+/// The driver's download as an action the page starts and follows: <see cref="Start"/> answers once
 /// the action has started, its end is news after, and the person's stop cancels it. It is never one call a bridge waits
-/// on, because the bridge gives up after thirty seconds and a download outlives that (WSR7 a). The routes that carry it
-/// to the page, <c>TOOLS_DOWNLOAD</c> and <c>TOOLS_USE</c>, are TOOLS7's.
+/// on, because the bridge gives up after thirty seconds and a download outlives that. The routes that carry it
+/// to the page are <c>TOOLS_DOWNLOAD</c> and <c>TOOLS_USE</c>.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>One at a time for each tool</b>, claimed as the action starts and released however it ends: two downloads
-/// of one version would stage into one folder (REV3 learned the shape on agents' logins).</para>
+/// of one version would stage into one folder.</para>
 /// <para>Planned first, from the lists as last fetched (<see cref="ToolInstall.Plan"/>), so a refusal is the answer and
 /// nothing starts; <c>use</c> and <c>update</c> switch only once the version is downloaded and verified.</para>
 /// </remarks>
@@ -79,7 +79,7 @@ public sealed class ToolActions(string home, string baseDirectory, HttpMessageHa
     }
 
     /// <summary>
-    /// Start a download, a use or an update (§3.6, §3.7), answered once it has started.
+    /// Start a download, a use or an update, answered once it has started.
     /// </summary>
     /// <param name="action"><c>download</c>, <c>use</c> or <c>update</c>.</param>
     /// <param name="version">The version named, or null for the newest the lists named at the last look.</param>

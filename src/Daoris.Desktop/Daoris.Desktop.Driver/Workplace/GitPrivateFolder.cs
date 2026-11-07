@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A folder of a git secret (D198 point 4; the git-auth design §3.4), shared by the keys' and the tokens' folders: made with its
+/// A folder of a git secret, shared by the keys' and the tokens' folders: made with its
 /// access limited to the person's Windows account (inherited entries removed; SYSTEM and Administrators keep their implicit reach),
 /// or to the owner on another system, <b>before</b> a byte is written into it. The base library alone: the doors compile it in.
 /// </summary>
@@ -31,7 +31,7 @@ public static class GitPrivateFolder
         }
     }
 
-    /// <summary>Whether a folder's access is this account's alone, inherited entries removed (the table's check, §3.4).</summary>
+    /// <summary>Whether a folder's access is this account's alone, inherited entries removed (the table's check).</summary>
     public static bool IsPrivate(string folder)
     {
         if (!OperatingSystem.IsWindows()) return (File.GetUnixFileMode(folder) & (UnixFileMode.GroupRead | UnixFileMode.OtherRead)) == 0;

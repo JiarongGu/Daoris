@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-CUTOVER1g (D190's binding moment, the cutover design §8; amends D157 point 11): a run is bound inside its start, once the start
+/// A run is bound inside its start, once the start
 /// is past the holds before its tree and before its take, so the take names the graph its run is bound to. A start held after the bind
 /// keeps its run bound to what it chose, and a choice changed since applies to the next run; a bind not made holds the start, said, and
 /// the next look binds and takes it; a start held before its tree opens binds nothing.
@@ -47,7 +47,7 @@ public sealed class WorkflowBindStartTickTests : IDisposable
         GitSeed.Discard(_home);
     }
 
-    /// <summary>A graph version of the merge after you accept: only a graph binds and runs (D232).</summary>
+    /// <summary>A graph version of the merge after you accept: only a graph binds and runs.</summary>
     private void Save() =>
         WorkflowStore.Add(_home, new WorkflowVersionAdded(
             "merge-after", "Merge after you accept", "terminal", "2026-10-09T09:00:00Z", null, WorkflowDefaults.Of(SetupPresets.Merge)!.Graph()), kept: []);

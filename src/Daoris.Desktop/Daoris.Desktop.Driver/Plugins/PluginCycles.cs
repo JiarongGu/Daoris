@@ -6,7 +6,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a cycle is given (FABRIC-PERFORM1e, the fabric events design §D9): the performed step it drives, the unit it is told, the two
+/// What a cycle is given: the performed step it drives, the unit it is told, the two
 /// revisions it is about, the inputs each attempt names and the deadline a timed-out attempt is given.
 /// </summary>
 /// <param name="Step">The performed step's id as its manifest writes it, or null for the plugin's first.</param>
@@ -16,7 +16,7 @@ public sealed record CycleFixture(string? Step, string Unit, IReadOnlyList<strin
 }
 
 /// <summary>
-/// The kit's cycle, `daoris plugin try &lt;folder&gt; --cycle &lt;fixture&gt;` (FABRIC-PERFORM1e, the fabric events design §D9): a
+/// The kit's cycle, `daoris plugin try &lt;folder&gt; --cycle &lt;fixture&gt;`: a
 /// performer driven through synthetic eligibility, duplicate delivery, failure, timeout, restart and a stale attempt's successor, then
 /// its resource's cleanup asked twice, without a real deployment.
 /// </summary>
@@ -29,7 +29,7 @@ public sealed record CycleFixture(string? Step, string Unit, IReadOnlyList<strin
 /// its platform's place and counts each external effect. A plugin that does not take it, which says so by writing
 /// <c>&lt;world&gt;.taken</c> before its handshake is answered, is sent no attempt: the cycle stops there and says why.</para>
 ///
-/// <para><b>A folder's plugin only</b>, told a scratch home and a scratch data folder under the home's trials (D63), both removed after: a
+/// <para><b>A folder's plugin only</b>, told a scratch home and a scratch data folder under the home's trials, both removed after: a
 /// cycle writes a journal of attempts that never happened, which an installed plugin's own data folder must never hold.</para>
 /// </remarks>
 public static class PluginCycles
@@ -306,7 +306,7 @@ public static class PluginCycles
                                         ? $"started again and sent `i-1` once more, it did the work again ({acts} times in all)."
                                         : $"started again: resynced `i-1` under its id, said done of it and {lost.State} of `i-3`, which the process before it began, and did no work twice.");
 
-                // A new revision's attempt: a new key, its own work, its own outcome, never the old one's.
+                // A new revision's attempt: a new key, its own work, its own outcome, never an earlier revision's.
                 await life.Peer.PerformAsync(call(4, r2, later), ct).ConfigureAwait(false);
                 var fresh = await life.UntilAsync(Completion("i-4"), ct).ConfigureAwait(false);
                 var once = Effects().Count(line => line == "act k-4");

@@ -9,10 +9,10 @@ internal interface ITurnEndWiring : ITurnWiring
     /// <summary>The driver's own sentence by its code, on the console and in the record.</summary>
     void Note(Noted noted);
 
-    /// <summary>The stream's end as a failure: its cause's where one was said before it, else <paramref name="sentence"/>.</summary>
+    /// <summary>The stream's end as a failure: its cause's where one is said before it, else <paramref name="sentence"/>.</summary>
     DriverException StreamEnded(string sentence);
 
-    /// <summary>One of the run's prompts, read for a transient failure where the run was handed a retry.</summary>
+    /// <summary>One of the run's prompts, read for a transient failure where the run is handed a retry.</summary>
     Task<string> PromptingAsync(Func<Task<string>> prompt, CancellationToken ct);
 
     /// <summary>One prompt of the driver's own words, written only while <paramref name="when"/> holds (null always holds).</summary>

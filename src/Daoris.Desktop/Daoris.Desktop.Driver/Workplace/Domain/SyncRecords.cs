@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What pulling a repository's line would do, or found (WSR6). Only a fast-forward moves anything.</summary>
+/// <summary>What pulling a repository's line would do, or found. Only a fast-forward moves anything.</summary>
 public static class PullKind
 {
     /// <summary>The local line would move forward to origin's, and nothing of its own would be lost.</summary>
@@ -45,20 +45,20 @@ public sealed record LinePull(
     public bool Moves => Kind == PullKind.FastForward;
 
     /// <summary>
-    /// Where the fetch failed, when this checkout last heard from origin (WSR7): what the row is judged against is what
+    /// Where the fetch failed, when this checkout last heard from origin: what the row is judged against is what
     /// origin said then. The newer of <c>FETCH_HEAD</c>'s time, where it holds a fetch, and when <c>origin/&lt;line&gt;</c>
     /// last moved here; null where neither says, which is never.
     /// </summary>
     public DateTimeOffset? LastFetch { get; init; }
 
-    /// <summary>Where the fetch failed, how origin is reached, from its address: `ssh`, `https`, `http`, `git` or `file` (WSR7).</summary>
+    /// <summary>Where the fetch failed, how origin is reached, from its address: `ssh`, `https`, `http`, `git` or `file`.</summary>
     public string? Reach { get; init; }
 
     /// <summary>Where the fetch failed, the host of origin's address as a git identity names it (with its port where it is not the scheme's), which Ask Daoris's door to Add a git identity fills; null for a local path.</summary>
     public string? Host { get; init; }
 }
 
-/// <summary>What bringing one branch up to date would do, or found (WSR6). Only a replay moves anything.</summary>
+/// <summary>What bringing one branch up to date would do, or found. Only a replay moves anything.</summary>
 public static class RebaseKind
 {
     /// <summary>Its own commits would be replayed onto the line, cutting at the commit it grew from.</summary>
@@ -86,7 +86,7 @@ public static class RebaseKind
     public const string Unknown = "unknown";
 }
 
-/// <summary>How the commit a branch's own work starts after was found (WSR6).</summary>
+/// <summary>How the commit a branch's own work starts after is found.</summary>
 public static class CutBy
 {
     /// <summary>It grew from the line: where it leaves the line.</summary>
@@ -99,7 +99,7 @@ public static class CutBy
     public const string Content = "content";
 }
 
-/// <param name="Landed">A branch a landing made and recorded (WSR5), rather than a session's own.</param>
+/// <param name="Landed">A branch a landing made and recorded, rather than a session's own.</param>
 /// <param name="Onto">The line it is brought up to.</param>
 /// <param name="Cut">The commit its own commits start after, where it is replayed; null otherwise.</param>
 /// <param name="CutBy">How that commit was found (<see cref="Driver.CutBy"/>).</param>
@@ -113,13 +113,12 @@ public sealed record RebaseItem(
     public bool Replays => Kind == RebaseKind.Replay;
 
     /// <summary>
-    /// Replay: how many of its commits the line already holds, which the replay leaves out (LANDSYNC3b, D87's 2026-10-15 amendment
-    /// point 4 by analogy): those the cut moved past and those it skips, beside <see cref="Commits"/>, what it carries. A run the walk
-    /// by content moved the cut past is said by <see cref="CutBy"/> instead. An added field: a row from before reads 0.
+    /// Replay: how many of its commits the line already holds, which the replay leaves out: those the cut moved past and those it skips, beside <see cref="Commits"/>, what it carries. A run the walk
+    /// by content moved the cut past is said by <see cref="CutBy"/> instead. A row without it reads 0.
     /// </summary>
     public int LeftOut { get; init; }
 
-    /// <summary>A landed branch's latest answer about its pull request, as <see cref="LandedItem.State"/> (PLUGHOOK1c, design §2.5).</summary>
+    /// <summary>A landed branch's latest answer about its pull request, as <see cref="LandedItem.State"/>.</summary>
     public PullRequestState? State { get; init; }
 
     /// <summary>Why that answer does not clear it, as <see cref="LandedItem.StateCode"/>.</summary>
@@ -132,12 +131,12 @@ public sealed record RebaseItem(
     public PullRequestNotAsked? NotAsked { get; init; }
 }
 
-/// <summary>A repository with a checkout here, and whether it holds a branch of Daoris's (WSR7, D112).</summary>
+/// <summary>A repository with a checkout here, and whether it holds a branch of Daoris's.</summary>
 /// <param name="Holds">A session branch (`daoris/…`), or a branch a landing recorded that still stands.</param>
 public sealed record SyncRepository(string Repository, string Workspace, bool Holds);
 
 /// <summary>
-/// Which repositories bringing up to date takes (WSR7, D112): by default those holding a branch of Daoris's, and every
+/// Which repositories bringing up to date takes: by default those holding a branch of Daoris's, and every
 /// other one only where the person includes it — all of them (`--all`), or by name (`--repository`, the screen's tick).
 /// </summary>
 public sealed record SyncScope
@@ -170,10 +169,10 @@ public sealed record SyncScope
     };
 }
 
-/// <summary>Bringing repositories up to date (WSR6), listed first: each line's pull, each branch's replay, and the landed branches that go.</summary>
+/// <summary>Bringing repositories up to date, listed first: each line's pull, each branch's replay, and the landed branches that go.</summary>
 public sealed record SyncPlan(IReadOnlyList<LinePull> Lines, IReadOnlyList<RebaseItem> Rebases, IReadOnlyList<LandedItem> Deletes)
 {
-    /// <summary>The repositories the look took (WSR7, D112), each with whether it holds a branch of Daoris's.</summary>
+    /// <summary>The repositories the look took, each with whether it holds a branch of Daoris's.</summary>
     public IReadOnlyList<SyncRepository> Looked { get; init; } = [];
 
     /// <summary>Every other repository with a checkout here: not fetched, not judged, listed for the person to include.</summary>
@@ -189,6 +188,6 @@ public sealed record RebaseResult(RebaseItem Item, bool Replayed, string Message
 /// <summary>What one press of bringing up to date did, all three steps.</summary>
 public sealed record SyncDone(IReadOnlyList<PullResult> Lines, IReadOnlyList<RebaseResult> Rebases, IReadOnlyList<LandedResult> Deletes)
 {
-    /// <summary>The repositories with a checkout here the press did not take (WSR7, D112): nothing of them was touched.</summary>
+    /// <summary>The repositories with a checkout here the press did not take: nothing of them is touched.</summary>
     public IReadOnlyList<SyncRepository> Apart { get; init; } = [];
 }

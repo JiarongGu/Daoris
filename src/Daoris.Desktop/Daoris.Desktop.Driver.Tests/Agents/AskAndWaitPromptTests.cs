@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Ask and wait (D79). Measured on a real run: a session whose ticket needed another repository's
-/// contract tried to read that repository, was refused, and guessed — because nothing it was handed
-/// said the answer was to ask. The target has to say so, and a resumed session has to be told it is
-/// resuming, or the claiming instruction sends it to take a quest it already holds.
+/// Ask and wait. A session whose ticket needs another repository's contract tries to read that
+/// repository, is refused, and guesses unless something it is handed says the answer is to ask.
+/// The target has to say so, and a resumed session has to be told it is resuming, or the claiming
+/// instruction sends it to take a quest it already holds.
 /// </summary>
 public sealed class AskAndWaitPromptTests
 {
@@ -43,8 +43,8 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
-    /// D83, reached on purpose: FG5's second verify session needed a sign-in only the person could give,
-    /// and DECLINED — because its instruction offered only done or decline, so the quest closed with the
+    /// A verify session that needs a sign-in only the person can give must not DECLINE because its
+    /// instruction offers only done or decline, closing the quest with the
     /// work unchecked. A session told it may stop and ask parks instead, and the person's answer carries
     /// the quest on in the same tree.
     /// </summary>
@@ -71,9 +71,9 @@ public sealed class AskAndWaitPromptTests
     private static string Flat(string prompt) => System.Text.RegularExpressions.Regex.Replace(prompt, @"\s+", " ");
 
     /// <summary>
-    /// WSSETUP9 (D124 §6.1): a driven session in a report repository stopped to ask the person which report
-    /// a ticket meant, a choice its own notes and code could settle, because its instruction offered "a
-    /// choice between options that is theirs" as a reason to stop. Every driven instruction now sends it to
+    /// A driven session in a report repository must not stop to ask the person which report
+    /// a ticket means, a choice its own notes and code can settle, because its instruction offers "a
+    /// choice between options that is theirs" as a reason to stop. Every driven instruction sends it to
     /// the sources first, names them, and has it decide what they settle.
     /// </summary>
     [Fact]
@@ -99,7 +99,7 @@ public sealed class AskAndWaitPromptTests
     /// <summary>
     /// A reading the evidence leans to is taken and said, not asked: it is committed on the session's branch,
     /// named in its close, and reviewed with the diff, so the person corrects it in review rather than being
-    /// stopped by it (D124 §6.1).
+    /// stopped by it.
     /// </summary>
     [Fact]
     public void A_reading_the_evidence_leans_to_is_taken_and_said_in_the_close()
@@ -114,10 +114,10 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
-    /// AUTONOMY1e (D184 point 4): a session's questions work as Claude Code's console does. Whatever it can decide it decides,
-    /// records why and keeps going; on the install, parks waited 7 to 57 minutes on questions such as which report a page
-    /// shows, or a name, which "a preference nothing records" (D124 §6.1) had let through. It asks only what it cannot decide,
-    /// and no go-ahead it asked for before is dropped (D184 point 5): outside the repository and on a production system still
+    /// A session's questions work as Claude Code's console does. Whatever it can decide it decides,
+    /// records why and keeps going; it must not park for minutes on questions such as which report a page
+    /// shows, or a name, which "a preference nothing records" would let through. It asks only what it cannot decide,
+    /// and no go-ahead it asks for is dropped: outside the repository and on a production system still
     /// are, and so is one the repository or the quest names.
     /// </summary>
     [Fact]
@@ -141,8 +141,8 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
-    /// AUTONOMY1e (D184 point 4): the question is asked at its turn's end, in its own words, in its own conversation, and the
-    /// person's answer goes on in that same conversation (ANSWER1a, D131 §1), which the instruction once told as a fresh start
+    /// The question is asked at its turn's end, in its own words, in its own conversation, and the
+    /// person's answer goes on in that same conversation, not as a fresh start
     /// "here, in this tree".
     /// </summary>
     [Fact]
@@ -161,8 +161,8 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
-    /// KNOWUSE1c (D135 §4): 31 of the 46 items put to the owner came in closing notes, readings put as decisions under
-    /// headings such as "Decisions for you" beside the production yeses, and none quoting the ticket's line it rested on.
+    /// Readings must not be put to the owner as decisions in closing notes, under
+    /// headings such as "Decisions for you" beside the production yeses, with no quote of the ticket's line they rest on.
     /// The close keeps what only the person can give apart from what the session took, and every item names its source.
     /// </summary>
     [Fact]
@@ -174,7 +174,7 @@ public sealed class AskAndWaitPromptTests
             Assert.True(flat.Contains(
                 "Your closing note, and your last message whenever you stop, keeps two lists apart.", StringComparison.Ordinal), which);
             Assert.True(flat.Contains(
-                // AUTONOMY1e (D184 point 4): what it could not decide, never a preference it could have made itself.
+                // What it could not decide, never a preference it could have made itself.
                 "Under **Needs you**, only what you could not decide — a go-ahead, an agreement this repository's own "
                 + "documents require, a credential or a sign-in, a choice left to the person — each with why, and what you "
                 + "looked at first.",
@@ -191,7 +191,7 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
-    /// PARKVIEW1 (the park's ask design §2): what only the person can decide is asked through the connector's `question_ask` before
+    /// What only the person can decide is asked through the connector's `question_ask` before
     /// the turn ends on it, with the answers offered and the one recommended, so the page draws it at the conversation's end with its
     /// answers as presses rather than leaving it a bullet of the closing note.
     /// </summary>
@@ -210,8 +210,8 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
-    /// KNOWUSE1d (D135 §5, D133 §1): a fresh attempt found the person's answer, misread, in its first attempt's closed note
-    /// ("Per your answer") and in a document on that branch, and wrote into the repository's knowledge that the owner had
+    /// A fresh attempt must not take the person's answer, misread, from its first attempt's closed note
+    /// ("Per your answer") or a document on that branch, and write into the repository's knowledge that the owner
     /// settled it. The person's words are those the instruction quotes as theirs, which the ask's record holds; a quote met
     /// anywhere else is someone's reading, relied on only as one and never recorded as theirs.
     /// </summary>
@@ -235,7 +235,7 @@ public sealed class AskAndWaitPromptTests
 
     /// <summary>
     /// Said with the look, where such a quote is met, and below the words the instruction quotes as the person's from the
-    /// ask's record (DRIFT1b), so what "quotes as theirs" points to is already above it.
+    /// ask's record, so what "quotes as theirs" points to is already above it.
     /// </summary>
     [Fact]
     public void A_second_hand_quote_is_said_after_the_look_and_below_the_words_the_ask_holds()
@@ -264,7 +264,7 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
-    /// KNOWUSE1c (D135 §4) as CONTEXTONE1c places it: the standing block names the indexes the repository keeps for its own documents,
+    /// The standing block names the indexes the repository keeps for its own documents,
     /// where its tree keeps any, so a session starts its look from them, and the look points to the block. None, and the block says none.
     /// </summary>
     [Fact]
@@ -323,8 +323,8 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
-    /// The other checkouts are a source only where the session may read them (D107): the standing block, at the instruction's end, points
-    /// to them as listed above it, read only or in the boundary as a declared target. Where reading across is off, it names none, as before.
+    /// The other checkouts are a source only where the session may read them: the standing block, at the instruction's end, points
+    /// to them as listed above it, read only or in the boundary as a declared target. Where reading across is off, it names none.
     /// </summary>
     [Fact]
     public void The_other_checkouts_are_a_source_only_where_the_session_may_read_across()
@@ -368,9 +368,9 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
-    /// 🔴 SAYHELD1, the owner's case on the install (2026-10-21): the person wrote to the session that asked while its quest waited,
-    /// and the resume opened a new session that was never handed their words. A resume is handed every word the session that asked
-    /// never took, after what came back: the person's quoted whole, and Daoris's as Daoris's. A resume handed none reads as it did.
+    /// 🔴 The person writes to the session that asked while its quest waits, and the resume must not open a new session that is
+    /// never handed their words. A resume is handed every word the session that asked
+    /// never took, after what came back: the person's quoted whole, and Daoris's as Daoris's. A resume handed none reads plainly.
     /// </summary>
     [Fact]
     public void A_resumed_target_is_handed_the_words_said_to_the_session_that_asked_while_it_waited()
@@ -399,8 +399,8 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
-    /// SAYHELD1: the resume's record opens with the target, then each word it was handed from the session that asked under the id that
-    /// record gave it, the person's as theirs and Daoris's as Daoris's, so the conversation shows them where it took them (D137 §3.1).
+    /// The resume's record opens with the target, then each word it is handed from the session that asked under the id that
+    /// record gave it, the person's as theirs and Daoris's as Daoris's, so the conversation shows them where it took them.
     /// </summary>
     [Fact]
     public void A_resume_opens_with_the_target_and_then_each_word_it_was_handed_under_its_id()
@@ -434,7 +434,7 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
-    /// D80: a session carrying a quest on after a cut-off is told what cut the last one off, that the
+    /// A session carrying a quest on after a cut-off is told what cut the last one off, that the
     /// quest is already its own, and where the earlier work is — uncommitted as well as committed,
     /// because a timeout lands mid-change.
     /// </summary>
@@ -453,8 +453,8 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
-    /// STANDDOWN2: a carry-on after the person answered a parked session is told what they said, in
-    /// their words, and that the session before asked rather than was cut off.
+    /// A carry-on after the person answered a parked session is told what they said, in
+    /// their words, and that the session before asked rather than being cut off.
     /// </summary>
     [Fact]
     public void A_carry_on_after_the_persons_answer_is_handed_the_answer_in_their_words()
@@ -472,8 +472,8 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
-    /// SESSUX1b (D126 §3.4): a carry-on after the person released their stop is told that they stopped the session before
-    /// and released the quest, never that it was cut off, and that the quest is still its own.
+    /// A carry-on after the person released their stop is told that they stopped the session before
+    /// and released the quest, never that it is cut off, and that the quest is still its own.
     /// </summary>
     [Fact]
     public void A_carry_on_after_the_person_released_their_stop_says_they_stopped_it_and_released_it()
@@ -489,7 +489,7 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
-    /// 🔴 An answer to a parked session was nowhere on the page after it was sent. The carry-on's
+    /// 🔴 An answer to a parked session must be on the page after it is sent. The carry-on's
     /// record opens with the target and then the person's answer, as theirs, so the conversation shows
     /// what they said rather than folding it inside the target.
     /// </summary>
@@ -505,8 +505,8 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
-    /// CHAIN2: a next step whose tree grew from its parent's branch is told the work is here, so it
-    /// neither asks for a merge nor tries to make one — FG5's verify step asked for exactly that.
+    /// A next step whose tree grew from its parent's branch is told the work is here, so it
+    /// neither asks for a merge nor tries to make one.
     /// </summary>
     [Fact]
     public void A_next_step_grown_from_its_parents_branch_is_told_the_work_is_in_its_tree()

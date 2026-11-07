@@ -3,20 +3,20 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// How a plugin is made (PLUG9): a plugin runs as the person, so its making is a repository's work, tested
+/// How a plugin is made: a plugin runs as the person, so its making is a repository's work, tested
 /// and reviewed — proposed as an ask there — and only its installing is a card here. The points come from
 /// the wire's own list.
 /// </summary>
 internal sealed class HelpRoomMakingAPlugin : IHelpRoomSection
 {
-    /// <summary>What each point a plugin speaks on is for, said where the room tells how a plugin is made (PLUG9).</summary>
+    /// <summary>What each point a plugin speaks on is for, said where the room tells how a plugin is made.</summary>
     internal static readonly IReadOnlyDictionary<string, string> PointSaid = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         [HookPoints.QuestConsider] = "to hold a quest before it starts",
         [HookPoints.SessionEnded] = "to hear how a session ended",
         [HookPoints.State] = "to say whether a landed branch's pull request completed, and with which commit",
         [HookPoints.StateChanged] = "to hear what a press or a terminal's verb changed of what the driver holds",
-        // FABRIC-PERFORM1e: the work wire's points, which the kit scaffolds with its performer's contract and contract test.
+        // The work wire's points, which the kit scaffolds with its performer's contract and contract test.
         [HookPoints.Watch] = "to be told which units await its steps",
         [HookPoints.Step] = "to report what became of a step it performs or observes",
         [HookPoints.Event] = "to hear what moved in the work cycle (a session or quest parked, a work ended or landed), as ids and codes, for a program on this machine",
@@ -26,7 +26,7 @@ internal sealed class HelpRoomMakingAPlugin : IHelpRoomSection
     public string Render(HelpMachine machine)
     {
         var text = new StringBuilder();
-        // PLUG9: a plugin runs as the person, so its making is a repository's work, tested and reviewed,
+        // A plugin runs as the person, so its making is a repository's work, tested and reviewed,
         // and only its installing is a card here. The points come from the wire's own list.
         text.Append("## Making a plugin\n\n");
         text.Append("A plugin runs on this machine as the person (one that opens a pull request does so with their sign-in), so making\n");

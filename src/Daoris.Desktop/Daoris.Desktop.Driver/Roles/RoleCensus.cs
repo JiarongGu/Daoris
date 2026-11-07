@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Census C (FOUNDATION1x, the foundation design §2.2, §2.7; O2-9): a record carrying an <c>actor</c> is held to a role taking its work, by
+/// The role census: a record carrying an <c>actor</c> is held to a role taking its work, by
 /// the revision of that role its start kept on its binding. The marks decide the work, since the desks write them at the open and the role
 /// says only its staffing; a role taking <c>design</c> is admitted on a record whose marks read <c>build</c>, since design work is read
 /// as build from its marks.
@@ -12,7 +12,7 @@ public static class RoleCensus
     /// Why <paramref name="actor"/> and its binding's role do not take <paramref name="work"/>, or null where the record holds.
     /// </summary>
     /// <param name="work">The work the record's marks read.</param>
-    /// <param name="actor">The record's <c>actor</c>, which a start writes as the seeded id of its work; null for a record from before D205.</param>
+    /// <param name="actor">The record's <c>actor</c>, which a start writes as the seeded id of its work; null for a record from before actors were recorded.</param>
     /// <param name="bound">The role and revision the binding kept; null for a record whose binding holds none, which is read as its <c>actor</c> at the seed.</param>
     /// <param name="at">The record of a role at a revision (<see cref="RoleCatalog.RecordAt"/>); null where none is kept.</param>
     public static string? Check(string work, string? actor, (string Role, long Revision)? bound, Func<string, long, RoleRecord?> at)

@@ -39,7 +39,7 @@ internal sealed class ChatConclusion(IExecutorWiring wiring)
 
     /// <summary>
     /// How a conversation that simply ended says so: its stop's reason where the driver made one, else the plain ending, with a word added
-    /// where the conversation was spoken in and Daoris kept no id for its harness conversation.
+    /// where the conversation is spoken in and Daoris keeps no id for its harness conversation.
     /// </summary>
     public Noted EndedNoteFor(string session, ChatWatched watched, bool stopped)
     {

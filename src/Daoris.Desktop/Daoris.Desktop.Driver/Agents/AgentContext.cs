@@ -8,7 +8,7 @@ internal interface IAgentContext
     ComposedInstruction Intake(SessionTarget target, string prompt, StandingBlockTold? block);
     string Parts(SessionTarget target);
 
-    /// <summary>The standing block of <paramref name="facts"/> after <paramref name="before"/> characters (CONTEXTONE1c): inline, or filed.</summary>
+    /// <summary>The standing block of <paramref name="facts"/> after <paramref name="before"/> characters: inline, or filed.</summary>
     StandingBlockTold Block(StandingFacts facts, int before);
 
     /// <summary><paramref name="facts"/> bound to the harness that runs them, in <paramref name="tree"/>.</summary>

@@ -4,9 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The one set of field readers every store and wire in the driver reads JSON with, by hand and without reflection
-/// (DEDUP1a): about forty private copies had each written their own, and about twenty-five threw on an element that was
-/// not an object.
+/// The one set of field readers every store and wire in the driver reads JSON with, by hand and without reflection.
 /// </summary>
 /// <remarks>
 /// Every reader answers <i>absent</i> for a value of the wrong kind rather than throwing, and that includes an element

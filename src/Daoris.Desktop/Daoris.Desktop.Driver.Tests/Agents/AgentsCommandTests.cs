@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris agent</c> (PUSH1f2d, D194, the alone-path design §1.2, §2): a person's press acting alone is refused from a session's
+/// <c>daoris agent</c>: a person's press acting alone is refused from a session's
 /// terminal, nothing written, a read is not; the rules and their proposals keep the door on <c>DAORIS_HOME</c> whatever
 /// <c>DAORIS_HARNESS_CONFIG</c> names, so <c>rules accept</c> is never alone beside a running Daoris; an account's settings and a trust on
-/// a named wiring file's home are written alone, nothing sent; and the verb table says which home each verb writes. Today's words are
+/// a named wiring file's home are written alone, nothing sent; and the verb table says which home each verb writes. The words are
 /// <see cref="AgentsTextTests"/>'.
 /// </summary>
 public sealed class AgentsCommandTests : IDisposable
@@ -55,8 +55,7 @@ public sealed class AgentsCommandTests : IDisposable
         Directory.CreateDirectory(HarnessSettings.ProfileHome(home, "claude-code", name));
 
     /// <summary>
-    /// A refusal's command names an account a shell cannot take by a placeholder (<see cref="ShellWord"/>): the CLI's
-    /// <c>shellword.test.ts</c> held these through its TypeScript verbs until PUSH1f2e handed them here.
+    /// A refusal's command names an account a shell cannot take by a placeholder (<see cref="ShellWord"/>).
     /// </summary>
     [Fact]
     public async Task A_refusals_command_names_an_account_it_cannot_spell_by_a_placeholder()
@@ -107,7 +106,7 @@ public sealed class AgentsCommandTests : IDisposable
     };
 
     /// <summary>
-    /// A person's press acting alone from a session's terminal is refused (D194 point 5, the alone-path design §2): <c>rules accept</c>
+    /// A person's press acting alone from a session's terminal is refused: <c>rules accept</c>
     /// among them, the one way a widening an agent proposed ever applies, so the proposal waits and no rule is written.
     /// </summary>
     [Fact]
@@ -137,7 +136,7 @@ public sealed class AgentsCommandTests : IDisposable
     [InlineData("profile ready claude-code --own")]
     [InlineData("profile rename claude-code work seat")]
     [InlineData("profile use claude-code --clear")]
-    // The long verbs (PUSH1f2e5): no route takes them, so a session's terminal is refused them before a word is said or a key read.
+    // The long verbs: no route takes them, so a session's terminal is refused them before a word is said or a key read.
     [InlineData("install claude-code")]
     [InlineData("key claude-code")]
     [InlineData("key claude-code --account work")]
@@ -177,7 +176,7 @@ public sealed class AgentsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// <c>list</c>, by its word and by none (PUSH1f2e4), is a read: said from a session's terminal, and nothing written. Every agent is
+    /// <c>list</c>, by its word and by none, is a read: said from a session's terminal, and nothing written. Every agent is
     /// pinned to a version nothing installed, so no tool is asked and no reading kept.
     /// </summary>
     [Theory]
@@ -205,9 +204,9 @@ public sealed class AgentsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// <c>rules accept</c> with <c>DAORIS_HARNESS_CONFIG</c> set takes the door on <c>DAORIS_HOME</c> (the alone-path design §1.2): the
+    /// <c>rules accept</c> with <c>DAORIS_HARNESS_CONFIG</c> set takes the door on <c>DAORIS_HOME</c>: the
     /// proposals are that home's whatever the variable names, so beside the running Daoris the press is its route, confirmed in its
-    /// window, and this process writes nothing. Naming a wiring file no longer makes it alone.
+    /// window, and this process writes nothing. Naming a wiring file does not make it alone.
     /// </summary>
     [Fact]
     public async Task Rules_accept_with_a_named_wiring_file_takes_the_door_on_the_home_and_never_acts_alone_beside_an_instance()
@@ -235,7 +234,7 @@ public sealed class AgentsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// A wiring file <c>DAORIS_HARNESS_CONFIG</c> names is no instance's (D194 point 2): an account's settings and a trust on its home are
+    /// A wiring file <c>DAORIS_HARNESS_CONFIG</c> names is no instance's: an account's settings and a trust on its home are
     /// written alone beside the running Daoris, and nothing is sent.
     /// </summary>
     [Theory]
@@ -260,10 +259,9 @@ public sealed class AgentsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// An account's change beside the running Daoris is the Accounts place's own press (PUSH1f2e2): <c>profile order</c> sends
+    /// An account's change beside the running Daoris is the Accounts place's own press: <c>profile order</c> sends
     /// <c>ACCOUNT_USE</c>'s order, confirmed in its window, and this process writes nothing; a workspace's unpin, which no route takes, is
-    /// written here and nothing is sent. Since POOL1b the order is the set's and its press names no workspace (D197 point 6); it named
-    /// <c>aurora</c> before. The stand-in window writes nothing, so the order said is the file's, the accounts' ids'.
+    /// written here and nothing is sent. The order is the set's and its press names no workspace. The stand-in window writes nothing, so the order said is the file's, the accounts' ids'.
     /// </summary>
     [Fact]
     public async Task Beside_the_running_Daoris_an_order_is_its_route_and_a_workspace_s_unpin_is_written_here()
@@ -300,10 +298,10 @@ public sealed class AgentsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// How a list is used beside the running Daoris is the Accounts place's own press (PUSH1f2e3): <c>profile use</c> sends
+    /// How a list is used beside the running Daoris is the Accounts place's own press: <c>profile use</c> sends
     /// <c>ACCOUNT_USE</c>'s <c>use</c> with each setting as the page sends it, a curve as its windows' points, confirmed in its window, and
-    /// this process writes nothing. Since POOL1b the settings are the set's and the press names no workspace (D197 point 6); it named
-    /// <c>aurora</c>'s list before. A file an older build wrote, a workspace's list, is read as the set.
+    /// this process writes nothing. The settings are the set's and the press names no workspace. A file a workspace's list is
+    /// kept in is read as the set.
     /// </summary>
     [Fact]
     public async Task Beside_the_running_Daoris_a_use_is_its_route()
@@ -338,7 +336,7 @@ public sealed class AgentsCommandTests : IDisposable
         Assert.Equal(before, File.ReadAllText(wiring));
     }
 
-    /// <summary>A trust no route takes is written here beside the running Daoris too (D171's PUSH1f note, kept by D194 point 5), nothing sent.</summary>
+    /// <summary>A trust no route takes is written here beside the running Daoris too, nothing sent.</summary>
     [Fact]
     public async Task Beside_the_running_Daoris_a_trust_is_written_here_and_nothing_is_sent()
     {
@@ -355,7 +353,7 @@ public sealed class AgentsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// <c>which --json</c> (PUSH1f2e, the alone-path design §4): the program a start resolves, as one object the real-run tools read: the
+    /// <c>which --json</c>: the program a start resolves, as one object the real-run tools read: the
     /// binary on <c>PATH</c> with nothing pinned; a pin's executable, the workspace's own pin first; a pin with nothing installed
     /// <c>missing</c>, exit 0; and the command <c>driver.json</c> names, before any pin. Said from a session's terminal too: a read.
     /// </summary>
@@ -426,10 +424,10 @@ public sealed class AgentsCommandTests : IDisposable
     {
         Assert.Equal(0, await AgentsCommand.RunAsync(["--help"], World(), CancellationToken.None));
         Assert.Contains(AgentsCommand.Usage, _out.ToString(), StringComparison.Ordinal);
-        // CONFIRMWAIT1b (the confirm-wait design §4.1): every change waits on its Confirm, and the usage says for how long.
+        // Every change waits on its Confirm, and the usage says for how long.
         Assert.Contains(InstanceDoor.WaitUsage, AgentsCommand.Usage, StringComparison.Ordinal);
 
-        // Every verb of the family is the program's since PUSH1f2e, `pin` the last: a word none is stands in for one it lacks.
+        // Every verb of the family is the program's, `pin` the last: a word none is stands in for one it lacks.
         Assert.Equal(2, await AgentsCommand.RunAsync(["frobnicate", "claude-code"], World(), CancellationToken.None));
         Assert.StartsWith("daoris agent: `frobnicate` is not a verb of this program's.", _error.ToString(), StringComparison.Ordinal);
     }
@@ -458,7 +456,7 @@ public sealed class AgentsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// <c>key</c> (PUSH1f2e5, the alone-path design §1.4) reads its key from the terminal's standard input, never an argument, holding no
+    /// <c>key</c> reads its key from the terminal's standard input, never an argument, holding no
     /// lease while the person types; then writes the key's account, said back by its handle only, and lets the home go.
     /// </summary>
     [Fact]
@@ -551,8 +549,8 @@ public sealed class AgentsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// <c>install</c>'s second hop (PUSH1f2e5, the alone-path design §1.1): the agent's own installer started at this terminal, with the
-    /// console's streams, its command said first; its exit mapped as the CLI's <c>relay</c> mapped it, 0 to 0 and anything else to 2. A
+    /// <c>install</c>'s second hop: the agent's own installer started at this terminal, with the
+    /// console's streams, its command said first; its exit mapped 0 to 0 and anything else to 2. A
     /// stand-in installer, a real process: the suite's Process half runs it.
     /// </summary>
     [Trait(Category.Name, Category.Process)]
@@ -584,7 +582,7 @@ public sealed class AgentsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// <c>login</c>'s browser ports (PUSH1f2e6, CODEXLOGIN1): each tried once before anything is made; where none can be taken it is refused
+    /// <c>login</c>'s browser ports: each tried once before anything is made; where none can be taken it is refused
     /// in the driver's words with the device code offered, no folder made, and <c>--device-code</c> tries none.
     /// </summary>
     [Fact]
@@ -607,7 +605,7 @@ public sealed class AgentsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// AGENTPROVIDER1 row b: no stand-in is an operand of a verb, configured or not (the operands are the agents naming a real program,
+    /// No stand-in is an operand of a verb, configured or not (the operands are the agents naming a real program,
     /// read from the registry), so <c>daoris agent login stub</c> is refused as an unknown agent whether or not the home's
     /// <c>commands</c> name a command for it, and the message names the same agents either way.
     /// </summary>
@@ -630,7 +628,7 @@ public sealed class AgentsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIVELOGIN1: <c>daoris agent login claude-code --new</c> under this scratch home, nothing named or pinned, would run PATH's
+    /// 🔴 <c>daoris agent login claude-code --new</c> under this scratch home, nothing named or pinned, would run PATH's
     /// <c>claude auth login</c> and open the person's browser on their real account. It is refused before the account's folder is made,
     /// naming the stub adapters, and nothing starts: PATH is a folder holding only a stub named like the real one, which would leave its
     /// mark had it run, and every start of the flow is held by a stand-in that records it.
@@ -661,7 +659,7 @@ public sealed class AgentsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// <c>login</c> (PUSH1f2e6, the alone-path design §1.1, §1.4): a stand-in agent's own sign-in run at this terminal into a folder made
+    /// <c>login</c>: a stand-in agent's own sign-in run at this terminal into a folder made
     /// first, then its end published under the lease. A real process: the suite's Process half runs it.
     /// </summary>
     [Trait(Category.Name, Category.Process)]
@@ -684,8 +682,7 @@ public sealed class AgentsCommandTests : IDisposable
         }
 
         /// <summary>
-        /// A new account is kept, named, placed in the set's order and said to have joined Daoris's accounts (POOL1b, D197 point 4). Before
-        /// POOL1b this ran with <c>--join-machine</c>, now refused, and ended saying the machine's list held it.
+        /// A new account is kept, named, placed in the set's order and said to have joined Daoris's accounts. <c>--join-machine</c> is refused.
         /// </summary>
         [Fact]
         public async Task A_finished_sign_in_is_kept_named_joined_and_said_and_the_home_let_go()
@@ -707,7 +704,7 @@ public sealed class AgentsCommandTests : IDisposable
         }
 
         /// <summary>
-        /// <c>login</c> naming no account signs in to the set's first (POOL1b, the account-pool design §5.1), where it read the machine's
+        /// <c>login</c> naming no account signs in to the set's first, not the machine's
         /// default; a sign-back-in says nothing of joining.
         /// </summary>
         [Fact]
@@ -761,7 +758,7 @@ public sealed class AgentsCommandTests : IDisposable
     }
 
     /// <summary>
-    /// The family's verb table says which home each verb writes (the alone-path design §1.2), and the command and the lease read it: a
+    /// The family's verb table says which home each verb writes, and the command and the lease read it: a
     /// named wiring file isolates exactly the rows that are the wiring's.
     /// </summary>
     [Fact]

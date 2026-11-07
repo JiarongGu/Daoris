@@ -22,13 +22,13 @@ internal static class DriverConfigWriter
             foreach (var name in config.Trees) writer.WriteStringValue(name);
             writer.WriteEndArray();
             writer.WriteNumber("cap", config.Cap);
-            // Written only when an actor is set (MODELROLE1c, D205 §9.1), as the file held it where the store filled the record (AsFile).
+            // Written only when an actor is set, as the file held it where the store filled the record (AsFile).
             ActorKey.Write(writer, asFile?.Actors ?? config.Actors);
-            // Written only while full (HELPMODE1a1): absent is restricted, and the CLI twin writes it the same way.
+            // Written only while full: absent is restricted, and the CLI twin writes it the same way.
             if (config.HelpMode == HelpModeNames.Full) writer.WriteString("helpMode", config.HelpMode);
             writer.WriteBoolean("notify", config.Notify);
             writer.WriteNumber("pollSeconds", config.PollSeconds);
-            // Written only when set (TOOL4e): absent is the default, and an edit elsewhere must not pin today's default.
+            // Written only when set: absent is the default, and an edit elsewhere must not pin today's default.
             if (config.CoolOffMinutes is { } coolOff) writer.WriteNumber("cooloff", coolOff);
             if (config.QuietMinutes is { } quiet) writer.WriteNumber(QuietSetting.File, quiet);
             writer.WriteStartObject("forgiven");
@@ -38,65 +38,65 @@ internal static class DriverConfigWriter
             }
 
             writer.WriteEndObject();
-            // Written only when set (SESSUX1b), as the CLI writes it: absent is no release.
+            // Written only when set, as the CLI writes it: absent is no release.
             WriteMap(writer, "released", config.Released);
-            // Written only when set (AGENTERRORS1a2): absent is no transient release.
+            // Written only when set: absent is no transient release.
             WriteTransientReleases(writer, config.TransientReleased);
             WriteRoleReleases(writer, config.RoleReleases);
-            // Written only when set (AGENTSPLACE1b): absent is no set-up admitted alone.
+            // Written only when set: absent is no set-up admitted alone.
             WriteMap(writer, "admitted", config.Admitted);
-            // Written only when set (PAUSE1a), as the CLI keeps them: absent is no pause.
+            // Written only when set, as the CLI keeps them: absent is no pause.
             WritePauses(writer, "pausedAsks", config.PausedAsks);
             WritePauses(writer, "pausedQuests", config.PausedQuests);
-            // Written only when set (KNOWUSE1b), as the CLI writes it: absent is no standing answer.
+            // Written only when set, as the CLI writes it: absent is no standing answer.
             WriteStanding(writer, config.Standing);
-            // Written only when set (WSR2): absent is the checkout's guess, and a file that never chose
+            // Written only when set: absent is the checkout's guess, and a file that never chose
             // a line should not start carrying an empty one.
             WriteMap(writer, "lines", config.Lines);
             WriteMap(writer, "workspaceLines", config.WorkspaceLines);
-            // Written only when set (LANG1c), as the CLI writes them: absent is no language, and no line handed.
+            // Written only when set, as the CLI writes them: absent is no language, and no line handed.
             WriteMap(writer, "languages", config.Languages);
             WriteMap(writer, "workspaceLanguages", config.WorkspaceLanguages);
-            // Written only when set (REVIEWENV1a), as the CLI writes them: absent is no review environment, today's behaviour.
+            // Written only when set, as the CLI writes them: absent is no review environment, today's behaviour.
             ReviewKey.WriteMap(writer, "reviews", config.Reviews);
             ReviewKey.WriteMap(writer, "workspaceReviews", config.WorkspaceReviews);
-            // Written only when set (XAGENT1a), as the CLI writes them: absent is no second opinion, today's behaviour.
+            // Written only when set, as the CLI writes them: absent is no second opinion, today's behaviour.
             OpinionKey.WriteMap(writer, "opinions", config.Opinions);
             OpinionKey.WriteMap(writer, "workspaceOpinions", config.WorkspaceOpinions);
-            // Written only when set (MIXAGENT2a-i), as the CLI writes them: absent is the default, `ask`.
+            // Written only when set, as the CLI writes them: absent is the default, `ask`.
             HelperKey.WriteMap(writer, "helpers", config.Helpers);
             HelperKey.WriteMap(writer, "workspaceHelpers", config.WorkspaceHelpers);
-            // Written only when set (MIXAGENT1c), as the CLI writes them: absent is the default, `ask`.
+            // Written only when set, as the CLI writes them: absent is the default, `ask`.
             HandOverKey.WriteMap(writer, "handOver", config.HandOver);
             HandOverKey.WriteMap(writer, "workspaceHandOver", config.WorkspaceHandOver);
-            // Written only when set (BRAINSTORM1b), as the CLI writes them: absent is D176 point 9's proposed defaults.
+            // Written only when set, as the CLI writes them: absent is the proposed defaults.
             BrainstormKey.WriteMachine(writer, config.Brainstorms);
             BrainstormKey.WriteMap(writer, "workspaceBrainstorms", config.WorkspaceBrainstorms);
             CommitKey.WriteMap(writer, "commits", config.Commits);
             CommitKey.WriteMap(writer, "workspaceCommits", config.WorkspaceCommits);
-            // Written only when set (WORKFLOW1e), as the CLI writes them: absent is Current, today's behaviour.
+            // Written only when set, as the CLI writes them: absent is Current, today's behaviour.
             WorkflowKey.WriteMap(writer, "workflows", config.Workflows, workspace: false);
             WorkflowKey.WriteMap(writer, "workspaceWorkflows", config.WorkspaceWorkflows, workspace: true);
-            // Written only when set (WORKFLOWCLEAN1 1a): absent is no home default (a place follows Current) and no line policy.
+            // Written only when set: absent is no home default (a place follows Current) and no line policy.
             if (config.DefaultWorkflow is { } homeDefault) writer.WriteString("defaultWorkflow", homeDefault);
             LinePolicyKey.WritePolicies(writer, "linePolicies", config.LinePolicies);
             LinePolicyKey.WritePolicies(writer, "workspaceLinePolicies", config.WorkspaceLinePolicies);
-            // Written only when set (INTEGRATE1d), beside the landed route's acceptance: absent is nothing accepted for integration.
+            // Written only when set, beside the landed route's acceptance: absent is nothing accepted for integration.
             IntegrationGatesKey.WriteMap(writer, config.IntegrationGates);
-            // Written only when set (AUTONOMY1a), as the CLI writes them: absent is today's behaviour, and nothing loosens by itself.
+            // Written only when set, as the CLI writes them: absent is today's behaviour, and nothing loosens by itself.
             AccessKey.WriteMap(writer, "access", config.Access);
             AccessKey.WriteMap(writer, "workspaceAccess", config.WorkspaceAccess);
             AccessKey.WriteMachine(writer, config.MachineAccess);
-            // Written only when set (HEAVYRUN1b2a), as the CLI writes it: absent is the repository's own heavy gates alone.
+            // Written only when set, as the CLI writes it: absent is the repository's own heavy gates alone.
             HeavyKey.WriteMap(writer, config.HeavyGates);
-            // Written only when set (FABRIC-PIPELINE1b), as the CLI writes it: absent is today's, a session running as it did.
+            // Written only when set, as the CLI writes it: absent is today's, a session running unchanged.
             SessionChecksKey.WriteMap(writer, config.SessionChecks);
-            // Written only where set (KEEP1d): absent is each kind's default, and an edit elsewhere must not pin today's defaults.
+            // Written only where set: absent is each kind's default, and an edit elsewhere must not pin today's defaults.
             config.Keep.Write(writer);
-            // Written only when set (D107), for the same reason: absent is reading on and no relationship.
+            // Written only when set, for the same reason: absent is reading on and no relationship.
             WriteFlags(writer, "readAcross", config.ReadAcross);
             WriteFlags(writer, "workspaceReadAcross", config.WorkspaceReadAcross);
-            // Written only when on (GITAPP2b): absent is the switch off.
+            // Written only when on: absent is the switch off.
             WriteFlags(writer, "checkoutWrites", config.CheckoutWrites);
             if (config.WriteAcross.Count > 0)
             {
@@ -124,7 +124,7 @@ internal static class DriverConfigWriter
         });
     }
 
-    /// <summary>The transient releases (AGENTERRORS1a2): each quest an object, its <c>session</c> and the <c>ended</c> it releases in UTC.</summary>
+    /// <summary>The transient releases: each quest an object, its <c>session</c> and the <c>ended</c> it releases in UTC.</summary>
     private static void WriteTransientReleases(Utf8JsonWriter writer, IReadOnlyDictionary<string, TransientRelease> map)
     {
         if (map.Count == 0) return;
@@ -140,7 +140,7 @@ internal static class DriverConfigWriter
         writer.WriteEndObject();
     }
 
-    /// <summary>A role's releases (STEWARDROLE1b): each quest an object, its <c>kind</c>, <c>session</c>, <c>by</c> and <c>act</c>.</summary>
+    /// <summary>A role's releases: each quest an object, its <c>kind</c>, <c>session</c>, <c>by</c> and <c>act</c>.</summary>
     private static void WriteRoleReleases(Utf8JsonWriter writer, IReadOnlyDictionary<string, RoleRelease> map)
     {
         if (map.Count == 0) return;
@@ -166,7 +166,7 @@ internal static class DriverConfigWriter
         writer.WriteEndObject();
     }
 
-    /// <summary>The design's shape (§2.5): each id an object, its time in UTC to the second where known, and its stops always, none as <c>{}</c>.</summary>
+    /// <summary>The pauses' shape: each id an object, its time in UTC to the second where known, and its stops always, none as <c>{}</c>.</summary>
     private static void WritePauses(Utf8JsonWriter writer, string name, IReadOnlyDictionary<string, WorkPause> map)
     {
         if (map.Count == 0) return;
@@ -184,7 +184,7 @@ internal static class DriverConfigWriter
         writer.WriteEndObject();
     }
 
-    /// <summary>The standing answers (KNOWUSE1b): each repository an object, its words, and its time in UTC to the second where known.</summary>
+    /// <summary>The standing answers: each repository an object, its words, and its time in UTC to the second where known.</summary>
     private static void WriteStanding(Utf8JsonWriter writer, IReadOnlyDictionary<string, StandingAnswer> map)
     {
         if (map.Count == 0) return;

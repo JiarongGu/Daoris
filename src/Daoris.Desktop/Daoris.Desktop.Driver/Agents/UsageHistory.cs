@@ -9,30 +9,30 @@ using static Daoris.Driver.AccountFileNodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The usage history (USAGECAP1a1, D179 point 2): every usage reading, appended under the home's <c>usage-history/</c> before
+/// The usage history: every usage reading, appended under the home's <c>usage-history/</c> before
 /// <see cref="AccountWindows.Said"/> keeps the newest of each window, so the readings an estimate of each window's capacity
-/// needs gather while the estimator is built (USAGECAP1b). Beside it, <c>epochs.json</c>: each account's binding epoch.
+/// needs gather while the estimator is built. Beside it, <c>epochs.json</c>: each account's binding epoch.
 /// </summary>
 /// <remarks>
 /// <para><b>One file per month</b> (<c>readings-YYYY-MM.jsonl</c>, the month in UTC), one JSON object per line, BOM-less UTF-8
-/// and LF, each record versioned, with its own id and the time it was written. Appended, not written whole, as the machine log
+/// and LF, each record versioned, with its own id and the time it is written. Appended, not written whole, as the machine log
 /// and a session's events are; one writer at a time in this process. Machine-local: never on a shared host, never synced, and
-/// no route reads it (D47 §4).</para>
+/// no route reads it.</para>
 /// <para><b>Bounded by age and size together</b>: 90 days and 64 MiB to begin with. Whole months are pruned oldest first, a
 /// month once it ended <see cref="KeptDays"/> ago and the oldest while the files and the write exceed <see cref="CapBytes"/>,
 /// and a <c>gap</c> record at the head of the next write says what went, from when to when, where a reader meets it. The
 /// month being written is never pruned: where it alone reaches the cap, a <c>full</c> record is written once and what follows
 /// that month is dropped, which a reader says as a gap to the month's end.</para>
-/// <para><b>Every turn's tokens</b> are kept beside the readings (USAGECAP1a2, <c>turns-YYYY-MM.jsonl</c>), each keyed by its
+/// <para><b>Every turn's tokens</b> are kept beside the readings (<c>turns-YYYY-MM.jsonl</c>), each keyed by its
 /// session and its event's sequence so a turn heard twice is written once, and carrying its account's epoch: a turn is a
 /// session that ran, so it begins an account's first epoch or its next after a sign-out as a reading does, and changes no plan.
 /// A model's name is kept only where it is a plain one (<see cref="TurnModels.Name"/>).</para>
 /// <para><b>The turns' log shares the bound</b>: the cap counts both logs' files, and a month pruned for size goes from both at
 /// once, each log's gap said in that log. A month of readings without its turns, or of turns without the readings around them,
-/// is nothing an estimate can be fitted on (D179 point 4).</para>
+/// is nothing an estimate can be fitted on.</para>
 /// <para><b>Never a reason to fail</b>: a write that cannot be made is dropped, as the machine log's is, and its caller goes on
 /// to <c>windows.json</c> as before.</para>
-/// <para><b>Never written</b> (D179 point 2): a prompt, a word, a raw frame, a key, an email, an organisation or who signed in.
+/// <para><b>Never written</b>: a prompt, a word, a raw frame, a key, an email, an organisation or who signed in.
 /// A record holds Daoris's names, numbers and times; a maker's name (a window's key, a scope, a plan) is kept only where it is
 /// a plain name (<see cref="Word"/>), and anything else is left out.</para>
 /// <para><b>An exact duplicate is written once</b>: the same account's window, from the same source, observed at the same
@@ -58,13 +58,13 @@ public static class UsageHistory
     /// <summary>Where a reading's reset came from: its maker said it, or the walk made it up for a window not yet opened.</summary>
     public const string ResetSaid = "said", ResetMadeUp = "made-up";
 
-    /// <summary>How a plan was read where the account's status question read it (ACCOUNTID1's <see cref="LoginRead"/>).</summary>
+    /// <summary>How a plan is read where the account's status question reads it (<see cref="LoginRead"/>).</summary>
     public const string PlanFromStatus = "status";
 
-    /// <summary>A door's turn counts are each turn's own (CONV5's measure on both Claude doors).</summary>
+    /// <summary>A door's turn counts are each turn's own (the measure on both Claude doors).</summary>
     public const string PerTurn = "per-turn";
 
-    /// <summary>A door's turn counts whose meaning was never measured: Codex's until a frame is recorded (D179 point 8).</summary>
+    /// <summary>A door's turn counts whose meaning is never measured: Codex's until a frame is recorded.</summary>
     public const string MeaningUnknown = "unknown";
 
     /// <summary>The version of the reading of a turn's tokens and models.</summary>
@@ -74,7 +74,7 @@ public static class UsageHistory
     internal const string TurnsLog = "turns";
     private const string EpochsFile = "epochs.json";
 
-    /// <summary>The logs the bound counts together (USAGECAP1a2): a month pruned for size goes from each.</summary>
+    /// <summary>The logs the bound counts together: a month pruned for size goes from each.</summary>
     private static readonly string[] Logs = [ReadingsLog, TurnsLog];
 
     /// <summary>How many readings' keys each home's history remembers, to write an exact duplicate once.</summary>
@@ -102,7 +102,7 @@ public static class UsageHistory
     public static string TurnsSegmentOf(DateTimeOffset at) => SegmentOf(TurnsLog, at);
 
     /// <summary>
-    /// Keep what a reader saw (USAGECAP1a1): one record per window, with its account's epoch, appended to its month's file after
+    /// Keep what a reader saw: one record per window, with its account's epoch, appended to its month's file after
     /// any gap a prune made. Never throws: a history not kept costs the history, never its caller.
     /// </summary>
     /// <param name="now">When it is written, the caller's clock.</param>
@@ -132,7 +132,7 @@ public static class UsageHistory
     }
 
     /// <summary>
-    /// What a status question said of an account the history has met (ACCOUNTID1's <see cref="LoginRead"/>): signed out marks
+    /// What a status question said of an account the history has met (<see cref="LoginRead"/>): signed out marks
     /// it, so its next sign-in or reading begins the next epoch; signed in with another plan begins it too. Never throws.
     /// </summary>
     public static void Login(string home, string agent, string account, LoginState login, string? plan, DateTimeOffset at)
@@ -157,7 +157,7 @@ public static class UsageHistory
         }
     }
 
-    /// <summary>An account removed from the machine (D66 §3): one made later under its name is another binding.</summary>
+    /// <summary>An account removed from the machine: one made later under its name is another binding.</summary>
     public static void Unbound(string home, string agent, string account, DateTimeOffset at) =>
         Login(home, agent, account, LoginState.Out, null, at);
 
@@ -179,7 +179,7 @@ public static class UsageHistory
     public static HistoryRead Read(string home) => UsageHistoryReads.Read(home);
 
     /// <summary>
-    /// Keep a turn (USAGECAP1a2): one record, with its account's epoch where a start bound it, appended to its month's file after
+    /// Keep a turn: one record, with its account's epoch where a start bound it, appended to its month's file after
     /// any gap a prune made. Never throws: a turn not kept costs the history, never the session.
     /// </summary>
     /// <param name="binding">Whose the session is, as its start chose; null where no start bound it.</param>
@@ -307,7 +307,7 @@ public static class UsageHistory
         return true;
     }
 
-    /// <summary>A sign-out marked once, for the next sign-in or reading to begin the next epoch. Whether it was newly marked.</summary>
+    /// <summary>A sign-out marked once, for the next sign-in or reading to begin the next epoch. Whether it is newly marked.</summary>
     private static bool MarkedOut(JsonObject entry)
     {
         if (Json.Flag(entry, "out")) return false;
@@ -516,8 +516,8 @@ public static class UsageHistory
         Text(json, "door", Word(binding?.Door));
         Text(json, "actor", Word(binding?.Actor));
         if (Word(binding?.Brainstorm) is { } brainstorm) json.WriteString("brainstorm", brainstorm);
-        // STAFFPOLICY1e2: the role's choice the turn was spent on, as its policy keys it (agent, model, effort), where its start chose one: what a
-        // daily budget of tokens is weighed against. Written only then, so a line from before reads as it did.
+        // The role's choice the turn is spent on, as its policy keys it (agent, model, effort), where its start chose one: what a
+        // daily budget of tokens is weighed against. Written only then, so a line without one reads as having none.
         if (binding?.Choice is { Length: > 0 and <= 400 } choice) json.WriteString("choice", choice);
         json.WriteString("session", turn.Session);
         json.WriteNumber("seq", turn.Seq);
@@ -645,7 +645,7 @@ public static class UsageHistory
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            // What was read stands; the rest is not there.
+            // What is read stands; the rest is not there.
         }
 
         return (records, gaps, unread);

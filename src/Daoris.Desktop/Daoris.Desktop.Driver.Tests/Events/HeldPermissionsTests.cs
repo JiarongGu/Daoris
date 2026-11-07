@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AUTONOMY1b3a (D184 point 3): a permission request a driven session's agent sends under its repository's asking permission prompts,
+/// A permission request a driven session's agent sends under its repository's asking permission prompts,
 /// held in memory for the person by session and request until the person answers it with an option the agent offered, or it is released
 /// by the session or at its own bound. Nothing here starts a process or writes a file.
 /// </summary>
@@ -17,7 +17,7 @@ public sealed class HeldPermissionsTests
     ];
 
     /// <summary>
-    /// A hold is listed for its session with the choices the person may make, a standing allow left out (a rule is proposed, D74),
+    /// A hold is listed for its session with the choices the person may make, a standing allow left out (a rule is proposed instead),
     /// until the person answers it with an offered option by its id: the hold ends with that option, and it is said as it moves.
     /// </summary>
     [Fact]
@@ -47,7 +47,7 @@ public sealed class HeldPermissionsTests
 
     /// <summary>
     /// 🔴 Never an invented allow: an option the agent did not offer, or its standing allow, is refused by its code, and the hold
-    /// waits on as it was.
+    /// waits on unchanged.
     /// </summary>
     [Theory]
     [InlineData("maybe", "unoffered")]
@@ -112,7 +112,7 @@ public sealed class HeldPermissionsTests
     }
 
     /// <summary>
-    /// 🔴 An unanswered request is a turn hung for ever (REV3): a hold nobody answers is released at its own bound, and nothing the
+    /// 🔴 An unanswered request is a turn hung for ever: a hold nobody answers is released at its own bound, and nothing the
     /// person says after it lands.
     /// </summary>
     [Fact]
@@ -138,7 +138,7 @@ public sealed class HeldPermissionsTests
         Assert.Equal(HeldPermissions.Bound, HeldPermissions.Of(events).For("s1").Bound);
     }
 
-    /// <summary>PERMUNTIL1: a hold says when its door's bound releases it, which the page reads rather than a copy of the bound.</summary>
+    /// <summary>A hold says when its door's bound releases it, which the page reads rather than a copy of the bound.</summary>
     [Fact]
     public void A_hold_says_when_its_doors_bound_releases_it()
     {

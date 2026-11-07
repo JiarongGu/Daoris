@@ -4,7 +4,7 @@ using System.Text;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// git for a test's fixture (TESTGIT1): the runner the driver's test classes share, so each reads git's two streams the
+/// git for a test's fixture: the runner the driver's test classes share, so each reads git's two streams the
 /// one way that cannot wait forever.
 /// </summary>
 /// <remarks>
@@ -17,7 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Both streams are read as UTF-8, which is what git writes. Nothing here judges the exit: a step whose failure matters
 /// asserts on <see cref="GitRun.ExitCode"/> itself.
 ///
-/// Each start goes past Git for Windows' launcher (<see cref="TestGit"/>, GITSTART1), as a class's own runner's does.
+/// Each start goes past Git for Windows' launcher (<see cref="TestGit"/>), as a class's own runner's does.
 /// </remarks>
 internal static class GitFixture
 {

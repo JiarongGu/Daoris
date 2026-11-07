@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 <b>An agent npm put on PATH is found, and started</b> (USE1f). A global npm install of the Claude
+/// 🔴 <b>An agent npm put on PATH is found, and started</b>. A global npm install of the Claude
 /// Code ACP adapter puts <c>claude-agent-acp.cmd</c> in the Node folder, with an extensionless POSIX
 /// script beside it. The CLI found it; the desktop held every driven start with "not installed",
 /// because it started the bare name, and Windows starts only an <c>.exe</c> by a bare name (the
@@ -95,8 +95,8 @@ public sealed class CommandShimTests : IDisposable
 
     /// <summary>
     /// 🔴 A shim is run by <c>cmd.exe</c>, which parses its arguments again and stops at a line break, so an argument it would
-    /// reinterpret is refused (<c>HarnessRunTests</c> holds that sentence). The pipe door's prompt, with its line breaks, now goes on
-    /// the harness's input (AGENTLYNTAI1s-i), which the shim's shell passes through unparsed: a driven start on a shim carries no
+    /// reinterpret is refused (<c>HarnessRunTests</c> holds that sentence). The pipe door's prompt, with its line breaks, goes on
+    /// the harness's input, which the shim's shell passes through unparsed: a driven start on a shim carries no
     /// prompt in its arguments and is started, not refused.
     /// </summary>
     [Fact]

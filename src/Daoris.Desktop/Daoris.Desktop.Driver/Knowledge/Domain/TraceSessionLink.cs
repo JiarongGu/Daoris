@@ -25,7 +25,7 @@ public sealed record TraceSessionLink(string Id)
     /// <summary>Its tree's folder name, never its path; null where the record names none.</summary>
     public string? Tree { get; init; }
 
-    /// <summary>Its tree's path, the terminal's: a machine path never goes to a page (D47 §4).</summary>
+    /// <summary>Its tree's path, the terminal's: a machine path never goes to a page.</summary>
     [JsonIgnore]
     public string? TreePath { get; init; }
 
@@ -34,13 +34,13 @@ public sealed record TraceSessionLink(string Id)
 
     public string? Quest { get; init; }
 
-    /// <summary>The ask an intake answers (D65 §1b).</summary>
+    /// <summary>The ask an intake answers.</summary>
     public string? Ask { get; init; }
 
     /// <summary>The record before it on its quest, or that it is the first; null with no quest or no moment it opened.</summary>
     public TraceBefore? Before { get; init; }
 
-    /// <summary>It took the quest through its own connector (STANDDOWN2).</summary>
+    /// <summary>It took the quest through its own connector.</summary>
     public bool Took { get; init; }
 
     /// <summary>Its record's note, as written.</summary>
@@ -55,7 +55,7 @@ public sealed record TraceSessionLink(string Id)
     /// <summary>This machine's record of it; null for a teammate's.</summary>
     public TraceEvents? Events { get; init; }
 
-    /// <summary>The rules it was handed; null for a teammate's.</summary>
+    /// <summary>The rules it is handed; null for a teammate's.</summary>
     public TraceRules? Rules { get; init; }
 
     /// <summary>Where its work landed; null for a teammate's.</summary>
@@ -69,13 +69,13 @@ public sealed record TraceSessionLink(string Id)
 /// <param name="State">The record's state, or empty where it says none.</param>
 public sealed record TraceState(string State)
 {
-    /// <summary>A failure an account's limit made (TOOL4c).</summary>
+    /// <summary>A failure an account's limit made.</summary>
     public bool Limit { get; init; }
 
-    /// <summary>A stop that was not the person's: the driver closed, or the sweep found it orphaned (D104).</summary>
+    /// <summary>A stop that is not the person's: the driver closed, or the sweep found it orphaned.</summary>
     public bool Interrupted { get; init; }
 
-    /// <summary>A park the person answered: it goes on at the driver's next look (STANDDOWN2).</summary>
+    /// <summary>A park the person answered: it goes on at the driver's next look.</summary>
     public bool Answered { get; init; }
 }
 
@@ -84,7 +84,7 @@ public sealed record TraceAgent
 {
     public string? Door { get; init; }
 
-    /// <summary>The tool's version the record opened on (D49 §4).</summary>
+    /// <summary>The tool's version the record opened on.</summary>
     public string? DoorVersion { get; init; }
 
     /// <summary>The account it ran as; null on this machine's record is the tool's own sign-in, and unsaid on a teammate's.</summary>
@@ -111,7 +111,7 @@ public sealed record TraceBefore(bool First)
     public string? Tree { get; init; }
 }
 
-/// <summary>A session's evidence (D46 §4): the driver's heading, its lines, and the commits they name.</summary>
+/// <summary>A session's evidence: the driver's heading, its lines, and the commits they name.</summary>
 public sealed record TraceEvidence(string Said, IReadOnlyList<string> Lines, IReadOnlyList<TraceCommit> Commits);
 
 public sealed record TraceCommit(string Sha, string Line);

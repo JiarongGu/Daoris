@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One thing the press lists (KEEP1e, the cleanup design §3.3): its kind, its id (what a press sends back), whether its rule takes it
+/// One thing the press lists: its kind, its id (what a press sends back), whether its rule takes it
 /// now or it could go early by the person's word, and what the list says of it.
 /// </summary>
 /// <param name="Kind"><c>set-aside</c>, <c>downloads</c>, <c>logs</c>, <c>browser-cache</c>, <c>left-over</c> or <c>update-failed</c>.</param>
@@ -31,7 +31,7 @@ public sealed record SpaceUnit(string Kind, string Id, bool Early, long? Bytes)
     /// <summary>A set-aside folder holds files of its own (written after its move, or a link in it): the person's to weigh.</summary>
     public bool? Own { get; init; }
 
-    /// <summary>A set-aside folder's class (KEEPSIZE1b, <see cref="SetAsideClass"/>), which the press lists it by: recorded, awaiting its record, stopped, refused, unmarked.</summary>
+    /// <summary>A set-aside folder's class (<see cref="SetAsideClass"/>), which the press lists it by: recorded, awaiting its record, stopped, refused, unmarked.</summary>
     public string? Class { get; init; }
 
     /// <summary>A recorded folder's recovery ref at its tip, where one holds it.</summary>

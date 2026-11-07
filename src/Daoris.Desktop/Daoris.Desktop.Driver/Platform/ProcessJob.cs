@@ -4,10 +4,10 @@ using System.Runtime.InteropServices;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Everything a spawned harness starts, held together so it ends together (ORPHAN1).
+/// Everything a spawned harness starts, held together so it ends together.
 /// </summary>
 /// <remarks>
-/// <para>🔴 Measured on FG5's run: a session started its repository's dev servers from a background
+/// <para>🔴 Measured: a session started its repository's dev servers from a background
 /// shell, its turn ended, the agent exited, and the servers kept running, holding two ports and a tree
 /// whose session was over. <see cref="Process.Kill(bool)"/> walks a tree from a live root, and by then
 /// there was no root: the agent had exited on its own and its descendants were nobody's children.</para>
@@ -18,17 +18,17 @@ namespace Daoris.Driver;
 /// it. Elsewhere this is a no-op: the platform where the orphan was measured is the one it holds.</para>
 ///
 /// <para>Best effort by construction. A process that exited before it could join, or a job the
-/// system refused, leaves the session running exactly as it did before this existed.</para>
+/// system refused, leaves the session running without the job.</para>
 ///
-/// <para>A heavy run (HEAVYRUN1a) holds its gates the other way round, and not as a best effort: an empty job made first
+/// <para>A heavy run holds its gates the other way round, and not as a best effort: an empty job made first
 /// (<see cref="Create"/>), each gate started suspended and joined before it runs, its count read (<see cref="Active"/>), and
 /// everything in it ended and waited for (<see cref="Terminate"/>, <see cref="WaitEmptyAsync"/>) before the run lets go of its
 /// slot. A gate that could not join is not run.</para>
 ///
-/// <para>An agent started through the launcher (TERMTRUST1a, D201 point 4) is held by none of these after its start: the launcher joins
+/// <para>An agent started through the launcher is held by none of these after its start: the launcher joins
 /// this process's agents' job (<see cref="AgentJobs"/>), then any piece's, then a job of its own that ends its harness's tree with it,
-/// all before the harness runs (<see cref="PieceLauncher"/>). The driver opens that own job by its name afterwards (<see cref="OpenHolding"/>,
-/// CONTAINCPU1) and reads and ends the session through it.</para>
+/// all before the harness runs (<see cref="PieceLauncher"/>). The driver opens that own job by its name afterwards (<see cref="OpenHolding"/>)
+/// and reads and ends the session through it.</para>
 /// </remarks>
 public sealed class ProcessJob : IDisposable
 {
@@ -41,7 +41,7 @@ public sealed class ProcessJob : IDisposable
 
     /// <summary>
     /// The same, for a process this library started itself and holds the handle of: a terminal's shell,
-    /// started suspended under its pseudo-console (CONSOLE4a) and joined before it can start anything.
+    /// started suspended under its pseudo-console and joined before it can start anything.
     /// </summary>
     internal static ProcessJob Hold(IntPtr processHandle) => Hold(() => processHandle);
 
@@ -70,14 +70,14 @@ public sealed class ProcessJob : IDisposable
 
     /// <summary>
     /// An empty job that ends what it holds on close, for processes this library starts suspended and joins (<see cref="Join"/>)
-    /// before they can start anything: a heavy run's gates (HEAVYRUN1a). Named where <paramref name="name"/> is given, so the next
+    /// before they can start anything: a heavy run's gates. Named where <paramref name="name"/> is given, so the next
     /// holder of the run's slot can find one a dead holder left (<see cref="EndNamedAsync"/>). Null off Windows, where there is no
     /// job, and where the system refused one or the name is already another's: a job that is not wholly this one's holds nothing.
     /// </summary>
     internal static ProcessJob? Create(string? name = null) => CreateNamed(name).Job;
 
     /// <summary>
-    /// <see cref="Create"/>, saying why there is none (TERMTRUST1a, D201 point 4: the agents' job's <c>name-held</c> and <c>job-refused</c>):
+    /// <see cref="Create"/>, saying why there is none (the agents' job's <c>name-held</c> and <c>job-refused</c>):
     /// <c>NameHeld</c> where another process already holds a job of that name, which is never this one's.
     /// </summary>
     internal static (ProcessJob? Job, bool NameHeld) CreateNamed(string? name)
@@ -109,7 +109,7 @@ public sealed class ProcessJob : IDisposable
     }
 
     /// <summary>
-    /// Put this process into the job (TERMTRUST1a: the launcher's own, made empty after it joined the jobs it was named, so it nests beneath
+    /// Put this process into the job (the launcher's own, made empty after it joined the jobs it is named, so it nests beneath
     /// them), so every process it starts afterwards is born in it. False where there is no job or it would not take this process.
     /// </summary>
     internal bool JoinThis()
@@ -119,7 +119,7 @@ public sealed class ProcessJob : IDisposable
     }
 
     /// <summary>
-    /// Whether the job by that name holds <paramref name="process"/> (TERMTRUST1a; the judge's question of D201 point 4, asked by a handle):
+    /// Whether the job by that name holds <paramref name="process"/> (the judge's question, asked by a handle):
     /// null off Windows, where no name answers, or where the job or the answer would not open.
     /// </summary>
     internal static bool? NamedHolds(string name, IntPtr process)
@@ -138,7 +138,7 @@ public sealed class ProcessJob : IDisposable
     }
 
     /// <summary>
-    /// The job by that name, opened to read its accounting and to end it, where it holds <paramref name="process"/> (CONTAINCPU1: the
+    /// The job by that name, opened to read its accounting and to end it, where it holds <paramref name="process"/> (the
     /// driver's hold on a launcher's own job, <see cref="PieceLauncher.OwnJobOf"/>): null off Windows, where no job answers to the name or
     /// would not open, and where it does not hold that process, which makes it no job of that process's. Disposing it closes this handle
     /// alone; while the job's maker holds its own, nothing in it ends.
@@ -171,8 +171,7 @@ public sealed class ProcessJob : IDisposable
     }
 
     /// <summary>
-    /// Whether the process was joined, so the job's accounting counts it and everything it starts (SESSWATCH1a, the session-watch design
-    /// §1.2): false where the join failed and off Windows, where the watcher reads busy as unknown.
+    /// Whether the process is joined, so the job's accounting counts it and everything it starts: false where the join failed and off Windows, where the watcher reads busy as unknown.
     /// </summary>
     public bool Holds => Volatile.Read(ref _handle) != IntPtr.Zero;
 
@@ -184,7 +183,7 @@ public sealed class ProcessJob : IDisposable
     }
 
     /// <summary>
-    /// The ids of every live process the job holds, those of jobs nested in it among them (the one management's census, D249): none where
+    /// The ids of every live process the job holds, those of jobs nested in it among them (the one management's census): none where
     /// there is no job or the list did not read.
     /// </summary>
     internal IReadOnlyList<int> Ids
@@ -220,7 +219,7 @@ public sealed class ProcessJob : IDisposable
     }
 
     /// <summary>
-    /// The CPU every process that ever joined the job has used, user and kernel, cumulative (SESSWATCH1a, the session-watch design §1.2):
+    /// The CPU every process that ever joined the job has used, user and kernel, cumulative:
     /// busy is read as the difference between two reads, never from one. Null where there is no job or the accounting did not read.
     /// </summary>
     public TimeSpan? Cpu
@@ -244,7 +243,7 @@ public sealed class ProcessJob : IDisposable
     }
 
     /// <summary>
-    /// Until the job holds no live process. Never timed: a run's slot is let go only once this returns (HEAVYRUN1a), and a bound would
+    /// Until the job holds no live process. Never timed: a run's slot is let go only once this returns, and a bound would
     /// let it go beside what is still running. A count that does not read ends the wait, and the handle's close ends what is left.
     /// </summary>
     public async Task WaitEmptyAsync()
@@ -263,7 +262,7 @@ public sealed class ProcessJob : IDisposable
     }
 
     /// <summary>
-    /// How many processes the job by that name holds, opened for its count alone (COAGENT1b: a restart observing a partner's job); null
+    /// How many processes the job by that name holds, opened for its count alone (a restart observing a partner's job); null
     /// where no job answers to the name or its count did not read, which is never "none".
     /// </summary>
     internal static int? ActiveOf(string name)
@@ -276,8 +275,8 @@ public sealed class ProcessJob : IDisposable
     }
 
     /// <summary>
-    /// Put this process into the job by that name, which another process made and holds (COAGENT1b: the partner's launcher joining its
-    /// piece's job, D199's note on the strict start): every process this one starts afterwards is born in it. False off Windows, where no
+    /// Put this process into the job by that name, which another process made and holds (the partner's launcher joining its
+    /// piece's job): every process this one starts afterwards is born in it. False off Windows, where no
     /// name answers, and where the job would not take this process: the launcher then starts nothing.
     /// </summary>
     internal static bool JoinNamed(string name)
@@ -296,7 +295,7 @@ public sealed class ProcessJob : IDisposable
     }
 
     /// <summary>
-    /// End the job a dead holder of a heavy-run slot named, if it is still there, and wait until it holds nothing (HEAVYRUN1a): true
+    /// End the job a dead holder of a heavy-run slot named, if it is still there, and wait until it holds nothing: true
     /// where it was. A name no job answers to is a job whose last handle closed, which ended what it held as it closed.
     /// </summary>
     /// <exception cref="System.ComponentModel.Win32Exception">It is there and would not open: cannot tell, which is never "ended".</exception>
@@ -319,7 +318,7 @@ public sealed class ProcessJob : IDisposable
     }
 
     /// <summary>
-    /// The job by that name, opened to count and to end what it holds (GITAPP2a: an act's job, which a reconciler finds without the step's pid);
+    /// The job by that name, opened to count and to end what it holds (an act's job, which a reconciler finds without the step's pid);
     /// null where no job answers to the name, which is a job whose last handle closed and ended what it held.
     /// </summary>
     /// <exception cref="System.ComponentModel.Win32Exception">It is there and would not open: held live, never "ended".</exception>

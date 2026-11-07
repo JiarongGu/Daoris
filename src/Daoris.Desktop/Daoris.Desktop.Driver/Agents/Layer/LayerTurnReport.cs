@@ -3,8 +3,8 @@ using Lyntai.Agents;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A turn's own report on the layer path (the agent-lyntai design §5.4, LQ17): the calls the harness denied, the context the turn held
-/// against the window the harness names, and the tokens split by the models that answered, each read into the readings today's native
+/// A turn's own report on the layer path: the calls the harness denied, the context the turn held
+/// against the window the harness names, and the tokens split by the models that answered, each read into the readings the native
 /// capture hands its writer for the same thing (<c>StructuredOutput</c>'s result). One report a turn, kept by <see cref="LayerReadings"/>.
 /// </summary>
 internal sealed class LayerTurnReport
@@ -27,8 +27,8 @@ internal sealed class LayerTurnReport
     public AcpUsage? Usage { get; private set; }
 
     /// <summary>
-    /// What the last assistant message held in context (its input and cache reads). The layer's tick carries no count of what was written to
-    /// the cache, so this is short by that count where an agent wrote some; the oracle finds the difference.
+    /// What the last assistant message holds in context (its input and cache reads). The layer's tick carries no count of what is written to
+    /// the cache, so this is short by that count where an agent writes some; the oracle finds the difference.
     /// </summary>
     public void Held(UsageLive live)
     {

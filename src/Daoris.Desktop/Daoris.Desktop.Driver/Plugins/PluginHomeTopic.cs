@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The plugins' answer to where the <see cref="ChangeTopics.Plugins"/> topic's files are (FOUNDATION1 mod-vii, the design §14.3): the plugins
+/// The plugins' answer to where the <see cref="ChangeTopics.Plugins"/> topic's files are: the plugins
 /// folder, heard as a plugin arrives or leaves and as its manifest changes. Installed when the driver's assembly loads, before any watch is built.
 /// </summary>
 internal static class PluginHomeTopic

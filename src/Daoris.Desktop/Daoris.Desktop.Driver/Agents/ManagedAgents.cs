@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The agent whose toolchain and accounts Daoris manages, by the name a press or a verb gives it: a name the registry holds no door or
-/// agent of is refused naming the doors that exist (D23), and a known agent Daoris manages nothing for is told its accounts are its own
+/// agent of is refused naming the doors that exist, and a known agent Daoris manages nothing for is told its accounts are its own
 /// tooling's. Every door that acts on an agent's toolchain or accounts asks here, so each refusal is said one way.
 /// </summary>
 public static class ManagedAgents

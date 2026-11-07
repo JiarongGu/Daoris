@@ -3,7 +3,7 @@ using System.Reflection;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the wiring read is handed (WIRING1b): every fact of the program that asks, each injectable, so a test reads no
+/// What the wiring read is handed: every fact of the program that asks, each injectable, so a test reads no
 /// machine's environment, account or home but its own.
 /// </summary>
 public sealed record WiringWorld : IToolHomeWorld
@@ -28,7 +28,7 @@ public sealed record WiringWorld : IToolHomeWorld
 
     /// <summary>
     /// How a terminal asks an address's status door; null asks nothing. 🔴 The window is handed none: its service's status is its
-    /// supervisor's last probe, and the page's open asks no network, starts no program and probes no git (the second opinion).
+    /// supervisor's last probe, and the page's open asks no network, starts no program and probes no git.
     /// </summary>
     public Func<string, ServiceProbe?>? AskStatus { get; init; }
 
@@ -38,10 +38,10 @@ public sealed record WiringWorld : IToolHomeWorld
     /// <summary>The sizes measured, kept for the process.</summary>
     public WiringSizes Sizes { get; init; } = WiringSizes.Shared;
 
-    /// <summary>The person's own tool home (OWNSPACE2); null where none is named: a world made by hand reads no machine's, a test names its scratch one, and the real worlds are handed <see cref="ToolHomeLeftovers.OwnHome(IToolHomeWorld)"/>.</summary>
+    /// <summary>The person's own tool home; null where none is named: a world made by hand reads no machine's, a test names its scratch one, and the real worlds are handed <see cref="ToolHomeLeftovers.OwnHome(IToolHomeWorld)"/>.</summary>
     public string? ToolHome { get; init; }
 
-    /// <summary>Where <see cref="ToolHome"/> was read from: <c>process</c>, <c>account</c> or <c>default</c> as the environment gave it, <c>named</c> where a caller named it.</summary>
+    /// <summary>Where <see cref="ToolHome"/> is read from: <c>process</c>, <c>account</c> or <c>default</c> as the environment gave it, <c>named</c> where a caller named it.</summary>
     public string ToolHomeFrom { get; init; } = "named";
 
     /// <summary>Why no tool home is named though the environment named one: <c>relative</c> or <c>inside-daoris</c>; null otherwise.</summary>
@@ -49,7 +49,7 @@ public sealed record WiringWorld : IToolHomeWorld
 
     /// <summary>
     /// The working directories Daoris's own records hold (<see cref="ToolHomeLeftovers.Origins"/>), read by the window's route
-    /// from the service's records; null where none was read, which lists the rooms with every folder kept <c>records-unread</c>.
+    /// from the service's records; null where none is read, which lists the rooms with every folder kept <c>records-unread</c>.
     /// </summary>
     public IReadOnlyList<ToolOrigin>? ToolOrigins { get; init; }
 

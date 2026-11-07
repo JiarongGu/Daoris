@@ -3,9 +3,9 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the door said it loaded, kept on the receipt of the start it said it for (HELPWIRED1b, the Ask Daoris modes design §6): the init
+/// What the door said it loaded, kept on the receipt of the start it said it for: the init
 /// frame's tools, servers with their status, skills and plugins, shown beside what the start handed so the person sees where the two
-/// differ. Never what was handed, which <see cref="HelpWired.Compose"/> records from the spawn's inputs: the two are kept apart so a
+/// differ. Never what the start handed, which <see cref="HelpWired.Compose"/> records from the spawn's inputs: the two are kept apart so a
 /// disagreement stays visible.
 /// </summary>
 public static class HelpLoaded

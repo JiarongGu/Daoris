@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 public sealed record GitPushVerb(string Repository, string Kind, string Name, string? At, bool Yes);
 
 /// <summary>
-/// <c>daoris git push &lt;repository&gt; branch|tag &lt;name&gt; [&lt;commit&gt;] [--plan|--yes]</c> (GITAPP2g, n, D204, D241 point 2): the terminal's twin
+/// <c>daoris git push &lt;repository&gt; branch|tag &lt;name&gt; [&lt;commit&gt;] [--plan|--yes]</c> (n): the terminal's twin
 /// of the Branches tab's <i>Push</i> and <i>Push tag</i>. Without <c>--yes</c> (or with <c>--plan</c>) it says what it would push and changes
 /// nothing. With <c>--yes</c> it is the running Daoris's client (<see cref="InstanceDoor.PressAsync"/>): the person's press, confirmed in the
 /// window; with no Daoris running it pushes itself, through the same act (<see cref="GitPushActs"/>), refused from a session's terminal
@@ -56,7 +56,7 @@ public static class GitPushCommand
         return new GitPushVerb(words[0], words[1], words[2], words.Count == 4 ? words[3] : null, yes == true);
     }
 
-    /// <summary>The verb's payload: the route's own fields beside <c>said: true</c> (RPC1e).</summary>
+    /// <summary>The verb's payload: the route's own fields beside <c>said: true</c>.</summary>
     public static Dictionary<string, object?> Payload(GitPushVerb verb) =>
         InstanceDoor.Said(("repository", verb.Repository), ("kind", verb.Kind), ("name", verb.Name), ("at", verb.At));
 

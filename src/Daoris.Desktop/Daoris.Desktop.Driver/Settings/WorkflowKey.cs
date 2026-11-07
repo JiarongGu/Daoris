@@ -3,23 +3,23 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A kind as a level's choice holds it (WORKFLOW1e, the workflow design §2.5, §4.2): for a workspace, its label in the person's
+/// A kind as a level's choice holds it: for a workspace, its label in the person's
 /// words, the paths work of that kind keeps to, and the workflow it maps to; for a repository, only the workflow.
 /// </summary>
 /// <param name="Workflow">A workflow's id, <c>current</c>, or null where the kind maps to nothing (the level's default).</param>
 public sealed record WorkflowKindChoice(string? Label, IReadOnlyList<string> Paths, string? Workflow);
 
 /// <summary>
-/// The landed route (FABRIC-PIPELINE1a, D192 point 2, the pipeline design §1.2): the verification pipeline for work that reaches the
+/// The landed route: the verification pipeline for work that reaches the
 /// line, and the gates the person accepted for it to run unasked, by git's blob id of <c>daoris.gates.json</c> at the line's tip.
 /// </summary>
 /// <param name="Workflow">A verification pipeline's id, or <c>current</c>: no verification, today's.</param>
-/// <param name="Gates">The accepted blob id, <c>none</c> where the line held no declaration, or null where none was accepted yet.</param>
+/// <param name="Gates">The accepted blob id, <c>none</c> where the line held no declaration, or null where none is accepted yet.</param>
 public sealed record WorkflowLanded(string Workflow, string? Gates);
 
 /// <summary>
-/// One level's choice of workflow (WORKFLOW1e, design §2.5): its default and its kinds, in the order written, and its landed route
-/// (FABRIC-PIPELINE1a). A repository's kinds map the workspace's; a workspace's also declare them.
+/// One level's choice of workflow: its default and its kinds, in the order written, and its landed route.
+/// A repository's kinds map the workspace's; a workspace's also declare them.
 /// </summary>
 /// <param name="Default">A workflow's id, <c>current</c>, or null for none.</param>
 public sealed record WorkflowChoice(string? Default, IReadOnlyList<KeyValuePair<string, WorkflowKindChoice>> Kinds)
@@ -33,7 +33,7 @@ public sealed record WorkflowChoice(string? Default, IReadOnlyList<KeyValuePair<
 
     /// <summary>
     /// Whether it names a development route, a default or a kind: what makes a repository's choice replace its workspace's. A landed
-    /// route alone does not (FABRIC-PIPELINE1a, the pipeline design §1.2).
+    /// route alone does not.
     /// </summary>
     public bool NamesDevelopment => Default is not null || Kinds.Count > 0;
 
@@ -42,14 +42,14 @@ public sealed record WorkflowChoice(string? Default, IReadOnlyList<KeyValuePair<
 }
 
 /// <summary>
-/// The workflow choices as <c>driver.json</c> keeps them, <c>workflows</c> by repository and <c>workspaceWorkflows</c> by workspace
-/// (WORKFLOW1e, D157 point 10; FOUNDATION1 mod-iii): the key's shape, its limits and the sentences that say what does not read, read
+/// The workflow choices as <c>driver.json</c> keeps them, <c>workflows</c> by repository and <c>workspaceWorkflows</c> by workspace:
+/// the key's shape, its limits and the sentences that say what does not read, read
 /// and written by the settings' own parser. What a choice means, its resolution, edit and the sentences of an edit, stays with the
 /// selection (<see cref="WorkflowSelection"/>), which answers through this for what it shares.
 /// </summary>
 public static class WorkflowKey
 {
-    /// <summary>The most kinds one choice holds (design §4.2).</summary>
+    /// <summary>The most kinds one choice holds.</summary>
     public const int MaxKinds = 12;
 
     /// <summary>The longest a kind's id is.</summary>
@@ -89,7 +89,7 @@ public static class WorkflowKey
 
     public static string KindWorkflowProblem(string kind) => $"kind `{kind}`'s `workflow` names a workflow: its id, or `current`.";
 
-    /// <summary>The workflow drawn from the rules as they stand (design §2.7), which no saved workflow's id may take.</summary>
+    /// <summary>The workflow drawn from the rules as they stand, which no saved workflow's id may take.</summary>
     public const string Current = "current";
 
     /// <summary>Why a choice's workflow is none: not a workflow's id, nor <see cref="Current"/>.</summary>
@@ -137,7 +137,7 @@ public static class WorkflowKey
         && paths.Distinct(StringComparer.Ordinal).Count() == paths.Count;
 
     /// <summary>
-    /// An entry read (design §2.5): its first problem, or the choice; a choice naming nothing is no problem. A repository's kind maps
+    /// An entry read: its first problem, or the choice; a choice naming nothing is no problem. A repository's kind maps
     /// to a workflow; a workspace's is an object, its label first. Null is absent, and a field a kind has no name for is not kept.
     /// </summary>
     /// <param name="entry">The entry.</param>
@@ -166,7 +166,7 @@ public static class WorkflowKey
             }
         }
 
-        // The landed route (FABRIC-PIPELINE1a), after the kinds: its workflow an id or `current`, its gates a blob id or `none` where accepted.
+        // The landed route, after the kinds: its workflow an id or `current`, its gates a blob id or `none` where accepted.
         WorkflowLanded? landed = null;
         if (entry.TryGetProperty("landed", out var route) && route.ValueKind != JsonValueKind.Null)
         {

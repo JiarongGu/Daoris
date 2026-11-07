@@ -4,27 +4,27 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>A judge's answer for one remote act (the git-auth design §6.5): whether it may pass, its code, and the one line a refusal says.</summary>
+/// <summary>A judge's answer for one remote act: whether it may pass, its code, and the one line a refusal says.</summary>
 /// <param name="Allowed">Whether the act may pass.</param>
 /// <param name="Code">Why: <c>read</c>, <c>granted</c>, <c>access</c>, <c>asked</c>, or a refusal's code (<c>denied</c>, <c>read-only</c>, ...).</param>
 /// <param name="Line">The one line a refusal writes where git prints it; null where the act passes.</param>
-/// <param name="Ask">Whether the act must be asked of the person at the door (GITAUTH1f, §6.6): not allowed yet, and not refused.</param>
+/// <param name="Ask">Whether the act must be asked of the person at the door: not allowed yet, and not refused.</param>
 public sealed record GitVerdict(bool Allowed, string Code, string? Line, bool Ask = false);
 
 /// <summary>
-/// The one judge of git access (GITAUTH1b, D198 points 8, 11 and 13; the git-auth design §6.1, §6.2, §6.5 and §6.7), asked by both
-/// doors at the remote command. Until the person can set git access (GITAUTH1f) it answers Daoris's default, door by door, which is
+/// The one judge of git access (11 and 13), asked by both
+/// doors at the remote command. Until the person can set git access it answers Daoris's default, door by door, which is
 /// today's behaviour: <b>Read</b> is allowed; <b>Write</b> is allowed to the push act alone, by the grant the driver writes for that
 /// act's git start on the person's press (<see cref="GitGrants"/>), and refused to every other process, a session on any harness and a
-/// plugin among them; <b>Dangerous</b>, each update of a push judged by its kind, is judged at the doors for every agent whatever its harness
-/// (D233 choice 3, D241 point 3), refused unless the person's git access allows it (<see cref="GitPushJudge"/>).
+/// plugin among them; <b>Dangerous</b>, each update of a push judged by its kind, is judged at the doors for every agent whatever its harness,
+/// refused unless the person's git access allows it (<see cref="GitPushJudge"/>).
 /// </summary>
 /// <remarks>
-/// <para><b>Git access alone</b> says whether a session pushes: a home whose person had switched <c>no-push</c> off was converted once into
-/// this machine's Write <i>allow</i> by the home's migration (<c>GitPushStep</c>).</para>
+/// <para><b>Git access alone</b> says whether a session pushes: the home's migration (<c>GitPushStep</c>) turns a home whose person had
+/// switched <c>no-push</c> off into this machine's Write <i>allow</i>.</para>
 /// <para><b>An identity read only on its host</b> refuses every Write through it, a grant's included, at both doors and at the landing.</para>
-/// <para><b>Refusing a Codex session's push</b>, which nothing refused before, is a narrowing D72 lets Daoris make without the person
-/// (§6.2). So is refusing a push by a process that is not a session and holds no grant (a plugin's trial or tool run, a hook).</para>
+/// <para><b>Refusing a Codex session's push</b> is a narrowing Daoris makes without the person.
+/// So is refusing a push by a process that is not a session and holds no grant (a plugin's trial or tool run, a hook).</para>
 /// <para>The base library alone: the doors compile it in (<c>Daoris.Desktop.GitDoor</c>).</para>
 /// </remarks>
 public static class GitAccessRules
@@ -55,7 +55,7 @@ public static class GitAccessRules
     public const string RefusedLine = "daoris: the git go-ahead for this act was refused, or was not answered in time.";
 
     /// <summary>
-    /// The answer for an act under the value its class resolved to (GITAUTH1f, §6.2, §6.5): <c>allow</c> passes, <c>deny</c> refuses,
+    /// The answer for an act under the value its class resolved to: <c>allow</c> passes, <c>deny</c> refuses,
     /// <c>ask</c> is asked at the door, and <see cref="GitAccessKeys.AsToday"/> (Write, set by none) is <see cref="Judge(GitAct, bool)"/>.
     /// A grant (the landing's, or a late answer's) passes a Write whatever the value but <c>deny</c>. An identity read only on its host makes
     /// Write refuse whatever the access and the grant.
@@ -74,7 +74,7 @@ public static class GitAccessRules
         };
     }
 
-    /// <summary>The class of an ssh remote command's program (§4.2): read, write, or null for one the door does not take.</summary>
+    /// <summary>The class of an ssh remote command's program: read, write, or null for one the door does not take.</summary>
     public static GitAct? ClassOf(string program, string? lfsOperation = null) => program switch
     {
         "git-upload-pack" => GitAct.Read,
@@ -86,7 +86,7 @@ public static class GitAccessRules
 }
 
 /// <summary>
-/// An address as the judge and the grants compare it (§6.5, §6.7): its host, lower-cased, and its path with no leading or trailing
+/// An address as the judge and the grants compare it: its host, lower-cased, and its path with no leading or trailing
 /// slash and no <c>.git</c>, so <c>git@github.com:org/engine.git</c>, <c>ssh://git@github.com/org/engine</c> and
 /// <c>https://github.com/org/engine.git</c> are one place. Never its user-info, port or scheme.
 /// </summary>
@@ -143,13 +143,13 @@ public static class GitAddressKeys
 }
 
 /// <summary>
-/// The push act's grant (GITAUTH1b, D198 point 13; the git-auth design §6.7): written by the driver for the act's push on the person's
+/// The push act's grant: written by the driver for the act's push on the person's
 /// press, handed to that act's own git start in <see cref="GitRouting.GrantVariable"/>, and taken by the door for one write connection to
 /// the address it names, once, within its bound. Kept in the home's <c>run/git/grants/</c>, one file per grant, holding the address's
 /// key and its bound and nothing else.
 /// </summary>
 /// <remarks>
-/// A grant file can be written by any process of the account, as every local record can (§10): grants are bound to their act and their
+/// A grant file can be written by any process of the account, as every local record can: grants are bound to their act and their
 /// minutes, and the doors govern an agent's ordinary git, not an agent set on getting round them. A grant carries the refs of its own act
 /// (<see cref="GitGrantRef"/>) and nothing else.
 /// </remarks>

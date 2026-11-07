@@ -20,7 +20,7 @@ internal static class LandedBranchJson
             writer.WriteString("branch", entry.Branch);
             if (entry.Line is not null) writer.WriteString("line", entry.Line);
             writer.WriteString("tip", entry.Tip);
-            // Written only where the landing squashed (PROCESS1b-ii): absent is the session's own commits on the branch.
+            // Written only where the landing squashed: absent is the session's own commits on the branch.
             if (entry.Squashed is not null) writer.WriteString("squashed", entry.Squashed);
             writer.WriteString("session", entry.Session);
             if (entry.Quest is not null) writer.WriteString("quest", entry.Quest);
@@ -38,7 +38,7 @@ internal static class LandedBranchJson
             if (entry.MovedTo is not null) writer.WriteString("movedTo", entry.MovedTo);
             if (entry.MovedToAt is not null) writer.WriteString("movedToAt", entry.MovedToAt);
             if (entry.KeptOn is not null) writer.WriteString("keptOn", entry.KeptOn);
-            // LANDRETIRE1: only where a withdrawal said why, so a trace from before reads as it did.
+            // Only where a withdrawal said why, so a trace from before reads as it did.
             if (entry.GoneWhy is not null) writer.WriteString("goneWhy", entry.GoneWhy);
             if (entry.AcceptedBy is not null) writer.WriteString("acceptedBy", entry.AcceptedBy);
             if (entry.Rule is { } rule)
@@ -47,7 +47,7 @@ internal static class LandedBranchJson
                 if (rule.Plugin is not null) writer.WriteString("plugin", rule.Plugin);
                 writer.WriteBoolean("autoAccept", rule.AutoAccept);
                 writer.WriteString("source", rule.Source);
-                // AUTONOMY1c2: added beside the rest, only where the access setup turned the switch on; a record from before reads none.
+                // Added beside the rest, only where the access setup turned the switch on; a record from before reads none.
                 if (rule.Access is not null) writer.WriteString("access", rule.Access);
                 writer.WriteEndObject();
             }
@@ -73,7 +73,7 @@ internal static class LandedBranchJson
                     if (advance.Opinion is { } read) WriteOpinion(writer, read);
                     if (advance.Workflow is { } went) WriteWorkflow(writer, went);
                     if (advance.Squashed is not null) writer.WriteString("squashed", advance.Squashed);
-                    // FABRIC-UNITLINK1, FABRIC-CLOSE1h13: each only where it is known, so an advance from before reads as it did.
+                    // Each only where it is known, so an advance from before reads as it did.
                     if (advance.Quest is not null) writer.WriteString("quest", advance.Quest);
                     if (advance.Unit is not null) writer.WriteString("unit", advance.Unit);
                     if (advance.Submission is { } made) WriteSubmission(writer, made);
@@ -110,7 +110,7 @@ internal static class LandedBranchJson
                 writer.WriteEndArray();
             }
 
-            // FABRIC-END2: each only where it is known, so an entry from before reads as it did.
+            // Each only where it is known, so an entry from before reads as it did.
             if (entry.Held is { } held) HeldFact.Write(writer, held);
             if (entry.Tidied is { } tidied) ChainTidies.Write(writer, tidied);
             if (entry.Units.Count > 0)
@@ -120,7 +120,7 @@ internal static class LandedBranchJson
                 writer.WriteEndArray();
             }
 
-            // FABRIC-CLOSE1h11, FABRIC-CLOSE1h13: each only where it is known, so a landing from before reads as it did.
+            // Each only where it is known, so a landing from before reads as it did.
             if (entry.Served is not null) writer.WriteString("served", entry.Served);
             if (entry.Submission is { } submission) WriteSubmission(writer, submission);
             WriteBrought(writer, entry.Brought);
@@ -131,7 +131,7 @@ internal static class LandedBranchJson
         writer.WriteEndObject();
     });
 
-    /// <summary>The submission a landing or an advance was made on (FABRIC-CLOSE1h13): its machine and sequence.</summary>
+    /// <summary>The submission a landing or an advance is made on: its machine and sequence.</summary>
     internal static void WriteSubmission(Utf8JsonWriter writer, QuestSubmissionRef submission)
     {
         writer.WriteStartObject("submission");
@@ -153,7 +153,7 @@ internal static class LandedBranchJson
             : null;
 
     /// <summary>
-    /// The acceptance's provenance (INTEGRATE1e, design §17.4): written only where <c>integrate</c> stood, so a landing or an advance without
+    /// The acceptance's provenance: written only where <c>integrate</c> stood, so a landing or an advance without
     /// it, and every one from before, writes nothing and reads as it did.
     /// </summary>
     internal static void WriteIntegrate(Utf8JsonWriter writer, LandedIntegrate integrate)
@@ -165,7 +165,7 @@ internal static class LandedBranchJson
     }
 
     /// <summary>
-    /// The provenance a landing or an advance kept, or null: a record that says neither, which is one from before INTEGRATE1e, one an older
+    /// The provenance a landing or an advance kept, or null: a record that says neither, which is one an older
     /// build rewrote, one made where no <c>integrate</c> stood, and one whose shape does not read whole. Its values are kept as written.
     /// </summary>
     internal static LandedIntegrate? IntegrateOf(JsonElement element) =>
@@ -175,8 +175,8 @@ internal static class LandedBranchJson
             : null;
 
     /// <summary>
-    /// The review that let a landing go (REVIEWENV1c), each field only where it is known. Internal with its reader and the opinion's and
-    /// workflow's, since an integration request keeps its gate proof in the record's own shape (INTEGRATE1e part e2).
+    /// The review that let a landing go, each field only where it is known. Internal with its reader and the opinion's and
+    /// workflow's, since an integration request keeps its gate proof in the record's own shape.
     /// </summary>
     internal static void WriteReview(Utf8JsonWriter writer, LandingReview review)
     {
@@ -190,7 +190,7 @@ internal static class LandedBranchJson
         writer.WriteEndObject();
     }
 
-    /// <summary>The review a landing or an advance kept, or null: absent, which is every landing from before REVIEWENV1c, or not whole.</summary>
+    /// <summary>The review a landing or an advance kept, or null: absent or not whole.</summary>
     internal static LandingReview? ReviewOf(JsonElement element) =>
         element.TryGetProperty("review", out var review) && review.ValueKind == JsonValueKind.Object && Text(review, "said") is { } said
             ? new LandingReview(said, Text(review, "environment"), Text(review, "quest"))
@@ -201,7 +201,7 @@ internal static class LandedBranchJson
             }
             : null;
 
-    /// <summary>The second opinion that let a landing go (XAGENT1f, design §8.6), each field only where it is known.</summary>
+    /// <summary>The second opinion that let a landing go, each field only where it is known.</summary>
     internal static void WriteOpinion(Utf8JsonWriter writer, LandingOpinion opinion)
     {
         writer.WriteStartObject("opinion");
@@ -230,7 +230,7 @@ internal static class LandedBranchJson
         }
     }
 
-    /// <summary>The second opinion a landing or an advance kept, or null: absent, which is every landing from before XAGENT1f.</summary>
+    /// <summary>The second opinion a landing or an advance kept, or null where absent.</summary>
     internal static LandingOpinion? OpinionOf(JsonElement element)
     {
         if (!element.TryGetProperty("opinion", out var opinion) || opinion.ValueKind != JsonValueKind.Object || Text(opinion, "said") is not { } said)
@@ -271,7 +271,7 @@ internal static class LandedBranchJson
         };
     }
 
-    /// <summary>The named workflow a landing went by (WORKFLOW1f, design §5.5), each field only where it is known.</summary>
+    /// <summary>The named workflow a landing went by, each field only where it is known.</summary>
     internal static void WriteWorkflow(Utf8JsonWriter writer, LandingWorkflow workflow)
     {
         writer.WriteStartObject("workflow");
@@ -282,7 +282,7 @@ internal static class LandedBranchJson
         writer.WriteEndObject();
     }
 
-    /// <summary>The named workflow a landing or an advance kept, or null: absent, which is every landing under Current and from before WORKFLOW1f.</summary>
+    /// <summary>The named workflow a landing or an advance kept, or null where absent.</summary>
     internal static LandingWorkflow? WorkflowOf(JsonElement element) =>
         element.TryGetProperty("workflow", out var workflow) && workflow.ValueKind == JsonValueKind.Object
         && Text(workflow, "workflow") is { } id && Text(workflow, "level") is { } level
@@ -290,7 +290,7 @@ internal static class LandedBranchJson
             ? new LandingWorkflow(id, number, level) { Kind = Text(workflow, "kind") }
             : null;
 
-    /// <summary>The kept answer, in the answer's own field names, with who answered and when it was asked (PLUGHOOK1a).</summary>
+    /// <summary>The kept answer, in the answer's own field names, with who answered and when it is asked.</summary>
     internal static void WriteState(Utf8JsonWriter writer, PullRequestState state)
     {
         writer.WriteStartObject("pullRequestState");
@@ -349,7 +349,7 @@ internal static class LandedBranchJson
             carried.Add(new CarriedBranch(branch, tip, at, by));
         }
 
-        // The empty case is the property's own default, so an entry from before PLUGHOOK1a still equals itself read twice.
+        // The empty case is the property's own default, so an entry without it still equals itself read twice.
         if (carried.Count == 0) return [];
         return carried;
     }
@@ -406,7 +406,7 @@ internal static class LandedBranchJson
         };
     }
 
-    /// <summary>The sessions a combined Accept brought into a landing or an advance (LINESTOGETHER1d); none in a record from before.</summary>
+    /// <summary>The sessions a combined Accept brought into a landing or an advance; none in a record from before.</summary>
     internal static IReadOnlyList<LandedWork> BroughtOf(JsonElement element)
     {
         if (!element.TryGetProperty("brought", out var brought) || brought.ValueKind != JsonValueKind.Array) return [];
@@ -436,7 +436,7 @@ internal static class LandedBranchJson
         writer.WriteEndArray();
     }
 
-    /// <summary>The units an entry carries (FABRIC-END2), each a non-empty string. Absent is none, which is every landing from before.</summary>
+    /// <summary>The units an entry carries, each a non-empty string. Absent is none, which is every landing from before.</summary>
     internal static IReadOnlyList<string> UnitsOf(JsonElement element)
     {
         if (!element.TryGetProperty("units", out var list) || list.ValueKind != JsonValueKind.Array) return [];
@@ -450,8 +450,8 @@ internal static class LandedBranchJson
     }
 
     /// <summary>
-    /// The advances an entry keeps (LAND2c), each whole or left out: one without the commits it moved between, when, or the
-    /// session is no fact at all. Absent is none, which is every landing from before LAND2c.
+    /// The advances an entry keeps, each whole or left out: one without the commits it moved between, when, or the
+    /// session is no fact at all. Absent is none.
     /// </summary>
     internal static IReadOnlyList<LandedAdvance> AdvancesOf(JsonElement element)
     {
@@ -474,7 +474,7 @@ internal static class LandedBranchJson
             });
         }
 
-        // The empty case is the property's own default, so an entry from before LAND2c still equals itself read twice.
+        // The empty case is the property's own default, so an entry without it still equals itself read twice.
         if (advances.Count == 0) return [];
         return advances;
     }

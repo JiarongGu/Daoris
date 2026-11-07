@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The workplace's answers to the two ports the service declares (FOUNDATION1 mod-iv, the design §14.3): its git read for the remote sync
+/// The workplace's answers to the two ports the service declares: its git read for the remote sync
 /// (<see cref="ICheckoutReads"/>) and its lock let go when a session's record ends (<see cref="SessionEnds"/>). Installed when the
 /// driver's assembly loads, before any client or sync can run, so every host, the loop and every test read and release as they always did
 /// and no construction site hands them anything.

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1l (the agent-provider design §11 row l, §3.2's <c>ModelRefused</c>): a model the protocol open refuses is one reading on the
+/// A model the protocol open refuses is one reading on the
 /// run's sink, said before the open's re-ask walks on, and the offers store's part keeps it as the account's refusal, so the walk the re-ask
 /// runs passes that account for that model while another account of the same door and version is tried.
 /// </summary>

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LAUNCHCHAIN1, through real processes: a server a session is handed starts as one node and nothing before it, the harness's start
+/// Through real processes: a server a session is handed starts as one node and nothing before it, the harness's start
 /// of it read as its job counts it; and a package no version of which is installed is installed once, by npm (a stand-in of node's
 /// here, never the network), with the log saying so, and every later start takes it from the toolchain.
 /// </summary>

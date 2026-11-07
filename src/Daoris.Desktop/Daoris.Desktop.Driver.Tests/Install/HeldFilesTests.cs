@@ -4,8 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// DEPLOYBUSY1: what holds a folder the swap must move. The deployment rehearsal's update rolled back <c>busy</c> after two
-/// minutes with nothing saying which file was held or by what; <see cref="HeldFiles"/> names both, where Windows can tell.
+/// What holds a folder the swap must move: <see cref="HeldFiles"/> names the file held and what holds it, where Windows can tell.
 /// </summary>
 /// <remarks>The holder here is this test's own process, holding a file open: nothing is started.</remarks>
 public sealed class HeldFilesTests : IDisposable
@@ -32,7 +31,7 @@ public sealed class HeldFilesTests : IDisposable
         Assert.True(found.Count == 0, Said(found));
     }
 
-    /// <summary>What was found, for a failure's message.</summary>
+    /// <summary>What is found, for a failure's message.</summary>
     private static string Said(IReadOnlyList<HeldEntry> found) =>
         string.Join("; ", found.Select(entry => $"{entry.Path} by {string.Join(", ", entry.By.Select(by => $"{by.Said} {by.Command}"))}"));
 
@@ -66,7 +65,7 @@ public sealed class HeldFilesTests : IDisposable
         Assert.Empty(HeldFiles.Find(_folder));
     }
 
-    /// <summary>The search stops at as many entries as it was asked for: a log line names a few, never a folder's every file.</summary>
+    /// <summary>The search stops at as many entries as it is asked for: a log line names a few, never a folder's every file.</summary>
     [Fact]
     public void The_search_stops_at_the_most_it_was_asked_for()
     {

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What sessions consumed (TOOL3/D57 §4) — measured before it is managed, on the owner's answer.
+/// What sessions consumed — measured before it is managed, on the owner's answer.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>Machine-local by an inherited rule, not a new one.</b> Per-account usage names a
@@ -11,8 +11,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// transcript, the tree path and the profile name behind the shell's own bridge. There is no HTTP
 /// route onto it, which is a structural guarantee rather than a policed one.</para>
 ///
-/// <para><b>Reported, never computed.</b> Every number here was volunteered by somebody else's tool.
-/// Daoris attaches no price: what a token costs is the deployment's business (D24).</para>
+/// <para><b>Reported, never computed.</b> Every number here is volunteered by somebody else's tool.
+/// Daoris attaches no price: what a token costs is the deployment's business.</para>
 /// </remarks>
 public sealed class UsageTests : IDisposable
 {
@@ -69,8 +69,8 @@ public sealed class UsageTests : IDisposable
     }
 
     /// <summary>
-    /// BRAINSTORM1c (D176 point 7): a brainstorm pass's reading names its brainstorm and the file keeps it, so the usage is the brainstorm's
-    /// and not a quest's or a session's; every other record is written as before, with no such field.
+    /// A brainstorm pass's reading names its brainstorm and the file keeps it, so the usage is the brainstorm's
+    /// and not a quest's or a session's; every other record is written with no such field.
     /// </summary>
     [Fact]
     public void A_brainstorm_pass_s_reading_names_its_brainstorm_and_every_other_reading_names_none()
@@ -125,9 +125,9 @@ public sealed class UsageTests : IDisposable
     private static AgentOfDoor Agents => new(ProviderRegistry.Built());
 
     /// <summary>
-    /// AGENTPROVIDER1 s-vii: usage is counted by agent. Before, one account used through <c>claude-code</c> and <c>claude-code-acp</c> was
-    /// two shares, one per door; now it is one share of <c>claude-code</c>. Another agent's account of the same name stays its own, and a door
-    /// no agent holds now (a removed plugin's) is counted as itself.
+    /// Usage is counted by agent: one account used through <c>claude-code</c> and <c>claude-code-acp</c> is
+    /// one share of <c>claude-code</c>, not one per door. Another agent's account of the same name stays its own, and a door
+    /// no agent holds (a removed plugin's) is counted as itself.
     /// </summary>
     [Fact]
     public void One_account_used_through_an_agent_s_two_doors_is_one_share_of_the_agent()
@@ -170,7 +170,7 @@ public sealed class UsageTests : IDisposable
     /// <summary>
     /// A hand-mangled or half-written file is a machine that has measured nothing, never a crash.
     /// Usage is an observation, and losing it costs nothing — the same reading `driver.json` and the
-    /// harness wiring already take (D21).
+    /// harness wiring already take.
     /// </summary>
     [Fact]
     public void An_unreadable_file_is_a_machine_that_measured_nothing()
@@ -179,7 +179,7 @@ public sealed class UsageTests : IDisposable
         File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Usage), "{ not json at all");
 
         Assert.Empty(Store().Sessions);
-        // And it is not overwritten by the act of reading it, which would destroy what was being typed.
+        // And it is not overwritten by the act of reading it, which would destroy what is being typed.
         Assert.Equal("{ not json at all", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Usage)));
     }
 

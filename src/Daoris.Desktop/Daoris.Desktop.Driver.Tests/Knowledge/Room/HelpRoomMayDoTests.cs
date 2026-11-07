@@ -7,13 +7,10 @@ namespace Daoris.Driver.Tests;
 public sealed class HelpRoomMayDoTests
 {
     /// <summary>
-    /// HELP4: asked to tidy a repository's branches, the helper's first move was a shell command, refused
-    /// before it ran, and it then rebuilt the repository's branches from its quests and presented the
-    /// guess as the tree. The room says it has no shell; that a repository's own work is routed there, as
-    /// an ask or a conversation in that repository; that what it could not see is said as such; and it
-    /// points at the cleanup the person wanted, which is a door of Daoris's own.
-    /// HELP5: its fourth move on a real conversation was a fetch of a ticket's URL, refused the same way,
-    /// so the same sentence says it has no web either.
+    /// Asked to tidy a repository's branches, the helper has no shell to try. The room says it has none; that a
+    /// repository's own work is routed there, as an ask or a conversation in that repository; that what it
+    /// cannot see is said as such; and it points at the cleanup the person wants, which is a door of
+    /// Daoris's own. The same sentence says it has no web either.
     /// </summary>
     [Fact]
     public void The_room_says_it_has_no_shell_nor_web_and_routes_a_repositorys_own_work_there()
@@ -27,7 +24,7 @@ public sealed class HelpRoomMayDoTests
             Assert.Contains("never try one", agents);
             Assert.Contains("a repository's own work", agents);
             Assert.Contains("`ask_propose`", agents);
-            // NEW1d-a: NEW1b removed Start a session; a conversation is begun with New conversation.
+            // A conversation is begun with New conversation, not Start a session.
             Assert.Contains("New conversation (Ctrl+N)", agents);
             Assert.DoesNotContain("Start a session", agents);
             Assert.Contains("say what you could not see", agents);
@@ -36,7 +33,7 @@ public sealed class HelpRoomMayDoTests
     }
 
     /// <summary>
-    /// D107, as HELPMODE1c4 serves it: with reading across on, the room names each checkout it may read, by name and workspace and
+    /// With reading across on, the room names each checkout it may read, by name and workspace and
     /// never a path, and how: <c>checkout_read</c> alone, a repository and a path from its top, a file or a folder, <c>status</c> and
     /// <c>branches</c>, each read judged by Daoris; and that it changes nothing there. No <c>git -C</c>, which it has no rule for.
     /// </summary>
@@ -57,7 +54,7 @@ public sealed class HelpRoomMayDoTests
     }
 
     /// <summary>
-    /// HELPMODE1c4: a checkout the person turned off under configured access is not listed, and is named apart with where it is turned
+    /// A checkout the person turned off under configured access is not listed, and is named apart with where it is turned
     /// on; every one turned off reads as none to read, said so, never as reading switched off by the repositories.
     /// </summary>
     [Fact]
@@ -77,7 +74,7 @@ public sealed class HelpRoomMayDoTests
     }
 
     /// <summary>
-    /// D107: with checkouts here and none it may read, the room says it reads none and why — reading is
+    /// With checkouts here and none it may read, the room says it reads none and why — reading is
     /// switched off — naming both doors, so the person knows where it is turned on.
     /// </summary>
     [Fact]
@@ -87,7 +84,7 @@ public sealed class HelpRoomMayDoTests
 
         Assert.Contains("you read no checkout", agents);
         Assert.Contains("Reading the checkouts here is switched off", agents);
-        // HELPSETUP1: a repository's reading is on its Setup since UX6f; a workspace's is on its own page since UX6g.
+        // A repository's reading is on its Setup; a workspace's is on its own page.
         Assert.Contains("for a repository under\nRepositories → the repository's page → Setup → Reach", agents);
         Assert.Contains("for a whole workspace under\nRepositories → the workspace's page → Setup → Defaults → Read by agents outside", agents);
         Assert.Contains("`daoris place across <repository> read on`", agents);
@@ -104,7 +101,7 @@ public sealed class HelpRoomMayDoTests
     }
 
     /// <summary>
-    /// HELPPLUG1a (D170 point 3, and its tightening): the servers plugins hand it, as the person approved them, are named with the
+    /// The servers plugins hand it, as the person approved them, are named with the
     /// tools it may call on each, a write outside Daoris said as one the person accepted; what such a tool does is the plugin's
     /// act, and a change to Daoris itself is still a proposal. One waiting for the person's approval is named as handed nothing.
     /// </summary>
@@ -132,7 +129,7 @@ public sealed class HelpRoomMayDoTests
     }
 
     /// <summary>
-    /// HELPPLUG1b (D170 point 4): the skills plugins hand it are named as the harness names them, <c>plugin:skill</c>; with none,
+    /// The skills plugins hand it are named as the harness names them, <c>plugin:skill</c>; with none,
     /// nothing is said. A skill declared for sessions alone, one with no skill file, and one that would allow itself tools are
     /// not among them.
     /// </summary>
@@ -179,7 +176,7 @@ public sealed class HelpRoomMayDoTests
     }
 
     /// <summary>
-    /// HELPPLUG1c: a server a plugin offers it that the person has not approved, or whose tools an update changed since, is never
+    /// A server a plugin offers it that the person has not approved, or whose tools an update changes, is never
     /// taken away in silence. The room names what it would have, reads and writes apart, says it once at the start, and where it is
     /// approved: the plugin's page, or its own proposal (`plugin_propose`'s `approve`), rather than only opening the page. One the
     /// installed copy lacks and the install's newer copy offers is said with its update first.
@@ -210,7 +207,7 @@ public sealed class HelpRoomMayDoTests
     }
 
     /// <summary>
-    /// HELPPLUG1c: the waiting servers are described from the person's approvals, each write apart and one changed since marked;
+    /// The waiting servers are described from the person's approvals, each write apart and one changed since approval marked;
     /// an installed offer whose newer copy offers a server the installed one lacks is named with both versions.
     /// </summary>
     [Fact]
@@ -302,7 +299,7 @@ public sealed class HelpRoomMayDoTests
     }
 
     /// <summary>
-    /// HELPMODE1a1 (D183 point 2): in restricted mode the room says its limits are the mode's, that full access is the person's own
+    /// In restricted mode the room says its limits are the mode's, that full access is the person's own
     /// choice and where it is made, and that it is never the helper's to propose.
     /// </summary>
     [Fact]
@@ -317,7 +314,7 @@ public sealed class HelpRoomMayDoTests
     }
 
     /// <summary>
-    /// HELPMODE1a1 (D183 points 1, 5): in full access the room says it acts on this machine itself, with every server the plugins
+    /// In full access the room says it acts on this machine itself, with every server the plugins
     /// here declare and nothing to approve; it says nothing that is restricted mode's alone (no shell, nothing changed, servers
     /// waiting, reading switched off); and the doctrine still speaks: a repository's work through a quest, Daoris's housekeeping its
     /// own, a push and a key the person's.
@@ -350,7 +347,7 @@ public sealed class HelpRoomMayDoTests
     }
 
     /// <summary>
-    /// HELPMODE1a1: in full access the servers it is said to be handed are every one the plugins here declare, for it or for
+    /// In full access the servers it is said to be handed are every one the plugins here declare, for it or for
     /// sessions, approved or not, as its spawn is handed them (<c>ChatServers.HandAsync</c>); none waits.
     /// </summary>
     [Fact]

@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The packages a session's servers run from, each installed once into the toolchain beside the agents' pins (LAUNCHCHAIN1):
+/// The packages a session's servers run from, each installed once into the toolchain beside the agents' pins:
 /// <c>cache/toolchain/&lt;package&gt;/&lt;version&gt;</c>, by npm's own <c>--prefix</c>, as an agent's pin is, with npm's cache
 /// taken before the network. A server then starts as node and the package's script, where <c>npx</c> would have resolved the same
 /// package on every start behind two <c>cmd</c>s and a node of npm's own.

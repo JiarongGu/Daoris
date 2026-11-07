@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The meetings on file (AGENTROOM1a, D177): each round's packet frozen for the person to read, and each round they sent run beside
+/// The meetings on file: each round's packet frozen for the person to read, and each round they sent run beside
 /// the look, its turns one at a time through a brainstorm's pass, each taking a slot under the cap.
 /// </summary>
 [LookPass("meetings", LookPhase.Read, "brainstorms")]

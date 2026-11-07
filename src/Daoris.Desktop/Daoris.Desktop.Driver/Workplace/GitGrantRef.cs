@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One ref a grant carries (D241 point 3): the ref's name, the commit the push moves it to, and where the person's act knows it, the commit
+/// One ref a grant carries: the ref's name, the commit the push moves it to, and where the person's act knows it, the commit
 /// the ref stands at. A grant is bound to its act, so it carries no ref but the ones its act names.
 /// </summary>
 /// <param name="Ref">The full ref name, <c>refs/heads/work/fix</c>.</param>

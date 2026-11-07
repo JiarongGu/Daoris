@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A workspace's room reads its workspace (ASKSCOPE1b, D158's ASKSCOPE1 note point 4): the machine's facts (D181's, as
+/// A workspace's room reads its workspace: the machine's facts (as
 /// <see cref="HelpFacts.Read"/> reads them, and the driver's own files beside them) projected to one workspace before any section
 /// counts or lists them, so another workspace's never fills its lists. What the machine holds for every workspace (the agents and
 /// their accounts, sign-in and usage, the plugins and their approvals, Daoris's browser, the driver and its cap) is kept whole.
@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// session, a quest, an ask, finished work, a landing) is placed by it; one that keeps only its repository (a quest parked or held,
 /// a unit of work, a recovery) by that repository's workspace now. A pause is placed by the ask or quest it holds.</para>
 ///
-/// <para><b>Reading no more than the facts</b> (D181): nothing here asks git or the service, so a press reads no more than before.</para>
+/// <para><b>Reading no more than the facts</b>: nothing here asks git or the service, so a press reads nothing more.</para>
 /// </remarks>
 internal static class HelpRoomScope
 {
@@ -54,8 +54,8 @@ internal static class HelpRoomScope
             Sessions = whole.Sessions is { } look ? look.WithRecords([.. look.Records.Where(record => Ours(record.Workspace))]) : null,
             History = whole.History is { } history ? [.. history.Where(reading => Ours(reading.Workspace))] : null,
             Work = whole.Work is { } units ? [.. units.Where(unit => own.Contains(unit.Repository))] : null,
-            // What the inventory could not read names its repository as data (FACTSPLIT1a): another workspace's is that workspace's,
-            // whatever the clause's words name; one no workspace registers stays in every room, as before.
+            // What the inventory could not read names its repository as data: another workspace's is that workspace's,
+            // whatever the clause's words name; one no workspace registers stays in every room.
             WorkUnread = [.. whole.WorkUnread.Where(unread => !others.Contains(unread.Repository))],
             WorkRecovery = [.. whole.WorkRecovery.Where(recovery => recovery.Repository is { } repository && own.Contains(repository))],
             // A line's waits by its record's workspace, as the Sessions list keeps its records.

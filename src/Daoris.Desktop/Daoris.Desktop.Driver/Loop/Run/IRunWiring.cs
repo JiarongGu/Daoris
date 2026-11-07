@@ -119,7 +119,7 @@ internal interface IRunWiring
     SessionConclusion ModelRefused(
         SessionConclusion conclusion, string agent, HarnessSelection selection, string? model, HarnessEnding ended, string sessionId);
 
-    /// <summary>The conclusion of a run whose account was signed out.</summary>
+    /// <summary>The conclusion of a run whose account is signed out.</summary>
     SessionConclusion AccountSignedOut(
         SessionConclusion conclusion, AgentDoor adapter, HarnessSelection selection, string? turnFailed, HarnessEnding? ended);
 

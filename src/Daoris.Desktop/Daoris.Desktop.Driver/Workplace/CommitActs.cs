@@ -25,10 +25,10 @@ public sealed record CommitPress(string Verb, string Message, string? Head, stri
 public sealed record CommitPlan(string? Head, string? Branch, string? Tree, string? Why, bool Empty, string? Message, IReadOnlyList<string> Hooks, string? Identity);
 
 /// <summary>
-/// **Commit and amend** (GITAPP2i, D204, the git-writes design §8). One <c>commit</c> step of the act journal, in the act's job, so a hook and its
+/// **Commit and amend**. One <c>commit</c> step of the act journal, in the act's job, so a hook and its
 /// children end with it and none is skipped (no <c>--no-verify</c>); git's own auto maintenance runs after it as it does for the person's own
 /// commit. An amend first keeps a recovery ref at the old tip under <see cref="ContentHolds.DiscardedPrefix"/>, in a step of its own. The commit
-/// carries the author of <see cref="GitAuthor"/> (D198 point 5). It is reconciled by HEAD against the old tip and the plan's message
+/// carries the author of <see cref="GitAuthor"/>. It is reconciled by HEAD against the old tip and the plan's message
 /// (<see cref="ActCommits"/>), never re-run; what a hook changed in it is said.
 /// </summary>
 public sealed class CommitActs(ActJournal journal)

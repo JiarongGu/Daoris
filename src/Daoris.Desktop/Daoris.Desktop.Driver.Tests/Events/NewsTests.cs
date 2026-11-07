@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 m-i (the foundation design §4.5, §19.6): the news owned in one place, each piece told at most once by its key claimed in the
+/// The news owned in one place, each piece told at most once by its key claimed in the
 /// said-set, durably, before anything is shown, and one journal cursor for each teller beside it.
 /// </summary>
 public sealed class NewsTests : IDisposable
@@ -71,7 +71,7 @@ public sealed class NewsTests : IDisposable
         Assert.Equal([1, 1], [first.Told.Count, other.Told.Count]);
     }
 
-    /// <summary>Each teller has a cursor of its own, with the store it was read against, and a claim moves it in the transaction that claims.</summary>
+    /// <summary>Each teller has a cursor of its own, with the store it is read against, and a claim moves it in the transaction that claims.</summary>
     [Fact]
     public void Each_teller_keeps_a_cursor_of_its_own_and_a_claim_moves_it()
     {

@@ -4,12 +4,12 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where this machine's remotes are — machine-local configuration, never per-repository (D47 §9,
-/// D48 §5): the home's `remotes.json` (D63), a MAP of workspace → `{ "url": "...", "key": "dk_..." }`, with
+/// Where this machine's remotes are — machine-local configuration, never per-repository:
+/// the home's `remotes.json`, a MAP of workspace → `{ "url": "...", "key": "dk_..." }`, with
 /// the environment overriding.
 /// </summary>
 /// <remarks>
-/// <para>A map rather than a single remote because one shared deployment serves one workspace (D48 §5),
+/// <para>A map rather than a single remote because one shared deployment serves one workspace,
 /// and a machine may hold repositories from several circles. The workspace NAME keys it; whether a
 /// given repository may feed at all stays its own manifest's declaration — the manifest says MAY, the
 /// machine says WHERE.</para>
@@ -36,7 +36,7 @@ public sealed record RemoteTarget(string Url, string Key)
     /// </summary>
     public const string DefaultWorkspace = WorkspaceNames.Default;
 
-    /// <summary>The map's file name under the Daoris home (D63), beside the driver's own config.</summary>
+    /// <summary>The map's file name under the Daoris home, beside the driver's own config.</summary>
     public const string FileName = "remotes.json";
 
     /// <summary>A workspace name as it is stored and compared: trimmed, and the default when unstated (the settings' <see cref="WorkspaceNames.Of"/>).</summary>
@@ -125,7 +125,7 @@ public sealed record RemoteTarget(string Url, string Key)
     public static string Redact(string key) => key.Length > 11 ? key[..11] + "…" : "…";
 
     /// <summary>
-    /// The map's conventional home, beside the driver's own config under the Daoris home (D63) — and
+    /// The map's conventional home, beside the driver's own config under the Daoris home — and
     /// null where there is none: a machine with no home has no remotes, the documented default anyway.
     /// </summary>
     public static string? DefaultPath => DaorisHome.File(HomeEntry.Remotes);
@@ -133,7 +133,7 @@ public sealed record RemoteTarget(string Url, string Key)
     /// <summary>The file every door reads and writes — the override, or the conventional home, as the driver's and the harnesses' are.</summary>
     public static string? ResolvePath() => Environment.GetEnvironmentVariable(PathVariable) ?? DefaultPath;
 
-    /// <summary>This machine's remotes, by workspace. Absence is the default and it is silent (D21).</summary>
+    /// <summary>This machine's remotes, by workspace. Absence is the default and it is silent.</summary>
     public static IReadOnlyDictionary<string, RemoteTarget> Load() => Load(Environment.GetEnvironmentVariable, ResolvePath());
 
     /// <summary>
@@ -144,7 +144,7 @@ public sealed record RemoteTarget(string Url, string Key)
         FromEnvironment(environment) ?? Parse(File.Exists(path) ? AtomicFile.ReadText(path) : null);
 
     /// <summary>
-    /// This machine's remotes as sync reads them, for the loop of <paramref name="home"/> (FABRIC-CLOSE1l): the environment's pair, else the
+    /// This machine's remotes as sync reads them, for the loop of <paramref name="home"/>: the environment's pair, else the
     /// file <see cref="PathVariable"/> names, else the home's own map. What a bind at the take reads to leave a circle synced through a remote
     /// unbound, so it never reads a map sync does not.
     /// </summary>
@@ -164,7 +164,7 @@ public sealed record RemoteTarget(string Url, string Key)
     /// <summary>
     /// Write a map built in memory whole — atomically, beside-then-rename, like every write in this family: a driver
     /// tick may read this file at any moment, and a torn read must never be what it finds. A door that edits the file
-    /// the person has edits it through <see cref="RemoteFile"/>, which keeps what it does not own (KEEPALL1e).
+    /// the person has edits it through <see cref="RemoteFile"/>, which keeps what it does not own.
     /// </summary>
     public static void Save(string path, IReadOnlyDictionary<string, RemoteTarget> remotes)
     {
@@ -174,10 +174,10 @@ public sealed record RemoteTarget(string Url, string Key)
 }
 
 /// <summary>
-/// The map's file as an editor reads it (KEEPALL1e, D173's KEEPALL1e note): every entry as the file holds it, in its order, whole or
-/// not, and whether a file was there. An edit sets or takes one workspace's entry, and <see cref="Save"/> makes only that onto the file
+/// The map's file as an editor reads it: every entry as the file holds it, in its order, whole or
+/// not, and whether a file exists. An edit sets or takes one workspace's entry, and <see cref="Save"/> makes only that onto the file
 /// as it stands (<see cref="JsonKeeping.Save"/>), so another key, an entry's own unknown keys, an entry missing half its pair, numbers
-/// as written and CRLF all stay. Rebuilt from the remotes read, the file lost each of them, and one that did not read was written over
+/// as written and CRLF all stay. Rebuilt from the remotes read, the file would lose each of them, and one that does not read would be written over
 /// with the edit's entry alone. The CLI's twin is <c>remotemap.ts</c>' <c>readRemoteFile</c>; both are held to
 /// <c>test/fixtures/home-files-keep.json</c>, which the service's reader (<c>RemoteConfig</c>) reads too.
 /// </summary>
@@ -263,7 +263,7 @@ public sealed record RemoteFile(
     /// <summary>
     /// The edit made onto the file as it stands (<see cref="JsonKeeping.Save"/>): no edit writes nothing.
     /// </summary>
-    /// <exception cref="DriverException">The file there now does not read or holds a key twice; nothing was written.</exception>
+    /// <exception cref="DriverException">The file there now does not read or holds a key twice; nothing is written.</exception>
     public void Save(string path) => JsonKeeping.Save(path, Found, Written(Read), Written(Entries));
 
     private IEnumerable<int> Holding(string workspace) => Enumerable.Range(0, Entries.Count).Where(index =>

@@ -5,11 +5,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTROOM1a (D177 points 1, 2, 4 and 7, and the traps that fall in this slice): a meeting of two agents that talks only. Daoris
+/// A meeting of two agents that talks only. Daoris
 /// freezes the first round's packet for the person to read, runs each participant's turn in their order, one at a time, through
 /// the brainstorm's pass (its slot, its minutes, its deadline, its repair, the stop and the restart), relays each message with its
 /// author from its own binding, and freezes the second round's packet with the first round's messages under a new digest, which goes
-/// only by the person's press. Every turn is a scripted stand-in, so nothing starts a process (MOD8).
+/// only by the person's press. Every turn is a scripted stand-in, so nothing starts a process.
 /// </summary>
 public sealed class MeetingTests : IDisposable
 {
@@ -181,7 +181,7 @@ public sealed class MeetingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 PARALLEL1b (D181 point 3): under the watch a meeting's first packet is frozen beside the look as the <c>freeze</c> topic's
+    /// Under the watch a meeting's first packet is frozen beside the look as the <c>freeze</c> topic's
     /// judge, once, however many looks meet it while a checkout slow to answer holds it.
     /// </summary>
     [Fact]
@@ -259,7 +259,7 @@ public sealed class MeetingTests : IDisposable
     /// the person's press, naming it; its rooms hold that packet; and the meeting ends after it.
     /// </summary>
     /// <summary>
-    /// DRAINHOLD1 (the driver follow-up): an update's drain holds a sent round, which would take agents' turns and slots. The look runs no
+    /// An update's drain holds a sent round, which would take agents' turns and slots. The look runs no
     /// round, says the drain's hold once, and leaves the meeting frozen and sent; after *Not now* the round runs.
     /// </summary>
     [Fact]
@@ -325,7 +325,7 @@ public sealed class MeetingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Authorship is Daoris's binding (D177's trap, an agent answering for another): an answer that names another participant, by a
+    /// Authorship is Daoris's binding, never an agent answering for another: an answer that names another participant, by a
     /// field or in its words, is relayed as its sender's, under the sender's id, maker and adapter.
     /// </summary>
     [Fact]
@@ -383,7 +383,7 @@ public sealed class MeetingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A stalled turn (D177's trap): a silent participant is cut at its own minutes, with no repair after them; the round goes on to
+    /// A stalled turn: a silent participant is cut at its own minutes, with no repair after them; the round goes on to
     /// the next participant, and the gap is said in the round's line, the transcript's show and its pass record.
     /// </summary>
     [Fact]
@@ -434,7 +434,7 @@ public sealed class MeetingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The person's stop ends the meeting at once (D177's trap, the person leaving): the turn that runs ends, no later turn starts,
+    /// The person's stop ends the meeting at once: the turn that runs ends, no later turn starts,
     /// no next packet is frozen, a later send is refused, and nothing runs again at a later look.
     /// </summary>
     [Fact]
@@ -477,7 +477,7 @@ public sealed class MeetingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A restart around a dispatch and around an answer's write (D177's trap): a Daoris that stopped mid-round, coming up, keeps the
+    /// A restart around a dispatch and around an answer's write: a Daoris that stopped mid-round, coming up, keeps the
     /// messages it relayed, marks the turn it ran interrupted, and an answer it recorded but never relayed interrupted too, since
     /// whether it went is uncertain; and runs nothing again, at this look or the next.
     /// </summary>
@@ -515,7 +515,7 @@ public sealed class MeetingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Another context quoted (D177's trap): a canary in another meeting's records, in a brainstorm's, in another repository's
+    /// Another context quoted: a canary in another meeting's records, in a brainstorm's, in another repository's
     /// knowledge and in a file of the home never reaches a turn's room, in either round, nor a packet that goes.
     /// </summary>
     [Fact]
@@ -573,7 +573,7 @@ public sealed class MeetingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 COWORK1d (trap 16; the message-urgency design §5): no level pierces a round. An urgent message on an ask's channel posted while
+    /// No level pierces a round. An urgent message on an ask's channel posted while
     /// a meeting's turn runs reaches no turn of it: the channel reaches a working agent only through its inbox, and a meeting's turn
     /// holds none, so the look finds no part to hand it to, and the turn's room and its round's packet hold nothing of it.
     /// </summary>
@@ -650,7 +650,7 @@ public sealed class MeetingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A real agent's meeting turn is refused, not started (AGENTROOM1a): no tool carries a meeting's message yet, so each turn is
+    /// A real agent's meeting turn is refused, not started: no tool carries a meeting's message yet, so each turn is
     /// <c>unavailable</c> with <c>no-message-tool</c>, no account is spent, and the brainstorm's turn is never borrowed for it.
     /// </summary>
     [Fact]
@@ -676,7 +676,7 @@ public sealed class MeetingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Two meetings on one machine (D177's trap): the machine's cap holds, so on a cap of one the second meeting's round waits for a
+    /// Two meetings on one machine: the machine's cap holds, so on a cap of one the second meeting's round waits for a
     /// later look, and no two turns ever run at once. A meeting's own turns are always one at a time.
     /// </summary>
     [Fact]
@@ -700,7 +700,7 @@ public sealed class MeetingTests : IDisposable
     }
 
     /// <summary>
-    /// CAPCOUNT1 (D130's note): the cap counts what the driver starts, so a conversation the person holds (Ask Daoris's, here) takes no
+    /// The cap counts what the driver starts, so a conversation the person holds (Ask Daoris's, here) takes no
     /// slot from a round, where a driven session in the same look still does.
     /// </summary>
     [Fact]

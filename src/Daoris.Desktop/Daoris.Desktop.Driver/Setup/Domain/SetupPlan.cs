@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>Why a set-up was refused: a code a screen can key on, and the sentence a person reads, naming the door that answers it.</summary>
 public sealed record SetupRefusal(string Code, string Sentence);
 
-/// <summary>The codes of <see cref="SetupRefusal"/> (D124 §2.1), in the order the press asks.</summary>
+/// <summary>The codes of <see cref="SetupRefusal"/>, in the order the press asks.</summary>
 public static class SetupRefusals
 {
     public const string NotOnRegistry = "not-on-registry";
@@ -15,24 +15,24 @@ public static class SetupRefusals
     public const string NoTool = "no-doctrine-tool";
     public const string AlreadySetUp = "already-set-up";
 
-    /// <summary>Set up, naming no index, and built with a stack the press knows no generator for (ORIENT2c).</summary>
+    /// <summary>Set up, naming no index, and built with a stack the press knows no generator for.</summary>
     public const string NoIndexForm = "no-index-form";
 
-    /// <summary>A reconcile asked of a repository the registry does not mark adopted, or whose line has not synced the doctrine (D230).</summary>
+    /// <summary>A reconcile asked of a repository the registry does not mark adopted, or whose line has not synced the doctrine.</summary>
     public const string NotAdopted = "not-adopted";
 
-    /// <summary>A reconcile asked where the doctrine tool printed no status for the checkout (D230).</summary>
+    /// <summary>A reconcile asked where the doctrine tool printed no status for the checkout.</summary>
     public const string StatusUnread = "status-unread";
 
-    /// <summary>A reconcile asked over a lock a newer canon wrote, which the doctrine tool never rolls back (WSSETUP4, D230).</summary>
+    /// <summary>A reconcile asked over a lock a newer canon wrote, which the doctrine tool never rolls back.</summary>
     public const string NewerLock = "newer-lock";
 
     public const string Open = "open";
 }
 
 /// <summary>
-/// The programs a set-up's session runs, as the press found them on the <c>PATH</c> a child of Daoris starts with
-/// (D124 §1.3, §2.1): <c>node</c>, which the doctrine tool runs on, and <c>daoris</c>, with what each answered for its
+/// The programs a set-up's session runs, as the press found them on the <c>PATH</c> a child of Daoris starts with:
+/// <c>node</c>, which the doctrine tool runs on, and <c>daoris</c>, with what each answered for its
 /// version. The files are this machine's and are never put in the quest.
 /// </summary>
 /// <param name="NodeProblem">Why no <c>node</c> could be named, in Tools' words, where none was.</param>
@@ -58,7 +58,7 @@ public sealed record SetupPlan(string Repository)
     /// <summary>Which set-up the line calls for, where it could be read.</summary>
     public SetupCase? Case { get; init; }
 
-    /// <summary>The generator an index quest names (ORIENT2c), whose two commands the press grants; null for any other case.</summary>
+    /// <summary>The generator an index quest names, whose two commands the press grants; null for any other case.</summary>
     public IndexForm? Index { get; init; }
 
     /// <summary>Every refusal that applies, in the press's order; none is a press that publishes.</summary>
@@ -77,7 +77,7 @@ public sealed record SetupPlan(string Repository)
     public string? Builds { get; init; }
 
     /// <summary>
-    /// Whether its quest is admitted alone (AGENTSPLACE1b): the repository is not driven here, so the press admits the quest it publishes
+    /// Whether its quest is admitted alone: the repository is not driven here, so the press admits the quest it publishes
     /// by its id, and nothing else of the repository starts.
     /// </summary>
     public bool Alone { get; init; }

@@ -1,17 +1,17 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's chosen settings, the driver's half (HELPMODE1c3, D183's note; the Ask Daoris modes design §4.1): each request its
+/// Ask Daoris's chosen settings, the driver's half: each request its
 /// connector's tool wrote is judged here at the call, then the setting is changed through the edit its own door makes, judged by the
 /// same checks a <c>setting</c> proposal is, with no Apply. What the loop running the conversation answers its
 /// <see cref="SessionRequestWatch.Set"/> with.
 /// </summary>
 /// <remarks>
 /// <para><b>Judged at every call, whatever the agent</b>, in housekeeping's order (<see cref="HelpHousekeeping"/>): the record named is
-/// an Ask Daoris conversation's; the setting is chosen in <see cref="ConfiguredAccess"/> now, so a revoke refuses the next call, and was
-/// handed at this start (its newest receipt, <see cref="HelpWired"/>), so a grant chosen since takes the conversation's next turn
-/// (ACCESSSWAP1); and a language names a repository or a workspace of the conversation's own, read from its record
-/// (<see cref="HelpCircle.OfRecord"/>, ASKSCOPE1c). An agent that takes no rules (Codex) is held by this, not by an allow-list.</para>
+/// an Ask Daoris conversation's; the setting is chosen in <see cref="ConfiguredAccess"/>, so a revoke refuses the next call, and
+/// handed at this start (its newest receipt, <see cref="HelpWired"/>), so a grant chosen since takes the conversation's next turn;
+/// and a language names a repository or a workspace of the conversation's own, read from its record
+/// (<see cref="HelpCircle.OfRecord"/>). An agent that takes no rules (Codex) is held by this, not by an allow-list.</para>
 ///
 /// <para><b>The existing validation and writer</b>: the <c>setting</c> proposal's plan (<see cref="HelpProposals.Plan"/>'s two steps), the
 /// route's own edit (<c>WithNotify</c>, <c>WithLanguage</c>, <c>WithCoolOff</c> and the cap), made on the driver's file

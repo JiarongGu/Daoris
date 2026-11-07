@@ -11,7 +11,7 @@ public sealed record ActEntry(string Mode, string Id, int Stage, string Path);
 internal sealed record ActStepEnd(int? Exit, bool Unended, string Said, bool Stops);
 
 /// <summary>
-/// The three effect steps an act takes (GITAPP2a, D204; the git-writes design §5, §6): their plans as the journal keeps them, their effects
+/// The three effect steps an act takes: their plans as the journal keeps them, their effects
 /// under the checkout lock, and their postconditions, which alone say what an effect did.
 /// </summary>
 /// <remarks>
@@ -92,7 +92,7 @@ internal static class ActSteps
     {
         _ = held;
         var input = Read(step.Arguments)["input"]!.GetValue<string>();
-        // A recovery ref is dated by its reflog's first entry (RECOVERYDATE1), which git writes outside refs/heads/ only when asked
+        // A recovery ref is dated by its reflog's first entry, which git writes outside refs/heads/ only when asked
         // (`--create-reflog` has no place in the census's literal command, so the setting is passed for this one git).
         var reflog = input.Contains(ContentHolds.DiscardedPrefix, StringComparison.Ordinal)
             ? new Dictionary<string, string>(StringComparer.Ordinal) { ["GIT_CONFIG_COUNT"] = "1", ["GIT_CONFIG_KEY_0"] = "core.logAllRefUpdates", ["GIT_CONFIG_VALUE_0"] = "always" }
@@ -519,7 +519,7 @@ internal static partial class ActConfig
         return header.Success ? text[..header.Index] + named + text[(header.Index + header.Length)..] : text;
     }
 
-    /// <summary>Whether the line is the header of <paramref name="section"/>: <c>[core]</c>, the old <c>[branch.topic]</c>, or <c>[branch "topic"]</c>.</summary>
+    /// <summary>Whether the line is the header of <paramref name="section"/>: <c>[core]</c>, the dotted <c>[branch.topic]</c>, or <c>[branch "topic"]</c>.</summary>
     private static bool Names(string line, string section)
     {
         var header = Header().Match(line);
@@ -546,7 +546,7 @@ internal static partial class ActConfig
     }
 }
 
-/// <summary>git's own lock files, which Daoris refuses beside and names, never removes (the git-writes design §3).</summary>
+/// <summary>git's own lock files, which Daoris refuses beside and names, never removes.</summary>
 internal static class ActLocks
 {
     /// <summary>A lock that stands, named, with the command to copy once no git runs there.</summary>

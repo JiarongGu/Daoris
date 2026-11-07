@@ -6,13 +6,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HOSTSTART2: the headless driver left nothing of why in its machine log when its start threw past its one catch, as
-/// the HTTP host did before HOSTSTART1. Its entry point is async and holds its log in a <c>using</c>, so the log was closed
-/// as the exception left the entry point, before the runtime raised it as unhandled, and the <c>error</c> line written for
-/// an unhandled exception was dropped on a closed log. The host as built in a process of its own, since only a real
-/// process raises an exception as unhandled, with nothing of this machine's Daoris in its environment. CONFIGREAD1 then
-/// brought the start this found inside the one catch, so it is a sentence and exit 2; the watch on what still leaves the
-/// entry point is held by <c>MachineLogTests</c>' rows.
+/// The headless driver leaves a reason in its machine log when its start throws past its one catch. Its entry point is
+/// async and holds its log in a <c>using</c>, so the log is closed as an exception leaves the entry point, before the
+/// runtime raises it as unhandled, and an <c>error</c> line written for an unhandled exception would be dropped on a
+/// closed log. The host as built in a process of its own, since only a real process raises an exception as unhandled,
+/// with nothing of this machine's Daoris in its environment. A start failure inside the one catch is a sentence and
+/// exit 2; the watch on what still leaves the entry point is held by <c>MachineLogTests</c>' rows.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class DriverStartFailureTests : IDisposable
@@ -42,8 +41,7 @@ public sealed class DriverStartFailureTests : IDisposable
 
     /// <summary>
     /// A <c>driver.json</c> that does not read ends the loop's start before its first look, as a sentence naming the file
-    /// and where in it, and exit 2 (CONFIGREAD1, REV3): the parse threw past the host's catch, and the person read the
-    /// parser's stack trace. The host's one catch writes it to its log, and the service's key in its environment is said
+    /// and where in it, and exit 2, never the parser's stack trace. The host's one catch writes it to its log, and the service's key in its environment is said
     /// nowhere.
     /// </summary>
     [Fact]

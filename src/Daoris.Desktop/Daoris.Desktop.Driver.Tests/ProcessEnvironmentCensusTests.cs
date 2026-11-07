@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// No test sets a variable of the process's environment or its current directory, but the sources named here, each with why, and each
-/// run alone. The suite runs its classes at once (PROCPAR1): what one sets, every class beside it reads and every child they start
+/// run alone. The suite runs its classes at once: what one sets, every class beside it reads and every child they start
 /// inherits, which failed classes that passed alone. A test hands the child it starts its own environment instead, or names its home
 /// on the start; where the product itself reads the process's environment, the class runs in a collection that runs alone. Code alone
 /// is read: a word in a comment or a literal sets nothing.

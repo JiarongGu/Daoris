@@ -5,8 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row a (D213; <c>docs/2026-10-26-agent-provider-design.md</c> §2, §5, §11): the provider contract named as records
-/// and the registry over today's adapters answering every question the contract asks, with no behaviour changed. Nothing reads
+/// The provider contract named as records
+/// and the registry over today's adapters answering every question the contract asks. Nothing reads
 /// either but these tests, which hold the registry equal to every copy of "own, else owner" the code makes today.
 /// </summary>
 public sealed class ProviderRegistryTests : IDisposable
@@ -398,13 +398,13 @@ public sealed class ProviderRegistryTests : IDisposable
             Assert.Equal(Strings(listed.Value, "providers"), pool.Providers.Select(id => id.Value));
             Assert.Equal(Strings(listed.Value, "doors"), pool.Doors.Select(id => id.Value));
 
-            // Every door in the pool reads the key it was grouped by, as today's `Owner` gives it.
+            // Every door in the pool reads the key it is grouped by, as today's `Owner` gives it.
             foreach (var door in pool.Doors) Assert.Equal(listed.Name, registry.OwnerOf(door).Value, ignoreCase: true);
         }
     }
 
     /// <summary>
-    /// The known agents are the build's and every installed plugin's, a disabled one's too (POOLSTRAY1): the registry's equal
+    /// The known agents are the build's and every installed plugin's, a disabled one's too: the registry's equal
     /// <c>ProviderRegistry.Agents</c>, which is <c>HarnessSettings.AgentsKnown</c>, for each case, with the disabled plugin's names among them.
     /// </summary>
     [Theory]
@@ -445,7 +445,7 @@ public sealed class ProviderRegistryTests : IDisposable
         }
     }
 
-    /// <summary>§2.2: an unknown id is D23's error, the one <c>ProviderRegistry.Resolve</c> gives; a provider's id where a door is asked is that same error.</summary>
+    /// <summary>An unknown id is the error <c>ProviderRegistry.Resolve</c> gives; a provider's id where a door is asked is that same error.</summary>
     [Fact]
     public void An_unknown_id_is_the_error_naming_what_exists_and_a_provider_is_no_door()
     {

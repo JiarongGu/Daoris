@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A session's own git reads its tree with long paths, as Daoris's does (TREELONG1, D109's note): Daoris's own git says
+/// A session's own git reads its tree with long paths, as Daoris's does: Daoris's own git says
 /// <c>-c core.longpaths=true</c> on every call (<see cref="WorkingTree.GitStart"/>), but a tree under the trees home sits deeper than
 /// its repository's checkout, so a file that fits there passes Windows' 260 characters in the tree, and a git without the setting
 /// reads it as deleted. Handed in the command scope of every session's start beside the author's, so nothing is written into the

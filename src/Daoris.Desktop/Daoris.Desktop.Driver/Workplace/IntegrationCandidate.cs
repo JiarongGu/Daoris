@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A candidate of a line's integration run as the store keeps it (INTEGRATE1e part e2; the integration design §5.2, §5.6): the line it is
+/// A candidate of a line's integration run as the store keeps it: the line it is
 /// formed on and that line's commit then, the job its processes run in, the run that holds it, and, once its members are replayed, its tip.
 /// One stands per line at a time; an ended one is kept as evidence.
 /// </summary>
@@ -27,7 +27,7 @@ public sealed record IntegrationCandidate(
     public bool Stands => EndedAt is null;
 }
 
-/// <summary>A request in a candidate (§5.2): its place in the candidate's order, what the steps have made of it, and its end.</summary>
+/// <summary>A request in a candidate: its place in the candidate's order, what the steps have made of it, and its end.</summary>
 /// <param name="State">One of <see cref="IntegrationMemberStates"/>, or a newer build's word, kept as written.</param>
 public sealed record IntegrationMember(string Candidate, string Request, int Position, string State, DateTimeOffset JoinedAt)
 {
@@ -47,7 +47,7 @@ public sealed record IntegrationMember(string Candidate, string Request, int Pos
 }
 
 /// <summary>
-/// One attempt of a candidate's step (§5.6): its start, written before the step's effect, and its end, written after, each in one
+/// One attempt of a candidate's step: its start, written before the step's effect, and its end, written after, each in one
 /// <c>BEGIN IMMEDIATE</c> transaction under the candidate's claim. An attempt with a start and no end is what a resume judges: by ancestry
 /// where the candidate's tip may be on the line, else run again from its start as a new attempt.
 /// </summary>
@@ -77,7 +77,7 @@ public sealed record IntegrationStep(
 /// <summary>The candidate's claim, which every write of its steps, members and end is checked against inside its own transaction.</summary>
 public sealed record IntegrationClaim(string Candidate, string Run, long Generation);
 
-/// <summary>A candidate to form (§5.2 step 2): its line, that line's commit, and the requests it takes, in their order.</summary>
+/// <summary>A candidate to form: its line, that line's commit, and the requests it takes, in their order.</summary>
 public sealed record IntegrationForming(string Repository, string Workspace, string Line, string Base, IReadOnlyList<string> Requests);
 
 /// <summary>
@@ -114,7 +114,7 @@ public sealed record IntegrationStepEnd(string Outcome)
     public string? Ends { get; init; }
 
     /// <summary>
-    /// The pending dispositions this end makes visible (INTEGRATE1e part e4b, §5.7): a superseded commit's recovery ref and what superseded it,
+    /// The pending dispositions this end makes visible: a superseded commit's recovery ref and what superseded it,
     /// written in this end's transaction, so a member settling and its work being kept in view are one write. Each names a member of the candidate.
     /// </summary>
     public IReadOnlyList<IntegrationDisposition> Dispositions { get; init; } = [];
@@ -122,9 +122,9 @@ public sealed record IntegrationStepEnd(string Outcome)
 
 /// <summary>
 /// A commit made on a unit's branch after its request froze that its replay conflicts with the line, in every conflicted hunk, in a way a commit
-/// outside the unit made (§5.7, INTEGRATE1e part e4b): kept on a recovery ref, said as superseded by that commit, and offered as <i>superseded</i>
+/// outside the unit made: kept on a recovery ref, said as superseded by that commit, and offered as <i>superseded</i>
 /// or <i>rebase it</i>. It stays pending, visible on the Integration view and the session's head even once its request's review row has gone, until
-/// one of them answers (<see cref="AnsweredAt"/>); it is never discarded by itself, and its recovery ref goes only by D102's rules.
+/// one of them answers (<see cref="AnsweredAt"/>); it is never discarded by itself, and its recovery ref goes only by the clean-up's rules.
 /// </summary>
 /// <param name="Request">The member's request: with <paramref name="Commit"/> the disposition's key.</param>
 /// <param name="Commit">The superseded commit.</param>
@@ -149,10 +149,10 @@ public sealed record IntegrationDisposition(string Request, string Commit, strin
     public bool Pending => AnsweredAt is null;
 }
 
-/// <summary>A superseded commit's answers (§5.7).</summary>
+/// <summary>A superseded commit's answers.</summary>
 public static class IntegrationAnswers
 {
-    /// <summary>It is superseded: its work stays on its recovery ref, which goes only by D102's rules.</summary>
+    /// <summary>It is superseded: its work stays on its recovery ref, which goes only by the clean-up's rules.</summary>
     public const string Superseded = "superseded";
 
     /// <summary>Rebase it: the member's session is told to rebase it onto the line.</summary>
@@ -162,7 +162,7 @@ public static class IntegrationAnswers
 }
 
 /// <summary>
-/// A decide recorded on a candidate held for one (INTEGRATE1h; the integration design §4.5, §8): the word, who pressed it, and when. The line's
+/// A decide recorded on a candidate held for one: the word, who pressed it, and when. The line's
 /// run consumes it at its next look in place of the verdict it held on.
 /// </summary>
 /// <param name="Decide">One of <see cref="IntegrationDecides"/>.</param>
@@ -172,7 +172,7 @@ public sealed record IntegrationDecide(string Candidate, string Decide, string R
 /// <summary>What a decide answered: the decide that stands (this one, or the first), and why it was refused; null where it was recorded.</summary>
 public sealed record IntegrationDecided(IntegrationDecide? Decide, string? Refused);
 
-/// <summary>A held candidate's decides (§4.5, §8): <c>land</c> is the person's alone.</summary>
+/// <summary>A held candidate's decides: <c>land</c> is the person's alone.</summary>
 public static class IntegrationDecides
 {
     /// <summary>Its members run one at a time; one of one is handed back as unresolved.</summary>
@@ -199,11 +199,11 @@ public static class IntegrationDecideRefusals
     /// <summary>A decide is recorded on it already, which stands.</summary>
     public const string Decided = "decided";
 
-    /// <summary>A <c>land</c> by anyone but the person (§8, F9).</summary>
+    /// <summary>A <c>land</c> by anyone but the person (F9).</summary>
     public const string Land = "land";
 }
 
-/// <summary>Where a queued request is moved in its line's queue (§8's <c>order</c>).</summary>
+/// <summary>Where a queued request is moved in its line's queue (its <c>order</c>).</summary>
 public static class IntegrationOrders
 {
     public const string First = "first";
@@ -240,7 +240,7 @@ public sealed record IntegrationRequestClose(string Request, string Why);
 /// <summary>What a take answered: the candidate as it stands, and the new claim; or the reason it was refused (<see cref="IntegrationTakeRefusals"/>).</summary>
 public sealed record IntegrationTaken(IntegrationCandidate? Candidate, IntegrationClaim? Claim, string? Refused);
 
-/// <summary>A candidate's steps (§5.2), in their order; the request, step 1, is the door's and is kept as the request's own row.</summary>
+/// <summary>A candidate's steps, in their order; the request, step 1, is the door's and is kept as the request's own row.</summary>
 public static class IntegrationStepNames
 {
     public const string Form = "form";
@@ -279,15 +279,15 @@ public static class IntegrationStepOutcomes
     public const string Interrupted = "interrupted";
 
     /// <summary>
-    /// The judge ran the candidate's members one at a time (INTEGRATE1e part e4a): the failing members are handed back, the candidate is formed
-    /// again, and the next form takes one member. A word added beside the six, so an older step is read as it was.
+    /// The judge ran the candidate's members one at a time: the failing members are handed back, the candidate is formed
+    /// again, and the next form takes one member.
     /// </summary>
     public const string Split = "split";
 
     public static IReadOnlyList<string> All { get; } = [Done, Promoted, Held, HandedBack, Stopped, Interrupted, Split];
 }
 
-/// <summary>What the steps make of a member (§5.2, §17.4's states).</summary>
+/// <summary>What the steps make of a member.</summary>
 public static class IntegrationMemberStates
 {
     public const string Formed = "formed";
@@ -303,8 +303,8 @@ public static class IntegrationMemberStates
     public const string Settled = "settled";
 
     /// <summary>
-    /// A conflict of meaning under <c>conflicts: hold</c>, or one whose session could not be told (INTEGRATE1e part e3b, §5.4): set aside, its
-    /// request open and out of the queue, for the steward's or the owner's act. A state added beside the eight, so an older row is read as it was.
+    /// A conflict of meaning under <c>conflicts: hold</c>, or one whose session could not be told: set aside, its
+    /// request open and out of the queue, for the steward's or the owner's act.
     /// </summary>
     public const string Held = "held";
 
@@ -317,18 +317,17 @@ public static class IntegrationCandidateEnds
     /// <summary>Promoted, and every member settled.</summary>
     public const string Settled = "settled";
 
-    /// <summary>Formed again: a member left it, or the line moved under it (§5.2 step 8).</summary>
+    /// <summary>Formed again: a member left it, or the line moved under it.</summary>
     public const string FormedAgain = "formed-again";
 
     /// <summary>Dropped by a person's stop or the steward's act.</summary>
     public const string Dropped = "dropped";
 
-    /// <summary>The line's integration stopped (§5.2's last paragraph).</summary>
+    /// <summary>The line's integration stopped.</summary>
     public const string Stopped = "stopped";
 
     /// <summary>
-    /// Every member left the candidate before any was left to promote (INTEGRATE1e part e3a): held by the line, or handed back. A code added
-    /// beside the four, so a candidate ended before it is read as it was.
+    /// Every member left the candidate before any is left to promote: held by the line, or handed back.
     /// </summary>
     public const string Empty = "empty";
 
@@ -365,8 +364,8 @@ public static class IntegrationTakeRefusals
 }
 
 /// <summary>
-/// The candidate's one job (§5.6, CISCOPE1e2's job, QUEUEDRAIN1's lesson): every process a candidate starts runs in the job its name names,
-/// one per candidate, so a drop, a stop or the run's end closes it and its descendants end with it. Row f's verdict port makes and closes it;
+/// The candidate's one job: every process a candidate starts runs in the job its name names,
+/// one per candidate, so a drop, a stop or the run's end closes it and its descendants end with it. The verdict port makes and closes it;
 /// the name is the store's, kept with the candidate.
 /// </summary>
 public static class IntegrationJobs

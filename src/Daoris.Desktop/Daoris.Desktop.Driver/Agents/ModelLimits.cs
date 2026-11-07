@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A limit scoped to a model family (MODELROLE1k, D205 §14 row k): which family a reading or a limit's words name, and which starts a
+/// A limit scoped to a model family: which family a reading or a limit's words name, and which starts a
 /// family's cool-off holds. Pure; the families are the agent's own declaration (<see cref="WindowWords.Models"/>).
 /// </summary>
 /// <remarks>
@@ -21,8 +21,8 @@ public static class ModelLimits
         Words(model).Any(word => string.Equals(word, family, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
-    /// The family among <paramref name="families"/> that the words a limit was read with name as a word (<i>Opus</i> in <i>You've hit
-    /// your Opus limit</i>): what was hit first, then the window its reset named. Null where none is named: the whole account's.
+    /// The family among <paramref name="families"/> that the words a limit carries name as a word (<i>Opus</i> in <i>You've hit
+    /// your Opus limit</i>): what is hit first, then the window its reset named. Null where none is named: the whole account's.
     /// </summary>
     public static string? In(LimitSeen seen, IReadOnlyList<string>? families) =>
         families is not { Count: > 0 } ? null

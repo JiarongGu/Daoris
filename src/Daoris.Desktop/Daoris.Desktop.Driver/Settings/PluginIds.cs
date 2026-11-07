@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A plugin's id as the settings and the catalogue read it (FOUNDATION1 mod-iii): lowercase letters, digits, dots and dashes, never
+/// A plugin's id as the settings and the catalogue read it: lowercase letters, digits, dots and dashes, never
 /// leading with a dot or a dash. A landing rule names a plugin by it, so the settings' parser holds the shape, and the catalogue's
 /// <see cref="PluginCatalog.IsId"/> answers through this.
 /// </summary>

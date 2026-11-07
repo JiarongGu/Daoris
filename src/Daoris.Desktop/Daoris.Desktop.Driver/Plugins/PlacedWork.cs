@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
-/// <summary>Where a placed plugin's process serves: a repository and its workspace, with the checkout its origin is read from (D241 point 5).</summary>
+/// <summary>Where a placed plugin's process serves: a repository and its workspace, with the checkout its origin is read from.</summary>
 public sealed record WorkPlace(string Repository, string Workspace, string Root);
 
 /// <summary>
-/// The work processes of the plugins that take the host's API token, one per place (D241 point 5): a plugin with a pull-request step is
+/// The work processes of the plugins that take the host's API token, one per place: a plugin with a pull-request step is
 /// started for each repository and workspace that awaits it, with the token of the identity serving that place's origin, and a place
 /// never shares a process with another, so a token reaches no process that serves another identity's origin. Every other plugin keeps its
 /// one process under its own id.
@@ -13,7 +13,7 @@ public sealed record WorkPlace(string Repository, string Workspace, string Root)
 /// <para>A place's process is kept by a key beneath the plugin's id, so <see cref="WorkPlugins"/> supervises it as it does any other: its
 /// waits, its unsound mark, its generation and its idle stop are the place's own. What the evaluation runtime sees stays the plugin's id: its
 /// generations are <see cref="Outer"/> numbers, unique across the plugin's places, and an attempt or an event is routed to the place its unit
-/// was told for.</para>
+/// is told for.</para>
 /// </remarks>
 internal sealed class PlacedWork
 {
@@ -124,7 +124,7 @@ internal sealed class PlacedWork
 
     /// <summary>
     /// The key of the process an attempt on <paramref name="unit"/> is sent to: the plugin's own where it is not placed, the place the unit
-    /// was told for where it is, and null where it was told for none.
+    /// is told for where it is, and null where it is told for none.
     /// </summary>
     public string? KeyFor(string plugin, string? unit)
     {

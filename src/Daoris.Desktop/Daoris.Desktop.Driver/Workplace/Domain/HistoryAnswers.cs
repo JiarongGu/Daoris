@@ -3,10 +3,10 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The codes a reason is said in (HIST1c, HIST1d; the history-clearing design §1.2): the page's catalogue keys for each word, which
+/// The codes a reason is said in: the page's catalogue keys for each word, which
 /// the shell's <c>Refusals</c> declares as these, and the driver's verbatim refusal for a word this build does not know.
 /// </summary>
-/// <remarks>In the driver library, so the terminal's <c>history --json</c> prints the code the page reads (HIST1d, D50).</remarks>
+/// <remarks>In the driver library, so the terminal's <c>history --json</c> prints the code the page reads.</remarks>
 public static class HistoryCodes
 {
     public const string Unknown = "HISTORY_UNKNOWN";
@@ -74,7 +74,7 @@ public sealed record HistoryReasonAnswer(
 /// <summary>What the home holds, by kind, in bytes, and their total.</summary>
 public sealed record HistorySizesAnswer(long Conversations, long Transcripts, long Files, long Kept, long Other, long Total);
 
-/// <summary>A workspace's reading (§2.4): counts and bytes, never a path or a title.</summary>
+/// <summary>A workspace's reading: counts and bytes, never a path or a title.</summary>
 public sealed record HistoryReadingAnswer(
     string Workspace,
     int Quests,
@@ -119,12 +119,12 @@ public sealed record HistoryChangedAnswer(string Kind, string Id, HistoryReasonA
 public sealed record HistoryWorkspacesAnswer(IReadOnlyList<HistoryPlanAnswer> Workspaces);
 
 /// <summary>
-/// What a clear's two presses answer, for both doors (HIST1c, HIST1d; the history-clearing design §6.2–§6.3): the shell's
+/// What a clear's two presses answer, for both doors: the shell's
 /// <c>HISTORY_PLAN</c> and <c>HISTORY_CLEAR</c> return these, and <c>daoris history --json</c> prints the first, so the
 /// terminal's answer is the route's field for field by construction. Ids, counts and bytes: never a path or a title.
 /// </summary>
 /// <remarks>
-/// <para>Moved here from the shell's route (HIST1d) so one projection serves both doors; each field list below is held by a test
+/// <para>Moved here from the shell's route so one projection serves both doors; each field list below is held by a test
 /// on each side, as <see cref="SessionsCommand.JsonFields"/> is for <c>SESSION_GROUPS</c>.</para>
 /// </remarks>
 public static class HistoryAnswers

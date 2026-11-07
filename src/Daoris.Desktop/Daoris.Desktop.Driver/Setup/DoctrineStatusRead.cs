@@ -4,7 +4,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A checkout's <c>daoris status --json</c> (the context-one design §3 A, D230 point 2), asked of the doctrine tool as a child of Daoris
+/// A checkout's <c>daoris status --json</c>, asked of the doctrine tool as a child of Daoris
 /// asks it and read by <see cref="DoctrineStatus.Parse"/>. Reads, and writes nothing.
 /// </summary>
 public static class DoctrineStatusRead

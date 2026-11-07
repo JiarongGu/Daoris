@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// stop. Written from the real login flow measured with no console — <c>claude auth login</c>
 /// prints its sign-in link wrapped in a hyperlink escape and then <i>Paste code here if prompted
 /// &gt;</i> with no newline, and waits on stdin. A pump that delivered whole lines only, from a
-/// process whose stdin nobody held, was a login that could never finish.
+/// process whose stdin nobody held, makes a login that can never finish.
 /// </summary>
 [Collection(ProcessPath.Name)]
 [Trait(Category.Name, Category.Process)]
@@ -65,17 +65,17 @@ public sealed class HarnessRunTests
         Assert.Equal("If the browser didn't open, visit: https://x.test/a?b=1", HarnessActions.Clean(wrapped));
         Assert.Equal("ok", HarnessActions.Clean("\x1b[32mok\x1b[0m"));
         Assert.Equal("plain", HarnessActions.Clean("plain"));
-        // SIGNIN1: no control byte is the tool's words, and the record separator that begins a phase line is the driver's alone,
+        // No control byte is the tool's words, and the record separator that begins a phase line is the driver's alone,
         // so a tool cannot print a line the page reads as a phase. A tab stays.
         Assert.Equal("{\"phase\":\"lists\"}", HarnessActions.Clean("\x1e{\"phase\":\"lists\"}"));
         Assert.Equal("a\tb", HarnessActions.Clean("a\x07\tb\x00\x1b"));
     }
 
     /// <summary>
-    /// 🔴 REV3: every declared installer is `npm …`, and on Windows `npm` is `npm.cmd`. A bare name with
-    /// no shell appends only `.exe`, so *Install* — and a pin of anything that ships only on npm — never
-    /// started from the desktop, and the page read the generic "something refused". The CLI's twin was
-    /// fixed 2026-09-22; this is the driver's.
+    /// Every declared installer is `npm …`, and on Windows `npm` is `npm.cmd`. A bare name with
+    /// no shell appends only `.exe`, so *Install* — and a pin of anything that ships only on npm — must
+    /// not start from a bare name, or the page reads the generic "something refused". The CLI has the
+    /// same case; this is the driver's.
     /// </summary>
     [Fact]
     public async Task A_bare_command_that_is_a_windows_shim_starts()

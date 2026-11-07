@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Codex's release channel over HTTP (AGT2b; PUSH1f2e, ported from the CLI's <c>channels.ts</c>): the newest-release pointer, the
+/// Codex's release channel over HTTP (ported from the CLI's <c>channels.ts</c>): the newest-release pointer, the
 /// release's metadata (its own, else the GitHub release's), the SUMS file it vouches for, and the package both vouch for, streamed,
 /// hashed and unpacked whole into a staging. What it checks against is <see cref="CodexReleases"/>'s; <see cref="ReleaseChannels"/>
 /// stages and publishes.
@@ -29,7 +29,7 @@ public static class CodexReleaseDownloads
     }
 
     /// <summary>
-    /// The exact version the channel names as its newest release (USE1a). 🔴 The pointer only chooses a version; it vouches for nothing,
+    /// The exact version the channel names as its newest release. 🔴 The pointer only chooses a version; it vouches for nothing,
     /// so it is read as one exact version or refused, and the version is then installed verified as a typed one would be.
     /// </summary>
     public static async Task<string> LatestAsync(CancellationToken ct, HttpMessageHandler? transport = null)

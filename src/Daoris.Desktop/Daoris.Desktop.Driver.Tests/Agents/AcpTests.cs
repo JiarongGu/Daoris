@@ -8,14 +8,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The protocol door (D53/ACP1), driven against a fake agent over in-memory streams.
+/// The protocol door, driven against a fake agent over in-memory streams.
 /// </summary>
 /// <remarks>
 /// <para>No process and no model: the wire is the thing under test, and a fake that answers frames is
 /// a truer subject than a real harness would be — it can be made to send the updates a real one sends
 /// rarely (a permission request mid-turn, a refusal, a cancel).</para>
 ///
-/// <para>What the driver takes from this wire is deliberately narrow (D46): the updates ENRICH the
+/// <para>What the driver takes from this wire is deliberately narrow: the updates ENRICH the
 /// console and the transcript, and the session RECORD still moves on the exit code and the quest's
 /// own state. The wire flattens an aborted or errored turn to `end_turn`, so believing its stop reason
 /// would be believing a self-report over an observation.</para>
@@ -117,8 +117,8 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// The rules Daoris composed ride `session/new` as the adapter names them (PERM1, D72) — and a
-    /// session given none sends no `_meta` at all, exactly as before the rules existed.
+    /// The rules Daoris composed ride `session/new` as the adapter names them — and a
+    /// session given none sends no `_meta` at all.
     /// </summary>
     [Fact]
     public async Task Session_new_carries_the_adapters_meta_and_none_when_there_is_none()
@@ -151,7 +151,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// A permission request is answered by REJECTING, always (D52: a better approval surface must not
+    /// A permission request is answered by REJECTING, always (a better approval surface must not
     /// widen autonomy). A request reaching the driver at all means the repository's own checked-in
     /// posture did not already cover the action — and the driver is not the party that may widen it.
     /// </summary>
@@ -229,8 +229,8 @@ public sealed class AcpTests
 
     /// <summary>
     /// A permission request whose shape this client cannot read is still ANSWERED — cancelled, which is
-    /// the refusal (REV3 chat F10). It used to throw while reading the options, and the pump showed the
-    /// frame as unreadable and went on, while the agent waited for an answer that never came: a turn
+    /// the refusal. Throwing while reading the options would have the pump show the
+    /// frame as unreadable and go on, while the agent waited for an answer that never came: a turn
     /// hung for ever.
     /// </summary>
     [Theory]
@@ -270,9 +270,9 @@ public sealed class AcpTests
         Assert.Contains("cancelled", answered);
     }
 
-    // ---- AUTONOMY1b3a (D184 point 3): under asking, the protocol door holds a request for the person ----
+    // ---- under asking, the protocol door holds a request for the person ----
 
-    /// <summary>A repository's setup with its permission prompts set to <paramref name="value"/>, the rest today's.</summary>
+    /// <summary>A repository's setup with its permission prompts set to <paramref name="value"/>, the rest default.</summary>
     private static ResolvedAccess PermissionsOf(string value) => AccessRules.ResolveLevels(
         new AccessSetting { Pauses = new Dictionary<string, string> { [AccessRules.Permissions] = value } }, null, null);
 
@@ -335,7 +335,7 @@ public sealed class AcpTests
         return held!;
     }
 
-    // A signal that fails to come only when the code is wrong waits the suite's patience (TESTPATIENCE1, ACPWAIT1).
+    // A signal that fails to come only when the code is wrong waits the suite's patience.
     private static Task UntilAsync(Func<bool> condition, string what) => Poll.Until(condition, () => what);
 
     private static string Coded(IEnumerable<SessionEvent> events, string code) => events
@@ -344,7 +344,7 @@ public sealed class AcpTests
     /// <summary>
     /// 🔴 Under asking, a permission request is held for the person, off the read loop: nothing answers it while it waits, the frames
     /// after it are still read, and the person's choice of an option the agent offered is the answer, by its id. The record says it
-    /// was held and that the person allowed it, by code.
+    /// is held and that the person allowed it, by code.
     /// </summary>
     [Theory]
     [InlineData("!?")]
@@ -417,7 +417,7 @@ public sealed class AcpTests
 
     /// <summary>
     /// A turn's cancel releases what it held: the cancel goes first, then each held request is answered <c>cancelled</c>, as the
-    /// protocol asks of a client that cancels, and the record says the turn was stopped before the person answered.
+    /// protocol asks of a client that cancels, and the record says the turn is stopped before the person answered.
     /// </summary>
     [Fact]
     public async Task A_cancel_releases_a_held_request_cancelled_saying_why()
@@ -480,7 +480,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// 🔴 An unanswered request is a turn hung for ever (REV3): one nobody answers is released at its bound, answered <c>cancelled</c>,
+    /// 🔴 An unanswered request is a turn hung for ever: one nobody answers is released at its bound, answered <c>cancelled</c>,
     /// and the record says nobody answered within it.
     /// </summary>
     [Fact]
@@ -505,7 +505,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// 🔴 Every other posture keeps today's answer exactly, a registry given or not (D52): auto, the adapter's own, unrestricted, and
+    /// 🔴 Every other posture keeps the plain refusal exactly, a registry given or not: auto, the adapter's own, unrestricted, and
     /// Ask Daoris's unmarked asking mode refuse at once by the rejection's kind, and nothing is ever held.
     /// </summary>
     [Theory]
@@ -578,16 +578,16 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// 🔴 A console full of <c>?</c>. Measured in FG5's
-    /// transcripts: every tool call was followed by five to eight updates that carry no status (its
-    /// input and output arriving in pieces), each printed as <c>toolu_… → ?</c>, and its end printed
+    /// 🔴 A console full of <c>?</c>. In real
+    /// transcripts every tool call is followed by five to eight updates that carry no status (its
+    /// input and output arriving in pieces), which must not print as <c>toolu_… → ?</c>, nor its end as
     /// its id, which says nothing to a person. An update with no status says nothing to the console,
     /// and an ending names the tool by the title its call gave it.
     /// </summary>
     /// <summary>
-    /// 🔴 Measured on FG5's apply session: a shell call's title is its whole command, heredoc and all,
-    /// and it printed across a dozen raw lines — which then read as the agent's own words, so a commit
-    /// message became the "last words" a parked card quoted. A tool is named on one line.
+    /// 🔴 A shell call's title is its whole command, heredoc and all,
+    /// and printed raw it would span a dozen lines — which then read as the agent's own words, so a commit
+    /// message would become the "last words" a parked card quoted. A tool is named on one line.
     /// </summary>
     [Fact]
     public async Task A_tool_is_named_on_one_line_however_long_its_command()
@@ -650,7 +650,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// D76 §1 (CONV1): the wire's structure reaches the record as typed events, where it used to be
+    /// The wire's structure reaches the record as typed events, not
     /// flattened into console lines and lost — the message, the thought, the tool call with its kind,
     /// its places, its input and its diff, the plan, the usage, and the turn's end. The console still
     /// gets its lines; the events are beside them, not instead.
@@ -718,7 +718,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// A location's line rides with its path (LEFT2): the line of the first location that names a path, which is
+    /// A location's line rides with its path: the line of the first location that names a path, which is
     /// the path a card opens, and never a later location's. A line that is not a whole number of zero or more is
     /// no line: the wire is shape-checked, as every read of it is.
     /// </summary>
@@ -759,8 +759,8 @@ public sealed class AcpTests
     }.ToJsonString();
 
     /// <summary>
-    /// 🔴 UX5 U3: a message arrives in chunks, and the console wrote each chunk as a line of its own, so
-    /// the raw view broke words across lines, driven sessions included. A chunk joins the line it
+    /// 🔴 A message arrives in chunks, and the console must not write each chunk as a line of its own, or
+    /// the raw view breaks words across lines, driven sessions included. A chunk joins the line it
     /// continues, a newline in the words ends one, and anything else the wire says ends the open line
     /// first. The record is untouched: it still keeps each chunk as the wire sent it.
     /// </summary>
@@ -800,9 +800,9 @@ public sealed class AcpTests
 
     /// <summary>
     /// 🔴 A line the agent's words leave open is shown once they go quiet, while the turn is still
-    /// running. Joining chunks alone held `acp heard: hold this turn` until the next update, and an
-    /// agent that says something and then waits sends none: the family rehearsal's stop never came,
-    /// because the words it waited for never reached the console.
+    /// running. Joining chunks alone would hold `acp heard: hold this turn` until the next update, and an
+    /// agent that says something and then waits sends none: a stop waiting on those words
+    /// would never come.
     /// </summary>
     [Fact]
     public async Task Words_left_on_an_open_line_are_shown_once_the_agent_goes_quiet()
@@ -891,12 +891,12 @@ public sealed class AcpTests
 
         var note = Assert.Single(events, e => e.Kind == SessionEventKind.Note);
         Assert.Contains("permission refused", note.Text);
-        // SESS1 S6: the call by its title, as a reader knows it — never the request's JSON — and the
+        // The call by its title, as a reader knows it — never the request's JSON — and the
         // call's id, so the page keeps the refusal with the call it refused.
         Assert.Contains("`git push`", note.Text);
         Assert.DoesNotContain("toolCallId", note.Text);
         Assert.Equal("c9", note.Id);
-        // CONVNOTE2b: the English is byte for byte what it was; the page words it by code, the title the agent's words
+        // The page words it by code, the title the agent's words
         // between the two (a title may hold a path, so never a value).
         Assert.Equal("permission refused: `git push` — the rules it runs under govern, and the driver may not widen them", note.Text);
         Assert.Equal(["refused.lead", null, "refused.governs"], note.Parts!.Select(part => part.Code).ToArray());
@@ -905,8 +905,8 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// HELP4: a call the driver refused ends on the wire as `failed`, and the record says `refused`: the
-    /// person saw Ask Daoris "fail" at a command it was never allowed to run. The console keeps the
+    /// A call the driver refused ends on the wire as `failed`, and the record says `refused`: a person
+    /// must not see Ask Daoris "fail" at a command it is never allowed to run. The console keeps the
     /// wire's own word, beside the refusal's line.
     /// </summary>
     [Fact]
@@ -943,8 +943,8 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// UNBLOCK5 (D122 §3.10), the protocol door end to end: each permission request the driver refused, once
-    /// the agent reports its call failed, is one ask in the machine log, by the kind the call was announced
+    /// The protocol door end to end: each permission request the driver refused, once
+    /// the agent reports its call failed, is one ask in the machine log, by the kind the call is announced
     /// with. The request's title and input never reach the log.
     /// </summary>
     [Fact]
@@ -1026,7 +1026,7 @@ public sealed class AcpTests
         var note = Assert.Single(events, e => e.Kind == SessionEventKind.Note);
         Assert.Contains("an unnamed `execute` call", note.Text);
         Assert.DoesNotContain("rawInput", note.Text);
-        // The console is the raw view, and keeps the request as the wire said it.
+        // The console is the raw view, and keeps the request as the wire says it.
         Assert.Contains(lines, line => line.Contains("rawInput", StringComparison.Ordinal));
     }
 
@@ -1061,9 +1061,9 @@ public sealed class AcpTests
 
     /// <summary>
     /// The session's own settings — the commands it offers, its mode, its config options (the model
-    /// catalogue among them, which D24 keeps Daoris out of) — are known updates and not the conversation:
-    /// shown on the console, kept out of the record. On the window they read as two "an update this
-    /// version does not know" rows over a chat nobody had spoken in yet, under a false "working…" (CONV3b).
+    /// catalogue among them, which Daoris stays out of) — are known updates and not the conversation:
+    /// shown on the console, kept out of the record. Otherwise the window would show two "an update this
+    /// version does not know" rows over a chat nobody has spoken in yet, under a false "working…".
     /// </summary>
     [Fact]
     public async Task The_sessions_own_settings_reach_the_console_and_not_the_conversation()
@@ -1094,11 +1094,11 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// 🔴 The first real Claude Code run over this door (ACP2, 2026-09-24) died at its first tool call,
-    /// three sessions in a row, each "exited without touching its quest". A real `tool_call` carries
-    /// `content` as a LIST, and the renderer read it as an object: the throw killed the reader, whose
-    /// `finally` then said the agent's stream had ended — a false sentence over a lost exception. The
-    /// stub had only ever sent the flat shape.
+    /// 🔴 A real Claude Code run over this door must not die at its first tool call, "exited without
+    /// touching its quest". A real `tool_call` carries
+    /// `content` as a LIST, and a renderer reading it as an object would throw and kill the reader, whose
+    /// `finally` then says the agent's stream has ended — a false sentence over a lost exception. A
+    /// stub sending only the flat shape would never show it.
     /// </summary>
     [Fact]
     public async Task A_real_tool_call_whose_content_is_a_list_is_rendered_and_the_turn_goes_on()
@@ -1184,7 +1184,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// The stop shape (D49's two endings, on the wire): cancelling sends `session/cancel` for the
+    /// The stop shape, on the wire: cancelling sends `session/cancel` for the
     /// session actually in flight. The person's interrupt is a verb, not a killed process.
     /// </summary>
     [Fact]
@@ -1213,7 +1213,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// A conversation (CONV3b, D76 §4): one handshake and one session, then a turn per prompt on it —
+    /// A conversation: one handshake and one session, then a turn per prompt on it —
     /// not a session per message, which would forget everything said before.
     /// </summary>
     [Fact]
@@ -1252,8 +1252,8 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// CONV5: a turn's tokens are the prompt response's <c>usage</c> — the turn's own totals, measured
-    /// on <c>claude-code-acp</c> (the probe's second turn). The total, the cost and the by-model split
+    /// A turn's tokens are the prompt response's <c>usage</c> — the turn's own totals, measured
+    /// on <c>claude-code-acp</c>. The total, the cost and the by-model split
     /// stay off the record; a response with no <c>usage</c> leaves the turn's tokens unknown, never zero.
     /// </summary>
     [Fact]
@@ -1285,16 +1285,16 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// USAGECAP1a2 (D179 point 2): a turn's models on this door, for the usage history alone. The model is what the turn's
+    /// A turn's models on this door, for the usage history alone. The model is what the turn's
     /// <c>usage_update</c>s name in <c>_meta["_claude/model"]</c>, and the split the prompt response's <c>_meta.quota</c> by
     /// model, taken where it agrees with the turn's <c>usage</c>. A small model the harness called on its own is counted in the
-    /// quota and not in <c>usage</c> (CONV5's probe, 909 input tokens): its tokens fall outside the total, so the turn is not whole.
+    /// quota and not in <c>usage</c> (909 input tokens in a probe): its tokens fall outside the total, so the turn is not whole.
     /// The next turn's names are its own.
     /// </summary>
     /// <remarks>
     /// 🔴 No frame on this machine holds <c>_meta.quota</c>'s counts or a <c>_claude/model</c> beside a turn: the shapes are the
-    /// evidence's words (the stream-json evidence's CONV5, the limit-signals evidence's table, <c>acp-agent.js:4772-4785</c>), the
-    /// quota's counts named as <c>usage</c> names them, and the totals the probe's second turn.
+    /// documented ones (<c>acp-agent.js:4772-4785</c>), the
+    /// quota's counts named as <c>usage</c> names them, and the totals those of a probe's second turn.
     /// </remarks>
     [Fact]
     public async Task A_turn_s_models_are_its_updates_model_and_its_quota_split_with_a_helper_outside_the_total()
@@ -1336,9 +1336,9 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// MODELROLE1a: the frames <c>claude-agent-acp</c> 0.84.0 sent for a real turn on the owner's install, as sent. Each
+    /// The frames <c>claude-agent-acp</c> 0.84.0 sent for a real turn on an install, as sent. Each
     /// model's counts sit under its own <c>token_count</c>, the cache read named <c>cachedInputTokens</c>; read at the entry's
-    /// top level, as the shape above was guessed, no split was found and the turn's helper went uncounted.
+    /// top level, as the shape above guesses, no split is found and the turn's helper goes uncounted.
     /// </summary>
     [Fact]
     public async Task A_measured_turn_s_quota_split_is_read_from_each_model_s_token_count()
@@ -1373,7 +1373,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// D205 row b: what ran is the door's own report. <c>codex-acp</c> names its model in the answer's quota alone (MODELROLE1a);
+    /// What ran is the door's own report. <c>codex-acp</c> names its model in the answer's quota alone;
     /// an answer that names none is <i>not reported</i>, whatever the session opened on.
     /// </summary>
     [Theory]
@@ -1400,7 +1400,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// USAGECAP1a2: a prompt an error answered ends no turn on this door, and the model its update named is not the next turn's:
+    /// A prompt an error answers ends no turn on this door, and the model its update names is not the next turn's:
     /// the next turn names its own, never <c>mixed</c> with one that never ended.
     /// </summary>
     /// <remarks>🔴 Built as the tests above, from the evidence's words.</remarks>
@@ -1436,7 +1436,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// USAGECAP1a2: a turn the person stopped answers every count zero on this door (CONV5), which is no report, so its tokens
+    /// A turn the person stopped answers every count zero on this door, which is no report, so its tokens
     /// stay unknown; it is still a turn, cancelled, with the model its update named and no split.
     /// </summary>
     /// <remarks>🔴 Built as the test above, from the evidence's words.</remarks>
@@ -1469,7 +1469,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// Seen on the window (CONV5): <c>claude-code-acp</c> tallies a turn at its <c>result</c>, so a turn
+    /// Seen on the window: <c>claude-code-acp</c> tallies a turn at its <c>result</c>, so a turn
     /// cancelled before one answers with every count zero — after reading 38,000 tokens of context. No
     /// turn that ran read nothing, so a report of nothing at all is no report, and the turn's tokens stay
     /// unknown rather than reading as a turn that cost nothing.
@@ -1538,8 +1538,8 @@ public sealed class AcpTests
 
     /// <summary>
     /// An agent that answers the prompt and then stops answering must not hang a run that is already
-    /// over. The courtesy close is bounded — found the hard way by a test that never returned, which
-    /// is the failure this pins so it cannot come back.
+    /// over. The courtesy close is bounded: an unbounded one would leave a test that never returns,
+    /// which is the failure this pins.
     /// </summary>
     [Fact]
     public async Task An_unanswered_close_does_not_hang_a_finished_run()
@@ -1581,12 +1581,11 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// 🔴 <b>The permission posture is a MODE on this wire, not a command-line flag</b> (ACP2, and
-    /// the evaluation's §1a where Claude Code's own modes were observed on `session/new`:
+    /// 🔴 <b>The permission posture is a MODE on this wire, not a command-line flag</b> (Claude Code's own modes are offered on `session/new`:
     /// `default`, `acceptEdits`, `plan`, `auto`, `bypassPermissions`).
     /// </summary>
     /// <remarks>
-    /// <b>D81</b> (a session does as much as the harness would on its own): Claude Code drives in <c>auto</c>, its own mode where the
+    /// <b>A session does as much as the harness would on its own</b>: Claude Code drives in <c>auto</c>, its own mode where the
     /// harness judges each action, rather than <c>acceptEdits</c> with every command refused. Still
     /// never <c>bypassPermissions</c>, which judges nothing, however available the wire makes it.
     /// </remarks>
@@ -1598,7 +1597,7 @@ public sealed class AcpTests
             {"id":"auto","name":"Auto"},{"id":"bypassPermissions","name":"Bypass"}
             """);
 
-        // 🔴 The posture comes from the ADAPTER, not from a constant in the session (ACP3) — taken
+        // 🔴 The posture comes from the ADAPTER, not from a constant in the session — taken
         // here from the real one, so this test fails if the Claude adapter ever stops naming it.
         var posture = BuiltDoors.Of("claude-code-acp").Postures.Ordinary;
 
@@ -1607,12 +1606,12 @@ public sealed class AcpTests
 
         Assert.Equal("auto", ModeSet(agent));
         // 🔴 Never the one that judges nothing, however available the wire makes it, unless the posture asked is Ask Daoris's full
-        // access, the person's own choice (HELPMODE1a1, D183), held below.
+        // access, the person's own choice, held below.
         Assert.DoesNotContain(agent.Sent, line => line.Contains("bypassPermissions"));
     }
 
     /// <summary>
-    /// HELPMODE1a1 (D183 points 1, 3): a posture marked required, Ask Daoris's full access, is set by name where the agent offers it:
+    /// A posture marked required, Ask Daoris's full access, is set by name where the agent offers it:
     /// Claude Code's mode that asks nothing, which no other posture ever reaches.
     /// </summary>
     [Theory]
@@ -1635,7 +1634,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// HELPMODE1a1 (D183 point 3): a required posture the agent does not offer (Claude's adapter hides <c>bypassPermissions</c> in
+    /// A required posture the agent does not offer (Claude's adapter hides <c>bypassPermissions</c> in
     /// some environments), or an agent that offers no modes at all, fails the open plainly, naming the mode asked, what the agent
     /// offers, and the person's two ways on. Nothing is set and nothing is prompted, so it never runs narrower under the full label.
     /// </summary>
@@ -1672,7 +1671,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// AUTONOMY1b (D184 point 3): a driven start's required posture, its repository's asking or unrestricted permission prompts, is
+    /// A driven start's required posture, its repository's asking or unrestricted permission prompts, is
     /// set where the agent offers it (Codex's <c>read-only</c>, which asks for approval), and where it does not, the open fails naming
     /// the repository's setup and its way on, never Ask Daoris's.
     /// </summary>
@@ -1725,7 +1724,7 @@ public sealed class AcpTests
 
     /// <summary>
     /// An adapter too old to offer <c>auto</c> is driven in the next posture it names — the one Daoris
-    /// always used — never in a neighbouring mode the adapter did not list (D81, ACP3).
+    /// always uses — never in a neighbouring mode the adapter does not list.
     /// </summary>
     [Fact]
     public async Task Without_auto_on_offer_the_next_named_posture_is_set_and_nothing_wider()
@@ -1740,7 +1739,7 @@ public sealed class AcpTests
             .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
 
         Assert.Equal("acceptEdits", ModeSet(agent));
-        // Not unless the posture asked is Ask Daoris's full access (HELPMODE1a1), held above.
+        // Not unless the posture asked is Ask Daoris's full access, held above.
         Assert.DoesNotContain(agent.Sent, line => line.Contains("bypassPermissions"));
     }
 
@@ -1750,7 +1749,7 @@ public sealed class AcpTests
         var method = frame.TryGetProperty("method", out var m) ? m.GetString() : null;
         return method switch
         {
-            // The shape §1a observed: modes, with a current one, on the session.
+            // The observed shape: modes, with a current one, on the session.
             "session/new" => Ok(frame, $$$"""
                 {"sessionId":"s-1","modes":{"currentModeId":"default","availableModes":[{{{modes}}}]}}
                 """),
@@ -1767,8 +1766,8 @@ public sealed class AcpTests
 
     /// <summary>
     /// 🔴 <b>An agent that offers the posture is still not set to it when the ADAPTER names none</b>
-    /// (ACP3). This is dsh's shape — its wire carries no modes — and it is the case that would have
-    /// been invisible: the old constant would have set `acceptEdits` on any agent that happened to
+    /// This is dsh's shape — its wire carries no modes — and it is the case that would be
+    /// invisible: a constant would set `acceptEdits` on any agent that happened to
     /// offer one, which is a posture nobody chose arriving through a harness nobody asked.
     /// </summary>
     [Fact]
@@ -1834,14 +1833,14 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// 🔴 <b>DeepSeek Harness over its own wire</b> (AGENTS2, ACP3): the shape its ACP server's own README states at
-    /// master, and DSH1 observed at 0.1.6-alpha.2. <c>initialize</c> asks no authentication; <c>session/new</c> answers
+    /// 🔴 <b>DeepSeek Harness over its own wire</b>: the shape its ACP server's own README states at
+    /// master, as observed at 0.1.6-alpha.2. <c>initialize</c> asks no authentication; <c>session/new</c> answers
     /// its configuration options, the model catalogue among them, and no <c>modes</c>; a permission prompt is one-shot.
     /// The posture is taken from the real adapter, so this fails if <c>dsh</c> ever names a mode its wire does not carry.
     /// </summary>
     /// <remarks>
-    /// What Daoris does there is nothing it was not asked to: no mode is set, the catalogue is never turned (D24; a
-    /// person may for one conversation, D98), and the one-shot prompt is refused (D52). The posture travels in the
+    /// What Daoris does there is nothing it is not asked to: no mode is set, the catalogue is never turned (a
+    /// person may for one conversation), and the one-shot prompt is refused. The posture travels in the
     /// environment, which <c>Acp3AdapterTests</c> holds.
     /// </remarks>
     [Fact]
@@ -1951,8 +1950,8 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// 🔴 <b>The measurement source</b> (TOOL3/D57 §4). ACP reports context pressure per turn, and
-    /// until now it was rendered into a transcript line and structurally discarded. It is the ONLY
+    /// 🔴 <b>The measurement source</b>. ACP reports context pressure per turn, and
+    /// it must be kept, not rendered into a transcript line and structurally discarded. It is the ONLY
     /// structured usage any door delivers, which is why measurement is an argument for the protocol
     /// door rather than a reason to parse the pipe door's text.
     /// </summary>
@@ -1986,9 +1985,8 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// An agent that reports nothing leaves usage <b>absent</b>, never zero. "Nothing was measured"
-    /// and "it used nothing" are different claims, and only one of them is true here (SES1's rule
-    /// about a bound, applied to a different number).
+    /// An agent that reports nothing leaves usage <b>absent</b>, never zero. "Nothing is measured"
+    /// and "it used nothing" are different claims, and only one of them is true here.
     /// </summary>
     [Fact]
     public async Task An_agent_that_reports_no_usage_leaves_it_absent_rather_than_zero()
@@ -2046,9 +2044,9 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// TOOL6c (limit-signals evidence §3): Claude Code's adapter forwards each <c>rate_limit_event</c> as a
+    /// Claude Code's adapter forwards each <c>rate_limit_event</c> as a
     /// <c>usage_update</c> whose <c>_meta["_claude/rateLimit"]</c> is the frame's <c>rate_limit_info</c>, unchanged. The door
-    /// tells its listener each one, and measures the context beside it as before; a <c>_meta</c> that carries no such object
+    /// tells its listener each one, and measures the context beside it; a <c>_meta</c> that carries no such object
     /// tells nothing, and a listener that throws costs a console line, never the turn.
     /// </summary>
     [Fact]
@@ -2067,7 +2065,7 @@ public sealed class AcpTests
 
             self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"usage_update","used":48000,"size":200000,"_meta":{"_claude/rateLimit":"""
                       + info + ""","_claude/model":"m"}}}}""");
-            // Before the turn has a real answer the adapter drops the frame (§3); a `_meta` without one says nothing.
+            // Before the turn has a real answer the adapter drops the frame; a `_meta` without one says nothing.
             self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"usage_update","used":900,"size":200000,"_meta":{"_claude/model":"m"}}}}""");
             self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"usage_update","_meta":{"_claude/rateLimit":"allowed"}}}}""");
             return Ok(frame, """{"stopReason":"end_turn"}""");
@@ -2086,10 +2084,10 @@ public sealed class AcpTests
         Assert.Contains(lines, line => line.Contains("could not be kept: a listener that fails", StringComparison.Ordinal));
     }
 
-    // ── the servers the door hands over (ACP4) ────────────────────────────────────────────────────
+    // ── the servers the door hands over ────────────────────────────────────────────────────
     //
-    // 🔴 Measured in ACP2's first real driven run: the session came up, streamed "I'll start by
-    // taking the quest", called `take`, had no such tool, and ended its turn having touched nothing.
+    // 🔴 In a real driven run without the wiring, the session comes up, streams "I'll start by
+    // taking the quest", calls `take`, has no such tool, and ends its turn having touched nothing.
     // The composed target instructs every session to claim its quest over its own connector, and the
     // PIPE door only works because the repository's own `.mcp.json` wires that — which an adopted
     // repository may not have, and which the driver may never reach in and write.
@@ -2125,7 +2123,7 @@ public sealed class AcpTests
 
     /// <summary>
     /// 🔴 Offering NOTHING stays an empty array, never an absent field. A machine with no host found
-    /// still drives — the session simply has no connector, exactly as it did before ACP4 — and an
+    /// still drives — the session simply has no connector — and an
     /// agent that reads `params.mcpServers.length` must not meet `undefined`.
     /// </summary>
     [Fact]
@@ -2142,7 +2140,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// CODEXTOOLS1: a session handed servers asks the adapter to wait for them to start before it answers the open, so the
+    /// A session handed servers asks the adapter to wait for them to start before it answers the open, so the
     /// first turn's catalog holds the connector; the key is the adapter's own, read beside the rules' <c>_meta</c> when both go.
     /// </summary>
     [Fact]
@@ -2181,7 +2179,7 @@ public sealed class AcpTests
         Assert.False(agent.Frame(1).GetProperty("params").TryGetProperty("_meta", out _));
     }
 
-    // ── CONSOLE2: what a session runs beside itself (docs/2026-09-28-console2-streams-evidence.md) ──
+    // ── what a session runs beside itself ──
 
     /// <summary>An agent that answers the calls, and says <paramref name="during"/> inside its one turn.</summary>
     private static FakeAgent Turn(Action<FakeAgent> during) => new((frame, self) =>
@@ -2208,9 +2206,9 @@ public sealed class AcpTests
     /// A session whose streams are kept asks for them, by the spelling that arrives: AIR's two
     /// capabilities, and the protocol's own <c>subagents</c> for when the SDK's schema carries it. It
     /// never asks for <c>terminal_output</c>, which streams nothing and moves a command's output out of
-    /// the field the record reads. A session given nowhere to keep them asks for its background tasks alone (BGWAIT3): the
+    /// the field the record reads. A session given nowhere to keep them asks for its background tasks alone: the
     /// task frames are what a driven turn that ends on its own background work waits by, and the headless loop's sessions
-    /// carried none. Its subagents stay on the session's own id, which only a session that keeps streams routes.
+    /// carry none. Its subagents stay on the session's own id, which only a session that keeps streams routes.
     /// </summary>
     [Fact]
     public async Task A_session_given_streams_asks_for_subagents_and_tasks_and_one_given_none_asks_for_tasks_alone()
@@ -2240,7 +2238,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// BGWAIT3: where no streams take the task frames, the record keeps no row for them and the console prints none. They are
+    /// Where no streams take the task frames, the record keeps no row for them and the console prints none. They are
     /// known, and not the conversation: the Bash call that started a task is its card, and the door's own notes say the waits.
     /// A raw row would also carry the harness's output path into the record.
     /// </summary>
@@ -2260,7 +2258,7 @@ public sealed class AcpTests
     /// 🔴 A subagent's updates come under its own <c>params.sessionId</c>, and a client that ignores it
     /// merges the child into the parent. Here the child's words and tools go to its own stream. The
     /// parent's console says it started and how it ended, and the parent's record holds it as one card,
-    /// because declaring the capability took the <c>Agent</c> call off the parent's wire.
+    /// because declaring the capability takes the <c>Agent</c> call off the parent's wire.
     /// </summary>
     [Fact]
     public async Task A_subagent_streams_as_its_own_and_is_one_card_in_its_parents_record()
@@ -2302,8 +2300,8 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// A background task's output is a file its harness writes, and the task names it (CONSOLE2a): the
-    /// stream is that file, read as it grows. Its ending is the LAST state the wire gave, since a task
+    /// A background task's output is a file its harness writes, and the task names it: the
+    /// stream is that file, read as it grows. Its ending is the LAST state the wire gives, since a task
     /// that finished on its own is said <c>stopped</c> and then <c>completed</c> in one breath.
     /// </summary>
     [Fact]
@@ -2348,7 +2346,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// A session's end is its streams' end (ORPHAN1's twin, said on the console): a subagent or a task
+    /// A session's end is its streams' end: a subagent or a task
     /// still open when the session closes is ended with it, says so, and its card says so too.
     /// </summary>
     [Fact]
@@ -2373,7 +2371,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// CONSOLE3a: a task its harness says can be stopped (<c>canStop</c>) is listed as one, and a stop
+    /// A task its harness says can be stopped (<c>canStop</c>) is listed as one, and a stop
     /// is the adapter's own request, <c>_session/async_task/stop</c> with the session and the task. The
     /// stream ends on the wire's word after it, like any other ending, never on the request's answer.
     /// </summary>
@@ -2428,7 +2426,7 @@ public sealed class AcpTests
 
     /// <summary>
     /// Two messages the agent sent one after another are two, by the id the wire gives each message
-    /// (found looking at CONSOLE2): joined, the window read <c>DONESubagent finished</c>. Chunks of one
+    /// (joined, the window would read <c>DONESubagent finished</c>). Chunks of one
     /// message still join, and the id rides the record so the page can tell them apart too.
     /// </summary>
     [Fact]
@@ -2452,7 +2450,7 @@ public sealed class AcpTests
             events.Where(e => e.Kind == SessionEventKind.Message).Select(e => e.Id));
     }
 
-    /// <summary>With nowhere to keep them, a child's updates are the session's, exactly as before CONSOLE2.</summary>
+    /// <summary>With nowhere to keep them, a child's updates are the session's.</summary>
     [Fact]
     public async Task Without_streams_a_childs_update_is_the_sessions_as_before()
     {
@@ -2466,7 +2464,7 @@ public sealed class AcpTests
         Assert.Contains("→ Read README.md", lines);
     }
 
-    // ——— One conversation's model and effort (AGT6b, D98): the options the agent offers, kept and changed.
+    // ——— One conversation's model and effort: the options the agent offers, kept and changed.
 
     /// <summary>
     /// What <c>claude-agent-acp</c> 0.84.0 answers <c>session/new</c> with (<c>acp-agent.js</c>,
@@ -2526,7 +2524,7 @@ public sealed class AcpTests
     /// <summary>
     /// A change is <c>session/set_config_option</c> with the session, the option and the value, and the
     /// agent's answer is the whole list after it — the effort's levels follow the model — which replaces
-    /// what was kept, and is told.
+    /// what is kept, and is told.
     /// </summary>
     [Fact]
     public async Task Setting_an_option_sends_set_config_option_and_keeps_the_agents_answer()
@@ -2555,7 +2553,7 @@ public sealed class AcpTests
 
     /// <summary>
     /// The agent may change the options itself — a model it fell back to, a switch it made — and says so in
-    /// a <c>config_option_update</c>, which replaces what was kept exactly as an answer does.
+    /// a <c>config_option_update</c>, which replaces what is kept exactly as an answer does.
     /// </summary>
     [Fact]
     public async Task An_update_the_agent_sends_replaces_the_options()
@@ -2581,9 +2579,9 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// A change the agent refuses is its refusal, in its words, and what was kept stays as it was. The words are where
-    /// <c>claude-agent-acp</c> 0.84.0 puts them, in <c>data.details</c> behind a bare <c>Internal error</c> (MODELROLE1a's
-    /// evidence): read from the message alone, the refusal said <c>Internal error</c> and nothing a person could act on.
+    /// A change the agent refuses is its refusal, in its words, and what is kept stays unchanged. The words are where
+    /// <c>claude-agent-acp</c> 0.84.0 puts them, in <c>data.details</c> behind a bare <c>Internal error</c>:
+    /// read from the message alone, the refusal would say <c>Internal error</c> and nothing a person could act on.
     /// </summary>
     [Fact]
     public async Task A_setting_the_agent_refuses_is_its_words_and_changes_nothing()
@@ -2602,8 +2600,7 @@ public sealed class AcpTests
         session.Release();
     }
 
-    // ——— MODELROLE1a (D205 §3.2, §3.3): the options and answers both protocol agents gave on the owner's install
-    // (docs/2026-10-23-model-effort-doors-evidence.md), as they gave them.
+    // ——— The options and answers both protocol agents gave on an install, as they gave them.
 
     /// <summary>
     /// <c>claude-agent-acp</c> 0.84.0's <c>session/new</c> list as measured: flat values, <c>default</c> a value of the model
@@ -2616,7 +2613,7 @@ public sealed class AcpTests
          {"id":"fast","name":"Fast mode","category":"model_config","type":"select","currentValue":"off","options":[{"value":"on","name":"On"},{"value":"off","name":"Off"}]}]
         """;
 
-    /// <summary>D205: a setter that returns no list leaves the composer its projection, never an acknowledgement.</summary>
+    /// <summary>A setter that returns no list leaves the composer its projection, never an acknowledgement.</summary>
     [Fact]
     public async Task A_setter_with_no_returned_list_is_not_an_acknowledgement()
     {
@@ -2634,7 +2631,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// The list <c>claude-agent-acp</c> answered after a change, as measured: the model's value as the agent holds it (an
+    /// The list <c>claude-agent-acp</c> answers after a change, as measured: the model's value as the agent holds it (an
     /// alias for a full id that has one), the effort while the model offers one, and no <c>fast</c> once it is not opus.
     /// </summary>
     private static string ClaudeAnswer(string mode, string model, string? effort) => $$"""
@@ -2644,7 +2641,7 @@ public sealed class AcpTests
         """;
 
     /// <summary>
-    /// The driven shape the row measured: the model, then the effort, each answered with the whole list, its current value
+    /// The driven shape as measured: the model, then the effort, each answered with the whole list, its current value
     /// the one asked, before any prompt; the agent's list is what is kept.
     /// </summary>
     [Fact]
@@ -2683,7 +2680,7 @@ public sealed class AcpTests
     /// <summary>
     /// 🔴 Measured: a full id the list does not hold is accepted and answered with its alias (<c>claude-sonnet-5-5</c> asked,
     /// <c>sonnet</c> returned). What is kept is the agent's word, never the request assumed, so a returned value that differs
-    /// from the one asked is not by itself a refusal (D205 §3.2, round 3).
+    /// from the one asked is not by itself a refusal.
     /// </summary>
     [Fact]
     public async Task A_full_id_claude_answers_with_its_alias_is_kept_as_the_agent_said_it()
@@ -2706,7 +2703,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// 🔴 Measured: <c>haiku</c> offers no effort, so its answer drops the effort option, and the change moved the posture,
+    /// 🔴 Measured: <c>haiku</c> offers no effort, so its answer drops the effort option, and the change moves the posture,
     /// <c>auto</c> to <c>acceptEdits</c>, both in a <c>current_mode_update</c> and in the list. The list kept is the agent's,
     /// so a reader sees no effort to set and the mode it is really in.
     /// </summary>
@@ -2769,14 +2766,14 @@ public sealed class AcpTests
         session.Release();
     }
 
-    // ——— MODELROLE1c: the protocol carrier (D205 §3.2), what an actor's entry asks set at the open, before the first prompt.
+    // ——— The protocol carrier: what an actor's entry asks set at the open, before the first prompt.
 
     private static ActorAsked Entry(string? model, string? effort) => new(
         "claude-code-acp",
         model is null ? new("account-default", null, false) : new("entry", model, true),
         effort is null ? new("account-default", null, false) : new("entry", effort, true));
 
-    /// <summary>An agent answering Claude's measured lists, holding what each set asked, and what the run's first prompt came after.</summary>
+    /// <summary>An agent answering Claude's measured lists, holding what each set asked, and what the run's first prompt comes after.</summary>
     private static FakeAgent Carrying(Func<JsonElement, string?>? set = null)
     {
         var held = (Model: "default", Effort: "default");
@@ -2805,7 +2802,7 @@ public sealed class AcpTests
 
     /// <summary>
     /// 🔴 The model, then the effort, each by its category, after <c>session/new</c> and before the posture and the first prompt; the
-    /// posture set again after them, since a model change can move it (MODELROLE1a). Nothing differs from what was asked, so nothing is
+    /// posture set again after them, since a model change can move it. Nothing differs from what is asked, so nothing is
     /// told.
     /// </summary>
     [Fact]
@@ -2822,7 +2819,7 @@ public sealed class AcpTests
         Assert.Null(told);
     }
 
-    /// <summary>An entry at account default sets nothing, and the open is today's.</summary>
+    /// <summary>An entry at account default sets nothing, and the open is the default.</summary>
     [Fact]
     public async Task Account_default_sets_nothing()
     {
@@ -2836,7 +2833,7 @@ public sealed class AcpTests
 
     /// <summary>
     /// A model the agent refuses at the set, and an effort it offers no option for, are kept as asked and not carried, and told, so the
-    /// record says <i>asked opus · not carried</i>, never a choice taken; the run goes on before any prompt fails (D205 §3.3, §5).
+    /// record says <i>asked opus · not carried</i>, never a choice taken; the run goes on before any prompt fails.
     /// </summary>
     [Fact]
     public async Task A_refused_model_is_kept_as_asked_and_not_carried()
@@ -2855,8 +2852,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// A returned list naming another value the list offers is a refusal; an asked id answered with its alias is taken (round 3, Opus N5;
-    /// MODELROLE1a).
+    /// A returned list naming another value the list offers is a refusal; an asked id answered with its alias is taken.
     /// </summary>
     [Theory]
     [InlineData("sonnet", "haiku", false)]
@@ -2872,14 +2868,14 @@ public sealed class AcpTests
         Assert.Equal(carried, told is null);
     }
 
-    // ——— MODELROLE1c2: a choice refused at the open (D205 §3.3), re-asked before any prompt.
+    // ——— A choice refused at the open, re-asked before any prompt.
 
     private static string Refusing(JsonElement frame) =>
         $$$$"""{"jsonrpc":"2.0","id":{{{{frame.GetProperty("id").GetRawText()}}}},"error":{"code":-32603,"message":"Internal error","data":{"details":"Invalid value for config option model"}}}""";
 
     /// <summary>
     /// 🔴 A model the agent refuses at the set, where the start re-asks, ends the open before any prompt: the refusal is the re-ask's,
-    /// coded <c>not-offered</c> for a value its list lacked, the session closed, the record ending <c>choice-not-offered</c>.
+    /// coded <c>not-offered</c> for a value its list lacks, the session closed, the record ending <c>choice-not-offered</c>.
     /// </summary>
     [Fact]
     public async Task A_model_refused_at_the_open_with_nothing_else_ends_it_before_any_prompt()
@@ -2904,9 +2900,9 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// D205 §3.3's same-account move: the re-ask answers a later choice of the same agent on the same account, set on the open session
+    /// The same-account move: the re-ask answers a later choice of the same agent on the same account, set on the open session
     /// with no respawn; a category the refused attempt moved and the later choice leaves at account default is first set back to its
-    /// opening value (round 4, Opus N6: the opening snapshot, not the latest list), then the run prompts.
+    /// opening value (the opening snapshot, not the latest list), then the run prompts.
     /// </summary>
     [Fact]
     public async Task A_same_account_move_sets_the_later_choice_on_the_open_session_restoring_what_the_attempt_moved()
@@ -2930,7 +2926,7 @@ public sealed class AcpTests
         Assert.Equal("default", session.OpeningOptions.First(option => option.Category == "model").Current);
     }
 
-    /// <summary>D205 §3.3: an agent that refuses the set back to the opening value ends the record, as a refusal with nothing else.</summary>
+    /// <summary>An agent that refuses the set back to the opening value ends the record, as a refusal with nothing else.</summary>
     [Fact]
     public async Task A_set_back_the_agent_refuses_ends_the_open()
     {
@@ -2952,7 +2948,7 @@ public sealed class AcpTests
         Assert.DoesNotContain("session/prompt", Methods(agent));
     }
 
-    // ——— ACPDATA1: a refusal's `data`, kept beside its message (D125 §1.2; limit-signals evidence §3, §4).
+    // ——— A refusal's `data`, kept beside its message.
 
     /// <summary>An agent that refuses the prompt with this JSON-RPC error, and answers the rest.</summary>
     private static FakeAgent RefusingThePrompt(string error) => new((frame, self) =>
@@ -2968,10 +2964,10 @@ public sealed class AcpTests
         () => new AcpSession(agent.Incoming, agent.Outgoing, _ => { }).RunAsync("D:/fam/Game", "a task", CancellationToken.None));
 
     /// <summary>
-    /// 🔴 Codex's usage limit, in the shape `codex-acp` sends it (evidence §4): the message is <c>Internal error</c> and
+    /// 🔴 Codex's usage limit, in the shape `codex-acp` sends it: the message is <c>Internal error</c> and
     /// nothing after it, and the sentence is the data's <c>message</c>. The refusal says the sentence after the message,
     /// as the protocol's own <c>Internal error: …</c> does, so the conclusion and the limit reader both have it; kept
-    /// alone, the note said <c>Internal error</c> and no entry could ever match.
+    /// alone, the note would say <c>Internal error</c> and no entry could ever match.
     /// </summary>
     [Fact]
     public async Task A_refusal_whose_data_carries_the_sentence_says_it_after_the_message()
@@ -2988,9 +2984,9 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// Claude Code's adapter puts the sentence in the message and the SDK message's category in <c>data.errorKind</c>
-    /// (evidence §3): the message is said as the agent said it, byte for byte, and the kind is kept beside it. The kind
-    /// here is one the SDK declares; which one a usage limit carries was not read.
+    /// Claude Code's adapter puts the sentence in the message and the SDK message's category in <c>data.errorKind</c>:
+    /// the message is said as the agent says it, byte for byte, and the kind is kept beside it. The kind
+    /// here is one the SDK declares; which one a usage limit carries is not read.
     /// </summary>
     [Fact]
     public async Task A_refusal_keeps_its_data_s_error_kind_and_says_its_message_as_the_agent_did()
@@ -3006,7 +3002,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// Read without trusting the shape (REV3): a data that is not an object, fields that are not text, a blank message
+    /// Read without trusting the shape: a data that is not an object, fields that are not text, a blank message
     /// and no data at all add nothing, and the call still ends in a refusal.
     /// </summary>
     [Theory]
@@ -3046,7 +3042,7 @@ public sealed class AcpTests
         Assert.Empty(agent.Sent);
     }
 
-    // ---- CODEXPERM1 (D184): Codex's modes match their work boundary ----
+    // ---- Codex's modes match their work boundary ----
 
     private const string CodexModes =
         """{"id":"read-only"},{"id":"workspace-write"},{"id":"agent"},{"id":"agent-full-access"}""";
@@ -3057,7 +3053,7 @@ public sealed class AcpTests
 
     /// <summary>
     /// A Codex session that edits a file in its tree (<c>e1</c>, done unasked), then asks to edit one beyond it (<c>e2</c>, request 900),
-    /// and ends its turn <c>cancelled</c> where that was refused with its interrupting option, else <c>end_turn</c>. Each answer is kept.
+    /// and ends its turn <c>cancelled</c> where that is refused with its interrupting option, else <c>end_turn</c>. Each answer is kept.
     /// </summary>
     private static FakeAgent CodexEditing(ConcurrentQueue<JsonElement> answers)
     {
@@ -3135,7 +3131,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// An agent too old to offer <c>workspace-write</c> (codex-acp 1.12.0 offered three modes) fails the open naming it, and is never set to
+    /// An agent too old to offer <c>workspace-write</c> (codex-acp 1.12.0 offers three modes) fails the open naming it, and is never set to
     /// <c>read-only</c> or <c>agent</c> under Asking's name.
     /// </summary>
     [Fact]
@@ -3159,7 +3155,7 @@ public sealed class AcpTests
 
     /// <summary>
     /// 🔴 Honest cancellation: on Auto the driver refuses the edit beyond the tree with the only rejection Codex offers, which ends the
-    /// turn <c>cancelled</c> though nobody stopped it. The outcome says the turn was cut by that refusal, naming the call, and the edit
+    /// turn <c>cancelled</c> though nobody stopped it. The outcome says the turn is cut by that refusal, naming the call, and the edit
     /// made before it is kept in the record.
     /// </summary>
     [Fact]

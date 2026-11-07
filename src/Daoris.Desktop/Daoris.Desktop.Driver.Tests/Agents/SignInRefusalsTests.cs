@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A start the agent refused for its sign-in, read from the door's failure (ROSTER1b; D125 point 1's rule, which an account's
+/// A start the agent refused for its sign-in, read from the door's failure (the rule an account's
 /// limit is read by too): the reader is pure, so this table is the whole contract for which failures are a refused sign-in.
 /// </summary>
 /// <remarks>
@@ -27,7 +27,7 @@ public sealed class SignInRefusalsTests
 
     /// <summary>
     /// Anything else is a failure as today: another refusal, an account's limit, the words quoted in the middle of a
-    /// sentence or running on into another, the native door's 401, which AGT3b reads from the transcript, and no words.
+    /// sentence or running on into another, the native door's 401, which is read from the transcript, and no words.
     /// </summary>
     [Theory]
     [InlineData("the ACP agent refused the call: Internal error: Overloaded")]
@@ -93,9 +93,9 @@ public sealed class SignInRefusalsTests
     }
 
     /// <summary>
-    /// Only an agent whose refusal of a sign-in was recorded on a door declares an entry: Claude Code, and the stub that
+    /// Only an agent whose refusal of a sign-in is recorded on a door declares an entry: Claude Code, and the stub that
     /// mirrors its words as it mirrors <c>Refused</c> and <c>Limits</c>, so a tick can gate it with no account. A door
-    /// onto either reads its owner's (AGT7); dsh, Codex's door and a plugin have none, and read every failure as a failure.
+    /// onto either reads its owner's; dsh, Codex's door and a plugin have none, and read every failure as a failure.
     /// </summary>
     [Fact]
     public void Only_an_agent_seen_refusing_a_sign_in_declares_an_entry()
@@ -104,7 +104,7 @@ public sealed class SignInRefusalsTests
         Assert.Same(Claude, ProviderRegistry.Built().AgentNamed("stub")!.Tables.SignIn);
     }
 
-    /// <summary>A door reads its owner's words (AGT7): Claude Code's protocol door, and the protocol stub onto the stub.</summary>
+    /// <summary>A door reads its owner's words: Claude Code's protocol door, and the protocol stub onto the stub.</summary>
     [Fact]
     public void A_door_reads_its_owner_s_words()
     {

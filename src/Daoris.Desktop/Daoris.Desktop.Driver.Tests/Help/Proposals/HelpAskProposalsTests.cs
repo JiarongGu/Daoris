@@ -3,7 +3,7 @@ using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
 
-/// <summary>Ask Daoris's <c>ask</c> proposal (HELP1c): something to start, made through the ask door.</summary>
+/// <summary>Ask Daoris's <c>ask</c> proposal: something to start, made through the ask door.</summary>
 public sealed class HelpAskProposalsTests : HelpProposalsFixture
 {
     [Fact]
@@ -22,7 +22,7 @@ public sealed class HelpAskProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// ENTRY1c: the review choice the person said goes with the ask, as the composer sends it and the terminal's
+    /// The review choice the person said goes with the ask, as the composer sends it and the terminal's
     /// <c>--review rule|on|&lt;environment&gt;|off [--review-words "…"]</c> takes it; <c>rule</c> sends none. The rows are the
     /// service box's (<c>HelpAskProposalTests</c>) and <c>AskReviewCommandTests</c>'s, so what the box writes the driver takes.
     /// </summary>
@@ -49,7 +49,7 @@ public sealed class HelpAskProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// ENTRY1c: a choice the composer would not send is refused in its words (<see cref="AskReviewCommand.Compose"/>), the rule's
+    /// A choice the composer would not send is refused in its words (<see cref="AskReviewCommand.Compose"/>), the rule's
     /// own judgement of a name among them. Whether a name is one the ask's workspace declares is the ask door's, at Apply.
     /// </summary>
     [Theory]
@@ -69,7 +69,7 @@ public sealed class HelpAskProposalsTests : HelpProposalsFixture
         Assert.Contains(named, HelpProposals.Plan(ask, DriverConfig.Empty, Facts).Refusal);
     }
 
-    /// <summary>ENTRY1c: the choice and its words are read from the file as the service's box writes them.</summary>
+    /// <summary>The choice and its words are read from the file as the service's box writes them.</summary>
     [Fact]
     public void An_asks_review_choice_is_read_from_the_file()
     {
@@ -96,7 +96,7 @@ public sealed class HelpAskProposalsTests : HelpProposalsFixture
         Assert.Contains("Applied", ask.Told);
     }
 
-    /// <summary>HEAD2e: the short title is read from the file, said on the card, and carried to the ask door at Apply.</summary>
+    /// <summary>The short title is read from the file, said on the card, and carried to the ask door at Apply.</summary>
     [Fact]
     public async Task An_asks_short_title_is_read_said_and_applied_through_the_ask_door()
     {
@@ -119,7 +119,7 @@ public sealed class HelpAskProposalsTests : HelpProposalsFixture
         Assert.Contains("Applied", ask.Told);
     }
 
-    /// <summary>HEAD2e2: the card's terminal line says the short title as the terminal takes it, after the review flags, quoted for any shell.</summary>
+    /// <summary>The card's terminal line says the short title as the terminal takes it, after the review flags, quoted for any shell.</summary>
     [Theory]
     [InlineData(null, null, "")]
     [InlineData("  ", null, "")]
@@ -138,7 +138,7 @@ public sealed class HelpAskProposalsTests : HelpProposalsFixture
         Assert.Equal($"daoris ask --workspace work {flags}\"add the compare setting\"{said}", HelpProposals.Plan(ask, DriverConfig.Empty, Facts).Terminal);
     }
 
-    /// <summary>ENTRY1c: the ask door hears the choice and the words as the composer sends them.</summary>
+    /// <summary>The ask door hears the choice and the words as the composer sends them.</summary>
     [Fact]
     public async Task An_asks_review_choice_is_applied_through_the_ask_door()
     {

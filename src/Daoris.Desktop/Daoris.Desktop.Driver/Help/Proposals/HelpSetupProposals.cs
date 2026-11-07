@@ -3,9 +3,9 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's <c>setup</c> proposal (D170 point 1; WORKFLOWCLEAN1 1f): the one door is <c>place</c>, whose ask carries adoption for the
+/// Ask Daoris's <c>setup</c> proposal: the one door is <c>place</c>, whose ask carries adoption for the
 /// repositories it names, judged by the place's plan and opened on the page's <i>Set up…</i>, where the person presses Apply. The
-/// repository-alone <c>setup</c> door went with its press; a helper that ran commands could run any driver verb (D89, HELP4), so the act
+/// repository-alone <c>setup</c> door went with its press; a helper that ran commands could run any driver verb, so the act
 /// stays a card the person applies.
 /// </summary>
 internal sealed class HelpSetupProposals : IHelpProposalKind
@@ -36,12 +36,12 @@ internal sealed class HelpSetupProposals : IHelpProposalKind
         };
     }
 
-    /// <summary>ASKSCOPE1c: its target is the repository it sets up; a place's ask names each of its repositories.</summary>
+    /// <summary>Its target is the repository it sets up; a place's ask names each of its repositories.</summary>
     public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) =>
         new([proposal.Workspace], [proposal.Target, proposal.Repository, .. proposal.Place?.Repositories ?? []]);
 
     /// <summary>
-    /// STEWARDROLE1a-ii (D209 §5.4): the set-up acts on its repository, which its Apply marks the owner's. A place's Apply writes nothing, but
+    /// The set-up acts on its repository, which its Apply marks the owner's. A place's Apply writes nothing, but
     /// the repositories it opens a set-up for are the ones the room may name, so they are marked as the press's is.
     /// </summary>
     public HelpOwned Owned(HelpProposal proposal)
@@ -57,7 +57,7 @@ internal sealed class HelpSetupProposals : IHelpProposalKind
             : new($"`{proposal.Door}` is not a door of a set-up: the one door is `place`, with adoption in its ask (`setup_propose`).", "", "", null);
 
     /// <summary>
-    /// The <c>place</c> door (AGENTSPLACE1k): judged by <see cref="PlacePlans.PlanAsync"/> over the ask, read-only, every refusal said as the plan
+    /// The <c>place</c> door: judged by <see cref="PlacePlans.PlanAsync"/> over the ask, read-only, every refusal said as the plan
     /// says it. What it allows is a go to the Setup page of the one workspace's repositories, with <i>Set up…</i> open on the ask.
     /// </summary>
     private static HelpPlan PlanPlace(HelpProposal proposal, HelpMachineFacts facts)
@@ -111,5 +111,5 @@ internal sealed class HelpSetupProposals : IHelpProposalKind
         Task.FromResult(applying.Settled(true, $"Applied: `#{applying.Id}` — {applying.Plan.Describe} Nothing else changed.", null) with { Go = applying.Plan.Go });
 }
 
-/// <summary>A place's plan as its card shows it (AGENTSPLACE1k): the ask, its workspace, each change said once and the digest the card is revised by.</summary>
+/// <summary>A place's plan as its card shows it: the ask, its workspace, each change said once and the digest the card is revised by.</summary>
 public sealed record HelpPlaceSetUp(PlaceAsk Asked, string Workspace, IReadOnlyList<PlaceChanged> Changes, string Digest);

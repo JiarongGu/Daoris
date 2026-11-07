@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A push of one ref to origin (GITAPP2g, n): <paramref name="Kind"/> is <c>branch</c> or <c>tag</c>, <paramref name="At"/> the commit the page
+/// A push of one ref to origin (n): <paramref name="Kind"/> is <c>branch</c> or <c>tag</c>, <paramref name="At"/> the commit the page
 /// showed it at (refused where it stands elsewhere), <paramref name="Workspace"/> the hold's row, as a fetch's is.
 /// </summary>
 public sealed record PushAsk(string Repository, string Checkout, string Kind, string Name, string? At = null, string? Workspace = null);
@@ -16,7 +16,7 @@ public sealed record PushAsk(string Repository, string Checkout, string Kind, st
 public sealed record PushPlan(bool Offered, string? Reason, string? Why, string? Address, string Dangerous, string Command);
 
 /// <summary>
-/// **Push one ref to origin** (GITAPP2g, GITAPP2n, D204, D241 point 2; the git-writes design §9, §12 rows g and n): the one push Daoris makes.
+/// **Push one ref to origin**: the one push Daoris makes.
 /// One <c>push</c> step of the act journal (<see cref="ActPushSteps"/>) whose command is fixed whatever the repository's configuration says:
 /// one ref, <c>&lt;commit&gt;:refs/heads/&lt;name&gt;</c> or <c>&lt;commit&gt;:refs/tags/&lt;name&gt;</c>, no <c>+</c>, no <c>-u</c>, no followed
 /// tags, no submodules, no signing, no push options; the repository's hooks run. It carries a grant bound to origin's push address, the ref,
@@ -193,7 +193,7 @@ public static class GitPushActs
             return new(null, null, null, $"`{ask.Name}` no longer stands at the commit shown, so nothing was pushed.");
         }
 
-        // Origin's ref as last fetched: a tag is never fetched (§9), so it is pushed as new, and a branch never fetched is pushed as new too.
+        // Origin's ref as last fetched: a tag is never fetched, so it is pushed as new, and a branch never fetched is pushed as new too.
         var old = Absent;
         if (ask.Kind == "branch")
         {

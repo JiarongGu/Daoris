@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITISOLATE1 (the FIX-LOG entry of that name): a test's git runs capped at its fixture, so a fixture folder that is no repository
+/// A test's git runs capped at its fixture, so a fixture folder that is no repository
 /// never climbs into the checkout's, whose config every worktree shares. The helpers cap each start (<see cref="TestGit.Ceiling"/>,
 /// <see cref="TestGit.Past"/>); this census reads both desktop test projects' sources and fails a file that builds a git start
 /// (<c>new ProcessStartInfo("git")</c>, <c>FileName = "git"</c>, <c>WorkingTree.GitStart</c>) and names none of <c>TestGit.Past</c>,

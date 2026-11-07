@@ -13,12 +13,12 @@ namespace Daoris.Driver;
 /// one home recording usage — then shared that name: one's write met the other's open file, or its
 /// move found the file already moved. Even with names of their own, two renames over one file at
 /// once are refused on Windows. Either threw out of a session that had finished its work, and turned
-/// it <c>failed</c> (REV3).</para>
+/// it <c>failed</c>.</para>
 ///
 /// <para>Text is written as BOM-less UTF-8, and what it says (LF, a final newline) is the caller's.</para>
 ///
-/// <para>A file these writes keep is read beside its writer through <see cref="ReadText"/> (BINDRACE1), <see cref="ReadBytes"/> or
-/// <see cref="OpenRead"/>, never plainly: <c>tools/read-shares.mjs</c> finds a plain read of one (READSHARE1).</para>
+/// <para>A file these writes keep is read beside its writer through <see cref="ReadText"/>, <see cref="ReadBytes"/> or
+/// <see cref="OpenRead"/>, never plainly: <c>tools/read-shares.mjs</c> finds a plain read of one.</para>
 /// </remarks>
 public static class AtomicFile
 {
@@ -26,20 +26,20 @@ public static class AtomicFile
 
     /// <summary>A file these writes keep, read whole, sharing its writing and deletion with a writer.</summary>
     /// <remarks>
-    /// 🔴 Measured (BINDRACE1), as <see cref="BesideReads"/> holds it: a reader that does not share deletion is refused a file the move
-    /// that landed it still holds. The read is Platform's, where the home's own files read through it (FOUNDATION1 mod-ii); this is
+    /// 🔴 Measured, as <see cref="BesideReads"/> holds it: a reader that does not share deletion is refused a file the move
+    /// that landed it still holds. The read is Platform's, where the home's own files read through it; this is
     /// the spelling every other reader of such a file finds.
     /// </remarks>
     /// <exception cref="FileNotFoundException">No file is there.</exception>
     /// <exception cref="IOException">It could not be read.</exception>
     public static string ReadText(string path) => BesideReads.Text(path);
 
-    /// <summary>A file these writes keep, read whole as bytes, sharing as <see cref="ReadText"/> does (READSHARE1).</summary>
+    /// <summary>A file these writes keep, read whole as bytes, sharing as <see cref="ReadText"/> does.</summary>
     /// <exception cref="FileNotFoundException">No file is there.</exception>
     /// <exception cref="IOException">It could not be read.</exception>
     public static byte[] ReadBytes(string path) => BesideReads.Bytes(path);
 
-    /// <summary>A file these writes keep, opened to read as a stream, sharing as <see cref="ReadText"/> does (READSHARE1).</summary>
+    /// <summary>A file these writes keep, opened to read as a stream, sharing as <see cref="ReadText"/> does.</summary>
     /// <exception cref="FileNotFoundException">No file is there.</exception>
     /// <exception cref="IOException">It could not be opened.</exception>
     public static FileStream OpenRead(string path) => BesideReads.Open(path);
@@ -50,7 +50,7 @@ public static class AtomicFile
 
     /// <summary>
     /// Write <paramref name="text"/> to <paramref name="path"/> whole, or not at all, renaming only where <paramref name="proceed"/>, asked
-    /// just before the rename, says so (FOUNDATION1w-s part 2: a keeping lock read again). False where it did not, and the beside file is gone.
+    /// just before the rename, says so (a keeping lock read again). False where it did not, and the beside file is gone.
     /// </summary>
     internal static bool WriteTextWhile(string path, string text, Func<bool> proceed) =>
         Write(path, beside => File.WriteAllText(beside, text, Utf8), proceed);
@@ -60,10 +60,10 @@ public static class AtomicFile
         Write(path, beside => File.WriteAllBytes(beside, bytes));
 
     /// <summary>
-    /// Write <paramref name="text"/> to <paramref name="path"/> whole where no file is there, never over one (FABRIC-CUTOVER1g): written
+    /// Write <paramref name="text"/> to <paramref name="path"/> whole where no file is there, never over one: written
     /// beside, then moved into place without overwriting, so of writers racing for one path exactly one lands and each other is told so.
     /// </summary>
-    /// <returns>Whether this write landed: false where a file was there already, or another writer's landed first.</returns>
+    /// <returns>Whether this write landed: false where a file is there already, or another writer's landed first.</returns>
     /// <exception cref="IOException">The write failed and no file is there: not another's, so nothing to read instead.</exception>
     public static bool TryCreateText(string path, string text)
     {
@@ -90,7 +90,7 @@ public static class AtomicFile
     }
 
     /// <summary>
-    /// A folder moved into place, tried again while something holds a file in it (FIX-LOG 2026-10-07): on Windows a folder
+    /// A folder moved into place, tried again while something holds a file in it: on Windows a folder
     /// holding an executable written a moment ago cannot move while the virus scanner has it open, and that gives way within
     /// seconds. A missing folder is not held, and throws at once; the last refusal throws after the tries.
     /// </summary>
@@ -138,7 +138,7 @@ public static class AtomicFile
     /// The rename, retried while the target is busy — briefly, and a bounded number of times.
     /// </summary>
     /// <remarks>
-    /// 🔴 Measured (REV3): on Windows a rename over a file that another rename is replacing at that
+    /// 🔴 Measured: on Windows a rename over a file that another rename is replacing at that
     /// moment is refused with <i>access denied</i>, and so is one over a file a reader holds open
     /// without delete sharing. Both clear in milliseconds. A missing file is not busy, and is not
     /// retried.

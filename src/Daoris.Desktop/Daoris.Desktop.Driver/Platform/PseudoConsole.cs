@@ -7,11 +7,11 @@ using Microsoft.Win32.SafeHandles;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A shell under a Windows pseudo-console (CONSOLE4a, D96): the person's own terminal, behaving as a console
+/// A shell under a Windows pseudo-console: the person's own terminal, behaving as a console
 /// window does — prompts, colours, Ctrl+C, history, tab completion and full-screen programs.
 /// </summary>
 /// <remarks>
-/// <para><b>A few Win32 calls, not a package</b> (D96's rejected list): <c>CreatePseudoConsole</c> over two
+/// <para><b>A few Win32 calls, not a package</b>: <c>CreatePseudoConsole</c> over two
 /// pipes, the shell started attached to it through <c>STARTUPINFOEX</c>, its output read as it arrives and
 /// its input written as the person types. The console host it runs is headless, so no window appears.</para>
 ///
@@ -24,12 +24,12 @@ namespace Daoris.Driver;
 /// and breaks the pipe; the exit is told when the reader has read to the end. Closing it by hand takes the
 /// same road: the job ends the shell, and the shell's exit closes the rest.</para>
 ///
-/// <para><b>What it carries is the person's own</b>: nothing here logs a byte of it (D94).</para>
+/// <para><b>What it carries is the person's own</b>: nothing here logs a byte of it.</para>
 /// </remarks>
 public sealed class PseudoConsole : ITerminal
 {
     /// <summary>
-    /// What the tools add to a shell's environment (TOOLS5, D121 §2.6), as the subdomain that owns the tools answers it: the variables
+    /// What the tools add to a shell's environment, as the subdomain that owns the tools answers it: the variables
     /// to set, from <paramref name="home"/> and the <paramref name="variables"/> the block holds so far. The port <see cref="ToolsEnvironment"/>
     /// holds, so the terminal's start names none of the tools.
     /// </summary>
@@ -315,13 +315,13 @@ public sealed class PseudoConsole : ITerminal
     }
 
     /// <summary>
-    /// This process's environment, then the tools' (TOOLS5, D121 §2.6), then <paramref name="added"/> over it, as the
+    /// This process's environment, then the tools', then <paramref name="added"/> over it, as the
     /// block CreateProcess reads: the person's own <c>git fetch</c> in a terminal runs the git Daoris's does.
     /// </summary>
     /// <remarks>
     /// Sorted by name without regard to case, as the system keeps its own block. The tools are read from the home the
     /// launch names, else this process's; with none, nothing is added.
-    /// <para>The marker a session's shell carries (<see cref="ChildMarks.SessionVariable"/>) is never handed on (PUSH1f2a, D194 point 5):
+    /// <para>The marker a session's shell carries (<see cref="ChildMarks.SessionVariable"/>) is never handed on:
     /// a terminal the window opens is the person's own, and a Daoris started from a session's shell would otherwise pass it to them.</para>
     /// </remarks>
     /// <param name="inherited">The variables the block starts from: this process's, where none are handed.</param>
@@ -342,7 +342,7 @@ public sealed class PseudoConsole : ITerminal
 
         variables.Remove(ChildMarks.SessionVariable);
         variables.Remove(ChildMarks.LineageProcVariable);
-        // SUPERVISOR1a-ii (D208 §2.2): the holder key is never inherited; the holder's own tab alone adds it back.
+        // The holder key is never inherited; the holder's own tab alone adds it back.
         variables.Remove(ChildMarks.RoleKeyVariable);
 
         var home = added.FirstOrDefault(pair => string.Equals(pair.Key, DaorisHome.Variable, StringComparison.OrdinalIgnoreCase)).Value
@@ -364,7 +364,7 @@ public sealed class PseudoConsole : ITerminal
     }
 
     /// <summary>
-    /// <paramref name="whole"/> as the block CreateProcess reads, and nothing else (STEWARDROLE1a-i, D209 §6.1): no variable of this
+    /// <paramref name="whole"/> as the block CreateProcess reads, and nothing else: no variable of this
     /// process's, no tools' — the holder's harness, whose environment Daoris composes whole.
     /// </summary>
     internal static string WholeBlock(IReadOnlyDictionary<string, string> whole)

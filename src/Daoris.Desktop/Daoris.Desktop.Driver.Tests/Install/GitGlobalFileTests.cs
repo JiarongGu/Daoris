@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What Daoris's git carries (TOOLS6 inside GITAUTH1c; D121 §2.5, the git-auth design §4.1): <c>profiles/git/global.gitconfig</c>, the
+/// What Daoris's git carries: <c>profiles/git/global.gitconfig</c>, the
 /// person's own global files included first by their paths and the allow-listed keys between Daoris's markers after them, handed as
 /// <c>GIT_CONFIG_GLOBAL</c> to every start that takes the tools' environment where git carries a key; a child's own global writes kept;
 /// a git known older than 2.32 not handed it, and a setting refused on it naming its floor.

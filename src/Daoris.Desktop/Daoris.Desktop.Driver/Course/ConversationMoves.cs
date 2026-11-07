@@ -4,17 +4,17 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The conversations' move record (FOUNDATION1f-ii part a, D212; the foundation design §3.3, §13.4, §19.4): the store a shell's conversation
+/// The conversations' move record: the store a shell's conversation
 /// moves are written in, the door to their destinations' <c>said</c>, and the take-up of a dead shell's conversation moves, at the shell's
-/// come-up and at each look. The live limit move writes its move here (<see cref="BeginAsync"/>), the curve (f-iii) and the conversation's
-/// hand-over (f-v part a) alike. Since FOUNDATION1f-iv part a the driver's carry-on writes its own through the same holder, handed the lease
-/// holder's scope (executor <c>driven</c>), and since f-v part c the quest's hand-over decides its move there, which the carry-on it starts goes on
+/// come-up and at each look. The live limit move writes its move here (<see cref="BeginAsync"/>), the curve and the conversation's
+/// hand-over alike. The driver's carry-on writes its own through the same holder, handed the lease
+/// holder's scope (executor <c>driven</c>), and the quest's hand-over decides its move there, which the carry-on it starts goes on
 /// from: the one store, the one decision, the one reading of a delivery, whichever executor writes the move.
 /// </summary>
 /// <remarks>
 /// <para><b>Nothing here sends a word.</b> A move this holder ends on its executor's failure, or takes up from a dead run, is read by its
 /// words' <c>sent</c> and its destination's <c>said</c> alone (<see cref="MoveDelivery"/>), and ended so its records go on by their own
-/// come-up as an older build's would: before its open was asked it falls back on its old part (<see cref="NotOpened"/>); with its open asked
+/// come-up as an older build's would: before its open is asked it falls back on its old part (<see cref="NotOpened"/>); with its open asked
 /// and no answer recorded it is held as an effect never recorded; opened and not delivered it is held as undelivered, naming only what the
 /// reading found <i>left</i> or uncertain. A word it moved that waits there never attempted goes on by its destination's own go-on, which
 /// sends only words never attempted, so no word is sent twice by a move.</para>
@@ -23,10 +23,10 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed class ConversationMoves
 {
-    /// <summary>The fall-back's code of a move whose executor stopped before its open was asked: its line stays on its old part.</summary>
+    /// <summary>The fall-back's code of a move whose executor stopped before its open is asked: its line stays on its old part.</summary>
     public const string NotOpened = "not-opened";
 
-    /// <summary>The outcome of a prompt its executor knows it never wrote: its hand was refused before the write.</summary>
+    /// <summary>The outcome of a prompt its executor knows it never wrote: its hand is refused before the write.</summary>
     public const string Unsent = "unsent";
 
     /// <summary>The moves to read again at the next look, by the store's file and the move: their destinations could not be read.</summary>
@@ -51,8 +51,8 @@ public sealed class ConversationMoves
     /// <param name="clock">What time it is, for a phase's quiet; null for the machine's.</param>
     /// <param name="said">The destinations' <c>said</c>; null for the service's.</param>
     /// <param name="scope">
-    /// Whose moves its take-up takes (FOUNDATION1f-iv part a): the conversations' by default; the driven carry-on's holder is handed the lease
-    /// holder's, over the same store and the same readings. The watch's first look takes a dead loop's driven moves up through it (part b).
+    /// Whose moves its take-up takes: the conversations' by default; the driven carry-on's holder is handed the lease
+    /// holder's, over the same store and the same readings. The watch's first look takes a dead loop's driven moves up through it.
     /// </param>
     public ConversationMoves(
         string home, ServiceClient service, SessionEvents events, SessionOutput? output = null, MoveStore? store = null, TimeProvider? clock = null,
@@ -67,9 +67,9 @@ public sealed class ConversationMoves
         Resolve = new MoveResolve(Store, Said);
         scope ??= MoveTakeUpScope.Conversations;
 
-        // FOUNDATION1f-vi part a (§3.3, §13.5): the conversations' scope imports the ended limit move's box an older build writes, at its
-        // come-up and look, and the hand-over's box of a conversation (FOUNDATION1f-v part a). The lease holder's scope has no limit box of its own
-        // to import, the driven carry-on never having written one; it imports the hand-over box of a quest session (part c), so each box is
+        // The conversations' scope imports the ended limit move's box an older build writes, at its
+        // come-up and look, and the hand-over's box of a conversation. The lease holder's scope has no limit box of its own
+        // to import, the driven carry-on never having written one; it imports the hand-over box of a quest session, so each box is
         // imported by exactly one holder, by its record's kind. A shared loop's scope imports only the sessions of the lines it runs.
         IMoveBoxImport[] imports = string.Equals(scope.Executor, MoveExecutors.Conversation, StringComparison.Ordinal)
             ?
@@ -101,7 +101,7 @@ public sealed class ConversationMoves
     public MoveResolve Resolve { get; }
 
     /// <summary>
-    /// A conversation's move decided (§13.4 step 1): the record's standing move read first as the course reads it (§3.1's <c>Never</c>), a hold
+    /// A conversation's move decided: the record's standing move read first as the course reads it (its <c>Never</c>), a hold
     /// under this run's claim closed <c>resolved</c> by the one rule where nothing it names waits, and this run's move past its write, its
     /// prompt's outcome recorded as the write returned, read by its delivery's one reading, which closes it <c>delivered</c> once every word it
     /// moved has <c>sent</c>; then the decision, claimed by this run. Where a move still stands for the record, the one it left or the one whose
@@ -133,7 +133,7 @@ public sealed class ConversationMoves
     }
 
     /// <summary>
-    /// The shell's come-up (§3.3): its run recorded, another live shell on its home said once (refusing nothing), then the look. Never faults:
+    /// The shell's come-up: its run recorded, another live shell on its home said once (refusing nothing), then the look. Never faults:
     /// a store that will not answer now is read again at the next look.
     /// </summary>
     /// <param name="say">Where another shell on the home is said; none logs it alone.</param>
@@ -150,7 +150,7 @@ public sealed class ConversationMoves
     }
 
     /// <summary>
-    /// One look (§3.3, §19.1 point 4): the moves this process keeps to read again; then every dead run's conversation move taken up once and
+    /// One look: the moves this process keeps to read again; then every dead run's conversation move taken up once and
     /// ended by its phase; every hold of this run's read by the one rule; and a live run's move quiet ten minutes said once. Never faults.
     /// </summary>
     public async Task<MoveLook?> LookAsync(CancellationToken ct)
@@ -180,15 +180,15 @@ public sealed class ConversationMoves
             }
         }
 
-        // A dead run's move: whether its prompt was written is not known here, so its delivery is read by its evidence alone.
-        // A hand-over found decided or quiescing goes on from its phase (§13.5's first row), not fallen back: it stays standing under this run,
-        // which the shell's hand-over take takes (FOUNDATION1f-v part a), as a box left on disk was taken at the next come-up.
+        // A dead run's move: whether its prompt reached the write is not known here, so its delivery is read by its evidence alone.
+        // A hand-over found decided or quiescing goes on from its phase, not fallen back: it stays standing under this run,
+        // which the shell's hand-over take takes, as a box left on disk is taken at the next come-up.
         foreach (var taken in look.Taken)
         {
             if (taken is { Claim: { } claim, Move: { } move } && !WaitsToBeTaken(move)) await Settle(() => EndAsync(claim, move.Phase, unwritten: false, ct)).ConfigureAwait(false);
         }
 
-        // A box an older build wrote, imported this look (FOUNDATION1f-vi part a): the importing run claims the move, so the take-up never
+        // A box an older build wrote, imported this look: the importing run claims the move, so the take-up never
         // takes it, and it goes on from its phase here as a taken move does, its prompt's write unknown.
         foreach (var imported in look.Imported)
         {
@@ -197,7 +197,7 @@ public sealed class ConversationMoves
     }
 
     /// <summary>
-    /// Whether a move is a hand-over decided and not yet begun (FOUNDATION1f-v parts a and c): the person's press or the agent's ask, a conversation's
+    /// Whether a move is a hand-over decided and not yet begun: the person's press or the agent's ask, a conversation's
     /// or a quest session's, which names its agent (the live limit move and the curve name none, and a driven carry-on is decided at
     /// <c>old-ended</c>), standing at <c>decided</c> or <c>quiescing</c>, the phases that have ended and opened nothing. A take-up or an import
     /// leaves it standing for the hand-over's own take.
@@ -206,14 +206,14 @@ public sealed class ConversationMoves
         move is { Agent: not null, Executor: MoveExecutors.Conversation or MoveExecutors.Driven, Phase: MoveRecordPhase.Decided or MoveRecordPhase.Quiescing };
 
     /// <summary>
-    /// Whether a move is a driven line's that names its agent and has not asked its open (FOUNDATION1f-v part c): a quest's hand-over, taken or
+    /// Whether a move is a driven line's that names its agent and has not asked its open: a quest's hand-over, taken or
     /// not yet, or a carry-on decided at <c>old-ended</c>. The carry-on a hand-over starts goes on from such a move, where it is its own.
     /// </summary>
     internal static bool DrivenBeforeOpen(MoveRecord move) =>
         move is { Agent: not null, Executor: MoveExecutors.Driven, Phase: MoveRecordPhase.Decided or MoveRecordPhase.Quiescing or MoveRecordPhase.OldEnded };
 
     /// <summary>
-    /// Whether a conversation move stands for the record and has not yet put its words on the line's head (FOUNDATION1f-v part a, TAKEWAITS1):
+    /// Whether a conversation move stands for the record and has not yet put its words on the line's head:
     /// the shell's judge of the person's words holds a word said meanwhile and says it once the move ends. A move held for the person has gone
     /// on past its destination, so its words follow the line's head and it holds none. False for a store that will not answer.
     /// </summary>
@@ -252,9 +252,9 @@ public sealed class ConversationMoves
     }
 
     /// <summary>
-    /// Every hand-over of <paramref name="executor"/>'s that waits to be taken and this run holds, oldest first (FOUNDATION1f-v parts a and c); none
+    /// Every hand-over of <paramref name="executor"/>'s that waits to be taken and this run holds, oldest first; none
     /// for a store that will not answer. One a headless host's look or a terminal decided is received first (<see cref="MoveStore.Receive"/>): that
-    /// run goes no further with it, so it is claimed here at each look rather than held for as long as the run lives (reading 5 of part a).
+    /// run goes no further with it, so it is claimed here at each look rather than held for as long as the run lives.
     /// </summary>
     internal IReadOnlyList<MoveRecord> HandOversWaiting(string executor = MoveExecutors.Conversation)
     {
@@ -287,7 +287,7 @@ public sealed class ConversationMoves
 
     /// <summary>
     /// A move its executor goes no further with, or a dead run's the take-up left to its caller, ended by its phase (the remarks).
-    /// <paramref name="unwritten"/> is its own executor's knowledge that its prompt was never written, its hand refused before the write: the
+    /// <paramref name="unwritten"/> is its own executor's knowledge that its prompt is never written, its hand refused before the write: the
     /// prompt's outcome is then recorded so, and the hold names no word, since none it moved reached the agent, its attempted words left to the
     /// come-up's settlement as before. Otherwise its delivery is read by its words' <c>sent</c> and its destination's <c>said</c> alone.
     /// </summary>
@@ -296,8 +296,8 @@ public sealed class ConversationMoves
         switch (phase)
         {
             case MoveRecordPhase.Decided or MoveRecordPhase.Quiescing or MoveRecordPhase.OldEnded:
-                // No open was asked: a record that continues the old part is none under this move's key, so an older build made it (§13.5's
-                // first row), and the move is superseded. Otherwise the line stays on its old part, which goes on by its own come-up.
+                // No open asked: a record that continues the old part is none under this move's key, so an older build made it,
+                // and the move is superseded. Otherwise the line stays on its old part, which goes on by its own come-up.
                 if (Store.Read(claim.Move) is { } before && await MoveSaying.HeadPastAsync(Said, before.Left, ct).ConfigureAwait(false) is not null)
                 {
                     Store.Close(claim, MoveCloseWhy.Superseded);
@@ -326,7 +326,7 @@ public sealed class ConversationMoves
     }
 
     /// <summary>
-    /// The one reading of a move's delivery, finished (§13.4 step 4): delivered, held or ended as the reading says; a move whose words wait on
+    /// The one reading of a move's delivery, finished: delivered, held or ended as the reading says; a move whose words wait on
     /// its destination never attempted, nothing begun, held as undelivered naming none, so it closes and they go on by the destination's own
     /// go-on; one whose destination could not be read kept to read again.
     /// </summary>
@@ -396,8 +396,8 @@ public sealed class ConversationMoves
 internal sealed record ConversationMoveBegun(ConversationMove? Move, MoveRecord? Standing, string? Refused);
 
 /// <summary>
-/// One live conversation move under its executor's claim (FOUNDATION1f-ii part a): each phase written under the claim's check before what it
-/// fences, answering the store's refusal where it would not take it, which stops the executor before that effect; null where it was written.
+/// One live conversation move under its executor's claim: each phase written under the claim's check before what it
+/// fences, answering the store's refusal where it would not take it, which stops the executor before that effect; null where it is written.
 /// </summary>
 internal sealed class ConversationMove(ConversationMoves moves, MoveClaim claim)
 {
@@ -406,13 +406,13 @@ internal sealed class ConversationMove(ConversationMoves moves, MoveClaim claim)
     /// <summary>The executor's claim.</summary>
     public MoveClaim Claim => claim;
 
-    /// <summary>The hand-over waits on the old part's own turn (§3.3): nothing is ended or opened until it is over. A write the store refuses leaves the move at <c>decided</c>, which waits alike.</summary>
+    /// <summary>The hand-over waits on the old part's own turn: nothing is ended or opened until it is over. A write the store refuses leaves the move at <c>decided</c>, which waits alike.</summary>
     public string? Quiescing() => Write(() => moves.Store.Advance(claim, MoveRecordPhase.Quiescing));
 
-    /// <summary>The old part ended, or there was none to end.</summary>
+    /// <summary>The old part ended, or there is none to end.</summary>
     public string? OldEnded() => Write(() => moves.Store.Advance(claim, MoveRecordPhase.OldEnded), Cuts.OldEnded);
 
-    /// <summary>The open asked under <paramref name="key"/>, the key its keyed open is sent with, so a retried open whose answer was lost reuses it.</summary>
+    /// <summary>The open asked under <paramref name="key"/>, the key its keyed open is sent with, so a retried open whose answer is lost reuses it.</summary>
     public string? Opening(string key) => Write(() => moves.Store.Opening(claim, key), Cuts.Opening);
 
     /// <summary>The open made and answered, its answer not yet written: the boundary a crash leaves the move at <c>opening</c> with its destination made.</summary>
@@ -423,7 +423,7 @@ internal sealed class ConversationMove(ConversationMoves moves, MoveClaim claim)
         Write(() => moves.Store.Opened(claim, destination, [.. moved.Select(word => new MoveRecordWord(word.Id, word.Key, word.Transfer, word.Order))]), Cuts.Opened);
 
     /// <summary>
-    /// Before anything is handed to the destination, the line's head is read (§13.4 step 5): where an older build has continued it, nothing is
+    /// Before anything is handed to the destination, the line's head is read: where an older build has continued it, nothing is
     /// delivered there and the move is held <see cref="MoveHoldWhy.Superseded"/>. True where it is held and the executor hands nothing. Never faults.
     /// </summary>
     public async Task<bool> SupersededAsync()
@@ -443,7 +443,7 @@ internal sealed class ConversationMove(ConversationMoves moves, MoveClaim claim)
     public string? Delivering() =>
         Write(() => moves.Store.Advance(claim, MoveRecordPhase.Delivering)) ?? Write(() => moves.Store.MarkEffect(claim, MoveEffects.Prompt), Cuts.Marked);
 
-    /// <summary>Whether the write's return was recorded (<see cref="Wire"/>).</summary>
+    /// <summary>Whether the write's return is recorded (<see cref="Wire"/>).</summary>
     public bool Wired => Volatile.Read(ref _wired) == 1;
 
     /// <summary>
@@ -505,7 +505,7 @@ internal sealed class ConversationMove(ConversationMoves moves, MoveClaim claim)
 }
 
 /// <summary>
-/// The boundaries of a live conversation move (FOUNDATION1f-ii part b, D212): each place a shell can be killed that leaves the move's record
+/// The boundaries of a live conversation move: each place a shell can be killed that leaves the move's record
 /// in a state of its own, named for the write that came just before it. <see cref="ConversationMoves.Cut"/> is told each as it is passed, and
 /// the crash proof (<c>LimitMoveCrashProcessTests</c>) runs one case for each, so a boundary added here and not proved fails its census.
 /// </summary>

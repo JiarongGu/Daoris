@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Who requests a place's integration and where its conflict goes, read outside a run (the integration design §17.7): the <c>integrate</c> step
+/// Who requests a place's integration and where its conflict goes, read outside a run: the <c>integrate</c> step
 /// of the newest version of the workflow the place's work follows by default. A line's policy says how the line is integrated and holds
 /// neither (<see cref="LinePolicyKey.PolicyProblem"/>), so the doors that ask with no run behind them (the come-up sweep, the steward's act and
 /// the authority read again at promotion) read them through <see cref="IWorkplaceWorkflows.IntegrateOf"/>. A place that follows no workflow,

@@ -8,26 +8,22 @@ using Piece = TargetPrompt.Piece;
 internal static class AskedPrompt
 {
     /// <summary>
-    /// Where a question goes, in the order a session should reach for each (WSSETUP9, D124 §6.1): to the
-    /// sources first, which settle most questions; then ask and wait (D79), since what another repository
-    /// knows is asked of it, never guessed, and, where the session may not read across (D107), never read
-    /// out of it; and only then to the person, for what it cannot decide (AUTONOMY1e, D184 point 4). A session that asks
+    /// Where a question goes, in the order a session should reach for each: to the
+    /// sources first, which settle most questions; then ask and wait, since what another repository
+    /// knows is asked of it, never guessed, and, where the session may not read across, never read
+    /// out of it; and only then to the person, for what it cannot decide. A session that asks
     /// another repository commits, ends its turn and keeps the quest, and the driver starts it again here with the answer; one
-    /// that asks the person does the same, and their answer goes on in its own conversation (ANSWER1a).
-    /// Beside the look, that the person's words met second-hand are a reading (KNOWUSE1d, D135 §5); last,
-    /// how what reaches the person is written (KNOWUSE1c, D135 §4): what only they can give, apart from the
-    /// readings the session took, each naming its source. Each its own section of the account (CONTEXT1): asking, which opens with the
-    /// look whose places the standing block names (CONTEXTONE1c), the words met second-hand, and the closing note.
+    /// that asks the person does the same, and their answer goes on in its own conversation.
+    /// Beside the look, that the person's words met second-hand are a reading; last,
+    /// how what reaches the person is written: what only they can give, apart from the
+    /// readings the session took, each naming its source. Each its own section of the account: asking, which opens with the
+    /// look whose places the standing block names, the words met second-hand, and the closing note.
     /// </summary>
     /// <remarks>
-    /// The person's stop once offered "a choice between options that is theirs", and a session read which
-    /// report a ticket meant as one, though its repository's notes and code settled it. A reading the
-    /// evidence leans to is taken and said in the close instead: it is committed on the session's branch and
-    /// reviewed with the diff, so the person corrects it in review rather than being stopped by it. Those
-    /// readings then reached the person in closing notes, mixed with the production yeses under one heading
-    /// and resting on a ticket line none of them quoted, so the close now keeps them apart and cites each.
-    /// "A preference nothing records" still stopped sessions for what they could decide, a name or which report a page shows,
-    /// and parks waited 7 to 57 minutes on them (AUTONOMY1e): what it can reasonably decide it now decides and records.
+    /// A reading the evidence leans to is taken and said in the close rather than stopping the person for a choice: it is
+    /// committed on the session's branch and reviewed with the diff, so the person corrects it in review. The close keeps those
+    /// readings apart from the production yeses and cites the ticket line each rests on. What the session can reasonably decide,
+    /// a name or which report a page shows, it decides and records.
     /// </remarks>
     /// <param name="lead">What comes before the look: the line break after the lines above it.</param>
     internal static IEnumerable<Piece> AskingPieces(SessionTarget target, string lead) =>
@@ -42,14 +38,14 @@ internal static class AskedPrompt
             + "be stopped by it.\n\n"),
         new(HandedSections.Attributed, Attributed + "\n\n"),
         new(HandedSections.Asking,
-            // SESSUX1j: a question published here gets the asker's short title, the words its list shows.
+            // A question published here gets the asker's short title, the words its list shows.
             $"{WorkplacePrompt.Needs(target)} Publish a quest to it saying\n"
             + "what you need and why, with a `shortTitle` of the few words that tell it apart in a list (at most 40\n"
             + $"characters), commit what you have so far, then respond to `#{target.QuestId}` with `wait`\n"
             + "on that new quest's id, and end your turn. The quest stays yours, and you are started again here,\n"
             + "in this tree, with its answer.\n\n"
-            // AUTONOMY1e: every go-ahead asked before is still asked, and one the repository or the quest names is too, since
-            // nothing loosens by itself (D184 point 5).
+            // Every go-ahead asked in an earlier step is still asked, and one the repository or the quest names is too, since
+            // nothing loosens by itself.
             + "Decide whatever you reasonably can, such as a name or which of two sound ways: say it under\n"
             + "**Readings** with why, and keep going. Ask the person only for what you cannot decide: a\n"
             + "credential, an account or a sign-in; a choice the quest or the person's words leave to them; a\n"
@@ -61,32 +57,31 @@ internal static class AskedPrompt
     ];
 
     /// <summary>
-    /// The person's words on the ask the quest was asked by, beneath the quest (DRIFT1b, D133 §2), or that they could not be
+    /// The person's words on the ask that asked the quest, beneath the quest, or that they could not be
     /// read; nothing for a quest no ask asked.
     /// </summary>
     internal static string Words(SessionTarget target) => AgentWorkWords.Current.AskWords(target.Words, target.QuestId);
 
     /// <summary>
-    /// The go-aheads its sessions asked on the ask (KNOWUSE1a, D135 §2), beneath the person's words: what was approved, what
-    /// was refused and what still waits, each by its number. Nothing where the ask holds none, or for a quest no ask asked.
+    /// The go-aheads its sessions asked on the ask, beneath the person's words: what is approved, what
+    /// is refused and what still waits, each by its number. Nothing where the ask holds none, or for a quest no ask asked.
     /// </summary>
     internal static string GoAheads(SessionTarget target) => AgentWorkWords.Current.GoAheads(target.Words);
 
     /// <summary>
-    /// The work's session language (LANG1c, the language design §7), as a paragraph of its own after the close instruction it
-    /// governs: what the agent writes to the person in. Nothing where none is set, so the instruction reads as it did.
+    /// The work's session language, as a paragraph of its own after the close instruction it
+    /// governs: what the agent writes to the person in. Nothing where none is set.
     /// </summary>
     internal static string Language(SessionTarget target) => SessionLanguageText.AfterClose(target.Language);
 
     /// <summary>
-    /// The person's words met second-hand while looking (KNOWUSE1d, D135 §5): theirs are the words this instruction quotes as
-    /// theirs, which the ask's record holds (D133 §1); a quote anywhere else is someone's reading, relied on only as one and
+    /// The person's words met second-hand while looking: theirs are the words this instruction quotes as
+    /// theirs, which the ask's record holds; a quote anywhere else is someone's reading, relied on only as one and
     /// never recorded as theirs. Said for every quest alike: on one no ask asked, nothing quoted second-hand is theirs either.
     /// </summary>
     /// <remarks>
-    /// A fresh attempt at a ticket found the person's answer, as an earlier attempt had misread it, in that attempt's closed
-    /// note ("per your answer") and in a document on its branch, and wrote into the repository's knowledge that the person
-    /// had settled it, where every later session would meet the misreading as knowledge.
+    /// An earlier attempt's closed note ("per your answer") and a document on its branch can carry a misreading of the person's
+    /// answer; written into the repository's knowledge as settled, every later session would meet it as knowledge.
     /// </remarks>
     internal const string Attributed =
         """
@@ -98,10 +93,10 @@ internal static class AskedPrompt
         """;
 
     /// <summary>
-    /// How the close is written (KNOWUSE1c, D135 §4): what only the person can give, apart from the readings the session
+    /// How the close is written: what only the person can give, apart from the readings the session
     /// took, and every item naming what it rests on, so a reading is corrected in review and a question that names nothing
     /// checked shows itself. Said for the note a quest closes with and the last message a stop ends on alike. What only the person
-    /// can decide is asked through the connector too (PARKVIEW1), so the page draws it at the conversation's end with its answers as
+    /// can decide is asked through the connector too, so the page draws it at the conversation's end with its answers as
     /// presses, never read out of the note's words.
     /// </summary>
     internal const string Closing =
@@ -121,10 +116,10 @@ internal static class AskedPrompt
         """;
 
     /// <summary>
-    /// Which go-aheads the session asks, by its repository's access setup (AUTONOMY1c, D184 points 3 and 5): under <c>named</c>,
-    /// today's, one for an act outside the repository or on a production system and one the repository or the quest names; under
+    /// Which go-aheads the session asks, by its repository's access setup: under <c>named</c>,
+    /// one for an act outside the repository or on a production system and one the repository or the quest names; under
     /// <c>never</c> only what the quest or the person's words demand, since the person wrote it there, and the rest is done and said.
-    /// The boundary's push, publish and release stay as it says: the landing pushes, as its rule says (D145).
+    /// The boundary's push, publish and release stay as it says: the landing pushes, as its rule says.
     /// </summary>
     internal static string GoAheadsAsked(SessionTarget target) => target.NoGoAheads
         ? "go-ahead only where the quest or the person's words demand one before an act. This repository's\n"
@@ -135,9 +130,9 @@ internal static class AskedPrompt
           + "or the quest says needs it.";
 
     /// <summary>
-    /// For a quest an ask asked (KNOWUSE1a, D135 §2): a go-ahead is asked once, on the ask, through the connector, so a
+    /// For a quest an ask asked: a go-ahead is asked once, on the ask, through the connector, so a
     /// request for an act already asked joins the first and is told its answer. Nothing for a quest no ask asked, which has
-    /// no ask to hold one, so its instruction reads as it did.
+    /// no ask to hold one.
     /// </summary>
     internal static string OnceOnTheAsk(SessionTarget target) => AskSender.AskOf(target.Asker) is null
         ? ""

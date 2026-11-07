@@ -5,9 +5,9 @@ using Daoris.Driver.Tests;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ASKHIST1 (D137 §2.2's chat, for Ask Daoris): an ended Ask Daoris conversation the person writes to goes on in its own harness
+/// An ended Ask Daoris conversation the person writes to goes on in its own harness
 /// conversation, by the id kept for it, in its room, with the room's place: its rules, its asking mode and its tools up front.
-/// The real client over an in-process ledger, and an adapter that hands back what it was asked and spawns nothing, so the
+/// The real client over an in-process ledger, and an adapter that hands back what it is asked and spawns nothing, so the
 /// fast half: the run fails at the spawn, which is where the judgement and the place are read.
 /// </summary>
 public sealed class HelpGoOnTests : IDisposable
@@ -51,7 +51,7 @@ public sealed class HelpGoOnTests : IDisposable
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
-    /// <summary>The person's words as the say door shows them (MSG1d): theirs, under the record's id, reaching it on resume.</summary>
+    /// <summary>The person's words as the say door shows them: theirs, under the record's id, reaching it on resume.</summary>
     private static SessionEvent Shown(string id, string text) => new()
     {
         Kind = SessionEventKind.User, Origin = "person", Id = id, Text = text, Reaches = "resume", Door = "screen",
@@ -88,9 +88,9 @@ public sealed class HelpGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c part B (the steward's choice: Ask Daoris follows the same rule in its own room): one whose conversation's id was not
+    /// One whose conversation's id is not
     /// kept has lost it, so it goes on by itself in a new conversation of its room, placed in its workspace, its history naming the one it
-    /// continues and that it was handed Daoris's brief. Here that one's spawn fails, as a go-on test spawns nothing, so the words wait on
+    /// continues and that it is handed Daoris's brief. Here that one's spawn fails, as a go-on test spawns nothing, so the words wait on
     /// the old one marked by the reason <c>unkept</c>, its conversation saying so; the old record never moves.
     /// </summary>
     [Fact]
@@ -119,9 +119,9 @@ public sealed class HelpGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// MSG1g, CONVNOTE2g: its own account cooling holds its words for the reset, said in its conversation with Ask Daoris's door
+    /// Its own account cooling holds its words for the reset, said in its conversation with Ask Daoris's door
     /// out of the wait (no repository holds it, so a new conversation from its history), each line by code and the English as
-    /// it was written. Nothing moves and nothing is spawned.
+    /// written. Nothing moves and nothing is spawned.
     /// </summary>
     [Fact]
     public async Task One_whose_account_is_cooling_waits_and_says_its_door_by_code()
@@ -149,7 +149,7 @@ public sealed class HelpGoOnTests : IDisposable
         Assert.Empty(ledger.Moves("h1"));
     }
 
-    /// <summary>The room is written again from the shell's reading where it hands one, as an open writes it (HELP1a).</summary>
+    /// <summary>The room is written again from the shell's reading where it hands one, as an open writes it.</summary>
     [Fact]
     public async Task The_room_is_written_again_from_the_machine_as_it_stands()
     {
@@ -175,7 +175,7 @@ public sealed class HelpGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 ASKSCOPE1b (D158's ASKSCOPE1 note point 4): a named workspace's conversation goes on in its own room folder, the one its
+    /// A named workspace's conversation goes on in its own room folder, the one its
     /// harness keeps it by, written from its workspace's facts; the machine's room is not written for it.
     /// </summary>
     [Fact]
@@ -203,7 +203,7 @@ public sealed class HelpGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// ASKSCOPE1b: one started in the machine's room before each workspace had its own goes on there, since its harness keeps it
+    /// One started in the machine's room before each workspace had its own goes on there, since its harness keeps it
     /// by that folder, and the room written there is the machine's, as when it started; its workspace's folder is never made.
     /// </summary>
     [Fact]

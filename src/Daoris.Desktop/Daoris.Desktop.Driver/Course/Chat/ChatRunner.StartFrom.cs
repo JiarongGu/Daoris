@@ -1,30 +1,30 @@
-// This file keeps the name ChatRunner.StartFrom.cs although it holds the StartFrom class alone (PART10h, D166): the web's
+// This file keeps the name ChatRunner.StartFrom.cs although it holds the StartFrom class alone: the web's
 // say.test.ts and tools/merge-branch.mjs read it by that name.
 namespace Daoris.Driver;
 
 /// <summary>
-/// *Start a conversation with these words* (MSG1f2, D137 §2.2, §5.3's <c>SESSION_START_FROM</c>): words a session cannot go on
+/// *Start a conversation with these words* (the page's <c>SESSION_START_FROM</c>): words a session cannot go on
 /// with, and that nothing carries on by itself, are the first message of a new conversation in the session's repository; then
 /// they leave the record they were said to, naming that conversation, as one act. The person's press, since a new conversation
 /// has none of the old one's context.
 /// </summary>
 /// <remarks>
-/// <para><b>Refused before anything starts</b>, by a code: D137 §2.2's nevers by <see cref="WordsNever"/>, a session still
+/// <para><b>Refused before anything starts</b>, by a code: what never goes on, by <see cref="WordsNever"/>, a session still
 /// running or parked (<see cref="Running"/>: its words reach it there), one with no words waiting (<see cref="NoWords"/>), and
 /// one whose quest is open or taken (<see cref="Carried"/>), which the driver carries on with the words by itself. Another agent's
-/// claims waiting beside the person's words (a helper's answer, MIXAGENT2a-iii) are not carried: only the person's words go, and a
+/// claims waiting beside the person's words (a helper's answer) are not carried: only the person's words go, and a
 /// record holding none of them is refused as having no words.</para>
 ///
 /// <para><b>The words, their files and a preface.</b> The words go in the order said, joined by a blank line, with the files
-/// said beside them read back from where their session kept them (MSG1d3); more than one message carries, and they go alone.
+/// said beside them read back from where their session kept them; more than one message carries, and they go alone.
 /// The preface names the session they were written to; it is the agent's to read, so it stays in the agent's language.</para>
 ///
 /// <para><b>Taken off only once they went.</b> A conversation that does not start, or opens without taking them, leaves the
-/// words where they were. Once its first message holds them they leave the old record by their ids, naming the conversation
-/// (MSG1a's taken door), so a word said meanwhile stays; that record's marks go; and its conversation says where they went, by
+/// words where they were. Once its first message holds them they leave the old record by their ids, naming the conversation,
+/// so a word said meanwhile stays; that record's marks go; and its conversation says where they went, by
 /// the reason <see cref="ContinueWhy.Started"/>, which the page words as its went line.</para>
 ///
-/// <para><b>Moved by the open</b> (FOUNDATION1d-ii part 4, the foundation design §3.4 rule 3): against a host whose <c>opens</c> mark is 2,
+/// <para><b>Moved by the open</b>: against a host whose <c>opens</c> mark is 2,
 /// the new conversation's open moves the words in its own step, the record they were said to named as the moves' source since the new
 /// record has no <c>from</c> link, and a word of the person's kept there since the read moves with them. The first message is then the new
 /// conversation's moved words (<see cref="MovedWords"/>), each shown under its id, its files copied into the new conversation's folder; they
@@ -38,7 +38,7 @@ public static class StartFrom
     /// <summary>No words wait on the record to start a conversation with.</summary>
     public const string NoWords = "no-words";
 
-    /// <summary>Its quest is open or taken, so the driver carries the words on with it by itself (D137 §2.2).</summary>
+    /// <summary>Its quest is open or taken, so the driver carries the words on with it by itself.</summary>
     public const string Carried = "carried";
 
     /// <summary>What the new conversation's agent is told ahead of the words: where they were first written. Its own language.</summary>
@@ -49,7 +49,7 @@ public static class StartFrom
     /// <summary>Judge, start, hand the words over, and take them off the record they were said to.</summary>
     /// <param name="start">
     /// Opens a conversation in a repository: the chat runner's own start, asked to move the words named from the record they were said to
-    /// (FOUNDATION1d-ii part 4), which a host below the <c>opens</c> mark 2 does not.
+    /// which a host below the <c>opens</c> mark 2 does not.
     /// </param>
     /// <param name="say">
     /// Hands a conversation its first message, with files and a preface, and what its conversation shows of the words: each moved word's own
@@ -68,21 +68,20 @@ public static class StartFrom
 
         var last = WordsNever.LastHere(json, record.Quest);
         var next = WordsNever.ContinuedIn(json, id);
-        // Ask Daoris's own conversation has no repository to start one in (ASKHIST1): its words go on in itself, or its history
+        // Ask Daoris's own conversation has no repository to start one in: its words go on in itself, or its history
         // starts a new one from it.
         var never = WordsNever.Judge(record, last, next) ?? (WordsNever.IsHelp(record) ? WordsNever.Help : null);
         var prior = ServiceClient.ReadRecord(json, id);
 
-        // The quest of a closed session is read only where nothing before it refused, as it was.
+        // The quest of a closed session is read only where nothing before it refused.
         string? questStatus = null;
         if (never is null && !record.Live && prior is { WordsWaiting: true } && record.Kind != "chat" && record.Quest is { } quest)
         {
             questStatus = (await service.FindQuestAsync(quest, ct).ConfigureAwait(false))?.Status;
         }
 
-        // FOUNDATION1h branch 8 (the foundation design §3.1, §14.2): what the record is, its words and its quest are read into the course, which
-        // decides for CourseTrigger.StartFrom; each refusal is said by the code and sentence it has always had, and the words that go are the
-        // course's (the person's alone, D212's difference 1).
+        // What the record is, its words and its quest are read into the course, which
+        // decides for CourseTrigger.StartFrom; the words that go are the course's (the person's alone).
         var facts = new CourseFacts(
             new CourseHead(
                 record.State, Conversation: record.Kind == "chat" || record.Quest is null, Teammate: never == WordsNever.Teammate,
@@ -120,12 +119,12 @@ public static class StartFrom
             return NeverWords(code, id, record, last, next);
         }
 
-        // Another agent's claims (a helper's answer, MIXAGENT2a-iii; a second opinion's findings) are never the person's words: a new
+        // Another agent's claims (a helper's answer; a second opinion's findings) are never the person's words: a new
         // conversation is handed only the person's, which the course names; the claims stay on the record, for the conversation they were meant for.
         var wanted = fresh.Words.Ids.ToHashSet(StringComparer.Ordinal);
         var words = prior!.Waiting.Where(word => wanted.Contains(word.Id ?? "")).ToList();
 
-        // FOUNDATION1d-ii part 4: the start's open moves the person's words, and any of theirs kept here since this read, in its own step.
+        // The start's open moves the person's words, and any of theirs kept here since this read, in its own step.
         var started = await start(
                 record.Repository, MovedWords.Asked(id, words.Select(word => word.Id), prior.Waiting.Select(word => word.Id)), ct)
             .ConfigureAwait(false);
@@ -158,7 +157,7 @@ public static class StartFrom
             new GoOnMarks(home).Clear(id);
         }
 
-        // Where they went, where the person wrote them: the words' ids, the conversation and the reason's code (MSG1d).
+        // Where they went, where the person wrote them: the words' ids, the conversation and the reason's code.
         var went = Continuations.Went(ids, to, ContinueWhy.Of(ContinueWhy.Started));
         output?.Append(id, went.Text!);
         events.Keep(id, went, say: null);
@@ -166,7 +165,7 @@ public static class StartFrom
     }
 
     /// <summary>
-    /// The words the start's open moved (FOUNDATION1d-ii part 4): the first message is the new conversation's moved words, their files read
+    /// The words the start's open moved: the first message is the new conversation's moved words, their files read
     /// from its folder and each shown under its id; they leave the new conversation once it holds them, and the record they were said to says
     /// where they went. Where nothing took them they wait on the new conversation, whose own go-on carries them.
     /// </summary>
@@ -202,7 +201,7 @@ public static class StartFrom
 
         if (!await moved.TakeAsync(service, ct).ConfigureAwait(false))
         {
-            // Still waiting where they were handed: said there, as a take refused off the old record was.
+            // Still waiting where they were handed: said there, as a take refused off the old record is.
             var line = WordsNotes.StartNotTaken(to, "they still wait on it.");
             output?.Append(to, line.Note);
             events.Keep(to, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
@@ -259,7 +258,7 @@ public static class StartFrom
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
-                // Gone or held open since it was kept: the words still go, as a resumed run's do without a file (MSG1d3).
+                // Gone or held open since its keeping: the words still go, as a resumed run's do without a file.
             }
         }
 
@@ -268,10 +267,10 @@ public static class StartFrom
 
     private static StartedFrom Refused(string why, string message) => new(null, false, why, message);
 
-    /// <summary>What never goes on, refused by its code with the sentence each always had (D137 §2.2).</summary>
+    /// <summary>What never goes on, refused by its code with a sentence each.</summary>
     private static StartedFrom NeverWords(string? code, string id, SessionRecord record, string? last, string? next) => code switch
     {
-        // HANDWORDS1: a conversation handed over or moved went on in another, which takes its words; no new one starts from them.
+        // A conversation handed over or moved went on in another, which takes its words; no new one starts from them.
         WordsNever.Continued => Refused(WordsNever.Continued, WordsNever.WentOn(id, next!)),
         WordsNever.Teammate => Refused(WordsNever.Teammate, $"{id} ran on {id[..id.IndexOf('/')]}, where its words are; nothing here takes them."),
         WordsNever.Help => Refused(

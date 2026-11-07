@@ -4,8 +4,8 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// An Accept the person pressed on a session whose tree was not clean or whose landing conflicted, kept on the session until it lands
-/// (LANDBACK1 part 1, D87's note): <i>accepted; lands when its tree is clean</i>. Daoris carried the session on in its own words, and the
+/// An Accept the person pressed on a session whose tree is not clean or whose landing conflicted, kept on the session until it lands:
+/// <i>accepted; lands when its tree is clean</i>. Daoris carried the session on in its own words, and the
 /// yes is the person's press, so the landing that follows needs no second one.
 /// </summary>
 /// <param name="Session">The session the Accept was pressed on.</param>
@@ -25,9 +25,9 @@ public sealed record CarriedAccept(string Session, string Tree, DateTimeOffset A
 /// </summary>
 /// <remarks>
 /// <para><b>One yes per session.</b> A new press replaces the kept one with a fresh count, and the stop, the decline, the discard of the
-/// session and a landing's end take it back: a yes outlasts none of them (D87's LANDBACK1 note).</para>
+/// session and a landing's end take it back: a yes outlasts none of them.</para>
 ///
-/// <para><b>A file that does not read is no yes</b>, never a failure: the session then waits for the person's press, as it did before.</para>
+/// <para><b>A file that does not read is no yes</b>, never a failure: the session then waits for the person's press.</para>
 /// </remarks>
 public sealed class CarriedAccepts(string home)
 {
@@ -70,7 +70,7 @@ public sealed class CarriedAccepts(string home)
         Edit(all => [.. all.Where(each => !Same(each, session))]);
     }
 
-    /// <summary>The yes of sessions whose records are gone (HIST1c), dropped: a deleted session's tree is never landed.</summary>
+    /// <summary>The yes of sessions whose records are gone, dropped: a deleted session's tree is never landed.</summary>
     public IReadOnlyCollection<string> Forget(IReadOnlyCollection<string> sessions)
     {
         lock (Gate)

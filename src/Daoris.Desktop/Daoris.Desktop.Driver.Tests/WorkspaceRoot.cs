@@ -2,8 +2,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The workspace root, found by walking up from the test binaries to <c>daoris.json</c>: what a test reads there (a table the
-/// CLI's suite reads too, a source, a scratch folder under <c>_fixtures/</c>) is found from here. Five classes had each written
-/// the same walk (REFAC1, the second-opinion review of 2026-10-07).
+/// CLI's suite reads too, a source, a scratch folder under <c>_fixtures/</c>) is found from here.
 /// </summary>
 internal static class WorkspaceRoot
 {

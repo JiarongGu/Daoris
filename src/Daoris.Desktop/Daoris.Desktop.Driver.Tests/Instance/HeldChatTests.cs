@@ -6,8 +6,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A terminal that holds the running Daoris's conversation (RPC1g2 and RPC1g3, D238, the terminal-conversation design §3.3), against a
-/// stand-in of the pipe: each row of the design's two tables, the lines <c>chat</c> printed before unchanged, and no instance refused with
+/// A terminal that holds the running Daoris's conversation, against a
+/// stand-in of the pipe: each row of the two tables, the lines <c>chat</c> prints unchanged, and no instance refused with
 /// nothing done. The instance's own half (the hold, its forwarding and its ends) is the modules' over a real pipe.
 /// </summary>
 /// <remarks>Windows only, as the pipe is: each test serves its own stand-in in process, on its own home.</remarks>
@@ -86,7 +86,7 @@ public sealed class HeldChatTests : IAsyncLifetime
     private Task EndedAsync(string session = "c1", string state = "completed") =>
         _standIn.PushAsync("DAORIS", "SESSION_ENDED", new { session, state });
 
-    // ——— §3.3, the verbs
+    // ——— the verbs
 
     [Fact]
     public async Task Chat_with_a_repository_starts_through_START_CHAT_with_its_hold_and_the_flags_as_the_payload()
@@ -119,7 +119,7 @@ public sealed class HeldChatTests : IAsyncLifetime
         await Running();
 
         var payload = Assert.Single(Sent("START_CHAT")).GetProperty("payload");
-        Assert.False(payload.TryGetProperty("adapter", out _));
+        Assert.False(payload.TryGetProperty("door", out _));
         Assert.False(payload.TryGetProperty("profile", out _));
         Assert.False(payload.TryGetProperty("ownTree", out _));
         _input.End();
@@ -229,7 +229,7 @@ public sealed class HeldChatTests : IAsyncLifetime
         Assert.Equal(0, _standIn.Connections);
     }
 
-    // ——— §3.3, in the terminal
+    // ——— in the terminal
 
     [Fact]
     public async Task A_line_is_said_in_the_verbs_form_with_no_question_draft_preface_or_level_and_nothing_is_printed_for_it()
@@ -426,7 +426,7 @@ public sealed class HeldChatTests : IAsyncLifetime
         Assert.Empty(Sent("END_CHAT"));
     }
 
-    // ——— §3.2, what the terminal reads
+    // ——— what the terminal reads
 
     [Fact]
     public async Task Forwarded_lines_print_in_order_a_line_already_printed_is_dropped_and_another_conversations_is_never_printed()

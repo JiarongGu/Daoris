@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BRAINSTORMPACKET1: a brainstorm's packet holds the records that answer its question. The search is asked by the question's
+/// A brainstorm's packet holds the records that answer its question. The search is asked by the question's
 /// terms, designs, decisions and the code index rank above session records, the asker may name sources with <c>--source</c>, and
 /// each source says why it is in.
 /// </summary>

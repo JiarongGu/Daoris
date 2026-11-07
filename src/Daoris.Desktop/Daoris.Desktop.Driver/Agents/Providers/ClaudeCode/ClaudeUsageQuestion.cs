@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Claude Code's way of being asked an account's windows (USAGEREAD2a): the native <c>claude</c> in stream-json mode answering a
+/// Claude Code's way of being asked an account's windows: the native <c>claude</c> in stream-json mode answering a
 /// <c>get_usage</c> control request, a reading standing a minute because its read is the only whole-account one a walk ranks on.
 /// </summary>
 public sealed record ClaudeUsageQuestion(string Harness, IReadOnlyList<string> Command, IReadOnlyList<RecordedFrame> Recorded)

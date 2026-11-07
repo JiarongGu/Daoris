@@ -5,7 +5,7 @@ namespace Daoris.Driver.Tests;
 /// <summary>The room's <see cref="HelpRoomAsks"/>: the asks not closed, by id.</summary>
 public sealed class HelpRoomAsksTests
 {
-    /// <summary>HELP6: the asks not closed are listed by id, so a delete of one made by mistake can name it.</summary>
+    /// <summary>The asks not closed are listed by id, so a delete of one can name it.</summary>
     [Fact]
     public void The_room_lists_the_asks_by_id()
     {

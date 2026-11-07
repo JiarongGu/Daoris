@@ -3,10 +3,10 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A conversation's agent as its runner reads it (ONEWAY1h-iii, AGENTPROVIDER1m-i part 4): the door's own facts, its process prepared and
+/// A conversation's agent as its runner reads it: the door's own facts, its process prepared and
 /// equipped, what that door is handed in its own way, what it frames and how it reads a refusal, and the run that holds it. The
 /// conversation's runner, its turns, its account reads and what it is told hold this and the <see cref="TransportRun"/> it makes, never the
-/// adapter seam, so row t replaces what is beneath a conversation here, as it does beneath the run.
+/// adapter seam, so what is beneath a conversation changes here, as it does beneath the run.
 /// </summary>
 internal sealed class ChatAgent(ProviderRegistry adapters, AgentDoor adapter)
 {
@@ -31,7 +31,7 @@ internal sealed class ChatAgent(ProviderRegistry adapters, AgentDoor adapter)
     /// <summary>Whether the protocol door reads a failure by its typed code before its words.</summary>
     public bool TypedFailures => adapters.AgentNamed(adapter.Id.Value)?.Tables.ErrorWords?.TypedFailures == true;
 
-    /// <summary>The conversation's process as the door makes it for its runner's request, then equipped as every session's is (D230 point 3).</summary>
+    /// <summary>The conversation's process as the door makes it for its runner's request, then equipped as every session's is.</summary>
     public ProcessStartInfo Prepare(SpawnRequest request, HarnessSelection selection)
     {
         var info = adapters.Chat(adapter, request);

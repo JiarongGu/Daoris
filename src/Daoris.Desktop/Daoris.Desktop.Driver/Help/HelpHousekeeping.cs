@@ -4,20 +4,20 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's housekeeping, the driver's half (HELPMODE1c2a, D183's note; the Ask Daoris modes design §4.1): each request its
+/// Ask Daoris's housekeeping, the driver's half: each request its
 /// connector's tool wrote is judged here at the call, then handed to the cleanup's own judges, never copied. What the loop running
 /// the conversation answers its <see cref="SessionRequestWatch.Housekeep"/> with.
 /// </summary>
 /// <remarks>
-/// <para><b>Judged at every call, whatever the agent</b> (the design's traps): the record named is an Ask Daoris conversation's;
-/// the operation is chosen in <see cref="ConfiguredAccess"/> now, so a revoke refuses the next call, and was handed at this start
+/// <para><b>Judged at every call, whatever the agent</b>: the record named is an Ask Daoris conversation's;
+/// the operation is chosen in <see cref="ConfiguredAccess"/>, so a revoke refuses the next call, and handed at this start
 /// (its newest receipt, <see cref="HelpWired"/>), so a grant chosen since takes the next start as its room and allow-list do, which
-/// the conversation's next turn now is (ACCESSSWAP1, <see cref="ChatRunner.HelpAccessChosen"/>); the
+/// the conversation's next turn is (<see cref="ChatRunner.HelpAccessChosen"/>); the
 /// repository is registered in the conversation's workspace, read from its record (<see cref="HelpCircle.OfRecord"/>), and has a
 /// checkout here. Targets are a repository and branch names, never a path.</para>
 ///
 /// <para><b>The judges, as the person's doors call them</b>: a look is the cleanup's git half (<see cref="SessionTrees.SweepPartAsync"/>),
-/// which asks no plugin, since a tool's call is no person's look (D148 point 2); a clean-up is the cleanup's press with the branches
+/// which asks no plugin, since a tool's call is no person's look; a clean-up is the cleanup's press with the branches
 /// named (<see cref="SessionTrees.CleanAsync"/>), each judged again before it goes; a discard is the branch's own, unforced
 /// (<see cref="SessionBranchDiscard.DiscardAsync"/>), which keeps a branch whose tree a running or waiting session holds. Nothing
 /// is forced, and no recovery ref is dropped.</para>
@@ -183,8 +183,8 @@ public sealed partial class HelpHousekeeping(string home, Func<ServiceClient?> s
     }
 
     /// <summary>
-    /// The trees sessions still running or waiting name, as the service's ledger says now, a session waiting on its own helper's among them
-    /// (HELPERWAIT1): each is kept, whatever it holds.
+    /// The trees sessions still running or waiting name, as the service's ledger says now, a session waiting on its own helper's among them:
+    /// each is kept, whatever it holds.
     /// </summary>
     private async Task<HashSet<string>> InUseAsync(ServiceClient ledger, CancellationToken ct)
     {

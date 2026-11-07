@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Where the loop follows lines (WSSETUP5, D124 §3.1): a look follows the lines Daoris moved since each was last followed,
+/// Where the loop follows lines: a look follows the lines Daoris moved after each one's last following,
 /// before it reads the registry, and a watch follows every line once as it starts, saying what must be fixed in a look's
 /// report. Held over the stand-in ledger with a root that is a linked worktree, which is refused before git is asked, so
 /// nothing here starts a process.

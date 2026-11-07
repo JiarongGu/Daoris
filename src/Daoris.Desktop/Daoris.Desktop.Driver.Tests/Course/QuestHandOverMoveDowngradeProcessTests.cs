@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-v part b (D212; the foundation design §13.5's downgrade table, §19.4, row f-v's proof): a quest's hand-over across a downgrade, as
+/// A quest's hand-over across a downgrade, as
 /// <c>HandOverMoveDowngradeProcessTests</c> proves a conversation's. A driver is killed at each place its look passes
 /// (<see cref="QuestHandOverMoveCrashProcessTests"/>), an older build leaves its own <c>&lt;s&gt;.hand-over.json</c> for the quest's session, the
 /// build that keeps a box, and this build returns: its look takes the killed move, with the box waiting behind it; the look after imports the box
@@ -36,7 +36,7 @@ public sealed class QuestHandOverMoveDowngradeProcessTests : IAsyncLifetime
 
     private string BoxPath => new HandOverBox(_h.Home).PathOf("s1");
 
-    /// <summary>The box's own record, once its move is ended: the phase, and why it was held or closed.</summary>
+    /// <summary>The box's own record, once its move is ended: the phase, and why it is held or closed.</summary>
     private static string[] Ended(MoveRecord move) => [move.PhaseWord, move.HeldWhy ?? "", move.ClosedWhy ?? ""];
 
     /// <summary>
@@ -102,7 +102,7 @@ public sealed class QuestHandOverMoveDowngradeProcessTests : IAsyncLifetime
         if (point == OldEnded) Assert.Equal(ConversationMoves.NotOpened, moves[0].FellBackCode);
         if (point is Decided or Quiescing) Assert.Equal(("delivered", "s2"), (moves[0].PhaseWord, moves[0].Destination));
 
-        // The box's own move is the last, imported by the driven holder under this run. Where no standing move was ahead of it, or the dead run's had
+        // The box's own move is the last, imported by the driven holder under this run. Where no standing move is ahead of it, or the dead run's has
         // fallen back, it is the ask the look takes and the carry-on goes on from: delivered, the one move of that delivery. Behind a move that stood
         // it waits until that move has carried the quest on, and is then refused, the quest being carried on, and ended by its phase: nothing sent twice.
         var boxed = moves[^1];

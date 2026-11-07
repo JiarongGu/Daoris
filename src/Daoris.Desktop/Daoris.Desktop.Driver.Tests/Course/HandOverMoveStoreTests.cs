@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-v part a (D212; the foundation design §3.3, §13.4, §13.5): a conversation's hand-over, the person's press and the agent's ask,
+/// A conversation's hand-over, the person's press and the agent's ask,
 /// keeps its move record in the store and writes no <c>&lt;s&gt;.hand-over.json</c> beside it. The move is decided at the ask, under this run's
 /// claim, and waits there for the conversation's turn to end; then <c>old-ended</c>, <c>opening</c> under the key its keyed open is sent with,
 /// <c>opened</c>, <c>delivering</c> and the prompt's mark before the hand, and <c>delivered</c>. A standing move means no second ask; a dead run's
@@ -61,7 +61,7 @@ public sealed class HandOverMoveStoreTests : IDisposable
     private static MoveDecision Decision(string left, string why = HandOverWhy.Press, string by = HandOverBy.Person) =>
         new(left, MoveExecutors.Conversation, MoveHows.Brief, why, by) { Agent = "talk", Account = "account-2" };
 
-    /// <summary>STAFFPOLICY1d: the choice a hand-over was approved on is kept with its move and read back as the ask its take is handed; a move from before names none.</summary>
+    /// <summary>The choice a hand-over is approved on is kept with its move and read back as the ask its take is handed; a move from before names none.</summary>
     [Fact]
     public void A_move_keeps_the_model_and_effort_of_the_choice_approved_and_a_move_from_before_reads_none()
     {
@@ -166,7 +166,7 @@ public sealed class HandOverMoveStoreTests : IDisposable
 
     private sealed record World(ChatContext Context, Opening Runner, ChatHandOver HandOver, ConversationMoves Moves, ChatLedger Ledger, ServiceClient Client, Turned Old)
     {
-        /// <summary>The old part's end as its watch writes it, which no process here makes: its record ends once the new part's open is asked (D51).</summary>
+        /// <summary>The old part's end as its watch writes it, which no process here makes: its record ends once the new part's open is asked.</summary>
         public void Ends(HttpRequestMessage request)
         {
             if (request.Method == HttpMethod.Post && request.RequestUri!.AbsolutePath == "/api/sessions/chat") Ledger.Edit("c1", record => record["state"] = "stopped");
@@ -232,7 +232,7 @@ public sealed class HandOverMoveStoreTests : IDisposable
             return Task.CompletedTask;
         };
 
-        // TAKEWAITS1: the take is told over only once its move has ended in the store, so the words the shell held meanwhile go after the brief.
+        // The take is told over only once its move has ended in the store, so the words the shell holds meanwhile go after the brief.
         string? phaseAtEnd = null;
         world.HandOver.TakeEnded += _ => phaseAtEnd = MoveFrom("c1")?.PhaseWord;
 
@@ -257,7 +257,7 @@ public sealed class HandOverMoveStoreTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1h branch 3 (the foundation design §3.1, §14.2): the hand-over of a conversation is decided by the course's one decision, and
+    /// 🔴 The hand-over of a conversation is decided by the course's one decision, and
     /// the shell's chat runner is only its adapter: the person's press with an account keeps it as a pick, an agent's ask, which reaches the
     /// course admitted by the door that judged it, opens on its account without keeping the pick, and a second ask is still the store's waiting.
     /// </summary>
@@ -376,7 +376,7 @@ public sealed class HandOverMoveStoreTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1f-v part c, reading 5 of part a: a hand-over a headless host's look decided (<c>DriverHandOvers</c>, no chat runner wired) is
+    /// 🔴 A hand-over a headless host's look decided (<c>DriverHandOvers</c>, no chat runner wired) is
     /// claimed by that process, which goes no further with it. A long-lived host would hold it for good if a shell took only a dead run's, so the
     /// shell receives it at its next look while the host lives, by a guarded update that raises the claim's generation: the host, still alive, can
     /// write nothing more under the claim it decided under.

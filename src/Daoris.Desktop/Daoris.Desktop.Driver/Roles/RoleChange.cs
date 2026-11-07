@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 public sealed record RoleRefusal(string Code, string Said);
 
 /// <summary>
-/// One change of the catalogue (§2.7): a role set, a seeded role removed (an added one deleted), or an id's record deleted so a seeded
+/// One change of the catalogue: a role set, a seeded role removed (an added one deleted), or an id's record deleted so a seeded
 /// id is the seed's again.
 /// </summary>
 public abstract record RoleChange
@@ -21,7 +21,7 @@ public abstract record RoleChange
     /// <summary><i>Back to the default</i> for the whole structure: every seeded role the seed's again; added roles are kept.</summary>
     public static RoleChange DefaultAll() => new DefaultAllRoles();
 
-    /// <summary>The supervisor's rules at one place (CONTEXTDRIVE1d), written to their own family, never a <c>roles</c> row.</summary>
+    /// <summary>The supervisor's rules at one place, written to their own family, never a <c>roles</c> row.</summary>
     public static RoleChange Rules(SupervisorRulesPress press) => new SetRules(press);
 
     /// <summary>The id the change is of.</summary>

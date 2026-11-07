@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 z-v (the design §13.6): <c>data/notices.json</c> imported once into the store's <c>notices</c>, the file left in place as
+/// <c>data/notices.json</c> imported once into the store's <c>notices</c>, the file left in place as
 /// the backup, every writer and reader on the store from the import, with the said-set's and the cursors' tables beside it. Homes under
 /// <c>_fixtures/</c>; the settled reading is handed in.
 /// </summary>
@@ -30,7 +30,7 @@ public sealed class NoticeStoreTests : IDisposable
         return reader.Query(sql, map);
     }
 
-    /// <summary>The file's notices move into <c>notices</c> once; the file stays as it was, the backup an older build reads.</summary>
+    /// <summary>The file's notices move into <c>notices</c> once; the file stays as it is, the backup an older build reads.</summary>
     [Fact]
     public void The_file_is_imported_once_and_left_in_place()
     {

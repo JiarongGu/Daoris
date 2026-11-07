@@ -3,12 +3,12 @@ using static Daoris.Driver.WorkingTree;
 
 namespace Daoris.Driver;
 
-/// <summary>A tree's committed and uncommitted work read as a diff: the files always, the patches within the bound (REVIEW3, REVIEWDIRTY1-a).</summary>
+/// <summary>A tree's committed and uncommitted work read as a diff: the files always, the patches within the bound.</summary>
 internal static class TreeDiffs
 {
     /// <summary>What a surface will render before a person stops reading and git on disk has the rest.</summary>
     /// <remarks>
-    /// The console's rule, applied again (design §5): a diff has no upper size, so the bound is stated
+    /// The console's rule, applied again: a diff has no upper size, so the bound is stated
     /// rather than hidden. It drops whole PATCHES rather than cutting one mid-hunk — half a hunk reads
     /// as a diff and is not one — and the file list survives intact, so the person always learns that
     /// a file changed even when they cannot read how.
@@ -24,11 +24,11 @@ internal static class TreeDiffs
     /// <remarks>
     /// <para><b>Committed work only.</b> The range is `before..HEAD`, which is exactly what the
     /// evidence string counts, so the two can never disagree about what the session did. Uncommitted
-    /// changes in the tree are deliberately not here: a chat may open on a dirty tree (D49 §3), so
+    /// changes in the tree are deliberately not here: a chat may open on a dirty tree, so
     /// what is uncommitted is not knowably the session's, and attributing somebody else's work in
     /// flight to an agent is the `reaching-in` mistake in a read-only disguise. Only a session's OWN
-    /// tree, which it ran in alone, has its uncommitted work read, and apart: <see cref="UncommittedDiffAsync(string, CancellationToken)"/>
-    /// (REVIEWDIRTY1-a, D164 point 4).</para>
+    /// tree, which it ran in alone, has its uncommitted work read, and apart: <see cref="UncommittedDiffAsync(string, CancellationToken)"/>.
+    /// </para>
     ///
     /// <para>Null when git cannot answer — no repository, an unknown base, a tree that has moved
     /// away. A caller says so rather than showing an empty diff, which reads as "it changed
@@ -38,7 +38,7 @@ internal static class TreeDiffs
         DiffAsync(root, before, ReadGitAsync, ct);
 
     /// <inheritdoc cref="DiffAsync(string, string, CancellationToken)"/>
-    /// <param name="git">How the review reads git: the seam its tests count processes through (REVIEW3).</param>
+    /// <param name="git">How the review reads git: the seam its tests count processes through.</param>
     internal static async Task<TreeDiff?> DiffAsync(string root, string before, GitRead git, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(before)) return null;
@@ -48,25 +48,25 @@ internal static class TreeDiffs
         return await RangeAsync(root, before, $"{before}..HEAD", CommittedRest, git, ct).ConfigureAwait(false);
     }
 
-    /// <summary>The size above which an untracked file is listed with no patch (REVIEWDIRTY1-a): a read of one costs a git start and a page of text.</summary>
+    /// <summary>The size above which an untracked file is listed with no patch: a read of one costs a git start and a page of text.</summary>
     public const int UntrackedPatchLimit = 200 * 1024;
 
     /// <summary>
-    /// What a session's OWN tree holds that no commit does (REVIEWDIRTY1-a, D164 point 4): the tracked changes, staged and
+    /// What a session's OWN tree holds that no commit does: the tracked changes, staged and
     /// unstaged together, against <c>HEAD</c>, and each untracked file as an addition. Null where git cannot answer.
     /// </summary>
     /// <remarks>
     /// 🔴 <b>Only for a tree the session ran in alone.</b> A conversation in the person's checkout may have opened on a dirty
-    /// tree (D49 §3), so what is uncommitted there is not knowably the session's and is never read through this: the caller
+    /// tree, so what is uncommitted there is not knowably the session's and is never read through this: the caller
     /// asks only of a tree this home made. Reads only (<c>git diff</c>, <c>git status</c>); the index is not refreshed to disk, and
-    /// no <c>index.lock</c> is taken in a tree its session may be writing in that moment (REVIEWLOCK1).
+    /// no <c>index.lock</c> is taken in a tree its session may be writing in that moment.
     /// The files are bounded as the committed list is: <see cref="PatchBudget"/> and <see cref="PatchCap"/>.
     /// </remarks>
     public static Task<TreeDiff?> UncommittedDiffAsync(string root, CancellationToken ct = default) =>
         UncommittedDiffAsync(root, ReadGitAsync, ct);
 
     /// <inheritdoc cref="UncommittedDiffAsync(string, CancellationToken)"/>
-    /// <param name="git">How the review reads git: the seam its tests count processes through (REVIEW3).</param>
+    /// <param name="git">How the review reads git: the seam its tests count processes through.</param>
     internal static async Task<TreeDiff?> UncommittedDiffAsync(string root, GitRead git, CancellationToken ct)
     {
         if (!await IsTopLevelAsync(root, git, ct).ConfigureAwait(false)) return null;
@@ -78,7 +78,7 @@ internal static class TreeDiffs
         var code = await git(root, UncommittedStatus, piece => { status.Append(piece.Span); return true; }, ct).ConfigureAwait(false);
         if (code != 0) return null;
 
-        // GITAPP1a-ii: the fold is the graph's too (ReviewChoices, UntrackedFold), so the two read the same files alike.
+        // The fold is the graph's too (ReviewChoices, UntrackedFold), so the two read the same files alike.
         var fold = new UntrackedFold(tracked);
         foreach (var path in ReviewChoices.UntrackedPaths(status.ToString()))
         {
@@ -98,13 +98,13 @@ internal static class TreeDiffs
     /// <summary>Where the rest of a tree's uncommitted work is, when the bound drops some.</summary>
     internal const string UncommittedRest = "`git diff HEAD` in the tree has all of it.";
 
-    /// <summary>The status of a session's own tree, as the uncommitted read asks it (REVIEWLOCK1: no <c>index.lock</c> taken).</summary>
+    /// <summary>The status of a session's own tree, as the uncommitted read asks it (no <c>index.lock</c> taken).</summary>
     internal static readonly string[] UncommittedStatus = ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all"];
 
-    /// <summary>One untracked file's read, counted in the review's untracked budget where the review asks it (GITAPP1a-i).</summary>
+    /// <summary>One untracked file's read, counted in the review's untracked budget where the review asks it.</summary>
     internal static async Task<(string? Patch, int? Added)> UntrackedReadAsync(string root, string path, GitRead git, CancellationToken ct)
     {
-        // GITAPP1a-i: a review's untracked reads are counted in a budget of their own, its tail (the git-app design P1.4).
+        // A review's untracked reads are counted in a budget of their own, its tail.
         using (GitLaunch.Budget == GitBudget.Review ? GitLaunch.Within(GitBudget.Untracked) : null)
         {
             return await UntrackedPatchAsync(root, path, git, ct).ConfigureAwait(false);
@@ -143,7 +143,7 @@ internal static class TreeDiffs
     }
 
     /// <summary>
-    /// What changed between two commits of the repository at <paramref name="root"/> (REVIEW2, D113): a landed
+    /// What changed between two commits of the repository at <paramref name="root"/>: a landed
     /// session's work, read from its branch in the repository's own checkout once its tree is gone.
     /// </summary>
     /// <remarks>
@@ -156,7 +156,7 @@ internal static class TreeDiffs
         DiffBetweenAsync(root, from, to, ReadGitAsync, ct);
 
     /// <inheritdoc cref="DiffBetweenAsync(string, string, string, CancellationToken)"/>
-    /// <param name="git">How the review reads git: the seam its tests count processes through (REVIEW3).</param>
+    /// <param name="git">How the review reads git: the seam its tests count processes through.</param>
     internal static async Task<TreeDiff?> DiffBetweenAsync(string root, string from, string to, GitRead git, CancellationToken ct)
     {
         if (!IsCommitId(from) || !IsCommitId(to)) return null;
@@ -166,7 +166,7 @@ internal static class TreeDiffs
         return await RangeAsync(root, from, $"{from}..{to}", BetweenRest(from, to), git, ct).ConfigureAwait(false);
     }
 
-    /// <summary>Where the rest of a range of two commits is, when the bound drops some (Review's graph says it alike, GITAPP1a-ii).</summary>
+    /// <summary>Where the rest of a range of two commits is, when the bound drops some (Review's graph says it alike).</summary>
     internal static string BetweenRest(string from, string to) => $"`git diff {Short(from)} {Short(to)}` in the repository's checkout has all of it.";
 
     /// <summary>Where the rest of a tree's committed range is, when the bound drops some.</summary>
@@ -175,7 +175,7 @@ internal static class TreeDiffs
     private static string Short(string commit) => TextBounds.ShortCommit(commit, 8);
 
     /// <summary>
-    /// The files and patches of one range, bounded, from ONE git process (REVIEW3); <paramref name="rest"/> says where the
+    /// The files and patches of one range, bounded, from ONE git process; <paramref name="rest"/> says where the
     /// rest is when the bound drops some.
     /// </summary>
     /// <remarks>
@@ -194,13 +194,13 @@ internal static class TreeDiffs
     ///
     /// <para><b>A rename is git's rename.</b> With the whole range in view, git pairs a renamed file with where it came
     /// from: its patch is the rename and the lines that changed, and its counts are found under its new path. A read of the
-    /// new path alone could not see the old one, so it showed the whole file as added and found no counts.</para>
+    /// new path alone cannot see the old one, so it would show the whole file as added and find no counts.</para>
     ///
     /// <para><b>The bound is applied as the answer comes</b>, exactly as each file's own read applied it, in the files'
     /// order: a patch is kept while less than <see cref="PatchBudget"/> is spent, cut at <see cref="PatchCap"/>; once the
     /// budget is spent every later file is counted, and git is stopped there rather than read to the end.</para>
     ///
-    /// <para>Internal since GIT1b: a commit's page and a compare read their changes through this same reader, over the range
+    /// <para>Internal: a commit's page and a compare read their changes through this same reader, over the range
     /// they name, rather than through a second one. A caller proves <paramref name="root"/> is a repository's top first.</para>
     /// </remarks>
     internal static async Task<TreeDiff?> RangeAsync(
@@ -211,7 +211,7 @@ internal static class TreeDiffs
             root,
             [
                 // A diff against the working tree (`HEAD` alone, a session's uncommitted work) takes the tree's `index.lock` to
-                // write the stat data it refreshed, which a session writing there may need that moment (REVIEWLOCK1). git's diff
+                // write the stat data it refreshed, which a session writing there may need that moment. git's diff
                 // does so whatever `--no-optional-locks` says (2.53); `diff.autoRefreshIndex=false` keeps it from refreshing,
                 // and RangeSplit drops the files that leaves listed with nothing changed. A range of two commits reads no tree.
                 "--no-optional-locks",
@@ -233,7 +233,7 @@ internal static class TreeDiffs
     }
 
     /// <summary>
-    /// git's answer to <c>diff -z --raw --numstat -p</c>, read as it comes (REVIEW3): the files and their counts first,
+    /// git's answer to <c>diff -z --raw --numstat -p</c>, read as it comes: the files and their counts first,
     /// then each file's patch, bounded as it is read.
     /// </summary>
     private sealed class RangeSplit
@@ -376,7 +376,7 @@ internal static class TreeDiffs
         {
             _inPatch = true;
             // A tracked file whose stat data alone moved is listed `M` by `--raw` when the index is not refreshed
-            // (`diff.autoRefreshIndex=false`, REVIEWLOCK1), and nothing else: no count and no patch. A file that changed is always
+            // (`diff.autoRefreshIndex=false`), and nothing else: no count and no patch. A file that changed is always
             // counted, a binary one with `-`, so one with no count changed nothing and is no file of the answer.
             _files.RemoveAll(file => file.Status == 'M' && !_counts.ContainsKey(file.New));
             _patches = new string?[_files.Count];

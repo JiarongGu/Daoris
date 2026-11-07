@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
 
-/// <summary>REVIEW2 S3-S5: a workspace's room keeps the roles that are its own, says a role off or unreadable as it is, and says the week is the machine's.</summary>
+/// <summary>A workspace's room keeps the roles that are its own, says a role off or unreadable as it is, and says the week is the machine's.</summary>
 public sealed class HelpRoomRolesScopeTests
 {
     private static HelpMachine Machine(string? workspace) => new()

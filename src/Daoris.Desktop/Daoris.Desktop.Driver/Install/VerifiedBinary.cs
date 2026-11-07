@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The SHA-256 a maker's channel verified a managed binary by (STEWARDROLE1a-i, D209 §6.1), kept as <see cref="FileName"/> in the managed
+/// The SHA-256 a maker's channel verified a managed binary by, kept as <see cref="FileName"/> in the managed
 /// install's folder, where the install's one folder move puts it with the binary: <c>{ "file": "bin/claude.exe", "sha256": "…" }</c>.
 /// Read by the one start that hands a binary a role's key, which refuses a binary whose bytes are not these, or a pin with no record.
 /// </summary>

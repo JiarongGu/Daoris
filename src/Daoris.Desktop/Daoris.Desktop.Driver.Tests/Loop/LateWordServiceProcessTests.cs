@@ -8,7 +8,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 row d-ii (D212's note of part 5; the foundation design §10 row 1d-ii's proof, §3.4 rule 3) end to end: a late word to a closed
+/// End to end: a late word to a closed
 /// quest's driven part reaches the conversation that went on from it. The service's own host runs in a process of its own over a scratch home
 /// (<see cref="RealServiceHost"/>), so the say door, the keyed open's one step, its receipt and the settlement trigger are the real ones; the
 /// driver's chat runner goes on from the driven part as a closed quest's part goes on by itself where its own conversation is lost, on the
@@ -18,7 +18,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// answered settled.
 /// </summary>
 /// <remarks>
-/// No model, no account, no sign-in, no real agent binary: the stand-in agent writes down each prompt with its account and the links it was
+/// No model, no account, no sign-in, no real agent binary: the stand-in agent writes down each prompt with its account and the links it is
 /// handed. The host is the service; nothing of an install running here is reached, and this process's environment is read and never set.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]

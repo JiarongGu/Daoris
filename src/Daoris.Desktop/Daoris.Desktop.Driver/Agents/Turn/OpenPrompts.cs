@@ -24,7 +24,7 @@ namespace Daoris.Driver;
 /// turned away (handed back), never both, which would send its words twice, and never neither, which would lose them. A passage is
 /// entered before its words' mark is awaited, so a run that ends during the mark turns it away rather than lose it, and its admission
 /// asks again. A word is taken once, by the answer before it, by a late take after an error, or by its own answer: read and set under
-/// one hold, or the record tells it twice or never. A word whose prompt an error refused after it was taken is marked on the reader's
+/// one hold, or the record tells it twice or never. A word whose prompt an error refused after it is taken is marked on the reader's
 /// thread before the request faults, so its send reads the mark as it catches the refusal.</para>
 /// </remarks>
 internal sealed class OpenPrompts
@@ -44,7 +44,7 @@ internal sealed class OpenPrompts
     private int _promptCount;
 
     /// <summary>
-    /// The words the run handed back unprompted, then every word it was asked to send and never wrote, turned away at its door, in the
+    /// The words the run handed back unprompted, then every word it is asked to send and never wrote, turned away at its door, in the
     /// order they came to it.
     /// </summary>
     public IReadOnlyList<IAgentWord> HandedBack
@@ -112,7 +112,7 @@ internal sealed class OpenPrompts
     }
 
     /// <summary>A passage whose words' mark came back: refused where the door shut meanwhile, or let go where the record did not mark them.</summary>
-    /// <exception cref="AcpTurnedAway">The door shut while the mark was awaited: the words went back with the run's.</exception>
+    /// <exception cref="AcpTurnedAway">The door shut while the mark is awaited: the words went back with the run's.</exception>
     /// <exception cref="AcpWordsUnmarked">The record did not name them marked: they wait on their record.</exception>
     public void Marked(PromptPassage passage, bool marked)
     {
@@ -153,7 +153,7 @@ internal sealed class OpenPrompts
 
     /// <summary>
     /// A passage admitted to the wire as its write begins, under the write lock, and its prompt open from then; false where the door shut
-    /// first, or where <paramref name="when"/>, what the prompt was decided on, no longer holds, its words then going back with the run's.
+    /// first, or where <paramref name="when"/>, what the prompt is decided on, no longer holds, its words then going back with the run's.
     /// </summary>
     /// <remarks><paramref name="when"/> reads the wake under its own gate before this gate is taken: the order every look takes.</remarks>
     public bool Admit(PromptPassage passage, OpenPrompt? open = null, Func<bool>? when = null)
@@ -195,7 +195,7 @@ internal sealed class OpenPrompts
 
     /// <summary>
     /// A prompt leaves as its answer is read, on the reader's thread: the words it carried judged first, then the words behind it taken
-    /// where it was answered with a result, the moment the turn is handed off to them. The words taken now, if any; and whether it was the
+    /// where it is answered with a result, the moment the turn is handed off to them. The words taken now, if any; and whether it is the
     /// last open (<paramref name="last"/>).
     /// </summary>
     public OpenPrompt? Leaves(OpenPrompt open, bool answered, TransientRetry? retry, out bool last)
@@ -211,7 +211,7 @@ internal sealed class OpenPrompts
                 if (open.Opening) retry.OpeningUnacknowledged = true;
             }
 
-            // A word's prompt refused after the word was taken, by its mark as the error came, never by a later update.
+            // A word's prompt refused after the word is taken, by its mark as the error came, never by a later update.
             if (retry is not null && !answered && open is { Taken: true, Words: { } refusedTaken }) _refusedTaken.Add(refusedTaken);
             _prompts.Remove(open);
             last = _prompts.Count == 0;
@@ -302,7 +302,7 @@ internal sealed class OpenPrompts
         lock (_gate) _unacknowledged.Clear();
     }
 
-    /// <summary>Whether this word's prompt was refused after it was taken, read once, by reference.</summary>
+    /// <summary>Whether this word's prompt is refused after it is taken, read once, by reference.</summary>
     public bool RefusedTaken(IAgentWord words)
     {
         lock (_gate) return _refusedTaken.Remove(words);

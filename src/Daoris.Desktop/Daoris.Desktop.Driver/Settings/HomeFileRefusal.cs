@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The codes a home file's operation refuses in (ONEWAY1u, D194 point 4): the page's catalogue keys, which the shell's <c>Refusals</c>
+/// The codes a home file's operation refuses in: the page's catalogue keys, which the shell's <c>Refusals</c>
 /// declares as these, and the driver's verbatim refusal for every other. One table, read by the route that answers the window and by the
 /// terminal's command, so a refusal is one line both ways. The files are the machine's remotes, the browser's favorites and its settings.
 /// </summary>
@@ -52,13 +52,13 @@ public sealed record FileSaid(IReadOnlyList<string> Out, IReadOnlyList<string> E
 {
     public static FileSaid Said(IEnumerable<string> lines, int exit = 0) => new([.. lines], [], exit);
 
-    /// <summary>A refusal said in a line, <c>daoris: </c> and the sentence, with the exit the verb gave it: 2, or 1 for a policy refusal (D194 point 6).</summary>
+    /// <summary>A refusal said in a line, <c>daoris: </c> and the sentence, with the exit the verb gave it: 2, or 1 for a policy refusal.</summary>
     public static FileSaid Refused(string message, int exit = 2) => new([], [$"daoris: {message}"], exit);
 }
 
 /// <summary>
-/// A home file's operation refusing by a named check (ONEWAY1u, as <see cref="ChoiceRefusal"/> carries a standing choice's): its sentence,
-/// and the facts the window's catalogue says it with. <see cref="HomeFileCodes.Of"/> gives its code. Nothing was written.
+/// A home file's operation refusing by a named check (as <see cref="ChoiceRefusal"/> carries a standing choice's): its sentence,
+/// and the facts the window's catalogue says it with. <see cref="HomeFileCodes.Of"/> gives its code. Nothing is written.
 /// </summary>
 public sealed class HomeFileRefusal(string check, string message, params (string Key, string Value)[] facts) : DriverException(message)
 {

@@ -54,6 +54,13 @@ internal sealed class PipeAsking(InstancePipe pipe)
             return;
         }
 
+        if (row.Refusal(asked) is { } words)
+        {
+            Confirmations.Let(place);
+            EndReserved(reserved, pipe.Refuse(request, InstancePipe.NotAllowed, words));
+            return;
+        }
+
         if (pipe.Holds(request.Module, request.Type))
         {
             Confirmations.Let(place);

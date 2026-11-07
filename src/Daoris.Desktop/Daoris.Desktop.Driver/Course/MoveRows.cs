@@ -13,7 +13,7 @@ internal static class MoveRows
         (MoveRecordPhase.FellBack, "fell_back_at"), (MoveRecordPhase.Held, "held_at"), (MoveRecordPhase.Closed, "closed_at"),
     ];
 
-    /// <summary>The store's step that added the columns a box's move carries and a quiet move's telling (part 2).</summary>
+    /// <summary>The store's step that added the columns a box's move carries and a quiet move's telling.</summary>
     internal const int BoxColumnsSince = 5;
 
     internal static readonly string StepFourColumns =
@@ -21,7 +21,7 @@ internal static class MoveRows
         + "effect, effect_begun, effect_outcome, effect_ended, fell_back_code, held_why, closed_why, "
         + string.Join(", ", Moments.Select(each => each.Column));
 
-    /// <summary>The store's step that added the offered choice's model and effort (STAFFPOLICY1d).</summary>
+    /// <summary>The store version that carries the offered choice's model and effort columns.</summary>
     internal const int EntryColumnsSince = 18;
 
     internal static readonly string Columns = StepFourColumns + ", agent, refused_bound, quiet_at, model, effort";

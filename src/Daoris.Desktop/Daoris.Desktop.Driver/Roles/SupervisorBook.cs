@@ -20,7 +20,7 @@ internal sealed class SupervisorBook(string home, MachineLog? log)
     /// <summary>Every course decision on a referred point by id (<see cref="SupervisorCourses"/>).</summary>
     public ConcurrentDictionary<string, SupervisorCourseDecision> Courses { get; } = new(StringComparer.Ordinal);
 
-    /// <summary>Questions a decision closed as the owner's, by session then question (§3.1 <c>overruled</c>), across a restart too.</summary>
+    /// <summary>Questions a decision closed as the owner's, by session then question (<c>overruled</c>), across a restart too.</summary>
     public ConcurrentDictionary<(string Session, string Question), SupervisorState> Closed { get; } = new();
 
     /// <summary>Run <paramref name="body"/> under <paramref name="session"/>'s decision lock.</summary>
@@ -44,7 +44,7 @@ internal sealed class SupervisorBook(string home, MachineLog? log)
             ? state == SupervisorState.Left ? SupervisorWhy.Answered : SupervisorWhy.Overruled
             : null;
 
-    /// <summary>A stale decision whose word was never taken back: the word of a release a revoke's sweep did not reach before it staled.</summary>
+    /// <summary>A stale decision whose word is never taken back: the word of a release a revoke's sweep did not reach before it staled.</summary>
     public static bool WordLeft(SupervisorLiveDecision decision) =>
         decision.State == SupervisorState.Stale && decision.Word is not null && !decision.TakenBack;
 
@@ -64,7 +64,7 @@ internal sealed class SupervisorBook(string home, MachineLog? log)
     public IReadOnlyList<string> LiveIds(string session) =>
         [.. Live.Values.Where(each => each.Session == session).OrderBy(each => each.KeptAt).Select(each => each.Id)];
 
-    /// <summary>Move <paramref name="decision"/> under its lock, by §3.6's table alone; a move not in it is refused and changes nothing.</summary>
+    /// <summary>Move <paramref name="decision"/> under its lock, by the move table alone; a move not in it is refused and changes nothing.</summary>
     public SupervisorState Move(SupervisorLiveDecision decision, SupervisorState to, DateTimeOffset at, string? why)
     {
         if (!SupervisorStates.Moves(decision.State, to)) return decision.State;
@@ -88,7 +88,7 @@ internal sealed class SupervisorBook(string home, MachineLog? log)
         SupervisorDecisionFiles.TryAppend(Files.StatesOf(decision.Session, decision.Id), line);
     }
 
-    /// <summary>Try any move on a live decision, for the tests of §3.6's table; true where it moved.</summary>
+    /// <summary>Try any move on a live decision, for the tests of the move table; true where it moved.</summary>
     public Task<bool> TryMoveAsync(string session, string decision, SupervisorState to, DateTimeOffset at) =>
         UnderAsync(session, () => Task.FromResult(
             Live.TryGetValue(decision, out var live) && SupervisorStates.Moves(live.State, to) && Move(live, to, at, null) == to));

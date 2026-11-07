@@ -4,7 +4,7 @@ using Microsoft.Win32.SafeHandles;
 
 namespace Daoris.Driver;
 
-/// <summary>A process found holding an entry open (DEPLOYBUSY1): its id, its name, when it started, and its command line.</summary>
+/// <summary>A process found holding an entry open: its id, its name, when it started, and its command line.</summary>
 public sealed record FileHolder(int Pid, string Name, DateTimeOffset? Started = null, string? Command = null)
 {
     /// <summary>The most of a command line <see cref="InFull"/> carries.</summary>
@@ -28,7 +28,7 @@ public sealed record FileHolder(int Pid, string Name, DateTimeOffset? Started = 
 public sealed record HeldEntry(string Path, IReadOnlyList<FileHolder> By);
 
 /// <summary>
-/// What holds a file or a folder open, where Windows can tell (DEPLOYBUSY1): a move the swap is refused names the entry that
+/// What holds a file or a folder open, where Windows can tell: a move the swap is refused names the entry that
 /// was held and the processes holding it, so a <c>busy</c> says who, not only that.
 /// </summary>
 /// <remarks>

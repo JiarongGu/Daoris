@@ -3,22 +3,22 @@ using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What the one door for solicited answers did with a hand (COMMS1b, the comms design §4.2), as the driver reads its answer.</summary>
+/// <summary>What the one door for solicited answers did with a hand, as the driver reads its answer.</summary>
 public enum SolicitedFate
 {
-    /// <summary>The word was kept now on <see cref="SolicitedAnswer.Holder"/>.</summary>
+    /// <summary>The word is kept now on <see cref="SolicitedAnswer.Holder"/>.</summary>
     Kept,
 
     /// <summary>
-    /// The key's word waits already on <see cref="SolicitedAnswer.Holder"/> (§13 point 4): nothing was kept now, and the look finishes the
+    /// The key's word waits already on <see cref="SolicitedAnswer.Holder"/>: nothing is kept now, and the look finishes the
     /// dispatch there before it marks the hand done, as for a word just kept.
     /// </summary>
     Waiting,
 
-    /// <summary>The key's word left a record of the line (row p): nothing was kept, and there is no word to dispatch.</summary>
+    /// <summary>The key's word left a record of the line: nothing is kept, and there is no word to dispatch.</summary>
     Settled,
 
-    /// <summary>Nothing was kept, in the host's own sentence; a host older than the door is one.</summary>
+    /// <summary>Nothing is kept, in the host's own sentence; a host older than the door is one.</summary>
     Refused,
 
     /// <summary>No answer that says either way: the word may wait on the line, and the next look asks again under its key.</summary>
@@ -28,7 +28,7 @@ public enum SolicitedFate
 /// <summary>A hand's answer: its fate, the host's sentence, the word and the record that holds it, or the record a settled word left.</summary>
 public sealed record SolicitedAnswer(SolicitedFate Fate, string Message)
 {
-    /// <summary>The word's id where one was kept now or waits already.</summary>
+    /// <summary>The word's id where one is kept now or waits already.</summary>
     public string? Word { get; init; }
 
     /// <summary>The word's text as the host keeps it.</summary>
@@ -44,7 +44,7 @@ public sealed record SolicitedAnswer(SolicitedFate Fate, string Message)
     public bool Handed => Fate is SolicitedFate.Kept or SolicitedFate.Waiting or SolicitedFate.Settled;
 }
 
-/// <summary>What a hand does before its door, by the attempt mark it finds (§13 point 3).</summary>
+/// <summary>What a hand does before its door, by the attempt mark it finds.</summary>
 public enum SolicitedStep
 {
     /// <summary>No attempt on file: the mark is written, then the door asked.</summary>
@@ -65,11 +65,11 @@ public enum SolicitedLineEnd
     Bound,
 }
 
-/// <summary>A line as the driver reads it from the records: the record named, its head where one was reached, and each record walked.</summary>
+/// <summary>A line as the driver reads it from the records: the record named, its head where one is reached, and each record walked.</summary>
 public sealed record SolicitedLine(PriorSession? Named, PriorSession? Head, IReadOnlyList<PriorSession> Records, SolicitedLineEnd End = SolicitedLineEnd.Head);
 
 /// <summary>
-/// The one hand a helper's, a partner's and an opinion's answers go through (COMMS1b, the comms design §4.2 and §13 points 1 to 4): the attempt
+/// The one hand a helper's, a partner's and an opinion's answers go through: the attempt
 /// mark written before the door and the door's answer settling it, a retry only inside the settlement's horizon, the line's head read as the door
 /// walks it for the looks' pre-check, and the door's answer read alike for the three. A host that answers no <c>answers</c> mark keeps each look's
 /// own hand.
@@ -120,7 +120,7 @@ public static class SolicitedHand
             : null;
 
     /// <summary>
-    /// Whether the line's head takes a solicited answer now (§13 point 1): an open conversation between turns, an ended record, and a park the
+    /// Whether the line's head takes a solicited answer now: an open conversation between turns, an ended record, and a park the
     /// person answered, beside their answer; never a running turn, nor a park still waiting on the person.
     /// </summary>
     public static bool TakesNow(PriorSession head) => head switch
@@ -132,7 +132,7 @@ public static class SolicitedHand
     };
 
     /// <summary>
-    /// A hand door's answer (<c>POST …/hand</c>): only a refusal the host gave says nothing was kept, its sentence on a bad request, a not-found or
+    /// A hand door's answer (<c>POST …/hand</c>): only a refusal the host gave says nothing is kept, its sentence on a bad request, a not-found or
     /// a conflict, or a bare 404 from a host older than the door; any other status, or a success that does not read, is uncertain.
     /// </summary>
     public static SolicitedAnswer Read(bool ok, int status, JsonElement? root, string payload, string door, string service)
@@ -151,7 +151,7 @@ public static class SolicitedHand
         }
 
         var message = Text(answer, "message") ?? "";
-        // Settled before a word (row p): nothing was kept and there is no word.
+        // Settled before a word: nothing is kept and there is no word.
         if (Text(answer, "settled") is { Length: > 0 } settled) return new(SolicitedFate.Settled, message) { SettledOn = settled };
 
         var said = answer.TryGetProperty("said", out var word) ? word : default;

@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>One word the run's input carries (D243 point 1): its ids on the record, its line as the process reads it, what its record opens with.</summary>
+/// <summary>One word the run's input carries: its ids on the record, its line as the process reads it, what its record opens with.</summary>
 /// <param name="Ids">The ids the record gave the words this line carries; empty for a line that carries none (a driver's own prompt).</param>
 /// <param name="Line">The text written to the process, as one write.</param>
 /// <param name="Opening">What the record says first when the line goes with a process that resumes a conversation; null for none.</param>
@@ -19,22 +19,22 @@ internal enum Delivery
     /// <summary>The write returned.</summary>
     Written,
 
-    /// <summary>The process was going and the run will start it once more: the word waits in the queue and is written to that process.</summary>
+    /// <summary>The process ran and the run will start it once more: the word waits in the queue and is written to that process.</summary>
     Held,
 
-    /// <summary>Nothing is listening and nothing will: the word was not written and is not kept.</summary>
+    /// <summary>Nothing is listening and nothing will: the word is not written and is not kept.</summary>
     Refused,
 }
 
 /// <summary>
-/// The one queue of a run's words (the agent-provider design §2.5, D243): every word a process is handed goes through it, nothing above
+/// The one queue of a run's words: every word a process is handed goes through it, nothing above
 /// the run writes to a process's stdin. A word is attempted on its record before it is handed here, is written as the write returns, and is
 /// acknowledged once the harness names the conversation it went to; a process that ended before naming one never opened it, so the run's
 /// one retry hands the next process every word written to that one, in order, and then those said during the restart, and a word
 /// acknowledged is never written again.
 /// </summary>
 /// <remarks>
-/// It is the native door's port (D246). A protocol door's words are requests its session answers, each acknowledged by its own answer and
+/// It is the native door's port. A protocol door's words are requests its session answers, each acknowledged by its own answer and
 /// retried on the same session, so they are <see cref="ProtocolWords"/>' and its input refuses every line, naming <see cref="Refuses"/>.
 /// </remarks>
 /// <param name="refuses">The ability a line is refused as, on a door whose words are not lines; null for a native door.</param>
@@ -78,7 +78,7 @@ internal sealed class DoorInput(string? refuses = null)
     }
 
     /// <summary>
-    /// A process is up and reads <paramref name="write"/>: it is handed, in order, each word written to the one before that was never
+    /// A process is up and reads <paramref name="write"/>: it is handed, in order, each word written to the one before and never
     /// acknowledged, then each that waited. Answers whether every write returned.
     /// </summary>
     public async Task<bool> AttachAsync(Func<string, CancellationToken, Task<bool>> write, CancellationToken ct)
@@ -134,7 +134,7 @@ internal sealed class DoorInput(string? refuses = null)
         return write is not null && await write(line, ct).ConfigureAwait(false);
     }
 
-    /// <summary>The harness named its conversation: it opened the one the words went to, so none is written again (D243 point 2).</summary>
+    /// <summary>The harness named its conversation: it opened the one the words went to, so none is written again.</summary>
     public IReadOnlyList<DoorWord> Acknowledge()
     {
         lock (_gate)

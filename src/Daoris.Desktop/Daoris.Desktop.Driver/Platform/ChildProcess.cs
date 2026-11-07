@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a child run to its end, or past its patience, left (DEDUP4a): the exit code and both streams, or why there is none.
+/// What a child run to its end, or past its patience, left: the exit code and both streams, or why there is none.
 /// </summary>
 /// <param name="Started">Whether the program started at all; when not, <see cref="Error"/> says why, if the runtime did.</param>
 /// <param name="ExitCode">The exit code; null when the program did not start or was ended for taking too long.</param>
@@ -16,7 +16,7 @@ public sealed record ChildRun(bool Started, int? ExitCode, string Stdout, string
 }
 
 /// <summary>
-/// One way to run a child to its end with a patience (DEDUP4a, survey §4). Four callers once carried a copy each, and two
+/// One way to run a child to its end with a patience. Four callers once carried a copy each, and two
 /// of them ended a process that had just exited with an unguarded kill, which threw.
 /// </summary>
 /// <remarks>
@@ -29,16 +29,16 @@ public static class ChildProcess
     /// Start <paramref name="info"/>, read both redirected streams whole, and wait <paramref name="patience"/> at most.
     /// A program still running then has its tree ended and is answered <see cref="ChildRun.TimedOut"/>; cancelling
     /// <paramref name="ct"/> ends the tree and throws <see cref="OperationCanceledException"/>. Either way the run returns only
-    /// once the process has exited (GITAPP1a-iii), or says it has not (<see cref="ProcessUnendedException"/>, thrown on a
+    /// once the process has exited, or says it has not (<see cref="ProcessUnendedException"/>, thrown on a
     /// cancellation and carried as <see cref="ChildRun.Error"/> past the patience).
     /// </summary>
     /// <param name="closeInput">Close the child's input at once, so a program that waits for input reads its end; the
     /// info must redirect it.</param>
     /// <remarks>
-    /// The start passes the process-wide gate (<see cref="ProcessStarts"/>, UIFREEZE1): a few at a time, on the thread pool,
+    /// The start passes the process-wide gate (<see cref="ProcessStarts"/>): a few at a time, on the thread pool,
     /// so no caller's thread waits on the runtime's process-start lock. Cancelling while it waits for its place throws. Every
     /// run here is a question read to its end (git, a version, an agent's status, a plugin's tool check), so its start is the
-    /// background's (<see cref="StartClass.Background"/>, PARALLEL1d): a person's start never queues behind one.
+    /// background's (<see cref="StartClass.Background"/>): a person's start never queues behind one.
     /// </remarks>
     public static Task<ChildRun> RunAsync(ProcessStartInfo info, TimeSpan patience, CancellationToken ct, bool closeInput) =>
         RunAsync(info, patience, ct, closeInput, ProcessStarts.Shared);
@@ -49,7 +49,7 @@ public static class ChildProcess
         RunAsync(info, patience, ct, closeInput ? "" : null, starts);
 
     /// <summary>
-    /// The same, writing <paramref name="input"/> to the child's input and closing it (FABRIC-END4a, second review: git's
+    /// The same, writing <paramref name="input"/> to the child's input and closing it (git's
     /// <c>update-ref --stdin</c> takes a transaction there); null leaves the input as the info says. The info must redirect it.
     /// </summary>
     /// <remarks>Both outputs are read before the input is written, so a child that answers as it reads never fills a pipe and waits.</remarks>
@@ -81,7 +81,7 @@ public static class ChildProcess
             }
             catch (OperationCanceledException)
             {
-                // GITAPP1a-iii: the tree ended and its exit awaited, so the runner never returns while its process runs on; one
+                // The tree ended and its exit awaited, so the runner never returns while its process runs on; one
                 // that outlived its kill is said, never swallowed.
                 ProcessUnendedException? unended = null;
                 try
@@ -122,7 +122,7 @@ public static class ChildProcess
     }
 
     /// <summary>
-    /// How long a runner waits for a process's exit after its kill (GITAPP1a-iii, the git-app design P1.6; provisional): past
+    /// How long a runner waits for a process's exit after its kill (provisional): past
     /// it, the process is said unended.
     /// </summary>
     public static readonly TimeSpan ExitBound = TimeSpan.FromSeconds(5);
@@ -131,8 +131,8 @@ public static class ChildProcess
     private static readonly AsyncLocal<Action<int, string>?> s_unended = new();
 
     /// <summary>
-    /// End <paramref name="process"/>'s tree (<see cref="OwnedProcesses.End"/>) and await its exit within <see cref="ExitBound"/>
-    /// (GITAPP1a-iii, the git-app design P1.6, Codex R4-5): the runners call it on their caller's cancellation or past their bound, and
+    /// End <paramref name="process"/>'s tree (<see cref="OwnedProcesses.End"/>) and await its exit within <see cref="ExitBound"/>:
+    /// the runners call it on their caller's cancellation or past their bound, and
     /// dispose the process only after.
     /// </summary>
     /// <exception cref="ProcessUnendedException">
@@ -180,8 +180,8 @@ public static class ChildProcess
     }
 
     /// <summary>
-    /// Tell <paramref name="unended"/> the pid and the reason of each process this flow's runners could not end, until disposed
-    /// (GITAPP1a-iii): the git seam opens it per start, so the fact is said with the node it belongs to.
+    /// Tell <paramref name="unended"/> the pid and the reason of each process this flow's runners could not end, until disposed:
+    /// the git seam opens it per start, so the fact is said with the node it belongs to.
     /// </summary>
     internal static IDisposable Telling(Action<int, string> unended)
     {
@@ -197,7 +197,7 @@ public static class ChildProcess
 }
 
 /// <summary>
-/// A runner's cancellation whose process outlived its kill (GITAPP1a-iii, the git-app design P1.6): the pid and why, so the
+/// A runner's cancellation whose process outlived its kill: the pid and why, so the
 /// owner hears the process was not ended rather than a cancellation that reads as one that worked.
 /// </summary>
 public sealed class ProcessUnendedException(int pid, string reason, CancellationToken token)

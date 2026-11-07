@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTLYNTAI1s-i, the real-process half of <see cref="NativePrompt"/>: a driven Claude Code session's prompt written on its input as
+/// The real-process half of <see cref="NativePrompt"/>: a driven Claude Code session's prompt written on its input as
 /// BOM-less UTF-8 in one call and the input closed, so a stand-in that reads its input to the end hears every byte of a Chinese prompt
 /// and one with an astral character; a start that redirects no input, and the protocol door's, are left as they are; a harness that
 /// ended before the write is its own answer, never the write's failure; and the same bytes arrive through the built launcher the
@@ -58,7 +58,7 @@ public sealed class NativePromptProcessTests : IDisposable
         var read = process.StandardOutput.ReadToEndAsync();
         _ = process.StandardError.ReadToEndAsync();
 
-        // FOUNDATION1f-iv part b: the write's return is what a carry-on's moved words' `sent` waits for.
+        // The write's return is what a carry-on's moved words' `sent` waits for.
         Assert.True(await NativePrompt.WriteAsync(process, BuiltDoors.Claude, Prompt, CancellationToken.None));
 
         // The reader ends only once its input is closed: an unclosed input fails this by its bound.
@@ -120,14 +120,14 @@ public sealed class NativePromptProcessTests : IDisposable
         _ = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync().WaitAsync(Poll.Patience);
 
-        // FOUNDATION1f-iv part b: a write the pipe refused never returned, so a moved word it carried reads unsent.
+        // A write the pipe refused never returned, so a moved word it carried reads unsent.
         Assert.False(await NativePrompt.WriteAsync(process, BuiltDoors.Claude, new string('x', 1 << 20), CancellationToken.None));
 
         Assert.Equal(3, process.ExitCode);
     }
 
     /// <summary>
-    /// The same bytes through the launcher a harness is started by (TERMTRUST1a): the stdio it was handed is the harness's, so a
+    /// The same bytes through the launcher a harness is started by: the stdio it is handed is the harness's, so a
     /// non-ASCII prompt written on the launcher's input is read intact on the harness's.
     /// </summary>
     [Fact]

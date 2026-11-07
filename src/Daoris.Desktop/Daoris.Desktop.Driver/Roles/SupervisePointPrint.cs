@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>sessions supervise &lt;id&gt;</c> for a point a person's <c>refer</c> rule held a line at (CONTEXTDRIVE1j): the fenced print the
+/// <c>sessions supervise &lt;id&gt;</c> for a point a person's <c>refer</c> rule held a line at: the fenced print the
 /// holder reads, with the point's count, its value, the rule that referred it and the course answered or waiting, then the line's course
 /// and its branch's commits as a question's print has them. A point has no question, so the print names none and says how to decide it.
 /// </summary>

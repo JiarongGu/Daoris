@@ -4,7 +4,7 @@ using static Daoris.Driver.HelpProposals;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's <c>setting</c> proposal (HELP1c, D89): one of the <c>daoris place</c>, <c>settings</c>, <c>quest</c> and <c>git</c> verbs the room's doors
+/// Ask Daoris's <c>setting</c> proposal: one of the <c>daoris place</c>, <c>settings</c>, <c>quest</c> and <c>git</c> verbs the room's doors
 /// table names — its door the verb, its target the repository, its workspace one for a whole workspace, its
 /// value what it is set to — judged by the config's own edits, which throw the route's refusal.
 /// </summary>
@@ -12,9 +12,9 @@ namespace Daoris.Driver;
 /// <para>The names the routes do not check, and a helper can invent, are checked here first: a registered
 /// repository, a workspace, an agent. Applied as the <c>SET_*</c> routes make the same edit.</para>
 ///
-/// <para>Since HELP9 (D110), every verb but <c>list</c>, which changes nothing: reading and writing across (D107), as
-/// <c>SET_READ_ACROSS</c> and <c>SET_WRITE_ACROSS</c> make them, and <c>cap</c> and <c>adapter</c>, which only a
-/// terminal set before. Since HELP10 <c>retry</c> too, its target a quest the loop's last tick parked
+/// <para>Every verb but <c>list</c>, which changes nothing: reading and writing across, as
+/// <c>SET_READ_ACROSS</c> and <c>SET_WRITE_ACROSS</c> make them, and <c>cap</c> and <c>adapter</c>, which a
+/// terminal sets as well. <c>retry</c> too, its target a quest the loop's last tick parked
 /// (<see cref="HelpMachineFacts.Parked"/>), applied as <c>RETRY_QUEST</c> makes the same edit.</para>
 ///
 /// <para>The doors with a plan of their own are their own types: <see cref="HelpAcrossSetting"/>, <see cref="HelpRetrySetting"/>,
@@ -24,16 +24,10 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
 {
     public string Kind => "setting";
 
-    // It proposes, and the person applies (HELP1c, D89).
+    // It proposes, and the person applies.
     public string Tool => "setting_propose";
 
     /// <summary>The `daoris place`, `settings`, `quest` and `git` verbs it takes, in the order the service's twin lists them (<c>HelpSettingProposalWriter.Doors</c>).</summary>
-    /// <remarks>
-    /// HELP9 added <c>across</c> (D107), and <c>cap</c> and <c>adapter</c>, which only a terminal set before; HELP10
-    /// <c>retry</c>, once the facts carried the parked quests; LANG1c2 <c>language</c>, once the service's writer listed it;
-    /// REVIEWENV1a <c>review</c>, with the service's writer in the same change; XAGENT1a <c>opinion</c>, the same way; TOOL4l-b <c>cooloff</c>, the same way;
-    /// DOORS1a <c>helpers</c> and <c>commits</c>, the same way (D164's amendment point 5); KEEP1d <c>keep</c>, the same way (D195 point 2).
-    /// </remarks>
     public IReadOnlyList<string> Doors { get; } =
     [
         "drive", "undrive", "hold", "resume", "trees", "line", "across", "standing", "language", "review", "opinion",
@@ -41,20 +35,20 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     ];
 
     /// <summary>
-    /// ASKSCOPE1c: its target is a repository, save a retry's, which is a quest; <c>across … write-to &lt;other&gt;</c> names a
+    /// Its target is a repository, save a retry's, which is a quest; <c>across … write-to &lt;other&gt;</c> names a
     /// second repository in its value.
     /// </summary>
     public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts)
     {
         var words = proposal.Door == "across" ? (proposal.Value ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries) : [];
         var other = words is ["write-to", var to, ..] ? to : null;
-        // ASKSCOPE1c3: a retry's quest is named as a record, filed under its repository's workspace.
+        // A retry's quest is named as a record, filed under its repository's workspace.
         var quest = proposal.Door == "retry" ? HelpNames.OfParked(facts, (proposal.Target ?? "").Trim().TrimStart('#').Trim()) : [];
         return new([proposal.Workspace], [proposal.Door == "retry" ? null : proposal.Target, other, proposal.Repository]) { Records = quest };
     }
 
     /// <summary>
-    /// STEWARDROLE1a-ii (D209 §5.4): each door's target, which its Apply marks the owner's: the quest for <c>retry</c>; for every other
+    /// Each door's target, which its Apply marks the owner's: the quest for <c>retry</c>; for every other
     /// door its repository, or its workspace where the plan is the workspace's (a line, a landing, a language). A machine's door
     /// (each of <see cref="MachineSettings.All"/>) names neither, and marks nothing.
     /// </summary>
@@ -80,10 +74,10 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         var value = proposal.Value?.Trim() ?? "";
         HelpPlan Refused(string why, string describe, string terminal) => new(why, describe, terminal, null);
 
-        // HELP10: a retry's target is a quest, not a repository, so it is judged before the registry is asked.
+        // A retry's target is a quest, not a repository, so it is judged before the registry is asked.
         if (proposal.Door == "retry") return HelpRetrySetting.Plan(target, config, facts);
 
-        // GITAUTH1e: a git identity chosen for a remote or a host is the identities file's own write, not an edit of the driver's file.
+        // A git identity chosen for a remote or a host is the identities file's own write, not an edit of the driver's file.
         if (proposal.Door == "git-use")
         {
             if (target is { Length: > 0 } && !facts.Repositories.Contains(target, StringComparer.OrdinalIgnoreCase))
@@ -104,7 +98,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             return Refused($"there is no workspace `{workspace}` on this machine — one of {Names(facts.Workspaces)}.", "", "");
         }
 
-        // ACCTQUOTE1b: a workspace in a command is spelled for any shell; a repository's name is not (D125's ACCTQUOTE1 note).
+        // A workspace in a command is spelled for any shell; a repository's name is not.
         var scope = workspace is { Length: > 0 } ? $"--workspace {ShellWord.Of(workspace, ShellWord.Workspace)}" : target ?? "";
         var whose = workspace is { Length: > 0 } ? $"workspace `{workspace}`" : $"`{target}`";
         (string Describe, string Terminal, Func<DriverConfig, DriverConfig> Edit) planned;
@@ -144,7 +138,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             }
             case "standing":
             {
-                // KNOWUSE1b (D135 §3): the person's words for one repository, kept on this machine as `SET_STANDING` and
+                // The person's words for one repository, kept on this machine as `SET_STANDING` and
                 // `daoris place standing` keep them; `--clear` takes the answer back.
                 var says = value == "--clear" ? null : value;
                 var at = DateTimeOffset.UtcNow;
@@ -157,8 +151,8 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             }
             case "language":
             {
-                // LANG1c (D142 point 7): the work's session language, for a repository or a workspace, judged by the closed
-                // table as `SET_LANGUAGE` and `daoris place language` judge it. A door since LANG1c2, whose service writer
+                // The work's session language, for a repository or a workspace, judged by the closed
+                // table as `SET_LANGUAGE` and `daoris place language` judge it. Its service writer
                 // checks only the shape; the registry and the workspace are judged here.
                 var circle = workspace is { Length: > 0 };
                 if (circle == target is { Length: > 0 })
@@ -220,13 +214,13 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 planned = (value == "on" ? "Say so when a session parks, or ends without being asked." : "Stop saying so when a session parks.",
                     $"daoris settings notify {value}", c => c.WithNotify(value == "on"));
                 break;
-            // HELP9: the dial only a terminal set before, judged as `daoris settings cap` takes it.
+            // The dial only a terminal set before, judged as `daoris settings cap` takes it.
             case "cap" when int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var cap) && cap >= 1:
                 planned = (cap == 1 ? "Run one session at a time on this machine, across every repository."
                         : $"Run at most {cap} sessions at once on this machine, across every repository.",
                     $"daoris settings cap {cap}", c => c.WithCap(cap));
                 break;
-            // TOOL4l-b (D125 §6): how long an account cools when its limit names no time, as `daoris settings cooloff` takes it;
+            // How long an account cools when its limit names no time, as `daoris settings cooloff` takes it;
             // a zero would start a spent account again at every look, so less than a minute falls to the refusal below.
             case "cooloff" when int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var cool) && cool >= 1:
                 planned = ($"An account whose limit names no time cools for {cool} minute{(cool == 1 ? "" : "s")} before it is offered again.",
@@ -237,7 +231,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 planned = ($"Look in on a session that says nothing and runs nothing for {quiet} minutes; none is ever stopped for running long.",
                     $"daoris settings quiet {quiet}", c => c.WithQuiet((int)quiet));
                 break;
-            // KEEP1d (D195 point 2; the cleanup design §2.2): one kind's keep rule, its words `<kind> <rule>` as `daoris settings keep`
+            // One kind's keep rule, its words `<kind> <rule>` as `daoris settings keep`
             // takes them, judged by the one judgement the terminal and SET_KEEP make, so a value out of its bounds is refused here.
             case "keep":
             {

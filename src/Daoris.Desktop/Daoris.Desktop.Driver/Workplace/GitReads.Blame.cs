@@ -4,8 +4,8 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>git blame --porcelain</c>, read as it comes (GIT1b, D147 §2.5): each line of the file with the commit that last
-/// changed it, a commit's details said once, and D111's bound and binary test applied as the lines arrive.
+/// <c>git blame --porcelain</c>, read as it comes: each line of the file with the commit that last
+/// changed it, a commit's details said once, and the preview's bound and binary test applied as the lines arrive.
 /// </summary>
 /// <remarks>
 /// <para><b>The porcelain form.</b> Every line of the file is a header (<c>&lt;id&gt; &lt;its line there&gt; &lt;its line
@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 /// <c>summary</c>, <c>boundary</c> and the rest), the <c>previous</c> commit and path and the <c>filename</c> where git writes
 /// them, then the line itself after a tab. A commit seen before is its header alone, and keeps the file name it had.</para>
 ///
-/// <para><b>D111's bound and binary test hold.</b> A NUL in the first <see cref="FilePreview.BinaryProbe"/> bytes is git's own
+/// <para><b>The preview's bound and binary test hold.</b> A NUL in the first <see cref="FilePreview.BinaryProbe"/> bytes is git's own
 /// test for a binary file, which has a history and no blame. A file is shown to its first <see cref="FilePreview.Budget"/>
 /// bytes, cut at a line's end, and the blame says the last line it shows. Either way nothing more of git's answer is wanted,
 /// and <see cref="Take"/> answers false so git is stopped.</para>

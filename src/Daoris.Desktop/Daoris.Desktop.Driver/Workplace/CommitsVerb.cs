@@ -5,14 +5,14 @@ using static Daoris.Driver.ChoiceArgs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris place commits</c> (PROCESS1a; FOUNDATION1 mod-iii): the workplace's own verb, the settings' port
+/// <c>daoris place commits</c>: the workplace's own verb, the settings' port
 /// (<see cref="ChoiceVerb"/>) implemented beside the rule it edits (<see cref="CommitRules"/>).
 /// </summary>
 public sealed class CommitsVerb : ChoiceVerb
 {
     public override string Word => "commits";
 
-    /// <summary><c>commits</c> (PROCESS1a): how work is committed here now.</summary>
+    /// <summary><c>commits</c>: how work is committed here now.</summary>
     public override ChoicePress Plan(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
         var path = world.ConfigPath;

@@ -14,8 +14,8 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
     internal async Task<ChatStart> GoingOnAsync(
         string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, DateTimeOffset? woke, CancellationToken ct)
     {
-        // Only an ended chat of this machine's with words waiting: a driven record goes on through the planner (MSG1b), and a
-        // live one hears words at its door. Ask Daoris's conversation goes on too, in its room (ASKHIST1).
+        // Only an ended chat of this machine's with words waiting: a driven record goes on through the planner, and a
+        // live one hears words at its door. Ask Daoris's conversation goes on too, in its room.
         var json = await _context.Service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
         var record = ServiceClient.ReadRecord(json, sessionId);
         if (record is not { Kind: "chat", WordsWaiting: true } || record.Teammate
@@ -24,7 +24,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
             return new(null, $"session `{sessionId}` is no ended conversation of this machine's with words waiting.");
         }
 
-        // 🔴 HANDWORDS1 (D163 point 1, D165 point 3): one handed over or moved went on in another, which holds its tree now and takes
+        // 🔴 One handed over or moved went on in another, which holds its tree now and takes
         // its words. Restarted, it would open a second conversation in that tree: it stays as it ended, its words unmarked.
         if (WordsNever.ContinuedIn(json, sessionId) is { } next)
         {
@@ -40,12 +40,12 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
             return new(null, $"conversation `{sessionId}`'s answer waits for you: it would take its work on a third time with nobody between.");
         }
 
-        // The person wrote to it, so it stays in view whatever comes of it (D137 §2.3), and an earlier mark of words it could
+        // The person wrote to it, so it stays in view whatever comes of it, and an earlier mark of words it could
         // not take is past: these are taken up now.
         new SessionArchive(_context.Home).Unarchive([sessionId]);
         _context.Marks.Clear(sessionId);
 
-        // 🔴 MODELROLE1d2 (D205 §3.5(b)): one its agent refused at the open began no conversation there, so it is never resumed: its go-on
+        // 🔴 One its agent refused at the open began no conversation there, so it is never resumed: its go-on
         // is a fresh start of its actor, its words the first message, a pick trying only its own agent's entries on its own account, and a
         // refused continuation handed the brief of its line first. The come-up's go-on takes the same path.
         if (record.NotOffered)
@@ -56,12 +56,11 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         }
 
         // Its conversation is the adapter's that opened it, so it goes on on that one or not at all. A record naming none (one from before
-        // the adapter was kept) goes on with its role's choice, Chat's order, never the machine's `adapter` key (FOUNDATION1j part iii,
-        // the foundation design §2.4's first row); Chat off, or its entry unread, holds the words with the sentence.
+        // adapters were kept) goes on with its role's choice, Chat's order, never the machine's `adapter` key; Chat off, or its entry unread, holds the words with the sentence.
         string ranOn;
         try
         {
-            // FOUNDATION1x: its binding's role first, as a quest's go-on reads it (§2.4).
+            // Its binding's role first, as a quest's go-on reads it.
             ranOn = record.Adapter is { Length: > 0 } opened
                 ? opened
                 : StartPlan.ContinuedOn(
@@ -79,7 +78,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         }
         catch (DriverException)
         {
-            // An adapter no longer here (a plugin's, removed): its conversation cannot be resumed.
+            // An adapter not here (a plugin's, removed): its conversation cannot be resumed.
         }
 
         // What can be known before anything is asked of the toolchain, on the account it ran on: the nevers, no words, its
@@ -91,7 +90,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         if (why is not null || adapter is null || kept is null)
         {
             var reason = why ?? ContinueWhy.Of(ContinueWhy.Unkept);
-            // 🔴 SESSCTX1c part B (D189 point 3): no id kept, or a door that cannot resume, proves its conversation lost, so it goes on by
+            // 🔴 No id kept, or a door that cannot resume, proves its conversation lost, so it goes on by
             // itself in a new part handed the brief; anything else waits for the person, the brief ready. A lost conversation is decided by
             // the move it goes on in (ConversationLost, which knows the walk's answer); what cannot go on is the course's hold here.
             if (adapter is not null && reason.Lost) return await owner.LostAsync(record, reason, adapter.Id.Value, config, onEnded, held: true, ct).ConfigureAwait(false);
@@ -112,11 +111,11 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
             return owner.Held(sessionId, HeldWords.NoCheckout(record.Repository));
         }
 
-        // The account it ran on, asked for by name, as a chat's picker names one (D137 §2.2, MSG1g): its conversation lives in
+        // The account it ran on, asked for by name, as a chat's picker names one: its conversation lives in
         // that account's home. Cooling, the words wait for its reset, said with the door out of the wait; unable to run there
         // at all, it cannot go on, at once and saying why, since nothing carries a chat's words on by itself; anything else the
         // selection will not start holds the words.
-        // LIMITSWITCH2 (D137's note of 2026-10-25): cooling, and another account of its agent ready, the person's words go on now in a new part
+        // Cooling, and another account of its agent ready, the person's words go on now in a new part
         // there, through the ended limit move's body, which walks once and opens on what it judged; otherwise they wait for the earliest
         // reset of any account of its agent, never its own alone.
         var resume = await owner.SwitchableAsync(record, adapter.Id.Value, config, known.Workspace, ct).ConfigureAwait(false);
@@ -141,7 +140,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         if (resume.Waits || course is LineCourse.Wait)
         {
             _context.Note(sessionId, ResumeWords.NotYetOn(resume, ResumeWords.ChatDoorOf(sessionId)));
-            // LIMITRESUME1c (D206 §3.5, D137 point 7): the look's limits stage wakes it at the reset.
+            // The look's limits stage wakes it at the reset.
             owner.Waits(sessionId);
             return new(null, resume.Selection.Refusal);
         }
@@ -154,24 +153,24 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
             return owner.CannotGoOn(record, account, adapter.Id.Value);
         }
 
-        // LIMITRESUME1c (D206 §3.5): the words its account's limit refused, handed again first, before the words that waited.
+        // The words its account's limit refused, handed again first, before the words that waited.
         var limited = LimitHeld.Waiting(_context.Events.After(sessionId, 0).Events, record.Limit);
 
-        // A tree of its own is taken again: its repository's trees are held until the ledger holds this one once more (LEFT2),
+        // A tree of its own is taken again: its repository's trees are held until the ledger holds this one once more,
         // so bringing the repository up to date does not rebase it under the conversation.
         var own = !SamePath(record.Tree!, known.Root!);
 
-        // LANDSYNC2b (D87's 2026-10-15 amendment point 7): a conversation going on in its own tree starts from the line where the line
-        // came to hold some of its commits, as a driven session's does (LANDSYNC2), and is told so after the words. Asked before this
+        // A conversation going on in its own tree starts from the line where the line
+        // came to hold some of its commits, as a driven session's does, and is told so after the words. Asked before this
         // start's own hold below, since bringing a tree up to date holds the repository's trees alone. The person's checkout is never
         // moved: a conversation in it asks nothing.
         var inSync = own ? await owner.StartInSyncAsync(record.Tree!, ct).ConfigureAwait(false) : null;
-        // GITLOCK1: one in the checkout itself holds it too, until the ledger holds it again below.
+        // One in the checkout itself holds it too, until the ledger holds it again below.
         using var starting = TreeLock.TryStarting(_context.Home, known.Root!);
         if (starting is null) return owner.Held(sessionId, HeldWords.Holding(known.Repository, TreeLock.HolderOf(_context.Home, known.Root!)));
 
-        // 🔴 The ledger's one move out of an ended state, with the person's words waiting (MSG1a, D137 §2.3), before anything
-        // is spawned: it holds the tree again, and refuses where another session holds it (D51).
+        // 🔴 The ledger's one move out of an ended state, with the person's words waiting, before anything
+        // is spawned: it holds the tree again, and refuses where another session holds it.
         try
         {
             await _context.Service.AdvanceAsync(sessionId, "working", GoingOnNote(record.Waiting), ct: ct).ConfigureAwait(false);
@@ -182,7 +181,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         }
 
         starting?.Dispose();
-        // COWORKVIEW1a: its process's token and `start` as its move returns, let go wherever it never reaches the runner.
+        // Its process's token and `start` as its move returns, let go wherever it never reaches the runner.
         var proc = ChildLineage.Opened(_context.Home, sessionId);
         var handed = false;
         using var unhanded = new Disposer(() =>
@@ -191,13 +190,13 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         });
 
         // Every word waiting once it moved: none can be kept on a record that works (the say door answers `running`), so the
-        // list read now is whole, a word said while it was judged included.
+        // list read now is whole, a word said while it is judged included.
         var now = await _context.ReadAgainAsync(sessionId, ct).ConfigureAwait(false);
         var words = Continuations.HandedAfterMove(record.Waiting, now);
         if (words.Count == 0) return await owner.TakenBackAsync(record, ct).ConfigureAwait(false);
-        // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words; the conversation's
-        // rules already read its own files folder (CONV4c). What its start did with its tree against the line after them (LANDSYNC2b).
-        // CONTEXTDRIVE1b (§3 point 2): and Daoris's count for its line, where one moved or stands near what Daoris does on it.
+        // Each word's files where they were kept when said, handed with the words; the conversation's
+        // rules already read its own files folder. What its start did with its tree against the line after them.
+        // And Daoris's count for its line, where one moved or stands near what Daoris does on it.
         var counted = CountTexts.GoOn(LineCountsRead.FactsOf(_context.Home, sessionId, json).Counts);
         var ask = new ResumeAsk(
             kept.Conversation, words,
@@ -207,10 +206,10 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         {
             Resent = owner.Resent(sessionId, limited),
         };
-        // SESSCTX1b: a part that continues another keeps reading its line's kept folders, whose files its brief named.
+        // A part that continues another keeps reading its line's kept folders, whose files its brief named.
         var continued = record.From is { Length: > 0 } from ? await ContextBriefs.LineIdsAsync(_context.Service, from, ct).ConfigureAwait(false) : [];
 
-        // CHATFLOW1e (§6.1 (c), (f)): a go-on with another agent's findings answers them in its first turn, whose reading is frozen at its end; a
+        // A go-on with another agent's findings answers them in its first turn, whose reading is frozen at its end; a
         // word of the person's that went with them puts their work inside that turn, as a word steered into it does.
         Func<bool, Task>? answering = null;
         if (words.Any(word => word.By is not null) && owner._answering.TryGetValue(sessionId, out var answers))
@@ -228,14 +227,14 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
             words.Any(word => word.Persons)
                 ? $"conversation `{sessionId}` goes on with your words in its own conversation."
                 : words.All(word => word.Daoris)
-                    // COWORK1b: Daoris's own words alone are no agent's answer.
+                    // Daoris's own words alone are no agent's answer.
                     ? $"conversation `{sessionId}` goes on with Daoris's words in its own conversation."
                     : $"conversation `{sessionId}` goes on with another agent's answer in its own conversation.",
             new ChatAgent(_context.Harnesses.Adapters, adapter), selection, config, placed, onEnded, ct, new GoingOn(record, ask) { Answering = answering, Proc = proc }).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Ask Daoris's ended conversation goes on with the person's words (ASKHIST1): judged as a chat's is up to its account, then
+    /// Ask Daoris's ended conversation goes on with the person's words: judged as a chat's is up to its account, then
     /// the room's one running conversation set aside, the ledger's move, and its own conversation resumed in the room. It reads
     /// the help chat's set-aside and room; the help chat calls nothing here.
     /// </summary>
@@ -245,7 +244,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
     {
         var sessionId = record.Session;
 
-        // Its account by name, as a chat's, among the machine's accounts (D89): going on keeps the account it ran on.
+        // Its account by name, as a chat's, among the machine's accounts: going on keeps the account it ran on.
         var resume = await _context.Harnesses
             .ResumeAsync(adapter.Id.Value, config, workspace: null, record.Profile, StartKind.Conversation, line: LineKind.AskDaoris, ct: ct)
             .ConfigureAwait(false);
@@ -253,7 +252,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         if (resume.Waits || course is LineCourse.Wait)
         {
             _context.Note(sessionId, ResumeWords.NotYetOn(resume, ResumeWords.HelpDoorOf()));
-            // LIMITRESUME1c (D206 §3.5, D137 point 7): the look's limits stage wakes it on its own account at the reset.
+            // The look's limits stage wakes it on its own account at the reset.
             owner.Waits(sessionId);
             return new(null, resume.Selection.Refusal ?? ResumeWords.HelpDoor);
         }
@@ -266,10 +265,10 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
             return owner.CannotGoOn(record, account, adapter.Id.Value);
         }
 
-        // Its own workspace's running one alone (ASKSCOPE1a): another workspace's runs on beside it.
+        // Its own workspace's running one alone: another workspace's runs on beside it.
         if (await _help.SetAsideHelpAsync(sessionId, record.Workspace, ct).ConfigureAwait(false) is { } answering) return owner.Held(sessionId, HeldWords.Answering(answering));
 
-        // 🔴 The ledger's one move out of an ended state (MSG1a, D137 §2.3), before anything is spawned: it holds the room again,
+        // 🔴 The ledger's one move out of an ended state, before anything is spawned: it holds the room again,
         // and refuses where another conversation holds it, one another process here runs among them.
         try
         {
@@ -280,7 +279,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
             return owner.Held(sessionId, HeldWords.Program(refused.Message));
         }
 
-        // COWORKVIEW1a: its process's token and `start` as its move returns, let go wherever it never reaches the runner.
+        // Its process's token and `start` as its move returns, let go wherever it never reaches the runner.
         var proc = ChildLineage.Opened(_context.Home, sessionId);
         var handed = false;
         using var unhanded = new Disposer(() =>
@@ -298,11 +297,11 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
                 : Continuations.OpeningNoted(adapter.Id.Value, selection.Version, record.DoorVersion, answer: false),
             files: word => ChatFiles.Kept(_context.Home, sessionId, word.Files))
         {
-            // LIMITRESUME1c (D206 §3.5): the words its account's limit refused, handed again first.
+            // The words its account's limit refused, handed again first.
             Resent = owner.Resent(sessionId, LimitHeld.Waiting(_context.Events.After(sessionId, 0).Events, record.Limit)),
         };
 
-        // ASKSCOPE1b: the room it ran in, its workspace's, or the machine's where it started there before each workspace had its own.
+        // The room it ran in, its workspace's, or the machine's where it started there before each workspace had its own.
         var (room, reads) = await _help.HelpRoomNowAsync(sessionId, KnowledgeRoomPaths.GoesOnIn(_context.Home, record.Workspace, record.Tree), ct)
             .ConfigureAwait(false);
         handed = true;

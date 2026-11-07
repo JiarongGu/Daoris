@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// How a protocol door's session begins, written once for a driven run and a conversation alike (AGENTPROVIDER1m-ii): a session that goes on
+/// How a protocol door's session begins, written once for a driven run and a conversation alike: a session that goes on
 /// goes on in its own conversation, resumed by the id kept for it, never a new session, which would be a new conversation under the same
-/// record (MSG1c, D137 §2.2). A resume the agent refuses is <see cref="AcpResumeRefused"/>, which each caller reads as its own shape says.
+/// record. A resume the agent refuses is <see cref="AcpResumeRefused"/>, which each caller reads as its own shape says.
 /// </summary>
 internal static class ProtocolOpen
 {

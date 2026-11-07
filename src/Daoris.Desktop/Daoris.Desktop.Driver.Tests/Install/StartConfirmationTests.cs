@@ -5,9 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 z-i (D212, the design §13.5, §19.7): a start's confirmation is settled once its install's swap journal is at no phase the
+/// A start's confirmation is settled once its install's swap journal is at no phase the
 /// launcher can still roll back from, and a journal that is there and does not read is never settled. The store's imports and stamp-raising
-/// migrations wait on that reading, so a rollback before the confirmation meets every file as it was and a store it can still write.
+/// migrations wait on that reading, so a rollback before the confirmation meets every file as it stands and a store it can still write.
 /// </summary>
 /// <remarks>
 /// Real folders in a scratch install under <c>_fixtures/</c>, journals written by <see cref="StagedBuild.WriteJournal"/> as the launcher
@@ -51,10 +51,10 @@ public sealed class StartConfirmationTests : IDisposable
         Settled = () => StartConfirmation.Read(_install),
     };
 
-    /// <summary>The version a start that is not settled leaves the store at: every step before this build's own first raise (LANDNODE1b's).</summary>
+    /// <summary>The version a start that is not settled leaves the store at: every step before this build's own first raise.</summary>
     private static readonly int Unraised = DesktopStore.Steps.TakeWhile(step => step.Writer == DesktopStore.FirstWriter).Count();
 
-    // ——— The reading (§19.7).
+    // ——— The reading.
 
     [Fact]
     public void A_build_that_runs_from_no_install_and_an_install_with_no_journal_are_settled()
@@ -130,7 +130,7 @@ public sealed class StartConfirmationTests : IDisposable
         Assert.Contains("does not read", read.Said);
     }
 
-    // ——— What a start does with it (§13.5; row z-i's proof).
+    // ——— What a start does with it.
 
     [Fact]
     public void A_start_finding_started_imports_nothing_and_raises_no_stamp()

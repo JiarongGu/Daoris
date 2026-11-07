@@ -266,7 +266,7 @@ public sealed class BrainstormProcessTests : IDisposable
         Assert.True(document["ranked"]!.GetValue<bool>());
         var members = document["rows"]!.AsArray().Single()!["members"]!.AsArray();
         Assert.Equal([("g1", "stub", "Inclusive window from g1"), ("g2", "acp-stub", "Inclusive window from g2")],
-            members.Select(member => (member!["pass"]!.GetValue<string>(), member["adapter"]!.GetValue<string>(), member["idea"]!.GetValue<string>())));
+            members.Select(member => (member!["pass"]!.GetValue<string>(), member["door"]!.GetValue<string>(), member["idea"]!.GetValue<string>())));
         Assert.Contains("stubs are no maker diversity", files.DocumentText(id)!, StringComparison.Ordinal);
 
         // BRAINSTORM1a2: the ACP stub's generator answered through `brainstorm_give` on its one connector, over MCP. The connector

@@ -6,12 +6,12 @@ using Xunit.Abstractions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TERMTRUST1a part (i) (D201's note on part (i)): what a start through the launcher adds to a start made directly, measured on a stand-in
+/// What a start through the launcher adds to a start made directly, measured on a stand-in
 /// harness that exits at once (the system's <c>cmd</c>, never an agent), from the start's call to the harness's exit read. The medians
-/// are written to the test's output, and D201's note keeps the measurement; the bound held is a loose one, so a launcher that starts a
+/// are written to the test's output; the bound held is a loose one, so a launcher that starts a
 /// second runtime or waits on something it should not fails here.
 /// </summary>
-/// <remarks>Alone (PROCPAR1): its claim is a bound on a real process's wall time, which the load of the classes beside it would move.</remarks>
+/// <remarks>Alone: its claim is a bound on a real process's wall time, which the load of the classes beside it would move.</remarks>
 [Trait(Category.Name, Category.Process)]
 [Collection(Alone.Name)]
 public sealed class AgentLaunchTimeTests(ITestOutputHelper output) : IDisposable

@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ROSTER1 (D150 §5.3, D125's TOOL6g note): an account is never read at the application's start, at a look, on a timer or
-/// when a view opens. The roster reports what was last read (<see cref="AccountReads"/>), with when, so a restart and a cold
-/// cache ask nothing; a start runs on an account never read, as on any unknown (SES3), and walks past one last read signed out.
+/// An account is never read at the application's start, at a look, on a timer or
+/// when a view opens. The roster reports what it last read (<see cref="AccountReads"/>), with when, so a restart and a cold
+/// cache ask nothing; a start runs on an account never read, as on any unknown, and walks past one last read signed out.
 /// </summary>
 /// <remarks>
 /// The agent is a script that logs every question it is asked, found by presence (<see cref="TestAgent.ProbeByPresence"/>),
@@ -90,7 +90,7 @@ public sealed class RosterReadTests : IDisposable
         Assert.Equal((LoginState.Unknown, (DateTimeOffset?)null), (report.OwnLogin, report.OwnRead));
     }
 
-    /// <summary>A start at a cold cache asks nothing, and runs on an account never read, as on any unknown (SES3).</summary>
+    /// <summary>A start at a cold cache asks nothing, and runs on an account never read, as on any unknown.</summary>
     [Fact]
     public async Task A_start_at_a_cold_cache_asks_no_account_and_runs_on_one_never_read()
     {
@@ -104,7 +104,7 @@ public sealed class RosterReadTests : IDisposable
     }
 
     /// <summary>
-    /// STARTSPROBE1 (D150 point 5): a view's read of a start (the Map's `STARTS`, through <see cref="HarnessRoster.WiringAsync"/>) asks no
+    /// A view's read of a start (the Map's `STARTS`, through <see cref="HarnessRoster.WiringAsync"/>) asks no
     /// account. An account last read signed out longer ago than a start waits to ask it again (<see cref="HarnessRoster.SignedOutAskedAgain"/>)
     /// is a start's question, which the next start asks; the view says it signed out, in the start's own sentence, and asks nothing. The
     /// start beside it is the control: it does ask, so the stand-in that fails on an ask is live.
@@ -126,7 +126,7 @@ public sealed class RosterReadTests : IDisposable
     }
 
     /// <summary>
-    /// STARTSPROBE1 and PERF3: nor does a view's read start the agent's binary. An agent found by presence is read by its file alone,
+    /// Nor does a view's read start the agent's binary. An agent found by presence is read by its file alone,
     /// each time, so a view refuses while the file is not there and, once it is, finds it with no start; a start goes on.
     /// </summary>
     [Fact]
@@ -165,8 +165,7 @@ public sealed class RosterReadTests : IDisposable
     }
 
     /// <summary>
-    /// Rewritten by POOL1a2 (D197 point 1): the machine's one named account was the start's only account, account-2 beside it in
-    /// no list. Both are the set now, so the start would pass to account-2; the case is an agent whose set is the one account.
+    /// The case is an agent whose set is the one account: with two accounts in the set, the start would pass to account-2.
     /// </summary>
     [Fact]
     public async Task An_account_last_read_signed_out_holds_its_start_naming_the_sign_in_and_asks_nothing()
@@ -185,9 +184,9 @@ public sealed class RosterReadTests : IDisposable
     }
 
     /// <summary>
-    /// HELPSTUCK1: a lock's folder beside the accounts is no account. The owner's machine listed Claude Code's lock folders as
-    /// accounts, a start's walk went to one read signed in, and a conversation ran there. The report names each as a stray,
-    /// saying whether it holds a sign-in (a reading that said so, or a sign-in's mark), so it is said rather than lost, and
+    /// A lock's folder beside the accounts is no account: listed as one, a start's walk would go to one read signed in,
+    /// and a conversation would run there. The report names each as a stray,
+    /// saying whether it holds a sign-in (a reading that says so, or a sign-in's mark), so it is said rather than lost, and
     /// no start walks to it.
     /// </summary>
     [Fact]
@@ -219,7 +218,7 @@ public sealed class RosterReadTests : IDisposable
     }
 
     /// <summary>
-    /// The report lists the accounts on disk, each with what was last read of it and when, and the tool's own sign-in's; one
+    /// The report lists the accounts on disk, each with its last reading and when, and the tool's own sign-in's; one
     /// never read says so. A removed account is gone from it at once, and a restart reads the same.
     /// </summary>
     [Fact]
@@ -257,8 +256,8 @@ public sealed class RosterReadTests : IDisposable
     }
 
     /// <summary>
-    /// A person looking again lets a refused account through (AGT3b) and ends the tool's own home's cool-off (D125 §3.7), as an
-    /// account action always has, and asks no account to do it. Its set is the one account (POOL1a2), as
+    /// A person looking again lets a refused account through and ends the tool's own home's cool-off, as an
+    /// account action does, and asks no account to do it. Its set is the one account, as
     /// <see cref="An_account_last_read_signed_out_holds_its_start_naming_the_sign_in_and_asks_nothing"/> says why.
     /// </summary>
     [Fact]
@@ -277,7 +276,7 @@ public sealed class RosterReadTests : IDisposable
     }
 
     /// <summary>
-    /// POOL1a3 (D197 point 3 and its acceptance note): the agent's <i>Read again</i> reads each account of Daoris's and never the
+    /// The agent's <i>Read again</i> reads each account of Daoris's and never the
     /// tool's own sign-in, and still ends that agent's own home's cool-off, nothing asked, so the cool-off's line that sends the
     /// person to it holds. Another agent's stands until the roster's whole refresh, which asks no own sign-in either.
     /// </summary>

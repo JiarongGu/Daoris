@@ -4,9 +4,9 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A checkout's guess at its line (<see cref="WorkingTree.DefaultBranchAsync"/>), asked of git once for as long as the files git
-/// reads to answer stay as they were (IDLECPU1). The screen's LINES, the remote sync and the registration's line asked git of
+/// reads to answer stay as they were. The screen's LINES, the remote sync and the registration's line asked git of
 /// every checkout with no line set at each ask, one to three program starts each; on a machine whose every start costs a quarter
-/// of a second or more (DEVDRIVE1), an idle window's list cost seconds of the shell's time at each ask.
+/// of a second or more, an idle window's list cost seconds of the shell's time at each ask.
 /// </summary>
 /// <remarks>
 /// <para><b>What git reads is what is watched</b>, in the files backend's layout: origin's <c>HEAD</c>, which is a symbolic ref and

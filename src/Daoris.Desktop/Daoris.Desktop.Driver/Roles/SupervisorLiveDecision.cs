@@ -9,7 +9,7 @@ internal sealed class SupervisorLiveDecision
     public required ParkQuestion Question { get; init; }
     public required string Choice { get; init; }
 
-    /// <summary>A defer's bound (SUPERVISOR1b, <c>left</c>), its choice empty; null for an answer.</summary>
+    /// <summary>A defer's bound (<c>left</c>), its choice empty; null for an answer.</summary>
     public string? Bound { get; init; }
 
     public required IReadOnlyList<SupervisorReason> Reasons { get; init; }
@@ -25,7 +25,7 @@ internal sealed class SupervisorLiveDecision
     public string? Receipt { get; set; }
     public string? Word { get; set; }
 
-    /// <summary>Whether the word's take-back was called (SUPERVISORRACE1): a stale decision's word not yet taken back is the next sweep's.</summary>
+    /// <summary>Whether the word's take-back is called: a stale decision's word not yet taken back is the next sweep's.</summary>
     public bool TakenBack { get; set; }
 
     public SupervisorTicket? Ticket { get; set; }

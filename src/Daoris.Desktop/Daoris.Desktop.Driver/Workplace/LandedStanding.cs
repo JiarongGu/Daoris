@@ -3,11 +3,10 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// How long a landing's branch has stood, said to the person (LANDRETIRE1 part 2, amending D102's note on the clean-up of landing
-/// branches): a branch whose quest is closed and which the line has not held for <see cref="Grace"/> is the person's to withdraw
+/// How long a landing's branch has stood, said to the person: a branch whose quest is closed and which the line has not held for <see cref="Grace"/> is the person's to withdraw
 /// (<see cref="LandedWithdrawals"/>), so the list names its age and its closed quest with the door beside it, and <i>What needs you</i> names
 /// it once (<see cref="InventoryCode.LandingStale"/>). The clean-up never removes it on this: an age says nothing of whether the person wants
-/// the work (CLEANUP1). Whether a quest is closed is the service's, so the one read of it is a seam the callers hand in
+/// the work. Whether a quest is closed is the service's, so the one read of it is a seam the callers hand in
 /// (<see cref="ClosedAsync"/>), and everything below it is pure.
 /// </summary>
 public static class LandedStanding
@@ -50,7 +49,7 @@ public static class LandedStanding
 
     /// <summary>
     /// The quests among the entries' that the service says are closed, read once and only where an entry asks. A service that does not
-    /// answer closes nothing: the age is still said, and a quest is never taken for closed for want of an answer (D57).
+    /// answer closes nothing: the age is still said, and a quest is never taken for closed for want of an answer.
     /// </summary>
     /// <param name="quests">The service's every quest, closed ones included (<c>ServiceClient.EveryQuestAsync</c>).</param>
     public static async Task<IReadOnlySet<string>> ClosedAsync(

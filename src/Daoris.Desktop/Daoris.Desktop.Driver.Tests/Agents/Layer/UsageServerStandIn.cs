@@ -145,7 +145,7 @@ internal sealed class UsageServerStreams(UsageServerStandIn server)
     }
 }
 
-/// <summary>The layer's runner onto the stand-in: each spawn as the runner was asked it, the stdin lines heard as they arrive.</summary>
+/// <summary>The layer's runner onto the stand-in: each spawn as the runner is asked it, the stdin lines heard as they arrive.</summary>
 internal sealed class UsageServerRunner(UsageServerStandIn server) : IProcessRunner
 {
     private readonly List<UsageSpawned> _spawns = [];
@@ -198,6 +198,6 @@ internal sealed class UsageServerRunner(UsageServerStandIn server) : IProcessRun
     }
 }
 
-/// <summary>One spawn the layer's runner was asked.</summary>
+/// <summary>One spawn the layer's runner is asked.</summary>
 internal sealed record UsageSpawned(
     string Command, IReadOnlyList<string> Args, string? WorkingDirectory, IReadOnlyDictionary<string, string?>? Environment);

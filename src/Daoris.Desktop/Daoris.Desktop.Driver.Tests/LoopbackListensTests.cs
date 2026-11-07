@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A test listens on loopback alone (FIREWALL1): a listener on every interface makes Windows ask its firewall about the test
+/// A test listens on loopback alone: a listener on every interface makes Windows ask its firewall about the test
 /// host, once for each path a test host runs from, so every new worktree and gate tree asked again. `TcpListener.Create`
 /// listens on every interface, as `IPAddress.Any` and `IPAddress.IPv6Any` do; the suites' own servers listen on
 /// `IPAddress.Loopback` or `127.0.0.1`. The rule is held on sources made in memory, then over every test project here.

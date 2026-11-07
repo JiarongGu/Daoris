@@ -3,13 +3,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// UPDATE1 (D139 §2): while an update drains, the watch starts nothing new — a quest, a resume, a carry-on, an answered
+/// While an update drains, the watch starts nothing new — a quest, a resume, a carry-on, an answered
 /// park, an intake — and lets what runs run on; the hold is said as the update's, and a hold the person made keeps its
 /// own sentence. The looks go on, so an ending is still reported.
 /// </summary>
 /// <remarks>
-/// Over the real client and planner with the service's doors and each start's run standing in, in-process, as the DEV3
-/// tests drive the watch: the scheduling is what is held here.
+/// Over the real client and planner with the service's doors and each start's run standing in, in-process: the scheduling is what is held here.
 /// </remarks>
 public sealed class UpdateDrainTests : IDisposable
 {
@@ -144,7 +143,7 @@ public sealed class UpdateDrainTests : IDisposable
     }
 
     /// <summary>
-    /// DRAINHOLD1 (the driver follow-up): the loop's work beside the looks that removes trees or opens turns waits out the drain too. The
+    /// The loop's work beside the looks that removes trees or opens turns waits out the drain too. The
     /// tidy and keeping pass stays due and begins no pass, and the wake of the conversations waiting for an account is not asked; after
     /// *Not now* the tidy begins and the wake is asked.
     /// </summary>
@@ -186,7 +185,7 @@ public sealed class UpdateDrainTests : IDisposable
         }
     }
 
-    /// <summary>DRAINHOLD1: the tidy of a ref move is refused with no try while an update drains, stays pending, and is tried after it.</summary>
+    /// <summary>The tidy of a ref move is refused with no try while an update drains, stays pending, and is tried after it.</summary>
     [Fact]
     public async Task A_tidy_of_a_ref_move_is_refused_while_an_update_drains_and_tried_after_it()
     {

@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// DONEEND1, through a REAL tick on the protocol door. On the install a driven session backgrounded a long test run, ended its
-/// turn holding its quest, and the quest then closed done; the session went on working, holding a slot of the cap, until the
-/// 90-minute timeout killed it, and the kill left the test's scratch in its tree. Here the stand-in agent does the same and then
+/// Through a REAL tick on the protocol door. A driven session backgrounds a long test run, ends its
+/// turn holding its quest, and the quest then closes done; left alone the session would go on working, holding a slot of the cap, until the
+/// 90-minute timeout killed it, and the kill would leave the test's scratch in its tree. Here the stand-in agent does the same and then
 /// idles, never exiting when its stdin closes, its test run still going: the run must end well inside its timeout, completed,
 /// and the test run must end with the agent's tree.
 /// </summary>
@@ -64,7 +64,7 @@ public sealed class DoneEndTickTests : IDisposable
         Assert.Contains("The session waits for that work", transcript, StringComparison.Ordinal);
         Assert.Contains("its quest no longer waits on its background work", transcript, StringComparison.Ordinal);
 
-        // Its agent never exited by itself, so its tree was ended, and its test run with it.
+        // Its agent never exited by itself, so its tree is ended, and its test run with it.
         Assert.Contains("Daoris ended its process tree", transcript, StringComparison.Ordinal);
         var work = int.Parse(File.ReadAllText(pidFile).Trim(), System.Globalization.CultureInfo.InvariantCulture);
         await Poll.Until(() => !Alive(work), () => $"the test run {work} still runs", TimeSpan.FromSeconds(20));

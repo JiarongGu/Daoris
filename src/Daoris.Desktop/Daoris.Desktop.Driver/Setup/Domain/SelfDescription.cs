@@ -10,18 +10,18 @@ namespace Daoris.Driver;
 public sealed record RepositoryDescription(string? Summary, IReadOnlyList<string> Stack, string? Source) : IIntakeDescription;
 
 /// <summary>
-/// What a repository that DECLARED nothing says about itself (D77) — read from its own committed
+/// What a repository that DECLARED nothing says about itself — read from its own committed
 /// files, never written, so an intake can decide a workspace nobody adopted.
 /// </summary>
 /// <remarks>
 /// <para><b>Evidence, not a declaration.</b> A declaration is a claim someone made on purpose about
-/// what a repository owns (D34); a README is whatever its authors wrote for a newcomer. The room says
+/// what a repository owns; a README is whatever its authors wrote for a newcomer. The room says
 /// which is which, and a declaration outranks this wherever both exist.</para>
 ///
-/// <para><b>Read, never written</b> (D32), and small: the top of a few files, no walk of the tree —
+/// <para><b>Read, never written</b>, and small: the top of a few files, no walk of the tree —
 /// an intake opens against every repository in a circle, and the first real one held twenty-nine.</para>
 ///
-/// <para>No model reads it (D24). What a paragraph says is judged by the intake session, which is
+/// <para>No model reads it. What a paragraph says is judged by the intake session, which is
 /// where a model is; this only decides which paragraph is worth handing it.</para>
 ///
 /// <para><b>The rules, pure</b>: the folder's top comes in as three questions (<see cref="Of"/>), asked in the
@@ -254,7 +254,7 @@ public static class SelfDescription
     }
 
     /// <summary>
-    /// Which lines of a README a fenced code block holds, read a line at a time as CommonMark reads a fence (ORIENT2h6):
+    /// Which lines of a README a fenced code block holds, read a line at a time as CommonMark reads a fence:
     /// its text is never a heading, an underline or a paragraph.
     /// </summary>
     /// <remarks>

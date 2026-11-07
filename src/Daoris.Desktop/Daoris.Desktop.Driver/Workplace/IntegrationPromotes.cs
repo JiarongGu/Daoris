@@ -5,8 +5,7 @@ using static Daoris.Driver.IntegrationPromoteWords;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The integration run's gates verdict, promotion and settle over git (INTEGRATE1e part e4a, D215; the integration design §5.2 steps 6 to 9,
-/// §5.6, §5.7): a verified candidate promoted onto its line only on a passing verdict for its exact tip, and only if the line has not moved
+/// The integration run's gates verdict, promotion and settle over git: a verified candidate promoted onto its line only on a passing verdict for its exact tip, and only if the line has not moved
 /// under it, and its members settled. The line's run calls it (<see cref="IntegrationLines"/>).
 /// </summary>
 /// <remarks>
@@ -23,7 +22,7 @@ namespace Daoris.Driver;
 /// working tree), and moves the line: one <c>update-ref</c> verifying the old value where no working tree has it out; a
 /// <c>merge --ff-only</c> in the one that has it out, where it is clean, and the step held, said why, where it is not. An <c>update-ref</c>
 /// under a checkout is never made.</para>
-/// <para><b>Each end closes the candidate's job</b> (§5.6): the candidate's one job, which every gate and runner process ran in, ends with it.</para>
+/// <para><b>Each end closes the candidate's job</b>: the candidate's one job, which every gate and runner process ran in, ends with it.</para>
 /// </remarks>
 internal sealed class IntegrationPromotes(IntegrationStore store, string treesRoot)
 {
@@ -64,7 +63,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
 
         if (candidate.PromotedAt is null)
         {
-            // INTEGRATE1h: a decide recorded on a candidate held for one is its verdict from then on, in place of the gates it held on: a held
+            // A decide recorded on a candidate held for one is its verdict from then on, in place of the gates it held on: a held
             // promotion after a `land` is tried again on that decide, never on the gates run again.
             var steps = store.Steps(candidate.Id);
             if (steps.Any(each => each is { Step: IntegrationStepNames.Judge, Outcome: IntegrationStepOutcomes.Held }) && store.DecideOf(candidate.Id) is { } decided)
@@ -85,7 +84,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
     }
 
     /// <summary>
-    /// Everything after the line holds the candidate's tip, each step once: the settle (§5.2 step 9), the tidy (step 10) and the close (step 11),
+    /// Everything after the line holds the candidate's tip, each step once: the settle, the tidy (step 10) and the close (step 11),
     /// by what the candidate's steps already show done, so a come-up that finds the candidate between them goes on from the step after the last
     /// and never promotes again. The candidate stands until its close ends it.
     /// </summary>
@@ -104,7 +103,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         var candidate = store.Candidate(claim.Candidate);
         if (candidate is { Stands: false })
         {
-            // §5.6: every end of the candidate closes its one job, its descendants ending with it, before anything else forms.
+            // Every end of the candidate closes its one job, its descendants ending with it, before anything else forms.
             try
             {
                 await ProcessJob.EndNamedAsync(candidate.Job).ConfigureAwait(false);
@@ -118,7 +117,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         return new IntegrationPromoteRun(kind, said) { Candidate = candidate, Members = store.Members(claim.Candidate), Verdict = verdict };
     }
 
-    // ——— The verdict, then the promotion (§5.2 steps 6 to 8).
+    // ——— The verdict, then the promotion.
 
     /// <summary>Everything up to and including the promotion: null where the line now holds the candidate's tip and the settle goes on; else the answer.</summary>
     private async Task<IntegrationPromoteRun?> PromoteAsync(
@@ -189,7 +188,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
             return (new IntegrationVerdict(VerdictActions.Green) { Said = "the line's rule integrates with no gates." }, null);
         }
 
-        // The declaration of the candidate's epoch, as the owner had accepted it when its requests were admitted (LANDNODE1g); an epoch that
+        // The declaration of the candidate's epoch, as the owner had accepted it when its requests were admitted; an epoch that
         // froze none, and a candidate of no epoch, run under the acceptance as it stands.
         var frozen = IntegrationEpoch.BlobOf(store.CandidateEpoch(candidate.Id));
         var accepted = frozen ?? IntegrationAcceptance.Of(ask.Config, ask.Repository);
@@ -252,7 +251,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
     }
 
     /// <summary>
-    /// The decide recorded on a candidate held for one, consumed (INTEGRATE1h; §4.5, §8): <c>land</c> promotes it where the line has not moved
+    /// The decide recorded on a candidate held for one, consumed: <c>land</c> promotes it where the line has not moved
     /// under it, the person's press standing for the gates' verdict; <c>split</c> forms it again to run one member at a time, and one of one is
     /// handed back as unresolved; <c>hand-back</c> hands every replayed member back with the hold's words. A word this build does not know is no
     /// decide: nothing is written. Null where the line now holds the candidate's tip and the settle goes on.
@@ -315,7 +314,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         return await AnswerAsync(kind, ended.Said ?? "", claim, action).ConfigureAwait(false);
     }
 
-    /// <summary>The candidate formed again where the line moved under it: nothing moves, and its members' requests are queued again (§5.2 step 8).</summary>
+    /// <summary>The candidate formed again where the line moved under it: nothing moves, and its members' requests are queued again.</summary>
     private async Task<IntegrationPromoteRun> FormAgainAsync(IntegrationClaim claim, IntegrationCandidate candidate, string line, CancellationToken ct)
     {
         var said = MovedWords(candidate, line);
@@ -327,7 +326,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
     }
 
     /// <summary>
-    /// The <c>promote</c> step (§5.2 step 8): begun with <paramref name="lineCommit"/>, the line's commit the promotion read before the gates, or, for an
+    /// The <c>promote</c> step: begun with <paramref name="lineCommit"/>, the line's commit the promotion read before the gates, or, for an
     /// attempt run again, the one its cut attempt recorded; its effect reads the line again and forms the candidate again where it moved. Its
     /// effect is <see cref="EffectAsync"/>. Null where the line now holds the candidate's tip.
     /// </summary>
@@ -356,7 +355,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
     /// declaration at the commit being moved, then the move, by the path its checkout allows.
     /// </summary>
     /// <remarks>
-    /// GITLOCK1: the checkout held alone (<see cref="TreeLock.TryWriting"/>) from the line's first read through the move and its read back, so
+    /// The checkout held alone (<see cref="TreeLock.TryWriting"/>) from the line's first read through the move and its read back, so
     /// no pull, replay or start meets it between; whatever holds it holds the step, said, for the next look. Taken here alone: the line's run and
     /// the legacy merge's press reach this through it and take none, and its claim and the line's one run are taken before it.
     /// </remarks>
@@ -369,7 +368,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
             return Held($"{TreeLock.Held(ask.Repository, TreeLock.HolderOf(ask.Home, ask.Root))}: nothing was moved, and it is tried again at the next look.");
         }
 
-        // GITAPP2a: the checkout's open acts reconciled under the hold, before the line's first read; one that still runs holds the promotion.
+        // The checkout's open acts reconciled under the hold, before the line's first read; one that still runs holds the promotion.
         if (await ActReconciler.ForWriterAsync(ask.Home, ask.Root, ct).ConfigureAwait(false) is { } acting)
         {
             return Held($"{acting.Said}: nothing was moved, and it is tried again at the next look.");
@@ -385,7 +384,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
 
         if (await FenceAsync(ask.Root, step.LineCommit!, ct).ConfigureAwait(false) is { } fenced) return Held($"{fenced}: nothing was moved, and it is tried again at the next look.");
 
-        // Each member's requester's authority, read again here for the race since the form (§5.2 step 8, §8): never trusted from the door.
+        // Each member's requester's authority, read again here for the race since the form: never trusted from the door.
         if (await LapsedAsync(ask, replayed, ct).ConfigureAwait(false) is { Count: > 0 } lapsed) return LapsedEnd(replayed, lapsed);
 
         if (await TreeWorktrees.EntriesAsync(ask.Root, ct).ConfigureAwait(false) is not { } entries)
@@ -398,7 +397,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         if (Seam is { } beforeMove) await beforeMove("before-move").ConfigureAwait(false);
         if (checkout is not null)
         {
-            // GITLOCK1: never under a session the ledger holds in that checkout, read inside the hold.
+            // Never under a session the ledger holds in that checkout, read inside the hold.
             if (await CheckoutBeside.WaitsAsync(ask.Beside, checkout.Path, ask.Repository, $"the promotion onto `{ask.Line}`", ct).ConfigureAwait(false) is { } waits)
             {
                 return Held($"{char.ToUpperInvariant(waits[0])}{waits[1..]}: nothing was moved.");
@@ -461,7 +460,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         return lapsed;
     }
 
-    // ——— The settle (§5.2 step 9, §5.7).
+    // ——— The settle.
 
     /// <summary>
     /// The settle: each member judged against the promoted line, a superseded member's work kept on its recovery ref, and everything one end
@@ -486,7 +485,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         return ended.Outcome == IntegrationStepOutcomes.Done ? null : await AnswerAsync(IntegrationPromoteRuns.Unsettled, ended.Said ?? "", claim).ConfigureAwait(false);
     }
 
-    // ——— The tidy (§5.2 step 10).
+    // ——— The tidy.
 
     /// <summary>
     /// The tidy: each settled member's landed branch handed to the landing's own clean-up, named alone, which removes it where the line holds its
@@ -495,7 +494,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
     /// </summary>
     private async Task TidyAsync(IntegrationClaim claim, IntegrationPromoteAsk ask, CancellationToken ct)
     {
-        // A merge rule's press carried no landed branch: its session's branch and tree stay the person's to discard, as a merge left them (INTEGRATE1g).
+        // A merge rule's press carried no landed branch: its session's branch and tree stay the person's to discard, as a merge left them.
         var settled = store.Members(claim.Candidate).Where(each => each.State == IntegrationMemberStates.Settled)
             .Select(each => store.Request(each.Request)!).Where(each => each.Route != IntegrationRoutes.Merge)
             .GroupBy(each => each.Branch, StringComparer.Ordinal).Select(group => group.First()).ToList();
@@ -544,7 +543,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         return new IntegrationStepEnd(IntegrationStepOutcomes.Done) { Said = $"{string.Join(" ", said)} {Warm}" };
     }
 
-    // ——— The close (§5.2 step 11).
+    // ——— The close.
 
     /// <summary>
     /// The close: the unit's integration note written from the candidate's record, which the review, the session's head, the quest's page, the CLI

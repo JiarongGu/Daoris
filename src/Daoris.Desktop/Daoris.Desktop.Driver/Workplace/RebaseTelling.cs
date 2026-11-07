@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The rebase words said to the session itself where its landing's replay onto the line conflicts (LANDREBASE1, D87's note point 3):
+/// The rebase words said to the session itself where its landing's replay onto the line conflicts:
 /// through the say door as Daoris's words, keyed by the session and the tip that conflicted (<see cref="RebaseKeys.Of"/>), so its
 /// own conversation goes on with them in its own tree, where the context to resolve the conflict is. The automatic landing says them
-/// at the tip it judged; a terminal's <c>trees land</c> says them at its tree's tip (LANDREBASE2), since a terminal has no second press
+/// at the tip it judged; a terminal's <c>trees land</c> says them at its tree's tip, since a terminal has no second press
 /// for the window's <i>Ask it to rebase</i>.
 /// </summary>
 public static class RebaseTelling
@@ -28,7 +28,7 @@ public static class RebaseTelling
     }
 
     /// <summary>
-    /// A terminal's landing (LANDREBASE2): the words said at the tree's HEAD, and the sentence the terminal says after the refusal: that
+    /// A terminal's landing: the words said at the tree's HEAD, and the sentence the terminal says after the refusal: that
     /// the session was asked and the landing can be run again once it has, or why it was not, with the words for the person to pass on.
     /// </summary>
     public static async Task<string> TellTreeAsync(Say say, string session, string tree, LandingConflict conflict, CancellationToken ct = default)

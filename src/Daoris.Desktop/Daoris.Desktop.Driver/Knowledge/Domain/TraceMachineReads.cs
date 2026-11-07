@@ -3,21 +3,21 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>This machine's side of a session in the chain: its events and the rules file it was handed.</summary>
+/// <summary>This machine's side of a session in the chain: its events and the rules file it is handed.</summary>
 internal static partial class TraceMachineReads
 {
     /// <summary>The states a session's process runs in, whose rules file stands while it does.</summary>
     private static readonly HashSet<string> Running = new(StringComparer.Ordinal) { "queued", "starting", "working" };
 
     /// <summary>
-    /// What a landing keeps in the session's record (D100), read from the writer itself so a reworded note is read the same: the
-    /// person's acceptance, a merge into the line's included, an acceptance at the quest's done (LAND2b), and a hand-off after it.
+    /// What a landing keeps in the session's record, read from the writer itself so a reworded note is read the same: the
+    /// person's acceptance, a merge into the line's included, an acceptance at the quest's done, and a hand-off after it.
     /// </summary>
     private static readonly IReadOnlyList<string> Acceptances = KnowledgeWorkplace.Current.AcceptanceNotes;
 
     /// <summary>
-    /// This machine's record of it (D76): the driver's notes before its instruction, which name the account a start chose and
-    /// why; each instruction it was handed, by its event and size; and each acceptance of its work a landing's press kept.
+    /// This machine's record of it: the driver's notes before its instruction, which name the account a start chose and
+    /// why; each instruction it is handed, by its event and size; and each acceptance of its work a landing's press kept.
     /// </summary>
     internal static TraceEvents Events(TracedSession session, TraceHere here)
     {
@@ -58,7 +58,7 @@ internal static partial class TraceMachineReads
     }
 
     /// <summary>
-    /// The rules it was handed (PERM1, D72), from the file the driver wrote under the home for it, while that file stands: it is
+    /// The rules it is handed, from the file the driver wrote under the home for it, while that file stands: it is
     /// the session's own and goes when its run ends.
     /// </summary>
     internal static TraceRules Rules(TracedSession session, TraceHere here)
@@ -99,7 +99,7 @@ internal static partial class TraceMachineReads
         }
     }
 
-    /// <summary>A field the record cut (<see cref="SessionEventText.Cut"/>): what it kept, then how long the original was.</summary>
+    /// <summary>A field the record cut (<see cref="SessionEventText.Cut"/>): what it kept, then how long the original is.</summary>
     [GeneratedRegex(@"^(?<kept>.*)… \((?<chars>\d+) chars\)$", RegexOptions.Singleline)]
     private static partial Regex CutSaid();
 }

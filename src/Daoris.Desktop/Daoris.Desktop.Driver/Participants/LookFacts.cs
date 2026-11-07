@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The facts the looks' judges keep for the plan (PARALLEL1g, D181 point 3; the events design §A3): what each owed opinion's judgment
+/// The facts the looks' judges keep for the plan: what each owed opinion's judgment
 /// found (the quests it sits, the gate the attention band reads, and a pass it found owed), and each ask for a helper's asker as its
 /// judgment read it. Under the watch these judgments run beside the look, one per subject, and the look reads them as last judged,
 /// so a judgment that does not answer holds its own subject alone.
@@ -38,8 +38,8 @@ internal sealed class LookFacts
         {
             var before = _opinions.GetValueOrDefault(due);
             _opinions[due] = fact;
-            // A pass found owed that an earlier judgment found and no look has taken (a draining look leaves it kept, DRAINHOLD1) moves
-            // nothing: its wake was given, and found again at every look it would spin the loop for as long as the update drains.
+            // A pass found owed that an earlier judgment found and no look has taken (a draining look leaves it kept) moves
+            // nothing: its wake is given, and found again at every look it would spin the loop for as long as the update drains.
             return before is null || (fact.Act is not null && before.Act is null) || !before.SatQuests.ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals(fact.SatQuests);
         }
     }
@@ -55,7 +55,7 @@ internal sealed class LookFacts
         }
     }
 
-    /// <summary>The pass <paramref name="due"/>'s last judgment found owed, left kept (DRAINHOLD1): a draining look reads it and begins nothing.</summary>
+    /// <summary>The pass <paramref name="due"/>'s last judgment found owed, left kept: a draining look reads it and begins nothing.</summary>
     internal IOpinionAct? PeekAct(string due)
     {
         lock (_gate) return _opinions.GetValueOrDefault(due)?.Act;
@@ -86,7 +86,7 @@ internal sealed class LookFacts
         lock (_gate) return _askers.TryAdd(ask, asker);
     }
 
-    // The subjects whose last judgment failed, said once (PARALLEL1g).
+    // The subjects whose last judgment failed, said once.
     private readonly HashSet<string> _failing = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
@@ -99,7 +99,7 @@ internal sealed class LookFacts
         lock (_gate) return _failing.Add(subject);
     }
 
-    /// <summary><paramref name="subject"/> was judged: a later failure is said again.</summary>
+    /// <summary><paramref name="subject"/> is judged: a later failure is said again.</summary>
     internal void Judged(string subject)
     {
         lock (_gate) _failing.Remove(subject);
@@ -117,7 +117,7 @@ internal sealed class LookFacts
 }
 
 /// <summary>
-/// What one judgment of an owed opinion found, as the looks keep it for the plan (PARALLEL1g): the quests it sits and the pass it
+/// What one judgment of an owed opinion found, as the looks keep it for the plan: the quests it sits and the pass it
 /// found owed. The review's <c>OpinionFact</c> implements it, so the facts name no more of the opinion than they read.
 /// </summary>
 internal interface IOpinionFact

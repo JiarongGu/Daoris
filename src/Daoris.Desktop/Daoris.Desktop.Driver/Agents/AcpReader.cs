@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// A session's reader, which lives as long as the conversation does: each frame is dispatched before the next is read, a response to
 /// its request, an update through the turn's Update stages, a request through its Request stages or answered as not implemented. Its
-/// end faults whatever was still awaited, so an agent that died mid-turn is a sentence rather than a hang. It reaches the session
+/// end faults whatever is still awaited, so an agent that died mid-turn is a sentence rather than a hang. It reaches the session
 /// through <see cref="ITurnReadWiring"/>.
 /// </summary>
 internal sealed class AcpReader(ITurnReadWiring wiring, AcpWire wire)
@@ -48,8 +48,8 @@ internal sealed class AcpReader(ITurnReadWiring wiring, AcpWire wire)
             // An agent's last words before its stream ended are the ones a person reads the console for.
             wiring.Console.Dispose();
 
-            // Whatever was still awaited will never be answered: faulting it here turns an agent that died mid-handshake into a sentence
-            // rather than a hang. 🔴 Where the timeout said it was ending the process before the stream ended, the sentence is the
+            // Whatever is still awaited will never be answered: faulting it here turns an agent that died mid-handshake into a sentence
+            // rather than a hang. 🔴 Where the timeout said it is ending the process before the stream ended, the sentence is the
             // timeout's; whatever is said after is not.
             wiring.StreamIsOver();
 

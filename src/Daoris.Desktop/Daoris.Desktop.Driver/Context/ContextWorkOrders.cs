@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What Context asks of the work orders: the bounds the instruction's ask, go-ahead and channel sections are quoted by, so the account
-/// of an instruction (<see cref="InstructionAccounting"/>) counts by the very rules the instruction was composed by. Work orders
+/// of an instruction (<see cref="InstructionAccounting"/>) counts by the very rules the instruction is composed by. Work orders
 /// installs it when the driver loads and answers with the same members its sections are written from.
 /// </summary>
 internal interface IContextWorkOrders
@@ -29,7 +29,7 @@ internal interface IContextWorkOrders
     (IReadOnlyList<ChannelItemView> Shown, IReadOnlyList<ChannelItemView> Left) ChannelBounded(IReadOnlyList<ChannelItemView> messages);
 
     /// <summary>
-    /// What the line <paramref name="session"/> ends waits on (COMMS1f): the exchanges its parts hold, read as the work orders read them,
+    /// What the line <paramref name="session"/> ends waits on: the exchanges its parts hold, read as the work orders read them,
     /// oldest first. A source that could not be read adds nothing; none read at all is none.
     /// </summary>
     Task<IReadOnlyList<BriefWait>> WaitsAsync(

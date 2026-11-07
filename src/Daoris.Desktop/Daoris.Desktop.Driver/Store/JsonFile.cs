@@ -6,7 +6,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The one way the driver writes a JSON file it keeps (DEDUP3a, duplication survey §3): indented, LF on every
+/// The one way the driver writes a JSON file it keeps: indented, LF on every
 /// platform, one final newline, BOM-less UTF-8, written through <see cref="AtomicFile"/> into a folder made on the way.
 /// </summary>
 /// <remarks>

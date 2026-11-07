@@ -7,15 +7,15 @@ namespace Daoris.Driver;
 /// <summary>A part of a line as this machine reads it: its session, and its events, null where its log does not read.</summary>
 public sealed record HistoryPart(string Session, PartEvents? Events);
 
-/// <summary>A line's parts oldest first under its one key (<see cref="LineKeys.Of"/>), and why its walk was cut, if it was.</summary>
+/// <summary>A line's parts oldest first under its one key (<see cref="LineKeys.Of"/>), and why its walk stopped short, if it did.</summary>
 public sealed record LineHistory(string Line, IReadOnlyList<HistoryPart> Parts, string? Cut);
 
-/// <summary>A line's answers-alone count (the context-counters design §2.1, §2.4): exact, or at least where its seed's history was cut or trimmed.</summary>
+/// <summary>A line's answers-alone count: exact, or at least where its seed's history is cut or trimmed.</summary>
 /// <param name="Since">When its epoch began: the seed's reading, or the word that reset it.</param>
 /// <param name="From"><see cref="ContinuationAdmissions.Admission"/> where the store keeps the line; <see cref="ContinuationAdmissions.Seed"/> where none is kept yet.</param>
 public sealed record AloneCount(string Line, int N, string Known, string? Why, DateTimeOffset Since, string From);
 
-/// <summary>A go-on judged inside its line's admission: admitted, or held for the person, and the count it was judged at.</summary>
+/// <summary>A go-on judged inside its line's admission: admitted, or held for the person, and the count it is judged at.</summary>
 public sealed record AloneAdmission(bool Admitted, AloneCount Count);
 
 /// <summary>One epoch of a line's count: its seed or the reset that opened it, and the count it opened at.</summary>
@@ -23,7 +23,7 @@ public sealed record AloneAdmission(bool Admitted, AloneCount Count);
 public sealed record AloneEpoch(int Epoch, string Cause, string? Source, int N, string Known, string? Why, DateTimeOffset Since);
 
 /// <summary>
-/// One go-on of a line by answers alone and its disposition (the comms design §5.3): reserved when admitted, attempted once a prompt took
+/// One go-on of a line by answers alone and its disposition: reserved when admitted, attempted once a prompt took
 /// its answers, then taken once its agent acted on them, or cancelled where they went beside the person's word. Uncertain is for a
 /// delivery that cannot tell whether its attempt reached the agent. Every disposition but cancelled counts.
 /// </summary>
@@ -46,8 +46,7 @@ public sealed record AloneRows(
     string Line, IReadOnlyList<AloneEpoch> Epochs, IReadOnlyList<AloneAdmitted> Admitted, IReadOnlyDictionary<string, long> Read, AloneScan Carry);
 
 /// <summary>
-/// The answers-alone count kept as one admission per line in the desktop store, under the line's one key (the comms design §5.3, §13 point
-/// 8). A go-on is judged and reserved inside one write, so two answers queued together are never both the second; the <c>at</c> it is
+/// The answers-alone count kept as one admission per line in the desktop store, under the line's one key. A go-on is judged and reserved inside one write, so two answers queued together are never both the second; the <c>at</c> it is
 /// judged against is handed in. A store short of the step, or one that does not read or take the write, answers null.
 /// </summary>
 public sealed class ContinuationAdmissions(string home, Func<StoreSettled>? settled = null, TimeProvider? clock = null)
@@ -160,7 +159,7 @@ public sealed class ContinuationAdmissions(string home, Func<StoreSettled>? sett
 
     /// <summary>
     /// The line's rows read on over <paramref name="history"/>: seeded where there are none, else each part's events after the last one read
-    /// fed on from the prompt read last. A part not read before is fed only what it kept after the seed: what came before was the seed's.
+    /// fed on from the prompt read last. A part not read before is fed only what it kept after the seed: what came before belongs to the seed.
     /// </summary>
     public static AloneRows ReadOn(AloneRows? rows, LineHistory history, DateTimeOffset now)
     {
@@ -257,7 +256,7 @@ public sealed class ContinuationAdmissions(string home, Func<StoreSettled>? sett
         return (new AloneAdmission(true, CountOf(reserved)), reserved);
     }
 
-    /// <summary>The line's first rows: its count read whole from the events, as it was kept before the admissions, and where that reading stopped.</summary>
+    /// <summary>The line's first rows: its count read whole from the events, and where that reading stopped.</summary>
     private static AloneRows Seeded(LineHistory history, DateTimeOffset now)
     {
         var line = new List<(string Part, SessionEvent Event)>();

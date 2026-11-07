@@ -1,24 +1,24 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a session's review read (<c>SESSION_DIFF</c>, SURF6, REVIEW2, REVIEWDIRTY1-a): the committed files and the base they are measured
+/// What a session's review read (<c>SESSION_DIFF</c>): the committed files and the base they are measured
 /// from, whether they were read from the session's own tree or its landed branch, the standing or landed review, the uncommitted part,
 /// how the tree stands against its line, the branch its HEAD names and the Accept offer. The route makes its wire answer of this.
 /// </summary>
 /// <param name="Diff">The committed files: read from the tree, or the landed branch's changes; empty where only dirty work reads.</param>
-/// <param name="FromBranch">Read from the landed branch in the repository's checkout, the tree no longer readable (REVIEW2).</param>
+/// <param name="FromBranch">Read from the landed branch in the repository's checkout, the tree no longer readable.</param>
 /// <param name="Landed">The standing landing's review (read from the tree), or the landed review the files came from.</param>
 /// <param name="TreeGone">Whether the session's tree is gone from this machine.</param>
 /// <param name="Uncommitted">The tree's uncommitted work, where it was read.</param>
-/// <param name="Behind">How the tree stands against its line (REVIEWBASE1), where the committed range read it.</param>
-/// <param name="TreeBranch">The branch the tree's HEAD names (REVIEWBASE4); null where detached or not read.</param>
-/// <param name="Offer">What the driver would land of the tree (ACCEPTFOOT1), where it offers anything.</param>
+/// <param name="Behind">How the tree stands against its line, where the committed range read it.</param>
+/// <param name="TreeBranch">The branch the tree's HEAD names; null where detached or not read.</param>
+/// <param name="Offer">What the driver would land of the tree, where it offers anything.</param>
 public sealed record SessionReview(
     TreeDiff? Diff, bool FromBranch, LandedReview? Landed, bool TreeGone, TreeDiff? Uncommitted = null,
     LineBehind? Behind = null, string? TreeBranch = null, LandOffer? Offer = null);
 
 /// <summary>
-/// Review's read of a session, today's chain (GITAPP1a-i, the git-app design P1.1): what <c>SESSION_DIFF</c> asks, moved here from
+/// Review's read of a session, today's chain: what <c>SESSION_DIFF</c> asks, moved here from
 /// the route unchanged so the route and the terminal door (<c>daoris git review</c>) read through one code. Each read is
 /// asked one after another, as the route asked it; every start is counted through <see cref="GitLaunch"/> in its budget, and the read
 /// is said in the machine log as <c>review.read</c>.
@@ -54,7 +54,7 @@ public static class SessionReviews
         using (GitLaunch.Within(GitBudget.Review))
         using (GitReadOnce.Within())
         {
-            // GITAPP1a-ii: today's reads as a graph, each started once what it needs has answered (ReviewGraphReads).
+            // Today's reads as a graph, each started once what it needs has answered (ReviewGraphReads).
             review = await ReviewGraphReads.ReadAsync(graph, session, tree, baseCommit, trees, checkoutOf, ct).ConfigureAwait(false);
         }
 
@@ -63,8 +63,8 @@ public static class SessionReviews
     }
 
     /// <summary>
-    /// Today's chain, kept as the oracle the graph is held equal to (the git-app design P1.7) until part two retires it: each read
-    /// asked one after another, as the route asked it before GITAPP1a-ii.
+    /// The sequential chain, kept as the oracle the graph is held equal to: each read
+    /// asked one after another.
     /// </summary>
     internal static async Task<SessionReview?> ChainReadAsync(
         string session, string? tree, string? baseCommit, SessionTrees trees, Func<string, CancellationToken, Task<string?>> checkoutOf,
@@ -77,9 +77,9 @@ public static class SessionReviews
     }
 
     /// <summary>
-    /// <c>review.read</c>'s fields (the git-app design P1.5, §10.3): the session, the whole read's time, its depth and starts, each budget's
+    /// <c>review.read</c>'s fields: the session, the whole read's time, its depth and starts, each budget's
     /// starts, the wasted ones, the gate's wait and the creation summed, the files and the untracked files read; never a path. The depth and the
-    /// wasted starts are the graph's (GITAPP1a-ii); a read with no graph asked each start after the one before, its depth its starts.
+    /// wasted starts are the graph's; a read with no graph asked each start after the one before, its depth its starts.
     /// </summary>
     internal static (string Key, object? Value)[] Line(string session, SessionReview? review, GitCount count, ReviewGraph? graph = null)
     {
@@ -104,7 +104,7 @@ public static class SessionReviews
         ];
     }
 
-    /// <summary>Whether <paramref name="tree"/> is one this home opened for a session, which ran in it alone (D49 §3); a person's checkout is not.</summary>
+    /// <summary>Whether <paramref name="tree"/> is one this home opened for a session, which ran in it alone; a person's checkout is not.</summary>
     public static bool OwnTree(SessionTrees trees, string? tree)
     {
         if (string.IsNullOrWhiteSpace(tree)) return false;
@@ -123,21 +123,21 @@ public static class SessionReviews
         string session, string? tree, string? baseCommit, SessionTrees trees, Func<string, CancellationToken, Task<string?>> checkoutOf,
         CancellationToken ct)
     {
-        // This machine's landing of the session, standing or a trace (D113): where its work went.
+        // This machine's landing of the session, standing or a trace: where its work went.
         var landing = trees.Recorded.Landing(session);
         var gone = TreeFolders.TreeGone(tree);
 
-        // What the session's OWN tree holds that no commit does, read apart (REVIEWDIRTY1-a, D164 point 4); never for a conversation in
-        // the person's checkout, whose uncommitted work is not knowably the session's (D49 §3).
+        // What the session's OWN tree holds that no commit does, read apart; never for a conversation in
+        // the person's checkout, whose uncommitted work is not knowably the session's.
         var dirty = gone || !OwnTree(trees, tree) ? null : await WorkingTree.UncommittedDiffAsync(tree!, ct).ConfigureAwait(false);
 
         if (!gone && !string.IsNullOrWhiteSpace(baseCommit))
         {
-            // The review measures from the newest commit the work shares with the line (REVIEWBASE1, D164's note): a tree that took
-            // in newer line commits (WSR6's replay, a merge, a rebase, the line checked out) would otherwise show the line's own
+            // The review measures from the newest commit the work shares with the line: a tree that took
+            // in newer line commits (a replay, a merge, a rebase, the line checked out) would otherwise show the line's own
             // changes as the session's work. It says how far the latest line it knows is past the tree, and fetches nothing.
             var range = await trees.ReviewRangeAsync(tree!, baseCommit, ct).ConfigureAwait(false);
-            // A chain's step that merged the line reads from a merge of the line's base and its parent's tip (REVIEWBASE3), a tree
+            // A chain's step that merged the line reads from a merge of the line's base and its parent's tip, a tree
             // and no commit: the answer still names the commit it is measured from.
             var diff = await WorkingTree.DiffAsync(tree!, range.Reads, ct).ConfigureAwait(false) is { } read ? read with { Base = range.From } : null;
             if (diff is not null)
@@ -152,10 +152,10 @@ public static class SessionReviews
                     }
                 }
 
-                // HEAD's own name, never the layout's (`SessionTrees.BranchNowAsync` falls back to it where detached, REVIEWBASE4). Git
+                // HEAD's own name, never the layout's (`SessionTrees.BranchNowAsync` falls back to it where detached). Git
                 // just read the range from this HEAD, so a refusal to name it is a fault, thrown as `BranchAsync` throws it.
                 var branch = await WorkingTree.BranchAsync(tree!, ct).ConfigureAwait(false);
-                // ACCEPTFOOT1: the driver's own offer to land this tree (LAND4: D88's proof and SQUASHTIDY1b's content hold), read where
+                // The driver's own offer to land this tree (the proof by ancestry and the content hold), read where
                 // the work is beyond the line and nothing landed it, so an open conversation is offered exactly what a press would land.
                 LandOffer? offer = null;
                 if (landing is null && range.Behind is { Ahead: > 0 } && OwnTree(trees, tree))

@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What one session consumed, as its harness reported it (TOOL3/D57 §4).</summary>
+/// <summary>What one session consumed, as its harness reported it.</summary>
 /// <param name="Session">The session record's id — the same id everything else about it is keyed by.</param>
 /// <param name="Profile">
 /// The credential profile it ran as, or null for the harness's own configuration home. <b>This is
@@ -10,32 +10,32 @@ namespace Daoris.Driver;
 /// loopback, and usage that names one inherits that rather than arguing for itself.
 /// </param>
 /// <param name="Used">Context held, at its high-water mark, in the harness's own units.</param>
-/// <param name="Size">The window it was held against.</param>
+/// <param name="Size">The window it is held against.</param>
 public sealed record UsageEntry(
     string Session, string Repository, string Door, string? Profile,
     long Used, long Size, DateTimeOffset When)
 {
     /// <summary>
-    /// The brainstorm a pass's reading was spent for (BRAINSTORM1c, D176 point 7): its usage is the brainstorm's own kind, never a
+    /// The brainstorm a pass's reading is spent for: its usage is the brainstorm's own kind, never a
     /// quest's or a repository's. Null for every other session, which is written with no such field.
     /// </summary>
     public string? Brainstorm { get; init; }
 }
 
 /// <summary>
-/// One account's share of the load — a derivation over the sessions, never a second tally — counted by agent (AGENTPROVIDER1 s-vii): the
+/// One account's share of the load — a derivation over the sessions, never a second tally — counted by agent: the
 /// agent its doors are (<see cref="AgentOfDoor"/>), so one account used through both of an agent's doors is one share.
 /// </summary>
 public sealed record AccountUsage(string Agent, string? Profile, int Sessions, long Used);
 
 /// <summary>
-/// What sessions on this machine consumed (TOOL3/D57 §4) — <b>measured before it is managed</b>.
+/// What sessions on this machine consumed — <b>measured before it is managed</b>.
 /// </summary>
 /// <remarks>
 /// <para><b>The source is whatever structured wire the door reads.</b> ACP reports context as a turn
-/// runs; Claude Code's own <c>stream-json</c>, which its adapter reads (CONV3a), reports it when a turn
+/// runs; Claude Code's own <c>stream-json</c>, which its adapter reads, reports it when a turn
 /// ends. A door that gives only text and an exit code is recorded not at all, and every surface says
-/// <i>not measured</i> rather than showing a zero. Driven sessions, intakes and, since USAGE1,
+/// <i>not measured</i> rather than showing a zero. Driven sessions, intakes and
 /// conversations all record here, each at its end.</para>
 ///
 /// <para>🔴 <b>Machine-local, by an inherited rule.</b> Per-account usage names a credential profile,
@@ -45,7 +45,7 @@ public sealed record AccountUsage(string Agent, string? Profile, int Sessions, l
 /// boundary per field is how a boundary erodes, so it is not re-decided here.</para>
 ///
 /// <para><b>No price, ever.</b> Daoris does not know what a token costs — that is the deployment's
-/// business (D24) — so this counts what the harness reported and stops. A price table per model per
+/// business — so this counts what the harness reported and stops. A price table per model per
 /// provider, maintained here, would be wrong within a month and would be Daoris claiming to know
 /// something it structurally does not.</para>
 /// </remarks>
@@ -62,11 +62,11 @@ public sealed class SessionUsage(string home)
     /// <summary>Every measured session, oldest first.</summary>
     public IReadOnlyList<UsageEntry> Sessions => Load();
 
-    /// <summary>What one session used, or null when it was never measured.</summary>
+    /// <summary>What one session used, or null when it is never measured.</summary>
     public UsageEntry? Of(string session) =>
         Load().FirstOrDefault(e => string.Equals(e.Session, session, StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>What a brainstorm's passes used (BRAINSTORM1c), oldest first: the readings that name it.</summary>
+    /// <summary>What a brainstorm's passes used, oldest first: the readings that name it.</summary>
     public IReadOnlyList<UsageEntry> OfBrainstorm(string brainstorm) =>
         [.. Load().Where(e => string.Equals(e.Brainstorm, brainstorm, StringComparison.Ordinal))];
 
@@ -77,7 +77,7 @@ public sealed class SessionUsage(string home)
     public IReadOnlyList<AccountUsage> ByAccount(AgentOfDoor agents) => ByAccount(Load(), agents);
 
     /// <summary>
-    /// Which account carried what, over sessions already read (PUSH1e): the route and the pushed slice group the one read they made,
+    /// Which account carried what, over sessions already read: the route and the pushed slice group the one read they made,
     /// so its sessions and its accounts can never disagree. A session is counted for its door's agent (s-vii), so a conversation moved
     /// between one agent's two doors on one account is one share; a session keeps the door it ran through.
     /// </summary>
@@ -100,7 +100,7 @@ public sealed class SessionUsage(string home)
     /// </remarks>
     public void Record(UsageEntry entry)
     {
-        // One writer at a time (USAGE1): a conversation's end and a driven session's both record here,
+        // One writer at a time: a conversation's end and a driven session's both record here,
         // and two read-modify-writes at once would each save a list missing the other's entry.
         lock (_writing) Keep(entry);
     }
@@ -133,7 +133,7 @@ public sealed class SessionUsage(string home)
     /// <summary>
     /// A missing, half-written or hand-mangled file is a machine that has measured nothing — never a
     /// crash, and never overwritten by the act of reading it. Usage is an observation and losing it
-    /// costs nothing, which is the same reading the driver's own wiring files take (D21).
+    /// costs nothing, which is the same reading the driver's own wiring files take.
     /// </summary>
     private List<UsageEntry> Load()
     {

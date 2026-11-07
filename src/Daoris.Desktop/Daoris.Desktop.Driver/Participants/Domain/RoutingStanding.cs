@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A repository's routing standing here (COWORKVIEW1e-i; the cowork view design §R11.2 point 4, §6.4): whether a quest published to its own
+/// A repository's routing standing here: whether a quest published to its own
 /// lanes would start on this machine, judged once. The standing block says it to a work that may publish (<see cref="StandingBlock"/>).
 /// </summary>
 /// <param name="Standing"><see cref="NotDriven"/>, <see cref="NoLanes"/>, <see cref="OneAtATime"/> or <see cref="Open"/>.</param>

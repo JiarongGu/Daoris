@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// NOTIFY2h (D196 point 7; the notification design §5.1, §9): each line the look says is classed where it is made and written as the
+/// Each line the look says is classed where it is made and written as the
 /// declared machine-log event <c>look.said</c>, its class and its family and never its words; a news line is a coded notice in
 /// <i>Done and failed</i>, whatever the notify switch says; and the census: every line a producer of the look adds goes through
 /// <see cref="LookSaid"/>, so a line with no class fails here. Files only, in a home under <c>_fixtures/</c>.
@@ -164,7 +164,7 @@ public sealed class LookSaidTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITRESUME1a (D206 point 1; the limit-resume design §3.1): a quest's line a limit cut off says what became of it as its own news,
+    /// A quest's line a limit cut off says what became of it as its own news,
     /// not as an <i>Ended</i>: keyed by the limited part, so a start held look after look keeps one notice of its wait and one of its
     /// going on. A start that carries on any other end, or that the person's words make, says none.
     /// </summary>
@@ -206,7 +206,7 @@ public sealed class LookSaidTests : IDisposable
     }
 
     /// <summary>
-    /// NOTIFY2h2's census (D196's NOTIFY2h note): the look's deeper producers, which hand it their lines whole, class each line where they
+    /// The census of the look's deeper producers, which hand it their lines whole, class each line where they
     /// make it. Every look line one of them makes (a family's word and two spaces, as the report's lines read) is made by a statement that
     /// classes it, and every run a meeting's, a brainstorm's or a helper's pass ends carries its class; one that does not fails here,
     /// naming its file and line.
@@ -243,7 +243,7 @@ public sealed class LookSaidTests : IDisposable
         Assert.True(unclassed.Count == 0, $"made with no class: {string.Join(", ", unclassed)}");
     }
 
-    /// <summary>The producers that hand the look their lines whole (2h's list, D196's NOTIFY2h note), and the passes whose runs end beside it.</summary>
+    /// <summary>The producers that hand the look their lines whole, and the passes whose runs end beside it.</summary>
     private static readonly string[] Producers =
     [
         "ChannelReach.cs", "ReopenTelling.cs", "ReviewDesk.cs", "RuleProposals.cs","WorkspaceSetup.cs",

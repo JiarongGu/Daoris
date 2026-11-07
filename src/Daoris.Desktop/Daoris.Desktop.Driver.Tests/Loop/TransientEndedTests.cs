@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTERRORS1d and e (D210 point 8; the agent-errors design §7): every kind of pass takes the one retry, within its own minutes, and ends past
+/// Every kind of pass takes the one retry, within its own minutes, and ends past
 /// its bound with its kind's transient reason, never <i>timed out</i> and never <i>no answer</i>.
 /// </summary>
 public sealed class TransientEndedTests

@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MSG1c (D137 §2.2, §4.2): an ended chat the person wrote to is taken up by the chat runner the moment its words are shown
+/// An ended chat the person wrote to is taken up by the chat runner the moment its words are shown
 /// in its conversation, and judged as a driven record is before anything is spawned. Where it cannot go on its words stay
 /// waiting, marked, and its conversation says why by the reason's code; what holds it leaves them waiting and says so; a
 /// driven record, a live one and a record with no words start nothing here. The real client over an in-process ledger, and
@@ -35,7 +35,7 @@ public sealed class ChatGoOnTests : IDisposable
     /// <summary>A conversation's adapter on the protocol door with no toolchain, so nothing is probed.</summary>
     private static Provider Talk() => TestDoors.Door("talk", transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("a judgement test spawns nothing"));
 
-    /// <summary>What the course answered each go-on, by session (FOUNDATION1h branch 7), heard from the runner's go-on.</summary>
+    /// <summary>What the course answered each go-on, by session, heard from the runner's go-on.</summary>
     private static List<(string Session, LineCourse Answer)> Deciding(ChatRunner runner)
     {
         var decided = new List<(string Session, LineCourse Answer)>();
@@ -64,15 +64,15 @@ public sealed class ChatGoOnTests : IDisposable
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
-    /// <summary>The person's words as the say door's door shows them (MSG1d): theirs, under the record's id, reaching it on resume.</summary>
+    /// <summary>The person's words as the say door's door shows them: theirs, under the record's id, reaching it on resume.</summary>
     private static SessionEvent Shown(string id, string text) => new()
     {
         Kind = SessionEventKind.User, Origin = "person", Id = id, Text = text, Reaches = "resume", Door = "screen",
     };
 
     /// <summary>
-    /// 🔴 A chat whose agent named no conversation (a text door, or one from before MSG1c) has lost it (`unkept`), so since SESSCTX1c part
-    /// B (D189 point 3) it goes on by itself in a new part of its session: a conversation opened in its tree, on its agent and account,
+    /// 🔴 A chat whose agent named no conversation (a text door, or an older record) has lost it (`unkept`), so
+    /// it goes on by itself in a new part of its session: a conversation opened in its tree, on its agent and account,
     /// its record naming the one it continues, why <c>resume</c>, by Daoris. Here that part's start fails, since a judgement test spawns
     /// nothing, so the words wait on the record as it ended, marked by their ids, its conversation saying why with the code the page words
     /// and offers its presses by; and the machine log says once that it did not resume — all from the words being shown.
@@ -130,8 +130,8 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// What holds it rather than refusing it (D137 §2.2): the ledger refusing the move, here because another session holds
-    /// its tree (D51). The words wait unmarked, so the next word tries again, and its conversation says what held it.
+    /// What holds it rather than refusing it: the ledger refusing the move, here because another session holds
+    /// its tree. The words wait unmarked, so the next word tries again, and its conversation says what held it.
     /// </summary>
     [Fact]
     public async Task The_ledger_refusing_the_move_holds_the_words_and_says_what_held_them()
@@ -153,7 +153,7 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 GITLOCK1 (D51's note): a conversation going on in the repository's checkout holds the repository shared until its record holds the
+    /// 🔴 A conversation going on in the repository's checkout holds the repository shared until its record holds the
     /// checkout again, as one in a tree of its own does. While a writer of the checkout holds it alone, the go-on is held before the ledger
     /// moves its record: the words wait unmarked, the record is as it ended, and its conversation says what held it.
     /// </summary>
@@ -179,7 +179,7 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// MSG1g (D137 §2.2): a chat's own account cooling holds its words for the reset, said in its conversation with the door
+    /// A chat's own account cooling holds its words for the reset, said in its conversation with the door
     /// out of the wait, a conversation with these words, since nothing carries a chat on by itself. The words wait unmarked and
     /// the record does not move, so the reset lets them go on.
     /// </summary>
@@ -199,13 +199,13 @@ public sealed class ChatGoOnTests : IDisposable
         events.Append("c1", Shown("w1", "Also log the port."));
 
         var held = await NoteAsync(events, "c1", e => e.Text?.Contains("does not go on yet") == true);
-        // FOUNDATION1h branch 7: the course's answer is the wait, for the account's reset.
+        // The course's answer is the wait, for the account's reset.
         Assert.Equal(("c1", "wait:AccountCooling"), Assert.Single(decided) is var (session, answer) ? (session, Said(answer)) : default);
         Assert.Contains("the `stub` account `account-1` is cooling until", held.Text);
         Assert.Contains("its conversation is on that account, so your words wait to go on in it then.", held.Text);
         Assert.EndsWith("`daoris session start-from c1`.", held.Text);
         Assert.StartsWith(ResumeWords.NotYet, held.Text);
-        // CONVNOTE2g: the wait and its door by code, the account by its id, the session its command names a value.
+        // The wait and its door by code, the account by its id, the session its command names a value.
         Assert.Equal(["waits.account", "waits.door-chat"], NoteAssert.Codes(held.Parts));
         Assert.Equal(("account-1", "c1"), (held.Parts![0].Value("account"), held.Parts[1].Value("session")));
         NoteAssert.Holds(held.Text, held.Parts);
@@ -216,7 +216,7 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// MSG1g: a chat whose own account is gone from this machine cannot go on, at once, its conversation with it; it says so by
+    /// A chat whose own account is gone from this machine cannot go on, at once, its conversation with it; it says so by
     /// the reason <c>account</c> and the line that says why, and its words wait marked for *Start a conversation with these words*.
     /// </summary>
     [Fact]
@@ -232,20 +232,20 @@ public sealed class ChatGoOnTests : IDisposable
         events.Append("c1", Shown("w1", "Also log the port."));
 
         var cannot = await NoteAsync(events, "c1", e => e.Why is not null);
-        // FOUNDATION1h branch 7: the course's answer is a hold, cannot go on, by the account's code.
+        // The course's answer is a hold, cannot go on, by the account's code.
         Assert.Equal(("c1", "hold:CannotGoOn:account"), Assert.Single(decided) is var (session, answer) ? (session, Said(answer)) : default);
         Assert.Equal(ContinueWhy.Account, cannot.Why);
         Assert.Equal(["w1"], cannot.Words!);
         Assert.EndsWith("this start runs on another. That account is not on this machine any more.", cannot.Text);
         Assert.Equal(("completed", 0), (ledger.State("c1"), ledger.Moves("c1").Count));
         Assert.Equal(ContinueWhy.Account, new GoOnMarks(_home).Read("c1")!.Why);
-        // SESSCTX1c part B: an account proves nothing of the conversation's loss, so no new part opens without the person.
+        // An account proves nothing of the conversation's loss, so no new part opens without the person.
         Assert.Equal(1, ledger.Count);
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c part B (the session-context design §2): a lost conversation goes on in a new part only with the person's words, since
-    /// another agent's answer is never a new part's words (XAGENT1e, MIXAGENT2a-iii). With only a helper's answer waiting, nothing opens:
+    /// 🔴 A lost conversation goes on in a new part only with the person's words, since
+    /// another agent's answer is never a new part's words. With only a helper's answer waiting, nothing opens:
     /// the answer waits, marked, and its conversation says why.
     /// </summary>
     [Fact]
@@ -287,7 +287,7 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// Only an ended chat of this machine's with words waiting goes on here: a driven record is the planner's (MSG1b), a live
+    /// Only an ended chat of this machine's with words waiting goes on here: a driven record is the planner's, a live
     /// chat hears words at its door, and a record with none waiting has nothing to go on with. Each starts nothing.
     /// </summary>
     [Theory]
@@ -332,9 +332,9 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1o (the foundation design §3.4 rule 4, §3.1's <c>Never</c>): a word shown on an ended conversation while a conversation move
+    /// 🔴 A word shown on an ended conversation while a conversation move
     /// stands for it is the move's, which its open carries: nothing goes on there, its record not even read. Once the move is over, a word shown
-    /// goes on as before.
+    /// goes on.
     /// </summary>
     [Fact]
     public async Task A_word_shown_while_a_conversation_move_stands_for_its_record_starts_nothing()
@@ -360,7 +360,7 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 CHATGOONWAKE1: a run ends its record before it lets its conversation go, so a word shown in between finds the conversation
+    /// 🔴 A run ends its record before it lets its conversation go, so a word shown in between finds the conversation
     /// still held here. Nothing goes on while it is held, its record not even read; the run's letting go takes the word up.
     /// </summary>
     [Fact]
@@ -385,9 +385,9 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1o (the foundation design §19.11's proof): an older shell's own come-up, and its take-up of a part its sweep stopped, over a
+    /// 🔴 An older shell's own come-up, and its take-up of a part its sweep stopped, over a
     /// word kept for a moving record, before the move's open and after it. An older build reads no move record, and this runner is given none.
-    /// Before the open the word waits on the old part, which goes on with it once, as had the move never been decided; after it the open moved
+    /// Before the open the word waits on the old part, which goes on with it once, as if the move were never decided; after it the open moved
     /// the word to the successor, so the old part holds nothing and nothing resumes in the tree its successor holds, and the successor goes on
     /// with the word once.
     /// </summary>
@@ -415,7 +415,7 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// MSG1c2: a chat taken up by itself announces its end, since no route that started it is there to hear it. Here its run
+    /// A chat taken up by itself announces its end, since no route that started it is there to hear it. Here its run
     /// fails at the spawn (a judgement test spawns nothing), which ends the record <c>failed</c> and is told as any end is.
     /// </summary>
     [Fact]
@@ -437,10 +437,9 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SAIDBACK1d (D137 §2.4): the words a run is handed are those the record holds once the ledger's move is made, never
-    /// those the look read. The only word was taken back between the two: nothing is sent, the record is put back as it ended
-    /// (not failed by a run that never should have started), and its conversation says so. Before the fix the look's word was
-    /// handed to a run, which here failed at its spawn.
+    /// 🔴 The words a run is handed are those the record holds once the ledger's move is made, never
+    /// those the look read. The only word is taken back between the two: nothing is sent, the record is put back as it ended
+    /// (not failed by a run that never should have started), and its conversation says so.
     /// </summary>
     [Fact]
     public async Task A_word_taken_back_between_the_look_and_the_move_is_never_handed_to_the_run()
@@ -462,7 +461,7 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// COWORKVIEW1a rule 4: a chat's go-on writes its process's <c>start</c> as its move returns, under a token of this Daoris
+    /// A chat's go-on writes its process's <c>start</c> as its move returns, under a token of this Daoris
     /// process's; put back before the runner, its words taken back, that token is told once and leaves, no line after its <c>start</c>.
     /// </summary>
     [Fact]
@@ -494,7 +493,7 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SAIDBACK1g (D137 §2.4): a chat put back because every word was taken back keeps what ended it: its own note, and the
+    /// 🔴 A chat put back because every word is taken back keeps what ended it: its own note, and the
     /// interrupted flag the move to working cleared, not the taken-back line in place of them. The conversation says so beside.
     /// </summary>
     [Fact]
@@ -517,7 +516,7 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// SAIDBACK1d: a word taken back or reworded between the look and the move is read as the move left the record: the words
+    /// A word taken back or reworded between the look and the move is read as the move left the record: the words
     /// handed are the record's now, a reword's new words included, never the look's.
     /// </summary>
     [Fact]
@@ -537,9 +536,9 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// LANDSYNC2b (D87's 2026-10-15 amendment point 7): a conversation going on in its own tree is told what its start did against
+    /// A conversation going on in its own tree is told what its start did against
     /// the line after the person's words, on both doors, as a driven session's words going on are; and before anything else the
-    /// resume carries after them. Nothing told, and the ask reads as it did. The runs are <c>ChatGoesOnInSyncProcessTests</c>'.
+    /// resume carries after them. Nothing told, and the ask reads plainly. The runs are <c>ChatGoesOnInSyncProcessTests</c>'.
     /// </summary>
     [Fact]
     public void A_conversation_going_on_in_its_own_tree_is_told_after_the_words_what_its_start_did_against_the_line()
@@ -559,8 +558,8 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// MIXAGENT2a-iii: an ended conversation goes on with a helper's answer through its own going-on, and says so as the driven
-    /// quest's does (D163): the ledger's note and the opening name a helper's answer where it is all that waits, "your words" only
+    /// An ended conversation goes on with a helper's answer through its own going-on, and says so as the driven
+    /// quest's does: the ledger's note and the opening name a helper's answer where it is all that waits, "your words" only
     /// where the person's wait too, and never "your words" for a claim of another agent.
     /// </summary>
     [Fact]
@@ -582,7 +581,7 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// MIXAGENT2a-iii: the ledger is told it goes on with a helper's answer, never "your words", where that is all that waits;
+    /// The ledger is told it goes on with a helper's answer, never "your words", where that is all that waits;
     /// the conversation is its own and the person's words are none of it.
     /// </summary>
     [Fact]
@@ -605,7 +604,7 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 COWORK1e (D188 point 4; the message-urgency design §2.3, trap 11), an ended conversation's go-on: its line went on by answers
+    /// 🔴 An ended conversation's go-on: its line went on by answers
     /// alone twice, so a third answer shown to it waits for the person, marked with the agent that answered and said once, before
     /// anything moves; the shell's come-up leaves it so. The person's *Go on with this answer* lets it go on in its own conversation.
     /// </summary>
@@ -633,7 +632,7 @@ public sealed class ChatGoOnTests : IDisposable
         events.Append("c1", Shown("w3", "Another agent says five.") with { Origin = "target", Helper = "h1" });
 
         var held = await NoteAsync(events, "c1", e => e.Parts?.Any(part => part.Code == HeldNoteCodes.AnswersHeld.Code) == true);
-        // FOUNDATION1h branch 7: the course's answer is the answers-alone hold, which offers the person's three doors.
+        // The course's answer is the answers-alone hold, which offers the person's three doors.
         Assert.Equal(("c1", "hold:AnswersAlone:answers-alone"), Assert.Single(decided) is var (session, answer) ? (session, Said(answer)) : default);
         Assert.Equal(["w3"], held.Words!);
         Assert.Equal((GoOnMarks.AnswersAlone, "codex-acp"), (new GoOnMarks(_home).Read("c1")!.Why, new GoOnMarks(_home).Read("c1")!.Agent));
@@ -647,7 +646,7 @@ public sealed class ChatGoOnTests : IDisposable
         await Poll.Until(() => { lock (ended) return ended.Count > 0; }, () => $"moves [{string.Join(",", ledger.Moves("c1"))}]");
         Assert.Equal(["working", "failed"], ledger.Moves("c1"));
         Assert.Single(events.After("c1", 0).Events, e => e.Parts?.Any(part => part.Code == HeldNoteCodes.AnswersHeld.Code) == true);
-        // COMMS1g: the line's admission was seeded at two, the person's press reset it, and the answer it let go on is admitted once.
+        // The line's admission is seeded at two, the person's press resets it, and the answer it lets go on is admitted once.
         var admission = new ContinuationAdmissions(_home, () => StoreSettled.Yes).Of("c1")!;
         Assert.Equal([("seed", 2), ("reset", 0)], admission.Epochs.Select(epoch => (epoch.Cause, epoch.N)));
         var row = Assert.Single(admission.Admitted);
@@ -656,7 +655,7 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// MIXAGENT2a-iii: a helper's answer for a conversation that is open in no runner here (the shell came up with it left on a
+    /// A helper's answer for a conversation that is open in no runner here (the shell came up with it left on a
     /// record that works) is not an ended chat's words: nothing goes on, and it waits where it is.
     /// </summary>
     [Fact]
@@ -676,10 +675,10 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// MSG1c2: words kept on an ended chat while no runner heard them (the shell was not running) are taken up when one
-    /// comes up, judged as words shown now are: here a chat whose conversation was not kept says why. What the runner never
-    /// takes up stays as it was: a driven record (the planner's), a live chat, a chat with no words, and a chat whose every
-    /// waiting word was already judged unable to go on, which waits for a word said since; one with a word said since the
+    /// Words kept on an ended chat while no runner heard them (the shell is not running) are taken up when one
+    /// comes up, judged as words shown now are: here a chat whose conversation is not kept says why. What the runner never
+    /// takes up stays as it is: a driven record (the planner's), a live chat, a chat with no words, and a chat whose every
+    /// waiting word is already judged unable to go on, which waits for a later word; one with a later word after the
     /// mark is tried.
     /// </summary>
     [Fact]
@@ -714,7 +713,7 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HANDWORDS1 (D163 point 1, D165 point 3): a conversation handed over or moved went on in another, which holds its tree now
+    /// 🔴 A conversation handed over or moved goes on in another, which holds its tree
     /// and takes its words. Words left on its record never restart it: not as its go-on is asked, not as the shell comes up, and not
     /// as a word is shown; it stays as it ended, its words unmarked and nothing said in it.
     /// </summary>
@@ -741,7 +740,7 @@ public sealed class ChatGoOnTests : IDisposable
         Assert.DoesNotContain(events.After("c1", 0).Events, e => e.Kind == SessionEventKind.Note);
     }
 
-    /// <summary>MSG1c2: a chat the sweep takes up announces its end as one a word takes up does.</summary>
+    /// <summary>A chat the sweep takes up announces its end as one a word takes up does.</summary>
     [Fact]
     public async Task A_chat_the_sweep_takes_up_announces_its_end()
     {
@@ -757,7 +756,7 @@ public sealed class ChatGoOnTests : IDisposable
         lock (ended) Assert.Equal([("c1", "failed")], ended);
     }
 
-    /// <summary>MSG1c2: a service that does not answer takes nothing up now, rather than ending the shell's start in an error.</summary>
+    /// <summary>A service that does not answer takes nothing up, rather than ending the shell's start in an error.</summary>
     [Fact]
     public async Task A_sweep_the_service_does_not_answer_takes_nothing_up()
     {
@@ -778,7 +777,7 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
-    /// A record is read as a run that goes on needs it (MSG1c): its kind, state, words, adapter, account, tree, version,
+    /// A record is read as a run that goes on needs it: its kind, state, words, adapter, account, tree, version,
     /// note and flags; a teammate's record with the same id is none of this machine's.
     /// </summary>
     [Fact]
@@ -813,7 +812,7 @@ public sealed class ChatGoOnTests : IDisposable
 }
 
 /// <summary>
-/// The service's doors an ended chat going on crosses, standing in (MSG1a's model): records with their kind, adapter,
+/// The service's doors an ended chat going on crosses, standing in: records with their kind, adapter,
 /// account, tree and words waiting; the registry; the ledger's moves, with the one move out of an ended state to working
 /// where words wait; and words taken off by their ids. In-process, through the real client over a handler.
 /// </summary>
@@ -831,7 +830,7 @@ internal sealed class ChatLedger : HttpMessageHandler
     private readonly Dictionary<string, string> _settled = [];
 
     /// <summary>
-    /// A producer's key whose word left <paramref name="record"/> (FOUNDATION1 row p, the design §3.4 rule 5): a keyed say that asks
+    /// A producer's key whose word left <paramref name="record"/>: a keyed say that asks
     /// <c>settled</c> under it is answered settled, naming the record, with nothing kept, as the service's say door answers a client that asks.
     /// </summary>
     public ChatLedger Settle(string key, string record)
@@ -840,50 +839,50 @@ internal sealed class ChatLedger : HttpMessageHandler
         return this;
     }
 
-    /// <summary>Where set, the ledger refuses the move out of an ended state with this sentence (D51's tree, held by another).</summary>
+    /// <summary>Where set, the ledger refuses the move out of an ended state with this sentence (a tree held by another).</summary>
     public string? Busy { get; set; }
 
     /// <summary>
-    /// The host's <c>opens</c> mark (FOUNDATION1d-ii part 4): 0 answers no protocol door, as a host before row d-i; 1 a d-i host, whose keyed
+    /// The host's <c>opens</c> mark: 0 answers no protocol door; 1 a host whose keyed
     /// open keeps its receipt and moves nothing; 2 a host whose keyed open also moves the words its <c>moves</c> names and the person's kept
-    /// since its read, as the service's one step does (row d-ii part 3).
+    /// after its read, as the service's one step does.
     /// </summary>
     public int Opens { get; set; }
 
     // Each keyed open's receipt: the record it opened and the transfer it answered, answered again to a retry of its key.
     private readonly Dictionary<string, (string Opened, JsonArray Transfer)> _receipts = new(StringComparer.Ordinal);
 
-    /// <summary>Each keyed open's key and the moves it was asked, in order: none for an unkeyed open.</summary>
+    /// <summary>Each keyed open's key and the moves asked of it, in order: none for an unkeyed open.</summary>
     public List<(string Key, JsonObject? Moves)> Opened { get; } = [];
 
     /// <summary>
     /// The records whose take answers <c>taken</c> and leaves their words, as the service's take answers a request naming words that do not wait
-    /// (FOUNDATION1d-ii part 4): what tells a reader that judges the take's answer from one that judges what the record holds after.
+    /// what tells a reader that judges the take's answer from one that judges what the record holds after.
     /// </summary>
     public HashSet<string> Keeps { get; } = new(StringComparer.Ordinal);
 
     /// <summary>
     /// Where set, called as a record moves to working, still inside the ledger's lock: what a take-back landing between the look
-    /// and the move does to the record's words (SAIDBACK1d).
+    /// and the move does to the record's words.
     /// </summary>
     public Action<JsonObject>? WhenWorking { get; set; }
 
-    /// <summary>How many times the records were read.</summary>
+    /// <summary>How many times the records are read.</summary>
     public int Reads { get; private set; }
 
     /// <summary>Each take of words: the session and the ids joined.</summary>
     public List<(string Session, string Ids)> Taken { get; } = [];
 
-    /// <summary>Each word taken back (COWORK1c's uncertain words, as a shell comes up): the session and the word.</summary>
+    /// <summary>Each word taken back (uncertain words, as a shell comes up): the session and the word.</summary>
     public List<(string Session, string Word)> TakenBack { get; } = [];
 
-    /// <summary>The workspace each Ask Daoris open named in its body, in order: null where it named none (ASKSCOPE1a).</summary>
+    /// <summary>The workspace each Ask Daoris open names in its body, in order: null where it names none.</summary>
     public List<string?> HelpAsked { get; } = [];
 
-    /// <summary>The mode each Ask Daoris open was told its start got, in order: null where it told none (HELPMODE1a2).</summary>
+    /// <summary>The mode each Ask Daoris open is told its start got, in order: null where it tells none.</summary>
     public List<string?> HelpModesAsked { get; } = [];
 
-    /// <summary>Each mode a conversation going on was recorded under, by its own door (HELPMODE1a2): the session and the mode.</summary>
+    /// <summary>Each mode a conversation going on is recorded under, by its own door: the session and the mode.</summary>
     public List<(string Session, string Mode)> HelpModesKept { get; } = [];
 
     /// <summary>One record as the ledger holds it now, a copy.</summary>
@@ -914,7 +913,7 @@ internal sealed class ChatLedger : HttpMessageHandler
         return this;
     }
 
-    /// <param name="lanes">The ids of the lanes the repository declares (COWORKVIEW1e-i), as the registry answers them.</param>
+    /// <param name="lanes">The ids of the lanes the repository declares, as the registry answers them.</param>
     public ChatLedger Register(string repository, string root, params string[] lanes)
     {
         lock (_gate)
@@ -932,7 +931,7 @@ internal sealed class ChatLedger : HttpMessageHandler
     /// <summary>A record of this machine's: a chat unless said otherwise, in the state given, on the account named or the tool's own.</summary>
     /// <param name="quest">The quest a driven record serves (MSG1f2's start-from), or null.</param>
     /// <param name="ask">The ask an intake answers, or null.</param>
-    /// <param name="from">The session it continues, why and who asked (MIXAGENT1a-iii), or null: a curve's move holds by it (SWITCH1c-ii).</param>
+    /// <param name="from">The session it continues, why and who asked, or null: a curve's move holds by it.</param>
     public Words Chat(
         string id, string state, string adapter, string tree, string kind = "chat", string? quest = null, string repository = "engine",
         string? ask = null, string? profile = null, ContinuedFrom? from = null)
@@ -955,11 +954,11 @@ internal sealed class ChatLedger : HttpMessageHandler
 
     private readonly Dictionary<string, JsonObject> _opinions = new(StringComparer.Ordinal);
 
-    /// <summary>The record each opinion's hand named (CHATFLOW1e), in order: null where it named none.</summary>
+    /// <summary>The record each opinion's hand names, in order: null where it names none.</summary>
     public List<string?> HandedTo { get; } = [];
 
     /// <summary>
-    /// A first pass on <paramref name="working"/>'s work, given, with one <c>must</c> finding (CHATFLOW1e): read back as the local host answers
+    /// A first pass on <paramref name="working"/>'s work, given, with one <c>must</c> finding: read back as the local host answers
     /// it, and handed by its door to the record the driver names, as an ordinary word whose <c>by</c> names it, in <paramref name="words"/>.
     /// </summary>
     public ChatLedger Opinion(string id, string working, string tip, string words)
@@ -1001,7 +1000,7 @@ internal sealed class ChatLedger : HttpMessageHandler
         }
     }
 
-    /// <summary>Change a record's stored fields as the ledger would have left them (SAIDBACK1g).</summary>
+    /// <summary>Change a record's stored fields as the ledger would leave them.</summary>
     public void Edit(string id, Action<JsonObject> change)
     {
         lock (_gate) change(Find(id));
@@ -1028,10 +1027,10 @@ internal sealed class ChatLedger : HttpMessageHandler
         /// <param name="files">The names of the files said with the words, as the record keeps them.</param>
         public Words Say(string word, string text, params string[] files) => Said(word, text, null, files);
 
-        /// <summary>A helper's answer (MIXAGENT2a-iii), as the hand door keeps it: marked with the helper's session, never the person's.</summary>
+        /// <summary>A helper's answer, as the hand door keeps it: marked with the helper's session, never the person's.</summary>
         public Words Helped(string word, string text, string helper = "h1") => Said(word, text, helper, []);
 
-        /// <summary>Daoris's own word (COWORK1b), as the say door keeps it: marked as Daoris's under its fact's key, never the person's.</summary>
+        /// <summary>Daoris's own word, as the say door keeps it: marked as Daoris's under its fact's key, never the person's.</summary>
         public Words Daoris(string word, string text, string key) => Said(word, text, null, [], key);
 
         private Words Said(string word, string text, string? helper, string[] files, string? key = null)
@@ -1072,7 +1071,7 @@ internal sealed class ChatLedger : HttpMessageHandler
 
     private readonly Dictionary<string, List<string>> _notes = new(StringComparer.Ordinal);
 
-    /// <summary>The note each move of a record carried, in order: what the ledger was told as it moved.</summary>
+    /// <summary>The note each move of a record carried, in order: what the ledger is told as it moves.</summary>
     public IReadOnlyList<string> Notes(string id)
     {
         lock (_gate) return [.. _notes.GetValueOrDefault(id) ?? []];
@@ -1092,7 +1091,7 @@ internal sealed class ChatLedger : HttpMessageHandler
             ["doorVersion"] = asked["doorVersion"]?.GetValue<string>(), ["profile"] = asked["profile"]?.GetValue<string>(),
             ["tree"] = asked["tree"]?.GetValue<string>(), ["created"] = "2026-10-03T08:00:00Z", ["said"] = new JsonArray(),
         };
-        // The conversation it continues, why and who asked (MIXAGENT1a-iii), as the service answers them on loopback.
+        // The conversation it continues, why and who asked, as the service answers them on loopback.
         StandInLedger.Continues(session, asked);
         _sessions.Add(session);
         return session;
@@ -1187,8 +1186,8 @@ internal sealed class ChatLedger : HttpMessageHandler
                 case ("GET", "/api/quests"):
                     return (HttpStatusCode.OK, new JsonArray([.. _quests.Select(quest => quest.DeepClone())]).ToJsonString());
 
-                // ASKHIST1: Ask Daoris's open, its record in the room's "repository", one running at a time in its workspace
-                // (ASKSCOPE1a), none named being `default`'s.
+                // Ask Daoris's open, its record in the room's "repository", one running at a time in its workspace,
+                // none named being `default`'s.
                 case ("POST", "/api/sessions/help"):
                 {
                     var asked = JsonNode.Parse(body!)!;
@@ -1213,7 +1212,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                         ["door"] = asked["door"]!.GetValue<string>(), ["doorVersion"] = asked["doorVersion"]?.GetValue<string>(),
                         ["profile"] = asked["profile"]?.GetValue<string>(), ["tree"] = asked["room"]?.GetValue<string>(),
                         ["created"] = "2026-10-03T08:00:00Z", ["said"] = new JsonArray(), ["workspace"] = workspace,
-                        // HELPMODE1a2: the mode its start got, none told being restricted, as the ledger keeps it.
+                        // The mode its start got, none told being restricted, as the ledger keeps it.
                         ["helpMode"] = mode ?? "restricted",
                     };
                     StandInLedger.Works(session);
@@ -1221,7 +1220,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                     return (HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "opened" }.ToJsonString());
                 }
 
-                // HELPMODE1a2: the mode an Ask Daoris conversation going on runs under, on its record.
+                // The mode an Ask Daoris conversation going on runs under, on its record.
                 case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/actor", StringComparison.Ordinal):
                 {
                     var session = Find(IdOf(path, "/actor"));
@@ -1240,7 +1239,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                     return (HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "kept" }.ToJsonString());
                 }
 
-                // FOUNDATION1d-ii part 4: the marks a host answers, none before row d-i.
+                // The marks a host answers.
                 case ("GET", "/api/protocol") when Opens > 0:
                     return (HttpStatusCode.OK, new JsonObject { ["run"] = "chat-ledger", ["marks"] = new JsonObject { ["opens"] = Opens } }.ToJsonString());
 
@@ -1276,7 +1275,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                     }
 
                     // The ledger's rule (SessionLedger.AdvanceAsync), which every host built so far keeps: only a move to failed says a limit, so
-                    // an end that writes the flag elsewhere is refused here as it would be there (FOUNDATION1g part c).
+                    // an end that writes the flag elsewhere is refused here as it would be there.
                     var moved = JsonNode.Parse(body!)!;
                     if (moved["limit"]?.GetValue<bool>() == true && to != "failed")
                     {
@@ -1284,7 +1283,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                     }
 
                     session["state"] = to;
-                    // The flags the ledger keeps with an end, cleared by a move to working (SAIDBACK1g).
+                    // The flags the ledger keeps with an end, cleared by a move to working.
                     session["interrupted"] = moved["interrupted"]?.GetValue<bool>() ?? false;
                     session["limit"] = moved["limit"]?.GetValue<bool>() ?? false;
                     session["noteParts"] = moved["noteParts"]?.DeepClone();
@@ -1301,7 +1300,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                     return (HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "moved" }.ToJsonString());
                 }
 
-                // COWORK1c: the say door, keeping a word last on the record under an id of its own, for a running record only where the
+                // The say door, keeping a word last on the record under an id of its own, for a running record only where the
                 // driver that runs it asks so; a word kept for a run reopens nothing.
                 case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/say", StringComparison.Ordinal):
                 {
@@ -1314,7 +1313,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                         return (HttpStatusCode.Conflict, """{"error":"words to a running session reach it through the driver that runs it.","refusal":"running"}""");
                     }
 
-                    // FOUNDATION1 row p: a keyed say that asks `settled`, under a key the line settled and no word waits under, is answered settled
+                    // A keyed say that asks `settled`, under a key the line settled and no word waits under, is answered settled
                     // before anything else but the record's absence, naming the record the word left, and keeps nothing.
                     if (asked["settled"]?.GetValue<bool>() == true && asked["key"]?.GetValue<string>() is { Length: > 0 } settledKey
                         && _settled.TryGetValue(settledKey, out var left)
@@ -1323,7 +1322,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                         return (HttpStatusCode.OK, new JsonObject { ["message"] = "Already settled.", ["settled"] = left }.ToJsonString());
                     }
 
-                    // A say under a key a waiting word holds is answered with that word (COWORK1b).
+                    // A say under a key a waiting word holds is answered with that word.
                     if (asked["key"]?.GetValue<string>() is { Length: > 0 } key
                         && session["said"]!.AsArray().FirstOrDefault(each => each!["key"]?.GetValue<string>() == key) is { } held)
                     {
@@ -1338,7 +1337,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                         ["id"] = $"k{++_kept}", ["text"] = asked["text"]!.GetValue<string>(), ["at"] = "2026-10-03T09:30:00Z",
                         ["files"] = new JsonArray(), ["reopens"] = !running, ["level"] = asked["level"]?.GetValue<string>(),
                         ["key"] = asked["key"]?.GetValue<string>(),
-                        // COWORK1b: Daoris's own words kept as Daoris's, as the service keeps them (LIMITRESUME1c's limit word).
+                        // Daoris's own words kept as Daoris's, as the service keeps them (the limit word).
                         ["from"] = asked["from"]?.GetValue<string>(),
                     };
                     session["said"]!.AsArray().Add(word);
@@ -1348,7 +1347,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                     }.ToJsonString());
                 }
 
-                // SAIDBACK1a's take-back door, without a reword: a word waiting on a record that runs no more leaves it.
+                // The take-back door, without a reword: a word waiting on a record that runs no more leaves it.
                 case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/take-back", StringComparison.Ordinal):
                 {
                     var id = IdOf(path, "/take-back");
@@ -1364,7 +1363,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                     return (HttpStatusCode.OK, """{"done":true,"message":"taken back"}""");
                 }
 
-                // COWORK1c: a word marked attempted on the record before it is written (AGENTERRORS1b's tries read the mark's own answer).
+                // A word marked attempted on the record before it is written (the tries read the mark's own answer).
                 case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/attempt", StringComparison.Ordinal):
                 {
                     var id = IdOf(path, "/attempt");
@@ -1394,7 +1393,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                     return (HttpStatusCode.OK, """{"message":"taken"}""");
                 }
 
-                // CHATFLOW1e: an opinion read back, and its findings handed to the record the driver names, as an ordinary word with `by`.
+                // An opinion read back, and its findings handed to the record the driver names, as an ordinary word with `by`.
                 case ("GET", _) when path.StartsWith("/api/opinions/", StringComparison.Ordinal):
                 {
                     var id = path["/api/opinions/".Length..];

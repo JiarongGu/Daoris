@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>fixtures/line-counts.json</c> as the driver's tests read it (CONTEXTDRIVE1a): records in the shape the service answers, and the
+/// <c>fixtures/line-counts.json</c> as the driver's tests read it: records in the shape the service answers, and the
 /// events of a part as short tokens. The service's <c>LineKeysFixtureTests</c> reads the same file for the same lines.
 /// </summary>
 internal static class LineCountsFixture
@@ -38,11 +38,11 @@ internal static class LineCountsFixture
         return events;
     }
 
-    /// <summary>When a row's admission was seeded: a part it has not read is fed only what it kept after.</summary>
+    /// <summary>When a row's admission is seeded: a part it has not read is fed only what it kept after.</summary>
     public static readonly DateTimeOffset Seeded = DateTimeOffset.Parse("2026-11-03T09:00:00Z");
 
     /// <summary>
-    /// A row's admission as the store would keep it (COMMS1g): its epochs in order, its go-ons not yet shown by the events, and the last event
+    /// A row's admission as the store would keep it: its epochs in order, its go-ons not yet shown by the events, and the last event
     /// it read of each part; null where the row has none kept, so the events count it.
     /// </summary>
     public static AloneRows? Admission(JsonElement row, string line)

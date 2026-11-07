@@ -7,7 +7,7 @@ public sealed record GitStashDropVerb(string Repository, string Id, bool Yes);
 public sealed record GitStashWorld(Func<string, CancellationToken, Task<string?>> CheckoutOf, Func<ActJournal> Journal, Func<string, string, StageContext> ContextOf);
 
 /// <summary>
-/// <c>daoris git stash drop &lt;repository&gt; &lt;commit&gt; [--plan|--yes]</c> (GITAPP2, D204; the git-writes design §9): the terminal's twin of the
+/// <c>daoris git stash drop &lt;repository&gt; &lt;commit&gt; [--plan|--yes]</c>: the terminal's twin of the
 /// Changes tab's stash <i>Drop</i>. The stash is named by its commit id, as the page names it, never by its place on the shared list. Without
 /// <c>--yes</c> (or with <c>--plan</c>) it says what it would drop and changes nothing. With <c>--yes</c> it is the running Daoris's client
 /// (<see cref="InstanceDoor.PressAsync"/>): the person's press, confirmed in the window; with no Daoris running it drops through the same act
@@ -65,7 +65,7 @@ public static class GitStashDropCommand
         return new GitStashDropVerb(words[0], words[1], yes == true);
     }
 
-    /// <summary>The verb's payload: the route's own fields beside <c>said: true</c> (RPC1e).</summary>
+    /// <summary>The verb's payload: the route's own fields beside <c>said: true</c>.</summary>
     public static Dictionary<string, object?> Payload(GitStashDropVerb verb) => InstanceDoor.Said(("repository", verb.Repository), ("id", verb.Id));
 
     public static async Task<int> RunAsync(IReadOnlyList<string> args, GitStashWorld world, InstanceWorld instance, CancellationToken ct)

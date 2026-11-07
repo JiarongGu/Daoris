@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Whether a start's confirmation is settled, read from its install's swap journal (FOUNDATION1 z-i; the design §13.5 and §19.7, D139):
+/// Whether a start's confirmation is settled, read from its install's swap journal:
 /// the store holds every import and every stamp-raising migration until it is, so a build rolled back before it confirmed meets every file
 /// as it was and a store it can still write.
 /// </summary>

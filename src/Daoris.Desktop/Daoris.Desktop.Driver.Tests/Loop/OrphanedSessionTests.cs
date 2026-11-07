@@ -7,9 +7,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A session whose record says it runs must have something running it (2026-09-25). A chat open when
-/// the shell closed was left `working` with no process behind it, and stop could not end it, because
-/// stop only knew the processes this driver held.
+/// A session whose record says it runs must have something running it. A chat open when
+/// the shell closes must not stay `working` with no process behind it: stop alone cannot end it,
+/// because stop only knows the processes this driver holds.
 /// </summary>
 /// <remarks>
 /// <para><b>"Not held here" is not "dead".</b> A terminal's driver or chat shares the home and holds
@@ -101,16 +101,16 @@ public sealed class OrphanedSessionTests : IDisposable
         Assert.Equal(["a1"], ended.Select(e => e.Id));
         Assert.Equal("stopped", service.State("a1"));
         Assert.Contains("nothing on this machine was running it", service.Note("a1"));
-        // Not the person's stop (D104): the record says so, and a take it ended is carried on.
+        // Not the person's stop: the record says so, and a take it ended is carried on.
         Assert.True(service.Interrupted("a1"));
         Assert.Equal(("working", "working", "awaiting-person", "starting"),
             (service.State("a2"), service.State("person@machine-b/a3"), service.State("a4"), service.State("a5")));
     }
 
     /// <summary>
-    /// QUEUED1: a start's record is marked by the process that opened it until its spawn's marker replaces it, so the sweep ends a
-    /// `queued` or `starting` record whose opener went, and leaves one a live driver here is starting, and one no opener marked (a
-    /// record from before the mark, or one in the breath between its open and its mark): only a dead opener proves nothing starts it.
+    /// A start's record is marked by the process that opened it until its spawn's marker replaces it, so the sweep ends a
+    /// `queued` or `starting` record whose opener has gone, and leaves one a live driver here is starting, and one no opener marked (a
+    /// record without a mark, or one in the breath between its open and its mark): only a dead opener proves nothing starts it.
     /// </summary>
     [Fact]
     public async Task The_sweep_ends_a_start_whose_opener_went_and_leaves_one_being_started()
@@ -137,12 +137,12 @@ public sealed class OrphanedSessionTests : IDisposable
             ("stopped", "stopped", "queued", "queued"),
             (service.State("q1"), service.State("s1"), service.State("q2"), service.State("q3")));
         Assert.Contains("nothing on this machine was running it", service.Note("q1"));
-        // The sweep's, never the person's (D104).
+        // The sweep's, never the person's.
         Assert.True(service.Interrupted("q1"));
     }
 
     /// <summary>
-    /// QUEUED1: an opener's mark is no running process to anything but the sweep's judgement of a start (a word, a stop, the
+    /// An opener's mark is no running process to anything but the sweep's judgement of a start (a word, a stop, the
     /// history's clearing read none yet), and the spawn's own marker replaces it.
     /// </summary>
     [Fact]
@@ -167,7 +167,7 @@ public sealed class OrphanedSessionTests : IDisposable
         await using var service = StandInService.Start(Path.Combine(_home, "engine"));
         service.Seed("a1", "working");
         service.Seed("a5", "starting");
-        // QUEUED1: a live opener's mark holds the sweep, never the person's stop of that one record.
+        // A live opener's mark holds the sweep, never the person's stop of that one record.
         new SessionProcesses(Markers).MarkOpening("a5");
 
         using var client = new ServiceClient(service.Url, null);
@@ -175,15 +175,15 @@ public sealed class OrphanedSessionTests : IDisposable
 
         Assert.Equal(["a5"], ended.Select(e => e.Id));
         Assert.Equal(("working", "stopped"), (service.State("a1"), service.State("a5")));
-        // 🔴 The person asked about that one: their stop is their decision, never carried on (D104).
+        // 🔴 The person asked about that one: their stop is their decision, never carried on.
         Assert.False(service.Interrupted("a5"));
     }
 
     /// <summary>
     /// 🔴 The shutdown half: a runner disposed inside the scope of the client it concludes through ends
     /// its chats and records each before the client goes — the loop's own `using` order. Stopping them
-    /// after the client was disposed wrote nothing, and the record was left `working` (seen on the
-    /// window, 2026-09-25: the loop's client is scoped to its run, and the shell stopped the chats after).
+    /// after the client is disposed writes nothing and leaves the record `working`: the loop's client
+    /// is scoped to its run.
     /// </summary>
     [Fact]
     public async Task A_runner_disposed_before_its_client_ends_its_chats_and_records_each()
@@ -244,8 +244,8 @@ public sealed class OrphanedSessionTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 REV3: a hand edit that left `driver.json` torn threw from the load, OUTSIDE the loop's catch —
-    /// so the watch died on the first tick, and in the shell nothing said so. The loop says what is wrong
+    /// 🔴 A hand edit that leaves `driver.json` torn must not throw from the load outside the loop's catch,
+    /// which would kill the watch on the first tick unannounced. The loop says what is wrong
     /// with the file, keeps watching it, and ticks again the moment it reads.
     /// </summary>
     [Fact]
@@ -277,7 +277,7 @@ public sealed class OrphanedSessionTests : IDisposable
 
         var said = Assert.Single(errors);
         Assert.IsType<DriverException>(said);
-        // The reader's sentence, with the file and where in it (CONFIGREAD1), then what the loop does about it.
+        // The reader's sentence, with the file and where in it, then what the loop does about it.
         Assert.StartsWith($"{config} is not readable JSON at line 1, byte 37 (", said.Message);
         Assert.EndsWith(
             "Fix it, or delete it to start from nothing. Nothing is driven until it reads; the loop keeps watching it, "
@@ -360,7 +360,7 @@ public sealed class OrphanedSessionTests : IDisposable
         /// <summary>The Ask Daoris mode its record keeps, where a conversation went on under another (HELPMODE1a2).</summary>
         public string? HelpMode(string id) => Field(id, "helpMode");
 
-        /// <summary>Whether its record says a stop was not the person's (D104).</summary>
+        /// <summary>Whether its record says a stop is not the person's.</summary>
         public bool Interrupted(string id)
         {
             lock (_sessions) return _sessions.Single(s => s["id"]!.GetValue<string>() == id)["interrupted"]?.GetValue<bool>() == true;
@@ -422,7 +422,7 @@ public sealed class OrphanedSessionTests : IDisposable
                             .Where(s => all || s["state"]!.GetValue<string>() is "queued" or "starting" or "working" or "awaiting-person")
                             .Select(s => s.DeepClone())]).ToJsonString());
 
-                    // Ask Daoris (HELP1a): one running at a time, refused naming it, as the ledger does.
+                    // Ask Daoris: one running at a time, refused naming it, as the ledger does.
                     case ("POST", "/api/sessions/help"):
                     {
                         var running = _sessions.FirstOrDefault(s => s["repository"]!.GetValue<string>() == "daoris:help"
@@ -473,7 +473,7 @@ public sealed class OrphanedSessionTests : IDisposable
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "moved" }.ToJsonString());
                     }
 
-                    // HELPMODE1a2: the mode an Ask Daoris conversation going on runs under, on its record (ACCESSSWAP1's resume).
+                    // The mode an Ask Daoris conversation going on runs under, on its record.
                     case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/help-mode", StringComparison.Ordinal):
                     {
                         var id = Uri.UnescapeDataString(path["/api/sessions/".Length..^"/help-mode".Length]);
@@ -492,7 +492,7 @@ public sealed class OrphanedSessionTests : IDisposable
         {
             _listener.Stop();
             _listener.Close();
-            // A request the stop cut short throws from its write or its close: that belongs to the stop, not to the test (FLAKE1).
+            // A request the stop cut short throws from its write or its close: that belongs to the stop, not to the test.
             try { await _serving; }
             catch (Exception error) when (error is HttpListenerException or ObjectDisposedException or InvalidOperationException) { }
         }

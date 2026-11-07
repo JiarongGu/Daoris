@@ -4,13 +4,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// USAGEREAD2a's spawn: Claude Code's native CLI, started as a harness's reporting command is (its PATH, its account's home in
+/// Claude Code's native CLI spawn, started as a harness's reporting command is (its PATH, its account's home in
 /// <c>CLAUDE_CONFIG_DIR</c>, the explicit command before the pin before PATH), asked <c>get_usage</c> and stopped. The CLI is a
 /// script that answers <c>control_request</c> lines on stdin as the evidence measured, does not exit by itself, and logs the
-/// home and the working folder it was started under, so a test sees which account was asked, and where, without reading inside.
+/// home and the working folder it starts under, so a test sees which account is asked, and where, without reading inside.
 /// </summary>
 /// <remarks>
-/// A real process, so the <c>Process</c> half (MOD8). The protocol and the reading are <c>ClaudeUsageTests</c>, in process.
+/// A real process, so the <c>Process</c> half. The protocol and the reading are <c>ClaudeUsageTests</c>, in process.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class ClaudeUsageProcessTests : IDisposable
@@ -119,8 +119,8 @@ public sealed class ClaudeUsageProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 USAGEONE1: a start on a set of one runs where it runs whatever its account would say, so its walk asks the CLI nothing,
-    /// though the account was never read: the hour's backstop and a person's look read it.
+    /// A start on a set of one runs where it runs whatever its account would say, so its walk asks the CLI nothing,
+    /// though the account is never read: the hour's backstop and a person's look read it.
     /// </summary>
     [Fact]
     public async Task A_start_on_a_set_of_one_runs_no_usage_read()
@@ -134,7 +134,7 @@ public sealed class ClaudeUsageProcessTests : IDisposable
         Assert.Empty(AskedLines());
     }
 
-    /// <summary>USAGEONE1: a set of two is a choice a reading can change, so its start still reads the one never read.</summary>
+    /// <summary>A set of two is a choice a reading can change, so its start still reads the one never read.</summary>
     [Fact]
     public async Task A_start_on_a_set_of_two_still_reads_the_account_never_read()
     {

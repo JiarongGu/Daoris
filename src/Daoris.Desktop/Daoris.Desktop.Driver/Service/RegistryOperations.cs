@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The codes a registry operation refuses in (ONEWAY1u, D194 point 4): <c>connect</c>, <c>retire</c>, <c>wire</c> and <c>import</c> on
+/// The codes a registry operation refuses in: <c>connect</c>, <c>retire</c>, <c>wire</c> and <c>import</c> on
 /// <see cref="ServiceClient"/>. One table, read by the terminal's command; the window has no caller of these today, so none is
 /// declared in its catalogue and the shell would say any of them verbatim.
 /// </summary>
@@ -33,7 +33,7 @@ public static class RegistryCodes
 
 /// <summary>
 /// A registry operation refusing by a named check, in its sentence and with the exit the CLI's verb gave it (a policy refusal 1, the
-/// rest 2). The service's own sentence is carried verbatim. Nothing was changed.
+/// rest 2). The service's own sentence is carried verbatim. Nothing is changed.
 /// </summary>
 public sealed class RegistryRefusal(string check, string message, int exit) : DriverException(message)
 {
@@ -58,7 +58,7 @@ public sealed record ConnectPlan(string Repository, string Service, JsonObject B
 
     public int Accepts => (Domain?["accepts"] as JsonArray)?.Count ?? 0;
 
-    /// <summary>What the repository says it uses, by the rule (D91).</summary>
+    /// <summary>What the repository says it uses, by the rule.</summary>
     public IReadOnlyList<string> Uses => [.. (Domain?["uses"] as JsonArray ?? []).Select(use => (string)use!)];
 
     /// <summary>The lanes sent: each id, and whether it is the steward's.</summary>
@@ -66,12 +66,12 @@ public sealed record ConnectPlan(string Repository, string Service, JsonObject B
         [.. (Body["lanes"] as JsonArray ?? []).OfType<JsonObject>().Select(lane => ((string)lane["id"]!, lane["steward"] is { } steward && (bool)steward))];
 }
 
-/// <summary>A registration taken: what was sent, and the workspace the service says took, which is null for a service too old to say.</summary>
+/// <summary>A registration taken: what is sent, and the workspace the service says took, which is null for a service too old to say.</summary>
 public sealed record ConnectDone(ConnectPlan Plan, string? Workspace);
 
 /// <summary>
-/// A repository's first registration from its working tree (ONEWAY1u, D124 §3.3): its manifest and lanes read, a linked worktree
-/// refused, the body composed as the registry follows a line (<see cref="LineRegistration"/>) with the workspace, if one was stated,
+/// A repository's first registration from its working tree: its manifest and lanes read, a linked worktree
+/// refused, the body composed as the registry follows a line (<see cref="LineRegistration"/>) with the workspace, if one is stated,
 /// and the root only for a service on this machine. <c>register</c> only re-follows the rows this machine's host already holds; this
 /// reaches any service, a remote one included.
 /// </summary>
@@ -82,7 +82,7 @@ public static class RegistryConnect
     /// <exception cref="RegistryRefusal">A linked worktree, a manifest that does not read or declares nothing, or lanes refused whole.</exception>
     public static ConnectPlan Plan(string root, string? workspace, string service)
     {
-        // Before anything else: a registration re-pointed at an ephemeral tree works until the tree is removed (D51).
+        // Before anything else: a registration re-pointed at an ephemeral tree works until the tree is removed.
         if (LinkedWorktree.MainOf(root) is { } main)
         {
             throw new RegistryRefusal(

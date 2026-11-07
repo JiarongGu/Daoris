@@ -14,37 +14,35 @@ public sealed record HistoryWorld(ServiceClient Service, string Home, string Con
 
     public Func<DateTimeOffset> Clock { get; init; } = () => DateTimeOffset.UtcNow;
 
-    /// <summary>How long nothing must have touched a file before it is left over (§2.3): an hour.</summary>
+    /// <summary>How long nothing must have touched a file before it is left over: an hour.</summary>
     public TimeSpan Untouched { get; init; } = TimeSpan.FromHours(1);
 
     /// <summary>
-    /// How the clear removes a file, or a folder whole, of the home (HIST1j): from the disk. A test hands one that refuses a path,
+    /// How the clear removes a file, or a folder whole, of the home: from the disk. A test hands one that refuses a path,
     /// as a process holding a transcript makes the disk refuse it, so what a clear frees is held on every platform.
     /// </summary>
     public Action<string, bool> Remover { get; init; } = SessionHomeFiles.FromDisk;
 
     /// <summary>
-    /// Where the terminal's verb looks for the running Daoris (RPC1e), whose routes it sends while one answers; null acts alone, as the
+    /// Where the terminal's verb looks for the running Daoris, whose routes it sends while one answers; null acts alone, as the
     /// window's own world and a test's do.
     /// </summary>
     public InstanceWorld? Instance { get; init; }
 }
 
 /// <summary>
-/// Clearing finished history from this machine, this machine's half (HIST1c, D153; the history-clearing design §2, §4–§5,
-/// §6.3, §6.5), for both doors: the screen's <c>HISTORY_PLAN</c> and <c>HISTORY_CLEAR</c>, and the terminal's history verbs.
+/// Clearing finished history from this machine, this machine's half, for both doors: the screen's <c>HISTORY_PLAN</c> and <c>HISTORY_CLEAR</c>, and the terminal's history verbs.
 /// </summary>
 /// <remarks>
-/// <para><b>Listed first, then pressed</b> (D88): <see cref="PlanAsync"/> asks the service's judgement (HIST1b's
-/// <c>GET /api/history</c>), judges this machine's half of each unit the service would clear (a process still running, an
+/// <para><b>Listed first, then pressed</b>: <see cref="PlanAsync"/> asks the service's judgement (<c>GET /api/history</c>), judges this machine's half of each unit the service would clear (a process still running, an
 /// automatic landing still trying, a tree still here, a landing's branch still standing), and reads what the home keeps;
 /// it changes nothing. <see cref="ClearAsync"/> sends exactly the units the list held, judges each again by both halves,
 /// asks the service to clear what may go, then removes what the home kept of each cleared session through
-/// <see cref="SessionHomeFiles"/>, the helper D126's delete calls too, and tidies what names it.</para>
+/// <see cref="SessionHomeFiles"/>, the helper a session's delete calls too, and tidies what names it.</para>
 ///
 /// <para><b>Never</b> a tree or a branch, an open or taken quest, what waits on the person, the team's copy on a remote,
-/// the machine log, the usage, the accounts, or a folder Daoris did not write (§1.3). <b>Nothing clears by itself</b>
-/// (§7) unless the person set an age: a press calls this, or the look's daily clear at that age (KEEP1g, <see cref="HistoryKeeping"/>),
+/// the machine log, the usage, the accounts, or a folder Daoris did not write. <b>Nothing clears by itself</b>
+/// unless the person set an age: a press calls this, or the look's daily clear at that age (<see cref="HistoryKeeping"/>),
 /// whose line says <c>rule</c>.</para>
 /// </remarks>
 public static class HistoryClearing
@@ -52,7 +50,7 @@ public static class HistoryClearing
     /// <summary>The scope's word: <c>workspace</c>, <c>quest</c>, <c>ask</c> or <c>failed</c>.</summary>
     public static string Word(HistoryScope scope) => scope.ToString().ToLowerInvariant();
 
-    /// <summary>The first press (§5 step 1): every unit with what it takes and why it would stay, and a workspace's reading.</summary>
+    /// <summary>The first press: every unit with what it takes and why it would stay, and a workspace's reading.</summary>
     /// <exception cref="DriverException">The service did not answer, or has no history door, in its words.</exception>
     public static async Task<HistoryPlan> PlanAsync(HistoryWorld world, HistoryScope scope, string id, CancellationToken ct = default)
     {
@@ -68,7 +66,7 @@ public static class HistoryClearing
     }
 
     /// <summary>
-    /// The second press (§5): exactly <paramref name="units"/>, the units the list said may go, each judged again by the
+    /// The second press: exactly <paramref name="units"/>, the units the list said may go, each judged again by the
     /// service's half and then this machine's; what may go cleared by the service, its sessions' files removed and what names
     /// it tidied; one log line for the press. A unit that changed since is kept and counted, never refused for the rest.
     /// </summary>
@@ -105,9 +103,9 @@ public static class HistoryClearing
                     continue;
                 }
 
-                // The kept files the service removed with the records (HIST1j): what this press measured of them, less what is still
+                // The kept files the service removed with the records: what this press measured of them, less what is still
                 // on the disk, so one the disk kept frees nothing whether or not the service said so. What it says it could not
-                // remove is failed, and left over for the next clear of a workspace (§2.3).
+                // remove is failed, and left over for the next clear of a workspace.
                 failed.AddRange(answer.FailedQuests.Select(quest => $"{QuestFolder}/{quest}"));
                 failed.AddRange(answer.FailedAsks.Select(ask => $"{AskFolder}/{ask}"));
                 var kept = Math.Max(0, (before?.Bytes.Kept ?? 0) - KeptFiles(machine.Files, answer.Unit.Quests, answer.Unit.Asks).Kept);
@@ -120,7 +118,7 @@ public static class HistoryClearing
         var removed = machine.Files.Remove(gone, world.Events);
         failed.AddRange(removed.Failed);
 
-        // And its quests' run bindings beside them (WORKFLOW1e3), by the same rule: only what went is counted.
+        // And its quests' run bindings beside them, by the same rule: only what went is counted.
         var bound = new HashSet<string>(StringComparer.Ordinal);
         var cleared = answered
             .Select(unit =>
@@ -157,7 +155,7 @@ public static class HistoryClearing
             Failed = failed.Count,
         };
 
-        // 5. One line for the press, counts only (§6.5); a clear that took nothing writes nothing.
+        // 5. One line for the press, counts only; a clear that took nothing writes nothing.
         if (outcome.Took)
         {
             world.Log?.Info("history.cleared",
@@ -271,8 +269,8 @@ public static class HistoryClearing
 
     /// <summary>
     /// The service's word with its facts, and which of its sentences is meant: what the service named beside the word (what
-    /// waits beside <c>needs-you</c>, HIST1l; how the work stands beside <c>open</c> and the open work beside <c>awaited</c>,
-    /// HIST1m), else read from the records the word names (§1.2's table); never from the service's sentence, which only a
+    /// waits beside <c>needs-you</c>; how the work stands beside <c>open</c> and the open work beside <c>awaited</c>),
+    /// else read from the records the word names; never from the service's sentence, which only a
     /// terminal prints.
     /// </summary>
     private static HistoryKeep Said(HistoryRefusalView refusal, string kind, Facts facts) => new(refusal.Word, refusal.Message)
@@ -289,13 +287,13 @@ public static class HistoryClearing
     {
         HistoryWords.Unknown => kind == HistoryKinds.Ask ? null : HistoryContexts.Quest,
         HistoryWords.Open when kind == HistoryKinds.Failed => HistoryContexts.Failed,
-        // How the service read the quest (HIST1m), as what waits below: a second read here may find it taken or closed since.
+        // How the service read the quest, as what waits below: a second read here may find it taken or closed since.
         HistoryWords.Open when refusal.Stands is HistoryStands.Taken => HistoryContexts.Taken,
         HistoryWords.Open when refusal.Stands is HistoryStands.Open => null,
         // A host before it, or a word this build does not know: the quest read here says which.
         HistoryWords.Open => Is(facts.Quest(refusal.Quest)?.Status, "Taken") ? HistoryContexts.Taken : null,
         HistoryWords.Live => refusal.Origin is not null ? HistoryContexts.Teammate : null,
-        // What the service named waiting (HIST1l), judged from the records it read: a second read here may have moved since.
+        // What the service named waiting, judged from the records it read: a second read here may have moved since.
         HistoryWords.NeedsYou when refusal.Waits is HistoryWaits.Parked => null,
         HistoryWords.NeedsYou when refusal.Waits is HistoryWaits.Held => HistoryContexts.Held,
         HistoryWords.NeedsYou when refusal.Waits is HistoryWaits.Conflict => HistoryContexts.Conflict,
@@ -311,7 +309,7 @@ public static class HistoryClearing
             facts.Quest(quest)?.Held == true ? HistoryContexts.Held : HistoryContexts.Conflict,
         HistoryWords.NeedsYou =>
             facts.Ask(refusal.Ask)?.State is { } state && (Is(state, "Open") || Is(state, "Proposed")) ? HistoryContexts.Ask : HistoryContexts.ProposalAsk,
-        // The open work the service named (HIST1m): the quest read here may have had its answer, or closed, since.
+        // The open work the service named: the quest read here may have had its answer, or closed, since.
         HistoryWords.Awaited when refusal.By is HistoryAwaitedBy.Question => HistoryContexts.Published,
         HistoryWords.Awaited when refusal.By is HistoryAwaitedBy.Asker => null,
         HistoryWords.Awaited when refusal.By is HistoryAwaitedBy.Step => HistoryContexts.Chain,
@@ -325,7 +323,7 @@ public static class HistoryClearing
     internal static bool Is(string? value, string expected) => string.Equals(value, expected, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// This machine's half of a unit the service would clear (§1.2), in the order a person meets them: a process still running
+    /// This machine's half of a unit the service would clear, in the order a person meets them: a process still running
     /// here, a tree still here, a landing's branch still standing, a piece not yet settled. Null when none holds it.
     /// </summary>
     private static HistoryKeep? MachineHalf(HistoryUnitView unit, Facts facts, Machine machine)
@@ -403,7 +401,7 @@ public static class HistoryClearing
         /// <summary>A process for it alive on this machine: this shell's, or one another driver sharing the home marked.</summary>
         public bool Alive(string session) => SessionEventText.IsId(session) && world.Processes.AliveOnThisMachine(session);
 
-        /// <summary>Its own tree still here with anything in it, as D126's delete judges it: a checkout is no tree of its own.</summary>
+        /// <summary>Its own tree still here with anything in it, as a session's delete judges it: a checkout is no tree of its own.</summary>
         public bool TreeHere(SessionRecord? record) =>
             record?.Tree is { } tree && Held(tree) && !TreeFolders.TreeGone(tree);
 

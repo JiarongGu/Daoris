@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONTAINCPU1 (D200 §1.2, D201 point 4): a session started through the launcher, as every agent is since TERMTRUST1a part (i), still has a
+/// A session started through the launcher, as every agent is, still has a
 /// job the driver reads and ends. The stand-in harness (the system's <c>cmd</c> running a script of this test's, never an agent) leaves a
 /// child computing whose parent has already exited, so no walk of the tree from the launcher finds it, then waits on its standard input,
 /// saying nothing. The registry opens the launcher's own job by name (<see cref="SessionProcesses.JobOf"/>), the watcher reads its CPU
@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the launcher, the harness and the orphaned child.
 /// </summary>
 /// <remarks>
-/// Alone (PROCPAR1): its claim is a computation's CPU over a one-second window of the machine's clock, as
+/// Alone: its claim is a computation's CPU over a one-second window of the machine's clock, as
 /// <see cref="SessionWatchProcessTests"/>' busy case is, which the load of classes beside it could break.
 /// </remarks>
 [Collection(Alone.Name)]

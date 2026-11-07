@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORK1c (D188 point 6; the message-urgency design §6, §14's trap 7) with a real conversation: words said to a conversation while its
+/// With a real conversation: words said to a conversation while its
 /// turn runs are kept on its record before they wait, so a shell that goes away under them, closed or cut off, leaves them there, and the
-/// next shell goes on with them in their order, in the same conversation, taking each off the record once it went.
+/// next shell goes on with them in their order, in the same conversation, taking each off the record once it goes.
 /// </summary>
 /// <remarks>
 /// A real process (node) speaking the protocol door, with no model and no account, over <see cref="ChatLedger"/>, the in-process ledger
@@ -140,7 +140,7 @@ public sealed class ChatWordsRestartProcessTests : IDisposable
     }
 
     /// <summary>
-    /// FOUNDATION1 row p (the design §3.4 rule 5) through a real conversation: a producer's retry of a word the line settled, said to the
+    /// Through a real conversation: a producer's retry of a word the line settled, said to the
     /// running conversation, is answered settled by the record: nothing is kept on the record, queued, handed to the turn or sent to the agent,
     /// and the answer is the runner's own, <see cref="ChatSaid.Settled"/>, with no reach and no word.
     /// </summary>
@@ -166,7 +166,7 @@ public sealed class ChatWordsRestartProcessTests : IDisposable
         Assert.Empty(ledger.Taken);
         Assert.DoesNotContain(HeardLines(), line => line.Contains("Also log the port.", StringComparison.Ordinal));
 
-        // A key the line never settled is kept and queued as it always was.
+        // A key the line never settled is kept and queued.
         var kept = await runner.SayKeptAsync(id, "No, 9090.", null, null, MessageLevel.Ordinary, "press/8");
         Assert.False(kept!.Settled);
         Assert.Equal(("turn-end", "k1"), (kept.Reaches, kept.Word));

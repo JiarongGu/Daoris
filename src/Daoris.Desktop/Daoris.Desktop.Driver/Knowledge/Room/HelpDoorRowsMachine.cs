@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>The doors for keeping a machine's branches, roles, settings and agents' reach: what a person sets once and leaves (D50).</summary>
+/// <summary>The doors for keeping a machine's branches, roles, settings and agents' reach: what a person sets once and leaves.</summary>
 internal static class HelpDoorRowsMachine
 {
     private const string Setup = HelpDoorPlaces.Setup;

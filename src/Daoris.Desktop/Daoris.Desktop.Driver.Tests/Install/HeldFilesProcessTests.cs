@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// DEPLOYBUSY1: a process whose working folder is the folder the swap must move holds that folder, and Windows refuses its
+/// A process whose working folder is the folder the swap must move holds that folder, and Windows refuses its
 /// move however few files are open in it. <see cref="HeldFiles"/> names the folder itself and the process, as it names a file.
 /// </summary>
 /// <remarks>A real process (node, as every gate already needs), started in the folder and killed at the end.</remarks>

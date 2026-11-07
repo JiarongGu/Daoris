@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Codex's releases as Install's source (PUSH1f2e): the release for this machine's target (<see cref="CodexReleases"/>,
+/// Codex's releases as Install's source: the release for this machine's target (<see cref="CodexReleases"/>,
 /// <see cref="CodexReleaseDownloads"/>). A fetch's trust is Claude Code's signing key, which this channel does not read.
 /// </summary>
 public sealed class CodexReleaseSource : IReleaseSource

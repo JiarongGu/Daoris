@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Where a known fact comes from (the agent-provider design §2.4): declared, negotiated at an opening, or measured.</summary>
+/// <summary>Where a known fact comes from: declared, negotiated at an opening, or measured.</summary>
 public enum KnownBy
 {
     Declared,
@@ -9,11 +9,11 @@ public enum KnownBy
 }
 
 /// <summary>
-/// A fact about another program, naming its source, its evidence and where it applies, or stated absent (the agent-provider design
-/// §2.4). Absent is a statement and reads as today's behaviour for an agent that says nothing (D53); it is never a value to read.
+/// A fact about another program, naming its source, its evidence and where it applies, or stated absent.
+/// Absent is a statement and reads as the behaviour for an agent that says nothing; it is never a value to read.
 /// </summary>
 /// <remarks>
-/// <see cref="Applies"/> is a plain description here; COAGENT1e builds the effective configuration it names. Declared, negotiated and
+/// <see cref="Applies"/> is a plain description. Declared, negotiated and
 /// measured stay separate evidence, never a score.
 /// </remarks>
 public readonly record struct Known<T>(T? Value, KnownBy By, string Evidence, string Applies, bool IsKnown)

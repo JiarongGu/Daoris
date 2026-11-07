@@ -4,8 +4,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>data/notices.json</c>, what ended, failed or went unanswered that the person need not answer (NOTIFY2f, D196 point 6; the
-/// notification design §2.5): the notices of <i>Done and failed</i> with whether each is read. A machine record: never synced, never on a
+/// <c>data/notices.json</c>, what ended, failed or went unanswered that the person need not answer: the notices of <i>Done and failed</i> with whether each is read. A machine record: never synced, never on a
 /// wire to a shared host, and no route answers it raw.
 /// </summary>
 /// <remarks>
@@ -38,37 +37,35 @@ public static class Notices
     public const string Ended = "ended";
 
     /// <summary>
-    /// A terminal's press that ended unanswered, refused by its time: kept for a notice written before CONFIRMWAIT1a-i, whose presses wait
+    /// A terminal's press that ended unanswered, refused by its time: kept for a notice already written, since presses wait
     /// until the person answers.
     /// </summary>
     public const string Expired = "expired";
 
-    /// <summary>A terminal's press its terminal took back after a window showed its card (CONFIRMWAIT1a-i, the confirm-wait design §6).</summary>
+    /// <summary>A terminal's press its terminal took back after a window showed its card.</summary>
     public const string Withdrawn = "withdrawn";
 
     /// <summary>
-    /// A terminal's press Daoris's close ended while it waited, not done: kept for a notice written by CONFIRMWAIT1a-i, whose close ended
-    /// what waited; since CONFIRMWAIT1a-ii a press waits across the close in its record.
+    /// A terminal's press Daoris's close ended while it waited, not done: kept for a notice already written; a press waits across the close in its record.
     /// </summary>
     public const string Closed = "closed";
 
     /// <summary>
-    /// Presses from a terminal a restart could not bring back, not done, <see cref="Notice.Count"/> of them (CONFIRMWAIT1a-ii, the
-    /// confirm-wait design §7.2): one notice for all a restart lost, or one carrying a key that Daoris's close ended, with its route.
+    /// Presses from a terminal a restart could not bring back, not done, <see cref="Notice.Count"/> of them: one notice for all a restart lost, or one carrying a key that Daoris's close ended, with its route.
     /// </summary>
     public const string Lost = "lost";
 
-    /// <summary>Presses from a terminal a newer Daoris kept, which this one leaves waiting for it (CONFIRMWAIT1a-ii, §7.2 step 2).</summary>
+    /// <summary>Presses from a terminal a newer Daoris kept, which this one leaves waiting for it.</summary>
     public const string Newer = "newer";
 
     /// <summary>
-    /// A conversation that answered the person's words (NOTIFY2g, the notification design §2.4): one per conversation, under
+    /// A conversation that answered the person's words: one per conversation, under
     /// <c>answered-&lt;session&gt;</c>, made unread again with the moment of each later answer (<see cref="Renew"/>). Listed in
     /// <i>Messages</i>, never in <i>Done and failed</i>.
     /// </summary>
     public const string Answered = "answered";
 
-    /// <summary>A line of the look's that is news, by its code (NOTIFY2h, <see cref="LookSaid"/>).</summary>
+    /// <summary>A line of the look's that is news, by its code (<see cref="LookSaid"/>).</summary>
     public const string Look = "look";
 
     private const string Moment = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";
@@ -102,7 +99,7 @@ public static class Notices
     }
 
     /// <summary>
-    /// The notice an attention item keeps (§2.2's fourth group): a session that ended without the person asking, by its end state,
+    /// The notice an attention item keeps: a session that ended without the person asking, by its end state,
     /// its workspace with it; null for what waits on the person or is said elsewhere. Its id is the session's, so a second writer of
     /// one end keeps it once.
     /// </summary>
@@ -220,7 +217,7 @@ public static class Notices
     }
 
     /// <summary>
-    /// Move the file's notices into the store's <c>notices</c> once the start's confirmation is settled (FOUNDATION1 z-v); the file stays as
+    /// Move the file's notices into the store's <c>notices</c> once the start's confirmation is settled; the file stays as
     /// the backup. <paramref name="settled"/> is the reading of that confirmation; null reads this install's swap journal.
     /// </summary>
     public static NoticesImport ImportFile(string home, Func<StoreSettled>? settled = null) => NoticeStore.Import(home, DateTimeOffset.UtcNow, settled);
@@ -342,8 +339,8 @@ public static class Notices
 }
 
 /// <summary>
-/// A notice of <i>Done and failed</i> (the notification design §2.5's <c>news</c> partition): what it is, when, whether it is read, and what
-/// it is about. Its workspace is the one it was made in, kept on it and never read again from a session that may since be gone; none is
+/// A notice of <i>Done and failed</i>: what it is, when, whether it is read, and what
+/// it is about. Its workspace is the one it is made in, kept on it and never read again from a session that may be gone; none is
 /// machine-wide.
 /// </summary>
 /// <param name="Kind">
@@ -354,7 +351,7 @@ public static class Notices
 /// <param name="Route">A press's route, its module before it where the module is not the driver's (<c>REMOTES.SET</c>).</param>
 /// <param name="Act">A press's act in its asker's own words, where it has no route the page words.</param>
 /// <param name="Code">What a look's line said, for <see cref="Notices.Look"/>: one of <see cref="LookSaid.NewsCodes"/>.</param>
-/// <param name="Count">How many presses a <see cref="Notices.Lost"/> notice names (CONFIRMWAIT1a-ii).</param>
+/// <param name="Count">How many presses a <see cref="Notices.Lost"/> notice names.</param>
 public sealed record Notice(
     string Id,
     string Kind,

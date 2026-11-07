@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT1c (D163 point 3; the mixed agents design §2, §5; D191's settling): the driver's judgement of an agent's ask to hand its
+/// The driver's judgement of an agent's ask to hand its
 /// session over, in process. The person's `handOver` rule alone settles it (`off` refused, `ask` held `waiting` until the person's
 /// yes, `on` taken), never Daoris's own offer's conditions; again what the connector judged, since a file may be old; and no second
 /// hand-over without a turn of the part's own between.
@@ -70,7 +70,7 @@ public sealed class HandOverAskJudgeTests
     }
 
     /// <summary>
-    /// 🔴 No second hand-over without a turn between (design §5; D191): the record of a part a hand-over started says so (its `from`
+    /// 🔴 No second hand-over without a turn between: the record of a part a hand-over started says so (its `from`
     /// with a hand-over's why), and an ask before that part's first turn ended is refused with that reason, whatever the rule. A part
     /// begun another way (a carry-on, a resume) asks as any does.
     /// </summary>
@@ -106,7 +106,7 @@ public sealed class HandOverAskJudgeTests
     }
 
     /// <summary>
-    /// 🔴 HANDOVERSAID1: each asker is named by the path that made the ask: the agent's own (its tool), the person at a terminal, the
+    /// 🔴 Each asker is named by the path that made the ask: the agent's own (its tool), the person at a terminal, the
     /// person by the window's press, each on a code of its own the page words.
     /// </summary>
     [Fact]
@@ -124,7 +124,7 @@ public sealed class HandOverAskJudgeTests
     }
 
     /// <summary>
-    /// 🔴 HANDOVERSAID1: a hand-over let go that Daoris could not take is said as not taken, never refused, with the take's own reason in
+    /// 🔴 A hand-over let go that Daoris could not take is said as not taken, never refused, with the take's own reason in
     /// words and what the session does next; a reason the take names that is no code here is `cannot`.
     /// </summary>
     [Fact]

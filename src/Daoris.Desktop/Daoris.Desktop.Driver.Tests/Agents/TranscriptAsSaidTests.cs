@@ -4,9 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TRANSCRIPT1: a working session's transcript is on the disk as it is said, not only once its session ends. DEV3d's
-/// rehearsal waited out its whole bound for a line its stub had already said, because the transcript held 0 bytes until
-/// the session ended (D46 §4: the transcript is the diagnostic a person or a rehearsal opens).
+/// A working session's transcript is on the disk as it is said, not only once its session ends: the transcript is the
+/// diagnostic a person or a rehearsal opens, and an empty file until the end leaves a rehearsal waiting for a line already said.
 /// </summary>
 /// <remarks>
 /// No process: a stand-in harness says a line on its stream and then waits, as a harness between steps does, and the test
@@ -97,7 +96,7 @@ public sealed class TranscriptAsSaidTests : IDisposable
 
     /// <summary>
     /// The writer every door opens, the protocol doors' included: a line written is on the disk while the file is open,
-    /// and a line written after it closed is refused as a closed writer's always was.
+    /// and a line written after it closed is refused, as a closed writer refuses.
     /// </summary>
     [Fact]
     public async Task A_line_is_on_the_disk_while_the_transcript_is_open()

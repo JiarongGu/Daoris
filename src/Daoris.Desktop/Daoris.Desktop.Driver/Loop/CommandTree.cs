@@ -11,7 +11,7 @@ public enum TreeRouteKind
 
     /// <summary>
     /// The usage, the tree's or a group's (<see cref="TreeRoute.Group"/>), after <see cref="TreeRoute.Said"/> where it says why; exit 0
-    /// where it was asked for, else 2. A word the CLI handed here that no group owns is refused so.
+    /// where it is asked for, else 2. A word the CLI handed here that no group owns is refused so.
     /// </summary>
     Usage,
 }
@@ -20,7 +20,7 @@ public enum TreeRouteKind
 public sealed record TreeRoute(TreeRouteKind Kind, IReadOnlyList<string> Words, string? Said = null, string? Group = null, bool Asked = false);
 
 /// <summary>
-/// The one command tree's router (D228), by the groups <see cref="CommandWords"/> collects: the host routes a person's words once, at its
+/// The one command tree's router, by the groups <see cref="CommandWords"/> collects: the host routes a person's words once, at its
 /// entry, into the words its commands read, and hands the CLI any word no group owns.
 /// </summary>
 public static class CommandTree
@@ -100,7 +100,7 @@ public static class CommandTree
         };
     }
 
-    /// <summary>A brainstorm, or a meeting where <c>--kind meeting</c> names one (the oneway design §6 X2): the meeting's own words.</summary>
+    /// <summary>A brainstorm, or a meeting where <c>--kind meeting</c> names one: the meeting's own words.</summary>
     private static TreeRoute Brainstorm(IReadOnlyList<string> args, List<string> rest)
     {
         var at = rest.IndexOf("--kind");

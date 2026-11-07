@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a landing door answers where no run's <c>land</c> performs the work (D228: a run's land is the one way to land, and no door lands
+/// What a landing door answers where no run's <c>land</c> performs the work (a run's land is the one way to land, and no door lands
 /// in place): the gate's own refusal where a part of it holds, else why the work's process lands nothing, refused as
 /// <see cref="LandingCode.Refused"/>.
 /// </summary>

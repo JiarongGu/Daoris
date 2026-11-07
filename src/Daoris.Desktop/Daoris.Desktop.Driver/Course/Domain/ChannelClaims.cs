@@ -4,17 +4,17 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// How a message another session wrote to the ask's channel is told to a part that is to read it as that agent's claim, never the person's
-/// words (COWORK1d, the message-urgency design §2.3, §4.2): Course's, since the driven inbox is its lowest reader, and the work orders'
+/// words: Course's, since the driven inbox is its lowest reader, and the work orders'
 /// <see cref="ChannelText"/> answers through it and tells the same words beneath a quest. The class's own words are twins of the page's.
 /// </summary>
 public static class ChannelClaims
 {
     /// <summary>
-    /// What a running part is handed at its next step for another session's message (design §2.3): Daoris's words around the
+    /// What a running part is handed at its next step for another session's message: Daoris's words around the
     /// agent's claim, which say whose it is and that it is not the person's. The record keeps it as Daoris's, never the person's.
     /// </summary>
     /// <param name="passedOn">
-    /// The person passed it on with <i>Send to its session</i> (COWORK1d, the message-urgency design §4.2): said so, and still the agent's
+    /// The person passed it on with <i>Send to its session</i>: said so, and still the agent's
     /// claim, never the person's words.
     /// </param>
     public static string Claim(ChannelItemView message, bool passedOn = false) =>
@@ -30,7 +30,7 @@ public static class ChannelClaims
     {
         var to = (message.Part, message.To, message.Question) switch
         {
-            // COMMS1k: a message to this part alone, from another part of its own line of work or from the person.
+            // A message to this part alone, from another part of its own line of work or from the person.
             ({ }, _, true) => "you alone",
             ({ }, _, false) => "to you alone",
             (null, { } repository, true) => $"`{repository}`",

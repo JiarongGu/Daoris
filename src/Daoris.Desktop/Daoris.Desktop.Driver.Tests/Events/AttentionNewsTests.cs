@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 m-iv (the foundation design §4.5): the look's own news, a wait for an account and a quest's park, told once across restarts by
+/// The look's own news, a wait for an account and a quest's park, told once across restarts by
 /// the said-set, which replaces the watch's first-look baseline; only the first run on a home takes what stands as said.
 /// </summary>
 public sealed class AttentionNewsTests : IDisposable

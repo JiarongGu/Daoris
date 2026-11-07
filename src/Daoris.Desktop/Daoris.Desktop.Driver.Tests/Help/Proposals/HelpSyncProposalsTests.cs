@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// Ask Daoris's <c>sync</c> proposal (HELP10, D109): the workspace's page → Branches → Updates → *Bring up to date*, as a
+/// Ask Daoris's <c>sync</c> proposal: the workspace's page → Branches → Updates → *Bring up to date*, as a
 /// card with the screen's two presses — the look, which is the person's and so the only thing that fetches, then the
 /// Apply, which acts on the rows that look listed and on nothing else.
 /// </summary>
@@ -12,7 +12,7 @@ public sealed class HelpSyncProposalsTests : HelpProposalsFixture
     private static HelpProposal Sync(string? repository = null, string? workspace = null) =>
         new("p11", "sync", "sync", repository, workspace, null, null, "the person's pull request merged", "h1", "proposed");
 
-    /// <summary>BRSCOPE1b: a workspace is refused as the agent proposals refuse one, and said in the card and the terminal's line.</summary>
+    /// <summary>A workspace is refused as the agent proposals refuse one, and said in the card and the terminal's line.</summary>
     [Fact]
     public void A_workspace_this_machine_does_not_have_is_refused_and_one_it_has_is_said()
     {
@@ -51,7 +51,7 @@ public sealed class HelpSyncProposalsTests : HelpProposalsFixture
         Assert.Contains("`engine` has no checkout here in workspace `work`", named.Told);
     }
 
-    /// <summary>The owner's case after a squash merge (D109): the line pulls, a session branch replays, a landed branch goes.</summary>
+    /// <summary>The case after a squash merge: the line pulls, a session branch replays, a landed branch goes.</summary>
     private static readonly SyncPlan Merged = new(
         [
             new LinePull("engine", "work", "main", PullKind.FastForward, "aaaaaaaa", "bbbbbbbb", 1, null, null),
@@ -90,7 +90,7 @@ public sealed class HelpSyncProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// The first Apply is the look (D109: looking reaches the network as the person, so it waits for their press): the
+    /// The first Apply is the look (looking reaches the network as the person, so it waits for their press): the
     /// list is <c>TREES_SYNC_PLAN</c>'s own, kept in the proposal's file, and the card stays for the second press.
     /// </summary>
     [Fact]
@@ -101,7 +101,7 @@ public sealed class HelpSyncProposalsTests : HelpProposalsFixture
         var (looked, _, later) = await ApplyAsync(Sync("engine"), doors);
 
         Assert.False(looked.Applied);
-        // LEFT3 c: the look settles nothing, and says so, so the page logs no settlement for it.
+        // The look settles nothing, and says so, so the page logs no settlement for it.
         Assert.True(looked.Stands);
         Assert.Equal(["TREES_SYNC_PLAN engine"], doors.Calls);
         Assert.Contains("3 thing(s) would change", looked.Told);
@@ -137,8 +137,8 @@ public sealed class HelpSyncProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// WSR7: the card's look says what its rows do not — what was not fetched, once, since a row carries only a mark, and
-    /// the repositories it left apart, holding no branch of Daoris's (D112), which a proposal naming one looks at.
+    /// The card's look says what its rows do not — what is not fetched, once, since a row carries only a mark, and
+    /// the repositories it left apart, holding no branch of Daoris's, which a proposal naming one looks at.
     /// </summary>
     [Fact]
     public async Task A_look_says_once_what_was_not_fetched_and_names_the_repositories_it_left_apart()
@@ -163,9 +163,9 @@ public sealed class HelpSyncProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// LEFT3 b: the card itself says what its rows do not, not only the look's words: each repository not fetched with
-    /// git's reason, when it last heard from origin and how origin is reached, and the repositories the look left apart
-    /// (D112). They are kept in the proposal's file beside the rows, so a card drawn again still says them.
+    /// The card itself says what its rows do not, not only the look's words: each repository not fetched with
+    /// git's reason, when it last heard from origin and how origin is reached, and the repositories the look left apart.
+    /// They are kept in the proposal's file beside the rows, so a card drawn again still says them.
     /// </summary>
     [Fact]
     public async Task A_look_keeps_what_was_not_fetched_and_the_repositories_left_apart_for_the_card()
@@ -197,7 +197,7 @@ public sealed class HelpSyncProposalsTests : HelpProposalsFixture
         Assert.Equal(["docs", "site"], besides.Apart);
     }
 
-    /// <summary>Before a look, and in a file a look kept before LEFT3, the card has nothing besides its rows to say.</summary>
+    /// <summary>Before a look, and in a file a look kept without them, the card has nothing besides its rows to say.</summary>
     [Fact]
     public void A_card_not_looked_at_or_kept_before_LEFT3_says_nothing_besides_its_rows()
     {
@@ -215,7 +215,7 @@ public sealed class HelpSyncProposalsTests : HelpProposalsFixture
         Assert.Empty(plan.Sync.Besides.Apart);
     }
 
-    /// <summary>A look that takes no repository, since none holds a branch of Daoris's (D112), says so rather than "no checkout".</summary>
+    /// <summary>A look that takes no repository, since none holds a branch of Daoris's, says so rather than "no checkout".</summary>
     [Fact]
     public async Task A_look_where_no_repository_holds_Daoris_branches_says_so()
     {

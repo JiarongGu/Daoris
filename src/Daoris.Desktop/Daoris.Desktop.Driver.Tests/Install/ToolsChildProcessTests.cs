@@ -5,14 +5,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// One answer for Daoris and every child, started for real (TOOLS5, D121 §2.4; the design's §7 proof): with git set
+/// One answer for Daoris and every child, started for real: with git set
 /// to a file the person names, Daoris's own git, a hook's child and a session's child each run THAT file when they
 /// say <c>git</c>. The file is a stub that answers with its own name, so the answer is the proof of which git ran.
 /// </summary>
 /// <remarks>
 /// The fast half holds the shapes (<see cref="ToolsChildrenTests"/>); this holds that a real child's own lookup, by
 /// its own shell, lands on the tools' <c>PATH</c>. A session's start reads its tools from the home its target is handed,
-/// as the driver hands its own (ENVSEAM1), so the class sets nothing of this process's and runs beside the rest (PROCPAR1).
+/// as the driver hands its own, so the class sets nothing of this process's and runs beside the rest.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class ToolsChildProcessTests : IDisposable
@@ -63,7 +63,7 @@ public sealed class ToolsChildProcessTests : IDisposable
     }
 
     /// <summary>
-    /// An install's launchers beside the home (WSSETUP2's layout), as stubs that answer with their own name: the
+    /// An install's launchers beside the home, as stubs that answer with their own name: the
     /// install is <c>_root</c>, whose <c>data/</c> is the home.
     /// </summary>
     private const string DoctrineAnswer = "stub-daoris 0.0.1";
@@ -130,7 +130,7 @@ public sealed class ToolsChildProcessTests : IDisposable
     }
 
     /// <summary>
-    /// WSSETUP3 (D124 §1.3): a driven session's own shell finds <c>daoris</c> by its bare name, and it is the install's,
+    /// A driven session's own shell finds <c>daoris</c> by its bare name, and it is the install's,
     /// beside the home, whatever the machine's own <c>PATH</c> holds.
     /// </summary>
     [Fact]

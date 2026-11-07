@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Which rung of the resolution answered (D49 §4, TOOL2): the order a start asks in.</summary>
+/// <summary>Which rung of the resolution answered: the order a start asks in.</summary>
 public enum ChoiceFrom
 {
     /// <summary>The person picked it for this one session.</summary>

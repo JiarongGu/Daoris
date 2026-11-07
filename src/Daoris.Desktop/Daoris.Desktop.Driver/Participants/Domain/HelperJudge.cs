@@ -12,7 +12,7 @@ public sealed record HelperVerdict(string Kind, string? Code = null)
     public const string Cap = "cap";
 
     /// <summary>
-    /// Why a waiting ask waits for its asker (COAGENT1a, D199 point 5): a turn of the asker's is in flight, and its work in progress
+    /// Why a waiting ask waits for its asker: a turn of the asker's is in flight, and its work in progress
     /// is captured only at a turn's boundary.
     /// </summary>
     public const string Turn = "turn";
@@ -29,21 +29,21 @@ public sealed record HelperVerdict(string Kind, string? Code = null)
 }
 
 /// <summary>
-/// The driver's judgement of each ask for a helper (MIXAGENT2a-ii, D163 point 2; the mixed agents design §5): what only the driver
+/// The driver's judgement of each ask for a helper: what only the driver
 /// can judge, since only it reads <c>driver.json</c>, and again what the connector judged, since an ask on file may be old.
 /// </summary>
 /// <remarks>
 /// <para><b>The person's rule is for an agent's ask.</b> <c>off</c> refuses it, <c>ask</c> holds it <c>waiting</c> until the
-/// person approves (MIXAGENT2b's press) or says no (HELPERNO1's, a refusal <see cref="HelperWhy.Declined"/> the bridge writes with
+/// person approves or says no (a refusal <see cref="HelperWhy.Declined"/> the bridge writes with
 /// its note, past judging here like any refusal), <c>on</c> starts it within the limits. Where nothing is set, the default is
-/// <c>on</c> for the agents Daoris set up and signed in on this machine (HELPERDEFAULT1), and an ask naming another is refused
+/// <c>on</c> for the agents Daoris set up and signed in on this machine, and an ask naming another is refused
 /// <see cref="HelperWhy.NotSetUp"/>, as one with none set up is <see cref="HelperWhy.NoneSetUp"/>. An ask the person wrote themselves (the
 /// terminal verb) is theirs: they said yes by typing it, so it goes whatever the rule says.</para>
 ///
-/// <para><b>The limits</b> (design §5): at most two helpers at once per asker, refused in a coded sentence the asker reads past
+/// <para><b>The limits</b>: at most two helpers at once per asker, refused in a coded sentence the asker reads past
 /// that; and each a slot under the cap, which only waits, since a slot frees.</para>
 ///
-/// <para><b>The asker's turn boundary</b> (COAGENT1a, D199 point 5; the co-agent design §2.5): the helper's copy carries the
+/// <para><b>The asker's turn boundary</b>: the helper's copy carries the
 /// asker's uncommitted work, captured with no turn of the asker's in flight, so an ask whose asker is mid-turn waits
 /// (<see cref="HelperVerdict.Turn"/>) and starts at the look after that turn ends. An urgent ask waits the same: its answer still
 /// reaches the asker at its next step where it is working again by then.</para>
@@ -67,7 +67,7 @@ public static class HelperJudge
         if (ask.AskedBy == HelperAsk.ByAgent)
         {
             if (rule.Mode == HelperRules.Off) return HelperVerdict.Refuse(HelperWhy.Off);
-            // HELPERDEFAULT1 (D163's 2026-10-24 note): the default asks Daoris's own agents alone, those set up and signed in here.
+            // The default asks Daoris's own agents alone, those set up and signed in here.
             if (rule.SetUp && ask.Agent is { Length: > 0 } named
                            && !rule.Agents.Any(agent => string.Equals(agent, named, StringComparison.OrdinalIgnoreCase)))
             {
@@ -75,7 +75,7 @@ public static class HelperJudge
             }
 
             if (rule.SetUp && rule.Agents.Count == 0) return HelperVerdict.Refuse(HelperWhy.NoneSetUp);
-            // A cooling ask already ran once (LIMITRESUME1h): the yes it started under holds for its run again.
+            // A cooling ask already ran once: the yes it started under holds for its run again.
             if (rule.Mode == HelperRules.Ask && state is not { State: HelperStates.Approved or HelperStates.Cooling }) return HelperVerdict.Wait(null);
         }
 

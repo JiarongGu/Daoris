@@ -5,10 +5,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Where the driver reads lanes (D115 §2.2, DEV4): the registry answers each repository's lanes as
+/// Where the driver reads lanes: the registry answers each repository's lanes as
 /// their words, and the intake's room lists them so an intake can address one; a quest answers the
 /// lanes it addresses beside its repository. The driver never reads a lane's paths through the
-/// service: those are the line's file's, and its reader is DEV6's.
+/// service: those are the line's file's.
 /// </summary>
 public sealed class LaneReadingTests
 {
@@ -87,7 +87,7 @@ public sealed class LaneReadingTests
         Assert.Equal("engine:assets+core", (quest with { Lanes = ["assets", "core"] }).Address);
     }
 
-    /// <summary>Answers each path with what it was given, whatever the query — the doors' own JSON.</summary>
+    /// <summary>Answers each path with what it is given, whatever the query — the doors' own JSON.</summary>
     private sealed class Canned(Dictionary<string, string> answers) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>

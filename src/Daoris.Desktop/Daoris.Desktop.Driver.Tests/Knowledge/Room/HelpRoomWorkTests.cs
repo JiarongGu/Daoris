@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// FABRIC-MILESTONE1b: Ask Daoris's room says a unit's milestone (the fabric events design §D0), in the terminal's own words
+/// Ask Daoris's room says a unit's milestone, in the terminal's own words
 /// (<see cref="WorkWords"/>), so the helper answers "did it end, what waits, what is kept" from the records and never by a guess.
 /// </summary>
 public sealed class HelpRoomWorkTests
@@ -51,7 +51,7 @@ public sealed class HelpRoomWorkTests
         "a branch or a tag of yours holds its commit, so the look's tidy removes it once it is 30 days old, from 2026-11-16 09:00 UTC")
     { Until = Then.AddDays(30), Repository = "engine" };
 
-    /// <summary>RECOVERYASK1: a recovery ref no unit names and nothing holds is said with its delete line, so the helper can give the person the command.</summary>
+    /// <summary>A recovery ref no unit names and nothing holds is said with its delete line, so the helper can give the person the command.</summary>
     [Fact]
     public void The_room_names_a_recovery_no_unit_names_and_says_its_delete_line()
     {

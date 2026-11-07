@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One delete the journal holds (ONEWAY1r, D204): the act, what it deleted and at which commit, who pressed it, the recovery ref that keeps the
+/// One delete the journal holds: the act, what it deleted and at which commit, who pressed it, the recovery ref that keeps the
 /// commit where one was kept, and whether its Undo is open. <see cref="Closed"/> is a code the page words, null where the Undo is open.
 /// </summary>
 public sealed record DeletedRef(string Act, string Kind, string Name, string Commit, DateTimeOffset At, string Press, string? Recovery, string? Closed);
@@ -16,7 +16,7 @@ public sealed record DeletedRefs(IReadOnlyList<DeletedRef> Rows)
 }
 
 /// <summary>
-/// **A repository's deletes, read from the journal alone** (ONEWAY1r, D204, D228): each done <c>ref.delete</c> act is a row, whoever pressed
+/// **A repository's deletes, read from the journal alone**: each done <c>ref.delete</c> act is a row, whoever pressed
 /// it (the person's <c>GIT_REF_DELETE</c> or a door of Daoris's through <see cref="JournaledDeletes"/>), with the Undo the act carries. A row
 /// reads the plan the act wrote: which delete it was, at which commit, which recovery ref kept the commit. git is asked only whether the Undo
 /// can still run (the name free, the commit still known), in a listing that also counts the recovery refs no journal record names.

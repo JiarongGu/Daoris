@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Whether a checkout is a linked worktree (D51): a twin of the CLI's <c>linkedWorktreeMain</c> (<c>connect.ts</c>), which
+/// Whether a checkout is a linked worktree: a twin of the CLI's <c>linkedWorktreeMain</c> (<c>connect.ts</c>), which
 /// refuses to register one. Git marks a linked worktree itself: its <c>.git</c> is a FILE naming the main repository's
 /// <c>.git/worktrees/&lt;name&gt;</c>. A submodule wears a <c>.git</c> file too, pointing at <c>.git/modules/&lt;name&gt;</c>,
 /// and is a repository of its own, so only the worktree marker counts. No spawn.

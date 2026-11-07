@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a trace reads of a session's events (TRACE1, D143; FOUNDATION1 mod-viii, the design §14.3): the events a session kept under the
+/// What a trace reads of a session's events: the events a session kept under the
 /// sessions' folder, in order, or none where it kept no file. The trace names no type of the context, which keeps the file; the context
 /// answers (<c>SessionEventReads</c>), installed when the driver's assembly loads, since the trace is read by the host's terminal, the
 /// shell's bridge and the tests, none of them built by Loop.
@@ -22,7 +22,7 @@ internal static class TraceEventFiles
     private static ITraceEventFiles? _current;
 
     /// <summary>The reading in force.</summary>
-    /// <exception cref="InvalidOperationException">None was installed: the assembly's own initializer has not run.</exception>
+    /// <exception cref="InvalidOperationException">None is installed: the assembly's own initializer has not run.</exception>
     internal static ITraceEventFiles Current
     {
         get => _current ?? throw new InvalidOperationException("no reading of a session's events is installed: the context installs it when the driver loads");

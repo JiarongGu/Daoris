@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where a start works, as a provider's <see cref="Reach"/> reads it (AGENTPROVIDER1 row u; D212 §2.4): a repository; a workspace with no
+/// Where a start works, as a provider's <see cref="Reach"/> reads it: a repository; a workspace with no
 /// repository, a brainstorm's voice; or the machine's room across repositories, Ask Daoris's.
 /// </summary>
 /// <param name="Workspace">The start's workspace, where it names one.</param>
@@ -20,8 +20,7 @@ public readonly record struct ReachPlace(string? Workspace, string? Repository, 
 }
 
 /// <summary>
-/// The places a person opened to a provider whose reach is <see cref="Reach.Opened"/>. Where and how a person opens one is OPENROUTER1's
-/// design; until it lands nothing is opened, and nothing opened reads closed.
+/// The places a person opened to a provider whose reach is <see cref="Reach.Opened"/>. Until a way for a person to open one exists nothing is opened, and nothing opened reads closed.
 /// </summary>
 public interface IReachOpenings
 {
@@ -30,7 +29,7 @@ public interface IReachOpenings
 }
 
 /// <summary>
-/// Whether a door's provider may work at a start's place (AGENTPROVIDER1 row u; the agent-provider design §11 row u): read before any
+/// Whether a door's provider may work at a start's place: read before any
 /// context or credential is sent, a joined door bound by its provider's reach. <see cref="Reach.Everywhere"/> admits every place;
 /// <see cref="Reach.Opened"/> only a place the person opened to it.
 /// </summary>

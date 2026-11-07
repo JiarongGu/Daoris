@@ -6,8 +6,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// DRIFT1a2 (D133 §1): what the person adds to a running session is told to the service's door for it
-/// (<c>POST /api/sessions/{id}/added</c>, DRIFT1a), which keeps it on the ask the session's work is for. Whether it was
+/// What the person adds to a running session is told to the service's door for it
+/// (<c>POST /api/sessions/{id}/added</c>), which keeps it on the ask the session's work is for. Whether it is
 /// kept is an answer, never an error: a session on no ask is answered <c>kept: false</c>, and an older host has no door.
 /// </summary>
 public sealed class SessionAddedTests
@@ -49,7 +49,7 @@ public sealed class SessionAddedTests
         Assert.Contains("has no door for what the person adds (404)", message);
     }
 
-    /// <summary>A service standing in: each request recorded, then answered with the one status and body it was given.</summary>
+    /// <summary>A service standing in: each request recorded, then answered with the one status and body it is given.</summary>
     private sealed class StandIn(HttpStatusCode status, string body) : HttpMessageHandler
     {
         public List<(string Method, string Path, string Body)> Heard { get; } = [];

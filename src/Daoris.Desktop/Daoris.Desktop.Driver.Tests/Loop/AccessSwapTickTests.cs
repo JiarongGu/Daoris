@@ -6,7 +6,7 @@ using SaidStandIn = Daoris.Desktop.Driver.Tests.SessionMessagesTickTests.SaidSta
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ACCESSSWAP1b (D183's note, D184's AUTONOMY1b) through REAL ticks: a driven session's changed setup applies at its next turn. The
+/// Through REAL ticks: a driven session's changed setup applies at its next turn. The
 /// session starts under `asking`; while its first turn runs the person holds a word for it and the terminal's <c>daoris place access</c>
 /// writes `unrestricted` to the driver's file from outside the run. At that turn's end the run reads the file, ends there, never
 /// mid-turn, and hands the word back to its record, which concludes completed, neither parked nor failed; the next look goes on in the
@@ -244,8 +244,8 @@ public sealed class AccessSwapTickTests : IDisposable
     }
 
     /// <summary>
-    /// A stand-in for Claude Code's native door that logs the permission mode it was started in: a first run takes the quest, says so
-    /// in a file, waits for the test's word to go on, and closes it; a resumed run logs what it was resumed with.
+    /// A stand-in for Claude Code's native door that logs the permission mode it is started in: a first run takes the quest, says so
+    /// in a file, waits for the test's word to go on, and closes it; a resumed run logs what it is resumed with.
     /// </summary>
     private string NativeHarness()
     {

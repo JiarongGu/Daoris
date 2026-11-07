@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The branch each of a home's trees has checked out, read with one git start per repository: <c>worktree list --porcelain</c> names
-/// every linked tree of a repository with its branch, where asking each tree on its own was a start per tree, at a third of a second
+/// every linked tree of a repository with its branch, where asking each tree on its own costs a start per tree, a third of a second
 /// each on a loaded machine, on every look. A tree git does not list, or whose repository cannot be told from its files, is asked on
 /// its own.
 /// </summary>

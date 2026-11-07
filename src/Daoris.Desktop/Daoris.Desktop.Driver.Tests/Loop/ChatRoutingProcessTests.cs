@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORKVIEW1e-i (the cowork view design §R11.2 point 4) as CONTEXTONE1c places it: a chat in a repository is told its routing standing in
+/// A chat in a repository is told its routing standing in
 /// its standing block, with its first message, and the record keeps a note of the block; a go-on resumes the same conversation and is never
 /// handed it again. A real process (node) on the protocol door, with no model and no account, and the in-process ledger of
 /// <see cref="ChatGoOnTests"/>.
@@ -103,7 +103,7 @@ public sealed class ChatRoutingProcessTests : IDisposable
     }
 
     /// <summary>
-    /// A go-on resumes the same conversation, which its first message told the standing block (the resume contract, CONTEXTONE1c): it is
+    /// A go-on resumes the same conversation, which its first message told the standing block: it is
     /// handed the person's words alone, whatever <c>driver.json</c> says of the drive by then, and the record keeps no second note.
     /// </summary>
     [Fact]

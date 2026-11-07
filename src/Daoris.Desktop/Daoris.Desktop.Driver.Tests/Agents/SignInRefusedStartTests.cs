@@ -5,15 +5,15 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ROSTER1b (D150 §5.3; D125's TOOL6g and ROSTER1 notes): a start the agent refused for its sign-in reads its account signed
+/// A start the agent refused for its sign-in reads its account signed
 /// out in <c>reads.json</c>, with its time, as a reading would; the next start walks past it, as rotation walks past any
 /// account read signed out, and a held start names it and its sign-in; the refusal is never one of the quest's strikes, and
-/// its record says why it ended; and a later sign-in through Daoris lets the account run again, as TOOL6g's mark does.
+/// its record says why it ended; and a later sign-in through Daoris lets the account run again, as the sign-in mark does.
 /// </summary>
 /// <remarks>
 /// Nothing here starts a process. The walk runs on an agent present by a file look that asks nobody whether an account is
 /// signed in (<see cref="TestAgent.ProbeByPresence"/>), so every account is ready unless a reading, a cool-off or a
-/// refusal says otherwise; the conclusion runs on the protocol stub, which reads the stub's words as its owner's (AGT7).
+/// refusal says otherwise; the conclusion runs on the protocol stub, which reads the stub's words as its owner's.
 /// A refused start through real ticks, its next start on another account, is <c>SignInRefusalTickTests</c>, in the
 /// <c>Process</c> half.
 /// </remarks>
@@ -82,7 +82,7 @@ public sealed class SignInRefusedStartTests : IDisposable
 
     private AccountRead? ReadOf(string agent, string account) => AccountReads.Of(_home, agent).Accounts.GetValueOrDefault(account);
 
-    // ——— The reading (D150 §5.3): signed out, with when, as a reading would be.
+    // ——— The reading: signed out, with when, as a reading would be.
 
     [Fact]
     public async Task A_start_refused_for_its_sign_in_reads_its_account_signed_out_with_its_time()
@@ -98,7 +98,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         Assert.Equal((LoginState.Out, (DateTimeOffset?)Seen), (account.Login, account.Read));
     }
 
-    /// <summary>The tool's own sign-in reads signed out the same way; a door's account is its owner's (AGT7).</summary>
+    /// <summary>The tool's own sign-in reads signed out the same way; a door's account is its owner's.</summary>
     [Fact]
     public void The_own_sign_in_and_a_door_s_account_read_signed_out_as_their_owner_s()
     {
@@ -113,7 +113,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         Assert.Empty(AccountReads.Of(_home, "acp-stub").Accounts);
     }
 
-    // ——— The next start (TOOL6g's walk): it walks past the account, and a hold names it and its sign-in.
+    // ——— The next start: it walks past the account, and a hold names it and its sign-in.
 
     [Fact]
     public async Task The_next_start_walks_past_it_to_another_account_of_the_list()
@@ -171,7 +171,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         Assert.Equal(["account-1", "account-2"], held.SignedOut!.Accounts);
     }
 
-    // ——— Cleared (TOOL6g): a sign-in through Daoris marks it, and the next start asks it again; a newer reading stands.
+    // ——— Cleared: a sign-in through Daoris marks it, and the next start asks it again; a newer reading stands.
 
     [Fact]
     public async Task A_later_sign_in_through_Daoris_lets_it_run_again()
@@ -218,8 +218,8 @@ public sealed class SignInRefusedStartTests : IDisposable
         Assert.Equal(("account-1", true), (selection.Profile, selection.Allowed));
     }
 
-    // ——— One fresh reading (TOOL6h): a refusal of an account last read signed in owes it one question, taken by the next start
-    // that walks to it whatever TOOL6g's mark and hour say, and its answer is honoured; then TOOL6g's mark and hour again.
+    // ——— One fresh reading: a refusal of an account last read signed in owes it one question, taken by the next start
+    // that walks to it whatever the mark and hour say, and its answer is honoured; then the mark and hour again.
 
     /// <summary>
     /// The fake agent whose status question a test answers in-process (<see cref="HarnessRoster.Asking"/>), each question
@@ -281,7 +281,7 @@ public sealed class SignInRefusedStartTests : IDisposable
 
     /// <summary>
     /// 🔴 Never every look: an agent whose status says signed in while it refuses every start costs one more start, not one per
-    /// look. The refusal of the signed-in reading the fresh reading itself made owes none, so TOOL6g's mark and hour hold it.
+    /// look. The refusal of the signed-in reading the fresh reading itself made owes none, so the mark and hour hold it.
     /// </summary>
     [Fact]
     public async Task A_refusal_of_the_fresh_reading_s_own_yes_owes_no_second_question()
@@ -304,7 +304,7 @@ public sealed class SignInRefusedStartTests : IDisposable
 
     /// <summary>
     /// Only a refusal that contradicts a reading saying signed in owes the question: an account never read, or last read signed
-    /// out, keeps ROSTER1b's word until TOOL6g's mark or hour, which still ask it.
+    /// out, keeps its word until the mark or hour, which still ask it.
     /// </summary>
     [Theory]
     [InlineData(null)]
@@ -331,8 +331,8 @@ public sealed class SignInRefusedStartTests : IDisposable
     }
 
     /// <summary>
-    /// The refused start's own conclusion owes it (ROSTER1b's one reader, <see cref="RefusedAccounts.SignInRefused"/>), and
-    /// so does a conversation's refused turn (SIGNIN1b), which reads its refusal by the same reader: the next start asks each
+    /// The refused start's own conclusion owes it (the one reader, <see cref="RefusedAccounts.SignInRefused"/>), and
+    /// so does a conversation's refused turn, which reads its refusal by the same reader: the next start asks each
     /// once, in the order it walks them.
     /// </summary>
     [Fact]
@@ -358,7 +358,7 @@ public sealed class SignInRefusedStartTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITPICK1: where no account is ready, the line's wait names the accounts that need a sign-in apart from the one cooling, each with
+    /// Where no account is ready, the line's wait names the accounts that need a sign-in apart from the one cooling, each with
     /// its sign-in, and the moment that account reads signed in again the next start takes it, without waiting for the reset.
     /// </summary>
     [Fact]
@@ -410,7 +410,7 @@ public sealed class SignInRefusedStartTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITPICK1 (D210 point 5): the protocol door's own authentication-required code is the account's sign-in whatever words come
+    /// The protocol door's own authentication-required code is the account's sign-in whatever words come
     /// with it, so an expired sign-in is marked for the person's sign-in, never struck and never cooled as a limit.
     /// </summary>
     [Fact]
@@ -465,8 +465,8 @@ public sealed class SignInRefusedStartTests : IDisposable
     }
 
     /// <summary>
-    /// The tool's own sign-in is never asked by a walk (TOOL6g), so a reading alone would start it into the same refusal at
-    /// every look: it is held as AGT3b holds a refused one, until a person looks again.
+    /// The tool's own sign-in is never asked by a walk, so a reading alone would start it into the same refusal at
+    /// every look: it is held as a refused credential is held, until a person looks again.
     /// </summary>
     [Fact]
     public async Task The_tool_s_own_sign_in_refused_is_held_until_a_person_looks_again()
@@ -497,7 +497,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         Assert.Null(looked.NotReady);
     }
 
-    /// <summary>AGT3b's refused credential on the native door reads the account signed out too, beside its hold.</summary>
+    /// <summary>A refused credential on the native door reads the account signed out too, beside its hold.</summary>
     [Fact]
     public async Task A_credential_its_provider_refused_reads_its_account_signed_out_beside_AGT3b_s_hold()
     {
@@ -518,7 +518,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         Assert.Equal(AccountReadiness.Refused, held.NotReady);
     }
 
-    // ——— A conversation (SIGNIN1b): its turn refused for its sign-in reads the account signed out, as a driven start's does.
+    // ——— A conversation: its turn refused for its sign-in reads the account signed out, as a driven start's does.
 
     /// <summary>The fake agent with Claude Code's sign-in words declared, so a conversation's refused turn can be read on it.</summary>
     private HarnessRoster FakeSigningIn() =>
@@ -571,7 +571,7 @@ public sealed class SignInRefusedStartTests : IDisposable
     }
 
     /// <summary>
-    /// AGT3c: only the door's failure, read by the adapter's table, says a sign-in was refused. A failure the table does not
+    /// Only the door's failure, read by the adapter's table, says a sign-in is refused. A failure the table does not
     /// recognise, and the same words on an agent that declares none, read nothing.
     /// </summary>
     [Fact]
@@ -589,7 +589,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         Assert.False(File.Exists(AccountReads.PathOf(_home)));
     }
 
-    /// <summary>The tool's own sign-in a conversation's turn was refused for is held until a person looks again, as a start's is.</summary>
+    /// <summary>The tool's own sign-in a conversation's turn is refused for is held until a person looks again, as a start's is.</summary>
     [Fact]
     public async Task A_conversation_refused_on_the_tool_s_own_sign_in_holds_the_next_start_until_a_person_looks_again()
     {
@@ -605,7 +605,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         Assert.Equal(AccountReadiness.Refused, held.NotReady);
     }
 
-    // ——— Never a strike (D58 as D125 amends it, and now for an account's sign-in): the fault is the account's.
+    // ——— Never a strike: the fault is the account's.
 
     /// <summary>The refused start's record, as the driver writes it: failed, its note saying the account's sign-in.</summary>
     private async Task<string> RefusedAsync(ServiceClient service, HarnessRoster roster, bool accountLine = true)

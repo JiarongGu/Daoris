@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDBACK1 part 3 (a), through REAL ticks on the native door. Its harness ends the session's own work with its turn, so a native session
+/// Through REAL ticks on the native door. Its harness ends the session's own work with its turn, so a native session
 /// that closes its quest done and leaves its fix uncommitted is carried on in Daoris's own words, as its conversation resumed, and reads
 /// completed once the tree is clean, or when the bound (<see cref="TurnCarry.Bound"/>) is met. The words are the run's own prompt: no card,
 /// no say, no move record, and Daoris commits nothing (any commit in the tree is the stand-in's).
@@ -43,7 +43,7 @@ public sealed class NativeCarryTickTests : IDisposable
 
     private string Transcript => File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Sessions, "s1.log"));
 
-    /// <summary>How many times the record says the bound was met (the note is kept in the record's events, never the transcript).</summary>
+    /// <summary>How many times the record says the bound is met (the note is kept in the record's events, never the transcript).</summary>
     private int BoundNotes() => new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s1", 0).Events
         .Count(e => e.Parts?.Any(part => part.Code == ChatNoteCodes.BackgroundCarryBound.Code) == true);
 
@@ -125,7 +125,7 @@ public sealed class NativeCarryTickTests : IDisposable
         Assert.Equal(0, BoundNotes());
     }
 
-    /// <summary>A carry-on whose turn the harness said failed is not carried on again either (TURNFAIL2's reading, NativeWords.Left).</summary>
+    /// <summary>A carry-on whose turn the harness reports failed is not carried on again either (<c>NativeWords.Left</c>).</summary>
     [Fact]
     public async Task A_carry_on_whose_turn_failed_is_not_carried_on_again()
     {

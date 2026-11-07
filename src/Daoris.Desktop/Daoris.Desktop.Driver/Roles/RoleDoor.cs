@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>A change of the catalogue its judge refused at a door: the judge's closed code beside its sentence; nothing was written.</summary>
+/// <summary>A change of the catalogue its judge refused at a door: the judge's closed code beside its sentence; nothing is written.</summary>
 public sealed class RoleRefusedException(RoleRefusal refusal) : DriverException(refusal.Said)
 {
     /// <summary>One of <see cref="RoleCatalog.Codes"/>.</summary>
@@ -25,7 +25,7 @@ public sealed record RoleRow(
 }
 
 /// <summary>
-/// The person's one door into the role catalogue (FOUNDATION1y-i, the foundation design §2.7): Settings' <c>SET_ROLE</c>,
+/// The person's one door into the role catalogue: Settings' <c>SET_ROLE</c>,
 /// <c>daoris role</c> and Ask Daoris's <c>role_propose</c>, applied by the person's press, each call <see cref="Apply"/>, so each
 /// answers the judge's closed codes alike. A role's record and its staffing are set together: the staffing first, a row no record reads
 /// until the record lands, then the catalogue's one write, then the staffing's check, which writes the projection the narrowing moved.
@@ -52,7 +52,7 @@ public static class RoleDoor
     /// <summary>
     /// <paramref name="change"/> made by the person: judged by the catalogue's judge and, for a set, its staffing by the role's work; then
     /// written. A new added role naming no <paramref name="choices"/> is off, which a work that may not be off refuses; null keeps the
-    /// staffing a role has. <paramref name="read"/> is the revision the change was made against, a proposal's, refused where it moved.
+    /// staffing a role has. <paramref name="read"/> is the revision the change is made against, a proposal's, refused where it moved.
     /// </summary>
     /// <returns>The id's new revision.</returns>
     /// <exception cref="RoleRefusedException">The judge's refusal; nothing written.</exception>
@@ -69,14 +69,14 @@ public static class RoleDoor
     }
 
     /// <summary>
-    /// Several changes made as one (AGENTSPLACE1g2, the Agents-place design §4): each judged in order against the roles the ones before it
-    /// leave, its staffing by its work, and its revision against the one it was made against, <b>before anything is written</b>; the first
+    /// Several changes made as one: each judged in order against the roles the ones before it
+    /// leave, its staffing by its work, and its revision against the one it is made against, <b>before anything is written</b>; the first
     /// refusal refuses the batch and writes nothing. Then the seeded roles' staffing in one write, the added roles' in one store
     /// transaction, the catalogue's rows in one transaction, and the staffing's check once.
     /// </summary>
     /// <returns>Each id's new revision, in the batch's order.</returns>
     /// <exception cref="RoleRefusedException">The first judge's refusal; nothing written.</exception>
-    /// <exception cref="DriverException">The batch is empty or names a role twice, a role moved since it was read, or a write refused; said.</exception>
+    /// <exception cref="DriverException">The batch is empty or names a role twice, a role moved since it is read, or a write refused; said.</exception>
     public static IReadOnlyList<long> ApplyAll(RoleStaffing staffing, IReadOnlyList<(RoleChange Change, IReadOnlyList<ActorChoice>? Choices, long? Read)> batch) =>
         Publish(staffing, [.. batch.Select(each => new RolePress(each.Change, each.Choices, each.Read))], Doors.Window);
 
@@ -84,7 +84,7 @@ public static class RoleDoor
     public static IReadOnlyList<long> ApplyAll(RoleStaffing staffing, IReadOnlyList<RolePress> batch, string door = Doors.Window) => Publish(staffing, batch, door);
 
     /// <summary>
-    /// The one publication (STAFFPOLICY1b, the staff policy design §11 point 2): every change judged in order, its staffing by its work and
+    /// The one publication: every change judged in order, its staffing by its work and
     /// its policy by the role's choices, at the revisions read, <b>before anything is written</b>; then the roles' staffing, the catalogue's
     /// rows and the policies in one store transaction, so none of the three lands without the others. A seeded role's staffing is also
     /// projected onto <c>driver.json</c> first, as any write of it is; the staffing's check runs once after.
@@ -154,7 +154,7 @@ public static class RoleDoor
             {
                 if (policy is not null) throw new RoleRefusedException(new RoleRefusal(StaffPolicy.Code, $"a policy goes with a role's set: `{change.Id}` is removed or given its seed."));
                 if (!isSeeded && change is not RoleChange.DefaultAllRoles) rows.Add((change.Id, null));
-                // A seeded role given its seed is given its seed's staffing too (ONEWAY1a, ONEWAY1b): a written order, or its caller's rule.
+                // A seeded role given its seed is given its seed's staffing too: a written order, or its caller's rule.
                 if (change is RoleChange.DefaultRole && isSeeded) seeded.Add((change.Id, ActorChoices.Seed(change.Id)));
                 if (change is RoleChange.DefaultAllRoles) seeded.AddRange(ActorChoices.Ids.Select(id => (id, ActorChoices.Seed(id))));
                 cleared.AddRange(change is RoleChange.DefaultAllRoles ? ActorChoices.Ids : [change.Id]);
@@ -227,7 +227,7 @@ public static class RoleDoor
     /// A press's change as <c>SET_ROLE</c>, the verb and a proposal carry it: <c>change</c> (<c>set</c>, <c>remove</c>, <c>default</c> or <c>default-all</c>, which names no id),
     /// <c>id</c>, for a set its <c>role</c> (<c>name.en</c>, <c>name.zh</c>, <c>takes</c>, <c>scope.kind</c>, <c>scope.id</c>; an appointed
     /// role's <c>filled: appointed</c>, <c>authority</c>, <c>holder</c> and <c>window</c> in place of <c>takes</c>) and its
-    /// <c>choices</c> (absent or null leaves them, an empty list is off), and the <c>revision</c> it was made against, if any.
+    /// <c>choices</c> (absent or null leaves them, an empty list is off), and the <c>revision</c> it is made against, if any.
     /// </summary>
     /// <exception cref="DriverException">The press does not read as a change; said.</exception>
     public static (RoleChange Change, IReadOnlyList<ActorChoice>? Choices, long? Read) Read(System.Text.Json.JsonElement? payload)

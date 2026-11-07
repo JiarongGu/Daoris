@@ -2,7 +2,7 @@ using static Daoris.Driver.TreeGit;
 
 namespace Daoris.Driver;
 
-/// <summary>What a landed branch holds, for the clean-up's list (WSR5). Only the first three go.</summary>
+/// <summary>What a landed branch holds, for the clean-up's list. Only the first three go.</summary>
 public static class LandedKind
 {
     /// <summary>Every file it changed reads on the line as it left it — a squash merge's pull request reached the line.</summary>
@@ -15,7 +15,7 @@ public static class LandedKind
     public const string Inside = "inside";
 
     /// <summary>
-    /// Its pull request completed, as the plugin that pushed it answered, and git confirms it here (PLUGHOOK1a, D148 point 4): the
+    /// Its pull request completed, as the plugin that pushed it answered, and git confirms it here: the
     /// merge commit is on the line and the branch stands at or under the commit it merged. What a squash leaves once the line
     /// has moved on.
     /// </summary>
@@ -30,7 +30,7 @@ public static class LandedKind
     /// <summary>It holds commits its remote-tracking branch does not: pushed, then moved — kept.</summary>
     public const string AheadOfRemote = "ahead-of-remote";
 
-    /// <summary>A session branch that stays holds commits only this branch holds, and D88's proof for it leans on this one — kept.</summary>
+    /// <summary>A session branch that stays holds commits only this branch holds, and the end proof for it leans on this one — kept.</summary>
     public const string LeanedOn = "leaned-on";
 
     /// <summary>Git could not say — kept.</summary>

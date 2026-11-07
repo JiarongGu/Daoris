@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The retry a run hands its protocol door for a transient failure (AGENTERRORS1a, D210, the agent-errors design §5.1): the reader as a
+/// The retry a run hands its protocol door for a transient failure: the reader as a
 /// delegate, the clock its waits are read off, and the owner's check before each try. <see cref="AcpSession"/> has no adapter, table or
 /// clock of its own, so the capture hands it this; a run handed none keeps today's end, whatever the reader would say.
 /// </summary>
@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// <para><b>Where.</b> Inside <see cref="AcpSession.RunAsync"/>, around its prompt sites: only there is a live session left to prompt.
 /// The capture's catch is too late, since by then the reader has ended and stdin is closing.</para>
 ///
-/// <para><b>Every run on the protocol door takes one</b> (D210 point 8): a driven session, an intake, a helper, an opinion, a partner and a
+/// <para><b>Every run on the protocol door takes one</b>: a driven session, an intake, a helper, an opinion, a partner and a
 /// brainstorm voice through the hold, each with its owner's check, and a conversation through its runner (<see cref="ChatRetry"/>).</para>
 ///
 /// <para><b>What it keeps</b> once the run is over, for the conclusion: whether an episode opened, the words a failed prompt left
@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 public sealed class TransientRetry
 {
     /// <summary>
-    /// The waits before each try (§5.1, round 2, C6): 1, 2, 4, 8 and 16 minutes, 31 minutes in all, one constant set for every door and
+    /// The waits before each try: 1, 2, 4, 8 and 16 minutes, 31 minutes in all, one constant set for every door and
     /// every kind of run. The bound is the count of tries, five; a try's own time is the harness's and is not counted.
     /// </summary>
     public static IReadOnlyList<TimeSpan> Delays { get; } =
@@ -28,7 +28,7 @@ public sealed class TransientRetry
     public static int Bound => Delays.Count;
 
     /// <summary>
-    /// The tries this run's episode makes before it ends past the bound (STAFFPOLICY1e): <see cref="Bound"/>, or a driven line's policy's
+    /// The tries this run's episode makes before it ends past the bound: <see cref="Bound"/>, or a driven line's policy's
     /// <c>after</c> where its role moves on <c>transient</c>, 1 to <see cref="Bound"/>. The waits are the schedule's first ones either way.
     /// </summary>
     public int Limit
@@ -38,7 +38,7 @@ public sealed class TransientRetry
     } = Bound;
 
     /// <summary>
-    /// The end of the pass's own minutes, where it has them (D210 point 8; the agent-errors design §7): a helper's, an opinion's, a partner's
+    /// The end of the pass's own minutes, where it has them: a helper's, an opinion's, a partner's
     /// or a brainstorm voice's. The waits are spent from them and none is waited past it, so an episode whose next wait would end after it
     /// ends there, past its bound, with the transient reason rather than <i>timed out</i>. Null for a run with no minutes of its own.
     /// </summary>
@@ -59,15 +59,15 @@ public sealed class TransientRetry
     public TimeProvider Clock { get; init; } = TimeProvider.System;
 
     /// <summary>
-    /// The owner's check before each try (§5.5, <c>TransientRetry.Wanted</c>): whether another turn is still wanted. Null, or one that
+    /// The owner's check before each try (<c>TransientRetry.Wanted</c>): whether another turn is still wanted. Null, or one that
     /// throws, answers yes, as an unread look must never end the episode as though the work were done.
     /// </summary>
     public Func<CancellationToken, Task<bool>>? Wanted { get; init; }
 
     /// <summary>
-    /// Keeps Daoris's go-on (<c>retry.go-on</c>) through the run's one dispatcher, once per episode before its first try (§5.1, round 3's
-    /// read, R3-O5): answers the word as its dispatcher hands it, marked attempted before the wire and taken off by its id once written,
-    /// or null where it was kept nowhere and goes in this process alone.
+    /// Keeps Daoris's go-on (<c>retry.go-on</c>) through the run's one dispatcher, once per episode before its first try:
+    /// answers the word as its dispatcher hands it, marked attempted before the wire and taken off by its id once written,
+    /// or null where it is kept nowhere and goes in this process alone.
     /// </summary>
     public Func<TransientEpisode, string, CancellationToken, Task<IAgentWord?>>? KeepGoOn { get; init; }
 
@@ -79,19 +79,19 @@ public sealed class TransientRetry
 
     /// <summary>
     /// Told as a wait begins (true) and ends (false): the watch reads the run as waiting on Daoris's own timer, never quiet
-    /// (<c>WaitsOnTransient</c>, §5.1), and a wait's end stamps the session heard (round 3, R2-O7).
+    /// (<c>WaitsOnTransient</c>), and a wait's end stamps the session heard.
     /// </summary>
     public Action<bool>? Waits { get; init; }
 
     /// <summary>
-    /// Told as each wait begins, with the moment it ends and the next try goes (AGENTERRORS1a2): the quiet <c>agent.transient</c> event
+    /// Told as each wait begins, with the moment it ends and the next try goes: the quiet <c>agent.transient</c> event
     /// the session's head reads for its <i>Trying again at</i>.
     /// </summary>
     public Action<TransientEpisode, DateTimeOffset>? WaitsUntil { get; init; }
 
     /// <summary>The go-on's words, with the provider's own sentence (<c>retry.go-on</c>): the agent's word, English only, as <c>limit.reset</c> is.</summary>
     /// <remarks>
-    /// Its last clause is the guarantee's other half (Codex's owed read of D210, finding 9): Daoris never replays the original prompt or
+    /// Its last clause is the guarantee's other half: Daoris never replays the original prompt or
     /// an accepted word, but an effect whose result the failure cut off may or may not have landed, so the agent checks before it
     /// repeats one.
     /// </remarks>
@@ -100,8 +100,8 @@ public sealed class TransientRetry
         + "Before you repeat a step whose result you did not see, check whether it already took effect.";
 
     /// <summary>
-    /// The conversation's one line (§8's <c>agent.transient-retrying</c>), the episode's tries and their minutes said as <i>up to</i>: the
-    /// line's tries rule's (CONTEXTDRIVE1n) where <paramref name="tries"/> names it, else the schedule's five.
+    /// The conversation's one line (<c>agent.transient-retrying</c>), the episode's tries and their minutes said as <i>up to</i>: the
+    /// line's tries rule's where <paramref name="tries"/> names it, else the schedule's five.
     /// </summary>
     public static Noted Retrying(string agent, string? words, DateTimeOffset next, int? tries = null)
     {
@@ -117,7 +117,7 @@ public sealed class TransientRetry
     }
 
     /// <summary>
-    /// AGENTERRORS1b2 (D210's note of 2026-10-25): told the person's words a try carried when a limit refused that try. A limit refuses a
+    /// Told the person's words a try carried when a limit refused that try. A limit refuses a
     /// prompt before the agent takes it, so those words are not uncertain and are never said <c>lost</c>: the one handed this hands them to
     /// whoever answers the limit, the conversation's record holding them as the refused turn's words (<c>LimitHeld</c>), so the wake or the
     /// move receives them once. Null keeps the words uncertain, as a driven run's are (its limit's conclusion takes its own words off).
@@ -127,17 +127,17 @@ public sealed class TransientRetry
     private readonly Lock _gate = new();
     private readonly List<IAgentWord> _uncertain = [];
 
-    /// <summary>Whether an episode opened in this run: a run with none keeps today's judgement of its words, TURNFAIL1's included (§5.1).</summary>
+    /// <summary>Whether an episode opened in this run: a run with none keeps today's judgement of its words.</summary>
     public bool Opened { get; private set; }
 
     /// <summary>The last episode, or null where none opened.</summary>
     public TransientEpisode? Episode { get; private set; }
 
-    /// <summary>The last error the reader answered in this run, any kind: what a limit read by its code is cooled from (§3.1, §5.2).</summary>
+    /// <summary>The last error the reader answered in this run, any kind: what a limit read by its code is cooled from.</summary>
     public AgentError? Last { get; private set; }
 
     /// <summary>
-    /// The person's words on the wire whose prompt met the error before any update of its turn (§5.1): D188's COWORK1c uncertain words,
+    /// The person's words on the wire whose prompt met the error before any update of its turn: the uncertain words,
     /// said by the <c>lost</c> note under their ids and never sent again.
     /// </summary>
     public IReadOnlyList<IAgentWord> Uncertain
@@ -146,7 +146,7 @@ public sealed class TransientRetry
     }
 
     /// <summary>
-    /// Whether the run's first prompt met its error before any update of its turn (§5.1): a resume's blocks, which carry no message on
+    /// Whether the run's first prompt met its error before any update of its turn: a resume's blocks, which carry no message on
     /// the door, are then unacknowledged rather than taken, and the conclusion says them by the <c>lost</c> note.
     /// </summary>
     public bool OpeningUnacknowledged { get; internal set; }
@@ -174,9 +174,9 @@ public sealed class TransientRetry
         lock (_gate) _uncertain.AddRange(words);
     }
 
-    /// <summary>The owner's check, an unread one a yes (§5.5).</summary>
+    /// <summary>The owner's check, an unread one a yes.</summary>
     /// <remarks>
-    /// 🔴 Bounded by <paramref name="ct"/> (RUNENDS1, second read, findings 1 and 6): a check that never answers held the end of a
+    /// 🔴 Bounded by <paramref name="ct"/>: a check that never answers held the end of a
     /// session whose quest closed, and a check that cancelled on a token of its own surfaced that token where only the caller's is the
     /// caller's to read. The caller's cancellation ends the wait at once and is thrown as the caller's; anything else the check does,
     /// its own cancellation among them, is an unread check, a yes, unless the caller cut it meanwhile.
@@ -200,7 +200,7 @@ public sealed class TransientRetry
 }
 
 /// <summary>
-/// The words a transient episode holds, waits on and carries (AGENTERRORS1a, AGENTERRORS1b): a driven run's inbox
+/// The words a transient episode holds, waits on and carries: a driven run's inbox
 /// (<see cref="DrivenInbox"/>) or a conversation's turns (<see cref="ChatTurns"/>). The episode is the session's own, so the one seat
 /// serves both; what differs is where the person's words wait.
 /// </summary>
@@ -223,12 +223,12 @@ public interface IEpisodeWords
 }
 
 /// <summary>
-/// One transient episode (§5.1): from its first failure to a try that answers, another kind, the owner's no, or the bound. Named by when
-/// its first failure was read.
+/// One transient episode: from its first failure to a try that answers, another kind, the owner's no, or the bound. Named by when
+/// its first failure is read.
 /// </summary>
 public sealed class TransientEpisode(DateTimeOffset began, AgentError first) : ITransientEpisode
 {
-    /// <summary>When its first failure was read: its name (<c>DaorisKeys.TransientRetry</c>).</summary>
+    /// <summary>When its first failure is read: its name (<c>DaorisKeys.TransientRetry</c>).</summary>
     public DateTimeOffset Began { get; } = began;
 
     /// <summary>The failure that opened it.</summary>
@@ -241,7 +241,7 @@ public sealed class TransientEpisode(DateTimeOffset began, AgentError first) : I
     public int Tries { get; internal set; }
 
     /// <summary>
-    /// The turns already on the wire that failed while the wire settled after the tries were spent (Codex's owed read of D210, finding 2):
+    /// The turns already on the wire that failed while the wire settled after the tries were spent:
     /// written before the episode could hold them, so each runs its own turn, and none counts a try past the bound or authorizes one.
     /// </summary>
     public int SettledPast { get; internal set; }
@@ -253,22 +253,22 @@ public sealed class TransientEpisode(DateTimeOffset began, AgentError first) : I
     public bool Exhausted { get; internal set; }
 
     /// <summary>
-    /// Whether it opened at the open (AGENTERRORS1a2, §5.6): the opening operation was refused, so nothing was prompted. Past the bound, its
+    /// Whether it opened at the open: the opening operation is refused, so nothing is prompted. Past the bound, its
     /// end is <i>nothing prompted</i>: Daoris's go-on comes off by its id, and the person's carried words wait for a word of theirs said
     /// after the end, by the hold's word rule's time, with no mark written.
     /// </summary>
     public bool AtOpen { get; internal set; }
 
-    /// <summary>The go-on as its dispatcher kept it, once its first try was written; null before, and where it was kept nowhere.</summary>
+    /// <summary>The go-on as its dispatcher keeps it, once its first try is written; null before, and where it is kept nowhere.</summary>
     public string? GoOnId { get; internal set; }
 }
 
 /// <summary>
-/// A run that ended past its transient bound (§5.1): its provider kept failing after every try, so the record ends <c>failed</c> with
+/// A run that ended past its transient bound: its provider kept failing after every try, so the record ends <c>failed</c> with
 /// <c>ended.transient</c>, no strike, and the planner holds its quest for the person.
 /// </summary>
 /// <summary>
-/// Shape 2 (AGENTERRORS1a2, the design §0, §4.2): a word the person said during a turn was taken, and its own prompt was then refused, so
+/// Shape 2: a word the person said during a turn is taken, and its own prompt is then refused, so
 /// the turn that failed is the one the word opened. Carried from the word's send to the run's loop, which reads <see cref="Refusal"/> as
 /// any prompt site's failure; never past the run.
 /// </summary>

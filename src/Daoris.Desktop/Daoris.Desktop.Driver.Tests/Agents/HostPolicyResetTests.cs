@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Host policy (the agent-lyntai design §5.3, round 4): D125's bounds live in one function, <see cref="ResetBounds.Limit"/>, over a reset as
-/// it was stated, which a sentence's reading and the layer's ingress both call. The margin is added to a stated reset, a dated one just past
+/// Host policy: the reset bounds live in one function, <see cref="ResetBounds.Limit"/>, over a reset as
+/// it is stated, which a sentence's reading and the layer's ingress both call. The margin is added to a stated reset, a dated one just past
 /// is given the grace, one beyond the furthest is not believed; a time of day or a weekday never has grace, and an absolute moment a field
 /// gave counts as dated. These are Daoris's own types, never a proof that the layer supplies the reset.
 /// </summary>

@@ -3,10 +3,10 @@ using Xunit.Abstractions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row b, part 2 (the agent-provider design §10, §4.6): the conformance suite's spawn cases, which plant sentinel credential and
+/// The conformance suite's spawn cases, which plant sentinel credential and
 /// home variables in the process's environment and read what each door's spawn inherits of them. Registering a provider keeps in every other
-/// provider's spawn each variable that provider declares (row b's, run); a key only in its own spawn, two providers sharing one variable and a
-/// key nobody else declares stripped from another's spawn are s-vi's, written here and held pending until s-vi strips them.
+/// provider's spawn each variable that provider declares; a key only in its own spawn, two providers sharing one variable and a
+/// key nobody else declares stripped from another's spawn are written here and held pending until the spawn strips them.
 /// </summary>
 /// <remarks>
 /// It sets the process's environment, which every class beside it reads and every child they start inherits, so it runs alone, after the rest

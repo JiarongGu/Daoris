@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Codex's protocol door's spawn (ACP3): <c>codex-acp</c>, the adapter's own bin, with its stdin open for the driver's frames. Its posture
-/// is a mode on the wire, so the recipe carries no variable, and it runs no program of Claude Code's (the agent-provider design §7 row 7).
+/// Codex's protocol door's spawn: <c>codex-acp</c>, the adapter's own bin, with its stdin open for the driver's frames. Its posture
+/// is a mode on the wire, so the recipe carries no variable, and it runs no program of Claude Code's.
 /// </summary>
 internal sealed class CodexAcpSpawn : ISpawn
 {

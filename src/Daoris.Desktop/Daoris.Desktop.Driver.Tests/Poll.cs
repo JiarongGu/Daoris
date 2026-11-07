@@ -1,20 +1,19 @@
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Waiting for a real process to reach a state. Every test here that spawns one polls, and seven
-/// classes had written the loop for themselves (REV3 CLEAN1).
+/// Waiting for a real process to reach a state. Every test here that spawns one polls through this one loop.
 /// </summary>
 internal static class Poll
 {
     /// <summary>
-    /// How long a test waits on a signal that only fails to come when the code is wrong (TESTPATIENCE1).
+    /// How long a test waits on a signal that only fails to come when the code is wrong.
     /// Two minutes, because the bound elapses only on failure, and a starved run reached any shorter one
     /// on time alone. Never for an elapsed-time bound that states the claim itself, nor for a staging delay.
     /// </summary>
     public static readonly TimeSpan Patience = TimeSpan.FromMinutes(2);
 
-    /// <summary>Wait until <paramref name="condition"/> holds, or fail saying what was seen.</summary>
-    /// <param name="seen">What the test saw, for the failure: the state the condition was waiting on.</param>
+    /// <summary>Wait until <paramref name="condition"/> holds, or fail saying what the test saw.</summary>
+    /// <param name="seen">What the test saw, for the failure: the state the condition waits on.</param>
     /// <param name="within">
     /// How long, <see cref="Patience"/> unless the caller says. Counted in polls rather than read off the clock, as
     /// every copy this replaced counted: a clock deadline is stricter under a loaded run, where each

@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Finished history by an age the person sets (KEEP1g, D195 point 7, decided by the owner; the cleanup design §3.6): once a day, each
-/// workspace's finished units whose last move is older than the person's days go through the clear itself, every refusal holding
-/// (the history clearing design §1.2). With no age set, the default, it runs nothing: nothing clears finished history by itself unless the
-/// person has set an age (the history clearing design §7 as D195 amends it).
+/// Finished history by an age the person sets (decided by the owner): once a day, each
+/// workspace's finished units whose last move is older than the person's days go through the clear itself, every refusal holding.
+/// With no age set, the default, it runs nothing: nothing clears finished history by itself unless the
+/// person has set an age.
 /// </summary>
 /// <remarks>
 /// <para><b>The clear's own two presses</b>: <see cref="HistoryClearing.PlanAsync"/> lists each workspace, and
@@ -12,8 +12,7 @@ namespace Daoris.Driver;
 /// both halves; its log line says <c>door: rule</c>. A unit past its days that a refusal keeps stays, and is said with its word.</para>
 ///
 /// <para><b>A unit's last move</b> is the newest of its quests' last status moves and its sessions' last moves, as the service answers
-/// them. One whose moment is not known (a host that answers none, a record not read) is not past its days: the unknown keeps (the
-/// cleanup design §6).</para>
+/// them. One whose moment is not known (a host that answers none, a record not read) is not past its days: the unknown keeps.</para>
 /// </remarks>
 public static class HistoryKeeping
 {

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A repository's access setup as it resolved, pause by pause (AUTONOMY1a, D184 point 1), as the workplace reads the landing pause of it:
+/// A repository's access setup as it resolved, pause by pause, as the workplace reads the landing pause of it:
 /// Participants keeps the rule and its resolved answer, which implements this directly.
 /// </summary>
 internal interface IWorkplaceResolvedAccess
@@ -14,8 +14,8 @@ internal interface IWorkplaceResolvedAccess
 }
 
 /// <summary>
-/// The access setup's resolution and its words (AUTONOMY1c, D184 points 1 and 5), as the landing's effective rule and the merges note read
-/// them: Participants keeps the rule (the foundation design's §14.2 places <c>Domain/AccessRules</c> there), so the workplace names only
+/// The access setup's resolution and its words (5), as the landing's effective rule and the merges note read
+/// them: Participants keeps the rule (<c>Domain/AccessRules</c> lives there), so the workplace names only
 /// these operations, which Participants installs when the driver loads.
 /// </summary>
 internal interface IWorkplaceAccessSetup

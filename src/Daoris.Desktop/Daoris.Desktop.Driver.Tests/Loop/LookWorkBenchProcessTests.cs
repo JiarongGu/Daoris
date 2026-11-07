@@ -6,7 +6,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PERF2: the look's <c>overlaps</c> and the workflow <c>nodes</c> on a benchmark home (ten open trees, each a driven session's, and thirty
+/// The look's <c>overlaps</c> and the workflow <c>nodes</c> on a benchmark home (ten open trees, each a driven session's, and thirty
 /// runs bound to a shipped graph with its gates), each read warm, the git it starts counted through the process gate
 /// (<see cref="GitStartTally"/>). A look where nothing moved starts no git for either; a look after one tree moved reads that tree alone.
 /// </summary>
@@ -31,7 +31,7 @@ public sealed class LookWorkBenchProcessTests(ITestOutputHelper output) : IAsync
     private string _root = "";
     private string _home = "";
 
-    // Each open tree with its driven session and the commit it was opened at.
+    // Each open tree with its driven session and the commit it is opened at.
     private readonly List<(string Session, string Tree, string BaseCommit)> _trees = [];
 
     public async Task InitializeAsync()

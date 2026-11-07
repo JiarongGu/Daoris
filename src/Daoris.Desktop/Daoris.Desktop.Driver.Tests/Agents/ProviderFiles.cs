@@ -24,7 +24,7 @@ internal sealed record ProviderFile(string Id, bool StandIn, string? Entry, IRea
 internal sealed record ProviderFileRead(string Path, ProviderFile? File, IReadOnlyList<string> Problems);
 
 /// <summary>
-/// The one place a tool reads a provider's stand-in facts (AGENTPROVIDER1 row b, part 3; D213's row b part 3 note): a <c>provider.json</c> in
+/// The one place a tool reads a provider's stand-in facts: a <c>provider.json</c> in
 /// each provider's folder under <c>Agents/Providers/</c>, holding its id, its stand-in flag, its doors' ids and kinds, and, for a stand-in,
 /// its program's layout: the entry under the folder's <c>Program/</c>, a Node module, and the arguments that choose each door. The family
 /// rehearsal reads the same files (<c>tools/stand-ins.mjs</c>); <c>ProviderFilesTests</c> holds every file equal to <c>Providers.Built()</c>.

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The groups a session is listed in by state (D126 §2.1), in the order the person acts on them, and Archived: the
+/// The groups a session is listed in by state, in the order the person acts on them, and Archived: the
 /// public spelling the page and <c>daoris session list --group</c> share.
 /// </summary>
 public static class SessionGroup
@@ -21,7 +21,7 @@ public static class SessionGroup
     /// <summary>Ended: a record.</summary>
     public const string Ended = "ended";
 
-    /// <summary>Archived: out of the way on this machine, kept whole (§5.2).</summary>
+    /// <summary>Archived: out of the way on this machine, kept whole.</summary>
     public const string Archived = "archived";
 
     /// <summary>The groups in the order a list shows them.</summary>

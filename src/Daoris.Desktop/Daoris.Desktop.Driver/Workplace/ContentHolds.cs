@@ -4,53 +4,52 @@ using static Daoris.Driver.TreeWorktrees;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The content proof and what a removal keeps and deletes by it (SQUASHTIDY1, SQUASHTIDY1c; PART10l, out of
-/// <c>SessionTrees.Content.cs</c>): where a branch's work is held by content, what a tree holds that no commit does, the
+/// The content proof and what a removal keeps and deletes by it: where a branch's work is held by content, what a tree holds that no commit does, the
 /// recovery refs' names and holders, and the delete at the commit judged. Over the trees' context for the record of
 /// what landings made, the delete's test seam and the working trees git lists; the rest is static.
 /// </summary>
 internal sealed class ContentHolds(TreeContext context)
 {
     /// <summary>
-    /// Where a content-held removal keeps what it deleted (SQUASHTIDY1c): one ref per deletion, under the branch's own name, out
+    /// Where a content-held removal keeps what it deleted: one ref per deletion, under the branch's own name, out
     /// of every proof's sight (<c>--branches</c> and <c>--remotes</c> never read it), and never deleted by Daoris.
     /// </summary>
     internal const string DiscardedPrefix = "refs/daoris/discarded/";
 
-    /// <summary>How many names a branch's recovery refs take before a discard gives up (SQUASHTIDY1c), the offer naming them alike (SQUASHTIDY1b).</summary>
+    /// <summary>How many names a branch's recovery refs take before a discard gives up, the offer naming them alike.</summary>
     internal const int DiscardedNames = 20;
 
-    /// <summary>What a delete that found its branch moved since the judgement says (SQUASHTIDY1c).</summary>
+    /// <summary>What a delete that found its branch moved since the judgement says.</summary>
     internal const string MovedSince = "it moved since it was judged";
 
-    /// <summary>What a delete whose judgement named nothing its proof rested on says (FABRIC-END4a), and the sweep before it (KEEPSIZE1b).</summary>
+    /// <summary>What a delete whose judgement named nothing its proof rested on says, and the sweep before it.</summary>
     internal const string NothingRested = "nothing its proof rested on was named, so its proof cannot be checked as it goes";
 
     /// <summary>
-    /// Where a session branch's work is held by content (SQUASHTIDY1), asked only once D88's proof found commits no branch of the
+    /// Where a session branch's work is held by content, asked only once the proof by ancestry found commits no branch of the
     /// person's holds: the owner squash-merged a session's work as a pull request, the platform deleted the pull request's branch,
     /// and the session branches then held commits no ref contains, so neither Discard nor git would let them go.
     /// </summary>
     /// <remarks>
-    /// <para>For each form of the line (D86: its own branch, then <c>origin/</c>'s copy), from where the branch left it:</para>
+    /// <para>For each form of the line (its own branch, then <c>origin/</c>'s copy), from where the branch left it:</para>
     /// <list type="number">
     /// <item><b>A squash</b>: the branch's tree is the tree of a commit on the line since then, its tip included. A squash merge
     /// of the branch onto a line that had not moved makes exactly that commit, and the line may have moved on after it.</item>
-    /// <item><b>Its files</b>: every file it changed since then reads on the line's tip as the branch left it — D102's proof by
+    /// <item><b>Its files</b>: every file it changed since then reads on the line's tip as the branch left it — the proof by
     /// content, as a landed branch is judged.</item>
-    /// <item><b>A landing's replay</b> (REVIEWLANDED1): the line holds each of its commits as a landing reads them, and has not changed a
+    /// <item><b>A landing's replay</b>: the line holds each of its commits as a landing reads them, and has not changed a
     /// file it changed since taking its patch (<see cref="ReplayHolds"/>). Where it holds some, the rest are <see cref="ContentProof.Lacks"/>.</item>
-    /// <item><b>A squash that carried it with other work</b> (SQUASHSEEN1): merging it into the line's tip adds nothing, generated
+    /// <item><b>A squash that carried it with other work</b>: merging it into the line's tip adds nothing, generated
     /// files and the backlog's rows aside (<see cref="SquashCarries"/>).</item>
     /// </list>
     /// <para>Failing both, its files read the same on one branch of the person's: a local branch outside <c>daoris/</c>, where a
     /// cherry-pick put them. One holder holds all of them, so the sentence can name it; work split over two is not proven.</para>
     ///
-    /// <para>🔴 <b>Nothing held keeps the refusal</b>: commits that change no file leave nothing to find (D102), and a comparison git
-    /// could not make proves nothing, and says so (<see cref="ContentProof.Unread"/>, PROOF-UNREAD1) rather than reading as not held. The paths are <c>--no-renames</c>, so a rename is both its paths and a deletion is a path the
+    /// <para>🔴 <b>Nothing held keeps the refusal</b>: commits that change no file leave nothing to find, and a comparison git
+    /// could not make proves nothing, and says so (<see cref="ContentProof.Unread"/>) rather than reading as not held. The paths are <c>--no-renames</c>, so a rename is both its paths and a deletion is a path the
     /// holder must not have; git compares them as blobs, so the same means byte for byte as the repository stores it.</para>
     ///
-    /// <para>🔴 <b>Every comparison is between object ids read once</b> (SQUASHTIDY1c): the tip is the caller's, and its tree is
+    /// <para>🔴 <b>Every comparison is between object ids read once</b>: the tip is the caller's, and its tree is
     /// read from that id, so a commit made meanwhile is never half of what was judged; each holder is read once too. A branch
     /// a landing made and recorded never holds another's work here, since the clean-up removes it on its own proof: one that
     /// vouched for a session branch would leave that work on no ref once it went.</para>
@@ -59,11 +58,11 @@ internal sealed class ContentHolds(TreeContext context)
     /// <param name="tip">The branch's tip as an object id, read once by the caller, which deletes only while the branch is still it.</param>
     /// <param name="line">The repository's line, or null where none is set and git names none.</param>
     /// <param name="notHolders">The branches that may not hold its work: those a landing made and recorded here.</param>
-    /// <param name="refs">The judgement's refs (PROC1d-ii), the repository's whichever tree <paramref name="cwd"/> is; null asks git.</param>
+    /// <param name="refs">The judgement's refs, the repository's whichever tree <paramref name="cwd"/> is; null asks git.</param>
     internal static async Task<ContentProof> HeldByContentAsync(
         string cwd, string tip, string? line, IReadOnlySet<string> notHolders, CancellationToken ct, RefSnapshot? refs = null)
     {
-        // PROOF-UNREAD1: a read git could not make is remembered, so no failure ends as "not held"; a hold found by other
+        // A read git could not make is remembered, so no failure ends as "not held"; a hold found by other
         // reads still stands, since it is found, not assumed.
         var (lineForms, unread) = await LandedProofs.ReadLineFormsAsync(cwd, line, ct, refs).ConfigureAwait(false);
         var forms = new List<(string Name, string Ref, string Id)>();
@@ -81,7 +80,7 @@ internal sealed class ContentHolds(TreeContext context)
         if (treeCode != 0) return ContentProof.UnreadBy($"git could not read the branch's tree: {Said(treeErr)}");
 
         IReadOnlyList<string>? changed = null;
-        // REVIEWLANDED1: what the line lacks of the branch's commits, from the first form whose per-commit reading found any lacking.
+        // What the line lacks of the branch's commits, from the first form whose per-commit reading found any lacking.
         IReadOnlyList<LandingCommit>? lacks = null;
         foreach (var (form, formRef, formId) in forms)
         {
@@ -123,17 +122,17 @@ internal sealed class ContentHolds(TreeContext context)
             }
 
             // A line with no commit since the branch left it holds none of its commits under ids of their own and carries nothing, so
-            // an ordinary landing asks git nothing more (LANDGIT1's counts).
+            // an ordinary landing asks git nothing more.
             if (logCode != 0 || string.IsNullOrWhiteSpace(trees)) continue;
 
-            // REVIEWLANDED1: a landing replayed each of its commits onto the line, read as the landing reads them (patch identity first).
+            // A landing replayed each of its commits onto the line, read as the landing reads them (patch identity first).
             if (differs is not null && await ReplayHolds.ReadAsync(cwd, tip, formId, mergeBase.Trim(), line, differs, ct).ConfigureAwait(false) is { } replay)
             {
                 if (replay.Held) return ContentProof.Of(new ContentHold(form, Squash: false) { Replayed = true, OnLine = true }, formRef, formId);
                 lacks ??= replay.Lacks;
             }
 
-            // SQUASHSEEN1: a squash carried it with other work, so merging it into the line adds nothing.
+            // A squash carried it with other work, so merging it into the line adds nothing.
             if (await SquashCarries.HeldAsync(cwd, tip, mergeBase.Trim(), formId, paths, ct).ConfigureAwait(false))
             {
                 return ContentProof.Of(new ContentHold(form, Squash: false) { Carried = true, OnLine = true }, formRef, formId);
@@ -184,7 +183,7 @@ internal sealed class ContentHolds(TreeContext context)
         return [.. paths.Where(differs.Contains)];
     }
 
-    /// <summary>The branches a landing made and recorded in <paramref name="repository"/>: never a holder by content (SQUASHTIDY1c).</summary>
+    /// <summary>The branches a landing made and recorded in <paramref name="repository"/>: never a holder by content.</summary>
     internal IReadOnlySet<string> LandedHere(string repository) =>
         context.Recorded.All()
             .Where(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))
@@ -192,7 +191,7 @@ internal sealed class ContentHolds(TreeContext context)
             .ToHashSet(StringComparer.Ordinal);
 
     /// <summary>
-    /// A detached tree's recovery ref goes (DETACHTX1) only in one ref transaction that verifies what its proof rested on, each ref at the
+    /// A detached tree's recovery ref goes only in one ref transaction that verifies what its proof rested on, each ref at the
     /// commit the proof read it at, as a judged delete verifies them: a holder rewound or replaced as the tree went refuses the whole, and
     /// the ref stays, the one ref left holding the commit the tree had out.
     /// </summary>
@@ -205,7 +204,7 @@ internal sealed class ContentHolds(TreeContext context)
     }
 
     /// <summary>
-    /// Whether git says <paramref name="reference"/> is missing (RECORDUNREAD1, FABRIC-END4a's fourth review): asked where a read of it
+    /// Whether git says <paramref name="reference"/> is missing: asked where a read of it
     /// failed, or a list left it out. <c>rev-parse --verify --quiet</c> exits 1 on any failure to resolve, a broken ref's too, and
     /// <c>for-each-ref</c> leaves a broken ref out of its list with a warning and exits 0; <c>show-ref --exists</c> exits 2 for a missing
     /// ref alone (git 2.43 and later; the knowledge note <c>git-ref-absence</c>). Only that forgets or retires a record.
@@ -219,9 +218,9 @@ internal sealed class ContentHolds(TreeContext context)
     }
 
     /// <summary>
-    /// The refs that hold <paramref name="tip"/> by ancestry, each at the commit this read found it at (FABRIC-END4a, third review): the read
+    /// The refs that hold <paramref name="tip"/> by ancestry, each at the commit this read found it at: the read
     /// a proof by ancestry makes, which picks its holder from them (<see cref="HolderOf"/>) and returns it for the delete to verify. Never
-    /// <paramref name="branch"/> itself, a symbolic <c>HEAD</c>, Daoris's own recovery refs, or any symbolic ref (CLEANUP1, re-check: a
+    /// <paramref name="branch"/> itself, a symbolic <c>HEAD</c>, Daoris's own recovery refs, or any symbolic ref (a
     /// name that points at another branch holds nothing of its own, and the branch it points at may go in the same pass).
     /// </summary>
     /// <returns>Null where git could not read them, and then nothing is proven.</returns>
@@ -236,7 +235,7 @@ internal sealed class ContentHolds(TreeContext context)
     internal const string UnaliasedFormat = "%(objectname)%09%(refname)%09%(symref)";
 
     /// <summary>
-    /// Each ref of a <see cref="UnaliasedFormat"/> listing with its commit, leaving out every symbolic ref (CLEANUP1, re-check), read by
+    /// Each ref of a <see cref="UnaliasedFormat"/> listing with its commit, leaving out every symbolic ref (re-check), read by
     /// git's own <c>%(symref)</c> rather than by its name: a ref name holds no tab.
     /// </summary>
     internal static IEnumerable<(string Ref, string Commit)> Unaliased(string listed) =>
@@ -246,7 +245,7 @@ internal sealed class ContentHolds(TreeContext context)
             .Select(parts => (parts[1].Trim(), parts[0].Trim()));
 
     /// <summary>
-    /// The holder a proof by ancestry rests on (FABRIC-END4a, third review), out of what <see cref="HoldersAsync"/> read: a form of
+    /// The holder a proof by ancestry rests on, out of what <see cref="HoldersAsync"/> read: a form of
     /// <paramref name="line"/> first, its own branch then origin's copy; else the first ref <paramref name="admit"/> takes, a branch of the
     /// person's before any other, since another session branch may go in the same pass. Null where none holds it: the holder the proof found
     /// is gone, and that is a refusal, never a fallback to a line that never held the tip.
@@ -268,28 +267,27 @@ internal sealed class ContentHolds(TreeContext context)
         : reference.StartsWith("refs/remotes/", StringComparison.Ordinal) ? reference["refs/remotes/".Length..]
         : reference;
 
-    /// <summary>D88's holder: a branch of the person's, local outside <c>daoris/</c> or remote-tracking outside <c>*/daoris/</c>.</summary>
+    /// <summary>The holder a proof counts: a branch of the person's, local outside <c>daoris/</c> or remote-tracking outside <c>*/daoris/</c>.</summary>
     internal static bool PersonsRef(string reference) =>
         (reference.StartsWith("refs/heads/", StringComparison.Ordinal) && !reference.StartsWith($"refs/heads/{TreeFollows.SessionPrefix}", StringComparison.Ordinal))
         || (reference.StartsWith("refs/remotes/", StringComparison.Ordinal) && !reference.Contains($"/{TreeFollows.SessionPrefix}", StringComparison.Ordinal));
 
     /// <summary>
-    /// Any ref but Daoris's own recovery refs, which a delete makes for itself, a piece's frozen ref (COAGENT1b, the co-agent
-    /// design §2.4), classed beside them: a piece's commit holds its lead's history up to its base, so counting it as a holder would
-    /// let a lead's branch be forgotten as held; and an act's own ref (GITAPP2a, <see cref="ActRefs"/>), which holds an index's
+    /// Any ref but Daoris's own recovery refs, which a delete makes for itself, a piece's frozen ref, classed beside them: a piece's commit holds its lead's history up to its base, so counting it as a holder would
+    /// let a lead's branch be forgotten as held; and an act's own ref (<see cref="ActRefs"/>), which holds an index's
     /// blobs only until its record expires.
     /// </summary>
     internal static bool AnyRef(string reference) =>
         !reference.StartsWith(DiscardedPrefix, StringComparison.Ordinal) && !PieceRefs.IsPiece(reference) && !ActRefs.IsAct(reference);
 
     /// <summary>
-    /// Delete a branch a judgement cleared, only while it is still the commit judged (SQUASHTIDY1c): <c>git update-ref -d</c>
+    /// Delete a branch a judgement cleared, only while it is still the commit judged: <c>git update-ref -d</c>
     /// with that id, which git refuses once the ref moved, so a commit made after the judgement never goes with it. Where the
     /// branch is gone already, nothing is left to delete.
     /// </summary>
     /// <returns>Null where it is deleted; otherwise why it is kept, in a clause.</returns>
     /// <remarks>
-    /// <para>🔴 <b>One ref transaction</b> (FABRIC-END4a, second review): <c>git update-ref --stdin</c> holds a <c>verify</c> for every ref
+    /// <para>🔴 <b>One ref transaction</b>: <c>git update-ref --stdin</c> holds a <c>verify</c> for every ref
     /// in <paramref name="held"/> at the commit the proof read and the <c>delete</c> at the commit judged, and git checks them all under its
     /// locks, so a line rewound or replaced as the branch goes refuses the whole: the branch never leaves, and no look, page or session can
     /// observe it absent. The transaction and what follows it are never cancelled, since a removal stopped halfway is one nobody judged.</para>
@@ -299,11 +297,10 @@ internal sealed class ContentHolds(TreeContext context)
     /// git refuses (a lock, a branch made meanwhile) is said as such, and the recovery ref the act made stays, then the one ref holding it.</para>
     /// </remarks>
     /// <param name="repository">The repository the journal's record names, which <c>GIT_REF_UNDO</c> undoes it in.</param>
-    /// <param name="held">What the proof rested on, each ref at the commit the proof read it at, as the proof returned it (FABRIC-END4a, third
-    /// review): the holder by ancestry, the ref holding the work by content, a squashing landing's branch, the landing a landed branch is
+    /// <param name="held">What the proof rested on, each ref at the commit the proof read it at, as the proof returned it: the holder by ancestry, the ref holding the work by content, a squashing landing's branch, the landing a landed branch is
     /// inside and what that one rests on, the form of the line a merge or a pull request's merge was found on. Verified exactly, and never
     /// looked for again here. Empty is no proof, and keeps the branch.</param>
-    /// <param name="keep">The recovery ref the door's rule keeps the commits on (SQUASHTIDY1c: the proof compared files, so a message, an empty
+    /// <param name="keep">The recovery ref the door's rule keeps the commits on (the proof compared files, so a message, an empty
     /// commit and history the final tree does not show are held nowhere else), made in the delete's own transaction; null keeps none.</param>
     internal async Task<string?> DeleteJudgedAsync(
         string root, string repository, string branch, string judged, IReadOnlyList<(string Ref, string Commit)> held, CancellationToken ct, RecoveryName? keep = null)
@@ -311,7 +308,7 @@ internal sealed class ContentHolds(TreeContext context)
         if (held.Count == 0) return NothingRested;
         if (context.BeforeDeleting is { } seam) await seam(branch).ConfigureAwait(false);
         // git branch -D refuses a branch a working tree has checked out; update-ref does not ask, so this does. A list git could
-        // not give is no answer to that (AUTOTIDY1).
+        // not give is no answer to that.
         if (await context.Worktrees.ReadAsync(root, ct).ConfigureAwait(false) is not { } worktrees)
         {
             return $"{ListUnread}, so whether a tree has it checked out is not known";
@@ -324,7 +321,7 @@ internal sealed class ContentHolds(TreeContext context)
 
         if (context.BeforeRefDeleted is { } late) await late(branch).ConfigureAwait(false);
         var none = CancellationToken.None;
-        // ONEWAY1r: the journal's delete, with its Undo; LANDRETIRE1: a proof resting on the branch itself is named once. Then the late
+        // The journal's delete, with its Undo; a proof resting on the branch itself is named once. Then the late
         // checkout, which no ref says: a tree on the branch, or a list git could not give, is not clear. Then the branch's section goes.
         var gone = await JournaledDeletes.DeleteAsync(context.Home, root, repository, branch, judged, held, async made =>
         {
@@ -338,13 +335,13 @@ internal sealed class ContentHolds(TreeContext context)
     }
 
     /// <summary>
-    /// Why git refused the transaction (FABRIC-END4a, second review): the branch gone already (nothing left to delete, null), moved since
+    /// Why git refused the transaction: the branch gone already (nothing left to delete, null), moved since
     /// it was judged, or a ref the proof rested on no longer at its commit; else git's own words. Nothing was deleted.
     /// </summary>
     /// <remarks>
-    /// 🔴 <b>Gone only on git's own word</b> (third review): any failure to read is never "gone": the branch is said kept, unread, and any
+    /// 🔴 <b>Gone only on git's own word</b>: any failure to read is never "gone": the branch is said kept, unread, and any
     /// recovery ref the act made stays with it. Exit 1
-    /// from <c>rev-parse --verify --quiet</c> is any failure to resolve, a broken ref's too (fourth review), so absence is asked of
+    /// from <c>rev-parse --verify --quiet</c> is any failure to resolve, a broken ref's too, so absence is asked of
     /// <c>show-ref --exists</c>, whose exit 2 alone says the ref is missing. A git older than 2.43 has no <c>--exists</c>, and its refusal
     /// reads as unread: the branch said kept where it went, never the other way.
     /// </remarks>
@@ -376,7 +373,7 @@ internal sealed class ContentHolds(TreeContext context)
     }
 
     /// <summary>
-    /// The branch made again at the commit judged after a late checkout (FABRIC-END4a review), only where nothing stands at its name, the
+    /// The branch made again at the commit judged after a late checkout, only where nothing stands at its name, the
     /// empty old value being git's "must not exist", and the recovery ref the act <paramref name="made"/> taken back with it; git's answer
     /// read, so a lock or a branch made meanwhile is said as such, and the ref stays.
     /// </summary>
@@ -397,7 +394,7 @@ internal sealed class ContentHolds(TreeContext context)
     private static string Short(string commit) => commit.Length > 12 ? commit[..12] : commit;
 
     /// <summary>
-    /// What an unforced removal of a tree would take that no commit holds (SQUASHTIDY1c), asked of git so no setting hides it:
+    /// What an unforced removal of a tree would take that no commit holds, asked of git so no setting hides it:
     /// every tracked change and untracked file (<c>--untracked-files=all</c>, whatever <c>status.showUntrackedFiles</c> says),
     /// and every ignored path (<c>--ignored=matching</c>, a folder ignored whole named once).
     /// </summary>
@@ -405,10 +402,10 @@ internal sealed class ContentHolds(TreeContext context)
     /// 🔴 <b>An ignored path the registered checkout holds too goes with the tree</b>: it is what the repository leaves in any
     /// checkout it is built in (installed dependencies, a build's output), and the checkout keeps its own. One only the session's
     /// tree holds (a local database, an export) was made there alone, and nothing says it can be made again, so it keeps the
-    /// tree, named. Null is git unable to say, which keeps the tree too. 🔴 <b>Except a session's own scratch in such a folder</b>
-    /// (TREEKEEP1): under a build folder (<see cref="TreeScratch.BuildFolders"/>) the path goes as ever; under any other, each file the tree
+    /// tree, named. Null is git unable to say, which keeps the tree too. 🔴 <b>Except a session's own scratch in such a folder</b>:
+    /// under a build folder (<see cref="TreeScratch.BuildFolders"/>) the path goes as ever; under any other, each file the tree
     /// wrote after it opened that the checkout does not hold as written (absent, or different bytes) is the tree's own, as an ignored path only it holds is.
-    /// 🔴 <b>Output goes either way</b> (TIDYOUTPUT1): a path the repository declares in <c>integration.scratch</c>
+    /// 🔴 <b>Output goes either way</b>: a path the repository declares in <c>integration.scratch</c>
     /// (<paramref name="declared"/>), and a build's <c>bin</c>, <c>obj</c> and <c>node_modules</c>
     /// (<see cref="TreeScratch.UnderMadeFolder"/>), go with the tree though the checkout holds none; and inside a folder looked into, a file
     /// under any build folder or declared is passed over. An ignored folder the checkout lacks is read file by file, so what keeps the tree
@@ -416,7 +413,7 @@ internal sealed class ContentHolds(TreeContext context)
     /// </remarks>
     /// <param name="declared">
     /// The repository's declared output, read from the declaration the owner accepted for integration at the line's tip alone
-    /// (<see cref="TreeScratch.AcceptedAsync"/>, INTEGRATE1d, D218's note); none where nothing is accepted, which keeps what it names.
+    /// (<see cref="TreeScratch.AcceptedAsync"/>); none where nothing is accepted, which keeps what it names.
     /// </param>
     internal static async Task<TreeHolds?> HoldsAsync(string tree, string root, IReadOnlyList<System.Text.RegularExpressions.Regex> declared, CancellationToken ct)
     {
@@ -428,7 +425,7 @@ internal sealed class ContentHolds(TreeContext context)
         var shared = new List<string>();
         var written = new List<string>();
         var tooLarge = new List<string>();
-        // When the tree opened: its folder was made by the worktree add and nothing since recreates it (TREEKEEP1).
+        // When the tree opened: its folder is made by the worktree add and nothing since recreates it.
         var opened = Directory.GetCreationTimeUtc(tree);
         var entries = porcelain.Split('\0');
         for (var at = 0; at < entries.Length; at++)
@@ -441,14 +438,14 @@ internal sealed class ContentHolds(TreeContext context)
                 var there = Path.Combine(root, path.TrimEnd('/'));
                 if (TreeScratch.IsDeclared(declared, path))
                 {
-                    // TIDYOUTPUT1: the repository says this is its own output, which its checks write again, whatever the checkout holds.
+                    // The repository says this is its own output, which its checks write again, whatever the checkout holds.
                     shared.Add(path);
                 }
                 else if (!File.Exists(there) && !Directory.Exists(there))
                 {
                     if (TreeScratch.UnderMadeFolder(path))
                     {
-                        // TIDYOUTPUT1: a build's own folder, though the checkout never built there.
+                        // A build's own folder, though the checkout never built there.
                         shared.Add(path);
                     }
                     else if (path.EndsWith('/'))
@@ -466,7 +463,7 @@ internal sealed class ContentHolds(TreeContext context)
                 }
                 else if (path.EndsWith('/') && !TreeScratch.UnderBuildFolder(path))
                 {
-                    // Not a build's folder: what the session wrote in it is its own (TREEKEEP1), unless the checkout holds it as written.
+                    // Not a build's folder: what the session wrote in it is its own, unless the checkout holds it as written.
                     var mine = TreeScratch.WrittenSince(tree, root, path, opened, out var large, declared);
                     if (large) tooLarge.Add(path);
                     else if (mine.Count > 0) written.AddRange(mine);
@@ -489,12 +486,12 @@ internal sealed class ContentHolds(TreeContext context)
     }
 
     /// <summary>
-    /// What a tree holds that no commit does (SQUASHTIDY1c): uncommitted paths, and ignored paths only it holds; and the ignored
+    /// What a tree holds that no commit does: uncommitted paths, and ignored paths only it holds; and the ignored
     /// paths the checkout holds too, which a press lets go with the tree. The look's own tidy moves the folder aside whole, so for
-    /// it no ignored path keeps the tree (AUTOTIDY2a).
+    /// it no ignored path keeps the tree.
     /// </summary>
     /// <remarks>
-    /// <paramref name="Written"/> and <paramref name="TooLarge"/> are a shared ignored folder's own part (TREEKEEP1): files the
+    /// <paramref name="Written"/> and <paramref name="TooLarge"/> are a shared ignored folder's own part: files the
     /// session wrote there after the tree opened that the checkout does not hold as written, and folders too large to look through. They
     /// are no longer in <paramref name="Shared"/>: they keep the tree like <paramref name="Ignored"/> does, which is
     /// <see cref="OwnSaid"/>.
@@ -507,7 +504,7 @@ internal sealed class ContentHolds(TreeContext context)
         public string IgnoredSaid => $"{Ignored.Count} ignored path(s) your checkout does not have: "
             + string.Join(", ", Ignored.Take(3)) + (Ignored.Count > 3 ? $" and {Ignored.Count - 3} more" : "");
 
-        /// <summary>The session's own files in a shared ignored folder, the first three named, in a clause (TREEKEEP1).</summary>
+        /// <summary>The session's own files in a shared ignored folder, the first three named, in a clause.</summary>
         public string? WrittenSaid
         {
             get
@@ -529,7 +526,7 @@ internal sealed class ContentHolds(TreeContext context)
             }
         }
 
-        /// <summary>What keeps the tree from an unforced removal, in a clause (CLEANUPADVICE1): its uncommitted paths and <see cref="OwnSaid"/>; null where none.</summary>
+        /// <summary>What keeps the tree from an unforced removal, in a clause: its uncommitted paths and <see cref="OwnSaid"/>; null where none.</summary>
         public string? KeepSaid => (Uncommitted.Count > 0, OwnSaid) switch
         {
             (false, null) => null,

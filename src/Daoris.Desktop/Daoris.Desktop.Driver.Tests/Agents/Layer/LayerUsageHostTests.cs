@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTLYNTAI1c (the agent-lyntai design §9.2): the read's host half is the roster's around the layer's read as around today's. An account
+/// The read's host half is the roster's around the layer's read as around today's. An account
 /// that is a key is never read, an account a session of Daoris's runs on is never read, a held probe lock holds the read off, and a ready
 /// account's read is spawned under its own home, its windows kept.
 /// </summary>
@@ -46,7 +46,7 @@ public sealed class LayerUsageHostTests : IDisposable
 
     /// <summary>
     /// Where the driver carries the layer, both agents' questions are the layer's read from the moment the driver loads: Claude Code's
-    /// again since Lyntai's reader keeps the installed server's model scope with no id (D248's note of 2026-11-07, Lyntai's D250).
+    /// again since Lyntai's reader keeps the installed server's model scope with no id.
     /// </summary>
     [Fact]
     public void Both_agents_questions_are_bound_to_the_layer_s_read()

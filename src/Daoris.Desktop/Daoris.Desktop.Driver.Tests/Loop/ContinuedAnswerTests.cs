@@ -6,7 +6,7 @@ using Daoris.Driver.Tests;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1d-ii part 1 (the foundation design §3.4 rule 2, §19.12's row for the head): a host with the <c>head</c> mark refuses a word said to a
+/// A host with the <c>head</c> mark refuses a word said to a
 /// record that is not its line's head as <c>continued</c>, its <c>head</c> member naming the head, at the say door's refusals' status. The client reads
 /// the head beside the word and the sentence, and a fresh dispatcher answered so holds, queues, steers, attempts and writes nothing on its old door:
 /// it answers the head to its caller, which says the word there. The forwards themselves are their callers' tests; here the door is a stand-in that
@@ -60,8 +60,8 @@ public sealed class ContinuedAnswerTests
         interrupt: () => Task.CompletedTask, changed: _ => { });
 
     /// <summary>
-    /// The steward's case on <see cref="ChatTurns.KeepAsync"/>: a keep the record answers <c>continued</c> never falls back to the word as it was said
-    /// (a refusal from a host before COWORK1c does): nothing is queued, steered, attempted or written, and the answer names the head, with no word,
+    /// The steward's case on <see cref="ChatTurns.KeepAsync"/>: a keep the record answers <c>continued</c> never falls back to the word as said:
+    /// nothing is queued, steered, attempted or written, and the answer names the head, with no word,
     /// at each level, <c>now</c> among them.
     /// </summary>
     [Theory]
@@ -117,7 +117,7 @@ public sealed class ContinuedAnswerTests
 
     /// <summary>
     /// A reword of a word a dispatcher holds, kept on a record that went on meanwhile: the record answers <c>continued</c>, so nothing is reworded,
-    /// held or queued here, the word kept stays as it was and the edit answers that nothing changed.
+    /// held or queued here, the word kept stays as said and the edit answers that nothing changed.
     /// </summary>
     [Fact]
     public async Task A_reword_answered_continued_changes_nothing_in_either_dispatcher()

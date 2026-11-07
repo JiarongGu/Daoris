@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Whether an answered park resumes its own conversation (ANSWER1a, D131 §1–§2), judged before anything is spawned: the
+/// Whether an answered park resumes its own conversation, judged before anything is spawned: the
 /// record still parked, the same adapter, the same account, its tree standing, a kept id, and a door that can resume.
 /// Every other case is today's carry-on, said by a code and one line that names no account. Pure, so the fast half.
 /// </summary>
@@ -29,11 +29,11 @@ public sealed class ContinuationTests : IDisposable
     private static readonly HarnessConversation Kept = new("claude-code-acp", "0b5e7c1a");
 
     /// <summary>
-    /// SUPERVISOR1a-i (D208; the supervisor design §6.1, §6.3): every list of words a go-on hands keeps a supervisor's word only where it
+    /// Every list of words a go-on hands keeps a supervisor's word only where it
     /// is the admission's ticket's; a forged one beside a helper's and the owner's words, and one arriving after planning, never go.
     /// </summary>
     /// <summary>
-    /// SUPERVISOR1a-i (the supervisor design §6.1): the working note and the opening follow who answered, never "your answer" where none
+    /// The working note and the opening follow who answered, never "your answer" where none
     /// of the owner's words wait, the authors in the fixed order.
     /// </summary>
     [Fact]
@@ -73,7 +73,7 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1i path 1 (the foundation design §10 row 1i): the driven go-on is the course's answer for the judge's reading. The judge
+    /// 🔴 The driven go-on is the course's answer for the judge's reading. The judge
     /// passing resumes its own conversation; refusing it falls back to a new part, `retry` by Daoris; another client holding the conversation,
     /// or an agent no longer here, waits for the person.
     /// </summary>
@@ -113,8 +113,8 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A different account never resumes (D131 §1): the conversation lives in the account it ran on, and the record
-    /// names one account. A limit cooling it, a rotation and D130's list all land here. The line names neither.
+    /// 🔴 A different account never resumes: the conversation lives in the account it ran on, and the record
+    /// names one account. A limit cooling it, a rotation and the account list all land here. The line names neither.
     /// </summary>
     [Theory]
     [InlineData("account-1", "account-2")]
@@ -185,7 +185,7 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// A service from before ANSWER1b ends the record as it takes the answer, and a finished record does not move: the
+    /// An older service ends the record as it takes the answer, and a finished record does not move: the
     /// carry-on is today's, said so.
     /// </summary>
     [Fact]
@@ -216,9 +216,9 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// SESSCTX1c (D189's amendment, the session-context design §2): the native door's harness that ended on a failed exit before it
+    /// The native door's harness that ended on a failed exit before it
     /// named its conversation proves nothing of its loss, so it has a code of its own apart from <c>gone</c>, which stays the
-    /// protocol door's <c>resource_not_found</c> and reads as it always did. Neither is a never.
+    /// protocol door's <c>resource_not_found</c>. Neither is a never.
     /// </summary>
     [Fact]
     public void The_native_doors_failed_exit_is_a_reason_of_its_own_apart_from_gone()
@@ -231,7 +231,7 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c (D189's amendment): a driven record's fallback carries on by itself, `from` why <c>retry</c>, after any refusal of
+    /// 🔴 A driven record's fallback carries on by itself, `from` why <c>retry</c>, after any refusal of
     /// its resume but one: another client holding its conversation (<c>elsewhere</c>), since a second writer in its tree could redo its
     /// work. That one holds it for the person.
     /// </summary>
@@ -253,7 +253,7 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c part B (D189 point 3, the session-context design §2): a conversation, or a closed quest's session, goes on by itself
+    /// 🔴 A conversation, or a closed quest's session, goes on by itself
     /// in a new part only where its own conversation is proven lost: the protocol door's <c>resource_not_found</c> (<c>gone</c>), no id
     /// kept (<c>unkept</c>), a door that cannot resume (<c>unable</c>) or an agent that offers no resume (<c>offered</c>). Nothing else
     /// proves it lost, so everything else waits for the person.
@@ -293,7 +293,7 @@ public sealed class ContinuationTests : IDisposable
             "It stopped with its quest still taken, to ask you:\n\nWhich port?\n\nCarried on in a new session, because "
             + "its conversation stays with the account it ran on, and this start runs on another.",
             ended.Note);
-        // The park's note had no parts, so it is carried whole before the line's code (LANG1a).
+        // The park's note has no parts, so it is carried whole before the line's code.
         Assert.Equal([null, "went.carried-on"], NoteAssert.Codes(ended.Parts));
         Assert.Equal(NoteBy.Before, ended.Parts[0].By);
         Assert.Equal("account", ended.Parts[1].Value("why"));
@@ -310,8 +310,8 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// The resumed run's first line names the door it resumed on, and the harness version where it moved since the record
-    /// opened (D131 §1): the record names the version it opened on, and a resume is never refused for a newer one.
+    /// The resumed run's first line names the door it resumed on, and the harness version where it moved after the record
+    /// opened: the record names the version it opened on, and a resume is never refused for a newer one.
     /// </summary>
     [Fact]
     public void The_resumed_runs_first_line_names_its_door_and_a_version_that_moved()
@@ -328,7 +328,7 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// <c>session.answered</c> (D131 §2, D94 §4): once per answer taken up, the parked session, the adapter, whether it
+    /// <c>session.answered</c>: once per answer taken up, the parked session, the adapter, whether it
     /// resumed, and why not as an identifier — never the answer, the agent's words or an account.
     /// </summary>
     [Fact]
@@ -347,10 +347,10 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// SESSCTX1c (D189 point 8; the session-context design §7): a move to a new part is said by a coded line on both parts, the part
+    /// A move to a new part is said by a coded line on both parts, the part
     /// it left naming where it went on and the new part where it came from, each with the agent and account, why, the context the
     /// part stood at (H) and the brief's characters (B); and <c>session.moved</c> in the machine log, by profile name, the new part
-    /// and the one it continues, whether it was briefed. A line with no account or no context leaves that value out, and the page
+    /// and the one it continues, whether it is briefed. A line with no account or no context leaves that value out, and the page
     /// shows the line as recorded.
     /// </summary>
     [Fact]
@@ -386,7 +386,7 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// SESSCTX1c (D189's amendment): words whose agent this machine no longer has wait on their record, said by a code that names the
+    /// Words whose agent this machine no longer has wait on their record, said by a code that names the
     /// agent and the session, with the hand-over as the way on; the agent to name is the person's.
     /// </summary>
     [Fact]
@@ -417,12 +417,12 @@ public sealed class ContinuationTests : IDisposable
 
     private static readonly SaidWordView Word = new("w1", "Also log the port.", DateTimeOffset.Parse("2026-10-03T09:00:00Z"), [], Reopens: true);
 
-    /// <summary>A record of this machine's with the person's words waiting (MSG1a's <c>said</c>), as the last run reads it.</summary>
+    /// <summary>A record of this machine's with the person's words waiting (its <c>said</c>), as the last run reads it.</summary>
     private PriorSession Written(string state, params SaidWordView[] said) =>
         Park(state: state) with { Said = said };
 
     /// <summary>
-    /// 🔴 Words to an ended session go on in its own record (MSG1b, D137 §2.2): completed, declined, stopped and failed each
+    /// 🔴 Words to an ended session go on in its own record: completed, declined, stopped and failed each
     /// resume its own conversation where the adapter, the account, the tree and the kept id are the same.
     /// </summary>
     [Theory]
@@ -435,7 +435,7 @@ public sealed class ContinuationTests : IDisposable
         Assert.Null(Continuations.Judge(Written(state, Word), "claude-code-acp", doorResumes: true, profile: "account-1", Kept));
     }
 
-    /// <summary>An ended record with no words waiting has nothing to go on with: it ended, as a record from before ANSWER1b did.</summary>
+    /// <summary>An ended record with no words waiting has nothing to go on with: it ended.</summary>
     [Fact]
     public void An_ended_record_with_no_words_waiting_has_ended()
     {
@@ -446,7 +446,7 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// The rows of D137 §2.2 that never go on, judged before anything else: a teammate's record, an intake and a stand-down.
+    /// The records that never go on, judged before anything else: a teammate's record, an intake and a stand-down.
     /// Each is a reason that carries nothing on, said in a line that names no machine and no account.
     /// </summary>
     [Fact]
@@ -476,7 +476,7 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// <c>elsewhere</c> (D137 §2.2): the agent refused because another client holds the conversation, read from its data and
+    /// <c>elsewhere</c>: the agent refused because another client holds the conversation, read from its data and
     /// never its sentence. Its line names no client.
     /// </summary>
     [Fact]
@@ -512,7 +512,7 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// MSG1d3 (D137 §2.4): words said with files are kept under the home, and the record names the files. The resumed run is
+    /// Words said with files are kept under the home, and the record names the files. The resumed run is
     /// handed where each word's files lie, as a conversation's message is: on the native door each word's paths beneath it
     /// in the one argument, on the protocol door a link per file after the words' blocks, which stay the words alone. A name
     /// nothing keeps any more is left out, never named as a path that is not there.
@@ -534,7 +534,7 @@ public sealed class ContinuationTests : IDisposable
         Assert.DoesNotContain("gone.png", resume.Prompt);
         Assert.Equal(kept, resume.Files);
         Assert.Equal(["See the trace.", "And log the port."], resume.Blocks);
-        // The run is handed a read of exactly where they lie, outside its tree, or every read there is asked and refused (D52).
+        // The run is handed a read of exactly where they lie, outside its tree, or every read there is asked and refused.
         Assert.Equal(ChatFiles.Folder(_tree, "s1"), DriverContinuations.SaidFilesFolder(_tree, "s1", resume));
 
         // Handed nothing to find them by, it is handed the words alone, as before, and no read.
@@ -545,7 +545,7 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// A file the record names is found where it was kept (MSG1d3): `&lt;first 12 of its hash&gt;-&lt;name&gt;` in the session's
+    /// A file the record names is found where it is kept: `&lt;first 12 of its hash&gt;-&lt;name&gt;` in the session's
     /// files folder, the newer of two given one name, never another name that ends the same way.
     /// </summary>
     [Fact]
@@ -563,9 +563,9 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SAIDBACK1e (D137 §2.4): a quest's record goes on by the ledger's move to working before its run is spawned, so no word is
-    /// taken back once the words are read, and where every word was taken back first it goes back as it was. An ended record goes
-    /// back to how it ended, its note, parts and flags as they were; a park waits on the person again.
+    /// 🔴 A quest's record goes on by the ledger's move to working before its run is spawned, so no word is
+    /// taken back once the words are read, and where every word is taken back first it goes back unchanged. An ended record goes
+    /// back to how it ended, its note, parts and flags intact; a park waits on the person again.
     /// </summary>
     [Fact]
     public void A_record_moved_to_working_goes_back_as_it_was_where_every_word_was_taken_back_first()
@@ -586,11 +586,11 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c (D189's amendment, the session-context design §2): a resumed run that could not start is a start failure, never a
+    /// 🔴 A resumed run that could not start is a start failure, never a
     /// move. Its record ends <c>failed</c> with the spawn's own words, as a first start's failed spawn does, so the strikes count it,
     /// and its words wait on it to go again, said so; a park as well as an ended record, since a park moved back to waiting on the
-    /// person would lose them. Where its note already said its words wait, they failed twice running and wait for the person, as a
-    /// failed turn's do (TURNFAIL1).
+    /// person would lose them. Where its note already says its words wait, they failed twice running and wait for the person, as a
+    /// failed turn's do.
     /// </summary>
     [Fact]
     public void A_resumed_run_that_could_not_start_is_a_failed_start_with_its_words_waiting()
@@ -614,7 +614,7 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SAIDBACK1f (D137 §2.4): a fallback hands its new session the words the record holds as the move left them, never those
+    /// 🔴 A fallback hands its new session the words the record holds as the move leaves them, never those
     /// the look read, so a word taken back between the two does not go; the look's only where the record cannot be read again.
     /// </summary>
     [Fact]
@@ -650,7 +650,7 @@ public sealed class ContinuationTests : IDisposable
         Assert.Equal("the quest reached done.\n\nYour words went to a new session, because its tree is gone.", went.Note);
         Assert.Equal([null, "went.new-session"], NoteAssert.Codes(went.Parts));
 
-        // A record whose note has parts keeps them, and the line follows them (LANG1a).
+        // A record whose note has parts keeps them, and the line follows them.
         var coded = record with { NoteParts = [EndNoteCodes.EndedDone.Part("the quest reached done.")] };
         var after = Continuations.CannotNote(coded, ContinueWhy.Of(ContinueWhy.Tree));
         Assert.Equal(cannot.Note, after.Note);
@@ -660,7 +660,7 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// An open quest whose last session could not go on with the person's words is started again, handed them (D137 §2.2):
+    /// An open quest whose last session could not go on with the person's words is started again, handed them:
     /// a first start's instruction, since the quest is not yet anyone's, with their words quoted, verbatim, beneath it.
     /// </summary>
     [Fact]
@@ -681,7 +681,7 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// A closed quest's session that went on with the person's words ends as its process does (D137 §2.3): as it was before
+    /// A closed quest's session that went on with the person's words ends as its process does: completed
     /// on a clean exit, failed otherwise, saying its quest stays as it closed.
     /// </summary>
     [Fact]
@@ -696,9 +696,8 @@ public sealed class ContinuationTests : IDisposable
     private const string Dropped = "the ACP agent refused the call: Internal error: API Error: Connection dropped (ECONNRESET)";
 
     /// <summary>
-    /// 🔴 TURNFAIL1: a closed quest's session went on with the person's words, its door failed after 27 minutes, and the agent
-    /// exited 0 as stdin closed, so the record ended <c>completed</c>, "it went on with your words and ended" (the install's
-    /// record, 2026-10-14). A failed turn is a failed run, said with the door's reason in the agent's words.
+    /// 🔴 A closed quest's session goes on with the person's words, its door fails after 27 minutes, and the agent
+    /// exits 0 as stdin closes, so the record would end <c>completed</c>, "it went on with your words and ended". A failed turn is a failed run, said with the door's reason in the agent's words.
     /// </summary>
     [Fact]
     public void A_closed_quests_session_whose_turn_failed_going_on_ends_failed_with_the_doors_reason()
@@ -714,10 +713,10 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 TURNFAIL1 (D137 §2.2, as a cooling account's): the words a run carried when its turn failed were never answered, so
+    /// 🔴 The words a run carries when its turn fails are never answered, so
     /// they stay waiting on its record, unmarked, and the next look takes them again; the record's note says why. Words a run
-    /// that went on with them after such a failure failed again are held for the person, so a door that keeps failing is not
-    /// tried at every look. A run that did not fail, or whose quest reached its close all the same, took them.
+    /// that goes on with them after such a failure and fails again are held for the person, so a door that keeps failing is not
+    /// tried at every look. A run that does not fail, or whose quest reaches its close all the same, takes them.
     /// </summary>
     [Fact]
     public void The_words_a_failed_turn_carried_wait_to_go_again_and_after_a_second_failure_wait_for_the_person()
@@ -740,7 +739,7 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITRESUME1b (D206, design §3.3; D137's TURNFAIL1 note amended): a turn an account's limit refused leaves the person's words
+    /// 🔴 A turn an account's limit refused leaves the person's words
     /// waiting, unmarked, however many limited ends run in a row, under a line of its own that neither bound reads as a first failure,
     /// so one limited end and then one ordinary failure is no *failed twice*.
     /// </summary>
@@ -766,10 +765,9 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Whether a resumed run's quest had closed is read from the quest as the look planned it, never as the run left it
-    /// (the merge of 2026-10-03). An answered park's run that closes its own quest done is a completed record, as ANSWER1a
-    /// concluded it: read after the run, the closed quest sent it down a closed quest's ending, which ended it as it was
-    /// before, still parked, its tree and its slot held for ever.
+    /// 🔴 Whether a resumed run's quest has closed is read from the quest as the look planned it, never as the run left it.
+    /// An answered park's run that closes its own quest done is a completed record: read after the run, the closed quest
+    /// would send it down a closed quest's ending, which ends it still parked, its tree and its slot held for ever.
     /// </summary>
     [Fact]
     public void A_park_whose_resumed_run_closes_its_quest_ends_completed()
@@ -788,7 +786,7 @@ public sealed class ContinuationTests : IDisposable
         Assert.Equal("failed", Observation.Resumed(1, before: "completed", startedOn: "Done", questStatus: "Done").State);
     }
 
-    /// <summary>A resumed run on a taken quest that ends still holding it is waiting on the person again, as ANSWER1a has it.</summary>
+    /// <summary>A resumed run on a taken quest that ends still holding it is waiting on the person again.</summary>
     [Fact]
     public void A_resumed_run_that_ends_still_holding_its_quest_parks_again()
     {
@@ -798,8 +796,8 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// A closed quest's ending never leaves a record live: it cannot park, holding no quest (D83), so a record that was live
-    /// when it went on ends completed on a clean exit.
+    /// A closed quest's ending never leaves a record live: it cannot park, holding no quest, so a record that is live
+    /// when it goes on ends completed on a clean exit.
     /// </summary>
     [Theory]
     [InlineData("awaiting-person")]
@@ -810,7 +808,7 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// <c>session.reopened</c> (D137 §3.3): once per reopen taken up, from which state, whether its own conversation resumed,
+    /// <c>session.reopened</c>: once per reopen taken up, from which state, whether its own conversation resumed,
     /// and why not by code. Never the words.
     /// </summary>
     [Fact]
@@ -828,7 +826,7 @@ public sealed class ContinuationTests : IDisposable
             carried.Data);
     }
 
-    /// <summary>An ended chat the person wrote to says so on the same line (MSG1c, D137 §3.3): its kind is the record's.</summary>
+    /// <summary>An ended chat the person wrote to says so on the same line: its kind is the record's.</summary>
     [Fact]
     public void A_chats_reopen_line_names_its_kind()
     {
@@ -839,7 +837,7 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A chat's record is judged as a driven one's (MSG1c, D137 §2.2): its conversation goes on only on the adapter that
+    /// 🔴 A chat's record is judged as a driven one's: its conversation goes on only on the adapter that
     /// opened it, the account it ran on, the tree it ran in, by the id kept for it. A chat whose agent named no conversation
     /// cannot go on, and says Daoris kept no id.
     /// </summary>
@@ -859,7 +857,7 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// MSG1d (D137 §3.1, §5.1): the driver's notes about the person's words carry their ids and the reason's code beside the
+    /// The driver's notes about the person's words carry their ids and the reason's code beside the
     /// line, since a reason is chrome the page words itself: where they went, naming the session, and where they cannot go on.
     /// </summary>
     [Fact]

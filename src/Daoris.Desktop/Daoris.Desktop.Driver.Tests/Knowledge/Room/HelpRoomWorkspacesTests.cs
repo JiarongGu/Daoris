@@ -18,7 +18,7 @@ public sealed class HelpRoomWorkspacesTests
     }
 
     /// <summary>
-    /// WORKFLOW1h-b (D157 point 13, design §8.4): the room's table gains each repository's workflow, its name, version and what
+    /// The room's table lists each repository's workflow, its name, version and what
     /// chose it, Current included, and each workspace's kinds after it, so the helper answers *how does work in engine land* from
     /// the drawn workflow.
     /// </summary>

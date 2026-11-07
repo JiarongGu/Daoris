@@ -7,12 +7,12 @@ namespace Daoris.Driver;
 /// <param name="Frame">The frame to send at <paramref name="Point"/> instead of the sample — the person's, root and all.</param>
 /// <param name="Patience">
 /// How long each point's call waits; absent, as long as the driver waits at the points tried. The handshake always waits
-/// that long, as the driver's does (PLUGKIT2).
+/// that long, as the driver's does.
 /// </param>
 public sealed record TrialOptions(string? Point = null, JsonObject? Frame = null, TimeSpan? Patience = null);
 
 /// <summary>
-/// One thing a trial checked: a declared tool or one of its checks (PLUGTOOL1a), the handshake, a point, the shutdown, stdout —
+/// One thing a trial checked: a declared tool or one of its checks, the handshake, a point, the shutdown, stdout —
 /// or the manifest, when that is as far as it got.
 /// </summary>
 public sealed record TrialStep(string Name, bool Ok, string Sentence);

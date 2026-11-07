@@ -410,7 +410,7 @@ public sealed class AccountLimitsTests
     [Fact]
     public void Every_recorded_sentence_is_recognised_and_its_reset_read()
     {
-        Assert.Equal(6, Claude.Recorded.Count);
+        Assert.Equal(7, Claude.Recorded.Count);
         foreach (var recorded in Claude.Recorded)
         {
             var seen = At($"{recorded.Seen} 12:00", Zone);

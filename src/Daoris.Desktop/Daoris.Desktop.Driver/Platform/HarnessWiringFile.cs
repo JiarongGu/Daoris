@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where the agents' wiring file is (FOUNDATION1 mod-v, the design §14.3: the type moved down to its one owner): the override's variable
+/// Where the agents' wiring file is: the override's variable
 /// and the file of a home, which the install's download clearing names beside the tools' own, so a subdomain below the agents reads the
 /// path without naming their settings. <see cref="HarnessSettings"/> answers through it, so every reader keeps its spelling.
 /// </summary>

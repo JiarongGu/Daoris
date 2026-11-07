@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Codex's words for an account's limit (TOOL4k, limit-signals evidence §4): the agent's, which its protocol door,
+/// Codex's words for an account's limit: the agent's, which its protocol door,
 /// <c>codex-acp</c>, is read through. Read in Codex's source and never seen
 /// on a door: they reach Daoris as the JSON-RPC error's <c>data.message</c>, which the door says after the
-/// message <c>Internal error</c> (ACPDATA1).
+/// message <c>Internal error</c>.
 /// </summary>
 /// <remarks>
 /// <para><b>One clause of sentences.</b> Codex joins no <c>·</c>: the reset is the rest of the marker's own
@@ -25,7 +25,7 @@ public static class CodexLimits
         Markers:
         [
             @"(?:^|: )you've hit your (?<hit>usage) limit(?: for .+?)?\.(?= |$)",
-            // The workspace's credits are spent (CODEXCREDITS1): the owner refills, so the sentence names no reset.
+            // The workspace's credits are spent: the owner refills, so the sentence names no reset.
             @"(?:^|: )your workspace is out of (?<hit>credits)\.(?= |$)",
         ],
         Resets: [@"\btry again at (?<when>.+?)\.?$"],

@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Context's part of a run's sink (the agent-provider design §3.1, row l): the session's event file keeps each event said, and its console
+/// Context's part of a run's sink: the session's event file keeps each event said, and its console
 /// shows each line and the streams beside it. Watched where a console is.
 /// </summary>
 /// <remarks>
-/// An event the record cannot keep costs a console line, never the run (D76 §2): the conversation enriches a run, it does not run it.
+/// An event the record cannot keep costs a console line, never the run: the conversation enriches a run, it does not run it.
 /// </remarks>
 internal sealed class RecordReadings(string sessionId, ISessionOutput? output, ISessionEvents? events) : IReadingSink
 {

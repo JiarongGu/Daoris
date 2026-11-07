@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where every machine-local file Daoris owns lives (D63): one home, named by <c>DAORIS_HOME</c>, and
+/// Where every machine-local file Daoris owns lives: one home, named by <c>DAORIS_HOME</c>, and
 /// <b>no default under the user profile</b>. The application's own folder is the home — the installed
 /// desktop sets the variable for itself and everything it spawns — and a terminal's <c>daoris</c>
 /// reads the same variable from the user's environment. Absent, there is no home: the management
@@ -11,10 +11,10 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// One of three twins — the CLI's <c>home.ts</c> and the service's <c>DaorisHome</c> hold the same
-/// contract in their own languages and share no code, the way the remotes map's three copies do
-/// (WSP3). The environment is the contract; the three tests move together.
+/// contract in their own languages and share no code, the way the remotes map's three copies do.
+/// The environment is the contract; the three tests move together.
 ///
-/// <para><b>Each file and folder under the home is an entry of D172's table</b> (<see cref="HomeEntry"/>, HOMELAYOUT2), and a
+/// <para><b>Each file and folder under the home is an entry of the table</b> (<see cref="HomeEntry"/>), and a
 /// reader asks for the entry by name, never for a path it joined itself (<see cref="Entry"/>; the CLI's
 /// <c>home-census.test.ts</c> fails a join by hand). The three twins hold the same table, cell for cell.</para>
 /// </remarks>
@@ -28,7 +28,7 @@ public static class DaorisHome
         + "Daoris.exe), or name the file's own variable. Daoris keeps nothing under the user profile.";
 
     /// <summary>
-    /// The refusal for an entry found in both its places (D172 point 5's review note): the entry's name, its new place and its old
+    /// The refusal for an entry found in both its places: the entry's name, its new place and its old
     /// one. The CLI's <c>HOME_TWICE</c> and the service's <c>Twice</c> are the same words.
     /// </summary>
     public const string Twice =
@@ -48,14 +48,14 @@ public static class DaorisHome
     /// <summary>The file `desktop-publish` writes at an install's root, and nothing else does: the desktop's <c>InstallHome.Marker</c>.</summary>
     public const string InstallMarker = "INSTALLED.md";
 
-    /// <summary>The folder the install's programs run from (D93), beside <see cref="InstallData"/>.</summary>
+    /// <summary>The folder the install's programs run from, beside <see cref="InstallData"/>.</summary>
     public const string InstallApp = "app";
 
-    /// <summary>The install's own home (D63), beside <see cref="InstallApp"/>.</summary>
+    /// <summary>The install's own home, beside <see cref="InstallApp"/>.</summary>
     public const string InstallData = "data";
 
     /// <summary>
-    /// The install a program runs from (FINDDAORIS1, D171 point 1): the folder above the <c>app/</c> it runs in, however deep
+    /// The install a program runs from: the folder above the <c>app/</c> it runs in, however deep
     /// (the desktop is <c>app/</c>, the driver host <c>app/daoris-driver/</c>), where that folder holds the marker. Null for a
     /// workspace build, which is no install.
     /// </summary>
@@ -80,15 +80,15 @@ public static class DaorisHome
         InstallOf(baseDirectory) is { } install ? Path.Combine(install, InstallData) : null;
 
     /// <summary>
-    /// The home a program finds with nobody to tell it (FINDDAORIS1, D171 point 1): the variable, which still wins (the dev
+    /// The home a program finds with nobody to tell it: the variable, which still wins (the dev
     /// loop, a rehearsal, a second home), else its install's own <c>data/</c>, else none.
     /// </summary>
     public static string? Resolve(Func<string, string?> environment, string baseDirectory) =>
         Resolve(environment) ?? OfInstall(baseDirectory);
 
     /// <summary>
-    /// Take the install's home as this process's <c>DAORIS_HOME</c> where none is named (FINDDAORIS1), as the desktop does for
-    /// itself (D63): every file, the machine log and each process it starts then read the same machine. The home it set, or
+    /// Take the install's home as this process's <c>DAORIS_HOME</c> where none is named, as the desktop does for
+    /// itself: every file, the machine log and each process it starts then read the same machine. The home it set, or
     /// null when one was named or this is no install.
     /// </summary>
     public static string? Adopt(Func<string, string?> environment, Action<string, string> setProcess, string baseDirectory)
@@ -103,7 +103,7 @@ public static class DaorisHome
         Adopt(Environment.GetEnvironmentVariable, (name, value) => Environment.SetEnvironmentVariable(name, value), baseDirectory);
 
     /// <summary>
-    /// Where an entry is in a home, by D172 point 5 and its review note (the install layout design §6.2): its new place where
+    /// Where an entry is in a home: its new place where
     /// that holds what the entry is, else its old place where that is there, else its new place, where a writer makes it.
     /// Where both hold it, neither is chosen: <see cref="HomeEntryTwiceException"/> names both, for the caller to say.
     /// </summary>
@@ -128,9 +128,9 @@ public static class DaorisHome
     }
 
     /// <summary>
-    /// The folder of an entry's category, made where its new place is answered and the Daoris folder is there (HOMELAYOUT3): a
-    /// writer of a file the home's top held before (<c>driver.json</c>, <c>keys.json</c>, <c>running.json</c>) found its folder
-    /// in the home itself, which was there, and now writes into its category's, which a new home has not made yet. Nothing else
+    /// The folder of an entry's category, made where its new place is answered and the Daoris folder is there: a
+    /// writer of a file the home's top holds in an older layout (<c>driver.json</c>, <c>keys.json</c>, <c>running.json</c>) writes
+    /// into its category's folder, which a new home has not made yet. Nothing else
     /// is made: an entry's own folders are its writer's, and a home that is not there stays not there.
     /// </summary>
     private static void MakeCategory(string folder, HomeEntry entry)
@@ -150,8 +150,8 @@ public static class DaorisHome
     }
 
     /// <summary>
-    /// Both places of an entry, asked as <see cref="Entry"/> is, without reading them: for a list of its items, which reads both
-    /// (the design §6.2). The new place first, then the old, once each. Only the marker that says which folder the home names is
+    /// Both places of an entry, asked as <see cref="Entry"/> is, without reading them: for a list of its items, which reads both.
+    /// The new place first, then the old, once each. Only the marker that says which folder the home names is
     /// read (<see cref="FolderOf"/>).
     /// </summary>
     public static IReadOnlyList<string> Places(string home, HomeEntry entry, params string[] asked)
@@ -164,9 +164,9 @@ public static class DaorisHome
     }
 
     /// <summary>
-    /// The Daoris folder a home names, and the old home its entries were under before D172's places (D172 point 2, HOMELAYOUT3):
+    /// The Daoris folder a home names, and the old home an earlier layout kept its entries under:
     /// an install's folder (it holds <see cref="InstallMarker"/>), whose old home is its <c>data/</c>; that <c>data/</c>, which
-    /// names the same install and is its old home, as every account that met D63 names it; and any other home, which is both.
+    /// names the same install and is its old home, as older accounts name it; and any other home, which is both.
     /// </summary>
     public static (string Folder, string Old) FolderOf(string home)
     {
@@ -183,14 +183,14 @@ public static class DaorisHome
     }
 
     /// <summary>
-    /// Where an install carries the doctrine tool's launchers, from its root (D124 §1.2, WSSETUP2): beside the
+    /// Where an install carries the doctrine tool's launchers, from its root: beside the
     /// application, in <c>app/</c>. Twins: the CLI's <c>INSTALL_BIN</c>, the publish's <c>CLI_BIN</c>, which lays them
     /// out; <c>desktop-publish.test.ts</c> reads all three.
     /// </summary>
     public static readonly IReadOnlyList<string> InstallBinLayout = ["app", "bin"];
 
     /// <summary>
-    /// The launchers' folder in the home's Daoris folder (<see cref="FolderOf"/>, HOMELAYOUT4), where it is a folder:
+    /// The launchers' folder in the home's Daoris folder (<see cref="FolderOf"/>), where it is a folder:
     /// an install's <c>app/bin/</c> whichever way its home is named, and a development run's scratch root's. Null for a Daoris
     /// folder with none, and for an <c>app/bin</c> that is not a folder.
     /// </summary>
@@ -201,8 +201,8 @@ public static class DaorisHome
     }
 
     /// <summary>
-    /// The home a file or folder of it is in, the entry it is named (HOMELAYOUT3): undone from the entry's new place, the Daoris
-    /// folder, spelled as its <c>data/</c> where that folder is an install, as every install's home has been since D63; else
+    /// The home a file or folder of it is in, the entry it is named: undone from the entry's new place, the Daoris
+    /// folder, spelled as its <c>data/</c> where that folder is an install, as older accounts name its home; else
     /// undone from its old place, the old home. For the readers that hold a file rather than its home (<c>DriverConfig.HomeOf</c>,
     /// <c>HarnessSettings.HomeOf</c>, the in-app browser's profile). An entry kept per item is not asked here.
     /// </summary>
@@ -279,7 +279,7 @@ public static class DaorisHome
         return (Path.Combine([.. parts]), asked[at..], true);
     }
 
-    /// <summary>D172 point 5 between an entry's two places, the new one taken only where it holds what the entry is.</summary>
+    /// <summary>The choice between an entry's two places, the new one taken only where it holds what the entry is.</summary>
     private static string Choose(HomeEntry entry, string next, string old, bool whole)
     {
         var held = Holds(entry, next);
@@ -316,7 +316,7 @@ public static class DaorisHome
     }
 }
 
-/// <summary>A top folder of the Daoris folder (D172 point 1): the category an entry is in.</summary>
+/// <summary>A top folder of the Daoris folder: the category an entry is in.</summary>
 public enum HomeCategory
 {
     Data,
@@ -328,16 +328,16 @@ public enum HomeCategory
 }
 
 /// <summary>
-/// An entry of D172's table (the install layout design §3, HOMELAYOUT2): its name, its category, its new place under the Daoris
+/// An entry of the home's table: its name, its category, its new place under the Daoris
 /// folder and its old one under the old home (<see cref="DaorisHome.FolderOf"/>), each <c>/</c>-separated, a <c>*</c> for each
 /// part of an item where the entry is kept per item, and the names that make a place there where the entry is known by them
 /// (none: the place itself). <see cref="DaorisHome.Entry"/> reads it.
 /// </summary>
 /// <remarks>
 /// One of three twins: the CLI's <c>HOME_ENTRIES</c> (<c>home.ts</c>) and the service's <c>HomeEntry</c> hold the same rows in
-/// the same order, which <c>home.test.ts</c> holds cell for cell. 🔴 The new places are switched on (HOMELAYOUT3): each is under
-/// the top folder its category names, and an install's <c>data/</c> entries are where they were. An entry made by HOMELAYOUT3
-/// itself had no old place: its old column repeats its new, a place under the old home nothing writes.
+/// the same order, which <c>home.test.ts</c> holds cell for cell. 🔴 The new places are switched on: each is under
+/// the top folder its category names, and an install's <c>data/</c> entries stay where they are. An entry with no older place
+/// repeats its new in its old column, a place under the old home nothing writes.
 /// </remarks>
 public sealed record HomeEntry(string Name, HomeCategory Category, string New, string Old, params string[] Holds)
 {
@@ -362,7 +362,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Abandoned = new("abandoned", HomeCategory.Data, "data/abandoned.json", "abandoned.json");
     public static readonly HomeEntry Update = new("update", HomeCategory.Data, "data/update.json", "update.json");
     public static readonly HomeEntry Knowledge = new("knowledge", HomeCategory.Data, "data/knowledge.db", "knowledge.db");
-    // FOUNDATION1 z-i (D212, the design §13.2): the desktop's own store, a database of the machine's, opened by the driver library alone; new since the layout, so its old place is its new one.
+    // The desktop's own store, a database of the machine's, opened by the driver library alone; its old place is its new one.
     public static readonly HomeEntry DesktopDb = new("desktop-db", HomeCategory.Data, "data/desktop.db", "data/desktop.db");
     public static readonly HomeEntry Sessions = new("sessions", HomeCategory.Data, "data/sessions", "sessions");
     public static readonly HomeEntry Helpers = new("helpers", HomeCategory.Data, "data/helpers", "helpers");
@@ -382,24 +382,24 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Keeping = new("keeping", HomeCategory.Data, "data/keeping.json", "keeping.json");
     public static readonly HomeEntry Notices = new("notices", HomeCategory.Data, "data/notices.json", "notices.json");
     public static readonly HomeEntry GitIdentities = new("git-identities", HomeCategory.Data, "data/git-identities.json", "data/git-identities.json");
-    // D201's grant, deleted: named only so the home migration's `standing-grant` step finds a stored record to remove.
+    // A deleted grant, named only so the home migration's `standing-grant` step finds a stored record to remove.
     public static readonly HomeEntry StandingConfirmation = new("standing-confirmation", HomeCategory.Data, "data/standing-confirmation.json", "data/standing-confirmation.json");
-    // MODELROLE1c2 (D205 §9.2): what each agent, version and account last offered and refused, a reading the walk judges.
+    // What each agent, version and account last offered and refused, a reading the walk judges.
     public static readonly HomeEntry AgentOffers = new("agent-offers", HomeCategory.Data, "data/agent-offers.json", "data/agent-offers.json");
-    // CONFIRMWAIT1a-ii (the confirm-wait design §7.1): a terminal's presses waiting for the person, one record each, kept across a restart in
-    // data/ (backed up), never run/ (anyone may clear it while Daoris is closed); never a key in it (D172 point 3).
+    // A terminal's presses waiting for the person, one record each, kept across a restart in
+    // data/ (backed up), never run/ (anyone may clear it while Daoris is closed); never a key in it.
     public static readonly HomeEntry PipeWaiting = new("pipe-waiting", HomeCategory.Data, "data/pipe-waiting", "data/pipe-waiting");
-    // GITAPP2j (D204; the git-writes design §5): the bytes a file step of the act journal replaces and writes, one folder per act, let go of
+    // The bytes a file step of the act journal replaces and writes, one folder per act, let go of
     // with its record; data/ (backed up), since they are the person's files as they stood.
     public static readonly HomeEntry ActFiles = new("act-files", HomeCategory.Data, "data/act-files/*", "data/act-files/*");
-    // AGENTSPLACE1b2 (the Agents-place design §4): a place's apply written before its first effect, one file per plan's digest, each operation's
+    // A place's apply written before its first effect, one file per plan's digest, each operation's
     // outcome kept there so a restart settles it; data/ (backed up), since it says what was done to the person's configuration.
     public static readonly HomeEntry PlaceReceipts = new("place-receipts", HomeCategory.Data, "data/place-receipts", "data/place-receipts");
-    // COMMS1l (D209 §6.2): the steward desk's requests kept across a restart, an open one read as interrupted; no caller's key, no grant.
+    // The steward desk's requests kept across a restart, an open one read as interrupted; no caller's key, no grant.
     public static readonly HomeEntry StewardDesk = new("steward-desk", HomeCategory.Data, "data/steward-desk.json", "data/steward-desk.json");
-    // D233 choice 6: the newest build that has run on the home, which the launcher refuses an older one by.
+    // The newest build that has run on the home, which the launcher refuses an older one by.
     public static readonly HomeEntry LastBuild = new("last-build", HomeCategory.Data, "data/last-build.json", "data/last-build.json");
-    // NOCOMPAT1 (D232): which release's migration converted the home, and the copies it took of each file before it changed it.
+    // Which release's migration converted the home, and the copies it took of each file before it changed it.
     public static readonly HomeEntry Migration = new("migration", HomeCategory.Data, "data/migration.json", "data/migration.json");
     public static readonly HomeEntry Salvage = new("salvage", HomeCategory.Data, "data/salvage", "data/salvage");
     public static readonly HomeEntry Keys = new("keys", HomeCategory.Profiles, "profiles/keys.json", "keys.json");
@@ -414,8 +414,8 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry GitKnownHosts = new("git-known-hosts", HomeCategory.Profiles, "profiles/git/known_hosts", "profiles/git/known_hosts");
     public static readonly HomeEntry GitConfig = new("git-config", HomeCategory.Profiles, "profiles/git/global.gitconfig", "profiles/git/global.gitconfig");
     public static readonly HomeEntry Window = new("window", HomeCategory.Profiles, "profiles/window", "", "chromium", "config");
-    // CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): the keys of a terminal's sent presses, kept as long as a press's card lives; a file
-    // that holds a key is a sign-in (D172 point 3), never under run/, which anyone may clear while Daoris is closed.
+    // The keys of a terminal's sent presses, kept as long as a press's card lives; a file
+    // that holds a key is a sign-in, never under run/, which anyone may clear while Daoris is closed.
     public static readonly HomeEntry PipeSent = new("pipe-sent", HomeCategory.Profiles, "profiles/pipe-sent", "profiles/pipe-sent");
     public static readonly HomeEntry Trees = new("trees", HomeCategory.Work, "work/trees/*/*/*", "trees/*/*/*");
     public static readonly HomeEntry HelpRoom = new("help-room", HomeCategory.Work, "work/rooms/help", "help", "CLAUDE.md");
@@ -428,7 +428,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Proof = new("proof", HomeCategory.Work, "work/files/proof/*", "proof/*");
     public static readonly HomeEntry UsageRead = new("usage-read", HomeCategory.Work, "work/usage-read", "usage-read");
     public static readonly HomeEntry BrainstormRooms = new("brainstorm-rooms", HomeCategory.Work, "work/brainstorm-rooms/*", "brainstorm-rooms/*");
-    // SUPERVISOR1a-ii (D208 §2.2): a role holder's own folder, outside every repository, emptied at each appointment; the window alone writes there.
+    // A role holder's own folder, outside every repository, emptied at each appointment; the window alone writes there.
     public static readonly HomeEntry RoleRooms = new("role-rooms", HomeCategory.Work, "work/rooms/roles/*", "work/rooms/roles/*");
     public static readonly HomeEntry Toolchain = new("toolchain", HomeCategory.Cache, "cache/toolchain", "toolchain");
     public static readonly HomeEntry ToolVersions = new("tool-versions", HomeCategory.Cache, "cache/tools", "tools");
@@ -476,7 +476,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
 }
 
 /// <summary>
-/// An entry found in both its places (D172 point 5's review note): neither is chosen, and the refusal names both, in
+/// An entry found in both its places: neither is chosen, and the refusal names both, in
 /// <see cref="DaorisHome.Twice"/>'s words, for the caller to say.
 /// </summary>
 public sealed class HomeEntryTwiceException(string name, string next, string old)

@@ -5,7 +5,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// NOCOMPAT1 (D232 point 2): the release's one migration converts an older home once at its first start, a copy of each file it changes in
+/// The release's one migration converts an older home once at its first start, a copy of each file it changes in
 /// the salvage folder, each step recorded as it finishes, so a second start runs nothing and a stopped one runs only what is left.
 /// </summary>
 public sealed class HomeMigrationTests : IDisposable
@@ -296,7 +296,7 @@ public sealed class HomeMigrationTests : IDisposable
     }
 
     /// <summary>
-    /// ONEWAY1x: closed six-character quests are cleared. One a remote numbered is tombstoned, its log kept with a <c>deleted</c> after the
+    /// Closed six-character quests are cleared. One a remote numbered is tombstoned, its log kept with a <c>deleted</c> after the
     /// machine's highest sequence; one never numbered goes whole; an open one, a closed twelve-character one and another quest's log stay.
     /// </summary>
     [Fact]
@@ -337,7 +337,7 @@ public sealed class HomeMigrationTests : IDisposable
         Assert.Empty(Column(read, "SELECT quest FROM quest_forwards"));
     }
 
-    /// <summary>ONEWAY1ac: a finished record whose note has no parts loses the note; one with parts, and one still in use, keep it.</summary>
+    /// <summary>A finished record whose note has no parts loses the note; one with parts, and one still in use, keep it.</summary>
     [Fact]
     public void A_finished_record_s_note_with_no_parts_is_cleared()
     {

@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 public sealed record AccountChange(string Agent, string Account, bool Added);
 
 /// <summary>
-/// <c>harnesses.json</c>'s <c>pooled</c> section (POOL1a; the account-pool design §6.3): agent → receipts, oldest first. A receipt or
+/// <c>harnesses.json</c>'s <c>pooled</c> section: agent → receipts, oldest first. A receipt or
 /// a field that does not read is passed over at the read; a save is measured from the section as read, so it is kept on the file.
 /// </summary>
 internal static class PoolReceipts

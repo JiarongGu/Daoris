@@ -4,9 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-i part 1 (D212; the foundation design §10's row 1f-i): the move record's readers, each a row's adoption. Until row f-ii none
-/// but the one wiring through which the workplace's delete takes a record's moves with it; since FOUNDATION1f-ii part a the conversations'
-/// holder and the live limit move, which writes its move through it, and since FOUNDATION1f-iv part a the driven carry-on's record and the
+/// The move record's readers, each an adoption. Beside the one wiring through which the workplace's delete takes a record's moves with it,
+/// they are the conversations' holder and the live limit move, which writes its move through it, and the driven carry-on's record and the
 /// driver that runs it. A source that names a type the move store's files declare is a row's
 /// adoption, and moves this check.
 /// </summary>
@@ -17,8 +16,8 @@ public sealed class MoveStoreCensusTests
     private static string Driver => Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver");
 
     /// <summary>
-    /// The move store's own files, which declare its types: since part 2 the take-up of dead runs' moves and the box importers too, which
-    /// nothing calls either; since part 3 the moved words' delivery, a hold's one rule and the door to a destination's <c>said</c>.
+    /// The move store's own files, which declare its types: the take-up of dead runs' moves, the box importers, the moved
+    /// words' delivery, a hold's one rule and the door to a destination's <c>said</c>.
     /// </summary>
     private static readonly string[] Own =
     [
@@ -32,43 +31,43 @@ public sealed class MoveStoreCensusTests
     /// <summary>The workplace's delete port, opened over a home: the first production reader, row f-i's.</summary>
     private const string Wiring = "Course/WorkplaceMoveRecordsWiring.cs";
 
-    /// <summary>The conversations' holder (FOUNDATION1f-ii part a): the store, the said door and the take-up a shell's conversation moves go through.</summary>
+    /// <summary>The conversations' holder: the store, the said door and the take-up a shell's conversation moves go through.</summary>
     private const string Conversations = "Course/ConversationMoves.cs";
 
-    /// <summary>The live limit move (FOUNDATION1f-ii part a), which decides its move through the holder.</summary>
+    /// <summary>The live limit move, which decides its move through the holder.</summary>
     private const string LiveMove = "Course/Chat/LimitMove.cs";
 
-    /// <summary>The ended limit move (FOUNDATION1f-vi part a), which decides its move through the same holder.</summary>
+    /// <summary>The ended limit move, which decides its move through the same holder.</summary>
     private const string EndedMove = "Course/Chat/EndedLimitMove.cs";
 
-    /// <summary>The conversation's move a supervisor rule makes at a transient end (CONTEXTDRIVE1n), which decides its move through the same holder.</summary>
+    /// <summary>The conversation's move a supervisor rule makes at a transient end, which decides its move through the same holder.</summary>
     private const string TransientMove = "Course/Chat/TransientMove.cs";
 
-    /// <summary>The curve's move (FOUNDATION1f-iii part a), which decides its move through the holder as the live limit move does.</summary>
+    /// <summary>The curve's move, which decides its move through the holder as the live limit move does.</summary>
     private const string CurveMove = "Course/Chat/CurveMove.cs";
 
-    /// <summary>The conversation's hand-over's ask (FOUNDATION1f-v part a), which decides its move through the same holder.</summary>
+    /// <summary>The conversation's hand-over's ask, which decides its move through the same holder.</summary>
     private const string HandOverAsk = "Course/HandOver/HandOver.cs";
 
-    /// <summary>The quest's hand-over's ask (FOUNDATION1f-v part c), which decides its driven move through the same holder.</summary>
+    /// <summary>The quest's hand-over's ask, which decides its driven move through the same holder.</summary>
     private const string QuestAsk = "Course/HandOver/HandOverQuest.cs";
 
-    /// <summary>The driver's look of the quest's hand-overs (FOUNDATION1f-v part c), which takes each move the ask decided from the holder.</summary>
+    /// <summary>The driver's look of the quest's hand-overs, which takes each move the ask decided from the holder.</summary>
     private const string QuestTake = "Loop/DriverHandOvers.cs";
 
-    /// <summary>The terminal's hand-over verb (FOUNDATION1f-v part c), which builds the driven holder for a quest session's ask and names its scope alone.</summary>
+    /// <summary>The terminal's hand-over verb, which builds the driven holder for a quest session's ask and names its scope alone.</summary>
     private const string Terminal = "WorkOrders/Sessions/SessionsGoingOn.cs";
 
-    /// <summary>The window's hand-over press of a quest session (FOUNDATION1f-v part c), which builds the driven holder as the terminal does.</summary>
+    /// <summary>The window's hand-over press of a quest session, which builds the driven holder as the terminal does.</summary>
     private const string Window = "../Daoris.Desktop.Modules/Bridge/Routes/ConversationRoutes.cs";
 
-    /// <summary>The driven carry-on's record (FOUNDATION1f-iv part a), which decides its move through the same holder.</summary>
+    /// <summary>The driven carry-on's record, which decides its move through the same holder.</summary>
     private const string CarryOn = "Loop/CarryOnRecord.cs";
 
     /// <summary>The driver, which builds the driven holder over the lease holder's scope and runs the carry-on's record.</summary>
     private const string DrivenLine = "Loop/Driver.cs";
 
-    /// <summary>The driven paths' course (FOUNDATION1i), which reads the destination's standing move through the resolve before a limit move.</summary>
+    /// <summary>The driven paths' course, which reads the destination's standing move through the resolve before a limit move.</summary>
     private const string DrivenCourse = "Course/GoOn/DrivenCourse.cs";
 
     private static string Relative(string path) => Path.GetRelativePath(Driver, path).Replace('\\', '/');
@@ -102,7 +101,7 @@ public sealed class MoveStoreCensusTests
         ];
     }
 
-    /// <summary>A new file naming a type fails the census; one more naming in a listed file, or another type there, passes (CENSUSRULES1).</summary>
+    /// <summary>A new file naming a type fails the census; one more naming in a listed file, or another type there, passes.</summary>
     [Fact]
     public void A_new_file_naming_a_move_store_type_fails_and_one_more_naming_in_a_listed_file_passes()
     {
@@ -132,7 +131,7 @@ public sealed class MoveStoreCensusTests
 
         var readers = Readers(CourseCensusTests.ProductionFiles().Select(path => (Relative(path), File.ReadAllText(path))), names);
 
-        // The files, not how often each names a type (CENSUSRULES1): a new file fails, and so does a listed file that names none now.
+        // The files, not how often each names a type: a new file fails, and so does a listed file that names none now.
         var differences = Differences(readers, Allowed);
         Assert.True(differences.Count == 0, string.Join('\n', differences));
         Assert.Contains($"{Wiring} names MoveStore", readers);
@@ -152,11 +151,11 @@ public sealed class MoveStoreCensusTests
         // The take of the curve's move writes its phases through the holder's move, never the store: it names no type of the store's.
         Assert.DoesNotContain(readers, reader => reader.StartsWith("Course/Chat/ChatHandOver.cs ", StringComparison.Ordinal));
 
-        // The driver names only the scope its driven holder is built with (FOUNDATION1f-iv part a); its take-up (part b, below) goes through
+        // The driver names only the scope its driven holder is built with; its take-up (below) goes through
         // the holder, and the watch names no type of the move record at all.
         Assert.Equal([$"{DrivenLine} names MoveTakeUpScope"], readers.Where(reader => reader.StartsWith(DrivenLine + " ", StringComparison.Ordinal)));
 
-        // The look of the quest's hand-overs (FOUNDATION1f-v part c) reads a move the holder hands it and writes its phases through that move's
+        // The look of the quest's hand-overs reads a move the holder hands it and writes its phases through that move's
         // own claim, never the store: it names the executor it asks for, the record it reads and its phase, and the scope of its own holder.
         Assert.Equal(
             [$"{QuestTake} names MoveExecutors", $"{QuestTake} names MoveRecord", $"{QuestTake} names MoveRecordPhase", $"{QuestTake} names MoveTakeUpScope"],
@@ -169,10 +168,10 @@ public sealed class MoveStoreCensusTests
     }
 
     /// <summary>
-    /// FOUNDATION1f-ii part a (the foundation design §3.3): the conversations' take-up runs at the shell's come-up before anything else that
-    /// could act on their records, an older build's limit box's import first among them (FOUNDATION1f-vi part a), and at each look of the shell
+    /// The conversations' take-up runs at the shell's come-up before anything else that
+    /// could act on their records, an older build's limit box's import first among them, and at each look of the shell
     /// beside the limits' wake and before it, the shell's one periodic place for its conversations; so a dead shell's move is taken up and a live
-    /// one's quiet is said. The records' loop reads a box still in place as its record's <c>Never</c>, which the box's own take-up no longer does.
+    /// one's quiet is said. The records' loop reads a box still in place as its record's <c>Never</c>.
     /// </summary>
     [Fact]
     public void The_conversations_take_up_runs_at_the_shell_s_come_up_and_at_each_of_its_looks_before_what_acts_on_their_records()
@@ -191,9 +190,9 @@ public sealed class MoveStoreCensusTests
     }
 
     /// <summary>
-    /// FOUNDATION1f-iv part b (the foundation design §3.3): a driven line's take-up runs at the watch's first look, at the slot where uncertain
+    /// A driven line's take-up runs at the watch's first look, at the slot where uncertain
     /// words are settled and before it, after the orphan sweep and the supervisor's, through the driver's own holder (<c>Driver.Moves</c>, whose
-    /// scope is the lease holder's, or a <c>--share</c> loop's own lines, SHAREMOVES1), so the watch names no type of the move record and the census
+    /// scope is the lease holder's, or a <c>--share</c> loop's own lines), so the watch names no type of the move record and the census
     /// of readers gains none; the headless host tells the watch it runs beside the lease holder, and the watch tells each driver it builds.
     /// </summary>
     [Fact]
@@ -216,10 +215,10 @@ public sealed class MoveStoreCensusTests
     }
 
     /// <summary>
-    /// FOUNDATION1f-i part 2, with FOUNDATION1f-vi part a and FOUNDATION1f-v parts a and c: the one production source that names an importer is the
+    /// The one production source that names an importer is the
     /// conversations' holder, which hands the limit box's importer and the hand-over box's, a conversation's or a quest session's by its scope,
-    /// to its take-up; the box files' readers name no move type, so today's owners of the boxes read them as before. No
-    /// production source writes the limit box any more: its writer is kept for a test to leave the box an older build would, and for nothing else.
+    /// to its take-up; the box files' readers name no move type, so the boxes' owners read them directly. No
+    /// production source writes the limit box: its writer is kept for a test to leave the box an older build would, and for nothing else.
     /// </summary>
     [Fact]
     public void No_production_source_calls_a_box_importer_but_the_conversations_holder_for_the_limit_and_the_conversations_hand_over_box_and_none_writes_the_limit_box()

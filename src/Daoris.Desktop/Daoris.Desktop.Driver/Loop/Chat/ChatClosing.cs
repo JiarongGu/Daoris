@@ -13,7 +13,7 @@ internal sealed class ChatClosing(IExecutorWiring wiring, ChatConclusion conclus
 
     /// <summary>
     /// End every conversation this runner holds, as the driver's own act, and return once each record says so, or once <paramref name="bound"/>
-    /// has passed, since a shutdown must not hang on one. Stopped, not finished: a harness given end-of-input finishes what it was saying
+    /// has passed, since a shutdown must not hang on one. Stopped, not finished: a harness given end-of-input finishes the sentence it is saying
     /// first, which can take minutes, and the person is closing the application now.
     /// </summary>
     public void StopAll(TimeSpan bound)
@@ -70,7 +70,7 @@ internal sealed class ChatClosing(IExecutorWiring wiring, ChatConclusion conclus
     }
 
     /// <summary>
-    /// Words a turn left waiting on their record, said: the record did not name them marked attempted, so nothing was written for them. They
+    /// Words a turn left waiting on their record, said: the record did not name them marked attempted, so nothing is written for them. They
     /// wait there for the conversation's next go-on, which sends each once, and are never sent by anything else.
     /// </summary>
     public void Unsent(string session, int count)

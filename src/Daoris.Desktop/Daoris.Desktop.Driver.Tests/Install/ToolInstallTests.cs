@@ -5,14 +5,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A managed version, downloaded, verified, unpacked and laid out (TOOLS4, D121; the tools design §3.6, §3.7, §5):
-/// the one implementation's tables since PUSH1f2c (D194), when the CLI's twin, <c>toolinstall.ts</c>, left with
-/// <c>daoris tool</c>; a test named for the CLI names the twin it was held to. A download staged and published apart is
+/// A managed version, downloaded, verified, unpacked and laid out: the one implementation's tables. A download staged and published apart is
 /// <c>ToolDownloadsTests</c>'.
 /// </summary>
 /// <remarks>
-/// <para>Every archive is built in the test from a row's words (<see cref="Archive"/>, as the CLI's <c>_archives.ts</c> built
-/// them until PUSH1f2c), and nothing here reaches a network: a download is served by a stand-in that answers as a host
+/// <para>Every archive is built in the test from a row's words (<see cref="Archive"/>), and nothing here reaches a network: a download is served by a stand-in that answers as a host
 /// would.</para>
 /// </remarks>
 public sealed class ToolInstallTests : IDisposable
@@ -26,7 +23,7 @@ public sealed class ToolInstallTests : IDisposable
         try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    // ── An archive's refusals (§3.6). The CLI's `an archive unpacks, or is refused by its check…` ──────────────
+    // ── An archive's refusals──────────────
 
     [Theory]
     [InlineData("a zip that unpacks", "zip", "bin/pwsh.exe=pwsh; bin/README=read me; docs/", "", "bin/pwsh.exe", null)]
@@ -191,7 +188,7 @@ public sealed class ToolInstallTests : IDisposable
         }
     }
 
-    // ── Which version, and whether anything is fetched (§3.7). The CLI's `a plan says which version…` ──────────────
+    // ── Which version, and whether anything is fetched──────────────
 
     [Theory]
     [InlineData("download the newest the lists name", null, Lists, "", "download", null, "2.63.0", true, null, null)]
@@ -244,7 +241,7 @@ public sealed class ToolInstallTests : IDisposable
         Assert.Equal("no list names PowerShell 2.64.0 for win-x64", ToolInstall.Plan(Home, MergedOf(Lists), "pwsh", "download", "2.64.0").Problem);
     }
 
-    // ── A download (§3.6). The CLI's `a download is verified, staged and laid out…` ──────────────────────────────────
+    // ── A download──────────────────────────────────
 
     /// <summary>The archive a download row serves, and the offer a list makes of it — the CLI's <c>offerOf</c>.</summary>
     private static (OfferedVersion Offered, Dictionary<string, object> Answers) OfferOf(string kind, string addresses)
@@ -381,7 +378,7 @@ public sealed class ToolInstallTests : IDisposable
         Assert.Equal(lookMilliseconds, ToolInstall.LookBound.TotalMilliseconds);
     }
 
-    // ── Deleting a version (§3.6). The CLI's `a version is deleted only when nothing uses it…` ──────────────────────
+    // ── Deleting a version──────────────────────
 
     [Theory]
     [InlineData("a version nothing uses", null, true, "2.62.0", null)]
@@ -410,7 +407,7 @@ public sealed class ToolInstallTests : IDisposable
         }
     }
 
-    // ── Look for updates (§3.7). The CLI's `a location is looked at as the driver looks…` ──────────────────────────
+    // ── Look for updates──────────────────────────
 
     private const string Location = "https://lists.example/resources.json";
 

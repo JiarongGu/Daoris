@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a line's counts, parts and go-ons are read through below the course (CONTEXTDRIVE1b, CONTEXTDRIVE1i): the brief and the
+/// What a line's counts, parts and go-ons are read through below the course: the brief and the
 /// supervisor's print read them; the course installs it when the driver loads (<c>Course/LineFactsWiring.cs</c>).
 /// </summary>
 internal interface ILineFactsReads

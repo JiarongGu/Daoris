@@ -5,11 +5,11 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>The plugin's first line to the relay, checked whole against its closed schema (the event hook design §6.1 step 3).</summary>
+/// <summary>The plugin's first line to the relay, checked whole against its closed schema.</summary>
 public sealed record RelayFirst(string Run, long Seq, int Grammar, string Build);
 
 /// <summary>
-/// One <c>work/event</c> frame the relay read and checked against <see cref="WorkEventGrammar"/> (§6.1 step 4): made only by
+/// One <c>work/event</c> frame the relay read and checked against <see cref="WorkEventGrammar"/>: made only by
 /// <see cref="RelayChecks.Frame"/>, so a sentence built from one holds nothing but ids in their minted shapes, closed codes and counts.
 /// </summary>
 public sealed class RelayFrame
@@ -30,7 +30,7 @@ public sealed class RelayFrame
 }
 
 /// <summary>
-/// What the relay takes from its pipe and its arguments, each checked before any of it is used (EVENTHOOK1c; §6.1 steps 3 to 5, §8): a
+/// What the relay takes from its pipe and its arguments, each checked before any of it is used: a
 /// value that fails is refused whole and never printed.
 /// </summary>
 public static class RelayChecks

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One door's sheet (COAGENT1 §3; the agent-provider design §2.4): what a session on it can do, each capability with its value and the
+/// One door's sheet: what a session on it can do, each capability with its value and the
 /// source it is known by, or absent with the fallback that applies. Plain values, read by the roster's answer, the terminal's list and
 /// the room; <c>Sheet.Of</c> makes it from the contract, a pure read.
 /// </summary>
@@ -20,7 +20,7 @@ public sealed record AgentCapabilities(string Door, string Transport, IReadOnlyL
 }
 
 /// <summary>
-/// One capability of a sheet: its value and the source it is known by, the evidence and where it applies, or absent (COAGENT1 §3.1).
+/// One capability of a sheet: its value and the source it is known by, the evidence and where it applies, or absent.
 /// Absent is a statement: its <see cref="Fallback"/> applies, and silence never reads as support.
 /// </summary>
 /// <param name="Capability">Its closed name, one of <see cref="SheetCapability"/>'s.</param>
@@ -39,7 +39,7 @@ public sealed record SheetRow(string Capability, string? Value, string Source, s
     public const string No = "no";
 }
 
-/// <summary>The sheet's capabilities by their closed names, in the order a sheet lists them (COAGENT1 §3.2).</summary>
+/// <summary>The sheet's capabilities by their closed names, in the order a sheet lists them.</summary>
 public static class SheetCapability
 {
     /// <summary>Its transport: <c>protocol</c> or <c>native</c>.</summary>

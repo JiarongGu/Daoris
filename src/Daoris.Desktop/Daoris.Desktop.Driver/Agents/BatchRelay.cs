@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What a session produces, batched per session on a short timer for whoever is showing it — the
-/// mechanics <see cref="ConsoleRelay"/> (lines) and <see cref="EventRelay"/> (events, D76) share.
+/// mechanics <see cref="ConsoleRelay"/> (lines) and <see cref="EventRelay"/> (events) share.
 /// </summary>
 /// <remarks>
 /// <para><b>Batched, deliberately.</b> One message per item is the obvious shape and the wrong one: a
@@ -90,7 +90,7 @@ public sealed class BatchRelay<T> : IDisposable
             catch (Exception)
             {
                 // A reader that is not listening is not a failure, and a driver that stopped capturing
-                // because a window closed would be. The source still holds what was said.
+                // because a window closed would be. The source still holds what is said.
             }
         }
     }
@@ -113,7 +113,7 @@ public sealed class BatchRelay<T> : IDisposable
 }
 
 /// <summary>
-/// A session's events, batched live for whoever is showing its conversation (D76, CONV1) — the
+/// A session's events, batched live for whoever is showing its conversation — the
 /// console's relay, for the record's events.
 /// </summary>
 public sealed class EventRelay(

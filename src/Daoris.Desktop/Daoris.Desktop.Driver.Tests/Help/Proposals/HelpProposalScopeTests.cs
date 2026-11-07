@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// ASKSCOPE1c (D158's ASKSCOPE1 note point 5): a proposal is judged against the workspace its conversation is bound to before its
+/// A proposal is judged against the workspace its conversation is bound to before its
 /// kind judges it. One naming another workspace, a repository of another, or every workspace at once is refused and says so; one
 /// naming its own is judged as before. A conversation bound to none, <c>default</c>'s room's, proposes for the whole machine.
 /// </summary>
@@ -25,7 +25,7 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
         new(scope, id, [new HistoryUnitPlan(kind, id, workspace) { Quests = [id], Bytes = new HistoryBytes(1024, 0, 0, 0, 0) }]);
 
     /// <summary>
-    /// <c>engine</c> is <c>alpha</c>'s, <c>game</c> is <c>beta</c>'s. ASKSCOPE1c2: each has a quest, an ask and a session, as each
+    /// <c>engine</c> is <c>alpha</c>'s, <c>game</c> is <c>beta</c>'s. Each has a quest, an ask and a session, as each
     /// kind's facts read them: the delete's and a go's records, the pause's works, the clear's plans, and the sessions where
     /// Sessions' list places them.
     /// </summary>
@@ -75,7 +75,7 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
             new SessionGrouping("sb2beta0", SessionGroup.Review, "review"),
             new SessionGrouping("sx9nowhere", SessionGroup.Ended, "completed"),
         ],
-        // ASKSCOPE1c3: a retry's quest, parked for alpha's repository and held for beta's.
+        // A retry's quest, parked for alpha's repository and held for beta's.
         Parked = [new ParkedQuest("qa1alpha", "engine")],
         Held = [new HeldQuest("qb1beta0", "game", "sb1beta0")],
     };
@@ -161,7 +161,7 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// 🔴 ASKSCOPE1c2: a proposal naming a record by its id is judged against the workspace that record is filed under, as the
+    /// A proposal naming a record by its id is judged against the workspace that record is filed under, as the
     /// facts its kind reads hold it. A delete, an accept, a pause, a clear and an archive of <c>beta</c>'s quest, ask or session,
     /// and a go to one of them, are refused from <c>alpha</c>'s conversation, naming the record and its workspace.
     /// </summary>
@@ -188,7 +188,7 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// 🔴 ASKSCOPE1c3: <c>ended</c> archives the conversation's workspace's ended sessions alone, and the list's kept counts are its
+    /// <c>ended</c> archives the conversation's workspace's ended sessions alone, and the list's kept counts are its
     /// own; a placed row no record files is excluded under a circle, and nothing is filtered under none.
     /// </summary>
     [Fact]
@@ -206,7 +206,7 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// 🔴 ASKSCOPE1c3: a retry names a quest by its repository's workspace, so another workspace's parked or held quest is refused,
+    /// A retry names a quest by its repository's workspace, so another workspace's parked or held quest is refused,
     /// and its own is judged as before. A quest in neither list names nothing, and its kind refuses it.
     /// </summary>
     [Fact]
@@ -228,7 +228,7 @@ public sealed class HelpProposalScopeTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// ASKSCOPE1c2: a record of the conversation's own workspace is judged by its kind as before, and accepted where its kind
+    /// A record of the conversation's own workspace is judged by its kind as before, and accepted where its kind
     /// accepts it. A record not found names no workspace, so its kind's own refusal is said, as before: the scope fails open there.
     /// </summary>
     [Fact]

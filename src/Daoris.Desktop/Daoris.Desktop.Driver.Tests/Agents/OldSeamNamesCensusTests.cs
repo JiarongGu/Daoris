@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1t's census of the old seam's names: the registry is made of providers alone and a reader asks a door's record, its
+/// Census of the adapter seam's names: the registry is made of providers alone and a reader asks a door's record, its
 /// provider's parts or the account agent, so no source names the adapter seam (<c>ISessionAdapter</c>, its one implementer
 /// <c>LegacyDoor</c>, its table <c>AdapterTable</c> or the <c>AdapterSet</c> before it), the toolchain (<c>HarnessToolchain</c>, whose program
 /// is a <c>ToolSpec</c> and whose accounts are the <c>AccountAgent</c>'s, nor its converters <c>ToolSpecs</c>, <c>PoolFacts.Of</c> and

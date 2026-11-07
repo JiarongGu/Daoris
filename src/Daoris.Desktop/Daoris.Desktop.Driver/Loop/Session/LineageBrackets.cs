@@ -34,7 +34,7 @@ internal sealed class LineageBrackets(string home, SessionProcesses processes, S
         return process;
     }
 
-    /// <summary>A process's end once its exit was read and its capture drained: clean, or killed, stopped or failed.</summary>
+    /// <summary>A process's end once its exit is read and its capture drained: clean, or killed, stopped or failed.</summary>
     public void Ended(string sessionId, string proc, int? exitCode) =>
         ChildLineage.End(home, sessionId, clean: exitCode == 0 && processes.StopMade(sessionId) is null, DateTimeOffset.UtcNow, proc);
 

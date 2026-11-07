@@ -3,8 +3,8 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The files at a checkout's top that <see cref="SelfDescription"/> reads (D77), read from the disk (STRUCT3e): whether a
-/// file of a name, or one matching a pattern, is there, and the top of a file, LF only. Read, never written (D32), and no
+/// The files at a checkout's top that <see cref="SelfDescription"/> reads, read from the disk: whether a
+/// file of a name, or one matching a pattern, is there, and the top of a file, LF only. Read, never written, and no
 /// walk of the tree.
 /// </summary>
 public static class SelfDescriptionFiles

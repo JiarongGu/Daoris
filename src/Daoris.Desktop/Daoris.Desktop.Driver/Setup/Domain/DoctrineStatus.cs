@@ -13,9 +13,9 @@ public static class DoctrineUpdates
 }
 
 /// <summary>
-/// What the doctrine tool's <c>status --json</c> says of a checkout against the canon it carries (the context-one design §3 A, D230 point 2),
+/// What the doctrine tool's <c>status --json</c> says of a checkout against the canon it carries,
 /// read field by field from its answer: whether the canon moved and by how many files, the keeps it reopened, and a lock a newer canon wrote.
-/// The tool judges, and nothing here judges again: no copy of D19's table (D117).
+/// The tool judges, and nothing here judges again: no copy of its table.
 /// </summary>
 public sealed record DoctrineStatus
 {
@@ -44,7 +44,7 @@ public sealed record DoctrineStatus
     /// <summary>The version of the newer canon that wrote the lock, which the tool never rolls back; null where none did.</summary>
     public string? NewerLock { get; init; }
 
-    /// <summary>Whether a reconcile is offered (the design §3 B): the canon moved, or a keep reopened, over a lock this tool may read.</summary>
+    /// <summary>Whether a reconcile is offered: the canon moved, or a keep reopened, over a lock this tool may read.</summary>
     public bool Offers => Synced && NewerLock is null && (Update is not null || Reopened > 0);
 
     /// <summary>The tool's answer read, or null where what it printed is no status.</summary>

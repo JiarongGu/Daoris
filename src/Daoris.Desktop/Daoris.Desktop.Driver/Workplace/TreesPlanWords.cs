@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The words of the <c>trees</c> reads (RPC1b2, RPCOPEN1, the terminal RPC design §7.3): the clean-up's and the sync's lists and each
+/// The words of the <c>trees</c> reads: the clean-up's and the sync's lists and each
 /// plan, one function per read, shared by the alone path and the routes that answer the read (<c>said</c>), so the verb that is
 /// the running Daoris's client prints what the alone path prints. Each takes the record the read's core returns; nothing here
 /// runs git or asks the service, except <see cref="LandPlanAsync"/>, which asks the landing's own two reads as the verb does.
@@ -9,11 +9,11 @@ namespace Daoris.Driver;
 public static class TreesPlanWords
 {
     /// <summary>
-    /// <c>trees clean</c>'s list: each session branch with what it holds and the doors offered beside a kept one (LAND4), the branches
+    /// <c>trees clean</c>'s list: each session branch with what it holds and the doors offered beside a kept one, the branches
     /// landings made, and what <c>--yes</c> would remove; or that there is nothing to clean.
     /// </summary>
     /// <param name="records">The sessions' records, read only where a kept branch's row could offer its landing; none otherwise.</param>
-    /// <param name="now">The moment a landed row's age is counted to (LANDRETIRE1 part 2); now where none is given.</param>
+    /// <param name="now">The moment a landed row's age is counted to; now where none is given.</param>
     public static TreesSaid CleanPlan(SweepPlan plan, IReadOnlyList<SessionRecord> records, TreesAsk ask, DateTimeOffset? now = null)
     {
         now ??= DateTimeOffset.UtcNow;
@@ -30,11 +30,11 @@ public static class TreesPlanWords
             if (SessionBranchDoors.RemovalOffered(item) is { } offer) said.Add($"         {offer}");
         }
 
-        // The branches landings made (WSR5), in a group of their own: each goes where its work reached the line.
+        // The branches landings made, in a group of their own: each goes where its work reached the line.
         if (plan.Landed.Count > 0) said.Add("  landed branches — each goes once its work reads on the line:");
         foreach (var item in plan.Landed)
         {
-            // LANDRETIRE1 part 2: a row the line does not hold says how long it has stood and whether its quest closed, and the door
+            // A row the line does not hold says how long it has stood and whether its quest closed, and the door
             // that withdraws it stands under it, as a session branch's doors do.
             said.Add($"  {(item.Removable ? "goes " : "kept ")} {LandedWords.Describe(item)}{LandedWords.Standing(item, now.Value)}");
             if (LandedWords.Door(item) is { } door) said.Add($"         {door}");
@@ -48,7 +48,7 @@ public static class TreesPlanWords
     }
 
     /// <summary>
-    /// <c>trees sync</c>'s list: what was not fetched, said once and first (WSR7), each line, branch and landed branch, the repositories
+    /// <c>trees sync</c>'s list: what is not fetched, said once and first, each line, branch and landed branch, the repositories
     /// left apart, and what <c>--yes</c> would change.
     /// </summary>
     public static TreesSaid SyncPlan(SyncPlan plan, TreesAsk ask, DateTimeOffset now)
@@ -66,16 +66,16 @@ public static class TreesPlanWords
         return new(said, [], 0);
     }
 
-    /// <summary>What accepting a session would do, in one line — who pushes it where a plugin does, and what would refuse it (D100).</summary>
+    /// <summary>What accepting a session would do, in one line — who pushes it where a plugin does, and what would refuse it.</summary>
     public static string Planned(string session, LandingPlan plan)
     {
-        // ACCEPTALL1g: a branch that already stands (an entry's or a chain's) is moved on, and its pull request grows, as the review says.
+        // A branch that already stands (an entry's or a chain's) is moved on, and its pull request grows, as the review says.
         var line = plan.Stands
             ? $"trees: accepting `{session}` would add its work to `{plan.Target}`, a branch that already stands, moving it on ({plan.Source})"
             : $"trees: accepting `{session}` would {(plan.Form == LandingForm.Branch ? "put its work on the branch" : "merge its work into")} `{plan.Target}` ({plan.Source})";
         if (plan.Plugin is { } plugin) line += plan.Stands ? $", then plugin `{plugin}` would push it to grow its pull request" : $", then plugin `{plugin}` would push it and open the pull request";
         line += ".";
-        // LAND2b: the rule's switch lands it at its quest's done with no press, and a plugin it cannot use does not stop the branch.
+        // The rule's switch lands it at its quest's done with no press, and a plugin it cannot use does not stop the branch.
         if (plan.AutoAccept) line += " The rule accepts automatically, so its quest's done lands it with no press.";
         return plan.Problem is { } problem
             ? $"{line} {(plan.AutoAccept ? "Its push would not be tried now" : "It would be refused now")}: {problem}"
@@ -83,14 +83,14 @@ public static class TreesPlanWords
     }
 
     /// <summary>
-    /// <c>trees land &lt;session&gt; --plan</c> for a session whose review reads as landed (REVIEW2, D113): why, which lands nothing again.
+    /// <c>trees land &lt;session&gt; --plan</c> for a session whose review reads as landed: why, which lands nothing again.
     /// </summary>
     public static TreesSaid LandedPlan(string session, LandedReview before) =>
         new([$"trees: {LandedReviewWords.Describe(session, before)}"], [], 0);
 
     /// <summary>
     /// <c>trees land &lt;session&gt; --plan</c>: where accepting would put the work, what the line already holds of it, the work it holds by
-    /// content (SQUASHTIDY1f), what the gate says before the press, the review's reading of an earlier landing, and where it is due.
+    /// content, what the gate says before the press, the review's reading of an earlier landing, and where it is due.
     /// </summary>
     /// <param name="pluginLines">A plugin's own lines said while the plan was made, first, as the alone path says them as they come.</param>
     public static async Task<TreesSaid> LandPlanAsync(
@@ -98,11 +98,11 @@ public static class TreesPlanWords
         IReadOnlyList<string> pluginLines, CancellationToken ct = default)
     {
         var said = new List<string>(pluginLines) { Planned(session, plan) };
-        // LANDSYNC1: what the press would leave out because the line holds it, judged against the last fetch.
+        // What the press would leave out because the line holds it, judged against the last fetch.
         said.AddRange(LandingSyncWords.Plan(plan));
-        // SQUASHTIDY1f: work the line holds by content, which the press refuses, said before it in the press's own sentence.
+        // Work the line holds by content, which the press refuses, said before it in the press's own sentence.
         if (await landing.DiscardOfferAsync(tree, ct).ConfigureAwait(false) is { } carried) said.Add($"trees: {carried.NotLanded}");
-        // What the gate says before the press (the second-agent design §8.6, the review design §3.5): what holds it, or what let it go.
+        // What the gate says before the press: what holds it, or what let it go.
         said.AddRange(gate.PlanLines());
         // Landed before, its branch gone since, its tree still here: said, as the review's note says it.
         if (before is not null) said.Add($"trees: {LandedReviewWords.Describe(session, before)}");
@@ -110,7 +110,7 @@ public static class TreesPlanWords
     }
 
     /// <summary>
-    /// What an entry's Accept would do, in lines (ACCEPTALL1e): where its parts land, then each part's own words: what it shares,
+    /// What an entry's Accept would do, in lines: where its parts land, then each part's own words: what it shares,
     /// what it leaves out, what it conflicts with, what holds it and what a later part superseded; the page's plan in a terminal's words.
     /// </summary>
     public static IEnumerable<string> EntryPlanned(SessionEntry entry, EntryPlan plan, IReadOnlyDictionary<string, string> held)

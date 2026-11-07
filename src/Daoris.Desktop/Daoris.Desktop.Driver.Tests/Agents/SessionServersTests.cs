@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LAUNCHCHAIN1: a server a session is handed starts as one node, its package's own script, never through <c>npx</c> or a
+/// A server a session is handed starts as one node, its package's own script, never through <c>npx</c> or a
 /// <c>cmd</c>; the package is resolved once into the toolchain, and the harness's file names the same direct command. An agent npm
 /// installed starts the same way, as its node and script, never its <c>.cmd</c> shim.
 /// </summary>

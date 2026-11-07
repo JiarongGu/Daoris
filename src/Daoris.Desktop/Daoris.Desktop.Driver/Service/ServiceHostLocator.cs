@@ -13,7 +13,7 @@ public sealed record HostLocation(string Executable, string WorkingDirectory);
 /// Where the service's HTTP host lives on this machine — the shell's question when it starts and
 /// nothing is answering yet. Ordered: what the person said, then what the install carries (the host
 /// `desktop-publish --service` puts beside the shell), then the installed home (`$DAORIS_HOME/bin`,
-/// the service publish's landing place — D63: its packaged folder, then a legacy flat binary), then the
+/// the service publish's landing place: its packaged folder, then a flat binary), then the
 /// workspace build for development.
 /// </summary>
 /// <remarks>
@@ -28,7 +28,7 @@ public static class ServiceHostLocator
         OperatingSystem.IsWindows() ? "daoris-knowledge-http.exe" : "daoris-knowledge-http";
 
     /// <summary>Every place worth looking, in the order they deserve trust.</summary>
-    /// <param name="home">The Daoris home (D63), or null on a machine with none — then there is no installed home to look in.</param>
+    /// <param name="home">The Daoris home, or null on a machine with none — then there is no installed home to look in.</param>
     public static IReadOnlyList<HostLocation> Candidates(string? explicitPath, string? home, string baseDirectory)
     {
         var candidates = new List<HostLocation>();
@@ -40,12 +40,9 @@ public static class ServiceHostLocator
         // A DEPLOYED shell carries its own host with it (`desktop-publish --service`), and an install
         // folder has no workspace below to fall through to.
         //
-        // 🔴 Ranked ABOVE the machine's installed home, and it was the other way round once, with a
-        // reason: the home's `bin/` is upgraded once for every shell on the machine, so a deployed copy
-        // outranking it would make a service upgrade invisible. The second deployment showed the
-        // inverse and it was worse: `--service` published a NEWER host beside the shell, the shell
-        // spawned the OLDER machine-wide one, and the window served a bundle that existed nowhere on
-        // disk but there. What the install carries is what it runs — the install's own upgrade path
+        // 🔴 Ranked ABOVE the machine's installed home: ranked below it, `--service` would publish a
+        // NEWER host beside the shell, the shell would spawn the OLDER machine-wide one, and the window
+        // would serve a bundle that exists nowhere on disk but there. What the install carries is what it runs — the install's own upgrade path
         // lands here, in one command with the shell — and a shell published without `--service` still
         // falls through to the machine's home next.
         //
@@ -64,15 +61,15 @@ public static class ServiceHostLocator
 
             // 🔴 Where the installer actually puts it. `service-publish --install` gives the HTTP host a
             // directory of its own because its `wwwroot` must travel BESIDE the executable, while the
-            // MCP host installs flat. Looking only flat made a correctly installed host invisible —
+            // MCP host installs flat. Looking only flat would miss a correctly installed host —
             // masked on every developer machine by the workspace candidate below, and fatal on a
-            // deployed one, which has no workspace to fall through to. Found by deploying.
+            // deployed one, which has no workspace to fall through to.
             var packaged = Path.Combine(bin, "daoris-knowledge-http", ExecutableName);
             candidates.Add(new(packaged, Path.GetDirectoryName(packaged)!));
 
-            // 🔴 LEGACYHOST1: the flat executable is the LEGACY layout, so it ranks BELOW the packaged one.
+            // 🔴 The flat executable is the LEGACY layout, so it ranks BELOW the packaged one.
             // A republish replaces only the packaged folder and never touches an older flat binary and its
-            // `wwwroot` beside it; ranked first, that stale pair kept running after every refresh. The
+            // `wwwroot` beside it; ranked first, that stale pair would keep running after every refresh. The
             // choice is ranking, not retiring: the publish stays out of files it did not write, and a
             // flat host with nothing packaged is still found. Naming a path (above) is the way to run
             // a specific host.

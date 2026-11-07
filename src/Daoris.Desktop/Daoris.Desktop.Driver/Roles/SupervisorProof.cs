@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The holder key (SUPERVISOR1a-ii, D208 point 2; the supervisor design §2.2): 32 random bytes the window draws at an appointment and
+/// The holder key: 32 random bytes the window draws at an appointment and
 /// puts in the environment of the one terminal it starts for the holder, as <see cref="Variable"/>, in hex. Daoris keeps only its
 /// SHA-256, in memory alone; no file, page or pipe ever carries the key.
 /// </summary>
@@ -17,8 +17,8 @@ namespace Daoris.Driver;
 public static class HolderKey
 {
     /// <summary>
-    /// The variable the holder's terminal carries the key in, and the only place the verb reads it from: <c>DAORIS_ROLE_KEY</c> since
-    /// STEWARDROLE1a-i (D209 §2.2), since a shared holder's key is no one role's. No install held the old name.
+    /// The variable the holder's terminal carries the key in, and the only place the verb reads it from: <c>DAORIS_ROLE_KEY</c>,
+    /// since a shared holder's key is no one role's.
     /// </summary>
     public const string Variable = ChildMarks.RoleKeyVariable;
 
@@ -41,7 +41,7 @@ public static class HolderKey
     }
 
     /// <summary>
-    /// A Daoris executable's first act (§2.2): the variable taken out of this process's environment, so no start it builds afterwards
+    /// A Daoris executable's first act: the variable taken out of this process's environment, so no start it builds afterwards
     /// copies it, whatever that start does with its own block. The inbox's two messaging variables leave with it
     /// (<see cref="ChildMarks.MessagingVariables"/>).
     /// </summary>
@@ -53,27 +53,27 @@ public static class HolderKey
 
     /// <summary>
     /// The verb's first act: the variable read into memory, then removed from the environment as <see cref="Strip"/> removes it. Only
-    /// <c>sessions supervise</c> asks for what was taken (<see cref="Taken"/>).
+    /// <c>sessions supervise</c> asks for what is taken (<see cref="Taken"/>).
     /// </summary>
     public static void Take()
     {
         _taken = Environment.GetEnvironmentVariable(Variable);
-        // STEWARDROLE1a-i (D209 §2.2): present at the entry, whatever its value and whether or not it is a key.
+        // Present at the entry, whatever its value and whether or not it is a key.
         TerminalRole.Held = _taken is not null;
         Strip();
     }
 
     /// <summary>
-    /// What <see cref="Take"/> read, let go by a verb that holds no key for its life (the events relay, its design §6.1 step 1); the entry's
+    /// What <see cref="Take"/> read, let go by a verb that holds no key for its life (the events relay); the entry's
     /// marker stays, so a role's terminal is still known as one.
     /// </summary>
     public static void Drop() => _taken = null;
 
-    /// <summary>What <see cref="Take"/> read, or null where the variable was not set.</summary>
+    /// <summary>What <see cref="Take"/> read, or null where the variable is not set.</summary>
     public static string? Taken => _taken;
 
     /// <summary>
-    /// The entry's marker (STEWARDROLE1a-i, D209 §2.2, §3.3): that the variable was present when <see cref="Take"/> ran, whatever its
+    /// The entry's marker: that the variable is present when <see cref="Take"/> runs, whatever its
     /// value, so this process started in a role's terminal. Every guard reads this, never the environment after the entry, which
     /// <see cref="Take"/> has already emptied.
     /// </summary>
@@ -88,7 +88,7 @@ public static class HolderKey
 }
 
 /// <summary>
-/// A role's terminal never acts as the owner nor alone (STEWARDROLE1a-i, D209 §3.3): in a process whose entry found
+/// A role's terminal never acts as the owner nor alone: in a process whose entry found
 /// <see cref="HolderKey.Variable"/> present, every verb that would send a person's press refuses <see cref="Code"/> before it connects,
 /// and every verb that would act from its own process refuses it instead, exit 2.
 /// </summary>
@@ -101,7 +101,7 @@ public static class RoleTerminal
     public const string Sentence = TerminalRole.Sentence;
 
     /// <summary>
-    /// The verbs a role's terminal runs at all (§2.2's start line, each by its exact prefix): the roles' verbs and the open reads the
+    /// The verbs a role's terminal runs at all (each by its exact prefix): the roles' verbs and the open reads the
     /// holder needs. Any other verb is refused at the entry; these refuse their own alone paths (<see cref="InstanceDoor"/>).
     /// </summary>
     public static bool Runs(IReadOnlyList<string> args) => args switch
@@ -130,16 +130,16 @@ public static class RoleTerminal
     }
 }
 
-/// <summary>The supervisor's routes (SUPERVISOR1a-ii; the supervisor design §3.1, §2.3), as the bridge's driver module names them.</summary>
+/// <summary>The supervisor's routes, as the bridge's driver module names them.</summary>
 public static class SupervisorRoutes
 {
     /// <summary>The holder's answer: <c>Role</c> in the pipe's census, judged by the judge's role method.</summary>
     public const string Answer = "SUPERVISOR_ANSWER";
 
-    /// <summary>The holder's leaving a question to the owner (SUPERVISOR1b): <c>Role</c>, judged as the answer is.</summary>
+    /// <summary>The holder's leaving a question to the owner: <c>Role</c>, judged as the answer is.</summary>
     public const string Defer = "SUPERVISOR_DEFER";
 
-    /// <summary>The holder's course on a point a person's <c>refer</c> rule holds a line at (CONTEXTDRIVE1j): <c>Role</c>, judged as the answer is.</summary>
+    /// <summary>The holder's course on a point a person's <c>refer</c> rule holds a line at: <c>Role</c>, judged as the answer is.</summary>
     public const string Course = "SUPERVISOR_COURSE";
 
     /// <summary>The role's acts, each judged by the judge's role method and nothing else.</summary>
@@ -150,8 +150,8 @@ public static class SupervisorRoutes
 }
 
 /// <summary>
-/// <c>SUPERVISOR_ANSWER</c>'s exact form (§3.1): <c>{ id, question, generation, proof, choice, reasons }</c>, every field named once
-/// (ignoring case, as the bridge reads names), of its type and bound, and nothing else, as D201's forms are; <c>reasons</c> 1 to 5,
+/// <c>SUPERVISOR_ANSWER</c>'s exact form: <c>{ id, question, generation, proof, choice, reasons }</c>, every field named once
+/// (ignoring case, as the bridge reads names), of its type and bound, and nothing else, as the other role forms are; <c>reasons</c> 1 to 5,
 /// each exactly <c>{ says: 1-300, source: 1-200 }</c>.
 /// </summary>
 public sealed record SupervisorForm(
@@ -175,7 +175,7 @@ public sealed record SupervisorForm(
 }
 
 /// <summary>
-/// <c>SUPERVISOR_DEFER</c>'s exact form (SUPERVISOR1b; §3.1): <c>{ id, question, generation, proof, bound, reasons }</c>, held as
+/// <c>SUPERVISOR_DEFER</c>'s exact form: <c>{ id, question, generation, proof, bound, reasons }</c>, held as
 /// <c>SUPERVISOR_ANSWER</c>'s is, <c>bound</c> one of <see cref="SupervisorBounds.All"/>. Its proof is over its own route's canonical
 /// bytes, so no answer's proof is a defer's, nor a defer's an answer's.
 /// </summary>
@@ -184,7 +184,7 @@ public sealed record SupervisorDeferForm(
 {
     public byte[] Canonical => SupervisorProof.Canonical(SupervisorRoutes.Defer, Id, Question, Generation, Bound, Reasons);
 
-    /// <summary>The form <paramref name="payload"/> is, or null where it is anything more or less, or names a bound §4.1 does not.</summary>
+    /// <summary>The form <paramref name="payload"/> is, or null where it is anything more or less, or names a bound the list does not.</summary>
     public static SupervisorDeferForm? Read(JsonElement? payload) =>
         SupervisorActs.Fields(payload, "bound", 40) is { } read && SupervisorBounds.Known(read.Chosen)
             ? new SupervisorDeferForm(read.Id, read.Question, read.Generation, read.Proof, read.Chosen, read.Reasons)
@@ -205,7 +205,7 @@ public interface ISupervisorAct
     byte[] Canonical { get; }
 }
 
-/// <summary>The role's two forms read alike (SUPERVISOR1b): every field named once, of its type and bound, and nothing else.</summary>
+/// <summary>The role's two forms read alike: every field named once, of its type and bound, and nothing else.</summary>
 public static class SupervisorActs
 {
     /// <summary>The act <paramref name="route"/> names, read from <paramref name="payload"/>; null for any other route or form.</summary>
@@ -272,7 +272,7 @@ public static class SupervisorActs
 }
 
 /// <summary>
-/// The holder's proof (SUPERVISOR1a-ii, D208 point 2; the supervisor design §2.2): an HMAC-SHA256 keyed by the key's SHA-256 over the
+/// The holder's proof: an HMAC-SHA256 keyed by the key's SHA-256 over the
 /// hello's nonce and the form's canonical bytes. The verb makes it from the key in its environment; the judge checks it against the hash
 /// in memory and the connection's nonce. The key never crosses the pipe.
 /// </summary>
@@ -292,7 +292,7 @@ public static class SupervisorProof
         Canonical(SupervisorRoutes.Answer, id, question, generation, choice, reasons);
 
     /// <summary>
-    /// <paramref name="route"/>'s canonical bytes (SUPERVISOR1b): its name first, so a proof over one act is never another's; then the
+    /// <paramref name="route"/>'s canonical bytes: its name first, so a proof over one act is never another's; then the
     /// form's fields but <c>proof</c> in its order, <paramref name="chosen"/> the answer's <c>choice</c> or the defer's <c>bound</c>.
     /// </summary>
     public static byte[] Canonical(

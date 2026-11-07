@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Link 8 of a watch's run (FABRIC-RUN1, PARALLEL1h): the evaluation runtime, begun after the plan on every wake it hears and at the look's
+/// Link 8 of a watch's run: the evaluation runtime, begun after the plan on every wake it hears and at the look's
 /// deadline and run beside the look, with the doors its units act through: an <c>integrate</c>'s door, a request's publish, a review's
 /// word, a <c>land</c>, a check's executor and a line's transport. Only where the loop holds a hook set; its passes write only where it
 /// holds the home's lease.
@@ -19,10 +19,10 @@ namespace Daoris.Driver;
 /// </remarks>
 internal sealed class WatchNodes
 {
-    /// <summary>The runtime's wake whose pass first runs the plugins' supervision: the awaited set it told changed (FABRIC-RUN1d).</summary>
+    /// <summary>The runtime's wake whose pass first runs the plugins' supervision: the awaited set it told changed.</summary>
     internal const string Awaited = "awaited";
 
-    /// <summary>What link 8 counts as acting (FABRIC-RUN1): an attempt sent or delivered again, an outcome applied, a retry made ready, a start.</summary>
+    /// <summary>What link 8 counts as acting: an attempt sent or delivered again, an outcome applied, a retry made ready, a start.</summary>
     private static readonly HashSet<string> Acted =
         new([PerformedWhat.Sent, PerformedWhat.Redelivered, PerformedWhat.Applied, PerformedWhat.Retry, PerformedWhat.Begun], StringComparer.Ordinal);
 
@@ -48,26 +48,26 @@ internal sealed class WatchNodes
         var home = watch.Home;
         var service = watch.Service;
 
-        // FABRIC-CLOSE1b: a closure graph arms it too, and its `quest.close` is sent through this loop's service client, the local host's close
-        // door. FABRIC-CLOSE1l: a quest is bound at its take, as its first session opens (Driver's start), never here.
+        // A closure graph arms it too, and its `quest.close` is sent through this loop's service client, the local host's close
+        // door. A quest is bound at its take, as its first session opens (Driver's start), never here.
         var nodes = Runtime = new NodeRuntime(new NodeRecordFiles(home), hooks, () => DateTimeOffset.UtcNow, () => HomeLease.HeldHere(home), service);
-        // DECIDE1c: what a run's review sends back is said on its work's session as Daoris's words, under their key, at its line's head.
+        // What a run's review sends back is said on its work's session as Daoris's words, under their key, at its line's head.
         nodes.Say = async (session, text, key, ct) =>
             (await WordsHead.FollowAsync(session, at => service.SayAsync(at, text, null, ct, from: DaorisWords.From, key: key)).ConfigureAwait(false)).Said;
 
-        // G8: where the pull request a plugin's step opened is written on its landing.
+        // Where the pull request a plugin's step opened is written on its landing.
         nodes.PullRequests = new PullRequestRecords(home);
 
-        // FABRIC-PIPELINE1d (the pipeline design §4.2): the heavy executor a check is handed to; its answer asks a pass, which reconciles it.
+        // The heavy executor a check is handed to; its answer asks a pass, which reconciles it.
         _executor = new HeavyExecutor(home, new VerifyWorld
         {
             Answered = (run, _) => watch.NodesWoken(RunUnits.IdOf(run)),
             Mapping = repository => HeavyMapping.For(DriverConfig.Load(DriverConfig.ResolvePath(home)), repository),
         });
 
-        // D247 §3.5: each starting kind builds its door from this loop's wiring, starting only where the loop holds the home's lease and never
-        // while an update drains (DRAINHOLD1). A run's `land` lands as the review's Accept lands it (WORKFLOWCLEAN1 1c); a unit's `integrate`
-        // asks the door a test hands, else the home's own (INTEGRATE1n, §17.4); a run's `request` publishes through this loop's service client.
+        // Each starting kind builds its door from this loop's wiring, starting only where the loop holds the home's lease and never
+        // while an update drains. A run's `land` lands as the review's Accept lands it; a unit's `integrate`
+        // asks the door a test hands, else the home's own; a run's `request` publishes through this loop's service client.
         var landingPlugins = new LandingPlugins(home, say: (plugin, line) => watch.Output?.Append($"plugin:{plugin}", line), pluginLog: hooks.Log);
         nodes.Doors = NodeDoors.Wired(new NodeDoorWiring(home, () => HomeLease.HeldHere(home) && !watch.DrainsNow())
         {
@@ -79,7 +79,7 @@ internal sealed class WatchNodes
             Requests = service,
         });
 
-        // INTEGRATE1g (the integration design §5.1, §17.4): the transport an open request's line is sent to, run off the pass beside the heavy
+        // The transport an open request's line is sent to, run off the pass beside the heavy
         // executor; a member's conflict told to its session through the say door, each step told to the log, and its answer asking a pass.
         _transport = new IntegrationTransport(home, new IntegrationTransportWorld
         {
@@ -95,7 +95,7 @@ internal sealed class WatchNodes
                 ("outcome", told.Outcome)),
             Said = said => Log?.Info("integration.said", ("said", said)),
             Answered = () => watch.NodesWoken("integration"),
-            // As the pass: only where this loop holds the home's lease, and never while an update drains (DRAINHOLD1).
+            // As the pass: only where this loop holds the home's lease, and never while an update drains.
             Runs = () => HomeLease.HeldHere(home) && !watch.DrainsNow(),
         });
         nodes.Lines = _transport;
@@ -109,15 +109,15 @@ internal sealed class WatchNodes
     private MachineLog? Log => _watch.Log;
 
     /// <summary>
-    /// Link 8 bound on the run's <paramref name="chain"/> (PARALLEL1h, D181 point 3): it begins the pass beside the look on the running set, so
+    /// Link 8 bound on the run's <paramref name="chain"/>: it begins the pass beside the look on the running set, so
     /// a read or a plugin that holds a pass holds no next look, and the closing loop waits for it as it waits for the sessions. A whole look's
-    /// ask is kept until a pass takes it. The runtime's own wakes and a plugin's step fire link 8 alone, beside whatever look runs
-    /// (FABRIC-RUN1d); one that fails is logged and the next wake or look passes again.
+    /// ask is kept until a pass takes it. The runtime's own wakes and a plugin's step fire link 8 alone, beside whatever look runs;
+    /// one that fails is logged and the next wake or look passes again.
     /// </summary>
     internal void Bind(Chain chain, System.Threading.Timer due, WatchDoors doors, CancellationToken ct)
     {
         _due = due;
-        // FABRIC-CUTOVER1d: a landing door's ask for a whole pass wakes link 8 alone, as the runtime's own wakes do; the pass that begins after
+        // A landing door's ask for a whole pass wakes link 8 alone, as the runtime's own wakes do; the pass that begins after
         // it takes it, reading the units afresh, and answers it once it ends.
         var asks = _asks = new PassAsks(() => _watch.NodesWoken("door"));
         chain.Bind(ChainRanks.Nodes, (heard, token) =>
@@ -148,8 +148,8 @@ internal sealed class WatchNodes
     }
 
     /// <summary>
-    /// The run's close of what link 8 runs off the pass: a check's job ends written no result, so the next loop's reconcile sends it again
-    /// (FABRIC-PIPELINE1d); then the line's run, whose cut candidate is the next come-up's to go on with (INTEGRATE1g).
+    /// The run's close of what link 8 runs off the pass: a check's job ends written no result, so the next loop's reconcile sends it again;
+    /// then the line's run, whose cut candidate is the next come-up's to go on with.
     /// </summary>
     internal async Task CloseAsync()
     {
@@ -164,7 +164,7 @@ internal sealed class WatchNodes
         var home = _watch.Home;
         var service = _watch.Service;
 
-        // DRAINHOLD1: a pass performs plugins' steps, starts their processes and acts on trees, none of which the drain waits on. A door
+        // A pass performs plugins' steps, starts their processes and acts on trees, none of which the drain waits on. A door
         // waiting on the pass is answered that none read; the whole look's ask and the awaited set's stay set for the pass after the drain.
         if (_watch.DrainsNow())
         {
@@ -178,15 +178,15 @@ internal sealed class WatchNodes
         NodeRuntimePass pass;
         try
         {
-            // FABRIC-RUN1d: a set naming a plugin anew starts its process here, with no plan, as the plan's supervision did at the look it
-            // woke; withdrawn first where the choices no longer arm the runtime (FABRIC-RUN1e), so it starts nothing for a removed graph.
+            // A set naming a plugin anew starts its process here, with no plan, as the plan's supervision does at the look it
+            // wakes; withdrawn first where the choices no longer arm the runtime, so it starts nothing for a removed graph.
             if (Interlocked.Exchange(ref _superviseAsked, 0) == 1 && !await Runtime.WithdrawAsync(_config(), token).ConfigureAwait(false))
             {
                 lines.AddRange(await _watch.Stages.TimeAsync("supervise", () => _hooks.ReconcileAsync(PluginCatalog.Load(home), token), beside: true)
                     .ConfigureAwait(false));
             }
 
-            // The pipeline design §4.3: at a whole look, each line a landed route verifies binds the run it owes before the pass, which reads it
+            // At a whole look, each line a landed route verifies binds the run it owes before the pass, which reads it
             // among the runs and so is armed by it.
             var config = _config();
             if (whole && LineBatching.Armed(config) && HomeLease.HeldHere(home))
@@ -200,16 +200,16 @@ internal sealed class WatchNodes
             {
                 Units = token => ReadNodeUnitsAsync(home, service, token),
                 Steps = () => [.. PluginCatalog.Load(home).Contributing.SelectMany(plugin => plugin.Manifest.Steps)],
-                // FABRIC-PERFORM1d: a receipt's role is what its plugin's manifest declares of its schema.
+                // A receipt's role is what its plugin's manifest declares of its schema.
                 Resources = plugin => PluginCatalog.Load(home).Contributing.FirstOrDefault(each => each.Manifest.Id == plugin)?.Manifest.Resources,
-                // FABRIC-PERFORM1i: an observed node's event is bound to its branch's tip read now, once per checkout per pass.
+                // An observed node's event is bound to its branch's tip read now, once per checkout per pass.
                 Tips = NodeTips.ReadAsync,
-                // FABRIC-RUN1b: the look's git reads for `pushed` and an ahead `pull-request`, asked only where one waits on them.
+                // The look's git reads for `pushed` and an ahead `pull-request`, asked only where one waits on them.
                 Remotes = NodeTips.RemotesAsync,
-                // FABRIC-RUN1c: D157's gates for a unit whose opinion or look waits, read as a landing door reads them; and a quest whose run
+                // The gates for a unit whose opinion or look waits, read as a landing door reads them; and a quest whose run
                 // is bound to a named version left to that version.
                 Gates = gates.ReadAsync,
-                // LANDNODE1k: what the line holds of a run's branch, where its `content.holds` waits.
+                // What the line holds of a run's branch, where its `content.holds` waits.
                 Content = gates.ContentAsync,
                 Bound = NodeRuntime.BoundIn(home),
             }, token), beside: true).ConfigureAwait(false);
@@ -226,17 +226,17 @@ internal sealed class WatchNodes
             throw;
         }
 
-        // FABRIC-CUTOVER1d: the doors that asked this pass read the runs' records it kept.
+        // The doors that asked this pass read the runs' records it kept.
         PassAsks.Done(asked, passed: true);
         Due(_due!, Runtime.NextDue);
         _watch.Passed?.Invoke(pass);
 
-        // A set naming a plugin anew wakes link 8 once more (FABRIC-RUN1d), whose supervision starts the process the start then goes to.
+        // A set naming a plugin anew wakes link 8 once more, whose supervision starts the process the start then goes to.
         if (pass.AwaitedChanged) _watch.NodesWoken(Awaited);
         var acted = pass.Performed.Count(done => Acted.Contains(done.What));
         if (acted > 0) Log?.Info("chain.fired", ("link", ChainRanks.Nodes), ("topic", ChangeTopics.Nodes), ("count", acted));
 
-        // The pipeline design §4.5: a failed verification whose check says `failed: ask` asks for its fix with no press, at a whole look.
+        // A failed verification whose check says `failed: ask` asks for its fix with no press, at a whole look.
         if (whole && LineBatching.Armed(_config()) && HomeLease.HeldHere(home))
         {
             try
@@ -254,7 +254,7 @@ internal sealed class WatchNodes
 
     /// <summary>
     /// The units a pass of the evaluation runtime reads (link 8's <see cref="NodeRuntimeLook.Units"/>), each repository's checkout the awaited
-    /// set names, and the tip of each branch a bound quest's chain worked (FABRIC-CLOSE1p).
+    /// set names, and the tip of each branch a bound quest's chain worked.
     /// </summary>
     /// <remarks>
     /// No roots go to the inventory: its recovery refs are its own entries, not a node's, and gathering them (a listing and a <c>rev-list</c> of
@@ -268,16 +268,16 @@ internal sealed class WatchNodes
         var unlinked = new List<string>();
         var registry = await service.RegistryAsync(token).ConfigureAwait(false);
         var units = await WorkUnits.ReadAsync(home, new Dictionary<string, string>(), new HashSet<string>(), service, unread, token, unlinked).ConfigureAwait(false);
-        // GITAUTH1c: the doors find a checkout's repository from the files alone, so the registry's roots are kept for them.
+        // The doors find a checkout's repository from the files alone, so the registry's roots are kept for them.
         GitFolders.Remember(home, registry.Where(repo => repo.Root is { Length: > 0 }).Select(repo => (repo.Root!, repo.Repository, repo.Workspace)));
         var roots = registry.Where(repo => repo.Root is { Length: > 0 }).GroupBy(repo => repo.Repository, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => group.First().Root!, StringComparer.Ordinal);
-        // FABRIC-CUTOVER1c (the cutover design §2.3): why the work's attribution was not read travels with the units, so a run's branch is never
+        // Why the work's attribution is not read travels with the units, so a run's branch is never
         // handed to Current on a link the outage dropped.
         return new NodeUnitsRead(units, roots) { Tips = await QuestClosing.TipsAsync(units, roots, token).ConfigureAwait(false), Unread = unlinked };
     }
 
-    /// <summary>What a person reads of a pass (FABRIC-RUN1): each attempt sent, answered, retried, unknown or held, and what the pass said.</summary>
+    /// <summary>What a person reads of a pass: each attempt sent, answered, retried, unknown or held, and what the pass said.</summary>
     internal static IReadOnlyList<string> NodeRuntimeLines(NodeRuntimePass pass) =>
     [
         .. pass.Performed
@@ -288,7 +288,7 @@ internal sealed class WatchNodes
     ];
 
     /// <summary>
-    /// The next timer the node records persist, set to wake a plan at its moment (FABRIC-RUN1). A moment already past is left to the look's
+    /// The next timer the node records persist, set to wake a plan at its moment. A moment already past is left to the look's
     /// deadline: the pass that just ran judged everything due then, so waking again at once would only spin on what it could not act on.
     /// </summary>
     internal static void Due(System.Threading.Timer timer, DateTimeOffset? at)

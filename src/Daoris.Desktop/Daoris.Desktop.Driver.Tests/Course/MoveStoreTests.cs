@@ -5,19 +5,19 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-i part 1 (D212; the foundation design §3.3, §13.3's family <i>The course</i>, §13.4, §13.5, §19.1): the move record in the
-/// desktop store, read by nothing. A move's one row in <c>moves</c>, its words in transfer in <c>move_words</c>; one standing move per record
+/// The move record in the
+/// desktop store. A move's one row in <c>moves</c>, its words in transfer in <c>move_words</c>; one standing move per record
 /// left by the partial unique index <c>moves_standing</c>, so of two executors deciding a move of one line the second finds the first's row;
 /// the claim by the process run that makes it, taken only from a run dead by the lease's own test and then once, its generation raised;
 /// every phase and effect written under the claim's check inside its own transaction; an ended move kept as evidence while the record's next
-/// move claims a new row; and the record's moves deleted with it. Part 3 adds the moved words' <c>sent</c>, <c>delivered</c> only once every
+/// move claims a new row; and the record's moves deleted with it; the moved words' <c>sent</c>, <c>delivered</c> only once every
 /// word has it, a hold's words by their disposition, the destination's standing move and the person's press.
 /// </summary>
 /// <remarks>
 /// Every case has its own scratch home under <c>_fixtures/</c> and sets no variable of the process's environment. One process is one run to
 /// the lease's test, so "another process" here is a second move store under a run of its own, writing through its own connection; a dead run
 /// is either the liveness the case hands in or a run row the case plants with an id no process has, the lease's own test then reading it. A
-/// really killed executor is part 2's. Nothing here starts a process, a window or an agent.
+/// really killed executor is <see cref="MoveClaimProcessTests"/>'. Nothing here starts a process, a window or an agent.
 /// </remarks>
 [Collection("agent operation ports")]
 public sealed class MoveStoreTests : IDisposable
@@ -401,7 +401,7 @@ public sealed class MoveStoreTests : IDisposable
     private MoveStore Kinded(string run, string kind, Func<StoreRun, bool>? alive = null) => new(_home, () => StoreSettled.Yes, alive, run, kind);
 
     /// <summary>
-    /// 🔴 FOUNDATION1f-v part c (reading 5 of part a): a hand-over still waiting, decided and not begun, naming its agent, is received from a run
+    /// 🔴 A hand-over still waiting, decided and not begun, naming its agent, is received from a run
     /// that decided it and goes no further, a headless host's or a terminal's, whether that run lives or not, and from a shell's only once it
     /// is dead: one guarded update that raises the generation, so the run that decided it can write nothing more. Never a live shell's, which
     /// takes its own; never the taker's own, a move past its wait, one naming no agent (a limit's or a curve's), or one another taker read first.
@@ -734,7 +734,7 @@ public sealed class MoveStoreTests : IDisposable
         host.Hold(claim, MoveHoldWhy.Undelivered);
         var resolved = shell.PressResolved(claim.Move)!;
 
-        // Closed by another run than its claim's, the claim left as it was; the claim's own close after is the press's, a phase written again.
+        // Closed by another run than its claim's, the claim left as it is; the claim's own close after is the press's, a phase written again.
         Assert.Equal(
             ((MoveRecordPhase?)MoveRecordPhase.Closed, (string?)MoveCloseWhy.Resolved, (string?)MoveHoldWhy.Undelivered, "run-host", 1L),
             (resolved.Phase, resolved.ClosedWhy, resolved.HeldWhy, resolved.ClaimRun, resolved.ClaimGeneration));

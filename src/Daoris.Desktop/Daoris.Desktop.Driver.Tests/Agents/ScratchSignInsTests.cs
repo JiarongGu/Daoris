@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 LIVELOGIN1: a sign-in under a scratch home (under <c>_fixtures/</c> or the OS's temporary folder) never runs the real agent,
+/// A sign-in under a scratch home (under <c>_fixtures/</c> or the OS's temporary folder) never runs the real agent,
 /// which is the agent's own binary found on <c>PATH</c>; a stub at a path, a command of another name and an agent with no binary of
 /// its own still sign in. Prepared, never started, and every start of the flow held by a stand-in that records it: the real
 /// <c>claude</c> is never run, not even to prove the refusal.
@@ -49,7 +49,7 @@ public sealed class ScratchSignInsTests : IDisposable
     }
 
     /// <summary>
-    /// The window's sign-in, PATH's <c>claude</c> into a new account under the scratch home: refused naming LIVELOGIN1 and the stub
+    /// The window's sign-in, PATH's <c>claude</c> into a new account under the scratch home: refused naming the scratch-home rule and the stub
     /// adapters, no folder made and nothing started. A stub laid in the scratch folder by its path, named like the real one, is prepared.
     /// </summary>
     [Fact]

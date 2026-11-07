@@ -4,9 +4,9 @@ using Daoris.Driver.Tests;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PIPELINE1c's long call (D192 point 5's fourth layer; the pipeline design §3.2) as the session watcher's one look finds it
-/// (SESSWATCH1b): a light session whose call outlasts its bound is found once, and told once, at urgent level, as Daoris's word kept on its
-/// record, and never ended; the rail's call says it was told.
+/// The long call as the session watcher's one look finds it:
+/// a light session whose call outlasts its bound is found once, and told once, at urgent level, as Daoris's word kept on its
+/// record, and never ended; the rail's call says it is told.
 /// </summary>
 /// <remarks>
 /// Every moment is the test's own: each event carries its stamp, and the watcher's wall clock is handed. The stand-in session is its
@@ -38,7 +38,7 @@ public sealed class LongCallLookTests : IDisposable
     private static SessionEvent Call(string id, string? status, string? title = null, int at = 0) =>
         new() { Kind = SessionEventKind.Tool, Id = id, Title = title, Status = status, At = T0.AddMinutes(at) };
 
-    /// <summary>The stand-in session's door: what it was sent at its next step, and whether anything ended it.</summary>
+    /// <summary>The stand-in session's door: what it is sent at its next step, and whether anything ended it.</summary>
     private sealed class Door
     {
         public List<ChatMessage> Sent { get; } = [];
@@ -144,7 +144,7 @@ public sealed class LongCallLookTests : IDisposable
         Assert.Equal((kept.Id, MessageLevel.Urgent), (sent.Id, sent.Level));
         Assert.NotNull(sent.Daoris);
         Assert.Equal(0, door.Interrupts);
-        // The rail's call says it was told, and still runs.
+        // The rail's call says it is told, and still runs.
         Assert.Equal(new RunningCall("dotnet test src/Daoris.Service", T0.AddMinutes(1)) { Told = true }, session.Calls.Calling("s1"));
     }
 

@@ -1,13 +1,13 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The notes a piece keeps (COAGENT1b, D199 point 8; the co-agent design §2.3 step 11, §4.2, §7.8), each by its code: on the lead its
+/// The notes a piece keeps, each by its code: on the lead its
 /// piece's course, on the partner whose session it works for. Notes, never words: none reaches a prompt, reopens a record or resets the
 /// answers-alone count, which reads words and the person's press alone (<see cref="AnswersAlone"/>).
 /// </summary>
 public static class PartnerNotes
 {
-    /// <summary>On the lead: a piece was asked of an agent, and its slot reserved.</summary>
+    /// <summary>On the lead: a piece is asked of an agent, and its slot reserved.</summary>
     public static Noted Asked(string agent) =>
         Noted.Of(PeerNoteCodes.PartnerAsked, $"A piece was asked of {agent}: it works in a clone of its own and changes nothing here.", ("agent", agent));
 
@@ -15,18 +15,18 @@ public static class PartnerNotes
     public static Noted Started(string agent, string partner) =>
         Noted.Of(PeerNoteCodes.PartnerStarted, $"Partner {agent} started on the piece in session {partner}.", ("agent", agent), ("session", partner));
 
-    /// <summary>On the lead: the piece's answer was handed, a claim beside a commit to take in.</summary>
+    /// <summary>On the lead: the piece's answer is handed, a claim beside a commit to take in.</summary>
     public static Noted Answered(string agent, string partner) =>
         Noted.Of(
             PeerNoteCodes.PartnerAnswered,
             $"Partner {agent} (session {partner}) answered: its work is a commit to take in, and its words are claims to check.",
             ("agent", agent), ("session", partner));
 
-    /// <summary>On the lead: the piece was refused, and why.</summary>
+    /// <summary>On the lead: the piece is refused, and why.</summary>
     public static Noted Refused(string why) =>
         Noted.Of(PeerNoteCodes.PartnerRefused, $"The piece was refused: {Said(why)}.", ("why", why));
 
-    /// <summary>On the lead: the turn's end where it was not the partner's own, its work kept.</summary>
+    /// <summary>On the lead: the turn's end where it is not the partner's own, its work kept.</summary>
     public static Noted? Ended(string? end, string agent) => end switch
     {
         PartnerEnds.Stopped => Noted.Of(PeerNoteCodes.PartnerStopped, $"Partner {agent} was stopped; the work it left is kept.", ("agent", agent)),

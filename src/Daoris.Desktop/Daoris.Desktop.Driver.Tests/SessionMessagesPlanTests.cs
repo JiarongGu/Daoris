@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The planner's half of words going on in their session (MSG1b, D137 §2.2): a record of this machine's with the person's
+/// The planner's half of words going on in their session: a record of this machine's with the person's
 /// words waiting, parked or ended, is planned `continuing` from itself, whatever its quest's state. Whatever holds a start
 /// holds it (a pause, the person's hold, the cap), and it goes before every start the driver planned itself. Pure, so the
 /// fast half.
@@ -49,9 +49,9 @@ public sealed class SessionMessagesPlanTests
     }
 
     /// <summary>
-    /// SESSWATCH1a (D200, the session-watch design §2.3): the person's *End and carry on* ends a quiet run as their stop released in the
+    /// The person's *End and carry on* ends a quiet run as their stop released in the
     /// same press, and the words they wrote to it go to the part that carries it on, never to a resume of the run that hung. Without the
-    /// press's note, the same stopped and released record with words waiting goes on in itself, as before.
+    /// press's note, the same stopped and released record with words waiting goes on in itself.
     /// </summary>
     [Fact]
     public void Words_on_a_run_the_person_ended_with_end_and_carry_on_go_to_the_carry_on_never_a_resume()
@@ -138,7 +138,7 @@ public sealed class SessionMessagesPlanTests
         Assert.StartsWith("carrying on in `Game` — session `s1` was cut off", only.Reason);
     }
 
-    /// <summary>An open quest's last session, written to after it ended, goes on too (D137 §2.2).</summary>
+    /// <summary>An open quest's last session, written to after it ended, goes on too.</summary>
     [Fact]
     public void Words_to_the_last_session_of_an_open_quest_go_on_in_it()
     {
@@ -153,7 +153,7 @@ public sealed class SessionMessagesPlanTests
     }
 
     /// <summary>
-    /// 🔴 Words to a session the person stopped release the stop's hold, as *Try again* does (D137 §2.2): the same session goes
+    /// 🔴 Words to a session the person stopped release the stop's hold, as *Try again* does: the same session goes
     /// on with them, where without words the quest would wait for *Try again*.
     /// </summary>
     [Fact]
@@ -184,7 +184,7 @@ public sealed class SessionMessagesPlanTests
     }
 
     /// <summary>
-    /// A reopen goes before every start the driver planned itself (D137 §2.2): with one slot, the record written to takes it
+    /// A reopen goes before every start the driver planned itself: with one slot, the record written to takes it
     /// and the oldest open quest waits, though the service lists that one first.
     /// </summary>
     [Fact]
@@ -216,7 +216,7 @@ public sealed class SessionMessagesPlanTests
         Assert.Equal(StartVerdict.AtCapacity, Assert.Single(Planner.Plan(snapshot, Config(cap: 1))).Verdict);
     }
 
-    /// <summary>Whatever holds a start holds a reopen (D137 §2.2): the work's pause, and the person's hold on the repository.</summary>
+    /// <summary>Whatever holds a start holds a reopen: the work's pause, and the person's hold on the repository.</summary>
     [Fact]
     public void A_pause_and_a_hold_each_hold_a_reopen()
     {
@@ -233,8 +233,8 @@ public sealed class SessionMessagesPlanTests
     }
 
     /// <summary>
-    /// 🔴 Words a reopen could not take (a closed quest's, a never) are marked, and a later look does not try them again
-    /// (MSG1a's open point); a word said after the mark is tried, since what held it may have moved.
+    /// 🔴 Words a reopen could not take (a closed quest's, a never) are marked, and a later look does not try them again;
+    /// a word said after the mark is tried, since what held it may have moved.
     /// </summary>
     [Fact]
     public void Words_already_judged_unable_to_go_on_are_not_tried_again_until_more_are_said()
@@ -255,10 +255,10 @@ public sealed class SessionMessagesPlanTests
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c (D189's amendment): a driven record whose resume found its conversation held by another client waits for the
+    /// 🔴 A driven record whose resume finds its conversation held by another client waits for the
     /// person, its words marked <c>elsewhere</c>. Its quest is not carried on in a new session meanwhile, as a failed record's
-    /// otherwise is (D80), since that would be the move the hold refuses; a word said since tries it again. A mark of any other
-    /// reason leaves the carry-on as it was.
+    /// otherwise is, since that would be the move the hold refuses; a word said since tries it again. A mark of any other
+    /// reason leaves the carry-on alone.
     /// </summary>
     [Fact]
     public void A_record_held_because_another_client_holds_its_conversation_is_not_carried_on_meanwhile()
@@ -282,7 +282,7 @@ public sealed class SessionMessagesPlanTests
     }
 
     /// <summary>
-    /// 🔴 COWORK1e (D188 point 4; the message-urgency design §2.3): a record whose answers the answers-alone bound holds for the person
+    /// 🔴 A record whose answers the answers-alone bound holds for the person
     /// neither goes on with them nor has its quest carried on in a new session meanwhile, which would take the line on with nobody
     /// between; so with answers the person kept (*Not now*). A word of theirs said since tries it again, the answers beside it.
     /// </summary>
@@ -307,7 +307,7 @@ public sealed class SessionMessagesPlanTests
         Assert.Equal((true, 2), (goesOn.GoesOn, goesOn.Resumes!.Waiting.Count));
     }
 
-    /// <summary>A parked record's answer is planned as before, saying the answer (ANSWER1a), and goes on through the same verdict.</summary>
+    /// <summary>A parked record's answer is planned saying the answer, and goes on through the same verdict.</summary>
     [Fact]
     public void An_answered_park_still_goes_on_saying_the_answer()
     {
@@ -327,11 +327,11 @@ public sealed class SessionMessagesPlanTests
     }
 
     /// <summary>
-    /// 🔴 SAYHELD1, the owner's case on the install (2026-10-21): a quest waited on another repository's answer, was resumed in a
-    /// new session once it came, and that session parked to ask the person. The service keeps naming the question the quest waited
-    /// on for as long as it is taken, so the person's answer to the park was read as words waiting on the question: the quest went
-    /// to its resume again, which the park itself held as a session working on it, and nothing went on. The answer goes on in the
-    /// park's own conversation, as any answered park's does; its question was answered before it began.
+    /// 🔴 A quest waits on another repository's answer, resumes in a
+    /// new session once it comes, and that session parks to ask the person. The service keeps naming the question the quest waited
+    /// on for as long as it is taken, so the person's answer to the park must not be read as words waiting on that question, or the quest goes
+    /// to its resume again, which the park itself holds as a session working on it, and nothing goes on. The answer goes on in the
+    /// park's own conversation, as any answered park's does; its question is answered before it begins.
     /// </summary>
     [Fact]
     public void An_answered_park_whose_quest_still_names_its_answered_question_goes_on()
@@ -354,7 +354,7 @@ public sealed class SessionMessagesPlanTests
     }
 
     /// <summary>
-    /// SAYHELD1: words to the session that asked wait with its quest while the question is open (D79, MSG1b), and once it is answered
+    /// Words to the session that asked wait with its quest while the question is open, and once it is answered
     /// they go with the resume, which opens a new session handed the answer, never back into the asker's own conversation, which
     /// would not be. A park on a question still open waits with it too.
     /// </summary>
@@ -384,10 +384,10 @@ public sealed class SessionMessagesPlanTests
     }
 
     /// <summary>
-    /// 🔴 ANSWER2, the owner's case on the install: a resumed run moves its record to working, and takes the person's words
+    /// 🔴 A resumed run moves its record to working, and takes the person's words
     /// off it only as it concludes, so for the whole run the record works with the words still on it. A look meanwhile does not
-    /// plan it to go on a second time, whose move to working the ledger refuses (working → working) and whose failure failed
-    /// the session the person had answered: the record runs, and its quest is the running session's as any working one's is.
+    /// plan it to go on a second time, whose move to working the ledger refuses (working → working) and whose failure would fail
+    /// the session the person answered: the record runs, and its quest is the running session's as any working one's is.
     /// </summary>
     [Theory]
     [InlineData("Taken")]
@@ -420,7 +420,7 @@ public sealed class SessionMessagesPlanTests
     }
 
     /// <summary>
-    /// ANSWER2: a record running with the person's words on it holds no closed quest beside the open ones, since nothing waits
+    /// A record running with the person's words on it holds no closed quest beside the open ones, since nothing waits
     /// to go on there; once it ends with them still on it (a refusal on the wire sends it back), they wait again.
     /// </summary>
     [Fact]
@@ -439,8 +439,7 @@ public sealed class SessionMessagesPlanTests
     }
 
     /// <summary>
-    /// 🔴 SAIDBACK1a, the owner's case of 2026-10-15: a closed quest's last session held two out-of-date words for seven hours,
-    /// planned going on at every look. Once both are taken back, the record the service answers holds an empty <c>said</c> and no
+    /// 🔴 A closed quest's last session holding two out-of-date words is planned going on at every look. Once both are taken back, the record the service answers holds an empty <c>said</c> and no
     /// <c>answer</c>: nothing waits, so the closed quest is not carried beside the open ones and nothing goes on.
     /// </summary>
     [Fact]
@@ -563,7 +562,7 @@ public sealed class SessionMessagesPlanTests
 
     /// <summary>
     /// The person's stop of the quest's last session still holds the quest: the reopen's words are Daoris's, and release no stop
-    /// the person made on another session (D173's FABRIC-CLOSE1c9 note).
+    /// the person made on another session.
     /// </summary>
     [Fact]
     public void The_persons_stop_of_the_last_session_holds_the_named_sessions_words()
@@ -575,7 +574,7 @@ public sealed class SessionMessagesPlanTests
         Assert.Equal((StartVerdict.Stopped, null), (only.Verdict, only.Resumes?.Session));
     }
 
-    /// <summary>Words on the named session it was found unable to go on with wait, as on the last one (MSG1f2): they are not tried again.</summary>
+    /// <summary>Words on the named session found unable to go on wait, as on the last one: they are not tried again.</summary>
     [Fact]
     public void The_named_sessions_words_it_could_not_go_on_with_wait()
     {

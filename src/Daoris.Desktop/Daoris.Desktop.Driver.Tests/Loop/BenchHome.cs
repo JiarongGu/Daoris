@@ -6,7 +6,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A home of a working machine's size, generated under the repository's scratch (PERF1b): the service's own host over a store holding
+/// A home of a working machine's size, generated under the repository's scratch: the service's own host over a store holding
 /// thousands of ended session records, a registered repository with a few dozen session trees on unlanded branches, and one tree holding
 /// a large ignored build. Every name is invented. The records past the few opened through the client are copies of one ended record
 /// written into the store's table, each with its own id and revision, so the generator spends seconds where thousands of opens would
@@ -47,7 +47,7 @@ internal sealed class BenchHome : IAsyncDisposable
     /// <summary>The driver's home, whose trees are under it.</summary>
     public string Home { get; }
 
-    /// <summary>Each tree with the session that ran in it and the commit it was opened at.</summary>
+    /// <summary>Each tree with the session that ran in it and the commit it opened at.</summary>
     public List<(string Session, string Tree, string BaseCommit)> Trees { get; } = [];
 
     /// <summary>The tree whose ignored build holds <see cref="Built"/> files.</summary>
@@ -109,7 +109,7 @@ internal sealed class BenchHome : IAsyncDisposable
             made.Trees.Add((await made.EndedAsync(tree.Path, baseCommit), tree.Path, baseCommit));
         }
 
-        // The large tree's work was landed by a squash, so the line holds it by content and every read asks what else the tree holds; the
+        // The large tree's work is landed by a squash, so the line holds it by content and every read asks what else the tree holds; the
         // checkout and the tree each built the engine, so the ignored build is in both.
         made.Large = made.Trees[0];
         made.Built = built;

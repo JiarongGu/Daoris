@@ -1,13 +1,13 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Keeping a decision (§3.1, §3.6 <c>held</c> and <c>left</c>): the judgement of an answer or a defer against the park the handler read,
+/// Keeping a decision (<c>held</c> and <c>left</c>): the judgement of an answer or a defer against the park the handler read,
 /// then the decision written and kept in the <see cref="SupervisorBook"/> under the session's lock. It holds no state of its own.
 /// </summary>
 internal sealed class SupervisorKeeping(SupervisorBook book, IDecisionAdmission admission, MachineLog? log)
 {
     /// <summary>
-    /// Keep a decision for <paramref name="answer"/> on the park the handler read (§3.1's checks marked 1a-i, then the generation rechecked
+    /// Keep a decision for <paramref name="answer"/> on the park the handler read (the checks, then the generation rechecked
     /// under the decision's lock), held for <see cref="QuestionSupervisorDecisions.Window"/>. A retry of the same form while it is held
     /// answers kept with the same decision; nothing is kept on any refusal.
     /// </summary>
@@ -44,7 +44,7 @@ internal sealed class SupervisorKeeping(SupervisorBook book, IDecisionAdmission 
                 return Task.FromResult(new SupervisorKept(false, null, null, SupervisorWhy.RoleChanged));
             }
 
-            // SUPERVISOR1e (§6.3): held for the window the effective appointment set, read with its generation.
+            // Held for the window the effective appointment set, read with its generation.
             var goesOnAt = now + QuestionSupervisorDecisions.WindowOf(admitted);
             var id = Guid.NewGuid().ToString("N")[..12];
             var decision = new SupervisorLiveDecision
@@ -114,7 +114,7 @@ internal sealed class SupervisorKeeping(SupervisorBook book, IDecisionAdmission 
             return Task.FromResult(new SupervisorKept(true, id, null, null));
         }, ct);
 
-    /// <summary>§3.1's refusals the park and the form answer, before memory is read; null where none applies.</summary>
+    /// <summary>The refusals the park and the form answer, before memory is read; null where none applies.</summary>
     private static string? Judge(SupervisorAnswer answer, SupervisedPark park)
     {
         if ((Refused(answer.Reasons, answer.Choice.Length > 0, park.Counts) ?? Parked(answer.Question, park)) is { } refused) return refused;
@@ -130,12 +130,12 @@ internal sealed class SupervisorKeeping(SupervisorBook book, IDecisionAdmission 
     }
 
     /// <summary>
-    /// The form's refusals every act shares: every reason naming its source, a count it cites one of those the keeping read (CONTEXTDRIVE1i),
+    /// The form's refusals every act shares: every reason naming its source, a count it cites one of those the keeping read,
     /// and their count and bounds.
     /// </summary>
     internal static string? Refused(IReadOnlyList<SupervisorReason> reasons, bool named, IReadOnlyList<CountFact>? counts)
     {
-        // D135 point 4: a reason with no source is refused by name; Daoris checks that one is named, never what it says.
+        // A reason with no source is refused by name; Daoris checks that one is named, never what it says.
         if (reasons.Any(reason => string.IsNullOrWhiteSpace(reason.Source) || CountTexts.NamesNone(reason.Source, counts))) return SupervisorWhy.NoSource;
         return reasons.Count is 0 or > QuestionSupervisorDecisions.MostReasons || !named
                || reasons.Any(reason => reason.Says.Trim().Length is 0 or > QuestionSupervisorDecisions.MaxSays || reason.Source.Length > QuestionSupervisorDecisions.MaxSource)

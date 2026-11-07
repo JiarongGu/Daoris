@@ -3,8 +3,8 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the person runs, and how long each part of it takes, into the machine log (LOG1b, D94): the
-/// session events of the design's catalogue, from what the service client and the conversation record
+/// What the person runs, and how long each part of it takes, into the machine log: the
+/// session events of the catalogue, from what the service client and the conversation record
 /// already say.
 /// </summary>
 /// <remarks>
@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// <see cref="ServiceClient"/>, which says so once the ledger said yes; every conversation event lands in
 /// <see cref="SessionEvents"/>, stamped as it is written. This class only listens to both.</para>
 ///
-/// <para><b>The lines</b> (<c>docs/2026-09-30-machine-log-design.md</c> §4):
+/// <para><b>The lines</b>:
 /// <c>session.started</c> {session, kind, adapter, repository, workspace, and <c>setup</c> true for a set-up's
 /// session} as a record opens;
 /// <c>session.opened</c> {session, adapter, openMs}, the open to the session's first prompt in its record;
@@ -21,18 +21,18 @@ namespace Daoris.Driver;
 /// calls, used, size}, a prompt to its turn's end with what the turn consumed;
 /// <c>session.parked</c> {session, kind, repository, workspace} as the record is moved to wait on the person;
 /// <c>session.ended</c> {session, state, seconds, reason, class} as the journal tells a record reached a closed state; and
-/// <c>permission.refused</c> {session, adapter, tool, kind, by} for each call the record says was refused
-/// (UNBLOCK5, D122 §3.10). Beside the sessions, what the client says of the registry and of the workspace
-/// plans: <c>registry.followed</c> (WSSETUP5) and the <c>setup.*</c> lines (WSSETUP6); and of the accounts:
-/// <c>account.limited</c> and <c>starts.waiting</c> (TOOL4d); of a landing at done, <c>landing.auto</c> (LAND2b); and of a
-/// done's evidence read, <c>evidence.checked</c> (EVID1b). An answer taken up, <c>session.answered</c> (ANSWER1a,
-/// D131 §2), and words that reopened an ended record, <c>session.reopened</c> with the door they were said at (MSG1b,
-/// MSG1d, D137 §3.3), and a move to a new part, <c>session.moved</c> (SESSCTX1c, D189 point 8), ride the account lines' channel,
+/// <c>permission.refused</c> {session, adapter, tool, kind, by} for each call the record marks refused.
+/// Beside the sessions, what the client says of the registry and of the workspace
+/// plans: <c>registry.followed</c> and the <c>setup.*</c> lines; and of the accounts:
+/// <c>account.limited</c> and <c>starts.waiting</c>; of a landing at done, <c>landing.auto</c>; and of a
+/// done's evidence read, <c>evidence.checked</c>. An answer taken up, <c>session.answered</c>,
+/// and words that reopened an ended record, <c>session.reopened</c> with the door they were said at,
+/// and a move to a new part, <c>session.moved</c>, ride the account lines' channel,
 /// which writes a catalogued line as it is given. The person's words
 /// shown the moment they are said (an event with <c>reaches</c>) are no prompt, and time nothing.</para>
 ///
-/// <para><b>A park is counted where it is made</b> (WSSETUP11, D124 §7.3): a session that stopped to ask the
-/// person (D83) is what setting a workspace up is meant to make rarer, so parks per week are its measure. Only
+/// <para><b>A park is counted where it is made</b>: a session that stops to ask the
+/// person is what setting a workspace up is meant to make rarer, so parks per week are its measure. Only
 /// the driver moves a record into the state <see cref="SessionStates.IsParked"/> names, a driven session's
 /// or an intake's, and always through this client, so the line is written at the move, in the shell and the
 /// headless host alike, in every mode. The attention watch says the same park from the active list a look
@@ -40,15 +40,15 @@ namespace Daoris.Driver;
 /// never said) and the headless <c>--once</c> and <c>--until-idle</c> run none. Both read the one predicate,
 /// and their tests hold the same rows.</para>
 ///
-/// <para><b>What a turn consumed</b> (WSSETUP11): its tokens as the wire reported them for the whole turn,
-/// METER1's split (new input, read from the cache, written to it, output), each null where the wire said
+/// <para><b>What a turn consumed</b>: its tokens as the wire reports them for the whole turn,
+/// split into new input, read from the cache, written to it and output, each null where the wire says
 /// none; the tool calls first seen in it, a call's later updates being the same call; and the context at its
-/// high-water within the turn against the window, from the turn's usage reports, null where it had none. A
+/// high-water within the turn against the window, from the turn's usage reports, null where it has none. A
 /// set-up's cost is the sum of its turns, which the usage report reads back.</para>
 ///
 /// <para><b>An ask is a refused call, once.</b> Nothing Daoris starts has a person at the prompt, so every
-/// permission a harness would have asked for is refused (D52), and the record marks the call
-/// <c>refused</c>: the protocol door when the agent reports a call it refused as failed (HELP4), the native
+/// permission a harness would have asked for is refused, and the record marks the call
+/// <c>refused</c>: the protocol door when the agent reports a call it refused as failed, the native
 /// door from the harness's own <c>permission_denied</c> report. A call is counted the first time, however
 /// many updates repeat it. <c>kind</c> is ACP's tool kind, from the refusal or else from the call's first
 /// event; <c>tool</c> and <c>by</c> are the wire's own identifiers where it gave them (only the native door
@@ -67,7 +67,7 @@ public sealed class SessionLog : IDisposable
         new HashSet<string>(["completed", "declined", "stood-down", "failed", "stopped"], StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// What a name in a line may be (D94 §4): an identifier such as <c>Bash</c>,
+    /// What a name in a line may be: an identifier such as <c>Bash</c>,
     /// <c>mcp__server__tool</c>, <c>execute</c> or <c>asyncAgent</c>, never a phrase.
     /// </summary>
     private static readonly Regex Identifier = new("^[A-Za-z][A-Za-z0-9_.:-]{0,119}$", RegexOptions.CultureInvariant);
@@ -98,7 +98,7 @@ public sealed class SessionLog : IDisposable
     }
 
     /// <summary>
-    /// A landing at done's try (LAND2b, design §8): <c>landing.auto</c>, with the fields <see cref="LandingLine"/> gives it —
+    /// A landing at done's try: <c>landing.auto</c>, with the fields <see cref="LandingLine"/> gives it —
     /// codes and counts, never a sentence, a branch or a path.
     /// </summary>
     public static void WriteLanding(MachineLog log, LandingLine line) => log.Write("info", line.Event, line.Data);
@@ -114,7 +114,7 @@ public sealed class SessionLog : IDisposable
     }
 
     /// <summary>
-    /// A done's evidence read (EVID1b, D144 §5): <c>evidence.checked</c>, with the fields <see cref="EvidenceLine"/> gives it —
+    /// A done's evidence read: <c>evidence.checked</c>, with the fields <see cref="EvidenceLine"/> gives it —
     /// counts and codes, never a path, a commit or the service's words. The terminal's check writes the same line through here.
     /// </summary>
     public static void WriteEvidence(MachineLog log, EvidenceLine line) => log.Write("info", line.Event, line.Data);
@@ -130,7 +130,7 @@ public sealed class SessionLog : IDisposable
     }
 
     /// <summary>
-    /// An account's line (TOOL4d, D125 §5.4): <c>account.limited</c> or <c>starts.waiting</c>, each with the fields
+    /// An account's line: <c>account.limited</c> or <c>starts.waiting</c>, each with the fields
     /// <see cref="AccountLine"/>'s catalogue gives it — an account by its profile name, never a key or the agent's words.
     /// </summary>
     public static void WriteAccount(MachineLog log, AccountLine line) => log.Write("info", line.Event, line.Data);
@@ -146,7 +146,7 @@ public sealed class SessionLog : IDisposable
     }
 
     /// <summary>
-    /// A workspace plan's line (WSSETUP6, D124 §4.1): <c>setup.planned</c>, <c>setup.published</c>, <c>setup.skipped</c>,
+    /// A workspace plan's line: <c>setup.planned</c>, <c>setup.published</c>, <c>setup.skipped</c>,
     /// <c>setup.paused</c>, <c>setup.resumed</c> or <c>setup.stopped</c>, each with the fields <see cref="SetupLine"/>'s
     /// catalogue gives it and nothing else. A terminal's press, pause, resume or stop writes the same line through here.
     /// </summary>
@@ -163,7 +163,7 @@ public sealed class SessionLog : IDisposable
     }
 
     /// <summary>
-    /// One registration followed from a line (WSSETUP5, D124 §3.4): <c>registry.followed</c>, its repository's name and a
+    /// One registration followed from a line: <c>registry.followed</c>, its repository's name and a
     /// word from <see cref="RegistryOutcome"/>, never the sentence, a path or a summary. A terminal's verb that follows
     /// with no loop writes the same line through here.
     /// </summary>
@@ -219,7 +219,7 @@ public sealed class SessionLog : IDisposable
         /// <summary>The calls first seen since the last turn ended.</summary>
         public long TurnCalls { get; set; }
 
-        /// <summary>The turn's context at its high-water, and the window it was held against, or null for none reported.</summary>
+        /// <summary>The turn's context at its high-water, and the window it is held against, or null for none reported.</summary>
         public long? TurnUsed { get; set; }
 
         public long? TurnSize { get; set; }
@@ -233,7 +233,7 @@ public sealed class SessionLog : IDisposable
         /// <summary>Whether the turn in flight has had its first answer.</summary>
         public bool Answered { get; set; }
 
-        /// <summary>Each call's kind as it was announced: a refusal that arrives as a bare update names none.</summary>
+        /// <summary>Each call's kind as announced: a refusal that arrives as a bare update names none.</summary>
         public Dictionary<string, string> Kinds { get; } = new(StringComparer.Ordinal);
 
         /// <summary>The calls already counted as refused, so a repeated update is not a second ask.</summary>
@@ -257,7 +257,7 @@ public sealed class SessionLog : IDisposable
             ("session", opened.Session), ("kind", opened.Kind), ("door", opened.Adapter), ("repository", opened.Repository),
             ("workspace", opened.Workspace),
         ];
-        // Said only of a set-up's session (WSSETUP11), so every other start reads as it always has.
+        // Said only of a set-up's session, so every other start reads the same.
         if (opened.Setup) data.Add(("setup", true));
         _log.Write("info", "session.started", data);
     }
@@ -270,11 +270,11 @@ public sealed class SessionLog : IDisposable
             return;
         }
 
-        // An end is written from the journal alone (FOUNDATION1 l-iv, `TellAsync`), whoever wrote the record, so a move here is no line.
+        // An end is written from the journal alone (`TellAsync`), whoever wrote the record, so a move here is no line.
     }
 
     /// <summary>
-    /// The ends a process read from the service's journal (FOUNDATION1 l-iv, the foundation design §4.2): <c>session.ended</c> for every end,
+    /// The ends a process reads from the service's journal: <c>session.ended</c> for every end,
     /// whichever process or connector wrote the record, with the note's <c>ended.*</c> code as <c>reason</c> and the end's <c>class</c>.
     /// </summary>
     public Task TellAsync(JournalBatch batch)
@@ -298,7 +298,7 @@ public sealed class SessionLog : IDisposable
     }
 
     /// <summary>
-    /// A record moved to wait on the person (WSSETUP11): the session, and the door, repository and workspace
+    /// A record moved to wait on the person: the session, and the door, repository and workspace
     /// its open said, or null each where this process never saw it open. It stays watched: a park is no
     /// ending, and the record ends when the person answers.
     /// </summary>
@@ -331,9 +331,9 @@ public sealed class SessionLog : IDisposable
 
             switch (e.Kind)
             {
-                // The person's words shown the moment they are said carry their reach, and are no prompt (MSG1d, D137 §3.1):
-                // the same words come again where the session took them, and that is where its open's wait and a turn end
-                // or begin. Timed from the saying, a word said to a session that had ended would open a turn of hours.
+                // The person's words shown the moment they are said carry their reach, and are no prompt:
+                // the same words come again where the session takes them, and that is where its open's wait and a turn end
+                // or begin. Timed from the saying, a word said to a session that has ended would open a turn of hours.
                 case SessionEventKind.User when e.Reaches is not null:
                     break;
 
@@ -371,7 +371,7 @@ public sealed class SessionLog : IDisposable
                     break;
 
                 case SessionEventKind.Usage:
-                    // The turn's high-water, as the usage record keeps a session's (D57 §4): a larger reading
+                    // The turn's high-water, as the usage record keeps a session's: a larger reading
                     // replaces a smaller one, so a turn that compacted still reads as having held the most.
                     if (e.Used is { } used && (watched.TurnUsed is not { } held || used > held))
                     {
@@ -404,7 +404,7 @@ public sealed class SessionLog : IDisposable
     }
 
     /// <summary>
-    /// A tool event read for an ask (UNBLOCK5): its kind remembered, and the line for a call refused for the
+    /// A tool event read for an ask: its kind remembered, and the line for a call refused for the
     /// first time. Called under the gate.
     /// </summary>
     private static (string Event, (string Key, object? Value)[] Data)? Refusal(string session, Watched watched, SessionEvent e)
@@ -422,7 +422,7 @@ public sealed class SessionLog : IDisposable
         ]);
     }
 
-    /// <summary>An identifier as written, or null for anything that is not one (D94 §5).</summary>
+    /// <summary>An identifier as written, or null for anything that is not one.</summary>
     private static string? Name(string? value) => value is not null && Identifier.IsMatch(value) ? value : null;
 
     /// <summary>Whole milliseconds, to the nearest: a stamp's arithmetic can land a tick short of one.</summary>

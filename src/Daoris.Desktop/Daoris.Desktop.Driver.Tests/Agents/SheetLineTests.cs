@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>COAGENT1e: the sheet's line under an installed agent in <c>daoris agent list</c>.</summary>
+/// <summary>The sheet's line under an installed agent in <c>daoris agent list</c>.</summary>
 public sealed class SheetLineTests
 {
     private static SheetRow Row(string capability, string? value, string source) =>

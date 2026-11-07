@@ -3,13 +3,13 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>One git-access class as it resolves for a repository: its value and where it was set (the git-auth design §6.2).</summary>
+/// <summary>One git-access class as it resolves for a repository: its value and where it is set.</summary>
 /// <param name="Class"><c>read</c>, <c>write</c> or <c>dangerous</c>.</param>
 /// <param name="Value"><c>allow</c>, <c>ask</c>, <c>deny</c>, or <see cref="GitAccessKeys.AsToday"/> where the person set none for Write.</param>
 /// <param name="Source"><c>repository</c>, <c>workspace</c>, <c>machine</c> or <c>default</c>.</param>
 public sealed record GitAccessClass(string Class, string Value, string Source);
 
-/// <summary>A repository's git access as it resolves, class by class (§6.2).</summary>
+/// <summary>A repository's git access as it resolves, class by class.</summary>
 public sealed record GitAccess(IReadOnlyList<GitAccessClass> Classes)
 {
     /// <summary>The class named <paramref name="name"/>.</summary>
@@ -32,14 +32,14 @@ public sealed record GitAccessLevels(
 }
 
 /// <summary>
-/// Git access as <c>driver.json</c> keeps it (GITAUTH1f, D198 points 8, 10 and 12; the git-auth design §6.2 and §6.4): <c>gitAccess</c>
+/// Git access as <c>driver.json</c> keeps it (10 and 12): <c>gitAccess</c>
 /// (by repository), <c>workspaceGitAccess</c> and <c>machineGitAccess</c>, each <c>{read, write, dangerous}</c> with any subset set.
 /// Separate keys from <c>access</c>, since a level of <c>access</c> may be <c>"full"</c>, which never touches git access. Read from the
 /// file alone, so the doors (which compile this in) judge from it; edited by <see cref="GitAccessActs"/>.
 /// </summary>
 /// <remarks>
 /// A stored shape: a class or a value this build does not know is passed over, and stays in the file as written, since an edit changes
-/// only the key paths it changed. An older build reading the file passes the keys over and enforces none of them (§6.4).
+/// only the key paths it changed. An older build reading the file passes the keys over and enforces none of them.
 /// </remarks>
 public static class GitAccessKeys
 {
@@ -55,7 +55,7 @@ public static class GitAccessKeys
     public const string Ask = "ask";
     public const string Deny = "deny";
 
-    /// <summary>Write where the person set none: the landing pushes on the person's yes, a session does not push (§6.2).</summary>
+    /// <summary>Write where the person set none: the landing pushes on the person's yes, a session does not push.</summary>
     public const string AsToday = "as-today";
 
     public const string FromRepository = "repository";
@@ -132,7 +132,7 @@ public static class GitAccessKeys
         return level;
     }
 
-    /// <summary>Each class as it resolves (§6.2): the repository's, else its workspace's, else this machine's, else Daoris's default.</summary>
+    /// <summary>Each class as it resolves: the repository's, else its workspace's, else this machine's, else Daoris's default.</summary>
     public static GitAccess Resolve(GitAccessLevels levels, string? repository, string? workspace)
     {
         IReadOnlyDictionary<string, string>? own = null;

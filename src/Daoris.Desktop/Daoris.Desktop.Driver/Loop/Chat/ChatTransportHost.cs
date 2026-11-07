@@ -3,7 +3,7 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a conversation's <see cref="TransportRun"/> asks of the runner that holds it (AGENTPROVIDER1m-i, ONEWAY1h-iii): the conversation's own
+/// What a conversation's <see cref="TransportRun"/> asks of the runner that holds it: the conversation's own
 /// waits, its kept conversations and downloads, and its process's lineage bracket, as every start's. A conversation is never ended on time and
 /// no watch hears it, so its exit is waited for and its capture read to their ends, and its streams are read as they are.
 /// </summary>
@@ -23,7 +23,7 @@ internal sealed class ChatTransportHost(
 
     public Task<Process?> SpawnedAsync(string proc, Func<Task<Process?>> spawn) => LineageBrackets.Spawned(proc, spawn);
 
-    /// <summary>The exit, told to the token set (COWORKVIEW1a); a conversation hands no bound, so none is kept here.</summary>
+    /// <summary>The exit, told to the token set; a conversation hands no bound, so none is kept here.</summary>
     public async Task<int?> WaitAsync(
         string sessionId, string proc, Process process, CancellationToken ct, int? minutes, Action<int>? timingOut, CancellationToken quiet,
         Action? quietEnding)
@@ -48,7 +48,7 @@ internal sealed class ChatTransportHost(
         }
     }
 
-    /// <summary>Its end once its exit was read and its capture drained: clean where it exited 0 and nobody stopped it (FABRIC-C1a).</summary>
+    /// <summary>Its end once its exit is read and its capture drained: clean where it exited 0 and nobody stopped it.</summary>
     public void Ended(string sessionId, string proc, int? exit) =>
         ChildLineage.End(home, sessionId, clean: exit == 0 && !processes.WasStopRequested(sessionId), DateTimeOffset.UtcNow, proc);
 

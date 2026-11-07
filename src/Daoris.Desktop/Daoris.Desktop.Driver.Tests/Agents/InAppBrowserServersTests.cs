@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A plugin server that drives Daoris's own browser (D78): `${browser}` is filled in when a session is
+/// A plugin server that drives Daoris's own browser: `${browser}` is filled in when a session is
 /// handed its servers, from the shell's answer — and where there is no answer, the server is not handed
 /// and the session is told why, never handed a placeholder that fails inside the harness unexplained.
 /// </summary>
@@ -32,7 +32,7 @@ public sealed class InAppBrowserServersTests
         public void Open(string address) { }
     }
 
-    /// <summary>A host that holds its browser down until a first connection (BROWSERSTART1): it counts what brought it up.</summary>
+    /// <summary>A host that holds its browser down until a first connection: it counts what brought it up.</summary>
     internal sealed class LazyBrowser(string endpoint) : IInAppBrowser
     {
         public int BroughtUp;
@@ -56,7 +56,7 @@ public sealed class InAppBrowserServersTests
         public void Open(string address) { }
     }
 
-    /// <summary>The endpoint is handed at the start and the browser stays down; who is driving is still drawn from the handing (BRW8).</summary>
+    /// <summary>The endpoint is handed at the start and the browser stays down; who is driving is still drawn from the handing.</summary>
     [Fact]
     public async Task A_deferring_host_is_handed_from_without_the_browser_coming_up()
     {
@@ -114,7 +114,7 @@ public sealed class InAppBrowserServersTests
         Assert.DoesNotContain(handed, server => server.Name == "browser");
         Assert.Contains("`browser`", notice);
         Assert.Contains("only the desktop shell", notice);
-        // Withheld is no hands on the page (BRW8).
+        // Withheld is no hands on the page.
         Assert.False(drives);
     }
 
@@ -140,11 +140,11 @@ public sealed class InAppBrowserServersTests
         Assert.Equal(1, browser.Asked);
         Assert.Null(notice);
         Assert.Contains("http://127.0.0.1:4810", Assert.Single(handed, server => server.Name == "browser").Arguments);
-        // Its session has its hands on the page from here until it ends (BRW8).
+        // Its session has its hands on the page from here until it ends.
         Assert.True(drives);
     }
 
-    // ——— Who is driving (BRW8): the registry names the running sessions handed the browser.
+    // ——— Who is driving: the registry names the running sessions handed the browser.
 
     private static System.Diagnostics.Process Waiting() => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
     {

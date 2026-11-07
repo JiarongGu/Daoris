@@ -3,23 +3,23 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The work side of the hook set (FABRIC-PERFORM1a; the fabric events design §C4, §D6): for each plugin that speaks a work point, what its
+/// The work side of the hook set: for each plugin that speaks a work point, what its
 /// steps are awaited by, the generation of its process, when that process may start again, and the events heard from it under their bounds.
 /// <see cref="HookSet"/> starts and stops the processes; this says which it wants and keeps what they said.
 /// </summary>
 /// <remarks>
 /// <para><b>Generations.</b> Each start of a plugin's process is its next generation, never reused while the loop runs. Its events are
-/// tagged with the generation of the process they were read from, never with anything the frame says (§C4's first rule), and one whose
+/// tagged with the generation of the process they were read from, never with anything the frame says, and one whose
 /// generation is not the plugin's current one when it arrives or is taken is refused (<see cref="WorkRefusals.NotSender"/>): an answer from
 /// a process since restarted or stopped is never applied.</para>
 ///
 /// <para><b>Resync.</b> The first frame to each generation says <c>resync</c>, and so does the next after any drop (a frame too long, too
 /// many, the queue full, a frame that did not reach the plugin): at the next look a minute or more after the last resync, so a plugin that
 /// floods is not asked to flood again at once. The minute after a resync takes, beside its 60, one event per awaited step it named, and as many
-/// more wait, so a replay in a stable order is taken whole rather than losing its last at every resync (round 2).</para>
+/// more wait, so a replay in a stable order is taken whole rather than losing its last at every resync.</para>
 ///
-/// <para><b>Kept in memory, as the loop's record of a plugin's health is</b> (D119 §2): a new loop starts every plugin at generation 1, with
-/// its waits afresh and nothing queued, so nothing a dead loop heard can be taken. Attempts are not recorded here (PERFORM1b).</para>
+/// <para><b>Kept in memory, as the loop's record of a plugin's health is</b>: a new loop starts every plugin at generation 1, with
+/// its waits afresh and nothing queued, so nothing a dead loop heard can be taken. Attempts are not recorded here.</para>
 /// </remarks>
 internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : IDisposable
 {
@@ -33,7 +33,7 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
 
         public Queue<(int Generation, JsonElement Params)> Waiting { get; } = new();
 
-        /// <summary>The steps the last resync told it of, one replayed event each: as many more are taken in its minute, and wait (round 2).</summary>
+        /// <summary>The steps the last resync told it of, one replayed event each: as many more are taken in its minute, and wait.</summary>
         public int Replay { get; set; }
 
         /// <summary>The version and install the catalogue last named for it: another is an update, which starts its record afresh.</summary>
@@ -55,7 +55,7 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
         public DateTimeOffset? Resynced { get; set; }
 
         /// <summary>
-        /// The last frame whose send to the current generation completed, and its number among the frames told it (FABRIC-PERFORM1i): what an
+        /// The last frame whose send to the current generation completed, and its number among the frames told it: what an
         /// event from that process is bound by. A send that fails leaves the one before; a newer one sent first is never replaced by an older.
         /// </summary>
         public (WorkWatchFrame Frame, int Number)? Sent { get; set; }
@@ -86,16 +86,16 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
         }
     }
 
-    /// <summary>The plugins owed a receipt's cleanup (FABRIC-PERFORM1d): kept up though no unit awaits their steps.</summary>
+    /// <summary>The plugins owed a receipt's cleanup: kept up though no unit awaits their steps.</summary>
     private HashSet<string> _owed = new(StringComparer.Ordinal);
 
-    /// <summary>The plugins owed a receipt's cleanup, whole: their process is wanted as an awaited one's is (§D3, only its process answers).</summary>
+    /// <summary>The plugins owed a receipt's cleanup, whole: their process is wanted as an awaited one's is (only its process answers).</summary>
     public void Owe(IReadOnlySet<string> plugins)
     {
         lock (_gate) _owed = new HashSet<string>(plugins, StringComparer.Ordinal);
     }
 
-    /// <summary>Whether the plugin's process is wanted: a unit awaits its steps, or it is owed a receipt's cleanup (FABRIC-PERFORM1d).</summary>
+    /// <summary>Whether the plugin's process is wanted: a unit awaits its steps, or it is owed a receipt's cleanup.</summary>
     public bool Awaits(string id)
     {
         lock (_gate) return (_states.TryGetValue(id, out var state) && state.Awaited.Count > 0) || _owed.Contains(id);
@@ -112,8 +112,8 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
     }
 
     /// <summary>
-    /// The last frame whose send to <paramref name="id"/>'s process of <paramref name="generation"/> completed (FABRIC-PERFORM1i, §C4's third
-    /// rule): what that process was actually told. Null where none did, the generation is not the current one, or it is not listened to.
+    /// The last frame whose send to <paramref name="id"/>'s process of <paramref name="generation"/> completed:
+    /// what that process is actually told. Null where none did, the generation is not the current one, or it is not listened to.
     /// </summary>
     public WorkWatchFrame? SentTo(string id, int generation)
     {
@@ -186,7 +186,7 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
 
     /// <summary>
     /// The plugins the catalogue still contributes, each with its build (its version and install): one switched off or removed starts its
-    /// waits afresh, and so does one updated (FABRIC-PERFORM1a, round 2) — told here whether its process runs or not, since an unsound plugin's
+    /// waits afresh, and so does one updated — told here whether its process runs or not, since an unsound plugin's
     /// does not, and an update is how its maker answers.
     /// </summary>
     public void Keep(IEnumerable<(string Id, string Build)> contributing)
@@ -210,8 +210,8 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
     }
 
     /// <summary>
-    /// A running process this loop did not listen to, now that the lease is its own again (FABRIC-PERFORM1a, round 2): a plugin kept for a
-    /// loop point while the lease was elsewhere is heard again on its own generation, and told the awaited set with a resync.
+    /// A running process this loop did not listen to, now that the lease is its own again: a plugin kept for a
+    /// loop point while the lease is elsewhere is heard again on its own generation, and told the awaited set with a resync.
     /// </summary>
     public void Reattach(string id, IHookChannel channel)
     {
@@ -227,8 +227,8 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
     }
 
     /// <summary>
-    /// Whether an answer read from <paramref name="channel"/>, generation <paramref name="generation"/>, may be handed back now (round 2): that
-    /// process is still the plugin's current one, listened to. One stopped or replaced since the call was sent answers for nobody.
+    /// Whether an answer read from <paramref name="channel"/>, generation <paramref name="generation"/>, may be handed back now: that
+    /// process is still the plugin's current one, listened to. One stopped or replaced since the call is sent answers for nobody.
     /// </summary>
     public bool IsCurrent(string id, IHookChannel channel, int generation)
     {
@@ -257,7 +257,7 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
     }
 
     /// <summary>
-    /// A step event taken here and not believed by the performer (FABRIC-PERFORM1c, §C4's belief codes), counted with this plugin's other
+    /// A step event taken here and not believed by the performer, counted with this plugin's other
     /// refusals. A plugin this supervision holds nothing for is passed over.
     /// </summary>
     public void Refused(string id, string code)
@@ -304,7 +304,7 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
     }
 
     /// <summary>
-    /// Told the plugin's id once an event of its current process is queued (FABRIC-RUN1d): the lease's loop wakes the evaluation runtime, which
+    /// Told the plugin's id once an event of its current process is queued: the lease's loop wakes the evaluation runtime, which
     /// takes it, rather than leave it for the next look. Called outside the lock; null tells nobody.
     /// </summary>
     public Action<string>? Arrived { get; set; }
@@ -373,8 +373,8 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
         state.ResyncDue = false;
         if (resync)
         {
-            // Round 2: the replay this asks for is taken whole, one event per awaited step beyond the minute's 60, and waits whole. Admitting
-            // the first 60 of a stable replay dropped the same last ones at every resync, for ever. Daoris's own set sizes it, never the plugin.
+            // The replay this asks for is taken whole, one event per awaited step beyond the minute's 60, and waits whole. Admitting
+            // the first 60 of a stable replay would drop the same last ones at every resync, for ever. Daoris's own set sizes it, never the plugin.
             var now = clock();
             state.Resynced = now;
             state.Replay = state.Awaited.Sum(unit => unit.Awaiting.Count);
@@ -394,7 +394,7 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
             sending = Task.FromException(error);
         }
 
-        // FABRIC-PERFORM1i: the frame binds an event only once its send completed; one written at once is kept here, under the lock held.
+        // The frame binds an event only once its send completed; one written at once is kept here, under the lock held.
         if (sending.IsCompletedSuccessfully) Said(state, generation, frame, number);
         else _ = sending.ContinueWith(_ => Said(plugin, generation, frame, number), CancellationToken.None, TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.Default);
         _ = sending.ContinueWith(

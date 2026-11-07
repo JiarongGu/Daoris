@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A harness action while it runs (D49 §4): the one thing a screen may send it, and the way it is
+/// A harness action while it runs: the one thing a screen may send it, and the way it is
 /// stopped. A login prints a prompt and waits — <i>paste the code</i> — and a process nobody can
 /// answer or stop is a page with every control disabled until the window closes.
 /// </summary>
@@ -19,7 +19,7 @@ public sealed class HarnessRun
     internal HarnessRun(Process process) => _process = process;
 
     /// <summary>
-    /// A pin from a maker's channel (AGT2b): no process at all — Daoris downloads it — so there is
+    /// A pin from a maker's channel: no process at all — Daoris downloads it — so there is
     /// nothing to answer, and stopping it is cancelling the download.
     /// </summary>
     internal HarnessRun(CancellationTokenSource download) => _download = download;
@@ -55,7 +55,7 @@ public sealed class HarnessRun
 }
 
 /// <summary>
-/// The person's explicit actions on a harness (D49 §4): install it, update it, log a profile in —
+/// The person's explicit actions on a harness: install it, update it, log a profile in —
 /// each by <b>that harness's own official mechanism</b>, spawned as a process like any other and
 /// streamed line by line to whoever asked.
 /// </summary>
@@ -72,7 +72,7 @@ public static class HarnessActions
 {
     /// <summary>Install a harness with its own installer — a whole command, since it may not exist yet.</summary>
     /// <remarks>
-    /// 🔴 <b>On the system's npm</b> (TOOLS5, D121 §2.7), whatever Tools runs node as: an install is the agent's own
+    /// 🔴 <b>On the system's npm</b>, whatever Tools runs node as: an install is the agent's own
     /// installer, into the machine, and that is the machine's npm's job. A managed npm's global folder may be its node
     /// version's, which the next version would lose. With no npm on the machine it refuses, naming <c>agent pin</c>.
     /// </remarks>
@@ -86,9 +86,9 @@ public static class HarnessActions
                 + "Install it with its own tooling; Daoris will find it on the next probe.");
 
     /// <summary>
-    /// Install one version into the directory Daoris owns (TOOL2/D57), leaving the machine's own
-    /// install alone: from the maker's own channel, verified, where the toolchain declares one
-    /// (AGT2b) — else npm's own `--prefix`, aimed somewhere Daoris chose.
+    /// Install one version into the directory Daoris owns, leaving the machine's own
+    /// install alone: from the maker's own channel, verified, where the toolchain declares one,
+    /// else npm's own `--prefix`, aimed somewhere Daoris chose.
     /// </summary>
     /// <param name="transport">How a channel is reached — the network, unless a test holds its own.</param>
     /// <param name="npm">The package manager a package pin runs — npm, unless a test holds a stand-in.</param>
@@ -100,9 +100,9 @@ public static class HarnessActions
         RunPinAsync(PinInstall.Plan(toolchain, home, harness, version, npm ?? Npm), toolchain, harness, version, write, ct, started, transport);
 
     /// <summary>
-    /// Runs the window's way of a <see cref="PinPlan"/> (AGT2b): an install already in place is the proof it verified, so re-pinning it
-    /// fetches nothing; a channel's download is staged and, the window's loop holding its home already, published at once (the alone-path
-    /// design §1.4); a package is installed redirected.
+    /// Runs the window's way of a <see cref="PinPlan"/>: an install already in place is the proof it verified, so re-pinning it
+    /// fetches nothing; a channel's download is staged and, the window's loop holding its home already, published at once;
+    /// a package is installed redirected.
     /// </summary>
     private static async Task<int> RunPinAsync(
         PinPlan plan, AccountAgent toolchain, string harness, string version, Action<string> write, CancellationToken ct,
@@ -133,9 +133,9 @@ public static class HarnessActions
     private static readonly string[] Npm = ["npm"];
 
     /// <summary>
-    /// A command whose first word a tool answers for, with that word the file Tools resolves (TOOLS5, D121 §2.4):
+    /// A command whose first word a tool answers for, with that word the file Tools resolves:
     /// <c>npm</c> in a pin is the managed node's npm when node is managed. A whole path, or a name no tool answers
-    /// for, is left as named; the system's tool PATH does not find keeps its bare name, so the start says so as before.
+    /// for, is left as named; the system's tool PATH does not find keeps its bare name, so the start says so.
     /// </summary>
     /// <exception cref="DriverException">The tool's way cannot run: it never falls back to <c>PATH</c>.</exception>
     internal static IReadOnlyList<string> ThroughTools(string home, IReadOnlyList<string> command)
@@ -147,7 +147,7 @@ public static class HarnessActions
 
     /// <summary>
     /// A command whose first word a tool answers for, found on the system's <paramref name="path"/> whatever Tools runs
-    /// that tool as (TOOLS5, §2.7): <c>agent install</c> is the machine's npm's job. Any other first word is left as
+    /// that tool as: <c>agent install</c> is the machine's npm's job. Any other first word is left as
     /// named.
     /// </summary>
     /// <exception cref="DriverException">The system has no such program: the install is refused, naming <c>agent pin</c>.</exception>
@@ -162,7 +162,7 @@ public static class HarnessActions
     }
 
     /// <summary>
-    /// Which Update a door has (USE1a): <c>"pin"</c> when it is pinned and declares a package or a
+    /// Which Update a door has: <c>"pin"</c> when it is pinned and declares a package or a
     /// channel, so Update moves the pin to the newest release; <c>"tool"</c> when it is unpinned and
     /// declares an updater of its own; otherwise null, and a surface offers no Update at all.
     /// </summary>
@@ -177,8 +177,8 @@ public static class HarnessActions
             : toolchain.Program.UpdateArguments is { Count: > 0 } ? "tool" : null;
 
     /// <summary>
-    /// Update a door (USE1a), by <see cref="UpdateOf"/>: move a pin to the newest release, or run the
-    /// door's own updater. A door with neither is refused, as it always was.
+    /// Update a door, by <see cref="UpdateOf"/>: move a pin to the newest release, or run the
+    /// door's own updater. A door with neither is refused.
     /// </summary>
     /// <param name="pinned">This machine's pin for the door, or null.</param>
     /// <param name="pin">
@@ -203,7 +203,7 @@ public static class HarnessActions
         };
 
     /// <summary>
-    /// Move a pin to the newest release (USE1a): resolve the newest to one exact version, then pin it
+    /// Move a pin to the newest release: resolve the newest to one exact version, then pin it
     /// through <see cref="PinAsync"/> — the channel's verified install, or npm's. A pin never names a
     /// pointer such as <c>latest</c>.
     /// </summary>
@@ -245,7 +245,7 @@ public static class HarnessActions
 
     /// <summary>
     /// The one version <c>npm view &lt;package&gt; version</c> answered, or null when it answered none
-    /// or several (USE1a). A warning npm prints beside it is not a version, and quotes around one are
+    /// or several. A warning npm prints beside it is not a version, and quotes around one are
     /// npm's own. The CLI's <c>versionFromNpm</c> is the twin.
     /// </summary>
     public static string? VersionFromNpm(IEnumerable<string> lines)
@@ -286,19 +286,18 @@ public static class HarnessActions
     /// lands in it is the harness's.
     /// </summary>
     /// <remarks>
-    /// <para>A sign-in that ends well ends that account's cool-off (TOOL4d, D125 §2.3): the directory may now hold another
+    /// <para>A sign-in that ends well ends that account's cool-off: the directory may now hold another
     /// account. Both the screen's sign-ins come through here.</para>
-    /// <para>🔴 <b>Into an account that is there, never a new folder</b> (ACCT1): a sign-in to an account is refused, before
+    /// <para>🔴 <b>Into an account that is there, never a new folder</b>: a sign-in to an account is refused, before
     /// anything starts and with nothing made, where its folder is not there; only a sign-in to a new account
-    /// (<paramref name="fresh"/>) opens one. The install's owner signed in to bring a signed-out account back and got a new
-    /// account no list held.</para>
+    /// (<paramref name="fresh"/>) opens one.</para>
     /// </remarks>
     /// <param name="run">
-    /// What the agent runs as (<see cref="HarnessProbe.CommandOf"/>, D57 rule 4): its named command, its pin, else
-    /// <c>PATH</c>'s, as its status question asks it (CODEXACCT1).
+    /// What the agent runs as (<see cref="HarnessProbe.CommandOf"/>): its named command, its pin, else
+    /// <c>PATH</c>'s, as its status question asks it.
     /// </param>
     /// <param name="fresh">Whether this sign-in opens a new account's folder; false signs in to one that must be there.</param>
-    /// <param name="way">The tool's own sign-in, first, or its device code (CODEXLOGIN1).</param>
+    /// <param name="way">The tool's own sign-in, first, or its device code.</param>
     public static async Task<int> LoginAsync(
         AccountAgent toolchain, HarnessCommand run, string profileHome,
         Action<string> write, CancellationToken ct = default, Action<HarnessRun>? started = null, bool fresh = false,
@@ -309,7 +308,7 @@ public static class HarnessActions
             .ConfigureAwait(false);
         if (code == 0)
         {
-            // And it is marked, so a start held on the account signed out asks it again (TOOL6g).
+            // And it is marked, so a start held on the account signed out asks it again.
             ProbeLock.MarkSignedIn(profileHome, DateTimeOffset.UtcNow);
             try
             {
@@ -325,18 +324,18 @@ public static class HarnessActions
     }
 
     /// <summary>
-    /// The sign-in's start, prepared and not started (CODEXACCT1): the agent's own flow on the binary <paramref name="run"/>
-    /// names, its pin's environment where it is the pin (AGT2), the account's folder made and named in the agent's variable.
-    /// Refused, with nothing made, for an agent with no sign-in flow, a device code asked of one that has none (CODEXLOGIN1), an
-    /// account that is not here (ACCT1), a pin with nothing installed at it, which is never <c>PATH</c>'s instead (D57), and the real
-    /// agent under a scratch home (LIVELOGIN1, <see cref="ScratchSignIns"/>).
+    /// The sign-in's start, prepared and not started: the agent's own flow on the binary <paramref name="run"/>
+    /// names, its pin's environment where it is the pin, the account's folder made and named in the agent's variable.
+    /// Refused, with nothing made, for an agent with no sign-in flow, a device code asked of one that has none, an
+    /// account that is not here, a pin with nothing installed at it, which is never <c>PATH</c>'s instead, and the real
+    /// agent under a scratch home (<see cref="ScratchSignIns"/>).
     /// </summary>
     /// <remarks>
-    /// 🔴 <b>Only into an account's folder under the home</b> (POOL1a3, D197 point 3): a folder outside the account homes is
+    /// 🔴 <b>Only into an account's folder under the home</b>: a folder outside the account homes is
     /// refused before the agent's flow is resolved, so no sign-in can start with the agent's configuration home anywhere else,
     /// the person's own above all, which Daoris never signs in or out.
     /// </remarks>
-    /// <param name="way">The tool's own sign-in, first, or its device code (CODEXLOGIN1).</param>
+    /// <param name="way">The tool's own sign-in, first, or its device code.</param>
     public static ProcessStartInfo PrepareLogin(
         AccountAgent toolchain, HarnessCommand run, string profileHome, bool fresh, SignInWay way = SignInWay.Browser)
     {
@@ -364,7 +363,7 @@ public static class HarnessActions
                 + $"`daoris agent unpin {run.Harness}` goes back to PATH.");
         }
 
-        // 🔴 LIVELOGIN1: never the real agent under a scratch home, which signs the person's browser in on their real account.
+        // 🔴 Never the real agent under a scratch home, which signs the person's browser in on their real account.
         if (ScratchSignIns.Refusal(toolchain, run, profileHome) is { } scratch) throw new DriverException(scratch);
 
         return Prepare([.. run.Run, .. login], toolchain, profileHome, run.Managed);
@@ -380,7 +379,7 @@ public static class HarnessActions
         RunAsync(Prepare(command, toolchain, profileHome), command, write, ct, started);
 
     /// <summary>
-    /// An agent's own command at a terminal (PUSH1f2e5, the alone-path design §1.1, <i>The second hop</i>): its installer, as the CLI's
+    /// An agent's own command at a terminal: its installer, as the CLI's
     /// <c>relay</c> started it, said first as <c>$ command</c> and a blank line, then started with the console's three streams left as
     /// the host's and no window flag, so the person answers its prompts, it finds a terminal, and Ctrl+C reaches it. The same facts as
     /// the window's start (<see cref="Tools.Hand(ProcessStartInfo, string?)"/> from <paramref name="home"/>, <see cref="Shell.Equip"/>,
@@ -420,7 +419,7 @@ public static class HarnessActions
     /// <summary>
     /// A harness action's start: its streams redirected as UTF-8, the tools' environment, and the account and binary
     /// through the one seam every spawn takes (<see cref="Shell.Equip"/>), with the pin's environment where
-    /// <paramref name="managed"/> is the pin's executable (AGT2). At a <paramref name="terminal"/> its streams are the host's
+    /// <paramref name="managed"/> is the pin's executable. At a <paramref name="terminal"/> its streams are the host's
     /// console's and it may have a window, the tools read from <paramref name="home"/>'s file (<see cref="TerminalRunAsync"/>).
     /// </summary>
     private static ProcessStartInfo Prepare(
@@ -447,11 +446,11 @@ public static class HarnessActions
                 StandardErrorEncoding = Encoding.UTF8,
             };
         foreach (var part in command.Skip(1)) info.ArgumentList.Add(part);
-        // An agent action is a child like a session (TOOLS5): the tools' PATH, before the file is resolved on it. A terminal's are its
-        // home's, the one the verb was handed.
+        // An agent action is a child like a session: the tools' PATH, before the file is resolved on it. A terminal's are its
+        // home's, the one the verb is handed.
         if (terminal) Tools.Hand(info, home);
         else Tools.Hand(info);
-        // Resolves the file Windows can start too (WindowsShim, USE1f): one line for every spawn.
+        // Resolves the file Windows can start too (WindowsShim): one line for every spawn.
         Shell.Equip(info, toolchain, profileHome, binary: managed);
         return info;
     }
@@ -466,15 +465,15 @@ public static class HarnessActions
         Process process;
         try
         {
-            // Through the start gate (PROCSTART2): an agent's install or sign-in is a press, so a person's start (PARALLEL1d);
-            // its caller's token ends its wait for a place as it ends the run (PARALLEL1e).
+            // Through the start gate: an agent's install or sign-in is a press, so a person's start;
+            // its caller's token ends its wait for a place as it ends the run.
             process = await ProcessStarts.Shared.StartAsync(info, ProcessPurpose.Tool, ct).ConfigureAwait(false)
                 ?? throw new DriverException($"`{command[0]}` did not start");
         }
         catch (System.ComponentModel.Win32Exception)
         {
             // Said by the driver, not by Win32: its message names the working directory, and one that
-            // reached the page as a bare exception became the generic "something refused" (REV3).
+            // reached the page as a bare exception becomes the generic "something refused".
             throw new DriverException(
                 $"`{command[0]}` could not be started — it is not on this machine's PATH, or it could not be run. "
                 + "Daoris runs the agent's own tooling; install that first, or run it from a terminal.");
@@ -494,8 +493,8 @@ public static class HarnessActions
     /// </summary>
     /// <remarks>
     /// 🔴 Every declared installer is `npm …`, and on Windows `npm` is `npm.cmd`: started by its bare
-    /// name with no shell, Windows appends only `.exe` and finds nothing (REV3; the CLI's `spawnable` is
-    /// the twin, fixed 2026-09-22). An agent npm installed globally is the same shape (USE1f), so every
+    /// name with no shell, Windows appends only `.exe` and finds nothing (the CLI's `spawnable` is
+    /// the twin). An agent npm installed globally is the same shape, so every
     /// spawn of a harness comes through here, by <see cref="Shell.Equip"/>. A shim is then run by
     /// `cmd.exe`, which parses its arguments again and stops at a line break — so an argument it would
     /// reinterpret is refused rather than escaped. An installer's are paths and `package@version`s, and
@@ -593,7 +592,7 @@ public static class HarnessActions
     /// brackets and semicolons. The label is kept; the wrapping goes, and colours with it.
     /// </summary>
     /// <remarks>
-    /// No other control byte is the tool's words either, and one is the driver's own (SIGNIN1): a sign-in's phase is a relayed
+    /// No other control byte is the tool's words either, and one is the driver's own: a sign-in's phase is a relayed
     /// line that begins with the record separator, so a tool's line keeps none and cannot be read as a phase.
     /// </remarks>
     internal static string Clean(string text) => Escapes.Replace(text, "");

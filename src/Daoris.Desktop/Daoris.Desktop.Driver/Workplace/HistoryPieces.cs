@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The pieces a clear of finished work stays for (D153 point 2, D199 point 3; the co-agent design §2.4). No clear touches a piece's
+/// The pieces a clear of finished work stays for. No clear touches a piece's
 /// ref or its box. A piece only the person's act settles waits on them, and the clear would take the lead's record that the person's
 /// <i>Discard…</i> finds the piece's checkout by, so a unit whose sessions asked for one stays until it is settled.
 /// </summary>

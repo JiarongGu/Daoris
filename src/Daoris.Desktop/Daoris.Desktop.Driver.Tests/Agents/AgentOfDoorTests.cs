@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 s-vii (the agent-provider design §7 row 10, O3-F9, O4-F4): which agent a door is, the one reading the usage count and
-/// PICKCARRY1's carry share. A move between one agent's two doors is one agent, so a picked conversation moved between them on its picked
+/// Which agent a door is, the one reading the usage count and
+/// the pick's carry share. A move between one agent's two doors is one agent, so a picked conversation moved between them on its picked
 /// account keeps its pick; two providers sharing a pool are two agents though their account key is one, so a pick is never carried between them.
 /// </summary>
 public sealed class AgentOfDoorTests : IDisposable
@@ -25,8 +25,8 @@ public sealed class AgentOfDoorTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Old: PICKCARRY1 compared the record's door with the new part's, so <c>claude-code</c> to <c>claude-code-acp</c> on one account
-    /// dropped the pick. New: both doors are agent <c>claude-code</c>, so the pick is kept; Codex's door is its holder's agent.
+    /// 🔴 Comparing the record's door with the new part's would drop the pick on <c>claude-code</c> to <c>claude-code-acp</c> on one account.
+    /// Both doors are agent <c>claude-code</c>, so the pick is kept; Codex's door is its holder's agent.
     /// </summary>
     [Fact]
     public void One_agent_s_two_doors_are_one_agent_and_another_agent_is_not()
@@ -42,7 +42,7 @@ public sealed class AgentOfDoorTests : IDisposable
 
     /// <summary>
     /// Two plugins' doors naming <c>claude-code-acp</c> share its pool (<c>OwnerOf</c> equal) and are each a provider of their own: never one
-    /// agent, so a pick is not carried between them, as PICKCARRY1 holds today; a door joined to <c>claude-code</c> is that agent's.
+    /// agent, so a pick is not carried between them; a door joined to <c>claude-code</c> is that agent's.
     /// </summary>
     [Fact]
     public void Two_providers_sharing_a_pool_are_two_agents_and_a_joined_door_is_its_provider_s()

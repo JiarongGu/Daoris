@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A channel's message kept, told as <see cref="WorkEventKinds.ChannelPosted"/> (CHANNELJOIN1d, D244; the event channel design §5.7): the
+/// A channel's message kept, told as <see cref="WorkEventKinds.ChannelPosted"/>: the
 /// journal's <c>channel</c> row of change <c>message</c>, its poster's class read from the poster's id as the doors read it, never from a
 /// name. A message of another machine's (a mirror) is told without its id, which is not this machine's to name.
 /// </summary>

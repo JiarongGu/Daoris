@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the settle judged of one promoted member (INTEGRATE1e part e4b): the commits its branch made after its request froze, as
+/// What the settle judged of one promoted member: the commits its branch made after its request froze, as
 /// <see cref="IntegrationAfterLanding"/> judged them, and the branch's tip where they were judged.
 /// </summary>
 /// <param name="Words">What the judgement says where no commit is superseded.</param>
@@ -13,9 +13,9 @@ internal sealed record IntegrationSettlement(
 internal sealed record IntegrationSettled(IReadOnlyList<IntegrationSettlement> Members, IReadOnlyList<IntegrationMember> Held, string? Unread);
 
 /// <summary>
-/// The integration run's settle step (INTEGRATE1e parts e4a and e4b, D215; the integration design §5.2 step 9, §5.7): for each promoted member,
+/// The integration run's settle step: for each promoted member,
 /// the commits its branch made after its request froze judged against the promoted line (<see cref="IntegrationAfterLanding"/>), and each member
-/// settled with its request closed. Contained is said and nothing is kept; new is said as offered by the rule's own <c>request</c> (§4.6); a
+/// settled with its request closed. Contained is said and nothing is kept; new is said as offered by the rule's own <c>request</c>; a
 /// superseded commit is never dropped: its branch's work is kept on a recovery ref first, in an act the journal records (<see cref="RecoveryKeeps"/>), then
 /// its disposition is written, pending, in the same end that settles the member, so a crash between them leaves the ref and no disposition,
 /// which the rerun repairs by finding the ref it made. A member whose ref cannot be made is not settled and the step ends <c>held</c>.
@@ -36,7 +36,7 @@ internal static class IntegrationSettles
             var request = store.Request(member.Request)!;
             var branch = request.Branch;
 
-            // A merge rule's press (INTEGRATE1g): nothing after it is the request's; the session's tree follows the merge as the landing says.
+            // A merge rule's press: nothing after it is the request's; the session's tree follows the merge as the landing says.
             if (request.Route == IntegrationRoutes.Merge)
             {
                 var by = request.Requester.Door == IntegrationDoors.Landing ? "merged by its workflow's landing, with no press." : "merged on the person's press.";
@@ -145,12 +145,12 @@ internal static class IntegrationSettles
         if (branchCode > 1) return (null, $"git could not read `{request.Branch}` ({ContentHolds.Said(branchErr)}): nothing was written, and it is asked again at the next look.");
         var branchTip = branchCode == 0 && branchOut.Trim().Length > 0 ? branchOut.Trim() : request.Tip;
 
-        // Where the unit began is the commit its work and the line first shared: what the line changed after it is the line's side (§5.7).
+        // Where the unit began is the commit its work and the line first shared: what the line changed after it is the line's side.
         var (forkCode, forkOut, forkErr) = await WorkingTree.GitAsync(root, ["merge-base", request.Tip, candidate.Base], ct).ConfigureAwait(false);
         if (forkCode > 1) return (null, $"git could not find where `{request.Branch}` began ({ContentHolds.Said(forkErr)}): nothing was written, and it is asked again at the next look.");
         var fork = forkCode == 0 && forkOut.Trim().Length > 0 ? forkOut.Trim() : candidate.Base;
 
-        // The unit's own landed work: its merge commit and the commits the merge brought in, which supersede nothing (§5.7).
+        // The unit's own landed work: its merge commit and the commits the merge brought in, which supersede nothing.
         var replayed = member.Replayed!;
         var (ownCode, ownOut, ownErr) = await WorkingTree.GitAsync(root, ["rev-list", replayed, "--not", $"{replayed}^1"], ct).ConfigureAwait(false);
         if (ownCode != 0) return (null, $"git could not list what the replay of `{request.Branch}` made ({ContentHolds.Said(ownErr)}): nothing was written, and it is asked again at the next look.");

@@ -5,9 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1l: a run's door says what happened as readings on one sink its executor composes. The event file each door keeps is the one
-/// it kept before the sink, byte for byte but for each event's own time; every failure is one <see cref="WireReading.Failed"/>; the sink's
-/// parts are each told every reading, watched where a console is. AGENTPROVIDER1 s-viii: a subagent's card on the native door wears the
+/// A run's door says what happened as readings on one sink its executor composes. The event file each door keeps is the door's
+/// own events, byte for byte but for each event's own time; every failure is one <see cref="WireReading.Failed"/>; the sink's
+/// parts are each told every reading, watched where a console is. A subagent's card on the native door wears the
 /// protocol door's <c>think</c>.
 /// </summary>
 public sealed class WireReadingsTests : IDisposable
@@ -162,8 +162,7 @@ public sealed class WireReadingsTests : IDisposable
     private static readonly WireReading TurnEnded = new WireReading.Said(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "success" });
 
     /// <summary>
-    /// The native door's failed result, read as a limit, is the limit its turn ended on, told once at that end; nothing else the sink hears is
-    /// (D210 1c, TOOL4n).
+    /// The native door's failed result, read as a limit, is the limit its turn ended on, told once at that end; nothing else the sink hears is a limit.
     /// </summary>
     [Fact]
     public void The_native_door_s_failed_result_read_as_a_limit_is_its_turn_s_limit_told_once_and_a_protocol_failure_is_none()

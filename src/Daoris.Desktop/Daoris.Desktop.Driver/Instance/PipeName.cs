@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The name of the pipe the running Daoris answers on (RPC1a, D171 point 3, the terminal RPC design §4.1):
+/// The name of the pipe the running Daoris answers on:
 /// <c>daoris-&lt;the home's id&gt;-&lt;the Windows session's id&gt;</c>, so two homes' instances, and one user's two sessions,
 /// never meet. The desktop serves it and writes it into <c>running.json</c> as <c>pipe</c> (<see cref="RunningAddress"/>); a
 /// reader takes a name only where it is the pipe of the home the file names.

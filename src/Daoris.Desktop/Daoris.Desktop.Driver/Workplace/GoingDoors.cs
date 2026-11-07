@@ -4,7 +4,7 @@ using static Daoris.Driver.TreeWorktrees;
 
 namespace Daoris.Driver;
 
-/// <summary>Which door removes a set-aside folder, as its <see cref="GoingRecord"/> says (KEEPSIZE1b).</summary>
+/// <summary>Which door removes a set-aside folder, as its <see cref="GoingRecord"/> says.</summary>
 internal static class GoingDoors
 {
     /// <summary>The hour after its record: its holding check runs again before a stopped delete finishes.</summary>

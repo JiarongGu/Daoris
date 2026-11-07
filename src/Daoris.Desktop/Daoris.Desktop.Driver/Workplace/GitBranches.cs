@@ -1,18 +1,18 @@
 namespace Daoris.Driver;
 
-/// <summary>The kinds a branch is listed under (GIT1a, D147 §2.2), in the order a list shows them.</summary>
+/// <summary>The kinds a branch is listed under, in the order a list shows them.</summary>
 public static class GitBranchKind
 {
-    /// <summary>The repository's line (D86), the local branch of that name.</summary>
+    /// <summary>The repository's line, the local branch of that name.</summary>
     public const string Line = "line";
 
-    /// <summary>A session's branch: the <c>daoris/</c> namespace Daoris's proofs read as its own sessions' (D88), or the branch its tree was moved onto (TREEFOLLOWREPO1).</summary>
+    /// <summary>A session's branch: the <c>daoris/</c> namespace Daoris's proofs read as its own sessions', or the branch its tree is moved onto.</summary>
     public const string Session = "session";
 
-    /// <summary>A branch a landing made that <c>landings.json</c> still records (D102), while it holds the commit it was made at.</summary>
+    /// <summary>A branch a landing made that <c>landings.json</c> still records, while it holds the commit that made it.</summary>
     public const string Landed = "landed";
 
-    /// <summary>Every other local branch: the person's own, a recorded name a branch no longer matches among them (D113).</summary>
+    /// <summary>Every other local branch: the person's own, a recorded name a branch no longer matches among them.</summary>
     public const string Yours = "yours";
 
     /// <summary>A branch only origin holds here, as this checkout last fetched it.</summary>
@@ -21,7 +21,7 @@ public static class GitBranchKind
     public static IReadOnlyList<string> Order { get; } = [Line, Session, Landed, Yours, Origin];
 }
 
-/// <summary>How a landed branch stands to its own name on origin (D147 §2.2), as this checkout last fetched origin.</summary>
+/// <summary>How a landed branch stands to its own name on origin, as this checkout last fetched origin.</summary>
 public static class GitOrigin
 {
     public const string InStep = "in-step";
@@ -44,7 +44,7 @@ public static class GitOrigin
     public const string Unknown = "unknown";
 }
 
-/// <summary>The line's head (D147 §2.2): which branch, what set it (D86), and how it stands to origin's copy of it.</summary>
+/// <summary>The line's head: which branch, what set it, and how it stands to origin's copy of it.</summary>
 /// <param name="Branch">The line, or null where nothing names one.</param>
 /// <param name="Source">What set it, one of <see cref="LineSource"/>.</param>
 public sealed record GitLine(string? Branch, string Source)
@@ -62,7 +62,7 @@ public sealed record GitLine(string? Branch, string Source)
     public int? Behind { get; init; }
 }
 
-/// <summary>What names a session's branch (D147 §2.2): the newest session record on the tree of its name, and where it grew from (WSR6).</summary>
+/// <summary>What names a session's branch: the newest session record on the tree of its name, and where it grew from.</summary>
 public sealed record GitSessionBranch
 {
     /// <summary>The newest session record whose tree has the branch's name, or null where no record read names it.</summary>
@@ -72,14 +72,14 @@ public sealed record GitSessionBranch
 
     public string? Quest { get; init; }
 
-    /// <summary>The chain step's branch it grew from (CHAIN2), as <c>session-branches.json</c> records it; null where it grew from the line.</summary>
+    /// <summary>The chain step's branch it grew from, as <c>session-branches.json</c> records it; null where it grew from the line.</summary>
     public string? GrewFrom { get; init; }
 
     /// <summary>The commit it started at, as <c>session-branches.json</c> records it; null where nothing recorded it.</summary>
     public string? From { get; init; }
 }
 
-/// <summary>What a landed branch's record says (D102), and how it stands to its own name on origin.</summary>
+/// <summary>What a landed branch's record says, and how it stands to its own name on origin.</summary>
 /// <param name="Origin">One of <see cref="GitOrigin"/>.</param>
 public sealed record GitLandedBranch(string Session, DateTimeOffset LandedAt, string Origin)
 {
@@ -87,7 +87,7 @@ public sealed record GitLandedBranch(string Session, DateTimeOffset LandedAt, st
 
     public string? Title { get; init; }
 
-    /// <summary>The plugin that answered that it pushed it (D100), or null.</summary>
+    /// <summary>The plugin that answered that it pushed it, or null.</summary>
     public string? Plugin { get; init; }
 
     /// <summary>Whether a push was recorded.</summary>
@@ -109,7 +109,7 @@ public sealed record GitLandedBranch(string Session, DateTimeOffset LandedAt, st
     public int? OriginBehind { get; init; }
 
     /// <summary>
-    /// What its plugin last answered about its pull request, with when (PLUGHOOK1c, D148 point 6, D147 §2.2), read from the
+    /// What its plugin last answered about its pull request, with when, read from the
     /// landing record; null where none is kept. A read never asks.
     /// </summary>
     public PullRequestState? PullRequestState { get; init; }
@@ -118,7 +118,7 @@ public sealed record GitLandedBranch(string Session, DateTimeOffset LandedAt, st
     public PullRequestAskFailed? PullRequestAskFailed { get; init; }
 }
 
-/// <summary>One branch in the list (D147 §2.2).</summary>
+/// <summary>One branch in the list.</summary>
 /// <param name="Name">As a person reads it: <c>topic</c>, or <c>origin/release</c> for one only origin holds.</param>
 /// <param name="Kind">One of <see cref="GitBranchKind"/>.</param>
 public sealed record GitBranch(string Name, string Kind, string Commit)
@@ -143,11 +143,11 @@ public sealed record GitBranch(string Name, string Kind, string Commit)
     public GitLandedBranch? Landed { get; init; }
 }
 
-/// <summary>When this checkout last fetched (D147 §2.2): <c>FETCH_HEAD</c>'s time, git's own.</summary>
+/// <summary>When this checkout last fetched: <c>FETCH_HEAD</c>'s time, git's own.</summary>
 /// <param name="Heard">False for an empty <c>FETCH_HEAD</c>: git empties it as a fetch begins, so one left empty was tried and heard nothing.</param>
 public sealed record GitFetch(DateTimeOffset At, bool Heard);
 
-/// <summary>One repository's group in the list (D147 §2.2): its line, its last fetch, its branches by kind, and how git answered.</summary>
+/// <summary>One repository's group in the list: its line, its last fetch, its branches by kind, and how git answered.</summary>
 public sealed record RepositoryBranches(string Repository, string Workspace, GitLine Line)
 {
     /// <summary>The line first, then each kind in <see cref="GitBranchKind.Order"/>, each newest commit first.</summary>
@@ -157,7 +157,7 @@ public sealed record RepositoryBranches(string Repository, string Workspace, Git
     public GitFetch? Fetch { get; init; }
 
     /// <summary>
-    /// Whether a branch of Daoris's stands here, a session's or a landed one (D112). A repository git could not answer for
+    /// Whether a branch of Daoris's stands here, a session's or a landed one. A repository git could not answer for
     /// counts as holding one, so git's words reach its row rather than the repository vanishing.
     /// </summary>
     public bool Holds { get; init; }
@@ -165,23 +165,23 @@ public sealed record RepositoryBranches(string Repository, string Workspace, Git
     /// <summary>The atoms this git lacked (<see cref="GitRefs.WorktreePath"/>, <see cref="GitRefs.AheadBehind"/>), each answered another way.</summary>
     public IReadOnlyList<string> Missing { get; init; } = [];
 
-    /// <summary>Each git call the read made, as a person types it in the checkout (D147 §3.3), in order.</summary>
+    /// <summary>Each git call the read made, as a person types it in the checkout, in order.</summary>
     public IReadOnlyList<string> Commands { get; init; } = [];
 
     /// <summary>Why git could not list it, in git's words where it said any; null where it answered.</summary>
     public string? Problem { get; init; }
 }
 
-/// <summary>The list (D147 §2.2): the repositories a scope takes, and every other one named apart (D112).</summary>
+/// <summary>The list: the repositories a scope takes, and every other one named apart.</summary>
 public sealed record GitBranchList(IReadOnlyList<RepositoryBranches> Repositories, IReadOnlyList<SyncRepository> Apart);
 
 /// <summary>One repository as the list reads it: its line, already resolved, and the records that name its branches.</summary>
 public sealed record GitRepositoryAsk(string Repository, string Workspace, Line Line)
 {
-    /// <summary>The landings record (D102); only this repository's standing entries are read.</summary>
+    /// <summary>The landings record; only this repository's standing entries are read.</summary>
     public IReadOnlyList<LandedBranch> Landings { get; init; } = [];
 
-    /// <summary>Where session branches grew from (WSR6); only this repository's are read.</summary>
+    /// <summary>Where session branches grew from; only this repository's are read.</summary>
     public IReadOnlyList<GrownBranch> Grown { get; init; } = [];
 
     /// <summary>The session records, closed ones included, or null where none were read: a session branch is then listed unnamed.</summary>
@@ -195,19 +195,19 @@ public sealed record GitRepositoryAsk(string Repository, string Workspace, Line 
 public delegate Task<(int Code, string Stdout, string Stderr)> GitRun(IReadOnlyList<string> arguments, CancellationToken ct);
 
 /// <summary>
-/// The branch list, read (GIT1a, D147 §2.2, §4.1): each repository's line and branches by kind, from one
+/// The branch list, read: each repository's line and branches by kind, from one
 /// <c>for-each-ref</c> per repository through the git the agents run.
 /// </summary>
 /// <remarks>
-/// <para><b>Through Tools' git</b> (D121 §3): every call starts through <see cref="WorkingTree.GitAsync(string, IReadOnlyList{string}, CancellationToken)"/>,
+/// <para><b>Through Tools' git</b>: every call starts through <see cref="WorkingTree.GitAsync(string, IReadOnlyList{string}, CancellationToken)"/>,
 /// which runs the file Tools resolves by its path, so the page reads the git the agents run.</para>
 ///
-/// <para>🔴 <b>One process per repository, never one per branch</b> (REVIEW3: a start costs about 100 ms, and a start per
+/// <para>🔴 <b>One process per repository, never one per branch</b> (a start costs about 100 ms, and a start per
 /// file was the measured cost). Three things add a call, each bounded by what is exceptional, and each is said in
 /// <see cref="RepositoryBranches.Commands"/>:</para>
 /// <list type="bullet">
 /// <item>a landed branch whose commit moved since its landing: one <c>merge-base --is-ancestor</c>, since it is the landing's
-/// only while it holds the commit the landing made it at (D102);</item>
+/// only while it holds the commit the landing made it at;</item>
 /// <item>a landed branch whose copy on origin differs from it: one <c>rev-list --left-right --count</c>;</item>
 /// <item>a git older than an atom: <see cref="ReadAsync"/>'s fallbacks.</item>
 /// </list>
@@ -228,11 +228,11 @@ public delegate Task<(int Code, string Stdout, string Stderr)> GitRun(IReadOnlyL
 /// </remarks>
 public static class GitBranches
 {
-    /// <summary>How many repositories are read at once, as many as bringing up to date fetches (WSR7).</summary>
+    /// <summary>How many repositories are read at once, as many as bringing up to date fetches.</summary>
     public const int ReadsAtOnce = SyncBounds.FetchesAtOnce;
 
     /// <summary>
-    /// Every repository with a checkout here, read, and listed by D112's scope: by default those holding a branch of
+    /// Every repository with a checkout here, read, and listed by a scope: by default those holding a branch of
     /// Daoris's first, every other one named apart; <see cref="SyncScope.Everything"/> lists every one, and a repository
     /// named is listed. Each is read to know whether it holds one, so an apart repository costs its one call too.
     /// </summary>
@@ -242,7 +242,7 @@ public static class GitBranches
         IReadOnlyList<SessionRecord>? sessions, SyncScope? scope = null, CancellationToken ct = default)
     {
         var landings = new LandedBranches(home).All();
-        // FABRIC-END4a review: a removed branch's trace that still says where its tree moved onto is read with the standing entries.
+        // A removed branch's trace that still says where its tree moved onto is read with the standing entries.
         var grown = new SessionBranches(home).Entries().Where(each => each.GoneAt is null || each.Now is not null).ToList();
         var present = repositories.Where(each => !string.IsNullOrWhiteSpace(each.Root) && Directory.Exists(each.Root)).ToList();
         var read = await TreeRefs.AtMostAsync(present, ReadsAtOnce, async (each, token) =>
@@ -303,7 +303,7 @@ public static class GitBranches
 
     /// <summary>
     /// The last fetch, from <c>FETCH_HEAD</c> in the git directory: its time where it is, never a guess where it is not. It is
-    /// the file a fetch writes there, the person's own; Daoris's fetch when it brings a repository up to date writes none (D109).
+    /// the file a fetch writes there, the person's own; Daoris's fetch when it brings a repository up to date writes none.
     /// </summary>
     public static GitFetch? FetchOf(string gitDirectory)
     {
@@ -445,7 +445,7 @@ public static class GitBranches
     }
 
     /// <summary>
-    /// Each ref sorted into its kind, from facts (D147 §2.2): the line by its name; a session's branch by the <c>daoris/</c>
+    /// Each ref sorted into its kind, from facts: the line by its name; a session's branch by the <c>daoris/</c>
     /// namespace, named by the newest session record on the tree of its name; a landed one by the record, while it holds the
     /// commit the landing made it at; every other local branch the person's; origin's where no local branch has its name.
     /// Pure: what git answered beyond the refs comes in <paramref name="answers"/>, keyed as <see cref="Owed"/> keys them.
@@ -529,7 +529,7 @@ public static class GitBranches
             };
 
             if (each == local) return branch with { Kind = GitBranchKind.Line };
-            // A branch the session's agent moved its tree onto is that session's while the tree is on it (TREEFOLLOWREPO1, D164):
+            // A branch the session's agent moved its tree onto is that session's while the tree is on it:
             // the ledger's entry names it in Now, and its own daoris/ branch, though it may be gone, names the tree's folder.
             var own = each.Short.StartsWith("daoris/", StringComparison.Ordinal);
             var moved = !own && movedOnto.TryGetValue(each.Short, out var followed) ? followed : null;
@@ -548,7 +548,7 @@ public static class GitBranches
                 };
             }
 
-            // A recorded name the branch no longer matches is the person's (D102, D113): it holds the recorded commit, or
+            // A recorded name the branch no longer matches is the person's: it holds the recorded commit, or
             // git said it does not. An answer git could not give leaves it the record's, since nothing here acts on it.
             if (landings.TryGetValue(each.Short, out var entry) && MayBeLanded(ask, each, entry)
                 && (AtTip(entry, each) || !answers.TryGetValue($"holds:{each.Name}", out var holds) || holds.Code != 1))
@@ -605,7 +605,7 @@ public static class GitBranches
     private static (int Left, int Right)? Counted(IReadOnlyDictionary<string, (int Code, string Stdout)> answers, string key) =>
         answers.TryGetValue(key, out var answer) && answer.Code == 0 ? GitRefs.ParseCounts(answer.Stdout) : null;
 
-    /// <summary>A tree's folder name: a session's branch is <c>daoris/&lt;name&gt;</c> for the tree at <c>…/&lt;name&gt;</c> (D51).</summary>
+    /// <summary>A tree's folder name: a session's branch is <c>daoris/&lt;name&gt;</c> for the tree at <c>…/&lt;name&gt;</c>.</summary>
     private static string TreeName(string tree)
     {
         var path = tree.Replace('\\', '/').TrimEnd('/');

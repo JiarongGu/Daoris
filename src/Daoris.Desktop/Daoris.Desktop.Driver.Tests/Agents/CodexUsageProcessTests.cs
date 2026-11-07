@@ -4,13 +4,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CODEXUSE1's spawn: Codex's own app server, started as a harness's reporting command is (its PATH, its account's home in
+/// Codex's own app server spawn, started as a harness's reporting command is (its PATH, its account's home in
 /// the toolchain's variable, the explicit command before the pin before PATH), asked one question and stopped. The server is
-/// a script speaking the evidence's lines (§1), which logs the home it was started under, so a test sees which account was
+/// a script speaking the evidence's lines, which logs the home it starts under, so a test sees which account is
 /// asked without reading inside it.
 /// </summary>
 /// <remarks>
-/// A real process, so the <c>Process</c> half (MOD8). The protocol and the reading are <c>CodexUsageTests</c>, in process.
+/// A real process, so the <c>Process</c> half. The protocol and the reading are <c>CodexUsageTests</c>, in process.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class CodexUsageProcessTests : IDisposable
@@ -95,8 +95,8 @@ public sealed class CodexUsageProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 POOL1a3 (D197 point 3, amending CODEXUSE3): an agent's press and the roster's read-all start each server under an
-    /// account's home of Daoris's, and never one with none, which would answer for the person's own sign-in (D63) and might
+    /// An agent's press and the roster's read-all start each server under an
+    /// account's home of Daoris's, and never one with none, which would answer for the person's own sign-in and might
     /// refresh their token. Nothing is kept under the own sign-in's key.
     /// </summary>
     [Fact]

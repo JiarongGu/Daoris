@@ -22,8 +22,8 @@ public sealed record BinaryFile(string Path, long Size, string Written)
     }
 }
 
-/// <summary>What a door's binary answered its version question, of which files, and when (PERF3).</summary>
-/// <param name="Files">The files the question started, as they stood; none where nothing was there to start.</param>
+/// <summary>What a door's binary answered its version question, of which files, and when.</summary>
+/// <param name="Files">The files the question started, as they stand; none where there is nothing to start.</param>
 /// <param name="Present">Whether it answered.</param>
 /// <param name="Version">The first line it answered with.</param>
 /// <param name="Problem">Why it is absent.</param>
@@ -34,9 +34,9 @@ public sealed record BinaryRead(IReadOnlyList<BinaryFile> Files, bool Present, s
 }
 
 /// <summary>
-/// What each door's binary last answered its version question, kept in <c>reads.json</c> beside the accounts' readings (PERF3): under
-/// the door's name, its <c>binary</c>. A version is read again only where the files a question would start are no longer the ones it
-/// was read of, at a press, or where an install, an update or a pin changed it, so a look, a list and a restart start no process.
+/// What each door's binary last answered its version question, kept in <c>reads.json</c> beside the accounts' readings: under
+/// the door's name, its <c>binary</c>. A version is read again only where the files a question would start differ from the ones it
+/// came from, at a press, or where an install, an update or a pin changed it, so a look, a list and a restart start no process.
 /// </summary>
 /// <remarks>
 /// The entry's shape: <c>{ "files": [ { "path": "…", "size": 1234, "written": "…" } ], "present": true, "version": "…", "read": "…Z" }</c>,
@@ -46,7 +46,7 @@ public static class BinaryReads
 {
     private const string Field = "binary";
 
-    /// <summary>What <paramref name="door"/>'s binary last answered; null where nothing was read, or it does not read.</summary>
+    /// <summary>What <paramref name="door"/>'s binary last answered; null where nothing is read, or it does not read.</summary>
     public static BinaryRead? Of(string home, string door)
     {
         if (Child(Child(Load(AccountReads.PathOf(home)), door), Field) is not { } entry

@@ -4,10 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ACPEND1, through a REAL tick on the protocol door. Measured on the first real run: the agent took
-/// the quest, worked, and then answered its prompt with an error — the account's spend limit — and
-/// exited 0 once the driver closed its stdin. The quest was still taken, so the record said
-/// "stood-down — someone else has it". It was nobody else: the turn had been refused.
+/// Through a REAL tick on the protocol door: the agent takes the quest, works, and then answers its
+/// prompt with an error — the account's spend limit — and exits 0 once the driver closes its stdin.
+/// The quest is still taken, but nobody else has it: the turn is refused, so the record is not
+/// "stood-down — someone else has it".
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class AcpTurnFailureTickTests : IDisposable
@@ -46,9 +46,9 @@ public sealed class AcpTurnFailureTickTests : IDisposable
         var record = service.Session("s1");
         Assert.Equal("Taken", service.Status("q1"));
         Assert.Equal("failed", record["state"]!.GetValue<string>());
-        // The table knows these words (TOOL4d): the failure is a limit, and so not a strike.
+        // The table knows these words: the failure is a limit, and so not a strike.
         Assert.True(record["limit"]!.GetValue<bool>());
-        // A limit's note carries its facts, the cooling line; the agent's own words stay in its transcript (AGT3c).
+        // A limit's note carries its facts, the cooling line; the agent's own words stay in its transcript.
         var note = record["note"]!.GetValue<string>();
         Assert.StartsWith(
             "the agent's turn failed with the quest still taken: The `stub` account it ran on hit its session limit and is cooling "
@@ -59,12 +59,12 @@ public sealed class AcpTurnFailureTickTests : IDisposable
     }
 
     /// <summary>
-    /// D80, the rest of the measured run: the quest a cut-off left taken is carried on at the next tick,
+    /// The quest a cut-off leaves taken is carried on at the next tick,
     /// in the tree the cut-off session worked in, by a session told it is carrying on — which closes it.
     /// </summary>
     /// <remarks>
-    /// Cut off by a refusal no limit table knows, since a limit's carry-on waits for the reset the agent named
-    /// (TOOL4d): that wait is <c>AccountLimitTickTests</c>'.
+    /// Cut off by a refusal no limit table knows, since a limit's carry-on waits for the reset the agent named:
+    /// that wait is <c>AccountLimitTickTests</c>'.
     /// </remarks>
     [Fact]
     public async Task The_next_tick_carries_the_quest_on_in_the_same_tree_and_the_quest_closes()

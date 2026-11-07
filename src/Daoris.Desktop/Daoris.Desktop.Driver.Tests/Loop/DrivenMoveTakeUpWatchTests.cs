@@ -4,11 +4,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-iv part b (D212; the foundation design §3.3, §19.1): the watch's first look takes up a dead loop's driven move through the
+/// The watch's first look takes up a dead loop's driven move through the
 /// driver's holder, before it plans the look's starts, so a quest whose carry-on a dead loop's move held is carried on by this one.
 /// </summary>
 /// <remarks>
-/// In-process over the stand-in ledger, as the DEV3 tests drive the watch: the dead loop is a run of the move store whose recorded start no
+/// In-process over the stand-in ledger, as the other watch tests drive it: the dead loop is a run of the move store whose recorded start no
 /// longer matches its process, as the lease declares one dead. Each phase's take-up is <see cref="DrivenCarryOnStoreTests"/>'.
 /// </remarks>
 public sealed class DrivenMoveTakeUpWatchTests : IDisposable
@@ -80,8 +80,8 @@ public sealed class DrivenMoveTakeUpWatchTests : IDisposable
     }
 
     /// <summary>
-    /// SHAREMOVES1 (D212): a <c>--share</c> loop's first look takes up only the lines it runs, so another line's dead move stands for the
-    /// lease holder; the dead loop's moves are visited oldest first, so the line it runs closing means the other was passed over.
+    /// A <c>--share</c> loop's first look takes up only the lines it runs, so another line's dead move stands for the
+    /// lease holder; the dead loop's moves are visited oldest first, so the line it runs closing means the other is passed over.
     /// </summary>
     [Fact]
     public async Task A_shared_loop_s_first_look_takes_up_its_own_line_and_leaves_another_line_s_move_standing()
@@ -98,7 +98,7 @@ public sealed class DrivenMoveTakeUpWatchTests : IDisposable
         Assert.Equal("old-ended", MoveFrom("other")!.PhaseWord);
     }
 
-    /// <summary>SHAREMOVES1: the lease holder's first look still takes up every dead run's driven move, whichever line runs it.</summary>
+    /// <summary>The lease holder's first look still takes up every dead run's driven move, whichever line runs it.</summary>
     [Fact]
     public async Task The_lease_holder_s_first_look_takes_up_every_dead_run_s_driven_move()
     {

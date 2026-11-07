@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TRACE1b (D143, D50): the chain a trace reads, as data, which both doors word. What may reach a page is held here, beside
+/// The chain a trace reads, as data, which both doors word. What may reach a page is held here, beside
 /// the route's own test (<c>DriverModuleTraceTests</c>): a tree by its folder's name, and neither its path nor what a failed
-/// read said, which may name a file under the home (D47 §4).
+/// read said, which may name a file under the home.
 /// </summary>
 public sealed class TraceChainTests
 {

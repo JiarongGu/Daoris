@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What an agent Daoris starts may do (PERM1, D72): Daoris's rules in three scopes of its own, one file
+/// What an agent Daoris starts may do: Daoris's rules in three scopes of its own, one file
 /// under the home, unioned with its defaults and handed to the harness at spawn as one more scope.
 /// </summary>
 /// <remarks>
@@ -60,12 +60,12 @@ public sealed class PermissionRulesTests : IDisposable
         "mcp__daoris-knowledge__memory_propose",
     ];
 
-    /// <summary>What the `commit` default allows (PERM4), a rename among it (UNBLOCK4, D122 §3.6).</summary>
+    /// <summary>What the `commit` default allows, a rename among it.</summary>
     private static readonly string[] Commit = ["Bash(cd:*)", "Bash(git add:*)", "Bash(git commit:*)", "Bash(git mv:*)"];
 
     /// <summary>
     /// What the `no-push` default denies: a push as written, and with options before its subcommand, the
-    /// forms the harness's maker says a `git push` rule does not stop (UNBLOCK4, D122 §3.7).
+    /// forms the harness's maker says a `git push` rule does not stop.
     /// </summary>
     private static readonly string[] NoPush = ["Bash(git push)", "Bash(git push:*)", "Bash(git -* push)", "Bash(git -* push *)"];
 
@@ -76,12 +76,12 @@ public sealed class PermissionRulesTests : IDisposable
 
     /// <summary>
     /// A machine that wrote nothing still hands every session Daoris's defaults: the connector's own
-    /// tools allowed (INT3b), because an ask is a refusal for anything Daoris starts, and a push denied
-    /// (D37), structurally rather than by a script's exit code.
+    /// tools allowed, because an ask is a refusal for anything Daoris starts, and a push denied,
+    /// structurally rather than by a script's exit code.
     /// </summary>
     /// <summary>
     /// Whether the connector reaches a session, which is what decides whether the driver holds for
-    /// trust (D73): allowed by the tool, the server or its wildcard, and asked or denied by none.
+    /// trust: allowed by the tool, the server or its wildcard, and asked or denied by none.
     /// </summary>
     [Fact]
     public void The_connector_reaches_a_session_only_when_allowed_and_never_asked_or_denied()
@@ -101,7 +101,7 @@ public sealed class PermissionRulesTests : IDisposable
     }
 
     /// <summary>
-    /// A session may read the folder its own quest's or ask's files are kept in (INT4j), and the rule
+    /// A session may read the folder its own quest's or ask's files are kept in, and the rule
     /// is written in the harness's own absolute form: `//` then the path in POSIX form, a Windows drive
     /// lower-cased (`C:\x` → `/c/x`), because that is what Claude Code compares a Read's target against
     /// on Windows — and an allow is compared case-sensitively there, so nothing else is re-cased.
@@ -116,7 +116,7 @@ public sealed class PermissionRulesTests : IDisposable
         Assert.Equal("Read(//srv/daoris/asks/a1/**)", PermissionRules.ReadRule("/srv/daoris/asks/a1"));
     }
 
-    /// <summary>D107: what a session reaches across joins the person's rules, each rule once, theirs first.</summary>
+    /// <summary>What a session reaches across joins the person's rules, each rule once, theirs first.</summary>
     [Fact]
     public void Two_sets_of_lists_join_each_rule_once_in_the_order_first_met()
     {
@@ -130,7 +130,7 @@ public sealed class PermissionRulesTests : IDisposable
         Assert.Equal(["Bash(rm:*)", "Edit(//b/**)"], joined.Deny);
     }
 
-    /// <summary>D107: an edit of another checkout is written in the same absolute form as a read.</summary>
+    /// <summary>An edit of another checkout is written in the same absolute form as a read.</summary>
     [Fact]
     public void A_checkouts_edit_is_the_same_absolute_rule_as_its_read()
     {
@@ -179,26 +179,25 @@ public sealed class PermissionRulesTests : IDisposable
     }
 
     /// <summary>
-    /// A reviewer's session says its opinion, and the working session handed one answers it (XAGENT1c2; the second agent
-    /// design §5.4, §6.1, §6.4). An ask over the protocol door is a refusal (D52), so the default allows both, as it allows
+    /// A reviewer's session says its opinion, and the working session handed one answers it. An ask over the protocol door is a refusal, so the default allows both, as it allows
     /// <c>review_serve</c>: the service answers each for its own session only, and neither gives the verdict.
     /// </summary>
     [Theory]
     [InlineData("opinion_give")]
     [InlineData("opinion_answer")]
-    // MIXAGENT2a-i (D163 point 2): a working session's ask for a helper and a helper's answer, each a file under the home.
+    // A working session's ask for a helper and a helper's answer, each a file under the home.
     [InlineData("helper_ask")]
     [InlineData("helper_answer")]
-    // COAGENT1b (D199 point 8): a partner's answer for its piece, a file under the home, refused to every session that writes none.
+    // A partner's answer for its piece, a file under the home, refused to every session that writes none.
     [InlineData("partner_answer")]
-    // SESSONE2b (D167 point 7): a session on an ask posts to and reads its channel; the service answers each for its own ask only.
+    // A session on an ask posts to and reads its channel; the service answers each for its own ask only.
     [InlineData("channel_post")]
     [InlineData("channel_read")]
-    // SESSCTX1f: a session reads its own line's record, read-only, on this machine; the service refuses every other record.
+    // A session reads its own line's record, read-only, on this machine; the service refuses every other record.
     [InlineData("line_read")]
-    // HANDBACK1: a session reads one quest's handback of its own workspace, read-only, as it reads the quest list.
+    // A session reads one quest's handback of its own workspace, read-only, as it reads the quest list.
     [InlineData("handback_read")]
-    // KNOWCENTRAL2b: a repository's memory, read changing nothing; a write staged, an end waiting for its approver, a proposal a quest.
+    // A repository's memory, read changing nothing; a write staged, an end waiting for its approver, a proposal a quest.
     [InlineData("memory_search")]
     [InlineData("memory_get")]
     [InlineData("memory_write")]
@@ -227,7 +226,7 @@ public sealed class PermissionRulesTests : IDisposable
         Assert.Contains("Bash(git commit:*)", back.Allow);
     }
 
-    /// <summary>ONEWAY1q: a push is git access's Write alone, so <c>no-push</c> has no switch, and a file that lists it off still hands it.</summary>
+    /// <summary>A push is git access's Write alone, so <c>no-push</c> has no switch, and a file that lists it off still hands it.</summary>
     [Fact]
     public void No_push_is_not_switched_here_since_git_access_says_whether_a_session_pushes()
     {
@@ -278,9 +277,9 @@ public sealed class PermissionRulesTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 REV3: a scope is a name as a person writes it, and every other layer — the registry, the planner,
-    /// the quest's `to` — matches names case-insensitively. Here they were keyed ordinally, so a quest to
-    /// `engine` spawned a session handed none of `Engine`'s denies: a widening nobody chose.
+    /// A scope is a name as a person writes it, and every other layer — the registry, the planner,
+    /// the quest's `to` — matches names case-insensitively. Keyed ordinally, a quest to
+    /// `engine` would spawn a session handed none of `Engine`'s denies: a widening nobody chose.
     /// </summary>
     [Fact]
     public void A_scope_named_in_another_case_still_reaches_its_session_and_an_edit_keeps_one_scope()
@@ -300,7 +299,7 @@ public sealed class PermissionRulesTests : IDisposable
     }
 
     /// <summary>
-    /// CASEFOLD1d: a scope is one in another case only as <c>OrdinalIgnoreCase</c> finds it, each letter to its one capital,
+    /// A scope is one in another case only as <c>OrdinalIgnoreCase</c> finds it, each letter to its one capital,
     /// as the CLI's <c>composeRules</c> and <c>addRule</c> find it through <c>casefold.ts</c> (<c>permissions.test.ts</c> names
     /// this behaviour): a name full case mapping would widen or lower to the same letters is another scope, neither handed
     /// with it nor written into it, and a final sigma is the sigma it is.
@@ -396,7 +395,7 @@ public sealed class PermissionRulesTests : IDisposable
     [InlineData("rm -rf /")]
     [InlineData("(npm test)")]
     [InlineData("Bash(npm test)\nWebFetch")]
-    // PERMSHAPE1: .NET's `$` also matches before a final line break; the shape ends at the very end, as the CLI's does.
+    // .NET's `$` also matches before a final line break; the shape ends at the very end, as the CLI's does.
     [InlineData("Bash\n")]
     public void Anything_else_is_refused_naming_the_shape(string rule)
     {
@@ -438,7 +437,7 @@ public sealed class PermissionRulesTests : IDisposable
     }
 
     /// <summary>
-    /// Wiring never stops a spawn (D21): a file that is not JSON reads as empty, says why, and the
+    /// Wiring never stops a spawn: a file that is not JSON reads as empty, says why, and the
     /// defaults are still handed — the safe direction, since the guard is one of them.
     /// </summary>
     [Fact]
@@ -454,9 +453,9 @@ public sealed class PermissionRulesTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 REV3 CLEAN1 — REV3's CLI F3, still live on the desktop's side. Empty is right for a SPAWN;
-    /// an edit made over it (a rule added from Settings, a proposal accepted) wrote the empty read
-    /// back, and every deny the person had written was gone. The CLI refuses that edit, and so does this.
+    /// Empty is right for a SPAWN;
+    /// an edit made over it (a rule added from Settings, a proposal accepted) would write the empty read
+    /// back and lose every deny the person had written. The CLI refuses that edit, and so does this.
     /// </summary>
     [Fact]
     public void An_edit_over_a_file_that_could_not_be_read_is_refused_and_the_file_is_kept()
@@ -501,7 +500,7 @@ public sealed class PermissionRulesTests : IDisposable
         Assert.False(File.Exists(path));
     }
 
-    /// <summary>No rules to hand still hands the session its own context (CONTEXTONE1e), and nothing else: no hooks, no classifier.</summary>
+    /// <summary>No rules to hand still hands the session its own context, and nothing else: no hooks, no classifier.</summary>
     [Fact]
     public void Nothing_to_hand_still_hands_the_sessions_own_context()
     {
@@ -514,13 +513,13 @@ public sealed class PermissionRulesTests : IDisposable
         Assert.All(ClaudeRules.OwnContext, pair => Assert.Equal(pair.Value, document.RootElement.GetProperty(pair.Key).GetBoolean()));
     }
 
-    // ——— PERM4: a driven session may commit.
+    // ——— A driven session may commit.
 
     /// <summary>
-    /// 🔴 The owner's answer to PERM4 (2026-09-24), from a measured failure: in a folder the agent had
-    /// never trusted, ACP2's real session took its quest, made the edit, was refused `git commit` —
-    /// the repository's own allow-list does not apply there — and declined. D37 makes a local commit
-    /// automatic and a push the person's, so Daoris ships the commit and `no-push` still refuses the push.
+    /// From a measured failure: in a folder the agent has
+    /// never trusted, a real session takes its quest, makes the edit, is refused `git commit` —
+    /// the repository's own allow-list does not apply there — and declines. A local commit
+    /// is automatic and a push the person's, so Daoris ships the commit and `no-push` still refuses the push.
     /// </summary>
     [Fact]
     public void Daoris_ships_a_commit_default_and_the_person_can_switch_it_off()
@@ -534,13 +533,13 @@ public sealed class PermissionRulesTests : IDisposable
         Assert.Contains("mcp__daoris-knowledge__quest_respond", off.Allow);
     }
 
-    // ——— UNBLOCK4: the push carve-out, held harder (D122 §3.6, §3.7).
+    // ——— The push carve-out, held harder.
 
     /// <summary>
-    /// 🔴 A push written another way than `git push …` met no deny rule in the composed file: the
+    /// 🔴 A push written another way than `git push …` meets no deny rule in the composed file: the
     /// harness's maker says a `git push` rule does not stop `git -C . push` or `git -c &lt;key&gt;=&lt;value&gt;
-    /// push`, and auto mode allows a push to the working repository by default (D81 put the protocol door
-    /// in auto mode). Every form here must meet a deny rule the composed spawn file carries, on either
+    /// push`, and auto mode allows a push to the working repository by default (the protocol door
+    /// runs in auto mode). Every form here must meet a deny rule the composed spawn file carries, on either
     /// door. A quoted subcommand, an alias, a path to git or a shell running it meet none; the classifier
     /// is told those (below), and on the pipe door nothing allows them.
     /// </summary>
@@ -569,7 +568,7 @@ public sealed class PermissionRulesTests : IDisposable
 
     /// <summary>
     /// The push's denies take nothing a session is allowed: its commit, a message that says "push", a
-    /// rename, the read-only git it runs unasked, and what reading and writing across hand it (D107). A
+    /// rename, the read-only git it runs unasked, and what reading and writing across hand it. A
     /// commit made with `-C` whose message has "push" as a word before another is refused, and that is
     /// the price: a false refusal costs a rewording, a false allowance the thing the carve-out keeps.
     /// </summary>
@@ -634,7 +633,7 @@ public sealed class PermissionRulesTests : IDisposable
     }
 
     /// <summary>
-    /// The classifier is told a push's sentence always, and publishing's while `no-publish` is on (ONEWAY1q): switched off, the person
+    /// The classifier is told a push's sentence always, and publishing's while `no-publish` is on: switched off, the person
     /// has taken publishing back, and its sentence alone goes.
     /// </summary>
     [Fact]
@@ -647,7 +646,7 @@ public sealed class PermissionRulesTests : IDisposable
         Assert.Equal(2, PermissionRules.HardDeny(PermissionRules.Load(_home)).Count);
     }
 
-    // ——— PERM3: the tree guard, a hook rather than a rule.
+    // ——— The tree guard, a hook rather than a rule.
 
     /// <summary>
     /// A rule cannot say "outside" (design §3), so the guard is a hook Daoris ships. It is a default like
@@ -682,13 +681,13 @@ public sealed class PermissionRulesTests : IDisposable
         Assert.Equal("Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell", entry.GetProperty("matcher").GetString());
         var hook = Assert.Single(entry.GetProperty("hooks").EnumerateArray());
         Assert.Equal("command", hook.GetProperty("type").GetString());
-        // The node Tools resolves (TOOLS5): with no tools file, the one PATH finds, by its whole path.
+        // The node Tools resolves: with no tools file, the one PATH finds, by its whole path.
         Assert.Equal(CommandPresence.Resolve("node", startable: true) ?? "node", hook.GetProperty("command").GetString());
         Assert.Equal([guard.Script, tree], hook.GetProperty("args").EnumerateArray().Select(e => e.GetString()));
         Assert.True(File.Exists(guard.Script));
     }
 
-    /// <summary>D107: each declared write target rides the hook as one more argument after the tree.</summary>
+    /// <summary>Each declared write target rides the hook as one more argument after the tree.</summary>
     [Fact]
     public void The_spawn_files_hook_names_each_declared_target_after_the_tree()
     {
@@ -724,7 +723,7 @@ public sealed class PermissionRulesTests : IDisposable
 
     /// <summary>
     /// A default's reason is read by a person on the rules card and in `daoris agent rules list`, who
-    /// has no decisions record to look a number up in (POLISH4). The reason says what the number meant.
+    /// has no decisions record to look a number up in. The reason says what the number means.
     /// </summary>
     [Fact]
     public void A_defaults_reason_names_no_decision_number()

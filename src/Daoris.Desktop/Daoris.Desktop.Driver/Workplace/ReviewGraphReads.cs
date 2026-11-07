@@ -3,7 +3,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Review's read of a session as a graph of today's reads (GITAPP1a-ii, D202 part one, the git-app design P1.1-P1.4): the same
+/// Review's read of a session as a graph of today's reads: the same
 /// commands with the same arguments as today's chain (<see cref="SessionReviews"/>' oracle), the same choices by today's code
 /// (<see cref="ReviewChoices"/>), and the same answer, field by field; only when each start is made changes.
 /// </summary>
@@ -11,18 +11,18 @@ namespace Daoris.Driver;
 /// <para>🔴 <b>Π, the reads that can run a configured program, are one chain in today's order</b>, one at a time and never
 /// speculative: W → S → U₁ … Uᵣ → M → D → the landed review's range → the offer, each where today's chain would ask it. A textconv,
 /// a clean filter or a merge driver is a process with state git does not see, so asking it earlier, beside another or needlessly could
-/// change an answer (Codex R4-1). The rest (T, P, K, E, K′, G1-G3, B1, B2, N↑, N↓, I, H, the landed review's ref reads) read refs and
+/// change an answer. The rest (T, P, K, E, K′, G1-G3, B1, B2, N↑, N↓, I, H, the landed review's ref reads) read refs and
 /// the commit graph only, and run at once and ahead; a speculative one only where its command is the one today's chain runs if the
 /// condition goes that way, its answer used only there.</para>
 ///
-/// <para><b>Nothing kept</b>: no cache, no refs observation, no watch. Every open runs its graph whole (part two's keeping, read
-/// later). The route's guards and its fallbacks' precedence are the chain's, in the same order.</para>
+/// <para><b>Nothing kept</b>: no cache, no refs observation, no watch. Every open runs its graph whole.
+/// The route's guards and its fallbacks' precedence are the chain's, in the same order.</para>
 /// </remarks>
 internal static class ReviewGraphReads
 {
     /// <summary>
-    /// The untracked window (P1.3): files started ahead of the fold. 1 in part one, since each untracked read runs the clean filter and
-    /// textconv (Π); wider is part two's, once its context shows no program applies to the untracked paths.
+    /// The untracked window: files started ahead of the fold. 1, since each untracked read runs the clean filter and
+    /// textconv (Π); wider only where the context shows no program applies to the untracked paths.
     /// </summary>
     internal const int Window = 1;
 
@@ -67,7 +67,7 @@ internal static class ReviewGraphReads
         // The standing landing's review (changes: false) reads refs only: speculative, used where D answers.
         var standing = ranged && landing is not null ? graph.Track(StandingAsync(graph, context, checkout!, landing, ct)) : null;
 
-        // Π, in today's order: the uncommitted part first (REVIEWDIRTY1-a), never for a tree that is not this home's own (D49 §3).
+        // Π, in today's order: the uncommitted part first, never for a tree that is not this home's own.
         var dirty = own ? await UncommittedAsync(graph, tree!, top, window, ct).ConfigureAwait(false) : null;
 
         if (ranged)
@@ -348,7 +348,7 @@ internal static class ReviewGraphReads
         }
 
         /// <summary>
-        /// Σ, then M in Π where the line's base and the record's are incomparable (REVIEWBASE3): the range as <c>ReviewRangeAsync</c>
+        /// Σ, then M in Π where the line's base and the record's are incomparable: the range as <c>ReviewRangeAsync</c>
         /// answers it, and the nodes D needs.
         /// </summary>
         internal async Task<(string From, string? Against, Task<LineBehind?> Behind, ReviewRead[] Sigma)> AnswerAsync()
@@ -357,7 +357,7 @@ internal static class ReviewGraphReads
             string? against = null;
             if (merge is var (lineBase, recordBase))
             {
-                // REVIEWBASE3: a configured merge driver runs, so it waits its turn in Π.
+                // A configured merge driver runs, so it waits its turn in Π.
                 against = await _graph.ProgramAsync(
                     "M", [independentNode],
                     async () =>
@@ -442,7 +442,7 @@ internal static class ReviewGraphReads
 }
 
 /// <summary>
-/// The untracked window (GITAPP1a-ii, the git-app design P1.3): opened only after W and S answered; at most <c>w</c> files started
+/// The untracked window: opened only after W and S answered; at most <c>w</c> files started
 /// and not yet folded, a slot given back only as the ordered fold passes a file; stopped by the fold once the budget is spent, each
 /// file started ahead of it then stopped and counted wasted. At w = 1 it is today's loop exactly.
 /// </summary>

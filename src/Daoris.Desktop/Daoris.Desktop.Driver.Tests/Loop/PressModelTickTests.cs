@@ -5,9 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PRESSMODEL1 (D163 point 1, D205 §3.5(a), §4.0, D206 point 7) through REAL ticks on the protocol door: the person's press to go on now
+/// Through REAL ticks on the protocol door: the person's press to go on now
 /// with another agent, taken while a driven line waits for an account's limit to reset, carries on with THAT agent's own choice, never the
-/// part before's model. The install's case first: Build lists the first agent alone, the press names a second agent whose door refuses the
+/// part before's model. First: Build lists the first agent alone, the press names a second agent whose door refuses the
 /// first one's model, so the part opens on the second agent's default and runs. Then a role that lists the second agent: its choice's
 /// model and effort. Then a model the second agent refuses at the open, re-asked on its next choice and its default; and a line the
 /// refusal already held, which goes on at the next look.
@@ -115,7 +115,7 @@ public sealed class PressModelTickTests : IDisposable
         return driver;
     }
 
-    /// <summary>The person's press in the wait: go on now with the second agent, which the next look takes as a hand-over (FOUNDATION1f-v part c: its driven move, decided in the store).</summary>
+    /// <summary>The person's press in the wait: go on now with the second agent, which the next look takes as a hand-over (its driven move, decided in the store).</summary>
     private async Task Press(Daoris.Driver.Driver driver, AskAndWaitTickTests.StandIn service, string agent = "acp-other")
     {
         var asked = await QuestHandOver.AskAsync(
@@ -125,7 +125,7 @@ public sealed class PressModelTickTests : IDisposable
 
     private static JsonObject Record(AskAndWaitTickTests.StandIn service, string id) => service.Session(id);
 
-    /// <summary>The model and effort the second agent was asked to set, in the order it heard them.</summary>
+    /// <summary>The model and effort the second agent is asked to set, in the order it hears them.</summary>
     private List<(string Id, string Value)> OtherSet() =>
         [.. Heard().Where(line => line["tag"]!.GetValue<string>() == "other" && line["method"]!.GetValue<string>() == "session/set_config_option")
             .Select(line => (line["configId"]!.GetValue<string>(), line["value"]!.GetValue<string>()))];

@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>The kinds of thing a trace starts from (TRACE1, D143).</summary>
+/// <summary>The kinds of thing a trace starts from.</summary>
 public static class TraceEntry
 {
     public const string Commit = "commit";
@@ -11,19 +11,19 @@ public static class TraceEntry
     public static IReadOnlyList<string> All { get; } = [Commit, Session, Quest];
 }
 
-/// <summary>What <c>daoris trace</c> was asked: an id, and the kind it names where the person said which.</summary>
+/// <summary>What <c>daoris trace</c> is asked: an id, and the kind it names where the person said which.</summary>
 /// <param name="Id">A commit (at least <see cref="CommitNames.Digits"/> hexadecimal digits), a session's id or a quest's, as typed.</param>
 /// <param name="Kind">One of <see cref="TraceEntry"/>, or null: whatever the id names here, refused where it names several.</param>
 public sealed record TraceAsk(string Id, string? Kind = null);
 
-/// <summary>Where a trace reads (D143): the service's doors, the home's files and the person's choices. It writes to none.</summary>
+/// <summary>Where a trace reads: the service's doors, the home's files and the person's choices. It writes to none.</summary>
 public sealed record TraceSources(ServiceClient Service, string Home, DriverConfig Config);
 
 /// <summary>An ask a chain names, as the service answered it: the ask, or not found, or why it could not be read.</summary>
 internal sealed record TraceAskRead(string Id, AskView? Ask, string? Unread);
 
 /// <summary>
-/// <c>daoris trace &lt;commit|session|quest&gt;</c> (TRACE1, D143): one read from a commit, a session or a quest back to the
+/// <c>daoris trace &lt;commit|session|quest&gt;</c>: one read from a commit, a session or a quest back to the
 /// ask it served, each link printed from the store that keeps it and a link nothing keeps said missing. In the library, so
 /// its words are held by a test.
 /// </summary>

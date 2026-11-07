@@ -1,18 +1,18 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A session branch's work a landing replayed onto the line (REVIEWLANDED1, D102's note): the line had moved, or the landing's records
+/// A session branch's work a landing replayed onto the line: the line had moved, or the landing's records
 /// conflicts were resolved by hand, so the landing replayed the session's commits under ids of their own and merged them, and the
 /// session's own commits are on no branch by ancestry. <c>trees land --plan</c> read them landed by the landing's own per-commit reading
 /// (<see cref="LineHolds.JudgeAsync"/>: the walk by content, then each commit's patch id), while the review row and the removal judged by
 /// ancestry and kept the tree. This is that reading as a form of the content proof (<see cref="ContentHolds.HeldByContentAsync"/>), asked
-/// after the files and before SQUASHSEEN1's merge, so every door that asks the proof reads it alike.
+/// after the files and before the merge form, so every door that asks the proof reads it alike.
 /// </summary>
 /// <remarks>
 /// <para><b>Every commit on the line</b>: the reading leaves none of the branch's commits for a landing to carry. A commit it keeps is work
 /// the line lacks, and the proof names those commits (<see cref="ContentProof.Lacks"/>), so a session told to rebase after its landing says
 /// its new commits as work to land, never its replayed ones.</para>
-/// <para><b>The line as it stands, never a commit it passed</b> (D102, D148): a file the branch changed that reads otherwise on the line's tip
+/// <para><b>The line as it stands, never a commit it passed</b>: a file the branch changed that reads otherwise on the line's tip
 /// is held only where the line's newest change to it is a commit holding one of the branch's patches. A line that took the patch and
 /// changed or reverted the file since does not hold it, as a commit the line holds only by patch is never an end.</para>
 /// </remarks>
@@ -31,7 +31,7 @@ internal static class ReplayHolds
     /// <param name="line">The repository's line, for the walk by content.</param>
     /// <param name="differs">The files the branch changed since it left the line that read otherwise on <paramref name="lineTip"/>.</param>
     /// <remarks>
-    /// MAINRED1: the landing's reading walks commit after commit by content, about fourteen git starts a tree, and a part's trees read
+    /// The landing's reading walks commit after commit by content, about fourteen git starts a tree, and a part's trees read
     /// asks it of every tree with commits once the line moves. So, as <i>Bring up to date</i>'s look holds the same reading to its starts
     /// (<see cref="LineHolds.JudgeBeyondAsync"/>), one log first marks each commit the line holds by patch, and the line's files since the
     /// branch left it say whether the walk could find any (<see cref="LineHolds.MayHoldByContent"/>). Where neither can hold one, the line

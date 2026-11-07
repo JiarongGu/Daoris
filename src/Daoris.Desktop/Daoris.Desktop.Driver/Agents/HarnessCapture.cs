@@ -6,22 +6,22 @@ namespace Daoris.Driver;
 /// <summary>
 /// What a harness says on the pipe door, captured into its transcript, the console and the record: one pump, one tee, one set
 /// of rules about which destination is the durable one, shared by a driven session and a conversation. The door's, not the
-/// loop's (LOOPOUT1): no module names the loop.
+/// loop's: no module names the loop.
 /// </summary>
 internal static class HarnessCapture
 {
     /// <summary>
-    /// A session's opening in its record: the target the driver composed, with the composer's account of it beside it
-    /// (CONTEXT1), then — for a carry-on the person answered (STANDDOWN2) — their answer, as theirs.
+    /// A session's opening in its record: the target the driver composed, with the composer's account of it beside it,
+    /// then — for a carry-on the person answered — their answer, as theirs.
     /// </summary>
     /// <remarks>
-    /// 🔴 An answer to a parked session was nowhere on the page after it was sent. The words travelled only inside the target, which the conversation folds, so the one thing the person
-    /// said was nowhere they would look.
+    /// 🔴 The words of an answer to a parked session travel inside the target, which the conversation folds, so they are shown here:
+    /// otherwise the one thing the person said would be nowhere they would look.
     /// </remarks>
-    /// <param name="account">What the target was composed of, kept on its event; null where none was composed here.</param>
+    /// <param name="account">What the target is composed of, kept on its event; null where none is composed here.</param>
     /// <param name="handed">
-    /// For a resume, the words it was handed from the session that asked (SAYHELD1), each after the target under the id that record gave
-    /// it, so the conversation shows them where the session took them (D137 §3.1): the person's as theirs, Daoris's as Daoris's. Null or
+    /// For a resume, the words it is handed from the session that asked, each after the target under the id that record gave
+    /// it, so the conversation shows them where the session took them: the person's as theirs, Daoris's as Daoris's. Null or
     /// empty for none.
     /// </param>
     internal static IReadOnlyList<SessionEvent> Opening(
@@ -35,7 +35,7 @@ internal static class HarnessCapture
         {
             Kind = SessionEventKind.User,
             Origin = word.Persons ? "person" : "target",
-            // SUPERVISOR1a-i: the supervisor's answer keeps its author where the session took it.
+            // The supervisor's answer keeps its author where the session took it.
             From = word.Daoris ? SaidFrom.Daoris : word.Supervisors ? SaidFrom.Supervisor : null,
             Watcher = WatchKeys.Is(word.Key) ? true : null,
             Id = word.Id,
@@ -50,7 +50,7 @@ internal static class HarnessCapture
     /// one pump, one tee, one set of rules about which destination is the durable one.
     /// </summary>
     /// <param name="preamble">
-    /// A fact about how this run was set up, written ahead of anything the process says — the pipe
+    /// A fact about how this run is set up, written ahead of anything the process says — the pipe
     /// door's form of the protocol door's first transcript lines.
     /// </param>
     internal static async Task CaptureAsync(
@@ -69,7 +69,7 @@ internal static class HarnessCapture
     }
 
     /// <summary>
-    /// The native door's capture when its harness speaks a structured stdout (D76, CONV3): each line
+    /// The native door's capture when its harness speaks a structured stdout: each line
     /// read by the adapter's own mapper, what it renders reaching the transcript and the console, what
     /// it means reaching the record — the protocol door's split, on the pipe.
     /// </summary>
@@ -77,31 +77,31 @@ internal static class HarnessCapture
     /// <para><b>The transcript stays text a person reads</b>, exactly as the protocol door's does: the
     /// rendered lines, never the JSON — and a failure's words among them, for the person.</para>
     ///
-    /// <para><b>What the harness says in its own words is kept apart</b> (AGT3c, <paramref name="own"/>): its stderr, the lines it
+    /// <para><b>What the harness says in its own words is kept apart</b> (<paramref name="own"/>): its stderr, the lines it
     /// prints outside its protocol and its failed turn's words, which no agent writes. A refused credential is read from those,
     /// never from the transcript, whose last lines may be the agent quoting one.</para>
     ///
     /// <para><b>A record that cannot be written costs a console line, never the session</b>: the
     /// conversation enriches the run, it does not run it.</para>
     /// </remarks>
-    /// <param name="prompt">What was asked, for the record's opening line — the composed target of a
+    /// <param name="prompt">What is asked, for the record's opening line — the composed target of a
     /// driven session. Null for a conversation, whose messages are recorded as the person sends them.</param>
     /// <param name="observed">
-    /// Told each event once the record holds it — how a conversation learns its turn ended (CONV4a).
+    /// Told each event once the record holds it — how a conversation learns its turn ended.
     /// After the record, never before: its next message must land behind the ending it waited for.
     /// </param>
     /// <returns>The context high-water mark the harness reported, or null when it reported none.</returns>
     /// <param name="sink">
-    /// Where the run's readings go (row l): each event the record keeps, each line the console shows, the streams beside, the conversation
-    /// the stream names, what a line says of the account's windows (TOOL6c) and a failed turn's one <see cref="WireReading.Failed"/>.
+    /// Where the run's readings go: each event the record keeps, each line the console shows, the streams beside, the conversation
+    /// the stream names, what a line says of the account's windows and a failed turn's one <see cref="WireReading.Failed"/>.
     /// </param>
-    /// <param name="named">Told once the stream named its conversation and the sink was told it: where the run learns its words went.</param>
+    /// <param name="named">Told once the stream named its conversation and the sink is told it: where the run learns its words went.</param>
     /// <param name="opened">
-    /// The record's opening where it is not a prompt's (ANSWER1a): a resumed run's first line and the person's answer.
+    /// The record's opening where it is not a prompt's: a resumed run's first line and the person's answer.
     /// </param>
     /// <param name="append">The transcript goes on rather than starting again: a resumed run's record is the one that parked.</param>
-    /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event; null where none was.</param>
-    /// <param name="own">Where the harness's own words are kept for its run's ending (AGT3c), begun again here; null keeps none.</param>
+    /// <param name="account">What the prompt is composed of, kept beside it on its event; null where none is.</param>
+    /// <param name="own">Where the harness's own words are kept for its run's ending, begun again here; null keeps none.</param>
     internal static async Task<AcpUsage?> CaptureStructuredAsync(
         TextReader stdout, TextReader stderr, string transcript, IReadingSink sink, IStreamMapper mapper, string? prompt,
         CancellationToken ct, string? preamble = null, Action<SessionEvent>? observed = null, string? personSaid = null,
@@ -110,7 +110,7 @@ internal static class HarnessCapture
     {
         own?.Begin();
         await using var file = AgentContext.Current.OpenTranscript(transcript, append);
-        // Told once, the moment the harness names its conversation (MSG1c): a conversation that lives for hours keeps it
+        // Told once, the moment the harness names its conversation: a conversation that lives for hours keeps it
         // before it ends, as the protocol door keeps `session/new`'s id.
         var told = false;
 
@@ -131,15 +131,15 @@ internal static class HarnessCapture
         }
 
         var errors = PumpAsync(stderr, file, sink, ct, also: own is null ? null : own.Said);
-        // What it runs beside itself, each its own console stream (CONSOLE3c), kept wherever someone watches the session's own console;
+        // What it runs beside itself, each its own console stream, kept wherever someone watches the session's own console;
         // a line that is a stream's never reaches the session's reader.
         var beside = ReadingStreams.Of(sink) is { } streams ? mapper.Beside(streams, Line) : null;
         var children = new NativeChildren();
         var tasks = new NativeTasks();
 
-        // A child's or a background task's start or end, said once as its reading: the part's lineage keeps a child's (FABRIC-C1a), the
-        // run's ending the work its harness ended with its turn however its streams are kept (BGWAIT1c), and the streams beside open and
-        // end theirs by it (AGENTPROVIDER1l).
+        // A child's or a background task's start or end, said once as its reading: the part's lineage keeps a child's, the
+        // run's ending the work its harness ended with its turn however its streams are kept, and the streams beside open and
+        // end theirs by it.
         void Work(WireReading reading)
         {
             sink.Read(reading);
@@ -149,11 +149,11 @@ internal static class HarnessCapture
 
         while (await stdout.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
         {
-            // Each line is read once into its frame, which every reader of it takes (AGENTPROVIDER1l).
+            // Each line is read once into its frame, which every reader of it takes.
             var frame = NativeFrame.Of(line);
             if (children.Read(frame) is { } child) Work(child);
             if (tasks.Read(frame) is { } task) Work(task);
-            // What the harness says it loaded, said once as its init frame goes by (HELPWIRED1b).
+            // What the harness says it loaded, said once as its init frame goes by.
             if (NativeInit.Read(frame) is { } loaded)
             {
                 try
@@ -175,8 +175,8 @@ internal static class HarnessCapture
                 if (mapped.ModelRefused) own.ModelRefused();
             }
 
-            // A failed turn is one reading on either door (row l): the result's own words, which nothing reads for the account until
-            // the pipe door's failure reader does (D210 row 1c).
+            // A failed turn is one reading on either door: the result's own words, which nothing reads for the account until
+            // the pipe door's failure reader does.
             if (mapped.Failed is { } failed) sink.Read(new WireReading.Failed(DoorFailures.OfResult(failed)));
 
             if (!told && mapper.Conversation is { } conversation)
@@ -216,7 +216,7 @@ internal static class HarnessCapture
         }
 
         // Said while the transcript is still open: what it left running ended with it. Then the ends only an update said, its notification
-        // never written (BGWAIT1c): the run's ending reads them, and a stream the close already ended keeps its words.
+        // never written: the run's ending reads them, and a stream the close already ended keeps its words.
         if (beside is not null) await beside.EndAllAsync().ConfigureAwait(false);
         foreach (var ended in tasks.Close()) Work(ended);
         await errors.ConfigureAwait(false);
@@ -227,7 +227,7 @@ internal static class HarnessCapture
     /// One stream into the transcript and the console. Internal rather than local so the tee itself is
     /// testable without a process: the property worth holding is that a line reaches BOTH.
     /// </summary>
-    /// <param name="also">Told each line too, after both: the native door's stderr is its harness's own words (AGT3c).</param>
+    /// <param name="also">Told each line too, after both: the native door's stderr is its harness's own words.</param>
     internal static async Task PumpAsync(
         TextReader reader, TextWriter file, IReadingSink sink, CancellationToken ct, Action<string>? also = null)
     {

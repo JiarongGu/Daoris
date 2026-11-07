@@ -3,14 +3,14 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A new session tree's machine-local inputs (TREELOCAL1, D216): the files under <c>local/</c> its repository's gates read, which
+/// A new session tree's machine-local inputs: the files under <c>local/</c> its repository's gates read, which
 /// git ignores and only the checkout holds, copied into the tree read-only as it opens, so its gates run the checks they run in the
 /// checkout. A sensitive scan that finds no private pattern list in a fresh tree falls back to its built-in patterns and passes.
 /// </summary>
 /// <remarks>
 /// <para><b>What is declared</b> is read from the checkout's <c>daoris.gates.json</c>, never the tree's: what leaves the checkout's
 /// private files is the checkout's say, never a branch's, and a chain's step grows from a branch a session wrote. Its
-/// <c>localInputs</c> names them, and its <c>sensitive.patternsFile</c> is one, as the merge tool's gate tree takes it (GATEWT1b);
+/// <c>localInputs</c> names them, and its <c>sensitive.patternsFile</c> is one, as the merge tool's gate tree takes it;
 /// a gates file naming no patterns file implies the devkit's default, copied where the checkout holds it and unsaid where it does
 /// not, since a repository that never wrote one may scan with its built-in patterns on purpose. No gates file, or one that does not
 /// read, declares nothing: the repository's own gates refuse that one in its own words.</para>
@@ -21,7 +21,7 @@ namespace Daoris.Driver;
 ///
 /// <para><b>The copy</b> is made under a name of its own beside where it goes, marked read-only and renamed into place, while the
 /// tree is still locked as opening: a cut-off open takes back what it copied, and its undo takes the tree. Copied, never linked:
-/// a link's write would land in the checkout, and a hard link shares the read-only mark with it (D216).</para>
+/// a link's write would land in the checkout, and a hard link shares the read-only mark with it.</para>
 /// </remarks>
 internal static class TreeLocalInputs
 {
@@ -85,7 +85,7 @@ internal static class TreeLocalInputs
         var asked = declared.Where(input => Candidate(root, input)).Select(input => input.Path).ToList();
         if (asked.Count == 0) return Copy(root, tree, declared, _ => false, null, ct);
 
-        // 🔴 git takes `-z` only with `--stdin` (TREEDEPS1's finding): the paths go in there.
+        // 🔴 git takes `-z` only with `--stdin`: the paths go in there.
         var (code, said, err) = await WorkingTree.GitAsync(tree, ["check-ignore", "--stdin", "-z"], string.Concat(asked.Select(path => path + "\0")), ct)
             .ConfigureAwait(false);
         if (code is not (0 or 1))
@@ -238,12 +238,12 @@ internal static class TreeLocalInputs
     }
 }
 
-/// <summary>A file a repository's gates read that only its checkout holds (TREELOCAL1).</summary>
+/// <summary>A file a repository's gates read that only its checkout holds.</summary>
 /// <param name="Path">Relative to the repository, in git's spelling.</param>
 /// <param name="Declared">Named by the gates file; false for the devkit's default patterns file, implied where it names none.</param>
 internal sealed record LocalInput(string Path, bool Declared);
 
-/// <summary>What a tree's open copied of its checkout's machine-local inputs (TREELOCAL1), and why it copied none of the rest.</summary>
+/// <summary>What a tree's open copied of its checkout's machine-local inputs, and why it copied none of the rest.</summary>
 /// <param name="Copied">The files copied, relative to the repository in git's spelling.</param>
 /// <param name="Declined">Each declared file not copied, and why.</param>
 internal sealed record LocalCopy(IReadOnlyList<string> Copied, IReadOnlyList<LocalUncopied> Declined)
@@ -272,7 +272,7 @@ internal sealed record LocalCopy(IReadOnlyList<string> Copied, IReadOnlyList<Loc
           + "checkout's, not this tree's work: leave them as they are, and fix what a gate finds with them in your own changes.";
 }
 
-/// <summary>A declared machine-local input not copied into a new tree (TREELOCAL1), and why: a line of the tree's opening.</summary>
+/// <summary>A declared machine-local input not copied into a new tree, and why: a line of the tree's opening.</summary>
 /// <param name="Input">The file, relative to the repository in git's spelling, as declared.</param>
 /// <param name="Why">Why (<see cref="LocalUncopiedWhy"/>).</param>
 /// <param name="Detail">What failed, in the program's words, where the copy did.</param>
@@ -297,7 +297,7 @@ internal sealed record LocalUncopied(string Input, string Why, string? Detail = 
     }
 }
 
-/// <summary>Why a declared machine-local input was not copied into a new tree (TREELOCAL1): each its own line's code.</summary>
+/// <summary>Why a declared machine-local input is not copied into a new tree: each its own line's code.</summary>
 internal static class LocalUncopiedWhy
 {
     /// <summary>The checkout does not hold it.</summary>

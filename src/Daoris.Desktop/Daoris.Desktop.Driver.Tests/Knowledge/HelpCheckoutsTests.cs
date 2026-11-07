@@ -4,11 +4,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HELPMODE1c4 (D183's note; the Ask Daoris modes design §4.1): Ask Daoris reads the checkouts through one typed tool the driver
+/// Ask Daoris reads the checkouts through one typed tool the driver
 /// judges at every call, for Claude and Codex alike. The person's record keeps the checkouts turned off, since the grant is on by
-/// default (D107's readable set, inherited); each start hands the checkouts on, through the tool and no rule; and each call is
-/// judged: the record is Ask Daoris's, the repository is registered in the conversation's workspace with a checkout here, readable
-/// under D107, not turned off now and handed at this start; the path stays inside the checkout, out of git's own folder and out of
+/// default (the readable set, inherited); each start hands the checkouts on, through the tool and no rule; and each call is
+/// judged: the record is Ask Daoris's, the repository is registered in the conversation's workspace with a checkout here, readable,
+/// not turned off now and handed at this start; the path stays inside the checkout, out of git's own folder and out of
 /// what git ignores. Git answers through its stand-in seam here, so no process starts; <c>HelpCheckoutsGitTests</c> asks the real one.
 /// </summary>
 public sealed class HelpCheckoutsTests : IDisposable
@@ -43,7 +43,7 @@ public sealed class HelpCheckoutsTests : IDisposable
 
     private void Choose(string json) => File.WriteAllText(ConfiguredAccess.PathOf(_home), json);
 
-    /// <summary>What this start was handed, as its receipt keeps it: the checkouts the tool may read.</summary>
+    /// <summary>What this start is handed, as its receipt keeps it: the checkouts the tool may read.</summary>
     private void Handed(string session, params string[] checkouts) =>
         new HelpWired(_home).Keep(session, new HelpReceipt
         {
@@ -75,7 +75,7 @@ public sealed class HelpCheckoutsTests : IDisposable
     private readonly List<IReadOnlyList<string>> _asked = [];
 
     /// <summary>
-    /// Git standing in: <c>check-ignore</c> names <c>local/</c> ignored, whatever it was asked, as git names only what it was asked
+    /// Git standing in: <c>check-ignore</c> names <c>local/</c> ignored, whatever it is asked, as git names only what it is asked
     /// and the judge reads only those; <c>status</c> and <c>branch</c> answer their own words. Anything else fails, so a read that
     /// asks git for more than those three is seen.
     /// </summary>
@@ -134,7 +134,7 @@ public sealed class HelpCheckoutsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Each start hands the checkouts on through the tool and no rule (the design's §4.1 table, now one mechanism for every agent):
+    /// 🔴 Each start hands the checkouts on through the tool and no rule, one mechanism for every agent:
     /// the place keeps the readable ones less those turned off, its allow-list names <c>checkout_read</c> and no <c>Read</c> or git
     /// rule for any checkout; with none to read, not even the tool.
     /// </summary>
@@ -294,7 +294,7 @@ public sealed class HelpCheckoutsTests : IDisposable
 
     /// <summary>
     /// 🔴 A checkout turned off is refused at the next call, since each call reads the record; one handed at no start waits for the
-    /// conversation's next turn; one whose repository switched reading by agents outside it off is refused, D107's set being the grant's.
+    /// conversation's next turn; one whose repository switched reading by agents outside it off is refused, the readable set being the grant's.
     /// </summary>
     [Fact]
     public async Task Turned_off_not_handed_and_reading_switched_off_are_refused()

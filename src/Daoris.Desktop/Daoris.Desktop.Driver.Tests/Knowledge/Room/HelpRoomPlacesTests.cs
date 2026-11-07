@@ -6,7 +6,7 @@ namespace Daoris.Driver.Tests;
 public sealed class HelpRoomPlacesTests
 {
     /// <summary>
-    /// HELP6: the places `go_propose` may name are listed from the driver's own table, the one it judges a
+    /// The places `go_propose` may name are listed from the driver's own table, the one it judges a
     /// go by — so the room and the judge cannot disagree about which screens exist.
     /// </summary>
     [Fact]
@@ -22,10 +22,10 @@ public sealed class HelpRoomPlacesTests
     }
 
     /// <summary>
-    /// UX6e2 and HELPSETUP1: a go names no repository and no agent, so the room says where each part lands — Repositories'
+    /// A go names no repository and no agent, so the room says where each part lands — Repositories'
     /// Setup on the repository its list has chosen, an agent's part on the agent that has it — and the helper says which
-    /// one the person means rather than promising it. UX6g2b: a workspace's parts open the page of the one in view. ENTRY1d2a
-    /// (D161's ENTRY1d note): Add repository and Import a folder may name the workspace the drawer opens with, a name and
+    /// one the person means rather than promising it. A workspace's parts open the page of the one in view.
+    /// Add repository and Import a folder may name the workspace the drawer opens with, a name and
     /// never a folder, which stays the person's pick there.
     /// </summary>
     [Fact]
@@ -45,16 +45,16 @@ public sealed class HelpRoomPlacesTests
         Assert.Contains("`add` and `import` may name the go's `workspace`, one this room lists or a new name:", places);
         Assert.Contains("the drawer opens with it filled, and the person picks the folder there and registers it.", places);
         Assert.Contains("Never name a folder.", places);
-        // NEW1d-a (D162's note): New conversation is a part of `sessions`, which may carry a repository and words.
+        // New conversation is a part of `sessions`, which may carry a repository and words.
         Assert.Contains("`new` (New conversation)", places);
         Assert.Contains("`sessions`'s `new` may name the go's `repository`, as this room's registry lists it with a checkout here, and its `sentence`:", places);
         Assert.Contains("the composer opens with them filled, and the person reads and sends them. With neither it opens empty.", places);
     }
 
     /// <summary>
-    /// UX6g2b (D161 §3, D150 §4.3): every place the window has is one a go can name, so a workspace's page's four tabs and
+    /// Every place the window has is one a go can name, so a workspace's page's four tabs and
     /// its Setup's two sections are parts of Repositories, prefixed where a repository's page shares their names. Settings →
-    /// Workspace and Permissions left Settings with UX6g, and the room offers neither: a go still spelled so is kept.
+    /// Workspace and Permissions are no longer parts of Settings, and the room offers neither: a go still spelled so is kept.
     /// </summary>
     [Fact]
     public void The_room_names_the_workspace_pages_parts_and_neither_retired_domain()
@@ -79,7 +79,7 @@ public sealed class HelpRoomPlacesTests
     }
 
     /// <summary>
-    /// ENTRY1b (D161's ENTRY1 note): a quest or a session keeps its own conversation, so Ask Daoris takes the person to what
+    /// A quest or a session keeps its own conversation, so Ask Daoris takes the person to what
     /// waits on them there. The room names Sessions' and Quests' groups by their headings, says a part brings its group into
     /// view and names no session or quest, and gives Overview none, since what waits on the person leads it.
     /// </summary>
@@ -96,12 +96,12 @@ public sealed class HelpRoomPlacesTests
     }
 
     /// <summary>
-    /// ENTRY1f1 (D161's ENTRY1f note): to take the person to the one quest or ask that waits, a go on Quests names it as its
+    /// To take the person to the one quest or ask that waits, a go on Quests names it as its
     /// item, with no part: a quest by its id and an ask as <c>ask:&lt;id&gt;</c>, each as the room lists it, so the helper
-    /// names only what it was shown.
+    /// names only what it is shown.
     /// </summary>
     /// <remarks>
-    /// ENTRY1f2: and the one session, on <c>sessions</c> by its id: one the room lists as waiting on the person, or another
+    /// And the one session, on <c>sessions</c> by its id: one the room lists as waiting on the person, or another
     /// the person names, never Ask Daoris's own conversation.
     /// </remarks>
     [Fact]
@@ -112,12 +112,12 @@ public sealed class HelpRoomPlacesTests
         Assert.Contains("To open one session, quest, ask or plugin, name it as the go's item on its view, with no part:", places);
         Assert.Contains("on `sessions` a session by its id, one this room lists as waiting on the person or another the person names,", places);
         Assert.Contains("never Ask Daoris's own conversation; on `quests` a quest by its id, an ask as `ask:<id>`, each one this room lists;", places);
-        // PLUGUI1h: and a plugin by its id, an offer as `offer:<id>`.
+        // A plugin by its id, an offer as `offer:<id>`.
         Assert.Contains("on `plugins` an installed plugin by its id, or one of Daoris's own not installed as `offer:<id>`, by the ids this room lists.", places);
     }
 
     /// <summary>
-    /// UX6i2a (D150 §2): the room names the places as the window has them, Knowledge with its two modes as its parts and
+    /// The room names the places as the window has them, Knowledge with its two modes as its parts and
     /// Plugins as a view, and lists no place that moved: a go still spelled so lands, but the helper is never offered it.
     /// </summary>
     [Fact]

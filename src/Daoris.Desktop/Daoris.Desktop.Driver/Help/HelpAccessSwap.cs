@@ -1,15 +1,15 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The change of Ask Daoris's access under its running conversations (ACCESSSWAP1, D183 point 2) and the receipt of what a start was
-/// handed (HELPWIRED1, D183 point 4): each conversation running under another access than the one chosen now ends at its turn's end, and
+/// The change of Ask Daoris's access under its running conversations and the receipt of what a start
+/// handed: each conversation running under another access than the one chosen now ends at its turn's end, and
 /// its next words resume it under the access chosen then.
 /// </summary>
 [Executor("help-access", ExecutorPhase.Move, "help")]
 internal sealed class HelpAccessSwap(IExecutorWiring wiring) : IExecutor
 {
     /// <summary>
-    /// An Ask Daoris start's receipt is on disk (HELPWIRED1, HELPWIREDLIVE1b): raised with the session's id once it is kept, so the
+    /// An Ask Daoris start's receipt is on disk: raised with the session's id once it is kept, so the
     /// modules publish the help scope after it, never before, and an open <i>What it has</i> reads the new receipt, not the old.
     /// </summary>
     public event Action<string>? WiredKept;
@@ -20,8 +20,8 @@ internal sealed class HelpAccessSwap(IExecutorWiring wiring) : IExecutor
     /// where it is idle, the way a person finishing ends it (the turns asked for run first); its console says what changed and when.
     /// </summary>
     /// <remarks>
-    /// <para>Nothing a running conversation was handed changes while it runs: a live switch of its harness's posture alone would
-    /// leave the rules, servers, guard and room its start handed for the old access (D183's HELPMODE1a2 note). Every access change
+    /// <para>Nothing handed to a running conversation changes while it runs: a live switch of its harness's posture alone would
+    /// leave the rules, servers, guard and room its start handed for the old access. Every access change
     /// applies at the next turn, a grant taken back too.</para>
     ///
     /// <para>A change back to what it runs under before its turn ends withdraws the end; one already ending goes on, and its next
@@ -65,8 +65,8 @@ internal sealed class HelpAccessSwap(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// Whether an Ask Daoris conversation running here was handed another choice of <paramref name="grant"/> than
-    /// <paramref name="chosen"/> holds (HELPMODE1c3 for the chosen settings): the grant's <i>pending</i> mark, from the change until that
+    /// Whether an Ask Daoris conversation running here started under another choice of <paramref name="grant"/> than
+    /// <paramref name="chosen"/> holds: the grant's <i>pending</i> mark, from the change until that
     /// conversation's agent has ended.
     /// </summary>
     public bool GrantPending(string grant, ConfiguredAccess chosen) =>
@@ -85,7 +85,7 @@ internal sealed class HelpAccessSwap(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// A conversation's run is over: what its start was handed is no longer compared with the person's access, so it is pending no more.
+    /// A conversation's run is over: what its start handed is not compared with the person's access, so nothing is pending.
     /// Said before its end is told, so the state judged at that word reads it gone.
     /// </summary>
     public void Forget(string sessionId)
@@ -116,7 +116,7 @@ internal sealed class HelpAccessSwap(IExecutorWiring wiring) : IExecutor
         }
     }
 
-    /// <summary>The configured access a running Ask Daoris conversation's start was handed; none where it kept none.</summary>
+    /// <summary>The configured access a running Ask Daoris conversation's start handed; none where it kept none.</summary>
     private ConfiguredAccess Handed(string sessionId) =>
         wiring.Context.AccessHanded.TryGetValue(sessionId, out var handed) ? handed : ConfiguredAccess.None;
 }

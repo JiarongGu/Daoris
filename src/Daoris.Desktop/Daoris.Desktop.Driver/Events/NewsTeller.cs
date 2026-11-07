@@ -2,12 +2,12 @@ namespace Daoris.Driver;
 
 /// <summary>A piece of news a teller claimed and is to show: what happened, to which session, and the journal position that keys it.</summary>
 /// <param name="Reason">For an end: the note's <c>ended.*</c> code.</param>
-/// <param name="Class">For an end: its class, one closed code (§4.2).</param>
+/// <param name="Class">For an end: its class, one closed code.</param>
 public sealed record NewsTold(
     AttentionKind Kind, string Session, long Position, string Store, string? Workspace, string? State, string? Reason, string? Class, DateTimeOffset At);
 
 /// <summary>
-/// One process's teller of the journal's news (FOUNDATION1 m-ii and m-iii, the foundation design §4.2, §4.5, §19.6): the rows it takes, a park
+/// One process's teller of the journal's news: the rows it takes, a park
 /// or an end, claimed in the said-set by their keys and shown only when claimed, so a restart tells a park made just before it once and no
 /// piece twice. The lease's loop takes the driven work's rows and the shell the conversations', each with a cursor of its own.
 /// </summary>
@@ -18,7 +18,7 @@ public sealed record NewsTold(
 /// <param name="show">What the claimed pieces become, called after the claim and never before it.</param>
 public sealed class NewsTeller(News news, string name, Func<JournalEntry, bool> takes, Func<DateTimeOffset> clock, Func<IReadOnlyList<NewsTold>, Task> show)
 {
-    /// <summary>Called with a batch whose history is incomplete since this teller's cursor: the teller tells what the journal still holds and none of the gap (§4.1).</summary>
+    /// <summary>Called with a batch whose history is incomplete since this teller's cursor: the teller tells what the journal still holds and none of the gap.</summary>
     public Action<JournalBatch>? Incomplete { get; init; }
 
     /// <summary>Called with why a claim the store refused showed nothing.</summary>
@@ -64,7 +64,7 @@ public sealed class NewsTeller(News news, string name, Func<JournalEntry, bool> 
             return new NewsTold(AttentionKind.Parked, row.Record, row.Position, store, row.Workspace, null, null, null, at);
         }
 
-        // An end by the one table: the classes the watch said before, never a conversation's (§4.2).
+        // An end by the one table: the classes the watch says, never a conversation's.
         if (PartEnds.Judge(row, store) is { } ended && EndReaders.Takes(EndReader.Notified, ended))
         {
             return new NewsTold(AttentionKind.Ended, ended.Session, ended.Position, store, ended.Workspace, ended.State, ended.Reason, ended.Class, at);

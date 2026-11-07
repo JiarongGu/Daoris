@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Who asked for a hand-over (MIXAGENT1a-i, D163), by code.</summary>
+/// <summary>Who asked for a hand-over, by code.</summary>
 public static class HandOverBy
 {
     /// <summary>The person, by a press or the terminal verb.</summary>
@@ -17,41 +17,41 @@ public static class HandOverBy
 }
 
 /// <summary>
-/// The outgoing agent's closing note as a take asked it (SESSCTX1c part B, the session-context design §2.2): what it wrote in its one turn,
-/// null where it wrote none, and how many of its conversation's events stood before the ask, which the brief is composed from, so the
+/// The outgoing agent's closing note as a take asks it: what it writes in its one turn,
+/// null where it writes none, and how many of its conversation's events stand before the ask, which the brief is composed from, so the
 /// closing turn is told once, as the note.
 /// </summary>
 public sealed record ClosingNote(string? Note, int Before);
 
-/// <summary>A conversation's hand-over as asked (MIXAGENT1a-i): the agent and account it goes to, why, by whom, and when.</summary>
+/// <summary>A conversation's hand-over as asked: the agent and account it goes to, why, by whom, and when.</summary>
 /// <param name="Agent">The adapter the new conversation runs on.</param>
 /// <param name="Account">The account it runs as, or null for the one the roster picks.</param>
 /// <param name="Why">One of <see cref="HandOverWhy"/>.</param>
 /// <param name="AskedBy">One of <see cref="HandOverBy"/>.</param>
-/// <param name="Model">The model of the choice it was offered and approved on (STAFFPOLICY1d), which the start takes and never picks again; null for the agent's own.</param>
+/// <param name="Model">The model of the choice it is offered and approved on, which the start takes and never picks again; null for the agent's own.</param>
 /// <param name="Effort">The effort of that choice, likewise.</param>
 public sealed record HandOverRequest(string Agent, string? Account, string Why, string AskedBy, DateTimeOffset At, string? Model = null, string? Effort = null);
 
-/// <summary>What a hand-over's ask came to (MIXAGENT1a-i): kept, or refused by a code, and its sentence.</summary>
+/// <summary>What a hand-over's ask came to: kept, or refused by a code, and its sentence.</summary>
 /// <param name="Kept">The box is kept: the shell's chat runner takes it.</param>
-/// <param name="Why">Why not, by a code of <see cref="WordsNever"/> or <see cref="HandOver"/>; null where it was kept.</param>
+/// <param name="Why">Why not, by a code of <see cref="WordsNever"/> or <see cref="HandOver"/>; null where it is kept.</param>
 /// <param name="Message">The sentence, in the terminal's words; the screen words <see cref="Why"/> itself.</param>
 public sealed record HandOverAnswer(bool Kept, string? Why, string Message);
 
-// SESSCTX1b (D189 point 4): the briefing a hand-over composed here is replaced by ContextBrief.Compose, Daoris's brief of the whole
-// line, which a hand-over, an account move, a carry-on and a fallback are all handed; the outgoing agent's note (MIXAGENT1c's
-// `handover_propose`) is its own section there, in HandOverNote's one wording.
+// A hand-over's briefing is ContextBrief.Compose, Daoris's brief of the whole line, which a hand-over, an account move, a
+// carry-on and a fallback are all handed; the outgoing agent's note (`handover_propose`) is its own section there, in
+// HandOverNote's one wording.
 
-/// <summary>The two lines a hand-over writes into conversations' records (MIXAGENT1a-i), each by its code with facts only.</summary>
+/// <summary>The two lines a hand-over writes into conversations' records, each by its code with facts only.</summary>
 public static class HandOverNotes
 {
-    /// <summary>The old conversation's end: where it went. Never an account's name or a path (D125 §3.6).</summary>
+    /// <summary>The old conversation's end: where it went. Never an account's name or a path.</summary>
     public static Noted HandedOver(string agent, string session) =>
         Noted.Of(
             ChatNoteCodes.ChatHandedOver, $"The conversation went on with {agent}, in conversation {session}.",
             ("agent", agent), ("session", session));
 
-    /// <summary>A quest's session end, stopped so its quest goes on with another agent (MIXAGENT1a-ii): which agent. Never an account's name or a path.</summary>
+    /// <summary>A quest's session end, stopped so its quest goes on with another agent: which agent. Never an account's name or a path.</summary>
     public static Noted QuestHandedOver(string agent) =>
         Noted.Of(EndNoteCodes.EndedHandedOver, $"Handed over to {agent}: its quest goes on with it, in the same tree.", ("agent", agent));
 
@@ -66,9 +66,9 @@ public static class HandOverNotes
             ("agent", agent), ("session", session), ("why", why));
 
     /// <summary>
-    /// A move to a new part (SESSCTX1c, D189 point 8; the session-context design §7), the line on the part it left: the session it
+    /// A move to a new part, the line on the part it left: the session it
     /// went on in, the agent and account that one runs on, why by the link's code, the context this part stood at as it moved (H,
-    /// its high-water in tokens) and the characters of the brief the new part was handed (B). The account by its id, as
+    /// its high-water in tokens) and the characters of the brief the new part is handed (B). The account by its id, as
     /// <see cref="Moved"/>'s are: a session's events stay on this machine. A value not known is left out, and its words with it.
     /// </summary>
     public static Noted MovedOn(string session, string agent, string? account, string why, long? context, int brief) =>
@@ -93,10 +93,10 @@ public static class HandOverNotes
     private static string As(string? account) => account is { Length: > 0 } named ? $" as `{named}`" : "";
 
     /// <summary>
-    /// A conversation moved by the usage curve (SWITCH1c-i; the switch design §4), its last line: the account it went on on, and
-    /// how far over its curve the account it left was. It names accounts, as the start's <c>opening.*</c> lines do: a
+    /// A conversation moved by the usage curve, its last line: the account it went on on, and
+    /// how far over its curve the account it left is. It names accounts, as the start's <c>opening.*</c> lines do: a
     /// conversation's record stays on this machine (<see cref="NotePart"/>). Its new conversation's first line is
-    /// <see cref="MovedFrom"/>; SWITCH1c-ii writes both.
+    /// <see cref="MovedFrom"/>; the curve move writes both.
     /// </summary>
     /// <param name="from">The account it ran on.</param>
     /// <param name="move">What <see cref="SwitchDecision"/> said: the account it went to, and the window over its curve.</param>
@@ -120,8 +120,8 @@ public static class HandOverNotes
     }
 }
 
-/// <summary>What a conversation's hand-over came to (MIXAGENT1a-i): the new conversation, or why none, as a start-from's answer.</summary>
-/// <param name="SessionId">The new conversation, where it was taken at once; null where the box waits or nothing was done.</param>
+/// <summary>What a conversation's hand-over came to: the new conversation, or why none, as a start-from's answer.</summary>
+/// <param name="SessionId">The new conversation, where it is taken at once; null where the box waits or nothing is done.</param>
 /// <param name="Kept">The ask stands: taken now (<paramref name="SessionId"/>) or kept for the conversation's turn to end.</param>
-/// <param name="Why">Why nothing was done, by a code of <see cref="WordsNever"/> or <see cref="HandOver"/>; null otherwise.</param>
+/// <param name="Why">Why nothing is done, by a code of <see cref="WordsNever"/> or <see cref="HandOver"/>; null otherwise.</param>
 public sealed record HandedOver(string? SessionId, bool Kept, string? Why, string Message);

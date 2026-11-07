@@ -3,7 +3,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Each repository's workspace kept in the desktop store (the context counters design §4.4): <c>repository_workspaces</c>,
+/// Each repository's workspace kept in the desktop store: <c>repository_workspaces</c>,
 /// written by the look from the registry it read and read by the rules' judge in every process, the window's door and a terminal's alike,
 /// so a write is weighed on the chain the lines read whichever process judges it. A store before the step, or none, keeps no workspace and
 /// each place is judged on its own chain to the machine.
@@ -38,7 +38,7 @@ public sealed class RuleWiderPlaceStore(string home, Func<StoreSettled>? settled
 
     /// <summary>
     /// Keep <paramref name="registered"/> as each repository's workspace, whole, where it differs from what is kept. An empty registry keeps
-    /// what was kept: a look whose registry did not read leaves the chain as the last one that did. Never throws.
+    /// what is kept: a look whose registry does not read leaves the chain as the last one that did. Never throws.
     /// </summary>
     /// <returns>Whether the kept map moved.</returns>
     public bool Keep(IEnumerable<(string Repository, string? Workspace)> registered)

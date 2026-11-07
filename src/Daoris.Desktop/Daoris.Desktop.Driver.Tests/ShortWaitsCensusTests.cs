@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TESTPATIENCE2 (the FIX-LOG entry of that name): a desktop test that waits on a signal which fails to come only when the code is
+/// A desktop test that waits on a signal which fails to come only when the code is
 /// wrong waits <c>Poll.Patience</c>, never a few seconds of its own, because a loaded machine reaches a few seconds on time alone
 /// and a fast-half failure is never re-run. This census reads both desktop test projects' sources and counts each short fixed
 /// <c>WaitAsync(TimeSpan.From…)</c> and each <c>TimeSpan Name = TimeSpan.From…</c> shorter than <c>Poll.Patience</c>. Each is listed
@@ -50,7 +50,7 @@ public sealed class ShortWaitsCensusTests
         ];
     }
 
-    /// <summary>Every short bound of the sources, by <c>path: bound</c>; how many times a file has one is not the rule's (CENSUSRULES1).</summary>
+    /// <summary>Every short bound of the sources, by <c>path: bound</c>; how many times a file has one is not the rule's.</summary>
     internal static SortedSet<string> Bounds(IEnumerable<(string File, string Source)> sources) =>
         new(sources.SelectMany(each => Shorts(each.Source).Select(bound => $"{each.File}: {bound}")), StringComparer.Ordinal);
 

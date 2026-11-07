@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <summary>A row of <c>roles</c>: the role id, its <c>state</c> (<c>set</c> or <c>removed</c>), its record's JSON and its revision.</summary>
 public sealed record StoredRole(string Id, string State, string Record, long Revision);
 
-/// <summary>How the catalogue reads one id (§2.7, X2-2.3): the seed's, a stored record, a removal, or a record that does not read.</summary>
+/// <summary>How the catalogue reads one id: the seed's, a stored record, a removal, or a record that does not read.</summary>
 public enum RoleState
 {
     /// <summary>No record: the seed's role (an added id never reads so).</summary>
@@ -30,14 +30,14 @@ public sealed record RoleSlot(string Id, RoleState State, RoleRecord? Role, stri
 public sealed record RoleFound(RoleRecord? Role, string? Held);
 
 /// <summary>
-/// The catalogue of roles (FOUNDATION1 w, the foundation design §2.7; D233 point 2): the store's <c>roles</c> and the seed per id. A
+/// The catalogue of roles: the store's <c>roles</c> and the seed per id. A
 /// working role's capabilities are the work codes (<see cref="RoleWork"/>), an appointed role's its acts (<see cref="RoleHold"/>).
 /// </summary>
 /// <remarks>
 /// <b>The seed</b> reproduces today's start per id: the eight always-on roles, each machine-wide and taking the work of its name, none taking
 /// design, so design falls back to what takes build; then the supervisor, held by the person's rules, and the steward, held by no one, both
 /// machine-wide. <b>An id reads</b> absent (the seed's), set, removed or unreadable; an unreadable seeded working id holds the starts of its
-/// work, an unreadable added working record every start in its scope, each said with the record's error (O3-16); an appointed record holds
+/// work, an unreadable added working record every start in its scope, each said with the record's error; an appointed record holds
 /// no start. A working role's staffing is not in the record: it is read from <c>role_staffing</c> by <see cref="Order"/>.
 /// </remarks>
 public sealed class RoleCatalog
@@ -73,7 +73,7 @@ public sealed class RoleCatalog
     public long RevisionOf(string id) => Slots.FirstOrDefault(slot => slot.Id == id)?.Revision ?? 0;
 
     /// <summary>
-    /// The catalogue a start reads (FOUNDATION1x): the store in <paramref name="home"/>, the seed where it has none. A store that cannot be
+    /// The catalogue a start reads: the store in <paramref name="home"/>, the seed where it has none. A store that cannot be
     /// read holds the start, never reads as the seed, since a role it holds could be one that takes the work.
     /// </summary>
     /// <exception cref="DriverException">The store cannot be read.</exception>
@@ -118,8 +118,8 @@ public sealed class RoleCatalog
     }
 
     /// <summary>
-    /// The record of <paramref name="id"/> as it stood at <paramref name="revision"/> (census C): the seed at 0 for a seeded id, else the revision
-    /// the store kept when its state was <c>set</c>; null where none is kept or it does not read. Never writes the store.
+    /// The record of <paramref name="id"/> as it stood at <paramref name="revision"/>: the seed at 0 for a seeded id, else the revision
+    /// the store kept when its state is <c>set</c>; null where none is kept or it does not read. Never writes the store.
     /// </summary>
     public static RoleRecord? RecordAt(string location, string id, long revision)
     {
@@ -166,7 +166,7 @@ public sealed class RoleCatalog
     /// <summary>
     /// The role that takes <paramref name="work"/> at <paramref name="place"/>: the most specific scope's, design falling back to what takes
     /// build; its <c>Held</c> where a record that does not read holds the start, or two roles take the work in one scope. A work no role
-    /// takes there, its role removed or scoped elsewhere, holds its starts until the person gives it one (FOUNDATION1y-i, §2.7), said.
+    /// takes there, its role removed or scoped elsewhere, holds its starts until the person gives it one, said.
     /// </summary>
     public RoleFound RoleFor(string work, RolePlace place)
     {
@@ -233,7 +233,7 @@ public sealed class RoleCatalog
     private const string Configured = "Agents → Roles, or `daoris role`";
 
     /// <summary>
-    /// What a start of <paramref name="work"/> says where no role takes it (FOUNDATION1y-i): its role was removed or scoped elsewhere, so it
+    /// What a start of <paramref name="work"/> says where no role takes it: its role is removed or scoped elsewhere, so it
     /// holds until the person gives the work a role. A work that is off has its role, with no choices, and is not this.
     /// </summary>
     public static string NoRole(string work) =>
@@ -372,7 +372,7 @@ public sealed class RoleCatalog
     public static long Write(string location, RoleChange change, Func<StoreSettled>? settled = null) => WriteAll(location, [change], settled)[0];
 
     /// <summary>
-    /// <see cref="Write"/> for a batch (AGENTSPLACE1g2): each change judged in order against the roles the changes before it leave, all in one
+    /// <see cref="Write"/> for a batch: each change judged in order against the roles the changes before it leave, all in one
     /// transaction, so the first refusal rolls every one back and nothing is written.
     /// </summary>
     /// <returns>Each id's new revision, in the batch's order.</returns>
@@ -383,7 +383,7 @@ public sealed class RoleCatalog
         return store.Write("roles", write => WriteIn(write, changes));
     }
 
-    /// <summary><see cref="WriteAll"/> inside a transaction the caller holds, so a role, its staffing and its policy are published in one (STAFFPOLICY1b).</summary>
+    /// <summary><see cref="WriteAll"/> inside a transaction the caller holds, so a role, its staffing and its policy are published in one.</summary>
     /// <exception cref="DriverException">The first change the judge refused; the caller's transaction rolls back.</exception>
     public static IReadOnlyList<long> WriteIn(DesktopWrite write, IReadOnlyList<RoleChange> changes)
     {

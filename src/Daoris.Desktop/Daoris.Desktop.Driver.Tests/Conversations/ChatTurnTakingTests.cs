@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The person's half of a conversation (D49 §3): a line goes into the harness's stdin, and closing
+/// The person's half of a conversation: a line goes into the harness's stdin, and closing
 /// that stream ends the conversation rather than killing it.
 /// </summary>
 /// <remarks>
@@ -64,7 +64,7 @@ public sealed class ChatTurnTakingTests
     }
 
     /// <summary>
-    /// A DRIVEN session has no input stream at all — it was given its whole target at once and has
+    /// A DRIVEN session has no input stream at all — it is given its whole target at once and has
     /// nobody to take turns with. The answer is structural, not a policy: there is nothing to write to.
     /// </summary>
     [Fact]
@@ -80,9 +80,9 @@ public sealed class ChatTurnTakingTests
     }
 
     /// <summary>
-    /// 🔴 "No stream to write to" stopped being the whole answer at ACP1: a protocol-door session's
-    /// stdin is OPEN, because the driver writes the protocol's frames into it (D53) — and an intake is
-    /// such a session on that door (INT4h). A person's line written there lands in the middle of the
+    /// 🔴 "No stream to write to" is not the whole answer: a protocol-door session's
+    /// stdin is OPEN, because the driver writes the protocol's frames into it — and an intake is
+    /// such a session on that door. A person's line written there lands in the middle of the
     /// JSON-RPC stream. A session tracked as taking no input is refused BEFORE anything is written or
     /// closed, whatever its streams are, and the registry says why in the driver's own sentence.
     /// </summary>
@@ -121,7 +121,7 @@ public sealed class ChatTurnTakingTests
 
     /// <summary>
     /// Stop is the other verb, and it means something else: the person cut the conversation off. The
-    /// flag is what lets the record say whose decision the end was.
+    /// flag is what lets the record say whose decision the end is.
     /// </summary>
     [Fact]
     public async Task Stopping_a_chat_is_recorded_as_the_person_s_decision()

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris tool</c> (PUSH1f2c, D194, the alone-path design §1.2, §1.4, §2): a person's press acting alone is refused from a
+/// <c>daoris tool</c>: a person's press acting alone is refused from a
 /// session's terminal, an open look is not; a download holds nothing while it fetches and publishes under the home's lease, waited for
 /// and never refused, said once its hold has lasted thirty seconds, taken the moment it is let go, run beside an instance that started
 /// meanwhile, and stopped by the person's Ctrl+C with its staging gone. Today's words are <see cref="ToolsTextTests"/>'.
@@ -263,7 +263,7 @@ public sealed class ToolsCommandTests : IDisposable
         Assert.Empty(ToolInstall.Downloaded(Home, "pwsh"));
     }
 
-    /// <summary>CONFIRMWAIT1b (the confirm-wait design §4.1): every change waits on its Confirm, and the usage says for how long.</summary>
+    /// <summary>Every change waits on its Confirm, and the usage says for how long.</summary>
     [Fact]
     public void The_usage_says_how_long_a_change_waits_on_its_confirm()
     {
@@ -271,7 +271,7 @@ public sealed class ToolsCommandTests : IDisposable
         Assert.Contains(InstanceDoor.WaitUsage, ToolsCommand.Usage, StringComparison.Ordinal);
     }
 
-    /// <summary>The short changes hold the home from the top; a read, the usage and the long verbs hold none (D194 point 2).</summary>
+    /// <summary>The short changes hold the home from the top; a read, the usage and the long verbs hold none.</summary>
     [Theory]
     [InlineData("use git system", true)]
     [InlineData("use git file C:/bin/git.exe", true)]

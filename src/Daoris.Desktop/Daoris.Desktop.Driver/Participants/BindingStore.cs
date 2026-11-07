@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The participants' bindings in the desktop store (FOUNDATION1 z-iii, D212; the design §13.3, §13.5, §13.6): the kept conversation of each
+/// The participants' bindings in the desktop store: the kept conversation of each
 /// session record of this machine, <c>bindings</c>. The store is the only place a conversation is kept; the files an older build kept are
 /// imported once by the home's migration (<see cref="BindingFilesStep"/>).
 /// </summary>
 /// <remarks>
-/// <para>Every keep writes the row, naming its own columns and never replacing the row (O3-16), and every read reads it.</para>
+/// <para>Every keep writes the row, naming its own columns and never replacing the row, and every read reads it.</para>
 /// <para><b>Opened for one use and closed.</b> Callers build these over any home, often for one read, so the store is opened for each use and
 /// never held, a read never creating or writing it. Every open of the process names one run (<see cref="StoreProcess.Run"/>), so
 /// <c>store_runs</c> holds the process once.</para>
@@ -45,7 +45,7 @@ public sealed class BindingStore(string home, Func<StoreSettled>? settled)
     }
 
     /// <summary>
-    /// Keep that the person picked this session's account (FOUNDATION1a-ii, the design §3.2 step 4): the account a start they named one for
+    /// Keep that the person picked this session's account: the account a start they named one for
     /// opened on, set by name beside the binding, so the account rule reads it as its constraint. Only a session of this machine has one, and
     /// a blank account keeps nothing. Throws what the store throws where it cannot write.
     /// </summary>
@@ -65,7 +65,7 @@ public sealed class BindingStore(string home, Func<StoreSettled>? settled)
 
     /// <summary>
     /// The account the person picked for a session, or null where they picked none: an agent's pick, the curve's account, a record from before
-    /// the pick was kept and a teammate's mirror hold none, and a home with no store holds none. The store's failure is thrown.
+    /// the pick is kept and a teammate's mirror hold none, and a home with no store holds none. The store's failure is thrown.
     /// </summary>
     public string? Picked(string session)
     {
@@ -75,7 +75,7 @@ public sealed class BindingStore(string home, Func<StoreSettled>? settled)
     }
 
     /// <summary>
-    /// Keep the role a start took and its revision (FOUNDATION1x), set by name beside the binding: the record's <c>actor</c> keeps the seeded id
+    /// Keep the role a start took and its revision, set by name beside the binding: the record's <c>actor</c> keeps the seeded id
     /// every build reads, and this is the role the newer build's continuation reads first. Throws what the store throws where it cannot write.
     /// </summary>
     public void KeepRole(string session, string role, long revision)
@@ -103,7 +103,7 @@ public sealed class BindingStore(string home, Func<StoreSettled>? settled)
             ("$session", session)).FirstOrDefault();
     }
 
-    /// <summary>The bindings of these sessions gone, each by its record's deletion (§13.6): the ones that held a row. Nothing is made for a home with no store.</summary>
+    /// <summary>The bindings of these sessions gone, each by its record's deletion: the ones that held a row. Nothing is made for a home with no store.</summary>
     public IReadOnlyList<string> Forget(IReadOnlyCollection<string> sessions)
     {
         var held = Holding(sessions);

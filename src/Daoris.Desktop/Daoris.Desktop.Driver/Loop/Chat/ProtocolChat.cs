@@ -26,13 +26,13 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
     private readonly Func<bool> _stopped;
     private readonly Func<string, LimitSeen?, Noted?>? _limited;
     private readonly Func<string, Noted?>? _signedOut;
-    // The retry its session was handed, whose last reading says the failure's code; null before the open or with none.
+    // The retry its session is handed, whose last reading says the failure's code; null before the open or with none.
     private volatile TransientRetry? _retried;
     private readonly Action? _wentOn;
     private Action<string> _line = _ => { };
     private Action<SessionEvent> _record = _ => { };
 
-    // The words handed to the running turn and not yet answered, and those a stop was asked while on their way.
+    // The words handed to the running turn and not yet answered, and those a stop is asked while on their way.
     private readonly object _gate = new();
     private readonly HashSet<string> _onTheirWay = new(StringComparer.Ordinal);
     private readonly HashSet<string> _stoppedUnder = new(StringComparer.Ordinal);
@@ -81,7 +81,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
     /// <summary>What its actor asks, set on the session before its first prompt; null sets nothing.</summary>
     public ActorAsked? Asked { get; init; }
 
-    /// <summary>Told what was carried where it differs from <see cref="Asked"/>.</summary>
+    /// <summary>Told what is carried where it differs from <see cref="Asked"/>.</summary>
     public Action<ActorAsked>? Carried { get; init; }
 
     /// <summary>Told what the open listed, its agent's offer reading on its account.</summary>
@@ -140,7 +140,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
     }
 
     /// <summary>
-    /// The retry its session is handed: the reader and the clock it was built with, the owner's check, and what the episode says in this
+    /// The retry its session is handed: the reader and the clock it is built with, the owner's check, and what the episode says in this
     /// conversation, the one line, a quiet event each wait and try, and Daoris's go-on.
     /// </summary>
     private TransientRetry Retried(ChatRetry retry) => new()
@@ -148,7 +148,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
         Read = retry.Read,
         Clock = retry.Clock,
         Limit = retry.Limit,
-        // The owner's check: the conversation wants another turn unless its session or the turn was stopped by the person.
+        // The owner's check: the conversation wants another turn unless its session or the turn is stopped by the person.
         Wanted = _ =>
         {
             if (!_stopAsked && !_stopped()) return Task.FromResult(true);
@@ -198,7 +198,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
     }
 
     /// <summary>
-    /// A call the door refused, opening the session or taking a turn, read for the account's sign-in: where it was, the account reads
+    /// A call the door refused, opening the session or taking a turn, read for the account's sign-in: where it is, the account reads
     /// signed out and the record says so, its English beside the line's parts as a session record's note carries them. Only the door's
     /// failure is read, as a driven start's conclusion reads it.
     /// </summary>
@@ -254,13 +254,13 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
         return wire.SteeredAsync(words, back => Turns.HandBack(ChatMessage.FromAgent(back) with { Said = true }));
     }
 
-    /// <summary>A word handed to the turn on the wire under the record's id where it was kept there, or a fresh one of its own.</summary>
+    /// <summary>A word handed to the turn on the wire under the record's id where it is kept there, or a fresh one of its own.</summary>
     private static ChatMessage Identified(ChatMessage message) =>
         message is { Kept: true, Id: not null } ? message : message with { Id = $"said-{Guid.NewGuid():N}"[..13] };
 
     /// <summary>
     /// A word handed to the running turn, answered: said where the agent refused it, where it never reached the agent, or where the person's
-    /// stop was asked while it was on its way and the agent answered it cancelled, since it may have read it and its answer was not kept.
+    /// stop is asked while it is on its way and the agent answers it cancelled, since it may have read it and its answer is not kept.
     /// </summary>
     private async Task AnsweredAsync(ChatMessage words, Task<string> answered)
     {
@@ -286,7 +286,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
         }
         catch (AcpWordTurnFailed)
         {
-            // The word was taken, so the turn that failed is the one it opened: the turn's failure, settled where the turn's words are
+            // The word is taken, so the turn that failed is the one it opened: the turn's failure, settled where the turn's words are
             // (`SettleSteeredAsync`), never a note of this word's.
         }
         catch (Exception error) when (error is DriverException or IOException or ObjectDisposedException or InvalidOperationException)
@@ -362,7 +362,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
     }
 
     /// <summary>
-    /// One turn's prompt: where the conversation was handed a retry, a transient failure is tried again on this same process, inside the
+    /// One turn's prompt: where the conversation is handed a retry, a transient failure is tried again on this same process, inside the
     /// turn, so the turn is one however many tries it takes: the queue is not released, no turn ends in the record, and nothing is counted,
     /// notified or moved until the turn does. Any other failure comes out as it came, and one past the bound as
     /// <see cref="AcpTransientExhausted"/>.
@@ -376,7 +376,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
         }
 
         await wire.RetriedAsync(prompt, cut).ConfigureAwait(false);
-        // The person's stop met the episode between tries: no prompt of the session's was open to answer it, so the turn ends here.
+        // The person's stop met the episode between tries: no prompt of the session's is open to answer it, so the turn ends here.
         if (_unwanted)
         {
             _line("— the turn ended: it was stopped while it waited to try again");
@@ -385,8 +385,8 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
     }
 
     /// <summary>
-    /// What became of the words steered into the turn on the wire, settled before the turn is found to have ended: one whose own prompt was
-    /// refused after it was taken (<see cref="AcpWordTurnFailed"/>) is the turn's prompt failing, so a transient one is tried again here, in
+    /// What became of the words steered into the turn on the wire, settled before the turn is found to have ended: one whose own prompt is
+    /// refused after it is taken (<see cref="AcpWordTurnFailed"/>) is the turn's prompt failing, so a transient one is tried again here, in
     /// the turn, which lasts. Any other answer is its word's own, said by its <see cref="AnsweredAsync"/>.
     /// </summary>
     private async Task SettleSteeredAsync()
@@ -453,7 +453,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
             return true;
         }
 
-        // Whatever it was, a turn's failure is one reading on the run's sink, as the driven door's is.
+        // Whatever it is, a turn's failure is one reading on the run's sink, as the driven door's is.
         if (_open.Task.IsCompletedSuccessfully && _open.Task.Result is { } failedRun)
         {
             failedRun.Read(new WireReading.Failed(DoorFailures.OfProtocol(error, DoorWhere.Prompt)));
@@ -494,7 +494,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
         ReadSignIn(error);
 
         // The turn ends: only a turn event closes a turn on the page, which would otherwise show it working under this note while the
-        // composer, told by the queue that nothing was taking, offered to send.
+        // composer, told by the queue that nothing is taking, offered to send.
         _record(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
         return true;
     }

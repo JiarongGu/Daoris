@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One role's last seven days (STAFFPOLICY1g, D226; the staff policy design §6.5): its new starts, by choice, and its moves to another choice,
+/// One role's last seven days: its new starts, by choice, and its moves to another choice,
 /// by condition, as Ask Daoris's room says them so <i>why did this run on Opus?</i> is answered from records.
 /// </summary>
 public sealed record StaffWeekRole(int Starts, IReadOnlyList<(StaffKey Choice, int Count)> ByChoice, IReadOnlyList<(string Condition, int Count)> Moved)

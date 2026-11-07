@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// STAFFPOLICY1g (D226; the staff policy design §6.5): the room says each role's choices, its policy in the fold's words, its next new
+/// The room says each role's choices, its policy in the fold's words, its next new
 /// start and its last seven days, read from the home's records, so <i>why did this run on Opus?</i> is answered from them.
 /// </summary>
 public sealed class HelpRoomRolesTests : IDisposable
@@ -82,7 +82,7 @@ public sealed class HelpRoomRolesTests : IDisposable
         var build = roles.Single(role => role.Id == "build");
         Assert.Equal(["claude-code sonnet high", "claude-code opus high"], build.Choices);
         Assert.Equal((StaffPolicyRead.Set, 1L), (build.PolicyState, build.PolicyRevision));
-        // The policy's moves are the supervisor's rules (CONTEXTDRIVE1l), which the room's rules section says; the policy says its spread.
+        // The policy's moves are the supervisor's rules, which the room's rules section says; the policy says its spread.
         Assert.Equal("Spread by weight (1:1)", build.Policy);
         Assert.Equal("last 7 days: 2 starts (claude-code sonnet high ×1, claude-code opus high ×1), moved: limit ×1", build.Week);
         Assert.False(string.IsNullOrEmpty(build.Next));

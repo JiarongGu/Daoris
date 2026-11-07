@@ -1,14 +1,14 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The person's doors for withdrawing a landing's branch the line will never hold (LANDRETIRE1; D50: one act, two doors): the window's
+/// The person's doors for withdrawing a landing's branch the line will never hold (one act, two doors): the window's
 /// <c>WITHDRAW_LANDING_BRANCH</c> names the branch and its repository (<see cref="WithdrawAsync"/>); the terminal's
 /// <c>daoris tree remove &lt;landing branch&gt; [--repository &lt;name&gt;] --why "…" [--plan]</c> names the branch alone
 /// (<see cref="WithdrawNamedAsync"/>), and both end in <see cref="SessionTrees.WithdrawLandedAsync"/>, which judges and acts.
 /// Mirrors <see cref="SessionBranchDiscard"/>.
 /// </summary>
 /// <remarks>
-/// <para><b>Only the process holding the home's lease acts</b> (<see cref="RecoveryDropping.WithoutHome"/>, D102's RECOVERYDROP1 note): the
+/// <para><b>Only the process holding the home's lease acts</b> (<see cref="RecoveryDropping.WithoutHome"/>): the
 /// desktop's own press while it runs, or a verb acting alone under the lease it took; a verb beside a running desktop is refused and says
 /// so. A plan changes nothing and needs none.</para>
 ///

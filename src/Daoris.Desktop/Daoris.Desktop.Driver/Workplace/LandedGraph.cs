@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A landed or gone session's review as nodes of Review's graph (GITAPP1a-ii, the git-app design P1.2's last row): the reads
+/// A landed or gone session's review as nodes of Review's graph: the reads
 /// <see cref="LandedReviews.LandedReviewAsync"/> makes, the same commands in the same checkout, each started once what it needs has
 /// answered. The range read and the content proof run programs (a textconv, a diff) and are Π; the ref reads run beside each other.
 /// </summary>

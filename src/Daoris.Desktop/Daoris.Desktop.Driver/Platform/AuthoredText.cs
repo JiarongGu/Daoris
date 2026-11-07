@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Words a person or a plugin writes into configuration (D222): a JSON string as written, or an object of language tags to text with at
+/// Words a person or a plugin writes into configuration: a JSON string as written, or an object of language tags to text with at
 /// least one entry. It needs no language; a page shows it in the viewer's language, else the viewer's base language (<c>zh-TW</c> → <c>zh</c>),
 /// else as written (the string, or the first entry). The one reader of the shape on this side; the page's is <c>locales/authored.ts</c>.
 /// </summary>

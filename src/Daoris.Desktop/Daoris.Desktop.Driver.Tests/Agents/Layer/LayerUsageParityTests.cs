@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTLYNTAI1c (the agent-lyntai design §6.3, §9.2): the usage port's two implementations, today's reader and the layer's read, over
+/// The usage port's two implementations, today's reader and the layer's read, over
 /// every recorded answer and every fixture of both readers' tests, the usage history's among them, observed whole by the oracle: the spawn,
-/// the lines written, the walk's windows, the history's rows with their plan, and whether anything was read; the source and the reader by
+/// the lines written, the walk's windows, the history's rows with their plan, and whether anything is read; the source and the reader by
 /// the relation. Each case states the channels it differs on, and only a named gap differs.
 /// </summary>
 public sealed class LayerUsageParityTests : IDisposable
@@ -30,7 +30,7 @@ public sealed class LayerUsageParityTests : IDisposable
     private static readonly string[] ClaudeSpawn = ["Spawn"];
 
     /// <summary>
-    /// A value the layer's reader cannot recognise reads the whole answer unknown (Lyntai's D237, D222), where today's keeps every other
+    /// A value the layer's reader cannot recognise reads the whole answer unknown, where today's keeps every other
     /// window it said: nothing reaches the walk or the history, and no provenance is kept.
     /// </summary>
     private static readonly string[] Unrecognised = ["Windows", "Records", "End", "provenance", "order"];
@@ -175,7 +175,7 @@ public sealed class LayerUsageParityTests : IDisposable
         return Observe("daoris", info.FileName, [.. info.ArgumentList], cwd, info.Environment[toolchain.ProfileVariable!], server.Heard, answer);
     }
 
-    /// <summary>The layer's read, its runner the stand-in's: the spawn as the runner was asked it.</summary>
+    /// <summary>The layer's read, its runner the stand-in's: the spawn as the runner is asked it.</summary>
     private async Task<ParityObservation> LayerAsync(Case each)
     {
         var (run, toolchain, question) = Spawn(each);

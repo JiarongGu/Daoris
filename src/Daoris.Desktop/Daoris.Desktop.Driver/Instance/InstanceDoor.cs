@@ -3,23 +3,23 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A verb's door to the running Daoris (D171 point 3, the terminal RPC design §7): it finds the instance as §7.4 says and switches as
-/// §7.2's table does, sending a press's route while the instance answers, acting alone where none runs, and never acting alone beside
-/// one that does not answer, nor after a request was sent; <c>press</c> asks again how a press ended, or takes one back.
+/// A verb's door to the running Daoris: it finds the instance and switches by the route's class,
+/// sending a press's route while the instance answers, acting alone where none runs, and never acting alone beside
+/// one that does not answer, nor after a request is sent; <c>press</c> asks again how a press ended, or takes one back.
 /// </summary>
 [CommandGroup("press", "result", "withdraw")]
 public static class InstanceDoor
 {
-    /// <summary>The pipe the dev loop and a rehearsal name, as they name the service (§7.4).</summary>
+    /// <summary>The pipe the dev loop and a rehearsal name, as they name the service.</summary>
     public const string Variable = "DAORIS_INSTANCE";
 
     /// <summary>
-    /// What the verb finds on its home (§7.4): the instance whose address file's process lives with its recorded start, whose
+    /// What the verb finds on its home: the instance whose address file's process lives with its recorded start, whose
     /// status and hello answer this home's id, and whose pipe that process serves; or the pipe <see cref="Variable"/> names,
     /// whose hello answers this home's id.
     /// </summary>
     /// <remarks>
-    /// 🔴 <b>A workspace build reads no address file</b> (D171's FINDDAORIS1 note): on a machine with an install the account's
+    /// 🔴 <b>A workspace build reads no address file</b>: on a machine with an install the account's
     /// <c>DAORIS_HOME</c> names that install's live home, and a gate or a test that met a running Daoris would act on it. The dev
     /// loop and a rehearsal that mean to reach an instance name its pipe in <see cref="Variable"/>.
     /// </remarks>
@@ -48,7 +48,7 @@ public static class InstanceDoor
             return new(InstanceFound.None, "Daoris is not running on this home.");
         }
 
-        // HOMEID1: only this home's instance. A file naming another home's id, or a status answering as another's, is not it.
+        // Only this home's instance. A file naming another home's id, or a status answering as another's, is not it.
         if (mine is null || (entry.Home is { } its && its != mine) || world.Status(entry.Url) is { Home: { } answered } && answered != mine)
         {
             return new(InstanceFound.None, "the Daoris running here answers as another home's.");
@@ -66,16 +66,16 @@ public static class InstanceDoor
         return await HelloAsync(pipe, mine, world, running, refused, server: entry.Pid, ct).ConfigureAwait(false);
     }
 
-    /// <summary>What a pipe that refused this terminal is said as (PIPEOWNER1): never a pipe that did not answer.</summary>
+    /// <summary>What a pipe that refused this terminal is said as: never a pipe that did not answer.</summary>
     internal const string NotThisUsers = "Its pipe belongs to another Windows account or elevation.";
 
-    /// <summary>The supervisor's verb's refusal of a pipe not served by the install's own application (SUPERVISOR1a-ii, D208 §2.2).</summary>
+    /// <summary>The supervisor's verb's refusal of a pipe not served by the install's own application.</summary>
     public const string NotInstall = "not-install";
 
     /// <summary>
     /// Whether <paramref name="server"/> runs the install's own application, <c>app/Daoris.Desktop.exe</c> under the root that carries
-    /// the verb (<paramref name="baseDirectory"/>), never the root's <c>Daoris.exe</c> launcher (SUPERVISOR1a-ii, D208 §2.2). Its limit,
-    /// said in §4.6: it binds a path, not the owner's instance. False for a workspace build, which no install carries.
+    /// the verb (<paramref name="baseDirectory"/>), never the root's <c>Daoris.exe</c> launcher. Its limit:
+    /// it binds a path, not the owner's instance. False for a workspace build, which no install carries.
     /// </summary>
     public static bool InstallApplication(int? server, string baseDirectory, Func<int, string?>? image = null)
     {
@@ -113,7 +113,7 @@ public static class InstanceDoor
             return new(InstanceFound.Silent, $"{silent} Its pipe is served by another process (pid {serving}), so nothing was sent to it.");
         }
 
-        // SUPERVISOR1a-ii (D208 §2.2): a verb that checks the pipe's server checks it here, before even the hello is sent.
+        // A verb that checks the pipe's server checks it here, before even the hello is sent.
         if (world.ServedBy is { } check && !check(client.Server))
         {
             await client.DisposeAsync().ConfigureAwait(false);
@@ -146,28 +146,28 @@ public static class InstanceDoor
     }
 
     /// <summary>
-    /// A press of <paramref name="route"/> as §7.2's switch takes it: alone, sent with its answer said by
+    /// A press of <paramref name="route"/> as its class takes it: alone, sent with its answer said by
     /// <paramref name="words"/>, or refused. The exit code is the verb's.
     /// </summary>
     /// <remarks>
-    /// 🔴 <b>A timeout never means "do it here"</b> (§7.2): once a request was sent, a lost answer is asked for by <c>RESULT</c>
+    /// 🔴 <b>A timeout never means "do it here"</b>: once a request is sent, a lost answer is asked for by <c>RESULT</c>
     /// with the request's key on a new connection, and what it says is said; the press is never sent again nor done alone.
-    /// <para><b>A person's press is confirmed in the window</b> (RPC1c, D156 §4.2): the instance shows it there naming this terminal,
+    /// <para><b>A person's press is confirmed in the window</b>: the instance shows it there naming this terminal,
     /// and the verb says it waits as the instance tells it so (<c>CONFIRMING</c>), naming the request's id and the verbs that read and
-    /// take it back at once (CONFIRMWAIT1b); the confirmed press's answer is said in the verb's words, and the person's refusal or the
+    /// take it back at once; the confirmed press's answer is said in the verb's words, and the person's refusal or the
     /// two minutes' end is the instance's sentence, exit 1, nothing done here. The verb's own wait over with the press still
-    /// <c>waiting</c> is exit 1 too, and an instance from before CONFIRMWAIT1a-i, which answers <c>running</c> then, is said as before,
-    /// exit 2; so is the close's answer <c>waiting</c> (CONFIRMWAIT1a-ii), the press kept across the restart. A window's route is never
+    /// <c>waiting</c> is exit 1 too, and an instance that answers <c>running</c> for a press waiting on the person is said as
+    /// still being worked on, exit 2; so is the close's answer <c>waiting</c>, the press kept across the restart. A window's route is never
     /// sent: no terminal verb has one.</para>
     /// </remarks>
     /// <param name="payload">The route's payload, as a window's press sends it.</param>
     /// <param name="alone">The verb acting from its own process, as it does where no instance runs.</param>
-    /// <param name="words">The route's answer in the verb's own words, returning its exit code (§7.3).</param>
+    /// <param name="words">The route's answer in the verb's own words, returning its exit code.</param>
     public static async Task<int> PressAsync(
         InstanceRoute route, object? payload, Func<Task<int>> alone, Func<JsonElement, int> words, InstanceWorld world,
         CancellationToken ct = default)
     {
-        // STEWARDROLE1a-i (D209 §3.3): a role's terminal never presses as the owner nor acts alone, refused before it connects.
+        // A role's terminal never presses as the owner nor acts alone, refused before it connects.
         if (world.RoleTerminal()) return await RoleRefusedAsync(world).ConfigureAwait(false);
         if (route.Class == RouteClass.Window) return await alone().ConfigureAwait(false);
 
@@ -183,10 +183,10 @@ public static class InstanceDoor
 
         var id = Guid.NewGuid().ToString();
         var key = Guid.NewGuid().ToString("N");
-        // RPC1j: kept before it is sent, so `result <id>` can ask for an answer that never reached this verb.
+        // Kept before it is sent, so `result <id>` can ask for an answer that never reached this verb.
         if (world.Home is { } kept) new SentPresses(kept).Keep(new SentPress(id, key, $"{route.Module}.{route.Route}", DateTimeOffset.UtcNow));
         JsonElement? answer;
-        // CONFIRMWAIT1b (§4.1): `--no-wait` leaves the line once the instance says the press waits, the id already said.
+        // `--no-wait` leaves the line once the instance says the press waits, the id already said.
         using var leave = CancellationTokenSource.CreateLinkedTokenSource(ct);
         await using (var client = look.Client!)
         {
@@ -196,8 +196,8 @@ public static class InstanceDoor
             }, world.Within, leave.Token).ConfigureAwait(false);
         }
 
-        // The answer was lost (the connection, or the verb's wait over): asked for, never sent again, never done here (§6.1). Which
-        // end it is, RESULT's state says (CONFIRMWAIT1b): a press still waiting for the person is not one under way.
+        // The answer is lost (the connection, or the verb's wait over): asked for, never sent again, never done here. Which
+        // end it is, RESULT's state says: a press still waiting for the person is not one under way.
         if (answer is null)
         {
             var result = await ResultAsync(client: look, id, key, world, ct).ConfigureAwait(false);
@@ -222,7 +222,7 @@ public static class InstanceDoor
             }
         }
 
-        // CONFIRMWAIT1 (§15.2 item 6): its answer is its end, so its key keeps a day from now; a close's `waiting` is no end, marked below.
+        // Its answer is its end, so its key keeps a day from now; a close's `waiting` is no end, marked below.
         if (world.Home is { } sent && (Succeeded(answer.Value) || Refusal(answer.Value).Code != Waiting))
         {
             new SentPresses(sent).Ended(id, DateTimeOffset.UtcNow);
@@ -234,7 +234,7 @@ public static class InstanceDoor
         }
 
         var (code, message, _) = Refusal(answer.Value);
-        // CONFIRMWAIT1a-ii (§4.1, §7.2): the close answers a line waiting on a press `waiting`, the press kept in its record across the
+        // The close answers a line waiting on a press `waiting`, the press kept in its record across the
         // restart; said as this verb's own wait's end.
         if (code == Waiting)
         {
@@ -248,50 +248,50 @@ public static class InstanceDoor
     }
 
     /// <summary>
-    /// A press's refusal as the verb's exit code: <c>already</c> 0, the world being as asked (CONFIRMWAIT1b, the confirm-wait design
-    /// §5.1); the person's or the asker's word on it (<see cref="PersonEnds"/>) 1, a policy answer (RPC1c); any other 2.
+    /// A press's refusal as the verb's exit code: <c>already</c> 0, the world being as asked;
+    /// the person's or the asker's word on it (<see cref="PersonEnds"/>) 1, a policy answer; any other 2.
     /// </summary>
     internal static int RefusalExit(string? code) => code == Already ? 0 : code is not null && PersonEnds.Contains(code) ? 1 : 2;
 
-    /// <summary>The instance's refusal of a person's press the person refused in its window (RPC1c, <c>InstancePipe.Refused</c>).</summary>
+    /// <summary>The instance's refusal of a person's press the person refused in its window (<c>InstancePipe.Refused</c>).</summary>
     public const string Refused = "refused";
 
-    /// <summary>The instance's refusal of a person's press nobody confirmed within its two minutes (RPC1c, <c>InstancePipe.Expired</c>).</summary>
+    /// <summary>The instance's refusal of a person's press nobody confirmed within its two minutes (<c>InstancePipe.Expired</c>).</summary>
     public const string Expired = "expired";
 
     /// <summary>
-    /// A press's endings that are the person's or its asker's word, exit 1 at the press and at <c>result</c> alike (the confirm-wait
-    /// design §2, §4.2): refused, a ground that changed while it waited, withdrawn, lost at a restart, and an instance from before
-    /// CONFIRMWAIT1a-i's two minutes.
+    /// A press's endings that are the person's or its asker's word, exit 1 at the press and at <c>result</c> alike:
+    /// refused, a ground that changed while it waited, withdrawn, lost at a restart, and a press nobody confirmed within
+    /// the two minutes.
     /// </summary>
     public static readonly IReadOnlySet<string> PersonEnds = new HashSet<string>(StringComparer.Ordinal)
     {
         Refused, Expired, "changed", "withdrawn", "lost",
     };
 
-    /// <summary>A press whose world is already as it asks, answered at the ask with no card (the confirm-wait design §5.1): exit 0.</summary>
+    /// <summary>A press whose world is already as it asks, answered at the ask with no card: exit 0.</summary>
     public const string Already = "already";
 
-    /// <summary><c>RESULT</c>'s state for a press that waits for the person's Confirm (CONFIRMWAIT1a-i, the confirm-wait design §4.2).</summary>
+    /// <summary><c>RESULT</c>'s state for a press that waits for the person's Confirm.</summary>
     public const string Waiting = "waiting";
 
-    /// <summary>The longest a verb waits on a press, and the default: <c>--wait</c>'s bound (the confirm-wait design §4.1).</summary>
+    /// <summary>The longest a verb waits on a press, and the default: <c>--wait</c>'s bound.</summary>
     public static readonly TimeSpan LongestWait = TimeSpan.FromMinutes(30);
 
-    /// <summary>What a family's usage says of the wait (CONFIRMWAIT1b), held in each by its usage test.</summary>
+    /// <summary>What a family's usage says of the wait, held in each by its usage test.</summary>
     public const string WaitUsage =
         "Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.";
 
     /// <summary>
-    /// What a family says at the person's Ctrl+C (RPC1h, CONFIRMWAIT1b): it withdraws nothing (the confirm-wait design §4.1, §11), so the
-    /// two verbs that read and take back what was sent are named.
+    /// What a family says at the person's Ctrl+C: it withdraws nothing, so the
+    /// two verbs that read and take back what is sent are named.
     /// </summary>
     public const string StoppedAtCtrlC =
         "daoris: stopped at your Ctrl+C. A change already sent to Daoris's window may still be confirmed there: `daoris press result <id>` "
         + "asks how it ended, and `daoris press withdraw <id>` takes it back; nothing more was done here.";
 
     /// <summary>
-    /// A press still waiting for the person's Confirm when the verb's wait ended (the confirm-wait design §4.1): not lost and not an
+    /// A press still waiting for the person's Confirm when the verb's wait ends: not lost and not an
     /// error, said with its id and the two verbs, exit 1.
     /// </summary>
     public static string StillWaiting(string verb, string id) =>
@@ -300,8 +300,8 @@ public static class InstanceDoor
 
     /// <summary>
     /// Takes <c>--wait &lt;minutes&gt;</c> (0 to 30) and <c>--no-wait</c>, which is <c>--wait 0</c>, from the host's words before any
-    /// verb reads them (CONFIRMWAIT1b, the confirm-wait design §4.1): the rest are the verb's, and the wait is set on the world the
-    /// verb is given, null where none was said. False, with the problem, for a wait out of bounds, without its minutes, or said twice.
+    /// verb reads them: the rest are the verb's, and the wait is set on the world the
+    /// verb is given, null where none is said. False, with the problem, for a wait out of bounds, without its minutes, or said twice.
     /// </summary>
     public static bool TakeWait(IReadOnlyList<string> args, out string[] rest, out TimeSpan? wait, out string? problem)
     {
@@ -349,7 +349,7 @@ public static class InstanceDoor
     public const string Confirming = "CONFIRMING";
 
     /// <summary>
-    /// Why a press that waits for the window carries a note beside it (CHANNELJOIN1c), by the code <c>CONFIRMING</c>'s <c>standing</c>
+    /// Why a press that waits for the window carries a note beside it, by the code <c>CONFIRMING</c>'s <c>standing</c>
     /// carries; null for a code this build does not know, which says the plain wait.
     /// </summary>
     public static string? StandingWhy(string? code) => code switch
@@ -359,7 +359,7 @@ public static class InstanceDoor
     };
 
     /// <summary>
-    /// Which of §7.2's rows a press that goes several routes in one run is in, asked once before the first: the connection it made is
+    /// Which row of the switch a press that goes several routes in one run is in, asked once before the first: the connection it made is
     /// closed, since each press of <see cref="PressAsync"/> finds its own. A press then refused (<see cref="InstanceFound.Silent"/> or
     /// <see cref="InstanceFound.Refused"/>) is said by <see cref="RefusedAsync(InstanceLook, InstanceWorld)"/> and is exit 2.
     /// </summary>
@@ -370,7 +370,7 @@ public static class InstanceDoor
         return look with { Client = null };
     }
 
-    /// <summary>A press refused before it was sent, said as <see cref="PressAsync"/> says it: exit 2.</summary>
+    /// <summary>A press refused before it is sent, said as <see cref="PressAsync"/> says it: exit 2.</summary>
     public static async Task<int> RefusedAsync(InstanceLook look, InstanceWorld world)
     {
         await world.Error.WriteLineAsync($"{world.Verb}: {look.Why}").ConfigureAwait(false);
@@ -378,7 +378,7 @@ public static class InstanceDoor
     }
 
     /// <summary>
-    /// A read of <paramref name="route"/> as §7.2's read column takes it (RPC1b2, RPC1e): sent where the instance answers, and
+    /// A read of <paramref name="route"/> as the switch takes a read: sent where the instance answers, and
     /// <paramref name="alone"/> wherever it does not (no instance, a pipe that is silent or refuses its hello, an answer that is lost
     /// or refused), since a read changes nothing and acting alone beside an instance is harmless. Said nothing of why.
     /// </summary>
@@ -399,7 +399,7 @@ public static class InstanceDoor
     public static async Task<int?> TryReadAsync(
         InstanceRoute route, object? payload, Func<JsonElement, int?> words, InstanceWorld world, CancellationToken ct = default)
     {
-        // STEWARDROLE1a-i (D209 §3.3): in a role's terminal the read is the instance's or nothing; its alone path is refused, exit 2.
+        // In a role's terminal the read is the instance's or nothing; its alone path is refused, exit 2.
         var role = world.RoleTerminal();
         if (route.Class != RouteClass.Open) return role ? await RoleRefusedAsync(world).ConfigureAwait(false) : null;
         var look = await FindAsync(world, ct).ConfigureAwait(false);
@@ -416,7 +416,7 @@ public static class InstanceDoor
         return exit is null && role ? await RoleRefusedAsync(world).ConfigureAwait(false) : exit;
     }
 
-    /// <summary>A role's terminal's verb refused (STEWARDROLE1a-i, D209 §3.3), before it connects or instead of acting alone: exit 2.</summary>
+    /// <summary>A role's terminal's verb refused, before it connects or instead of acting alone: exit 2.</summary>
     public static async Task<int> RoleRefusedAsync(InstanceWorld world)
     {
         await world.Error.WriteLineAsync(TerminalRole.Refusal(world.Verb)).ConfigureAwait(false);
@@ -424,7 +424,7 @@ public static class InstanceDoor
     }
 
     /// <summary>
-    /// A host verb's route as the running Daoris's client (RPC1d, RPC1e, §7.2 and §7.3): where the verb was handed an instance to look
+    /// A host verb's route as the running Daoris's client: where the verb is handed an instance to look
     /// for, an open route is read through <see cref="ReadAsync"/> and any other pressed through <see cref="PressAsync"/>, its answer
     /// said in the verb's own lines (<see cref="TreesSaid"/>, which the route answers asked by <see cref="Said"/>); handed none, the
     /// verb acts alone.
@@ -439,7 +439,7 @@ public static class InstanceDoor
 
     /// <summary>
     /// A verb's payload: the route's own fields, as a window's press sends them, beside <c>said: true</c>, which asks the route for the
-    /// verb's lines and exit code (RPC1d). An absent value is left out.
+    /// verb's lines and exit code. An absent value is left out.
     /// </summary>
     public static Dictionary<string, object?> Said(params (string Name, object? Value)[] fields)
     {
@@ -454,10 +454,10 @@ public static class InstanceDoor
     }
 
     /// <summary>
-    /// <c>daoris press result &lt;id&gt;</c> (RPC1j, §6.1): how a press this terminal sent ended, asked of the instance with the key it
-    /// was sent with. An answered press's words are its route's (<c>said</c>), else its answer as the instance gave it; a press still
-    /// under way, one the instance does not know and one it holds for another key are said, exit 2. CONFIRMWAIT1b (the confirm-wait
-    /// design §4.2): a press still <c>waiting</c> for the person is said as the verb's own wait's end says it, exit 1, and kept past the
+    /// <c>daoris press result &lt;id&gt;</c>: how a press this terminal sent ended, asked of the instance with the key it
+    /// is sent with. An answered press's words are its route's (<c>said</c>), else its answer as the instance gave it; a press still
+    /// under way, one the instance does not know and one it holds for another key are said, exit 2.
+    /// A press still <c>waiting</c> for the person is said as the verb's own wait's end says it, exit 1, and kept past the
     /// day; an ending the person or the asker made is exit 1 as at the press, <c>already</c> 0.
     /// </summary>
     public static async Task<int> ResultAsync(string id, InstanceWorld world, CancellationToken ct = default)
@@ -510,8 +510,8 @@ public static class InstanceDoor
     }
 
     /// <summary>
-    /// <c>daoris press withdraw &lt;id&gt;</c> (CONFIRMWAIT1b, the confirm-wait design §4.3): takes back a press this terminal sent that
-    /// still waits for the person's Confirm, by the pipe's own <c>WITHDRAW { id, key }</c> with the key it was sent with, on a new
+    /// <c>daoris press withdraw &lt;id&gt;</c>: takes back a press this terminal sent that
+    /// still waits for the person's Confirm, by the pipe's own <c>WITHDRAW { id, key }</c> with the key it is sent with, on a new
     /// connection; never the kit's <c>CANCEL</c>, which reaches a confirmed press and aborts it. Taken back is exit 0; confirmed meanwhile
     /// (nothing is cancelled) or already ended, said with its ending, exit 1; anything else exit 2, an instance from before the route
     /// among them, which says so.
@@ -601,7 +601,7 @@ public static class InstanceDoor
         return (kept, presses, null);
     }
 
-    /// <summary>A refusal said, exit as <see cref="PressAsync"/> gives the same refusal (CONFIRMWAIT1b, the confirm-wait design §4.2).</summary>
+    /// <summary>A refusal said, exit as <see cref="PressAsync"/> gives the same refusal.</summary>
     private static async Task<int> RefusedAsync(JsonElement envelope, InstanceWorld world)
     {
         var (code, message, _) = Refusal(envelope);
@@ -609,7 +609,7 @@ public static class InstanceDoor
         return RefusalExit(code);
     }
 
-    /// <summary><c>RESULT</c> for a press whose answer was lost, asked on a new connection to the pipe the verb found.</summary>
+    /// <summary><c>RESULT</c> for a press whose answer is lost, asked on a new connection to the pipe the verb found.</summary>
     private static async Task<JsonElement?> ResultAsync(InstanceLook client, string id, string key, InstanceWorld world, CancellationToken ct)
     {
         var connect = await InstanceClient.ConnectAsync(client.Client!.Pipe, world.Answer, world.Owners, ct).ConfigureAwait(false);
@@ -621,9 +621,9 @@ public static class InstanceDoor
     }
 
     /// <summary>
-    /// A route's progress, said as a line where it names this press and says something (§6); and that the press waits for the person
-    /// in the window (RPC1c), said once on the error, so the output stays the answer's: with the request's id and the verbs that read
-    /// and take it back, at once and flushed, before any wait (CONFIRMWAIT1b, the confirm-wait design §4.1). True where it said so.
+    /// A route's progress, said as a line where it names this press and says something; and that the press waits for the person
+    /// in the window, said once on the error, so the output stays the answer's: with the request's id and the verbs that read
+    /// and take it back, at once and flushed, before any wait. True where it says so.
     /// </summary>
     private static bool Told(JsonElement told, string id, InstanceWorld world)
     {
@@ -640,7 +640,7 @@ public static class InstanceDoor
                     $"{world.Verb}: waiting for you to confirm this in Daoris's window (request {id}{why}); `daoris press result {id}` says "
                     + $"how it ended, and `daoris press withdraw {id}` takes it back…");
                 world.Error.Flush();
-                // CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): its record is marked waiting as the id is said, before any RESULT, so a
+                // Its record is marked waiting as the id is said, before any RESULT, so a
                 // verb killed now leaves its key kept as long as the card may live.
                 if (world.Home is { } home) new SentPresses(home).Waiting(id, DateTimeOffset.UtcNow);
                 confirming = true;

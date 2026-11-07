@@ -1,15 +1,15 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The sweeps over many decisions (§5, §3.4): a revoke's or a replacing appointment's, a cannot-go-on's, the comparison of the files
+/// The sweeps over many decisions: a revoke's or a replacing appointment's, a cannot-go-on's, the comparison of the files
 /// with memory, and the start's sweep of the files left by the last run. Each move is made under its session's lock in the
 /// <see cref="SupervisorBook"/>; this type holds no state of its own.
 /// </summary>
 internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log)
 {
     /// <summary>
-    /// A revoke's or a replacing appointment's sweep (§5): every held or released decision of the session goes stale, and the word of
-    /// every stale one not yet taken back is taken back (SUPERVISORRACE1).
+    /// A revoke's or a replacing appointment's sweep: every held or released decision of the session goes stale, and the word of
+    /// every stale one not yet taken back is taken back.
     /// </summary>
     public Task StaleAsync(string session, string why, SupervisorTakeBack takeBack, DateTimeOffset now, CancellationToken ct = default) =>
         book.UnderAsync(session, async () =>
@@ -25,16 +25,16 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log)
         }, ct);
 
     /// <summary>
-    /// A revoke's or a replacing appointment's sweep (SUPERVISOR1a-ii; §5, §2.3), run only after the judge's mutation step has ended
+    /// A revoke's or a replacing appointment's sweep, run only after the judge's mutation step has ended
     /// and its lock is let go: each session with a live decision kept under <paramref name="generation"/>, in turn and under that
     /// session's own decision lock, moves its held and released decisions of that generation to <c>stale</c> (<c>revoked</c>), a
     /// released one's word taken back. A release or an admission already holding the lock finishes first and is swept after; an
-    /// admitted decision is a taken-in act, which a revoke does not recall. An admission that found the generation dead before the
-    /// sweep came staled its released decision itself and took nothing back (SUPERVISORRACE1): the sweep takes back the word of every
+    /// admitted decision is a taken-in act, which a revoke does not recall. An admission that finds the generation dead before the
+    /// sweep comes stales its released decision itself and takes nothing back: the sweep takes back the word of every
     /// decision of that generation already stale and not yet taken back.
     /// </summary>
     /// <param name="repository">
-    /// SUPERVISOR1e (§5): only the decisions of this repository, where a repository's own appointment replaced its workspace's for it
+    /// Only the decisions of this repository, where a repository's own appointment replaces its workspace's for it
     /// alone, each moved with <c>appointment-changed</c>; null sweeps the generation whole, with <c>revoked</c>.
     /// </param>
     /// <returns>How many went stale.</returns>
@@ -129,7 +129,7 @@ internal sealed class SupervisorSweeps(SupervisorBook book, MachineLog? log)
                 }
 
                 var state = closed ?? earlier.State;
-                // A question left to the owner (SUPERVISOR1b) stays decided across the restart, as one closed as theirs does.
+                // A question left to the owner stays decided across the restart, as one closed as theirs does.
                 if (SupervisorStates.OwnersAgain(state) || state == SupervisorState.Left) book.Closed[(session, earlier.Question.Id)] = state;
             }
         }

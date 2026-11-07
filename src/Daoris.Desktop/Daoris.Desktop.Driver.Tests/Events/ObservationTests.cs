@@ -3,15 +3,15 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A session's end is OBSERVED, never self-reported (D46 §4): the exit code and the quest's own state
+/// A session's end is OBSERVED, never self-reported: the exit code and the quest's own state
 /// are the two signals, because they are the two signals outside work also produces. This table is the
 /// whole mapping, so this table is the whole test.
 /// </summary>
 public sealed class ObservationTests
 {
     /// <summary>
-    /// 🔴 FLAKE3 with D104: the driver's close records itself, stopped and interrupted, only where no stop came first. A stop made
-    /// before it decided the end, so the record says that stop and is never interrupted: the driver's, stood down for its reason;
+    /// 🔴 The driver's close records itself, stopped and interrupted, only where no stop came first. A stop made
+    /// before it decides the end, so the record says that stop and is never interrupted: the driver's, stood down for its reason;
     /// the person's, stopped with what its door said.
     /// </summary>
     [Fact]
@@ -32,11 +32,10 @@ public sealed class ObservationTests
     }
 
     /// <summary>
-    /// 🔴 BGWAIT2: a run the timeout killed after its work brought its quest to done ended its work, so it is completed, as a
-    /// done outranks a messy exit, and its note says both the done and the timeout. The install's session committed and closed
-    /// its quest done, then waited 48 minutes on a prompt its adapter never answered, and was recorded failed. Only a done this
-    /// run reached counts: one whose quest had closed before it went on with the person's words is judged on those (MSG1b), and
-    /// a quest still taken at the timeout is failed, which D80 carries on.
+    /// 🔴 A run the timeout killed after its work brought its quest to done ended its work, so it is completed, as a
+    /// done outranks a messy exit, and its note says both the done and the timeout. Only a done this
+    /// run reached counts: one whose quest had closed before it went on with the person's words is judged on those, and
+    /// a quest still taken at the timeout is failed, which the carry-on then picks up.
     /// </summary>
     [Fact]
     public void A_timeout_after_the_run_brought_its_quest_to_done_completes_and_says_both()
@@ -59,7 +58,7 @@ public sealed class ObservationTests
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1h5 (D173's CLOSELAND1 note): in a closure graph a quest stays taken at its agent's <c>ready</c>, so a session that took
+    /// In a closure graph a quest stays taken at its agent's <c>ready</c>, so a session that took
     /// it and ended there would read as parked, waiting on the person, and never be due. Its submission is its result in: completed, as a
     /// done is, before a messy exit or a failed turn, a first run's and a carried-on run's alike; a new question still asks first.
     /// </summary>
@@ -84,7 +83,7 @@ public sealed class ObservationTests
     }
 
     /// <summary>
-    /// ACCESSSWAP1b (D183's note): a run Daoris ended at its turn's end because its repository's permission prompts changed is neither a
+    /// A run Daoris ended at its turn's end because its repository's permission prompts changed is neither a
     /// park nor a failure. Where it ended cleanly with its quest as a park or an untouched quest would read, a first run's and a resumed
     /// one's alike, it is completed, saying the change and that it goes on in the same conversation under the new setup; where its work
     /// had reached an ending of its own (done, declined, a wait) or its door failed, that ending stands, the line after it.
@@ -124,7 +123,7 @@ public sealed class ObservationTests
         }
     }
 
-    /// <summary>Whose decision a stop was (SURF5b): the person's where the driver gave no reason of its own.</summary>
+    /// <summary>Whose decision a stop is: the person's where the driver gave no reason of its own.</summary>
     [Fact]
     public void A_stop_with_the_drivers_reason_is_the_drivers_and_any_other_the_persons()
     {
@@ -133,9 +132,9 @@ public sealed class ObservationTests
     }
 
     /// <summary>
-    /// 🔴 A refused credential is OBSERVED in the tool's own words (AGT3b). Measured on Claude Code
+    /// 🔴 A refused credential is OBSERVED in the tool's own words. Measured on Claude Code
     /// 2.1.280 with an invalid key: a text-mode run prints nothing for 189 s while it retries, then
-    /// this one line, and exits 1. Read only where the harness itself said the run failed (AGT3c).
+    /// this one line, and exits 1. Read only where the harness itself said the run failed.
     /// </summary>
     [Fact]
     public void A_provider_s_refusal_is_read_from_the_tool_s_own_last_words()
@@ -150,7 +149,7 @@ public sealed class ObservationTests
     }
 
     /// <summary>
-    /// AGT3c: the door's failure is the harness's own word, read whatever the exit; its own lines are read only beside a
+    /// The door's failure is the harness's own word, read whatever the exit; its own lines are read only beside a
     /// failure it reported, so a run it ended normally holds nothing, whatever its lines say.
     /// </summary>
     [Fact]
@@ -190,7 +189,7 @@ public sealed class ObservationTests
 
     /// <summary>
     /// A clean exit with the quest taken is the stand-down shape: the session found someone else's
-    /// claim and finished without touching anything (D46 §3).
+    /// claim and finished without touching anything.
     /// </summary>
     [Fact]
     public void A_clean_exit_with_the_quest_taken_is_a_stand_down()
@@ -215,7 +214,7 @@ public sealed class ObservationTests
         Assert.Equal("failed", Observation.Conclude(3, "Open").State);
     }
 
-    // ——— Ask and wait (D79).
+    // ——— Ask and wait.
 
     /// <summary>
     /// A session that asked another repository and waited ended well: its quest stays taken, marked with
@@ -237,11 +236,11 @@ public sealed class ObservationTests
         Assert.Equal("completed", Observation.Conclude(0, "Taken", awaitsBefore: "q1", awaitsAfter: "q2").State);
     }
 
-    // ——— A turn the agent refused (ACPEND1).
+    // ——— A turn the agent refused.
     //
-    // 🔴 Measured on the first real run: the account's spend limit refused the turn mid-edit, the
-    // protocol door wrote so, and then the adapter exited 0 once stdin closed. With the quest still
-    // taken, the record said "stood-down — someone else has it", which was false and hid the reason.
+    // 🔴 Measured on a real run: the account's spend limit refuses the turn mid-edit, the
+    // protocol door writes so, and then the adapter exits 0 once stdin closes. With the quest still
+    // taken, the record must not say "stood-down — someone else has it", which would be false and hide the reason.
 
     private const string SpendLimit =
         "the ACP agent refused the call: Internal error: You've hit your individual spend limit";
@@ -274,11 +273,11 @@ public sealed class ObservationTests
         Assert.Equal("completed", Observation.Conclude(0, "Taken", awaitsAfter: "q1", turnFailed: SpendLimit).State);
     }
 
-    // ——— A session that holds its own quest and stops (STANDDOWN2).
+    // ——— A session that holds its own quest and stops.
     //
-    // 🔴 FG5's verify session took its quest, did what it could, and ended its turn holding it open
-    // with three questions for the person. The record said "stood-down — someone else has it". It was
-    // waiting on the person, and nothing told them. Its own take is written on its record now.
+    // 🔴 A session that takes its quest, does what it can, and ends its turn holding it open
+    // with questions for the person is waiting on the person; the record never says
+    // "stood-down — someone else has it". Its own take is written on its record.
 
     private const string Asked = "Three things from you and I can run the whole checklist.";
 
@@ -300,8 +299,8 @@ public sealed class ObservationTests
     }
 
     /// <summary>
-    /// A resume (D79) or a carry-on (D80) that ends holding the quest is waiting on the person too —
-    /// its take was this machine's before it began. A park is never resumed by itself, so nothing
+    /// A resume or a carry-on that ends holding the quest is waiting on the person too —
+    /// its take is this machine's before it begins. A park is never resumed by itself, so nothing
     /// loops; a messy exit is still a failure, which the strikes bound.
     /// </summary>
     [Fact]
@@ -348,11 +347,11 @@ public sealed class ObservationTests
     private const string PicksUp = "The gates are running in the background (lint, then the tests); I'll pick up when they finish.";
 
     /// <summary>
-    /// BGWAIT1c (D83's BGWAIT1 note, "the native door"): on the native door the harness ends a session's own background work with
+    /// On the native door the harness ends a session's own background work with
     /// its turn, so a turn that ended on that work is no question and has nothing to wait for. Where it would have parked, quoting
-    /// what it said of the work, it is cut off by a code of its own, failed, so D80 carries it on in the same tree and the strikes
+    /// what it said of the work, it is cut off by a code of its own, failed, so the carry-on picks it up in the same tree and the strikes
     /// bound it, its note naming the work. A start and a resumed run alike; the person's reopen, a close, a wait, a messy exit and a
-    /// failed turn are read as before, and a turn whose work the harness did not cut parks as before.
+    /// failed turn read as usual, and a turn whose work the harness did not cut parks as usual.
     /// </summary>
     [Fact]
     public void A_native_turn_that_ended_on_work_its_harness_cut_is_cut_off_not_parked()
@@ -392,7 +391,7 @@ public sealed class ObservationTests
         "API Error: the model's safeguards flagged this message. Details: `[reasoning_extraction]`\n\nRequest ID: req_011StandIn";
 
     /// <summary>
-    /// 🔴 APIREFUSAL1 (the install, 2026-10-23): a turn its model's provider refused, which its adapter said as the agent's last words
+    /// 🔴 A turn its model's provider refused, which its adapter said as the agent's last words
     /// before exiting 0, is a failed run by its own code with the provider's words and request id kept, never a park on the person:
     /// a start holding its quest, one that never took it, a resumed run and one whose quest had closed alike. A done or a new
     /// question to another repository reached first still stands, and the same words without the door's refusal still park.
@@ -432,7 +431,7 @@ public sealed class ObservationTests
     }
 
     /// <summary>
-    /// CODEXPERM1: a turn its agent ended <c>cancelled</c> with nobody having stopped it, after a permission was refused, parks on the
+    /// A turn its agent ended <c>cancelled</c> with nobody having stopped it, after a permission is refused, parks on the
     /// person but says so: the call refused and that it asked nothing, never "to ask you" with the agent's last words quoted as a question.
     /// A cancel with no refusal behind it says the agent cancelled it. A run that ended otherwise than parked keeps its ending.
     /// </summary>
@@ -461,11 +460,11 @@ public sealed class ObservationTests
     private const string HelperAsked = "I asked a helper about the window; I will go on when it answers.";
 
     /// <summary>
-    /// 🔴 HELPERWAIT1 (the owner's install, 2026-10-23): a driven turn that ends cleanly on its own open helper ask, holding its quest
+    /// 🔴 A driven turn that ends cleanly on its own open helper ask, holding its quest
     /// as a park would, waits on that helper and not on the person. Completed, by a code of its own and no quote of the agent's
-    /// words, so neither *What needs you* nor the place's count holds it; the helper's answer reopens it (D188 point 4). A start and a
+    /// words, so neither *What needs you* nor the place's count holds it; the helper's answer reopens it. A start and a
     /// resumed run alike. A done, a new question to another repository, the person's reopen, a messy exit and a failed turn read as
-    /// before; a stand-down is no park, and without an open helper ask the park is unchanged.
+    /// usual; a stand-down is no park, and without an open helper ask the park is unchanged.
     /// </summary>
     [Fact]
     public void A_turn_that_ended_on_its_own_open_helper_ask_waits_on_the_helper_not_the_person()
@@ -501,7 +500,7 @@ public sealed class ObservationTests
     }
 
     /// <summary>
-    /// HELPERWAIT1: the park a session is brought back to when the helper it waited on ends with no answer is today's park, its reason
+    /// The park a session is brought back to when the helper it waited on ends with no answer is today's park, its reason
     /// first: the helper's refusal by its own code, then the agent's last words quoted as a park quotes them, or the transcript's pointer.
     /// </summary>
     [Fact]
@@ -528,7 +527,7 @@ public sealed class ObservationTests
     }
 
     /// <summary>
-    /// BGWAIT1: whether a turn's clean end would park on the person is one rule, read twice — by the conclusion, and by the
+    /// Whether a turn's clean end would park on the person is one rule, read twice — by the conclusion, and by the
     /// protocol door when a turn ends while the session's own background work runs, to keep such a session working rather
     /// than park it. Held to agree with <see cref="Observation.Conclude"/> on every quest state and take this table covers.
     /// </summary>

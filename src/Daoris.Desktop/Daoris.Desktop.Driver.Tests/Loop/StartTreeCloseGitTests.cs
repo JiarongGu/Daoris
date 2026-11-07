@@ -5,8 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// QUEUEDTREE1b over real git: the case of <see cref="StartTreeCloseTests"/>, whose stand-in git cannot model the branch's delete. That delete
-/// is the journal's <c>ref.delete</c> act (ONEWAY1r), whose git starts as a held child outside the gate's seam, so only a real repository
+/// Over real git: the case of <see cref="StartTreeCloseTests"/>, whose stand-in git cannot model the branch's delete. That delete
+/// is the journal's <c>ref.delete</c> act, whose git starts as a held child outside the gate's seam, so only a real repository
 /// answers it. A start's tree opens, the driver closes before the record's open is asked, and the tree and its branch go by the clean path
 /// on no token with no record opened and no harness started.
 /// </summary>

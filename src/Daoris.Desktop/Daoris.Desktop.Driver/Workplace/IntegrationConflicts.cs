@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The words a conflict of meaning is told in (INTEGRATE1e part e3b; the integration design §5.4): the conflicted files, the line's commits that
+/// The words a conflict of meaning is told in: the conflicted files, the line's commits that
 /// changed them since the member's work began, and the member of the same candidate whose work it met, where it met one. They are the
 /// <c>conflicts</c> sentence <see cref="LandingSyncWords.Rebase"/> puts in the landing's own rebase words, so a candidate's member is asked as an
 /// automatic landing's session is (<see cref="RebaseTelling"/>, keyed by the session and the tip), and the person reads the same sentence where

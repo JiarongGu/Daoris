@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The agent producer (MAP3d): a repository that keeps a code map is asked, by the session prompt, to
-/// keep it current — the owner's answer (2026-09-24) over a canon skill, which would have made a
-/// Daoris feature into doctrine that no two repositories had learned. The file is still written by
-/// that repository's own session, in its own tree; the driver only frames the ask (D32).
+/// The agent producer: a repository that keeps a code map is asked, by the session prompt, to
+/// keep it current, rather than by a canon skill, which would make a
+/// Daoris feature into doctrine that no two repositories learned. The file is written by
+/// that repository's own session, in its own tree; the driver only frames the ask.
 /// </summary>
 public sealed class CodeMapPromptTests : IDisposable
 {
@@ -29,7 +29,7 @@ public sealed class CodeMapPromptTests : IDisposable
         Root: "C:/somewhere/Game",
         ServiceUrl: "http://localhost:5177")
     {
-        // CONTEXTONE1c: the code map is the standing block's to name.
+        // The code map is the standing block's to name.
         Block = new StandingFacts { Repository = "Game", CodeMap = codeMap },
     };
 
@@ -64,7 +64,7 @@ public sealed class CodeMapPromptTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Only where a map exists (design §3): a repository that keeps none is not asked to start one —
+    /// 🔴 Only where a map exists: a repository that keeps none is not asked to start one —
     /// a map an agent invents unasked is a claim nobody chose, and the tool producer or the person
     /// starts a map deliberately.
     /// </summary>
@@ -76,7 +76,7 @@ public sealed class CodeMapPromptTests : IDisposable
 
     /// <summary>
     /// An intake answers an ask in a room under the home, not in a repository — its own words stand, and its standing block is the
-    /// workspace's part alone (CONTEXTONE1c), which names no code map.
+    /// workspace's part alone, which names no code map.
     /// </summary>
     [Fact]
     public void An_intake_is_never_asked_about_a_code_map()
@@ -101,7 +101,7 @@ public sealed class CodeMapPromptTests : IDisposable
 
     /// <summary>
     /// The target a quest's session is handed names the map in the TREE it runs in — its own tree
-    /// where the repository opted in (D51), which carries the committed map like the root does.
+    /// where the repository opted in, which carries the committed map like the root does.
     /// </summary>
     [Fact]
     public void A_quests_target_names_the_map_its_tree_keeps_and_carries_the_quest()

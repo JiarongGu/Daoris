@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The result a landing and its gates judge (FABRIC-CLOSE1h, the fabric design §E5): a quest's done, or, in a closure graph, its taker's
+/// The result a landing and its gates judge: a quest's done, or, in a closure graph, its taker's
 /// current submission. Where a graph holds <c>quest.close</c> Daoris writes no Done before the graph's end, so what hangs on a done today
 /// hangs there on the submission, unchanged otherwise: the holds the service computes on it (<see cref="QuestView.Held"/>,
 /// <see cref="QuestView.Hold"/>), the landing at an unheld one, and the gates that read a chain's step as finished.
@@ -27,8 +27,8 @@ public static class QuestResults
     public static string? Status(QuestView? quest) => Submitted(quest) ? "Done" : quest?.Status;
 
     /// <summary>
-    /// Whether two reads of one quest stand on the same result (FABRIC-CLOSE1h): the same submission, by its machine and sequence, or none
-    /// on either. A later <c>ready</c> is another submission, judged again from the start (§E5), even at the same commit.
+    /// Whether two reads of one quest stand on the same result: the same submission, by its machine and sequence, or none
+    /// on either. A later <c>ready</c> is another submission, judged again from the start, even at the same commit.
     /// </summary>
     public static bool Same(QuestView? judged, QuestView? now) =>
         judged is not null && now is not null

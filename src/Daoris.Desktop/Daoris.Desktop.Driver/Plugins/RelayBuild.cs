@@ -5,7 +5,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A build of the events relay is its whole bundle (EVENTHOOK1b; the event hook design §4.1, §6.1 step 0, K2.2): the SHA-256, in lowercase
+/// A build of the events relay is its whole bundle: the SHA-256, in lowercase
 /// hex, of one line <c>&lt;path&gt;\t&lt;size&gt;\t&lt;sha256&gt;\n</c> for each file under the folder, its path relative with <c>/</c>, the
 /// lines in ordinal order, as a staged build's manifest lists every file. So a changed companion library is another build. The set tells it
 /// in <c>work/event</c>'s handshake, and the relay's copy is named by it.

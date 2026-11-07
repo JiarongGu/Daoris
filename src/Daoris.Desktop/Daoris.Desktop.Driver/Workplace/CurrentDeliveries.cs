@@ -4,12 +4,12 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The delivery a door writes for Current's <c>land</c> (LANDNODE1c3; the land node design §3, §4): every door of a session's tree under
+/// The delivery a door writes for Current's <c>land</c>: every door of a session's tree under
 /// Current, the review's Accept, a terminal's <c>trees land</c> and the look's landing at done alike, writes it once the landing is judged and
-/// lands through it, so a press and a pass land one delivery once. Its intent is Current's graph read from the live rule (D157 point 6): the
+/// lands through it, so a press and a pass land one delivery once. Its intent is Current's graph read from the live rule: the
 /// method its <c>land</c> names, the tree's line as target and line, the branch the rule names, today's message, the rule's plugin and its
 /// line's policy epoch. A unit's earlier delivery is settled by phase first (<see cref="DeliveryReconciler.BeforeStartAsync"/>), so a terminal
-/// with no loop runs the same fence. LANDNODE1m: a run bound to a graph version that lands by a <c>land</c> is delivered the same way at every
+/// with no loop runs the same fence. A run bound to a graph version that lands by a <c>land</c> is delivered the same way at every
 /// door, its intent and authorization that version's (<see cref="BoundLand"/>), so nothing lands its work but its graph's own <c>land</c>.
 /// </summary>
 internal static class CurrentDeliveries
@@ -25,7 +25,7 @@ internal static class CurrentDeliveries
     /// <param name="branch">The branch a branch method makes or moves, as the landing names it; null for a merge.</param>
     /// <param name="waited">Whether the landing waited for another of its tree, so a delivery its key names delivered meanwhile is said so.</param>
     /// <param name="standing">Whether the standing automatic authority still stands, asked just before the first effect.</param>
-    /// <param name="bound">The bound graph version's <c>land</c> it is written from (LANDNODE1m); null writes the landing's own form, with no graph.</param>
+    /// <param name="bound">The bound graph version's <c>land</c> it is written from; null writes the landing's own form, with no graph.</param>
     public static async Task<(TreeDelivery? Delivery, TreeLanding? Refusal)> StartAsync(
         string home, Landing landing, string repository, string workspace, string root, LandingSubject subject, string tip,
         string line, string tree, string? branch, string acceptedBy, bool waited, Func<string?> standing, CancellationToken ct, BoundLand? bound = null)
@@ -36,7 +36,7 @@ internal static class CurrentDeliveries
             : (bound.Method, bound.Graph);
         TreeLanding Refused(string why) => new(false, $"Nothing was landed: {why}.") { Refusal = LandingCode.Refused };
         // The landing goes into the tree's line whatever the record would say, and the repository declares one line: a target is that line or
-        // nothing lands (REVIEW2), so a saved version that names another is refused here and never lands.
+        // nothing lands, so a saved version that names another is refused here and never lands.
         if (bound?.Target is { } target && !string.Equals(target, line, StringComparison.Ordinal))
         {
             return (null, Refused($"its `land` names the target `{target}`, and only the repository's line `{line}` is one it declares"));

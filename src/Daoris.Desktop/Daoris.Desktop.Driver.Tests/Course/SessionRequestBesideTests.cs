@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PARALLEL1h (D181 point 3): a terminal's requests are honoured beside each other, one session's claim each, never under one
+/// A terminal's requests are honoured beside each other, one session's claim each, never under one
 /// gate across the home. A slow say holds only its own session: another session's request in the same look, or one that
 /// arrives while it is slow, is taken and answered at once; the same session's next request keeps its asked-at order behind
 /// it. Over the test seam and over the fake change source, so no process starts.

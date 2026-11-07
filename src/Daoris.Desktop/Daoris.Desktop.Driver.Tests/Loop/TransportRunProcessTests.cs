@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1m-i: <see cref="TransportRun"/> over both of today's doors, run as real model-free processes, observed as a start observes
-/// them. Every executor's run holds it (ONEWAY1h-i and h-ii, through <c>Driver.HoldAsync</c>), so this is that run's unit: the downloads kept,
+/// <see cref="TransportRun"/> over both doors, run as real model-free processes, observed as a start observes
+/// them. Every executor's run holds it (through <c>Driver.HoldAsync</c>), so this is that run's unit: the downloads kept,
 /// the process bracketed by its own lineage token, started through the agents' route and tracked, a reaper beside it, the capture reading its
 /// streams into the transcript and the record, a native prompt on its input, the wait on its exit, the capture bounded past it, and the end
 /// read the way the conclusion reads it, for its first process, its go-on's and its retry's alike. A native door's one program is a Node
@@ -72,7 +72,7 @@ public sealed class TransportRunProcessTests : IDisposable
         File.WriteAllText(Path.Combine(_home, "agent.cjs"), Script);
         Directory.CreateDirectory(Path.Combine(_home, "engine"));
         _processes = new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions));
-        // The driver's registry holds the shipped doors alone: a go-on's process is prepared from the registry its run was started from,
+        // The driver's registry holds the shipped doors alone: a go-on's process is prepared from the registry its run started from,
         // whose door it is, never from one the driver holds now.
         _driver = new Daoris.Driver.Driver(_service, DriverConfig.Empty, ProviderRegistry.Built(), _home, _processes);
         _events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
@@ -216,9 +216,9 @@ public sealed class TransportRunProcessTests : IDisposable
     }
 
     /// <summary>
-    /// The go-on (MSG1b, D137 §2.1): the next process resumes the kept conversation with the held words as its one prompt on its input
-    /// (AGENTLYNTAI1s-i), under the settings and servers the start was handed, its output appended to the same transcript with its own opening;
-    /// its executor told once that process is up and before anything reads it, where the words it carries are sent (COWORK1c); a conversation
+    /// The go-on: the next process resumes the kept conversation with the held words as its one prompt on its input,
+    /// under the settings and servers the start is handed, its output appended to the same transcript with its own opening;
+    /// its executor told once that process is up and before anything reads it, where the words it carries are sent; a conversation
     /// it names kept, never told to the resume the run began with, whose own words it does not carry; both processes tracked until the run is
     /// let go.
     /// </summary>
@@ -261,8 +261,8 @@ public sealed class TransportRunProcessTests : IDisposable
     }
 
     /// <summary>
-    /// The native resume's one retry (SESSCTX1c): the same start once more after a failed exit before the conversation was named, its
-    /// transcript appended, its opening not said again, said as the retry it is, and the resume told it was tried again.
+    /// The native resume's one retry: the same start once more after a failed exit before the conversation is named, its
+    /// transcript appended, its opening not said again, said as the retry it is, and the resume told it is tried again.
     /// </summary>
     [Fact]
     public async Task A_resume_that_failed_before_naming_its_conversation_is_tried_once_more_by_the_run_with_its_opening_said_once()
@@ -285,7 +285,7 @@ public sealed class TransportRunProcessTests : IDisposable
 
         // The first process exits 1 before its `init`; the run tries the same resume once more on its own, and its end is the retry's.
         // A word said before either process is up waits on the run's input, is handed to the first process and, as that one ended before it
-        // named its conversation, to the retry's (D243); once the conversation is named it is acknowledged and never written again.
+        // named its conversation, to the retry's; once the conversation is named it is acknowledged and never written again.
         run.Input.Hold(new DoorWord("w1", "Also log the port."));
         await run.ResumeAsync("conv-1", Bound, resume);
         var again = await run.EndAsync(Bound);
@@ -314,9 +314,9 @@ public sealed class TransportRunProcessTests : IDisposable
         [.. File.ReadAllLines(ChildLineage.PathOf(_home, "s1")).Select(line => System.Text.Json.JsonDocument.Parse(line).RootElement)];
 
     /// <summary>
-    /// ONEWAY1h-i, the lineage bracket (COWORKVIEW1a): the run's process is issued its own token, its <c>start</c> written before the spawn, the
+    /// The lineage bracket: the run's process is issued its own token, its <c>start</c> written before the spawn, the
     /// token on the spawn's environment, its <c>end</c> written clean once the exit is read and the capture drained, and the token let go at the
-    /// exit, as a start's always was.
+    /// exit.
     /// </summary>
     [Fact]
     public async Task A_runs_process_is_bracketed_by_its_own_token_from_its_start_to_its_end()
@@ -360,8 +360,8 @@ public sealed class TransportRunProcessTests : IDisposable
     }
 
     /// <summary>
-    /// ONEWAY1h-i, the native prompt (AGENTLYNTAI1s-i): written on the process's input once its output is being read, the input closed, and
-    /// the write's return told (FOUNDATION1f-iv part b).
+    /// The native prompt: written on the process's input once its output is being read, the input closed, and
+    /// the write's return told.
     /// </summary>
     [Fact]
     public async Task A_native_runs_prompt_goes_on_its_input_and_its_write_is_told()
@@ -382,7 +382,7 @@ public sealed class TransportRunProcessTests : IDisposable
     }
 
     /// <summary>
-    /// ONEWAY1h-i: an executor whose own steps come between its spawn and its capture (its actor kept, its watch and inbox opened) spawns
+    /// An executor whose own steps come between its spawn and its capture (its actor kept, its watch and inbox opened) spawns
     /// first, the process up and tracked with nothing reading it, then hands the run its completed start and its records and opens over the
     /// same process.
     /// </summary>
@@ -412,7 +412,7 @@ public sealed class TransportRunProcessTests : IDisposable
     }
 
     /// <summary>
-    /// A run let go before its end (ANSWER2, ONEWAY1h-i): its process ended, its <c>end</c> written unclean once the exit is read and its token
+    /// A run let go before its end: its process ended, its <c>end</c> written unclean once the exit is read and its token
     /// let go, and its capture observed.
     /// </summary>
     [Fact]
@@ -473,7 +473,7 @@ public sealed class TransportRunProcessTests : IDisposable
     }
 
     /// <summary>
-    /// ONEWAY1h-i, the driven session's wider setup as the executor's closure: what it sets on the session the run made, its lines said
+    /// The driven session's wider setup as the executor's closure: what it sets on the session the run made, its lines said
     /// through the run beside the session's, and its word at the session's end said after the turn's end and before the input closes.
     /// </summary>
     [Fact]
@@ -507,7 +507,7 @@ public sealed class TransportRunProcessTests : IDisposable
         Assert.True(turnEnd < transcript.IndexOf("— the executor's last word", StringComparison.Ordinal), transcript);
     }
 
-    /// <summary>The refusal a protocol turn ended on is the ending's, for a conclusion that reads its code (FOUNDATION1g part b).</summary>
+    /// <summary>The refusal a protocol turn ended on is the ending's, for a conclusion that reads its code.</summary>
     [Fact]
     public async Task A_protocol_refusal_is_the_endings_refusal()
     {
@@ -521,7 +521,7 @@ public sealed class TransportRunProcessTests : IDisposable
         Assert.False(string.IsNullOrEmpty(end.Ending.Failure));
     }
 
-    /// <summary>A protocol failure at the prompt is the ending's failure, as the conclusion reads it beside the exit (ACPEND1).</summary>
+    /// <summary>A protocol failure at the prompt is the ending's failure, as the conclusion reads it beside the exit.</summary>
     [Fact]
     public async Task A_protocol_failure_is_the_endings_failure()
     {
@@ -535,7 +535,7 @@ public sealed class TransportRunProcessTests : IDisposable
         Assert.True(end.Ending.Failed);
     }
 
-    /// <summary>A resume the agent would not take is no turn that failed: nothing was prompted, and the run says why it was refused.</summary>
+    /// <summary>A resume the agent would not take is no turn that failed: nothing is prompted, and the run says why it is refused.</summary>
     [Fact]
     public async Task A_protocol_resume_the_agent_refuses_prompts_nothing_and_says_why()
     {
@@ -551,7 +551,7 @@ public sealed class TransportRunProcessTests : IDisposable
     }
 
     /// <summary>
-    /// The conversation's shape (ONEWAY1h-iii): a protocol door's session opened and held, its open on its way as the run's open returns and
+    /// The conversation's shape: a protocol door's session opened and held, its open on its way as the run's open returns and
     /// told once made, words and turns beside it on <see cref="TransportRun.Session"/>, closed by the run, the process gone with the close; its
     /// transcript closed once both its streams ended, before the run is let go, so a record concluded over it is read, and a line said later
     /// dropped.
@@ -589,7 +589,7 @@ public sealed class TransportRunProcessTests : IDisposable
     }
 
     /// <summary>
-    /// ONEWAY1h-iii: a held open the agent refuses is told to its executor before the run ends its process, so what it says is the transcript's;
+    /// A held open the agent refuses is told to its executor before the run ends its process, so what it says is the transcript's;
     /// the session that never opened is no session, and the run's end says it could not open, as the conversation's record concludes it.
     /// </summary>
     [Fact]
@@ -620,8 +620,8 @@ public sealed class TransportRunProcessTests : IDisposable
     }
 
     /// <summary>
-    /// ONEWAY1h-iii, the native conversation: each event its capture keeps told once the record holds it, which is how its turn's end lets its
-    /// next words go (CONV4a); the conversation its stream names kept and told the moment it is named, while the harness still runs (MSG1c); and
+    /// The native conversation: each event its capture keeps told once the record holds it, which is how its turn's end lets its
+    /// next words go; the conversation its stream names kept and told the moment it is named, while the harness still runs; and
     /// its close the end of its input, after which the harness winds up and exits on its own.
     /// </summary>
     [Fact]
@@ -657,7 +657,7 @@ public sealed class TransportRunProcessTests : IDisposable
     }
 
     /// <summary>
-    /// ONEWAY1h-iii: an executor that composes what names its process before the spawn (the conversation's connector, COWORKVIEW1a) has the run
+    /// An executor that composes what names its process before the spawn (the conversation's connector) has the run
     /// bracket it first: the downloads kept and the token issued, the spawn under that token, and a run let go before its spawn lets it go.
     /// </summary>
     [Fact]

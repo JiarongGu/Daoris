@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// RPC1g4 (D238): a `*.turn` mark an older build's terminal left is removed at the start, as one step of the home's migration; the
+/// A `*.turn` mark an older build's terminal left is removed at the start, as one step of the home's migration; the
 /// requests beside it stay, and a home with no request folder is left alone.
 /// </summary>
 public sealed class TurnMarksStepTests : IDisposable

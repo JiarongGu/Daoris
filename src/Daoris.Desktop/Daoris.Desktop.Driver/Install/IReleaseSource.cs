@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A maker's release channel this build installs a pin from (AGENTPROVIDER1 row f; the agent-provider design §11): Install owns each,
+/// A maker's release channel this build installs a pin from: Install owns each,
 /// a provider's program names one by its channel, and <see cref="ReleaseChannels"/> stages and publishes whatever it fetched, so adding a
 /// channel is a source of its own and no switch on ids.
 /// </summary>
@@ -14,7 +14,7 @@ public interface IReleaseSource
     /// <exception cref="DriverException">It is not one exact release the channel installs.</exception>
     void RefuseVersion(string version);
 
-    /// <summary>The exact version the channel names as its newest release (USE1a), what an update pins.</summary>
+    /// <summary>The exact version the channel names as its newest release, what an update pins.</summary>
     Task<string> LatestAsync(CancellationToken ct, HttpMessageHandler? transport);
 
     /// <summary>The release fetched and verified into <paramref name="staging"/>'s <c>package</c> folder; the executable, relative to it.</summary>

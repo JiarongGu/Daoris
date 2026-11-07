@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The name and email a commit carries (GITAUTH1c, D198 point 5; the git-auth design §3.6): a commit made in a session's tree, or by
+/// The name and email a commit carries: a commit made in a session's tree, or by
 /// Daoris in the repository (a squash's commit), carries the <c>commitsAs</c> of the identity its repository's <c>origin</c> resolves
 /// to, only where the repository's own configuration (its local and worktree scopes) names no <c>user.name</c> and no
 /// <c>user.email</c>. A repository that names its author keeps it; an identity with no <c>commitsAs</c>, <c>own</c>, or no identity
@@ -9,12 +9,12 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// Read at the start, so a repository that names an author during a session is honoured from its next start; and a process serves one
-/// repository, so a commit it makes in another it may write in carries the same author (§3.6's stated limits). A home where no identity
+/// repository, so a commit it makes in another it may write in carries the same author, a stated limit. A home where no identity
 /// commits as anyone starts no git here.
 /// </remarks>
 public static class GitAuthor
 {
-    /// <summary>The author a commit in <paramref name="root"/> carries by §3.6, or null for git's own answer.</summary>
+    /// <summary>The author a commit in <paramref name="root"/> carries, or null for git's own answer.</summary>
     public static async Task<(string Name, string Email)?> OfAsync(string? home, string root, CancellationToken ct)
     {
         if (home is null) return null;
@@ -36,7 +36,7 @@ public static class GitAuthor
     public static bool Names(string scoped) =>
         scoped.Split('\n', StringSplitOptions.RemoveEmptyEntries).Any(line => line.StartsWith("local\t", StringComparison.Ordinal) || line.StartsWith("worktree\t", StringComparison.Ordinal));
 
-    /// <summary>Hand the author to a start's command scope (§4.1's <c>user.name</c> and <c>user.email</c>).</summary>
+    /// <summary>Hand the author to a start's command scope (<c>user.name</c> and <c>user.email</c>).</summary>
     public static void Hand(IDictionary<string, string?> environment, (string Name, string Email)? author)
     {
         if (author is { } who) GitRouting.Scope(environment, [("user.name", who.Name), ("user.email", who.Email)]);

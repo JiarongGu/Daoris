@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONTEXT1: the account is kept beside the instruction, on the same event of the session's record (D76), and says what was
+/// The account is kept beside the instruction, on the same event of the session's record, and says what is
 /// handed beside the instruction too: the permission rules a session's agent takes. In-process: the structured capture is
-/// driven over readers, as <see cref="ClaudeStreamJsonTests"/> drives it, so this is the fast half (MOD8).
+/// driven over readers, as <see cref="ClaudeStreamJsonTests"/> drives it, so this is the fast half.
 /// </summary>
 public sealed class HandedRecordTests : IDisposable
 {
@@ -47,7 +47,7 @@ public sealed class HandedRecordTests : IDisposable
         Assert.Contains("\"account\":{\"chars\":", File.ReadAllText(events.PathOf("s1")));
     }
 
-    /// <summary>The native door's structured capture opens the record with the instruction it was handed, and its account.</summary>
+    /// <summary>The native door's structured capture opens the record with the instruction it is handed, and its account.</summary>
     [Fact]
     public async Task The_structured_capture_opens_its_record_with_the_instruction_and_its_account()
     {

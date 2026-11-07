@@ -3,8 +3,8 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The pass <c>daoris remote sync</c> runs now, through the running Daoris where one answers (RPCOPEN1, RPC1e, the terminal RPC design
-/// §7.2): the instance's own set runs each circle's pass, as its tick and the screen's <i>Sync now</i> do (<c>SYNC_NOW</c>, D156 §3), and
+/// The pass <c>daoris remote sync</c> runs now, through the running Daoris where one answers:
+/// the instance's own set runs each circle's pass, as its tick and the screen's <i>Sync now</i> do (<c>SYNC_NOW</c>), and
 /// the verb prints the report it answers in the words it prints for a pass of its own. Alone where none runs.
 /// </summary>
 public static class SyncPass
@@ -12,11 +12,11 @@ public static class SyncPass
     /// <summary>
     /// One pass of every circle, or of the one <paramref name="workspace"/> names. With an instance, a press per circle, so each circle's
     /// problems and notes carry its name as the set's own report does, and are joined as it joins them; with none, <paramref name="alone"/>
-    /// once for the whole. Null where the instance lives and did not run it, which the door has said (exit 2).
+    /// once for the whole. Null where the instance lives and does not run it, which the door has said (exit 2).
     /// </summary>
     /// <param name="circles">The circles this machine has a remote for, in the set's order.</param>
     /// <param name="alone">The set's own pass, for the workspace named or for every circle (null).</param>
-    /// <exception cref="DriverException">A circle was named that this machine has no remote for, said as the set says it.</exception>
+    /// <exception cref="DriverException">A circle is named that this machine has no remote for, said as the set says it.</exception>
     public static async Task<SyncReport?> RunAsync(
         string? workspace, IReadOnlyList<string> circles, Func<string?, Task<SyncReport>> alone, InstanceWorld instance,
         CancellationToken ct = default)

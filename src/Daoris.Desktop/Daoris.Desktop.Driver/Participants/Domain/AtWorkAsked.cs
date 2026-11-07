@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The quests half of the routing (COWORKVIEW1b-ii), a port the layer above the composition fills: what the entry's parts asked, over the
+/// The quests half of the routing, a port the layer above the composition fills: what the entry's parts asked, over the
 /// quest units that layer builds from the stores it holds (<c>AtWorkQuests.Reading</c>). The composition reads nothing itself.
 /// </summary>
 /// <param name="attended">The attended session.</param>
@@ -36,7 +36,7 @@ public sealed record AtWorkTaker
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Unrecorded { get; init; }
 
-    /// <summary>The quest is open: the tick's reason for it sitting is the page's to read beside (§3.9).</summary>
+    /// <summary>The quest is open: the tick's reason for it sitting is the page's to read beside.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Untaken { get; init; }
 }
@@ -44,7 +44,7 @@ public sealed record AtWorkTaker
 /// <summary>One quest a part of the entry published, or a step of one's chain, as the quest unit reads it.</summary>
 public sealed record AtWorkAskedQuest(string Id, string Title, string Status)
 {
-    /// <summary>The repository it was sent to, where that is not the attended part's own.</summary>
+    /// <summary>The repository it is sent to, where that is not the attended part's own.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Of { get; init; }
 
