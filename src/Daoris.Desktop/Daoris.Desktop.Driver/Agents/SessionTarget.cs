@@ -164,9 +164,9 @@ public sealed record SessionTarget(
     public string? Git { get; init; }
 
     /// <summary>
-    /// For a session in a tree just opened with its checkout's dependencies copied in: what is copied, and
-    /// to skip the <c>npm ci</c> that would delete it (<see cref="DependencyCopy.Told"/>), said before how to take the quest. Null
-    /// where nothing is copied, and the instruction reads as it did.
+    /// For a session in a tree whose files stage kept, placed or installed its dependencies: which, and to skip the install that
+    /// would delete them (<see cref="TreeFilesOutcome.Told"/>), said before how to take the quest. Null where none stands ready, and
+    /// the instruction reads as it did.
     /// </summary>
     public string? Dependencies { get; init; }
 

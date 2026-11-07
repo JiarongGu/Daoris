@@ -171,6 +171,8 @@ export const HOME_ENTRIES = [
   // The keys of a terminal's sent presses, kept as long as a press's card lives; named
   // here, never read by the CLI.
   row('pipe-sent', 'profiles', 'profiles/pipe-sent', 'profiles/pipe-sent'),
+  // Named here, never read by the CLI.
+  row('deps-secret', 'profiles', 'profiles/deps-secret', 'profiles/deps-secret'),
   row('trees', 'work', 'work/trees/*/*/*', 'trees/*/*/*'),
   row('help-room', 'work', 'work/rooms/help', 'help', 'CLAUDE.md'),
   row('help-rooms', 'work', 'work/rooms/help-*', 'help-*', 'CLAUDE.md'),
@@ -184,6 +186,8 @@ export const HOME_ENTRIES = [
   row('brainstorm-rooms', 'work', 'work/brainstorm-rooms/*', 'brainstorm-rooms/*'),
   // Named here, never read by the CLI.
   row('role-rooms', 'work', 'work/rooms/roles/*', 'work/rooms/roles/*'),
+  row('deps', 'work', 'work/deps/*', 'work/deps/*'),
+  row('tree-files', 'work', 'work/files/trees/*', 'work/files/trees/*'),
   row('toolchain', 'cache', 'cache/toolchain', 'toolchain'),
   row('tool-versions', 'cache', 'cache/tools', 'tools'),
   row('bin', 'cache', 'cache/bin', 'bin'),

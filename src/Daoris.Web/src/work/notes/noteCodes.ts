@@ -112,6 +112,18 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'started.uncopied-link': { values: ['modules'] },
   'started.uncopied-unignored': { values: ['modules'] },
   'started.uncopied-failed': { values: ['modules'] },
+  // What the files stage did with each dependency and the tree's other files, after the record opens.
+  'started.deps-kept': { values: ['path'] },
+  'started.deps-placed': { values: ['path', 'install'] },
+  'started.deps-installed': { values: ['path', 'install'] },
+  'started.deps-unstored': { values: ['path', 'why'] },
+  'started.deps-unplaced': { values: ['path', 'why'] },
+  'started.deps-left': { values: ['path', 'why'] },
+  'started.files-waiting': { values: ['count', 'repository'] },
+  'started.files-unread': { values: ['repository', 'why'] },
+  'started.files-stopped': { values: [] },
+  'started.files-written-back': { values: ['paths'] },
+  'started.files-failed': { values: ['why'] },
   // The machine-local files a repository's gates read, copied into its tree read-only, and why a declared one is not.
   'started.local-copied': { values: ['inputs'] },
   'started.local-missing': { values: ['input'] },

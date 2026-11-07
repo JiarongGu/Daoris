@@ -170,7 +170,7 @@ internal static class TreeLocalInputs
     /// </summary>
     private static string? CopyOne(string source, string final, List<string> made)
     {
-        var under = Path.Combine(Path.GetDirectoryName(final)!, TreeDependencies.CopyingPrefix + Guid.NewGuid().ToString("N")[..8]);
+        var under = Path.Combine(Path.GetDirectoryName(final)!, DependencyStore.MakingPrefix + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(final)!);

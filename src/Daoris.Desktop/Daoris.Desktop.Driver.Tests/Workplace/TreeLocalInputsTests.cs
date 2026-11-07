@@ -149,7 +149,7 @@ public sealed class TreeLocalInputsTests : IDisposable
         Write(Checkout, Patterns, "quiltmark\n");
         var elsewhere = Path.Combine(_scratch, "elsewhere");
         Directory.CreateDirectory(elsewhere);
-        TreeDependencies.Link(Path.Combine(Tree, "local"), elsewhere);
+        DependencyLinks.Link(Path.Combine(Tree, "local"), elsewhere);
 
         var copy = Reuse();
 
