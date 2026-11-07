@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// Ask Daoris's <c>plugin</c> proposal (PLUG9): a plugin that has landed, added from its folder, or one installed
-/// here switched — and since PLUG9 (c) and (d) one of the install's own by id, or an update from where one came from.
+/// Ask Daoris's <c>plugin</c> proposal: a plugin that has landed, added from its folder, or one installed
+/// here switched, one of the install's own by id, or an update from where one came from.
 /// </summary>
 public sealed class HelpPluginProposalsTests : HelpProposalsFixture
 {
@@ -94,7 +94,7 @@ public sealed class HelpPluginProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// HELPPLUG1a (D170 point 3): the card says, before Apply, what a plugin hands Ask Daoris and the tools it would allow it,
+    /// The card says, before Apply, what a plugin hands Ask Daoris and the tools it would allow it,
     /// beside what it hands every session.
     /// </summary>
     [Fact]
@@ -111,7 +111,7 @@ public sealed class HelpPluginProposalsTests : HelpProposalsFixture
         var plan = HelpProposals.Plan(PluginAdd("house-plugins", "tickets"), DriverConfig.Empty, facts);
 
         Assert.Null(plan.Refusal);
-        // Its tools reach Ask Daoris only once the person approves them on its page (D170's note), so the card says so.
+        // Its tools reach Ask Daoris only once the person approves them on its page, so the card says so.
         Assert.Contains(
             "It offers Ask Daoris server `tickets` (`tickets --serve`), to read with `search`, `get_issue` and to change things "
             + "outside Daoris with `create_issue`, once you approve them on its page.", plan.Describe);
@@ -229,7 +229,7 @@ public sealed class HelpPluginProposalsTests : HelpProposalsFixture
         Assert.Equal("refused", HelpProposals.Find(_home, "p6")!.State);
     }
 
-    // ── PLUG9 (c) and (d): one of the install's own plugins, by id; an update from where one came from ──
+    // ── One of the install's own plugins, by id; an update from where one came from ──
 
     /// <summary>The install's offers, beside the test's home as an install lays them out.</summary>
     private string OffersFolder => Beside("-app-plugin-offers");

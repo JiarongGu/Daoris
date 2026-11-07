@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A session is told in its instruction not to try a remote Daoris holds (GITAUTH1a, D198 point 7; the git-auth design §5.3): its Git
+/// A session is told in its instruction not to try a remote Daoris holds: its Git
 /// section, the driver's own words, beside the boundary and counted with it, on a first start, a resume and a carry-on alike. Without a
-/// hold the instruction reads as it did.
+/// hold the instruction carries no such section.
 /// </summary>
 public sealed class GitHeldToldTests
 {

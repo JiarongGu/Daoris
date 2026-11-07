@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A download staged and published apart (PUSH1f2c, D194 point 3, the alone-path design §1.4): it stages under its own process's name
+/// A download staged and published apart: it stages under its own process's name
 /// while it waits on the network, holding nothing, and becomes the version by one move once published. Two runs of one version never
 /// meet in a staging; one publishes and the other keeps it; the person's stop takes the staging with it; and a staging whose process is
 /// gone is swept at the next run's start. Nothing here reaches a network: a stand-in answers as a host would.
@@ -20,7 +20,7 @@ public sealed class ToolDownloadsTests : IDisposable
 
     private string Tool => DaorisHome.Entry(Home, HomeEntry.ToolVersions, "pwsh");
 
-    /// <summary>No session runs here: what a delete asks before it removes a version (KEEP1b).</summary>
+    /// <summary>No session runs here: what a delete asks before it removes a version.</summary>
     private static Task<LiveSessions> NoSessions(CancellationToken _) => Task.FromResult(LiveSessions.None);
 
     private static readonly byte[] Bytes = ToolInstallTests.Archive.Build("zip", "bin/pwsh.exe=pwsh", "");

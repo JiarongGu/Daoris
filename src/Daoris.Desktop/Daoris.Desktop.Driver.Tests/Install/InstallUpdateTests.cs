@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// UPDATE1 (D139 §2, §3): the request both doors write under the home, the mode that holds for what is staged, the
+/// The request both doors write under the home, the mode that holds for what is staged, the
 /// install a home belongs to, and the config a draining look plans with.
 /// </summary>
 public sealed class InstallUpdateTests : IDisposable
@@ -105,7 +105,7 @@ public sealed class InstallUpdateTests : IDisposable
         Assert.Equal(config.Drivable, drained.Drivable);
     }
 
-    /// <summary>AGENTSPLACE1b: a repository not driven whose set-up quest is admitted alone is held by the drain too, once.</summary>
+    /// <summary>A repository not driven whose set-up quest is admitted alone is held by the drain too, once.</summary>
     [Fact]
     public void A_draining_look_holds_a_repository_whose_set_up_is_admitted_alone()
     {
@@ -119,7 +119,7 @@ public sealed class InstallUpdateTests : IDisposable
             drained, true)).Verdict);
     }
 
-    /// <summary>DRAINHOLD1 (the driver follow-up): the drained config says it drains, so each start the look makes on its own reads one view.</summary>
+    /// <summary>The drained config says it drains, so each start the look makes on its own reads one view.</summary>
     [Fact]
     public void The_drained_config_says_it_drains_and_the_one_it_came_from_does_not()
     {

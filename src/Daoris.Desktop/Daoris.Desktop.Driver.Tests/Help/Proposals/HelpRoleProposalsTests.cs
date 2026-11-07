@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// Ask Daoris's <c>role</c> proposal (FOUNDATION1y-i, the foundation design §2.7; O2-11): a change of the role catalogue judged by the
+/// Ask Daoris's <c>role</c> proposal: a change of the role catalogue judged by the
 /// role door's judge before the person sees it, every code refused at this door as at the screen's and the terminal's, a field a set
 /// leaves out kept from the role, and a change made since the revision read refused rather than overwritten.
 /// </summary>
@@ -53,7 +53,7 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         Assert.Equal("designer", Assert.IsType<RoleChange.SetRole>(plan.Role!.Change).Role.Id);
     }
 
-    /// <summary>I18NOPEN1 (D222): a role proposed in one language, or in a third, plans, and its card and terminal twin say the name as given.</summary>
+    /// <summary>A role proposed in one language, or in a third, plans, and its card and terminal twin say the name as given.</summary>
     [Fact]
     public void A_role_named_in_one_language_or_a_third_plans_and_its_card_says_it()
     {
@@ -84,7 +84,7 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         Assert.Contains("already takes", HelpProposals.Plan(Role("set", "chatty", """{ "name": { "en": "C", "zh": "C" }, "takes": ["chat"], "choices": [{ "agent": "claude-code" }] }"""), DriverConfig.Empty, Machine).Refusal);
     }
 
-    /// <summary>STAFFPOLICY1b: a policy rides a set as a preset or a record, is judged by the policy's judge, and is applied by the person's press with the revision read.</summary>
+    /// <summary>A policy rides a set as a preset or a record, is judged by the policy's judge, and is applied by the person's press with the revision read.</summary>
     [Fact]
     public void A_policy_proposed_with_a_set_is_judged_described_and_applied_by_the_press_alone()
     {
@@ -111,7 +111,7 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         Assert.DoesNotContain("model-refused", unstored.Describe);
     }
 
-    /// <summary>STAFFPOLICY1g: the card says the policy before and after, a stale one as having run in order, and a revision moved since is refused at Apply.</summary>
+    /// <summary>The card says the policy before and after, a stale one as having run in order, and a revision moved since is refused at Apply.</summary>
     [Fact]
     public void The_card_says_the_policy_before_and_after_and_a_revision_moved_since_is_refused_at_apply()
     {
@@ -125,7 +125,7 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         var weighted = HelpProposals.Plan(Role("set", "build", """{ "policy": "weighted", "policyRevision": 1 }"""), config, Machine);
         Assert.Contains("Policy, Build: Spread by weight (1:1) → Spread by weight (1:1). This can spend differently.", weighted.Describe);
 
-        // The card of the same read, pressed after the policy moved, is refused whole and the stored policy stays as it was.
+        // The card of the same read, pressed after the policy moved, is refused whole and the stored policy stays unchanged.
         var refused = Assert.Throws<RoleRefusedException>(() => RoleDoor.Apply(Staffing, duplicate.Role!.Change, duplicate.Role.Choices, duplicate.Role.Read, duplicate.Role.Policy));
         Assert.Equal(StaffPolicy.Code, refused.Code);
         Assert.Equal(1L, Staffing.Policy("build").Revision);
@@ -135,7 +135,7 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         Assert.Contains("→ First that can run (its policy is cleared).", cleared.Describe);
     }
 
-    /// <summary>REVIEW2 S2: a default or a set of new choices clears or re-keys a policy it does not name, and the card says so (D226).</summary>
+    /// <summary>A default or a set of new choices clears or re-keys a policy it does not name, and the card says so.</summary>
     [Fact]
     public void A_change_that_clears_or_rekeys_a_standing_policy_says_so_on_the_card()
     {
@@ -153,7 +153,7 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         Assert.Contains("Policy, Build: Spread by weight (1:1) →", rekeyed.Describe);
     }
 
-    /// <summary>REVIEW2 S3: in a workspace's conversation a change is judged by the role's own scope, and the whole-seed door reaches every workspace.</summary>
+    /// <summary>In a workspace's conversation a change is judged by the role's own scope, and the whole-seed door reaches every workspace.</summary>
     [Fact]
     public void A_scoped_conversation_refuses_a_change_to_a_role_scoped_elsewhere_and_a_default_of_every_role()
     {
@@ -179,7 +179,7 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         Assert.Equal([new ActorChoice("claude-code", "sonnet", "high")], plan.Role.Choices);
     }
 
-    /// <summary>DEFAULTCONFIG1b's <i>Restore all role defaults</i>: <c>default-all</c> names no role, so the target and a revision read are not its.</summary>
+    /// <summary><i>Restore all role defaults</i>: <c>default-all</c> names no role, so the target and a revision read are not its.</summary>
     [Fact]
     public void Every_seeded_role_given_back_its_seed_names_no_role_and_its_card_says_the_terminal_twin()
     {
@@ -205,7 +205,7 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
     }
 
     /// <summary>
-    /// CONTEXTDRIVE1d (the context counters design §7.6): <c>role_propose</c>'s rules, a <c>set</c> of the supervisor naming the place, judged by
+    /// <c>role_propose</c>'s rules, a <c>set</c> of the supervisor naming the place, judged by
     /// the rules' judge, said before and after on the card with the terminal's twin, and applied by the person's press alone.
     /// </summary>
     [Fact]
@@ -218,7 +218,7 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
 
         Assert.Null(plan.Refusal);
         Assert.Equal("daoris role rules --place repository:daoris --clear all --set answers-alone=3:hold", plan.Terminal);
-        // CONTEXTDRIVE1k: the card carries the rules as fields, which the page words in its catalogue.
+        // The card carries the rules as fields, which the page words in its catalogue.
         Assert.Equal("repository:daoris", plan.Rules!.Place);
         Assert.Empty(plan.Rules.Before);
         Assert.Equal(("answers-alone", 3, "hold"), (plan.Rules.After.Single().Count, plan.Rules.After.Single().At, plan.Rules.After.Single().Do));

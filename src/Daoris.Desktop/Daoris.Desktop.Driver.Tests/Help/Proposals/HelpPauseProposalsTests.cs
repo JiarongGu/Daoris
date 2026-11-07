@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// Ask Daoris's <c>pause</c> proposal (PAUSE1f-b, D132 §7.4, design §2): an ask's work or one quest's paused on this machine,
+/// Ask Daoris's <c>pause</c> proposal: an ask's work or one quest's paused on this machine,
 /// or resumed, judged by what a pause would do with each piece of it (<see cref="WorkPausing.Plan"/>) and the pauses
 /// <c>driver.json</c> keeps, and applied through the pause and the resume the pages press. Nothing is paused until the
-/// person's press (D89), and abandon is never proposed: its reason is the person's answer (D37).
+/// person's press, and abandon is never proposed: its reason is the person's answer.
 /// </summary>
 public sealed class HelpPauseProposalsTests : HelpProposalsFixture
 {
@@ -33,7 +33,7 @@ public sealed class HelpPauseProposalsTests : HelpProposalsFixture
 
     private static readonly IReadOnlyDictionary<string, PausedBy> NonePaused = new Dictionary<string, PausedBy>();
 
-    /// <summary>The ask's work as <see cref="WorkPausing.PlanAsync"/> reads it: every piece §2.1 names, once.</summary>
+    /// <summary>The ask's work as <see cref="WorkPausing.PlanAsync"/> reads it: every piece, once.</summary>
     private static WorkPlan AskPlan(IReadOnlyDictionary<string, PausedBy>? paused = null, params SessionRecord[] more) => WorkPausing.Plan(
         new WorkPieces(
             WorkScope.Ask, AskId,
@@ -59,7 +59,7 @@ public sealed class HelpPauseProposalsTests : HelpProposalsFixture
         DriverConfig.Empty.WithPausedAsk(AskId, new WorkPause(At, stopped ?? new Dictionary<string, string>()));
 
     /// <summary>
-    /// §2.6: the card says what the pause's own ask says, then where they apply the two sentences it adds, then what §2.1
+    /// The card says what the pause's own ask says, then where they apply the two sentences it adds, then what the plan
     /// leaves as it is: a session waiting on the person, a teammate's, and a take no session here worked.
     /// </summary>
     [Fact]
@@ -80,7 +80,7 @@ public sealed class HelpPauseProposalsTests : HelpProposalsFixture
         Assert.Equal(new PausedBy(WorkScope.Ask, AskId), plan.Pause);
     }
 
-    /// <summary>§5.1: another machine may take an open quest only where this machine syncs its workspace with a remote.</summary>
+    /// <summary>Another machine may take an open quest only where this machine syncs its workspace with a remote.</summary>
     [Fact]
     public void Another_machine_is_named_only_where_the_quests_workspace_syncs_with_a_remote()
     {
@@ -117,7 +117,7 @@ public sealed class HelpPauseProposalsTests : HelpProposalsFixture
         Assert.Equal(new PausedBy(WorkScope.Quest, "q2taken0"), plan.Pause);
     }
 
-    /// <summary>§2.6: a pause that stops nothing loses nothing, and the card says so.</summary>
+    /// <summary>A pause that stops nothing loses nothing, and the card says so.</summary>
     [Fact]
     public void A_pause_that_stops_nothing_says_nothing_runs()
     {
@@ -133,7 +133,7 @@ public sealed class HelpPauseProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// D48 §6: a pause of what is paused already is information, never a refusal; where something of it started since, Apply
+    /// A pause of what is paused already is information, never a refusal; where something of it started since, Apply
     /// stops that as the pause's own, as <see cref="WorkPausing.PauseAsync"/> does.
     /// </summary>
     [Fact]
@@ -170,7 +170,7 @@ public sealed class HelpPauseProposalsTests : HelpProposalsFixture
         Assert.Null(plan.Pause);
     }
 
-    /// <summary>§2.4: Resume lifts the pause and releases each stop it made; it starts nothing itself.</summary>
+    /// <summary>Resume lifts the pause and releases each stop it made; it starts nothing itself.</summary>
     [Fact]
     public void Resuming_a_paused_ask_releases_its_stops()
     {
@@ -187,7 +187,7 @@ public sealed class HelpPauseProposalsTests : HelpProposalsFixture
         Assert.Equal(new PausedBy(WorkScope.Ask, AskId), plan.Pause);
     }
 
-    /// <summary>§2.4: another pause over a quest of the work is not lifted by this one, and the card names it by what holds it.</summary>
+    /// <summary>Another pause over a quest of the work is not lifted by this one, and the card names it by what holds it.</summary>
     [Fact]
     public void A_resume_names_the_pauses_it_does_not_lift()
     {
@@ -214,7 +214,7 @@ public sealed class HelpPauseProposalsTests : HelpProposalsFixture
             quest.Describe);
     }
 
-    /// <summary>D48 §6: a resume of what is not paused is information, never a refusal.</summary>
+    /// <summary>A resume of what is not paused is information, never a refusal.</summary>
     [Fact]
     public void A_resume_of_what_is_not_paused_is_said_and_changes_nothing()
     {
@@ -254,7 +254,7 @@ public sealed class HelpPauseProposalsTests : HelpProposalsFixture
         Assert.Null(plan.Pause);
     }
 
-    /// <summary>D132 §7.4: abandon declines quests with the person's reason, which is their answer (D37), so it is never proposed.</summary>
+    /// <summary>Abandon declines quests with the person's reason, which is their answer, so it is never proposed.</summary>
     [Fact]
     public void An_abandon_is_refused_as_the_persons_own()
     {
@@ -266,7 +266,7 @@ public sealed class HelpPauseProposalsTests : HelpProposalsFixture
             plan.Refusal);
     }
 
-    /// <summary>PAUSE1f-c: the box writes which one was named, so an id both have is the one it said; a word it does not know is the lookup's.</summary>
+    /// <summary>The box writes which one is named, so an id both have is the one it said; a word it does not know is the lookup's.</summary>
     [Theory]
     [InlineData("ask", WorkScope.Ask)]
     [InlineData("quest", WorkScope.Quest)]
@@ -300,7 +300,7 @@ public sealed class HelpPauseProposalsTests : HelpProposalsFixture
         Assert.Equal(WorkScope.Ask, plan.Pause!.Scope);
     }
 
-    /// <summary>The service writes the one id the helper named and, from a file before PAUSE1f-c, not whether it is an ask's or a quest's, so one both name is refused.</summary>
+    /// <summary>The service writes the one id the helper named and, in a file that carries no kind, not whether it is an ask's or a quest's, so one both name is refused.</summary>
     [Fact]
     public void An_id_both_an_ask_and_a_quest_have_is_refused()
     {

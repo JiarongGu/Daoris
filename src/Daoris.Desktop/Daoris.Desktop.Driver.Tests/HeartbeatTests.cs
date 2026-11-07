@@ -1,7 +1,7 @@
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The heartbeat a real child rewrites is read beside its writer's open handle (<see cref="Heartbeat"/>; TEST4, PROCPAR1). No
+/// The heartbeat a real child rewrites is read beside its writer's open handle (<see cref="Heartbeat"/>). No
 /// process here: the writer is a handle this test holds.
 /// </summary>
 public sealed class HeartbeatTests : IDisposable

@@ -12,13 +12,13 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// A spawn handed no home reads this process's (<see cref="SpawnRequest.Home"/>); the driver's own git runs and tools read the home a
 /// program named (<see cref="ProgramHome"/>), which no test names, so theirs is the system's. Inherited
-/// from a developer's shell, that home was the person's install's: a test's sessions made folders under it and its git read the install's
-/// profile, and a class that passed in that shell failed in the gate's, which names none. Here every run has a home, and never the
+/// from a developer's shell, that home is the person's install's: a test's sessions make folders under it and its git reads the install's
+/// profile, and a class that passes in that shell fails in the gate's, which names none. Here every run has a home, and never the
 /// person's. The one variable of the process the suite sets outside a collection that runs alone (<see cref="ProcessEnvironmentCensusTests"/>).
 /// </remarks>
 internal static partial class HostEnvironment
 {
-    /// <summary>The goldens' write switch (GOLDEN1), the suite's own and never Daoris's.</summary>
+    /// <summary>The goldens' write switch, the suite's own and never Daoris's.</summary>
     private const string GoldenWriteSwitch = "DAORIS_GOLDEN_WRITE";
 
     /// <summary>This run's home, under the checkout's scratch.</summary>
@@ -27,7 +27,7 @@ internal static partial class HostEnvironment
     [ModuleInitializer]
     internal static void Set()
     {
-        // The goldens' write switch is the suite's own, never Daoris's (GOLDEN1), so it is the one kept.
+        // The goldens' write switch is the suite's own, never Daoris's, so it is the one kept.
         foreach (var name in Environment.GetEnvironmentVariables().Keys.Cast<string>()
                      .Where(name => Removed().IsMatch(name) && !string.Equals(name, GoldenWriteSwitch, StringComparison.OrdinalIgnoreCase))
                      .ToList())

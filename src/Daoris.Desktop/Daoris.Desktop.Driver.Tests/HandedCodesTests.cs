@@ -7,8 +7,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The codes an instruction's account carries (CONTEXT1) and the page's catalogues are two lists that must agree, in two
-/// languages and two artefacts, with no compiler between them (D143 point 1, as LANG1a's note codes are). Read from this side,
+/// The codes an instruction's account carries and the page's catalogues are two lists that must agree, in two
+/// languages and two artefacts, with no compiler between them, as the note codes are. Read from this side,
 /// as <see cref="NoteCodesTests"/> reads its codes: a section, a source, an absence or a cut the composer writes fails here
 /// until both languages word it, and an entry no code declares fails too. The page's <c>work/handed.test.ts</c> holds the
 /// same from its side.

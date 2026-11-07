@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// Ask Daoris's <c>session</c> proposal (SESSUX1h2b, D126 §5.2, §5.3, §7.3): sessions archived on this machine or unarchived,
+/// Ask Daoris's <c>session</c> proposal: sessions archived on this machine or unarchived,
 /// by id, or every session that ended archived, judged by where Sessions' list places each, as <see cref="SessionArchive"/>
-/// judges an archive, and applied through Sessions' own archive. Nothing is archived until the person's press (D89).
+/// judges an archive, and applied through Sessions' own archive. Nothing is archived until the person's press.
 /// </summary>
 public sealed class HelpSessionProposalsTests : HelpProposalsFixture
 {
@@ -41,7 +41,7 @@ public sealed class HelpSessionProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// Archive never hides what needs the person (§5.2): a live session, one waiting on you and one to review are refused, as
+    /// Archive never hides what needs the person: a live session, one waiting on you and one to review are refused, as
     /// Sessions' own archive refuses them; so is an id no record here has, and Ask Daoris's own conversation, which its
     /// History keeps.
     /// </summary>
@@ -73,7 +73,7 @@ public sealed class HelpSessionProposalsTests : HelpProposalsFixture
             two.Refusal);
     }
 
-    /// <summary>An archive mark is this machine's, never the record's (§5.2), so a teammate's session may be archived here.</summary>
+    /// <summary>An archive mark is this machine's, never the record's, so a teammate's session may be archived here.</summary>
     [Fact]
     public void A_teammates_ended_session_may_be_archived_here_and_their_record_is_not_changed()
     {
@@ -99,7 +99,7 @@ public sealed class HelpSessionProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// §5.3: archive what ended lists first what it would take and what it keeps, as Sessions' *Archive what ended…* does, and
+    /// Archive what ended lists first what it would take and what it keeps, as Sessions' *Archive what ended…* does, and
     /// the press archives what has ended, each judged again as it goes.
     /// </summary>
     [Fact]
@@ -163,7 +163,7 @@ public sealed class HelpSessionProposalsTests : HelpProposalsFixture
         Assert.Equal(refusal, plan.Refusal);
     }
 
-    /// <summary>SESSUX1h1: a session's stop is its own conversation, so the refusal says where it is pressed.</summary>
+    /// <summary>A session's stop is its own conversation, so the refusal says where it is pressed.</summary>
     [Fact]
     public void A_stop_is_no_door_and_the_refusal_says_the_person_stops_it_on_its_page()
     {
@@ -205,7 +205,7 @@ public sealed class HelpSessionProposalsTests : HelpProposalsFixture
         Assert.Equal(["SESSION_ARCHIVE archive s1ended0,s2ended0,h1helper,north/s7team0,c1chat00,c2tree00,c3named0,c4remote"], all.Calls);
     }
 
-    // COWORKUX1: the person's helper doors, a card for the page's Ask another agent…, Ask again… and Pass to the lead.
+    // The person's helper doors, a card for the page's Ask another agent…, Ask again… and Pass to the lead.
 
     private static HelpProposal Helping(string question, HelperProposalFields? fields = null, string session = "s1ended0") =>
         Session("helper", session, question) with { Helper = fields ?? new HelperProposalFields(null, null, false) };

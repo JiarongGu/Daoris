@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOLS6's file read by this machine's real git (D121 §2.5, the git-auth design §4.1): asked <c>config --show-origin core.sshCommand</c>
+/// Daoris's git file read by this machine's real git: asked <c>config --show-origin core.sshCommand</c>
 /// in a scratch repository, the key is Daoris's file's; the person's own global file is read through its include, and one gone since
 /// is read as nothing; a repository's own key still wins; and a child's <c>git config --global</c> writes Daoris's file, never the
 /// person's, and is kept by the next rewrite.

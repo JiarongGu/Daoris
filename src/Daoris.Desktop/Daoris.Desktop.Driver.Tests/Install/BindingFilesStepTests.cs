@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1t (D232): a session's binding file (<c>&lt;session&gt;.harness.json</c>, keyed <c>adapter</c>) is imported into the desktop
+/// A session's binding file (<c>&lt;session&gt;.harness.json</c>, keyed <c>adapter</c>) is imported into the desktop
 /// store's bindings once by the home's migration, a copy of the file kept first, and the file and its set-aside are gone after.
 /// </summary>
 public sealed class BindingFilesStepTests : IDisposable
