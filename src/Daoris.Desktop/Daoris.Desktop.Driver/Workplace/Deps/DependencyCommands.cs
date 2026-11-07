@@ -33,8 +33,13 @@ internal static class DependencyCommands
     /// <summary>The test seam: run with each install's folder as it starts, where a test acts during an install. Production sets none.</summary>
     internal static readonly AsyncLocal<Action<string>?> Installing = new();
 
+    /// <summary>What an install ended by a terminal's visit exits with.</summary>
+    internal const int Visited = -2;
+
+    /// <param name="visited">Cancelled by a terminal's visit to the tree, which ends the command with all it started.</param>
     internal static async Task<CommandRan> RunAsync(
-        string home, string tree, string command, string directory, IReadOnlyDictionary<string, string> environment, TimeSpan bound, CancellationToken ct)
+        string home, string tree, string command, string directory, IReadOnlyDictionary<string, string> environment, TimeSpan bound, CancellationToken ct,
+        CancellationToken visited = default)
     {
         var log = DaorisHome.Entry(home, HomeEntry.TreeFiles, $"{TreeFilesRecord.IdOf(tree)}.{Guid.NewGuid().ToString("N")[..8]}.log");
         Directory.CreateDirectory(Path.GetDirectoryName(log)!);
@@ -52,7 +57,7 @@ internal static class DependencyCommands
         }
 
         using (var step = started)
-        using (var bounded = CancellationTokenSource.CreateLinkedTokenSource(ct))
+        using (var bounded = CancellationTokenSource.CreateLinkedTokenSource(ct, visited))
         {
             bounded.CancelAfter(bound);
             try
@@ -64,7 +69,7 @@ internal static class DependencyCommands
                 job?.Terminate();
                 step.Stop();
                 if (ct.IsCancellationRequested) throw;
-                code = -1;
+                code = visited.IsCancellationRequested ? Visited : -1;
             }
         }
 

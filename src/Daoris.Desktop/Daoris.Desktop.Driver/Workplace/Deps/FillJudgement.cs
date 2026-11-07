@@ -59,20 +59,20 @@ internal static class FillJudgement
     }
 
     /// <summary>Why the folder may not be stored, or null where it may: a link outside the tree, the tree's path, or a secret value in a file.</summary>
-    internal static string? Unsealable(string tree, string folder, DependencyManifest manifest, string? outside, IEnumerable<string> secrets)
+    internal static DepsReason? Unsealable(string tree, string folder, DependencyManifest manifest, string? outside, IEnumerable<string> secrets)
     {
-        if (outside is not null) return $"its link `{outside}` leads outside the tree";
-        var patterns = new List<(byte[] Bytes, string Why)>();
+        if (outside is not null) return DepsWhy.LinksOut(outside);
+        var patterns = new List<(byte[] Bytes, DepsReason Why)>();
         foreach (var spelled in DependencyKeys.TreeSpellings(tree).SelectMany(Cases))
         {
-            patterns.Add((Encoding.UTF8.GetBytes(spelled), StoreWhy.NamesTree));
-            patterns.Add((Encoding.Unicode.GetBytes(spelled), StoreWhy.NamesTree));
+            patterns.Add((Encoding.UTF8.GetBytes(spelled), DepsWhy.NamesItsTree()));
+            patterns.Add((Encoding.Unicode.GetBytes(spelled), DepsWhy.NamesItsTree()));
         }
 
         foreach (var secret in secrets.Where(value => value.Length > 0))
         {
-            patterns.Add((Encoding.UTF8.GetBytes(secret), StoreWhy.Secret));
-            patterns.Add((Encoding.Unicode.GetBytes(secret), StoreWhy.Secret));
+            patterns.Add((Encoding.UTF8.GetBytes(secret), DepsWhy.HoldsSecret()));
+            patterns.Add((Encoding.Unicode.GetBytes(secret), DepsWhy.HoldsSecret()));
         }
 
         foreach (var file in manifest.Files)
@@ -96,13 +96,4 @@ internal static class FillJudgement
             yield return (char.IsUpper(path[0]) ? char.ToLowerInvariant(path[0]) : char.ToUpperInvariant(path[0])) + path[1..];
         }
     }
-}
-
-/// <summary>The reasons a note says, each a clause.</summary>
-internal static class StoreWhy
-{
-    internal const string NamesTree = "it names the folder it was installed in";
-    internal const string Secret = "it holds a value its rule marks secret";
-    internal const string Bound = "its rule says it is bound to its tree";
-    internal const string ChangedOther = "its install changed `{0}`, which another dependency placed";
 }

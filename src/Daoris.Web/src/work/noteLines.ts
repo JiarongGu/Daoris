@@ -68,6 +68,32 @@ export const HANDED_REASONS: Readonly<Record<string, { key: string; values: read
 };
 
 /**
+ * Why the files stage kept, left, placed or stored a dependency as it did (the driver's `NoteCodes.Deps`), each its entry with the
+ * values it says. `locales/note.test.ts` holds this map to the driver's declaration key for key.
+ */
+export const DEPS_REASONS: Readonly<Record<string, { key: string; values: readonly string[] }>> = {
+  changed: { key: 'note.deps.why.changed', values: [] },
+  companion: { key: 'note.deps.why.companion', values: ['file'] },
+  unplaced: { key: 'note.deps.why.unplaced', values: [] },
+  'key-moved': { key: 'note.deps.why.key-moved', values: [] },
+  'before-own': { key: 'note.deps.why.before-own', values: ['before'] },
+  'input-changed': { key: 'note.deps.why.input-changed', values: [] },
+  gone: { key: 'note.deps.why.gone', values: [] },
+  grouped: { key: 'note.deps.why.grouped', values: ['with'] },
+  denied: { key: 'note.deps.why.denied', values: ['install'] },
+  held: { key: 'note.deps.why.held', values: ['install'] },
+  failed: { key: 'note.deps.why.failed', values: ['install', 'tail'] },
+  tracked: { key: 'note.deps.why.tracked', values: ['file'] },
+  bound: { key: 'note.deps.why.bound', values: [] },
+  'names-tree': { key: 'note.deps.why.names-tree', values: [] },
+  secret: { key: 'note.deps.why.secret', values: [] },
+  beside: { key: 'note.deps.why.beside', values: ['file'] },
+  'link-out': { key: 'note.deps.why.link-out', values: ['link'] },
+  'held-ignored': { key: 'note.deps.why.held-ignored', values: ['file'] },
+  group: { key: 'note.deps.why.group', values: ['with'] },
+};
+
+/**
  * Why a piece is refused, held or uncertain (the driver's `NoteCodes.Partner`), each its entry; none carries a value of
  * its own. `locales/note.test.ts` holds this map to the driver's declaration key for key.
  */
@@ -273,6 +299,8 @@ export const NOTE_VALUES: Readonly<
   copied: 'names', modules: 'text',
   // The machine-local files a tree's open copied from its checkout, each as code, and one it did not copy.
   inputs: 'names', input: 'text',
+  // A dependency's folder and its install, what the files stage put back, and git's own files an install changed, each as code.
+  path: 'text', install: 'text', written: 'names', changed: 'names',
   why: 'why',
   cooling: 'cooling',
   window: 'window',
@@ -408,6 +436,10 @@ function said(
       if (code.why === 'helper') return HELPER_REASONS[why] ? t(HELPER_REASONS[why].key) : null;
       if (code.why === 'partner') return PARTNER_REASONS[why] ? t(PARTNER_REASONS[why].key) : null;
       if (code.why === 'handover') return HAND_OVER_ASK_REASONS[why] ? t(HAND_OVER_ASK_REASONS[why].key) : null;
+      if (code.why === 'deps') {
+        const reason = DEPS_REASONS[why];
+        return reason ? t(reason.key, Object.fromEntries(reason.values.map((name) => [name, text(values[name]) ?? '']))) : null;
+      }
       return reasonOf(t, why, {
         from: text(values.from), to: text(values.to), door: text(values.door), agent: text(values.agent),
       });

@@ -1,6 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
-
 namespace Daoris.Driver;
 
 /// <summary>What the files stage did in a tree: each line it says, whether a terminal's visit stopped it, and what the session is told.</summary>
@@ -14,15 +11,16 @@ internal sealed record TreeFilesOutcome(IReadOnlyList<Noted> Said, bool Stopped,
 /// <summary>
 /// The files stage (the tree-pool design §29.7), after a start's record opens and before anything is handed the tree. In an unworked
 /// tree, one Daoris marked as it made it and has handed to no agent or terminal since: what a cut-off start left is written back, then
-/// each dependency in rule order is kept where its key and record hold, placed from the store at a hit, or installed by Daoris and
-/// sealed where its judgement holds; the <c>post-checkout</c> hook the making held runs; and the machine-local files are copied. In a
-/// worked tree it installs, removes and runs nothing but a key's <c>toolchain</c> reads: a dependency is kept where its record holds, or
-/// placed from a hit into an absent folder where every one before it was kept or placed here; every other is the line's own, said.
+/// each group and each dependency in rule order is kept where its key, record and companions hold, placed from the store at a hit, or
+/// installed by Daoris and sealed where its judgement holds; the <c>post-checkout</c> hook the making held runs; each kept placement's
+/// other writes are read, one gone installing it again; and the machine-local files are copied. In a worked tree it installs, removes
+/// and runs nothing but a key's <c>toolchain</c> reads: a dependency is kept where its record holds, or placed from a hit into an absent
+/// folder where every one before it was kept or placed here and no group names it; every other is the line's own, said.
 /// </summary>
 /// <remarks>
 /// The mark is read again under the record's lock before each write-back, removal, placement record, hook and copy, and the lock is held
-/// through each write, never while an install or the hook runs: once a terminal's visit has taken it, the stage stops, takes its
-/// <c>installing</c> mark away and leaves what it had not finished as the line's own.
+/// through each write, never while an install or the hook runs: once a terminal's visit has taken it, which ends a running install or
+/// hook, the stage stops, takes its <c>installing</c> mark away and leaves what it had not finished as the line's own.
 /// </remarks>
 internal sealed class TreeFilesStage(string home, string root, string tree, string repository)
 {
@@ -30,28 +28,48 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
 
     private readonly List<Noted> _said = [];
     private readonly List<string> _ready = [];
+    private readonly Dictionary<string, string> _keys = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _grouped = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _installOnly = new(StringComparer.Ordinal);
+    private IReadOnlyList<StoreDependency> _order = [];
+    private FileRules? _rules;
+    private string? _own;
+    private CancellationToken _visited;
     private bool _stopped;
 
     internal async Task<TreeFilesOutcome> RunAsync(CancellationToken ct)
     {
         var head = await WorkingTree.HeadAsync(tree, ct).ConfigureAwait(false);
         if (head is null) return TreeFilesOutcome.None;
-        var state = TreeFilesRecord.Read(home, tree);
-        var unworked = state is { Unworked: true };
+        using var watch = TreeVisit.Watch(tree);
+        _visited = watch.Token;
+        var unworked = TreeFilesRecord.Read(home, tree) is { Unworked: true };
         var deps = await StoreDependencyRules.ReadAsync(home, tree, repository, head, ct).ConfigureAwait(false);
+        (_order, _rules) = (deps.Each, deps.Rules);
         if (deps.Rules.Unread is { } unread) _said.Add(Noted.Of(StartNoteCodes.StartedFilesUnread, $"this machine's file rules for `{repository}` do not read ({unread}), so Daoris held every install and copy they could restrict here.", ("repository", repository), ("why", unread)));
 
         if (unworked && !await WriteBackAsync(ct).ConfigureAwait(false)) return Stop();
-        var keys = new List<string>();
+        var before = new List<string>();
+        foreach (var dependency in deps.Each)
+        {
+            var key = await DependencyKeys.KeyAsync(home, tree, head, repository, dependency, before, ct).ConfigureAwait(false);
+            before.Add(key);
+            _keys[dependency.Path] = key;
+        }
+
+        if (!Groups(unworked)) return Stop();
         var waiting = 0;
         var standing = true;
         foreach (var dependency in deps.Each)
         {
-            var key = await DependencyKeys.KeyAsync(home, tree, head, repository, dependency, keys, ct).ConfigureAwait(false);
-            keys.Add(key);
-            if (unworked)
+            var key = _keys[dependency.Path];
+            if (_grouped.Contains(dependency.Path))
             {
-                var held = await UnworkedAsync(dependency, key, deps.Rules, ct).ConfigureAwait(false);
+                Kept(dependency);
+            }
+            else if (unworked)
+            {
+                var held = await UnworkedAsync(dependency, key, ct).ConfigureAwait(false);
                 if (_stopped) return Stop();
                 if (held) waiting++;
             }
@@ -65,12 +83,13 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         if (unworked)
         {
             if (!await HookAsync(head, ct).ConfigureAwait(false)) return Stop();
+            if (!await OthersAsync(ct).ConfigureAwait(false)) return Stop();
             if (!TreeFilesRecord.Holding(home, tree, () => { })) return Stop();
-            var copied = await TreeLocalInputs.CopyAsync(root, tree, ct).ConfigureAwait(false);
-            if (copied.Line() is { } line) _said.Add(line);
-            foreach (var each in copied.Declined) _said.Add(each.Line());
         }
 
+        var copied = await TreeLocalInputs.CopyAsync(root, tree, ct).ConfigureAwait(false);
+        if (copied.Line() is { } line) _said.Add(line);
+        foreach (var each in copied.Declined) _said.Add(each.Line());
         return Outcome();
     }
 
@@ -82,7 +101,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         var wrote = TreeFilesRecord.Holding(home, tree, () => PutBack(changed));
         if (!wrote) return false;
         TreeFilesRecord.WhileUnworked(home, tree, record => record with { HookOwed = true });
-        _said.Add(Noted.Of(StartNoteCodes.StartedFilesWrittenBack, $"Daoris put back what a start cut off before it left changed here: {string.Join(", ", changed.Keys.Select(path => $"`{path}`"))}.", ("paths", (IReadOnlyList<string>)[.. changed.Keys])));
+        _said.Add(Noted.Of(StartNoteCodes.StartedFilesWrittenBack, $"Daoris put back what a start cut off before it left changed here: {string.Join(", ", changed.Keys.Select(path => $"`{path}`"))}.", ("written", (IReadOnlyList<string>)[.. changed.Keys])));
         return true;
     }
 
@@ -102,50 +121,84 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         }
     }
 
-    /// <summary>One dependency in an unworked tree; true where a restriction holds its install for an allow.</summary>
-    private async Task<bool> UnworkedAsync(StoreDependency dependency, string key, FileRules rules, CancellationToken ct)
+    /// <summary>
+    /// Each group the record holds, judged once before any member: kept whole; else, in an unworked tree, each member removed to be
+    /// installed again in rule order, never placed by its own key. In a worked tree a failing group's members are the line's own.
+    /// </summary>
+    private bool Groups(bool unworked)
     {
-        var folder = Path.Combine(tree, dependency.Folder);
-        var placement = TreeFilesRecord.Read(home, tree)?.Of(dependency.Path);
-        var exists = Path.Exists(folder);
+        if (TreeFilesRecord.Read(home, tree) is not { } record) return true;
+        foreach (var group in record.Groups)
+        {
+            if (DependencyGroups.Fails(tree, record, group, _order, _keys, others: false) is null)
+            {
+                _grouped.UnionWith(group.Members);
+                continue;
+            }
+
+            if (!unworked) continue;
+            foreach (var member in group.Members)
+            {
+                _installOnly.Add(member);
+                if (!Remove(member)) return false;
+            }
+
+            if (!TreeFilesRecord.WhileUnworked(home, tree, state => state.Without(group))) return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>One dependency in an unworked tree; true where a restriction holds its install for an allow.</summary>
+    private async Task<bool> UnworkedAsync(StoreDependency dependency, string key, CancellationToken ct)
+    {
+        var record = TreeFilesRecord.Read(home, tree);
+        var placement = record?.Of(dependency.Path);
+        var exists = Path.Exists(Path.Combine(tree, dependency.Folder));
         if (placement is { Installing: true })
         {
-            if (!Remove(dependency)) return false;
+            if (!Remove(dependency.Path)) return false;
             (placement, exists) = (null, false);
         }
 
         if (placement is not null && exists)
         {
-            if (placement.Manifest?.Differs(tree, dependency.Folder, dependency.Caches) is { } changed)
+            if (placement.Manifest?.Differs(tree, dependency.Folder, dependency.Caches) is not null)
             {
-                Left(dependency, $"its work changed it: {changed}");
+                Left(dependency, DepsWhy.ChangedIt());
                 return false;
             }
 
-            if (placement.Key == key)
+            if (placement.Key == key && InstallWrites.CompanionsDiffer(tree, placement) is null)
             {
                 Kept(dependency);
                 return false;
             }
 
-            if (!Remove(dependency)) return false;
+            if (!Remove(dependency.Path)) return false;
         }
         else if (exists)
         {
-            Left(dependency, "Daoris did not place it");
+            Left(dependency, DepsWhy.NotPlaced());
             return false;
         }
 
-        if (await PlaceAsync(dependency, key, ct).ConfigureAwait(false)) return false;
+        if (Placeable(dependency) && await PlaceAsync(dependency, key, ct).ConfigureAwait(false)) return false;
         if (_stopped) return false;
+        return await InstallUnlessHeldAsync(dependency, key, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>The install, unless the person's permissions deny it or hold it for an allow: true where one holds it.</summary>
+    private async Task<bool> InstallUnlessHeldAsync(StoreDependency dependency, string key, CancellationToken ct)
+    {
         var install = dependency.Rule.Install!;
-        switch (rules.Judge(FileActs.Run(install)))
+        switch (_rules!.Judge(FileActs.Run(install)))
         {
             case FileVerdict.Denied:
-                Unplaced(dependency, $"a restriction set for it denies `{install}`");
+                Unplaced(dependency, DepsWhy.DeniedBy(install));
                 return false;
             case FileVerdict.Held:
-                Unplaced(dependency, $"`{install}` waits for an allow");
+                Unplaced(dependency, DepsWhy.HeldFor(install));
                 return true;
         }
 
@@ -154,29 +207,56 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
     }
 
     /// <summary>
-    /// One dependency in a worked tree: kept where its key and record hold, or placed from a hit into an absent folder where no tracked
-    /// input of its key has a working change and every dependency before it was kept or placed here. Whether it stands as its key says.
+    /// One dependency in a worked tree: kept where its key, record, companions and other writes hold, or placed from a hit into an
+    /// absent folder where no tracked input of its key has a working change, no group names it and every dependency before it was kept
+    /// or placed here. Whether it stands as its key says.
     /// </summary>
     private async Task<bool> WorkedAsync(StoreDependency dependency, string key, bool standing, CancellationToken ct)
     {
         var record = TreeFilesRecord.Read(home, tree);
         var placement = record?.Of(dependency.Path);
         var exists = Path.Exists(Path.Combine(tree, dependency.Folder));
-        if (placement is { Installing: false } && exists && placement.Key == key && placement.Manifest?.Differs(tree, dependency.Folder, dependency.Caches) is null)
+        DepsReason why;
+        if (record?.GroupOf(dependency.Path) is { } group)
+        {
+            why = DepsWhy.GroupedWith(DependencyGroups.Others(group, dependency.Path));
+        }
+        else if (placement is { Installing: false } && exists && placement.Key == key
+            && placement.Manifest?.Differs(tree, dependency.Folder, dependency.Caches) is null
+            && InstallWrites.CompanionsDiffer(tree, placement) is null && InstallWrites.OtherGone(tree, placement) is null)
         {
             Kept(dependency);
             return standing;
         }
+        else if (exists)
+        {
+            why = placement is null ? DepsWhy.NotPlaced() : placement.Key != key ? DepsWhy.KeyMovedSince() : DepsWhy.ChangedIt();
+        }
+        else if (!standing)
+        {
+            why = DepsWhy.BeforeIsOwn(_own!);
+        }
+        else if (await DependencyKeys.InputChangedAsync(tree, dependency, ct).ConfigureAwait(false))
+        {
+            why = DepsWhy.InputChangedHere();
+        }
+        else if (await PlaceAsync(dependency, key, ct).ConfigureAwait(false))
+        {
+            return standing;
+        }
+        else
+        {
+            why = DepsWhy.FolderGone();
+        }
 
-        string why;
-        if (exists) why = placement is null ? "Daoris did not place it" : placement.Key != key ? "the files that key it moved since it was installed, and this tree is its line's to install in" : "its work changed it";
-        else if (!standing) why = "a dependency before it is this line's own here, and this tree is its line's to install in";
-        else if (await DependencyKeys.InputChangedAsync(tree, dependency, ct).ConfigureAwait(false)) why = "this line changed a file that keys it, and this tree is its line's to install in";
-        else if (await PlaceAsync(dependency, key, ct).ConfigureAwait(false)) return standing;
-        else why = "its folder is gone, and this tree is its line's to install in";
         Left(dependency, why);
+        _own ??= dependency.Folder;
         return false;
     }
+
+    /// <summary>Whether the store may place it by its own key: never a group's member, nor one this stage must install so its producer runs.</summary>
+    private bool Placeable(StoreDependency dependency) =>
+        !_installOnly.Contains(dependency.Path) && TreeFilesRecord.Read(home, tree)?.GroupOf(dependency.Path) is null;
 
     /// <summary>A hit placed into the absent folder, and its record written: true where it was placed.</summary>
     private async Task<bool> PlaceAsync(StoreDependency dependency, string key, CancellationToken ct)
@@ -211,13 +291,15 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
     }
 
     /// <summary>
-    /// Daoris's own install of one dependency: recorded <c>installing</c> first, run one at a time per repository, judged against the
-    /// status it began from and sealed where the judgement holds; a failed one takes its mark and its half folder away.
+    /// Daoris's own install of one dependency, under its admission: recorded <c>installing</c> first, judged against the status it began
+    /// from, its writes beside its folder sorted into companions and other writes, grouped with each earlier placement it changed, and
+    /// sealed where the judgement holds; a failed one takes its mark and its half folder away.
     /// </summary>
     private async Task InstallAsync(StoreDependency dependency, string key, CancellationToken ct)
     {
-        using var one = await Task.Run(() => RecordLock.Take(RecordLock.PathOf(home, "deps-install-" + Short(repository)), DependencyCommands.InstallBound), ct).ConfigureAwait(false);
-        if (await PlaceAsync(dependency, key, ct).ConfigureAwait(false) || _stopped) return;
+        using var admitted = await InstallAdmission.TakeAsync(home, repository, tree, dependency, key, ct).ConfigureAwait(false);
+        if (Placeable(dependency) && await PlaceAsync(dependency, key, ct).ConfigureAwait(false)) return;
+        if (_stopped) return;
         if (!TreeFilesRecord.WhileUnworked(home, tree, record => record.With(new TreePlacement(dependency.Path, key, "installed", null) { Installing = true })))
         {
             _stopped = true;
@@ -225,10 +307,14 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         }
 
         var before = await FillJudgement.StatusAsync(tree, ignored: true, ct).ConfigureAwait(false);
+        var common = await GitCommonFolder.ListAsync(tree, ct).ConfigureAwait(false);
         var environment = InstallEnvironment.Of(dependency.Rule);
         var install = dependency.Rule.Install!;
         DependencyCommands.Installing.Value?.Invoke(dependency.Folder);
-        var ran = await DependencyCommands.RunAsync(home, tree, install, Path.Combine(tree, dependency.Runs), environment, DependencyCommands.InstallBound, ct).ConfigureAwait(false);
+        var ran = await DependencyCommands.RunAsync(home, tree, install, Path.Combine(tree, dependency.Runs), environment, DependencyCommands.InstallBound, ct, _visited).ConfigureAwait(false);
+        var wrote = GitCommonFolder.Changed(common, await GitCommonFolder.ListAsync(tree, ct).ConfigureAwait(false));
+        InstallAdmission.Wrote(home, repository, dependency.Path, wrote.Count > 0);
+        if (wrote.Count > 0) _said.Add(Noted.Of(StartNoteCodes.StartedDepsCommon, $"`{dependency.Folder}`'s install changed git's own files for this repository: {string.Join(", ", wrote.Select(name => $"`{name}`"))}.", ("path", dependency.Folder), ("changed", wrote)));
         if (!Still())
         {
             Unrecord(dependency);
@@ -243,33 +329,40 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
             var cleared = TreeFilesRecord.Holding(home, tree, () =>
             {
                 if (tracked.Count > 0) PutBack(tracked);
-                Clear(dependency);
+                Clear(dependency.Path);
             });
             if (!cleared)
             {
                 Unrecord(dependency);
-                _stopped = true;
                 return;
             }
 
             TreeFilesRecord.WhileUnworked(home, tree, record => record.Without(dependency.Path));
-            Unplaced(dependency, ran.Code != 0
-                ? $"`{install}` failed: {ran.Tail}"
-                : $"its install changed {string.Join(", ", changes.Tracked.Select(path => $"`{path}`"))}, which git tracks or does not ignore, so Daoris put it back");
+            Unplaced(dependency, ran.Code != 0 ? DepsWhy.FailedSaying(install, ran.Tail) : DepsWhy.TrackedPutBack(changes.Tracked));
             return;
         }
 
         var manifest = DependencyManifest.Read(tree, dependency.Folder, dependency.Caches, out var outside, ct);
-        var why = dependency.Rule.Bound == true ? StoreWhy.Bound
-            : changes.Beside.Count > 0 ? $"its install wrote `{changes.Beside[0]}` outside its folder"
-            : ChangedEarlier(dependency) is { } other ? string.Format(System.Globalization.CultureInfo.InvariantCulture, StoreWhy.ChangedOther, other)
+        var (companions, others) = InstallWrites.Of(tree, changes.Beside, _rules!);
+        var current = TreeFilesRecord.Read(home, tree)!;
+        var changed = DependencyGroups.Changed(tree, current, dependency.Path, _order);
+        // A fill seals only in a tree that held, as it began, nothing ignored but the folders of the dependencies Daoris placed before it.
+        var held = before.Where(each => each.Value == "!!" && each.Key != dependency.Path && current.Of(each.Key) is null).Select(each => each.Key).FirstOrDefault();
+        var why = dependency.Rule.Bound == true ? DepsWhy.BoundToTree()
+            : changes.Beside.Count > 0 ? DepsWhy.WroteBeside(changes.Beside[0])
+            : held is not null ? DepsWhy.HeldIgnored(held)
+            : changed.Count > 0 ? DepsWhy.GroupFormed(changed[0].TrimEnd('/'))
             : FillJudgement.Unsealable(tree, dependency.Folder, manifest, outside, (dependency.Rule.Secret ?? []).Select(name => environment.TryGetValue(name, out var value) ? value : ""));
         var sealedHere = why is null && DependencyStore.Seal(home, key, tree, dependency.Folder, manifest, ct);
-        var placement = new TreePlacement(dependency.Path, key, sealedHere ? "sealed" : "installed", outside is null ? manifest : null);
-        if (!TreeFilesRecord.WhileUnworked(home, tree, record => record.With(placement)))
+        var placement = new TreePlacement(dependency.Path, key, sealedHere ? "sealed" : "installed", outside is null ? manifest : null) { Companions = companions, Others = others };
+        var recorded = TreeFilesRecord.WhileUnworked(home, tree, record =>
+        {
+            var state = record.With(placement);
+            return changed.Count == 0 ? state : DependencyGroups.Formed(tree, state, DependencyGroups.Members(state, dependency.Path, changed, _order), _keys, _order);
+        });
+        if (!recorded)
         {
             Unrecord(dependency);
-            _stopped = true;
             return;
         }
 
@@ -280,16 +373,8 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         }
         else
         {
-            _said.Add(Noted.Of(StartNoteCodes.StartedDepsUnstored, $"`{dependency.Folder}` was installed in this tree and not stored: {why}.", ("path", dependency.Folder), ("why", why)));
+            _said.Add(Noted.Of(StartNoteCodes.StartedDepsUnstored, $"`{dependency.Folder}` was installed in this tree and not stored: {why.Text}.", why.With(("path", dependency.Folder))));
         }
-    }
-
-    /// <summary>An earlier placement this install changed, read against its record: such an install seals nothing.</summary>
-    private string? ChangedEarlier(StoreDependency dependency)
-    {
-        var record = TreeFilesRecord.Read(home, tree);
-        return record?.Placements.Where(each => each.Path != dependency.Path && each.Manifest is not null)
-            .FirstOrDefault(each => each.Manifest!.Differs(tree, each.Path.TrimEnd('/'), []) is not null)?.Path.TrimEnd('/');
     }
 
     /// <summary>The <c>post-checkout</c> hook the making held, where the record holds it owed: run as git would after a checkout, its owing cleared whatever its exit.</summary>
@@ -297,24 +382,72 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
     {
         if (TreeFilesRecord.Read(home, tree) is not { Unworked: true } record) return false;
         if (!record.HookOwed) return true;
-        await WorkingTree.GitAsync(tree, ["hook", "run", "--ignore-missing", "post-checkout", "--", Zeros, head, "1"], ct).ConfigureAwait(false);
+        using var visitable = CancellationTokenSource.CreateLinkedTokenSource(ct, _visited);
+        try
+        {
+            await WorkingTree.GitAsync(tree, ["hook", "run", "--ignore-missing", "post-checkout", "--", Zeros, head, "1"], visitable.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            return false;
+        }
+
         return TreeFilesRecord.WhileUnworked(home, tree, state => state with { HookOwed = false });
+    }
+
+    /// <summary>
+    /// After the hook, at every unworked stage: each kept placement's and group's other writes read; one gone, its own rule having cleared
+    /// or moved it, fails it, and it is removed and installed again in rule order, never placed, so its producer runs before the hand.
+    /// </summary>
+    private async Task<bool> OthersAsync(CancellationToken ct)
+    {
+        if (TreeFilesRecord.Read(home, tree) is not { Unworked: true } record) return false;
+        var again = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var dependency in _order)
+        {
+            if (again.Contains(dependency.Path) || record.Of(dependency.Path) is not { Installing: false }) continue;
+            var group = record.GroupOf(dependency.Path);
+            IReadOnlyList<string> members = group?.Members ?? [dependency.Path];
+            if (members.All(member => record.Of(member) is not { } each || InstallWrites.OtherGone(tree, each) is null)) continue;
+            foreach (var member in members)
+            {
+                again.Add(member);
+                _installOnly.Add(member);
+                if (!Remove(member)) return false;
+            }
+
+            if (group is not null && !TreeFilesRecord.WhileUnworked(home, tree, state => state.Without(group))) return false;
+        }
+
+        foreach (var dependency in _order.Where(each => again.Contains(each.Path)))
+        {
+            _ready.Remove(dependency.Folder);
+            _said.RemoveAll(line => line.Parts.Any(part => part.Code == StartNoteCodes.StartedDepsKept.Code && part.Values.Any(value => value.Key == "path" && Equals(value.Value, dependency.Folder))));
+            await InstallUnlessHeldAsync(dependency, _keys[dependency.Path], ct).ConfigureAwait(false);
+            if (_stopped) return false;
+        }
+
+        return true;
     }
 
     private bool Still() => TreeFilesRecord.Read(home, tree) is { Unworked: true };
 
-    /// <summary>A placement Daoris made, or its cut-off install, removed link-safe under the record's lock with its record.</summary>
-    private bool Remove(StoreDependency dependency)
+    /// <summary>A placement Daoris made, or its cut-off install, removed link-safe under the record's lock with its companions and its record.</summary>
+    private bool Remove(string path)
     {
-        var removed = TreeFilesRecord.Holding(home, tree, () => Clear(dependency));
-        if (removed) removed = TreeFilesRecord.WhileUnworked(home, tree, record => record.Without(dependency.Path));
+        var removed = TreeFilesRecord.Holding(home, tree, () =>
+        {
+            Clear(path);
+            foreach (var companion in TreeFilesRecord.Read(home, tree)?.Of(path)?.Companions ?? []) Clear(companion.Path);
+        });
+        if (removed) removed = TreeFilesRecord.WhileUnworked(home, tree, record => record.Without(path));
         if (!removed) _stopped = true;
         return removed;
     }
 
-    private void Clear(StoreDependency dependency)
+    private void Clear(string path)
     {
-        var folder = Path.Combine(tree, dependency.Folder);
+        var folder = Path.Combine(tree, path.TrimEnd('/'));
         if (Path.Exists(folder)) TreeSetAside.DeleteNeverFollowing(folder);
     }
 
@@ -345,11 +478,9 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         _said.Add(Noted.Of(StartNoteCodes.StartedDepsKept, $"`{dependency.Folder}` is kept as it was installed: the files that key it, its install and its own files are unchanged.", ("path", dependency.Folder)));
     }
 
-    private void Left(StoreDependency dependency, string why) =>
-        _said.Add(Noted.Of(StartNoteCodes.StartedDepsLeft, $"`{dependency.Folder}` is left as this line's own: {why}.", ("path", dependency.Folder), ("why", why)));
+    private void Left(StoreDependency dependency, DepsReason why) =>
+        _said.Add(Noted.Of(StartNoteCodes.StartedDepsLeft, $"`{dependency.Folder}` is left as this line's own: {why.Text}.", why.With(("path", dependency.Folder))));
 
-    private void Unplaced(StoreDependency dependency, string why) =>
-        _said.Add(Noted.Of(StartNoteCodes.StartedDepsUnplaced, $"`{dependency.Folder}` was not placed: {why}.", ("path", dependency.Folder), ("why", why)));
-
-    private static string Short(string text) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)))[..16];
+    private void Unplaced(StoreDependency dependency, DepsReason why) =>
+        _said.Add(Noted.Of(StartNoteCodes.StartedDepsUnplaced, $"`{dependency.Folder}` was not placed: {why.Text}.", why.With(("path", dependency.Folder))));
 }

@@ -14,13 +14,15 @@ public static class StartNoteCodes
     public static readonly NoteCode StartedDepsKept = new("started.deps-kept", ["path"]);
     public static readonly NoteCode StartedDepsPlaced = new("started.deps-placed", ["path", "install"]);
     public static readonly NoteCode StartedDepsInstalled = new("started.deps-installed", ["path", "install"]);
-    public static readonly NoteCode StartedDepsUnstored = new("started.deps-unstored", ["path", "why"]);
-    public static readonly NoteCode StartedDepsUnplaced = new("started.deps-unplaced", ["path", "why"]);
-    public static readonly NoteCode StartedDepsLeft = new("started.deps-left", ["path", "why"]);
+    public static readonly NoteCode StartedDepsUnstored = new("started.deps-unstored", ["path", "why"]) { Why = NoteCodes.Deps };
+    public static readonly NoteCode StartedDepsUnplaced = new("started.deps-unplaced", ["path", "why"]) { Why = NoteCodes.Deps };
+    public static readonly NoteCode StartedDepsLeft = new("started.deps-left", ["path", "why"]) { Why = NoteCodes.Deps };
+    // An install that changed git's own hooks or configuration for the repository, named.
+    public static readonly NoteCode StartedDepsCommon = new("started.deps-common", ["path", "changed"]);
     public static readonly NoteCode StartedFilesWaiting = new("started.files-waiting", ["count", "repository"]);
     public static readonly NoteCode StartedFilesUnread = new("started.files-unread", ["repository", "why"]);
     public static readonly NoteCode StartedFilesStopped = new("started.files-stopped", []);
-    public static readonly NoteCode StartedFilesWrittenBack = new("started.files-written-back", ["paths"]);
+    public static readonly NoteCode StartedFilesWrittenBack = new("started.files-written-back", ["written"]);
     public static readonly NoteCode StartedFilesFailed = new("started.files-failed", ["why"]);
 
     // Written by openings that copied the checkout's dependencies before the store replaced the copy, and read while those

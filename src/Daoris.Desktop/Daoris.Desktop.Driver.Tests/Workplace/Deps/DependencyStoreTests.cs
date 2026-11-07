@@ -147,7 +147,7 @@ public sealed class DependencyStoreTests : IDisposable
 
     [Theory]
     [InlineData("beside", "its install wrote `out/` outside its folder")]
-    [InlineData("names", StoreWhy.NamesTree)]
+    [InlineData("names", "it names the folder it was installed in")]
     [InlineData("link-out", "its link `up` leads outside the tree")]
     public async Task Nothing_is_sealed_from_an_install_that_writes_beside_its_folder_names_its_tree_or_links_outside(string how, string why)
     {
