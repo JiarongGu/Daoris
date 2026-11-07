@@ -1,6 +1,25 @@
-# A repository's session trees kept and reused, each session's work a branch (TREEPOOL1, 2026-10-26: round 4, proposed 2026-11-07)
+# Rooms first, with an optimised fallback: a session works in place in the room it holds, and a repository without rooms gets kept trees whose ignored content is managed by class (TREEPOOL1, 2026-10-26: round 5, proposed 2026-11-07)
 
-**Standing (round 4, proposed under D191, D214):** **The independent Opus reader read round 3** at `23958cb903`
+**Standing (round 5, proposed under D191, D214):** **The independent Opus reader read round 4** at `b8ef097e29`: 8 findings, 2 blocking
+(F1, a take compiles every .NET project since the SDK stamps the commit into every assembly; F2, `bin/` and `wwwroot` are run without a
+build), no case in which the pool loses work. **The owner then reframed the work on 2026-11-07**: the purpose is to end the churn of a
+whole repository written and deleted for every session, writing only what changes, build time second; Daoris is generic, so no code names
+a stack's folders; and the ignored files are what git leaves unmanaged. **The owner chose the frame: rooms first, with an optimised
+fallback.** **Round 5 is written by Claude Opus 5.5 from main at `bfdb82acd6`**, measured in fresh worktrees of this repository and a
+scratch clone of a sibling .NET repository (R5.2). **Measured:** a session's fresh tree here writes 26,502 files and 1.47 GB and deletes
+them (147 GB per 100 sessions); a kept tree switched in place over a day of main writes 2,386 files and 526 MB and deletes none (53 GB per
+100); the sibling repository's 835 MB falls to 148 MB; a clone at a new path compiles every project again. **The central way, rooms**
+(R5.3, R5.4): a room is a lane claimed by one session at a time; the session works in place in the checkout, Daoris commits its room's
+changes onto its own branch through a private index, and no tree is written; rooms are proposed from a repository's structure, checked
+(no build unit, lockfile or generated file split across rooms) and adopted gradually. **The fallback**, for a repository or a path with no
+room (R5.7): ignored content by five declared classes (R5.5), dependencies from a machine store keyed by their lockfile (R5.6), and kept
+slots switched in place, made and renewed by copy-on-write clones where a Dev Drive exists; a fresh worktree only as the last resort; a
+view (ProjFS) and build slots apart from editing the later step. **This repository's stamp** is its own row, first (R5.8): off in
+development, on in a publish or a stage, so a switch compiles 7 or 9 projects of 12, not 12. The rows are re-cut (§17.0), §18 item 4 is
+restated and items 6 to 8 asked, and round 4's read is answered in §25. **Both makers read round 5 before any of it is accepted, and
+nothing is built until then.** Nothing here is built, spends an account, signs in, publishes or deletes.
+
+**Round 4's standing**, kept as the fallback's slot mechanics: **The independent Opus reader read round 3** at `23958cb903`
 (`docs/2026-10-26-tree-pool-reads.md`, *Opus (independent), round 3*), the only read of it: 14 findings, 1 blocking, no case in which the pool
 loses work, and another round asked, scoped to its F1: no take saved the first build, since a slot moved to each line's path cannot carry the
 outputs that name their path, and round 3 measured its saving against `npm ci`, which TREEDEPS1's copy already avoids. **The owner chose on
@@ -39,6 +58,332 @@ conversation's `Loop/Chat/ChatStarts.cs` *(R4-F2)*. Every line round 4 writes wa
 round 4 does not rewrite stands as round 3 read it at `3dd134cf3`, through that map: the round-3 reader found each moved, none changed in
 meaning (its §1), and each row re-reads what it touches at its own base. Paths keep round 1's aliases: a bare path is under
 `src/Daoris.Desktop/Daoris.Desktop.Driver/`, and `Tests/` is the driver's tests.
+
+## R5. Round 5: rooms first, with an optimised fallback
+
+§0 to §24 are round 4's design of kept slots. Round 5 keeps them as the mechanics of one option of the fallback (R5.7) and changes them
+where R5 says so; R5 is what round 5 proposes.
+
+### R5.1 What round 5 answers, and its frame
+
+- **The owner's reframing (2026-11-07).** Each session today opens the whole repository as a fresh worktree and removes it afterwards. That
+  helps nothing and, over time, wears the disk. The purpose is to end that churn: write only what changes. Build time is a second gain, not
+  the reason.
+- **Daoris is generic.** The repositories it drives use any stack: .NET, native C++, Python, Java and Gradle, Rust, Go, plain documents. So no
+  code names a stack's folders: a repository declares them, and what it does not declare is treated as a fresh checkout treats it.
+- **What git leaves unmanaged.** Git already manages the tracked files: one object store for every tree, a switch that writes only what
+  differs. The ignored files are what nobody manages: dependencies, build intermediates, runnable outputs, local configuration, scratch.
+  Today each session makes them again, copies them or deletes them whole, and R5.2 measures them at 93% of a session's bytes here. Round 5
+  manages them by class (R5.5), under every way a session gets its files.
+- **The frame, the owner's decision.** The central way is the **room** (R5.3): a session that holds a room works in place, in the
+  repository's checkout, and needs no tree of its own. A repository, or a path, with no room yet gets the **fallback** (R5.7): its ignored
+  content managed by class, its dependencies from a store, and a kept tree switched in place, or a copy-on-write clone where a Dev Drive
+  exists. Today's fresh worktree stays only as the last resort. Rooms are adopted gradually (R5.4).
+- **The read of round 4** is answered in §25. This repository's own build fix, the commit stamped into every assembly, is its own row
+  (R5.8), apart from the generic design.
+
+### R5.2 Measured: what a session writes
+
+Measured on 2026-11-07, on Windows 11 (build 26300, NTFS), the .NET SDK 10.0.402, git 2.53.0.windows.3 and Node 24.19, with other sessions
+building on the machine, so a time can vary twofold between runs where the files and bytes do not. Counted from the file system: a file
+is written when it is new or its size or change time moved, and R5.5 names the classes. This repository was measured in a fresh worktree at
+main `77a311c967`, then switched in place to `bfdb82acd6`, a day of main later (2,052 files differ). The sibling .NET repository was measured
+in a scratch clone under `_fixtures/`, nothing written into it, at two commits of its main five days apart (12 merges, 115 files).
+
+**This repository:**
+
+| Step | Today: a fresh tree per session | A kept tree switched in place |
+|---|---|---|
+| Tracked files | the checkout: 8,286 files, 99.5 MB, 18.6 s | the switch: 2,034 files written and 44 deleted, 37.3 MB, 7.8 s |
+| Dependencies | 17,327 files, 253.7 MB (`npm ci` 93 s; TREEDEPS1's copy writes the same files) | none: no lockfile changed |
+| The first build of the two desktop test projects | 730 files, 927 MB (`bin/` 835 MB, `obj/` 93 MB), 92 s | with the web's build: 352 files, 489 MB; .NET 81 s, every project compiled |
+| The web's build, its contracts generator included | 159 files, 192 MB, 395 s, most of it the type check under load | 479 s, in the line above |
+| The removal | 26,797 files deleted, 18.1 s | none |
+| **Per session** | **26,502 files and 1.47 GB written, as many deleted** | **2,386 files and 526 MB written** |
+| **Per 100 sessions** | 2.65 million files and 147 GB written, 2.65 million deleted | 0.24 million files and 53 GB written |
+
+A kept tree writes 24,100 fewer files and 0.95 GB less per session (91% of the files, 64% of the bytes) and deletes none: per 100 sessions,
+2.4 million files and 95 GB less written, and 2.65 million deletions gone. Of today's bytes, 93% are ignored content: runnable outputs 67%,
+dependencies 17%, intermediates 9%; the tracked files are 7%.
+
+**In place, under a room** (R5.3): no checkout, no dependencies, no removal, and builds of what the session changed. With the stamp off
+(R5.8), the build after 45 files of the driver and the modules changed wrote 81 files and 297 MB (7 of 12 projects compiled), 212 MB of it
+copies of the rebuilt assemblies into each test project's `bin/`.
+
+**The sibling .NET repository** (15 projects, 1,443 tracked files):
+
+| | Today | Kept, switched in place |
+|---|---|---|
+| Tracked files | the checkout: 1,443 files, 15.9 MB, 3.5 s | the switch: 115 files, 4.1 MB, 0.3 s |
+| The build | 821 files, 820 MB, 26 s | 283 files, 144 MB, 22 s; every project compiled (the SDK's commit stamp) |
+| The removal | 2,278 files deleted, 3.2 s | none |
+| **Per session** | **2,264 files, 835 MB** | **398 files, 148 MB** |
+
+There a kept tree writes 82% fewer bytes, most of them the native runtimes MSBuild copies into `bin/` and skips when they are unchanged.
+
+**A clone of a warm tree, emulated on NTFS** (model C): `git worktree add --no-checkout` took 0.2 s; copying a warm tree's tracked files,
+dependencies and intermediates, no runnable output (26,279 files, 640 MB), took 47.5 s eight files at once, against 18.6 s for a checkout.
+With the warm tree's index copied into the new entry, git listed the tree, and its first `status` (3.0 s) showed nothing but the experiment's
+own edit. **Its build at the new path compiled all 12 projects and wrote 935 MB**: .NET's intermediates name their path, so a clone at
+another path saves no build.
+
+**The dependency store's placements on NTFS** (the web's `node_modules`, 17,069 files, 229 MB): `npm ci` 72 s; a copy 16.5 s (5.9 s in
+D51's quieter measurement); a hard link per file 194 s, made one by one by Git for Windows' `cp -al`, a link being an entry per file too;
+deleting either, 9 to 10 s.
+
+**What a view would hydrate** (model A): the two desktop test projects read the 4,699 tracked files of their folders (55% of 8,566), the
+web's build 1,932 more (23%), and a harness's search reads every file.
+
+### R5.3 Rooms: a session works in place in the room it holds
+
+**What a room is today.** Two declarations name parts of a repository. `daoris.json`'s `rooms` lists folders with a brief of their own
+(`AGENTS.md`), which `sync` points at (doctrine rule 33); this repository declares none, and the sibling .NET repository measured in R5.2
+declares three. `daoris.lanes.json` lists lanes: domains that own paths (D115), which the merge tool reads to print the lanes a branch
+touched, refusing nothing. Neither is claimed by anyone today. **Round 5's room is a lane that is claimed**: its `paths` as the lanes file
+writes them, plus the build units it owns (`builds`: the project, solution, package or module files whose sources lie in it). One
+declaration, the lanes file, so ownership has one home (D228). A doctrine room is a brief's place, a different job, and a room may name one.
+
+**The claim.** One session writes a room at a time. The claim is a desktop-store row, `room_claims` (repository, room, line, run,
+generation), taken in one `BEGIN IMMEDIATE` transaction and passed on only from a dead process by `HomeLease`'s test, as round 4's slot claim
+(§2.3) and the act engine's claims are. A start that needs a room another session holds waits or goes to the fallback, as the planner says;
+the person claims a room from the Projects row, and a room whose paths hold changes no session made (the person's) is refused to a session
+until they are committed or the person releases it.
+
+**Working in place.** The session's folder is the checkout (or the room's brief folder, where it has one). Its branch `daoris/s-<8 hex>`
+is made at the line's tip without a checkout (`git branch`). The checkout's index and `HEAD` are never touched by a session. Daoris
+commits for it, through a private index per line:
+
+1. `GIT_INDEX_FILE=<home>/work/index/<line>` and `git read-tree <branch tip>`;
+2. `git add -A -- <the room's paths>`, which reads the room's working files only;
+3. `git write-tree`, then `git commit-tree <tree> -p <branch tip>` with the session's message;
+4. `git update-ref refs/heads/daoris/s-<8 hex> <new> <old>` through the act journal, with its check and its Undo.
+
+Every path outside the room stays at the branch's own version, so the branch holds the room's changes and nothing else. The agent commits
+by Daoris's tool (`commit`, with a message) and reads its status and diff against its branch by the same tool, scoped to its room. D164
+point 1, Daoris commits nothing, is amended: the commit is the agent's, made through Daoris's door (§18 item 7).
+
+**Landing without a tree.** The merge tool already lands in a gate tree of its own (GATEWT1), so a room's branch lands as any branch does.
+After it lands, the checkout's `HEAD` names the new line tip while its index still holds the old one for the landed paths; the landing then
+moves those index entries alone to the line (`git reset -q <new tip> -- <landed paths>`), only where each still equals the old tip's, so a
+staged change of the person's is never overwritten. The room's working files already hold the landed content and read as clean. A checkout
+that is not on the line, or holds a staged change in a claimed room, takes no in-place session: the fallback serves it.
+
+**Parallelism.** It keeps one session per room, every room of a repository at once: here, eight rooms (R5.4) against the five workers the
+dispatch skill runs today. It loses two sessions in one room at once, which today's trees allow and then merge with conflicts; and a
+session's licence to write anywhere: a change in another room is asked of it by a quest, as a change in another repository is.
+
+**What breaks, named:**
+1. **A harness that runs git itself.** Claude Code commits by habit; a `git switch`, `stash`, `reset`, `checkout` or `clean` in a shared
+   checkout would reach every room's work. The session's permissions deny git's writing commands (Claude Code's deny rules, Codex's rules); its
+   status and diff come from Daoris's tool. A `HEAD` or index moved at a turn's end stops the session for the person, never undone by Daoris.
+2. **Builds that see another room's uncommitted edits.** A build unit that references another room's sources compiles that session's
+   half-done work. Here the driver's tests reference the launcher (the modules' room) and both desktop rooms build the service's contracts.
+   The room check (R5.4) flags every such reference; a red build whose failing unit is another room's is said as that room's.
+3. **Two builds at once over one set of outputs.** Both desktop rooms' builds write the contracts' `obj/` and `bin/`. A build unit that two
+   rooms build is built under one lock per unit, Daoris's own, so the second waits; R5.7's build slots (model B) are where this goes for good.
+4. **Lockfiles shared across rooms.** A lockfile belongs to the room of its build unit (here the root's to the tools' room, the web's to the
+   web's); a package another room needs is asked by a quest.
+5. **Generated files.** A tracked generated file (`docs/code-map.json`) belongs to its generator's room. An ignored one written from any
+   room's tools (`docs/index/`, the contracts' generated types) is written under its writer's own lock, as `docs/index/` already is.
+6. **Paths no room owns.** This repository's documents are laneless, written by any change; under rooms they are a room of their own, and
+   an area document goes with the room it describes (R5.4).
+7. **Hooks.** Nothing checks out, so no `post-checkout` hook runs; a tool that needs `docs/index/` runs its writer.
+8. **The person's own work in the checkout** shows the sessions' work in progress as uncommitted changes. That is what it is; each such path
+   is in a claimed room, said on the Projects row.
+
+**What a repository gains.** A repository whose sessions do not overlap in a room writes no tree at all: no checkout, no dependency copy,
+no first build, no removal, its builds warm in place with the stamp off (R5.8), only what changes written. Here that is everything R5.2's
+*today* column counts, per session. The install's work workspace holds 29 repositories; how many ran two sessions at once in one room last
+week is row 2's count, read from the install's own records before any tree is retired (row 5).
+
+### R5.4 The way into rooms
+
+- **On the fallback until rooms are declared.** A repository with no rooms works as R5.7 says. One may declare some rooms and leave the
+  rest: a session whose work lies in no declared room takes the fallback.
+- **Daoris proposes rooms** from the repository's structure: its folders, its build units (a solution and its projects, packages, modules,
+  workspace members), its lanes, and the paths its gates declare. Ask Daoris or the set-up proposes them as a change in that repository's
+  lanes file, which the person accepts there; for another repository, it is asked of its owner by a quest. The conventions it reads build
+  units by are canon knowledge, a document, never code; with no model available nothing is proposed, said with the tier that ran.
+- **The check of a proposed room**, deterministic and stack-agnostic, reading only declared paths and git's tracked files: no two rooms'
+  paths overlap; every tracked path is in one room or is said to be in none; every declared build unit's sources lie in one room; every
+  lockfile lies in one room; no generated file (tracked, or declared an output in R5.5) is written from two rooms' sources; and a build
+  unit referenced from another room is listed, so its lock (R5.3 break 3) is known. A failed check names the path and the two rooms.
+- **This repository's rooms**, from its lanes and the check: **web** (web-shell and web-settings joined, since they are one package, one
+  lockfile and one build), **driver**, **modules**, **service** (the contracts with it), **cli**, **tools** (the root lockfile with it),
+  **records**, and **docs** (the laneless documents, an area document going with its room's code). The check flags the driver tests'
+  reference to the launcher and both desktop rooms' build of the contracts, so this repository's desktop rooms share build locks until a
+  build slot (R5.7, model B) builds them apart. The lanes stay the dispatch skill's map; joining the two web lanes as one room is row 1's.
+
+### R5.5 Ignored content by class, and its declaration
+
+| Class | What it is | Between one line and the next | Examples |
+|---|---|---|---|
+| **Dependencies** | what a package manager installs from a lockfile, readable at any path | placed from the store by its key (R5.6), never linked | `node_modules`, `vcpkg_installed` |
+| **Intermediates** | what a build tool checks itself and makes again when stale, valid only at the path it was made | carried only by a tree kept at one path: the checkout under a room, a kept slot or build slot; never two trees' at once, never cloned to another path | `obj/`, `target/`, `.gradle/`, a CMake tree, a `.venv` (its launchers name its path) |
+| **Runnable outputs** | what a runner uses without building first, or what its writer makes again cheaply | never carried: cleared at every take, never in a template | `bin/`, `dist/`, `wwwroot`, `docs/index/` |
+| **Local** | machine-local inputs the gates read | copied in read-only at every open (TREELOCAL1), never stored or cloned | `localInputs` |
+| **Scratch** | everything ignored that no class names | never carried: it goes with its session's record (§10) | `_fixtures/`, logs |
+
+**The declaration**, in `daoris.gates.json` beside `localInputs`, read from the checkout's file and never a tree's, as `TreeLocalInputs`
+reads its key: what crosses from one line to the next is the checkout's say, never a branch's. Its paths are written as the gates' `paths`
+are: repository-relative, forward slashes, globs, a folder ending in `/`. A declared path git tracks is refused, since it is git's. `key`
+names tracked files whose bytes, with the `toolchain` command's output and the machine's system and architecture, key the store. `prepare`
+lists commands that the same file's `safe` list holds, run in order to warm a template or a slot at the line's tip. The local class is
+`localInputs`, unchanged (D216), never declared twice. This repository:
+
+```json
+"trees": {
+  "dependencies": [
+    { "path": "node_modules/", "key": ["package-lock.json"], "toolchain": "node --version" },
+    { "path": "src/Daoris.Web/node_modules/", "key": ["src/Daoris.Web/package-lock.json"], "toolchain": "node --version" }
+  ],
+  "intermediates": ["src/**/obj/", "tools/**/obj/"],
+  "outputs": ["src/**/bin/", "tools/**/bin/", "src/Daoris.Service/Daoris.Service.Http/wwwroot/", "src/Daoris.Cli/dist/",
+              "docs/index/", "src/Daoris.Web/src/data/generated/", "src/Daoris.Web/src/bridge/generated/"],
+  "prepare": ["npm ci", "npm --prefix src/Daoris.Web ci", "dotnet build src/Daoris.Desktop/Daoris.Desktop.Driver.Tests"]
+}
+```
+
+A Python repository on uv declares no dependency: a `.venv` names its own path, so it is an intermediate, and uv's own store outside the
+tree already makes a sync at a new path cheap:
+
+```json
+"trees": { "intermediates": [".venv/", ".pytest_cache/", "**/__pycache__/"], "outputs": ["dist/", "build/"], "prepare": ["uv sync --frozen"] }
+```
+
+A Rust repository carries cargo's `target/`, since cargo checks every unit's fingerprint and links a binary before it runs it; one whose
+scripts run `target/debug/*.exe` without cargo declares that path an output instead:
+
+```json
+"trees": { "intermediates": ["target/"], "prepare": ["cargo build --locked"] }
+```
+
+A C++ CMake tree is an intermediate; Gradle's `.gradle/` and `build/tmp/` are intermediates and its `build/libs/` an output; Go keeps its
+build cache outside the tree and declares nothing.
+
+**With nothing declared,** nothing ignored is carried: a session's tree is a fresh checkout and its kept slot is cleared of every ignored
+path at a take, the local copies made again. An undeclared repository is never wrong, only not faster. **Ask Daoris proposes a
+declaration** for a repository that has none, as it proposes rooms (R5.4): from its `.gitignore` files, its tracked lockfiles and manifests,
+its gates' `safe` list and the sizes of the ignored folders in its checkout, each entry with its reason, as a change in that repository.
+
+### R5.6 The dependency store
+
+- **An entry per key**, once per machine, `<home>/work/deps/<sha256>`, keyed by the declared path, each key file's bytes, the toolchain's
+  output, the system and the architecture. Two repositories at one lockfile share an entry.
+- **Filled only right after a prepare step** ran at the line's tip in a template or a freshly cleared slot, never from a tree an agent worked
+  in (F6): the folder copied in and sealed, with a manifest of each file's size and hash and the read-only mark. A link inside it (npm's
+  workspace junction) is recorded by its target within the tree; one that leads outside seals nothing.
+- **Placed at a take or an open** wherever the tree's key files hash to a sealed entry: a block clone where the store and the tree share a
+  volume that clones (ReFS, a Dev Drive), a copy elsewhere (TREEDEPS1's eight at once); its links made again inside the tree; the manifest
+  checked before a session starts. **Never a hard link or a junction**: D51's rejection stands, since a write in place, or the package
+  manager's own clean, reaches every tree's copy, where a ReFS clone's write is copied on write and reaches no other.
+- **A key no entry holds** places nothing; the agent installs, said as today's misses are; the next warming at that key fills the store.
+- **It goes** by KEEPSIZE1's size limit and days since last placed, a `deps` kind on the Disk space card.
+- **It replaces TREEDEPS1's copy from the checkout** (D228; D51's note), so a person's install never reaches a session (F6).
+- **What it saves** is measured in R5.2: an install made again against a copy and a clone, and what a link would have saved.
+
+### R5.7 The fallback: a repository or a path with no room
+
+Every way below manages ignored content by R5.5's classes and takes its dependencies from the store. The figures are this repository's,
+per session, from R5.2; a ReFS figure is Microsoft's documented behaviour, not run here (R5.9).
+
+| Way | Written per session | Time per session | The owner's step | Risks | Daoris's tree code |
+|---|---|---|---|---|---|
+| Today: a fresh worktree | 26,502 files and 1.47 GB, as many deleted | checkout 19 s, copy 6 to 17 s, cold build 92 s | none | none new | none |
+| **1. Kept slots switched in place** (§2 to §12) | about 2,400 files and 0.5 GB, none deleted; less with the stamp off | a switch of 1 to 8 s, a build of what changed | none | a line works in a slot: D189 amended (§4), every folder-reader asks the pool (§3.2); a live line's own files (§18 item 4) | round 4's rows a, b and f under R5.5's classes |
+| **C. Copy-on-write clones of a warm template**, on a Dev Drive | the clone an entry per file and no data; the build its compiled output (about 95 MB here), its copies cloned | an entry per file (26,000 here), then a whole build every time, the path being new | a Dev Drive, an administrator's step, with `work/` and the package caches on it | no clone across volumes; a disk image to keep attached; on NTFS a clone is a copy, slower than a checkout | the open made with `--no-checkout`, the template's files and index cloned in; a template per repository warmed by its `prepare` |
+| **A. A view (ProjFS), as VFS for Git** | what is read: 78% of this tree by its builds, all of it by a search | a provider in every first read | ProjFS enabled, an administrator's step | a provider down leaves the tree unreadable; stock git reads what it hashes; VFS for Git is in maintenance | a file-system provider Daoris hosts, and a git that asks it |
+| **B. Build slots apart from editing** | per build: a switch and an incremental build in a slot no line works in | per build: the switch, then a warm build | none | an agent's builds routed through a tool; a dev server holding a slot; paths in errors mapped back | round 4's slot with no line in it, reset by design as the integration tree is; a build tool on Daoris's MCP |
+| A content-addressed build cache | outputs replayed, cloned where the volume clones | no compile of an unchanged unit, at any path | none | per stack (MSBuild's project cache plugin, Gradle's cache, sccache); a commit stamp makes every unit a miss | none: a repository's own build choice |
+
+**What each model asked:**
+
+- **C: a clone that git and Daoris both recognise.** `git worktree add --no-checkout --detach <path> <commit>` writes the entry and no
+  file; the template's working files are cloned in (`CopyFile2`, or .NET's `File.Copy`, which on Windows 11 24H2 clones on ReFS), its index
+  cloned into the entry's folder, and the line's branch made by `git switch -c`, which writes only what differs from the template's commit.
+  R5.2 shows git listing such a tree clean. What breaks: the template, the trees and the store must share one volume; the index's stat data
+  is the template's, so the first `status` reads again what changed (3 s here); a template holds no runnable output and no local input; and
+  the intermediates come along stale, so the build compiles everything. `git worktree repair` serves a moved tree, not a made one: unused.
+- **A: the view.** A read hydrates the file whole, so a session here writes most of a checkout's bytes, later rather than sooner. Stock
+  git's `status` reads every file whose stat it cannot trust; VFS for Git needed Microsoft's fork of git, whose virtual-file-system hook
+  told git which paths were touched, and Microsoft's successor, Scalar, dropped virtualization for sparse checkout, partial clone and
+  fsmonitor, now in upstream git. A session's commits would go to the shared object store as a worktree's do, its branch made as today, and
+  its dependencies projected read-only from the store; but a provider must run while any tool reads the tree. Not for repositories of this
+  size; open for one far larger than any session reads.
+- **B: build slots.** An agent's build or test is asked of Daoris's MCP tool (`build` or `test`, naming a gate or a `safe` command), never a
+  shim on the path, which a script or an absolute path steps around and a `--no-build` run defeats. Daoris takes a free slot `b-<n>`,
+  switches it to the session's branch (under a room the private-index commits keep it current; on the fallback Daoris first commits the
+  session's working files to a private ref), clears its runnable outputs, runs the command and streams its output back as the tool's
+  progress and result, a slot's paths shown as the session's. A dev server holds its slot for its life, a claim like round 4's served visit,
+  stopped with its session; under a room it runs in place. A build slot holds no work and is reset by design, as the integration tree is
+  (`IntegrationReplays.cs:76-78`), so no line-in-slot hazard arises, and it ends rooms' breaks 2 and 3 (R5.3) for good.
+- **The content-addressed cache** is a repository's own build choice, made in that repository, and works here only with the stamp off.
+
+**The fallback's choice.** Kept slots switched in place (way 1) are the default on every machine: the only way measured that writes
+neither the whole tracked tree nor the intermediates again, with no step of the owner's. Where the volume clones, a clone of the warm
+template makes a slot the first time, renews one at its size bound and makes a last-resort tree when every slot is held, and the store's
+placements clone: C serves inside way 1, not beside it (D228). A plain fresh worktree is made only where every slot is held and no volume
+clones. **The owner's lean, C and D near term with A and B later, is confirmed for D and refined for C:** a clone per session saves the
+bytes, but no build, and only on a Dev Drive, while a kept slot saves both on every machine; so C accelerates the slot. A and B stay the
+later step: A only for a repository far larger than a session reads, B once rows 2 and 4 show builds colliding between rooms or slots. If
+the owner prefers the smaller change to the saving on NTFS, the other way is a clone per session on a Dev Drive and today's tree elsewhere
+(§18 item 6).
+
+**The Dev Drive, if the owner sets one up.** Settings → System → Storage → Advanced storage settings → Disks & volumes → *Create dev
+drive* → *Create new VHD*, as a dynamically expanding VHDX on the data drive with the most room, 200 GB (Dev Drive's floor is 50 GB; three
+kept slots of this repository hold about 4.5 GB, the store a few GB). Onto it go the repositories under development, the install's `work/`
+(its trees, slots, store and set-aside folders, moved by the install's own home move, never by hand) and the package caches
+(`NUGET_PACKAGES`, npm's cache), so MSBuild's copies from the NuGet cache clone too. Check after a restart that the drive is attached.
+
+### R5.8 The stamp: this repository's own row (row 0)
+
+- **Where.** On the SDK's defaults, `IncludeSourceRevisionInInformationalVersion` is on and so is SourceLink, so `SourceRevisionId`, the
+  commit git reports, goes into every assembly's `AssemblyInformationalVersionAttribute` (`0.0.1+<commit>`) and each project's
+  `*.sourcelink.json`, both inputs of its compile. `src/Daoris.Desktop/Directory.Build.props` sets `Version` from `canon/canon.json`
+  (UPDATEVERSION) and neither switch; `src/Daoris.Service/Directory.Build.props` neither; `src/Daoris.Contracts` and `tools/contracts` have
+  no props of their own.
+- **The design.** A root `Directory.Build.props`, imported by the desktop's and the service's and found by the projects without one: unless
+  `DaorisStamp` is `true`, `EnableSourceControlManagerQueries` off (no read of git at all), `EnableSourceLink` off and `SourceRevisionId`
+  `dev`, so a development build carries `<version>+dev`. `tools/desktop-publish.mjs` and `tools/service-publish.mjs` pass
+  `-p:DaorisStamp=true`, so a stage and a release carry `<version>+<commit>` as today.
+- **Measured** in R5.2's fresh worktree, the change made there and removed with it:
+
+  | Build | SDK defaults | Stamp off |
+  |---|---|---|
+  | cold | 92 s, 12 projects | 67 s, 12 |
+  | nothing changed | 12 s (round 4) | 16 s, none |
+  | after a switch writing no file | 51 s, all 12 (round 4's read) | none, by the unchanged case |
+  | after 30 minutes of main (45 desktop files) | — | 69 s, 7 |
+  | after 7 hours of main (380 files, the contracts among them) | 191 s under load, all 12 | 62 s, 9 |
+  | after a day of main | 81 s, all 12 | — |
+
+  The assemblies said `0.0.1+dev`, no source-link file was written and no warning was added. The machine was loaded, so the robust figure
+  is the projects compiled, not the seconds. The driver, the largest project, changes in most commits and its dependants follow it, so here
+  the time saved is smaller than the count suggests; a repository whose busiest project is a leaf saves more.
+- **What reads the commit at run time.** `Loop/SystemWiring.cs:469-472` splits the program's version at `+` into the System page's
+  *program* and *build*; `Store/DesktopStore.cs:88` keeps it as the store's writer build (`:324`, `:369`); `Instance/InstanceClient.cs:125`,
+  `:226-227` names it in the instance hello; the service's `HostVersion.Stamped` reports it (`Routes/KnowledgeRoutes.cs:44`).
+  `InstallRollback.This` and `BuildVersionTests` read the number alone, through `HomeLastBuild.Numbered`, which drops what follows `+`
+  (`Install/HomeLastBuild.cs:59`). An installed build keeps its commit, the publish stamping it, so none of them changes there. The stage's
+  `build.json` already names `version` and `commit` (`tools/desktop-publish/staging.mjs:45-61`), so an installed reader could take it from
+  there, but none needs to. In development they read `dev`, so two development builds of different commits name one build in the hello and
+  the store's rows; row 0 checks that neither decides anything on it.
+- **Its own row, first**, since it helps every builder and session whatever else round 5 builds: BUILDSTAMP1 (§17.0 row 0).
+
+### R5.9 What was not run here, and the sources
+
+- **ReFS block cloning, the Dev Drive and the copy engine**, from Microsoft's documentation (the Dev Drive pages; ReFS block cloning; the
+  `FSCTL_DUPLICATE_EXTENTS_TO_FILE` and `CopyFile2` references): a clone shares clusters until one copy is written, within one volume and on
+  cluster-aligned ranges; from Windows 11 24H2 the copy engine (`CopyFile`, `CopyFileEx`, `CopyFile2`) clones on ReFS by itself; .NET's
+  `File.Copy` calls `CopyFileEx` on Windows, so it and MSBuild's `Copy` task clone there unchanged. This machine is past 24H2 (build 26300
+  against 26100) and has Dev Drive enabled (`fsutil devdrv query`), but no ReFS volume, so nothing cloned here.
+- **ProjFS and VFS for Git**, from Microsoft's ProjFS documentation, VFS for Git's maintenance notice and git's Scalar documentation
+  (upstream since git 2.38); ProjFS is installed here, disabled, and was not enabled.
+- **MSBuild's project cache plugin**, and cargo's, CMake's, uv's and Gradle's path-dependence in R5.5's examples, from their
+  documentation; only the .NET case was measured.
+- **The hard-link figure** is Git for Windows' `cp -al`, file by file; a native `CreateHardLink` caller would be faster, and stays rejected
+  (D51) whatever its speed.
+- **The install's 29 repositories** were not read; row 2 counts their overlapping sessions from the install's own records.
 
 ## 0. What this rests on
 
@@ -846,6 +1191,10 @@ stand**; 1d's allowance never counts a kept slot, which is live, and its set-asi
 
 ## 11. Dependencies and build outputs kept
 
+*Round 5:* R5.5's declared classes replace `SlotKeeps` below: a slot keeps the repository's declared dependencies (placed again from the
+store when their key moves, R5.6) and intermediates; its runnable outputs, `bin/` and `wwwroot` among them, are cleared at every take
+*(R4-F2)*; and the saving is R5.2's, measured after a switch. The rest of this section is round 4's.
+
 - **The one list:** `TreeScratch`'s thirteen (`Workplace/TreeScratch.cs`) and `wwwroot`, an ignored web root no list holds today (survey §4).
   Each use names its subset of it: **what a slot keeps across lines** (`SlotKeeps`, below) *(R4-F1)*; what a finish sets aside with the record
   (the line's own, everything else, §10); what a removal lets go of (TREEKEEP1's, `TreeScratch`'s thirteen byte for byte, so a legacy tree's
@@ -1056,6 +1405,22 @@ checkout that a line of work holds*. Git's refusal text and an author's words ar
   named by none (§3.1) *(R4)*; and it reaches folders the install holds to save one build per slot once.
 
 ## 17. The rows, in build order after mod-x
+
+### 17.0 Round 5's rows, in build order
+
+Round 5 re-cuts the rows around rooms. Rows a to j below are round 4's: row 4 draws on a, b and f for the kept slot; c, d and e are
+re-read against row 4's base when it starts; g to j are withdrawn with a line handed from slot to slot, or wait on model B's round (R5.7).
+Each row lands as the paragraph after this table says, and a ⚖ row only after both makers' reads find nothing blocking in it.
+
+| Row | Changes | The person sees | Proof |
+|---|---|---|---|
+| **0. The commit stamped only where a release is built** (this repository's own build, BUILDSTAMP1, apart from the generic design) | R5.8: a root `Directory.Build.props`, imported by the desktop's and the service's, gives a development build no source-control query, no source link and the fixed `+dev`; the publish and the stage pass `-p:DaorisStamp=true` and stamp the commit as today | nothing, but the System page's build fact reads `dev` in a development build | a switch's build compiles only what changed (R5.8's measurement as a test of the generated `AssemblyInfo`); `BuildVersionTests` unchanged; a staged build's `ProductVersion` carries its commit |
+| **1. Rooms and classes declared, and proposed** | the lanes file's lanes gain `builds` and are the rooms (R5.3); the room check (R5.4); `trees` in the gates file and its reader (R5.5); Ask Daoris's and the set-up's proposals of both, their conventions in canon knowledge; this repository's declarations, the two web lanes one room and the documents a room. Nothing acts on them | the proposals, in Ask Daoris and the set-up | the check failing on overlapping rooms, a build unit or a lockfile split, a generated file written from two rooms, and listing a reference across rooms; the reader refusing a tracked path and a `prepare` command its `safe` list lacks; no declaration carrying nothing |
+| **2. ⚖ A session in place in its claimed room** | `room_claims` and its takeover; a start whose work lies in one free room placed in the checkout, else the fallback; the private-index commit through the journal; Daoris's `commit`, `status` and `diff` tools; git's writing commands denied in the session's permissions; the landing's index move; one build lock per shared unit; D51 and D164 amended (§18 item 7) | a session working in place in its room, the room claimed on the Projects row | two sessions in two rooms of one checkout, each branch holding only its room's changes; the checkout's index and `HEAD` untouched until a landing, whose index move keeps a person's staged change; a session's own `git commit` denied, a `HEAD` moved by hand stopping it; a dead run's claim taken over; two builds of a shared unit serialised; the install's week of overlapping sessions per room counted |
+| **3. ⚖ The dependency store** | R5.6; TREEDEPS1's copy from the checkout removed (D228, D51's note); the `deps` kind on the Disk space card | dependencies said placed from the store, or missed | an entry sealed only after a prepare step; placed by copy on NTFS and by clone on ReFS; a placed file edited by hand failing its manifest; a link leading outside sealing nothing; eviction by days and size |
+| **4. ⚖ The fallback's tree** | kept slots switched in place (§2 to §12 under R5.5's classes in place of `SlotKeeps`, and §25), a slot made, renewed or a last-resort tree made by a clone of a warm template where the volume clones (R5.7); a fresh worktree only where every slot is held and no volume clones | sessions of a repository without rooms starting in a kept tree, said | round 4's row b over R5.5's classes; `--no-build`, `e2e-host.mjs` and `desktop.mjs run` refusing in a taken slot as in a fresh tree; a cloned tree that git lists, whose `status` is clean, and that today's removal removes |
+| **5. ⚖ Per-session trees retired where rooms cover the work** | the planner opens no tree for work whose paths lie in free rooms; the owner's yes (§18 item 8) | fewer trees under `work/trees` | a week on the install: no tree opened for work rooms covered; `work/trees` no longer growing |
+| *Later:* **B, build slots apart from editing**, and **A, views** | a round of their own once rows 2 and 4 measure a need (R5.7) | — | — |
 
 Each row is its own branch, after FOUNDATION1's mod-x has landed and on files no open branch holds (D212 §14.6), every new type written in
 `Workplace/`. Each lands with every gate of `daoris.gates.json` green, runs the brief §9's suites whole wherever it touches their part
@@ -1310,7 +1675,14 @@ or resetting a tree that holds work.
    nothing; compared again right before the tree is reset for another line, and laid back when the line returns. *What a yes does:* trees whose
    sessions left uncommitted work go back to the pool. *What a no does:* such a tree stays its line's, said, until a session commits the work or
    the person discards it, and the pool opens another. *Where to look:* §5.5 and row i's proof.
-4. **Whether a kept tree may be handed on while its last line may still come back** (row j) *(C2-5.1, R4)*. *What it is:* with a fixed
+4. **Whether a kept tree may be handed on while its last line may still come back** (row j) *(C2-5.1, R4, R5)*. *Round 5's restatement:*
+   it arises only on the fallback's kept slots (R5.7, row 4); a room's session works in place and hands nothing on. Under R5.5's classes a
+   slot's dependencies and intermediates are the slot's, its runnable outputs (this repository's `bin/`, `wwwroot`, `dist/`, `docs/index/`
+   and the contracts' generated types) are cleared at every take since their writers make them again, and its local copies are made again.
+   So what a live line may lose at a take is its **scratch** alone: an ignored path no class names, which this repository's sessions write
+   under `_fixtures/`. The options below are unchanged but for that, and the recommendation stays **(a)**: with F5's files declared outputs, a
+   line whose only ignored files are outputs no longer holds its slot, so (a) hands on far more slots than round 4's read found. *Round 4's
+   text:* with a fixed
    folder, a kept tree's dependencies and build folders are the tree's own and stay valid there, so handing it on moves none of them and deletes
    nothing a build made: the next line builds over them. What is the line's own are the ignored files it made that are not builds the tree
    keeps: its scratch (this repository's sessions write `_fixtures/`) and any output a tool would run in place of the next line's sources (this
@@ -1331,6 +1703,21 @@ or resetting a tree that holds work.
    repository, on one of the owner's accounts, to prove the conversation is found once its tree was taken and brought back. *What a yes does:*
    runs it once, bounded to one session and one resume with nothing forced to a limit, unless an authorization the repository records already
    covers it. *Where to look:* row g.
+6. **The Dev Drive, and the fallback's shape** (R5.7) *(R5)*. *What it is:* an administrator's step on the machine: a ReFS Dev Drive, a
+   200 GB disk image on the data drive with the most room, holding the repositories under development, the install's `work/` and the
+   package caches. *What a yes does:* the fallback's slots, its last-resort trees and the store's placements are clones, which write no data
+   until a file changes. *What a no does:* nothing is lost; every placement is a copy, as today. *A second question:* the fallback as R5.7
+   recommends, kept slots on every machine with clones inside them, or the smaller change, a clone per session on a Dev Drive and today's
+   fresh tree elsewhere, which saves the bytes on a Dev Drive only and no build anywhere. *Where to look:* R5.2, R5.7.
+7. **Sessions working in place in the checkout, Daoris committing for them** (row 2) *(R5)*. *What it is:* D51's rule that a session
+   works in a tree of its own, and D164 point 1's that Daoris commits nothing, both amended for a session holding a room: it works in the
+   registered checkout, its changes committed onto its own branch by Daoris's door when the agent asks, through a private index, the
+   checkout's index and `HEAD` never touched but by a landing's index move of the landed paths. *What a yes does:* builds row 2, behind the
+   test's seam until its proofs pass. *What a no does:* rooms stay a declaration and the fallback serves every session. *Where to look:*
+   R5.3.
+8. **Per-session trees retired where rooms cover the work** (row 5) *(R5)*. *What it is:* once a repository's rooms cover a start's work,
+   the planner opens no tree for it. *What a yes does:* starts in that repository work in place; trees are made only on the fallback.
+   *Where to look:* R5.3, R5.4, row 5.
 
 Round 2's item 4, a finished line's scratch cleared at a take, is withdrawn: a finished line's scratch now goes with its record at its finish,
 which is today's rule under the owner's decision of 2026-10-24 (D195:503-505), and asks nothing new *(O2-F6)*.
@@ -1398,9 +1785,21 @@ slot path, answers the round-3 reader's proposed item 6 *(R4-F1)*.
 | *Round 4:* `update-ref -d` for a take's empty branch (round 3's §2.3) *(R4-F6)* | a second way to delete a branch; the journal's `ref.delete` act keeps the commit check and the Undo |
 | *Round 4:* a claim keyed by run alone (round 3's §2.3) *(R4-F8)* | two lookers reading one claim dead would both act; a generation fences them, as every other claimed family does |
 | *Round 4:* one kept-tree type for the slots and the integration tree now *(R4-F11)* | one holds a line's work and is never reset, the other is reset by design; left open (§20) |
+| *Round 5:* `SlotKeeps`, a list of stack folders in Daoris's code (round 4's §11) | Daoris is generic: a repository declares its classes (R5.5), and an undeclared path is scratch |
+| *Round 5:* `bin/`, `wwwroot` and the generated files carried in a kept slot (round 4's §11) *(R4-F2, R4-F5)* | each is run, or read, without a build: runnable outputs, cleared at every take |
+| *Round 5:* a clone of a warm template per session as the fallback's default | it saves no build, the path being new (R5.2), and saves bytes only on a Dev Drive; it serves inside the kept slot instead (R5.7), and stays the owner's alternative (§18 item 6) |
+| *Round 5:* hard links or junctions from the dependency store | a write in place, or a package manager's own clean, reaches every tree's copy (D51); a link is still an entry per file (R5.2) |
+| *Round 5:* the dependency store filled from a tree an agent worked in, or from the checkout | an earlier line's or a person's install is trusted by a file's time (R4-F6); the store fills only right after a prepare step |
+| *Round 5:* a view (ProjFS) per session now (model A) | builds and searches hydrate most of a repository this size (R5.2); stock git cannot work in a view; a provider must run for every read |
+| *Round 5:* a command shim routing an agent's builds to a build slot (model B) | a script or an absolute path steps around it, and a `--no-build` run defeats it; a build is asked of Daoris's tool |
+| *Round 5:* sessions in one checkout committing with the shared index | each would commit the others' staged work onto the checkout's `HEAD`; a private index per line instead (R5.3) |
+| *Round 5:* two web rooms in this repository | one package, one lockfile and one build: the room check refuses a build unit split across rooms (R5.4) |
 
 ## 20. What stays unmeasured, and what this design's checks do not cover
 
+- **Round 5's**: R5.9 lists what rests on documentation alone (ReFS clones, ProjFS, the other stacks' path-dependence) and what the
+  install's records answer (overlapping sessions per room); R5.2's figures were taken once, under load, the files and bytes firmer than the
+  seconds.
 - **What the pool saves** *(R4-F1)*: measured once here, in a fresh worktree on a machine running other sessions (§11); row b measures a warm
   build against a cold one in one slot over a line's own day of commits and proves them equal, its note read before row d; row g measures it
   from a start's admission on the install. If the saving is too small to carry the costs of §1.1 row 1, a later round says so with that number.
@@ -1435,7 +1834,8 @@ slot path, answers the round-3 reader's proposed item 6 *(R4-F1)*.
 | 1 | 2026-10-26, Claude Opus 5.5, from main at `f8fbb1bb7`: the synthesis of Codex's and the independent Opus reader's sealed proposals; every question of the brief answered (§1); each difference chosen with its reason and the case the other gets wrong (§1.1); one choice neither proposal's, the slot moved to its line's path (§1.1 row 1, §2); the rows in order with their proofs (§17); D214 proposed | both at `3f55eb1e5` (`docs/2026-10-26-tree-pool-reads.md`): Codex, another round (18 findings, 12 blocking); the independent Opus reader, another round (15 findings, 4 blocking), both keeping the central choice | §22, every finding of both |
 | 2 | 2026-10-26, Claude Opus 5.5, from main at `f92e95415` (FOUNDATION1's mod-vii and LIMITSWITCH3 landed since round 1): both reads answered one row each (§22); every blocking finding taken and met by a contract and the row that proves it; the slot parked between lines, switched and checked under a parking name and placed last under the exclusive hold, its destination unique and absent; the claim's whole intent, every kind's phases and a takeover that reads the disk first, git's steps in a job; a terminal's visit in the store; `line_records`; only what reads its own path carried across a move; the keep of index and working tree both; the count's doors at row f; the install measured from admission; D214's round-2 note | both at `d595cabd6` (`docs/2026-10-26-tree-pool-reads.md`): Codex, another round (15 findings, 8 blocking; its round-1 1.2, 2.2, 2.3 and 2.6 open in the cases they name); the independent Opus reader, accept after named changes (15 findings, 1 blocking; F2, F3, F4, F5, F7 and F11 before row b), finding no case in which the pool loses work | §23, every finding of both |
 | 3 | 2026-10-26, Claude Opus 5.5, from main at `3dd134cf3` (FOUNDATION1's row p and LIMITSWITCH3b landed since round 2): both reads answered one row each (§23), every blocking finding taken and met by a contract and the row that proves it; `node_modules` alone carried across a move; a finished line's other ignored folders set aside with its record by today's rule; a live line's build folders the owner's question (§18 item 4) and row j's; the finish KEEPSIZE1b's own set-aside of what the slot does not keep, `line_records` withdrawn; links made again before placement and proved by npm's workspace declarations; the open under FOUNDATION1's keyed open; the claim's named job emptied by the takeover, the pool on Windows alone; a served build's admission, a landing's hold, visits that hold back only a move; the keep's private index seeded from the real index; hooks off at the park; one port for Settings; D214's round-3 note | the independent Opus reader at `23958cb903` (`docs/2026-10-26-tree-pool-reads.md`): another round, scoped to F1 (14 findings, 1 blocking), no case found in which the pool loses work; Codex has not read it | §24, every finding |
-| 4 | 2026-11-07, Claude Opus 5.5, from main at `75a4b694be`, on the owner's choice of a fixed slot path: the slot a fixed folder `k-<n>` no record names, every record naming its line's path, so a missed reader and an older build fail as at a gone tree; the take a switch in place inside the start's shared hold, no rename; the slot's dependencies and .NET builds its own, the saving measured here; the claim on the act engine's job and a generation; the holders `TidyHolders`, `moves` and a run's `land` node; TREELOCAL1's copies, the binding check and the journal's delete at a take; hooks run after the check; D189 and D51 amended; §18 item 4 restated; §22 and §23 moved to the reads file; D214's round-4 status | owed: Codex's, and the independent Opus reader's | — |
+| 4 | 2026-11-07, Claude Opus 5.5, from main at `75a4b694be`, on the owner's choice of a fixed slot path: the slot a fixed folder `k-<n>` no record names, every record naming its line's path, so a missed reader and an older build fail as at a gone tree; the take a switch in place inside the start's shared hold, no rename; the slot's dependencies and .NET builds its own, the saving measured here; the claim on the act engine's job and a generation; the holders `TidyHolders`, `moves` and a run's `land` node; TREELOCAL1's copies, the binding check and the journal's delete at a take; hooks run after the check; D189 and D51 amended; §18 item 4 restated; §22 and §23 moved to the reads file; D214's round-4 status | the independent Opus reader at `b8ef097e29` (`docs/2026-10-26-tree-pool-reads.md`): another round, scoped to F1 and F2 (8 findings, 2 blocking), no case found in which the pool loses work; Codex has not read it | §25, every finding |
+| 5 | 2026-11-07, Claude Opus 5.5, from main at `bfdb82acd6`, on the owner's reframing (end the churn, generic, the ignored files unmanaged) and the owner's frame (rooms first, an optimised fallback): the churn measured by class in this repository and a sibling .NET repository (R5.2); rooms, a claimed lane worked in place with private-index commits (R5.3) and the way into them (R5.4); ignored content by five declared classes (R5.5); the dependency store (R5.6); the fallback's ways compared and chosen, kept slots with clones inside them (R5.7); this repository's stamp its own row, measured (R5.8); §17 re-cut (§17.0); §18 items 4 restated and 6 to 8 added; D214's round-5 status | owed: Codex's, and the independent Opus reader's | — |
 
 ## 22. Round 2: both reads of round 1 answered
 
@@ -1474,3 +1874,24 @@ the pool now uses that rather than standing beside it (D228). Every row was chec
 claims that rest on other programs, not run here: that a .NET build made incrementally after a switch equals a clean one at the same path,
 which deterministic compilation leads one to expect and row b proves byte for byte; that Claude Code files a conversation by its working folder
 (SWITCHCTX1 §1.5); and that MSBuild's incremental clean removes a project's outputs its new build no longer makes. What was measured is §11's.
+
+## 25. Round 5: the independent read of round 4 answered
+
+The independent Opus 5.5 reader read round 4 at `b8ef097e29`, verbatim in `docs/2026-10-26-tree-pool-reads.md`: 8 findings, 2 blocking, no
+case in which the pool loses work, and another round asked, scoped to F1 and F2; Codex has not read round 4. The owner then reframed the work
+(R5.1). Under a room (R5.3) no tree is handed from line to line, so most findings meet only the fallback's kept slot (R5.7, row 4), which
+keeps round 4's mechanics under R5.5's classes; each row says where it applies. Every row was checked at `bfdb82acd6`.
+
+| Finding | Verdict | Where it went, and the row that proves it |
+|---|---|---|
+| F1 (blocking) A take compiles every .NET project, since the SDK stamps the commit into every assembly | **Taken**, and measured (R5.2, R5.8) | The stamp is this repository's own build choice, never the pool's: row 0 stamps the commit only where a publish or a stage builds and a fixed `+dev` elsewhere, measured in R5.8 (after a switch 7 or 9 projects of 12 compile, not 12). Every saving is stated from a build after a switch, never an unchanged one, and by toolchain: a .NET repository on the SDK's defaults compiles every project at every commit, as the sibling .NET repository did in R5.2. The generic design names no toolchain: intermediates are carried only at the path they were made (R5.5), and what that saves is each repository's own build's property, measured per repository. A room's session builds in place and moves no `HEAD` until its landing, so the stamp meets it only there |
+| F2 (blocking) `bin/` and `wwwroot` are run without building | **Taken** | They are the *runnable outputs* class (R5.5): never carried from one line to another, cleared at every take of a kept slot or a build slot whatever the finish left, and never in a template. Row 4's proof runs `dotnet test --no-build`, `e2e-host.mjs` and `desktop.mjs run` in a taken slot, each refusing as in a fresh checkout. A room's session has outputs of its own making only |
+| F3 `CopyAsync` refreshes no TREELOCAL1 copy that a slot holds | **Taken** | The *local* class is TREELOCAL1's `localInputs`, unchanged (R5.5). At a take of a kept slot its earlier copies are deleted first, the read-only mark cleared and never following a link, the undeclared ones among them, and then `CopyAsync` runs; a template holds none. A room's session reads the checkout's own `local/`. Row 4 |
+| F4 A take's undo cannot run the journaled delete inside the start's shared hold | **Taken** | As the read proposes: a take that ends before its open detaches and frees the slot under the shared hold, and the look's takeover deletes the branch through the journal once the hold is let go. A room's branch is made without a tree and is deleted, where its session ends before any commit, by the same journal act outside any hold. Rows 2 and 4 |
+| F5 Every pooled line holds ignored paths of its own from its first moment | **Taken** | The files F5 names (`docs/index/`, the contracts' generated types, each rewritten by its writer after every switch or every `quick`) are runnable outputs by this repository's declaration (R5.5), so a take clears them and they never hold a slot; what a live line may still own is its scratch (§18 item 4, restated). Under a room nothing is handed on. Row 1 writes the declaration, row 4 proves the take |
+| F6 npm's freshness, read by a file's time, trusts another line's install | **Taken** | The store keys an entry by the declared key files' bytes and the toolchain, never by a file's time (R5.6); an entry is sealed only right after a prepare step, never from a tree an agent worked in; a placed copy is checked against its manifest; and a kept slot's dependencies are placed again whenever their key moves. TREEDEPS1's reading of the checkout's hidden lockfile goes with TREEDEPS1 (D228). Row 3 |
+| F7 Readers deriving a branch from a listed folder meet `daoris/k-<n>` | **Taken** | Row 4's census, round 4's row a's, also lists every reader that derives a branch from a folder git lists (`TreeWorkReads.cs:166-167`, `TreeRemovals.cs:88`, `TreeBranches.cs:151`, `:168`, `TreeUpdates.cs:383`), each asking the pool or refusing a `k-` folder. A room's session has no folder of its own to read a branch from; its branch is in its record |
+| F8 Nits | **Taken**, each | (a) §2.3's *writer stamp unchanged* is restated by row 4, which says why an older build never opens its tables, the stamp having been raised since (`Store/DesktopStoreSteps.cs:453`, `:503`, `:633`). (b) `git hook run` needs git 2.36: below it, a kept slot is not offered and the fallback makes a fresh tree, whose open runs its hook as today; a room's session runs no checkout and no hook. (c) The sentence on MSBuild reading the SDK among its inputs is withdrawn; row 4 measures a toolchain change at an unchanged commit |
+
+**The code, checked.** Each line the table cites was read at `bfdb82acd6`. What rests on other programs and was not run here is listed in
+R5.9.

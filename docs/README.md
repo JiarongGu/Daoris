@@ -161,7 +161,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-10-26-agent-provider-reads.md`|Reads: AGENTPROVIDER1
 |`2026-10-27-provider-infrastructure-design.md`|Accepted D213 amendment: AGENTINFRA1
 |`2026-10-26-tree-pool-brief.md`|Brief: TREEPOOL1
-|`2026-10-26-tree-pool-design.md`|Proposed design: tree pool (D214)
+|`2026-10-26-tree-pool-design.md`|Proposed design: rooms first, with a kept-tree fallback (D214)
 |`2026-10-26-tree-pool-reads.md`|Evidence: TREEPOOL1 reads
 |`2026-10-26-tree-pool-proposal-codex.md`|Proposal: TREEPOOL1, Codex
 |`2026-10-26-tree-pool-proposal-opus.md`|Proposal: TREEPOOL1, Opus
