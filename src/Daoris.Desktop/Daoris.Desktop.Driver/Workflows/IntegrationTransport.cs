@@ -142,7 +142,6 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
             }
             catch (Exception error)
             {
-                // Any failure, the service's transport errors among them: a faulted loop is never replaced, so no line would run again.
                 _world.Said?.Invoke($"integration: `{next.Repository}`'s line `{next.Line}` was not run ({error.Message}); it is tried again at the next send.");
             }
         }
