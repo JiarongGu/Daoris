@@ -60,8 +60,14 @@ public static class HomeMigration
         var record = DaorisHome.Entry(home, HomeEntry.Migration);
         if (Done(record) is { } done && steps.All(step => done.Contains(step.Name))) return new(Name, [], []);
 
-        using var lease = HomeLease.Await(home, LeaseKind.Migration, "migration", leaseWait ?? HomeLease.Wait, out var holder);
-        if (lease is null) return new(Name, [], [], $"{holder!.Named} held this home, so it was not converted; the next start converts it");
+        // The launcher's swap holds the home until this very application confirms, which comes after this run, so waiting for it can only
+        // time out; nothing else runs from the folder it is replacing, so the swap's hold is the guard and the steps run under it.
+        using var lease = HomeLease.TryAcquire(home, LeaseKind.Migration, out var holder, "migration")
+            ?? (holder is { Kind: LeaseKind.Swap } ? null : HomeLease.Await(home, LeaseKind.Migration, "migration", leaseWait ?? HomeLease.Wait, out holder));
+        if (lease is null && holder is not { Kind: LeaseKind.Swap })
+        {
+            return new(Name, [], [], $"{holder!.Named} held this home, so it was not converted; the next start converts it");
+        }
 
         // Read again under the lease: another start may have converted it while this one waited.
         var ran = new List<string>();

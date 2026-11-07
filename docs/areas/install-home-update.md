@@ -194,7 +194,9 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     the start is settled. (from D139, D212, D226)
 51. No code reads a record, key, file or layout in a shape an older build wrote. A release that changes a stored shape carries
     one migration, `HomeMigration`, run by the application's start once the home is known and before the staffing, the loop
-    and the routes read it, under the home's lease; a lease held past its wait runs nothing, and the next start runs it. (from D232)
+    and the routes read it, under the home's lease; a lease held past its wait runs nothing, and the next start runs it. The launcher's swap lease is no
+    holder to wait for (it lasts until this application confirms, after the run), so an updated application converts the home
+    under the swap's hold in the same run. (from D232)
 52. The migration is a list of steps, each converting its own records and idempotent. Before a file's first change it is
     copied into `data/salvage/<migration>/`, the Daoris folder's layout under it, a database with its journal files; a copy
     already there is kept. The copy is the undo. (from D232)

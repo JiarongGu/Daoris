@@ -152,6 +152,19 @@ public sealed class HomeMigrationTests : IDisposable
     }
 
     [Fact]
+    public void A_home_the_launchers_swap_holds_is_converted_in_the_same_run()
+    {
+        Directory.CreateDirectory(_home);
+        using var swap = HomeLease.Await(_home, LeaseKind.Swap, null, TimeSpan.Zero, out _);
+        Assert.NotNull(swap);
+        var migrated = HomeMigration.Run(_home, leaseWait: TimeSpan.Zero);
+        Assert.Null(migrated.Held);
+        Assert.NotEmpty(migrated.Ran);
+        Assert.True(File.Exists(DaorisHome.Entry(_home, HomeEntry.Migration)));
+        Assert.True(HomeLease.HeldBy(_home) is { Kind: LeaseKind.Swap });
+    }
+
+    [Fact]
     public void A_waiting_say_with_now_alone_waits_with_its_level()
     {
         var path = Put(HomeEntry.Requests, """{"session":"s1","move":"say","now":true}""", "r1.json");

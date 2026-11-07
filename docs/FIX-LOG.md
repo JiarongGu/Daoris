@@ -5,6 +5,17 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-08 - An installed update did not convert the home; the next start had to (HOMEMIGRATE1)
+
+- **Symptom:** on the owner's install every update since 2026-11-07 logged `home.migration-held` (the launcher's update of the
+  application held the home, so it was not converted) and needed a second restart before the new build's steps ran.
+- **Root cause:** the application runs the migration at its first moment and waited for the home's lease as a `Migration`; the launcher's
+  swap holds that lease until the application confirms, which comes after the migration, so the wait could only time out (30 seconds,
+  delaying the start) and nothing ran. Introduced by 33785f3503, which put the migration at the application's start under the lease.
+- **Fix:** a lease held by a swap is no holder to wait for: the steps run under the swap's hold in the same run; any other holder keeps
+  the held sentence.
+- **Verify:** `HomeMigrationTests.A_home_the_launchers_swap_holds_is_converted_in_the_same_run`; a verb's hold still says the next start.
+
 ## 2026-11-07 - Every `dev-line` run sat at `content.holds` after its done, with no reason said (LANDAUTO1)
 
 - **Symptom:** on the owner's install (main's 2925def910), Daoris's run 4f5f19f696a2, Shenora's d009d29af00c (its line not moved) and
