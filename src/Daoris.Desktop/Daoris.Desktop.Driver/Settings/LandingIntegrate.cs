@@ -1,9 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The install's half of integration, a branch rule's <c>integrate</c> (INTEGRATE1d; the integration design §4.1's <i>install's
-/// half</i>, §17.7): each key as written, null where absent, so its reader reads the design's <i>Absent</i> column
-/// (<see cref="Resolved"/>). <c>request</c> and <c>conflicts</c> are the unit's process, read under Current from here and under a
+/// The install's half of integration, a branch rule's <c>integrate</c>: each key as written, null where absent, so its reader
+/// resolves each absent key (<see cref="Resolved"/>). <c>request</c> and <c>conflicts</c> are the unit's process, read under Current from here and under a
 /// named workflow from its <c>integrate</c> step; the rest say how the line is integrated, and stay the rule's always.
 /// </summary>
 /// <param name="Request">Who requests: <see cref="Owner"/>, <see cref="Done"/> (through the rule's own <c>autoAccept</c>), or <see cref="Steward"/>.</param>
@@ -49,7 +48,7 @@ public sealed record LandingIntegrate(
     public static IReadOnlyList<string> Overlaps { get; } = [Warn, Wait];
 
     /// <summary>
-    /// Every absent key read as the design's <i>Absent</i> column: requested by the owner, each member merged, eight members where
+    /// Every absent key read as its default: requested by the owner, each member merged, eight members where
     /// gates run and one where none, in arrival order, no gates, an unconfirmed failure split either way, a conflict to the member's
     /// session, an overlap warned of; the line stays null, the repository's canonical one.
     /// </summary>
@@ -61,7 +60,7 @@ public sealed record LandingIntegrate(
     }
 
     /// <summary>
-    /// What an unconfirmed failure does for a unit a member reaches or not (the design §4.5): <see cref="Split"/> where absent, and
+    /// What an unconfirmed failure does for a unit a member reaches or not: <see cref="Split"/> where absent, and
     /// where <see cref="Land"/> is set on a line no whole-set verification runs on, since <c>land</c> is only ever the owner's choice
     /// backed by one.
     /// </summary>

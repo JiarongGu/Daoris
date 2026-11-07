@@ -3,30 +3,29 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>A brainstorm's minutes (D176 points 6 and 9): each generator's, the synthesis's, the challenge's and the whole request's.</summary>
+/// <summary>A brainstorm's minutes: each generator's, the synthesis's, the challenge's and the whole request's.</summary>
 public sealed record BrainstormMinutes(int Pass, int Synthesis, int Challenge, int Request)
 {
-    /// <summary>D176 point 9's proposed defaults: ten a generator, ten the synthesis, ten the challenge, thirty the request.</summary>
+    /// <summary>The proposed defaults: ten a generator, ten the synthesis, ten the challenge, thirty the request.</summary>
     public static BrainstormMinutes Default { get; } = new(10, 10, 10, 30);
 
-    /// <summary>The generators' minutes: the request's less the synthesis's and the challenge's, reserved from the start (point 6).</summary>
+    /// <summary>The generators' minutes: the request's less the synthesis's and the challenge's, reserved from the start.</summary>
     public int Generators => Request - Synthesis - Challenge;
 }
 
 /// <summary>
-/// The person's brainstorm policy (BRAINSTORM1b, D176 point 9): whether a brainstorm an agent asks for waits for the person's yes
+/// The person's brainstorm policy: whether a brainstorm an agent asks for waits for the person's yes
 /// (<c>ask</c>, the default) or is refused (<c>off</c>); the agents a brainstorm runs, in order, none named leaving each request to
 /// name its own; and its minutes.
 /// </summary>
 public sealed record BrainstormRule(string Mode, IReadOnlyList<string> Agents, BrainstormMinutes Minutes)
 {
-    /// <summary>What stands where nothing is set: D176 point 9's proposed defaults.</summary>
+    /// <summary>What stands where nothing is set: the proposed defaults.</summary>
     public static BrainstormRule Default { get; } = new(BrainstormKey.Ask, [], BrainstormMinutes.Default);
 }
 
 /// <summary>
-/// The brainstorm policy as <c>driver.json</c> keeps it, <c>brainstorms</c> (this machine's rule) and <c>workspaceBrainstorms</c>
-/// (FOUNDATION1 mod-iii): the key's shape, its limits and the sentences that say what does not read, read and written by the
+/// The brainstorm policy as <c>driver.json</c> keeps it, <c>brainstorms</c> (this machine's rule) and <c>workspaceBrainstorms</c>: the key's shape, its limits and the sentences that say what does not read, read and written by the
 /// settings' own parser. What the policy means, its resolution, edit and words, stays with the brainstorms
 /// (<see cref="BrainstormRules"/>), which answers through this for what it shares.
 /// </summary>
@@ -37,7 +36,7 @@ public static class BrainstormKey
 
     public static readonly IReadOnlyList<string> Modes = [Ask, Off];
 
-    /// <summary>The most agents one brainstorm runs (D176 point 9: at most four makers).</summary>
+    /// <summary>The most agents one brainstorm runs: at most four makers.</summary>
     public const int MostAgents = 4;
 
     /// <summary>The minutes' names, in the order they are kept.</summary>

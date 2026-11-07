@@ -4,16 +4,16 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A second-opinion rule (XAGENT1a, D155 point 3, the second-agent design §2.3): the reviewers, adapters in the person's
+/// A second-opinion rule: the reviewers, adapters in the person's
 /// order, and when they read work by themselves. With no reviewer it is <see cref="None"/>, a repository's <c>false</c>: no
 /// second opinion here, whatever its workspace says.
 /// </summary>
-/// <param name="Reviewers">Adapters, in the order they are tried; named by the person, never guessed (D23).</param>
+/// <param name="Reviewers">Adapters, in the order they are tried; named by the person, never guessed.</param>
 /// <param name="On">The occasions it reads at by itself, <c>landing</c> then <c>steps</c>; <c>landing</c> where the file names none.</param>
-/// <param name="Required">Whether work waits for the person when no reviewer can read it (§8.4).</param>
-/// <param name="Verify">Whether a reviewer may build and run what the repository declares safe, in its own copy (§5.3).</param>
+/// <param name="Required">Whether work waits for the person when no reviewer can read it.</param>
+/// <param name="Verify">Whether a reviewer may build and run what the repository declares safe, in its own copy.</param>
 /// <param name="Minutes">The wall-clock bound of one pass as written, 5 to 120; null where the file names none.</param>
-/// <param name="Recheck">Whether the commits a session makes in answer are read once more (§6.5); off only by JSON <c>false</c>.</param>
+/// <param name="Recheck">Whether the commits a session makes in answer are read once more; off only by JSON <c>false</c>.</param>
 public sealed record OpinionRule(
     IReadOnlyList<string> Reviewers, IReadOnlyList<string> On, bool Required = false, bool Verify = false, int? Minutes = null,
     bool Recheck = true)
@@ -29,14 +29,13 @@ public sealed record OpinionRule(
 }
 
 /// <summary>
-/// The second-opinion rule as <c>driver.json</c> keeps it, <c>opinions</c> and <c>workspaceOpinions</c> (XAGENT1a, D155 point 3;
-/// FOUNDATION1 mod-iii): the key's shape, its limits and the sentences that say what does not read, read and written by the
+/// The second-opinion rule as <c>driver.json</c> keeps it, <c>opinions</c> and <c>workspaceOpinions</c>: the key's shape, its limits and the sentences that say what does not read, read and written by the
 /// settings' own parser. What the rule means, its resolution, edit and words, stays with the second opinion (<see cref="OpinionRules"/>),
 /// which answers through this for what it shares.
 /// </summary>
 public static class OpinionKey
 {
-    /// <summary>The occasion before a chain's work in a repository lands (design §2.1).</summary>
+    /// <summary>The occasion before a chain's work in a repository lands.</summary>
     public const string Landing = "landing";
 
     /// <summary>The occasion before a chain's next step starts.</summary>
@@ -45,7 +44,7 @@ public static class OpinionKey
     /// <summary>The occasions a rule may name, in the order a rule keeps them — the CLI's <c>OPINION_OCCASIONS</c>.</summary>
     public static readonly IReadOnlyList<string> Occasions = [Landing, Steps];
 
-    /// <summary>One pass's bound where the rule names none (design §2.3): a starting point, not a measurement.</summary>
+    /// <summary>One pass's bound where the rule names none: a starting point, not a measurement.</summary>
     public const int DefaultMinutes = 20;
 
     private const int FewestMinutes = 5;

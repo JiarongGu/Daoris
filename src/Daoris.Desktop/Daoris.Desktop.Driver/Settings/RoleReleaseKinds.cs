@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>The kinds of a role's release: a stop's (§3.1 row 8) and, with STEWARDROLE1f, a transient hold's (row 11).</summary>
+/// <summary>The kinds of a role's release: a stop's and a transient hold's.</summary>
 public static class RoleReleaseKinds
 {
     public const string Stop = "stop";

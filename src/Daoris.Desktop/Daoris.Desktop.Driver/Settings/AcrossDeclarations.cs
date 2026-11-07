@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What <c>driver.json</c>'s <c>writeAcross</c> may hold (READ1, D107): the settings' own reading of a declared relationship, which
+/// What <c>driver.json</c>'s <c>writeAcross</c> may hold: the settings' own reading of a declared relationship, which
 /// the permissions' <see cref="AcrossRules.Problem"/> answers through, so the file reads, the verb refuses and a session's reach
 /// resolves one rule.
 /// </summary>

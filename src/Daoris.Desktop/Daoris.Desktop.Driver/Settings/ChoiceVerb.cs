@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One of the setting verbs of <c>daoris</c> that a subdomain above the settings owns (FOUNDATION1 mod-iii, the design §14.2 and §14.3:
-/// a verb file belongs to the subdomain whose acts it drives): the settings declare this port, the subdomain implements it beside the
+/// One of the setting verbs of <c>daoris</c> that a subdomain above the settings owns
+/// (a verb file belongs to the subdomain whose acts it drives): the settings declare this port, the subdomain implements it beside the
 /// rule it edits, and Loop wires the set into the terminal's world (<see cref="DriverChoicesWorld.Verbs"/>), so the settings' command
 /// names no type of theirs. Its words are the verb's own: what it says, the press it plans and the lines it adds to <c>list</c>.
 /// </summary>

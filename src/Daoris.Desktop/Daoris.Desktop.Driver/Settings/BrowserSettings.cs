@@ -5,8 +5,8 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What Daoris's browser does with extensions other software registered for Chrome on this machine
-/// (CHR7): <see cref="Offer"/> them for the person's approval, as the engine does, or
+/// What Daoris's browser does with extensions other software registered for Chrome on this machine:
+/// <see cref="Offer"/> them for the person's approval, as the engine does, or
 /// <see cref="Refuse"/> them before it starts.
 /// </summary>
 public static class ExtensionsSetting
@@ -16,7 +16,7 @@ public static class ExtensionsSetting
 }
 
 /// <summary>
-/// Which browser sessions drive and the person opens (BRW12, D84): Daoris's own, the engine it ships,
+/// Which browser sessions drive and the person opens: Daoris's own, the engine it ships,
 /// or the person's Edge on a profile of Daoris's.
 /// </summary>
 public static class BrowserChoice
@@ -26,7 +26,7 @@ public static class BrowserChoice
 }
 
 /// <summary>
-/// Where a link on Daoris's page opens (BRW7): in the system's browser, as a link always has, or in
+/// Where a link on Daoris's page opens: in the system's browser, as a link always has, or in
 /// Daoris's — whichever <see cref="BrowserChoice"/> the file chooses.
 /// </summary>
 public static class LinksSetting
@@ -35,16 +35,16 @@ public static class LinksSetting
     public const string Daoris = "daoris";
 }
 
-/// <summary>What the settings file holds, and why a file that was there gave only the defaults.</summary>
+/// <summary>What the settings file holds, and why a file that exists gave only the defaults.</summary>
 public sealed record BrowserSettingsRead(string Extensions, string Browser, string Links, string? Problem);
 
 /// <summary>
-/// Daoris's browser's settings (CHR7): <c>&lt;home&gt;/browser/settings.json</c>, which
+/// Daoris's browser's settings: <c>&lt;home&gt;/browser/settings.json</c>, which
 /// <c>daoris-browser</c> reads each time it starts, and whose <c>links</c> the page reads at each
-/// click (BRW7), so that one holds at once.
+/// click, so that one holds at once.
 /// </summary>
 /// <remarks>
-/// <para>The one writer of the file (ONEWAY1u): the window's Browser screen, Ask Daoris and the terminal call
+/// <para>The one writer of the file: the window's Browser screen, Ask Daoris and the terminal call
 /// <see cref="SetExtensions"/>, <see cref="SetBrowser"/> and <see cref="SetLinks"/>.</para>
 ///
 /// <para><b>An editor never writes over what it could not read</b>, and keeps what it has no field
@@ -67,7 +67,7 @@ public static class BrowserSettings
     }
 
     /// <summary>Set the extensions setting for the browser's next start.</summary>
-    /// <exception cref="HomeFileRefusal">A value that is neither, or a file this could not read; nothing was written.</exception>
+    /// <exception cref="HomeFileRefusal">A value that is neither, or a file this could not read; nothing is written.</exception>
     public static void SetExtensions(string home, string extensions)
     {
         if (extensions is not (ExtensionsSetting.Offer or ExtensionsSetting.Refuse))
@@ -80,7 +80,7 @@ public static class BrowserSettings
     }
 
     /// <summary>Choose the browser for the next time one is opened.</summary>
-    /// <exception cref="HomeFileRefusal">A value that is neither, or a file this could not read; nothing was written.</exception>
+    /// <exception cref="HomeFileRefusal">A value that is neither, or a file this could not read; nothing is written.</exception>
     public static void SetBrowser(string home, string browser)
     {
         if (browser is not (BrowserChoice.Daoris or BrowserChoice.Edge))
@@ -92,8 +92,8 @@ public static class BrowserSettings
         Set(home, "browser", browser);
     }
 
-    /// <summary>Choose where the page's links open (BRW7).</summary>
-    /// <exception cref="HomeFileRefusal">A value that is neither, or a file this could not read; nothing was written.</exception>
+    /// <summary>Choose where the page's links open.</summary>
+    /// <exception cref="HomeFileRefusal">A value that is neither, or a file this could not read; nothing is written.</exception>
     public static void SetLinks(string home, string links)
     {
         if (links is not (LinksSetting.System or LinksSetting.Daoris))
@@ -116,8 +116,8 @@ public static class BrowserSettings
                 ("file", FilePath(home)), ("problem", problem));
         }
 
-        // The edit made onto the file as it stands (KEEPALL1c, `JsonKeeping.Save`): its line ends kept, a key written twice
-        // refused, no edit nothing written. Written from the nodes, it wrote LF over a file in CRLF. The CLI's `setField` does the same.
+        // The edit made onto the file as it stands (`JsonKeeping.Save`): its line ends kept, a key written twice
+        // refused, no edit nothing written. Written from the nodes alone, it would write LF over a file in CRLF. The CLI's `setField` does the same.
         var read = file is null ? null : JsonFile.Serialize(file);
         file ??= [];
         file[field] = value;
@@ -132,7 +132,7 @@ public static class BrowserSettings
         JsonNode? file;
         try
         {
-            // A key written twice reads as the CLI's `JSON.parse` reads it, where a node threw at the first look (KEEPALL1c).
+            // A key written twice reads as the CLI's `JSON.parse` reads it (the last wins), where a node would throw at the first look.
             file = JsonNode.Parse(JsonKeeping.Once(AtomicFile.ReadText(path)));
         }
         catch (JsonException error)

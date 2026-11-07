@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What <c>browser</c> says (ONEWAY1u, D194 point 6): one words function per verb over what the command read and the operation's result,
+/// What <c>browser</c> says: one words function per verb over what the command read and the operation's result,
 /// the lines the TypeScript verb said (<c>fixtures/driver-files-text.json</c>). A file that could not be read is said first and the
 /// verb exits 1 with the default held.
 /// </summary>
