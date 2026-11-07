@@ -28,6 +28,41 @@ public sealed class BuildVersionTests : IDisposable
         Assert.Equal(HomeLastBuild.Numbered(Release), HomeLastBuild.Numbered(library));
     }
 
+    /// <summary>
+    /// The driver, the tests and a project with no build settings of its own (the contracts), as a development build makes them.
+    /// The commit is a compile input wherever it is stamped, so a development build that stamped it recompiled every project at
+    /// every switch between commits, the unchanged ones too; a publish passes <c>DaorisStamp</c> and stamps it.
+    /// </summary>
+    private static readonly System.Reflection.Assembly[] Built =
+        [typeof(UpdateRefusal).Assembly, typeof(BuildVersionTests).Assembly, typeof(Daoris.Contracts.RouteDeclaration).Assembly];
+
+    [Fact]
+    public void A_development_build_carries_the_fixed_dev_and_no_commit()
+    {
+        Assert.Equal($"{Release}+dev", UpdateRefusal.Running);
+        foreach (var assembly in Built)
+        {
+            var product = FileVersionInfo.GetVersionInfo(assembly.Location).ProductVersion;
+            Assert.True(product?.EndsWith("+dev", StringComparison.Ordinal), $"{assembly.GetName().Name} says {product}");
+        }
+    }
+
+    [Fact]
+    public void A_development_build_writes_no_source_link()
+    {
+        var sourceLink = new Guid("CC110556-A091-4D38-9FEC-25AB9A351A6A");
+        foreach (var assembly in Built)
+        {
+            var pdb = Path.ChangeExtension(assembly.Location, ".pdb");
+            Assert.True(File.Exists(pdb), $"{pdb} was not built");
+            using var stream = File.OpenRead(pdb);
+            using var provider = System.Reflection.Metadata.MetadataReaderProvider.FromPortablePdbStream(stream);
+            var reader = provider.GetMetadataReader();
+            var kinds = reader.CustomDebugInformation.Select(handle => reader.GetGuid(reader.GetCustomDebugInformation(handle).Kind));
+            Assert.DoesNotContain(sourceLink, kinds);
+        }
+    }
+
     [Fact]
     public void A_stage_of_the_running_release_is_no_going_back_while_a_delivery_is_unresolved_and_a_lower_one_is()
     {

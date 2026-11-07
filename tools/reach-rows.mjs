@@ -33,5 +33,13 @@ const canonVersion = (driverReaders) => ({
   why: 'the release version every desktop assembly is stamped with, which the driver test BuildVersionTests reads beside the stage manifest',
 });
 
-/** The rows, in REACH's order: a provider's declaration's files, its own sources, and the stamped version. */
-export const reachRows = (driverReaders) => [declarations(driverReaders), sources(driverReaders), canonVersion(driverReaders)];
+/** The build settings every .NET project builds with, each tree's importing them: where the commit is stamped (BUILDSTAMP1). */
+const rootBuild = (driverReaders) => ({
+  paths: ['Directory.Build.props'],
+  gates: [...driverReaders, 'service', 'service-process', 'devkit', 'code-map'],
+  why: "every .NET project builds with it, each tree's settings importing it: the desktop's, the service's and the devkit's suites, the headless host the family rehearsal drives, and the deployed shell, whose publish stamps the commit (BUILDSTAMP1)",
+});
+
+/** The rows, in REACH's order: a provider's declaration's files, its own sources, the stamped version and the stamp's settings. */
+export const reachRows = (driverReaders) =>
+  [declarations(driverReaders), sources(driverReaders), canonVersion(driverReaders), rootBuild(driverReaders)];

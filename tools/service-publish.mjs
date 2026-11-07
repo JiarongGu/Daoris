@@ -45,6 +45,12 @@ export const executableFor = (binary, rid) => (rid.startsWith('win') ? `${binary
 export const builtInto = (command, artifacts = null) => (artifacts ? `${command} --artifacts-path "${artifacts}"` : command);
 
 /**
+ * What every publish passes, so its assemblies carry `<version>+<commit>`: a development build reads no git and carries `+dev`
+ * (the root `Directory.Build.props`), since a commit stamped there recompiled every project at every switch.
+ */
+export const STAMPED = '-p:DaorisStamp=true';
+
+/**
  * The recipe: the `dotnet publish` that makes `host` a self-contained single-file executable in `folder`, run from the
  * workspace root; its builds into `artifacts` when one is given (`builtInto`, REHLANE2b).
  *
@@ -54,7 +60,7 @@ export const builtInto = (command, artifacts = null) => (artifacts ? `${command}
  */
 export function publishCommand(host, rid, folder, artifacts = null) {
   return builtInto(`dotnet publish "${host.project}" -c Release -r ${rid} --self-contained `
-    + `-p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o "${folder}"`, artifacts);
+    + `-p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true ${STAMPED} -o "${folder}"`, artifacts);
 }
 
 /**

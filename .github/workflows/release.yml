@@ -71,7 +71,7 @@ jobs:
       - name: Publish ${{ matrix.rid }}
         shell: bash
         run: |
-          dotnet publish src/Daoris.Devkit/Daoris.Devkit.Cli -c Release -r ${{ matrix.rid }}             -o "publish/${{ matrix.rid }}"
+          dotnet publish src/Daoris.Devkit/Daoris.Devkit.Cli -c Release -r ${{ matrix.rid }} -p:DaorisStamp=true -o "publish/${{ matrix.rid }}"
 
       # The name carries the platform because all three land in one release, and a bare `daoris-devkit`
       # downloaded from the wrong row is a confusing failure rather than an obvious one.

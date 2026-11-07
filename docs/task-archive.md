@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## BUILDSTAMP1 — the commit stamped only where a publish builds (2026-11-07)
+
+> **BUILDSTAMP1** (TREEPOOL1 round 5, row 0; R5.8): the SDK stamped the commit into every assembly, so every switch between commits recompiled every .NET project. Outcome: a root `Directory.Build.props`, imported by the desktop's, the service's and the devkit's, gives a development build no git query, no source link and `<version>+dev`; every publish recipe and the devkit's release pass `-p:DaorisStamp=true` and carry `<version>+<commit>` (a scratch publish read `0.0.1+<its commit>`). After a switch between two commits of one tree, both desktop test projects compiled 12 of 12 before and none after; an unchanged build none either way (`BuildVersionTests`, `publish-stamp.test.ts`).
+
 ## PERF3 — the agent sheet starts no process it read before (2026-11-07)
 
 > **PERF3** (driver, modules): `daoris agent list` took 3.5-5.5 s on the install, asking each binary its version and each account its sign-in on every read. Outcome: a binary's answer is kept in `reads.json` under the door's name with the path, size and last write of the files its question starts, and asked again only where they changed, at a press or after an install, update or pin (`BinaryVersion`, `BinaryReads`; the roster's in-memory map gone); `agent list` says each account's last reading as the page does and `list --again` asks; `reg.exe` and `docker` were the harness's own children, Daoris starting neither; `AgentSheetStartsTests` counts no start on a warm list and page read, one on a changed binary.

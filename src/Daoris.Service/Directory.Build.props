@@ -1,5 +1,7 @@
 <Project>
 
+  <Import Project="$(MSBuildThisFileDirectory)..\..\Directory.Build.props" />
+
   <!--
     Shared build settings for the service tree. Mirrors the family's convention so anyone moving
     between these repositories meets the same setup.

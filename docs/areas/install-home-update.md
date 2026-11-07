@@ -142,7 +142,13 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     size and SHA-256). It refuses a non-install, a swap under way, and a missing `--service` where the install carries its HTTP
     host. A running install is never refused. A publish in place removes anything staged. A build's version is the release's,
     `canon/canon.json`'s: the desktop's `Directory.Build.props` stamps it on every assembly and `build.json` names it, so the running
-    build, the launcher's read of `app/` and a stage's manifest read one number. (from D139, D233)
+    build, the launcher's read of `app/` and a stage's manifest read one number. The commit follows it (`0.0.1+<commit>`) only where
+    a publish builds: every publish recipe passes `-p:DaorisStamp=true`, which the root `Directory.Build.props`, imported by each
+    tree's, reads. A development build reads no git, writes no source link and carries `+dev`, so the System page's build fact
+    reads `dev`, and the instance hello and the store's recorded build (`store_version.build`) name one build for every development
+    commit; neither decides on it. Measured on both desktop test projects: after a switch between two commits of one tree, all 12 projects compiled with
+    the commit stamped (90 s) and none without it (20 s); an unchanged build compiles none either way (10 s); after 30 minutes
+    and after 7 hours of main, 7 and 9 of the 12 (TREEPOOL1's R5.8). (from D139, D233)
 
 **Updating**
 
