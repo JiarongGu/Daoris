@@ -50,6 +50,14 @@ public sealed class RoleActTests : IDisposable
         { "finish", """{"id":"s1","state":"completed","said":true}""" },
         { "retry", """{"quest":"q1"}""" },
         { "workflow", """{"repository":"engine","workflow":"review"}""" },
+        { "pause", """{"quest":"q1"}""" },
+        { "unpause", """{"quest":"q1"}""" },
+        { "done", """{"quest":"q1"}""" },
+        { "delete", """{"quest":"q1"}""" },
+        { "updatenow", "{}" },
+        { "updatecancel", "{}" },
+        { "land", """{"id":"s1"}""" },
+        { "clean", """{"id":"s1"}""" },
     };
 
     [Theory]
@@ -58,7 +66,10 @@ public sealed class RoleActTests : IDisposable
     {
         var (judge, key) = Appointed();
 
-        Assert.Equal(["drive", "undrive", "trees", "hold", "resume", "stop", "finish", "retry", "workflow"], StewardActs.Table.Keys);
+        Assert.Equal(
+            ["drive", "undrive", "trees", "hold", "resume", "stop", "finish", "retry", "workflow",
+             "pause", "unpause", "done", "delete", "land", "clean", "updatenow", "updatecancel"],
+            StewardActs.Table.Keys);
         var judged = Act(judge, key, act, form);
         Assert.True(judged.Covered, judged.Why);
     }
@@ -86,7 +97,6 @@ public sealed class RoleActTests : IDisposable
     /// <summary>§3.2: what is the owner's is never the steward's, whatever its form: closing a quest as done and a decline among them.</summary>
     [Theory]
     [InlineData("QUEST_DONE")]
-    [InlineData("done")]
     [InlineData("decline")]
     [InlineData("SET_TREES")]
     [InlineData("trees-off")]
@@ -458,6 +468,24 @@ public sealed class RoleActTests : IDisposable
         }
 
         public Task<IReadOnlyList<Consideration>> VerdictsAsync(CancellationToken ct) => Task.FromResult(Verdicts);
+
+        public Task PauseQuestAsync(string quest, CancellationToken ct)
+        {
+            Moved.Add("pause " + quest);
+            return Task.CompletedTask;
+        }
+
+        public Task UnpauseQuestAsync(string quest, string operation, CancellationToken ct)
+        {
+            Moved.Add("unpause " + quest);
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateAsync(string mode, CancellationToken ct)
+        {
+            Moved.Add(mode == UpdateMode.Now ? "update now" : "update cancel");
+            return Task.CompletedTask;
+        }
     }
 
     /// <summary>A judge whose catalogue staffs the steward with the terminal, its acts the table's eight.</summary>

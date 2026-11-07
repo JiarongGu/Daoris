@@ -25,6 +25,14 @@ public sealed class StewardCommandTests : IDisposable
     [InlineData("stop s1", "stop", """{"id":"s1","said":true}""")]
     [InlineData("finish s1", "finish", """{"id":"s1","state":"completed","said":true}""")]
     [InlineData("retry #q1", "retry", """{"quest":"q1"}""")]
+    [InlineData("pause #q1", "pause", """{"quest":"q1"}""")]
+    [InlineData("unpause q1", "unpause", """{"quest":"q1"}""")]
+    [InlineData("done q1", "done", """{"quest":"q1"}""")]
+    [InlineData("delete q1", "delete", """{"quest":"q1"}""")]
+    [InlineData("land s1", "land", """{"id":"s1"}""")]
+    [InlineData("clean s1", "clean", """{"id":"s1"}""")]
+    [InlineData("update now", "updatenow", "{}")]
+    [InlineData("update cancel", "updatecancel", "{}")]
     public void Each_verb_makes_its_route_s_exact_form(string words, string act, string form)
     {
         var read = StewardCommand.Read(words.Split(' '));
@@ -34,11 +42,12 @@ public sealed class StewardCommandTests : IDisposable
         Assert.Equal(form, JsonSerializer.Serialize(read.Value.Form));
     }
 
-    /// <summary>What is the owner's has no verb here: trees off, a decline, a done, a hand-over, words.</summary>
+    /// <summary>What is the owner's has no verb here: trees off, a decline, a hand-over, words, a forced clean or an update's later word.</summary>
     [Theory]
     [InlineData("trees engine off")]
     [InlineData("decline s1")]
-    [InlineData("done q1")]
+    [InlineData("clean s1 --force")]
+    [InlineData("update when-idle")]
     [InlineData("hand-over s1 --agent codex")]
     [InlineData("say s1 go on")]
     [InlineData("drive")]

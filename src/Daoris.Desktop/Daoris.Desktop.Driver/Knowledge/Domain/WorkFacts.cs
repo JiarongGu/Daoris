@@ -214,7 +214,8 @@ public enum WorkScope
 /// work. What the planner's <see cref="StartVerdict.Paused"/> names, and what *Resume* takes away.
 /// </summary>
 /// <param name="Id">The ask's or the quest's id, as <c>driver.json</c> spells it.</param>
-public sealed record PausedBy(WorkScope Scope, string Id)
+/// <param name="ByTheSteward">The pause was the steward's, a quest's alone: the sessions it stops say so in their own code, never the person's.</param>
+public sealed record PausedBy(WorkScope Scope, string Id, bool ByTheSteward = false)
 {
     /// <summary><c>ask</c> or <c>quest</c>: the scope's public spelling, which the page and the machine log read.</summary>
     public string Word => Scope == WorkScope.Ask ? "ask" : "quest";
@@ -231,7 +232,9 @@ public sealed record PausedBy(WorkScope Scope, string Id)
     /// <summary><see cref="Note"/> with its code and the work's id (LANG1a, the language design §4 rows 52–53).</summary>
     public Noted Noted => Scope == WorkScope.Ask
         ? Noted.Of(EndNoteCodes.StoppedPausedAsk, $"paused with ask `#{Id}`.", ("ask", Id))
-        : Noted.Of(EndNoteCodes.StoppedPausedQuest, $"paused with quest `#{Id}`.", ("quest", Id));
+        : ByTheSteward
+            ? Noted.Of(EndNoteCodes.StoppedPausedQuestSteward, $"the steward paused quest `#{Id}`.", ("quest", Id))
+            : Noted.Of(EndNoteCodes.StoppedPausedQuest, $"paused with quest `#{Id}`.", ("quest", Id));
 }
 
 

@@ -52,6 +52,17 @@ internal sealed class StewardRecord(StandingConfirmation owner, StandingState st
         }
     }
 
+    /// <summary>Whether the steward's last pause or resume of <paramref name="quest"/> this run is a pause, and nothing of the owner's on it since.</summary>
+    public bool StewardPaused(string quest)
+    {
+        lock (state.Gate)
+        {
+            var last = state.StewardDone.LastOrDefault(each => each.Quest is { } named && string.Equals(named, quest, StringComparison.OrdinalIgnoreCase)
+                                                               && each.Act is StewardActNames.Pause or StewardActNames.Unpause);
+            return last is { Act: StewardActNames.Pause } && !state.OwnerHolds(new RoleScope(OwnerKinds.Quest, quest));
+        }
+    }
+
     /// <summary>
     /// Whether a steward's act caused a start of <paramref name="quest"/> in <paramref name="repository"/> (§3.1a): the repository driven by
     /// the steward this run and not the owner's since, or a live pending operation of the steward's on the quest.

@@ -22,7 +22,9 @@ public static class AppointedRoles
     public static IReadOnlyList<string> StewardActs { get; } =
     [
         StewardActNames.Drive, StewardActNames.Undrive, StewardActNames.Trees, StewardActNames.Hold, StewardActNames.Resume,
-        StewardActNames.Stop, StewardActNames.Finish, StewardActNames.Retry, StewardActNames.Workflow, StewardActNames.Setup,
+        StewardActNames.Stop, StewardActNames.Finish, StewardActNames.Retry, StewardActNames.Workflow,
+        StewardActNames.Pause, StewardActNames.Unpause, StewardActNames.Done, StewardActNames.Delete,
+        StewardActNames.UpdateNow, StewardActNames.UpdateCancel, StewardActNames.Land, StewardActNames.Clean, StewardActNames.Setup,
     ];
 
     /// <summary>The acts <paramref name="kind"/> may hold; none for a kind this build does not know.</summary>
@@ -53,6 +55,20 @@ public static class StewardActNames
     public const string Finish = "finish";
     public const string Retry = "retry";
     public const string Workflow = "workflow";
+
+    /// <summary>A quest's work paused and resumed in the steward's own words (never the person's stop), its done, its delete.</summary>
+    public const string Pause = "pause";
+    public const string Unpause = "unpause";
+    public const string Done = "done";
+    public const string Delete = "delete";
+
+    /// <summary>A staged update installed now, or put away for that build.</summary>
+    public const string UpdateNow = "updatenow";
+    public const string UpdateCancel = "updatecancel";
+
+    /// <summary>A session's tree landed on its line, or cleaned unforced; neither pushes.</summary>
+    public const string Land = "land";
+    public const string Clean = "clean";
     public const string Setup = "setup";
 }
 

@@ -334,6 +334,7 @@ internal static class Program
             // the last swap's outcome is said once. Then the drain watches what is staged, holding the loop's starts.
             var updater = app.Services.GetRequiredService<InstallUpdater>();
             loop.Draining = () => updater.Draining;
+            loop.SayUpdate = (mode, token) => updater.SayAsync(mode, "steward");
             // An update's drain holds the pipe's presses that would add to what it waits on, a terminal told Daoris is updating; the close
             // it ends in is a stop's beginning, which holds every press (§6.3, DRAINHOLD1).
             var pipe = app.Services.GetRequiredService<InstancePipe>();

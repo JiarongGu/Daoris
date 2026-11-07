@@ -122,7 +122,10 @@ public static class EndNoteCodes
     // ——— A stop.
     public static readonly NoteCode StoppedPausedAsk = new("stopped.paused-ask", ["ask"]);
     public static readonly NoteCode StoppedPausedQuest = new("stopped.paused-quest", ["quest"]);
-    public static readonly NoteCode StoppedAbandonedAsk = new("stopped.abandoned-ask", ["ask"]);
+
+    // The steward's pause of a quest's work, a sibling of the person's above: its own code, so no record says the person paused it.
+    public static readonly NoteCode StoppedPausedQuestSteward = new("stopped.paused-quest-steward", ["quest"]);
+    public static readonly NoteCode StoppedAbandonedAsk =new("stopped.abandoned-ask", ["ask"]);
     public static readonly NoteCode StoppedAbandonedQuest = new("stopped.abandoned-quest", ["quest"]);
     public static readonly NoteCode StoppedCheckpointFinished = new("stopped.checkpoint-finished", []);
     public static readonly NoteCode StoppedCheckpointStopped = new("stopped.checkpoint-stopped", []);

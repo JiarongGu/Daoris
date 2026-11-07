@@ -490,6 +490,10 @@ public sealed class NoteSitesTests
         Line(new PausedBy(WorkScope.Ask, "a1").Noted, "paused with ask `#a1`.", "stopped.paused-ask");
         Line(new PausedBy(WorkScope.Quest, "q1").Noted, "paused with quest `#q1`.", "stopped.paused-quest");
         Assert.Equal("paused with quest `#q1`.", new PausedBy(WorkScope.Quest, "q1").Note);
+        // The steward's pause says the steward did it, in a code of its own that a reader of the person's stop reads as a stop all the same.
+        Line(new PausedBy(WorkScope.Quest, "q1", ByTheSteward: true).Noted, "the steward paused quest `#q1`.", "stopped.paused-quest-steward");
+        Assert.True(new PriorSession("s", null, "stopped") { NoteParts = new PausedBy(WorkScope.Quest, "q1", true).Noted.Parts }.StewardStopped);
+        Assert.False(new PriorSession("s", null, "stopped") { NoteParts = new PausedBy(WorkScope.Quest, "q1").Noted.Parts }.StewardStopped);
         Line(WorkAbandoning.NoteOf(WorkScope.Ask, "a1"), "ask `#a1` abandoned.", "stopped.abandoned-ask");
         Line(WorkAbandoning.NoteOf(WorkScope.Quest, "q1"), "quest `#q1` abandoned.", "stopped.abandoned-quest");
         Assert.Equal("q1", WorkAbandoning.NoteOf(WorkScope.Quest, "q1").Parts[0].Value("quest"));
