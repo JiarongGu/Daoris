@@ -12,6 +12,11 @@ public static class HeldNoteCodes
     public static readonly NoteCode AnswersPassed = new("answers.passed", []);
     public static readonly NoteCode AnswersKept = new("answers.kept", []);
 
+    // ——— A rule that asks the supervisor (`refer`): the supervisor the person staffed let the answer go on, its window past, which the
+    // count reads as the person's press is read; or no terminal holds the supervisor for the line's place, so it waits for the person.
+    public static readonly NoteCode AnswersSupervised = new("answers.supervised", []);
+    public static readonly NoteCode SupervisorUnreferred = new("supervisor.unreferred", []);
+
     // ——— A rule of the person's acted on the line: the count it reads (`counted`, a name) and what it stood at, the rule's bound, its place
     // and its act. Its own value names, since `count` and `at` are a number and a moment on every other note.
     public static readonly NoteCode SupervisorRule = new("supervisor.rule", ["counted", "n", "bound", "place", "do"]);

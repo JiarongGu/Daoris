@@ -51,6 +51,8 @@ public sealed class QuestionSupervisorDecisions
     private readonly SupervisorSweeps _sweeps;
     private readonly SupervisorTickets _tickets;
     private readonly SupervisorReads _reads;
+    private readonly SupervisorCourses _courses;
+    private readonly IDecisionAdmission _admission;
 
     public QuestionSupervisorDecisions(string home, IDecisionAdmission admission, MachineLog? log = null)
     {
@@ -60,7 +62,23 @@ public sealed class QuestionSupervisorDecisions
         _sweeps = new SupervisorSweeps(_book, log);
         _tickets = new SupervisorTickets(_book, admission);
         _reads = new SupervisorReads(_book);
+        _courses = new SupervisorCourses(_book, admission, log);
+        _admission = admission;
     }
+
+    /// <summary>Whether a holder is admitted for <paramref name="repository"/> now: the agent supervisor is on there (CONTEXTDRIVE1j).</summary>
+    public bool Admits(string? repository) => repository is not null && _admission.Admit(repository) is { Why: null, Generation: not null };
+
+    /// <summary>Keep a course act on a referred point (<see cref="SupervisorCourses.KeepAsync"/>).</summary>
+    public Task<SupervisorKept> CourseAsync(SupervisorCourse course, ReferredPoint point, DateTimeOffset now, CancellationToken ct = default) =>
+        _courses.KeepAsync(course, point, now, ct);
+
+    /// <summary>Release each held go-on whose moment came (<see cref="SupervisorCourses.ReleaseAsync"/>).</summary>
+    public Task<IReadOnlyList<SupervisorState>> ReleaseCoursesAsync(CourseLine line, DateTimeOffset now, CancellationToken ct = default) =>
+        _courses.ReleaseAsync(line, now, ct);
+
+    /// <summary>Whether a referred point waits for the holder (<see cref="SupervisorCourses.Waits"/>).</summary>
+    public bool Refers(string session, string point) => _courses.Waits(session, point);
 
     /// <summary>Run <paramref name="body"/> under <paramref name="session"/>'s decision lock.</summary>
     public Task<T> UnderAsync<T>(string session, Func<Task<T>> body, CancellationToken ct = default) => _book.UnderAsync(session, body, ct);
@@ -109,10 +127,11 @@ public sealed class QuestionSupervisorDecisions
     /// <summary>The start's sweep of the files the last run left (<see cref="SupervisorSweeps.SweepAtStart"/>).</summary>
     public IReadOnlyList<string> SweepAtStart(DateTimeOffset now) => _sweeps.SweepAtStart(now);
 
-    /// <summary>The owner's <b>Overrule</b> (<see cref="SupervisorReleasing.OverruleAsync"/>).</summary>
-    public Task<SupervisorState?> OverruleAsync(
+    /// <summary>The owner's <b>Overrule</b> of a course decision (<see cref="SupervisorCourses.OverruleAsync"/>) or an answer (<see cref="SupervisorReleasing.OverruleAsync"/>).</summary>
+    public async Task<SupervisorState?> OverruleAsync(
         string session, string decision, SupervisorTakeBack takeBack, DateTimeOffset now, CancellationToken ct = default) =>
-        _releasing.OverruleAsync(session, decision, takeBack, now, ct);
+        await _courses.OverruleAsync(session, decision, now, ct).ConfigureAwait(false)
+        ?? await _releasing.OverruleAsync(session, decision, takeBack, now, ct).ConfigureAwait(false);
 
     /// <summary>The owner's words named a question (<see cref="SupervisorReleasing.SupersedeAsync"/>).</summary>
     /// <returns>How many moved.</returns>
@@ -150,8 +169,8 @@ public sealed class QuestionSupervisorDecisions
     /// <summary>The moment a held decision of a session goes on (<see cref="SupervisorReads.HeldUntil"/>).</summary>
     public DateTimeOffset? HeldUntil(string session) => _reads.HeldUntil(session);
 
-    /// <summary>The soonest moment a held decision goes on, across every session (<see cref="SupervisorReads.NextGoesOn"/>).</summary>
-    public DateTimeOffset? NextGoesOn() => _reads.NextGoesOn();
+    /// <summary>The soonest moment a held decision or go-on goes on, across every session (<see cref="SupervisorReads.NextGoesOn"/>).</summary>
+    public DateTimeOffset? NextGoesOn() => new[] { _reads.NextGoesOn(), _courses.NextGoesOn() }.Min();
 
     /// <summary>The sessions a held decision holds now (<see cref="SupervisorReads.HeldSessions"/>).</summary>
     public IReadOnlySet<string> HeldSessions() => _reads.HeldSessions();

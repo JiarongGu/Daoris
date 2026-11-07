@@ -44,7 +44,7 @@ public sealed class SupervisorRulesTests
         {
             var place = each!["place"]!.GetValue<string>();
             var held = each["held"] is { } given ? Sets(given) : [new SupervisorRuleSet("machine", 1, Rules(Fixture["base"], "machine"))];
-            var world = new SupervisorRuleWorld(Roles, each["referOffered"]?.GetValue<bool>() ?? false);
+            var world = new SupervisorRuleWorld(Roles);
             var refusal = SupervisorRules.Judge(place, each["revision"]!.GetValue<long>(), Rules(each["rules"], place), held, world);
             var expect = each["expect"]?.GetValue<string>();
             var name = each["name"]!.GetValue<string>();
