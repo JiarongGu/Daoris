@@ -100,7 +100,8 @@ public sealed class LookWorkBenchProcessTests(ITestOutputHelper output) : IAsync
         {
             var run = $"r{at:D2}";
             RunHome.Bind(home, run, digest, now.AddMinutes(-RunCount + at));
-            units.Add(RunHome.QuestUnit(RunHome.Quest(run, at < 2 * TreeCount ? "Taken" : "Done")));
+            // The runs with a tree are done, so their content, opinion and look are read; ten more work on; the rest are done with no branch.
+            units.Add(RunHome.QuestUnit(RunHome.Quest(run, at is >= TreeCount and < 2 * TreeCount ? "Taken" : "Done")));
             if (at >= TreeCount) continue;
             var (session, tree, _) = _trees[at];
             units.Add(RunHome.Branch($"branch-{at}", TreeTips.Branch(tree)!, now.AddHours(-1), [run]) with { Executors = [session] });
@@ -127,6 +128,7 @@ public sealed class LookWorkBenchProcessTests(ITestOutputHelper output) : IAsync
         await PassAsync(whole: true);
         var (whole, wholeMs, _) = await CountedAsync("a whole pass where nothing moved", () => PassAsync(whole: true));
         var (wake, _, _) = await CountedAsync("a wake's pass where nothing moved", () => PassAsync(whole: false));
+        Assert.Equal(NodeStates.Active, new NodeRecordFiles(home).Read(RunUnits.IdOf("r00"))!.Statuses["look"].State);
 
         var moved = _trees[3].Tree;
         await File.WriteAllTextAsync(Path.Combine(moved, "moved.txt"), "moved\n");
@@ -137,8 +139,14 @@ public sealed class LookWorkBenchProcessTests(ITestOutputHelper output) : IAsync
         Assert.Empty(whole.Starts);
         Assert.Empty(wake.Starts);
         Assert.True(wholeMs <= StageBudget.TotalMilliseconds, $"a whole pass took {wholeMs} ms where nothing moved");
-        Assert.All(one.Starts, start => Assert.EndsWith(Path.GetFileName(moved), start, StringComparison.Ordinal));
+        var others = _trees.Select(each => each.Tree).Where(tree => tree != moved).Select(Path.GetFileName).ToList();
+        Assert.DoesNotContain(one.Starts, start => others.Any(other => start.EndsWith(other!, StringComparison.Ordinal)));
+        Assert.True(one.Starts.Count <= MovedTreeStarts, one.Report("a whole pass after one tree moved"));
     }
+
+    // The moved tree's gates read again for its run's opinion and look, as a landing door reads them, with its repository's origin and
+    // refs: measured at 12, held there.
+    private const int MovedTreeStarts = 12;
 
     [Fact]
     public async Task A_staged_edit_is_read_at_the_next_look_and_one_not_staged_once_the_kept_read_is_old()
