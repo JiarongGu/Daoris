@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where Daoris reads a done's evidence, and why it reads it there: the tree, how the commit was chosen
+/// Where Daoris reads a done's evidence, and why it reads it there: the tree, how the commit is chosen
 /// (<see cref="EvidenceCodes.How"/>), the commit (the tree's HEAD where none is named), the tree's base, and the session
 /// whose end it reads.
 /// </summary>

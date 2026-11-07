@@ -16,7 +16,7 @@ public enum ContainedKind
     Piece,
 }
 
-/// <summary>Why a start was not contained (the machine log's <c>agent.contained</c> <c>why</c>).</summary>
+/// <summary>Why a start is not contained (the machine log's <c>agent.contained</c> <c>why</c>).</summary>
 public static class ContainedWhy
 {
     /// <summary>No launcher is laid out beside the home: a workspace build, a test's home.</summary>
@@ -226,7 +226,7 @@ public sealed class AgentJobs : IDisposable
 }
 
 /// <summary>
-/// One start's containment: whether it was made through the launcher, why not where it was not, and, for an uncontained one,
+/// One start's containment: whether it is made through the launcher, why not where it is not, and, for an uncontained one,
 /// its share of its process's open event, let go as its process ends (<see cref="Lives"/>) or as it is disposed unstarted.
 /// </summary>
 public sealed class AgentStart : IDisposable

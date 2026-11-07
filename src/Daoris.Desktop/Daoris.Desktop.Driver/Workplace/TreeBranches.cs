@@ -323,7 +323,7 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
     /// (<c>update-ref</c>), so a branch moved in between is refused by git itself. Like the branch form, it writes one ref and
     /// touches no checkout.</para>
     ///
-    /// <para><b>A branch whose pull request was merged is not moved on</b>: the content proof on the recorded tip, the
+    /// <para><b>A branch whose pull request is merged is not moved on</b>: the content proof on the recorded tip, the
     /// same one the clean-up and the hand-off make, finds its work on the line, and commits added now would ride no pull
     /// request.</para>
     /// </remarks>
@@ -350,8 +350,8 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
         var (_, headOut, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}^{{commit}}"], ct)
             .ConfigureAwait(false);
         var head = replayed ?? pinned ?? headOut.Trim();
-        // What the session's work must grow from: the tip the record says was squashed where it says one, else the tip
-        // the branch was made or last moved at, its commits the session's own; a replay onto that tip grows from it.
+        // What the session's work must grow from: the tip the record gives as squashed where it gives one, else the tip
+        // the branch got when made or last moved, its commits the session's own; a replay onto that tip grows from it.
         var grewFrom = LandingAdvance.GrewFrom(recorded, squash is not null, replayed is not null);
 
         // Each fact read only where the one before it allowed an advance, in the order the refusals are said.

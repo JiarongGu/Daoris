@@ -95,7 +95,7 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
     /// where the list said it held none changed since the list, and is kept. Never following a link inside it.
     /// </summary>
     /// <param name="listedOwn">Whether the list the person read said it holds files of its own.</param>
-    /// <param name="listedClass">The class the list said it was (<see cref="ListedClass"/>); one that reads another now is kept,
+    /// <param name="listedClass">The class the list gave (<see cref="ListedClass"/>); one that reads another now is kept,
     /// <c>changed</c> (Codex's read of the branch, finding 4). Null from a door that lists no class, which compares none.</param>
     /// <param name="listedRef">The recovery ref the list named its tip on; one that reads another now is kept, <c>changed</c>.</param>
     internal (long Bytes, string? Kept) RemoveEarly(string folder, bool listedOwn, string? listedClass = null, string? listedRef = null)

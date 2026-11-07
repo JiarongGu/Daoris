@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>A push batch's answer: whether every update may pass, the code, the one line a refusal says, and whether the grant was used.</summary>
+/// <summary>A push batch's answer: whether every update may pass, the code, the one line a refusal says, and whether the grant is used.</summary>
 /// <param name="Allowed">Whether the whole batch may pass; one refused update refuses it all, before any ref moves.</param>
 /// <param name="Code"><c>access</c>, <c>granted</c>, or a refusal's code: <c>grant-bound</c>, <c>dangerous-denied</c>.</param>
 /// <param name="Line">The one line a refusal writes where git prints it; null where the batch passes.</param>

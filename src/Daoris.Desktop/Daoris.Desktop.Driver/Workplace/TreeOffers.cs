@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What an ended session's own tree offers to land: the commits on it no branch of the person's holds, by D88's
+/// What an ended session's own tree offers to land: the commits on it no branch of the person's holds, by the content
 /// proof, whatever the session's ending, with the branch and the tree they are on. The press is the review's Accept, at any
 /// of its doors, so everything a landing checks is checked there; this only says there is work a press would land.
 /// </summary>

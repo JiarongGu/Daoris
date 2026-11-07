@@ -27,7 +27,7 @@ public sealed record TreesAsk(TreesLook Look)
     public bool Yes { get; init; }
 }
 
-/// <summary>What <c>daoris tree land --entry &lt;id&gt; | --ask &lt;id&gt;</c> was asked.</summary>
+/// <summary>What <c>daoris tree land --entry &lt;id&gt; | --ask &lt;id&gt;</c> asks.</summary>
 /// <param name="IsAsk">The ask's one Accept (<c>--ask</c>, the page's <c>LAND_ASK</c>); else the entry's (<c>--entry</c>, <c>LAND_ENTRY</c>).</param>
 /// <param name="Id">The entry's key, or the ask's id.</param>
 /// <param name="LeaveOut">The parts the person leaves out (<c>--leave-out &lt;session&gt;</c>, once each), as the page sends them.</param>
@@ -226,7 +226,7 @@ public static class TreesCommand
     /// <summary>Bringing up to date's list looked at none, since none of the checkouts it took holds a branch of Daoris's.</summary>
     public static string NoneHeld(TreesAsk ask) => $"trees: no repository{Of(ask)} with a checkout here holds a branch of Daoris's.";
 
-    /// <summary>The press a list suggests, carrying the list's own scope and its workspace, so <c>--yes</c> takes what was listed.</summary>
+    /// <summary>The press a list suggests, carrying the list's own scope and its workspace, so <c>--yes</c> takes what is listed.</summary>
     public static string Press(TreesAsk ask) =>
         $"daoris tree {(ask.Look == TreesLook.Clean ? "clean" : "sync")}"
         + (ask.Repository is { } named ? $" --repository {named}" : "")

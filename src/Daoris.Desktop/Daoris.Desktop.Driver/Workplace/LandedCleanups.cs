@@ -78,7 +78,7 @@ internal sealed class LandedCleanups(
                 .Select(item => item.Branch).ToList();
             var judged = await JudgeLandedAsync(root, repository, RemoteTarget.Workspace(workspace), entries, staying, stale: null, ct)
                 .ConfigureAwait(false);
-            // Each row says why its pull request was not asked about, where it would have been.
+            // Each row says why its pull request is not asked about, where it would be.
             // And whether its quest is closed, as the caller read the service once.
             landed.AddRange(judged.Select(each => each.Item with
             {
@@ -114,7 +114,7 @@ internal sealed class LandedCleanups(
     /// 🔴 <b>Judged over the whole set, then again right before each goes</b>, because the list is a fact about a
     /// moment and "inside another landed branch" is a fact about the set: the branches that are inside another
     /// go before the one they are inside, and each re-judgment proves that one again. Removal deletes exactly
-    /// the branch judged, only while it is the commit it was judged at (<c>git update-ref -d</c> with that id),
+    /// the branch judged, only while it is the commit it is judged at (<c>git update-ref -d</c> with that id),
     /// in the repository's own checkout — no working tree, no other ref, and never a remote branch.
     /// </remarks>
     /// <param name="only">The branches the person saw listed to go, as <c>repository:branch</c>; null for every one the proof clears now.</param>
@@ -264,7 +264,7 @@ internal sealed class LandedCleanups(
         internal string? Line { get; init; }
 
         /// <summary>
-        /// What its removal rests on, as its proof returned it: the form of the line it was proved on, or the
+        /// What its removal rests on, as its proof returned it: the form of the line it is proved on, or the
         /// landing it is inside at the tip judged with what that one rests on, each at the commit read; its delete verifies exactly these.
         /// </summary>
         internal IReadOnlyList<(string Ref, string Commit)> Rests { get; init; } = [];
@@ -328,7 +328,7 @@ internal sealed class LandedCleanups(
                 proof = proof with
                 {
                     Kind = LandedKind.PullRequest, Where = verdict.Form, Files = [], Detail = null, Judgeable = false,
-                    // The form its merge commit was found on, at the commit read.
+                    // The form its merge commit is found on, at the commit read.
                     Rests = LandedProofs.RestsOn(forms.FirstOrDefault(form => form.Name == verdict.Form)),
                 };
             }

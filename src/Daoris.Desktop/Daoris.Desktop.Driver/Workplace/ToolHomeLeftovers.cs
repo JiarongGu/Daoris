@@ -153,7 +153,7 @@ public static class ToolHomeLeftovers
     /// </summary>
     private static string? ConversationKeeps(string home, string session)
     {
-        // A binding the store holds (FOUNDATION1 z-iii) is a conversation kept as a file was, so the file's presence is no longer all of it.
+        // A binding the store holds is a conversation kept just as a file is, so the file's presence is no longer all of it.
         var (kept, reads) = WorkplaceHarnessBindings.Current.Open(home).Kept(session);
         return !kept ? null : reads ? "resumable" : "record-unread";
     }

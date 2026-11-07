@@ -206,7 +206,7 @@ public sealed class LandedBranches(string home)
     });
 
     /// <summary>
-    /// The withdrawal's write (<see cref="LandedWithdrawals"/>, its only caller): that standing landing becomes a trace saying it was
+    /// The withdrawal's write (<see cref="LandedWithdrawals"/>, its only caller): that standing landing becomes a trace saying it is
     /// withdrawn, why, and the recovery ref its commits stay on. Applied to that landing alone (<see cref="SameLanding"/>), so a new landing of
     /// the same name keeps its standing, and never over a trace, which is never judged again.
     /// </summary>
@@ -243,7 +243,7 @@ public sealed class LandedBranches(string home)
     /// answer, and a failure older than it is no longer the latest word.
     /// </summary>
     /// <remarks>
-    /// Occasions ask at once, and the slower request can return last, so an answer is kept only where it was asked no
+    /// Occasions ask at once, and the slower request can return last, so an answer is kept only where it is asked no
     /// earlier than the kept one, judged under the record's lock; and a kept <c>completed</c>, which is final, is never
     /// replaced. A failure asked after the answer stays the latest word beside it.
     /// </remarks>

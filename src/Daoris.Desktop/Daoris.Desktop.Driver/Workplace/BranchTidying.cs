@@ -144,7 +144,7 @@ public sealed class BranchTidying(string home)
         RefSnapshot.Take(row.Root!);
         // A session lock whose session no longer holds its tree goes first, since the tidy refuses a locked tree.
         await trees.LetGoUnheldLocksAsync(row.Root!, row.Repository, row.Workspace, inUse, ct).ConfigureAwait(false);
-        // The folders under its trees that are no tree first, so a branch whose folder one was
+        // The folders under its trees that are no tree first, so a branch whose folder is one
         // goes in the same look rather than being kept as unreadable.
         strayed(await trees.TidyStraysAsync(row.Root!, row.Repository, row.Workspace, inUse, Clock(), ct).ConfigureAwait(false));
         return await trees.TidyEmptyAsync(row.Root!, row.Repository, row.Workspace, inUse, ct).ConfigureAwait(false);
@@ -404,7 +404,7 @@ public sealed class BranchTidying(string home)
     };
 
     /// <summary>
-    /// <c>branch.kept</c>'s data: the cause is a field only where there is one, so what was read before it reads the same.
+    /// <c>branch.kept</c>'s data: the cause is a field only where there is one, so what read it before reads the same.
     /// The code only, never the sentence's path.
     /// </summary>
     private static (string Key, object? Value)[] Kept(string repository, string workspace, string? branch, string why, string? cause)

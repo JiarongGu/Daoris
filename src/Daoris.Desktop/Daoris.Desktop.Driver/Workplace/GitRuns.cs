@@ -140,7 +140,7 @@ internal static class GitRuns
         string root, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string>? environment, TimeSpan? timeout,
         string? input, CancellationToken ct)
     {
-        // A git that may move a ref drops what this flow was told, before it starts as well as after it ends.
+        // A git that may move a ref drops what this flow is told, before it starts as well as after it ends.
         GitFacts.Ran(arguments);
         // Counted, classified and timed at the one seam, which raises Started; the arguments go on as they came.
         return GitLaunch.LaunchAsync(

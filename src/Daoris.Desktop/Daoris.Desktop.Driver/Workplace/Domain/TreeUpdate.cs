@@ -58,7 +58,7 @@ public static class TreeStartWords
     public static string HoldsNone(string line) => $"Before this turn Daoris judged this tree against `{line}`, and the line holds none of its work.";
 
     /// <summary>
-    /// A step the person went on with was brought up to date with its source's new submission: <paramref name="kept"/>
+    /// A step the person went on with is brought up to date with its source's new submission: <paramref name="kept"/>
     /// of its own commits replayed onto <paramref name="commit"/>, as a tree is replayed onto the line.
     /// </summary>
     public static string OntoSubmission(string source, string commit, int kept) =>
@@ -67,7 +67,7 @@ public static class TreeStartWords
         + "you made have new ids.";
 
     /// <summary>
-    /// The step's tree was left exactly as it was: a conflict in git's words, or why it was left; nothing else was
+    /// The step's tree is left exactly as it is: a conflict in git's words, or why it is left; nothing else is
     /// brought up to date, the line included. A conflict is the person's to resolve, and the session is told to say so.
     /// </summary>
     public static string NotOntoSubmission(string source, string commit, string why, bool conflict) =>
@@ -77,12 +77,12 @@ public static class TreeStartWords
             : $"Tell the person why, and build nothing on `{source}`'s new work until the tree holds it.");
 
     /// <summary>
-    /// The host names no commit for the new submission: only the line was synced, as a carry-on's start is. The end of the session that said the <c>ready</c>
-    /// posts its commit whether or not evidence was asked, so none is named only by an older host, or where no session's end read it (a ready no session said, or a tree git could not read then).
+    /// The host names no commit for the new submission: only the line is synced, as a carry-on's start is. The end of the session that said the <c>ready</c>
+    /// posts its commit whether or not evidence is asked, so none is named only by an older host, or where no session's end read it (a ready no session said, or a tree git could not read then).
     /// </summary>
     /// <param name="broughtForward">
     /// A bring-forward's carry-on: its source may never have moved, so no new submission is claimed, and the words say only
-    /// the line was brought up to date.
+    /// the line is brought up to date.
     /// </param>
     public static string NoSubmissionCommit(string source, bool broughtForward = false) => broughtForward
         ? $"Daoris could not tell whether `{source}` moved since this tree last held its work: the service names no commit for its "
@@ -92,7 +92,7 @@ public static class TreeStartWords
           + $"it, or a submission whose commit no session's end read), so only the line was brought up to date. Read what `{source}` now holds "
           + "before you build on its work.";
 
-    /// <summary>The new submission's commit is not in this repository: only the line was synced.</summary>
+    /// <summary>The new submission's commit is not in this repository: only the line is synced.</summary>
     /// <param name="broughtForward">As <see cref="NoSubmissionCommit"/>'s.</param>
     public static string SubmissionNotHere(string source, string commit, bool broughtForward = false) => broughtForward
         ? $"Daoris could not tell whether `{source}` moved since this tree last held its work: its submission's commit (`{commit}`) is not "

@@ -217,7 +217,7 @@ internal sealed class TreeDelivering
 
     /// <summary>
     /// What a landing says that waited for its tree behind its delivery's other starter, which delivered it meanwhile (a press and a pass at
-    /// once): where the work is, and that nothing more was landed. Kept as <see cref="LandingCode.Already"/>, as LANDRACE1's is.
+    /// once): where the work is, and that nothing more is landed. Kept as <see cref="LandingCode.Already"/>.
     /// </summary>
     public static TreeLanding Meanwhile(DeliveryRecord delivered)
     {
@@ -300,7 +300,7 @@ internal sealed class TreeDelivering
     public async Task<string?> BeginMergeAsync(string line, string commit)
     {
         await SeamAsync(DeliveryPhases.Prepared).ConfigureAwait(false);
-        // A merge going on after its press left its request waiting was prepared before.
+        // A merge going on after its press left its request waiting is prepared already.
         if (_open == DeliveryPhases.Prepared) End(DeliveryPhases.Prepared, DeliveryOutcomes.Done, commit, $"the commit merged into `{line}` is {commit}");
         return Begin(DeliveryPhases.RefWritten, $"`refs/heads/{line}` to hold {commit}");
     }

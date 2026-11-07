@@ -7,8 +7,8 @@ public sealed record RecoveryRef(string Repository, string Ref)
     public string? Commit { get; init; }
 
     /// <summary>
-    /// When the ref was kept: the journal's act that kept it; for a ref no record names, its reflog's first entry, else its
-    /// commit's date (<c>committerdate</c>), at or before it was made. Null where none was read.
+    /// When the ref is kept: the journal's act that kept it; for a ref no record names, its reflog's first entry, else its
+    /// commit's date (<c>committerdate</c>), at or before it is made. Null where none is read.
     /// </summary>
     public DateTimeOffset? Dated { get; init; }
 

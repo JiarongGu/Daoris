@@ -44,7 +44,7 @@ public static class CarriedBy
 }
 
 /// <summary>
-/// What a row says where a kept answer does not clear a branch, and why nothing was asked. Nothing
+/// What a row says where a kept answer does not clear a branch, and why nothing is asked. Nothing
 /// goes on any of them.
 /// </summary>
 public static class PullRequestCodes

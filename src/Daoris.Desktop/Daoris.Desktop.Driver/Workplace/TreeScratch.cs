@@ -11,7 +11,7 @@ internal static class TreeScratch
 {
     /// <summary>
     /// The folders a build or an install writes and writes again: an ignored path under one of these, which the
-    /// registered checkout holds too, goes with the tree unasked, as D102's SQUASHTIDY1c rule always let it. Matched by any
+    /// registered checkout holds too, goes with the tree unasked. Matched by any
     /// path segment, so <c>src/app/node_modules/</c> is one. Any other shared ignored folder is looked into
     /// (<see cref="WrittenSince"/>), since a session's own scratch (<c>devtools/.tmp</c>) lives in such a folder too.
     /// </summary>
@@ -37,7 +37,7 @@ internal static class TreeScratch
         path.Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries).Any(MadeFolders.Contains);
 
     /// <summary>
-    /// The globs a repository declares as its own output: <c>integration.scratch</c>, the key D215 reserves for what the
+    /// The globs a repository declares as its own output: <c>integration.scratch</c>, the key reserved for what the
     /// landing's tidy may take with a tree. A list of files the tidy deletes is accepted as a command is, so
     /// it is read from the blob the owner accepted for <paramref name="repository"/>'s integration alone, and only where that blob is the
     /// declaration at <paramref name="line"/>'s tip: never the checkout's working file, nor the tree, which holds the session's own copy.

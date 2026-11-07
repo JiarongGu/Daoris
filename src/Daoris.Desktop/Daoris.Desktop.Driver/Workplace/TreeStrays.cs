@@ -4,7 +4,7 @@ using static Daoris.Driver.TreeGit;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a folder under a repository's trees that is no tree of its own was to the look: the machine log's
+/// What a folder under a repository's trees that is no tree of its own is to the look: the machine log's
 /// <c>branch.tidied</c> <c>kind</c>, beside the clean-up's kinds.
 /// </summary>
 public static class StrayKind
@@ -12,7 +12,7 @@ public static class StrayKind
     /// <summary>A folder git lists no tree in: one a removed tree left, a half-removed tree's, or one a session wrote beside its tree.</summary>
     public const string Folder = "stray";
 
-    /// <summary>A tree whose opening was cut off: locked by an open that no running process holds.</summary>
+    /// <summary>A tree whose opening is cut off: locked by an open that no running process holds.</summary>
     public const string Opening = "opening";
 }
 
@@ -40,8 +40,8 @@ public sealed record StrayResult(string Folder, string Kind, bool Moved, string 
 }
 
 /// <summary>
-/// The look's own tidy of the folders under a repository's trees that are no tree of its own (AUTOTIDY2c, OPENCUT1; D88's
-/// AUTOTIDY2c note): each folder git lists no tree in, and each tree whose opening was cut off, moved aside whole into the trees
+/// The look's own tidy of the folders under a repository's trees that are no tree of its own:
+/// each folder git lists no tree in, and each tree whose opening got cut off, moved aside whole into the trees
 /// home's <c>.tidied</c>, as the look moves a tree's folder, so nothing in it is lost before the purge's fourteen days.
 /// </summary>
 /// <remarks>
@@ -79,7 +79,7 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
     /// <summary>A folder judged to go: what it is, and for a cut-off opening its branch, the commit judged, its lock's reason and why.</summary>
     private sealed record Found(string Folder, string Kind, string? Branch = null, string? Tip = null, string? Reason = null, string? Clause = null)
     {
-        /// <summary>The other ref that held the branch's tip when it was judged, at its commit then: the delete verifies it.</summary>
+        /// <summary>The other ref that held the branch's tip when it is judged, at its commit then: the delete verifies it.</summary>
         public (string Ref, string Commit)? Holder { get; init; }
     }
 
@@ -175,7 +175,7 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
     }
 
     /// <summary>
-    /// A tree git lists whose opening was cut off: a session tree's folder, locked by an opening no running process holds,
+    /// A tree git lists whose opening is cut off: a session tree's folder, locked by an opening no running process holds,
     /// on its own branch or none yet, whose branch holds no commit another ref does not. Null where it is any other tree.
     /// </summary>
     private static async Task<Found?> OpeningAsync(string root, string folder, string name, WorktreeEntry entry, CancellationToken ct)

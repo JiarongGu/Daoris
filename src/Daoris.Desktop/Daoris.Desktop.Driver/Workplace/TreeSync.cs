@@ -173,7 +173,7 @@ internal sealed class TreeSync(
     /// <param name="fetch">Whether to fetch first — the terminal's one command does; the screen's press acts on what its list fetched.</param>
     /// <param name="inUseNow">
     /// The trees sessions running or waiting hold, asked again while a repository's trees are held for its replays
-    /// (<see cref="TreeLock"/>): a session a driver opened since <paramref name="inUse"/> was read is then seen.
+    /// (<see cref="TreeLock"/>): a session opened by a driver since the read of <paramref name="inUse"/> is then seen.
     /// Every door with a service hands it; without it the replays judge by <paramref name="inUse"/> alone.
     /// </param>
     /// <param name="scope">

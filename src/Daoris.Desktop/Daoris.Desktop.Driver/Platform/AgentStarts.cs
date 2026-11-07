@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// the harness's, and a kill of it ends the harness through the launcher's own job.
 /// </summary>
 /// <remarks>
-/// <para><b>Best effort</b>: a start that cannot be contained is made as it was, logged <c>contained: false</c> with why, and
+/// <para><b>Best effort</b>: a start that cannot be contained is made as before, logged <c>contained: false</c> with why, and
 /// holds its process's open event until it ends. A piece is the exception: it is never started outside its own job.</para>
 /// <para><c>ProcessStartsCensusTests</c> holds every agent start to this route, and every other start through the gate to a named reason
 /// of Daoris's own.</para>

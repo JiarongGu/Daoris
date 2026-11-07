@@ -22,6 +22,6 @@ public static class SetAsideKept
     /// <summary>A recorded folder past its hour whose holding check did not pass right before its rename, or could not run.</summary>
     public const string Unheld = "unheld";
 
-    /// <summary>A folder a stopped removal left in <c>.going</c>, put back where it was, saying why.</summary>
+    /// <summary>A folder a stopped removal left in <c>.going</c>, put back where it stood, saying why.</summary>
     public const string Returned = "returned";
 }

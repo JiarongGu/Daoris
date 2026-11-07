@@ -6,7 +6,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Each kept tree's last read, by what it was read from: the trees fact walks a tree again only where something its
+/// Each kept tree's last read, by what it is read from: the trees fact walks a tree again only where something its
 /// work is judged from moved since, and asks one <c>git status</c> of every other.
 /// </summary>
 /// <remarks>

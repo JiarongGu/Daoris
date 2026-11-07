@@ -85,7 +85,7 @@ internal static class TreeLocalInputs
         var asked = declared.Where(input => Candidate(root, input)).Select(input => input.Path).ToList();
         if (asked.Count == 0) return Copy(root, tree, declared, _ => false, null, ct);
 
-        // 🔴 git takes `-z` only with `--stdin` (TREEDEPS1's finding): the paths go in there.
+        // 🔴 git takes `-z` only with `--stdin`: the paths go in there.
         var (code, said, err) = await WorkingTree.GitAsync(tree, ["check-ignore", "--stdin", "-z"], string.Concat(asked.Select(path => path + "\0")), ct)
             .ConfigureAwait(false);
         if (code is not (0 or 1))
@@ -297,7 +297,7 @@ internal sealed record LocalUncopied(string Input, string Why, string? Detail = 
     }
 }
 
-/// <summary>Why a declared machine-local input was not copied into a new tree: each its own line's code.</summary>
+/// <summary>Why a declared machine-local input is not copied into a new tree: each its own line's code.</summary>
 internal static class LocalUncopiedWhy
 {
     /// <summary>The checkout does not hold it.</summary>

@@ -39,7 +39,7 @@ public static class LandTries
     }
 
     /// <summary>
-    /// What a landing came to, by its code. The push is the plugin's whether the branch was made or moved on, so a
+    /// What a landing came to, by its code. The push is the plugin's whether the branch is made or moved on, so a
     /// plugin that could not or did not push is kept as that first.
     /// </summary>
     public static string CodeOf(TreeLanding landed)

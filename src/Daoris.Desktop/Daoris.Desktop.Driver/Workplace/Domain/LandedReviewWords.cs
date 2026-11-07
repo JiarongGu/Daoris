@@ -14,8 +14,8 @@ public static class LandedReviewWords
         var when = at == DateTimeOffset.MinValue
             ? ""
             : $" on {at.ToUniversalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC";
-        // Who accepted it: said where it was the rule's switch, since a press is what the review offers.
-        // AUTONOMY1c2's setup accepts by the rule: its record keeps the level that set it, said. Only the landing's own
+        // Who accepted it: said where it is the rule's switch, since a press is what the review offers.
+        // The setup accepts by the rule: its record keeps the level that set it, said. Only the landing's own
         // acceptance is the setup's; an advance of the branch keeps no rule.
         var by = entry.AcceptedByOf(session) != AcceptedBy.Auto ? ""
             : string.Equals(entry.Session, session, StringComparison.OrdinalIgnoreCase) && entry.Rule?.Access is { } access

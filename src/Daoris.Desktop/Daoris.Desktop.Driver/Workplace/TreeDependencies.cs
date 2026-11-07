@@ -180,7 +180,7 @@ internal static class TreeDependencies
                 }
 
                 // Whole: each renamed into place, tried again while the virus scanner holds a file just written in it (as an installed
-                // binary is), and the empty folder it was made under goes where it can.
+                // binary is), and the empty folder it is made under goes where it can.
                 foreach (var (under, final) in whole)
                 {
                     AtomicFile.MoveFolder(Path.Combine(under, Modules), final);
@@ -404,7 +404,7 @@ internal static class TreeDependencies
         return (ignored, "");
     }
 
-    /// <summary>What was made of a copy that did not finish, deleted never following a link, as far as it goes.</summary>
+    /// <summary>What a copy that did not finish made, deleted never following a link, as far as it goes.</summary>
     private static void Discard(IEnumerable<string> made)
     {
         foreach (var each in made.Where(Path.Exists))

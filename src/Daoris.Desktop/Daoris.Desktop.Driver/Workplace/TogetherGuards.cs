@@ -1,8 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a door that would land, discard or rebase a tree reads of the operations bringing sessions together (LINESTOGETHER1d, the
-/// review-flow design §4): the binding, read under the record lock. A bound tree is refused, naming its operation, but to its own
+/// What a door that would land, discard or rebase a tree reads of the operations bringing sessions together: the binding, read under the record lock. A bound tree is refused, naming its operation, but to its own
 /// combined Accept; a binding that cannot be read refuses too, since "cannot tell" is never "go on".
 /// </summary>
 internal static class TogetherGuard

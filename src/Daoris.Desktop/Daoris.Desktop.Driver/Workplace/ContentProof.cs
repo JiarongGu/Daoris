@@ -16,7 +16,7 @@ internal sealed record ContentProof(ContentHold? Hold, string? Unread)
     public static readonly ContentProof NotHeld = new(null, null);
 
     /// <summary>
-    /// The ref the work was found held on, at the commit the proof compared: what a removal by this proof rests
+    /// The ref the work is found held on, at the commit the proof compared: what a removal by this proof rests
     /// on, and what its delete verifies. Null where the work is not held.
     /// </summary>
     internal (string Ref, string Commit)? At { get; init; }

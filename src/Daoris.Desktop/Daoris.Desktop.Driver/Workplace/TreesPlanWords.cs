@@ -48,7 +48,7 @@ public static class TreesPlanWords
     }
 
     /// <summary>
-    /// <c>trees sync</c>'s list: what was not fetched, said once and first, each line, branch and landed branch, the repositories
+    /// <c>trees sync</c>'s list: what is not fetched, said once and first, each line, branch and landed branch, the repositories
     /// left apart, and what <c>--yes</c> would change.
     /// </summary>
     public static TreesSaid SyncPlan(SyncPlan plan, TreesAsk ask, DateTimeOffset now)

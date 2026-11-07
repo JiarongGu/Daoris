@@ -425,7 +425,7 @@ internal sealed class ContentHolds(TreeContext context)
         var shared = new List<string>();
         var written = new List<string>();
         var tooLarge = new List<string>();
-        // When the tree opened: its folder was made by the worktree add and nothing since recreates it.
+        // When the tree opened: its folder is made by the worktree add and nothing since recreates it.
         var opened = Directory.GetCreationTimeUtc(tree);
         var entries = porcelain.Split('\0');
         for (var at = 0; at < entries.Length; at++)

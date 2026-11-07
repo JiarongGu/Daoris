@@ -4,7 +4,7 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// An Accept the person pressed on a session whose tree was not clean or whose landing conflicted, kept on the session until it lands:
+/// An Accept the person pressed on a session whose tree is not clean or whose landing conflicted, kept on the session until it lands:
 /// <i>accepted; lands when its tree is clean</i>. Daoris carried the session on in its own words, and the
 /// yes is the person's press, so the landing that follows needs no second one.
 /// </summary>

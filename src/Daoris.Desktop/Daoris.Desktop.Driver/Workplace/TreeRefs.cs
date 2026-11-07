@@ -147,8 +147,7 @@ internal static class TreeRefs
 
     /// <summary>
     /// The line's latest as this checkout knows it once fetched: origin's where the line here is behind it or absent,
-    /// which is what WSR6's pull would take; else the line here. Null where neither is here. A landing's branch form builds on it
-    /// (D87's 2026-10-15 amendment point 3).
+    /// which is what the look's pull would take; else the line here. Null where neither is here. A landing's branch form builds on it.
     /// </summary>
     internal static async Task<string?> LatestAsync(string root, string line, CancellationToken ct, RefSnapshot? refs = null)
     {

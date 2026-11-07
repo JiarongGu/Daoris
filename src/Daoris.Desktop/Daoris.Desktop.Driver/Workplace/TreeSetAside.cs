@@ -7,7 +7,7 @@ using static Daoris.Driver.SetAsideReads;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the look's own tidy decides of one session branch and does to its tree (AUTOTIDY1; PART10l-ii, out of
+/// What the look's own tidy decides of one session branch and does to its tree (out of
 /// <c>SessionTrees.Auto.cs</c>): which branches it takes without a press, its last guards right before one goes, the tree's folder
 /// moved aside rather than deleted, and the later purge of what was moved. Over the trees' context alone: the clean-up's sweep
 /// (<see cref="TreeSweeps"/>) takes it for its by-itself path, and the look's pass (<see cref="AutoTidies"/>) takes the sweep.
@@ -24,7 +24,7 @@ internal sealed class TreeSetAside(TreeContext context)
     /// it, as the judgement's <c>dirty</c>.
     /// A landed branch goes only once its work is on the line (<see cref="SweepItem.OnLine"/>): landed on another branch of the
     /// person's alone, its pull request may still be open and its session asked to change it in its own tree, so the look waits
-    /// for the merge D88 began from, and the press may take it before by the person's choice.
+    /// for the merge it began from, and the press may take it before by the person's choice.
     /// </summary>
     internal bool GoesByItself(SweepItem item) =>
         item is { Removable: true, Unread: false }

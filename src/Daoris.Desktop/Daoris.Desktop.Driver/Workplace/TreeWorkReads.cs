@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// It takes the squash, the content proof and the follow for the members it reads (<c>SquashedHolderAsync</c>, <c>LandedHere</c>,
-/// <c>BranchOfTree</c>; PART10l), and names their statics by their classes (<see cref="ContentHolds.HeldByContentAsync"/>,
+/// <c>BranchOfTree</c>), and names their statics by their classes (<see cref="ContentHolds.HeldByContentAsync"/>,
 /// <see cref="ContentHolds.HoldsAsync"/>, <see cref="TreeFollows.OwnBranchOfAsync"/>, <see cref="TreeFollows.UnlandedAsync"/>,
 /// <see cref="ContentHolds.DiscardedPrefix"/>).
 /// </remarks>
@@ -30,7 +30,7 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
     /// both asked of that id, so a commit made meanwhile is never half of what was judged.</para>
     /// </remarks>
     /// <param name="uncommitted">
-    /// The tree's uncommitted paths as its door read them a moment before (LANDGIT1c: the look's automatic landing reads them where it
+    /// The tree's uncommitted paths as its door read them a moment before (the look's automatic landing reads them where it
     /// judges the entry), so `status` is not asked again; null asks git.
     /// </param>
     /// <param name="here">The tree's repository and branch as a landing read them a moment ago; null reads them where needed.</param>
@@ -72,7 +72,7 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
         // branch of work already there.
         if (work.Commits is not > 0 || judged is null) return work;
         var (found, lacks) = await HeldWorkAsync(tree, judged, own, here, ct).ConfigureAwait(false);
-        // Where the line holds some of its commits under ids of their own (a landing replayed them, and the session was told
+        // Where the line holds some of its commits under ids of their own (a landing replayed them, and the session is told
         // to rebase and made more), only the commits it lacks are work to land, as the landing's plan counts them.
         return found is not null ? work with { Held = found }
             : lacks is { Count: > 0 } && lacks.Count < work.Commits ? work with { Commits = lacks.Count }
@@ -82,7 +82,7 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
     /// <summary>
     /// How many paths the session's own tree holds that no commit does: what the landing's plan says
     /// before the press, since Accept refuses until they are committed. Null where the tree is not one this home opened (a person's
-    /// checkout is never counted, D49 §3), is gone, or git cannot say; one <c>git status</c>, where <see cref="WorkAsync"/> reads the commits too.
+    /// checkout is never counted), is gone, or git cannot say; one <c>git status</c>, where <see cref="WorkAsync"/> reads the commits too.
     /// </summary>
     internal async Task<int?> UncommittedAsync(string tree, CancellationToken ct = default)
     {
@@ -121,8 +121,8 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
     }
 
     /// <summary>
-    /// Where a tree's commits are held by content, by the review's Discard's own proof (SQUASHTIDY1's
-    /// <see cref="ContentHolds.HeldByContentAsync"/>, with SQUASHTIDY1c's guarantees), and what an unforced discard of it would do now; null
+    /// Where a tree's commits are held by content, by the review's Discard's own proof
+    /// (<see cref="ContentHolds.HeldByContentAsync"/>), and what an unforced discard of it would do now; null
     /// where nothing holds them, or git could not say.
     /// </summary>
     /// <remarks>

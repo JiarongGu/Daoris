@@ -47,7 +47,7 @@ internal sealed class TreeGates(TreeContext context)
     internal TreeContext Context => context;
 
     /// <summary>
-    /// The whole landing gate for this tree: D154's look as
+    /// The whole landing gate for this tree: the look as
     /// the review's <c>ReviewAsync</c> reads it, and the second opinion before it. Every door that lands reads it here, once, and hands it
     /// to <see cref="SessionTrees.LandAsync"/>, which refuses the first part that holds.
     /// </summary>
@@ -57,8 +57,8 @@ internal sealed class TreeGates(TreeContext context)
     /// otherwise it is read here, once, for every part.
     /// </param>
     /// <param name="tip">
-    /// The commit to judge the work at (D173's CLOSELAND1 note): where a landing's push is judged, the one its branch
-    /// was judged and made at (<see cref="LandingGate.Tip"/>), so a commit made on the tree after it, which the push does not carry, holds
+    /// The commit to judge the work at: where a landing's push is judged, the one its branch
+    /// is judged and made at (<see cref="LandingGate.Tip"/>), so a commit made on the tree after it, which the push does not carry, holds
     /// nothing back. Null judges the tree's <c>HEAD</c>, as every door before the landing does.
     /// </param>
     /// <param name="run">A chat run's key where the work serves no quest, whose bound process is read in place of the rules live.</param>

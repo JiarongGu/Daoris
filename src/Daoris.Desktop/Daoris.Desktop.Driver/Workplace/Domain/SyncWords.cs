@@ -71,8 +71,8 @@ public static class SyncWords
     }
 
     /// <summary>
-    /// A branch's row: what the press does with it, and on a landed branch what its pull request's answer was and why it does not
-    /// clear it, or why nothing was asked, as the clean-up's rows say it.
+    /// A branch's row: what the press does with it, and on a landed branch what its pull request's answer is and why it does not
+    /// clear it, or why nothing is asked, as the clean-up's rows say it.
     /// </summary>
     public static string Describe(RebaseItem item) => Replay(item)
         + (item.Landed ? PullRequestWords.Row(item.State, item.StateCode, item.AskFailed, item.NotAsked) : "");

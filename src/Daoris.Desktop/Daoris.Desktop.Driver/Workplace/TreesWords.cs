@@ -36,7 +36,7 @@ public static class TreesWords
 
     /// <summary>
     /// <c>trees land &lt;session&gt;</c>: the plugin's lines as they came, then the landing's sentence; 1 where the step the rule asked for did
-    /// not happen, a push held back once the branch was made among them.
+    /// not happen, a push held back once the branch is made among them.
     /// </summary>
     public static TreesSaid Land(TreeLanding landed, IReadOnlyList<string> pluginLines) =>
         new([.. pluginLines, $"trees: {landed.Message}"], [],
@@ -209,7 +209,7 @@ public static class TreesWords
 
     /// <summary>
     /// A refusal the driver threw for one entry's press, said as that entry's own landing: it holds only this entry and never stops
-    /// the rest (D167's amendment point 4). Both doors say it alike.
+    /// the rest. Both doors say it alike.
     /// </summary>
     public static EntryLanding Unlanded(string reason) => new(false, $"Nothing was landed: {reason}", null, []);
 

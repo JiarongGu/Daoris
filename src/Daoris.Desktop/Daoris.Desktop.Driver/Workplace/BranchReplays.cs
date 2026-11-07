@@ -114,7 +114,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
 
         replayed.Add(new Replayed(tip, now, cut));
         var kept = await CountAsync(root, $"{onto}..{now}", ct).ConfigureAwait(false);
-        // What the line holds is said apart from what became empty: the one was judged before, the other found by the replay.
+        // What the line holds is said apart from what became empty: the one judged before, the other found by the replay.
         var message = kept == 0 && item.Commits == 0 && judged.LeftOut > 0
             ? $"moved `{item.Branch}` onto `{line}`: it holds nothing of its own beyond work that reached the line ({judged.LeftOut} commit(s) the line holds left out)."
             : $"replayed `{item.Branch}` onto `{line}`: {kept} commit(s) of its own"

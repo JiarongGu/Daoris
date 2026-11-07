@@ -4,17 +4,17 @@ using static Daoris.Driver.TreeGit;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The worktree half of D51: a repository may have more than one working tree, and the extra ones are
+/// The worktrees: a repository may have more than one working tree, and the extra ones are
 /// Daoris's to open and account for — <c>&lt;home&gt;/trees/&lt;workspace&gt;/&lt;repository&gt;/&lt;name&gt;</c>,
 /// each a real linked worktree of the registered root on a branch of its own.
 /// </summary>
 /// <remarks>
-/// <para><b>Daoris owns the location; git owns the contents</b> (D51 rule 2) — the same arrangement as
+/// <para><b>Daoris owns the location; git owns the contents</b> — the same arrangement as
 /// a credential profile, and for the same reason: a directory Daoris created is one it may
 /// reason about, and one scattered beside somebody's checkout is not. That is also why
 /// <see cref="RemoveAsync"/> refuses anything outside the trees home outright, whatever git would say.</para>
 ///
-/// <para><b>Nothing merges itself and nothing deletes itself</b> (rules 6–7). Opening never touches
+/// <para><b>Nothing merges itself and nothing deletes itself</b>. Opening never touches
 /// the root's own state; removal refuses while the tree holds uncommitted changes or commits the
 /// canonical line has not taken, naming what would be lost — and the person may say it again with
 /// force, meaning it. Commits whose work a squash merge or a cherry-pick holds by content lose nothing,
@@ -26,7 +26,7 @@ namespace Daoris.Driver;
 /// tree → open → spawn: the ledger's open needs the tree path for the lock, so the id it would borrow
 /// does not exist yet. Short and random, like the id itself; the record ties the two together.</para>
 ///
-/// <para><b>One type, a front over classes</b> (D166's PART10i–l notes): the opening, the listing and what a tree is stay here;
+/// <para><b>One type, a front over classes</b>: the opening, the listing and what a tree is stay here;
 /// every other part is a class over the shared <see cref="TreeContext"/>, built once below with the classes it takes in its
 /// constructor, and this keeps its callers' one-line calls.</para>
 /// </remarks>
@@ -107,7 +107,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     /// <summary>The set-aside kind's removal, the purge and the slim, which the Keeping pass runs.</summary>
     private SetAsideKeeping Keeping => _setAsideKeeping ??= new(_context, SetAsides);
 
-    /// <summary>A session tree's removal (D51 rule 7).</summary>
+    /// <summary>A session tree's removal.</summary>
     private TreeRemovals Removals => _removals ??= new(_context, Follows, Content, Squashes);
 
     /// <summary>The session branches' half of the clean-up, for the person's press and the look's own.</summary>
@@ -267,12 +267,11 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         Entries.JoinAsync(path, session, entry, ct, process);
 
     /// <summary>
-    /// What one session's landing is named for, at every door that lands one session (ACCEPTALL1b, ACCEPTALL1f; D167's 2026-10-15
-    /// amendment point 2): the review's <c>LANDING</c> and <c>LAND_SESSION_TREE</c>, the terminal's <c>trees land</c> and the look's
+    /// What one session's landing is named for, at every door that lands one session: the review's <c>LANDING</c> and <c>LAND_SESSION_TREE</c>, the terminal's <c>trees land</c> and the look's
     /// landing at done. A part of an entry with others (<see cref="EntryLandings.LeadOf"/>) is its entry's Accept for that part alone:
     /// named for the entry's first part (its chain's first quest), its own session recorded, on the entry's branch
     /// (<see cref="JoinEntryAsync"/>), which <see cref="LandingSubject.Joins"/> then lands on. Otherwise the session's own subject, the
-    /// chain's first quest, as before. A merge rule makes no branch to join; a TREEFOLLOW1 tree still lands as its own branch, and
+    /// chain's first quest, as before. A merge rule makes no branch to join; a tree its agent moved onto a branch of its own still lands as that branch, and
     /// is named for its own quest and title.
     /// </summary>
     /// <param name="quest">The session's own quest, null for a conversation.</param>
@@ -540,10 +539,10 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         string tree, string common, HeldWork kept, IReadOnlyList<System.Text.RegularExpressions.Regex>? declared, CancellationToken ct = default) =>
         WorkReads.HeldAgainAsync(tree, common, kept, declared, ct);
 
-    /// <summary>The landings record a tree's walk reads (TREELOOK1's stamp).</summary>
+    /// <summary>The landings record a tree's walk reads.</summary>
     internal string LandingsPath => _context.Recorded.FilePath;
 
-    /// <summary>The choices a tree's walk reads its line from (TREELOOK1's stamp).</summary>
+    /// <summary>The choices a tree's walk reads its line from.</summary>
     internal string ConfigPath => DriverConfig.ResolvePath(_context.Home);
 
     /// <inheritdoc cref="TreeWorkReads.DiscardOfferAsync"/>

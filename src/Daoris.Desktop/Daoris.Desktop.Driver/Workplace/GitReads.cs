@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Why a read behind a page was not answered, or <see cref="None"/> where it was.</summary>
+/// <summary>Why a read behind a page is not answered, or <see cref="None"/> where it is.</summary>
 public enum GitReadRefusal
 {
     /// <summary>Answered: the answer carries its value.</summary>

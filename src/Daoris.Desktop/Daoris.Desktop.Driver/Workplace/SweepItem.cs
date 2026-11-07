@@ -15,7 +15,7 @@ public sealed record SweepItem(
     public LandedBranch? CarriedBy { get; init; }
 
     /// <summary>
-    /// Landed by content: where its work is, though no branch of the person's holds its commits, and how it was
+    /// Landed by content: where its work is, though no branch of the person's holds its commits, and how it is
     /// found there. Null for a branch landed by ancestry, and for every other kind.
     /// </summary>
     public ContentHold? HeldBy { get; init; }
@@ -68,7 +68,7 @@ public sealed record SweepItem(
     public string? Hold { get; init; }
 
     /// <summary>
-    /// Held by a landing (<see cref="Hold"/> <c>landing</c>): that landing's own branch, by which its record's landing is found, since <see cref="SweepItem.Where"/> names the form of the line it was proven on. Null for every other hold.
+    /// Held by a landing (<see cref="Hold"/> <c>landing</c>): that landing's own branch, by which its record's landing is found, since <see cref="SweepItem.Where"/> names the form of the line it is proven on. Null for every other hold.
     /// </summary>
     public string? LandingBranch { get; init; }
 }

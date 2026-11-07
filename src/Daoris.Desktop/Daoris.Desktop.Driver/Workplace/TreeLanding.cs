@@ -8,7 +8,7 @@ public sealed record TreeLanding(bool Landed, string Message, string? Branch = n
 {
     /// <summary>
     /// A refusal's code, one of <see cref="LandingCode"/>: <c>uncommitted</c>, <c>nothing</c>, <c>exists</c> or, where a
-    /// chain's branch was merged, <c>completed</c> where the branch form said so, else null, which a landing at done keeps
+    /// chain's branch is merged, <c>completed</c> where the branch form says so, else null, which a landing at done keeps
     /// as <c>refused</c>. The message says it to a person.
     /// </summary>
     public string? Refusal { get; init; }

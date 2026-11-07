@@ -117,7 +117,7 @@ public static class RecoveryRetention
     }
 
     /// <summary>
-    /// When each of <paramref name="refs"/>, which no journal record names, was made: its reflog's oldest entry, in one
+    /// When each of <paramref name="refs"/>, which no journal record names, came to be: its reflog's oldest entry, in one
     /// <c>log --walk-reflogs</c>. A ref with no reflog (made before it, or by hand) is not named, and is dated by its commit; null where git did
     /// not answer, so no such ref is dated and none goes at this look. Transitional, with the census (<see cref="RecoveryCensus"/>).
     /// </summary>

@@ -16,8 +16,8 @@ internal static class TreeOpenings
     private const string Opening = "Daoris is opening this tree (process ";
 
     /// <summary>
-    /// git's own reason for the lock it holds while <c>git worktree add</c> runs, left behind where the add was killed: an open
-    /// that gave no reason of Daoris's, or one cut off before git wrote the reason it was handed.
+    /// git's own reason for the lock it holds while <c>git worktree add</c> runs, left behind where the add is killed: an open
+    /// that gave no reason of Daoris's, or one cut off before git wrote the reason it is handed.
     /// </summary>
     internal const string GitsOwn = "initializing";
 
@@ -32,7 +32,7 @@ internal static class TreeOpenings
             : null;
 
     /// <summary>
-    /// Whether a tree locked for this reason is an opening that was cut off: git's own lock from an add that never
+    /// Whether a tree locked for this reason is an opening that is cut off: git's own lock from an add that never
     /// finished, or Daoris's opening lock whose process no longer runs. A person's lock, any other reason or none, is never one.
     /// </summary>
     /// <remarks>

@@ -4,7 +4,7 @@ using static Daoris.Driver.TreeLeftovers;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A session tree's removal (D51 rule 7; out of <c>SessionTrees.cs</c>): only a tree under the
+/// A session tree's removal: only a tree under the
 /// trees home, unforced only behind the clean-up's proof, its branch deleted only while it is the commit judged. Over the trees'
 /// context, the layout's answer of a tree's branch, the content proof's keep and delete, and the squash's record. The tidy, the
 /// landing's tidy and abandon's discard take it; the front keeps its public call.
@@ -95,15 +95,15 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
         RecoveryName? keep = null;
         // A detached tree's commit kept while its tree goes, until what its proof rested on is shown standing.
         string? recovery = null;
-        // What the proof that clears the branch rests on (third review), each ref at the commit it read: returned by that proof
+        // What the proof that clears the branch rests on, each ref at the commit it read: returned by that proof
         // and verified exactly by the delete, never looked for again.
         IReadOnlyList<(string Ref, string Commit)> rests = [];
 
         if (!force)
         {
-            // Nothing deletes itself (D51 rule 7). Two different kinds of work can be lost here, and
+            // Nothing deletes itself. Two different kinds of work can be lost here, and
             // the refusal names the kind, because they are fixed differently: uncommitted changes are
-            // committed or abandoned IN the tree; unmerged commits are merged FROM it (SURF6's surface).
+            // committed or abandoned IN the tree; unmerged commits are merged FROM it.
             // Asked so no setting hides one: an untracked file `status.showUntrackedFiles=no` hides,
             // and an ignored one only this tree holds, which `git worktree remove` deletes without asking.
             // The output the repository declares counts only as the owner accepted it for integration.
@@ -165,7 +165,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                 ContentProof? proof = null;
                 if (string.IsNullOrWhiteSpace(unmerged))
                 {
-                    // FABRIC-END4a, third review: the branch of the person's holding it, at the commit read, is what the delete verifies; one
+                    // The branch of the person's holding it, at the commit read, is what the delete verifies; one
                     // gone since the judgement read none is a refusal.
                     if (await ContentHolds.HoldersAsync(root, judged, named, ct).ConfigureAwait(false) is not { } holders)
                     {
@@ -309,7 +309,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                 + (stays == ContentHolds.MovedSince ? ", so it holds work this removal did not judge." : ".") + (left is null ? "" : $" {left}"));
         }
 
-        // How the work was found held, where ancestry could not say, and where its commits stay: the
+        // How the work is found held, where ancestry could not say, and where its commits stay: the
         // sentence the review's Discard shows as it is.
         return new(true, $"removed the session tree at {path} (branch `{branch}`)"
             + (held is not null ? $": {held.Said}." : squashedOn is not null ? $": {TreeSquashes.SquashedSaid(squashedOn)}." : ".")

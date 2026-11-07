@@ -140,10 +140,10 @@ public sealed class IntegrationStore(
         }
     }
 
-    /// <summary>The epoch a request was admitted under; null where none is recorded, which reads as its own.</summary>
+    /// <summary>The epoch a request is admitted under; null where none is recorded, which reads as its own.</summary>
     public string? RequestEpoch(string request) => EpochOf(RequestSubject, request);
 
-    /// <summary>The epoch a candidate was formed under, its first member's; null where none is recorded.</summary>
+    /// <summary>The epoch a candidate is formed under, its first member's; null where none is recorded.</summary>
     public string? CandidateEpoch(string candidate) => EpochOf(CandidateSubject, candidate);
 
     private string? EpochOf(string subject, string id) =>
@@ -202,7 +202,7 @@ public sealed class IntegrationStore(
             .FirstOrDefault(), null);
 
     /// <summary>
-    /// A line's queue: its repository's open requests for it that stand in no candidate, in their order (those an <c>order</c> moved first, then the rest as admitted, then those it moved last). A request whose member was held for its conflict
+    /// A line's queue: its repository's open requests for it that stand in no candidate, in their order (those an <c>order</c> moved first, then the rest as admitted, then those it moved last). A request whose member is held for its conflict
     /// (<see cref="IntegrationMemberStates.Held"/>) is not queued: it waits for the steward's or the owner's act, and queued again it would
     /// be formed, conflict and be held in every candidate for ever.
     /// </summary>

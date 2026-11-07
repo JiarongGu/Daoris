@@ -63,7 +63,7 @@ internal sealed class TreeLeftovers(TreeContext context)
     }
 
     /// <summary>
-    /// The clean-up's retry: every empty folder where a tree was, under the trees home,
+    /// The clean-up's retry: every empty folder where a tree stood, under the trees home,
     /// deleted — and a sentence for each one removed or still held.
     /// </summary>
     internal IReadOnlyList<string> EmptyFoldersGone()

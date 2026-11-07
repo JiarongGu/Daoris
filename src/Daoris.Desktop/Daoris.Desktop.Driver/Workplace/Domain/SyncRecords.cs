@@ -86,7 +86,7 @@ public static class RebaseKind
     public const string Unknown = "unknown";
 }
 
-/// <summary>How the commit a branch's own work starts after was found.</summary>
+/// <summary>How the commit a branch's own work starts after is found.</summary>
 public static class CutBy
 {
     /// <summary>It grew from the line: where it leaves the line.</summary>
@@ -188,6 +188,6 @@ public sealed record RebaseResult(RebaseItem Item, bool Replayed, string Message
 /// <summary>What one press of bringing up to date did, all three steps.</summary>
 public sealed record SyncDone(IReadOnlyList<PullResult> Lines, IReadOnlyList<RebaseResult> Rebases, IReadOnlyList<LandedResult> Deletes)
 {
-    /// <summary>The repositories with a checkout here the press did not take: nothing of them was touched.</summary>
+    /// <summary>The repositories with a checkout here the press did not take: nothing of them is touched.</summary>
     public IReadOnlyList<SyncRepository> Apart { get; init; } = [];
 }

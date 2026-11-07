@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para>The service's <c>GitForWindows</c> is its twin (<c>.claude/knowledge/twins.md</c>): the same rule in
 /// the service's own code, its <c>GitForWindowsTests</c> holding this side's rows case for case. The two change together.</para>
-/// <para>🔴 The launcher's variables are what it was measured setting (git 2.53.0.windows.3), held to
+/// <para>🔴 The launcher's variables are what it sets as measured (git 2.53.0.windows.3), held to
 /// a real install by <c>GitForWindowsProcessTests</c>. git started bare with no <c>MSYSTEM</c> repairs its own
 /// <c>PATH</c>, but in another order (<c>HOME\bin</c> first), and with any <c>MSYSTEM</c> set it repairs nothing, so
 /// <c>sh</c>, and with it every hook and <c>!</c> alias, would go unfound; so the start sets them all.</para>

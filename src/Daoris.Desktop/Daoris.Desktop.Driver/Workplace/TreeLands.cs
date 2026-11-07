@@ -88,7 +88,7 @@ internal sealed class TreeLands
     /// of the tree: a refusal it answers is the landing's, before anything is made; null lets it go on. Past this point a hold, a reopen or
     /// a gate's word applies to what follows, never to this landing, which is the landing's commitment. Null asks nothing. The
     /// person's press and an entry's part ask theirs of <see cref="PressedResult"/>,
-    /// on the result the press was made on.
+    /// on the result the press is made on.
     /// </param>
     /// <param name="uncommitted">
     /// The tree's uncommitted paths as the door read them where it judged the landing: the look's automatic landing reads

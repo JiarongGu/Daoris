@@ -327,7 +327,7 @@ public static class IntegrationCandidateEnds
     public const string Stopped = "stopped";
 
     /// <summary>
-    /// Every member left the candidate before any was left to promote: held by the line, or handed back.
+    /// Every member left the candidate before any is left to promote: held by the line, or handed back.
     /// </summary>
     public const string Empty = "empty";
 

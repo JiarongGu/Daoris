@@ -20,7 +20,7 @@ internal sealed class ReviewRead(string name, IReadOnlyList<ReviewRead> needs, b
     /// <summary>Whether it reads file content through git's diff or merge machinery, so a configured program may run (Π).</summary>
     public bool Program { get; } = program;
 
-    /// <summary>Whether it was started before the condition that decides whether its answer is used.</summary>
+    /// <summary>Whether it started before the condition that decides whether its answer is used.</summary>
     public bool Speculative { get; } = speculative;
 
     /// <summary>Whose its starts are: the review's, the untracked tail's, the landed review's or the offer's.</summary>

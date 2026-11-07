@@ -11,8 +11,8 @@ namespace Daoris.Driver;
 public static class LandingAdvance
 {
     /// <summary>
-    /// What the session's work must grow from to move the branch on: the tip the record says was squashed, under a squash rule where
-    /// it says one, else the tip the branch was made or last moved at. 🔴 Work replayed onto the branch's tip (a
+    /// What the session's work must grow from to move the branch on: the tip the record says is squashed, under a squash rule where
+    /// it says one, else the tip the branch is made or last moved at. 🔴 Work replayed onto the branch's tip (a
     /// part joining its entry's branch, or past what the line holds) grows from that tip under a squash too:
     /// the squashed tip is another tree's, which the replay does not hold.
     /// </summary>

@@ -3,8 +3,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// A session branch's work a squash carried with other work: the parent landed two sessions' work on the line
 /// as one squashed commit, so neither branch's tree is that commit's tree, and the files they both changed (the backlog, the records, a
-/// generated index) read otherwise on the line than on either branch. SQUASHTIDY1's two proofs saw neither, so both sessions were told to
-/// rebase onto the line, ran again and found everything there. This is the third form of the content proof
+/// generated index) read otherwise on the line than on either branch. The other two proofs see neither, so both sessions would be told to
+/// rebase onto the line, run again and find everything there. This is the third form of the content proof
 /// (<see cref="ContentHolds.HeldByContentAsync"/>), the one reading every door asks: merging the branch into the line as it stands adds
 /// nothing.
 /// </summary>
@@ -24,7 +24,7 @@ internal static class SquashCarries
     /// </summary>
     /// <remarks>
     /// A read git could not make finds nothing here, as a trial git cannot make says nothing (<see cref="LineHolds.TrialAsync"/>): this
-    /// form only adds holds, so a git too old to merge in memory leaves SQUASHTIDY1's proofs and their words as they were.
+    /// form only adds holds, so a git too old to merge in memory leaves the other proofs and their words as they are.
     /// </remarks>
     /// <param name="paths">The files the branch changed since <paramref name="mergeBase"/>, none of them a rename.</param>
     internal static async Task<bool> HeldAsync(
@@ -66,7 +66,7 @@ internal static class SquashCarries
     /// the line's own changes to other rows are its own.
     /// </summary>
     /// <remarks>
-    /// The backlog by rows rather than by merge (LANDBACKLOG1's <see cref="BacklogMerge.ByBase"/> leaves a base line both sides changed as
+    /// The backlog by rows rather than by merge (<see cref="BacklogMerge.ByBase"/> leaves a base line both sides changed as
     /// a conflict): two sessions that each moved out a row next to the other's leave one hunk on the squash that covers both, which no
     /// merge settles, though every row each moved is moved on the line.
     /// </remarks>

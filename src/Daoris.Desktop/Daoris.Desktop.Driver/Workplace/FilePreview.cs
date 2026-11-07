@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Daoris.Driver;
 
-/// <summary>Why a file was not read for its preview, or <see cref="None"/> when it was.</summary>
+/// <summary>Why a file is not read for its preview, or <see cref="None"/> when it is.</summary>
 public enum FilePreviewRefusal
 {
     /// <summary>Read: the answer carries the file.</summary>
@@ -38,7 +38,7 @@ public enum FilePreviewRefusal
 /// <param name="Truncated">Whether the file holds more than <paramref name="Text"/>.</param>
 public sealed record PreviewedFile(string Path, long Size, bool Binary, string? Text, bool Truncated)
 {
-    /// <summary>The landed branch it was read from, once the session's tree is gone; null for the file on disk.</summary>
+    /// <summary>The landed branch it is read from, once the session's tree is gone; null for the file on disk.</summary>
     public string? Branch { get; init; }
 }
 

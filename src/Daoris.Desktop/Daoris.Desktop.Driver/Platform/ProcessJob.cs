@@ -109,7 +109,7 @@ public sealed class ProcessJob : IDisposable
     }
 
     /// <summary>
-    /// Put this process into the job (the launcher's own, made empty after it joined the jobs it was named, so it nests beneath
+    /// Put this process into the job (the launcher's own, made empty after it joined the jobs it is named, so it nests beneath
     /// them), so every process it starts afterwards is born in it. False where there is no job or it would not take this process.
     /// </summary>
     internal bool JoinThis()
@@ -171,7 +171,7 @@ public sealed class ProcessJob : IDisposable
     }
 
     /// <summary>
-    /// Whether the process was joined, so the job's accounting counts it and everything it starts: false where the join failed and off Windows, where the watcher reads busy as unknown.
+    /// Whether the process is joined, so the job's accounting counts it and everything it starts: false where the join failed and off Windows, where the watcher reads busy as unknown.
     /// </summary>
     public bool Holds => Volatile.Read(ref _handle) != IntPtr.Zero;
 

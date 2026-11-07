@@ -18,8 +18,7 @@ public sealed record HistoryAsk(HistoryScope Scope, string? Id)
 }
 
 /// <summary>
-/// <c>daoris history</c>, <c>history clear --workspace</c>, <c>quest clear [--failed]</c> and <c>ask --clear</c> (HIST1d,
-/// D153 point 7; the history-clearing design §6.2, D50): the terminal's door to <see cref="HistoryClearing"/>, which the screen's
+/// <c>daoris history</c>, <c>history clear --workspace</c>, <c>quest clear [--failed]</c> and <c>ask --clear</c>: the terminal's door to <see cref="HistoryClearing"/>, which the screen's
 /// <c>HISTORY_PLAN</c> and <c>HISTORY_CLEAR</c> call too, so a machine with no screen clears as the window does. In the library,
 /// so its words are held by a test.
 /// </summary>
@@ -494,7 +493,7 @@ public static class HistoryCommand
 
     /// <summary>
     /// The line that clears a scope, without its <c>--yes</c> for a workspace's (the reading names it to list first). A
-    /// workspace's name is spelled for any shell, as ACCTQUOTE1b's commands are: a person copies this line, and
+    /// workspace's name is spelled for any shell, as every printed command's is: a person copies this line, and
     /// <c>my team</c> printed bare is two arguments, <c>R&amp;D</c> a second command. A quest's or an ask's id needs none: it is
     /// the store's hex (<c>QuestStore.MakeId</c>, <c>AskStore.MakeId</c>), and a unit is found only by it, in any case.
     /// </summary>

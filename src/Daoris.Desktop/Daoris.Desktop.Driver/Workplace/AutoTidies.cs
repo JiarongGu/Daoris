@@ -77,7 +77,7 @@ public static class TidyKept
 }
 
 /// <summary>
-/// Which <see cref="TidyKept.Unread"/> it was: the machine log's <c>branch.kept</c> <c>cause</c>, a code so the page can
+/// Which <see cref="TidyKept.Unread"/> it is: the machine log's <c>branch.kept</c> <c>cause</c>, a code so the page can
 /// word why without the sentence, whose path stays the console's. Other reasons carry none.
 /// </summary>
 public static class TidyCause
@@ -316,7 +316,7 @@ internal sealed class AutoTidies(
         return Pass([.. stays, .. results]) with { Landed = gone };
 
         // Whether the kept fact holds at the branch's tip now, by the line the cycle names: read from the refs already taken, so no
-        // git starts for it. Where it was cleared or never written, the line is not known to hold it, and nothing goes.
+        // git starts for it. Where it is cleared or never written, the line is not known to hold it, and nothing goes.
         async Task<bool> HeldHereAsync(string branch, HeldFact? fact) =>
             fact is not null && string.Equals(fact.Line, line, StringComparison.Ordinal)
             && string.Equals(await TreeRefs.CommitOfAsync(root, $"refs/heads/{branch}", ct, refs).ConfigureAwait(false), fact.Tip, StringComparison.Ordinal);

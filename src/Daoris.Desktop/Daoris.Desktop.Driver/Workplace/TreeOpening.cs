@@ -114,7 +114,7 @@ internal sealed class TreeOpening(TreeContext context)
         var branch = $"daoris/{name}";
         var path = Path.Combine(TreesRoot, workspace, repository, name);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        // A folder that was there before the add is never this open's to delete.
+        // A folder there before the add is never this open's to delete.
         var ours = !Directory.Exists(path);
 
         string? unrecorded = null;
@@ -210,7 +210,7 @@ internal sealed class TreeOpening(TreeContext context)
     /// </summary>
     /// <param name="basedOn">What it grew from, spelled for a person.</param>
     /// <param name="startedAt">The branch it started at, or <c>HEAD</c>: the fact the page says.</param>
-    /// <param name="unrecorded">Why where its branch started was not recorded, in the program's words; null where it was.</param>
+    /// <param name="unrecorded">Why where its branch started is not recorded, in the program's words; null where it is.</param>
     /// <param name="dependencies">What was copied of the checkout's dependencies, and why not the rest; none by default.</param>
     /// <param name="inputs">What was copied of the machine-local inputs the checkout's gates file declares, and why not the rest; none by default.</param>
     internal static Noted OpeningOf(

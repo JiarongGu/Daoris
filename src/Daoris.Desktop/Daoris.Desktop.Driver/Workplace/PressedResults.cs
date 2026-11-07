@@ -36,7 +36,7 @@ public sealed class PressQuests(Func<string, CancellationToken, Task<QuestView?>
 }
 
 /// <summary>
-/// The quest result a person's press was made on, and the landing's judgement
+/// The quest result a person's press is made on, and the landing's judgement
 /// of it (<see cref="TreeLands.LandAsync"/>'s <c>judged</c>), once it holds its tree. This reads the one quest.
 /// </summary>
 /// <remarks>

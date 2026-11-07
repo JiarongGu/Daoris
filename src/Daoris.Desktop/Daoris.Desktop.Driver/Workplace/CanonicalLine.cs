@@ -60,10 +60,10 @@ public static class CanonicalLine
     }
 
     /// <summary>
-    /// The line as far as the checkout's guess was judged: what is set first; with no checkout here
+    /// The line as far as the checkout's guess is judged: what is set first; with no checkout here
     /// (<paramref name="root"/> empty), what is set alone; else <paramref name="guessed"/>, the guess as the machine's facts last
-    /// judged it, or null where it was not judged yet, so the reader says the line not read yet rather than guess or wait. The twin
-    /// of <see cref="OfAsync"/> over what was judged: Ask Daoris's room and the lines slice read it, and it asks no git.
+    /// judged it, or null where it is not judged yet, so the reader says the line not read yet rather than guess or wait. The twin
+    /// of <see cref="OfAsync"/> over what is judged: Ask Daoris's room and the lines slice read it, and it asks no git.
     /// </summary>
     public static Line? Judged(DriverConfig config, string repository, string? workspace, string? root, HelpLineGuess? guessed)
     {

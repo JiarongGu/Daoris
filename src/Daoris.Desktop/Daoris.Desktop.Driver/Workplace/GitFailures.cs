@@ -8,8 +8,8 @@ public enum GitAct
 }
 
 /// <summary>
-/// The classes of a remote act's failure GITAUTH1a holds on: those today's ambient credentials meet,
-/// and GITAUTH1b's <c>own-input</c>. The identity's and the judge's classes (<c>no-identity</c>, <c>denied</c>, <c>ask</c>) join with
+/// The classes of a remote act's failure it holds on: those today's ambient credentials meet,
+/// and <c>own-input</c>. The identity's and the judge's classes (<c>no-identity</c>, <c>denied</c>, <c>ask</c>) join with
 /// the rows that make them.
 /// </summary>
 public enum GitFailureClass
@@ -49,7 +49,7 @@ public enum GitFailureClass
 /// <summary>
 /// A remote act's failure classed by the transport's own words. The words
 /// are the ones git, its curl and OpenSSH write, measured against real git and OpenSSH on local servers in
-/// <c>GitFailuresProcessTests</c> and <c>GitPromptsProcessTests</c>, and recorded in the GITAUTH1a measurements; a host's own
+/// <c>GitFailuresProcessTests</c> and <c>GitPromptsProcessTests</c>; a host's own
 /// sentence before them (<c>remote: …</c>) is never what classes a failure, since git and ssh say theirs after it.
 /// </summary>
 public static class GitFailures
@@ -69,7 +69,7 @@ public static class GitFailures
         "could not read Password for",
         "The requested URL returned error: 401",
         "Too many authentication failures",
-        "has no git identity on this machine", // the ssh door (GITAUTH1e): the home has moved and nothing serves the host
+        "has no git identity on this machine", // the ssh door: the home has moved and nothing serves the host
     ];
 
     private const string Forbidden = "The requested URL returned error: 403";

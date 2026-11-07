@@ -158,7 +158,7 @@ internal sealed class LandingPress(
         string? squashedTip = null;
         string? squashedInto = null;
         var branchForm = landing.Form == LandingForm.Branch;
-        // A name entered where nothing is branched is refused, not ignored: the person would think it was used. A delivery's
+        // A name entered where nothing is branched is refused, not ignored: the person would think it is used. A delivery's
         // name is its intent's.
         if (delivering is null && !branchForm && subject.EnteredName is not null) return new(false, EnteredMerge);
         // Only what the line lacks lands. The person's press fetches the line once first,
@@ -273,14 +273,14 @@ internal sealed class LandingPress(
                         Integrate = LandedIntegrate.Of(null, named is not null, named?.IntegrateRequest),
                         // The record moves to the session tip this advance squashed; a fast-forward keeps it.
                         Squashed = branched.Squashed,
-                        // Whose work this is, its unit, and the submission it was accepted on.
+                        // Whose work this is, its unit, and the submission it is accepted on.
                         Quest = subject.Served, Unit = unit, Submission = subject.Submission, Brought = subject.Brought,
                     }, unit)).ConfigureAwait(false);
             }
             else if (landed.Landed && tip is not null)
             {
                 // Where its work grew from: the session branch's start, so bringing it up to date replays only its own; the line's
-                // commit a replay was made onto.
+                // commit a replay is made onto.
                 var from = branched.Replay is not null && replaying is not null ? replaying.Onto
                     : branched.Source is { } source ? context.Grown.Of(repository, source)?.From : null;
                 landed = await RecordedAsync(landed, tip, () => context.Recorded.Record(new LandedBranch(
@@ -289,7 +289,7 @@ internal sealed class LandingPress(
                 {
                     From = from,
                     // Who accepted it, and the rule as it stood: a choice keeps its facts. Where the access
-                    // setup turned its switch on, where that was set, so the record says the setup accepted it.
+                    // setup turned its switch on, where that is set, so the record says the setup accepted it.
                     AcceptedBy = acceptedBy,
                     Rule = new LandedRule(null, landing.AutoAccept, LandingSource.Default),
                     // That `integrate` stood at this acceptance, its `request` and whose step, so a landing made
@@ -301,11 +301,11 @@ internal sealed class LandingPress(
                     Opinion = gate?.OpinionLanding,
                     // The named version that decided; none under Current.
                     Workflow = named?.Record,
-                    // The session tip its one commit was made from: what proves the session landed.
+                    // The session tip its one commit is made from: what proves the session landed.
                     Squashed = branched.Squashed,
                     // The branch work unit whose work it carries, where the session's entry has one.
                     Units = UnitOf(full, repository) is { } unit ? [unit] : [],
-                    // The quest its session served and the submission it was accepted on.
+                    // The quest its session served and the submission it is accepted on.
                     Served = subject.Served,
                     Submission = subject.Submission,
                     // The sessions its combined Accept brought in, in the same write.

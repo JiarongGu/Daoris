@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What came of asking to merge a session tree into the canonical line (D51 rule 6). A refusal is an
+/// What came of asking to merge a session tree into the canonical line. A refusal is an
 /// ANSWER — the checkout is busy, there is nothing to merge, the branches conflict — and each names
 /// what the person would do about it.
 /// </summary>

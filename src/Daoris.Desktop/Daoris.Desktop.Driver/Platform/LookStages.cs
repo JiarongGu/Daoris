@@ -187,7 +187,7 @@ public sealed class LookStages
         }
 
         /// <summary>
-        /// Its queue so far: what was waited, and a wait open now counted to now, so a look slow at its threshold says
+        /// Its queue so far: what has been waited, and a wait open now counted to now, so a look slow at its threshold says
         /// whether it is waiting for a place or working. Written always, 0 included, never held to <see cref="Floor"/>.
         /// </summary>
         internal long QueuedSoFar()

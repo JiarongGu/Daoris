@@ -22,7 +22,7 @@ public sealed record EntryLandingPart(string Session, string Tree)
     public LandingSubject? Own { get; init; }
 
     /// <summary>
-    /// The result the press was made on for this part, its own quest's: judged again under the part's
+    /// The result the press is made on for this part, its own quest's: judged again under the part's
     /// own tree's hold, and before its push. Null holds to nothing: a part with no quest or no result in, or a door that read none.
     /// </summary>
     public PressedResult? Pressed { get; init; }
@@ -75,7 +75,7 @@ public static class EntryPartOutcome
     /// <summary>It was refused, as <see cref="EntryPartLanding.Landing"/> says; the parts after it were not tried.</summary>
     public const string Refused = "refused";
 
-    /// <summary>The person chose to leave it out: nothing of it was landed, and its tree stays.</summary>
+    /// <summary>The person chose to leave it out: nothing of it is landed, and its tree stays.</summary>
     public const string LeftOut = "left-out";
 
     /// <summary>Its tree is an earlier part's, whose landing carried its commits.</summary>
@@ -84,12 +84,12 @@ public static class EntryPartOutcome
     /// <summary>An earlier part was refused, so it was not tried: the order is the ledger's, and a later part may build on it.</summary>
     public const string NotTried = "not-tried";
 
-    /// <summary>Its work was replayed onto the head bringing it in: the head's landing carries it, and it lands nothing itself.</summary>
+    /// <summary>Its work is replayed onto the head bringing it in: the head's landing carries it, and it lands nothing itself.</summary>
     public const string BroughtInto = "brought-into";
 
     /// <summary>
-    /// The person's Accept was kept as the review's word of the part's run, whose <c>land</c> the runtime performs at its
-    /// pass: nothing was landed here, and the part is not refused.
+    /// The person's Accept is kept as the review's word of the part's run, whose <c>land</c> the runtime performs at its
+    /// pass: nothing is landed here, and the part is not refused.
     /// </summary>
     public const string Accepted = "accepted";
 }
@@ -330,7 +330,7 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
         return name;
     }
 
-    /// <summary>Whether a recorded branch's pull request was merged or closed: the platform's kept word, else the proof on its tip.</summary>
+    /// <summary>Whether a recorded branch's pull request is merged or closed: the platform's kept word, else the proof on its tip.</summary>
     private static async Task<bool> CompletedAsync(string root, LandedBranch recorded, string? line, CancellationToken ct)
     {
         if (recorded.PullRequestState is { State: PullRequestStates.Completed or PullRequestStates.Abandoned }) return true;

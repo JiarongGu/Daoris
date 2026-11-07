@@ -9,7 +9,7 @@ public sealed record SpaceFreeWorld(string Home)
     /// <summary>The sizes counted, whose set-aside walk says each folder's bytes; a run's end counts the kinds it removed from again.</summary>
     public SpaceSizes Sizes { get; init; } = SpaceSizes.Shared;
 
-    /// <summary>How the downloads are judged right before each goes (KEEP1b's act).</summary>
+    /// <summary>How the downloads are judged right before each goes.</summary>
     public Func<DownloadJudge>? Judge { get; init; }
 
     /// <summary>The shell's browser host; null with no shell to say whether the browser runs, which keeps its caches.</summary>

@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The questions the driver asks a working tree: is it clean enough to spawn into, what landed while
-/// a session ran, and — since D48 §6 — where in the repository's history this checkout stands. Asked
+/// a session ran, and where in the repository's history this checkout stands. Asked
 /// of git itself, because git's answer is the one that matters.
 /// </summary>
 /// <remarks>
@@ -202,8 +202,8 @@ public static class WorkingTree
     }
 
     /// <summary>
-    /// Every branch tip in <paramref name="root"/>, read by one <c>git for-each-ref</c> (CONFIRMWAIT1, the confirm-wait design §15.1 item
-    /// 1: a plan's branches bound by their full commits, not their count): each local branch by its name, each remote's as
+    /// Every branch tip in <paramref name="root"/>, read by one <c>git for-each-ref</c> (a plan's branches bound by their full
+    /// commits, not their count): each local branch by its name, each remote's as
     /// <c>&lt;remote&gt;/&lt;name&gt;</c>, each by its full commit id. Null where git cannot say.
     /// </summary>
     public static async Task<IReadOnlyDictionary<string, string>?> TipsAsync(string root, CancellationToken ct = default)
@@ -227,8 +227,8 @@ public static class WorkingTree
     }
 
     /// <summary>
-    /// What <paramref name="root"/>'s index holds staged against its head, by each entry's modes and full blob ids (CONFIRMWAIT1 §15.1
-    /// item 2: a discard binds its index, whose staged bytes can change while the working file stays the same). Empty where nothing is
+    /// What <paramref name="root"/>'s index holds staged against its head, by each entry's modes and full blob ids
+    /// (a discard binds its index, whose staged bytes can change while the working file stays the same). Empty where nothing is
     /// staged; null where git cannot say.
     /// </summary>
     public static async Task<string?> StagedAsync(string root, CancellationToken ct = default)

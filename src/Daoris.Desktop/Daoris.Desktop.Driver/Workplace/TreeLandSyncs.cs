@@ -49,15 +49,15 @@ internal sealed record LandReplay(string Now, IReadOnlyList<LandingCommit> Lande
 }
 
 /// <summary>
-/// A landing in sync with its line (D87's 2026-10-15 amendment): the press's one fetch and its words where it fails, the
+/// A landing in sync with its line: the press's one fetch and its words where it fails, the
 /// judgement against the line, the replay of what the line lacks in a tree of Daoris's own and its proof, the conflict's refusal,
-/// and the session's tree moved to what landed. Over the trees' context, and WSR6's replay.
+/// and the session's tree moved to what landed. Over the trees' context, and the branch replays.
 /// </summary>
 internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
 {
     /// <summary>
-    /// Read what a landing of <paramref name="full"/> is judged against, and judge it: the branch form against the line's latest by
-    /// REVIEWBASE2-i's rule, the merge form against the line here. <paramref name="fetch"/> fetches the line first, once,
+    /// Read what a landing of <paramref name="full"/> is judged against, and judge it: the branch form against the line's latest,
+    /// the merge form against the line here. <paramref name="fetch"/> fetches the line first, once,
     /// and a fetch that fails is said and judged against the last one, never refused. Null where there is nothing to judge
     /// (not a tree of this home's, not on a branch, no line, or git cannot say), and the landing goes on as before.
     /// </summary>
@@ -78,8 +78,8 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
         if ((await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch is not { } line) return (null, null);
 
         var fetched = fetch ? await FetchedAsync(root, line, repository, workspace, ct).ConfigureAwait(false) : null;
-        // The line here and origin's copy of it, one read after the fetch, where each form was a start of its own
-        // and the line here was asked twice. Read at the moment the forms were, and the judgement's alone: it ends with this method.
+        // The line here and origin's copy of it, one read after the fetch, not a start for each form with
+        // the line here asked twice. Read at the moment the forms read theirs, and the judgement's alone: it ends with this method.
         var refs = RefSnapshot.Take(root);
         var here = await CommitOfAsync(root, $"refs/heads/{line}", ct, refs).ConfigureAwait(false);
         var onto = branchForm ? await LatestAsync(root, line, ct, refs).ConfigureAwait(false) : here;
@@ -103,7 +103,7 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
         return await FetchedAsync(root, line, repository, workspace, ct).ConfigureAwait(false);
     }
 
-    /// <summary>D109's fetch of the line, and its words in WSR7's where it failed; null where it fetched or there is no `origin`.</summary>
+    /// <summary>The fetch of the line, and its words where it failed; null where it fetched or there is no `origin`.</summary>
     private async Task<string?> FetchedAsync(string root, string line, string repository, string workspace, CancellationToken ct)
     {
         var (failed, url) = await FetchAsync(context.Home, root, line, ct, repository, workspace).ConfigureAwait(false);
@@ -193,7 +193,7 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
     }
 
     /// <summary>
-    /// The session's tree moved to what landed, as WSR6 moves a session branch: detached where it stands, its branch moved
+    /// The session's tree moved to what landed, as a session branch moves: detached where it stands, its branch moved
     /// by compare-and-swap from the commit the landing judged, switched back. Only while it is clean, on that branch at that commit,
     /// nothing runs in it and its branch is not on its remote. Null where it moved; else why it stays.
     /// </summary>
@@ -256,7 +256,7 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
 public static class LandingSyncWords
 {
     /// <summary>
-    /// What <c>trees land --plan</c> says of what the line holds (D87's amendment point 4): what the press would leave out
+    /// What <c>trees land --plan</c> says of what the line holds: what the press would leave out
     /// and why, what it would replay, and a conflict it would be refused for; where the line holds none of the tree's commits and only
     /// moved since the work began, what it would replay onto it first; nothing where it lands the commits as made.
     /// </summary>
@@ -280,7 +280,7 @@ public static class LandingSyncWords
         }
     }
 
-    /// <summary>One commit left out: its short id, subject and why (D87's amendment point 4).</summary>
+    /// <summary>One commit left out: its short id, subject and why.</summary>
     public static string Each(LeftOutCommit commit) => $"`{TextBounds.ShortCommit(commit.Sha, 8)}` “{commit.Subject}”" + commit.Why switch
     {
         LeftOutWhy.Content => " (on the line by content)",
@@ -402,8 +402,8 @@ public static class LandingSyncWords
         + ", resolve each conflict, rerun the tests your change reaches, and commit. It can land again once your tree has changed.";
 
     /// <summary>
-    /// A fetch that failed, in WSR7's words: git's reason, that the landing was judged against what origin said when it was
-    /// last fetched here and when that was, and what the git Daoris runs needs to reach an origin over SSH or HTTPS.
+    /// A fetch that failed, in its own words: git's reason, that the landing is judged against what origin said when
+    /// last fetched here and when that happened, and what the git Daoris runs needs to reach an origin over SSH or HTTPS.
     /// </summary>
     public static string NotFetched(string reason, DateTimeOffset? lastFetch, string? reach, DateTimeOffset now) =>
         $" `origin` was not fetched ({reason}), so this was judged against what it said when it was last fetched here "

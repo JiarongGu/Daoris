@@ -3,7 +3,7 @@ using static Daoris.Driver.BranchTidying;
 
 namespace Daoris.Driver;
 
-/// <summary>What the look keeps beside the branches: the set-aside folders, the downloads, the machine log, finished history and the free space's floor (KEEP1a to KEEP1g), said as the look's lines.</summary>
+/// <summary>What the look keeps beside the branches: the set-aside folders, the downloads, the machine log, finished history and the free space's floor, said as the look's lines.</summary>
 internal sealed class TidyKeeping(BranchTidying tidy, string home)
 {
     private readonly object _gate = new();
@@ -223,7 +223,7 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
     }
 
     /// <summary>
-    /// What the person's press could free now (KEEP1f's row), in bytes, of what its list measures: every unit the list names whose size it
+    /// What the person's press could free now, in bytes, of what its list measures: every unit the list names whose size it
     /// knows. Read only when a volume is first said below its floor; null where the list does not read.
     /// </summary>
     private long? Could()

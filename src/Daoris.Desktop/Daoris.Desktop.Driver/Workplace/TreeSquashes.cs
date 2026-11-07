@@ -3,7 +3,7 @@ using static Daoris.Driver.TreeGit;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The squash a landing rule asks for (PROCESS1b-ii, D164's amendment point 2 and its PROCESS1b-ii note; PART10l, out of
+/// The squash a landing rule asks for (out of
 /// <c>SessionTrees.Squash.cs</c>): the pull request's branch made as one commit from the session's work, the first commit Daoris
 /// itself makes, and the landing record's word of what it squashed, which is what proves the session landed once its commits are
 /// on no branch of the person's. Over the trees' context for that record; the commit's making is static, for the landing's branch
@@ -55,7 +55,7 @@ internal sealed class TreeSquashes(TreeContext context)
     /// The standing landing whose squash holds <paramref name="tip"/>: its recorded session tip is that commit or one
     /// that grew from it, and its branch still stands holding the commit it was recorded at. Null where none does, or git could
     /// not say. The record is Daoris's own word of what it squashed, so it vouches as a branch the landing made would by ancestry,
-    /// and only while that branch is the landing's (D102's rule); the content proof is left as it is for the rest.
+    /// and only while that branch is the landing's; the content proof is left as it is for the rest.
     /// </summary>
     /// <param name="cwd">A working tree of the repository: the session's own, or the registered root.</param>
     /// <param name="tip">The session branch's commit, read once by the caller.</param>
@@ -64,7 +64,7 @@ internal sealed class TreeSquashes(TreeContext context)
         (await SquashedHoldAsync(cwd, repository, tip, ct, refs).ConfigureAwait(false))?.Entry;
 
     /// <summary>
-    /// <see cref="SquashedHolderAsync"/> with the commit its branch was read standing at (third review): the record vouches only
+    /// <see cref="SquashedHolderAsync"/> with the commit its branch is read standing at: the record vouches only
     /// while that branch is the landing's, so a removal on its word rests on the branch at that commit, and verifies it as it goes.
     /// </summary>
     internal async Task<(LandedBranch Entry, string At)?> SquashedHoldAsync(string cwd, string repository, string tip, CancellationToken ct, RefSnapshot? refs = null)

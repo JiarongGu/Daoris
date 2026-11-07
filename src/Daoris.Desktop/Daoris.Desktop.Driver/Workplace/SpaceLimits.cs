@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The size limits (D195's keep-size note): a kind over its limit lets go of its oldest eligible units first, through the
+/// The size limits: a kind over its limit lets go of its oldest eligible units first, through the
 /// press's own removal (<see cref="SpaceFree.RunAsync"/>), so every guard each removal has holds as it does for the press. Beside them the
 /// allowance over the whole (§4.3's stopping rule): where the whole is still over it, the eligible units go in order, but only where all
 /// of them would bring the whole within it. Only what can be made again or is only a copy is ever taken: the set-aside folders whose record

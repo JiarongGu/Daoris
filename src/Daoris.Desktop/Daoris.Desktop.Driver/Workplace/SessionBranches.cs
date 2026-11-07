@@ -5,11 +5,11 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where one session branch grew from: the repository, the branch, the line it was opened on, the commit
-/// it started at, and the branch that commit was the tip of when a chain's step grew from the step before's.
+/// Where one session branch grew from: the repository, the branch, the line it is opened on, the commit
+/// it started at, and the branch that commit is the tip of when a chain's step grew from the step before's.
 /// What bringing the branch up to date cuts at, so only its own commits are replayed.
 /// </summary>
-/// <param name="Line">The repository's line when the tree was opened, or null where git named none.</param>
+/// <param name="Line">The repository's line when the tree is opened, or null where git named none.</param>
 /// <param name="From">The commit the branch started at: the line's tip, or the step before's tip. A branch whose history does not hold it is not this record's.</param>
 /// <param name="GrewFrom">The step before's branch it grew from, or null where it grew from the line.</param>
 /// <param name="Now">
@@ -30,7 +30,7 @@ public sealed record GrownBranch(
     public HeldFact? Held { get; init; }
 
     /// <summary>
-    /// When its branch went and the entry was kept as a trace: held, or its unit still open on a standing landing. Null while
+    /// When its branch went and the entry is kept as a trace: held, or its unit still open on a standing landing. Null while
     /// it stands. A trace is never judged again.
     /// </summary>
     public DateTimeOffset? GoneAt { get; init; }
@@ -52,7 +52,7 @@ public sealed record TidyBlock(string Why, DateTimeOffset At)
 {
     /// <summary>
     /// The sentence the tidy kept it with, so What needs you says why and not only which guard; null where
-    /// none was said. Additive: a block without it reads as null.
+    /// none is said. Additive: a block without it reads as null.
     /// </summary>
     public string? Reason { get; init; }
 }

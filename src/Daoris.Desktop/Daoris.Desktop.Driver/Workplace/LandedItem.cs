@@ -34,7 +34,7 @@ public sealed record LandedItem(
     /// </summary>
     public PullRequestNotAsked? NotAsked { get; init; }
 
-    /// <summary>When the landing recorded this branch, the age a row says; null where a row was made from no record.</summary>
+    /// <summary>When the landing recorded this branch, the age a row says; null where a row is made from no record.</summary>
     public DateTimeOffset? LandedAt { get; init; }
 
     /// <summary>The quest the landing is named for, where it names one.</summary>

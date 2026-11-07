@@ -284,7 +284,7 @@ public static class ToolsCommand
                     return 0;
                 }
 
-                // Alone, no Daoris runs to say what a session was handed, so the home's process markers say whether one runs at all.
+                // Alone, no Daoris runs to say what a session is handed, so the home's process markers say whether one runs at all.
                 return new ToolPress("delete", ToolRoutes.Delete, new JsonObject { ["tool"] = tool.Id, ["version"] = version },
                     async stop => (object?)await ToolInstall.DeleteAsync(home, tool.Id, version,
                         token => ToolDownloads.Current.RunningAsync(home, token), ct: stop).ConfigureAwait(false),

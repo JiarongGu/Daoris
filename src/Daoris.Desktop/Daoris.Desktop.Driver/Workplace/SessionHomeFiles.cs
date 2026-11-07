@@ -136,7 +136,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Files, Place.Files, "", true, bytes => HistoryBytes.None with { Files = bytes }),
         new(Marker, Place.Pids, ".pid", false, Beside),
         new(Mark, Place.Sessions, GoOnMarkSuffix, false, Beside),
-        // The reopens it was told of, a mark too, which goes with its record.
+        // The reopens it is told of, a mark too, which goes with its record.
         new(Mark, Place.Sessions, ReopenMarkSuffix, false, Beside),
         // The question its park asked (QuestionFiles), a mark of the park as the others are, which goes with its record.
         new(Mark, Place.Sessions, QuestionSuffix, false, Beside),

@@ -92,9 +92,9 @@ public sealed class InstallSwap(
 
     /// <summary>
     /// A folder or a file moved, tried again while a held file refuses it, for <see cref="HeldWithin"/>; every hold met is
-    /// kept with how long it lasted, and what was found holding it: asked at the first refusal, every
+    /// kept with how long it lasted, and what is found holding it: asked at the first refusal, every
     /// <see cref="HeldAskEvery"/> after, and when the wait gives up, keeping the last answer, since what still holds it is
-    /// what the hold was; one moment's answer can be a passer-by. A hold that outlasts the wait throws
+    /// what the hold is; one moment's answer can be a passer-by. A hold that outlasts the wait throws
     /// <see cref="HeldMoveException"/>; any other failure throws at once.
     /// </summary>
     private void MoveHeld(string source, string target, bool overwrite = false)

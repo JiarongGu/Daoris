@@ -78,7 +78,7 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
 
     /// <summary>
     /// This subject named for its work where it is a conversation's: its name the oldest commit subject its work holds
-    /// beyond the line, or empty where none was read, so its branch is never a slug of
+    /// beyond the line, or empty where none is read, so its branch is never a slug of
     /// the person's first words. The opening stays its title, for the record and the squash, and is searched for a ticket's key after
     /// that subject. Any other subject is unchanged.
     /// </summary>

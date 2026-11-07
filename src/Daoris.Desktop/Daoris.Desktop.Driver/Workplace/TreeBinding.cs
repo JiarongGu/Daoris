@@ -29,7 +29,7 @@ internal static class TreeBinding
 
     /// <summary>
     /// An environment of the call's own, with nothing in it: the runner then asks git as written, never a fact a flow kept
-    /// (<see cref="WorkingTree"/>'s runner, LANDGIT1's rule for a call with variables of its own).
+    /// (<see cref="WorkingTree"/>'s runner, for a call with variables of its own).
     /// </summary>
     private static readonly IReadOnlyDictionary<string, string> AsWritten = new Dictionary<string, string>();
 
@@ -70,7 +70,7 @@ internal static class TreeBinding
         + ", set by something other than Daoris, binds it there, so nothing was removed, reset or written through it. Move that value into "
         + "the owning checkout's own worktree configuration, or unset it, then ask again";
 
-    /// <summary>The same folder, spelled as git spells it or reached through a link (AUTOTIDY1's <see cref="TreeGit.Normal"/>).</summary>
+    /// <summary>The same folder, spelled as git spells it or reached through a link (<see cref="TreeGit.Normal"/>).</summary>
     private static bool Own(string reported, string folder) => SamePath(reported, folder) || SamePath(Normal(reported), Normal(folder));
 
     /// <summary>

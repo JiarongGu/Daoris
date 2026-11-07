@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>Why the press kept a unit it was asked to remove, beside each kind's own codes.</summary>
+/// <summary>Why the press kept a unit named for removal, beside each kind's own codes.</summary>
 public static class SpaceKept
 {
     /// <summary>It changed since the list the person read: a folder that held no files of its own now does, or a day no longer past.</summary>

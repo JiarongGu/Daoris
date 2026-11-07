@@ -69,7 +69,7 @@ internal sealed class LandedReviews(TreeContext context)
     }
 
     /// <summary>
-    /// Where a landed branch's work grew from: the start of the session branch it was made from, as the landing
+    /// Where a landed branch's work grew from: the start of the session branch it is made from, as the landing
     /// recorded it, while that is still in the branch's history; else where the branch leaves the line.
     /// </summary>
     private async Task<string?> LandedFromAsync(string root, LandedBranch entry, string tip, CancellationToken ct)

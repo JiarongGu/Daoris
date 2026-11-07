@@ -176,7 +176,7 @@ internal sealed class RefSnapshot
         static string? Empty(string field) => field.Length == 0 ? null : field;
     }
 
-    /// <summary>Drop what was read, and what git answered of commits: the next question reads again.</summary>
+    /// <summary>Drop what has been read, and what git answered of commits: the next question reads again.</summary>
     internal void Invalidate()
     {
         lock (_gate) (_refs, _trees, _facts, Unheld) = (null, null, new(StringComparer.Ordinal), new UnheldTips());

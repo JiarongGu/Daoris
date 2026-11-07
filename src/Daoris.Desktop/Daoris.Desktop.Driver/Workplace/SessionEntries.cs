@@ -19,7 +19,7 @@ public static class PartBegan
     public const string HandedOver = "handed-over";
 
     /// <summary>
-    /// A record that went on from one whose own conversation was proven lost (<see cref="HandOverWhy.Resume"/>): a move of its own, never a hand-over.
+    /// A record that went on from one whose own conversation is proven lost (<see cref="HandOverWhy.Resume"/>): a move of its own, never a hand-over.
     /// </summary>
     public const string Moved = "moved";
 

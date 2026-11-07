@@ -9,15 +9,15 @@ public sealed record SweepResult(SweepItem Item, bool Removed, string Message)
     /// <summary>Kept by the look's own tidy: why, as the machine log's code (<see cref="TidyKept"/>); null where the press kept it.</summary>
     public string? Kept { get; init; }
 
-    /// <summary>Which <see cref="TidyKept.Unread"/> it was (<see cref="TidyCause"/>); null for any other reason.</summary>
+    /// <summary>Which <see cref="TidyKept.Unread"/> it is (<see cref="TidyCause"/>); null for any other reason.</summary>
     public string? Cause { get; init; }
 
-    /// <summary>Removed by the look's own tidy: where its tree's folder was moved aside to; null where it had no folder here.</summary>
+    /// <summary>Removed by the look's own tidy: where its tree's folder is moved aside to; null where it had no folder here.</summary>
     public string? MovedTo { get; init; }
 
     /// <summary>
     /// Removed though held by content: the ref its commits were kept on, for the look's report and log to name;
-    /// null where none was kept.
+    /// null where none is kept.
     /// </summary>
     public string? KeptRef { get; init; }
 }

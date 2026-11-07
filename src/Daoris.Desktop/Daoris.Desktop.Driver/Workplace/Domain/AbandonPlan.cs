@@ -104,7 +104,7 @@ public enum AbandonVerdict
     /// <summary>The second press ran its steps: what went, what stayed and what changed are said.</summary>
     Abandoned,
 
-    /// <summary>Nothing is left to take, or nothing was listed: said, never refused.</summary>
+    /// <summary>Nothing is left to take, or nothing is listed: said, never refused.</summary>
     Nothing,
 
     /// <summary>No such ask on this machine, or no such quest here: <c>WORK_UNKNOWN</c>.</summary>

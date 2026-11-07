@@ -10,7 +10,7 @@ internal static class LandingSayings
     private const int HookSaidLimit = 600;
 
     /// <summary>
-    /// What a merge its repository's hook refused says, told from the merge the integration tree made for the press: that it was the hook and no conflict, the hook's own output, and
+    /// What a merge its repository's hook refused says, told from the merge the integration tree made for the press: that it is the hook and no conflict, the hook's own output, and
     /// that Daoris does not skip a repository's hooks (this merge never passes <c>--no-verify</c>, as the git writes design's §4.1
     /// proposes for the person's own acts), so the person changes what the hook refuses or merges by hand. git runs a hook with its output on stderr; its own closing line, where it is in English, is left out.
     /// </summary>

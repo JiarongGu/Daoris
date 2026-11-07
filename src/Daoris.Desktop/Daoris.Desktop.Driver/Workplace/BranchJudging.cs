@@ -34,7 +34,7 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
     /// Every session branch and every recorded landed branch of one repository, judged for the replay onto
     /// <paramref name="onto"/> — and the landed branches whose work reached the line, which go instead.
     /// </summary>
-    /// <param name="asked">The look's asks, for each landed row to say why it was not asked; null at the press, which asks nothing.</param>
+    /// <param name="asked">The look's asks, for each landed row to say why it is not asked; null at the press, which asks nothing.</param>
     /// <param name="refs">The refs the caller's judgement read; null takes this judgement's own.</param>
     internal async Task<(List<RebaseJudged> Branches, List<LandedItem> Deletes)> JudgeBranchesAsync(
         string root, string repository, string workspace, string? line, string? onto, HashSet<string> busy, CancellationToken ct,
@@ -61,7 +61,7 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
         var config = asked is null ? null : context.Config();
         foreach (var landed in await cleanups.JudgeLandedAsync(root, repository, workspace, entries, staying, stale: null, ct, refs).ConfigureAwait(false))
         {
-            // What its pull request's answer was, and why the look did not ask where it would have.
+            // What its pull request's answer is, and why the look did not ask where it would have.
             var item = asked is null ? landed.Item : landed.Item with { NotAsked = cleanups.NotAskedOf(landed.Item, asked, config!) };
             if (item.Removable || item.Kind == LandedKind.LeanedOn)
             {

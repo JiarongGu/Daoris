@@ -121,7 +121,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     }
 
     /// <summary>
-    /// Whether the acceptance at <paramref name="entry"/>'s tip was the request, by the provenance its newest advance, else its own,
+    /// Whether the acceptance at <paramref name="entry"/>'s tip is the request, by the provenance its newest advance, else its own,
     /// keeps and who accepted it, and the policy the request then freezes: the request the acceptance stood under (the node's own where the
     /// version's step asks), the rest the rule's. Nothing is read from git, and a record that says neither is no request.
     /// </summary>

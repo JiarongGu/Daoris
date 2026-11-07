@@ -3,7 +3,7 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Why a row's pull request was not asked about at an occasion: no plugin to ask, the
+/// Why a row's pull request is not asked about at an occasion: no plugin to ask, the
 /// plugin not ready, or the occasion's bound reached first. Nothing goes on any of them, and none is kept: the next look asks again.
 /// </summary>
 /// <param name="Code"><see cref="PullRequestCodes.NoPlugin"/>, <see cref="PullRequestCodes.Unready"/> or <see cref="PullRequestCodes.NotAsked"/>.</param>
@@ -44,7 +44,7 @@ public sealed record PullRequestAskedAgain(LandedBranch Entry)
 /// </summary>
 public static class PullRequestWords
 {
-    /// <summary>Why nothing was asked where no plugin pushed the branch and the rule names none.</summary>
+    /// <summary>Why nothing is asked where no plugin pushed the branch and the rule names none.</summary>
     public const string NoPlugin = "no plugin pushed it and its repository's landing rule names none, so its pull request was not asked about.";
 
     /// <summary>

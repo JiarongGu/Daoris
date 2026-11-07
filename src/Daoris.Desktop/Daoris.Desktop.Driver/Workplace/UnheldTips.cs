@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Which session branches no branch of the person's holds, for every session branch of a checkout in one <c>rev-list</c>: D88's
-/// proof asked <c>log tip --not &lt;the person's branches&gt;</c> of each branch the look judged, one start a branch. A branch's tip is
+/// Which session branches no branch of the person's holds, for every session branch of a checkout in one <c>rev-list</c>, instead of a
+/// <c>log tip --not &lt;the person's branches&gt;</c> proof of each branch the look judged, one start a branch. A branch's tip is
 /// held exactly when it is not among the commits the one walk lists, so the answer for any tip the snapshot holds a session branch at is
 /// read from that list. Kept with the judgement's refs (<see cref="RefSnapshot.Unheld"/>), so a write of the flow drops it with them.
 /// </summary>
@@ -43,7 +43,7 @@ internal sealed class UnheldTips
             .Select(entry => entry.Object)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (tips.Count == 0) return (tips, []);
-        // The same branches D88 counts against (`TreeFollows.UnlandedLogAsync`): a local branch outside `daoris/` or a remote-tracking one outside `*/daoris/`.
+        // The same branches the landing check counts against (`TreeFollows.UnlandedLogAsync`): a local branch outside `daoris/` or a remote-tracking one outside `*/daoris/`.
         var (code, open, _) = await WorkingTree.GitAsync(
             root, ["rev-list", $"--branches={TreeFollows.SessionPrefix}*", "--not", $"--exclude={TreeFollows.SessionPrefix}*", "--branches", "--exclude=*/daoris/*", "--remotes"], ct)
             .ConfigureAwait(false);

@@ -29,7 +29,7 @@ internal sealed class TreeContext
     /// <summary>The test seam: run with the branch's name between a judgement and the delete it cleared. Production sets none.</summary>
     internal Func<string, Task>? BeforeDeleting { get; set; }
 
-    /// <summary>A test's seam (FABRIC-END4a review): run once the trees were read, right before the branch's ref goes.</summary>
+    /// <summary>A test's seam: run once the trees are read, right before the branch's ref goes.</summary>
     internal Func<string, Task>? BeforeRefDeleted { get; set; }
 
     /// <summary>The test seam: true for a checkout whose working trees git could not list. Production sets none.</summary>
@@ -51,7 +51,7 @@ internal sealed class TreeContext
     internal string TreesRoot => DaorisHome.Entry(Home, HomeEntry.Trees);
 
     /// <summary>
-    /// Both places of <see cref="HomeEntry.Trees"/>, the new first: D172 point 6 never moves a tree, so the trees
+    /// Both places of <see cref="HomeEntry.Trees"/>, the new first: a layout move never moves a tree, so the trees
     /// opened before the layout moved stay at the old place while new ones open at the new, and each is one this home opened.
     /// </summary>
     internal IReadOnlyList<string> TreesRoots => DaorisHome.Places(Home, HomeEntry.Trees);
@@ -91,9 +91,8 @@ internal sealed class TreeContext
 
     /// <summary>
     /// The output a repository declares, which an unforced removal of its tree takes with it: its <c>integration.scratch</c>,
-    /// read from the declaration the owner accepted for integration at its line's tip alone (INTEGRATE1d, D218's note,
-    /// <see cref="TreeScratch.AcceptedAsync"/>). None where the choices could not be read, the line is not known or nothing is accepted,
-    /// so the tree keeps what it names, as before TIDYOUTPUT1.
+    /// read from the declaration the owner accepted for integration at its line's tip alone (<see cref="TreeScratch.AcceptedAsync"/>). None where the choices could not be read, the line is not known or nothing is accepted,
+    /// so the tree keeps what it names.
     /// </summary>
     /// <param name="line">The repository's line where the caller read it already; null reads it here.</param>
     internal async Task<IReadOnlyList<System.Text.RegularExpressions.Regex>> ScratchAsync(

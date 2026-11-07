@@ -34,7 +34,7 @@ public sealed class SizeReading
     /// <summary>How many files were counted.</summary>
     public required int Counted { get; init; }
 
-    /// <summary>Each entry of D172's table, by name, and its bytes where it is found (its new place or its old one).</summary>
+    /// <summary>Each entry of the table, by name, and its bytes where it is found (its new place or its old one).</summary>
     public required IReadOnlyDictionary<string, long> Entries { get; init; }
 
     /// <summary>Each name at the home's top that no entry holds, and its bytes.</summary>
@@ -46,17 +46,17 @@ public sealed class SizeReading
     /// <summary>The entries, names and folders a part of which could not be read: their bytes are as far as the walk got.</summary>
     public required IReadOnlySet<string> Unreadable { get; init; }
 
-    /// <summary>Each project folder Daoris left in the person's tool home, by name, measured with the home; null where none was asked.</summary>
+    /// <summary>Each project folder Daoris left in the person's tool home, by name, measured with the home; null where none is asked.</summary>
     public IReadOnlyDictionary<string, ToolMeasure>? Tool { get; init; }
 }
 
 /// <summary>
-/// The sizes This Daoris shows (its second opinion's point 3): measured, never
+/// The sizes This Daoris shows: measured, never
 /// guessed; never walked on a page's open, only when asked, in the background, one walk per folder at a time; kept for the
 /// process, so every window reads the last measure; cancellable; bounded by a budget, answering what it counted past it.
 /// </summary>
 /// <remarks>
-/// <para><b>Each file is counted once, for the entry that holds it.</b> D172's places nest (a kept file under a session's
+/// <para><b>Each file is counted once, for the entry that holds it.</b> The places nest (a kept file under a session's
 /// folder is <c>work</c>'s, the session's record <c>data</c>'s), so a file is given to the entry whose place matches it most
 /// closely, a named part outranking a <c>*</c>; a file no entry holds is its top name's, a name the table does not hold.</para>
 ///
@@ -74,7 +74,7 @@ public sealed class WiringSizes
     /// <summary>The names an earlier build of Daoris wrote at the home's top, which no entry holds now.</summary>
     public static IReadOnlySet<string> EarlierBuild { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
-        // The window's engine before D92.
+        // The window's engine of an earlier build.
         "webview2",
     };
 
@@ -277,7 +277,7 @@ public sealed class WiringSizes
 
     private static IReadOnlyList<Pattern>? _patterns;
 
-    /// <summary>Every place of every entry of D172's table, new and old; an entry known by the names it holds, each of them.</summary>
+    /// <summary>Every place of every entry of the table, new and old; an entry known by the names it holds, each of them.</summary>
     private static IReadOnlyList<Pattern> Patterns() => _patterns ??= [.. Build()];
 
     private static IEnumerable<Pattern> Build()
@@ -354,7 +354,7 @@ public sealed class WiringSizes
 
         public string? Stopped { get; private set; }
 
-        /// <summary>Told each file counted, for a walk that wants more of it than its size (OWNSPACE2's newest file).</summary>
+        /// <summary>Told each file counted, for a walk that wants more of it than its size (the newest file, say).</summary>
         public Action<FileInfo>? Seen { get; init; }
 
         /// <summary>A path the walk passes over, folder or file, by its full path (another kind's place).</summary>

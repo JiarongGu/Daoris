@@ -50,7 +50,7 @@ internal static class TreeGit
     /// A tree's repository and branch in one git start: a landing, a removal and an update asked
     /// <c>--git-common-dir</c> and then <c>--abbrev-ref HEAD</c>, a start each. Where the one start fails (a branch with no
     /// commit yet, a folder git does not know), the two are asked as before, one at a time, so each answer and each failure
-    /// is the one they gave: the branch is asked only where the common dir was read. The one start asks the
+    /// is the one they gave: the branch is asked only where the common dir is read. The one start asks the
     /// tree's working root too, which the doors that write through the tree compare with its folder, and which costs them no start.
     /// </summary>
     internal static async Task<CommonDirAndBranch> CommonDirAndBranchAsync(string tree, CancellationToken ct)

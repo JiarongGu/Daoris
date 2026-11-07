@@ -131,7 +131,7 @@ internal static class LandedBranchJson
         writer.WriteEndObject();
     });
 
-    /// <summary>The submission a landing or an advance was made on: its machine and sequence.</summary>
+    /// <summary>The submission a landing or an advance is made on: its machine and sequence.</summary>
     internal static void WriteSubmission(Utf8JsonWriter writer, QuestSubmissionRef submission)
     {
         writer.WriteStartObject("submission");
@@ -290,7 +290,7 @@ internal static class LandedBranchJson
             ? new LandingWorkflow(id, number, level) { Kind = Text(workflow, "kind") }
             : null;
 
-    /// <summary>The kept answer, in the answer's own field names, with who answered and when it was asked.</summary>
+    /// <summary>The kept answer, in the answer's own field names, with who answered and when it is asked.</summary>
     internal static void WriteState(Utf8JsonWriter writer, PullRequestState state)
     {
         writer.WriteStartObject("pullRequestState");

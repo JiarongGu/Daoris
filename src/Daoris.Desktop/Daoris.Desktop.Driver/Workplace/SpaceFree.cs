@@ -4,15 +4,15 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The person's <i>Free up space…</i>: listed first, then pressed (D88's shape, as
-/// CACHECLEAR1's). The list changes nothing: per kind, what its rule takes now, and what could go early by the person's word (set-aside
+/// The person's <i>Free up space…</i>: listed first, then pressed.
+/// The list changes nothing: per kind, what its rule takes now, and what could go early by the person's word (set-aside
 /// folders before their date, unused downloads within their days, the browser's caches, what an earlier build left, a failed update's
 /// folder). A run removes exactly the units a press names, each judged again right before it goes through its kind's one removal; one
 /// changed since the list is kept and counted. The window's route, <c>daoris space free</c> and nothing else call it.
 /// </summary>
 /// <remarks>
 /// <para><b>Each kind's one removal</b>: the set-aside folders through the purge and the slim (<see cref="SetAsideKeeping"/>),
-/// one before its date whole with its manifest; the downloads through CACHECLEAR1's act (<see cref="DownloadClearing.ClearAsync"/>); the
+/// one before its date whole with its manifest; the downloads through their clearing (<see cref="DownloadClearing.ClearAsync"/>); the
 /// log's days through its prune (<see cref="MachineLog.Remove"/>); the browser's caches through the shell's host
 /// (<see cref="BrowserCacheClearing"/>); an earlier build's two folders and a failed update's by their exact paths, moved aside first.</para>
 /// <para><b>One run at a time</b>: every run holds the home's run lock (<see cref="KeepingRun"/>), taken by <see cref="SpaceRuns"/>.</para>

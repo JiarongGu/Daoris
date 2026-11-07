@@ -151,7 +151,7 @@ internal sealed class TreeSweeps(
             var worktrees = ByBranch(listed);
             var line = (await context.LineAsync(root, item.Repository, item.Workspace, ct).ConfigureAwait(false)).Branch;
             var carriers = item.Kind == SweepKind.Carried ? await asks.CarriersAsync(root, item.Repository, line, ct, fresh).ConfigureAwait(false) : [];
-            // The commit it was judged at: the one its delete must still find, and the one a pull request's answer
+            // The commit of its judgement: the one its delete must still find, and the one a pull request's answer
             // removed, for the record of it. And what that judgement's proof rested on, each ref at the commit it read: the delete verifies exactly these, and nothing looks for them again.
             var rests = new List<(string Ref, string Commit)>();
             // The moment before the judgement reads what the tree holds, the finished
@@ -310,7 +310,7 @@ internal sealed class TreeSweeps(
     }
 
     /// <summary>
-    /// One session branch judged, and the commit it was judged at: every question is asked of
+    /// One session branch judged, and the commit of its judgement: every question is asked of
     /// that one id, read once, and a removal deletes the branch only while it is still that commit. Null where
     /// git could not read it.
     /// </summary>
@@ -472,7 +472,7 @@ internal sealed class TreeSweeps(
         var onLine = byItself && line is not null && (holder.Ref == $"refs/heads/{line}" || holder.Ref == $"refs/remotes/origin/{line}")
             ? ContentHolds.Named(holder.Ref)
             : null;
-        // Or the form a landing's branch that holds it was proven on: the line holds this work through that branch, which
+        // Or the form a landing's branch that holds it is proven on: the line holds this work through that branch, which
         // the look takes after this one, as the press does. Waiting for the line by ancestry, a squash merge would keep both.
         var hold = onLine is not null ? "line" : "branch";
         string? landingBranch = null;
@@ -481,7 +481,7 @@ internal sealed class TreeSweeps(
             onLine = landing.Line;
             hold = "landing";
             landingBranch = landing.Branch;
-            // And on what that landing's proof rested on, so the line rewound since it was proved keeps it.
+            // And on what that landing's proof rested on, so the line rewound since its proof keeps it.
             rests?.Add(($"refs/heads/{landing.Branch}", landing.Tip));
             rests?.AddRange(landing.Rests);
         }
@@ -493,7 +493,7 @@ internal sealed class TreeSweeps(
     /// <summary>
     /// The form of the line that holds <paramref name="commit"/> by ancestry: the line's own branch, else origin's
     /// copy, which a fetch brings a platform's merge to before anyone pulls it. Null where neither does, or git could not say. Asked at
-    /// the commit the form was read at, which a removal on it rests on.
+    /// the commit the form is read at, which a removal on it rests on.
     /// </summary>
     private static async Task<LandedProofs.LineForm?> LineHoldingAsync(string root, string? line, string commit, CancellationToken ct, RefSnapshot? refs = null)
     {
@@ -542,7 +542,7 @@ internal sealed class TreeSweeps(
         line is not null && (where == line || where == $"origin/{line}");
 
     /// <summary>
-    /// The form of the line a landing's branch holding <paramref name="tip"/> was proven on, the first that holds it;
+    /// The form of the line a landing's branch holding <paramref name="tip"/> is proven on, the first that holds it;
     /// null where none does, or git could not say. A removal on it rests on that branch at the tip judged, and
     /// on what its own proof rested on: a landing whose proof names nothing it rested on holds nothing here.
     /// </summary>
@@ -568,7 +568,7 @@ internal sealed class TreeSweeps(
 internal sealed record LineLanding(string Branch, string Tip, string Line)
 {
     /// <summary>
-    /// What its own proof rested on, each ref at the commit read: the form of the line it was proved on. A
+    /// What its own proof rested on, each ref at the commit read: the form of the line it is proved on. A
     /// session branch's removal through it rests on these too, so the line rewound since keeps that branch. None, and it holds nothing.
     /// </summary>
     internal IReadOnlyList<(string Ref, string Commit)> Rests { get; init; } = [];

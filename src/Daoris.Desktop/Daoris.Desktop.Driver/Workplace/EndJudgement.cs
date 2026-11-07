@@ -48,7 +48,7 @@ internal static class EndBy
 
 /// <summary>
 /// A landing whose own proof ended it (<see cref="EndBy.Merged"/>, <see cref="EndBy.OnLine"/>, <see cref="EndBy.PullRequest"/>), at the tip it
-/// was judged at: what a landing inside it rests on, and a session branch whose work it holds with no unit naming it.
+/// is judged at: what a landing inside it rests on, and a session branch whose work it holds with no unit naming it.
 /// </summary>
 internal sealed record EndHost(LandedBranch Entry, string Tip, EndVerdict End);
 
@@ -392,7 +392,7 @@ internal static class EndJudgement
         if (carriers is { Count: > 0 }
             && await PullRequestAsks.CarrierOfAsync(root, subject.Tip, carriers, ct).ConfigureAwait(false) is { } carrier)
         {
-            // After the merge, the carried proof rests on the form of the line its merge commit was found on (and, through a
+            // After the merge, the carried proof rests on the form of the line its merge commit is found on (and, through a
             // cleared tip, on that branch at it), which the carried tidy verifies. The form stands once the platform and the person deleted the
             // carrier's branch, so the kept fact names it, never the gone branch, whose commit no later look can read.
             var on = forms.FirstOrDefault(form => carrier.Rests.Any(rest => string.Equals(rest.Ref, form.Ref, StringComparison.Ordinal)))?.Name;

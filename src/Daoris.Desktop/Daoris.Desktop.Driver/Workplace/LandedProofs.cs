@@ -17,7 +17,7 @@ internal static class LandedProofs
     internal sealed record LineForm(string Name, string Ref)
     {
         /// <summary>
-        /// The commit it was read at, where <see cref="LineFormsAsync"/> read it: what every proof over it compares
+        /// The commit it is read at, where <see cref="LineFormsAsync"/> read it: what every proof over it compares
         /// with, and what a removal by such a proof verifies, so the commit verified is the commit proved. Null for a form a caller named.
         /// </summary>
         internal string? At { get; init; }
@@ -119,7 +119,7 @@ internal static class LandedProofs
                 : $"there is no `{line}` here, nor `origin/{line}`, to compare it with", 0, false);
         }
 
-        // Each form is asked at the commit it was read at (Rev), never by its live name, and the proof names
+        // Each form is asked at the commit it is read at (Rev), never by its live name, and the proof names
         // that form and commit as what a removal by it rests on.
         foreach (var form in forms)
         {

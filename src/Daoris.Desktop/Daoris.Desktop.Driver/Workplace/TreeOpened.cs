@@ -14,9 +14,9 @@ public sealed record TreeOpened(string Path, string Branch, string BasedOn, stri
     public Noted? Opening { get; init; }
 
     /// <summary>
-    /// What its session's agent is told of what was copied into it from its checkout: the dependencies, and to skip the
+    /// What its session's agent is told of what is copied into it from its checkout: the dependencies, and to skip the
     /// <c>npm ci</c> that would delete them; then the machine-local files its gates read, and to leave them as they
-    /// are. Null where nothing was. Its name is the dependencies', which its readers carry as one told-once field.
+    /// are. Null where nothing is. Its name is the dependencies', which its readers carry as one told-once field.
     /// </summary>
     public string? Dependencies { get; init; }
 }

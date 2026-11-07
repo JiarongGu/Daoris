@@ -60,7 +60,7 @@ internal static class SetAsideReads
     }
 
     /// <summary>
-    /// A moved folder put back where its tree was, and its manifest forgotten only once it is back:
+    /// A moved folder put back where its tree stood, and its manifest forgotten only once it is back:
     /// where the put-back fails, the manifest stays at <c>judged</c> beside the folder aside, with its facts, so the next look meets a
     /// registration whose folder is gone, removes it and its branch, and marks the manifest <c>deleted</c>, and its record is kept.
     /// </summary>

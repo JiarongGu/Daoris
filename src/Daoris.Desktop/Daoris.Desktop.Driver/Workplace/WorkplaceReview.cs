@@ -30,7 +30,7 @@ public interface IWorkplaceLandingWorld : IReviewWorld
     Task<IReadOnlyList<TreeHolder>> BesideAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<TreeHolder>>([]);
 
     /// <summary>
-    /// A world that reads the service afresh (FABRIC-END7's review): each chosen entry is judged again from it just before its own
+    /// A world that reads the service afresh: each chosen entry is judged again from it just before its own
     /// landing. A world that keeps nothing between reads answers itself.
     /// </summary>
     IWorkplaceLandingWorld Again() => this;
@@ -51,8 +51,8 @@ internal static class LandingDoors
 }
 
 /// <summary>
-/// What the trees read of the whole landing gate a door hands them: the commit it was judged at,
-/// the first part that holds as a landing's refusal, the process it was read with, what the review and the second opinion keep on the
+/// What the trees read of the whole landing gate a door hands them: the commit of its judgement,
+/// the first part that holds as a landing's refusal, the process it is read with, what the review and the second opinion keep on the
 /// landing's record when they let the work go, whether the graph's part asks a pass, and the gate's words for the plan and the machine
 /// log. The review's <c>LandingGate</c> implements this directly, so the landing names no more of the gate than it reads.
 /// </summary>

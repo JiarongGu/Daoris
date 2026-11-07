@@ -103,16 +103,16 @@ public sealed record SwapMove(string From, string To);
 /// For a roll-back or a refusal, its code: a <see cref="StagedProblem"/>'s (<c>busy</c> only for a hold that outlasted the
 /// wait, or something still running from <c>app/</c>), or <c>exited</c>, <c>start</c>, <c>move</c> (a move or its journal
 /// failed, not held), <c>interrupted</c>, <c>error</c> (the launcher met an error before it could swap). On a journal still
-/// under way, the reason a roll-back that stopped part way was undoing for, which the next start finishes it with.
+/// under way, the reason the roll-back that stopped part way is undoing for, which the next start finishes it with.
 /// </param>
-/// <param name="Holds">Every move the swap found held, and how long; null when none was.</param>
+/// <param name="Holds">Every move the swap found held, and how long; null when there is none.</param>
 public sealed record SwapRecord(
     string Phase, string? Id, string? Version, string? Commit, DateTimeOffset? At, IReadOnlyList<SwapMove> Moves,
     int? Pid = null, string? Reason = null, string? Detail = null, bool? Confirmed = null, bool Told = false,
     IReadOnlyList<SwapHold>? Holds = null);
 
 /// <summary>
-/// A move the swap found held, relative to the install's root: how long it was refused, from the first refusal to
+/// A move the swap found held, relative to the install's root: how long it is refused, from the first refusal to
 /// the move or to the end of the wait, over how many tries, and whether it gave way. The measurement the wait is sized by.
 /// </summary>
 /// <param name="Held">
@@ -391,7 +391,7 @@ public static class StagedBuild
                     if (entry is JsonObject hold && Text(hold["from"]) is { } from && Text(hold["to"]) is { } to
                         && Number(hold["ms"]) is { } ms && Number(hold["tries"]) is { } tries)
                     {
-                        // What was found holding it, where the journal names one.
+                        // What is found holding it, where the journal names one.
                         holds.Add(new SwapHold(from, to, ms, (int)tries,
                             hold["released"] is JsonValue released && released.TryGetValue<bool>(out var gave) && gave,
                             Text(hold["held"]), Text(hold["by"]), Text(hold["holders"])));

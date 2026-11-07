@@ -5,16 +5,15 @@ using static Daoris.Driver.LandingSayings;
 
 namespace Daoris.Driver;
 
-/// <summary>A session tree's work merged into its line by the rule's merge form (D51 rule 6).</summary>
+/// <summary>A session tree's work merged into its line by the rule's merge form.</summary>
 internal sealed class TreeMerges(TreeContext context)
 {
     /// <summary>
-    /// Merge a session tree's commits into the canonical line, in the repository's own root (D51
-    /// rule 6, design §5).
+    /// Merge a session tree's commits into the canonical line, in the repository's own root.
     /// </summary>
     /// <remarks>
-    /// <para><b>Nothing merges itself.</b> This is only ever the person pressing it — D37 would permit
-    /// automating a local, reversible act, and it stays a press because it is <i>where their
+    /// <para><b>Nothing merges itself.</b> This is only ever the person pressing it — automating
+    /// a local, reversible act would be allowed, and it stays a press because it is <i>where their
     /// verification lands</i>.</para>
     ///
     /// <para>🔴 <b>This is the one place Daoris writes into a checkout it did not create</b>, so every
@@ -23,16 +22,16 @@ internal sealed class TreeMerges(TreeContext context)
     /// because somebody's work in flight is exactly what that document was written from; the root must
     /// already be <b>on</b> the canonical line, because switching a branch in a checkout we do not own
     /// is the same trespass in a smaller form; and every check is made <b>immediately before</b> the
-    /// merge in this one call, because "it was clean when I looked" expires the moment you look away.
+    /// merge in this one call, because a look at the root expires the moment you look away.
     /// Assume another session is working in that repository right now — it very often is.</para>
     ///
-    /// <para><b>A conflict aborts and reports</b>, leaving the root exactly as it was. Nothing here
+    /// <para><b>A conflict aborts and reports</b>, leaving the root exactly as it stood. Nothing here
     /// resolves anything, forces anything or removes anything: the tree survives a merge whether it
     /// succeeded or not, and discarding it stays a separate act the person asks for.</para>
     /// </remarks>
     /// <param name="replay">
-    /// What the landing replayed onto the line here, leaving out what the line holds (D87's 2026-10-15 amendment point 2):
-    /// its tip is merged in place of the session's branch, as D86 merges one. Null merges the branch as made.
+    /// What the landing replayed onto the line here, leaving out what the line holds:
+    /// its tip is merged in place of the session's branch. Null merges the branch as made.
     /// </param>
     /// <param name="uncommitted">
     /// The session tree's uncommitted paths as the landing's judgement counted them a moment before; null asks git.
@@ -157,13 +156,13 @@ internal sealed class TreeMerges(TreeContext context)
         // The press is carried by the integration transport under `{ owner, none, 1, merge }`.
         // The merge is made `--no-ff` in the line's integration tree, one commit a person can read and revert as a unit, under the branch's
         // name whether a replay's tip or a pinned commit is merged, with the repository's own hooks; the checkout is then
-        // only fast-forwarded to it. A conflict or a refusing hook leaves the checkout as it was, in today's words.
+        // only fast-forwarded to it. A conflict or a refusing hook leaves the checkout as it stood, in today's words.
         var frozen = replay?.Now ?? pinned ?? await CommitOfAsync(root, $"refs/heads/{branch}", ct).ConfigureAwait(false);
         if (frozen is null) return new(false, $"git could not read where `{branch}` stands, so nothing was merged.");
         // No hold here. The checkout's checks above are this press's early words; the promotion's effect holds the checkout alone
         // and reads them again before it moves it, and a hold taken here would refuse that one in this very process.
         if (delivering is not null && await delivering.BeginMergeAsync(canonical, frozen).ConfigureAwait(false) is { } unbegun) return new(false, $"Nothing was merged: {unbegun}.");
-        // Current's delivery is admitted by its rule and says today's message, as the press always was.
+        // Current's delivery is admitted by its rule and says today's message, as the press always has.
         var (carried, refused) = await IntegrationPresses.MergeAsync(
             context.Home, context.Config(), root, repository, workspace, canonical, branch, frozen, ct, beside, delivered: delivering is { Live: false },
             message: delivering?.Template, automatic: delivering?.Accepted == AcceptedBy.Auto).ConfigureAwait(false);

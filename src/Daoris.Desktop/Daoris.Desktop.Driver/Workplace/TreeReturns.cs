@@ -38,7 +38,7 @@ public sealed record TreeStanding(TreeStand Stand, string? Branch, Noted? Said, 
 /// (<see cref="TreeSetAside.MoveFolderAside"/>), so nothing in it is lost.</para>
 ///
 /// <para><b>The branch the session is on</b> is the one the layout names, or the one its agent moved its tree onto, as the ledger
-/// learned it: a tree is made again on that, so the work goes on where it was.</para>
+/// learned it: a tree is made again on that, so the work goes on where it left off.</para>
 /// </remarks>
 internal sealed class TreeReturns(TreeContext context, TreeFollows follows, TreeSetAside setAside)
 {

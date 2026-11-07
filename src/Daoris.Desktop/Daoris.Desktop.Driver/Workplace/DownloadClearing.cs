@@ -17,7 +17,7 @@ namespace Daoris.Driver;
 /// Null where nothing uses it, else why it stays: <c>pinned</c> (an agent's pin names it), <c>used</c> (Tools runs it), <c>named</c> (a
 /// setting names a file inside it), <c>unread</c> (a file that says what is used cannot be read, or the running sessions cannot be),
 /// <c>recent</c> (downloaded within <see cref="DownloadClearing.Settling"/>, so a pin or a use may be on its way), <c>running</c> (a running
-/// session was handed it), or, at a removal, <c>in-use</c> (a program holds it).
+/// session is handed it), or, at a removal, <c>in-use</c> (a program holds it).
 /// </param>
 /// <param name="By">What keeps it: <c>machine</c> or <c>workspace:&lt;name&gt;</c> for a pin, <c>session:&lt;id&gt;</c> for a running
 /// session, <c>sessions</c> where they could not be read, else the file (<c>tools.json</c>, <c>driver.json</c>, <c>harnesses.json</c>).</param>
@@ -137,7 +137,7 @@ public sealed record DownloadJudge(Func<DownloadUses> Uses, Func<DateTimeOffset>
 /// workspace's pin first; a tool's where Tools runs it managed at that version. A version a setting names a file inside (a tool's
 /// <c>file</c>, a command in <c>driver.json</c>) is used too. A file that cannot be read keeps everything it would have said.</para>
 ///
-/// <para><b>And what a running session was handed</b>: a version holding a file a running session's start was handed
+/// <para><b>And what a running session is handed</b>: a version holding a file a running session's start is handed
 /// stays (<c>running</c>), both of an ACP session's; a record without that field keeps the start-time rule, kept while a session that
 /// started before the version's current unused stretch began runs. A pin and an unpin between two passes leave no trace in that
 /// stretch, which is why the session's own versions are the guard.</para>
@@ -286,7 +286,7 @@ public static class DownloadClearing
 
     /// <summary>
     /// One version judged and moved aside, holding the use files' locks from the judgement to the rename and letting them go before anything
-    /// is removed: where it went, or the row as judged where it stays; neither where it was gone once the locks were held.
+    /// is removed: where it went, or the row as judged where it stays; neither where it is gone once the locks are held.
     /// </summary>
     private static (string? Aside, DownloadedVersion? Kept) MoveAside(
         DownloadedVersion row, DownloadJudge judge, LiveSessions sessions, Action<string, string>? move)
@@ -391,7 +391,7 @@ public static class DownloadClearing
     }
 
     /// <summary>
-    /// The downloaded versions a start was handed, read off the start itself: every path in what it runs, its arguments (a
+    /// The downloaded versions a start is handed, read off the start itself: every path in what it runs, its arguments (a
     /// shim's, where a command runs it) and its environment (an ACP adapter's <c>claude</c>, each managed tool's folder on its PATH) that
     /// lies inside a version under <c>cache/</c>, as <c>&lt;agent|tool&gt;/&lt;name&gt;/&lt;version&gt;</c>, in order. A path elsewhere is none.
     /// </summary>

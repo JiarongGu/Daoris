@@ -10,7 +10,7 @@ internal static class SetAsideDeleting
     /// tree's open discards an unfinished copy of its checkout's dependencies with it too. The bytes its files held.
     /// </summary>
     /// <remarks>
-    /// 🔴 KEEP1a: it checks its own argument, and each folder again right before it reads it, and refuses one that is a link:
+    /// 🔴 It checks its own argument, and each folder again right before it reads it, and refuses one that is a link:
     /// handed a folder that is, or became, a junction, it would have read the junction's target. What still crosses is a folder replaced
     /// by a junction between that check and the read, under a trees home only Daoris writes.
     /// </remarks>

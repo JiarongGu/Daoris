@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// What a session in a tree of its own is told of its process at its start: how its work
 /// lands, by the branch the pull request comes from where it has one, then the commit rule standing for its repository (its mode,
-/// where it was set, the person's convention quoted), so the agent and the repository's own rules do not stop each other. The
+/// where it is set, the person's convention quoted), so the agent and the repository's own rules do not stop each other. The
 /// instruction's landing section, in every form the tail carries; Daoris's one-copy English.
 /// </summary>
 /// <remarks>

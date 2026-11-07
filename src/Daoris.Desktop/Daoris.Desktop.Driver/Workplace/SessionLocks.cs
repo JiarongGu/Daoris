@@ -9,8 +9,8 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>Why.</b> A session's tree opens on a branch at its line's tip and has no commit until the session has work, so its branch
-/// reads as merged and its tree as clean: a repository's own merge tool removed one mid-session (the FIX-LOG's 2026-10-20 DOGFOOD1
-/// entry). git refuses a locked tree to <c>git worktree prune</c> and to a <c>git worktree remove</c> without <c>--force</c> twice,
+/// reads as merged and its tree as clean: a repository's own merge tool removed one mid-session.
+/// git refuses a locked tree to <c>git worktree prune</c> and to a <c>git worktree remove</c> without <c>--force</c> twice,
 /// whoever asks.</para>
 ///
 /// <para><b>Held from the record's open to its end.</b> A driven start locks its tree once its record is open, while it still holds the
@@ -35,8 +35,7 @@ internal static class SessionLocks
         reason is { } said && said.StartsWith(Prefix, StringComparison.Ordinal) && said.Length > Prefix.Length ? said[Prefix.Length..] : null;
 
     /// <summary>
-    /// The session whose lock holds <paramref name="tree"/>, read from git's own file with no git run (FABRIC-PIPELINE1b, the pipeline
-    /// design §3.2's second layer): a linked tree's <c>locked</c> in its folder under the checkout's git folder, whose text is the reason
+    /// The session whose lock holds <paramref name="tree"/>, read from git's own file with no git run: a linked tree's <c>locked</c> in its folder under the checkout's git folder, whose text is the reason
     /// <c>git worktree lock --reason</c> wrote. Null where the tree is no linked tree, is not locked, or its lock names no session.
     /// </summary>
     internal static string? HolderOf(string tree)

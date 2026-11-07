@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// 🔴 <b>Where anything about a path is unknown, it stays</b>: git's status, the index or the folders that could not be read judge
-/// nothing droppable, and the tree moves aside whole with no manifest, as before KEEP1a.
+/// nothing droppable, and the tree moves aside whole with no manifest.
 /// </remarks>
 internal static class TreeSlims
 {

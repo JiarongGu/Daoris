@@ -10,7 +10,7 @@ public static class RegistryHeard
     extension(RegistryFollowing)
     {
             /// <summary>
-            /// The ref watch heard <paramref name="repository"/>'s refs move: where git's own files say its line, as it was last
+            /// The ref watch heard <paramref name="repository"/>'s refs move: where git's own files say its line, as it last got
             /// followed, now stands at another commit than the one followed, it is recorded moved, so the next look follows it. A line moved
             /// outside Daoris (a pull request merged on the remote, then pulled) is how a set-up landed on a branch for review reaches its line,
             /// and no Daoris landing says so. Read with no process: one never followed is the start's to follow, and a line the files cannot

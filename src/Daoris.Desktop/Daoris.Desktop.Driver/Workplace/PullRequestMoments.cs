@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// When each repository's line was last fetched here, or heard fetched: kept in this process for the
+/// When each repository's line last got fetched here, or heard fetched: kept in this process for the
 /// minute that bounds the next fetch, so a moment fetches only where nothing brought the remote's facts within it. Every fetch
 /// of a line, made or failed, is counted by <see cref="TreeRefs.FetchAsync"/>, the landing press's and bringing up to date's among them;
 /// the person's own fetch, heard by the ref watch moving origin's line, is counted by the moments, and git's own files say when it was last
@@ -70,7 +70,7 @@ public static class RemoteFetches
     }
 
     /// <summary>
-    /// When git's own files say the line was last fetched here, across restarts, or null: <c>FETCH_HEAD</c>'s time where it
+    /// When git's own files say the line last got fetched here, across restarts, or null: <c>FETCH_HEAD</c>'s time where it
     /// names the line (every fetch writes it, a fetch that changed nothing too; Daoris's own writes none, and an empty one is a fetch that
     /// failed), and the newest entry of <c>origin/&lt;line&gt;</c>'s log, which every fetch that moved it writes, Daoris's own included. The
     /// later of the two. Read from the main checkout's git dir, with no process; a fetch made in a linked tree writes its own.
@@ -226,7 +226,7 @@ public sealed class PullRequestMoments : IAsyncDisposable
     private readonly Dictionary<string, string?> _seen = new(StringComparer.OrdinalIgnoreCase);
     // The repositories a moment skipped while something held them, asked once they are let go.
     private readonly HashSet<string> _owed = new(StringComparer.OrdinalIgnoreCase);
-    // When origin's line last moved in each repository while a pull request there was inside its minute, kept until every
+    // When origin's line last moved in each repository while a pull request there is inside its minute, kept until every
     // open pull request of it was asked after that move, so the first wake past the minute asks it.
     private readonly Dictionary<string, DateTimeOffset> _moved = new(StringComparer.OrdinalIgnoreCase);
     private bool _listening;
@@ -379,11 +379,11 @@ public sealed class PullRequestMoments : IAsyncDisposable
     /// <summary>
     /// A repository's refs moved, or Daoris pushed there: a moment where origin's line moved since it was last seen here (nothing fetched,
     /// since that fetch brought the remote's facts), or where Daoris pushed (fetched unless the line was within the minute). A move that
-    /// came while a pull request was inside its minute stays a moment for it, asked at the first wake past the minute.
+    /// comes while a pull request is inside its minute stays a moment for it, asked at the first wake past the minute.
     /// </summary>
     private async Task<int> RefsAsync(string name, CancellationToken ct)
     {
-        // A push, or a moment skipped while the repository was held: asked as a push is, fetched where the minute allows.
+        // A push, or a moment skipped while the repository is held: asked as a push is, fetched where the minute allows.
         bool pushed;
         DateTimeOffset? pending;
         lock (_gate)
@@ -468,7 +468,7 @@ public sealed class PullRequestMoments : IAsyncDisposable
         if (fetch && !(_world.Fetched(repository, line) is { } last && now - last < PullRequestAsking.Fresh))
         {
             // The fetch's answer is read. One that failed moved nothing of origin's here, so nothing is seen; a held origin
-            // was not tried at all, and its hold, not the minute, keeps the next moment from trying it. The
+            // is not tried at all, and its hold, not the minute, keeps the next moment from trying it. The
             // plugin is asked all the same: it asks the host's own service, not git.
             // The fetch's own write to origin's line is no one else's fetch when the ref watch tells it.
             if (await _world.FetchAsync(repository, line, ct).ConfigureAwait(false) is null) Seen(repository, line, _world.OriginTip(repository, line));

@@ -60,7 +60,7 @@ public sealed record PlaceOperation(string Id, string Kind, string? Repository, 
 }
 
 /// <summary>
-/// A place's apply as it was authorized: the plan's digest, the ask and the acceptances chosen, and
+/// A place's apply as it is authorized: the plan's digest, the ask and the acceptances chosen, and
 /// each operation's outcome. Written before the first effect and again at each outcome, so a restart reads what is done, what failed and what
 /// is uncertain.
 /// </summary>

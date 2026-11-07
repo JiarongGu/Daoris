@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>One git-access class as it resolves for a repository: its value and where it was set.</summary>
+/// <summary>One git-access class as it resolves for a repository: its value and where it is set.</summary>
 /// <param name="Class"><c>read</c>, <c>write</c> or <c>dangerous</c>.</param>
 /// <param name="Value"><c>allow</c>, <c>ask</c>, <c>deny</c>, or <see cref="GitAccessKeys.AsToday"/> where the person set none for Write.</param>
 /// <param name="Source"><c>repository</c>, <c>workspace</c>, <c>machine</c> or <c>default</c>.</param>

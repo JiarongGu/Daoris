@@ -6,10 +6,10 @@ public static class GitBranchKind
     /// <summary>The repository's line, the local branch of that name.</summary>
     public const string Line = "line";
 
-    /// <summary>A session's branch: the <c>daoris/</c> namespace Daoris's proofs read as its own sessions', or the branch its tree was moved onto.</summary>
+    /// <summary>A session's branch: the <c>daoris/</c> namespace Daoris's proofs read as its own sessions', or the branch its tree is moved onto.</summary>
     public const string Session = "session";
 
-    /// <summary>A branch a landing made that <c>landings.json</c> still records, while it holds the commit it was made at.</summary>
+    /// <summary>A branch a landing made that <c>landings.json</c> still records, while it holds the commit that made it.</summary>
     public const string Landed = "landed";
 
     /// <summary>Every other local branch: the person's own, a recorded name a branch no longer matches among them.</summary>

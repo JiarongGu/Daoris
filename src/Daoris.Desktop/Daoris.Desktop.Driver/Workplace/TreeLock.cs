@@ -6,13 +6,12 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A repository's checkout and its session trees, held while a session starts in one of them, while bringing its branches up
-/// to date replays them (WSR6's open window, closed by LEFT2), and while Daoris writes the checkout: one file under
+/// to date replays them, and while Daoris writes the checkout: one file under
 /// the home per checkout, which a start takes shared and a replay or a writer takes alone.
 /// </summary>
 /// <remarks>
 /// <para><b>Why.</b> Bringing a repository up to date judges each session branch by whether a session running or
-/// waiting holds its tree, and the service's ledger says which do. A driver that resumed a session in a tree (D79,
-/// D80), or opened a fresh one from the line before it moved, between that look and the replay would start an agent
+/// waiting holds its tree, and the service's ledger says which do. A driver that resumed a session in a tree, or opened a fresh one from the line before it moved, between that look and the replay would start an agent
 /// in a tree being rebased under it. The ledger holds a tree once the session's record is open; this holds the
 /// repository from before a start chooses its tree until that record is open, and a replay takes it alone and asks
 /// the ledger again inside it. Whichever comes first, the other sees it.</para>

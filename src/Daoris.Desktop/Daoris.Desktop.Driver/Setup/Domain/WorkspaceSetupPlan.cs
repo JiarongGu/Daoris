@@ -73,7 +73,7 @@ public sealed record WorkspaceSetupPlan(string Workspace, IReadOnlyList<string> 
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Each repository's index quest, by the repository's name, as the plan published it once the repository was
+    /// Each repository's index quest, by the repository's name, as the plan published it once the repository is
     /// set up: the plan asks it after the set-up, one at a time with the set-ups.
     /// </summary>
     public IReadOnlyDictionary<string, string> Indexed { get; init; } =

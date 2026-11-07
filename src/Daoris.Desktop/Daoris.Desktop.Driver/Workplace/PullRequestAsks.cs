@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 public sealed record PullRequestCarrier(LandedBranch Entry, string Source, string? ClearedTip)
 {
     /// <summary>
-    /// What a removal on its word rests on: the form of the line its merge commit was found on, at the commit
+    /// What a removal on its word rests on: the form of the line its merge commit is found on, at the commit
     /// read, and the cleared tip's branch where that tip is what carried the revision (<see cref="PullRequestAsks.CarrierOfAsync"/>).
     /// </summary>
     internal IReadOnlyList<(string Ref, string Commit)> Rests { get; init; } = [];
@@ -178,7 +178,7 @@ internal sealed class PullRequestAsks(TreeContext context)
             var answers = await AskStatesAsync([(root, entry.Repository, workspace)], landedMayGo: true, ct, again: entry).ConfigureAwait(false);
             asked = answers.FirstOrDefault() is { } said
                 ? asked with { Answered = said.Answer is not null, Code = said.Failure, Why = said.Sentence }
-                // Nothing was due: a branch under Daoris's own namespace, which the session branches' own judgement covers, or a landing the record no longer holds.
+                // Nothing is due: a branch under Daoris's own namespace, which the session branches' own judgement covers, or a landing the record no longer holds.
                 : asked with
                 {
                     Code = PullRequestCodes.NotAsked,
@@ -255,7 +255,7 @@ internal sealed class PullRequestAsks(TreeContext context)
         string? mergeOn = null;
         foreach (var form in forms)
         {
-            // At the commit the form was read at, which a removal by this verdict verifies.
+            // At the commit the form is read at, which a removal by this verdict verifies.
             var (on, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", merge, form.Rev], ct).ConfigureAwait(false);
             if (on != 0) continue;
             mergeOn = form.Name;
