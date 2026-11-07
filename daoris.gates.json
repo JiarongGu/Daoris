@@ -14,6 +14,10 @@
         "tools/process-reach.mjs", "tools/processes.mjs", "tools/rehearsal-kit.mjs", "tools/service-publish.mjs", "tools/setup-kit.mjs",
         "tools/stand-ins.mjs", "tools/test-failures.mjs", "tools/test-map.mjs", "tools/test-recall.mjs", "tools/desktop-publish/"
       ] },
+    { "name": "comments", "run": "node tools/comment-gate.mjs",
+      "paths": [
+        "daoris.gates.json", "package.json", "src/", "tools/comment-gate.mjs", "tools/fsx.mjs"
+      ] },
     { "name": "service", "run": "dotnet test src/Daoris.Service --filter Category!=Process",
       "paths": [
         ".gitattributes", ".gitignore", "AGENTS.md", "CHANGELOG.md", "CLAUDE.md", "LICENSE", "README.md", "ROADMAP.md", "TASKS.md",
