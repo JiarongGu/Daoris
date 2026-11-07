@@ -23,8 +23,7 @@ internal static class InstallAdmission
             }
 
             holds.Add(await Task.Run(() => RecordLock.Take(RecordLock.PathOf(home, "deps-key-" + key[..Math.Min(32, key.Length)]), DependencyCommands.InstallBound), ct).ConfigureAwait(false));
-            var request = new AdmissionRequest($"installing `{dependency.Folder}`") { Repository = repository, Tree = tree, Kind = "deps" };
-            holds.Add(await MachineAdmission.TakeAsync(home, request, TextWriter.Null, ct).ConfigureAwait(false));
+            holds.Add(await InstallRunner.Current.AdmitAsync(home, $"installing `{dependency.Folder}`", repository, tree, ct).ConfigureAwait(false));
             return new Held(holds);
         }
         catch

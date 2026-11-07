@@ -18,7 +18,7 @@ internal sealed record CommandRan(int Code, string Output)
 }
 
 /// <summary>
-/// A dependency rule's commands, run as an integration gate's command is (<see cref="HeavyStep"/>) in exactly the environment
+/// A dependency rule's commands, run as an integration gate's command is (<see cref="IInstallRunner"/>) in exactly the environment
 /// <see cref="InstallEnvironment"/> composes, bounded, and ended with everything it started at the bound or a cancel. Its output goes to a
 /// log beside the tree's files record.
 /// </summary>
@@ -46,10 +46,10 @@ internal static class DependencyCommands
         int code;
         // A job of its own, so its end ends whatever the command started; disposed, it ends what is left.
         using var job = ProcessJob.Create();
-        HeavyStep started;
+        IRunningInstall started;
         try
         {
-            started = HeavyStep.Start(job, command, directory, new Dictionary<string, string>(), new StepOptions(environment, log));
+            started = InstallRunner.Current.Start(job, command, directory, environment, log);
         }
         catch (DriverException refused)
         {
