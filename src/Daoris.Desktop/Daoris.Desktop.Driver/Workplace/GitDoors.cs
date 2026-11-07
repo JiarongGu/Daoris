@@ -126,7 +126,7 @@ public static class GitDoors
     /// <summary>The ssh the door starts, under an identity or as git would have: its file, its folder and its words.</summary>
     private static ProcessStartInfo SshStart(string file, string folder, IReadOnlyList<string> words)
     {
-        // Not the tools' environment: the door is git's child, and its ssh takes git's environment as git would have handed it.
+        // Not the tools' environment (TOOLS5): the door is git's child, and its ssh takes git's environment as git would have handed it.
         var info = new ProcessStartInfo(file)
         {
             UseShellExecute = false,
@@ -322,7 +322,7 @@ public static class GitDoors
     /// <summary>What git answers in <paramref name="folder"/> on its standard output; null where it fails or cannot start.</summary>
     private static string? Ask(string git, string folder, IReadOnlyList<string> arguments)
     {
-        // Not the tools' environment: git's own git, on git's PATH, asked its configuration.
+        // Not the tools' environment (TOOLS5): git's own git, on git's PATH, asked its configuration.
         var info = new ProcessStartInfo(git)
         {
             UseShellExecute = false,
@@ -429,7 +429,7 @@ public static class GitDoors
         if ((identity is not null || anonymous) && GitHttps.HasPassword(address))
             return Refuse(error, "git-remote-daoris: refuses an address carrying a password: a git identity's token is kept in Daoris's tokens folder, not written into an address.");
 
-        // Not the tools' environment: git's own transport, with git's environment less Daoris's routing.
+        // Not the tools' environment (TOOLS5): git's own transport, with git's environment less Daoris's routing (§4.3).
         // The relay reads and writes the streams' bytes (BaseStream); the encodings are named for the census, and change no byte.
         var info = new ProcessStartInfo(file)
         {
