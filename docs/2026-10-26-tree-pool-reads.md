@@ -2102,3 +2102,76 @@ Below, **Design** means `docs/2026-10-26-tree-pool-design.md`; code paths beginn
 I found **no additional defect** in the revised same-line-only takeover rule or the ref-backed release predicate. Claim groups also address the identified shared-build races when their closures are complete and stable. The sparse/index-bit refusals, explicit signing, pathspec translation and selective commit interface answer those private-index points; hook confinement remains finding 2.
 
 For row 4, I found **no new work-loss case in the described claim fencing, named-job takeover, holder checks or non-forcing switch**. Its remaining blocker above concerns what the next line is allowed to reuse.
+
+
+## Codex, round 7
+
+Codex's read of rows 3 and 4 as round 7 left them, at `687dc968a8`, run by the steward from outside the install, read-only, without seeing the independent Opus reader's round-7 read; verbatim but for its headings set down.
+
+**Row 3: another round.** Round 7 fixes the tracked-input key, install provenance and placement-record problems, but the fill can still consume unkeyed state, miss writes outside its dependency folders, and produce effects a store hit never recreates.
+
+**Row 4: another round, narrowly.** The revised classes and running-session mappings address the previous findings. Releasing the start’s shared hold for installation introduces a pre-record replay gap that needs closing.
+
+Reviewed at `687dc968a8`. No files changed, programs built or `local/` contents read. Measurements were not reproduced. Below, **Design** means `docs/2026-10-26-tree-pool-design.md`; abbreviated code paths are relative to `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
+
+1. **Blocking — selecting environment variables does not bound the install’s inputs.**
+
+   **Where:** R5.6, Design:465–479 and :502–504; §5.3, Design:1179–1186. Code: `Review/Heavy/HeavyStep.cs:126–142`; `Workplace/TreeOpening.cs:175`; `Workplace/TreeLocalInputs.cs:81–97`; `Workplace/TreeClassesReader.cs:91`.
+
+   **Sequence:** Daoris seals an install using the selected environment. The package manager also reads configuration from the user’s profile. That configuration changes while its pathname, selected variables, toolchain versions and repository commit remain unchanged. The old entry hits and its manifest verifies an install made under the previous configuration. npm explicitly reads project, user, global and built-in configuration files; an environment allow-list does not suppress those reads. [npm configuration files](https://docs.npmjs.com/cli/v11/configuring-npm/npmrc/)
+
+   The same gap admits **session-derived state**. A slot retains intermediates from line A. After switching to B, an install miss runs with those intermediates accessible, local inputs copied back, and the checkout hook already run. An install script reads an ignored settings file into its generated dependency configuration. It changes no tracked file, writes only inside its dependency folder, leaves no external link and embeds no tree pathname. Every stated sealing check passes. Nevertheless, the entry contains A’s state—or private data copied into the tree.
+
+   “Daoris ran the install” establishes who launched it, not what it consumed. The whole-tree fallback also cannot distinguish changing ignored files or profile configuration at the same commit. Explicitly passing a secret through `env` likewise does not prevent an install from embedding it; the proposed scan searches for paths, not secrets.
+
+   **Smallest change:** Extend the reuse contract beyond tracked inputs. Use controlled package-manager configuration, key declared non-secret filesystem inputs, and keep local copies and previous-session artifacts unavailable during a sealable fill. Where an install requires private or otherwise unbounded inputs, explicitly disable sealing **and cross-line reuse**, running it before each admission instead. Keep secret values out of persisted key descriptions and diagnostics. This retains one dependency mechanism and requires neither cloning nor another filesystem.
+
+2. **Blocking — the proposed fill judgement cannot detect writes inside existing ignored folders.**
+
+   **Where:** R5.6, Design:477–484; §27’s stronger “writes beside its folder” claim at Design:2273. Code: `Workplace/ContentHolds.cs:402` and :421–424; `Workplace/TreeDependencies.cs:221–264`.
+
+   **Sequence:** Dependency A is placed and checked. Dependency B then misses, so Daoris runs B’s install. Its lifecycle script patches a file inside A’s existing ignored folder.
+
+   Before and after, git can report the same ignored directory entry. The walk specified for the judgement covers B’s folder, not the changed bytes inside A. Consequently, B can be sealed and A’s placement record can remain stale. The session starts using modified A; its record is not checked again until another take.
+
+   The cited `ContentHolds` code explicitly describes a wholly ignored folder being named once. A comparison of these status listings proves neither that existing ignored files were untouched nor that another dependency remains valid. Today’s dependency copy launches no install scripts; introducing them creates this additional case.
+
+   **Smallest change:** Give the write check a content-aware baseline outside the install’s declared path set, excluding permitted outputs. Revalidate every affected placement after all installs, before opening the record. A forbidden write must prevent sealing and leave affected dependencies restored or absent, with the failure reported. Add a regression in which the install changes an existing file under another ignored dependency without adding any pathname.
+
+3. **Blocking — a store hit does not reproduce permitted install effects outside the stored paths.**
+
+   **Where:** R5.5, Design:400–407 and :430–431; R5.6, Design:477–488; §5.3, Design:1179–1186. Code: `package.json:14`; `tools/merge-rows.mjs:264–275`; `tools/index-hook.mjs:57–86`.
+
+   **Sequence:** An accepted install writes its dependency folder and generates a required client under a declared output directory. R5.6 permits that output and seals only the dependency folder.
+
+   A later take clears runnable outputs, finds the dependency entry, places it and skips installation. The generated client is absent. The manifest still passes because it describes only the stored dependency paths. The same problem occurs when the dependency stays in place while its companion output is cleared.
+
+   This repository demonstrates the distinction: its root `prepare` changes common git configuration, installs hooks and may write the orientation index. Its checkout hook supplies an independent regeneration route for that index. A generic repository has no such guarantee.
+
+   **Smallest change:** Require a reusable dependency declaration to cover every artifact needed from its install. Required generated artifacts can join the dependency’s multi-path set, with the existing prohibition on overlapping classes. If required effects remain outside that set, specify how they are recreated on **both hits and kept placements**, or make the install non-reusable and run it after those effects are cleared. Merely allowing a declared output during sealing is insufficient.
+
+4. **Blocking — installation releases the protection that currently prevents a replay before record opening.**
+
+   **Where:** §2.3, Design:835–842; §3.2, Design:971–975; §5.3, Design:1185–1186 and :1218–1222; row 3, Design:2293–2295. Code: `Workplace/TreeLock.cs:15–23`; `Workplace/TreeSync.cs:211–245` and :270; `Workplace/BranchJudging.cs:117–124`; `Workplace/BranchReplays.cs:67–81`.
+
+   **Sequence:** A returning line is switched into a slot and passes the check. Its dependencies miss. The start releases its shared hold to wait for admission and run installation; its new session record has not opened.
+
+   Another process acquires the checkout’s exclusive hold and runs a replay. The returning line has no active record or other ledger holder. Expanding ledger-held paths through `WhereIs` adds nothing for this start. The replay sees a clean worktree and proceeds.
+
+   Its judgement does not inspect worktree locks or `tree_claims`; the replay then detaches and rewrites the tree while installation reads it. The install can consequently consume changing sources under a previously computed key. The specified sequence has no repeat of the branch/base check after installation and before record opening.
+
+   §7 correctly says a claim holds a slot, but round 7 specifies claim exclusion for pool operations and record-based expansion for existing in-use readers. It does not connect the pre-record claim to those replay readers. Row 3 introduces the same interval for fresh trees before row 4 supplies pool claims.
+
+   **Smallest change:** Before releasing the shared hold, establish a reservation that every removal and replay judgement reads, including fresh-tree opens. Include claimed slots directly in those readers’ busy sets; do not require an opened record or completed `kept_trees.line` mapping. Reacquire the shared hold and verify branch, commit, declaration, key and placements before opening the record. Test a second process attempting a replay during a paused install.
+
+5. **Not blocking — the proposed repository example still omits a specifically promised key input.**
+
+   **Where:** R5.5, Design:416–420; §27’s proof at Design:2308–2310. Code: `src/Daoris.Web/package.json:52–67`; the present key reader at `Workplace/TreeClassesReader.cs:85–92`.
+
+   **Sequence:** Seal the web install using the example key. Add a project `.npmrc` containing `omit=dev`, without changing either package file or the accepted declaration. None of the example’s key inputs changes. The existing entry hits, although a fresh install would omit development dependencies, including this project’s build tools. npm documents that omission changes the installed tree while retaining dependency resolution in the lockfile. [npm ci’s omit setting](https://docs.npmjs.com/cli/v11/commands/npm-ci/#omit)
+
+   **Smallest change:** Include optional project configuration paths, recording absence as round 7 already requires, or omit the narrow `key` until its completeness is established. Make the `.npmrc` regression exercise the actual proposed declaration. The reader’s planned removal of the “must currently be tracked” restriction is necessary for this absent-file case.
+
+I found **no additional defect** in the revised treatment of path-bound dependencies, toolchain-triggered intermediate renewal, mixed runnable folders, writable copies, or link-safe removal. The cited holder code supports round 7’s distinction between `InUseAsync` and `HoldersAsync`; mapping running records to their slots addresses the identified running-session deletion and replay case.
+
+I also found no further work-loss case in the specified non-forcing switch, claim-generation fencing, named-job takeover or ref-backed finish. Evicting a sealed entry leaves independent placed copies intact as designed. Those conclusions concern the proposed rules; their crash and process proofs remain to be built.
