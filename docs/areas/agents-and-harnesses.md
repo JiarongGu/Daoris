@@ -187,7 +187,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 
 **Accounts**
 
-26. An account is made by signing in into a fresh `account-N` folder; removing it deletes the folder. An API key is an account
+26. An account is made by signing in into a fresh folder named by a new id (`acct-` and eight hex characters, never reused; an older
+    `account-N` keeps its name as its id); removing it deletes the folder. An API key is an account
     too: kept machine-local, handed in the tool's own variable, shown only by its last four characters. (from D66, D67)
 27. Each agent's accounts are one set serving every workspace, with one order and one set of use settings. There are no
     machine or workspace lists. The person's pick at a start is the one exception. (from D197)
@@ -200,12 +201,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     names that family as a word of its id (`opus`, `claude-opus-4-5`), or one at account default, and passes a start naming
     another, its hold naming the family's limit (`held.cooling-model`). Every reader that knows a line's model reads it the
     same way, the model being `PriorSession.ModelOn` (the record's choice with the composer's kept change over it): a
-    resume's own account, a limited line's wait and its candidate test (`LimitWaits`), the accounts a limit move or the
-    curve could move to (`SwitchCandidates`), a carry-on's hold and the hand-over press (`SessionCooling`, `GoOnNew`), all
+    resume's own account, a limited line's wait and its candidate test (`LimitWaits`), the accounts the
+    curve could move a conversation to (`SwitchCandidates`), a carry-on's hold and the hand-over press (`SessionCooling`, `GoOnNew`), all
     through `CoolingOf` and `CoolingsOf` with the model, over `AccountCooling.Holding`. A refused or signed-out account is
     passed until a person acts. With no account ready the start waits, saying the soonest way out. (from D125, D130, D205)
-31. A running session moves at its turn's end to another account of the same agent with room (10 points under its curve on
-    every window), never mid-turn, and not again within 30 minutes unless refused. Where none has room, the `handOver` rule
+31. A running conversation moves at its turn's end to another account of the same agent with room (10 points under its curve on
+    every window), never mid-turn, and not again within 30 minutes of its last curve move. Where none has room, the `handOver` rule
     decides another agent. (from D165, D163)
 32. A resume asks for its record's own account, because a harness keeps a conversation in that account's home. A start on
     another agent is on another account, whatever the names. (from D131, D137)
@@ -222,7 +223,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     carries how it was read (a refused credential, a sign-in's words, or a code the door declares), and a refused resume's
     open and the conclusion's sign-out read that, never the name of the entry. (from D210, D125)
 37. A limit cools that account until the reset the agent named, plus 2 minutes, with 15 minutes' grace and nothing believed
-    past 8 days, else 60 minutes. The grace is a dated reset's alone, never a time of day's or a weekday's. One function
+    past 8 days, else the machine's `cooloff` (60 minutes by default). The grace is a dated reset's alone, never a time of day's or a weekday's. One function
     holds these bounds (`ResetBounds`), whoever read the reset. A limit is never a strike. A limit whose words name a model
     family the agent's windows declare (`WindowWords.Models`, Claude's `opus` and `sonnet`), and a reading that puts that
     family's week (`seven_day_opus`, `seven_day_sonnet`) at 100% with its reset ahead, cool the account plus that family alone
@@ -262,7 +263,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     pin; the managed `claude` it runs reads `claude-code`'s pin. On Windows an agent npm installed starts as the node and script
     its `.cmd` shim would run, never through the shim's `cmd` (`PackageStarts`). (from D57, D121)
 43. A start's model and effort come from the role's choices, in the tool's own words. The protocol door carries them by
-    `session/set_config_option` after the posture and before the first prompt; the pipe door by `--model` and `--effort`. An
+    `session/set_config_option` before the posture (a model change can move it) and the first prompt; the pipe door by `--model` and `--effort`. An
     absent value is the account default. (from D205)
 44. A model the agent does not offer stops the process before any prompt, with no strike, and the walk goes on. A running
     session never moves to another choice. The record keeps what was asked, acknowledged and ran. (from D205)
@@ -283,7 +284,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 ## Where a change goes
 
 **By subdomain.** Agents sits after Knowledge and before Workplace, Roles, Participants, Context, Course and Loop
-(`Driver.Tests/StructureTests.cs:448`). Agents may use what is below it. What sits above reaches it through ports installed
+(`Driver.Tests/StructureTests.cs:366`). Agents may use what is below it. What sits above reaches it through ports installed
 when the driver loads (`IAgentContext`, `IAgentWorkplace`, `IAgentWorkWords`, `IAgentPlugins`).
 
 - A new agent or door: a registration line in `Registry/Providers.cs` and a folder under `Agents/Providers/<id>/`, on the
@@ -324,13 +325,13 @@ when the driver loads (`IAgentContext`, `IAgentWorkplace`, `IAgentWorkWords`, `I
   `AccountCoolingTests`, `ModelCoolingTests`, `AccountLimitsTests`, `ResumeAccountTests`, `LineAccountTests` and its callers' census;
 - errors and usage: `AgentErrorsTests`, `ClaudeUsageTests`, `CodexUsageTests`, `UsageHistoryTests`, `UsageProjectionTests`;
 - rules: `PermissionRulesTests`, `RuleProposalsTests`, `WorkspaceTrustTests`, `AcrossTests`;
-- the twins with the CLI: `RotationTwinTests`, `RotationUseTwinTests`, `CoolingTwinTests`, `WindowsTwinTests`,
+- the twins with the CLI: `RotationUseTwinTests`, `CoolingTwinTests`, `WindowsTwinTests`,
   `UsageCurvesTwinTests`, `AccountNamesTwinTests`.
 
 **Gates that bite** (`daoris.gates.json`): `driver` (every test above but process ones), `censuses` (the provider census, the
 tools-at-the-start census, the line-account callers' census), `driver-process` (real processes: conformance, native prompt,
 usage questions, session processes), the structure gate inside `driver`, `cli` for the twins' other half, `web-unit` for the
-Agents page, and `orient-index` and `code-map` once files move.
+Agents page, and `universal` (which writes the orient index) and `code-map` once files move.
 
 ## Contradictions
 
@@ -365,13 +366,13 @@ Agents page, and `orient-index` and `code-map` once files move.
   `get_usage` has answered the families' weeks null on every account read so far (`docs/2026-10-12-usage-read-evidence.md`).
   The listings and counts that show every cool-off of an account (`AccountsRoutes`, the terminal's agent list, `Offered`) read
   the whole of it by design: they ask no start.
-- **AGENTPROVIDER1d**'s rest: s-ix on, whose three cells are named in the design (`p-claude-bare`, `p-dsh` and `p-b`, where the
+- The agent card's door (AGENTPROVIDER1d's last choice, no backlog row): s-ix on, whose three cells are named in the design (`p-claude-bare`, `p-dsh` and `p-b`, where the
   page's own-home question reads the owner's first door and the walk the door's own), waits on the owner's choice: the page's agent
   card is one per account key, so which door's home it speaks for where an owner's doors disagree is not yet chosen
   (`RosterNext.OwnersToolchain` reads the owner's first door as before). `OwnerOf` of the old set is retired, every read asks
   `ProviderRegistry.OwnerOfAgent`, and every read of an agent's program and accounts `ProviderRegistry.AgentNamed`, which answers an
   `AccountAgent` (a holder's included). The roster's `LimitsOf`, `SignInOf`, `WindowsOf` and `UsageOf` read through the registry.
-  **1e**'s rest: a door's own limit, window, sign-in and refused words are its `DoorTablesPart` (`Own`), beside its provider's
+  Door words (AGENTPROVIDER1e, built): a door's own limit, window, sign-in and refused words are its `DoorTablesPart` (`Own`), beside its provider's
   `TablesPart` and its `Lent` words (a plugin's door states its toolchain's once in both; `codex-acp` says Codex's limits, as it
   lends them); a candidate's read floor is its provider's (s-iii, `SwitchCandidate.Floor`), and the page's is the accounts answer's
   `readFloor` per agent, its question's own, a minute only for a shell that names none. `alt-stub` (`Providers/AltStub/`) is built: its own
@@ -547,8 +548,8 @@ Agents page, and `orient-index` and `code-map` once files move.
   `-p` on the layer (measured to change no answer), and a value the layer's reader cannot recognise
   reads its whole answer unknown where today's keeps the rest for the history. The other moves wait on the capabilities requested
   in `docs/2026-11-06-lyntai-requests.md`.
-- **AGENTINFRA1**: an execution-neutral run for remote APIs and hosted runtimes, with scoped availability and explicit
-  recovery. Accepted; built after AGENTPROVIDER1, isolated home first.
+- **AGENTINFRA1** (design only, no backlog row; `docs/2026-10-27-provider-infrastructure-design.md`): an execution-neutral run for
+  remote APIs and hosted runtimes, with scoped availability and explicit recovery. Accepted, nothing built.
 - **AGENTERRORS1c**: the native door's failure reads and the measured `--resume`; **1e**: what remains of point 8 (the
   native door's live, driven and one-turn tries). 1d is built.
 - **LIMITRESUME1f** and **TOOL4n**: the native door's limit read, so a native session ended by a limit cools its account.
@@ -568,5 +569,4 @@ Agents page, and `orient-index` and `code-map` once files move.
 - **STEER3**, **MSG1h**, **MSG1i**: steering and next-step words measured on other doors (Codex, native).
 - **BGWAIT2b**, **SESSCTX1a**, **HELPMODE1a3**, **FABRIC-C2b**: woken-turn words, resume and fresh part per door, full access
   on the installed pins, the two-harness canary.
-- **POOL1d**: the install's fold of `harnesses.json` read rule by rule, applied on the person's press.
 - **MODELROLE1c4**, **MODELROLE1d3**: the installed proofs of a refused model passing an account and a chat's chosen model.
