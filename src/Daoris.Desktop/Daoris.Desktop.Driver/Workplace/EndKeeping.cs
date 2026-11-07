@@ -121,7 +121,8 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
 
         foreach (var grown in context.Grown.All().Where(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase)))
         {
-            if (await TreeRefs.CommitOfAsync(root, $"refs/heads/{grown.Branch}", ct, refs).ConfigureAwait(false) is not { } tip) continue;
+            // TREEFOLLOW1: a tree its agent moved onto a branch of its own has its work there, which its run binds, so that branch's tip is judged.
+            if (await TreeRefs.CommitOfAsync(root, $"refs/heads/{grown.Now ?? grown.Branch}", ct, refs).ConfigureAwait(false) is not { } tip) continue;
             // D245: a part its chain's tidy ended at this tip is ended by that record alone, and none of the proofs below judge it again.
             if (ChainTidies.Of(standing, repository, grown.Branch, tip) is { } tidied)
             {

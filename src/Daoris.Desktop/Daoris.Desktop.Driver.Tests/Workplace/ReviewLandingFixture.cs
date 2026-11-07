@@ -50,11 +50,15 @@ public abstract class ReviewLandingFixture : IDisposable
         Assert.True(WorkflowRunBindings.Bind(_home, WorkflowRunBindings.Plan(Config(), _home, "q1", "engine", "aurora", null, task, [], DateTimeOffset.UtcNow)));
     }
 
-    /// <summary>A done session in its own tree, whose run follows a saved workflow as its conclusion reads it.</summary>
-    protected async Task<string> NamedDoneAsync(string root, string session, string quest)
+    /// <summary>
+    /// A done session in its own tree, whose run follows a saved workflow as its conclusion reads it; with <paramref name="ownBranch"/>, its agent
+    /// committed its work on a branch of its own (<see cref="OwnBranchAsync"/>).
+    /// </summary>
+    protected async Task<string> NamedDoneAsync(string root, string session, string quest, bool ownBranch = false)
     {
         var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
-        await CommitAsync(opened.Path, $"{session}.txt", $"the work of {session}", $"the work of {session}");
+        if (ownBranch) await OwnBranchAsync(opened.Path);
+        else await CommitAsync(opened.Path, $"{session}.txt", $"the work of {session}", $"the work of {session}");
         _world.Quests[quest] = new QuestView(quest, "game", "engine", "Fix the gap", "Fix it.", "Done");
         _world.Records.Add(new SessionRecord(session, "engine", "completed") { Quest = quest, Tree = opened.Path, Created = DateTimeOffset.UtcNow });
         var process = await WorkflowProcesses.ConcludedAsync(_home, Config(), _world, _world.Quests[quest], opened.Path, "aurora");

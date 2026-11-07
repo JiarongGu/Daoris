@@ -258,7 +258,9 @@ internal static class NodeGoverning
         };
 
         var (declared, dispatchable, observable) = Declare(graph, steps);
-        var watched = new WatchedUnit(repository, binding.Workspace, root, branch?.Subject.Artifact ?? "", "", null, null, [])
+        // The branch its work stands on: the one its tree's agent moved onto where the look learned it (TREEFOLLOW1), else its session branch, which
+        // then no longer moves, so its branch-side nodes bound to that tip would never read the tree's work.
+        var watched = new WatchedUnit(repository, binding.Workspace, root, branch?.Records.Branch?.Now ?? branch?.Subject.Artifact ?? "", "", null, null, [])
         {
             Unit = branch?.Id ?? run.Unit, Identity = identity,
         };
