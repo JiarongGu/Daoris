@@ -130,7 +130,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     every other provider's registered credential and home dropped (a plugin's door, its program unmeasured, keeps all), the
     repository and service, the tools, the session's git, the identity variables, the recipe's own; then the account's key,
     the binary and its pin, the program resolved on the tools' `PATH`, Claude Code's seam on a door whose program runs it
-    (Claude Code's protocol door and the protocol stand-in `acp-stub`; never Codex's, dsh's or a plugin's door), the home last; then the
+    (Claude Code's protocol door and the protocol stand-ins `acp-stub` and `alt-acp-stub`; never Codex's, dsh's or a plugin's door), the home last; then the
     tools-at-the-start switch (`ENABLE_TOOL_SEARCH=false` for Claude Code); the carriers after all of it. A provider declaring
     a name of Daoris's list is refused at registration, but for the session's tokens. (from D49, D230, D172 point 3)
 13. A start's connectors are one `ConnectorPlan`, composed once per workspace by `ConnectorPlans.For` (the workspace, the servers, the
@@ -191,7 +191,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 
 **Accounts**
 
-26. An account is made by signing in into a fresh folder named by a new id (`acct-` and eight hex characters, never reused; an older
+26. An account is made by signing in into a fresh folder named by a new id (`acct-` and eight hex characters, a drawn id is redrawn while a folder of it exists; an older
     `account-N` keeps its name as its id); removing it deletes the folder. An API key is an account
     too: kept machine-local, handed in the tool's own variable, shown only by its last four characters. (from D66, D67)
 27. Each agent's accounts are one set serving every workspace, with one order and one set of use settings. There are no
@@ -202,7 +202,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     provider reported (any window it declares, by what is left under the curve, or of the window where the curve table has none;
     rooms within a five-point band tie; an account with no number ranks as one with no room; not under `switch: off`), then
     fewest of Daoris's sessions running, then a week about to lapse, then most room under the curve, then least recently
-    started, then the order. Under `order` the first ready account runs. The cap stays one number per machine.
+    started, then the order. Under `order` the list is the walk, a near account last. The cap stays one number per machine.
     (from D130, D165, D197)
 30. A cooling account is held first, by a file read, before any probe. A model family's cool-off holds a start whose model
     names that family as a word of its id (`opus`, `claude-opus-4-5`), or one at account default, and passes a start naming
@@ -210,8 +210,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     same way, the model being `PriorSession.ModelOn` (the record's choice with the composer's kept change over it): a
     resume's own account, a limited line's wait and its candidate test (`LimitWaits`), the accounts the
     curve could move a conversation to (`SwitchCandidates`), a carry-on's hold and the hand-over press (`SessionCooling`, `GoOnNew`), all
-    through `CoolingOf` and `CoolingsOf` with the model, over `AccountCooling.Holding`. A refused or signed-out account is
-    passed until a person acts. With no account ready the start waits, saying the soonest way out. (from D125, D130, D205)
+    through `CoolingOf` and `CoolingsOf` with the model, over `AccountCooling.Holding`. A refused account is passed until a person
+    acts, and a signed-out one until a person signs in or its last reading is an hour old, when it is asked again. With no account ready the start waits, saying the soonest way out. (from D125, D130, D205)
 31. A running conversation moves at its turn's end to another account of the same agent with room (10 points under its curve on
     every window), never mid-turn, and not again within 30 minutes of its last curve move. Where none has room, the `handOver` rule
     decides another agent. (from D165, D163)
