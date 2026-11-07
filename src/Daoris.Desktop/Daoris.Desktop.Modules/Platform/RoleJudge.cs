@@ -168,7 +168,7 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
         if (!owner.TableOf(role).TryGetValue(act.Act, out var row)) return RoleJudgement.Refused(RoleWhy.NotRole);
         // STEWARDROLE1c (§6.2): the desk's decline changes nothing of Daoris's controls, so every steward may make it.
         var desk = role == AppointedRoles.Steward && StewardActs.Desk.Contains(act.Act, StringComparer.Ordinal);
-        if (!desk && !grant.Acts.Contains(act.Act, StringComparer.Ordinal)) return RoleJudgement.Refused(RoleWhy.NotGranted);
+        if (!desk && !grant.Acts.Contains(act.Act, StringComparer.Ordinal)) return StewardAsk.Outside(row, act, holding.Id, roles);
 
         if (!row.IsForm(act.Form)) return RoleJudgement.Refused(SupervisorWhy.Form);
 

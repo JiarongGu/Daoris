@@ -22,6 +22,12 @@ public interface IRoleAct
     string TargetKind => OwnerKinds.Repository;
 
     /// <summary>
+    /// The person's route whose exact form is this act's own (STEWARDROLE1d): outside the acts the person granted the role, its holder's
+    /// proved press asks the person as that route's press, and confirmed it is theirs. None is refused <c>not-granted</c> there.
+    /// </summary>
+    string? PersonRoute => null;
+
+    /// <summary>
     /// The act's conditions that read a dependency (<c>landing-pushes</c>, <c>no-tree</c>), judged again under the gates of its target and
     /// its dependencies before its handler runs (STEWARDROLE1a-ii, D209 §3.4 step 8): null where they hold, else the refusal's code.
     /// </summary>

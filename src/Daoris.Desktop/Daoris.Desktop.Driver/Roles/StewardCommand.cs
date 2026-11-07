@@ -141,16 +141,25 @@ public static class StewardCommand
             return 2;
         }
 
+        var sent = Guid.NewGuid().ToString();
+        var owners = new StewardAsked(sent, output);
         var answer = await client.RequestAsync(
-            Guid.NewGuid().ToString(), Act.Module, Act.Route, new RoleActForm(StewardRoutes.Role, asked.Act, generation, form, proof).Payload(),
-            Guid.NewGuid().ToString("N"), told: null, instance.Within, ct).ConfigureAwait(false);
+            sent, Act.Module, Act.Route, new RoleActForm(StewardRoutes.Role, asked.Act, generation, form, proof).Payload(),
+            Guid.NewGuid().ToString("N"), owners.Told, instance.Within, ct).ConfigureAwait(false);
         if (answer is not { } envelope)
         {
             await output.WriteLineAsync("steward: Daoris did not answer; read `steward acts` before acting again.").ConfigureAwait(false);
             return 2;
         }
 
-        if (!envelope.TryGetProperty("success", out var success) || success.ValueKind != JsonValueKind.True)
+        var succeeded = envelope.TryGetProperty("success", out var success) && success.ValueKind == JsonValueKind.True;
+        if (owners.Asked)
+        {
+            await output.WriteLineAsync(owners.Ended($"{asked.Act} {string.Join(' ', args.Skip(1))}", succeeded)).ConfigureAwait(false);
+            return succeeded ? 0 : 1;
+        }
+
+        if (!succeeded)
         {
             var error = envelope.TryGetProperty("error", out var held) ? held : default;
             await output.WriteLineAsync($"steward: {InstanceClient.Text(error, "message")} ({InstanceClient.Text(error, "code")})").ConfigureAwait(false);
