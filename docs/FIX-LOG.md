@@ -5,6 +5,37 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-08 - A session branch its tree moved off was never tidied (CI 12, SCOPEVERIFY1)
+
+- **Symptom:** CI run 12's git half on bb912f3537: `TidyEffectGitTests.A_removed_branchs_live_tree_is_followed_to_its_next_branch`
+  found the empty session branch still standing after the tidy, and `BranchTidyingProcessTests.A_tree_its_agent_moved_onto_a_branch_of_its_own_is_followed_and_its_empty_session_branch_goes`
+  heard the look say nothing; both again alone.
+- **Root cause:** 36acbbbd1b (LANDAUTO1) made the end keeper judge a moved tree's unit at the tip of the branch its tree is on now
+  (`GrownBranch.Now`), so the kept fact's tip is that branch's. The look's tidy still took as candidates only the entries whose kept fact
+  holds at the session branch's own tip (`AutoTidies`, `HeldHereAsync(grown.Branch, …)`), which a moved tree's fact never does, so its
+  session branch stayed for good, before and after its work landed. The tests still expected the branch to go at the first look, which
+  would now be wrong: a removed branch's entry becomes a trace the keeper never judges again, so a unit whose work is on its own branch
+  would never end.
+- **Fix:** the tidy reads the kept fact at the tip the keeper judged (`grown.Now ?? grown.Branch`); the session branch goes once the line
+  holds the moved branch's work, and its trace keeps the held fact. The two tests merge `feature/x` before the look that removes it.
+- **Verify:** both tests failed first with the fix taken out (the branch stood after the merge; the look said nothing), and pass alone
+  twice with it, beside their classes whole.
+
+## 2026-11-08 - The driver's Process half still read the door as `adapter` (CI 12, SCOPEVERIFY1)
+
+- **Symptom:** CI run 12's full set on bb912f3537: twelve driver Process tests (thirteen cases) failed, and failed again alone. Eight
+  cases with a NullReferenceException (`BrainstormProcessTests`, `BrainstormRoomMeasureProcessTests`, three `ReviewTreeTests` facts and
+  its theory's two, `OpinionResumeTickTests` on the native door), `HeldChatProcessTests` with a missing key, `OpinionResumeTickTests` on the protocol
+  door with no findings in the session's events, `StaffPolicyTransientTickTests` twice with no `"adapter":` in the record, and
+  `SettledServiceProcessTests` with *table sessions has no column named adapter*.
+- **Root cause:** 6b73851be6 (AGENTPROVIDER1t-ii) renamed the door's key to `door` in a brainstorm's document and room measure, the
+  START_CHAT press and an opinion's reviewer; aa18f4bc74 (AGENTPROVIDER1t-ii) renamed the session record's field and the store's column.
+  Each updated the fast half's fixtures and none of these Process classes, which a worktree does not run. The tests read the old key, and
+  the review stand-ins built the reviewer and its session from `adapter`, so the driver saw no reviewer's door and delivered nothing. The
+  product was right; only the tests were behind it.
+- **Fix:** the tests read and write `door` (3cb0e2a77d), and `HeldChatTests`' assertion that an unnamed agent sends no door names `door`.
+- **Verify:** the seven classes together (38 green), each of the twelve alone twice, the driver's censuses and `comment-gate`.
+
 ## 2026-11-08 - An installed update did not convert the home; the next start had to (HOMEMIGRATE1)
 
 - **Symptom:** on the owner's install every update since 2026-11-07 logged `home.migration-held` (the launcher's update of the

@@ -119,7 +119,7 @@ public sealed class HeldChatTests : IAsyncLifetime
         await Running();
 
         var payload = Assert.Single(Sent("START_CHAT")).GetProperty("payload");
-        Assert.False(payload.TryGetProperty("adapter", out _));
+        Assert.False(payload.TryGetProperty("door", out _));
         Assert.False(payload.TryGetProperty("profile", out _));
         Assert.False(payload.TryGetProperty("ownTree", out _));
         _input.End();

@@ -140,7 +140,7 @@ public sealed class BrainstormRoomMeasureProcessTests : IDisposable
             },
             Outcomes(measure));
         var kept = JsonNode.Parse(File.ReadAllText(files.PathOf(id, "room-measure.json")))!;
-        Assert.Equal(("acp-stub", "kept"), (kept["adapter"]!.GetValue<string>(), kept["verdict"]!.GetValue<string>()));
+        Assert.Equal(("acp-stub", "kept"), (kept["door"]!.GetValue<string>(), kept["verdict"]!.GetValue<string>()));
         Assert.Contains("Room measurement on `acp-stub`: kept.", files.MeasureText(id)!, StringComparison.Ordinal);
         Assert.False(Directory.Exists(files.Rooms(id)));
         Assert.False(Directory.Exists(files.PathOf(id, "probe")));

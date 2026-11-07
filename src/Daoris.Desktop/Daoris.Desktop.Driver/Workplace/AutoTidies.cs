@@ -244,7 +244,7 @@ internal sealed class AutoTidies(
         foreach (var grown in context.Grown.All().Where(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase)
                      && sessions.Contains(each.Branch, StringComparer.Ordinal)))
         {
-            if (await HeldHereAsync(grown.Branch, grown.Held).ConfigureAwait(false)) held.Add(grown.Branch);
+            if (await HeldHereAsync(grown.Now ?? grown.Branch, grown.Held).ConfigureAwait(false)) held.Add(grown.Branch);
         }
 
         var entries = new List<LandedBranch>();

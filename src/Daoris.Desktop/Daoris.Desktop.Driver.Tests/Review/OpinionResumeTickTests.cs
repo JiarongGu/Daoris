@@ -533,7 +533,7 @@ public sealed class OpinionResumeTickTests : IDisposable
                     {
                         ["repository"] = "engine", ["base"] = tip, ["tip"] = tip, ["commits"] = new JsonArray(tip),
                     },
-                    ["reviewer"] = new JsonObject { ["adapter"] = "codex-acp", ["label"] = "another-maker", ["product"] = "Codex", ["maker"] = "OpenAI" },
+                    ["reviewer"] = new JsonObject { ["door"] = "codex-acp", ["label"] = "another-maker", ["product"] = "Codex", ["maker"] = "OpenAI" },
                     ["minutes"] = 20, ["state"] = "given",
                     ["given"] = new JsonObject
                     {

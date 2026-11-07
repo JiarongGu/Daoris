@@ -99,7 +99,7 @@ public sealed class HeldChatProcessTests : IAsyncDisposable
         var start = Assert.Single(daoris.Sent, each => Is(each, "START_CHAT"));
         Assert.True(start.GetProperty("hold").GetBoolean());
         Assert.Equal("newcomer", start.GetProperty("payload").GetProperty("repository").GetString());
-        Assert.Equal("stub", start.GetProperty("payload").GetProperty("adapter").GetString());
+        Assert.Equal("stub", start.GetProperty("payload").GetProperty("door").GetString());
         Assert.Equal(
             "what is this repository for?",
             Assert.Single(daoris.Sent, each => Is(each, "SESSION_INPUT")).GetProperty("payload").GetProperty("text").GetString());

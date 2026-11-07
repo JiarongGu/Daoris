@@ -202,7 +202,7 @@ public sealed class ReviewTreeTests : IDisposable
         Assert.Equal(_base, asked["candidate"]!["base"]!.GetValue<string>());
         Assert.Equal(_tip, asked["candidate"]!["tip"]!.GetValue<string>());
         Assert.Equal([_middle, _tip], asked["candidate"]!["commits"]!.AsArray().Select(commit => commit!.GetValue<string>()));
-        Assert.Equal("stub", asked["reviewer"]!["adapter"]!.GetValue<string>());
+        Assert.Equal("stub", asked["reviewer"]!["door"]!.GetValue<string>());
         Assert.Equal(ReviewerLabels.MakerNotDeclared, asked["reviewer"]!["label"]!.GetValue<string>());
         Assert.Equal(["claude-code"], asked["families"]!.AsArray().Select(family => family!.GetValue<string>()));
         Assert.Equal(OpinionPosture.CopyAlone, asked["posture"]!.GetValue<string>());
@@ -550,7 +550,7 @@ public sealed class ReviewTreeTests : IDisposable
                         var (reader, opinion) = ("r" + Asked.Count, "op" + Asked.Count);
                         var session = new JsonObject
                         {
-                            ["id"] = reader, ["repository"] = "reports", ["state"] = "queued", ["kind"] = "chat", ["adapter"] = body["reviewer"]!["adapter"]!.GetValue<string>(),
+                            ["id"] = reader, ["repository"] = "reports", ["state"] = "queued", ["kind"] = "chat", ["door"] = body["reviewer"]!["door"]!.GetValue<string>(),
                             ["workspace"] = "work", ["opinion"] = opinion, ["tree"] = body["tree"]!.GetValue<string>(),
                         };
                         _states[reader] = [];

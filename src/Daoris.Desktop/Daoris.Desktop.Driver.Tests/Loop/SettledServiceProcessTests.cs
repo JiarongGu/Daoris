@@ -215,7 +215,7 @@ public sealed class SettledServiceProcessTests : IAsyncLifetime
 
         var lead = await EndedAsync();
         Statement(
-            "INSERT INTO sessions (id, repository, adapter, state, created, updated, kind, serves, piece) VALUES ('pt000001', 'engine', 'stub', 'Completed', $at, $at, 'Chat', $lead, 'piece1')",
+            "INSERT INTO sessions (id, repository, door, state, created, updated, kind, serves, piece) VALUES ('pt000001', 'engine', 'stub', 'Completed', $at, $at, 'Chat', $lead, 'piece1')",
             ("$at", DateTimeOffset.UtcNow.ToString("O")), ("$lead", lead));
         var piece = await _client.Partners.HandAsync("pt000001", "the piece");
         Assert.Equal(SolicitedFate.Kept, piece.Fate);

@@ -158,6 +158,9 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
         await CommitAsync(opened.Path, "work.txt", "work\n", "the work");
         using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
         await TidyAsync(trees, root);
+        Assert.True(await StandsAsync(root, opened.Branch));
+        await GitAsync(root, "merge", "--no-ff", "--quiet", "-m", "merge feature/x", "feature/x");
+        await TidyAsync(trees, root);
         Assert.False(await StandsAsync(root, opened.Branch));
 
         await GitAsync(opened.Path, "checkout", "--quiet", "-b", "feature/y");
