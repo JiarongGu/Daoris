@@ -498,7 +498,7 @@ public sealed class AccountRotationGoalTests : IDisposable
 
         // Only a start moved off where its scope begins is a rotation in the log, with the step that moved it.
         Assert.Equal(2, lines.Count);
-        Assert.Equal(["session", "adapter", "from", "to", "carries", "why", "scope", "said", "fromSaid", "toSaid"], lines[0].Data.Select(field => field.Key));
+        Assert.Equal(["session", "door", "from", "to", "carries", "why", "scope", "said", "fromSaid", "toSaid"], lines[0].Data.Select(field => field.Key));
         Assert.Equal(new object?[] { "s1", "claude-code-acp", "account-1", "account-3", null, "fewest", "work", false, null, null }, lines[0].Data.Select(field => field.Value));
         Assert.Equal("s0", lines[1].Data.Single(field => field.Key == "carries").Value);
     }

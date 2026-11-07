@@ -155,7 +155,7 @@ function week(): string {
     line('2026-09-30T08:01:00.000Z', 'desktop', 'info', 'view.opened', { view: 'sessions' }),
     line('2026-09-30T08:02:00.000Z', 'desktop', 'info', 'panel.moved', { view: 'console', region: 'right' }),
     'not json',
-    line('2026-09-30T08:03:00.000Z', 'desktop', 'info', 'session.started', { session: 's2', kind: 'driven', adapter: 'codex-acp', repository: 'game' }),
+    line('2026-09-30T08:03:00.000Z', 'desktop', 'info', 'session.started', { session: 's2', kind: 'driven', door: 'codex-acp', repository: 'game' }),
     line('2026-09-30T08:03:02.000Z', 'desktop', 'info', 'session.opened', { session: 's2', adapter: 'codex-acp', openMs: 2000 }),
     line('2026-09-30T08:03:05.000Z', 'desktop', 'info', 'turn.answered', { session: 's2', firstAnswerMs: 4000 }),
     line('2026-09-30T08:04:00.000Z', 'desktop', 'info', 'turn.ended', { session: 's2', stopReason: 'cancelled', turnMs: null }),

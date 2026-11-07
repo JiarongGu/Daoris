@@ -148,7 +148,7 @@ public sealed class SignInPhasesTests : Bridge
         Assert.Equal(["harness.started", "harness.prompted", "harness.ended"], life.Select(line => line.GetProperty("event").GetString()));
         Assert.All(life, line => Assert.Equal(
             ("codex-acp", "login-new"),
-            (line.GetProperty("data").GetProperty("harness").GetString(), line.GetProperty("data").GetProperty("action").GetString())));
+            (line.GetProperty("data").GetProperty("door").GetString(), line.GetProperty("data").GetProperty("action").GetString())));
         var end = life[2].GetProperty("data");
         Assert.Equal("done", end.GetProperty("outcome").GetString());
         Assert.Equal(0, end.GetProperty("code").GetInt32());

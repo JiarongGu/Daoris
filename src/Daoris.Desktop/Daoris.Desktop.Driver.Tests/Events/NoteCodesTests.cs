@@ -227,7 +227,7 @@ public sealed class NoteCodesTests
     public void A_reason_brings_its_own_values_and_elsewhere_names_the_agent_it_ran_on()
     {
         var adapter = StartNoteCodes.WentNewSession.Part("x", NoteCodes.Reason(ContinueWhy.DoorChanged("claude-code", "codex-acp")));
-        Assert.Equal("adapter", adapter.Value("why"));
+        Assert.Equal("door", adapter.Value("why"));
         Assert.Equal("claude-code", adapter.Value("from"));
         Assert.Equal("codex-acp", adapter.Value("to"));
 

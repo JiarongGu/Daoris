@@ -98,7 +98,7 @@ public sealed class SessionLogTests : IDisposable
         var started = Data(Assert.Single(Named("session.started")));
         Assert.Equal(id, started.GetProperty("session").GetString());
         Assert.Equal("chat", started.GetProperty("kind").GetString());
-        Assert.Equal("claude-code-acp", started.GetProperty("adapter").GetString());
+        Assert.Equal("claude-code-acp", started.GetProperty("door").GetString());
         Assert.Equal("engine", started.GetProperty("repository").GetString());
 
         // A move that is not an ending is no line: `starting` and `working` are the ledger's business.
@@ -157,7 +157,7 @@ public sealed class SessionLogTests : IDisposable
 
         var opened = Data(Assert.Single(Named("session.opened")));
         Assert.Equal(s, opened.GetProperty("session").GetString());
-        Assert.Equal("claude-code-acp", opened.GetProperty("adapter").GetString());
+        Assert.Equal("claude-code-acp", opened.GetProperty("door").GetString());
         Assert.Equal(5840, opened.GetProperty("openMs").GetInt64());
 
         var answered = Named("turn.answered").Select(Data).ToList();
@@ -258,7 +258,7 @@ public sealed class SessionLogTests : IDisposable
 
         var refused = Data(Assert.Single(Named("permission.refused")));
         Assert.Equal(s, refused.GetProperty("session").GetString());
-        Assert.Equal("claude-code-acp", refused.GetProperty("adapter").GetString());
+        Assert.Equal("claude-code-acp", refused.GetProperty("door").GetString());
         Assert.Equal("execute", refused.GetProperty("kind").GetString());
         // The protocol door's wire names a call's kind and title, never its tool, nor what decided it.
         Assert.Equal(JsonValueKind.Null, refused.GetProperty("tool").ValueKind);
@@ -288,7 +288,7 @@ public sealed class SessionLogTests : IDisposable
         var lines = Named("permission.refused").Select(Data).ToList();
         Assert.Equal(2, lines.Count);
         Assert.Equal(("claude-code", "Bash", "execute", "rule"), (
-            lines[0].GetProperty("adapter").GetString(), lines[0].GetProperty("tool").GetString(),
+            lines[0].GetProperty("door").GetString(), lines[0].GetProperty("tool").GetString(),
             lines[0].GetProperty("kind").GetString(), lines[0].GetProperty("by").GetString()));
         Assert.Equal("mcp__daoris-knowledge__quest_publish", lines[1].GetProperty("tool").GetString());
         Assert.Equal(JsonValueKind.Null, lines[1].GetProperty("kind").ValueKind);
@@ -312,7 +312,7 @@ public sealed class SessionLogTests : IDisposable
 
         var refused = Data(Assert.Single(Named("permission.refused")));
         Assert.Equal("orphan2", refused.GetProperty("session").GetString());
-        foreach (var field in new[] { "adapter", "tool", "kind", "by" })
+        foreach (var field in new[] { "door", "tool", "kind", "by" })
         {
             Assert.Equal(JsonValueKind.Null, refused.GetProperty(field).ValueKind);
         }
@@ -385,8 +385,8 @@ public sealed class SessionLogTests : IDisposable
         Assert.Equal(2, lines.Count);
         Assert.Equal(("s1", "completed", true, "screen"), (
             lines[0].GetProperty("session").GetString(), lines[0].GetProperty("from").GetString(),
-            lines[0].GetProperty("resumed").GetBoolean(), lines[0].GetProperty("door").GetString()));
-        Assert.Equal(("tree", JsonValueKind.Null), (lines[1].GetProperty("why").GetString(), lines[1].GetProperty("door").ValueKind));
+            lines[0].GetProperty("resumed").GetBoolean(), lines[0].GetProperty("saidAt").GetString()));
+        Assert.Equal(("tree", JsonValueKind.Null), (lines[1].GetProperty("why").GetString(), lines[1].GetProperty("saidAt").ValueKind));
     }
 
     /// <summary>

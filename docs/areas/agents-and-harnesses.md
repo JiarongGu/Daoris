@@ -449,13 +449,21 @@ Agents page, and `orient-index` and `code-map` once files move.
   moves its own store, as it adds its columns, because a shared host opens the same schema and runs no desktop migration. A remote whose
   host runs an older build sends `adapter`, read here as the door `unknown`; no reader of the old field is kept. Kept, each with its end:
   `driver.json`'s `adapter`, `intakeAdapter` and `helperAdapter`, read only by the staffing import nocompat1's `StaffingStep` runs and then
-  takes out, deleted with that step when the next release's migration replaces nocompat1 (D232 point 2); the session store's rename,
-  deleted with nocompat1's steps; a plugin's `session.ended` frame's `adapter`, which other repositories' published plugins read, renamed
-  with the work-event grammar's next version (`WorkEventGrammar.Version`, 3), never under a plugin reading this one; **t-ii**'s rest, the
-  records that copy the session's door, each renamed `door` with its own conversion: an opinion's reviewer (the service's opinions), a
-  memory operation's author's `adapter` and `harness` (the service's memory operations), the machine log's fields (and the usage and
-  orient reports that read them), a note's part (`resumed.*`'s `adapter` value, the why `adapter`, `unable`'s value and their catalogue
-  placeholders), a brainstorm's and a meeting's files, and `START_CHAT`'s press; **t-iii**, the lineage's `harness` and `acp` signal, the service's `LineageFile`, which a plugin
+  takes out, deleted with that step when the next release's migration replaces nocompat1 (D232 point 2); the service stores' renames
+  (`SessionColumnNames`, `MemoryAuthorColumnNames`, `NotePartNames`, `OpinionReviewerNames`) and the `brainstorm-files` step, deleted
+  with nocompat1's steps; a plugin's `session.ended` frame's `adapter`, which other repositories' published plugins read, renamed
+  with the work-event grammar's next version (`WorkEventGrammar.Version`, 3), never under a plugin reading this one; the other records
+  that copied the session's door name it `door` too, each with its own conversion: an opinion's reviewer (`reviewer.door` in the asking
+  JSON, the wire's `OpinionReviewerWire.Door`; the service renames a row's `adapter` as it opens, `OpinionReviewerNames`), a memory
+  operation's author (`memory_ops.door` and `door_version`, `MemoryAuthorColumnNames`; the author on the wire and the proposal's
+  packet name `door`), a session note's parts (a part's `adapter` value is `door` and the reason `adapter` is the reason `door`, the
+  catalogue's `work.say.why.door` and the `{{door}}` placeholders of `note.resumed.*`, `work.say.why.unable` and `work.memory.by`;
+  `NotePartNames`, run as the sessions open), a brainstorm's and a meeting's files (the desktop migration's `brainstorm-files` step
+  renames `adapter` in the pass records, the document, the packets and the room measures, a tool's answers untouched, and writes a
+  meeting's packet again under the digest of what it now holds), the machine log's lines (`session.*`, `agent.*`, `account.*`,
+  `opinion.asked`, `harness.*` and the refusal log say `door`; `session.reopened`'s words-door is `saidAt`; a line already written is
+  read by the older word, `doorOf` in the usage report and the orient report's `door ?? adapter`, until those files age out), `START_CHAT`'s press (`door`, from the page and from
+  `daoris chat --agent`) and the trace answer's `agent.door` and `agent.doorVersion`; **t-iii**, the lineage's `harness` and `acp` signal, the service's `LineageFile`, which a plugin
   may read, so its end waits on that contract (the page's catalogue keys `harness.wire.acp` and `harness.wire.pipe` keep their names).
   Done: the account presses (`AccountsReadPress`, `AccountUsePress`, `HarnessActionPress`, `HarnessInputPress`, `HarnessCancelPress`,
   `AgentSettingsPress`), the `HARNESSES` and `ACCOUNTS` answers, the `HARNESS_ENDED` news and the attention slice's account row name their

@@ -213,7 +213,7 @@ internal sealed class OpinionStandIn : HttpMessageHandler
             {
                 ["repository"] = "reports", ["base"] = @base ?? Base, ["tip"] = tip ?? Tip, ["commits"] = new JsonArray(tip ?? Tip),
             },
-            ["reviewer"] = new JsonObject { ["adapter"] = adapter, ["label"] = "another-maker", ["product"] = "Codex", ["maker"] = "OpenAI" },
+            ["reviewer"] = new JsonObject { ["door"] = adapter, ["label"] = "another-maker", ["product"] = "Codex", ["maker"] = "OpenAI" },
             ["families"] = new JsonArray("claude-code"), ["posture"] = "copy-alone", ["minutes"] = 20, ["tier"] = "agent",
             ["asked"] = "2026-10-09T09:00:00Z", ["due"] = "2026-10-09T09:20:00Z", ["state"] = state, ["why"] = why,
             ["given"] = weights is null ? null : new JsonObject

@@ -160,7 +160,7 @@ public sealed class BrainstormRoomMeasureTests : IDisposable
         var json = JsonNode.Parse(System.Text.Encoding.UTF8.GetString(BrainstormRoomProbe.Json(measure)))!;
         var text = BrainstormRoomProbe.Markdown(measure);
 
-        Assert.Equal(("codex-acp", "kept", 6), (json["adapter"]!.GetValue<string>(), json["verdict"]!.GetValue<string>(), json["probes"]!.AsArray().Count));
+        Assert.Equal(("codex-acp", "kept", 6), (json["door"]!.GetValue<string>(), json["verdict"]!.GetValue<string>(), json["probes"]!.AsArray().Count));
         Assert.Equal("held", json["probes"]![1]!["outcome"]!.GetValue<string>());
         Assert.Contains("Room measurement on `codex-acp`: kept.", text, StringComparison.Ordinal);
         Assert.Contains("no guarantee", text, StringComparison.Ordinal);

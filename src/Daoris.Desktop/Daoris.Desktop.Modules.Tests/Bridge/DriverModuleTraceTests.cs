@@ -125,8 +125,8 @@ public sealed class DriverModuleTraceTests : DriverModuleBridge
         var first = links[2].GetProperty("session");
         var second = links[3].GetProperty("session");
         Assert.Equal(("s1", "s2"), (first.GetProperty("id").GetString(), second.GetProperty("id").GetString()));
-        Assert.Equal(("claude-code", "2.1.4", "work"), (second.GetProperty("agent").GetProperty("adapter").GetString(),
-            second.GetProperty("agent").GetProperty("harness").GetString(), second.GetProperty("agent").GetProperty("account").GetString()));
+        Assert.Equal(("claude-code", "2.1.4", "work"), (second.GetProperty("agent").GetProperty("door").GetString(),
+            second.GetProperty("agent").GetProperty("doorVersion").GetString(), second.GetProperty("agent").GetProperty("account").GetString()));
         Assert.Equal("dashboards-q1", second.GetProperty("tree").GetString());
         Assert.Equal(("s1", "same"), (second.GetProperty("before").GetProperty("session").GetString(), second.GetProperty("before").GetProperty("tree").GetString()));
         Assert.Equal("carried on from session `s1` on `work`.", second.GetProperty("events").GetProperty("starts")[0].GetString());
