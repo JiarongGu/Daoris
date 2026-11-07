@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-08 - An installed update did not convert the home; the next start had to (HOMEMIGRATE1)
+
+- **Symptom:** on the owner's install every update since 2026-11-07 logged `home.migration-held` (the launcher's update of the
+  application held the home, so it was not converted) and needed a second restart before the new build's steps ran.
+- **Root cause:** the application runs the migration at its first moment and waited for the home's lease as a `Migration`; the launcher's
+  swap holds that lease until the application confirms, which comes after the migration, so the wait could only time out (30 seconds,
+  delaying the start) and nothing ran. Introduced by 33785f3503, which put the migration at the application's start under the lease.
+- **Fix:** a migration that finds the swap's lease says it is converted once the update has confirmed, without waiting; the application
+  runs `HomeMigration` again (`RunAfterSwapAsync`) after the confirmation, once the swap has let go. Any other holder keeps its wait and
+  its sentence. A build that fails to confirm is rolled back onto a home it did not convert.
+- **Verify:** `HomeMigrationTests.A_home_the_launchers_swap_holds_is_converted_once_the_swap_lets_go` (failed first: no such method) and
+  `A_swap_that_never_lets_go_leaves_the_home_unconverted`; a verb's hold still says the next start.
+
 ## 2026-11-07 - Every `dev-line` run sat at `content.holds` after its done, with no reason said (LANDAUTO1)
 
 - **Symptom:** on the owner's install (main's 2925def910), Daoris's run 4f5f19f696a2, Shenora's d009d29af00c (its line not moved) and
