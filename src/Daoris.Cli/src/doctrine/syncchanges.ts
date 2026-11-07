@@ -7,7 +7,7 @@ import { significantTokens, containment } from './twins.ts';
 import { isSwitchedOff, resolveSelection } from './canon.ts';
 import { lockIndex } from './config.ts';
 import { spanBody } from './tierrender.ts';
-import { resolveHarness } from '../layout/harness.ts';
+import { lockLayout } from '../layout/layout.ts';
 
 /**
  * A canonical file renamed upstream arrives as a delete plus an add, which loses
@@ -77,7 +77,10 @@ export function planChanges(
   const added: string[] = [];
   const changed: string[] = [];
 
-  const harness = manifest.harnessDescriptor ?? resolveHarness(manifest.harness);
+  // Where the lock says the files are, as every other reader of them does: a manifest flipped to another layout
+  // names a root nothing has been moved to yet.
+  const was = lockLayout(root, lock, manifest);
+  const harness = was.harness;
   const keeps = manifest.kept ?? {};
 
   for (const file of selected) {
@@ -99,7 +102,7 @@ export function planChanges(
       continue;
     }
 
-    const abs = join(root, manifest.target, file.target);
+    const abs = join(root, was.target, file.target);
     if (!existsSync(abs)) continue;
     const onDisk = readText(abs);
     if (sha256(onDisk) !== entry.sha256) continue;
