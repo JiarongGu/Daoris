@@ -34,7 +34,7 @@ internal static class MovedParts
     }
 
     /// <summary>
-    /// A limit's move whose own conversation was carried to the new account, said on the part it left and in the machine log; the new
+    /// A limit's move whose own conversation is carried to the new account, said on the part it left and in the machine log; the new
     /// part's line is its resume's first (<see cref="CarriedNotes.From"/>).
     /// </summary>
     public static void SayCarried(LoopContext context, PriorSession prior, string sessionId, string agent, string? account, string why, CarryPlan.Carried carried)

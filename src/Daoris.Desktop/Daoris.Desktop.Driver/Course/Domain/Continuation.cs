@@ -411,9 +411,7 @@ public static class Continuations
     /// <c>session.moved</c>: once per move to a new part, as
     /// <c>account.rotated</c> says a start moved off its scope's first account: the new part and the one it continues,
     /// the agent each ran on, the account each by its profile name (null for the tool's own home), why by the link's code
-    /// (<see cref="HandOverWhy"/>), whether it is handed Daoris's brief, and how a limit's move took its conversation: <c>whole</c> or
-    /// <c>compacted</c> where it was carried, else the carry's code (<see cref="LimitCarry"/>); null for a move no carry was asked of.
-    /// Never a word, the brief or an account's key.
+    /// (<see cref="HandOverWhy"/>), whether it is handed Daoris's brief, and a limit's <c>carry</c> by its code. Never a word, the brief or an account's key.
     /// </summary>
     public static AccountLine Moved(
         string session, string continues, string? ranOn, string adapter, string? from, string? to, string why, bool briefed, string? carry = null) =>

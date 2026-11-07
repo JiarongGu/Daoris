@@ -9,7 +9,7 @@ internal static class LimitCarry
     /// <summary>The door's provider declares no carry.</summary>
     public const string Unable = "unable";
 
-    /// <summary>No conversation id was kept for the part it leaves.</summary>
+    /// <summary>No conversation id is kept for the part it leaves.</summary>
     public const string Unkept = "unkept";
 
     /// <summary>An account it leaves or goes to is a home Daoris does not own, the tool's own.</summary>
@@ -29,7 +29,7 @@ internal static class LimitCarry
         registry.Provider(registry.ProviderOf(door)).Conversations.TryGet(out var home) ? home.Carry : null;
 
     /// <summary>The plan for the conversation, before anything is copied.</summary>
-    /// <param name="used">The context the part left stood at, in tokens; null where none was said, which carries it whole.</param>
+    /// <param name="used">The context the part left stood at, in tokens; null where none is said, which carries it whole.</param>
     /// <param name="size">That context's window, where said.</param>
     public static CarryPlan Plan(IConversationCarry? carry, string? conversation, string? from, string? to, long? used, long? size)
     {

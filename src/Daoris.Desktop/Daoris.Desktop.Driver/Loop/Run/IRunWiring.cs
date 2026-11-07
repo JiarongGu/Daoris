@@ -91,7 +91,6 @@ internal interface IRunWiring
     /// <summary>The note a carry-on's brief leaves on the record it goes on from; <paramref name="notCarried"/> why a limit's move could not carry its conversation.</summary>
     void SayMoved(PriorSession prior, string sessionId, string agent, string? account, string why, ComposedBrief brief, string? notCarried = null);
 
-    /// <summary>The note a limit's move that carried its conversation leaves on the record it goes on from, and the machine log's line.</summary>
     void SayCarried(PriorSession prior, string sessionId, string agent, string? account, string why, CarryPlan.Carried carried);
 
     /// <summary>The re-ask of a start whose agent refused the model it asked at the open, on the walk's later entries.</summary>

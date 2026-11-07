@@ -48,7 +48,7 @@ public sealed class LimitCarryTests : IDisposable
         Assert.Equal(StubConversationHome.Bound, LimitCarry.Declared(registry, new DoorId("acp-stub"))!.WholeBound);
     }
 
-    /// <summary>🔴 Whole at or under the bound and where no context was said; compacted past it, Claude Code asked at the bound's share of its window.</summary>
+    /// <summary>🔴 Whole at or under the bound and where no context is said; compacted past it, Claude Code asked at the bound's share of its window.</summary>
     [Fact]
     public void The_bound_chooses_whole_compacted_or_briefed()
     {

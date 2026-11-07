@@ -145,7 +145,7 @@ public static class WiringVariables
         ["DAORIS_MEASURED_PORT"] = "the web's measured check's port, where a checkout's own is not wanted",
         ["DAORIS_CANON"] = "the doctrine tool's tests' fixture canon",
         ["DAORIS_STUB_CONFIG_DIR"] = "the stub agent's tests' folder",
-        ["DAORIS_OWN_TOOLS"] = "a constant's name, not a variable",
+        ["DAORIS_STUB_COMPACT_AT"] = "the stub agent's compaction a carried conversation's process is spawned with",        ["DAORIS_OWN_TOOLS"] = "a constant's name, not a variable",
     };
 
     /// <summary>

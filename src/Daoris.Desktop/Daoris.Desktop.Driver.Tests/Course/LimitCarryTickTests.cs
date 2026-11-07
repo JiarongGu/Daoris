@@ -172,7 +172,7 @@ public sealed class LimitCarryTickTests : IDisposable
 
     /// <summary>
     /// The stand-in on the protocol door: it keeps each conversation as a file under its account's home (none in mode <c>unfiled</c>), says
-    /// its context (150,000 tokens in mode <c>large</c>, else 1,000) and the compaction its process was asked for.
+    /// its context (150,000 tokens in mode <c>large</c>, else 1,000) and the compaction its process is asked for.
     /// </summary>
     private string Agent()
     {
