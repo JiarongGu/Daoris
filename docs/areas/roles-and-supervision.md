@@ -351,7 +351,7 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 - **SUPERVISOR1a-iii:** the installed proof of the activation: a place's supervisor held by a started terminal on the install's
   `app/Daoris.Desktop.exe`, a referred point decided and gone on, and the look in the window.
 - **QUESTIONUI1b, SUPERVISOR1d, SUPERVISOR1c, SUPERVISOR1f:** the pick on the card; the bench; the `actor` holder; words.
-- **STEWARDROLE1d (rest):** the steward's further acts; the installed look.
+- **STEWARDROLE1d:** the installed look of rule 51's acts.
 - **STEWARDROLE1e to 1h:** the steward's hand-over, go-on, set-up, and free words.
 - **ROLEPERM1, PERSONDOOR1c-i:** permission answers through appointed actors; the role's boundary at every door.
 - **SETUPUX1y:** the places tree lit by default, retiring the Roles sections under Setup.
