@@ -4,7 +4,7 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A piece's box under <c>&lt;home&gt;/data/partners</c> (COAGENT1b, D199 point 2; the co-agent design §7.1): <c>&lt;id&gt;.ask.json</c>
+/// A piece's box under <c>&lt;home&gt;/data/partners</c>: <c>&lt;id&gt;.ask.json</c>
 /// written once, <c>&lt;id&gt;.state.json</c> the driver's alone, <c>&lt;id&gt;.answer.json</c>, <c>&lt;id&gt;.facts.json</c> and
 /// <c>&lt;id&gt;.delivery.json</c>. Each is written whole, to a temporary name and renamed (<see cref="JsonFile"/>). The service's
 /// <c>PartnerBox</c>, when it comes, shares no code with this and holds the same shapes (<c>twins.md</c>).
@@ -66,7 +66,7 @@ public sealed class PartnerFiles(string home)
     }
 
     /// <summary>Write an ask once: an id already on file is never written again (the ask is never changed).</summary>
-    /// <returns>False where the id was already on file.</returns>
+    /// <returns>False where the id is already on file.</returns>
     public bool WriteAsk(PartnerAsk ask)
     {
         if (File.Exists(PathOf(ask.Id, "ask"))) return false;
@@ -88,7 +88,7 @@ public sealed class PartnerFiles(string home)
         return true;
     }
 
-    /// <summary>One piece's state, or null where none was written or it is unreadable (<see cref="Unreadable"/> tells which).</summary>
+    /// <summary>One piece's state, or null where none is written or it is unreadable (<see cref="Unreadable"/> tells which).</summary>
     public PartnerState? ReadState(string id)
     {
         if (Parse(PathOf(id, "state")) is not { } root) return null;
@@ -222,7 +222,7 @@ public sealed class PartnerFiles(string home)
         }
     }
 
-    /// <summary>The piece's one delivery receipt, or null where none was claimed yet or it is unreadable.</summary>
+    /// <summary>The piece's one delivery receipt, or null where none is claimed yet or it is unreadable.</summary>
     public PartnerReceipt? ReadReceipt(string id)
     {
         if (Parse(PathOf(id, "delivery")) is not { } root) return null;

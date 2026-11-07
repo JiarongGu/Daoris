@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The time a session's quiet is counted on (SESSWATCH1a, D200, the session-watch design §1.5): one that does not advance while the
+/// The time a session's quiet is counted on: one that does not advance while the
 /// machine sleeps, so a wake reads no session as quiet, and a slow look or a long <c>PollSeconds</c> loses nothing, since the count is
 /// time, not looks.
 /// </summary>

@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Why the next start of a scope would take its account (TOOL6e, D130 §3–§4 as §16.3 amends them, D125 §3.7): a closed set
+/// Why the next start of a scope would take its account: a closed set
 /// the screen translates, the walk's steps among them by the log's own names. Read without starting anything.
 /// </summary>
 public enum NextReason
 {
-    /// <summary>No default and no list name an account: the tool's own sign-in (D125 §3.7).</summary>
+    /// <summary>No default and no list name an account: the tool's own sign-in.</summary>
     Own,
 
     /// <summary>The scope names one account: a default and no list, or a list of one.</summary>
@@ -19,7 +19,7 @@ public enum NextReason
     Kept,
 
     /// <summary>
-    /// The account it was weighed against is near its limit (<see cref="AccountReadings.Near"/>), so went last (§16.3 step 2).
+    /// The account it is weighed against is near its limit (<see cref="AccountReadings.Near"/>), so it goes last.
     /// </summary>
     Near,
 
@@ -27,8 +27,7 @@ public enum NextReason
     Fewest,
 
     /// <summary>
-    /// Within its week's last day, more of its week would lapse at its reset, per hour left, than of the other's (step 4,
-    /// USAGERESET1).
+    /// Within its week's last day, more of its week would lapse at its reset, per hour left, than of the other's.
     /// </summary>
     Lapsing,
 
@@ -38,15 +37,15 @@ public enum NextReason
     /// <summary>Daoris started on it less recently (step 6).</summary>
     LeastRecent,
 
-    /// <summary>Daoris has not started on it yet (step 6, where it was never started).</summary>
+    /// <summary>Daoris has not started on it yet.</summary>
     NotStarted,
 
     /// <summary>The list's order, begun at its default: nothing else told the two apart (step 7, or <c>order</c>'s walk).</summary>
     List,
 
-    /// <summary>No account the scope may use is ready: the start waits (D125 §4).</summary>
+    /// <summary>No account the scope may use is ready: the start waits.</summary>
     Waits,
 
-    /// <summary>No Daoris account of the agent's exists for the scope to take: its starts wait until a sign-in (D175, OWNSPACE1b-B).</summary>
+    /// <summary>No Daoris account of the agent's exists for the scope to take: its starts wait until a sign-in.</summary>
     NoAccount,
 }

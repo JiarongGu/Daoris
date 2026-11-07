@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The start layer's table (FOUNDATION1q, D212; the foundation design §2.3): may this work start, for this asker, keyed by the work. The
-/// one answer to <i>may this session ask for a co-worker?</i>, which the driver's judges and the person's doors ask (survey §1.3 row 6);
+/// The start layer's table: may this work start, for this asker, keyed by the work. The
+/// one answer to <i>may this session ask for a co-worker?</i>, which the driver's judges and the person's doors ask;
 /// the service's desk and connector keep their own guard, held to the same table (<c>fixtures/helper-askers.json</c>). Whether a record is
 /// held on this machine is each door's own question, asked before this.
 /// </summary>
@@ -17,7 +17,7 @@ public static class StartAdmission
     /// <summary>The asker is an ask's intake, which does no work in a repository.</summary>
     public const string Intake = "intake";
 
-    /// <summary>The asker is Ask Daoris's conversation (D203 point 6; the design's §7 row 9).</summary>
+    /// <summary>The asker is Ask Daoris's conversation.</summary>
     public const string AskDaoris = "ask-daoris";
 
     /// <summary>The marks a record the service answered carries, as the work's rule reads them.</summary>

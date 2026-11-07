@@ -36,7 +36,7 @@ public static class PartnerWhy
     /// <summary>The partner's copy could not be made.</summary>
     public const string CopyFailed = "copy-failed";
 
-    /// <summary>The partner's process could not be joined to its strict job, so it was never run.</summary>
+    /// <summary>The partner's process could not be joined to its strict job, so it is never run.</summary>
     public const string NoJob = "no-job";
 
     /// <summary>The state file could not be read: the piece waits for the person, its copy untouched.</summary>
@@ -54,6 +54,6 @@ public static class PartnerWhy
     /// <summary>The partner left no work in its copy.</summary>
     public const string NoWork = "no-work";
 
-    /// <summary>A restart cut the hand of its answer after the door was asked: the word may be on the lead's record.</summary>
+    /// <summary>A restart cut the hand of its answer after the door is asked: the word may be on the lead's record.</summary>
     public const string HandCut = "hand-cut";
 }

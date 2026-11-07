@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Daoris's own browser, as the driver sees it (D78): a window of the shell that sessions drive over
+/// Daoris's own browser, as the driver sees it: a window of the shell that sessions drive over
 /// the Chrome DevTools Protocol. The shell implements it; a host with no shell has none.
 /// </summary>
 public interface IInAppBrowser
@@ -13,7 +13,7 @@ public interface IInAppBrowser
     Task<string?> EnsureAsync(CancellationToken ct = default);
 
     /// <summary>
-    /// The endpoint a session's servers are handed (BROWSERSTART1), answered without bringing the browser up where the host can
+    /// The endpoint a session's servers are handed, answered without bringing the browser up where the host can
     /// hold it: the browser then starts at the first connection to the endpoint. A host that cannot defer brings it up, as
     /// <see cref="EnsureAsync"/> does.
     /// </summary>
@@ -23,7 +23,7 @@ public interface IInAppBrowser
     void Show();
 
     /// <summary>
-    /// Open a page in it for the person, in front, as a tab of its own (BRW7): a link on Daoris's page,
+    /// Open a page in it for the person, in front, as a tab of its own: a link on Daoris's page,
     /// where the person chose that links open here. <paramref name="address"/> is already a web page's.
     /// </summary>
     void Open(string address);

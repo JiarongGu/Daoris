@@ -1,21 +1,21 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The knowledge server a driven session is handed over the protocol door (ACP4).
+/// The knowledge server a driven session is handed over the protocol door.
 /// </summary>
 /// <remarks>
 /// <para><b>Why this exists.</b> The composed target tells every session to claim its quest and close
 /// it over its own connector. The PIPE door manages that only because the repository's own
 /// `.mcp.json` wires the tools — and an adopted repository may not have one, while the driver may
-/// never reach in and write it (`reaching-in`, D32). ACP carries the wiring on `session/new`, so the
+/// never reach in and write it (`reaching-in`). ACP carries the wiring on `session/new`, so the
 /// protocol door hands the session its voice with <b>nothing written anywhere</b>.</para>
 ///
-/// <para>Measured before it was built: without this a real driven session came up, streamed "I'll
+/// <para>Measured before it is built: without this a real driven session came up, streamed "I'll
 /// start by taking the quest", called `take`, found no such tool and ended its turn having touched
 /// nothing.</para>
 ///
 /// <para>Its names, the order of the places to look and the server's surroundings, and <c>Offer</c>,
-/// <c>Locate</c> and <c>Candidates</c>, which look at this machine, are one type (FLAT1b-iii-a).</para>
+/// <c>Locate</c> and <c>Candidates</c>, which look at this machine, are one type.</para>
 /// </remarks>
 public static class KnowledgeConnector
 {
@@ -26,18 +26,18 @@ public static class KnowledgeConnector
     public const string ServerName = "daoris-knowledge";
 
     /// <summary>
-    /// What a run handed another agent's findings is given beside the person's rules (XAGENT1e, D155 point 7): this connector's
-    /// <c>opinion_answer</c>, which no default names. A driven run takes it at its resume, a chat run from its spawn (CHATFLOW1e).
+    /// What a run handed another agent's findings is given beside the person's rules: this connector's
+    /// <c>opinion_answer</c>, which no default names. A driven run takes it at its resume, a chat run from its spawn.
     /// </summary>
     internal static readonly IReadOnlyList<string> AnswersFindings = [$"mcp__{ServerName}__opinion_answer"];
 
     /// <summary>
-    /// The home this driver keeps its rules in (PERM2) — where a session's proposal to change them is
+    /// The home this driver keeps its rules in — where a session's proposal to change them is
     /// written. 🔴 The service's <c>RuleProposalBox.HomeVariable</c> reads the same name.
     /// </summary>
     public const string RulesHomeVariable = "DAORIS_RULES_HOME";
 
-    /// <summary>The role the session's start took, which its memory rows name at each call (KNOWCENTRAL2d; the service's IntakeScope reads it).</summary>
+    /// <summary>The role the session's start took, which its memory rows name at each call (the service's IntakeScope reads it).</summary>
     public const string RoleVariable = "DAORIS_SESSION_ROLE";
 
     /// <summary>That role's revision.</summary>
@@ -47,7 +47,7 @@ public static class KnowledgeConnector
         OperatingSystem.IsWindows() ? "daoris-knowledge.exe" : "daoris-knowledge";
 
     /// <summary>
-    /// The folder an install keeps its connector in, under `app/` beside the HTTP host's (CONNECTOR1):
+    /// The folder an install keeps its connector in, under `app/` beside the HTTP host's:
     /// the folder `service-publish` publishes this host into, so one recipe lays out both.
     /// </summary>
     public const string Folder = "daoris-knowledge";
@@ -79,7 +79,7 @@ public static class KnowledgeConnector
     /// </summary>
     /// <param name="variable">A variable of the surroundings the session runs in: this process's, or a test's.</param>
     /// <param name="scope">
-    /// What THIS session's connector carries beyond the store — an intake's ask and session (D65 §1b),
+    /// What THIS session's connector carries beyond the store — an intake's ask and session,
     /// which is how a publish from a room that is no repository is asked by the ask. Null for a
     /// quest's session, whose repository already says everything.
     /// </param>
@@ -98,7 +98,7 @@ public static class KnowledgeConnector
             if (value is { Length: > 0 }) carried[name] = value;
         }
 
-        // 🔴 CONNECTOR2. Codex hands an MCP server only its entry's own variables, and the host refuses to start
+        // 🔴 Codex hands an MCP server only its entry's own variables, and the host refuses to start
         // with no home (exit 2, before it answers `initialize`); Claude hands its whole environment, which hid it.
         // The scope's value wins (set above), then the environment's (read here), then the home this driver resolved.
         if (!carried.ContainsKey(DaorisHome.Variable))
@@ -125,11 +125,11 @@ public static class KnowledgeConnector
     }
 
     /// <summary>
-    /// What a connector carries beyond the store (PERM2): the session, so a rule proposal says who made
+    /// What a connector carries beyond the store: the session, so a rule proposal says who made
     /// it, and this driver's home, so it lands beside the rules it would change — which is the folder
-    /// `driver.json` sits in and need not be the account's home. An intake's ask rides too (D65 §1b).
-    /// A driven session's and a conversation's alike, so it is the connector's, not the loop's (LOOPOUT1).
-    /// The role its start took rides too, which its memory rows name (KNOWCENTRAL2d).
+    /// `driver.json` sits in and need not be the account's home. An intake's ask rides too.
+    /// A driven session's and a conversation's alike, so it is the connector's, not the loop's.
+    /// The role its start took rides too, which its memory rows name.
     /// </summary>
     /// <param name="proc">The lineage token of the process this entry is composed for; null carries none.</param>
     /// <param name="role">The role and revision the session's start took, as its binding keeps them; null carries none.</param>
@@ -159,16 +159,16 @@ public static class KnowledgeConnector
     /// where `publish:service --install` puts one, then a development build.
     /// </summary>
     /// <remarks>
-    /// 🔴 CONNECTOR1. The install's own copy outranks the home's, as the install's HTTP host does.
-    /// An install carried its HTTP host and no connector, so every session was handed the home's
+    /// 🔴 The install's own copy outranks the home's, as the install's HTTP host does.
+    /// An install carried its HTTP host and no connector, so every session is handed the home's
     /// `bin/` copy, which one `publish:service --install` laid down and no republish refreshed. Eight
     /// days old on the install that found it, it opened the shared store, rebuilt it at its own older
     /// schema, and the running host failed every knowledge route after. What the install carries is
     /// built with the shell it runs beside, and a shell published without its connector still falls
     /// through to the home's next.
     /// </remarks>
-    /// <param name="home">The Daoris home (D63), whose `bin/` is the CLI's install landing place; null when the machine has none.</param>
-    /// <param name="baseDirectory">The running application's folder: an install's `app/` (D93), or a build's output.</param>
+    /// <param name="home">The Daoris home, whose `bin/` is the CLI's install landing place; null when the machine has none.</param>
+    /// <param name="baseDirectory">The running application's folder: an install's `app/`, or a build's output.</param>
     /// <param name="workspace">The workspace a development build runs below, the folder holding <see cref="WorkspaceMarker"/>; null for none.</param>
     public static IReadOnlyList<string> Ranked(
         string? explicitPath, string? home, string baseDirectory, string? workspace)
@@ -203,7 +203,7 @@ public static class KnowledgeConnector
     /// The server to offer, or <c>null</c> when this machine has no host to offer.
     /// </summary>
     /// <remarks>
-    /// Null is an answer, not a failure: the session drives exactly as it did before ACP4, which is
+    /// Null is an answer, not a failure: the session drives
     /// without a connector. Refusing to start would make a missing optional binary fatal to a loop
     /// that has other work to do.
     /// </remarks>
@@ -224,7 +224,7 @@ public static class KnowledgeConnector
     }
 
     /// <summary>
-    /// The same, every input read from the surroundings <paramref name="variable"/> answers (ENVSEAM1): the host it names, the home it
+    /// The same, every input read from the surroundings <paramref name="variable"/> answers: the host it names, the home it
     /// names, and what it passes through. The driver's own environment, which is this process's unless a test hands in its own.
     /// </summary>
     public static ServerEntry? Offer(Func<string, string?> variable, string baseDirectory, IReadOnlyDictionary<string, string>? scope)

@@ -26,8 +26,8 @@ internal sealed class AcpRun(ITurnRunWiring wiring, AcpPrompting prompting, AcpS
             }
             catch (AcpChoiceNotOffered refused)
             {
-                // The choice refused at the open, no prompt sent, so nothing of the person's was taken; the session closes here and its
-                // record ends as the start's re-ask said.
+                // The choice refused at the open, no prompt sent, so nothing of the person's is taken; the session closes here and its
+                // record ends as the start's re-ask says.
                 wiring.Say($"[{refused.Message}]");
                 await wiring.CloseAsync(ct).ConfigureAwait(false);
                 return new AcpOutcome(AcpOutcome.ChoiceNotOffered, wiring.SessionId ?? "", wiring.Updates, wiring.Usage) { NotOffered = refused.Refusal };
@@ -81,7 +81,7 @@ internal sealed class AcpRun(ITurnRunWiring wiring, AcpPrompting prompting, AcpS
                     continue;
                 }
 
-                // A silent turn of a closed quest was left and the run's door shut: every word still held goes back unprompted.
+                // A silent turn of a closed quest is left and the run's door shut: every word still held goes back unprompted.
                 if (wiring.DoorShut)
                 {
                     var waiting = inbox?.Close() ?? [];
@@ -134,7 +134,7 @@ internal sealed class AcpRun(ITurnRunWiring wiring, AcpPrompting prompting, AcpS
                     }
                     catch (AcpWordsUnmarked)
                     {
-                        // The record did not name it marked, so it was not written: it waits on its record, said, never the session's work.
+                        // The record does not name it marked, so it is not written: it waits on its record, said, never the session's work.
                         wiring.Note(WordsNotes.Unreached(1, "were not sent", UnreachedWhy.Unmarked));
                     }
 
@@ -147,7 +147,7 @@ internal sealed class AcpRun(ITurnRunWiring wiring, AcpPrompting prompting, AcpS
                 }
                 catch (AcpWordTurnFailed failed)
                 {
-                    // 🔴 The word was taken, so the turn that failed is the one it opened, and its refusal is that turn's prompt failing:
+                    // 🔴 The word is taken, so the turn that failed is the one it opened, and its refusal is that turn's prompt failing:
                     // read as any prompt site's, a transient one opening the episode.
                     stopReason = await wiring.PromptingAsync(() => Task.FromException<string>(failed.Refusal), ct).ConfigureAwait(false);
                 }
@@ -158,7 +158,7 @@ internal sealed class AcpRun(ITurnRunWiring wiring, AcpPrompting prompting, AcpS
                 }
                 catch (AcpWordsUnmarked)
                 {
-                    // A word the record did not name marked was not written: it waits on its record, said, never the session's work.
+                    // A word the record does not name marked is not written: it waits on its record, said, never the session's work.
                     wiring.Note(WordsNotes.Unreached(1, "were not sent", UnreachedWhy.Unmarked));
                 }
             }
@@ -168,7 +168,7 @@ internal sealed class AcpRun(ITurnRunWiring wiring, AcpPrompting prompting, AcpS
         }
         finally
         {
-            // 🔴 The run's door shuts before its words are counted. A word on its way to the wire, its mark still awaited, was in no list
+            // 🔴 The run's door shuts before its words are counted. A word on its way to the wire, its mark still awaited, is in no list
             // the end reads, and would be written to the closed session once the mark landed; it goes back with the rest
             // (HandedBack), and nothing is written after.
             await ShutAsync().ConfigureAwait(false);

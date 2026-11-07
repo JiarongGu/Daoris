@@ -5,9 +5,9 @@ using Microsoft.Win32.SafeHandles;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The change watch's source on the machine (FABRIC-EVENT2, the design §A4.1): one <see cref="FileSystemWatcher"/> per folder,
+/// The change watch's source on the machine: one <see cref="FileSystemWatcher"/> per folder,
 /// with a 64 KB buffer, telling names, writes and sizes. A rename is told as the name it left, deleted, then the name it
-/// arrived under, since a replace is a deletion and then a rename (§A5, measured); an <c>Error</c> is a loss.
+/// arrived under, since a replace is a deletion and then a rename (measured); an <c>Error</c> is a loss.
 /// </summary>
 /// <remarks>
 /// A folder's identity is read when it is opened, so a reconciliation can find it replaced at its path, which no watcher

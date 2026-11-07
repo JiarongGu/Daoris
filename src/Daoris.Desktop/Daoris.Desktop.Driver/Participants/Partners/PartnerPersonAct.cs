@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The person's own act on a piece (COAGENT1b2, D199; the co-agent design §6.1, §6.4): the one judge and writer the page's <i>Discard…</i>
+/// The person's own act on a piece: the one judge and writer the page's <i>Discard…</i>
 /// and <i>Hand over what it left</i> share. It judges what a reader of the file cannot know, the piece and the state that takes the act, and
 /// writes the act's file; the driver's next look does the act, since it alone writes a piece's state and runs git for it.
 /// </summary>

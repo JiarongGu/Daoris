@@ -1,8 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A harness's stream as its capture reads it, telling the watcher each time a line is read (SESSWATCH1a, D200, the session-watch design
-/// §1.2): the time alone, never the line. Each capture is handed its streams through one of these, its own parameter, so a subagent's
+/// A harness's stream as its capture reads it, telling the watcher each time a line is read: the time alone, never the line. Each capture is handed its streams through one of these, its own parameter, so a subagent's
 /// line taken aside, a partial delta dropped and a stderr line each count as heard, and nothing rides <see cref="HarnessWords"/>.
 /// </summary>
 /// <param name="inner">The stream itself.</param>

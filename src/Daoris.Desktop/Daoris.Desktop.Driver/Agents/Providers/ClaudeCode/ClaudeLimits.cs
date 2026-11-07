@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Claude Code's words for an account's limit (TOOL4a, D125 §0.2): five recorded sentences, on its ACP
+/// Claude Code's words for an account's limit: five recorded sentences, on its ACP
 /// adapter's door and on the maker's own CLI outside Daoris, which inform the grammar, and the weekly reset
-/// the maker's errors page documents with a weekday (TOOL4k).
+/// the maker's errors page documents with a weekday.
 /// </summary>
 public static class ClaudeLimits
 {

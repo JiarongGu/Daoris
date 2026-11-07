@@ -3,14 +3,14 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The composer's account of the pieces it joined (CONTEXT1, D143 point 1): each section's size as counted while joining, and,
-/// from the target the instruction was composed for, where it came from and what its bound left out. The bounds are counted by
+/// The composer's account of the pieces it joined: each section's size as counted while joining, and,
+/// from the target the instruction is composed for, where it came from and what its bound left out. The bounds are counted by
 /// the same rules the instruction quotes by (<see cref="TargetPrompt.RequirementsShown"/>, <see cref="AskWordsText.Bounded"/>,
-/// <see cref="GoAheadsText.Shown"/>), so the account cannot disagree with what was handed.
+/// <see cref="GoAheadsText.Shown"/>), so the account cannot disagree with what is handed.
 /// </summary>
 /// <remarks>
 /// The English here is the driver's sentence for a terminal (<c>daoris trace</c>); the page words each section by its
-/// codes. A section that could have been handed and was not is said, with why (D143 point 3): the ones a person looks for
+/// codes. A section that could have been handed and is not is said, with why: the ones a person looks for
 /// when a session seems not to know something.
 /// </remarks>
 internal static class InstructionAccounting
@@ -23,7 +23,7 @@ internal static class InstructionAccounting
 
     /// <summary>
     /// The instruction joined from its pieces, and the account of it: each section once, in the order it first appears; then its standing
-    /// block (CONTEXTONE1c), after a blank line counted with it, where the target carries one.
+    /// block, after a blank line counted with it, where the target carries one.
     /// </summary>
     internal static ComposedInstruction Account(SessionTarget target, IReadOnlyList<TargetPrompt.Piece> pieces, StandingBlockTold? block)
     {
@@ -68,7 +68,7 @@ internal static class InstructionAccounting
 
     /// <summary>
     /// An instruction its own composer wrote (<see cref="IntakePrompt"/>, a helper's, a partner's, a reviewer's, a brainstorm's pass): one
-    /// section, its parts not counted apart; then its standing block (CONTEXTONE1c) where the target carries one.
+    /// section, its parts not counted apart; then its standing block where the target carries one.
     /// </summary>
     internal static ComposedInstruction Intake(SessionTarget target, string prompt, StandingBlockTold? block)
     {
@@ -119,9 +119,9 @@ internal static class InstructionAccounting
                 Chars = chars,
                 From = target.Answered.Id,
             },
-            // A first start's is the parts before it on its session's line (SESSONE1d); a carry-on's, the session it carries on; and
-            // either's, what waited on the ask's channel (SESSONE2b), which alone is a start's on a line with no part before it here.
-            // RETRYWORK1: an open quest carried on in its failed session's tree is told what that session left, as a carry-on is.
+            // A first start's is the parts before it on its session's line; a carry-on's, the session it carries on; and
+            // either's, what waited on the ask's channel, which alone is a start's on a line with no part before it here.
+            // An open quest carried on in its failed session's tree is told what that session left, as a carry-on is.
             HandedSections.CarryOn => target.CutOff is not null || target.Retried is not null ? CarryOn(target, chars, size)
                 : target.Parts is not null ? Parts(target, chars, size)
                 : Channel(target, chars, size),
@@ -336,7 +336,7 @@ internal static class InstructionAccounting
     }
 
     /// <summary>
-    /// A further part's account of the parts before it (SESSONE1d): how many, and where its tree stands to theirs, from their
+    /// A further part's account of the parts before it: how many, and where its tree stands to theirs, from their
     /// records and this machine's trees. Named by the session it went into, ran beside, or whose tree it grew again for.
     /// </summary>
     private static HandedSection Parts(SessionTarget target, int chars, string size)
@@ -365,7 +365,7 @@ internal static class InstructionAccounting
     }
 
     /// <summary>
-    /// What waited on the ask's channel (SESSONE2b), where it is all the carry-on section holds: a start on a line of work with no
+    /// What waited on the ask's channel, where it is all the carry-on section holds: a start on a line of work with no
     /// part before it here. Counted by the bound the instruction quotes by (<see cref="ChannelText.Bounded"/>).
     /// </summary>
     private static HandedSection Channel(SessionTarget target, int chars, string size)
@@ -392,7 +392,7 @@ internal static class InstructionAccounting
     private static string ChannelFact(SessionTarget target) => ChannelShown(target) is { } shown ? $", and {shown}" : "";
 
     /// <summary>
-    /// What the session before left (D80): its record's end and why it went on, then, since SESSCTX1b, Daoris's brief of its line,
+    /// What the session before left: its record's end and why it went on, then Daoris's brief of its line,
     /// whose own sections are counted beside this one (<see cref="BriefSection"/>); with no brief, what the tree holds uncommitted.
     /// </summary>
     private static HandedSection CarryOn(SessionTarget target, int chars, string size)
@@ -416,7 +416,7 @@ internal static class InstructionAccounting
     }
 
     /// <summary>
-    /// A section of a carry-on's brief (SESSCTX1b, the session-context design §3.4), or a start's course (CONTEXTDRIVE1b), as the brief
+    /// A section of a carry-on's brief, or a start's course, as the brief
     /// accounted it, at its size here.
     /// </summary>
     private static HandedSection BriefSection(string name, SessionTarget target, int chars) =>
@@ -425,8 +425,8 @@ internal static class InstructionAccounting
             : new HandedSection(name, HandedSources.Record, $"{name}: {N(chars)} characters") { Chars = chars };
 
     /// <summary>
-    /// The landing section's sentence (PROCESS1d-i): where the work goes, where a plan was handed, and the commit rule it was told,
-    /// where one was; a merge's section and a rule's alone name no branch.
+    /// The landing section's sentence: where the work goes, where a plan is handed, and the commit rule it is told,
+    /// where one is; a merge's section and a rule's alone name no branch.
     /// </summary>
     private static string Landing(SessionTarget target, string size)
     {
@@ -456,7 +456,7 @@ internal static class InstructionAccounting
         };
     }
 
-    /// <summary>A section that could have been handed and was not, saying why (D143 point 3).</summary>
+    /// <summary>A section that could have been handed and is not, saying why.</summary>
     private static HandedSection Absent(string name, SessionTarget target)
     {
         var ask = target.Words?.Ask;

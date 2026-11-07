@@ -2,9 +2,9 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>How one scope's list is used, each setting's value as a start reads it (D130 §16.6; D165 point 2).</summary>
-/// <param name="Use"><i>Use accounts</i>: one of <see cref="Modes"/> — <c>goal</c>, §16.3's walk (<see cref="AccountRotation.Order"/>), or
-/// <c>order</c>, D125's walk.</param>
+/// <summary>How one scope's list is used, each setting's value as a start reads it.</summary>
+/// <param name="Use"><i>Use accounts</i>: one of <see cref="Modes"/> — <c>goal</c>, the goal's walk (<see cref="AccountRotation.Order"/>), or
+/// <c>order</c>, the walk down the list in order.</param>
 /// <param name="Keep">The account kept for conversations, or none.</param>
 /// <param name="Switch">When to switch: one of <see cref="Switches"/> — <c>smart</c>, Daoris's curve; <c>curve</c>, the
 /// person's own; <c>off</c>, no switch while a session runs.</param>
@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 public sealed record RotationUse(string Use, string? Keep, string Switch, UseCurve Curve)
 {
     /// <summary>
-    /// The settings as the old names spelled them (D130 §16.6), read on as a file's are (D165 §6): <c>early</c> false is
+    /// The settings as the old names spell them, read on as a file's are: <c>early</c> false is
     /// <c>off</c>, and <c>near</c> other than 90 the session window flat at it, under <c>curve</c> unless off.
     /// </summary>
     public RotationUse(string use, string? keep, bool early, int near)
@@ -25,22 +25,22 @@ public sealed record RotationUse(string Use, string? Keep, string Switch, UseCur
     {
     }
 
-    /// <summary>Today's defaults (D130 §16.6, D165 point 2), and the one place they live: what absence means for each setting.</summary>
+    /// <summary>Today's defaults, and the one place they live: what absence means for each setting.</summary>
     public static readonly RotationUse Default = new("goal", Keep: null, Switch: "smart", Curve: UseCurve.None);
 
-    /// <summary><i>Use accounts</i>' choices (§16.6): make the most of them, one by one in order. A new choice is a row here.</summary>
+    /// <summary><i>Use accounts</i>' choices: make the most of them, one by one in order. A new choice is a row here.</summary>
     public static readonly IReadOnlyList<string> Modes = ["goal", "order"];
 
-    /// <summary>When to switch (D165 point 2): Daoris's curve, the person's own, or no switch while a session runs.</summary>
+    /// <summary>When to switch: Daoris's curve, the person's own, or no switch while a session runs.</summary>
     public static readonly IReadOnlyList<string> Switches = ["smart", "curve", "off"];
 
     /// <summary>
-    /// The smart curve's five-hour window, flat (D165 point 2; D130 §6's 90): what <i>near</i> meant where none was set, and
+    /// The smart curve's five-hour window, flat: what <i>near</i> means where none is set, and
     /// the old name's value that reads as no curve. The CLI's <c>SMART_SESSION</c>.
     /// </summary>
     public const int SmartSession = 90;
 
-    /// <summary><i>Near</i>'s range (§14), which the old name still takes at a door: a whole percent from the one to the other.</summary>
+    /// <summary><i>Near</i>'s range, which the old name still takes at a door: a whole percent from the one to the other.</summary>
     public const int NearLowest = 50;
 
     /// <inheritdoc cref="NearLowest"/>
@@ -49,24 +49,24 @@ public sealed record RotationUse(string Use, string? Keep, string Switch, UseCur
     /// <summary>The settings this build knows, in the order they are written.</summary>
     public static readonly IReadOnlyList<string> Fields = ["use", "keep", "switch", "curve"];
 
-    /// <summary>The old names (D130 §16.6), which D165 §6 replaced: read on, and never written.</summary>
+    /// <summary>The old names: read on, and never written.</summary>
     public static readonly IReadOnlyList<string> OldNames = ["early", "near"];
 
     /// <summary>
-    /// The settings §16.6 retired, which nothing released wrote: read as nothing and said as nothing, and gone at the next write, which
-    /// is measured from the entry as read (KEEPALL1b).
+    /// The retired settings, which nothing released wrote: read as nothing and said as nothing, and gone at the next write, which
+    /// is measured from the entry as read.
     /// </summary>
     public static readonly IReadOnlyList<string> Retired = ["prefer", "parallel"];
 
     /// <summary>
-    /// <i>Switch before the limit</i> in the old name's terms (D165 §6): the switch is not <c>off</c>. The walk reads the curve
-    /// since SWITCH1b-ii; this stays for the doors that still speak the old names (the modules' answer, Ask Daoris).
+    /// <i>Switch before the limit</i> in the old name's terms: the switch is not <c>off</c>. The walk reads the curve;
+    /// this stays for the doors that still speak the old names (the modules' answer, Ask Daoris).
     /// </summary>
     public bool Early => Switch != "off";
 
     /// <summary>
-    /// <i>Near</i> in the old name's terms (D165 §6): the session window's one point under <c>curve</c>, else the smart curve's
-    /// 90. The walk reads the curve since SWITCH1b-ii; this stays for the doors that still speak the old names.
+    /// <i>Near</i> in the old name's terms: the session window's one point under <c>curve</c>, else the smart curve's
+    /// 90. The walk reads the curve; this stays for the doors that still speak the old names.
     /// </summary>
     public int Near => Switch == "curve" && Curve["session"] is [var only] ? only.Used : SmartSession;
 
@@ -120,7 +120,7 @@ public sealed record RotationUse(string Use, string? Keep, string Switch, UseCur
 }
 
 /// <summary>
-/// One scope's settings as the file holds them (TOOL6a): by name, in the order read, each a value this build knows or not.
+/// One scope's settings as the file holds them: by name, in the order read, each a value this build knows or not.
 /// An editor keeps what it has no field for, so a setting a newer build writes outlives this one's save.
 /// </summary>
 public sealed record UseEntry(IReadOnlyList<KeyValuePair<string, JsonElement>> Fields)
@@ -169,7 +169,7 @@ public sealed record UseEntry(IReadOnlyList<KeyValuePair<string, JsonElement>> F
     internal UseEntry Changed(UseChange change) => Folded().Applied(change);
 
     /// <summary>
-    /// The old names read on (D165 §6): <c>early</c> and <c>near</c> taken out, and what reads of them applied as a change
+    /// The old names read on: <c>early</c> and <c>near</c> taken out, and what reads of them applied as a change
     /// applies them, over the entry's own switch and curve — as the CLI's <c>foldedUse</c> does.
     /// </summary>
     internal UseEntry Folded()
@@ -267,7 +267,7 @@ public sealed record UseEntry(IReadOnlyList<KeyValuePair<string, JsonElement>> F
     }
 
     /// <summary>
-    /// The entry as the file held it, each value as read, for the text a save's edit is measured from (KEEPALL1b): the settings this
+    /// The entry as the file holds it, each value as read, for the text a save's edit is measured from: the settings this
     /// build knows in their written order, then every other field in the order read, the old and retired names among them, so an
     /// entry the writer would write alike measures as no edit, and its old and retired names as ones the edit takes out.
     /// </summary>
@@ -307,23 +307,23 @@ public sealed record UseEntry(IReadOnlyList<KeyValuePair<string, JsonElement>> F
 }
 
 /// <summary>
-/// A point of a curve (D165 point 2): how much of the window's time has passed, and the most of it an account should have
+/// A point of a curve: how much of the window's time has passed, and the most of it an account should have
 /// used by then, each a whole percent.
 /// </summary>
 public readonly record struct CurvePoint(int Elapsed, int Used);
 
 /// <summary>
-/// The person's curve (D165 point 2; the switch design §2, §6): per window, the most of it an account should have used by
+/// The person's curve: per window, the most of it an account should have used by
 /// each point of its time, the points joined by straight lines, flat before the first and after the last. A window left
 /// out takes the smart curve's. A twin of the CLI's <c>Curve</c>, <c>readCurve</c> and <c>curveProblem</c>: the shared
 /// table's <c>refusal</c> rows hold the sentences, word for word.
 /// </summary>
 public sealed record UseCurve
 {
-    /// <summary>A curve's windows, as <c>windows.json</c> names them (the switch design §5), in the order they are written.</summary>
+    /// <summary>A curve's windows, as <c>windows.json</c> names them, in the order they are written.</summary>
     public static readonly IReadOnlyList<string> Windows = ["session", "weekly"];
 
-    /// <summary>A window's curve has one point to this many (the switch design §6).</summary>
+    /// <summary>A window's curve has one point to this many.</summary>
     public const int MostPoints = 12;
 
     /// <summary>No curve of the person's own: every window the smart curve's.</summary>
@@ -371,7 +371,7 @@ public sealed record UseCurve
 
     /// <summary>
     /// The first problem with a curve a door is handed, as <see cref="Problem"/> finds it, with the rule it breaks and the
-    /// window, point and numbers it names (SWITCH1d), so a door that refuses it in a code says it in the reader's language.
+    /// window, point and numbers it names, so a door that refuses it in a code says it in the reader's language.
     /// </summary>
     public static CurveProblem? ProblemOf(JsonElement raw)
     {
@@ -491,7 +491,7 @@ public sealed record UseCurve
 }
 
 /// <summary>
-/// What is wrong with a curve a door is handed (SWITCH1d): the rule it breaks, the sentence both twins say, and the window,
+/// What is wrong with a curve a door is handed: the rule it breaks, the sentence both twins say, and the window,
 /// point and numbers it names, so a door that refuses it in a code says it in the reader's language (the modules'
 /// <c>ACCOUNT_USE_CURVE</c>, its rule the catalogue's form).
 /// </summary>
@@ -506,15 +506,15 @@ public sealed record CurveProblem(
     string Kind, string Sentence, string? Window = null, int? Point = null, string? Value = null, string? Before = null, int? Count = null);
 
 /// <summary>
-/// A change to one scope's settings: a field null is left as it was; <paramref name="NoKeep"/> keeps none;
+/// A change to one scope's settings: a field null is left alone; <paramref name="NoKeep"/> keeps none;
 /// <paramref name="Curve"/> sets each window it names, keeping the others, and <paramref name="NoCurve"/> takes the curve
 /// out. A door validates each value first; <see cref="HarnessSettings.WithUse"/> writes it as given.
 /// </summary>
 /// <remarks>
-/// <paramref name="Early"/> and <paramref name="Near"/> are the old names (D165 §6), which the modules' <c>ACCOUNT_USE</c>
-/// and Ask Daoris's <c>use</c> door still read beside <c>switch</c> and <c>curve</c> since SWITCH1d, for a page or a proposal
-/// written before it: <c>Early</c> false is <c>switch: off</c>, and true is
-/// <c>smart</c> where it was off; <c>Near</c> other than 90 is the session window flat at it, and <c>switch: curve</c> unless
+/// <paramref name="Early"/> and <paramref name="Near"/> are the old names, which the modules' <c>ACCOUNT_USE</c>
+/// and Ask Daoris's <c>use</c> door still read beside <c>switch</c> and <c>curve</c>, for a page or a proposal
+/// written with them: <c>Early</c> false is <c>switch: off</c>, and true is
+/// <c>smart</c> where it is off; <c>Near</c> other than 90 is the session window flat at it, and <c>switch: curve</c> unless
 /// it is off, and 90 takes the session window back to the smart curve's. They are applied before <paramref name="Switch"/>
 /// and <paramref name="Curve"/>, so a new name beside an old one is the one written — as the CLI's <c>UseChange</c>.
 /// </remarks>
@@ -522,7 +522,7 @@ public sealed record UseChange(
     string? Use = null, string? Keep = null, bool NoKeep = false, bool? Early = null, int? Near = null,
     string? Switch = null, UseCurve? Curve = null, bool NoCurve = false);
 
-/// <summary>The scope a start reads (D130 §2 rule 1).</summary>
+/// <summary>The scope a start reads.</summary>
 /// <param name="From">Whose scope: <see cref="ChoiceFrom.Workspace"/> or <see cref="ChoiceFrom.Machine"/>.</param>
 /// <param name="Default">The scope's own default, trimmed, or none.</param>
 /// <param name="List">The scope's list, empty for none.</param>
@@ -532,7 +532,7 @@ public sealed record UseChange(
 public sealed record RotationScope(
     ChoiceFrom From, string? Default, IReadOnlyList<string> List, string? Begins, RotationUse Use, IReadOnlyList<string> Unknown);
 
-/// <summary>What binds a scope (D130 §3.1, §4.6).</summary>
+/// <summary>What binds a scope.</summary>
 public enum ScopeProblemKind
 {
     /// <summary>Its default is not in its list.</summary>
@@ -546,7 +546,7 @@ public enum ScopeProblemKind
 }
 
 /// <summary>
-/// Why a scope cannot be written (D130 §3.1, §4.6): its default or its kept account outside its list, or a kept account that
+/// Why a scope cannot be written: its default or its kept account outside its list, or a kept account that
 /// leaves driven work none. Both doors refuse it; the CLI's <c>scopeProblem</c> is the twin. No list is refused for its
 /// length: a list of one with no kept account, and a list of many, are both fine.
 /// </summary>

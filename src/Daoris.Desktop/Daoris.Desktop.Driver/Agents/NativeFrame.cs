@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One line of a native door's structured stdout, parsed once (AGENTPROVIDER1l; the design §3.2): the capture reads each line into one
+/// One line of a native door's structured stdout, parsed once: the capture reads each line into one
 /// frame, and every reader of the line takes the frame, never the text again: the dialect's mapper (<see cref="IStreamMapper"/>), the
 /// streams beside (<see cref="IStreamsReader"/>, a child's words) and the children and background tasks it says (<see cref="NativeChildren"/>,
 /// <see cref="NativeTasks"/>), whose readings alone the part's lineage, the run's own ending and the streams beside read of a start or an end.

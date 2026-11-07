@@ -20,14 +20,14 @@ internal sealed class AcpPrompting(ITurnPromptWiring wiring)
     private Task _attempts = Task.CompletedTask;
     private readonly object _attemptsGate = new();
 
-    // Whether this client asked the turn to stop, and how the last turn was cut.
+    // Whether this client asked the turn to stop, and how the last turn got cut.
     private volatile bool _cancelAsked;
     private volatile TurnCut? _turnCut;
 
     /// <summary>Told each of the person's words as the session takes them: a run's listener, or a conversation's.</summary>
     public Action<IAgentWord>? OnAsked { get; set; }
 
-    /// <summary>How the last turn was cut by the agent, where it was; null otherwise.</summary>
+    /// <summary>How the last turn got cut by the agent, where it did; null otherwise.</summary>
     public TurnCut? TurnCut => _turnCut;
 
     /// <summary>This client asked the turn in flight to stop: a turn that ends cancelled now is its own, never the agent's cut.</summary>
@@ -44,7 +44,7 @@ internal sealed class AcpPrompting(ITurnPromptWiring wiring)
 
     /// <summary>One prompt of one or more text blocks, each its own, then the files as links.</summary>
     /// <param name="when">
-    /// Read under the write lock as the prompt is written: false where what the prompt was decided on no longer holds, and it is not
+    /// Read under the write lock as the prompt is written: false where what the prompt is decided on no longer holds, and it is not
     /// written at all (<see cref="AcpTurnedAway"/>). Null always holds.
     /// </param>
     public async Task<string> SendPromptAsync(
@@ -80,7 +80,7 @@ internal sealed class AcpPrompting(ITurnPromptWiring wiring)
             // already inside the write lock.
             // 🔴 Only the person's stop, or the driver's shutdown, puts a cancel on the wire. The session's own cut, as it leaves a closed
             // quest's silent turn, stops its wait for the answer and nothing more: a cancel sent then lands on whatever turn runs, a turn
-            // that spoke since the quiet was read among them.
+            // that spoke since the quiet is read among them.
             if (wiring.Stopped) await wiring.CancelTurnAsync().ConfigureAwait(false);
             throw;
         }
@@ -92,9 +92,9 @@ internal sealed class AcpPrompting(ITurnPromptWiring wiring)
 
     /// <summary>
     /// A word sent during a running turn, as <see cref="SendPromptAsync(string, IReadOnlyList{KeptFile}?, CancellationToken, Action?, IAgentWord?, Func{bool}?)"/>
-    /// sends it. 🔴 Where the run was handed a retry and the word's prompt was refused after the word was taken (the turn before it
+    /// sends it. 🔴 Where the run is handed a retry and the word's prompt is refused after the word is taken (the turn before it
     /// answered, handing the turn to it), the refusal is thrown as <see cref="AcpWordTurnFailed"/>: the turn that failed is the one the
-    /// word opened, never that word's own refusal. Refused before it was taken, it is the word's.
+    /// word opened, never that word's own refusal. Refused before it is taken, it is the word's.
     /// </summary>
     public async Task<string> MidTurnAsync(IAgentWord words, CancellationToken ct)
     {
@@ -177,10 +177,10 @@ internal sealed class AcpPrompting(ITurnPromptWiring wiring)
         var answered = frame.TryGetProperty("result", out var result);
         if (answered)
         {
-            // A word an error handed nothing to, answered before the agent did anything else for it: it was taken after all.
+            // A word an error handed nothing to, answered before the agent did anything else for it: it is taken after all.
             if (open.Words is not null && wiring.Open.TakeLate(open) is { } own) AskedAll(own);
 
-            // A call a steer cut that never heard again ends with the turn it was cut in, as cut.
+            // A call a steer cut that never heard again ends with the turn it got cut in, as cut.
             CloseCut();
             // The turn's own counts, where the agent reported them: the response's `usage`.
             var tokens = result.ValueKind == JsonValueKind.Object && result.TryGetProperty("usage", out var usage)
@@ -197,7 +197,7 @@ internal sealed class AcpPrompting(ITurnPromptWiring wiring)
                 Models = wiring.Measure.ModelsOf(result, tokens),
             });
 
-            // A turn that ends cancelled when this client never asked it to stop was cut by the agent, after a refusal if one came.
+            // A turn that ends cancelled when this client never asked it to stop got cut by the agent, after a refusal if one came.
             _turnCut = stopReason == "cancelled" && !_cancelAsked ? new TurnCut(wiring.Refused.Last) : null;
             wiring.Refused.Last = null;
             _cancelAsked = false;
@@ -215,7 +215,7 @@ internal sealed class AcpPrompting(ITurnPromptWiring wiring)
             wiring.Measure.Forget();
         }
 
-        // A word's disposition is read before its prompt leaves, from its turn; the words behind it are taken where it was answered.
+        // A word's disposition is read before its prompt leaves, from its turn; the words behind it are taken where it is answered.
         var taken = wiring.Open.Leaves(open, answered, wiring.Retry, out var last);
         if (taken is not null) AskedAll(taken);
 

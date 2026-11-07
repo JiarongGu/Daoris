@@ -1,16 +1,16 @@
 namespace Daoris.Driver;
 
-/// <summary>An account a running session could move to (SWITCH1c-i): what its agent last said, and whether it can run now.</summary>
+/// <summary>An account a running session could move to: what its agent last said, and whether it can run now.</summary>
 /// <param name="Account">The account, one of the scope's list other than the session's.</param>
 /// <param name="Said">What it last said about its windows, or null where it said nothing.</param>
 /// <param name="Ready">Not cooling, not refused and signed in: an account that is not is never moved to.</param>
 /// <param name="Floor">
-/// How long a reading of this candidate stands before it is read again: its provider's own read floor (s-iii), or null where its
+/// How long a reading of this candidate stands before it is read again: its provider's own read floor, or null where its
 /// agent asks nothing of its server and <see cref="SwitchDecision.Fresh"/> stands.
 /// </param>
 public sealed record SwitchCandidate(string Account, AccountSaid? Said, bool Ready, TimeSpan? Floor = null);
 
-/// <summary>What <see cref="SwitchDecision.Decide"/> says of a session at its turn's end (SWITCH1c-i; the switch design §4).</summary>
+/// <summary>What <see cref="SwitchDecision.Decide"/> says of a session at its turn's end.</summary>
 public abstract record SwitchChoice
 {
     private SwitchChoice()
@@ -33,13 +33,13 @@ public abstract record SwitchChoice
     public sealed record MoveTo(string Account, string Window, double Used, double Curve) : SwitchChoice;
 }
 
-/// <summary>Why a session stays on its account (SWITCH1c-i), by code: the runner's log reads it, no person does.</summary>
+/// <summary>Why a session stays on its account, by code: the runner's log reads it, no person does.</summary>
 public static class SwitchStay
 {
-    /// <summary>The scope's switch is <c>off</c>: no switch while a session runs (the switch design §2).</summary>
+    /// <summary>The scope's switch is <c>off</c>: no switch while a session runs.</summary>
     public const string Off = "off";
 
-    /// <summary>The session's account said no number on a window this build measures: absent is never over (D57).</summary>
+    /// <summary>The session's account said no number on a window this build measures: absent is never over.</summary>
     public const string Unmeasured = "unmeasured";
 
     /// <summary>The session's account is not over its curve; on it is not over it.</summary>
@@ -53,22 +53,21 @@ public static class SwitchStay
 }
 
 /// <summary>
-/// Whether a running session should move to another account by the usage curve, at its turn's end (SWITCH1c-i; the switch
-/// design §2, margin and hold, and §4; D165 point 3). Pure: the readings, the readiness, the moment and the last move come in
-/// as values. The runner (SWITCH1c-ii) asks it, reads the others where it says so, and asks once more.
+/// Whether a running session should move to another account by the usage curve, at its turn's end. Pure: the readings, the
+/// readiness, the moment and the last move come in as values. The runner asks it, reads the others where it says so, and asks once more.
 /// </summary>
 /// <remarks>
 /// <para>The order: <c>off</c> stays; an account that said no number stays; one with the margin's room stays and reads nothing;
 /// within the margin, a ready candidate said long ago or never is read first, unless the session is held; not over stays;
 /// held stays; then, of the ready candidates with at least <see cref="UsageCurves.SwitchMargin"/> on every window they said, the
-/// one where the most of a week would lapse per hour to its reset (<see cref="UsageCurves.Lapsing"/>, USAGERESET1, as the walk's
-/// step 4), then the most room on its tightest window (step 5, SWITCH1b-ii), the scope's list order breaking a tie; none stays.
+/// one where the most of a week would lapse per hour to its reset (<see cref="UsageCurves.Lapsing"/>, as the walk's
+/// step 4), then the most room on its tightest window (step 5), the scope's list order breaking a tie; none stays.
 /// What would lapse never makes a move: a session under its curve stays whatever another account's reset.</para>
-/// <para>A limit reached is not this path: a cut-off session carries on by TOOL4f, held or not.</para>
+/// <para>A limit reached is not this path: a cut-off session carries on held or not.</para>
 /// </remarks>
 public static class SwitchDecision
 {
-    /// <summary>How long a session that moved by the curve stays where it went (the switch design §2): no flip-flop between two accounts near their curves.</summary>
+    /// <summary>How long a session that moved by the curve stays where it went: no flip-flop between two accounts near their curves.</summary>
     public static readonly TimeSpan Hold = TimeSpan.FromMinutes(30);
 
     /// <summary>The floor of a candidate whose provider states none: a reading older than this is read again before a move (Claude's, <c>ClaudeUsage.Floor</c>).</summary>
@@ -103,7 +102,7 @@ public static class SwitchDecision
         if (tightest.Room >= 0) return new SwitchChoice.Stay(SwitchStay.Room);
         if (held) return new SwitchChoice.Stay(SwitchStay.Held);
 
-        // The move is required by now; what would lapse only chooses where it goes (USAGERESET1, the switch design §4): the most
+        // The move is required by now; what would lapse only chooses where it goes: the most
         // of a week that would lapse per hour first, as the walk's step 4, then the most room. OrderByDescending and ThenBy
         // are stable: equal keeps the scope's list order.
         var target = others
@@ -122,7 +121,7 @@ public static class SwitchDecision
             : new SwitchChoice.MoveTo(target, tightest.Window.Window, tightest.Window.Used!.Value, tightest.Curve);
     }
 
-    /// <summary>Whether a reading is older than the candidate's floor, or nothing was said.</summary>
+    /// <summary>Whether a reading is older than the candidate's floor, or nothing is said.</summary>
     private static bool Stale(AccountSaid? said, DateTimeOffset now, TimeSpan floor) =>
         said is null || said.Windows.Count == 0 || now - said.Seen > floor;
 }

@@ -15,14 +15,14 @@ public enum ChildCallKind
     /// <summary>A call from the part's own agent, its root.</summary>
     Root,
 
-    /// <summary>A call whose agent was sent and could not be read, or that names no id: never the root's.</summary>
+    /// <summary>A call whose agent is sent and cannot be read, or that names no id: never the root's.</summary>
     Unknown,
 
     /// <summary>A call no line of the agent's joins to an agent.</summary>
     Unjoined,
 }
 
-/// <summary>One line's reading (the design §2.3, row l): what it is, and the child it names where it names one.</summary>
+/// <summary>One line's reading: what it is, and the child it names where it names one.</summary>
 public sealed record ChildCall(ChildCallKind Kind, string? Agent = null)
 {
     public static ChildCall None { get; } = new(ChildCallKind.None);
@@ -37,7 +37,7 @@ public sealed record ChildCall(ChildCallKind Kind, string? Agent = null)
 }
 
 /// <summary>
-/// One record's lineage lines read in an agent's words, new per reading (the design §2.3, row l): every line of the agent's learnt first,
+/// One record's lineage lines read in an agent's words, new per reading: every line of the agent's learnt first,
 /// in no order, for who an id is, then each call read in the file's order as the child it came from.
 /// </summary>
 public interface IChildLines
@@ -66,6 +66,6 @@ public static class LineageText
 
     public static string? Id(JsonObject line, string name) => Text(line, name) is { } text && IdShape.IsMatch(text) ? text : null;
 
-    /// <summary>Whether the connector named a field its agent sent that is not an id (FABRIC-C2a): the call is unknown, never the root's.</summary>
+    /// <summary>Whether the connector named a field its agent sent that is not an id: the call is unknown, never the root's.</summary>
     public static bool Malformed(JsonObject line) => line["malformed"] is not null;
 }

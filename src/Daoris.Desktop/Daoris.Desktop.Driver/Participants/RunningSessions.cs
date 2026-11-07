@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The sessions a driver started and has not yet reported ending (DEV3, D115 §3.1). A look starts what may
+/// The sessions a driver started and has not yet reported ending. A look starts what may
 /// start and returns; the runs go on here, and each one's ending waits here for the next look's report.
 /// </summary>
 /// <remarks>
@@ -13,16 +13,16 @@ namespace Daoris.Driver;
 ///
 /// <para><b>A run that never opened a record is its own look's to report</b>: a hold, a refusal and an error
 /// before the record opened are what that look says about the quest. Only a run whose record opened is kept
-/// here, since only it outlives the look; or, under the watch (PARALLEL1b), one its look let go of while it
+/// here, since only it outlives the look; or, under the watch, one its look let go of while it
 /// still prepared, reserved here until it opens or comes to nothing, which a later look says
 /// (<see cref="Carry"/>).</para>
 ///
-/// <para><b>The work beside the looks is kept here too</b> (PARALLEL1b, D181 point 3): the remote sync's
-/// pass, the landing's, the evaluation runtime's (PARALLEL1h), and each topic's judges, one judgement per
+/// <para><b>The work beside the looks is kept here too</b>: the remote sync's
+/// pass, the landing's, the evaluation runtime's, and each topic's judges, one judgement per
 /// subject and each topic bounded, so a closing loop waits for them as it waits for its sessions.</para>
 ///
 /// <para><b>Nothing here decides how a session ends.</b> Each run concludes its own record, on its exit code
-/// and its quest, as it always has (D46 §4). This keeps the runs and hands their endings on.</para>
+/// and its quest, as it always has. This keeps the runs and hands their endings on.</para>
 /// </remarks>
 public sealed class RunningSessions
 {
@@ -35,15 +35,15 @@ public sealed class RunningSessions
 
     /// <summary>
     /// Which quest each running session holds, by quest id: what the lost-claim stop checks this machine's
-    /// claim on (D68 §5). An entry lives exactly as long as its session's process.
+    /// claim on. An entry lives exactly as long as its session's process.
     /// </summary>
     internal ConcurrentDictionary<string, string> Live { get; } = new(StringComparer.Ordinal);
 
-    // The records a run of this loop takes up with the person's words, from the look that began it until it ends (ANSWER2).
+    // The records a run of this loop takes up with the person's words, from the look that began it until it ends.
     private readonly HashSet<string> _goingOn = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Claim a record the person's words wait on for the one run that takes it up (ANSWER2, D131 §3: one record, one harness
+    /// Claim a record the person's words wait on for the one run that takes it up (one record, one harness
     /// conversation): false where a run of this loop already has it. That run is told it opened before its process starts and
     /// moves the record to working, so a look in between still reads the record waiting and would begin a second run on it,
     /// whose move to working the ledger refuses, failing the session the first run is resuming.
@@ -59,11 +59,11 @@ public sealed class RunningSessions
         lock (_gate) _goingOn.Remove(session);
     }
 
-    // The chains' work whose second opinion a run of this loop asks or delivers, from the look that began it until it ends (XAGENT1f).
+    // The chains' work whose second opinion a run of this loop asks or delivers, from the look that began it until it ends.
     private readonly HashSet<string> _opinions = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Claim a chain's work in a repository for the one run that asks or delivers its second opinion (XAGENT1f): false where a run
+    /// Claim a chain's work in a repository for the one run that asks or delivers its second opinion: false where a run
     /// of this loop already has it. A pass and a recheck run for minutes, and a look in between would ask the same one again.
     /// </summary>
     internal bool TryOpinion(string key)
@@ -71,11 +71,11 @@ public sealed class RunningSessions
         lock (_gate) return _opinions.Add(key);
     }
 
-    // The starts an update's drain held that a look has said so of (DRAINHOLD1), kept across the looks so each is said once per drain.
+    // The starts an update's drain held that a look has said so of, kept across the looks so each is said once per drain.
     private readonly HashSet<string> _drainHeld = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// Note that a look says the drain held <paramref name="key"/> (DRAINHOLD1): true the first time since the drain began, so the hold is
+    /// Note that a look says the drain held <paramref name="key"/>: true the first time since the drain began, so the hold is
     /// said once however many looks meet it, as a person's hold on an ask is.
     /// </summary>
     internal bool DrainHeld(string key)
@@ -96,7 +96,7 @@ public sealed class RunningSessions
     }
 
     /// <summary>
-    /// Whether a run of this loop holds <paramref name="key"/>'s claim now (PARALLEL1g): an opinion's judgment beside the looks reads it
+    /// Whether a run of this loop holds <paramref name="key"/>'s claim now: an opinion's judgment beside the looks reads it
     /// before the gate, and finds no pass owed while one is in flight, whose end the next judgment reads.
     /// </summary>
     internal bool OpinionHeld(string key)
@@ -104,14 +104,14 @@ public sealed class RunningSessions
         lock (_gate) return _opinions.Contains(key);
     }
 
-    /// <summary>The facts the judges beside the looks keep for the plan (PARALLEL1g, D181 point 3), shared across the looks as the runs are.</summary>
+    /// <summary>The facts the judges beside the looks keep for the plan, shared across the looks as the runs are.</summary>
     internal LookFacts Facts { get; } = new();
 
-    // A judgment beside the looks moved a fact the plan reads since the last look took it (PARALLEL1g).
+    // A judgment beside the looks moved a fact the plan reads since the last look took it.
     private bool _factsMoved;
 
     /// <summary>
-    /// A judgment beside the looks moved a fact the plan reads (PARALLEL1g): a chain it held or let go, an ask it read. Wakes a wait as an
+    /// A judgment beside the looks moved a fact the plan reads: a chain it held or let go, an ask it read. Wakes a wait as an
     /// ending does, so the plan reads it at once; a judgment that moved nothing wakes nothing, so a hold never spins the loop.
     /// </summary>
     internal void FactsMoved()
@@ -133,19 +133,19 @@ public sealed class RunningSessions
         lock (_gate) _factsMoved = false;
     }
 
-    // The starts of this loop's not yet open (PARALLEL1b), each reserved by the look that began it until its record opens or it comes
+    // The starts of this loop's not yet open, each reserved by the look that began it until its record opens or it comes
     // to nothing; and what a start came to after the look that began it let go of it, for a later look's report.
     private readonly List<StartReservation> _reserved = [];
     private readonly List<StartCame> _came = [];
 
-    /// <summary>The starts of this loop's reserved and not yet open (PARALLEL1b), as a look hands them to the planner.</summary>
+    /// <summary>The starts of this loop's reserved and not yet open, as a look hands them to the planner.</summary>
     internal IReadOnlyList<StartReservation> Reserved
     {
         get { lock (_gate) return [.. _reserved]; }
     }
 
     /// <summary>
-    /// Reserve a start (PARALLEL1b, D181 point 3): its quest or ask, and the tree it goes back into, held from the look that plans it
+    /// Reserve a start: its quest or ask, and the tree it goes back into, held from the look that plans it
     /// until its record opens or it comes to nothing, so a look meanwhile neither plans it again nor gives its place under the cap
     /// (<see cref="Snapshot.Starting"/>). False where a start of this loop's already holds the quest, the ask or the tree.
     /// </summary>
@@ -172,7 +172,7 @@ public sealed class RunningSessions
     }
 
     /// <summary>
-    /// Keep what a start a look let go of comes to (PARALLEL1b): its record open, a hold, a refusal, or a failure before its spawn, for
+    /// Keep what a start a look let go of comes to: its record open, a hold, a refusal, or a failure before its spawn, for
     /// the next look's report, which says it as the look that began it would have. An opened one wakes a wait, as an ending does, so
     /// its run is bound and its progress said at once; a hold waits for whatever wakes the next look, so a hold never spins the loop.
     /// </summary>
@@ -213,7 +213,7 @@ public sealed class RunningSessions
     }
 
     /// <summary>
-    /// Whether nothing runs, no remote sync, judge or evaluation pass works beside the looks, and nothing ended or was
+    /// Whether nothing runs, no remote sync, judge or evaluation pass works beside the looks, and nothing ended or is
     /// said that a look has not yet reported.
     /// </summary>
     public bool Idle
@@ -228,22 +228,22 @@ public sealed class RunningSessions
         }
     }
 
-    // The remote sync beside the looks (PARALLEL1b), while a pass works, and the pass asked for meanwhile, which runs once after it.
+    // The remote sync beside the looks, while a pass works, and the pass asked for meanwhile, which runs once after it.
     private Task? _syncing;
     private (Func<CancellationToken, Task<IReadOnlyList<string>>> Pass, CancellationToken Ct)? _syncAgain;
 
-    /// <summary>Whether a remote sync pass works beside the looks (PARALLEL1b).</summary>
+    /// <summary>Whether a remote sync pass works beside the looks.</summary>
     internal bool Syncing
     {
         get { lock (_gate) return _syncing is not null; }
     }
 
-    // The judges beside the looks (PARALLEL1b; the events design §A3): each topic's places, and the subjects being judged now.
+    // The judges beside the looks: each topic's places, and the subjects being judged now.
     private readonly Dictionary<string, SemaphoreSlim> _topics = new(StringComparer.Ordinal);
     private readonly HashSet<string> _judging = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// Judge <paramref name="subject"/> of <paramref name="topic"/> beside the looks (PARALLEL1b, D181 point 3; the events design §A3):
+    /// Judge <paramref name="subject"/> of <paramref name="topic"/> beside the looks:
     /// its work runs on its own task, a topic judging at most <paramref name="bound"/> subjects at once, and one subject never twice at
     /// once. What it says joins the next look's report and wakes a wait, as an ending does; a judgement that says nothing wakes nothing.
     /// </summary>
@@ -299,8 +299,8 @@ public sealed class RunningSessions
     private bool _claimsDue;
 
     /// <summary>
-    /// Whether a remote sync pass beside the looks ended since the last look that asked, while a session of this loop's held a quest
-    /// (PARALLEL1b): the lost-claim stop rides every sync (D68 §5), so the look after it asks, as the whole look asked after its own
+    /// Whether a remote sync pass beside the looks ended since the last look that asked, while a session of this loop's held a quest:
+    /// the lost-claim stop rides every sync, so the look after it asks, as the whole look asked after its own
     /// sync. Taken once: true for the one look that asks. A pending one wakes a wait, as an ending does.
     /// </summary>
     internal bool TakeClaimsDue()
@@ -314,7 +314,7 @@ public sealed class RunningSessions
     }
 
     /// <summary>
-    /// Run a remote sync pass beside the looks (PARALLEL1b, D181 point 3): a remote that does not answer holds
+    /// Run a remote sync pass beside the looks: a remote that does not answer holds
     /// that pass, never a local start. One pass at a time, since the set's passes share one gate; one asked for while a pass works runs
     /// once after it, however many were asked, so an ending's sync is never lost to the deadline's. What a pass says joins the next
     /// look's report, and wakes a wait as an ending does; a pass that says nothing wakes nothing.
@@ -377,19 +377,19 @@ public sealed class RunningSessions
         }
     }
 
-    // The evaluation runtime's pass beside the looks (PARALLEL1h), while one works, and the pass asked for meanwhile, which runs once
+    // The evaluation runtime's pass beside the looks, while one works, and the pass asked for meanwhile, which runs once
     // after it; and what the passes said since the last look took it.
     private Task? _passing;
     private (Func<CancellationToken, Task<IReadOnlyList<string>>> Pass, CancellationToken Ct)? _passAgain;
     private readonly List<string> _passSaid = [];
 
     /// <summary>
-    /// Run the evaluation runtime's pass beside the looks (PARALLEL1h, D181 point 3), so a pass that a read or a plugin holds never holds
+    /// Run the evaluation runtime's pass beside the looks, so a pass that a read or a plugin holds never holds
     /// the next look. One pass at a time, since the runtime judges its units under one lock; one asked for while a pass works runs once
     /// after it, however many were asked. What a pass says joins the next look's report and wakes nothing, as it joined its own look's
     /// before: what wakes a plan is the pass's own nudge (a set naming a plugin anew, a timer the records persist).
     /// </summary>
-    /// <summary>Whether a pass of the evaluation runtime works beside the looks now, or one asked for follows it (FABRIC-RUN1d's tests).</summary>
+    /// <summary>Whether a pass of the evaluation runtime works beside the looks now, or one asked for follows it.</summary>
     internal bool Passing
     {
         get
@@ -455,12 +455,12 @@ public sealed class RunningSessions
         }
     }
 
-    // The runs the starts bound since a look last took them (FABRIC-CUTOVER1g), which that look's bind says.
+    // The runs the starts bound since a look last took them, which that look's bind says.
     private readonly List<IRunBound> _bound = [];
 
     /// <summary>
-    /// A run a start bound before its take (FABRIC-CUTOVER1g, the cutover design §8), kept for the next look's bind to say: a start runs
-    /// beside the look that began it (PARALLEL1b), and binds whatever it comes to after, a hold or a refusal included.
+    /// A run a start bound before its take, kept for the next look's bind to say: a start runs
+    /// beside the look that began it, and binds whatever it comes to after, a hold or a refusal included.
     /// </summary>
     internal void Bound(IRunBound bound)
     {
@@ -508,8 +508,8 @@ public sealed class RunningSessions
     }
 
     /// <summary>
-    /// Every ending not yet reported, in the order they ended, then what the evaluation runtime's passes beside the looks said
-    /// (PARALLEL1h) — each handed on once.
+    /// Every ending not yet reported, in the order they ended, then what the evaluation runtime's passes beside the looks said —
+    /// each handed on once.
     /// </summary>
     internal IReadOnlyList<StartRun> Drain()
     {
@@ -523,8 +523,8 @@ public sealed class RunningSessions
     }
 
     /// <summary>
-    /// Completes once an ending waits to be reported, the claims a sync beside the looks may have moved wait to be asked
-    /// (PARALLEL1b), or a judgment beside them moved a fact the plan reads (PARALLEL1g) — at once when one already does.
+    /// Completes once an ending waits to be reported, the claims a sync beside the looks may have moved wait to be asked,
+    /// or a judgment beside them moved a fact the plan reads — at once when one already does.
     /// </summary>
     public async Task EndedAsync(CancellationToken ct = default)
     {
@@ -543,8 +543,7 @@ public sealed class RunningSessions
 
     /// <summary>
     /// Completes once nothing runs: every session concluded and its record written, and no remote sync, judge or
-    /// evaluation pass works (PARALLEL1b, PARALLEL1h). Never cancelled, on purpose — it is what a closing driver waits on, so every record says how it ended
-    /// (REV3, D104).
+    /// evaluation pass works. Never cancelled, on purpose — it is what a closing driver waits on, so every record says how it ended.
     /// </summary>
     public async Task SettledAsync()
     {
@@ -563,7 +562,7 @@ public sealed class RunningSessions
 
     /// <summary>
     /// Wait for an ending, <paramref name="pace"/>, or <paramref name="ct"/>, whichever comes first. Never
-    /// throws: the caller reads the token to learn whether it was the close.
+    /// throws: the caller reads the token to learn whether it is the close.
     /// </summary>
     /// <param name="endings">False waits out the pace whatever ended — for a caller whose last look failed.</param>
     internal async Task NextAsync(TimeSpan pace, CancellationToken ct, bool endings = true)
@@ -609,24 +608,24 @@ public sealed class RunningSessions
 
     /// <summary>
     /// Work kept beside the looks, begun from a look's stage that does not wait on it: its starts' waits for a place are said to no
-    /// stage until a span of its own takes them, never as the queue of the stage that began it (LOOKWAIT1b, D181 point 6).
+    /// stage until a span of its own takes them, never as the queue of the stage that began it.
     /// </summary>
     private static Task ApartAsync(Func<Task> work) => ProcessStarts.QueuedToAsync(queue: null, work);
 }
 
-/// <summary>What one start of a look is (DEV3): a quest's or an ask's intake, where it runs, on which adapter, and the plan's start.</summary>
-/// <param name="Start">The quest's planned start, which its run is bound by once it opens (WORKFLOW1e); null for an intake.</param>
+/// <summary>What one start of a look is: a quest's or an ask's intake, where it runs, on which adapter, and the plan's start.</summary>
+/// <param name="Start">The quest's planned start, which its run is bound by once it opens; null for an intake.</param>
 internal sealed record StartBegun(string? Quest, string? Ask, string Where, string? Workspace, string Adapter, IPlannedStart? Start = null);
 
-/// <summary>A quest's planned start, which its run is bound by once it opens (WORKFLOW1e); the planner's <c>Consideration</c> implements it.</summary>
+/// <summary>A quest's planned start, which its run is bound by once it opens; the planner's <c>Consideration</c> implements it.</summary>
 internal interface IPlannedStart;
 
-/// <summary>A run a start bound (FABRIC-CUTOVER1g), kept for the next look's bind to say; the workflows' <c>WorkflowBind</c> implements it.</summary>
+/// <summary>A run a start bound, kept for the next look's bind to say; the workflows' <c>WorkflowBind</c> implements it.</summary>
 internal interface IRunBound;
 
 /// <summary>
-/// What one start came to (DEV3, PARALLEL1b): null <paramref name="Came"/> for a record opened and running on, else its hold, refusal
-/// or failure; with the trust holds it met (D73), which the report's screen offers.
+/// What one start came to: null <paramref name="Came"/> for a record opened and running on, else its hold, refusal
+/// or failure; with the trust holds it met, which the report's screen offers.
 /// </summary>
 internal sealed record StartCame(StartBegun Started, StartRun? Came, IReadOnlyList<TrustHold> Untrusted)
 {

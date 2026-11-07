@@ -2,16 +2,16 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>One sentence a door was seen saying when its agent refused a start for its sign-in (ROSTER1b): the words, when, and where.</summary>
-/// <param name="Sentence">The door's failure as the driver recorded it, the door's preface included.</param>
-/// <param name="Seen">The day it was seen, ISO 8601.</param>
-/// <param name="Channel">Which door, which agent, and what was running.</param>
+/// <summary>One sentence a door has said when its agent refused a start for its sign-in: the words, when, and where.</summary>
+/// <param name="Sentence">The door's failure as the driver records it, the door's preface included.</param>
+/// <param name="Seen">The day it is seen, ISO 8601.</param>
+/// <param name="Channel">Which door, which agent, and what is running.</param>
 public sealed record RecordedSignIn(string Sentence, string Seen, string Channel, string? Version = null);
 
 /// <summary>
-/// The words one agent refuses a start for its sign-in in (ROSTER1b, D150 §5.3): its entry, declared on its toolchain as
-/// <see cref="AccountAgent.SignIn"/>, beside AGT3b's <c>Refused</c> and TOOL4a's <c>Limits</c>, and read as a limit is (D125
-/// point 1): from the door's failure, apart from the agent's words, and never from the transcript.
+/// The words one agent refuses a start for its sign-in in: its entry, declared on its toolchain as
+/// <see cref="AccountAgent.SignIn"/>, beside <c>Refused</c> and <c>Limits</c>, and read as a limit is:
+/// from the door's failure, apart from the agent's words, and never from the transcript.
 /// </summary>
 /// <remarks>
 /// <para><b>An entry grows only with a recorded sentence.</b> Every marker is matched by one of <see cref="Recorded"/>, and every
@@ -24,7 +24,7 @@ public sealed record RecordedSignIn(string Sentence, string Seen, string Channel
 /// <param name="Recorded">The sentences the markers stand on.</param>
 public sealed record SignInWords(IReadOnlyList<string> Markers, IReadOnlyList<RecordedSignIn> Recorded);
 
-/// <summary>Whether a door's failure is its agent refusing the start for its sign-in (ROSTER1b): the one reader, pure.</summary>
+/// <summary>Whether a door's failure is its agent refusing the start for its sign-in: the one reader, pure.</summary>
 public static class SignInRefusals
 {
     /// <summary>True where <paramref name="entry"/> recognises <paramref name="failure"/>; an agent with no entry reads every failure as a failure.</summary>

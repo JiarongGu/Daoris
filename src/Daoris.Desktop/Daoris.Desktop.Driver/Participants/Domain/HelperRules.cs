@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>Where a repository's helpers rule was set: <see cref="HelperRules.DefaultSource"/> where nothing was.</summary>
+/// <summary>Where a repository's helpers rule is set: <see cref="HelperRules.DefaultSource"/> where nothing is.</summary>
 public sealed record ResolvedHelpers(HelperRule Rule, string Source);
 
 /// <summary>What a set changes, before it is judged: each field null where it is not named; an agents list that is not one is spelled <c>[null]</c>.</summary>
@@ -31,7 +31,7 @@ public sealed record HelperEdit
 /// </summary>
 /// <remarks>
 /// One table, this suite's <c>fixtures/helper-rules.json</c>, cell for cell (<c>HelperRulesTests</c>); its CLI twin, <c>helpers.ts</c>,
-/// left with the driver family's TypeScript (PUSH1f2b, D194 point 7). Nothing here starts a helper: the driver's helper session (the
+/// left with the driver family's TypeScript. Nothing here starts a helper: the driver's helper session (the
 /// next row) reads the rule, and `off` is its to apply.
 /// </remarks>
 public static class HelperRules
@@ -70,7 +70,7 @@ public static class HelperRules
         rule.Agents.Count == 0 ? rule.Mode : $"{rule.Mode}: {string.Join(", else ", rule.Agents.Select(agent => $"`{agent}`"))}";
 
     /// <summary>
-    /// What the terminal and Ask Daoris's card say of a mode as it is set (TWINWORDS1, <c>landing-says.json</c>'s <c>helpers</c>): one
+    /// What the terminal and Ask Daoris's card say of a mode as it is set (<c>landing-says.json</c>'s <c>helpers</c>): one
     /// function, <c>daoris place helpers</c>' and the card's.
     /// </summary>
     public static string Says(string mode) => mode switch

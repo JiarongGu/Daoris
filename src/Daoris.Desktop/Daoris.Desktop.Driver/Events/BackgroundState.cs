@@ -12,7 +12,7 @@ public static class BackgroundState
     /// <summary>The harness said it failed.</summary>
     public const string Failed = "failed";
 
-    /// <summary>The harness said it was stopped.</summary>
+    /// <summary>The harness said it stopped.</summary>
     public const string Stopped = "stopped";
 
     /// <summary>The harness kept no state for it (<c>AcpBackground</c>'s fallback).</summary>

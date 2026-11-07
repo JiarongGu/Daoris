@@ -1,8 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The kinds of the work cycle an outside session hears at <c>work/event</c> (EVENTHOOK1b, EVENTHOOK1d, D244; the event hook design §4.2, the
-/// event channel design §3), named <c>&lt;subject&gt;.&lt;what&gt;</c>: each says what moved, never what it is now.
+/// The kinds of the work cycle an outside session hears at <c>work/event</c>, named <c>&lt;subject&gt;.&lt;what&gt;</c>: each says what moved, never what it is now.
 /// </summary>
 public static class WorkEventKinds
 {
@@ -27,13 +26,13 @@ public static class WorkEventKinds
     /// <summary>A quest told closed is open again: a rebase found this machine's close lost.</summary>
     public const string QuestCloseLost = "quest.close-lost";
 
-    /// <summary>A press no terminal waited on its line for settled, after its record said how (D244's note on the confirmation's kind).</summary>
+    /// <summary>A press no terminal waited on its line for settled, after its record said how.</summary>
     public const string ConfirmationEnded = "confirmation.ended";
 
-    /// <summary>The line holds a session's work: the end keeping wrote its entry ended (D244's note on <c>work.ended</c>'s teller).</summary>
+    /// <summary>The line holds a session's work: the end keeping writes its entry ended.</summary>
     public const string WorkEnded = "work.ended";
 
-    /// <summary>A message was kept on a channel: a part's, the person's, an outside member's or a teammate's (CHANNELJOIN1d).</summary>
+    /// <summary>A message kept on a channel: a part's, the person's, an outside member's or a teammate's.</summary>
     public const string ChannelPosted = "channel.posted";
 
     /// <summary>
@@ -44,10 +43,10 @@ public static class WorkEventKinds
 }
 
 /// <summary>
-/// One event a source of the lease's process tells (EVENTHOOK1b, EVENTHOOK1d): its kind, when it moved, and the ids and closed codes its
+/// One event a source of the lease's process tells: its kind, when it moved, and the ids and closed codes its
 /// frame carries, never a name, a word or a path. The shapes are checked where the frame is built (<see cref="HookFrames.Event"/>).
 /// </summary>
-/// <param name="At">When the record moved; for <see cref="WorkEventKinds.Missed"/>, when the gap was found.</param>
+/// <param name="At">When the record moved; for <see cref="WorkEventKinds.Missed"/>, when the gap is found.</param>
 public sealed record WorkEvent(string Kind, DateTimeOffset At)
 {
     /// <summary>The session's id.</summary>
@@ -89,6 +88,6 @@ public sealed record WorkEvent(string Kind, DateTimeOffset At)
     /// <summary>The poster's class (<see cref="ChannelPosts.Classes"/>).</summary>
     public string? By { get; init; }
 
-    /// <summary>Set only where the message was posted urgent.</summary>
+    /// <summary>Set only where the message is posted urgent.</summary>
     public bool? Urgent { get; init; }
 }

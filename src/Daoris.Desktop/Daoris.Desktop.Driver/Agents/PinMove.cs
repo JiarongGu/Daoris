@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What moving a pin to the newest release comes to (USE1a), decided once for the window's update and the terminal's.</summary>
+/// <summary>What moving a pin to the newest release comes to, decided once for the window's update and the terminal's.</summary>
 internal enum PinMoveKind
 {
     /// <summary>The newest is the pin and is installed: nothing is fetched and the pin stays.</summary>
@@ -18,7 +18,7 @@ internal enum PinMoveKind
 
 /// <summary>
 /// The decisions the pin's install and its update's move share between the window's actions and the terminal's <c>agent pin</c> and
-/// <c>agent update</c> (AGENTPROVIDER1 row f): what a move comes to, and the command a package pin runs. Each surface keeps its own words
+/// <c>agent update</c>: what a move comes to, and the command a package pin runs. Each surface keeps its own words
 /// and the way it runs the command (the terminal at its console, the window redirected).
 /// </summary>
 internal static class PinMove
@@ -33,7 +33,7 @@ internal static class PinMove
 
     /// <summary>
     /// The command a package pin runs: <paramref name="npm"/> (the tools' npm by default) installing the package at the version under
-    /// the folder Daoris keeps it in, its prefix named so what it installs runs on the tools' node (TOOLS5, D121 §2.7).
+    /// the folder Daoris keeps it in, its prefix named so what it installs runs on the tools' node.
     /// </summary>
     /// <exception cref="DriverException">The tools' way cannot run.</exception>
     public static IReadOnlyList<string> PackageCommand(

@@ -5,7 +5,7 @@ using static Daoris.Driver.HelpWorkflowProposals;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The <c>draft</c> door of the workflow proposal (FLOWCHART2e, D223; the flowchart design §4, §8.4, §8.6): a change to the draft open in
+/// The <c>draft</c> door of the workflow proposal: a change to the draft open in
 /// the person's editor, judged on its card and, at Apply, settled in the file without saving or choosing anything.
 /// </summary>
 internal static class HelpWorkflowDrafts
@@ -14,7 +14,7 @@ internal static class HelpWorkflowDrafts
     public const string VersionRefused = "version";
 
     /// <summary>
-    /// A whole graph proposed against the draft this conversation was told under its fingerprint, of either pipeline, read and judged as
+    /// A whole graph proposed against the draft this conversation has been told under its fingerprint, of either pipeline, read and judged as
     /// a save would judge it (each refusal the card's to put right, never the proposal's), and said as <see cref="WorkflowGraphDiff"/>'s
     /// changes. The candidate rides apart from what a save takes, so <see cref="HelpWorkflowCard.Saves"/> stays false; a base, a choice,
     /// a route or a name beside it is refused.
@@ -99,7 +99,7 @@ internal static class HelpWorkflowDrafts
     }
 
     /// <summary>
-    /// A draft card's Apply (the flowchart design §8.6): it writes no workflow and no choice. Pressed from the card, with no
+    /// A draft card's Apply: it writes no workflow and no choice. Pressed from the card, with no
     /// change named, it takes the person to the place's Workflow, where the editor shows the proposal, and settles nothing; pressed by the
     /// editor with every change taken or left once, it settles applied, the file recording which. A press naming them otherwise stands.
     /// </summary>

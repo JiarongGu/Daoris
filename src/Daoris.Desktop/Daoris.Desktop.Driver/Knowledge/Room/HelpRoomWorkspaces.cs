@@ -3,9 +3,9 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The workspaces and their repositories (HELP1a): each repository with how it is driven, its line and how
-/// its work lands, from the driver's own answers, and its standing answer where it keeps one (KNOWUSE1b) — or, with none
-/// registered, where to begin. Since WORKFLOW1h-b, the workflow each one's work follows and each workspace's kinds (§8.4).
+/// The workspaces and their repositories: each repository with how it is driven, its line and how
+/// its work lands, from the driver's own answers, and its standing answer where it keeps one — or, with none
+/// registered, where to begin. Also the workflow each one's work follows and each workspace's kinds.
 /// </summary>
 internal sealed class HelpRoomWorkspaces : IHelpRoomSection
 {
@@ -14,7 +14,7 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
     public string Render(HelpMachine machine)
     {
         var text = new StringBuilder();
-        // ASKSCOPE1b: a workspace's room lists its own repositories; none left in it is not a machine with none.
+        // A workspace's room lists its own repositories; none left in it is not a machine with none.
         if (machine.Repositories.Count == 0 && machine.Workspace is { } workspace)
         {
             text.Append($"No repository is in workspace `{workspace}` on this machine now. A repository joins it on its page's\n");
@@ -32,10 +32,10 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
                      .OrderBy(circle => circle.Key, StringComparer.Ordinal))
         {
             text.Append($"### Workspace `{circle.Key}`\n\n");
-            // REVIEWENV1a (design §1.7–§1.8): the room's table names each repository's review rule, and *no review
-            // environment* where nothing is set, which is today's behaviour. XAGENT1a (design §2.5–§2.6) adds each one's second
+            // The room's table names each repository's review rule, and *no review
+            // environment* where nothing is set, which is today's behaviour. It adds each one's second
             // opinion, and *no second opinion* where nothing is set.
-            // WORKFLOW1h-b (the workflow design §8.4) adds the workflow each one's new work follows, Current where nothing chooses one.
+            // It also adds the workflow each one's new work follows, Current where nothing chooses one.
             text.Append("| Repository | Driven | Line | Work lands | Reviewed before landing | Second opinion before landing | Workflow |\n");
             text.Append("|---|---|---|---|---|---|---|\n");
             foreach (var repository in circle.OrderBy(repository => repository.Name, StringComparer.Ordinal))
@@ -47,7 +47,7 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
 
             text.Append('\n');
 
-            // WORKFLOW1h-b (§8.4): the kinds of work the workspace declares, each with the workflow it maps to.
+            // The kinds of work the workspace declares, each with the workflow it maps to.
             var kinds = machine.WorkflowKinds.Where(kind => string.Equals(kind.Workspace, circle.Key, StringComparison.OrdinalIgnoreCase)).ToList();
             if (kinds.Count > 0)
             {
@@ -61,7 +61,7 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
                 text.Append('\n');
             }
 
-            // KNOWUSE1b: each standing answer in the person's words, after the table, only where one is kept.
+            // Each standing answer in the person's words, after the table, only where one is kept.
             var standing = circle.Where(repository => repository.Standing is not null).OrderBy(repository => repository.Name, StringComparer.Ordinal).ToList();
             if (standing.Count > 0)
             {
@@ -126,7 +126,7 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
     {
         if (followed is not null && followed.Workflow != WorkflowLevels.Current)
         {
-            // The land step's methods and the pattern it leaves open (the cleanup design §1.4), as the room names them.
+            // The land step's methods and the pattern it leaves open, as the room names them.
             var pattern = followed.LandPattern ?? "feature/{quest}-{slug}";
             var how = followed.LandMethod switch
             {
@@ -158,24 +158,24 @@ public sealed record HelpRepository(string Name, string Workspace)
 
     public Line Line { get; init; } = new(null, LineSource.None);
 
-    /// <summary>Whether its checkout's line was not judged yet when the room was written (PARALLEL1a).</summary>
+    /// <summary>Whether its checkout's line is not judged yet when the room is written.</summary>
     public bool LineNotReadYet { get; init; }
 
-    /// <summary>Its standing answer on this machine, the person's words (KNOWUSE1b); null where it keeps none.</summary>
+    /// <summary>Its standing answer on this machine, the person's words; null where it keeps none.</summary>
     public string? Standing { get; init; }
 
-    /// <summary>The review rule standing for it and where it was set (REVIEWENV1a); null where nothing is set anywhere.</summary>
+    /// <summary>The review rule standing for it and where it is set; null where nothing is set anywhere.</summary>
     public ResolvedReview? Review { get; init; }
 
-    /// <summary>The second-opinion rule standing for it and where it was set (XAGENT1a); null where nothing is set anywhere.</summary>
+    /// <summary>The second-opinion rule standing for it and where it is set; null where nothing is set anywhere.</summary>
     public ResolvedOpinion? Opinion { get; init; }
 
-    /// <summary>The workflow its new work follows and what chose it (WORKFLOW1h-b, the workflow design §8.4); null reads as Current.</summary>
+    /// <summary>The workflow its new work follows and what chose it; null reads as Current.</summary>
     public HelpWorkflowFollowed? Workflow { get; init; }
 }
 
 /// <summary>
-/// The workflow a repository's work follows with no task's kind (WORKFLOW1h-b, design §4.1, §8.4): its id or <c>current</c>, the level
+/// The workflow a repository's work follows with no task's kind: its id or <c>current</c>, the level
 /// that chose it, its name and newest version where it is saved here, or why it is not, and the repository's own kinds.
 /// </summary>
 /// <param name="Level">One of <see cref="WorkflowLevels"/>.</param>
@@ -185,17 +185,17 @@ public sealed record HelpWorkflowFollowed(string Workflow, string Level)
 
     public int? Version { get; init; }
 
-    /// <summary>The newest version's <c>land</c> method (<see cref="LandNodes.Methods"/>) and its pattern, null where it names none or the version was not read.</summary>
+    /// <summary>The newest version's <c>land</c> method (<see cref="LandNodes.Methods"/>) and its pattern, null where it names none or the version is not read.</summary>
     public string? LandMethod { get; init; }
 
     public string? LandPattern { get; init; }
 
-    /// <summary>Why the chosen workflow's version is not named: not saved here, or unreadable; null where it is, or none was read.</summary>
+    /// <summary>Why the chosen workflow's version is not named: not saved here, or unreadable; null where it is, or none is read.</summary>
     public string? Problem { get; init; }
 
     /// <summary>The repository's own kinds, each with the workflow it maps to, null for its default.</summary>
     public IReadOnlyList<(string Kind, string? Workflow)> Kinds { get; init; } = [];
 }
 
-/// <summary>A kind of work a workspace declares (WORKFLOW1e, design §4.2), its label, paths and the workflow it maps to, null for none.</summary>
+/// <summary>A kind of work a workspace declares, its label, paths and the workflow it maps to, null for none.</summary>
 public sealed record HelpWorkflowKind(string Workspace, string Kind, string? Label, IReadOnlyList<string> Paths, string? Workflow);

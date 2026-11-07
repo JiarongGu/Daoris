@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Where a connector a start hands comes from: the sources a workspace permits (CONNECTORS1).</summary>
+/// <summary>Where a connector a start hands comes from: the sources a workspace permits.</summary>
 public enum ConnectorSource
 {
     /// <summary>Daoris's own knowledge connector, carrying the session's identity.</summary>
@@ -17,7 +17,7 @@ public enum ConnectorSource
 }
 
 /// <summary>
-/// The connectors one start hands its session (the design §4.4, CONNECTORS1): the servers it chose, Daoris's connector first where
+/// The connectors one start hands its session: the servers it chose, Daoris's connector first where
 /// there is one, each with its own environment, which carries the session's identity Daoris wrote into it, never an inherited one.
 /// Which servers a start gets is its caller's choice, made once per workspace (<see cref="ConnectorPlans"/>); a door only answers how it
 /// takes them, on its wire (<see cref="AcpProtocol"/>'s open) or by a file in its provider's layout (<see cref="IServerHanding"/>).

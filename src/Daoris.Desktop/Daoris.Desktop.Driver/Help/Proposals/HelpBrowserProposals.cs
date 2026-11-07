@@ -5,7 +5,7 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's <c>browser</c> proposal (HELP10, D110): Daoris's browser's settings, as Settings → Browser and
+/// Ask Daoris's <c>browser</c> proposal: Daoris's browser's settings, as Settings → Browser and
 /// <c>daoris browser</c> set them — its door the terminal's verb (<c>use</c>, <c>links</c>, <c>extensions</c>,
 /// <c>favorite</c>), its value what it is set to, and for a favorite its target the address and its own <c>title</c>.
 /// </summary>
@@ -135,7 +135,7 @@ internal sealed class HelpBrowserProposals : IHelpProposalKind
 }
 
 /// <summary>
-/// What Daoris's browser's two files hold, as the Browser screen reads them (HELP10): the settings and the favorites,
+/// What Daoris's browser's two files hold, as the Browser screen reads them: the settings and the favorites,
 /// why either could not be read, and whether an Edge is installed.
 /// </summary>
 /// <param name="Browser">`daoris` or `edge`.</param>
@@ -157,7 +157,7 @@ public sealed record HelpBrowserFacts(string Browser, string Links, string Exten
 public interface IHelpBrowserDoors
 {
     /// <summary>
-    /// The Browser screen's own edit of Daoris's browser's files (HELP10, <c>BrowserModule</c>): which browser, where the
+    /// The Browser screen's own edit of Daoris's browser's files (<c>BrowserModule</c>): which browser, where the
     /// page's links open, other software's extensions, or a favorite kept or dropped.
     /// </summary>
     /// <param name="setting">`use`, `links`, `extensions` or `favorite`.</param>

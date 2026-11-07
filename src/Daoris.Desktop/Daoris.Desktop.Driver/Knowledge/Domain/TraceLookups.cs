@@ -12,7 +12,7 @@ internal static class TraceLookups
     internal static bool SamePath(string a, string b) =>
         string.Equals(a.Replace('\\', '/').TrimEnd('/'), b.Replace('\\', '/').TrimEnd('/'), StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>A tree's last segment: the name Daoris gave it (D51 §2), never the path, which is machine-local.</summary>
+    /// <summary>A tree's last segment: the name Daoris gave it, never the path, which is machine-local.</summary>
     internal static string? FolderOf(string? tree)
     {
         if (tree is null) return null;

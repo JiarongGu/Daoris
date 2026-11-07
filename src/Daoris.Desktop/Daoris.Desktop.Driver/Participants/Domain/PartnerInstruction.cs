@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Daoris.Driver;
 
-/// <summary>What a partner is handed (COAGENT1b; the co-agent design §2.3 step 5): the piece as written, its paths, the base, and the lead's uncommitted paths.</summary>
+/// <summary>What a partner is handed: the piece as written, its paths, the base, and the lead's uncommitted paths.</summary>
 /// <param name="Lead">The session that asked.</param>
 /// <param name="Repository">The repository the lead works in.</param>
 /// <param name="Base">The exact commit the piece grows from, which the copy stands at.</param>
@@ -14,7 +14,7 @@ public sealed record PartnerPacket(
     string Lead, string Repository, string Base, string Piece, IReadOnlyList<string> Paths, IReadOnlyList<string> Uncommitted, int Minutes);
 
 /// <summary>
-/// The partner's instruction (COAGENT1b, D199 points 2 and 10; the co-agent design §2.3 step 5): the piece as its lead's asker wrote it,
+/// The partner's instruction: the piece as its lead's asker wrote it,
 /// where it writes, what never, and how it ends. Composed once, from facts, with no model; handed whole in one turn. Project-agnostic,
 /// as every instruction is, and one line a paragraph.
 /// </summary>
@@ -24,7 +24,7 @@ public sealed record PartnerPacket(
 /// </remarks>
 public static class PartnerInstruction
 {
-    /// <summary>How long one partner's turn may run unless the machine's session timeout comes first (a first value, read again in COAGENT1f).</summary>
+    /// <summary>How long one partner's turn may run unless the machine's session timeout comes first (a first value).</summary>
     public const int DefaultMinutes = 45;
 
     public static string Compose(PartnerPacket packet)
@@ -69,19 +69,19 @@ public static class PartnerInstruction
     }
 }
 
-/// <summary>The partner's pass's own words and bounds (COAGENT1b), each said once for every door.</summary>
+/// <summary>The partner's pass's own words and bounds, each said once for every door.</summary>
 public static class PartnerPass
 {
     /// <summary>
-    /// How long one partner's turn may run: its own bound, never capped by a session's time (SESSWATCH1a, D200); only the tests' backstop
+    /// How long one partner's turn may run: its own bound, never capped by a session's time; only the tests' backstop
     /// (<see cref="DriverConfig.TestBound"/>) comes first.
     /// </summary>
     public static int Bound(DriverConfig config) => Math.Max(1, Math.Min(PartnerInstruction.DefaultMinutes, config.TestBound ?? int.MaxValue));
 
-    /// <summary>What a copy's folder name starts with, beside a session tree's <c>s-</c> and an opinion's <c>o-</c> (the design §2.2).</summary>
+    /// <summary>What a copy's folder name starts with, beside a session tree's <c>s-</c> and an opinion's <c>o-</c>.</summary>
     public const string Prefix = "p-";
 
-    /// <summary>The copy's folder for a piece, under the home's trees, named before it is made (the design §7.2's <c>preparing</c>).</summary>
+    /// <summary>The copy's folder for a piece, under the home's trees, named before it is made (<c>preparing</c>).</summary>
     public static string CopyFor(string home, string? workspace, string repository, string piece) =>
         DaorisHome.Entry(
             home, HomeEntry.Trees, workspace is { } named && !string.IsNullOrWhiteSpace(named) ? named.Trim() : RemoteTarget.DefaultWorkspace,

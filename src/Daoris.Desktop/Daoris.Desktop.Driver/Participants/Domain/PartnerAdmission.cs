@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A piece's place in the common admission (COAGENT1b, D199 point 4; the co-agent design §2.3 step 4, §5): before its record opens, a
+/// A piece's place in the common admission: before its record opens, a
 /// piece in <see cref="PartnerStates.Approved"/> or <see cref="PartnerStates.Preparing"/> holds a slot under the machine's cap, read by
 /// every starter through <see cref="Snapshot.SlotsHeld"/>; once a record carrying its piece is active, that record holds it instead,
 /// counted once. Its lead holds at most <see cref="OpenBound"/> open pieces across its <c>from</c> chain, counted from the boxes, never
@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// <param name="State">Where it stands (<see cref="PartnerStates"/>).</param>
 public sealed record PieceReservation(string Id, string Lead, string State);
 
-/// <summary>What the common admission answers a piece's look (the design §2.3 step 4).</summary>
+/// <summary>What the common admission answers a piece's look.</summary>
 public enum PieceAdmitted
 {
     /// <summary>Reserved: its slot and its place in the lead's allowance, with <see cref="PartnerStates.Approved"/> written.</summary>
@@ -30,11 +30,11 @@ public enum PieceAdmitted
 
 public static class PartnerAdmission
 {
-    /// <summary>A lead's open pieces at most, across its <c>from</c> chain (the design §2.3 step 2; a first value, read again in COAGENT1f).</summary>
+    /// <summary>A lead's open pieces at most, across its <c>from</c> chain (a first value).</summary>
     public const int OpenBound = 2;
 
     /// <summary>
-    /// The pieces whose reservation takes a slot now (the design §5): each <see cref="PartnerStates.Reserves"/> state but one an active
+    /// The pieces whose reservation takes a slot now: each <see cref="PartnerStates.Reserves"/> state but one an active
     /// record already carries as its <see cref="SessionView.Piece"/>, which <see cref="ActiveSessions.HoldsSlot"/> counts by its
     /// <c>serves</c> (the record opened before its state moved to <see cref="PartnerStates.Started"/>).
     /// </summary>
@@ -45,7 +45,7 @@ public static class PartnerAdmission
     }
 
     /// <summary>
-    /// Every record of <paramref name="lead"/>'s <c>from</c> chain (the design §5: a hand-over does not reset its two): the lead, the
+    /// Every record of <paramref name="lead"/>'s <c>from</c> chain (a hand-over does not reset its two): the lead, the
     /// records it continues, and those continuing any of them, from the records' <c>from</c> links by id.
     /// </summary>
     public static IReadOnlySet<string> Chain(string lead, IReadOnlyDictionary<string, string?> fromOf)
@@ -71,7 +71,7 @@ public static class PartnerAdmission
                               && !string.Equals(piece.Id, except, StringComparison.Ordinal));
 
     /// <summary>
-    /// The admission of one piece in one step (the design §2.3 step 4): a piece already past judging is never reserved again; its lead's
+    /// The admission of one piece in one step: a piece already past judging is never reserved again; its lead's
     /// allowance first, since a third piece is refused whatever the cap; then the cap, read as every starter reads it, with the slots
     /// this look already took.
     /// </summary>

@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 internal static class UsageHistoryReads
 {
     /// <summary>
-    /// What the history holds, oldest month first and each in the order written (USAGECAP1a1): its readings, the gaps a reader
+    /// What the history holds, oldest month first and each in the order written: its readings, the gaps a reader
     /// meets, and how many lines did not read, which are counted and never guessed at. A record of a kind this reader does not
     /// know is passed over. Never throws: what could not be read is not there.
     /// </summary>
@@ -32,7 +32,7 @@ internal static class UsageHistoryReads
     }
 
     /// <summary>
-    /// The turn lines of <paramref name="sessions"/>, by session, in the order written (KNOWCENTRAL2d): what a commit point hands the service,
+    /// The turn lines of <paramref name="sessions"/>, by session, in the order written: what a commit point hands the service,
     /// so a memory row names the model of the turn its instant falls in. A session with no line is left out. Never throws.
     /// </summary>
     public static IReadOnlyDictionary<string, IReadOnlyList<KeptTurn>> TurnLinesOf(string home, IReadOnlyCollection<string> sessions)
@@ -78,7 +78,7 @@ internal static class UsageHistoryReads
 
     /// <summary>
     /// Every whole line of a month's file from <paramref name="offset"/> on, each record of <paramref name="kind"/> added to
-    /// <paramref name="into"/> (USAGEPROBE1): only the bytes appended since the last read are read, a line still being written
+    /// <paramref name="into"/>: only the bytes appended since the last read are read, a line still being written
     /// is left for the next. The offset read to, -1 where the file is shorter than the offset, and the offset itself where the
     /// file does not read.
     /// </summary>

@@ -5,17 +5,16 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// <c>profile use &lt;agent&gt; [goal|order] [--keep &lt;account&gt;|--no-keep] [--switch smart|curve|off] [--curve
-/// &lt;window&gt;=&lt;elapsed&gt;:&lt;used&gt;,…]… [--no-curve]</c>, or <c>--clear</c> (TOOL6a, D130 §16.6; D165 §6, the switch design §5;
-/// POOL1b, D197 point 2, §5.1): how the set is used, its one entry of settings, the Accounts place's <c>ACCOUNT_USE</c> <c>use</c>. With
+/// &lt;window&gt;=&lt;elapsed&gt;:&lt;used&gt;,…]… [--no-curve]</c>, or <c>--clear</c>: how the set is used, its one entry of settings, the Accounts place's <c>ACCOUNT_USE</c> <c>use</c>. With
 /// no flag it prints the settings, the step the next start would follow and what each account last said. An agent with no account of
-/// Daoris's has nothing to use and is refused, naming the sign-in; a kept account is one of the set and leaves driven work another
-/// (§4.6); a curve is refused in the sentence the driver says. <c>--early</c> and <c>--near</c> are the old names.
+/// Daoris's has nothing to use and is refused, naming the sign-in; a kept account is one of the set and leaves driven work another;
+/// a curve is refused in the sentence the driver says. <c>--early</c> and <c>--near</c> are accepted aliases.
 /// </summary>
 internal static class AgentAccountUse
 {
     private const string Prefix = AccountVerbContext.Prefix;
 
-    /// <summary><c>profile use</c>'s flags (TOOL6a, D130 §16.6; D165 §6, SWITCH1a); any other is refused rather than read as a choice.</summary>
+    /// <summary><c>profile use</c>'s flags; any other is refused rather than read as a choice.</summary>
     private static readonly HashSet<string> UseFlags = new(StringComparer.Ordinal)
     {
         "--keep", "--no-keep", "--switch", "--curve", "--no-curve", "--early", "--near", "--clear",
@@ -27,7 +26,7 @@ internal static class AgentAccountUse
         + "[--curve <window>=<elapsed>:<used>,…]… [--no-curve], or --clear (--early on|off and --near <percent> "
         + "are the old names)";
 
-    /// <summary>How a curve is given at the terminal (the switch design §5), as a refusal shows it.</summary>
+    /// <summary>How a curve is given at the terminal, as a refusal shows it.</summary>
     private const string CurveExample = "`--curve weekly=0:30,50:70,100:100`";
 
     /// <summary>Choices said as a person says them: <c>a, b or c</c>.</summary>
@@ -157,8 +156,8 @@ internal static class AgentAccountUse
     }
 
     /// <summary>
-    /// The settings <c>profile use</c>'s flags name, each refused unless it is one, and whether any was named: the switch, the curve,
-    /// the old names, then the kept account, in the order the TypeScript verb judged them.
+    /// The settings <c>profile use</c>'s flags name, each refused unless it is one, and whether any is named: the switch, the curve,
+    /// the aliases, then the kept account, in that order.
     /// </summary>
     private static (UseChange Change, bool Named) UseChangeOf(AccountVerbContext at, string owner)
     {
@@ -238,7 +237,7 @@ internal static class AgentAccountUse
     }
 
     /// <summary>
-    /// The curve <c>--curve &lt;window&gt;=&lt;elapsed&gt;:&lt;used&gt;,…</c> gives, once per window (the switch design §5): each window's
+    /// The curve <c>--curve &lt;window&gt;=&lt;elapsed&gt;:&lt;used&gt;,…</c> gives, once per window: each window's
     /// points as whole numbers, then held to the curve's rules in the sentence the driver says (<see cref="UseCurve.Problem"/>).
     /// </summary>
     private static UseCurve CurveOf(IReadOnlyList<string> given)
@@ -280,7 +279,7 @@ internal static class AgentAccountUse
             return 0;
         }
 
-        // Each account by the person's name for it, else its id (ACCT2).
+        // Each account by the person's name for it, else its id.
         string Shown(string account) => AccountNames.Shown(at.Home, owner, account);
         at.Say($"{Prefix}: `{owner}`'s accounts, for every workspace, in order: {string.Join(", then ", scope.List.Select(Shown))}.");
 
@@ -297,8 +296,8 @@ internal static class AgentAccountUse
         at.Say($"  {"next start",-24} {row}");
         if (next is not null) at.Say($"  {next}");
 
-        // Each account's cool-off, else its last reading and its age (TOOL6c), else that it has said nothing: unknown. A reading over the
-        // scope's curve says so, as the start's line does (SWITCH1b-iii).
+        // Each account's cool-off, else its last reading and its age, else that it has said nothing: unknown. A reading over the
+        // scope's curve says so, as the start's line does.
         var cooling = AccountCooling.Read(at.Home, now);
         at.Say("  what each account last said:");
         foreach (var account in scope.List)

@@ -1,18 +1,18 @@
 namespace Daoris.Driver;
 
-/// <summary>What a line the look says is (NOTIFY2h, D196 point 7; the notification design §5.1), and so where it goes.</summary>
+/// <summary>What a line the look says is, and so where it goes.</summary>
 public enum LookClass
 {
     /// <summary>The look could not read or do something, and tries at the next: the machine log alone.</summary>
     Retry,
 
-    /// <summary>The person's own act, carried out: never said back (R3), the machine log alone.</summary>
+    /// <summary>The person's own act, carried out: never said back, the machine log alone.</summary>
     Own,
 
     /// <summary>Something now waits on the person: its row of <i>What needs you</i> says it; the line is the log's.</summary>
     Wait,
 
-    /// <summary>What moved as it was asked, which its own place says: the machine log alone.</summary>
+    /// <summary>What moved as asked, which its own place says: the machine log alone.</summary>
     Progress,
 
     /// <summary>An end or a failure nobody pressed and nobody must answer: a coded notice in <i>Done and failed</i>, and the log.</summary>
@@ -20,7 +20,7 @@ public enum LookClass
 }
 
 /// <summary>
-/// A <see cref="LookClass.News"/> line's notice (NOTIFY2h): its code, which the page words in the reader's language, and what it is
+/// A <see cref="LookClass.News"/> line's notice: its code, which the page words in the reader's language, and what it is
 /// about. One notice per code and subject, so a line said again by a later look keeps one.
 /// </summary>
 /// <param name="Code">One of <see cref="LookSaid"/>'s news codes.</param>
@@ -28,7 +28,7 @@ public enum LookClass
 public sealed record LookNews(string Code, string Subject, string? Session = null, string? Quest = null, string? Workspace = null);
 
 /// <summary>
-/// A line's class as its producer judged it, carried with a line said later where it enters the look (NOTIFY2h2): a pass beside the
+/// A line's class as its producer judges it, carried with a line said later where it enters the look: a pass beside the
 /// look whose line its run carries (<c>StartRun.Look</c>).
 /// </summary>
 /// <param name="Class">Its class; <see cref="LookClass.News"/> names its notice.</param>
@@ -40,13 +40,13 @@ public sealed record LookClassed(LookClass Class, string Family, LookNews? News 
     public static LookClassed Noticed(string family, LookNews news) => new(LookClass.News, family, news);
 }
 
-/// <summary>A line with its class as its producer judged it, handed up to where it enters the look (NOTIFY2h2).</summary>
+/// <summary>A line with its class as its producer judges it, handed up to where it enters the look.</summary>
 /// <param name="Text">The line, unchanged.</param>
 /// <param name="Look">Its class.</param>
 public sealed record LookLine(string Text, LookClassed Look);
 
 /// <summary>
-/// The lines one producer of the look says (NOTIFY2h2, D196's NOTIFY2h note): each classed as it is made, through
+/// The lines one producer of the look says: each classed as it is made, through
 /// <see cref="LookSaid"/>, so a producer that hands the look its lines whole has no add that is not classed. <see cref="Said"/> is what
 /// it hands on, the lines unchanged.
 /// </summary>
@@ -59,7 +59,7 @@ public sealed class LookLines(LookSaid said, string family)
     /// <summary>The lines said, in their order, unchanged.</summary>
     public IReadOnlyList<string> Said => _lines;
 
-    /// <summary>How many lines were said.</summary>
+    /// <summary>How many lines are said.</summary>
     public int Count => _lines.Count;
 
     /// <inheritdoc cref="LookClass.Retry"/>
@@ -83,19 +83,19 @@ public sealed class LookLines(LookSaid said, string family)
 
 /// <summary>
 /// Each line the look says, classed at its producer and written as the declared machine-log event <c>look.said</c> before it goes
-/// anywhere (NOTIFY2h, D196 point 7; the notification design §5.1): a <see cref="LookClass.News"/> line is kept as a coded notice in
+/// anywhere: a <see cref="LookClass.News"/> line is kept as a coded notice in
 /// <i>Done and failed</i> through <see cref="Notices"/>, whatever the notify switch says; every other class is the log's alone.
 /// </summary>
 /// <remarks>
-/// <para><b>The line itself is unchanged</b>: it goes on into the look's report as before, which the headless host prints and the
+/// <para><b>The line itself is unchanged</b>: it goes on into the look's report, which the headless host prints and the
 /// windows read to know a look moved something. No window toasts it (<c>ShellSignals</c>): it is English, and most of it is a look's
-/// passing failure the next answers (D62).</para>
-/// <para><b>The event carries the class and the family, never the line</b> (D94 §5): a line can quote a session's note or an agent's
+/// passing failure the next answers.</para>
+/// <para><b>The event carries the class and the family, never the line</b>: a line can quote a session's note or an agent's
 /// words, which the session's own record keeps.</para>
 /// <para><b>The census</b> (<c>LookSaidTests</c>): every line a producer of the look adds goes through here, so a line with no
 /// class fails the test. A producer that hands the look its lines whole takes the look's <see cref="LookSaid"/> and adds each through
 /// <see cref="LookLines"/>, or carries its class up (<see cref="LookLine"/>, <c>StartRun.Look</c>); its file joins the census's
-/// producers (NOTIFY2h2).</para>
+/// producers.</para>
 /// </remarks>
 /// <param name="home">The home whose notices a news line is kept in; none keeps none.</param>
 /// <param name="log">The machine log at the moment of the line, or none.</param>
@@ -106,7 +106,7 @@ public sealed class LookSaid(string? home, Func<MachineLog?> log, Action? notice
     /// <summary>The machine log's event.</summary>
     public const string Event = "look.said";
 
-    /// <summary>A quest's session whose hand-over its judge refused: it was not handed over.</summary>
+    /// <summary>A quest's session whose hand-over its judge refused: it is not handed over.</summary>
     public const string HandOverRefused = "hand-over-refused";
 
     /// <summary>A hand-over that could not be made: the session runs in another Daoris process on this machine.</summary>
@@ -139,42 +139,41 @@ public sealed class LookSaid(string? home, Func<MachineLog?> log, Action? notice
     /// <summary>A session a Daoris before this one left running, ended as this one began.</summary>
     public const string Swept = "swept";
 
-    /// <summary>A meeting stopped in a round by a failure, not by the person: ended as failed (NOTIFY2h2).</summary>
+    /// <summary>A meeting stopped in a round by a failure, not by the person: ended as failed.</summary>
     public const string MeetingFailed = "meeting-failed";
 
-    /// <summary>A brainstorm stopped by a failure, not by the person: ended as failed (NOTIFY2h2).</summary>
+    /// <summary>A brainstorm stopped by a failure, not by the person: ended as failed.</summary>
     public const string BrainstormFailed = "brainstorm-failed";
 
-    /// <summary>An ask for a helper refused because the session that asked it has left this machine: nobody is told (NOTIFY2h2).</summary>
+    /// <summary>An ask for a helper refused because the session that asked it has left this machine: nobody is told.</summary>
     public const string HelperAskerGone = "helper-asker-gone";
 
-    /// <summary>A reopen naming a session this machine keeps no record of: nobody here is told (NOTIFY2h2).</summary>
+    /// <summary>A reopen naming a session this machine keeps no record of: nobody here is told.</summary>
     public const string ReopenUnrecorded = "reopen-unrecorded";
 
-    /// <summary>A reopen, or a step's go-on, whose session's tree is gone: it is told nothing, and no work is made again (NOTIFY2h2).</summary>
+    /// <summary>A reopen, or a step's go-on, whose session's tree is gone: it is told nothing, and no work is made again.</summary>
     public const string ReopenTreeGone = "reopen-tree-gone";
 
-    /// <summary>A plugin whose hook process exited three times within an hour: not started again until the person tries again (NOTIFY2h2).</summary>
+    /// <summary>A plugin whose hook process exited three times within an hour: not started again until the person tries again.</summary>
     public const string PluginUnsound = "plugin-unsound";
 
     /// <summary>
     /// A quest's line an account's limit cut off, held while every account it may run on cools: it goes on by itself once one is ready
-    /// (LIMITRESUME1a, D206 point 1). Its own news, said once per limited part, in place of that part's <i>Ended</i>.
+    /// Its own news, said once per limited part, in place of that part's <i>Ended</i>.
     /// </summary>
     public const string LimitWaits = "limit-waits";
 
-    /// <summary>A quest's line an account's limit cut off, gone on in a new session handed the brief (LIMITRESUME1a): its own news, once.</summary>
+    /// <summary>A quest's line an account's limit cut off, gone on in a new session handed the brief: its own news, once.</summary>
     public const string LimitWentOn = "limit-went-on";
 
     /// <summary>
-    /// A quest's line an account's limit cut off, resumed in its own conversation once its own account was ready again (LIMITRESUME1b,
-    /// D206): its own news, once per limited part.
+    /// A quest's line an account's limit cut off, resumed in its own conversation once its own account is ready again: its own news, once per limited part.
     /// </summary>
     public const string LimitResumed = "limit-resumed";
 
     /// <summary>
-    /// The second opinion a chat run's press asked settled (CHATFLOW1d, the chat-flow design §5.2 point 6): given, failed or unavailable, so
-    /// the person, who was asked to press Accept again once it settles, is told so, the notice naming the conversation. Once per pass.
+    /// The second opinion a chat run's press asked for, settled: given, failed or unavailable, so
+    /// the person, who is asked to press Accept again once it settles, is told so, the notice naming the conversation. Once per pass.
     /// </summary>
     public const string OpinionSettled = "opinion-settled";
 
@@ -205,12 +204,12 @@ public sealed class LookSaid(string? home, Func<MachineLog?> log, Action? notice
     public string Of(LookClass @class, string family, string line) =>
         @class == LookClass.News ? throw new ArgumentException("a news line names its notice: News", nameof(@class)) : Said(@class, family, line);
 
-    /// <summary>A line its producer classed, said as it enters the look (NOTIFY2h2).</summary>
+    /// <summary>A line its producer classed, said as it enters the look.</summary>
     public string Say(LookLine line) => Ran(line.Look, byPerson: false, line.Text);
 
     /// <summary>
-    /// A run's line said as it enters the look, by the class its producer gave it (NOTIFY2h2); one its producer did not class is a
-    /// session's end, which the watch announces (<c>progress</c>, the design §5.1's <c>:1246</c>), or the person's own (<c>own</c>).
+    /// A run's line said as it enters the look, by the class its producer gave it; one its producer does not class is a
+    /// session's end, which the watch announces (<c>progress</c>), or the person's own (<c>own</c>).
     /// </summary>
     public string Ran(LookClassed? classed, bool byPerson, string line) => classed switch
     {
@@ -228,7 +227,7 @@ public sealed class LookSaid(string? home, Func<MachineLog?> log, Action? notice
         var now = _clock();
         var notice = new Notice($"look-{news.Code}-{news.Subject}", Notices.Look, now, Workspace: news.Workspace, Session: news.Session,
             Quest: news.Quest, Code: news.Code);
-        // A write refused is logged and dropped (§2.5); one kept is told, so the windows' slice reads it again, since a write this process
+        // A write refused is logged and dropped; one kept is told, so the windows' slice reads it again, since a write this process
         // marked wakes nothing on its own watch; a notice kept already is told too, and the slice pushes only what moved.
         if (Notices.Add(home, notice, now) is { } why) log()?.Warn("notices.refused", ("why", why));
         else noticed?.Invoke();
@@ -261,7 +260,7 @@ public static class RegistrationLines
     extension(RegistrationFollow)
     {
         /// <summary>
-        /// The look's line for one outcome, classed as it is made (NOTIFY2h2): what moved, a refusal included, since the repository's row is
+        /// The look's line for one outcome, classed as it is made: what moved, a refusal included, since the repository's row is
         /// keyed on its outcome and says it where the person fixes it. Null where <see cref="RegistrationFollow.EventLine(RegistrationFollowed)"/> says nothing.
         /// </summary>
         public static string? EventLine(RegistrationFollowed followed, LookSaid said) =>

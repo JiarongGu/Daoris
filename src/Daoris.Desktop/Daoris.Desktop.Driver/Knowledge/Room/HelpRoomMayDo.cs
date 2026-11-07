@@ -3,14 +3,14 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the helper may do (HELP1a, D89): read, advise and propose, never change a thing itself — and what it
-/// cannot reach, so it routes a repository's own work there rather than guessing at it (HELP4, HELP5). Since
-/// D107 it may read the checkouts reading across allows, and it says which and how: since HELPMODE1c4 through
+/// What the helper may do: read, advise and propose, never change a thing itself — and what it
+/// cannot reach, so it routes a repository's own work there rather than guessing at it.
+/// It may read the checkouts reading across allows, and it says which and how: through
 /// <c>checkout_read</c>, less those the person turned off.
 /// </summary>
 /// <remarks>
-/// HELPMODE1a1 (D183): all of that is restricted mode's, and the section says so. In full access it says the helper acts on this
-/// machine itself, with every server the plugins here declare, and what the doctrine still asks of it (D183 point 5).
+/// All of that is restricted mode's, and the section says so. In full access it says the helper acts on this
+/// machine itself, with every server the plugins here declare, and what the doctrine still asks of it.
 /// </remarks>
 internal sealed class HelpRoomMayDo : IHelpRoomSection
 {
@@ -26,30 +26,30 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("on a screen or with a terminal command, and the two always do the same thing. When a change would\n");
         text.Append("help, name both — the screen and where on it, and the command — and, where the person wants it made,\n");
         text.Append("propose it with the tool for its kind (below). A proposal is a card with Apply and Not now; nothing\n");
-        // ASKQUESTS1: what an Apply did is Daoris's word, never the person's; a Not now is still theirs.
+        // What an Apply did is Daoris's word, never the person's; a Not now is still theirs.
         text.Append("changes until the person presses Apply. What the Apply did comes back to you as Daoris's word, starting\n");
         text.Append("`Daoris:` and naming by id any ask or quest it published; a Not now comes back as their next message. Daoris\n");
         text.Append("checks each proposal first by the rules of the screen that makes the same change, and one those rules\n");
         text.Append("would refuse never reaches the person: you are told why instead. Read the family through\n");
         text.Append("`daoris-knowledge` (the registry, its knowledge, its quests) when the question needs more than this page.\n\n");
-        // HELPMODE1a1 (D183 point 2): asked to clean up a tree Daoris made, the helper said it could change nothing and listed
-        // commands, and never that this was a mode the person could change. Said, and where; full access is never proposed.
+        // Asked to clean up a tree Daoris made, the helper otherwise says it could change nothing and lists
+        // commands, and never that this is a mode the person could change. Said, and where; full access is never proposed.
         text.Append("This is restricted mode. In full access you would act on this machine yourself; only the person chooses it,\n");
         text.Append("with `daoris ask-daoris mode full`, from the next conversation's start. When they ask why you cannot do\n");
         text.Append("something yourself, say so and where it is chosen: it is never yours to propose.\n\n");
-        // HELPMODE1c2a (D183's note): a discard of a session branch granted is the helper's to do through its tool.
+        // A discard of a session branch granted is the helper's to do through its tool.
         var discards = machine.Housekeeping.Contains(ConfiguredAccess.DiscardBranch);
         text.Append(discards
             ? "Never offer to push, merge, sign in, or handle a key: those stay the person's own presses,\n"
             : "Never offer to push, merge, discard, sign in, or handle a key: those stay the person's own presses,\n");
         text.Append("where they already are.\n\n");
         if (machine.Housekeeping.Count > 0) text.Append(Housekeeping(machine.Housekeeping, alone: machine.Settings.Count == 0));
-        // HELPMODE1c3 (D183's note): the chosen settings granted, changed by the helper's own tools with no Apply.
+        // The chosen settings granted, changed by the helper's own tools with no Apply.
         if (machine.Settings.Count > 0) text.Append(Settings(machine.Settings, alone: machine.Housekeeping.Count == 0));
-        // HELP4: the first repository question met a shell refused before it ran, then a guess at the
-        // repository's branches presented as its tree. HELP5: a later one spent a turn on a ticket's URL,
-        // refused the same way. Said plainly, so none of them happens again. D107: the checkouts reading
-        // across allows are read, since HELPMODE1c4, through one typed tool Daoris judges at each call, on
+        // A repository question otherwise meets a shell refused before it ran, then a guess at the
+        // repository's branches presented as its tree, or a turn spent on a ticket's URL,
+        // refused the same way. Said plainly, so none of them happens. The checkouts reading
+        // across allows are read through one typed tool Daoris judges at each call, on
         // every agent, which is still no shell; so the room names no path, which no tool of its takes.
         var reads = machine.Reads.Where(read => !machine.CheckoutsOff.Contains(read.Name, StringComparer.OrdinalIgnoreCase)).ToList();
         var off = machine.Reads.Where(read => !reads.Contains(read)).Select(read => $"`{read.Name}`").ToList();
@@ -93,7 +93,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("are cleaned up under the workspace's page → Branches → Session branches. When the family's knowledge and quests\n");
         text.Append("are all you can see, say what you could not see: never build a repository's state from its quests and\n");
         text.Append("present it as the tree.\n\n");
-        // HELPPLUG1a (D170 point 3): a plugin's server reaches it only where declared for it, and only its declared tools are
+        // A plugin's server reaches it only where declared for it, and only its declared tools are
         // allowed; what such a tool does outside Daoris is the plugin's, and Daoris itself still changes only by a proposal.
         if (machine.PluginServers.Count > 0)
         {
@@ -113,8 +113,8 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
             text.Append("a change to Daoris itself is still a proposal, with the tool for its kind.\n\n");
         }
 
-        // A manifest describes and grants nothing (D170's note): a server waiting for the person's approval is handed nothing.
-        // HELPPLUG1c: a server it lacked left Ask Daoris with nobody told; what it would have, and where it is approved, is said
+        // A manifest describes and grants nothing: a server waiting for the person's approval is handed nothing.
+        // A server it lacked left Ask Daoris with nobody told; what it would have, and where it is approved, is said
         // once at the start, and the helper proposes the approval rather than only opening the page.
         if (machine.PluginServersWaiting.Count > 0 || machine.PluginServersOffered.Count > 0)
         {
@@ -146,25 +146,25 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
             text.Append("only the writes they said they accept), rather than only taking them to the page.\n\n");
         }
 
-        // HELPPLUG1b (D170 point 4): the skills a plugin hands it, by the names the harness gives them.
+        // The skills a plugin hands it, by the names the harness gives them.
         if (machine.PluginSkills.Count > 0)
         {
             text.Append($"Plugins installed here also hand you these skills: {string.Join(", ", machine.PluginSkills.Select(skill => $"`{skill}`"))}.\n\n");
         }
 
-        // D170 point 2: asked to set a repository up, the helper said it had no shell and no door, as if that were a limit of its own.
+        // Asked to set a repository up, the helper said it had no shell and no door, as if that were a limit of its own.
         text.Append("Where you have no door to propose what the person wants, that is never a limit of yours: where the act is\n");
         text.Append("under *Done at a terminal* (below), name its command for the person to run.\n\n");
         if (reads.Count == 0 && off.Count > 0)
         {
-            // HELPMODE1c4: every readable checkout turned off under configured access, which is the person's choice for Ask Daoris
+            // Every readable checkout turned off under configured access, which is the person's choice for Ask Daoris
             // alone, not the repositories' reading switched off.
             text.Append("The person turned reading off for you in every checkout here under Ask Daoris's configured access. They\n");
             text.Append("turn one on again under Settings → AI features → Configured access → Reading checkouts.\n\n");
         }
         else if (machine.Reads.Count == 0 && machine.Repositories.Any(repository => repository.Checkout))
         {
-            // HELPSETUP1: a repository's reading is on its Setup since UX6f; a workspace's is on its own page since UX6g.
+            // A repository's reading is on its Setup; a workspace's is on its own page.
             text.Append("Reading the checkouts here is switched off. The person turns it on for a repository under\n");
             text.Append("Repositories → the repository's page → Setup → Reach, and for a whole workspace under\n");
             text.Append("Repositories → the workspace's page → Setup → Defaults → Read by agents outside, or with `daoris place across <repository> read on`\n");
@@ -175,7 +175,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
     }
 
     /// <summary>
-    /// HELPMODE1c2a (D183's note): the housekeeping the person granted, a change restricted mode makes itself (the one, where no
+    /// The housekeeping the person granted, a change restricted mode makes itself (the one, where no
     /// setting is granted beside it), each tool named with what it does, and what holds every one of them.
     /// </summary>
     private static string Housekeeping(IReadOnlyList<string> granted, bool alone)
@@ -207,7 +207,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
     }
 
     /// <summary>
-    /// HELPMODE1c3 (D183's note): the chosen settings the person granted, each changed by its own tool with no Apply, through the
+    /// The chosen settings the person granted, each changed by its own tool with no Apply, through the
     /// checks and writer Settings uses; every other setting is still proposed.
     /// </summary>
     private static string Settings(IReadOnlyList<string> granted, bool alone)
@@ -238,7 +238,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
     };
 
     /// <summary>
-    /// The section in full access (HELPMODE1a1, D183 points 1, 5): it acts on this machine itself, with every server the plugins here
+    /// The section in full access: it acts on this machine itself, with every server the plugins here
     /// declare; and the doctrine still speaks, a repository's work through a quest and Daoris's own housekeeping its to do. Nothing
     /// restricted mode's alone is said: no shell refused, nothing waiting for approval, no reading switched off.
     /// </summary>
@@ -251,7 +251,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("so say what you will do before you do it, and what you did after; the proposal tools (below) still serve\n");
         text.Append("where the person would rather press it themselves. Read the family through `daoris-knowledge` (the registry,\n");
         text.Append("its knowledge, its quests) when the question needs more than this page.\n\n");
-        // D183 point 5: words, not a gate; the mode is the gate.
+        // Words, not a gate; the mode is the gate.
         text.Append("A repository's own work (its branches, its uncommitted work, what is ready to push) is still asked for through\n");
         text.Append("a quest: propose an ask for it with `ask_propose`, so that repository's agent does it with its own tools, or\n");
         text.Append("take the person there with `go_propose`, the repository and their words filled.\n");
@@ -274,24 +274,24 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
     }
 }
 
-/// <summary>A checkout Ask Daoris may read (D107): its repository, its workspace, and where it is.</summary>
+/// <summary>A checkout Ask Daoris may read: its repository, its workspace, and where it is.</summary>
 public sealed record HelpRead(string Name, string Workspace, string Path);
 
-/// <summary>A server a plugin hands Ask Daoris (HELPPLUG1a): the plugin, the server's name, and the tools that read it may call there.</summary>
+/// <summary>A server a plugin hands Ask Daoris: the plugin, the server's name, and the tools that read it may call there.</summary>
 public sealed record HelpPluginServer(string Plugin, string Server, IReadOnlyList<string> Tools)
 {
     /// <summary>
-    /// The writes outside Daoris the person accepted, which it may call too; for one that waits, every write it declares
-    /// (HELPPLUG1c), each the person's to accept.
+    /// The writes outside Daoris the person accepted, which it may call too; for one that waits, every write it declares,
+    /// each the person's to accept.
     /// </summary>
     public IReadOnlyList<string> Writes { get; init; } = [];
 
-    /// <summary>For one that waits: approved once, and an update has changed its tools since (HELPPLUG1c).</summary>
+    /// <summary>For one that waits: approved once, and an update has changed its tools since.</summary>
     public bool Changed { get; init; }
 }
 
 /// <summary>
-/// A server the install's newer copy of a plugin installed here offers Ask Daoris, which the installed copy does not
-/// (HELPPLUG1c): the plugin, the server, and the two versions.
+/// A server the install's newer copy of a plugin installed here offers Ask Daoris, which the installed copy does not:
+/// the plugin, the server, and the two versions.
 /// </summary>
 public sealed record HelpPluginServerOffered(string Plugin, string Server, string Installed, string Shipped);

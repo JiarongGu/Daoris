@@ -3,7 +3,7 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a reader asks of a registered door beyond its record (AGENTPROVIDER1 row t): the abilities it can state, the spawn and the
+/// What a reader asks of a registered door beyond its record: the abilities it can state, the spawn and the
 /// dialect its parts hold, and, through the registry, what its provider adds: the variables a start strips, the rule language, the
 /// skill layout and the maker. A door with no spawn declared is refused by name, never run.
 /// </summary>

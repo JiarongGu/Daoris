@@ -5,14 +5,14 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>The kinds a <see cref="SessionEvent"/> can be — Daoris's own vocabulary (D76 §1).</summary>
+/// <summary>The kinds a <see cref="SessionEvent"/> can be — Daoris's own vocabulary.</summary>
 /// <remarks>
 /// Small on purpose. Each door maps its own wire into these (ACP's <c>session/update</c> here, Claude
 /// Code's <c>stream-json</c> in its adapter), so the page learns one model and never a harness's.
 /// </remarks>
 public static class SessionEventKind
 {
-    /// <summary>What was asked: the person's message, or the target the driver composed.</summary>
+    /// <summary>What is asked: the person's message, or the target the driver composes.</summary>
     public const string User = "user";
 
     /// <summary>The agent's words — a chunk; consecutive chunks are one message.</summary>
@@ -27,7 +27,7 @@ public static class SessionEventKind
     /// <summary>The agent's plan, whole each time it changes.</summary>
     public const string Plan = "plan";
 
-    /// <summary>Context pressure as the harness reported it (TOOL3) — never computed here.</summary>
+    /// <summary>Context pressure as the harness reports it — never computed here.</summary>
     public const string Usage = "usage";
 
     /// <summary>A turn ended, with the wire's stop reason: a self-report, never the record's conclusion.</summary>
@@ -37,7 +37,7 @@ public static class SessionEventKind
     public const string Note = "note";
 
     /// <summary>
-    /// A transient episode's quiet event (AGENTERRORS1a2, D210, the agent-errors design §5.1, §8): a try going, its number in
+    /// A transient episode's quiet event: a try going, its number in
     /// <see cref="SessionEvent.Try"/>, or a wait beginning, the moment it ends in <see cref="SessionEvent.Next"/>. Never a line: the
     /// session's head reads it, saying <i>Trying again at</i> while a wait runs and nothing while a try runs.
     /// </summary>
@@ -47,27 +47,27 @@ public static class SessionEventKind
     public const string Raw = "raw";
 
     /// <summary>
-    /// What the door observed of a word under its <see cref="SessionEvent.Id"/> (COWORK1c, D188 point 7; the message-urgency design §7),
-    /// as <see cref="SessionEvent.Receipt"/> says: each written only where it was observed. <i>Taken</i> is the word's own event as
+    /// What the door observed of a word under its <see cref="SessionEvent.Id"/>,
+    /// as <see cref="SessionEvent.Receipt"/> says: each written only where it is observed. <i>Taken</i> is the word's own event as
     /// the turn's ask, and <i>uncertain</i> the <see cref="SessionEventCodes.Lost"/> note.
     /// </summary>
     public const string Receipt = "receipt";
 }
 
-/// <summary>The receipts a <see cref="SessionEventKind.Receipt"/> event names (COWORK1c, the message-urgency design §7).</summary>
+/// <summary>The receipts a <see cref="SessionEventKind.Receipt"/> event names.</summary>
 public static class Receipts
 {
     /// <summary>The write to the harness returned: the prompt, the steer or the resume's opening. Never the prompt's answer.</summary>
     public const string Sent = "sent";
 
     /// <summary>
-    /// The turn that took the word ended <c>end_turn</c> (COMMS1h): what Daoris saw, said <i>taken, turn ended</i> and never an answer.
+    /// The turn that took the word ended <c>end_turn</c>: what Daoris saw, said <i>taken, turn ended</i> and never an answer.
     /// </summary>
     public const string Ended = "ended";
 }
 
 /// <summary>
-/// The codes a driver's note in a conversation carries where the page words it itself (MSG1c3, D142 point 1): each the page's
+/// The codes a driver's note in a conversation carries where the page words it itself: each the page's
 /// <c>work.conversation.&lt;code&gt;</c>, worded in both catalogues. A note with none is the driver's English, shown as written.
 /// </summary>
 /// <remarks>
@@ -78,20 +78,20 @@ public static class Receipts
 public static class SessionEventCodes
 {
     /// <summary>
-    /// A word handed to a turn at its next step that the person's stop cut off on its way (MSG1c, STEER1 §3): the agent may
-    /// have read it, and its answer was not kept.
+    /// A word handed to a turn at its next step that the person's stop cuts off on its way: the agent may
+    /// have read it, and its answer is not kept.
     /// </summary>
     public const string Lost = "lost";
 
     /// <summary>
-    /// A word the person took back, or reworded, while it still waited (QUEUEEDIT1a): the record showed it waiting under its
+    /// A word the person took back, or reworded, while it still waited: the record shows it waiting under its
     /// id, and this settles it as never taken.
     /// </summary>
     public const string Withdrawn = "withdrawn";
 
     /// <summary>
-    /// Daoris's own word dropped where it was to be delivered (COWORK1b, the message-urgency design §4.3): the fact it stated no
-    /// longer held, a reopen a later submission answered or a go-on moved past, so it was never said late.
+    /// Daoris's own word dropped where it is to be delivered: the fact it stated no
+    /// longer holds, a reopen a later submission answers or a go-on moves past, so it is never said late.
     /// </summary>
     public const string Dropped = "dropped";
 
@@ -100,8 +100,8 @@ public static class SessionEventCodes
 }
 
 /// <summary>
-/// The notes every door keeps of a word the person took back (WITHDRAWNLINE1): the driver's terminal and conversations, and the
-/// modules' bridge, keep one shape, so the page settles the word it showed waiting however it was taken back.
+/// The notes every door keeps of a word the person took back: the driver's terminal and conversations, and the
+/// modules' bridge, keep one shape, so the page settles the word it shows waiting however it is taken back.
 /// </summary>
 public static class SessionNotes
 {
@@ -112,8 +112,8 @@ public static class SessionNotes
     public const string WithdrawnLine = "— taken back before it was sent.";
 
     /// <summary>
-    /// The line a record keeps of a word taken back or reworded while it waited (QUEUEEDIT1a): its code, which the page words as
-    /// <c>work.conversation.withdrawn</c>, and the word's id, so the page settles the word it showed waiting.
+    /// The line a record keeps of a word taken back or reworded while it waited: its code, which the page words as
+    /// <c>work.conversation.withdrawn</c>, and the word's id, so the page settles the word it shows waiting.
     /// </summary>
     public static SessionEvent Withdrawn(string word) =>
         new() { Kind = SessionEventKind.Note, Text = WithdrawnLine, Words = [word], Code = SessionEventCodes.Withdrawn };
@@ -127,23 +127,23 @@ public sealed record ToolContent(
 public sealed record PlanEntry(string Content, string? Status = null, string? Priority = null);
 
 /// <summary>
-/// What one turn consumed, as the harness reported it for the whole turn (CONV5): new input, output,
-/// input read from its cache, and input written to it. Each is null where the wire did not say — never
-/// zero (TOOL3).
+/// What one turn consumed, as the harness reports it for the whole turn: new input, output,
+/// input read from its cache, and input written to it. Each is null where the wire does not say — never
+/// zero.
 /// </summary>
 /// <remarks>
-/// Counts only. The total is their sum and is not kept twice; the cost stays on the wire, and the record keeps no model's name
-/// (D24, TOOL3): the models ride the turn's event to the usage history alone (<see cref="SessionEvent.Models"/>, USAGECAP1a2).
-/// Measured on both doors: docs/2026-09-25-stream-json-evidence.md, § CONV5.
+/// Counts only. The total is their sum and is not kept twice; the cost stays on the wire, and the record keeps no model's name:
+/// the models ride the turn's event to the usage history alone (<see cref="SessionEvent.Models"/>).
+/// Measured on both doors.
 /// </remarks>
 public sealed record TurnTokens(long? Input, long? Output, long? CacheRead, long? CacheWrite)
 {
     /// <summary>
-    /// Four counts from a wire's usage object, by that wire's own names — or null when it named none, or
-    /// named every one as zero.
+    /// Four counts from a wire's usage object, by that wire's own names — or null when it names none, or
+    /// names every one as zero.
     /// </summary>
     /// <remarks>
-    /// 🔴 <b>All zero is no report</b> (seen on the window, CONV5): <c>claude-code-acp</c> tallies a turn
+    /// 🔴 <b>All zero is no report</b>: <c>claude-code-acp</c> tallies a turn
     /// at its <c>result</c>, so a turn cancelled before one answers with every count zero, after reading
     /// the whole context. No turn that ran read nothing, and a zero here would claim one did.
     /// </remarks>
@@ -162,8 +162,8 @@ public sealed record TurnTokens(long? Input, long? Output, long? CacheRead, long
 }
 
 /// <summary>
-/// What a session spent, summed from its turns (SESSCTX1d, <see cref="SessionEvents.Spent"/>): the turns that ended, those whose
-/// door said what they consumed, and each count over those, null where none said it, never zero (TOOL3).
+/// What a session spent, summed from its turns (<see cref="SessionEvents.Spent"/>): the turns that ended, those whose
+/// door said what they consumed, and each count over those, null where none said it, never zero.
 /// </summary>
 public sealed record SessionSpent(int Turns, int Reported, long? Input, long? Output, long? CacheRead, long? CacheWrite)
 {
@@ -181,7 +181,7 @@ public sealed record SessionSpent(int Turns, int Reported, long? Input, long? Ou
 }
 
 /// <summary>
-/// One thing a session did, in Daoris's vocabulary (D76 §1): what the page renders a conversation
+/// One thing a session did, in Daoris's vocabulary: what the page renders a conversation
 /// from, live and after a restart.
 /// </summary>
 /// <remarks>
@@ -199,7 +199,7 @@ public sealed record SessionEvent
     public required string Kind { get; init; }
 
     /// <summary>
-    /// A tool call's id: its later updates carry the same one. For the person's words to a driven session (STEER1, D136):
+    /// A tool call's id: its later updates carry the same one. For the person's words to a driven session:
     /// the id that pairs the words shown while they wait (<see cref="Reaches"/>) with the same words where it took them.
     /// </summary>
     public string? Id { get; init; }
@@ -213,20 +213,20 @@ public sealed record SessionEvent
     public string? Origin { get; init; }
 
     /// <summary>
-    /// For <see cref="SessionEventKind.User"/>: <c>daoris</c> on Daoris's own words to the session (COWORK1b, D188), a reopen told or
+    /// For <see cref="SessionEventKind.User"/>: <c>daoris</c> on Daoris's own words to the session, a reopen told or
     /// a step's go-on, whose <see cref="Origin"/> is <c>target</c>, so a page that does not read this field shows them as what Daoris
-    /// handed the session, never as the person's. Null on every other event, and on a record from before.
+    /// handed the session, never as the person's. Null on every other event, and on a record without it.
     /// </summary>
     public string? From { get; init; }
 
     /// <summary>
-    /// For <see cref="SessionEventKind.User"/>: true on the watcher's word to a quiet session (SESSWATCH1b, <c>QuietWord</c>), which is
+    /// For <see cref="SessionEventKind.User"/>: true on the watcher's word to a quiet session (<c>QuietWord</c>), which is
     /// Daoris's but starts no go-on and resets no answers-alone count (<see cref="AnswersAlone"/>). Null on every other event.
     /// </summary>
     public bool? Watcher { get; init; }
 
     /// <summary>
-    /// For the turn Daoris handed a session with another agent's findings (XAGENT1e, D155 point 7): the second opinion they are
+    /// For the turn Daoris handed a session with another agent's findings: the second opinion they are
     /// from. Its <see cref="Origin"/> is <c>target</c>, since the words are Daoris's fixed words around that agent's claims, so a
     /// page that does not read this field shows them as what Daoris handed the session and never as the person's. And for the
     /// driver's note on how the session answered them, read as its turn ended. Null on every other event.
@@ -234,101 +234,98 @@ public sealed record SessionEvent
     public string? Opinion { get; init; }
 
     /// <summary>
-    /// For <see cref="SessionEventKind.User"/>: the helper session whose answer these words are (COWORK1e, D188 point 4), as its word on
+    /// For <see cref="SessionEventKind.User"/>: the helper session whose answer these words are, as its word on
     /// the record names it, so the answers-alone bound tells a helper's answer from Daoris's composed prompt (<see cref="AnswersAlone"/>).
-    /// Its <see cref="Origin"/> is <c>target</c>, as before. Null on every other event, and on a record from before, read as it was.
+    /// Its <see cref="Origin"/> is <c>target</c>. Null on every other event, and on a record without it.
     /// </summary>
     public string? Helper { get; init; }
 
     /// <summary>
-    /// For <see cref="SessionEventKind.User"/>: the ask's channel message these words carry (SESSONE2b), by its id (SESSCTX1b, the
-    /// session-context design §7), so the page and a brief tell a channel's message by this mark, as an opinion's is, and never by
+    /// For <see cref="SessionEventKind.User"/>: the ask's channel message these words carry, by its id, so the page and a brief tell a channel's message by this mark, as an opinion's is, and never by
     /// the English Daoris wraps another session's claim in. Its <see cref="Origin"/> says whose: <c>target</c> for another session's
-    /// claim, <c>person</c> for theirs. Null on every other event, and on a record from before, which the page still reads by the
+    /// claim, <c>person</c> for theirs. Null on every other event, and on a record without it, which the page reads by the
     /// claim's opening.
     /// </summary>
     public string? Channel { get; init; }
 
     /// <summary>
-    /// For <see cref="SessionEventKind.User"/>: the answer of its park's question the person pressed (PARKVIEW1, the park's ask design
-    /// §4), as the question offered it: the words begin with this label, then the person's own after a blank line. So the page draws a
+    /// For <see cref="SessionEventKind.User"/>: the answer of its park's question the person pressed, as the question offers it: the words begin with this label, then the person's own after a blank line. So the page draws a
     /// choice as one, and the resumed run is handed it as <c>chose: &lt;label&gt;</c> (<see cref="SaidWordView.Handed"/>). Null on every
-    /// other event, and on a record from before, read as it was.
+    /// other event, and on a record without it.
     /// </summary>
     public string? Choice { get; init; }
 
     /// <summary>
-    /// For <see cref="SessionEventKind.User"/>: on the brief a new part is handed as its first prompt (SESSCTX1b, the session-context
-    /// design §3.4), the session it continues. Its <see cref="Origin"/> is <c>target</c> and it carries its <see cref="Account"/>, so
+    /// For <see cref="SessionEventKind.User"/>: on the brief a new part is handed as its first prompt, the session it continues. Its <see cref="Origin"/> is <c>target</c> and it carries its <see cref="Account"/>, so
     /// it reads as an instruction does; no person said it, so it never names the conversation (<see cref="SessionEvents.Openings"/>).
     /// Null on every other event.
     /// </summary>
     public string? Continues { get; init; }
 
     /// <summary>
-    /// For the person's words to a driven session, on the event that shows them the moment they are said (STEER1, D136):
-    /// when they reach it, <c>next-step</c> or <c>turn-end</c>, or <c>now</c> where the person's *Send now* steered them into
-    /// the running turn (STEER2a). The words where the session took them come again without it, under the same
+    /// For the person's words to a driven session, on the event that shows them the moment they are said:
+    /// when they reach it, <c>next-step</c> or <c>turn-end</c>, or <c>now</c> where the person's *Send now* steers them into
+    /// the running turn. The words where the session took them come again without it, under the same
     /// <see cref="Id"/>, and that one is the turn's ask.
     /// </summary>
     public string? Reaches { get; init; }
 
     /// <summary>
-    /// For the person's words shown the moment they are said to a running session (COWORK1a, D188 point 1): the urgency they
-    /// asked for, <c>ordinary</c>, <c>urgent</c> or <c>now</c>, beside <see cref="Reaches"/>, what the door gave. A word whose level
+    /// For the person's words shown the moment they are said to a running session: the urgency they
+    /// ask for, <c>ordinary</c>, <c>urgent</c> or <c>now</c>, beside <see cref="Reaches"/>, what the door gave. A word whose level
     /// changes while it waits is told again under the same <see cref="Id"/>, and the latest says where it stands. Null on a record
-    /// from before, read as it was.
+    /// without it.
     /// </summary>
     public string? Level { get; init; }
 
     /// <summary>
-    /// For the person's words shown the moment they are said (MSG1d, D137 §3.3): the door they were said at, <c>screen</c> or
+    /// For the person's words shown the moment they are said: the door they were said at, <c>screen</c> or
     /// <c>terminal</c>, which the machine log's <c>session.reopened</c> names when the words reopen the session. Null where
-    /// the door kept none.
+    /// the door keeps none.
     /// </summary>
     public string? Door { get; init; }
 
     /// <summary>
-    /// For the driver's note about the person's words (MSG1d, D137 §3.1): the ids of the words it speaks of, as their record
-    /// gave them, so the note pairs with where the words were shown.
+    /// For the driver's note about the person's words: the ids of the words it speaks of, as their record
+    /// gives them, so the note pairs with where the words are shown.
     /// </summary>
     public IReadOnlyList<string>? Words { get; init; }
 
     /// <summary>
-    /// For the driver's note that the person's words went to a new session (MSG1d, D137 §3.1): that session's id, which the
+    /// For the driver's note that the person's words went to a new session: that session's id, which the
     /// page links.
     /// </summary>
     public string? To { get; init; }
 
     /// <summary>
-    /// For the driver's note about the person's words (MSG1d, D137 §5.1): why they did not go on in this session, a code of
+    /// For the driver's note about the person's words: why they did not go on in this session, a code of
     /// <see cref="ContinueWhy"/>. A reason is chrome, so the page says it in its own words from the code; the line beside it
     /// is the driver's English.
     /// </summary>
     public string? Why { get; init; }
 
     /// <summary>
-    /// For a driver's note the page words itself (MSG1c3, D142 point 1): a code of <see cref="SessionEventCodes"/>. Daoris's
+    /// For a driver's note the page words itself: a code of <see cref="SessionEventCodes"/>. Daoris's
     /// own line is chrome, so the page says it from the code in the reader's language; <see cref="Text"/> beside it stays the
     /// driver's English, for the console, the terminal and a page that does not know the code.
     /// </summary>
     public string? Code { get; init; }
 
     /// <summary>
-    /// For <see cref="SessionEventKind.Receipt"/> (COWORK1c): what was observed of the word under <see cref="Id"/>, one of
+    /// For <see cref="SessionEventKind.Receipt"/>: what is observed of the word under <see cref="Id"/>, one of
     /// <see cref="Receipts"/>. Null on every other event.
     /// </summary>
     public string? Receipt { get; init; }
 
     /// <summary>
-    /// For a driver's note whose lines are worded by code (LAND2b, LANG1a): its parts, as a session record's note carries them
+    /// For a driver's note whose lines are worded by code: its parts, as a session record's note carries them
     /// beside its English (<see cref="NotePart"/>), each coded part from <see cref="NoteCodes"/>. <see cref="Text"/> stays the
     /// whole English, for the console, the terminal, the trace and a page that does not read the parts. Null on every other.
     /// </summary>
     public IReadOnlyList<NotePart>? Parts { get; init; }
 
     /// <summary>
-    /// For <see cref="SessionEventKind.User"/>: the names of the files the person attached (CONV4c) —
+    /// For <see cref="SessionEventKind.User"/>: the names of the files the person attached —
     /// names, never the kept paths or the lines Daoris added to reach them.
     /// </summary>
     public IReadOnlyList<string>? Files { get; init; }
@@ -341,16 +338,16 @@ public sealed record SessionEvent
     public string? Status { get; init; }
 
     /// <summary>
-    /// For a refused call (<see cref="Status"/> <c>refused</c>): the tool's own name, where the wire named one
-    /// (UNBLOCK5). The native door's refusal carries it (<c>tool_name</c>, such as <c>Bash</c>). The protocol
+    /// For a refused call (<see cref="Status"/> <c>refused</c>): the tool's own name, where the wire names one.
+    /// The native door's refusal carries it (<c>tool_name</c>, such as <c>Bash</c>). The protocol
     /// door's wire names a call's kind and title and never its tool, so its refusals carry none.
     /// </summary>
     public string? ToolName { get; init; }
 
     /// <summary>
-    /// For a refused call: what decided it, in the wire's own word where it gave one (UNBLOCK5). The native
+    /// For a refused call: what decided it, in the wire's own word where it gives one. The native
     /// door's refusal carries <c>decision_reason_type</c> (<c>rule</c>, <c>mode</c>, <c>classifier</c>,
-    /// <c>asyncAgent</c>), never the reason's sentence. Null where the wire said nothing, as the protocol
+    /// <c>asyncAgent</c>), never the reason's sentence. Null where the wire says nothing, as the protocol
     /// door's permission request does not.
     /// </summary>
     public string? RefusedBy { get; init; }
@@ -359,8 +356,8 @@ public sealed record SessionEvent
     public IReadOnlyList<string>? Locations { get; init; }
 
     /// <summary>
-    /// The line the first of <see cref="Locations"/> names, where the wire carried one (ACP's
-    /// <c>locations[].line</c>, LEFT2): the file a card opens, at the place the adapter says. In the adapter's own
+    /// The line the first of <see cref="Locations"/> names, where the wire carries one (ACP's
+    /// <c>locations[].line</c>): the file a card opens, at the place the adapter says. In the adapter's own
     /// terms, never inferred; the native door carries none.
     /// </summary>
     public long? Line { get; init; }
@@ -374,7 +371,7 @@ public sealed record SessionEvent
     public string? Output { get; init; }
 
     /// <summary>
-    /// For a card that stands for something the session runs beside itself (CONSOLE2): the stream its
+    /// For a card that stands for something the session runs beside itself: the stream its
     /// own console is kept under, as <see cref="SessionStream.Id"/> names it.
     /// </summary>
     public string? Stream { get; init; }
@@ -383,31 +380,31 @@ public sealed record SessionEvent
 
     public long? Used { get; init; }
 
-    /// <summary>For <see cref="SessionEventKind.Transient"/> (AGENTERRORS1a2): the try going, counted from one; null for a wait.</summary>
+    /// <summary>For <see cref="SessionEventKind.Transient"/>: the try going, counted from one; null for a wait.</summary>
     public int? Try { get; init; }
 
-    /// <summary>For <see cref="SessionEventKind.Transient"/> (AGENTERRORS1a2): when the wait beginning ends and the next try goes.</summary>
+    /// <summary>For <see cref="SessionEventKind.Transient"/>: when the wait beginning ends and the next try goes.</summary>
     public DateTimeOffset? Next { get; init; }
 
     public long? Size { get; init; }
 
     public string? StopReason { get; init; }
 
-    /// <summary>For <see cref="SessionEventKind.Turn"/>: what the turn consumed, where the wire said (CONV5).</summary>
+    /// <summary>For <see cref="SessionEventKind.Turn"/>: what the turn consumed, where the wire says.</summary>
     public TurnTokens? Tokens { get; init; }
 
     /// <summary>
-    /// For <see cref="SessionEventKind.Turn"/>: which models its tokens were spent on, as its door said them (USAGECAP1a2, D179
-    /// point 2). Never written on the event log: it rides in memory to the history's watch and D205's provenance watch;
+    /// For <see cref="SessionEventKind.Turn"/>: which models its tokens are spent on, as its door says them.
+    /// Never written on the event log: it rides in memory to the history's watch and the provenance watch;
     /// reported names are kept separately on the machine-local service record. A replayed event has none.
     /// </summary>
     [JsonIgnore]
     public TurnModels? Models { get; init; }
 
     /// <summary>
-    /// For the instruction the driver composed (origin <c>target</c>): what it was handed, section by section (CONTEXT1, D143
-    /// point 1): each section's size, its source and what its bound left out, and what was handed beside it. Null on every
-    /// other event, and on an instruction handed before the account was kept.
+    /// For the instruction the driver composed (origin <c>target</c>): what it is handed, section by section:
+    /// each section's size, its source and what its bound leaves out, and what is handed beside it. Null on every
+    /// other event, and on an instruction whose account is not kept.
     /// </summary>
     public InstructionAccount? Account { get; init; }
 
@@ -416,15 +413,15 @@ public sealed record SessionEvent
 }
 
 /// <summary>
-/// Where a search found its words (RAIL1): the session, the event its passage began at, whose words
-/// they were (<see cref="SessionEventKind.User"/> or <see cref="SessionEventKind.Message"/>), and a
+/// Where a search finds its words: the session, the event its passage begins at, whose words
+/// they are (<see cref="SessionEventKind.User"/> or <see cref="SessionEventKind.Message"/>), and a
 /// window of the text around the match.
 /// </summary>
 public sealed record SessionHit(string Session, long Seq, string Kind, string Snippet);
 
 /// <summary>What a search found, and whether its bounds left anything out.</summary>
-/// <param name="Cut">Whether anything was left out: a session on this page held more hits than it shows, or more sessions follow.</param>
-/// <param name="Total">The sessions with a hit, all pages (RAILPAGE1a); a search within one session counts it as one.</param>
+/// <param name="Cut">Whether anything is left out: a session on this page holds more hits than it shows, or more sessions follow.</param>
+/// <param name="Total">The sessions with a hit, all pages; a search within one session counts it as one.</param>
 /// <param name="Next">Where the next page starts, in sessions; null on the last.</param>
 public sealed record SessionSearch(IReadOnlyList<SessionHit> Hits, bool Cut, int Total = 0, int? Next = null);
 
@@ -434,21 +431,21 @@ public sealed record SessionSearch(IReadOnlyList<SessionHit> Hits, bool Cut, int
 public sealed record EventPage(IReadOnlyList<SessionEvent> Events, bool Earlier, long Latest)
 {
     /// <summary>
-    /// What the session was first asked, where this page does not hold it (SESS1): a long run is read
+    /// What the session is first asked, where this page does not hold it: a long run is read
     /// from its ask, and the newest page of one is hundreds of events past it. Null when the page holds
-    /// it, or nothing was asked.
+    /// it, or nothing is asked.
     /// </summary>
     public SessionEvent? Opening { get; init; }
 
     /// <summary>
-    /// Where the session's first failed call began (SESS1 S9), wherever it is in the run — the call's
+    /// Where the session's first failed call began, wherever it is in the run — the call's
     /// first event, since the failure is an update to it — or null when no call failed.
     /// </summary>
     public long? FirstFailure { get; init; }
 }
 
 /// <summary>
-/// The rules a session's record keeps apart from the file it is kept in (D76 §2, STRUCT3g-i): its bounds, how it is spelled,
+/// The rules a session's record keeps apart from the file it is kept in: its bounds, how it is spelled,
 /// what an id may be and how a text is cut or searched. <see cref="SessionEvents"/> keeps the file; a caller names these here.
 /// </summary>
 public static class SessionEventText
@@ -483,7 +480,7 @@ public static class SessionEventText
     /// <summary>
     /// Whether this is a session id — the one check for everything named by one under the home (the
     /// record here, a conversation's kept files), so an id that arrives from a page never names a path. It keeps <c>:</c>
-    /// for a remote's <c>machine:id</c> form (DEDUP6): each side of one is held to the folder rule, so a trailing newline,
+    /// for a remote's <c>machine:id</c> form: each side of one is held to the folder rule, so a trailing newline,
     /// a trailing dot or a device name is no id either.
     /// </summary>
     public static bool IsId(string? sessionId) =>
@@ -496,7 +493,7 @@ public static class SessionEventText
     public static bool IsLocalId(string? sessionId) => IsId(sessionId) && SafeNames.IsFolderId(sessionId!);
 
     /// <summary>
-    /// Whether these words are enough to search with (ASKHIST1d): two characters, or one Han character, which is a word on its
+    /// Whether these words are enough to search with: two characters, or one Han character, which is a word on its
     /// own (区, 圈). One letter of any other script would find nearly everything, so it finds nothing.
     /// </summary>
     public static bool Searchable(string? words)
@@ -517,7 +514,7 @@ public static class SessionEventText
         return $"{(start > 0 ? "…" : "")}{window}{(end < text.Length ? "…" : "")}";
     }
 
-    /// <summary>An event with each large field cut to its limit, saying how long it was.</summary>
+    /// <summary>An event with each large field cut to its limit, saying its full length.</summary>
     internal static SessionEvent Bound(SessionEvent e) => e with
     {
         Text = Cut(e.Text, TextLimit),
@@ -532,7 +529,7 @@ public static class SessionEventText
         Raw = Cut(e.Raw, RawLimit),
     };
 
-    /// <summary>A field cut to a limit, saying how long it was — never silently shortened.</summary>
+    /// <summary>A field cut to a limit, saying its full length — never silently shortened.</summary>
     internal static string? Cut(string? text, int limit) =>
         TextBounds.ClipCounted(text, limit);
 }

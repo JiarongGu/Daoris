@@ -7,7 +7,7 @@ internal static class CommitTrailers
 {
     // The registration declares the maker; the harness knows the model actually selected for the turn.
     // Account settings may be aliases or defaults, and a continued session may have changed maker.
-    // MAKERTRAIL2: a carry-on whose earlier part ran on another maker and left work uncommitted is told that maker's trailer too.
+    // A carry-on whose earlier part ran on another maker and left work uncommitted is told that maker's trailer too.
     internal static string For(ProviderRegistry adapters, AgentDoor adapter, EarlierMaker? earlier = null)
     {
         var maker = adapters.MakerOf(adapter);
@@ -35,7 +35,7 @@ internal static class CommitTrailers
     }
 
     /// <summary>
-    /// The earlier maker's trailer, its model as that part's door reported it (MODELROLE1b), or <c>model unreported</c>: never the
+    /// The earlier maker's trailer, its model as that part's door reported it, or <c>model unreported</c>: never the
     /// new maker's, nor an account default.
     /// </summary>
     private static string Left(EarlierMaker earlier)

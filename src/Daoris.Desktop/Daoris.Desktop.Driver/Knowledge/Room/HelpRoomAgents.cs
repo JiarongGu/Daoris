@@ -3,8 +3,8 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The agents (HELP1a): each installed or not, and which of Daoris's accounts are signed in, by the tool's own
-/// answer — an account by its name, never its key (AGT3). One not installed is said, not dropped.
+/// The agents: each installed or not, and which of Daoris's accounts are signed in, by the tool's own
+/// answer — an account by its name, never its key. One not installed is said, not dropped.
 /// </summary>
 internal sealed class HelpRoomAgents : IHelpRoomSection
 {
@@ -27,18 +27,18 @@ internal sealed class HelpRoomAgents : IHelpRoomSection
 
         var named = string.Join(" ", new[] { agent.Product, agent.Version }.Where(part => part is { Length: > 0 }));
         var line = named.Length > 0 ? $"`{agent.Name}` ({named}): " : $"`{agent.Name}`: ";
-        // Only Daoris's accounts are signed in for Daoris (D175): the tool's own sign-in is not said here, and a start
-        // waits for a sign-in when no account is, as the roster's walk holds it (OWNSPACE1b-C).
+        // Only Daoris's accounts are signed in for Daoris: the tool's own sign-in is not said here, and a start
+        // waits for a sign-in when no account is, as the roster's walk holds it.
         var accounts = string.Join("; ", agent.Accounts.Select(account => $"account `{account.Name}` {Login(account.Login)}"));
         var noneSignedIn = agent.Accounts.All(account => account.Login == "out");
         if (accounts.Length > 0) line += accounts;
         if (noneSignedIn) line += (accounts.Length > 0 ? "; " : "") + "no Daoris account is signed in, so its starts wait for a sign-in";
-        // HELPSTUCK1: a folder beside the accounts that is no account, said so the helper can answer a person who misses one.
+        // A folder beside the accounts that is no account, said so the helper can answer a person who misses one.
         foreach (var stray in agent.Strays) line += (line.EndsWith(": ", StringComparison.Ordinal) ? "" : "; ") + StrayLine(stray);
         return line;
     }
 
-    /// <summary>A folder beside the accounts that is no account (HELPSTUCK1), with the way to keep a sign-in it holds.</summary>
+    /// <summary>A folder beside the accounts that is no account, with the way to keep a sign-in it holds.</summary>
     private static string StrayLine(StrayFolder stray)
     {
         var kind = stray.Name.StartsWith('.') ? "a hidden folder's name" : "a lock's name";
@@ -69,9 +69,9 @@ public sealed record HelpAgent(string Name)
 
     public IReadOnlyList<HelpAccount> Accounts { get; init; } = [];
 
-    /// <summary>The folders beside its accounts that are no account (HELPSTUCK1), each with whether it holds a sign-in.</summary>
+    /// <summary>The folders beside its accounts that are no account, each with whether it holds a sign-in.</summary>
     public IReadOnlyList<StrayFolder> Strays { get; init; } = [];
 }
 
-/// <summary>An account Daoris keeps for an agent, by its name — never its key (AGT3).</summary>
+/// <summary>An account Daoris keeps for an agent, by its name — never its key.</summary>
 public sealed record HelpAccount(string Name, string Login);

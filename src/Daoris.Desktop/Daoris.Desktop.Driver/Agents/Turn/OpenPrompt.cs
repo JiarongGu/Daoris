@@ -18,7 +18,7 @@ internal sealed class OpenPrompt(IAgentWord? words, IReadOnlyList<IAgentWord>? t
     public bool Taken { get; set; }
 
     /// <summary>
-    /// Whether an update of this prompt's turn came while it was the oldest open: what makes a word whose prompt then met an error taken,
+    /// Whether an update of this prompt's turn came while it is the oldest open: what makes a word whose prompt then met an error taken,
     /// where none makes it unacknowledged. Read from the turn, never from <see cref="Taken"/> alone.
     /// </summary>
     public bool Heard { get; set; }

@@ -1,16 +1,16 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Claude Code written on the contract (AGENTPROVIDER1 row d; the agent-provider design §2.3, §11): provider <c>claude-code</c> with its
+/// Claude Code written on the contract: provider <c>claude-code</c> with its
 /// two doors, <c>claude-code</c> on the pipe and <c>claude-code-acp</c> on the protocol, which runs as its accounts.
 /// </summary>
 /// <remarks>
-/// Each door's spawn is its own (<see cref="ClaudeCodeSpawn"/>, <see cref="ClaudeAcpSpawn"/>); its dialect is its class's until rows i and k. The
-/// protocol door's home variable and trust file are its own <see cref="DoorHome"/>, the same values as the pipe door's (O2-F2).
+/// Each door's spawn is its own (<see cref="ClaudeCodeSpawn"/>, <see cref="ClaudeAcpSpawn"/>); its dialect is its class's. The
+/// protocol door's home variable and trust file are its own <see cref="DoorHome"/>, the same values as the pipe door's.
 /// </remarks>
 internal static class ClaudeCodeProvider
 {
-    /// <summary>Its sign-in check (ACCOUNTID1: one email may sign in to two organisations; these tell the two accounts apart).</summary>
+    /// <summary>Its sign-in check (one email may sign in to two organisations; these tell the two accounts apart).</summary>
     /// <remarks>The CLI's twin is <c>toolchain.ts</c>' <c>claude-code</c> entry.</remarks>
     public static LoginQuestion Login { get; } = new(
         ["auth", "status"],
@@ -20,7 +20,7 @@ internal static class ClaudeCodeProvider
         Org: @"""orgName""\s*:\s*""([^""]+)""",
         Plan: @"""subscriptionType""\s*:\s*""([^""]+)""");
 
-    /// <summary>Its id, which the settings' <em>questions</em> pause also keeps as its one value: the console's way of asking (D184 point 4).</summary>
+    /// <summary>Its id, which the settings' <em>questions</em> pause also keeps as its one value: the console's way of asking.</summary>
     public const string Id = ConsoleProviderId.Value;
 
     private const string Evidence ="Claude Code's declaration";
@@ -31,26 +31,26 @@ internal static class ClaudeCodeProvider
     {
         var program = new ToolSpec(
             ["claude"], ["--version"], ["npm", "install", "-g", "@anthropic-ai/claude-code"], ["update"], Package: null,
-            // A pin comes from the release bucket, against its signed manifest (AGT2b).
+            // A pin comes from the release bucket, against its signed manifest.
             Channel: ClaudeReleases.Channel,
             PinnedEnvironment: ClaudeCodeSpawn.StayPinned,
             ProbeByPresence: false);
         var pool = new PoolFacts(
-            // An account that is an API key (AGT3), measured on 2.1.280.
+            // An account that is an API key, measured on 2.1.280.
             KeyVariable: "ANTHROPIC_API_KEY",
             Login: Login,
             LoginArguments: ["auth", "login"],
             DeviceLoginArguments: null,
             LoginPorts: null,
-            // Its user-tier settings, `model` and `effortLevel` among them (AGT6); the protocol door's are this one's.
+            // Its user-tier settings, `model` and `effortLevel` among them; the protocol door's are this one's.
             SettingsFile: AgentSettings.FileName,
-            // Its maker fixes an account's weekly reset at one time each week (TOOL6b, D130 §0.3 C1).
+            // Its maker fixes an account's weekly reset at one time each week.
             WeekFixed: true);
         var tables = new TablesPart(
             Limits: ClaudeLimits.Words,
             Windows: ClaudeWindows.Words,
             SignIn: ClaudeSignIn.Words,
-            // What it prints when its provider refuses the credential (AGT3b), measured on 2.1.280.
+            // What it prints when its provider refuses the credential, measured on 2.1.280.
             Refused: "API Error: 401",
             ErrorWords: ClaudeErrors.Words);
         var usage = new UsagePart(UsageReads.Of(ClaudeUsage.Question));
@@ -75,10 +75,10 @@ internal static class ClaudeCodeProvider
             Known<IDialect>.Declared(new ClaudeNativeDialect(), Evidence),
             new AbilitiesPart(
                 Known<bool>.Declared(true, Evidence),
-                // It resumes a conversation it kept by its id (`--resume`), measured (AGENTLYNTAI1s-i).
+                // It resumes a conversation it kept by its id (`--resume`), measured.
                 Known<bool>.Declared(true, Evidence),
                 Known<bool>.Declared(true, Evidence),
-                // Its servers inherit its environment (D70's driven path through the repository's own `.mcp.json`).
+                // Its servers inherit its environment (the driven path through the repository's own `.mcp.json`).
                 ServersInherit: Known<bool>.Declared(true, Evidence)),
             new DoorTablesPart(null, UsageHistory.PerTurn), null, skills);
         var protocol = new AgentDoor(
@@ -96,7 +96,7 @@ internal static class ClaudeCodeProvider
                 Known<bool>.Declared(true, Evidence),
                 Known<bool>.Declared(true, "the protocol transport's default", Eligibility.Applies),
                 Known<bool>.Declared(true, Evidence)),
-            // Its own server's word that -32000 means authentication required (AGENTERRORS1a), read before its provider's.
+            // Its own server's word that -32000 means authentication required, read before its provider's.
             new DoorTablesPart(ClaudeAcpErrors.Words, UsageHistory.PerTurn), new AccountKey("claude-code"), skills);
 
         return new Provider(

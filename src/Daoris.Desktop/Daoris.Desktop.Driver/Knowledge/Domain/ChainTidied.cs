@@ -4,7 +4,7 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a run's <c>tidy</c> ended of a landing's chain (D245 point 1), kept on the landing record as <c>tidied</c>: the landing's tip it ended
+/// What a run's <c>tidy</c> ended of a landing's chain, kept on the landing record as <c>tidied</c>: the landing's tip it ended
 /// the chain at, when, and each part. The keeper and the press read it for a part a squashing chain carried, and judge that part no more.
 /// </summary>
 /// <param name="Tip">The landing's tip its pull request merged at, which the <c>tidy</c> node is reached on.</param>
@@ -24,7 +24,7 @@ public sealed record ChainTidied(string Tip, DateTimeOffset At)
 /// <summary>One part of a chain the tidy ended: its session branch at the commit it ended it at.</summary>
 public sealed record TidiedPart(string Branch, string Tip)
 {
-    /// <summary>The recovery ref its commits are kept on, which the delete rested on; null where none was made.</summary>
+    /// <summary>The recovery ref its commits are kept on, which the delete rested on; null where none is made.</summary>
     public string? KeptOn { get; init; }
 
     /// <summary>The journal's <c>ref.delete</c> act that removed its branch, which <c>GIT_REF_UNDO</c> undoes; null where none ran.</summary>

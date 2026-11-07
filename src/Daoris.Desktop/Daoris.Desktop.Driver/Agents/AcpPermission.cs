@@ -49,7 +49,7 @@ internal sealed class AcpPermission(ITurnWiring wiring) : ITurnStage
             ? named : (JsonElement?)null;
         var callId = call is { } c && c.TryGetProperty("toolCallId", out var asked) && asked.ValueKind == JsonValueKind.String
             ? asked.GetString() : null;
-        // Said of every place a session runs, a repository, an intake's room, Ask Daoris's, since the rules it was handed and the
+        // Said of every place a session runs, a repository, an intake's room, Ask Daoris's, since the rules it is handed and the
         // place's own settings are what refused it, wherever that is.
         const string governs = "— the rules it runs under govern, and the driver may not widen them";
         wiring.Refused.Add(callId, Named(call).Trim('`'));
@@ -95,7 +95,7 @@ internal sealed class AcpPermission(ITurnWiring wiring) : ITurnStage
     }
 
     /// <summary>
-    /// Hold a permission request for the person where the session's posture says the person answers them and it was given a door
+    /// Hold a permission request for the person where the session's posture says the person answers them and it has a door
     /// (<see cref="ITurnWiring.Permissions"/>): listed with what the person may choose, said on the console and in the record, and
     /// answered off the read loop once the person answers or it is released. False leaves it to the refusal.
     /// </summary>
@@ -105,7 +105,7 @@ internal sealed class AcpPermission(ITurnWiring wiring) : ITurnStage
     /// writer as every other frame.</para>
     ///
     /// <para><b>A request this client cannot read is still refused at once</b>: params or options of an unexpected shape hold nothing,
-    /// and the refusal answers it as it always did.</para>
+    /// and the refusal answers it.</para>
     /// </remarks>
     private bool HoldPermission(JsonElement id, JsonElement frame)
     {
@@ -171,7 +171,7 @@ internal sealed class AcpPermission(ITurnWiring wiring) : ITurnStage
     /// <summary>
     /// The answer to a held request, once the person answers it or it is released: the option the person chose where it allows the
     /// call, else the offered rejection they chose, else <c>cancelled</c>; said on the console and in the record, and sent unless the
-    /// stream is over. A call it did not allow is marked refused, so its later <c>failed</c> reads as what it was.
+    /// stream is over. A call it did not allow is marked refused, so its later <c>failed</c> reads as what it is.
     /// </summary>
     private async Task AnsweredAsync(JsonElement id, string raw, string? callId, string title, Task<PermissionEnd> held, TimeSpan bound)
     {
@@ -237,7 +237,7 @@ internal sealed class AcpPermission(ITurnWiring wiring) : ITurnStage
         }
         catch (Exception error) when (error is IOException or ObjectDisposedException or InvalidOperationException)
         {
-            // The agent's input closed as it was answered: its stream's end says the rest.
+            // The agent's input closed as it is answered: its stream's end says the rest.
         }
     }
 

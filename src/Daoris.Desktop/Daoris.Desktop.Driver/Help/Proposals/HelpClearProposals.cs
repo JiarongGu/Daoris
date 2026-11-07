@@ -6,25 +6,25 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's <c>clear</c> proposal (HIST1f-b, D153, the history-clearing design §6.4): what this machine kept of finished work
+/// Ask Daoris's <c>clear</c> proposal: what this machine kept of finished work
 /// cleared from it, as the pages' *Clear from this machine…* and *Clear history…* and the terminal's history clears do. Its doors
 /// are <c>quest</c>, <c>ask</c>, <c>failed</c> and <c>workspace</c>, its target the quest's id, the ask's id or the workspace's name, as the
 /// service's box writes it. It is judged by what <see cref="HistoryClearing.PlanAsync"/> answers, the screen's first press, and
 /// applied through its second, <see cref="HistoryClearing.ClearAsync"/>.
 /// </summary>
 /// <remarks>
-/// <para><b>The card is the first press, Apply the second</b> (§5, §6.4): the card says what would go, counted in the terminal's
+/// <para><b>The card is the first press, Apply the second</b>: the card says what would go, counted in the terminal's
 /// words, every kept unit with its keep's own sentence, and that nothing brings it back. Drawing it holds the units it listed in
 /// the proposal's file (<see cref="Drawn"/>, <see cref="HelpProposal.Units"/>), and Apply sends exactly those, never a fresh
 /// plan's: the press judges each again, and keeps and counts one that changed since. A card drawn again says what changed since it
 /// listed, what is gone, and what may go now that it did not list, which a new proposal lists. A card never drawn has listed
 /// nothing, so its Apply sends nothing and leaves it standing.</para>
 ///
-/// <para><b>A quest or an ask the clear would keep is refused</b> in its keep's sentence, as its page offers no press for it
-/// (§6.1); a quest an ask asked names the ask, which clears it with every quest it became (§1.1). A workspace with nothing that
-/// may go is said, never refused (D48 §6), and its Apply calls no door.</para>
+/// <para><b>A quest or an ask the clear would keep is refused</b> in its keep's sentence, as its page offers no press for it;
+/// a quest an ask asked names the ask, which clears it with every quest it became. A workspace with nothing that
+/// may go is said, never refused, and its Apply calls no door.</para>
 ///
-/// <para><b>A closed quest's failed sessions</b> (HIST1f-d, §1.1, §4) are the <c>failed</c> door, its target the quest's id: the
+/// <para><b>A closed quest's failed sessions</b> are the <c>failed</c> door, its target the quest's id: the
 /// card names them, and the quest and its other sessions stay. A quest still open or taken is refused in the keep's sentence; a
 /// closed one with none of this machine's failed sessions is said, and its Apply calls no door.</para>
 /// </remarks>
@@ -32,13 +32,13 @@ internal sealed class HelpClearProposals : IHelpProposalKind
 {
     public string Kind => "clear";
 
-    // HIST1f-b, HIST1f-d: a closed quest's work, an ask's, a closed quest's failed sessions and a workspace's.
+    // A closed quest's work, an ask's, a closed quest's failed sessions and a workspace's.
     public string Tool => "clear_propose";
 
     public IReadOnlyList<string> Doors { get; } = ["quest", "ask", "failed", "workspace"];
 
     /// <summary>
-    /// ASKSCOPE1c: a workspace's clear names the workspace as its target. ASKSCOPE1c2: a quest's, an ask's and a closed quest's
+    /// A workspace's clear names the workspace as its target. A quest's, an ask's and a closed quest's
     /// failed sessions' name a record by id, filed under the workspace the plan read for it says.
     /// </summary>
     public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) =>
@@ -49,7 +49,7 @@ internal sealed class HelpClearProposals : IHelpProposalKind
                 : [],
         };
 
-    /// <summary>ASKSCOPE1c2: the unit a quest's, an ask's or a failed clear names, as <see cref="OnePlan"/> finds it; null for none.</summary>
+    /// <summary>The unit a quest's, an ask's or a failed clear names, as <see cref="OnePlan"/> finds it; null for none.</summary>
     private static HistoryUnitPlan? UnitOf(HelpProposal proposal, HelpMachineFacts facts)
     {
         HistoryScope? scope = proposal.Door switch { "quest" => HistoryScope.Quest, "ask" => HistoryScope.Ask, "failed" => HistoryScope.Failed, _ => null };
@@ -96,7 +96,7 @@ internal sealed class HelpClearProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// §5: the card's units held in the proposal's file, once, from when the list opened, beside every field the service wrote. A
+    /// The card's units held in the proposal's file, once, from when the list opened, beside every field the service wrote. A
     /// card that changes nothing holds nothing, so a later draw that lists something holds that.
     /// </summary>
     public void Drawn(string home, HelpProposal proposal, HelpPlan plan)
@@ -120,7 +120,7 @@ internal sealed class HelpClearProposals : IHelpProposalKind
             return applying.Settled(true, $"Applied: `#{applying.Id}` — nothing changed: {plan.Describe}", null);
         }
 
-        // §5: Apply is the second press. A card never drawn has listed nothing, so nothing is sent, and it stands, unsettled.
+        // Apply is the second press. A card never drawn has listed nothing, so nothing is sent, and it stands, unsettled.
         if (!clear.Held)
         {
             throw new DriverException($"the card for `#{applying.Id}` has not listed what it clears yet: Apply clears only what its card "
@@ -132,8 +132,8 @@ internal sealed class HelpClearProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// A quest's work, an ask's or a quest's failed sessions, one unit: refused where it would be kept, else what it takes (§6.1's
-    /// ask). A failed-sessions unit that takes nothing is said, never refused (HIST1f-d, D48 §6).
+    /// A quest's work, an ask's or a quest's failed sessions, one unit: refused where it would be kept, else what it takes.
+    /// A failed-sessions unit that takes nothing is said, never refused.
     /// </summary>
     private static HelpPlan OnePlan(HistoryScope scope, string id, HistoryPlan? read, IReadOnlyList<HistoryUnitName>? held)
     {
@@ -166,7 +166,7 @@ internal sealed class HelpClearProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// §5 step 1, §6.1: what a workspace's clear takes, counted by kind and each unit named, then every unit it keeps with its
+    /// What a workspace's clear takes, counted by kind and each unit named, then every unit it keeps with its
     /// reason. Once held, the units the card listed, each as it stands now, and what may go that it did not list.
     /// </summary>
     private static HelpPlan WorkspacePlan(string name, HistoryPlan? read, IReadOnlyList<HistoryUnitName>? held, HelpMachineFacts facts)
@@ -258,7 +258,7 @@ internal sealed class HelpClearProposals : IHelpProposalKind
         return applying.Settled(false, $"Not applied: `#{id}` (`{terminal}`) — kept {named}, which changed since the list: {kept}", kept);
     }
 
-    /// <summary>The press's answer for a workspace (§5): how many of those listed went, what, and each that changed since and stayed.</summary>
+    /// <summary>The press's answer for a workspace: how many of those listed went, what, and each that changed since and stayed.</summary>
     private static HelpApplied WorkspaceCleared(HelpApplying applying, HistoryOutcome outcome)
     {
         var (id, terminal, workspace) = (applying.Id, applying.Plan.Terminal, outcome.Id);
@@ -334,21 +334,21 @@ internal sealed class HelpClearProposals : IHelpProposalKind
     private static string Sentence(string text) => text.EndsWith('.') ? text : text + ".";
 }
 
-/// <summary>What a clear card's Apply sends (HIST1f-b): the scope and its id as this machine spells them, and the units its card listed.</summary>
+/// <summary>What a clear card's Apply sends: the scope and its id as this machine spells them, and the units its card listed.</summary>
 /// <param name="Units">The units the card listed, each <c>quest</c> or <c>ask</c> by id, as <c>HISTORY_CLEAR</c>'s <c>units</c> takes them.</param>
 public sealed record HelpClearPlan(HistoryScope Scope, string Id, IReadOnlyList<HistoryUnitName> Units)
 {
-    /// <summary>Whether the units are the ones the drawn card held in its file; false before it was drawn, when Apply sends nothing.</summary>
+    /// <summary>Whether the units are the ones the drawn card held in its file; false before it is drawn, when Apply sends nothing.</summary>
     public bool Held { get; init; }
 }
 
 public interface IHelpClearDoors
 {
     /// <summary>
-    /// The screen's second press of a clear (<c>HISTORY_CLEAR</c>, HIST1c, D153; design §5): <see cref="HistoryClearing.ClearAsync"/>
+    /// The screen's second press of a clear (<c>HISTORY_CLEAR</c>): <see cref="HistoryClearing.ClearAsync"/>
     /// with exactly <paramref name="units"/>, each judged again by the service's half and this machine's as it goes, and for a
     /// workspace its left-over files and its intake's room. What went and what changed since comes back whole; a service that
-    /// did not answer throws, before anything was removed.
+    /// did not answer throws, before anything is removed.
     /// </summary>
     Task<HistoryOutcome> ClearHistoryAsync(HistoryScope scope, string id, IReadOnlyList<HistoryUnitName> units, CancellationToken ct);
 }

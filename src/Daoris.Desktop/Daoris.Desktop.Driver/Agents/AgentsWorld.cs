@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where <c>daoris agent</c> acts (PUSH1f2d): the terminal it says its words on and finds the running Daoris from, and what a
+/// Where <c>daoris agent</c> acts: the terminal it says its words on and finds the running Daoris from, and what a
 /// verb reads the machine by: the folder a relative folder is named from, the person's own profile folder an agent's own home falls
 /// back to, the agents this machine runs, and the moment an answer is settled at. A test hands its own of each.
 /// </summary>
@@ -18,7 +18,7 @@ public sealed record AgentsWorld
     /// <summary>The person's own profile folder: an agent's own configuration home where it names none of its own.</summary>
     public string UserHome { get; init; } = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
-    /// <summary>The agents this machine runs, read from a home: the build's and those its plugins declare (D64), as the window's roster reads them.</summary>
+    /// <summary>The agents this machine runs, read from a home: the build's and those its plugins declare, as the window's roster reads them.</summary>
     public Func<string, ProviderRegistry> Adapters { get; init; } = home =>
     {
         var built = ProviderRegistry.Built();
@@ -34,7 +34,7 @@ public sealed record AgentsWorld
     /// <summary>Called once a long verb's publication finds another act holding the home (<c>key</c>): a test's sign that it waits.</summary>
     public Action? Waiting { get; init; }
 
-    /// <summary>How a browser sign-in's port is tried before its flow starts (<c>login</c>, CODEXLOGIN1): taken for a moment, unless a test's.</summary>
+    /// <summary>How a browser sign-in's port is tried before its flow starts (<c>login</c>): taken for a moment, unless a test's.</summary>
     public Func<int, PortHold> Ports { get; init; } = SignInPorts.Hold;
 
     /// <summary>How a maker's release channel is reached (<c>pin</c>, <c>update</c>): the network, unless a test holds its own.</summary>

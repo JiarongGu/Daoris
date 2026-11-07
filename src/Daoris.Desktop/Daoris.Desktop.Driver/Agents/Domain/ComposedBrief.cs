@@ -14,16 +14,16 @@ public sealed record ComposedBrief(IReadOnlyList<BriefPiece> Pieces, IReadOnlyLi
 
     /// <summary>
     /// Where the line's parts keep the files the person attached, which the brief names: the new part's rules read exactly these
-    /// folders (the design §3.1 item 5).
+    /// folders.
     /// </summary>
     public IReadOnlyList<string> Kept { get; init; } = [];
 
     /// <summary>
     /// The memory its line read, newest first, as the service rechecked it now: the standing block handed with the brief says it
-    /// (CONTEXTONE1c, <see cref="StandingFacts.Memory"/>), never the brief itself.
+    /// (<see cref="StandingFacts.Memory"/>), never the brief itself.
     /// </summary>
     public IReadOnlyList<string> Memory { get; init; } = [];
 
-    /// <summary>Its CONTEXT1 account (D143 point 1): its sections sum to its length, by construction.</summary>
+    /// <summary>Its account: its sections sum to its length, by construction.</summary>
     public InstructionAccount Account => new(Text.Length, Sections);
 }

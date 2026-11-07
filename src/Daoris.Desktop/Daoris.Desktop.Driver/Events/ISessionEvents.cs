@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A session's events as the events' own watches read them (FOUNDATION1 mod-vii, the design §14.3): told of each one as it is written, and
+/// A session's events as the events' own watches read them: told of each one as it is written, and
 /// handed one to keep. The record that writes them, <see cref="SessionEvents"/>, is the context's and answers this port, so the watches
 /// of calls, held permissions, quiet and the machine log name no type above the events, and a watch keys what it keeps by the record's
 /// instance, whichever record it is.

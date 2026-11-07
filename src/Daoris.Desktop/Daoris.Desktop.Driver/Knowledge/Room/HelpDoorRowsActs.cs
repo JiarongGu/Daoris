@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>The doors for the person's own acts: accounts, quests, sessions, plugins, the browser, updates and the workflow's presses (D50).</summary>
+/// <summary>The doors for the person's own acts: accounts, quests, sessions, plugins, the browser, updates and the workflow's presses.</summary>
 internal static class HelpDoorRowsActs
 {
     private const string Ws = HelpDoorPlaces.Ws;
@@ -32,7 +32,7 @@ internal static class HelpDoorRowsActs
             + "to today's defaults)"),
         ("end an account's cool-off now, after its agent hit a limit", Agent + "the account's Try now",
             "`daoris agent account ready <agent> <profile>|--own` (`--own` only ends an old cool-off of the tool's own sign-in, which Daoris no longer starts sessions in)"),
-        // The doors built since, which the helper now proposes too.
+        // Further doors, which the helper proposes too.
         ("update an agent, or pin it to one version", Agent + "Ways in → Update, Pin a version",
             "`daoris agent update <agent>`, `daoris agent pin <agent> <version>`"),
         ("set an account's own model and effort", Agent + "Model and effort",

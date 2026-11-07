@@ -62,13 +62,13 @@ internal static class HelpRoomDescriptions
         public static HelpMachine Describe(HelpMachine machine, HelpMachineSources sources) => machine with
         {
             Adapter = ActorChoices.BuildAgent(sources.Config),
-            // MODELROLE1d (D205 §6.4): Intake's and Ask Daoris's first agent, as their actors read; an order that does not read is said by
+            // Intake's and Ask Daoris's first agent, as their actors read; an order that does not read is said by
             // the actors' own line.
             Intake = First("intake", sources.Config),
             Helper = First("ask-daoris", sources.Config),
             Cap = sources.Config.Cap,
             QuietMinutes = (int)QuietSetting.Of(sources.Config).TotalMinutes,
-            // ENTRY1f2 (D161's ENTRY1f note): by the Sessions list's own rule, so the count and the list name the same sessions,
+            // By the Sessions list's own rule, so the count and the list name the same sessions,
             // less Ask Daoris's own conversation, which opens here; a teammate's never reached the snapshot.
             Waiting = [.. sources.Snapshot.Active
                 .Where(session => KnowledgeWorkOrders.Current.WaitsOnYou(session.Id, session.State, session.Answered) && session.Repository != HelpRoom.Repository)
@@ -86,25 +86,25 @@ internal static class HelpRoomDescriptions
             {
                 State = entry.PullRequestState,
                 AskFailed = entry.PullRequestAskFailed,
-                // ACCESSWORDS1b: only where the rule's switch accepted it, as the review's note reads it: a press under the setup keeps
+                // Only where the rule's switch accepted it, as the review's note reads it: a press under the setup keeps
                 // the level on its record too, and the setup accepted nothing there.
                 Access = entry.AcceptedBy == AcceptedBy.Auto ? entry.Rule?.Access : null,
             })],
             Parked = sources.Parked,
             Held = sources.Held,
-            // PAUSE1f-b: the pauses the pause and the resume write (design §2.5), asks first, each in its ids' order.
+            // The pauses the pause and the resume write, asks first, each in its ids' order.
             Paused = [.. sources.Config.PausedAsks.Keys.Order(StringComparer.Ordinal).Select(ask => new PausedBy(WorkScope.Ask, ask)),
                 .. sources.Config.PausedQuests.Keys.Order(StringComparer.Ordinal).Select(quest => new PausedBy(WorkScope.Quest, quest))],
             Browser = sources.Browser is { } files ? new HelpBrowser(files.Browser, files.Links, files.Extensions, files.Favorites) : null,
             History = sources.History,
-            // PARALLEL1a: what the judges' facts had not read yet, which each section says where it says its part.
+            // What the judges' facts had not read yet, which each section says where it says its part.
             NotReadYet = sources.NotReadYet,
         };
 
         private static string? First(string actor, DriverConfig config) => ActorKey.FirstAgent(actor, config);
     
         /// <summary>
-        /// This machine's sessions as the Sessions list places them (SESSUX1h3): one rule, <see cref="SessionGroups.Read"/>, less Ask
+        /// This machine's sessions as the Sessions list places them: one rule, <see cref="SessionGroups.Read"/>, less Ask
         /// Daoris's own conversations and a teammate's, which this machine does not act on; archived ones are in the list's own
         /// group, so in no count here. The ended come newest first, as the list orders them.
         /// </summary>
@@ -115,8 +115,8 @@ internal static class HelpRoomDescriptions
     {
         /// <summary>
         /// The checkouts it may read: every readable one here, from the driver's own setting, in every workspace in <c>default</c>'s room.
-        /// A workspace's room (ASKSCOPE1c, D158's ASKSCOPE1 note point 5) reads its own workspace's alone, of those reading across already
-        /// allows (D107): they are what its spawn is granted, so the room lists what its rules allow.
+        /// A workspace's room reads its own workspace's alone, of those reading across already
+        /// allows: they are what its spawn is granted, so the room lists what its rules allow.
         /// </summary>
         public static HelpMachine Describe(HelpMachine machine, HelpMachineSources sources)
         {
@@ -129,7 +129,7 @@ internal static class HelpRoomDescriptions
         }
     
         /// <summary>
-        /// HELPMODE1a1 (D170 as D183 amends it): in full access its spawn is handed every server the plugins here declare, for it or for
+        /// In full access its spawn is handed every server the plugins here declare, for it or for
         /// sessions, approved or not (<c>ChatServers.HandAsync</c>), each once by name; so none waits, and none is offered.
         /// </summary>
         private static HelpMachine Full(HelpMachine machine, HelpMachineSources sources)
@@ -148,7 +148,7 @@ internal static class HelpRoomDescriptions
         private static HelpMachine Restricted(
             HelpMachine machine, HelpMachineSources sources, IReadOnlyList<RepoView> registry, Dictionary<string, string> workspaceOf)
         {
-            // ASKSCOPE1c: the grants intersect, its workspace's checkouts and those reading across allows; the whole registry stays the
+            // The grants intersect, its workspace's checkouts and those reading across allows; the whole registry stays the
             // one each checkout's workspace is named from.
             var readable = sources.Workspace is { } circle
                 ? registry.Where(known => string.Equals(RemoteTarget.Workspace(known.Workspace), circle, StringComparison.OrdinalIgnoreCase))
@@ -157,17 +157,17 @@ internal static class HelpRoomDescriptions
             {
                 Reads = [.. AcrossReads.Readable(sources.Config, readable)
                     .Select(checkout => new HelpRead(checkout.Repository, sources.Workspace ?? workspaceOf[checkout.Repository], checkout.Path))],
-                // HELPPLUG1a: the servers the person approved for it, as its spawn is handed them (HelpGrants), and those waiting.
+                // The servers the person approved for it, as its spawn is handed them (HelpGrants), and those waiting.
                 PluginServers = [.. (sources.Grants?.All ?? []).Where(grant => grant.State == HelpGrantStates.Approved)
                     .Select(grant => new HelpPluginServer(grant.Plugin, grant.Server.Name, grant.Server.Allow) { Writes = grant.Accepted })],
-                // HELPPLUG1c: what each would bring, reads and writes apart, and one an update changed since its approval.
+                // What each would bring, reads and writes apart, and one an update changed since its approval.
                 PluginServersWaiting = [.. (sources.Grants?.All ?? []).Where(grant => grant.State == HelpGrantStates.Waits)
                     .Select(grant => new HelpPluginServer(grant.Plugin, grant.Server.Name, grant.Server.Allow)
                     {
                         Writes = grant.Server.Writes, Changed = grant.Changed,
                     })],
                 PluginServersOffered = [.. Offered(sources)],
-                // HELPPLUG1b: the skills its spawn is handed (SpawnSkills.Hand, in its provider's layout), as the harness names them.
+                // The skills its spawn is handed (SpawnSkills.Hand, in its provider's layout), as the harness names them.
                 PluginSkills = [.. sources.Plugins.Contributing.SelectMany(plugin => plugin.Manifest.Skills
                     .Where(skill => skill.HandedTo(PluginServerTo.Help) && SkillFiles.Judge(plugin.Folder, skill.Name) is null)
                     .Select(skill => $"{plugin.Manifest.Id}:{skill.Name}"))],
@@ -175,7 +175,7 @@ internal static class HelpRoomDescriptions
         }
     
         /// <summary>
-        /// HELPPLUG1c: each server an installed plugin's newer copy in the install would offer Ask Daoris and the installed copy does
+        /// Each server an installed plugin's newer copy in the install would offer Ask Daoris and the installed copy does
         /// not, as an installed in-app browser 1.0.0 is beside the shipped 1.1.0: said with its update first, so it is not missing
         /// in silence.
         /// </summary>
@@ -235,15 +235,15 @@ internal static class HelpRoomDescriptions
                     Held = Named(config.Holds, known.Repository),
                     OwnTree = config.OpensOwnTree(known.Repository),
                     Line = lineOf.TryGetValue(known.Repository, out var line) ? new Line(line.Branch, line.Source) : new Line(null, LineSource.None),
-                    // PARALLEL1a: a checkout whose line the facts have not judged yet, said so rather than as none git can name.
+                    // A checkout whose line the facts have not judged yet, said so rather than as none git can name.
                     LineNotReadYet = Named(sources.NotReadYet.Repositories, known.Repository),
-                    // KNOWUSE1b: what the person says holds for every session there, in their words.
+                    // What the person says holds for every session there, in their words.
                     Standing = config.StandingFor(known.Repository)?.Says,
-                    // REVIEWENV1a: where its work is shown to the person before it lands, and where that was set.
+                    // Where its work is shown to the person before it lands, and where that is set.
                     Review = KnowledgeReviews.Current.Review(config, known.Repository, known.Workspace),
-                    // XAGENT1a: which other agent reads its work before it lands, and where that was set.
+                    // Which other agent reads its work before it lands, and where that is set.
                     Opinion = KnowledgeReviews.Current.Opinion(config, known.Repository, known.Workspace),
-                    // WORKFLOW1h-b (design §8.4): the workflow its new work follows, and what chose it.
+                    // The workflow its new work follows, and what chose it.
                     Workflow = Followed(config, sources.Workflows, known.Repository, known.Workspace),
                 })],
                 WorkflowKinds =
@@ -255,7 +255,7 @@ internal static class HelpRoomDescriptions
         }
     
         /// <summary>
-        /// The workflow a repository's work follows with no task's kind (design §4.1, rows 3, 5 and 6), Current where nothing chooses
+        /// The workflow a repository's work follows with no task's kind (rows 3, 5 and 6), Current where nothing chooses
         /// one, its newest version where it is saved here, and a repository's own kinds.
         /// </summary>
         private static HelpWorkflowFollowed Followed(DriverConfig config, IReadOnlyList<IKnowledgeWorkflowFile>? saved, string repository, string workspace)

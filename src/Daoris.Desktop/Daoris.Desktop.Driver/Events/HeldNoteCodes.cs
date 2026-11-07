@@ -84,7 +84,7 @@ public static class HeldNoteCodes
     public static readonly NoteCode HeldLimitWaitsSignIn = new("held.limit-waits-sign-in", ["owner", "account", "until", "accounts"]) { Why = NoteCodes.Cooling };
     public static readonly NoteCode HeldSignedOut = new("held.signed-out", ["owner", "account", "profile"]);
 
-    // Every account the start could run on was locked past its patience; the accounts by id, a list.
+    // Every account the start could run on is locked past its patience; the accounts by id, a list.
     public static readonly NoteCode HeldLocked = new("held.locked", ["owner", "accounts"]);
 
     // No Daoris account of the agent's is signed in, and its own home is never a start's.

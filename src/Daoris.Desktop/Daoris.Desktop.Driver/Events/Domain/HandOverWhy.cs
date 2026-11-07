@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
-/// <summary>Why a conversation was handed to another agent, by code (MIXAGENT1a-i, D163): the page's <c>note.handed.why.*</c>.</summary>
+/// <summary>Why a conversation is handed to another agent, by code: the page's <c>note.handed.why.*</c>.</summary>
 public static class HandOverWhy
 {
     /// <summary>The person pressed it.</summary>
     public const string Press = "press";
 
-    /// <summary>The account it ran on was near its limit.</summary>
+    /// <summary>The account it runs on is near its limit.</summary>
     public const string Near = "near";
 
     /// <summary>The account it ran on reached its limit.</summary>
@@ -16,47 +16,47 @@ public static class HandOverWhy
     public const string Agent = "agent";
 
     /// <summary>
-    /// Daoris moved it on its own by the person's switching setting (D165 point 3): its account was over the curve that setting
-    /// draws, and another account of the same agent had room. A reason a record continues another by (MIXAGENT1a-iii).
+    /// Daoris moves it on its own by the person's switching setting: its account is over the curve that setting
+    /// draws, and another account of the same agent has room. A reason a record continues another by.
     /// </summary>
-    /// <remarks>A box takes it since SWITCH1c-i, which declares its coded line; the automatic move that asks for it is SWITCH1c-ii's.</remarks>
+    /// <remarks>A box takes it, and declares its coded line; the automatic move asks for it.</remarks>
     public const string Curve = "curve";
 
     /// <summary>
-    /// Its own conversation was proven lost, and it went on by itself in a new part (SESSCTX1b, D189 point 3; the session-context
-    /// design §7). A reason a record continues another by; no box takes it.
+    /// Its own conversation is proven lost, and it goes on by itself in a new part. A reason a record continues another by; no box
+    /// takes it.
     /// </summary>
     public const string Resume = "resume";
 
     /// <summary>
-    /// A carry-on on the same account (D80, TOOL4f): after a cut-off, a time-out, a crash, a refused turn or an interrupted take
-    /// (SESSCTX1b). A reason a record continues another by; no box takes it.
+    /// A carry-on on the same account: after a cut-off, a time-out, a crash, a refused turn or an interrupted take.
+    /// A reason a record continues another by; no box takes it.
     /// </summary>
     public const string CarryOn = "carry-on";
 
     /// <summary>
-    /// A driven record's fallback (D131 point 3): its resume was refused and it went on in a new part (SESSCTX1b). A reason a record
+    /// A driven record's fallback: its resume is refused and it goes on in a new part. A reason a record
     /// continues another by; no box takes it.
     /// </summary>
     public const string Retry = "retry";
 
     /// <summary>
-    /// A conversation's replacement (MODELROLE1d2, D205 §3.5(b)): the record it continues ended <c>choice-not-offered</c> at its open,
-    /// before any prompt, and this one opened on the walk's next answer with its words. A reason a record continues another by; no box
+    /// A conversation's replacement: the record it continues ended <c>choice-not-offered</c> at its open,
+    /// before any prompt, and this one opens on the walk's next answer with its words. A reason a record continues another by; no box
     /// takes it.
     /// </summary>
     public const string NotOffered = "not-offered";
 
-    /// <summary>A role's policy moved the line to another choice because its service did not answer (STAFFPOLICY1e). A reason a record continues another by.</summary>
+    /// <summary>A role's policy moved the line to another choice because its service did not answer. A reason a record continues another by.</summary>
     public const string Transient = "transient";
 
-    /// <summary>A role's policy moved the line to another choice after its fatal errors again (STAFFPOLICY1e).</summary>
+    /// <summary>A role's policy moved the line to another choice after its fatal errors again.</summary>
     public const string Failed = "failed";
 
-    /// <summary>A role's policy moved the line to another choice after a quiet stop (STAFFPOLICY1e).</summary>
+    /// <summary>A role's policy moved the line to another choice after a quiet stop.</summary>
     public const string Quiet = "quiet";
 
-    /// <summary>A role's policy moved the line to another choice because its choice reached its daily budget (STAFFPOLICY1e).</summary>
+    /// <summary>A role's policy moved the line to another choice because its choice reached its daily budget.</summary>
     public const string Budget = "budget";
 
     /// <summary>The reason as the brief's agent reads it, in Daoris's one English: after <c>because</c>.</summary>
@@ -98,11 +98,11 @@ public static class HandOverWhy
     };
 
     /// <summary>
-    /// Whether a word is one of the reasons a hand-over's box takes: the five a hand-over is asked for (SESSCTX1b keeps the box's
-    /// check on them; <see cref="Continues"/> is every reason a record names).
+    /// Whether a word is one of the reasons a hand-over's box takes: the five a hand-over is asked for (the box's
+    /// check is on them; <see cref="Continues"/> is every reason a record names).
     /// </summary>
     public static bool Known(string? why) => why is Press or Near or Limit or Agent or Curve;
 
-    /// <summary>Whether a word is one of the reasons a record continues another by (SESSCTX1b): each has its <c>note.handed.why.*</c> line.</summary>
+    /// <summary>Whether a word is one of the reasons a record continues another by: each has its <c>note.handed.why.*</c> line.</summary>
     public static bool Continues(string? why) => Known(why) || why is Resume or CarryOn or Retry or NotOffered or Transient or Failed or Quiet or Budget;
 }

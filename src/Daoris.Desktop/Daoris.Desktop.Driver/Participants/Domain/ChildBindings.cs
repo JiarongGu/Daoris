@@ -6,8 +6,8 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One native child of a part, bound to that part from what its harness wrote (FABRIC-C1a, D173): never a session of its own. Its
-/// state and moments are its latest run's (COWORKVIEW1a); its earlier runs are never a second row.
+/// One native child of a part, bound to that part from what its harness wrote: never a session of its own. Its
+/// state and moments are its latest run's; its earlier runs are never a second row.
 /// </summary>
 /// <param name="Harness"><c>claude-code</c> or <c>codex</c>; null where no line said.</param>
 /// <param name="Native">Its id as its harness names it: Claude Code's agent id, Codex's thread id, the protocol door's announcement.</param>
@@ -31,7 +31,7 @@ public sealed record ChildBinding(string? Harness, string Native)
     /// <summary><see cref="ChildBindings.Connected"/> where a call of its reached the connector, else <see cref="ChildBindings.Observed"/>.</summary>
     public string Connectivity { get; init; } = ChildBindings.Observed;
 
-    /// <summary>Its run's state, one of <see cref="ChildBindings"/>' (the design §3.6, <i>what a child reads</i>).</summary>
+    /// <summary>Its run's state, one of <see cref="ChildBindings"/>'.</summary>
     public string State { get; init; } = ChildBindings.Uncertain;
 
     /// <summary>How many of its calls reached the connector.</summary>
@@ -40,7 +40,7 @@ public sealed record ChildBinding(string? Harness, string Native)
     /// <summary>Its label where a line gave one: the protocol door's name or task, the stream's task description.</summary>
     public string? Label { get; init; }
 
-    /// <summary>Its run's start, or its first line where no start was said (<see cref="StartSaid"/> false); null where it had no moment.</summary>
+    /// <summary>Its run's start, or its first line where no start is said (<see cref="StartSaid"/> false); null where it had no moment.</summary>
     public DateTimeOffset? Since { get; init; }
 
     public bool StartSaid { get; init; }
@@ -56,10 +56,10 @@ public sealed record ChildBinding(string? Harness, string Native)
 }
 
 /// <summary>
-/// A part's native children, folded from its lineage lines (FABRIC-C1a, D173; <c>docs/2026-10-16-fabric-contract-audit.md</c>
-/// §2-§3): the connector's line per call (<c>by: call</c>), Claude Code's hook (<c>by: hook</c>), Claude Code's stream as the
+/// A part's native children, folded from its lineage lines:
+/// the connector's line per call (<c>by: call</c>), Claude Code's hook (<c>by: hook</c>), Claude Code's stream as the
 /// driver read it (<c>by: stream</c>) and the part's end (<c>by: end</c>). The lines are the one store; this is their reading,
-/// and the part's record stays canonical (D173's first guard).
+/// and the part's record stays canonical.
 /// </summary>
 /// <remarks>
 /// <para><b>How a child is told apart.</b> On Claude Code, each subagent is its hook's <c>agent_id</c>; a call is joined to the
@@ -71,7 +71,7 @@ public sealed record ChildBinding(string? Harness, string Native)
 /// none and no depth; a call with no lineage, and a Claude call no hook named, are counted apart and bound to nobody; a child
 /// only seen, never calling, is <see cref="Observed"/>.</para>
 ///
-/// <para><b>Generations and runs</b> (COWORKVIEW1a, the design §3.6, rules 5 to 8). A <c>start</c> begins its process's
+/// <para><b>Generations and runs</b>. A <c>start</c> begins its process's
 /// generation, and a line naming its process is placed there wherever it sits; before a file's first <c>start</c> a line with
 /// none is history, placed by position between the ends an older build wrote. From that <c>start</c> on, a line tied to no
 /// process is unplaced: its ids counted, never a row or a state. A generation closes only where its process's exit is proven,
@@ -118,13 +118,13 @@ public sealed record ChildBindings
     /// <summary>Its process's exit seen by this window's token and how it ended not yet said by its end: no manner claimed.</summary>
     public const string AgentEnded = "agentEnded";
 
-    /// <summary>A record's kind whose every process wrote its own end before row a, so a clean one in its history is its process's.</summary>
+    /// <summary>A record's kind whose every process wrote its own end, even where its lines name no process, so a clean one in its history is its process's.</summary>
     public const string Chat = "chat";
 
-    /// <summary>A call of its reached the connector (the proposal's L2).</summary>
+    /// <summary>A call of its reached the connector.</summary>
     public const string Connected = "connected";
 
-    /// <summary>Only seen, by a hook or the stream (L1).</summary>
+    /// <summary>Only seen, by a hook or the stream.</summary>
     public const string Observed = "observed";
 
     private static readonly Regex IdShape = LineageText.IdShape;
@@ -133,7 +133,7 @@ public sealed record ChildBindings
 
     private static readonly string[] Words = [Completed, Failed, Cancelled, Disconnected, Stopped];
 
-    /// <summary>A re-run's suffix on the protocol door's ids (CONSOLE2): the same child run again.</summary>
+    /// <summary>A re-run's suffix on the protocol door's ids: the same child run again.</summary>
     private static readonly Regex ReRun = new(":generation:[0-9]+$", RegexOptions.CultureInvariant);
 
     /// <summary>The harness the lines are from, or null where none said.</summary>
@@ -161,12 +161,12 @@ public sealed record ChildBindings
     public int Unplaced { get; init; }
 
     /// <summary>
-    /// How many children have a run in the newest generation: the subagents the part's current agent process started (COWORKVIEW1e-iii,
-    /// the design §6.4 point 3). A child of an earlier process counts nowhere.
+    /// How many children have a run in the newest generation: the subagents the part's current agent process started.
+    /// A child of an earlier process counts nowhere.
     /// </summary>
     public int StartedNewest { get; init; }
 
-    /// <summary>The tokens this window read its generations by, each with the reading the fold took (COWORKVIEW1a, rule 12).</summary>
+    /// <summary>The tokens this window read its generations by, each with the reading the fold took.</summary>
     public IReadOnlyDictionary<string, TokenReading> Readings { get; private init; } = new Dictionary<string, TokenReading>();
 
     private IReadOnlySet<string> UnmatchedIds { get; init; } = new HashSet<string>();
@@ -176,7 +176,7 @@ public sealed record ChildBindings
     private IReadOnlyDictionary<string, string> Announced { get; init; } = new Dictionary<string, string>();
 
     /// <summary>
-    /// Whether a line appended after this reading moves what it holds (COWORKVIEW1a, rule 13): any line but a call does; a call only
+    /// Whether a line appended after this reading moves what it holds: any line but a call does; a call only
     /// where it names an id held neither as a child, among the unmatched or as the part's root, nor, tied to no process, among the
     /// unplaced; or a child read not known or whose agent ended, whose last seen it moves; or, on Codex, a held child named with no
     /// parent, which becomes a root. A Claude Code connector call names its agent by the hook's line beside it, so it moves nothing.
@@ -494,7 +494,7 @@ public sealed record ChildBindings
     }
 
     /// <summary>
-    /// What a run reads (the design §3.6, <i>what a child reads</i>): as its harness said it ended; else closed only where its process's
+    /// What a run reads: as its harness said it ended; else closed only where its process's
     /// exit is proven, by its own end or this window's token gone, saying what that proves; else working only where this window
     /// watches its process alive; else not known.
     /// </summary>
@@ -505,8 +505,8 @@ public sealed record ChildBindings
         var late = run.Late ? run.Last : null;
         if (generation.EndIndex is not null)
         {
-            // A recorded end is its issuer's word that the process exited; a chat's from before row a only where it says clean; a
-            // driven record's from before row a may be a later process's, so it claims nothing.
+            // A recorded end is its issuer's word that the process exited; a chat's with no process named only where it says clean; a
+            // driven record's with no process named may be a later process's, so it claims nothing.
             if (generation.Proc is not null || (kind == Chat && generation.Clean))
             {
                 return (generation.Clean ? Ended : Lost, run.Late ? null : generation.EndAt, late);
@@ -535,7 +535,7 @@ public sealed record ChildBindings
     }
 
     /// <summary>
-    /// The lineage line a child's reading says (COWORKVIEW1a), by the signal that said it, <c>stream</c> or <c>acp</c>: a start with its
+    /// The lineage line a child's reading says, by the signal that said it, <c>stream</c> or <c>acp</c>: a start with its
     /// parent and depth where its wire said them, its type, and its label bounded (<see cref="LineageLabels"/>), the stream's task
     /// <c>description</c> or the protocol door's <c>name</c> and <c>task</c>; an end with its wire's word, the stream's <c>status</c> or the
     /// protocol door's <c>state</c>. Each names the process its run stamped where that is a token. Null for any other reading, a replayed
@@ -571,14 +571,14 @@ public sealed record ChildBindings
     }
 
     /// <summary>
-    /// A process's start (COWORKVIEW1a), written before its spawn: its token, and the Daoris process that issued it as
+    /// A process's start, written before its spawn: its token, and the Daoris process that issued it as
     /// <c>{pid} {ticks}</c>; null where the token is not one.
     /// </summary>
     public static string? StartLine(string proc, string issuer, DateTimeOffset at) => IdShape.IsMatch(proc)
         ? new JsonObject { ["at"] = Moment(at), ["by"] = "start", ["proc"] = proc, ["issuer"] = issuer }.ToJsonString()
         : null;
 
-    /// <summary>A process's end once its exit was read: clean, or killed, stopped or failed; naming its process where it has a token.</summary>
+    /// <summary>A process's end once its exit is read: clean, or killed, stopped or failed; naming its process where it has a token.</summary>
     public static string EndLine(bool clean, DateTimeOffset at, string? proc = null)
     {
         var line = new JsonObject { ["at"] = Moment(at), ["by"] = "end" };

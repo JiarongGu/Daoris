@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The files a trace opens on this machine (TRACE1, D143): a session's events and the rules file the driver wrote for it.
+/// The files a trace opens on this machine: a session's events and the rules file the driver wrote for it.
 /// They are read here and handed to <see cref="TraceChains"/> as <see cref="TraceHere"/>'s values, so the chain, which is a
-/// Domain, opens none (STRUCT3g-i). Nothing here writes.
+/// Domain, opens none. Nothing here writes.
 /// </summary>
 internal static class TraceReads
 {

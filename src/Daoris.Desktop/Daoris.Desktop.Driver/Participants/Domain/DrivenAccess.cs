@@ -1,18 +1,18 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a driven start gets on its harness under its repository's permission prompts (AUTONOMY1b, D184 points 2, 3 and 5): the
+/// What a driven start gets on its harness under its repository's permission prompts: the
 /// posture its protocol door asks, or the permission mode its native door names; or why it cannot start under that value. Resolved at
 /// each start and each resume from the setup standing then (<see cref="AccessRules.Resolve"/>), as Ask Daoris's mode is
 /// (<see cref="HelpAccess"/>).
 /// </summary>
 /// <remarks>
-/// <para><b>Auto</b> is today's (D81): the adapter's own posture, nothing named. <b>Asking</b> is the harness's asking mode
+/// <para><b>Auto</b> is today's: the adapter's own posture, nothing named. <b>Asking</b> is the harness's asking mode
 /// (<see cref="AgentDoor.AskingPosture"/>), and <b>unrestricted</b> its mode that asks nothing (<see cref="AgentDoor.FullPosture"/>),
 /// each required on the protocol door, so an agent that does not offer it fails the open rather than running in its own mode under
-/// that label (D183 point 3). A harness that names none is refused before any record opens, naming it (D183 point 1).</para>
+/// that label. A harness that names none is refused before any record opens, naming it.</para>
 ///
-/// <para><b>What every value keeps</b> (D184 point 5): the rules the spawn is handed are composed beside the mode, never from it, so
+/// <para><b>What every value keeps</b>: the rules the spawn is handed are composed beside the mode, never from it, so
 /// the person's denies, the tree guard and the classifier's hard denials go in every one. Only a harness that takes no rules (Codex)
 /// is beyond them, in every mode, and its sentence says so.</para>
 /// </remarks>
@@ -36,15 +36,15 @@ public sealed record DrivenAccess(string Permissions, string Said) : IAgentAcces
     public string Repository { get; init; } = "";
 
     /// <summary>
-    /// The workspace its repository's setup was resolved in (ACCESSSWAP1b), so a running session reads its setup again where its start
+    /// The workspace its repository's setup is resolved in, so a running session reads its setup again where its start
     /// read it (<see cref="ChangedIn"/>); null is <c>default</c>.
     /// </summary>
     public string? Workspace { get; init; }
 
     /// <summary>
-    /// What a running session's next turn would get (ACCESSSWAP1b, D183's note): its repository's permission prompts as
+    /// What a running session's next turn would get: its repository's permission prompts as
     /// <paramref name="now"/> resolves them, in the workspace its start read, where they name another value than it runs under; null
-    /// where they name the same. Only the permission prompts are compared: every other pause applies at its own point (AUTONOMY1c).
+    /// where they name the same. Only the permission prompts are compared: every other pause applies at its own point.
     /// </summary>
     /// <param name="now">The driver's file as it reads now, not as the look that started the session read it.</param>
     public DrivenAccess? ChangedIn(DriverConfig now, AgentDoor adapter)
@@ -52,13 +52,13 @@ public sealed record DrivenAccess(string Permissions, string Said) : IAgentAcces
         return DrivenAccessChanges.ChangedIn(this, now, adapter);
     }
 
-    /// <summary>The same change as a swap from what it started under (ACCESSSWAP1b); null where <paramref name="now"/> names the same.</summary>
+    /// <summary>The same change as a swap from what it started under; null where <paramref name="now"/> names the same.</summary>
     public SetupSwap? SwapIn(DriverConfig now, AgentDoor adapter) =>
         DrivenAccessChanges.SwapIn(this, now, adapter);
 
     /// <summary>
-    /// Tell the console of each driven session running here whose permission prompts a change of the driver's file moves (ACCESSSWAP1b,
-    /// D183's note), as Ask Daoris's console is told its access changed (<see cref="HelpSwap.Said"/>): what it started under, what the
+    /// Tell the console of each driven session running here whose permission prompts a change of the driver's file moves,
+    /// as Ask Daoris's console is told its access changed (<see cref="HelpSwap.Said"/>): what it started under, what the
     /// file names now, and that its next turn runs under them; or, moved back to what it started under, that it goes on as it runs. The
     /// page's press calls it; the terminal writes the file from another process and reaches no console, so a run reads the file at its
     /// turn's end all the same.
@@ -153,7 +153,7 @@ public sealed record DrivenAccess(string Permissions, string Said) : IAgentAcces
         $"Set its permission prompts to `auto` (`daoris place access {repository} permissions=auto`), or choose another agent for it.";
 
     /// <summary>
-    /// The permission prompts a record says it started under (AUTONOMY1a's <c>access</c>), read as a stored shape: a record from before
+    /// The permission prompts a record says it started under (<c>access</c>), read as a stored shape: a record from before
     /// the setting ran today's, auto, and a value this build does not know reads as auto too, as the driver's file reads one.
     /// </summary>
     public static string Ran(IReadOnlyDictionary<string, string>? kept) =>
@@ -163,15 +163,15 @@ public sealed record DrivenAccess(string Permissions, string Said) : IAgentAcces
             : AccessRules.Auto;
 
     /// <summary>
-    /// What a run going on from <paramref name="prior"/> says first where its permission prompts changed since that record started (D183
-    /// point 3, as HELPMODE1a2 says Ask Daoris's); null where they are the same.
+    /// What a run going on from <paramref name="prior"/> says first where its permission prompts changed since that record started
+    /// as Ask Daoris's console says it; null where they are the same.
     /// </summary>
     public static string? ChangedSince(PriorSession prior, string now) => Ran(prior.Access) == now
         ? null
         : $"Permission prompts changed since `{prior.Session}` started: it started under `{Ran(prior.Access)}`, and this run goes on under `{now}`.";
 
     /// <summary>
-    /// Tell the service the setup a resumed record now runs under (AUTONOMY1b2, D184 point 1), where its permission prompts changed since
+    /// Tell the service the setup a resumed record now runs under, where its permission prompts changed since
     /// it started, so the record names what this run runs under; a resume under the same setup calls nothing. The change is noted first
     /// (<see cref="GoingOnNote"/>) and the setup kept before anything is spawned.
     /// </summary>
@@ -197,7 +197,7 @@ public sealed record DrivenAccess(string Permissions, string Said) : IAgentAcces
     }
 
     /// <summary>
-    /// What a resumed record notes as it goes on (AUTONOMY1b): the change and the mode it got, where its permission prompts changed
+    /// What a resumed record notes as it goes on: the change and the mode it got, where its permission prompts changed
     /// since it started; null otherwise. Its record keeps the setup it opened under.
     /// </summary>
     public static string? GoingOnNote(PriorSession prior, DrivenAccess got) =>

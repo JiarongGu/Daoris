@@ -4,7 +4,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The standing block (CONTEXTONE1c, D230 point 3; the context-one design §3 C): the one section that tells a session where things are,
+/// The standing block: the one section that tells a session where things are,
 /// its repository's routing, the person's choices on this machine, its repository's and workspace's facts and the memory its line read.
 /// Composed by the driver with no model, handed at a session's start and at a move through its brief, never on a resume of the same
 /// conversation. It replaces the routing line, the standing answer's preface and the instruction's map, look and indexes.
@@ -41,7 +41,7 @@ public static class StandingBlock
         "Work another repository owns goes to that repository as a quest (`quest_publish`, naming the repository from the registry or this "
         + "repository's `uses`), and a question about this repository goes to a helper (`helper_ask`).";
 
-    /// <summary>What a session whose harness takes no rules file is told (D233 choice 3): no deny of the person's reaches it, and what still refuses.</summary>
+    /// <summary>What a session whose harness takes no rules file is told: no deny of the person's reaches it, and what still refuses.</summary>
     internal const string NoDenies =
         "Your harness takes no rules file, so none of the person's deny rules reaches you: hold to what they asked in their words. "
         + "Daoris's git doors still refuse a push, a force-push and a branch delete from here unless the person's git access allows them.";
@@ -146,7 +146,7 @@ public static class StandingBlock
     }
 
     /// <summary>
-    /// The person's choices for <paramref name="repository"/> (the standing answer, D135 §3, D230 point 4): their words, verbatim and
+    /// The person's choices for <paramref name="repository"/> (the standing answer): their words, verbatim and
     /// quoted, with when they were set, cut at <see cref="StandingText.Limit"/> and said to be.
     /// </summary>
     public static string Choices(StandingAnswer choices, string repository)
@@ -219,7 +219,7 @@ public static class StandingBlock
     }
 
     /// <summary>
-    /// The routing (COWORKVIEW1e-i, ROUTEQUEST1): whether a quest published to the repository's own lanes would start on this machine, and
+    /// The routing: whether a quest published to the repository's own lanes would start on this machine, and
     /// where work another repository owns, or a question about this one, goes.
     /// </summary>
     private static string Routing(string standing, IReadOnlyList<string> lanes, string repository)

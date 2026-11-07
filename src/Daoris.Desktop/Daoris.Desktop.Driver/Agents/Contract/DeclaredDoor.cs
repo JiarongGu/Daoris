@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A door a plugin's manifest declares (the agent-provider design §4.8): the fields a declaration has a place for, and no others. It has
+/// A door a plugin's manifest declares: the fields a declaration has a place for, and no others. It has
 /// no field for rules, skills, limit, window, sign-in, refused or error words, a usage question, children or lineage, confinement,
 /// steering, queueing, resume, a dialect or a conversation home, so a manifest naming one reaches nothing and no door reads it. Plugins
 /// converts a manifest into it; <see cref="DeclaredDoors"/> makes it a door.
@@ -17,7 +17,7 @@ namespace Daoris.Driver;
 /// <param name="AccountOf">The agent whose accounts the door runs as, verbatim, or null for none.</param>
 /// <param name="Product">What the plugin says its tool is.</param>
 /// <param name="Maker">Who makes it, which the commit trailer and the reviewer's choice read.</param>
-/// <param name="OwnHome">The plugin's word that its agent's own home is nobody's (D175).</param>
+/// <param name="OwnHome">The plugin's word that its agent's own home is nobody's.</param>
 /// <param name="FullPosture">The harness's own mode that asks nothing, or null where none is declared.</param>
 /// <param name="AskingPosture">The harness's own mode that asks the person, or null where none is declared.</param>
 public sealed record DeclaredDoor(

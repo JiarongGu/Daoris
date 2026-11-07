@@ -3,12 +3,12 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The skills plugins hand one session (HELPPLUG1b, D170 point 4): the plugins' sources for the session's destination, laid out by the
+/// The skills plugins hand one session: the plugins' sources for the session's destination, laid out by the
 /// door's provider (<see cref="ISkillLayout"/>) under the home and handed by the door's own way. Removed when the session ends.
 /// </summary>
 /// <remarks>
-/// <b>Never a skill that would allow itself tools</b> (D170 point 3): a skill's <c>allowed-tools</c> pre-approves its tools for the
-/// turn that invokes it, untrusted too (the development documents design §2 point 3), so a plugin's skill declaring it is handed to
+/// <b>Never a skill that would allow itself tools</b>: a skill's <c>allowed-tools</c> pre-approves its tools for the
+/// turn that invokes it, untrusted too, so a plugin's skill declaring it is handed to
 /// neither destination, and <see cref="Judge"/> says why.
 /// </remarks>
 public static class SpawnSkills

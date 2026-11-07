@@ -3,7 +3,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The doors (D50): each change the room speaks of, where it is on the screen, and the terminal command that
+/// The doors: each change the room speaks of, where it is on the screen, and the terminal command that
 /// does the same, spelled as the CLI's help spells it — a helper that invented a verb would send the person to
 /// nothing.
 /// </summary>
@@ -15,8 +15,8 @@ namespace Daoris.Driver;
 internal sealed class HelpRoomDoors : IHelpRoomSection
 {
     /// <summary>
-    /// What each change is, where it is on the screen, and the command that does the same (D50); a row Ask Daoris answers for says how
-    /// as its fourth, never in its words (REVIEW2 T12).
+    /// What each change is, where it is on the screen, and the command that does the same; a row Ask Daoris answers for says how
+    /// as its fourth, never in its words.
     /// </summary>
     internal static readonly HelpDoor[] Doors = [.. HelpDoorRowsSetup.Rows, .. HelpDoorRowsMachine.Rows, .. HelpDoorRowsActs.Rows];
 

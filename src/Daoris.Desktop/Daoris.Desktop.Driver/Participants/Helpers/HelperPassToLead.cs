@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <i>Pass to the lead</i> (COWORKUX1d, the co-worker design §7): the person's press that sends an answer kept for them to the session that
+/// <i>Pass to the lead</i>: the person's press that sends an answer kept for them to the session that
 /// asked. It marks the state; the driver's look hands the answer through the one door, the helper's word with its mark unchanged, and keeps
 /// <c>answers.passed</c> beside it, which the count reads as the person's word. Nothing is relabelled.
 /// </summary>

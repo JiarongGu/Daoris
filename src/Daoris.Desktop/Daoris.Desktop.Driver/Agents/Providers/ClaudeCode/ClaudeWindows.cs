@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Claude Code's words for its windows (TOOL6c, limit-signals evidence §1): the <c>rate_limit_event</c>'s
-/// <c>rate_limit_info</c>, which its protocol door forwards unchanged as <c>usage_update._meta["_claude/rateLimit"]</c> (§3).
+/// Claude Code's words for its windows: the <c>rate_limit_event</c>'s
+/// <c>rate_limit_info</c>, which its protocol door forwards unchanged as <c>usage_update._meta["_claude/rateLimit"]</c>.
 /// </summary>
 public static class ClaudeWindows
 {
@@ -27,13 +27,13 @@ public static class ClaudeWindows
             new("""{"status":"rejected"}""", "2026-10-02", Declared),
         ],
         Shape: Shape,
-        // The families `get_usage` answers a week of (`seven_day_opus`, `seven_day_sonnet`; the usage-read evidence's field table).
+        // The families `get_usage` answers a week of (`seven_day_opus`, `seven_day_sonnet`).
         Models: ["opus", "sonnet"]);
 
     /// <summary>
-    /// A window's length and scope as Claude Code's key names it, for the usage history (USAGECAP1a1): <c>five_hour</c> five
+    /// A window's length and scope as Claude Code's key names it, for the usage history: <c>five_hour</c> five
     /// hours and <c>seven_day</c> a week, the whole plan's; <c>seven_day_&lt;scope&gt;</c> a week of what the rest names (a model
-    /// family: <c>seven_day_opus</c>, limit-signals evidence §1.2 and the usage-read evidence's field table); any other key
+    /// family: <c>seven_day_opus</c>); any other key
     /// neither, never guessed.
     /// </summary>
     public static (int? Minutes, string? Scope) Shape(string key) => key switch

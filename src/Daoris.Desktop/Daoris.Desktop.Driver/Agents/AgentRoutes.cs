@@ -3,9 +3,9 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The routes <c>daoris agent</c> sends while Daoris runs (PUSH1f2d; RPC1f, the terminal RPC design §9), each the window twin of the
-/// change it makes, the verbs no route takes, each with why it acts alone (D171's PUSH1f note, kept by D194 point 5), and which home each
-/// writes: the CLI's <c>AGENT_VERBS</c> rows for these verbs, now this program's. Held to the census by <c>PipeCensusTests</c>.
+/// The routes <c>daoris agent</c> sends while Daoris runs, each the window twin of the
+/// change it makes, the verbs no route takes, each with why it acts alone, and which home each
+/// writes: the CLI's <c>AGENT_VERBS</c> rows for these verbs. Held to the census by <c>PipeCensusTests</c>.
 /// </summary>
 public static class AgentRoutes
 {
@@ -20,10 +20,10 @@ public static class AgentRoutes
     /// <summary><c>agent settings &lt;agent&gt; model|effort …</c>: an account's own model and effort.</summary>
     public static InstanceRoute Settings { get; } = Person("SET_AGENT_SETTINGS");
 
-    /// <summary><c>agent unpin</c> and <c>agent profile add|remove|default|rename|join</c>: the Agents place's own actions (PUSH1f2e2).</summary>
+    /// <summary><c>agent unpin</c> and <c>agent profile add|remove|default|rename|join</c>: the Agents place's own actions.</summary>
     public static InstanceRoute Harness { get; } = Person("HARNESS_ACTION");
 
-    /// <summary><c>agent profile order|ready|use</c>: the Accounts place's order, <i>Try now</i> and how a list is used (PUSH1f2e2, PUSH1f2e3).</summary>
+    /// <summary><c>agent profile order|ready|use</c>: the Accounts place's order, <i>Try now</i> and how a list is used.</summary>
     public static InstanceRoute Account { get; } = Person("ACCOUNT_USE");
 
     /// <summary>

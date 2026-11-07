@@ -1,21 +1,20 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What Daoris writes into a <b>dsh home it created</b> (ACP3/D53, closing HELP2): the two outbound
+/// What Daoris writes into a <b>dsh home it created</b>: the two outbound
 /// rows off, and Daoris's own skills reachable.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>Only where Daoris made the directory.</b> A named credential profile is a directory
-/// Daoris created and owns the location of (SES3); with no profile named, <c>DSH_HOME</c> is unset
+/// Daoris created and owns the location of; with no profile named, <c>DSH_HOME</c> is unset
 /// and dsh uses the person's own <c>~/.dsh</c>, which is theirs. Silence means the harness's own
 /// configuration home, and that rule is what keeps this feature purely additive — so this class
 /// writes into a Daoris profile home and nowhere else, and <see cref="NoticeFor"/> is what happens
 /// instead when there is no such home.</para>
 ///
-/// <para><b>Every claim here was read from the harness's own shipped bundle</b> at
+/// <para><b>Every claim here comes from the harness's own shipped bundle</b> at
 /// <c>0.1.6-alpha.2</c>, never guessed — the disable syntax, the two row ids, the patch file's path
-/// and role, and the skill provider's option name and resolution order.
-/// <c>docs/2026-09-22-acp3-probe-evidence.md</c> §4 and §5 are the record.</para>
+/// and role, and the skill provider's option name and resolution order.</para>
 /// </remarks>
 public static class DshProfile
 {
@@ -38,7 +37,7 @@ public static class DshProfile
     /// <remarks>
     /// <c>session-log-deepseek</c> uploads the canonical session log as a field on every
     /// official-route model request; <c>session-telemetry-otel</c> exports to a hosted collector
-    /// under <c>FEEDBACK_ONLY</c>. Neither is hidden — each is documented — and D47 §4 says
+    /// under <c>FEEDBACK_ONLY</c>. Neither is hidden — each is documented — and
     /// transcript-class material never leaves the machine, so a deployment either patches them off or
     /// accepts them out loud. Daoris does not accept them on anybody's behalf.
     /// </remarks>
@@ -49,7 +48,7 @@ public static class DshProfile
     /// Where Daoris's skills already are. 🔴 <b>Relative, and that is load-bearing</b>: dsh resolves
     /// the default project roots per session <c>cwd</c>, but resolves <c>customSkillDirs</c> once, at
     /// construction, against the process's own working directory. The driver spawns one process per
-    /// tree with its working directory set to that tree (D51), so a relative path lands on the right
+    /// tree with its working directory set to that tree, so a relative path lands on the right
     /// repository — where an absolute path written into a shared home would pin every session in it
     /// to whichever tree happened to be first.
     /// </summary>
@@ -83,7 +82,7 @@ public static class DshProfile
                 + $"`{SkillRoot}` added to skill-filesystem's `customSkillDirs`.");
         }
 
-        // Atomic, so a reader of the overlay never meets half of it (DEDUP3a); the bytes are the plain write's.
+        // Atomic, so a reader of the overlay never meets half of it; the bytes are the plain write's.
         AtomicFile.WriteText(path, Compose());
         return path;
     }
@@ -125,9 +124,9 @@ public static class DshProfile
     /// case, including every other harness.
     /// </summary>
     /// <remarks>
-    /// 🔴 <b>Three answers were possible and only one is honest.</b> Refusing the run would strand a
+    /// 🔴 <b>Three answers are possible and only one is honest.</b> Refusing the run would strand a
     /// capability over a default somebody else chose. Writing into <c>~/.dsh</c> would reach into the
-    /// person's own configuration home, which SES3 puts out of bounds. So: run, and put the sentence
+    /// person's own configuration home, which is out of bounds. So: run, and put the sentence
     /// where the run is read. The person can act on it in one command.
     /// </remarks>
     /// <summary>Whether a door is dsh's, the one whose Daoris-made home is given this profile.</summary>

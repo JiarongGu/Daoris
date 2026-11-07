@@ -5,7 +5,7 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's <c>plugin</c> proposal (PLUG9): a plugin that has landed, added from its folder in the
+/// Ask Daoris's <c>plugin</c> proposal: a plugin that has landed, added from its folder in the
 /// checkout of the repository that holds it, or one installed here switched on or off — judged with the
 /// catalogue's own reader, as <c>daoris plugin add</c> and the Plugins place's switch judge them. Its door is
 /// <c>add</c>, <c>enable</c>, <c>disable</c> or <c>update</c>; its target the id of a plugin switched or
@@ -24,7 +24,7 @@ namespace Daoris.Driver;
 /// <para>🔴 <b>Nothing runs</b> at the proposal, the judgement or the Apply: an add copies a folder and a
 /// switch writes a row; the loop starts what a plugin runs at its next look, as it does any plugin.</para>
 ///
-/// <para><b>Since PLUG9 (c) and (d) (D103)</b> an add may name one of the install's own offers by its id,
+/// <para>An add may name one of the install's own offers by its id,
 /// never a path, and an <c>update</c> replaces an installed plugin from the source it recorded, judged by
 /// <see cref="PluginInstall.PlanUpdate"/> and showing what changes before Apply.</para>
 /// </remarks>
@@ -32,10 +32,10 @@ internal sealed class HelpPluginProposals : IHelpProposalKind
 {
     public string Kind => "plugin";
 
-    // PLUG9: adding a plugin that has landed, or switching one; making one is an ask, never this.
+    // Adding a plugin that has landed, or switching one; making one is an ask, never this.
     public string Tool => "plugin_propose";
 
-    // HELPPLUG1c: `approve` and `withdraw`, the person's approval of what a plugin's server offers Ask Daoris, by their press.
+    // `approve` and `withdraw`, the person's approval of what a plugin's server offers Ask Daoris, by their press.
     public IReadOnlyList<string> Doors { get; } = ["add", "enable", "disable", "update", "approve", "withdraw"];
 
     public HelpProposal Read(HelpProposal proposal, JsonElement file) => proposal with
@@ -63,8 +63,8 @@ internal sealed class HelpPluginProposals : IHelpProposalKind
     {
         var (proposal, plan, doors, id) = (applying.Proposal, applying.Plan, applying.Doors, applying.Id);
 
-        // PLUG9: a copy, a swap or a row, and nothing started — the loop starts what it runs at its next look.
-        // HELPPLUG1c: an approval writes exactly the tools its card named, through the page's own code; a withdrawal takes it back.
+        // A copy, a swap or a row, and nothing started — the loop starts what it runs at its next look.
+        // An approval writes exactly the tools its card named, through the page's own code; a withdrawal takes it back.
         try
         {
             if (plan.Grant is { Withdraw: true } withdrawn) doors.WithdrawHelp(withdrawn.Plugin, withdrawn.Server);
@@ -83,7 +83,7 @@ internal sealed class HelpPluginProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// An add of one of the install's offers, by its id (PLUG9 d): one the install carries, sound, and not
+    /// An add of one of the install's offers, by its id: one the install carries, sound, and not
     /// installed here — <see cref="PluginInstall.AddOffer"/>'s own refusals, said before the card is drawn.
     /// </summary>
     private static HelpPlan OfferAdd(HelpProposal proposal, HelpMachineFacts facts)
@@ -114,7 +114,7 @@ internal sealed class HelpPluginProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// An update of an installed plugin from the source it recorded (PLUG9 c): <see cref="PluginInstall.PlanUpdate"/>'s
+    /// An update of an installed plugin from the source it recorded: <see cref="PluginInstall.PlanUpdate"/>'s
     /// judgement, in the words <c>daoris plugin update</c> refuses with, and what changes before Apply.
     /// </summary>
     private static HelpPlan PluginUpdate(HelpProposal proposal, HelpMachineFacts facts)
@@ -143,9 +143,9 @@ internal sealed class HelpPluginProposals : IHelpProposalKind
     private static string Said(string value) => value.Length > 0 ? $"`{value}`" : "none";
 
     /// <summary>
-    /// An approval of what a plugin's server offers Ask Daoris, or its withdrawal (HELPPLUG1c, D170's note), judged as the page's
+    /// An approval of what a plugin's server offers Ask Daoris, or its withdrawal, judged as the page's
     /// press is (<see cref="HelpGrants"/>): a plugin here, switched on and sound, a server it declares for Ask Daoris (the one it
-    /// declares, where none is named), never one naming a generic execution tool (HELP4), each write accepted one it declares,
+    /// declares, where none is named), never one naming a generic execution tool, each write accepted one it declares,
     /// and a change from what is on file. The card names every tool, its reads and its writes apart.
     /// </summary>
     private static HelpPlan GrantPlan(HelpProposal proposal, HelpMachineFacts facts)
@@ -372,8 +372,8 @@ internal sealed class HelpPluginProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// A server as the card says it (HELPPLUG1a, D170 point 3): who it is handed to, and what it offers Ask Daoris, its reads and
-    /// its writes outside Daoris, which reach the helper only once the person approves them on the plugin's page (D170's note).
+    /// A server as the card says it: who it is handed to, and what it offers Ask Daoris, its reads and
+    /// its writes outside Daoris, which reach the helper only once the person approves them on the plugin's page.
     /// </summary>
     private static string Handed(HelpPluginPart server)
     {
@@ -418,7 +418,7 @@ internal sealed class HelpPluginProposals : IHelpProposalKind
 }
 
 /// <summary>
-/// What a plugin proposal's card shows (PLUG9): the plugin's id, the command it starts, the points it
+/// What a plugin proposal's card shows: the plugin's id, the command it starts, the points it
 /// speaks on, the harnesses it declares and the servers it hands every session, each as its manifest
 /// writes it, so the person sees what will run before Apply.
 /// </summary>
@@ -433,10 +433,10 @@ public sealed record HelpPluginView(
     /// <summary>Why an installed plugin contributes nothing as it stands, in the catalogue's words; null when sound.</summary>
     public string? Problem { get; init; }
 
-    /// <summary>What an offer says it needs on the machine, in its README's words (PLUG9 d); empty for every other plugin.</summary>
+    /// <summary>What an offer says it needs on the machine, in its README's words; empty for every other plugin.</summary>
     public IReadOnlyList<string> Needs { get; init; } = [];
 
-    /// <summary>What an update changes (PLUG9 c); empty for every other change, and for an update whose declarations stay.</summary>
+    /// <summary>What an update changes; empty for every other change, and for an update whose declarations stay.</summary>
     public IReadOnlyList<PluginChange> Changes { get; init; } = [];
 
     /// <summary>Whether Apply replaces the installed folder from its source, keeping what it kept (an update).</summary>
@@ -444,7 +444,7 @@ public sealed record HelpPluginView(
 }
 
 /// <summary>
-/// What a plugin proposal's approval or withdrawal names (HELPPLUG1c): the plugin, the server, each tool it reads with and each
+/// What a plugin proposal's approval or withdrawal names: the plugin, the server, each tool it reads with and each
 /// it writes outside Daoris with, as the plugin declares them, and the writes accepted, as the approval keeps them.
 /// </summary>
 /// <param name="Name">The plugin's name, as its manifest gives it.</param>
@@ -459,7 +459,7 @@ public sealed record HelpGrantView(
 /// <summary>A harness a plugin declares, or a server it hands: its name, and the command that runs it.</summary>
 public sealed record HelpPluginPart(string Name, IReadOnlyList<string> Command)
 {
-    /// <summary>A server's: who it is handed to (HELPPLUG1a, D170 point 3), sessions where its manifest names none.</summary>
+    /// <summary>A server's: who it is handed to, sessions where its manifest names none.</summary>
     public IReadOnlyList<string> To { get; init; } = [PluginServerTo.Sessions];
 
     /// <summary>A server's: the tools of it that read, which Ask Daoris may call once the person approves them.</summary>
@@ -472,32 +472,32 @@ public sealed record HelpPluginPart(string Name, IReadOnlyList<string> Command)
 public interface IHelpPluginDoors
 {
     /// <summary>
-    /// <c>daoris plugin add</c>'s copy, the driver's twin (<see cref="PluginInstall.Add"/>, PLUG9): the
+    /// <c>daoris plugin add</c>'s copy, the driver's twin (<see cref="PluginInstall.Add"/>): the
     /// folder copied into the home under its manifest's id. 🔴 Nothing the plugin declares is started here.
     /// </summary>
     void AddPlugin(string folder);
 
-    /// <summary><c>PLUGIN_ACTION</c>'s own enable or disable: a row in <c>plugins.json</c> (PLUG9).</summary>
+    /// <summary><c>PLUGIN_ACTION</c>'s own enable or disable: a row in <c>plugins.json</c>.</summary>
     void SwitchPlugin(string id, bool on);
 
     /// <summary>
-    /// <c>PLUGIN_INSTALL</c>'s own copy of one of the install's offers, by its id (PLUG9 d,
+    /// <c>PLUGIN_INSTALL</c>'s own copy of one of the install's offers, by its id (
     /// <see cref="PluginInstall.AddOffer"/>). 🔴 Nothing the plugin declares is started here.
     /// </summary>
     void AddOffer(string id);
 
     /// <summary>
-    /// <c>PLUGIN_UPDATE</c>'s own apply (PLUG9 c, <see cref="PluginInstall.Update"/>): the plugin's hook stopped,
+    /// <c>PLUGIN_UPDATE</c>'s own apply (<see cref="PluginInstall.Update"/>): the plugin's hook stopped,
     /// its install folder replaced from its source, what it kept untouched; the loop starts it again later.
     /// </summary>
     Task UpdatePluginAsync(string id, CancellationToken ct);
 
     /// <summary>
-    /// <c>PLUGIN_ACTION</c>'s own <c>help-approve</c> (HELPPLUG1c, <see cref="HelpGrants.Approve(string, PluginCatalog, string, string, IReadOnlyList{string})"/>):
+    /// <c>PLUGIN_ACTION</c>'s own <c>help-approve</c> (<see cref="HelpGrants.Approve(string, PluginCatalog, string, string, IReadOnlyList{string})"/>):
     /// the server's exact reads and the writes accepted, the others asked. Ask Daoris's next spawn is handed it.
     /// </summary>
     void ApproveHelp(string plugin, string server, IReadOnlyList<string> writes);
 
-    /// <summary><c>PLUGIN_ACTION</c>'s own <c>help-withdraw</c> (HELPPLUG1c, <see cref="HelpGrants.Withdraw"/>).</summary>
+    /// <summary><c>PLUGIN_ACTION</c>'s own <c>help-withdraw</c> (<see cref="HelpGrants.Withdraw"/>).</summary>
     void WithdrawHelp(string plugin, string server);
 }

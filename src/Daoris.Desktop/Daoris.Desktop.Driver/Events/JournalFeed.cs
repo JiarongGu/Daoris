@@ -4,13 +4,13 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>What one read of the journal brought a teller.</summary>
-/// <param name="Store">The identity of the store the positions are of (§4.5: a position alone carries no store).</param>
+/// <param name="Store">The identity of the store the positions are of: a position alone carries no store.</param>
 /// <param name="Floor">The lowest position the journal keeps.</param>
 /// <param name="Newest">The newest position issued.</param>
-/// <param name="Rows">The rows after the cursor, in order; those from the floor where the cursor was below it.</param>
+/// <param name="Rows">The rows after the cursor, in order; those from the floor where the cursor is below it.</param>
 /// <param name="Missed">
-/// Whether the teller's history is incomplete: its cursor was below the floor, or another store's. Its rows are what the journal still
-/// holds; what lay between is gone, and the teller says so and tells none of it (§4.1, §19.6).
+/// Whether the teller's history is incomplete: its cursor is below the floor, or another store's. Its rows are what the journal still
+/// holds; what lay between is gone, and the teller says so and tells none of it.
 /// </param>
 public sealed record JournalBatch(string Store, long Floor, long Newest, IReadOnlyList<JournalEntry> Rows, bool Missed = false);
 
@@ -21,9 +21,9 @@ public sealed record JournalTeller(Func<JournalBatch, Task> Told, Func<JournalPo
 public sealed record JournalPosition(string Store, long Position);
 
 /// <summary>
-/// One process's reading of the service's event journal from its come-up (FOUNDATION1 l-i, the foundation design §4.1): the change stream asked
+/// One process's reading of the service's event journal from its come-up: the change stream asked
 /// for its <c>journal</c> family, each move answered by the rows after the cursor, handed to the teller in order. A cursor that is kept is the
-/// teller's own and advances only after the teller took the batch, so a teller that fails reads the rows again.
+/// teller's own and advances only after the teller takes the batch, so a teller that fails reads the rows again.
 /// </summary>
 /// <remarks>
 /// <para><b>Never a hot loop</b>, as <see cref="LedgerChanges"/> is: the next ask is never sooner than <see cref="Floor"/> after the last
@@ -63,7 +63,7 @@ public static class JournalFeed
     /// </summary>
     /// <param name="heard">
     /// Told after each ask whether the host answered it with the journal's place: false for a host that keeps none, a refusal and a drop, so a
-    /// reader that keeps its old surface as its adapter (the foundation design §19.12) uses it whenever the journal may tell it nothing.
+    /// reader that keeps its own surface as its adapter uses it whenever the journal may tell it nothing.
     /// </param>
     public static async Task RunAsync(
         ServiceClient service, IReadOnlyList<JournalTeller> tellers, MachineLog? log, CancellationToken ct, TimeSpan? floor = null, Action<bool>? heard = null)

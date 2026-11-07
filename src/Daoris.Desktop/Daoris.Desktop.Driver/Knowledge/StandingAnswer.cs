@@ -3,8 +3,8 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// How a standing answer is quoted (KNOWUSE1b): the person's words verbatim, line by line, bounded at what a door takes and saying what
-/// was cut. The standing block says it as the person's choices on this machine (<see cref="StandingBlock.Choices"/>).
+/// How a standing answer is quoted: the person's words verbatim, line by line, bounded at what a door takes and saying what
+/// is cut. The standing block says it as the person's choices on this machine (<see cref="StandingBlock.Choices"/>).
 /// </summary>
 public static class StandingText
 {

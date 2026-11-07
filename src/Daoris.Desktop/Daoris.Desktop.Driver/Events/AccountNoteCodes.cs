@@ -4,8 +4,8 @@ namespace Daoris.Driver;
 public static class AccountNoteCodes
 {
     // ——— An account's line, appended to a failure. A limit's cooling line names whose accounts they are, never which, and the window
-    // its reset named. `account.cooling` is no longer written but notes on machines carry it, and the page words a line only with every
-    // value its entry says, so a code that gained a value would show each of them as recorded: a limit that named no window has its own line.
+    // its reset named. `account.cooling` is written by no code but notes on machines carry it, and the page words a line only with every
+    // value its entry says, so a code that adds a value would show each of them as recorded: a limit that names no window has its own line.
     public static readonly NoteCode AccountCooling = new("account.cooling", ["until", "why"]) { Why = NoteCodes.Cooling };
     public static readonly NoteCode AccountCoolingWindow = new("account.cooling-window", ["until", "why", "owner", "window"]) { Why = NoteCodes.Cooling };
     public static readonly NoteCode AccountCoolingNoWindow = new("account.cooling-no-window", ["until", "why", "owner"]) { Why = NoteCodes.Cooling };

@@ -4,12 +4,12 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The effective configuration a partner's start hands its agent (COAGENT1b, D199 point 4; the co-agent design §3.3): what a measurement
-/// of its confinement (M2) is taken in, and what admission compares with a measured row. Two starts that hand the same configuration
+/// The effective configuration a partner's start hands its agent: what a measurement
+/// of its confinement is taken in, and what admission compares with a measured row. Two starts that hand the same configuration
 /// read the same, whichever piece and copy: the copy is named by its shape, never its path.
 /// </summary>
 /// <param name="Agent">The adapter's name.</param>
-/// <param name="DoorVersion">The harness's version the account's walk resolved, or null where none was read (which no row holds).</param>
+/// <param name="DoorVersion">The harness's version the account's walk resolved, or null where none is read (which no row holds).</param>
 /// <param name="Posture">The posture handed, in the harness's own words: the adapter's, since a partner's start names no access setup.</param>
 /// <param name="WritableRoots">
 /// What the start hands it to write: <see cref="PartnerConfigurations.CopyAlone"/>, its working folder being its copy and nothing else
@@ -27,7 +27,7 @@ namespace Daoris.Driver;
 public sealed record PartnerConfiguration(
     string Agent, string? DoorVersion, string? Posture, string WritableRoots, string Network, string System, string SettingsDigest);
 
-/// <summary>A partner's effective configuration, made from what its start hands (the co-agent design §3.3, §8.5).</summary>
+/// <summary>A partner's effective configuration, made from what its start hands.</summary>
 public static class PartnerConfigurations
 {
     /// <summary>Its copy is its working folder and the one thing it is handed to write.</summary>
