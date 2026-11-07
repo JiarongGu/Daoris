@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-07 - A door present by a file look was never said present after a report, and CI 11's other reds
+
+- **Symptom:** CI run 11's fast half on 75a4b694be: `RoleStructureTests` read a presence-probed agent's `Installed` as unknown after
+  its report; five driver classes found no `adapter` in the records they read; the driver's structure test named Install's
+  `InstallRollback` and Roles' `GoOnMarks`, `RuledLine` and `AnswersAloneNotes` above them; the short-waits, direct-start and home-join
+  censuses named the look-work and session-reads benches and `AgentSheetStartsTests`; the modules README had no `supervisorcourse` row.
+- **Root cause:** d8040ca886 (PERF3) replaced the roster's in-memory reports with `reads.json`, written only by a version question
+  (`BinaryVersion`); a door with no version arguments is present by a look at its file and kept nothing, so the sheet and the role
+  structure, which read only the kept reading, never said what the report found. 6b73851be6 (AGENTPROVIDER1t-ii) renamed those records'
+  field to `door`, its tests not with it. 510049d830 and e9dafcb742 (CONTEXTDRIVE1j) named the upper subdomains' types; the three merged
+  chunks went past their censuses and README rows.
+- **Fix:** `BinaryPresence` keeps the look as the door's reading, written only where it differs from the kept one; the tests read
+  `door`; the going back is asked through Install's `GoingBackRefusals` port, which Workplace fills, and `ReferredPoints` lies in
+  `Course/GoOn`; each census entry carries its reason, the README its rows. `canon/canon.json`'s reach to the driver was 5d2f0a9506's.
+- **Verify:** each class red first at the tip, then green filtered; both projects' censuses, `AgentSheetStartsTests` with the process
+  settings, the home census and the merge tool's suite-reads test.
+
 ## 2026-11-07 - A `dev-line` run held before its landing on the install, and its automatic merge was filed as the person's press (LANDAUTO1)
 
 - **Symptom:** on the owner's install, after its update to the build of 778dfe5d29, Lyntai's `dev-line` runs stopped landing by
