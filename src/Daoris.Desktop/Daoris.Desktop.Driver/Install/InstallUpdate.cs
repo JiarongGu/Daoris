@@ -5,19 +5,19 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// An install's update, the machine-local half (UPDATE1, D139): the request both doors write under the home, which
+/// An install's update, the machine-local half: the request both doors write under the home, which
 /// mode holds for what is staged, and what a draining look plans with.
 /// </summary>
 /// <remarks>
-/// <para><b>Two doors, one file</b> (D50): the application's banner and <c>daoris update</c> write
+/// <para><b>Two doors, one file</b>: the application's banner and <c>daoris update</c> write
 /// <c>$DAORIS_HOME/update.json</c> through <c>InstallUpdate.Write</c>, and the application reads it at each of its looks. Absent or
 /// unreadable is the default, a staged build installed when idle, so a torn file never stops an update nor starts one now.</para>
 ///
-/// <para><b>The drain holds starts, never looks</b> (D139 §2, rejected: skipping looks). A look still reports endings, tells
+/// <para><b>The drain holds starts, never looks</b> (rejected: skipping looks). A look still reports endings, tells
 /// plugins and syncs; <see cref="Drained"/> is the config it plans with, and <c>HeldFor</c> says the hold in its own
 /// words where the person's hold would otherwise be named.</para>
 ///
-/// <para><b>One type</b> (FLAT1b-iii-a): the rules, the request's file read, written and cleared, and an install found beside a
+/// <para><b>One type</b>: the rules, the request's file read, written and cleared, and an install found beside a
 /// home are its own members.</para>
 /// </remarks>
 public static class InstallUpdate
@@ -27,14 +27,14 @@ public static class InstallUpdate
 
     /// <summary>
     /// Why a quest sits while an update drains — the driver's sentence, which the page says in the reader's language by the
-    /// tick's <c>forUpdate</c> (UX5 U27), never by these words.
+    /// tick's <c>forUpdate</c>, never by these words.
     /// </summary>
     public const string HoldReason =
         "an update is waiting for this machine's sessions to end: nothing new starts until it is installed and Daoris "
         + "starts again — Not now, or `daoris update --cancel`, lets work start meanwhile.";
 
     /// <summary>
-    /// The look's line for a start the drain held that is not a quest's (DRAINHOLD1): <paramref name="family"/> and what was held, then the
+    /// The look's line for a start the drain held that is not a quest's: <paramref name="family"/> and what was held, then the
     /// drain's own sentence (<see cref="HoldReason"/>, which names <c>update --cancel</c>), so a held helper, piece, pass or landing reads
     /// as the update's wait and not as a refusal. A quest's hold is a consideration (<c>HeldFor</c>), never this line.
     /// </summary>
@@ -44,15 +44,15 @@ public static class InstallUpdate
 
     /// <summary>
     /// The mode that holds for the build staged now: the request's, where it was said of this build or of whatever is
-    /// staged; <see cref="UpdateMode.WhenIdle"/> otherwise, so a newer stage drains again after a *Not now* (D139 §3).
+    /// staged; <see cref="UpdateMode.WhenIdle"/> otherwise, so a newer stage drains again after a *Not now*.
     /// </summary>
     public static string ModeFor(UpdateRequest? request, string? staged) => UpdateRequests.ModeFor(request, staged);
 
     /// <summary>
-    /// The config a draining look plans with (D139 §2): every drivable repository held, and every one a set-up is admitted alone in
-    /// (AGENTSPLACE1b), so no quest starts, resumes or carries on and no answered park goes on; and no intake, which a hold does not
+    /// The config a draining look plans with: every drivable repository held, and every one a set-up is admitted alone in,
+    /// so no quest starts, resumes or carries on and no answered park goes on; and no intake, which a hold does not
     /// reach. The cap is left, since a workspace's set-up plan reads it to publish, which starts nothing. An Intake actor that is set is
-    /// turned off in what <see cref="ActorChoices.Effective"/> reads too (D205 §6.4), so the drain's <i>intakes too</i> reaches it.
+    /// turned off in what <see cref="ActorChoices.Effective"/> reads too, so the drain's <i>intakes too</i> reaches it.
     /// </summary>
     public static DriverConfig Drained(DriverConfig config) => config with
     {
@@ -71,7 +71,7 @@ public static class InstallUpdate
     // (`IsHeldForUpdate`) are the work orders' members of this type (`UpdateHolds`): they read the planner's verdicts, which
     // this subdomain does not name. Each caller keeps the spelling `InstallUpdate.HeldFor`.
 
-    /// <summary>Whether the work allows the update (D139 §2): no driven session running and no conversation's turn in flight.</summary>
+    /// <summary>Whether the work allows the update: no driven session running and no conversation's turn in flight.</summary>
     public static bool Idle(int driven, int turns) => driven <= 0 && turns <= 0;
 
     /// <summary>The request, or null when there is none or it does not read: the default then holds. The launcher's reader.</summary>
@@ -93,7 +93,7 @@ public static class InstallUpdate
             ["at"] = (request.At ?? DateTimeOffset.UtcNow).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture),
         };
         JsonFile.Write(PathOf(home), root);
-        // The shell's own write, said to its watch of the file (FABRIC-EVENT4): its look follows this call directly.
+        // The shell's own write, said to its watch of the file: its look follows this call directly.
         HomeWrites.Mine(PathOf(home));
     }
 
@@ -111,7 +111,7 @@ public static class InstallUpdate
     }
 
     /// <summary>
-    /// The install a home belongs to (D63): the folder above it when that is a marked install and the home is its
+    /// The install a home belongs to: the folder above it when that is a marked install and the home is its
     /// <c>data</c> — or null, for a home named for itself (a gate's, a terminal's), which a terminal points at with <c>--install</c>.
     /// </summary>
     public static string? InstallOf(string home)

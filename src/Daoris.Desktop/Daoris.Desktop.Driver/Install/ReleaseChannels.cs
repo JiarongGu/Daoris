@@ -3,16 +3,16 @@ using System.Globalization;
 
 namespace Daoris.Driver;
 
-/// <summary>A channel install staged and verified, not yet the version (PUSH1f2e, the alone-path design §1.4).</summary>
+/// <summary>A channel install staged and verified, not yet the version.</summary>
 /// <param name="Where">The managed folder the pin points at, which the staging becomes.</param>
 /// <param name="Staging">The staging folder, <c>&lt;where&gt;.part-&lt;pid&gt;</c>, its <c>package</c> folder the install.</param>
 /// <param name="Executable">The executable, relative to the package folder, <c>/</c>-separated.</param>
 public sealed record ChannelStaged(string Where, string Staging, string Executable);
 
 /// <summary>
-/// The makers' own release channels this build installs a pin from (AGT2b; PUSH1f2e), each Install's <see cref="IReleaseSource"/> in
+/// The makers' own release channels this build installs a pin from, each Install's <see cref="IReleaseSource"/> in
 /// <see cref="Sources"/>, the CLI's <c>channels.ts</c> until it left. A pin is staged where no reader takes it and no other run meets it, <c>&lt;where&gt;.part-&lt;pid&gt;</c>, holding
-/// nothing while it downloads, then published by one folder move after a look again at what is there (the alone-path design §1.4): a
+/// nothing while it downloads, then published by one folder move after a look again at what is there: a
 /// terminal's pin publishes under the home's lease, which it waited for; the window's loop holds its home already.
 /// </summary>
 public static class ReleaseChannels
@@ -38,7 +38,7 @@ public static class ReleaseChannels
     /// <exception cref="DriverException">It is not one exact release the channel installs; or the channel is not one this build knows.</exception>
     public static void RefuseVersion(string channel, string version) => Of(channel).RefuseVersion(version);
 
-    /// <summary>The exact version a channel names as its newest release (USE1a), what an update pins.</summary>
+    /// <summary>The exact version a channel names as its newest release, what an update pins.</summary>
     public static Task<string> LatestAsync(string channel, CancellationToken ct, HttpMessageHandler? transport = null) =>
         Of(channel).LatestAsync(ct, transport);
 

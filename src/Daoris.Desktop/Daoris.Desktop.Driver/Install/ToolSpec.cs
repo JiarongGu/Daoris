@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A program Daoris manages (AGENTPROVIDER1 row f; the agent-provider design §2.3): its binary, how to ask its version, install and update
+/// A program Daoris manages: its binary, how to ask its version, install and update
 /// it, the package or release channel a pin is fetched from (<see cref="IReleaseSource"/> names the channel), the environment a pinned
 /// copy is run in, and whether it is present by a file look alone. Install owns the shape and each provider and door states its own,
 /// so a pin, an update and a probe read one description of a program, never a second copy of its facts.

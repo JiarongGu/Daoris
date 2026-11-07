@@ -15,6 +15,6 @@ public sealed record ToolsRead(
 /// <param name="File">The file that starts; null for a refusal, and for a system tool <c>PATH</c> does not find.</param>
 /// <param name="Refused">
 /// True when the way set cannot run: it never falls back to <c>PATH</c>. False with a problem is a system tool
-/// <c>PATH</c> does not find, which is said, and whose callers keep today's behaviour (§2.3).
+/// <c>PATH</c> does not find, which is said, and whose callers keep today's behaviour.
 /// </param>
 public sealed record ToolResolution(string Tool, ToolWay? Way, string? Version, string? File, bool Refused, string? Problem);

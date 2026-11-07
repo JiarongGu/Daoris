@@ -5,11 +5,10 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Codex's own release channel (AGT2b), what a pin of <c>codex</c> installs from (PUSH1f2e, ported from the CLI's <c>channels.ts</c>):
+/// Codex's own release channel, what a pin of <c>codex</c> installs from (ported from the CLI's <c>channels.ts</c>):
 /// the release's package tarball, by the digest its metadata publishes AND the line its SUMS file publishes, the SUMS file itself
 /// checked against the metadata first, then unpacked whole, since its executable finds its helpers through the package's layout.
-/// <c>docs/2026-09-24-agt2b-channel-evidence.md</c> is where every address, shape and name below was checked. What it checks and says
-/// is here; <see cref="CodexReleaseDownloads"/> fetches and stages.
+/// What the channel says is here; <see cref="CodexReleaseDownloads"/> fetches and stages.
 /// </summary>
 public static partial class CodexReleases
 {
@@ -21,7 +20,7 @@ public static partial class CodexReleases
     /// <summary>The documented fallback when a release's own metadata does not answer.</summary>
     public const string GitHub = "https://api.github.com/repos/openai/codex/releases/tags";
 
-    /// <summary>Where the channel names its newest release (USE1a): the newest release's own metadata.</summary>
+    /// <summary>Where the channel names its newest release: the newest release's own metadata.</summary>
     public const string Latest = "https://releases.openai.com/codex/channels/latest";
 
     /// <summary>The file beside each release that lists every package's SHA-256.</summary>

@@ -8,13 +8,13 @@ public sealed record ToolVersionCleared(string Outcome, string? Keeps, IReadOnly
 
 /// <summary>
 /// What the tools' delete of a downloaded version asks of the workplace's download clearing, and what the verb asks of it for the sessions
-/// that run (FOUNDATION1 mod-v, the design §14.3: the lower declares a port, the higher implements it): the install judges whether the
+/// that run (the lower declares a port, the higher implements it): the install judges whether the
 /// version may go by its own rules and asks the clearing to take it, then says what the clearing answered in its own words.
 /// </summary>
 public interface IToolDownloads
 {
     /// <summary>
-    /// Clear one managed tool's downloaded version under the clearing's judgement (KEEP1b), never keeping one for being recent: the use files
+    /// Clear one managed tool's downloaded version under the clearing's judgement, never keeping one for being recent: the use files
     /// read at <paramref name="harnesses"/> and <paramref name="config"/> as they stand, the running sessions as <paramref name="sessions"/>
     /// reads them right before the judgement, the move asked of <paramref name="move"/> where a test holds its own.
     /// </summary>

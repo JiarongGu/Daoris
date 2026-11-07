@@ -8,13 +8,13 @@ namespace Daoris.Driver;
 // The launcher compiles this file alone (Daoris.Desktop.Launcher.csproj), beside InstallSwap.cs: it uses nothing but the base
 // library, and names no other type of the driver.
 
-/// <summary>How the person wants a staged build installed (UPDATE1, D139 §2, §3), as <c>update.json</c> writes it.</summary>
+/// <summary>How the person wants a staged build installed, as <c>update.json</c> writes it.</summary>
 public static class UpdateMode
 {
     /// <summary>Start nothing new, let what runs end or park, then install: the default for a staged build.</summary>
     public const string WhenIdle = "when-idle";
 
-    /// <summary>Install it now: the close ends what runs, as any close does (D104).</summary>
+    /// <summary>Install it now: the close ends what runs, as any close does.</summary>
     public const string Now = "now";
 
     /// <summary>Keep it staged and drive on; for that build only.</summary>
@@ -27,7 +27,7 @@ public static class UpdateMode
 public sealed record UpdateRequest(string Mode, string? Build, DateTimeOffset? At);
 
 /// <summary>
-/// <c>$DAORIS_HOME/update.json</c> (D139 §3): its name, and which mode holds for what is staged. The launcher compiles this
+/// <c>$DAORIS_HOME/update.json</c>: its name, and which mode holds for what is staged. The launcher compiles this
 /// file, and reads the request through <c>UpdateRequests.Read</c> as the application does: one reader. Absent, unreadable or
 /// of a mode this build does not know is null, and the default, when idle, then holds. The driver library's
 /// <c>InstallUpdate</c> writes it, and is where its rules are told.
@@ -64,7 +64,7 @@ public static class UpdateRequests
 
     /// <summary>
     /// The mode that holds for the build staged now: the request's, where it was said of this build or of whatever is
-    /// staged; when idle otherwise, so a newer stage drains again after a *Not now* (D139 §3).
+    /// staged; when idle otherwise, so a newer stage drains again after a *Not now*.
     /// </summary>
     public static string ModeFor(UpdateRequest? request, string? staged) =>
         request is null ? UpdateMode.WhenIdle
@@ -76,7 +76,7 @@ public static class UpdateRequests
 public sealed record StagedFile(string Path, long Size, string Sha256);
 
 /// <summary>
-/// What <c>update/staged/build.json</c> says of the build beside it (UPDATE1, D139 §1): its id, the release version it
+/// What <c>update/staged/build.json</c> says of the build beside it: its id, the release version it
 /// was packed at, the commit it was built from where the publish could read one, when, and every file it carries.
 /// </summary>
 public sealed record StagedManifest(string Id, string Version, string? Commit, DateTimeOffset? At, IReadOnlyList<StagedFile> Files);
@@ -91,11 +91,11 @@ public sealed record StagedManifest(string Id, string Version, string? Commit, D
 /// </param>
 public sealed record StagedProblem(string Code, string Sentence);
 
-/// <summary>A move the swap made, relative to the install's root, journalled before the next one (D139 §5).</summary>
+/// <summary>A move the swap made, relative to the install's root, journalled before the next one.</summary>
 public sealed record SwapMove(string From, string To);
 
 /// <summary>
-/// The launcher's record of the last swap, <c>update/swap.json</c> (D139 §5, §6): which build, how far it got, and how
+/// The launcher's record of the last swap, <c>update/swap.json</c>: which build, how far it got, and how
 /// it ended. The application reads it at its start to say the outcome once, and marks it told.
 /// </summary>
 /// <param name="Phase"><see cref="SwapPhase"/>'s words.</param>
@@ -103,20 +103,20 @@ public sealed record SwapMove(string From, string To);
 /// For a roll-back or a refusal, its code: a <see cref="StagedProblem"/>'s (<c>busy</c> only for a hold that outlasted the
 /// wait, or something still running from <c>app/</c>), or <c>exited</c>, <c>start</c>, <c>move</c> (a move or its journal
 /// failed, not held), <c>interrupted</c>, <c>error</c> (the launcher met an error before it could swap). On a journal still
-/// under way, the reason a roll-back that stopped part way was undoing for, which the next start finishes it with (SWAP2).
+/// under way, the reason a roll-back that stopped part way was undoing for, which the next start finishes it with.
 /// </param>
-/// <param name="Holds">Every move the swap found held, and how long (SWAP2); null when none was.</param>
+/// <param name="Holds">Every move the swap found held, and how long; null when none was.</param>
 public sealed record SwapRecord(
     string Phase, string? Id, string? Version, string? Commit, DateTimeOffset? At, IReadOnlyList<SwapMove> Moves,
     int? Pid = null, string? Reason = null, string? Detail = null, bool? Confirmed = null, bool Told = false,
     IReadOnlyList<SwapHold>? Holds = null);
 
 /// <summary>
-/// A move the swap found held (SWAP2), relative to the install's root: how long it was refused, from the first refusal to
+/// A move the swap found held, relative to the install's root: how long it was refused, from the first refusal to
 /// the move or to the end of the wait, over how many tries, and whether it gave way. The measurement the wait is sized by.
 /// </summary>
 /// <param name="Held">
-/// The entry found held, relative to the install's root (DEPLOYBUSY1): the folder moved itself, or a file within it; null
+/// The entry found held, relative to the install's root: the folder moved itself, or a file within it; null
 /// where Windows could not tell, and on a journal written before it.
 /// </param>
 /// <param name="By">The processes found holding <paramref name="Held"/>, each <c>name (pid n)</c>; null where none was found.</param>
@@ -146,7 +146,7 @@ public static class SwapPhase
     /// <summary>The new application is started and has not yet said it came up.</summary>
     public const string Started = "started";
 
-    /// <summary>The new application came up: written by it, once composed (D139 §5).</summary>
+    /// <summary>The new application came up: written by it, once composed.</summary>
     public const string Confirmed = "confirmed";
 
     /// <summary>Done: the build before it removed.</summary>
@@ -160,7 +160,7 @@ public static class SwapPhase
 }
 
 /// <summary>
-/// A build staged beside an install, and the swap that installs it while the application is closed (UPDATE1, D139): the
+/// A build staged beside an install, and the swap that installs it while the application is closed: the
 /// layout's names, what a build must carry, and which manifest paths stay inside it.
 /// </summary>
 /// <remarks>
@@ -169,7 +169,7 @@ public static class SwapPhase
 /// launcher still references nothing and the check it runs before it moves a file is this one, not a second copy that
 /// could drift. So it uses nothing but the base library.</para>
 ///
-/// <para><b>The reads and writes are its own</b> (FLAT1b-iii-a): the manifest read, the build checked file by file, the
+/// <para><b>The reads and writes are its own</b>: the manifest read, the build checked file by file, the
 /// journal read and written, what is staged removed, and what runs from a folder; the swap is <see cref="InstallSwap"/>, and
 /// the launcher compiles both files, each on the base library alone.</para>
 ///
@@ -200,7 +200,7 @@ public static class StagedBuild
     /// <summary>The manifest's schema this build reads.</summary>
     public const int Schema = 1;
 
-    /// <summary>The application's folder, the launcher and the marker: the three names at an install's root a swap replaces (D93).</summary>
+    /// <summary>The application's folder, the launcher and the marker: the three names at an install's root a swap replaces.</summary>
     public const string AppFolder = "app";
 
     public const string Launcher = "Daoris.exe";
@@ -292,7 +292,7 @@ public static class StagedBuild
     }
 
     /// <summary>
-    /// Check the staged build before anything is replaced (D139 §4): its manifest reads at this schema, every file it names
+    /// Check the staged build before anything is replaced: its manifest reads at this schema, every file it names
     /// is there with its size and SHA-256, nothing is there it does not name, it carries <see cref="Required"/>,
     /// and the host when the install carries one. Null when it may be installed, or when nothing is staged.
     /// </summary>
@@ -363,7 +363,7 @@ public static class StagedBuild
         try
         {
             // Read sharing every access, the delete too: the launcher reads at every poll while the new application writes
-            // its confirmation, and a reader that shares less refuses that rename (SWAP2).
+            // its confirmation, and a reader that shares less refuses that rename.
             string text;
             using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
             using (var reader = new StreamReader(stream))
@@ -381,7 +381,7 @@ public static class StagedBuild
                 }
             }
 
-            // Absent on a journal written before SWAP2, which reads as it did.
+            // Absent on an older journal.
             List<SwapHold>? holds = null;
             if (root["holds"] is JsonArray held)
             {
@@ -391,7 +391,7 @@ public static class StagedBuild
                     if (entry is JsonObject hold && Text(hold["from"]) is { } from && Text(hold["to"]) is { } to
                         && Number(hold["ms"]) is { } ms && Number(hold["tries"]) is { } tries)
                     {
-                        // What was found holding it (DEPLOYBUSY1), absent on a hold journalled before it.
+                        // What was found holding it, where the journal names one.
                         holds.Add(new SwapHold(from, to, ms, (int)tries,
                             hold["released"] is JsonValue released && released.TryGetValue<bool>(out var gave) && gave,
                             Text(hold["held"]), Text(hold["by"]), Text(hold["holders"])));
@@ -458,7 +458,7 @@ public static class StagedBuild
         var staging = path + ".writing";
         File.WriteAllText(staging, root.ToJsonString(Indented).Replace("\r\n", "\n") + "\n", new System.Text.UTF8Encoding(false));
         Replace(staging, path);
-        // This process's own write, said to the updater's watch of the journal (FABRIC-EVENT4).
+        // This process's own write, said to the updater's watch of the journal.
         HomeWrites.Mine(path);
     }
 
@@ -467,10 +467,10 @@ public static class StagedBuild
         ReadJournal(install)?.Phase is SwapPhase.Swapping or SwapPhase.Started or SwapPhase.Confirmed;
 
     /// <summary>
-    /// The new application says it came up (D139 §5): a journal at <see cref="SwapPhase.Started"/> becomes
+    /// The new application says it came up: a journal at <see cref="SwapPhase.Started"/> becomes
     /// <see cref="SwapPhase.Confirmed"/>, which the waiting launcher reads. True when this start confirmed a swap, so the
     /// application says once that it was updated; false for every other start, and for a journal a roll-back stopped part
-    /// way through, which carries its reason and is finished at the next start, never confirmed (SWAP2).
+    /// way through, which carries its reason and is finished at the next start, never confirmed.
     /// </summary>
     public static bool Confirm(string install, int pid)
     {
@@ -515,7 +515,7 @@ public static class StagedBuild
         if (Directory.Exists(staged)) Directory.Delete(staged, recursive: true);
     }
 
-    /// <summary>Every process running from under <paramref name="folder"/>, by id — what the swap waits out (D139 §5).</summary>
+    /// <summary>Every process running from under <paramref name="folder"/>, by id — what the swap waits out.</summary>
     public static IReadOnlyList<int> RunningFrom(string folder)
     {
         var prefix = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder)) + Path.DirectorySeparatorChar;
@@ -540,9 +540,9 @@ public static class StagedBuild
 
     /// <summary>
     /// The journal renamed into place, tried again a moment while a reader holds it open without delete sharing, which
-    /// Windows refuses as access denied and which clears in milliseconds (AtomicFile.Replace's REV3 measurement, written here
+    /// Windows refuses as access denied and which clears in milliseconds (as AtomicFile.Replace tries it, written here
     /// because the launcher compiles this file alone). A refused write would lose a phase the swap reached, or the new
-    /// application's confirmation (SWAP2).
+    /// application's confirmation.
     /// </summary>
     private static void Replace(string staging, string path)
     {

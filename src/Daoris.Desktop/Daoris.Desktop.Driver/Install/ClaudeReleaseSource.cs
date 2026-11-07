@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Claude Code's signed release bucket as Install's source (AGT2b): its manifest verified against the pinned key, then the binary by the
+/// Claude Code's signed release bucket as Install's source: its manifest verified against the pinned key, then the binary by the
 /// hash the manifest vouches for, both properties of this source (<see cref="ClaudeReleases"/>, <see cref="ClaudeReleaseDownloads"/>).
 /// </summary>
 public sealed class ClaudeReleaseSource : IReleaseSource

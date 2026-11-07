@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where <c>daoris tool</c> acts (PUSH1f2c): the terminal it says its words on and finds the running Daoris from, and what a
+/// Where <c>daoris tool</c> acts: the terminal it says its words on and finds the running Daoris from, and what a
 /// verb reads the machine by: the folder a relative file is named from, the <c>PATH</c> a system tool is found on, this machine's
 /// platform, the network, a named file's answer to its version question, and the process a download stages under. A test hands its
 /// own of each.
@@ -51,7 +51,7 @@ public sealed record ToolsWorld
 }
 
 /// <summary>
-/// One tool's press (PUSH1f2c, D194 points 4 and 6): the route the window's press sends and the payload the verb writes from its words,
+/// One tool's press (6): the route the window's press sends and the payload the verb writes from its words,
 /// the operation it calls alone, the press's own fields read from the route's answer, and the one function that says it from those
 /// fields on both paths. <see cref="ToolsCommand.Plan"/> makes it; a test sends its payload through the route.
 /// </summary>
@@ -69,11 +69,11 @@ public sealed class ToolWords(string message, int exit = 2) : Exception(message)
 }
 
 /// <summary>
-/// <c>daoris tool</c> (PUSH1f2c, D194, the alone-path design §1.2): the programs Daoris runs beside its agents from a terminal,
+/// <c>daoris tool</c>: the programs Daoris runs beside its agents from a terminal,
 /// the words <c>daoris tool …</c> hands this program. Each short change is its route through <see cref="InstanceDoor.PressAsync"/>
-/// where the running Daoris answers, confirmed in its window; else its operation, on the terminal's word (D50), refused from a
-/// session's terminal (D194 point 5). A download, an update and a managed use are long: they hold nothing while they fetch, stage
-/// under this process's name, and publish under the home's lease, waited for and never refused (§1.4). Its words are one function per
+/// where the running Daoris answers, confirmed in its window; else its operation, on the terminal's word, refused from a
+/// session's terminal. A download, an update and a managed use are long: they hold nothing while they fetch, stage
+/// under this process's name, and publish under the home's lease, waited for and never refused. Its words are one function per
 /// verb on both paths, today's text kept (<c>fixtures/tools-text.json</c>).
 /// </summary>
 /// <remarks>
@@ -104,7 +104,7 @@ public static class ToolsCommand
     /// <summary>
     /// Whether the words are a short change, which holds the home's lease from the top: a way set to the system's or a file, a delete,
     /// a location added or removed, and a look, whose copies are the home's. A read, the usage and the long verbs hold none: a download
-    /// takes the lease itself to publish (the alone-path design §1.2, §1.4).
+    /// takes the lease itself to publish.
     /// </summary>
     public static bool Changes(IReadOnlyList<string> args)
     {
@@ -191,7 +191,7 @@ public static class ToolsCommand
             case "use":
             {
                 // A way set to the system's or a file is a press (Plan); a managed use answers once the driver's download starts, and
-                // its end is an event a terminal hears only by subscribing (RPC1g): this verb's alone, as a download and an update are.
+                // its end is an event a terminal hears only by subscribing: this verb's alone, as a download and an update are.
                 var tool = words.NeedTool("use");
                 var home = RequireHome(world);
                 if (words.Way == "managed") return await ManagedAsync(world, home, tool, "use", words.Named, ct).ConfigureAwait(false);
@@ -284,7 +284,7 @@ public static class ToolsCommand
                     return 0;
                 }
 
-                // KEEP1b: alone, no Daoris runs to say what a session was handed, so the home's process markers say whether one runs at all.
+                // Alone, no Daoris runs to say what a session was handed, so the home's process markers say whether one runs at all.
                 return new ToolPress("delete", ToolRoutes.Delete, new JsonObject { ["tool"] = tool.Id, ["version"] = version },
                     async stop => (object?)await ToolInstall.DeleteAsync(home, tool.Id, version,
                         token => ToolDownloads.Current.RunningAsync(home, token), ct: stop).ConfigureAwait(false),
@@ -341,7 +341,7 @@ public static class ToolsCommand
                     return 0;
                 }
 
-                // A value is set only on a git new enough to read it (TOOLS6): the refusal names both versions, here as in the window.
+                // A value is set only on a git new enough to read it: the refusal names both versions, here as in the window.
                 return new ToolPress("git", ToolRoutes.GitSetting, payload,
                     async stop => (object?)await ToolChoices.SetGitAsync(home, "core.sshCommand", command, GitVersions.AskAsync, stop).ConfigureAwait(false),
                     _ => null, _ => Said());
@@ -399,7 +399,7 @@ public static class ToolsCommand
         return $"{lead}{how}: {(resolution.Refused ? "refused" : "not found")} — {resolution.Problem}";
     }
 
-    /// <summary><c>locations</c> alone lists them in read order (§3.3); <c>add</c> and <c>remove</c> are presses (<see cref="Plan"/>).</summary>
+    /// <summary><c>locations</c> alone lists them in read order; <c>add</c> and <c>remove</c> are presses (<see cref="Plan"/>).</summary>
     private static int Locations(ToolsWorld world, string home, string? sub)
     {
         void Say(string line) => world.Instance.Out.WriteLine(line);
@@ -456,7 +456,7 @@ public static class ToolsCommand
     }
 
     /// <summary>
-    /// Download, use or update a managed version (§3.6, §3.7; the alone-path design §1.4): planned first, so a refusal fetches nothing;
+    /// Download, use or update a managed version: planned first, so a refusal fetches nothing;
     /// staged under this process's name holding nothing; then published, and for a use or an update written, under the home's lease,
     /// waited for and never refused. The person's Ctrl+C takes the staging with it, and nothing switches.
     /// </summary>
@@ -548,7 +548,7 @@ public static class ToolsCommand
     }
 
     /// <summary>
-    /// The home's lease for a publication (the alone-path design §1.4): waited for, saying once its hold has lasted thirty seconds who
+    /// The home's lease for a publication: waited for, saying once its hold has lasted thirty seconds who
     /// holds it; beside an instance, holding nothing.
     /// </summary>
     private static Task<HomeLease> Publication(ToolsWorld world, string home, string action, CancellationToken ct) =>
@@ -584,8 +584,8 @@ public static class ToolsCommand
 
     /// <summary>
     /// A press as the alone-path design §1.1 takes it: its route through the instance that answers, its words read from the answer's
-    /// fields; else its operation here, refused from a session's terminal where it is the person's (D194 point 5), its refusal one line
-    /// with its code (D194 point 6).
+    /// fields; else its operation here, refused from a session's terminal where it is the person's, its refusal one line
+    /// with its code.
     /// </summary>
     private static async Task<int> PressAsync(ToolsWorld world, ToolPress press, CancellationToken ct)
     {
