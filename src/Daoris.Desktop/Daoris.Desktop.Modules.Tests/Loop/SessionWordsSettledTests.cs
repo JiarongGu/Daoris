@@ -63,6 +63,22 @@ public sealed class SessionWordsSettledTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// The page names no key, and a say the service did not answer for may still have been kept: said again, it must be the same
+    /// press to the line, so the record path says every word under a key of its own, as the inbox and chat paths do.
+    /// </summary>
+    [Fact]
+    public async Task A_word_said_with_no_key_to_a_record_goes_to_the_service_under_one()
+    {
+        var service = new KeyedSayService { Records = Records(Chat("c1", "completed")) };
+        var loop = await UpAsync(service);
+
+        await loop.Words.SayAsync("c1", Words, [], preface: null, "screen", CancellationToken.None);
+
+        var body = Assert.Single(service.Said("c1")).Body;
+        Assert.Matches("\"key\":\"press/", body.Replace(" ", ""));
+    }
+
+    /// <summary>
     /// The pump: a word held while its record wound up, then tried when it ended, is answered settled (its first say's answer is lost, the word
     /// kept and taken meanwhile): off the held file with nothing shown, never a second word on the record and nothing said to the person.
     /// </summary>
