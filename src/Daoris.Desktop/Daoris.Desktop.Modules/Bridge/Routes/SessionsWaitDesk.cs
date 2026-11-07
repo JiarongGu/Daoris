@@ -121,6 +121,9 @@ internal sealed class SessionsWaitDesk(DriverContext context)
     public async Task<object?> DeferAsync(SupervisorActPress press, CancellationToken cancellationToken) =>
         await SupervisorDoor.DeferAsync(_loop, press.Form.Json, cancellationToken).ConfigureAwait(false);
 
+    public async Task<object?> CourseAsync(SupervisorActPress press, CancellationToken cancellationToken) =>
+        await SupervisorCourseDoor.CourseAsync(_loop, press.Form.Json, cancellationToken).ConfigureAwait(false);
+
     public async Task<object?> RoleActAsync(RoleActPress press, CancellationToken cancellationToken) =>
         await SupervisorDoor.ActAsync(_loop.Pipe, press.Form.Json, cancellationToken, context.OwnerScopesOf(), context.StewardWorldOf()).ConfigureAwait(false);
 

@@ -139,8 +139,11 @@ public static class SupervisorRoutes
     /// <summary>The holder's leaving a question to the owner (SUPERVISOR1b): <c>Role</c>, judged as the answer is.</summary>
     public const string Defer = "SUPERVISOR_DEFER";
 
+    /// <summary>The holder's course on a point a person's <c>refer</c> rule holds a line at (CONTEXTDRIVE1j): <c>Role</c>, judged as the answer is.</summary>
+    public const string Course = "SUPERVISOR_COURSE";
+
     /// <summary>The role's acts, each judged by the judge's role method and nothing else.</summary>
-    public static readonly IReadOnlyList<string> Acts = [Answer, Defer];
+    public static readonly IReadOnlyList<string> Acts = [Answer, Defer, Course];
 
     /// <summary>What waits for the holder: <c>Open</c>.</summary>
     public const string Waiting = "SUPERVISOR_WAITING";
@@ -210,13 +213,17 @@ public static class SupervisorActs
     {
         SupervisorRoutes.Answer => SupervisorForm.Read(payload),
         SupervisorRoutes.Defer => SupervisorDeferForm.Read(payload),
+        SupervisorRoutes.Course => SupervisorCourseForm.Read(payload),
         _ => null,
     };
 
     internal sealed record ActFields(string Id, string Question, string Generation, string Proof, string Chosen, IReadOnlyList<SupervisorReason> Reasons);
 
-    /// <summary>The six fields of either form, <paramref name="chosen"/> its fifth (<c>choice</c> or <c>bound</c>), up to <paramref name="most"/>.</summary>
-    internal static ActFields? Fields(JsonElement? payload, string chosen, int most)
+    /// <summary>
+    /// The six fields of each form, <paramref name="named"/> its second (<c>question</c>, or a course's <c>point</c>) and <paramref name="chosen"/>
+    /// its fifth (<c>choice</c>, <c>bound</c> or <c>do</c>), up to <paramref name="most"/>.
+    /// </summary>
+    internal static ActFields? Fields(JsonElement? payload, string chosen, int most, string named = "question")
     {
         if (payload is not { ValueKind: JsonValueKind.Object } body) return null;
         var fields = new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
@@ -225,9 +232,9 @@ public static class SupervisorActs
             if (!fields.TryAdd(property.Name, property.Value)) return null;
         }
 
-        string[] named = ["id", "question", "generation", "proof", chosen, "reasons"];
-        if (fields.Count != named.Length || !named.All(fields.ContainsKey)) return null;
-        if (Text(fields["id"], 128) is not { } id || Text(fields["question"], 128) is not { } question
+        string[] names = ["id", named, "generation", "proof", chosen, "reasons"];
+        if (fields.Count != names.Length || !names.All(fields.ContainsKey)) return null;
+        if (Text(fields["id"], 128) is not { } id || Text(fields[named], 128) is not { } question
             || Text(fields["generation"], 128) is not { } generation || Text(fields["proof"], 64) is not { } proof
             || Text(fields[chosen], most) is not { } choice || fields["reasons"].ValueKind != JsonValueKind.Array)
         {

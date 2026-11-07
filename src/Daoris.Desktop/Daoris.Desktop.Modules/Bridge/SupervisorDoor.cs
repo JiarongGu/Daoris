@@ -261,7 +261,8 @@ public static class SupervisorDoor
         var service = loop.Service ?? throw DriverArguments.NotReady();
         var admission = (IDecisionAdmission?)loop.Pipe?.StandingConfirmation ?? NoDecisionAdmission.Instance;
         var waiting = new List<object>();
-        foreach (var record in (await service.RecordsAsync(ct).ConfigureAwait(false)).Where(each => each.Parked && !each.Teammate))
+        var records = (await service.RecordsAsync(ct).ConfigureAwait(false)).ToList();
+        foreach (var record in records.Where(each => each.Parked && !each.Teammate))
         {
             if (record.Repository is not { } repository || admission.Admit(repository) is not { Why: null, Generation: { } generation }) continue;
             var asked = await Task.Run(() => new QuestionFiles(loop.Home).Read(record.Session), ct).ConfigureAwait(false);
@@ -273,6 +274,7 @@ public static class SupervisorDoor
             });
         }
 
+        waiting.AddRange(SupervisorCourseDoor.Waiting(loop, records, admission));
         return waiting;
     }
 

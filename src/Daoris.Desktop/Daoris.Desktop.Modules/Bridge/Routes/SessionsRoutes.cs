@@ -259,6 +259,13 @@ public sealed class SessionsRoutes(DriverContext context)
     [Publishes("SUPERVISOR_DEFER", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private Task<object?> SupervisorDeferAsync(SupervisorActPress press, CancellationToken cancellationToken) => _wait.DeferAsync(press, cancellationToken);
 
+    // The supervisor's course on a point a person's `refer` rule holds a line at: `{ id, point, generation, proof, do, reasons }`, the
+    // role's third act, judged as the answer is. A `go-on` is held for the role's window, then goes through the count's own door between
+    // turns; a `hold` leaves the point to the owner at once. `{ kept, decision?, goesOnAt?, why? }`, refused as data.
+    [DriverRoute("SUPERVISOR_COURSE", PipeClass.Role, Drain = PipeDrain.Passes)]
+    [Publishes("SUPERVISOR_COURSE", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
+    private Task<object?> SupervisorCourseAsync(SupervisorActPress press, CancellationToken cancellationToken) => _wait.CourseAsync(press, cancellationToken);
+
     // A role's act: `{ role, act, generation, form, proof }`, `Role` in the pipe's census, judged by the
     // judge's role method as SUPERVISOR_ANSWER is, then admitted once with an id Daoris draws. Its handler checks the act once more
     // under the judge's lock (§3.4 step 8: still admitted, its holder's hash present, its appointment live) and runs its role's table's
