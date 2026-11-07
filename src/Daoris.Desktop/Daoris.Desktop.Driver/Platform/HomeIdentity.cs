@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A home's identity (HOMEID1, D171, the terminal RPC design §3.1): <c>&lt;home&gt;/home.json</c>,
+/// A home's identity: <c>&lt;home&gt;/home.json</c>,
 /// <c>{ "id": "&lt;32 lower-case hex&gt;", "minted": "&lt;ISO 8601&gt;" }</c>. One folder has many paths (a junction, a mapped
 /// or <c>subst</c> drive, another case, a short name), and every one of them reads this file alike, so a running service, an
 /// address file and the home's lease are told apart by it and never by a path.
@@ -28,7 +28,7 @@ public static class HomeIdentity
 
     private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
-    /// <summary>Where a home's identity is: the home's <c>home-id</c> entry (D172, HOMELAYOUT2).</summary>
+    /// <summary>Where a home's identity is: the home's <c>home-id</c> entry.</summary>
     public static string PathIn(string home) => DaorisHome.Entry(home, HomeEntry.HomeId);
 
     /// <summary>Whether a value is an id as this file holds one: 32 lower-case hex characters.</summary>
@@ -107,7 +107,7 @@ public static class HomeIdentity
         var beside = $"{path}.{Guid.NewGuid():N}.writing";
         try
         {
-            // The home and the folder its id is in (`data/` since HOMELAYOUT3), which a new home has not made yet.
+            // The home and the folder its id is in (`data/`), which a new home has not made yet.
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             File.WriteAllText(beside, Minted(), Utf8);
             File.Move(beside, path, overwrite: false);

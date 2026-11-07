@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// How the driver downloads a binary: one client, one fetch with its words, one streaming hash. The tool
-/// installer and the Claude release download each carried a copy (DEDUP8); each still chooses its own
+/// installer and the Claude release download each carried a copy; each still chooses its own
 /// exception, so a refusal reads as that caller's kind.
 /// </summary>
 internal static class Downloads

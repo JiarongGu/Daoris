@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What holds a repository's checkout alone (GITLOCK1), as its holder writes it beside the checkout's lock: what a start or a writer it
+/// What holds a repository's checkout alone, as its holder writes it beside the checkout's lock: what a start or a writer it
 /// refuses names.
 /// </summary>
 public static class HeldBy
 {
-    /// <summary>Bringing its branches up to date: a line's pull and the replays (WSR6), or a tree's own update.</summary>
+    /// <summary>Bringing its branches up to date: a line's pull and the replays, or a tree's own update.</summary>
     public const string Updating = "updating";
 
     /// <summary>Tidying or removing its session trees, or letting go of their locks.</summary>
@@ -15,9 +15,9 @@ public static class HeldBy
     /// <summary>Moving its line to what its integration promoted.</summary>
     public const string Promoting = "promoting";
 
-    /// <summary>A git act of the person's, or the act journal's reconciliation of one (GITAPP2a).</summary>
+    /// <summary>A git act of the person's, or the act journal's reconciliation of one.</summary>
     public const string Acting = "acting";
 
-    /// <summary>A delivery's landing writing its branch's ref (LANDNODE1b2).</summary>
+    /// <summary>A delivery's landing writing its branch's ref.</summary>
     public const string Landing = "landing";
 }

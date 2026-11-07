@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// DEDUP6 (D166's note): the one yes-or-no for a name that is joined to the disk. Ten copies of the path check disagreed on
+/// The one yes-or-no for a name that is joined to the disk. Ten copies of the path check disagreed on
 /// <c>\</c>, <c>:</c>, <c>..</c> and control characters; a caller keeps its own refusal sentence and asks this. Containment
 /// and existence stay with the caller, and a path handed to git only (<c>a:b</c> is a legal tree entry) keeps its own rule.
 /// </summary>

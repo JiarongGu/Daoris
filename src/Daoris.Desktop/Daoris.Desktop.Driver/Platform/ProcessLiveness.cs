@@ -3,8 +3,8 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Whether a process named by its id and its start time still runs as the process it named: the home lease's test of a live holder
-/// (HOMELEASE1), and since FOUNDATION1f-i the move record's test of a live claim (the foundation design §3.3, §13.4, §19.1), one test for both
+/// Whether a process named by its id and its start time still runs as the process it named: the home lease's test of a live holder,
+/// and the move record's test of a live claim, one test for both
 /// so a move is taken over from a run exactly when the lease would judge that run's process gone.
 /// </summary>
 /// <remarks>
@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// exited as it was looked at, is gone; an id running under another start time is another process, so the one named is gone.</para>
 /// <para><b>A start time it may not read counts as alive</b>: nothing can tell, and the lease's <i>cannot tell</i> holds, so neither a lease
 /// nor a move is ever taken from a process merely because its start was hidden.</para>
-/// <para>The home is one machine's: an id of another machine's process reads as gone (§19.1 point 5). Compiled into the launcher with the lease,
+/// <para>The home is one machine's: an id of another machine's process reads as gone. Compiled into the launcher with the lease,
 /// so it uses the base library alone.</para>
 /// </remarks>
 public static class ProcessLiveness

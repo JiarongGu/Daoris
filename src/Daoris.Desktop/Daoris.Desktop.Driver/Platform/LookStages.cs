@@ -4,9 +4,9 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What each part of the loop's looks took (LOOKWAIT1, D181 point 6): every stage of a look, and every piece of the work that runs
-/// beside it (the remote sync, a start's preparation that outlived its look, a plugin's word on an ending, a packet frozen, and since
-/// PARALLEL1g an owed opinion's, a helper's ask's and a landing selection's judgment), timed
+/// What each part of the loop's looks took: every stage of a look, and every piece of the work that runs
+/// beside it (the remote sync, a start's preparation that outlived its look, a plugin's word on an ending, a packet frozen, an owed
+/// opinion's, a helper's ask's and a landing selection's judgment), timed
 /// as a span with its subject, so a slow look names its slow part in the machine log rather than only its length.
 /// </summary>
 /// <remarks>
@@ -19,7 +19,7 @@ namespace Daoris.Driver;
 /// look marked <c>~</c>; a stage under <see cref="Floor"/> left out. A subject is a name, a quest's <c>#id</c>, a session or a
 /// repository, never a path.</para>
 ///
-/// <para><b>A start's queue</b> (LOOKWAIT1b). A start the work of a stage makes waits for its place in <see cref="ProcessStarts"/>
+/// <para><b>A start's queue</b>. A start the work of a stage makes waits for its place in <see cref="ProcessStarts"/>
 /// apart from its run: the work a span runs (<see cref="StageSpan.RunAsync{T}"/>, and every <see cref="TimeAsync{T}"/>) says those
 /// waits as its queue, the innermost span's alone. A wait with no span's work in flight, or begun beside one, is said nowhere.</para>
 ///
@@ -135,7 +135,7 @@ public sealed class LookStages
         private int _ended;
         private volatile bool _beside;
 
-        // Its work's starts waiting for a place now, under _gate, and since when one has (LOOKWAIT1b): the time any waited is its
+        // Its work's starts waiting for a place now, under _gate, and since when one has: the time any waited is its
         // queue, so a fan-out's waits side by side are said once, on the span's own clock, never longer than the span.
         private int _waits;
         private long _waitingSince;
@@ -163,7 +163,7 @@ public sealed class LookStages
         public void Queued(TimeSpan queued) => Interlocked.Add(ref _queued, (long)queued.TotalMilliseconds);
 
         /// <summary>
-        /// Run <paramref name="work"/> as this span's own (LOOKWAIT1b, D181 point 6): each start of it that waits for a place
+        /// Run <paramref name="work"/> as this span's own: each start of it that waits for a place
         /// (<see cref="ProcessStarts"/>) is said as the span's queue, apart from its hold. Only within the work, never in the flow
         /// that began the span, so a span held in a variable while other work goes on takes none of that work's waits.
         /// </summary>
@@ -187,7 +187,7 @@ public sealed class LookStages
         }
 
         /// <summary>
-        /// Its queue so far (LOOKSLOW2): what was waited, and a wait open now counted to now, so a look slow at its threshold says
+        /// Its queue so far: what was waited, and a wait open now counted to now, so a look slow at its threshold says
         /// whether it is waiting for a place or working. Written always, 0 included, never held to <see cref="Floor"/>.
         /// </summary>
         internal long QueuedSoFar()
@@ -215,7 +215,7 @@ public sealed class LookStages
         }
 
         /// <summary>
-        /// It runs on beside the look that began it, which let go of it (PARALLEL1b: a start not yet open), so it is marked as work
+        /// It runs on beside the look that began it, which let go of it (a start not yet open), so it is marked as work
         /// beside the look in the line it ends in, never read as a later look's own.
         /// </summary>
         public void Aside() => _beside = true;

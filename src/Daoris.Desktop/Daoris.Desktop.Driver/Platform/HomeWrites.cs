@@ -4,7 +4,7 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The marks of what this process wrote itself to a file of the home (FABRIC-EVENT4, the design §A4.1, EVENT2's rule): a writer
+/// The marks of what this process wrote itself to a file of the home: a writer
 /// marks the file after it wrote it, and a <c>HomeWatch</c> that hears the write finds the file as marked and wakes
 /// nothing, so a look's own write never wakes the look that made it. A mark is the file's stamp, so a later move by anyone else
 /// is not the mark's, and is heard. A file of its own, using the base library alone, because the launcher compiles it in beside
