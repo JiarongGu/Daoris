@@ -274,7 +274,11 @@ public static class SupervisorDoor
         var records = (await service.RecordsAsync(ct).ConfigureAwait(false)).ToList();
         foreach (var record in records.Where(each => each.Parked && !each.Teammate))
         {
-            if (record.Repository is not { } repository || admission.Admit(repository) is not { Why: null, Generation: { } generation }) continue;
+            if (record.Repository is not { } repository
+                || admission.Admit(SupervisorKinds.Question, new RolePlace(Repository: repository), SupervisorKinds.Answer) is not { Why: null, Generation: { } generation })
+            {
+                continue;
+            }
             var asked = await Task.Run(() => new QuestionFiles(loop.Home).Read(record.Session), ct).ConfigureAwait(false);
             // A question its agent marked the owner's is never the holder's to look at.
             if (asked is null || asked.Owner is not null || loop.Supervisor.Decided(record.Session, asked.Id)) continue;
@@ -329,7 +333,7 @@ public static class SupervisorDoor
 
     // The act's hold the park's repository's effective supervisor's, a workspace's included; why not, else null.
     private static string? Covers(DriverLoop loop, string generation, string repository) =>
-        loop.Pipe?.StandingConfirmation is { } judge ? judge.Covers(generation, repository) : SupervisorWhy.NotStaffed;
+        loop.Pipe?.StandingConfirmation is { } judge ? judge.Covers(generation, SupervisorKinds.Question, repository) : SupervisorWhy.NotStaffed;
 
     /// <summary>
     /// The answer's answer: kept with the decision and when it goes on, or refused with why, keeping nothing; with the roles the

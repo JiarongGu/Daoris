@@ -22,6 +22,20 @@ public sealed class RoleVerbTests : IDisposable
         RoleStaffing.Wire(_home, () => StoreSettled.Yes).ImportFile();
         // The seeded Design role takes design machine-wide; the cases below add one that does, so it is removed first.
         RoleCatalog.Write(DesktopStore.LocationIn(_home), RoleChange.Remove("design"), () => StoreSettled.Yes);
+        HomeMigration.Run(_home, [new SupervisorStep(() => null)]);
+    }
+
+    [Fact]
+    public async Task Set_with_decides_makes_a_supervisor_of_a_kind_with_nothing_ticked()
+    {
+        Assert.Equal(0, await Run("set", "gatekeeper", "--name", "Gatekeeper", "--decides", "allow", "--holder", "rules"));
+
+        var hold = Catalogue().Slots.Single(slot => slot.Id == "gatekeeper").Role!.Hold!;
+        Assert.Equal((AppointedRoles.Supervisor, 0), (hold.Kind, hold.Acts.Count));
+        Assert.Equal([SupervisorKinds.Allow], hold.Decides);
+
+        Assert.Equal(0, await Run("set", "gatekeeper", "--decides", "every", "--scope", "workspace:studio"));
+        Assert.True(Catalogue().Slots.Single(slot => slot.Id == "gatekeeper").Role!.Hold!.Generic);
     }
 
     public void Dispose()

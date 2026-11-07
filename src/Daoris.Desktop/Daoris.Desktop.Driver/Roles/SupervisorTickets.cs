@@ -24,7 +24,7 @@ internal sealed class SupervisorTickets(SupervisorBook book, IDecisionAdmission 
                 return (await move([]).ConfigureAwait(false), (SupervisorTicket?)null);
             }
 
-            if (admission.Admit(released.Repository) is not { Why: null, Generation: { } generation } || generation != released.Generation)
+            if (admission.Admit(SupervisorKinds.Question, new RolePlace(Repository: released.Repository), SupervisorKinds.Answer) is not { Why: null, Generation: { } generation } || generation != released.Generation)
             {
                 book.Move(released, SupervisorState.Stale, now, SupervisorWhy.Revoked);
                 return (false, null);

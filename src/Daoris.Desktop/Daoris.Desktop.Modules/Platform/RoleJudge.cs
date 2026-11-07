@@ -14,20 +14,22 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
     private readonly MachineLog _log = owner.Log;
 
     /// <summary>
-    /// The decisions' admission: the effective supervisor's hold for <paramref name="repository"/>, its
-    /// generation and its role's window, read under the lock for this synchronous answer alone; refused <c>not-staffed</c> where the
-    /// supervisor there is held by the person's rules alone, or <c>not-started</c> where its terminal is not started this run.
+    /// The decisions' admission: the hold of the supervisor that answers <paramref name="kind"/> at <paramref name="place"/>, its
+    /// generation and its role's window, read under the lock for this synchronous answer alone; refused <c>not-staffed</c> where that
+    /// supervisor is held by the person's rules alone (or the person decides there), <c>not-granted</c> where its grants do not cover
+    /// <paramref name="act"/> (a null act is a leave, which needs none), or <c>not-started</c> where its terminal is not started this run.
     /// </summary>
     /// <remarks>
-    /// <b>One effective supervisor per question</b>, as a work's role is found: the most specific scope's, a repository's own over its
-    /// workspace's over the machine's, the workspace the one <see cref="StandingConfirmation.WorkspaceOf"/> places the repository in now.
+    /// <b>One supervisor per decision</b>, <see cref="SupervisorResolution.Find"/>'s, kind first, the repository placed in the workspace the
+    /// store keeps it in now. The catalogue is read at each ask, so a grant taken away by any process stops the next step that asks.
     /// </remarks>
-    public DecisionAdmitted Admit(string repository)
+    public DecisionAdmitted Admit(string kind, RolePlace place, string? act)
     {
-        var effective = Supervising(repository);
+        var effective = owner.Supervising(kind, place).Role;
         lock (state.Gate)
         {
             if (effective is not { Hold.Terminal: true }) return DecisionAdmitted.Refused(SupervisorWhy.NotStaffed);
+            if (act is not null && !SupervisorGrants.Covers(effective, kind, act)) return DecisionAdmitted.Refused(SupervisorWhy.NotGranted);
             return state.HoldOf(effective.Id) is { } hold
                 ? new DecisionAdmitted(hold.Generation, null) { Window = TimeSpan.FromMinutes(effective.Hold!.Window) }
                 : DecisionAdmitted.Refused(SupervisorWhy.NotStarted);
@@ -35,27 +37,24 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
     }
 
     /// <summary>
-    /// Whether the supervisor's hold of <paramref name="generation"/> is the effective one for <paramref name="repository"/>, which the
-    /// holder's answer and defer check against the park's repository: null where it is; <c>role-changed</c> where it holds a supervisor
-    /// that covers the repository but another is effective there (a repository's own made over its workspace's); <c>not-staffed</c>
-    /// where it covers nothing there.
+    /// Whether the supervisor's hold of <paramref name="generation"/> is the one that answers <paramref name="kind"/> at
+    /// <paramref name="repository"/>, which the holder's acts check against the park's repository: null where it is; <c>role-changed</c>
+    /// where it holds a supervisor deciding the kind there but another answers it (a repository's own made over its workspace's);
+    /// <c>not-staffed</c> where it decides nothing there.
     /// </summary>
-    public string? Covers(string generation, string repository)
+    public string? Covers(string generation, string kind, string repository)
     {
         var staffed = owner.Appointed();
-        var place = new RolePlace(owner.WorkspaceOf(repository), repository);
-        var effective = Supervising(repository);
+        var place = owner.Placed(repository);
+        var effective = owner.Supervising(kind, place).Role;
         lock (state.Gate)
         {
             if (effective is { Hold.Terminal: true } && state.HoldOf(effective.Id) is { } live && live.Generation == generation) return null;
             var named = state.Holds.FirstOrDefault(each => each.Kind == AppointedRoles.Supervisor && each.Generation == generation);
-            var covering = named is not null && staffed.Any(role => role.Id == named.Role && role.Scope.Covers(place));
+            var covering = named is not null && staffed.Any(role => role.Id == named.Role && SupervisorGrants.Decides(role, kind) && role.Scope.Covers(place));
             return covering ? SupervisorWhy.RoleChanged : SupervisorWhy.NotStaffed;
         }
     }
-
-    // The supervisor that acts for a repository now: the most specific scope's that covers it; null where none.
-    private RoleRecord? Supervising(string repository) => owner.Staffed(AppointedRoles.Supervisor, new RolePlace(owner.WorkspaceOf(repository), repository));
 
     /// <summary>
     /// The judge's role method, for every route of the census's <c>Role</c>
@@ -119,6 +118,7 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
 
         // The supervisor's answer or defer, each proved over its own route's canonical bytes; or ROLE_ACT's form.
         RoleActForm? act = null;
+        (string Kind, string Act)? asked = null;
         string generation, proof;
         byte[] canonical;
         if (roleAct)
@@ -129,7 +129,7 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
         else
         {
             if (SupervisorActs.Read(route, payload) is not { } read) return RoleJudgement.Refused(SupervisorWhy.Form);
-            (generation, proof, canonical) = (read.Generation, read.Proof, read.Canonical);
+            (generation, proof, canonical, asked) = (read.Generation, read.Proof, read.Canonical, SupervisorGrants.Asked(read));
         }
 
         if (state.Holds.FirstOrDefault(each => each.Kind == role && each.Generation == generation) is not { } held)
@@ -161,6 +161,8 @@ internal sealed class RoleJudge(StandingConfirmation owner, StandingState state)
         var repository = found.Scope.Kind == Daoris.Driver.RoleScope.Repository ? found.Scope.Id : null;
         if (act is null)
         {
+            // A supervisor's decision is covered by its grants alone; leaving one to the person asks none.
+            if (asked is { } needed && !SupervisorGrants.Covers(found, needed.Kind, needed.Act)) return RoleJudgement.Refused(SupervisorWhy.NotGranted);
             state.Answers[held.Generation] = state.Answers.GetValueOrDefault(held.Generation) + 1;
             return new RoleJudgement(true, null, held.Kind, repository, held.Generation, holding.Id, Roles: roles);
         }

@@ -16,7 +16,7 @@ public static class SupervisorCourseDoor
         if (form.Generation != generation) return Refused(SupervisorWhy.RoleChanged);
         var service = loop.Service ?? throw DriverArguments.NotReady();
         if (await service.RecordAsync(form.Id, ct).ConfigureAwait(false) is not { Repository: { } repository } record) return Refused(SupervisorWhy.NotReferred);
-        var uncovered = loop.Pipe?.StandingConfirmation is { } judge ? judge.Covers(generation, repository) : SupervisorWhy.NotStaffed;
+        var uncovered = loop.Pipe?.StandingConfirmation is { } judge ? judge.Covers(generation, SupervisorKinds.Course, repository) : SupervisorWhy.NotStaffed;
         if (uncovered is not null) return Refused(uncovered);
 
         var counts = (await LineCountsRead.FactsAsync(service, loop.Home, form.Id, ct).ConfigureAwait(false)).Counts;
@@ -38,7 +38,7 @@ public static class SupervisorCourseDoor
         foreach (var record in records)
         {
             if (record.Teammate || record.Repository is not { } repository || points.Open(record.Session, loop.Look.Latest) is not { } open) continue;
-            if (!loop.Supervisor.Refers(record.Session, open.Id) || admission.Admit(repository) is not { Why: null, Generation: { } generation }) continue;
+            if (!loop.Supervisor.Refers(record.Session, open.Id) || admission.Admit(SupervisorKinds.Course, new RolePlace(Repository: repository), SupervisorKinds.GoOn) is not { Why: null, Generation: { } generation }) continue;
             waiting.Add(new { Session = record.Session, Repository = repository, Point = open.Id, Count = open.Rule.Count, N = open.N, Rule = open.Rule.Id, Place = open.Rule.Place, Generation = generation });
         }
 

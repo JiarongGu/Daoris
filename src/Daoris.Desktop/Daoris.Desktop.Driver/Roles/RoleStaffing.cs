@@ -118,6 +118,9 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     /// <summary>The reading of the start's confirmation this staffing writes under, which the catalogue's write beside it takes too.</summary>
     internal Func<StoreSettled> Confirmation => Settled;
 
+    /// <summary>The home the staffing is of.</summary>
+    public string Home => home;
+
     /// <summary>The store's file in this home.</summary>
     public string Location => DesktopStore.LocationIn(home);
 

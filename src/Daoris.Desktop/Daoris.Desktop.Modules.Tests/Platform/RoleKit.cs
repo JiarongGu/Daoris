@@ -55,11 +55,26 @@ internal static class RoleKit
     public static RoleRecord Steward(IReadOnlyList<string> acts, string? holder = RoleHolders.Terminal) =>
         new(AppointedRoles.Steward, AuthoredText.Of("Steward"), RoleRecord.Appointed, [], CatalogueScope.Everywhere, new RoleHold(AppointedRoles.Steward, acts, holder));
 
-    /// <summary>A supervisor's record at <paramref name="scope"/> (the machine where none), held by <paramref name="holder"/>, its window in minutes.</summary>
+    /// <summary>
+    /// A supervisor's record at <paramref name="scope"/> (the machine where none), held by <paramref name="holder"/>, its window in minutes,
+    /// deciding <paramref name="decides"/> (every kind where none) under <paramref name="acts"/> (the seed's grants where none).
+    /// </summary>
     public static RoleRecord Supervisor(
-        string id = AppointedRoles.Supervisor, CatalogueScope? scope = null, string? holder = RoleHolders.Terminal, int window = RoleHold.DefaultWindow) =>
+        string id = AppointedRoles.Supervisor, CatalogueScope? scope = null, string? holder = RoleHolders.Terminal, int window = RoleHold.DefaultWindow,
+        IReadOnlyList<string>? decides = null, IReadOnlyList<string>? acts = null) =>
         new(id, AuthoredText.Of("Supervisor"), RoleRecord.Appointed, [], scope ?? CatalogueScope.Everywhere,
-            new RoleHold(AppointedRoles.Supervisor, AppointedRoles.SupervisorActs, holder, window));
+            new RoleHold(AppointedRoles.Supervisor, acts ?? SupervisorKinds.Seeded, holder, window) { Decides = decides ?? [] });
+
+    /// <summary>The admission for a question at <paramref name="repository"/>, answered: what the holder's answer asks.</summary>
+    public static DecisionAdmitted Admit(this StandingConfirmation standing, string repository) =>
+        standing.Admit(SupervisorKinds.Question, new RolePlace(Repository: repository), SupervisorKinds.Answer);
+
+    /// <summary>Whether a hold is the supervisor answering a question at <paramref name="repository"/>.</summary>
+    public static string? Covers(this StandingConfirmation standing, string generation, string repository) =>
+        standing.Covers(generation, SupervisorKinds.Question, repository);
+
+    /// <summary>An appointed record as the catalogue reads one that reads.</summary>
+    public static RoleSlot Slot(RoleRecord role) => new(role.Id, RoleState.Set, role, null, 1, role.Scope, Appointed: true);
 
     /// <summary>A repository's scope in the catalogue.</summary>
     public static CatalogueScope Repository(string name) => new(CatalogueScope.Repository, name);
@@ -73,8 +88,8 @@ internal static class RoleKit
     /// </summary>
     public static StandingConfirmation Staff(this StandingConfirmation standing, params RoleRecord[] roles)
     {
-        var now = standing.Appointed().Where(each => roles.All(role => role.Id != each.Id)).Concat(roles).ToList();
-        standing.Appointed = () => now;
+        var now = standing.Slots().Where(each => roles.All(role => role.Id != each.Id)).Concat(roles.Select(Slot)).ToList();
+        standing.Slots = () => now;
         return standing;
     }
 

@@ -37,7 +37,7 @@ public sealed class SupervisorCourseTests : IDisposable
 
     private sealed class Admits(string? generation, string? why = null) : IDecisionAdmission
     {
-        public DecisionAdmitted Admit(string repository) =>
+        public DecisionAdmitted Admit(string kind, RolePlace place, string? act) =>
             generation is null ? DecisionAdmitted.Refused(why ?? SupervisorWhy.NotStaffed) : new(generation, null) { Window = TimeSpan.FromMinutes(1) };
     }
 
