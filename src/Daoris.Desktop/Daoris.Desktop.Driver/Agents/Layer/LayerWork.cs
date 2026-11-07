@@ -19,6 +19,10 @@ internal sealed class LayerWork
 
     private readonly HashSet<string> _ended = new(StringComparer.Ordinal);
 
+    private readonly record struct Update(string Word, bool AfterTurn);
+
+    private readonly Dictionary<string, Update> _updates = new(StringComparer.Ordinal);
+
     private readonly Dictionary<string, string> _outputs = new(StringComparer.Ordinal);
 
     /// <summary>The reading a task's start is: a child's or a background task's; null where it was said already or names no task.</summary>
@@ -54,7 +58,26 @@ internal sealed class LayerWork
 
         if (!_tasks.Contains(task)) return null;
         _ended.Add(task);
-        return new WireReading.TaskEnded(task, ended.Status) { Output = _outputs.GetValueOrDefault(task), AfterTurn = afterTurn };
+        return new WireReading.TaskEnded(task, ended.Status ?? _updates.GetValueOrDefault(task).Word) { Output = _outputs.GetValueOrDefault(task), AfterTurn = afterTurn };
+    }
+
+    public void Updated(AgentTaskUpdated updated, bool afterTurn)
+    {
+        if (updated.TaskId is { Length: > 0 } task && updated.Status is { } status && _tasks.Contains(task) && !_ended.Contains(task))
+            _updates[task] = new Update(status, afterTurn);
+    }
+
+    /// <summary>The tasks whose update gave an ending word and whose end never came, ended in that word.</summary>
+    public IReadOnlyList<WireReading> Close()
+    {
+        var closed = new List<WireReading>();
+        foreach (var (task, update) in _updates)
+        {
+            if (update.Word is "running" or "pending" || !_ended.Add(task)) continue;
+            closed.Add(new WireReading.TaskEnded(task, update.Word) { AfterTurn = update.AfterTurn });
+        }
+
+        return closed;
     }
 
     /// <summary>The file a task's output is written to, kept for its end: the first its events named.</summary>

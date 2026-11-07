@@ -514,7 +514,9 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   door's context figures as sent; a child's and a background task's start and end, `LayerWork`: Lyntai's `AgentTaskStarted` of the
   subagent's kind one `ChildSeen` and its `AgentTaskEnded` one `ChildEnded`, any other kind one `TaskStarted` and `TaskEnded`, the end
   carrying the output file the events named and whether it came after the terminal, each once, as `NativeChildren` and `NativeTasks` read
-  the same frames), the two containers
+  the same frames; an `AgentTaskUpdated` keeps a task's last word, and at the turn's close a task it ended whose end never came is ended
+  in that word, after the streams end, as `NativeTasks.Close` does; an `AgentTaskOutputFile` is followed by the task's stream while the
+  command runs, `LayerStreams`), the two containers
   (`LayerContainer`: the registry's, which never spawns and refuses a door registered twice; one per start or read over its own
   runner), `LauncherRunner` (every layer start through `AgentStarts`, no clock on a turn, a read bounded by its patience, each raw line
   heard, the lines outside a frame and stderr kept as the harness's own, stdin recorded, a stop the kill of the tree), `LayerRun`
@@ -553,8 +555,8 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   observed with the lineage line it writes. Over every recorded Claude Code stream, today's
   door and the driven binding read alike (`ClaudeDrivenParityProcessTests`), the init's reading of what the harness loaded handed
   before the conversation its frame names, a message's id on its words read from Lyntai's `TextDelta`, and a family's lineage, the streams
-  beside and a child's words and calls on its own stream among them; a command its update alone ended, its notification never written,
-  is the one named gap, since Lyntai's Claude door yields no task's update. Their spawns hand
+  beside and a child's words and calls on its own stream among them, a command its update alone ended, its notification never written,
+  and a running command's output file followed from its tool result; no named gap remains there. Their spawns hand
   Claude Code the same arguments on each driven mode, `default` among them, but for the three flow tools the layer's door always denies
   (`ClaudeDrivenSpawnParityProcessTests`). A
   pending line may name the run kind it holds its case on (`run`, read by the suite and `tools/stand-ins.mjs` alike), and each
@@ -582,10 +584,7 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   `end_turn` or `cancelled`), so `LimitMove` moves it to the next account and its end says `limited`.
 - Row s-ii of the agent-layer adoption: a driven Claude Code start denies or keeps the three tools a headless turn cannot
   answer. The measurement needs the owner's yes; until it is made, the layer's door denying them is a gap of row d's spawn.
-- Row d of the agent-layer adoption: its installed proof, and two gaps the sibling library answers: its Claude door yields no task's
-  update, so a command its update alone ended (a process Daoris ended at its turn's end) is still running when a layer run's stream
-  closes and the ending names no cut; and it names a command's output file only where a frame's `output_file` does, at its end, so a
-  watched console shows a running command's output only once it ended.
+- Row d of the agent-layer adoption: its installed proof.
 - **CODEXTOOLS1**: Codex's first tool catalogue waits for the connector to be ready.
 - **STEER3**, **MSG1h**, **MSG1i**: steering and next-step words measured on other doors (Codex, native).
 - **BGWAIT2b**, **SESSCTX1a**, **HELPMODE1a3**, **FABRIC-C2b**: woken-turn words, resume and fresh part per door, full access

@@ -127,19 +127,68 @@ public sealed class ClaudeDrivenParityProcessTests : IDisposable
 
     /// <summary>
     /// A command its update ended after the turn, whose notification never came (a process Daoris ended at its turn's end before the harness
-    /// wrote it): today's reader ends it at the stream's close in the update's word, and the layer's events carry no update, so on the layer
-    /// path it is still running when the stream closes. The one difference, named.
+    /// wrote it): both paths end it at the stream's close in the update's word, and the run's ending cuts it.
     /// </summary>
     [Fact]
-    public async Task A_command_its_update_ended_with_no_notification_after_differs_only_by_its_named_gap()
+    public async Task A_command_its_update_ended_with_no_notification_after_is_read_alike_on_both_paths()
     {
         var (daoris, layer) = await BothAsync("claude-update-cut", UpdateCut);
 
-        var (rest, theirs) = ParityGap.Apart(daoris, layer, [UpdateEnded]);
-        ParityOracle.Equal(rest, theirs, Relation, []);
+        ParityOracle.Equal(daoris, layer, Relation, []);
         Assert.Contains(daoris.Seen, each => each is { Channel: ParityChannel.End } && each["cut"] == "npm run gates");
-        Assert.Contains(layer.Seen, each => each is { Channel: ParityChannel.End } && each["cut"] == "");
+        Assert.Contains(layer.Seen, each => each is { Channel: ParityChannel.End } && each["cut"] == "npm run gates");
     }
+
+    /// <summary>A backgrounded command whose result names its output file: the file's lines are on the command's stream on both paths.</summary>
+    [Fact]
+    public async Task A_running_command_s_output_file_is_followed_alike_on_both_paths()
+    {
+        var file = Path.Combine(_scratch, "b1.output");
+        await File.WriteAllTextAsync(file, "listening on 4200\nready\n", _bound.Token);
+        var (daoris, layer) = await BothAsync("claude-output-file", OutputFile(file));
+
+        ParityOracle.Equal(daoris, layer, Relation, []);
+        foreach (var seen in new[] { daoris, layer })
+        {
+            var streams = seen.Seen.Where(each => each.Channel == ParityChannel.Streams).Select(each => each["reading"]!).ToList();
+            Assert.Contains(streams, each => each.Contains("task/b1") && each.Contains("listening on 4200"));
+            Assert.Contains(streams, each => each.Contains("task/b1") && each.Contains("ready"));
+        }
+    }
+
+    /// <summary>A command backgrounded and its result naming the file its output is written to; the turn ends with the command running.</summary>
+    private static string[] OutputFile(string file) =>
+    [
+        Said("init", new { session_id = "c0ffee00-1111-2222-3333-444455556668", tools = new[] { "Bash" } }),
+        Frame(new
+        {
+            type = "assistant",
+            message = new
+            {
+                id = "msg_dev", role = "assistant",
+                content = new object[] { new { type = "tool_use", id = "toolu_bg", name = "Bash", input = new { command = "npm run dev", run_in_background = true, description = "dev server" } } },
+            },
+        }),
+        Said("task_started", new { task_id = "b1", tool_use_id = "toolu_bg", description = "dev server", is_backgrounded = true, task_type = "local_bash" }),
+        Frame(new
+        {
+            type = "user",
+            message = new
+            {
+                role = "user",
+                content = new object[]
+                {
+                    new
+                    {
+                        tool_use_id = "toolu_bg", type = "tool_result",
+                        content = $"Command running in background with ID: b1. Output is being written to: {file}. You will be notified when it completes. To check interim output, use Read on that file path.",
+                    },
+                },
+            },
+            tool_use_result = new { stdout = "", stderr = "", backgroundTaskId = "b1" },
+        }),
+        Frame(new { type = "result", subtype = "success", is_error = false, result = "The server is running.", session_id = "c0ffee00-1111-2222-3333-444455556668" }),
+    ];
 
     private static string Frame(object value) => System.Text.Json.JsonSerializer.Serialize(value);
 
@@ -206,15 +255,6 @@ public sealed class ClaudeDrivenParityProcessTests : IDisposable
         Frame(new { type = "result", subtype = "success", is_error = false, result = "The gates are running.", session_id = "c0ffee00-1111-2222-3333-444455556667" }),
         Said("task_updated", new { task_id = "b1gates", patch = new { status = "killed" } }),
     ];
-
-    /// <summary>
-    /// A command's end only its update said (BGWAIT1c): today's reader's reading of it and the cut its ending reads from it, which the layer's
-    /// events cannot say until Lyntai's Claude door yields a task's update.
-    /// </summary>
-    private static readonly ParityGap UpdateEnded = new(
-        "a command's end only its update said",
-        seen => seen.Where(each => each is { Channel: ParityChannel.Events, What: "TaskEnded" } or { Channel: ParityChannel.End }),
-        seen => seen.Where(each => each.Channel == ParityChannel.End));
 
     private Task<(ParityObservation Daoris, ParityObservation Layer)> BothAsync(string fixture) => BothAsync(
         Path.GetFileNameWithoutExtension(fixture), [.. File.ReadAllLines(Path.Combine(Fixtures, fixture)).Where(each => each.Length > 0)]);
