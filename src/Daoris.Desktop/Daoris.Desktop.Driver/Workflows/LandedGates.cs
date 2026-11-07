@@ -3,20 +3,20 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The line's tip as a landed route reads it (FABRIC-PIPELINE1a): its line, the commit at its tip, and git's blob id of the
+/// The line's tip as a landed route reads it: its line, the commit at its tip, and git's blob id of the
 /// <c>daoris.gates.json</c> it holds there, or <c>none</c> where it holds none.
 /// </summary>
 public sealed record LandedTip(string Line, string Commit, string Gates);
 
 /// <summary>
-/// The declaration a landed route runs unasked, accepted by its blob (FABRIC-PIPELINE1a, D192 point 2, the pipeline design §4.2): the
+/// The declaration a landed route runs unasked, accepted by its blob: the
 /// person accepts the <c>daoris.gates.json</c> at the line's tip, kept as the blob id git gives it, so any edit of the file (a command, a
 /// folder, a gate, a <c>heavy</c> or <c>clock</c> mark, the runner) asks again, and a landed edit of it never runs by itself. Read as
 /// git objects with no checkout, so what the person has in flight there is neither read nor touched.
 /// </summary>
 /// <remarks>
 /// A blob is git's digest of the file's bytes, so no twin computes a canonical form of the declaration; an edit that changes nothing
-/// that runs (a key moved) asks again too, the price the design names (§6). The CLI's <c>use … --landed</c> reads it the same way.
+/// that runs (a key moved) asks again too, the price of the blob. The CLI's <c>use … --landed</c> reads it the same way.
 /// </remarks>
 public static class LandedGates
 {
@@ -47,7 +47,7 @@ public static class LandedGates
     /// </summary>
     public static async Task<(LandedTip? Tip, string? Problem)> ReadAsync(string root, string line, CancellationToken ct = default)
     {
-        // 🔴 git walks UP (FIX-LOG): a folder that is not a repository's top would answer for the one above it.
+        // 🔴 git walks UP: a folder that is not a repository's top would answer for the one above it.
         if (!await WorkingTree.IsTopLevelAsync(root, ct).ConfigureAwait(false)) return (null, "its checkout here is not a git repository");
         if (!BranchName.IsValid(line)) return (null, $"its line `{line}` is not a branch name git would take");
 
@@ -77,7 +77,7 @@ public static class LandedGates
     private static bool IsBlob(string text) => text != WorkflowSelection.NoGates && WorkflowSelection.IsGates(text);
 
     /// <summary>
-    /// Where a route's acceptance stands against the tip (the pipeline design §4.2): <see cref="Accepted"/>, <see cref="Changed"/>,
+    /// Where a route's acceptance stands against the tip: <see cref="Accepted"/>, <see cref="Changed"/>,
     /// <see cref="Unaccepted"/>, <see cref="Unread"/>, or <see cref="NoVerification"/> where the route names none.
     /// </summary>
     public static string StateOf(WorkflowLandedSelected route, LandedTip? tip)

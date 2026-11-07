@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The look's end of an outside agent's membership (CHANNELJOIN1c; the event-channel design §5.5, the co-working area's rule 15): one
+/// The look's end of an outside agent's membership: one
 /// whose channel's claims have expired, its ask with no quest open and no part running, or that neither read nor posted for a day, is
 /// ended as <c>expired</c> by the person's key. Judged against the record at the look, never a timer, so a quest opened again, or a
 /// part started again, keeps the member. A membership ended keeps its record; the service journals its end, so <i>At work</i> redraws.
@@ -19,7 +19,7 @@ internal sealed class ChannelMembersLook(ILookWiring wiring) : ILookPass
         await wiring.Stages.TimeAsync("members", () => EndAsync(wiring.Service, wiring.Harnesses.Clock(), ct)).ConfigureAwait(false);
     }
 
-    /// <summary>Whether the look ends <paramref name="member"/> at <paramref name="now"/>: its claims are spent, or it was last seen over a day ago.</summary>
+    /// <summary>Whether the look ends <paramref name="member"/> at <paramref name="now"/>: its claims are spent, or it is last seen over a day ago.</summary>
     public static bool Ends(ChannelMemberView member, DateTimeOffset now) =>
         member.Left is null && (member.Spent || now - (member.Seen ?? member.Joined ?? now) >= Quiet);
 

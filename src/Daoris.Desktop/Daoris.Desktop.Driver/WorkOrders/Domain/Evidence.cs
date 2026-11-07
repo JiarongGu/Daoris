@@ -5,11 +5,11 @@ using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What a done waits on (EVID1a, D144 §3): one item of one requirement it answered met, by the requirement's number.</summary>
+/// <summary>What a done waits on: one item of one requirement it answered met, by the requirement's number.</summary>
 public sealed record WantedEvidence(int Requirement, QuestEvidenceItem Item);
 
 /// <summary>
-/// Which paths Daoris asks git for (EVID1b, D144 §2–§3): the service's own judge (<c>QuestEvidence.JudgePath</c>), read
+/// Which paths Daoris asks git for: the service's own judge (<c>QuestEvidence.JudgePath</c>), read
 /// again on this side before a path becomes a git argument. The two share no code, so each holds the same rows (twins).
 /// </summary>
 public static class EvidencePaths

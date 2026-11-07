@@ -6,9 +6,9 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A verification run's binding (FABRIC-PIPELINE1d; the pipeline design §4.3), written once in a folder of its own,
+/// A verification run's binding, written once in a folder of its own,
 /// <c>&lt;home&gt;/workflows/lines/&lt;run&gt;.json</c>: its repository and checkout, the verification pipeline's version it runs, the commit it
-/// judges, the branch it was asked of where one was, and the declaration's blob the person accepted. Every node of it observes the run itself at
+/// judges, the branch it is asked of where it has one, and the declaration's blob the person accepted. Every node of it observes the run itself at
 /// that commit.
 /// </summary>
 /// <param name="Level">
@@ -28,7 +28,7 @@ public sealed record VerifyRun(
     public string? Line { get; init; }
 
     /// <summary>
-    /// A landed run's base (the pipeline design §4.3): the tip of the newest run on its line whose check settled with a verdict, so its batch is
+    /// A landed run's base: the tip of the newest run on its line whose check settled with a verdict, so its batch is
     /// the commits from it to <see cref="Commit"/>; null for the line's first verification and for a person's run.
     /// </summary>
     public string? Base { get; init; }
@@ -37,7 +37,7 @@ public sealed record VerifyRun(
     public WorkflowRunBinding Binding => new(Run, Repository, Workspace, Workflow, Level, At) { Version = Version, Digest = Digest };
 }
 
-/// <summary>The verification runs' bindings under the home's <c>workflows/lines/</c> (FABRIC-PIPELINE1d), apart from the chains' runs.</summary>
+/// <summary>The verification runs' bindings under the home's <c>workflows/lines/</c>, apart from the chains' runs.</summary>
 public static class VerifyRuns
 {
     /// <summary>A person's verification of a commit or a branch, which the line's batching never counts.</summary>

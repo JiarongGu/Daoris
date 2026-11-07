@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The runner that holds a conversation, reserving it for the person's press on its work (CHATFLOW1d, the chat-flow design §5.2 point 1): the
+/// The runner that holds a conversation, reserving it for the person's press on its work: the
 /// shell's <see cref="ChatRunner"/>. A seam, so the press's operation is the same on every door and its tests stand in.
 /// </summary>
 public interface IChatPressing
@@ -16,7 +16,7 @@ public interface IChatPressing
     void Release(string sessionId);
 }
 
-/// <summary>What the person's press on a chat run's work asks the operation (CHATFLOW1d): the record pressed and its run.</summary>
+/// <summary>What the person's press on a chat run's work asks the operation: the record pressed and its run.</summary>
 /// <param name="Session">The record the door lands, the line's newest in its tree.</param>
 /// <param name="Live">Whether that record is still a live conversation, which some runner holds; an ended one needs no reservation.</param>
 public sealed record ChatPressAsk(string Session, string Tree, string Run, string Repository, string Workspace, bool Live);
@@ -25,17 +25,17 @@ public sealed record ChatPressAsk(string Session, string Tree, string Run, strin
 public sealed record ChatPressed(TreeLanding Landed, LandingGate? Gate, string? Tip)
 {
     /// <summary>
-    /// What refused it, where the page words it in the reader's language (CHATFLOW1d): <c>busy</c>, <c>elsewhere</c>, <c>moved</c> or <c>asked</c>;
+    /// What refused it, where the page words it in the reader's language: <c>busy</c>, <c>elsewhere</c>, <c>moved</c> or <c>asked</c>;
     /// null where the landing's own sentence says it.
     /// </summary>
     public string? Code { get; init; }
 
-    /// <summary>Whether this press asked the run's second opinion (§5.2 point 3).</summary>
+    /// <summary>Whether this press asked the run's second opinion.</summary>
     public bool Asked { get; init; }
 }
 
 /// <summary>
-/// The person's press on a chat run's work (CHATFLOW1d, the chat-flow design §5.2, Codex's findings 1 and 11, the Opus check's finding 5): one
+/// The person's press on a chat run's work: one
 /// driver operation the bridge's <c>LAND_SESSION_TREE</c>, the connected terminal and the standalone terminal each call. It reserves the
 /// conversation against another turn, captures the tree's <c>HEAD</c> once, reads every part of the gate at that tip, asks the second opinion
 /// where its part holds as <c>not-asked</c>, and lands that tip by the pinned path (<see cref="LandingGate.Tip"/>), refusing a moved candidate.
@@ -45,9 +45,9 @@ public sealed record ChatPressed(TreeLanding Landed, LandingGate? Gate, string? 
 /// answers. It is held through the landing hold too, since the landing reads the tree itself, and let go however the press ends. A live
 /// conversation no runner here holds is held by another window, and the press is refused there, never landed beside a turn it cannot see.</para>
 ///
-/// <para><b>Only the press asks</b> (§5.2 point 5): the plan reads the gate and writes nothing. A press while the pass is asked, reading,
-/// with the conversation or read again asks nothing and is refused with that state's words (point 4). No press is kept: the person presses
-/// again once it settles, and the work lands at that press (point 7). <i>Accept automatically</i> never lands a chat's work.</para>
+/// <para><b>Only the press asks</b>: the plan reads the gate and writes nothing. A press while the pass is asked, reading,
+/// with the conversation or read again asks nothing and is refused with that state's words. No press is kept: the person presses
+/// again once it settles, and the work lands at that press. <i>Accept automatically</i> never lands a chat's work.</para>
 /// </remarks>
 public static class ChatPresses
 {
@@ -70,12 +70,12 @@ public static class ChatPresses
     public const string Moved = "the work moved while it was judged; press Accept again.";
 
     /// <summary>
-    /// The press (§5.2 points 1 to 7): reserved, captured, judged at the tip, the opinion asked where it is not, and landed pinned.
+    /// The press: reserved, captured, judged at the tip, the opinion asked where it is not, and landed pinned.
     /// </summary>
     /// <param name="holder">The runner that may hold the conversation in this process; null where none does (a terminal alone).</param>
     /// <param name="gate">The whole gate read at a tip, keyed by the run, every part in its fixed order, and a press's answer to what it showed.</param>
     /// <param name="land">The landing, pinned to the gate's tip.</param>
-    /// <param name="turns">The person's turn count, read once the conversation is reserved (§6.1 (b)).</param>
+    /// <param name="turns">The person's turn count, read once the conversation is reserved.</param>
     /// <param name="head">The tree's <c>HEAD</c>, read once to capture and again where the landing was refused; git's where null.</param>
     public static async Task<ChatPressed> PressAsync(
         string home, ChatPressAsk ask, IChatPressing? holder, Func<string, CancellationToken, Task<LandingGate>> gate,
@@ -130,7 +130,7 @@ public static class ChatPresses
     private static TreeLanding Refusal(string message, string code) => new(false, message) { Refusal = code };
 
     /// <summary>
-    /// A graph-bound run's candidate (CHATFLOW1f, the chat-flow design §4.5), submitted at this press and no other: the next one where the newest
+    /// A graph-bound run's candidate, submitted at this press and no other: the next one where the newest
     /// has landed, the newest taking this tip in place where it is submitted and unlanded at another, and nothing for a tip already submitted. A
     /// run bound to anything else, or held by a problem, submits none.
     /// </summary>
@@ -151,7 +151,7 @@ public static class ChatPresses
     }
 
     /// <summary>
-    /// The person's turn count over a line (§6.1 (b), the Opus check's finding 4): their own words in the line's conversation history, each
+    /// The person's turn count over a line: their own words in the line's conversation history, each
     /// kept word once by its id, plus <paramref name="waiting"/>, the words waiting or being kept. It only rises: a word leaves the queue for
     /// the history once its turn is on the wire.
     /// </summary>

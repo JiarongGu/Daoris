@@ -1,16 +1,16 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the person's <i>Send to its session</i> did (COWORK1d, the message-urgency design §4.2, §8.4): sent, to which part, or why not by
-/// a code the page words: <c>no-part</c> (no part of that line of work on this machine), <c>gone</c> (the channel no longer holds it),
+/// What the person's <i>Send to its session</i> did: sent, to which part, or why not by
+/// a code the page words: <c>no-part</c> (no part of that line of work on this machine), <c>gone</c> (the channel does not hold it),
 /// <c>held</c> (another part of the entry holds it now), or the say door's own refusal. Declared here, beside the answer the page reads,
-/// since the loop's <c>ChannelReach</c> makes it and no module may name the loop (the code-structure design §5).
+/// since the loop's <c>ChannelReach</c> makes it and no module may name the loop.
 /// </summary>
 public sealed record ChannelForwarded(bool Sent, string? Code, string? Session);
 
 /// <summary>
-/// One item of an ask's channel as the page reads it (SESSONE2c): a message's words, or one of Daoris's coded lines. COWORK1d: a message's
-/// level (null for one from before) and what it reached in each repository it addresses. COMMS1k: a message to one part names it, the
+/// One item of an ask's channel as the page reads it: a message's words, or one of Daoris's coded lines. A message's
+/// level (null for one from before) and what it reached in each repository it addresses; a message to one part names it, the
 /// channel it is kept on, and what it reached in that part's line.
 /// </summary>
 public sealed record ChannelItemAnswer(
@@ -20,17 +20,17 @@ public sealed record ChannelItemAnswer(
     string? Origin = null);
 
 /// <summary>
-/// A line's own channel as the person reads it (COMMS1k, <c>CHANNEL_LINE</c>): its origin and its messages, oldest first; no origin where
+/// A line's own channel as the person reads it (<c>CHANNEL_LINE</c>): its origin and its messages, oldest first; no origin where
 /// the line has none of its own, or the host has no such door.
 /// </summary>
 public sealed record LineChannelAnswer(string? Origin, IReadOnlyList<ChannelItemAnswer> Items);
 
-/// <summary>The person's <i>Send to its session</i> (COWORK1d): sent, to which session, or the code that says why not.</summary>
+/// <summary>The person's <i>Send to its session</i>: sent, to which session, or the code that says why not.</summary>
 public sealed record ChannelForwardAnswer(bool Sent, string? Code, string? Session);
 
 /// <summary>
 /// An ask's channel as the person reads it: its items in time order, how many are past their mark, and the mark; and the messages to one
-/// part each (COMMS1k), apart from the items.
+/// part each, apart from the items.
 /// </summary>
 public sealed record ChannelAnswer(string Ask, string Entry, IReadOnlyList<ChannelItemAnswer> Items, int Unread, DateTimeOffset? Mark)
 {
@@ -44,9 +44,9 @@ public sealed record ChannelPostAnswer(bool Posted, string? Code, ChannelItemAns
 public sealed record ElsewhereAnswer(IReadOnlyList<ElsewhereAskAnswer> Asks);
 
 /// <summary>
-/// What the channel's doors answer the page (SESSONE2c, D167, D50): the shell's <c>CHANNEL_READ</c>, <c>CHANNEL_POST</c> and
+/// What the channel's doors answer the page: the shell's <c>CHANNEL_READ</c>, <c>CHANNEL_POST</c> and
 /// <c>CHANNEL_MARK</c> return these, so the page reads what the service says field for field. A session and an entry are ids and
-/// keys, and a message's words are as written, cleaned of paths by the service (D167 point 8): never a path of this machine.
+/// keys, and a message's words are as written, cleaned of paths by the service: never a path of this machine.
 /// </summary>
 public static class ChannelAnswers
 {

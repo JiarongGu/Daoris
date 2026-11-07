@@ -47,7 +47,7 @@ internal static class SessionCooling
         return (adapter, profile, model) => roster.CoolingOf(adapter ?? "", profile, model);
     }
 
-    /// <summary>The cool-off on the account a record ran on, or null: none, or an adapter this build no longer has.</summary>
+    /// <summary>The cool-off on the account a record ran on, or null: none, or an adapter this build does not have.</summary>
     internal static CoolingEntry? Of(Func<string?, string?, string?, CoolingEntry?> coolingOf, PriorSession record)
     {
         try
@@ -56,7 +56,7 @@ internal static class SessionCooling
         }
         catch (DriverException)
         {
-            // An adapter this build no longer has: nothing cools on it, and its runner says why it cannot go on.
+            // An adapter this build does not have: nothing cools on it, and its runner says why it cannot go on.
             return null;
         }
     }

@@ -3,11 +3,11 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What is worth interrupting a person for (working-surface design §4, SURF5b).
+/// What is worth interrupting a person for.
 /// </summary>
 /// <remarks>
 /// <para><b>The judgement is here, and the delivery is not.</b> A toast is one way to say this; a
-/// line on a headless machine's console is another, and both ask the same question (D50). Keeping the
+/// line on a headless machine's console is another, and both ask the same question. Keeping the
 /// decision in the library is also what makes it testable — a screen is not.</para>
 ///
 /// <para><b>The two halves are found differently, and that is the design.</b> A <b>park</b> is a state
@@ -23,27 +23,26 @@ namespace Daoris.Driver;
 /// <para><b>It says a thing once.</b> A parked session is parked on every tick until somebody answers
 /// it; reporting that every poll interval would be the same failure in a different shape.</para>
 ///
-/// <para><b>A wait for an account is the third thing</b> (TOOL4d, D125 §4): starts held because every account they may
+/// <para><b>A wait for an account is the third thing</b>: starts held because every account they may
 /// use is cooling, from the report's <see cref="TickReport.Waits"/>. Said once per cool-off, since it lasts every look
 /// until its reset; nothing is wrong with the work, and it starts by itself then. A wait on accounts not signed in with none
-/// cooling (UX6d1) is said once per set of accounts: it lasts until a sign-in, which only the person makes.</para>
+/// cooling is said once per set of accounts: it lasts until a sign-in, which only the person makes.</para>
 ///
-/// <para><b>A quest's park is the fourth</b> (SESSUX1i, D126 §4.7): a quest the planner parked on its failed sessions
+/// <para><b>A quest's park is the fourth</b>: a quest the planner parked on its failed sessions
 /// here, from the parks a door read for that look (<see cref="QuestParkReader"/>). Said once per park, a park being its
 /// last session: a hold that hides it for a look is the same park, and *Try again* then new failures make a new one. Never
 /// for the person's stop, which is no park. Its notice carries the last failure's note, so that failure's own end in the
 /// same look is not said beside it.</para>
 ///
 /// <para><b>A conversation's end is deliberately not reported</b>, though a conversation that PARKS
-/// is — parks come from the tick and are blind to how the session was started. The reason is design
-/// §4's own: this exists because nobody should have to watch an <i>unattended</i> session, and a
+/// is — parks come from the tick and are blind to how the session was started. The reason: this exists because nobody should have to watch an <i>unattended</i> session, and a
 /// conversation is something the person is in, whose ending appears in the stream they are looking
 /// at. `ChatRunner` concludes outside the tick and so never reaches here at all, which is the
 /// mechanism; this paragraph is the intent, so the next reader can tell one from the other. If real
 /// use shows a chat left running and crashing silently, the fix is to feed its `onEnded` in — the
 /// repository is already remembered here.</para>
 ///
-/// <para><b>A conversation's answer is the fifth</b> (NOTIFY1a): the person said something and looked away, and the turn
+/// <para><b>A conversation's answer is the fifth</b>: the person said something and looked away, and the turn
 /// their words started has ended. That is the stream they are in, but not one they can watch while they do something
 /// else: a window behind another says nothing until they look. Told by the conversation's
 /// runner as its turns move (<see cref="Asked"/>, <see cref="Turned"/>), never by the tick, and kept apart from the tick's
@@ -55,31 +54,31 @@ public sealed class AttentionWatch
 {
     private Dictionary<string, string>? _seen;
 
-    // Each conversation's turns as this watch judged them (NOTIFY1a), by session: whether the person spoke since its last
+    // Each conversation's turns as this watch judged them, by session: whether the person spoke since its last
     // answer, and the turn's end it was last judged at. Told from the conversations' threads, so each is locked on its own.
     private readonly ConcurrentDictionary<string, Turns> _turns = new(StringComparer.OrdinalIgnoreCase);
 
-    // The waits already said, by account, with the cool-off each was for (TOOL4d): a wait lasts every look until its
+    // The waits already said, by account, with the cool-off each was for: a wait lasts every look until its
     // reset, and a look that planned no start says nothing of it, so the cool-off — not the look — is what is said once. A
-    // wait on signed-out accounts (UX6d1) is said once per set of accounts, as the log's line is, and kept apart from a
+    // wait on signed-out accounts is said once per set of accounts, as the log's line is, and kept apart from a
     // cool-off of the tool's own sign-in, whose account is null too.
     private readonly Dictionary<string, string> _waits = new(StringComparer.OrdinalIgnoreCase);
 
     // The quests' parks already said or seen at the first look, by quest, with the last session each park was for
-    // (SESSUX1i). Bounded by what the planner still considers. A null session is a park seen at a first look whose records
+    // Bounded by what the planner still considers. A null session is a park seen at a first look whose records
     // were not read, taken as said when they are.
     private readonly Dictionary<string, string?> _parks = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The sessions whose state is being remembered — bounded by what is active.</summary>
     public IReadOnlyList<string> Watching => _seen is null ? [] : [.. _seen.Keys.Order(StringComparer.Ordinal)];
 
-    /// <summary>What a park the person answered is seen as: no longer waiting on them, though its record is still parked.</summary>
+    /// <summary>What a park the person answered is seen as: not waiting on them, though its record is still parked.</summary>
     private const string AnsweredPark = "answered";
 
     /// <summary>
-    /// A session's state as this watch compares it: a park the person answered waits on nobody (ANSWER1c) until the look takes it
-    /// up (ANSWER1b), so it is seen apart from one that waits, and the same record parked again unanswered has asked a new question,
-    /// said though no look saw it working between (AUTONOMY1e, D184 point 4).
+    /// A session's state as this watch compares it: a park the person answered waits on nobody until the look takes it
+    /// up, so it is seen apart from one that waits, and the same record parked again unanswered has asked a new question,
+    /// said though no look saw it working between.
     /// </summary>
     private static string Seen(SessionView session) =>
         SessionStates.IsParked(session.State) && session.Answered ? AnsweredPark : session.State;
@@ -103,8 +102,8 @@ public sealed class AttentionWatch
 
         _seen = now;
 
-        // A wait whose cool-off was not said yet (TOOL4d, D125 §4), and a quest's park not said yet (SESSUX1i): the first look's too, since a
-        // restart's baseline is the said-set's (FOUNDATION1 m-iv, `AttentionNews`).
+        // A wait whose cool-off was not said yet, and a quest's park not said yet: the first look's too, since a
+        // restart's baseline is the said-set's (`AttentionNews`).
         var waits = report.Waits.Where(Unsaid).ToList();
         var parked = UnsaidParks(report, parks);
 
@@ -112,7 +111,7 @@ public sealed class AttentionWatch
         events.AddRange(waits.Select(wait => new AttentionEvent(
             AttentionKind.Waiting, "", string.Join(", ", wait.Repositories), Note: wait.Sentence)));
 
-        // A session's park is told from the journal (FOUNDATION1 m-ii, `NewsTeller`), never found by comparing two looks' snapshots.
+        // A session's park is told from the journal (`NewsTeller`), never found by comparing two looks' snapshots.
 
         events.AddRange(parked.Select(park => new AttentionEvent(
             AttentionKind.QuestParked, park.Session ?? "", park.Repository, Note: park.Note)
@@ -121,18 +120,18 @@ public sealed class AttentionWatch
             Strikes = park.Strikes,
         }));
 
-        // A session's end is told from the journal (FOUNDATION1 m-iii, `NewsTeller`) by the one class table, so an account's limit, an agent's
-        // refusal of the choice and the person's own stop raise none (LIMITRESUME1a, D206 point 1; D205 §3.5(c); `EndReaders`).
+        // A session's end is told from the journal (`NewsTeller`) by the one class table, so an account's limit, an agent's
+        // refusal of the choice and the person's own stop raise none (`EndReaders`).
         return events;
     }
 
     /// <summary>
     /// The parks among <paramref name="parks"/> not said yet by this watch; each is marked said either way. What a restart owes is the
-    /// said-set's (<see cref="AttentionNews"/>), not a first look's baseline (FOUNDATION1 m-iv).
+    /// said-set's (<see cref="AttentionNews"/>), not a first look's baseline.
     /// </summary>
     private List<QuestPark> UnsaidParks(TickReport report, IReadOnlyList<QuestPark>? parks)
     {
-        // A quest the planner no longer considers is done, declined or gone, and its park with it.
+        // A quest the planner does not consider is done, declined or gone, and its park with it.
         var considered = report.Considerations.Select(c => c.Quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (var quest in _parks.Keys.Where(quest => !considered.Contains(quest)).ToList()) _parks.Remove(quest);
 
@@ -159,29 +158,29 @@ public sealed class AttentionWatch
         return !said;
     }
 
-    /// <summary>The person's own words went to a conversation (NOTIFY1a): the turn's end they start is one they wait on.</summary>
+    /// <summary>The person's own words went to a conversation: the turn's end they start is one they wait on.</summary>
     public void Asked(string sessionId)
     {
         var turns = _turns.GetOrAdd(sessionId, _ => new Turns());
         lock (turns) turns.Asked = true;
     }
 
-    /// <summary>The person stopped a conversation's turn (NOTIFY1a): the end it comes to is their press, never an answer.</summary>
+    /// <summary>The person stopped a conversation's turn: the end it comes to is their press, never an answer.</summary>
     public void Stopped(string sessionId)
     {
         if (!_turns.TryGetValue(sessionId, out var turns)) return;
         lock (turns) turns.Asked = false;
     }
 
-    /// <summary>A conversation is over here (NOTIFY1a): what it was waited on for goes with it.</summary>
+    /// <summary>A conversation is over here: what it was waited on for goes with it.</summary>
     public void Forget(string sessionId) => _turns.TryRemove(sessionId, out _);
 
     /// <summary>
-    /// Whether a conversation's turns, as its runner just told them, are an answer worth saying (NOTIFY1a): a turn's end not
+    /// Whether a conversation's turns, as its runner just told them, are an answer worth saying: a turn's end not
     /// judged yet, nothing running or waiting after it, and the person's words since the last answer. Null otherwise.
     /// </summary>
     /// <remarks>
-    /// The turn's end is the one the usage curve judges (<see cref="CurveMove.TurnJustEnded"/>, SWITCH1c-ii): words queued
+    /// The turn's end is the one the usage curve judges (<see cref="CurveMove.TurnJustEnded"/>): words queued
     /// behind a turn keep the conversation taking, so the end between them is not one, and the last one's is.
     /// </remarks>
     public AttentionEvent? Turned(string sessionId, string repository, ChatQueue queue)

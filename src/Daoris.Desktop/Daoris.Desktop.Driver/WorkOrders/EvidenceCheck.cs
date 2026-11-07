@@ -4,8 +4,8 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A done's evidence, read and posted (EVID1b, D144 §3): what a session's end, the orphan sweep and the terminal's check each
-/// do with the same code. The driver reads, the exchange judges and keeps; the driver moves no quest (D46 as D144 amends it).
+/// A done's evidence, read and posted: what a session's end, the orphan sweep and the terminal's check each
+/// do with the same code. The driver reads, the exchange judges and keeps; the driver moves no quest.
 /// </summary>
 public static partial class EvidenceCheck
 {
@@ -18,7 +18,7 @@ public static partial class EvidenceCheck
         RunAsync(service, quest, at, WorkingTree.ReadGitAsync, ct);
 
     /// <inheritdoc cref="RunAsync(ServiceClient, QuestView, EvidenceAt, CancellationToken)"/>
-    /// <param name="git">How git is read: the review's seam (REVIEW3), which a test stands git in at.</param>
+    /// <param name="git">How git is read: the review's seam, which a test stands git in at.</param>
     internal static async Task<EvidenceOutcome> RunAsync(
         ServiceClient service, QuestView quest, EvidenceAt at, WorkingTree.GitRead git, CancellationToken ct = default)
     {
@@ -34,7 +34,7 @@ public static partial class EvidenceCheck
         {
             try
             {
-                // FABRIC-CLOSE1b (CLOSE1e's first fence): a submitted quest's verdict names the submission it was read for; a done's names none.
+                // A submitted quest's verdict names the submission it was read for; a done's names none.
                 var named = quest is { Status: "Taken", Submission: { } submission } ? new QuestSubmissionRef(submission.Machine, submission.Sequence) : null;
                 posted = await service.EvidenceAsync(quest.Id, verdict with { Submission = named }, ct).ConfigureAwait(false);
             }
@@ -50,9 +50,9 @@ public static partial class EvidenceCheck
     }
 
     /// <summary>
-    /// The record's evidence at a session's end (D46 §4, D144 §3, §5): <paramref name="commits"/>, and beneath them what was read
+    /// The record's evidence at a session's end: <paramref name="commits"/>, and beneath them what is read
     /// of its done's evidence, where <paramref name="quest"/> waits on some. A quest that waits on none, or that the service no
-    /// longer answers, ends as it did: git is asked nothing more and nothing is posted. Never throws but for the caller's own
+    /// longer answers, ends unchanged: git is asked nothing more and nothing is posted. Never throws but for the caller's own
     /// cancellation, since the record is written whatever the read came to.
     /// </summary>
     /// <param name="at">Where and how: the tree's HEAD at a session's end or the sweep, with its base and its session.</param>
@@ -86,7 +86,7 @@ public static partial class EvidenceCheck
     }
 
     /// <summary>
-    /// The submission whose commit the end <paramref name="at"/> reads posts alone (FABRIC-CLOSE1c6, §E5; D173's CLOSE1c5 note, <i>Left</i>):
+    /// The submission whose commit the end <paramref name="at"/> reads posts alone:
     /// <paramref name="quest"/> taken, its current submission said by the session ending here, waiting on no evidence and with no commit
     /// known. A submission whose answers name evidence is read for it, and that verdict gives the commit. Null for every other quest and end.
     /// </summary>
@@ -97,7 +97,7 @@ public static partial class EvidenceCheck
             : null;
 
     /// <summary>
-    /// Post the tree's HEAD alone for <paramref name="submission"/> (FABRIC-CLOSE1c6): a verdict reading no evidence, which the service keeps as
+    /// Post the tree's HEAD alone for <paramref name="submission"/>: a verdict reading no evidence, which the service keeps as
     /// the submission's commit, so a step that grew from it is brought up to date with it on the person's go-on. The record is written whatever
     /// came of it, so this never throws but for the caller's own cancellation; a commit not read or not kept leaves the go-on syncing the line
     /// alone, which it says.
@@ -120,7 +120,7 @@ public static partial class EvidenceCheck
         }
     }
 
-    /// <summary>The record's lines for one read (D144 §5): the commit and how, then each item; or why nothing was read.</summary>
+    /// <summary>The record's lines for one read: the commit and how, then each item; or why nothing was read.</summary>
     private static string Bundle(EvidenceReading reading, EvidencePosted posted)
     {
         if (reading.Verdict is not { } verdict) return $"evidence not read: {reading.Unread}";
@@ -133,7 +133,7 @@ public static partial class EvidenceCheck
     }
 
     /// <summary>
-    /// The done's commit a driven end read (D144 §3), from a session record's evidence bundle: the full id a session's end or
+    /// The done's commit a driven end reads, from a session record's evidence bundle: the full id a session's end or
     /// the sweep wrote, never the terminal's own read. Null where the record says none.
     /// </summary>
     public static string? DonesCommit(string? bundle) =>

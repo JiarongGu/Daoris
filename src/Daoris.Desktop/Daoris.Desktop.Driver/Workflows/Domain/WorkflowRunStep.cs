@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One step of a run (design §5.2, §7): the chosen workflow's step, where it stands, the row of that state's table,
+/// One step of a run: the chosen workflow's step, where it stands, the row of that state's table,
 /// and the facts its words and its door are made of, each the record's own.
 /// </summary>
 /// <param name="State">One of <see cref="WorkflowRunStates"/>.</param>
@@ -54,40 +54,40 @@ public sealed record WorkflowRunStep(WorkflowStep Step, string State, string Det
     public string? Code { get; init; }
 
     /// <summary>
-    /// On a run bound to a graph version (FABRIC-CUTOVER1e), the node's own kind (<c>claimed</c>, <c>handed</c>, a plugin's
+    /// On a run bound to a graph version, the node's own kind (<c>claimed</c>, <c>handed</c>, a plugin's
     /// <c>&lt;plugin&gt;/&lt;node&gt;</c>), its detail one of <see cref="WorkflowGraphDetails"/>, read from the run's record; null on a steps run
     /// and on a look the work added beside a graph.
     /// </summary>
     public string? Node { get; init; }
 
     /// <summary>
-    /// What a graph run's node observes (FABRIC-CUTOVER1e; the cutover design §2.2), one of <see cref="WorkflowGraphSubjects"/>: its
+    /// What a graph run's node observes, one of <see cref="WorkflowGraphSubjects"/>: its
     /// <see cref="Quest"/>, or its <see cref="Branch"/> at <see cref="Commit"/>, or its landing there; null for the run itself.
     /// </summary>
     public string? On { get; init; }
 
     /// <summary>
-    /// What the person may say of a graph run's node now (FABRIC-CUTOVER1f, <see cref="RunNodeWords.Acts"/>): its <c>skip</c> and its <c>stop</c>,
+    /// What the person may say of a graph run's node now (<see cref="RunNodeWords.Acts"/>): its <c>skip</c> and its <c>stop</c>,
     /// as the one table takes them where it stands; null where it offers neither, on a steps run's step, and where its run ended or its record
     /// does not read.
     /// </summary>
     public IReadOnlyList<string>? Acts { get; init; }
 
-    /// <summary>The person's word on a graph run's node, kept by its door and not applied yet (FABRIC-CUTOVER1f); null where none waits.</summary>
+    /// <summary>The person's word on a graph run's node, kept by its door and not applied yet; null where none waits.</summary>
     public NodeWord? Asked { get; init; }
 
-    /// <summary>The gate a failed check named (FABRIC-PIPELINE1d), read from the attempt's result by the reader; null on any other step.</summary>
+    /// <summary>The gate a failed check named, read from the attempt's result by the reader; null on any other step.</summary>
     public string? Gate { get; init; }
 
-    /// <summary>A check's newest attempt held unknown for the person, or settled by their stop (FABRIC-PIPELINE1d); null on any other step.</summary>
+    /// <summary>A check's newest attempt held unknown for the person, or settled by their stop; null on any other step.</summary>
     public WorkflowRunHeld? Held { get; init; }
 
     /// <summary>
-    /// The requests the work's sessions made, on the work step only (INTEGRATE1o part o2; §17.3): the quests they published and the helpers they
-    /// asked. Null where there are none, so a run without any reads and answers as it did before.
+    /// The requests the work's sessions made, on the work step only: the quests they published and the helpers they
+    /// asked. Null where there are none.
     /// </summary>
     public IReadOnlyList<WorkflowRunRequest>? Requests { get; init; }
 
-    /// <summary>The unit's integration state, on a graph run's <c>integrate</c> node only (INTEGRATE1h; §17.9), as its record says it.</summary>
+    /// <summary>The unit's integration state, on a graph run's <c>integrate</c> node only, as its record says it.</summary>
     public IntegrationHead? Integration { get; init; }
 }

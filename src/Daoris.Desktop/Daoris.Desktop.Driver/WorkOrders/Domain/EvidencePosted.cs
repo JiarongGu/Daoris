@@ -1,15 +1,15 @@
 namespace Daoris.Driver;
 
-/// <summary>A read's whole end (EVID1b): the verdict where one was read, what the door said, and the record's lines.</summary>
-/// <param name="Verdict">What was read, or null where nothing was.</param>
-/// <param name="Posted">What the door said, or why nothing was posted.</param>
+/// <summary>A read's whole end: the verdict where one is read, what the door said, and the record's lines.</summary>
+/// <param name="Verdict">The verdict read, or null where none.</param>
+/// <param name="Posted">What the door said, or why nothing is posted.</param>
 /// <param name="Bundle">
-/// The lines the session record's evidence bundle gains (D46 §4, D144 §5) beneath its commits: the commit read by its full id
-/// and how, the count found and whether it was kept, then each item with its code. No machine path.
+/// The lines the session record's evidence bundle gains beneath its commits: the commit read by its full id
+/// and how, the count found and whether it is kept, then each item with its code. No machine path.
 /// </param>
 public sealed record EvidenceOutcome(EvidenceVerdict? Verdict, EvidencePosted Posted, string Bundle)
 {
-    /// <summary>Whether the done's evidence was found and kept: what lets what it held go on.</summary>
+    /// <summary>Whether the done's evidence is found and kept: what lets what it held go on.</summary>
     public bool Released => Posted.Outcome == EvidencePosted.Kept && Verdict is { Found: true };
 }
 

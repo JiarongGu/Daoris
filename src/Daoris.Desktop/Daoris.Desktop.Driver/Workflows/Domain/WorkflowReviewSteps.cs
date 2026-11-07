@@ -6,9 +6,8 @@ namespace Daoris.Driver;
 internal static class WorkflowReviewSteps
 {
     /// <summary>
-    /// The second opinion (design §3.2's <c>opinion</c>, D155): where Current draws one, its gate's state (XAGENT1f, the
-    /// second-agent design §8.5), the detail being the gate's own code. It is not reached while the work runs, since the gate reads
-    /// the chain's work once it is done here (§8.1); and a landing done is what it let go, as its landing record keeps it.
+    /// The second opinion: where Current draws one, its gate's state, the detail being the gate's own code. It is not reached while
+    /// the work runs, since the gate reads the chain's work once it is done here; and a landing done is what it let go, as its landing record keeps it.
     /// </summary>
     /// <remarks>
     /// The gate's states, where they stand at a step: another agent at it (<c>not-asked</c>, which the driver's next look asks;
@@ -65,15 +64,15 @@ internal static class WorkflowReviewSteps
             {
                 State = WorkflowRunStates.Done, At = gate.Person?.At, Words = gate.Person?.Words, Code = gate.Person?.Said,
             },
-            // A named workflow's opinion step that cannot start (WORKFLOW1f): it sits, saying why.
+            // A named workflow's opinion step that cannot start: it sits, saying why.
             OpinionGateStates.CannotStart => on with { State = WorkflowRunStates.CannotStart, Session = gate.Session, Words = gate.Problem },
             _ => on with { State = WorkflowRunStates.NotKnown, Detail = OpinionGateStates.Unread, Words = gate.Problem },
         };
     }
 
     /// <summary>
-    /// The person's look (design §3.2's <c>look</c>, D154): where Current draws one, or where the work's own choice asks for one
-    /// (<i>a look added for this work</i>, design §4.6). Its state is the review's gate's; a landing done is what it let go.
+    /// The person's look: where Current draws one, or where the work's own choice asks for one
+    /// (<i>a look added for this work</i>). Its state is the review's gate's; a landing done is what it let go.
     /// </summary>
     internal static WorkflowRunStep? Look(WorkflowRunFacts facts, bool workDone, WorkflowRunStep landing)
     {
@@ -100,7 +99,7 @@ internal static class WorkflowReviewSteps
         if (gate is null) return on with { State = WorkflowRunStates.NotKnown, Detail = WorkflowRunDetails.Unread };
         if (gate.State == ReviewStates.Unread) return on with { State = WorkflowRunStates.NotKnown, Detail = WorkflowRunDetails.Unread, Words = gate.Problem };
 
-        // The person's skip stands whenever it was given (D154 point 7, row 1).
+        // The person's skip stands whenever it is given.
         if (gate.State == ReviewStates.Skipped)
         {
             return on with
@@ -115,8 +114,8 @@ internal static class WorkflowReviewSteps
             return on with { State = WorkflowRunStates.Skipped, Detail = WorkflowRunDetails.Off, Code = decision!.Level, Words = decision.Choice };
         }
 
-        // A landing done is what the look let go: no door lands work the gate holds (REVIEWENV1c), so it was reviewed then. Its
-        // record keeps the commit where it was a branch; a tree gone since cannot show what it held.
+        // A landing done is what the look let go: no door lands work the gate holds, so the work stood reviewed then. Its
+        // record keeps the commit where it is a branch; a tree gone since cannot show what it held.
         if (landing.State == WorkflowRunStates.Done && landing.Detail is not WorkflowRunDetails.Nothing)
         {
             var kept = facts.Landings.Select(entry => entry.Review).LastOrDefault(review => review?.Said == ReviewVerdicts.Reviewed);
@@ -160,7 +159,7 @@ internal static class WorkflowReviewSteps
     }
 
     /// <summary>
-    /// The look a work's own choice adds to a run bound to a graph version (FABRIC-CUTOVER1e; D190 point 7, the cutover design §6): D154's
+    /// The look a work's own choice adds to a run bound to a graph version: the look's
     /// hold at every landing door, drawn beside the graph and never one of its nodes, where it stands as a steps run's added look stands.
     /// Null where the work's choice adds none. <paramref name="facts"/>' Current holds the graph's nodes as steps and no look, so the added
     /// look takes an id none of them has.

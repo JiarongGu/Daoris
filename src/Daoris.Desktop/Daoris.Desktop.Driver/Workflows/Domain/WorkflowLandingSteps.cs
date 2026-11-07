@@ -6,9 +6,9 @@ namespace Daoris.Driver;
 internal static class WorkflowLandingSteps
 {
     /// <summary>
-    /// The landing (design §3.2's <c>landing</c>): reached once the work is done, read on the newest of its sessions that has work
+    /// The landing: reached once the work is done, read on the newest of its sessions that has work
     /// to land. Done where this machine's record names it, a branch or the line; else it waits for the person's <i>Accept…</i>,
-    /// or for Daoris's next look where the rule accepts automatically (D145).
+    /// or for Daoris's next look where the rule accepts automatically.
     /// </summary>
     internal static WorkflowRunStep Landing(WorkflowStep cell, bool workDone, IReadOnlyList<TracedSession> sessions, WorkflowRunFacts facts)
     {
@@ -26,7 +26,7 @@ internal static class WorkflowLandingSteps
         }
 
         var on = new WorkflowRunStep(cell, "", "") { Session = newest.Id };
-        // Another machine ran it, and keeps its landing (D47 §4): nothing here can say.
+        // Another machine ran it, and keeps its landing: nothing here can say.
         if (newest.Teammate) return on with { State = WorkflowRunStates.NotKnown, Detail = WorkflowRunDetails.Elsewhere };
 
         if (facts.Landings.LastOrDefault(entry => entry.Names(newest.Id)) is { } landed)
@@ -38,7 +38,7 @@ internal static class WorkflowLandingSteps
             };
         }
 
-        // LINESTOGETHER1d: brought into another session's landing, read from its operation, as a left-out part's note is.
+        // Brought into another session's landing, read from its operation, as a left-out part's note is.
         if (facts.Brought.TryGetValue(newest.Id, out var brought))
         {
             return on with
@@ -63,8 +63,8 @@ internal static class WorkflowLandingSteps
     }
 
     /// <summary>
-    /// The pull request (design §3.2's <c>pull-request</c>, D148): opened by the plugin that pushed the landed branch; its state is
-    /// the answer its plugin last gave, kept on the landing record, which Current asks only when branches are cleaned up (§5.4).
+    /// The pull request: opened by the plugin that pushed the landed branch; its state is
+    /// the answer its plugin last gave, kept on the landing record, which Current asks only when branches are cleaned up.
     /// </summary>
     internal static WorkflowRunStep PullRequest(WorkflowStep cell, WorkflowRunStep landing, WorkflowRunFacts facts)
     {
@@ -94,7 +94,7 @@ internal static class WorkflowLandingSteps
 
         if (!entry.Pushed) return on with { State = WorkflowRunStates.CannotStart, Detail = WorkflowRunDetails.NotPushed };
 
-        // A failure never overwrites an answer (PLUGHOOK1a): the newer of the two is what is known now.
+        // A failure never overwrites an answer: the newer of the two is what is known now.
         if (entry.PullRequestAskFailed is { } failed && failed.At > (kept?.AskedAt ?? DateTimeOffset.MinValue))
         {
             return on with { State = WorkflowRunStates.NotKnown, Detail = WorkflowRunDetails.AskFailed, Code = failed.Code, Plugin = failed.Plugin, At = failed.At };

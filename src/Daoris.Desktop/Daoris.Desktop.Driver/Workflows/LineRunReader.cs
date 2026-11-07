@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A repository's verification runs as its line's read draws them (FABRIC-PIPELINE1d; the pipeline design §4.4): each run bound under the home's
+/// A repository's verification runs as its line's read draws them: each run bound under the home's
 /// <c>workflows/lines/</c>, newest first, drawn from its record as any graph run is, with the commit it judged, the branch it was asked of and its
 /// verdict, each gate's evidence from its checks' newest results. Reads only; the service is never asked, since nothing of a line is a quest's.
 /// </summary>
@@ -33,7 +33,7 @@ public static class LineRunReader
         return new WorkflowRunRead([.. lines.Select(line => RunOf(line, home, config, workspaceOf(line.Repository), store, records))]);
     }
 
-    /// <summary>One verification run, drawn from its record under the version it was bound to; a version that no longer reads is its problem.</summary>
+    /// <summary>One verification run, drawn from its record under the version it was bound to; a version that does not read is its problem.</summary>
     /// <param name="registered">The workspace the registry holds its repository in, or null.</param>
     public static WorkflowRun RunOf(VerifyRun line, string home, DriverConfig config, string? registered, IWorkflowStore store, IWorkflowRunRecords records)
     {

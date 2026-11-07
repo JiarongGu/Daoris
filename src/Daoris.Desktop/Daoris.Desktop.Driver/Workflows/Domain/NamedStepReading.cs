@@ -14,7 +14,7 @@ namespace Daoris.Driver;
 internal static class NamedStepReading
 {
     /// <summary>
-    /// A version's steps read (design §2.5, §3.2, §3.3, §3.9), the first problem said: the list and its bound, then each step's
+    /// A version's steps read, the first problem said: the list and its bound, then each step's
     /// shape in order (a group's members inside it), then the order the runtime keeps, then whether this build runs each kind.
     /// </summary>
     public static (IReadOnlyList<NamedStep>? Steps, string? Problem) ReadSteps(JsonElement? value, int number, IReadOnlyList<NamedVersion>? prior = null)
@@ -34,7 +34,7 @@ internal static class NamedStepReading
 
     /// <summary>
     /// A version's steps read as <see cref="ReadSteps"/> reads them, all but whether this build runs each kind: Ask Daoris's judge
-    /// (WORKFLOW1h-b, design §8.1) says a kind this build does not run as what the card needs first, where the editor refuses it.
+    /// says a kind this build does not run as what the card needs first, where the editor refuses it.
     /// </summary>
     public static (IReadOnlyList<NamedStep>? Steps, string? Problem) ReadShape(JsonElement? value, int number, IReadOnlyList<NamedVersion>? prior = null)
     {
@@ -63,7 +63,7 @@ internal static class NamedStepReading
         return OrderProblem(steps, v) is { } order ? (null, order) : (steps, null);
     }
 
-    /// <summary>One step's shape read (design §3.2): an object, its id once, its kind, a group's rule, its fields; a group's members inside it.</summary>
+    /// <summary>One step's shape read: an object, its id once, its kind, a group's rule, its fields; a group's members inside it.</summary>
     private static (NamedStep? Step, string? Problem) ReadStep(
         JsonElement raw, int position, string? group, HashSet<string> seen, IReadOnlyList<NamedVersion> prior, string v)
     {
@@ -128,8 +128,8 @@ internal static class NamedStepReading
     }
 
     /// <summary>
-    /// Why a landing that merges cannot be read, or null: a merge writes into the person's checkout (D145 point 1, D51 rule 6), so it never
-    /// lands with no press, and makes no branch for a plugin (D100), so it names no pattern and no plugin. A sentence after the step's prefix.
+    /// Why a landing that merges cannot be read, or null: a merge writes into the person's checkout, so it never
+    /// lands with no press, and makes no branch for a plugin, so it names no pattern and no plugin. A sentence after the step's prefix.
     /// </summary>
     private static string? MergeProblem(NamedStep step)
     {
@@ -146,8 +146,7 @@ internal static class NamedStepReading
     }
 
     /// <summary>
-    /// A graph version's gate nodes read back as the steps <see cref="WorkflowProcess.Of"/> reads (FABRIC-CUTOVER1d; D190 point 4, the cutover
-    /// design §4): its <c>claimed</c> as the work, its <c>opinion</c>, its <c>look</c> and its <c>handed</c> as the landing, in the graph's order,
+    /// A graph version's gate nodes read back as the steps <see cref="WorkflowProcess.Of"/> reads: its <c>claimed</c> as the work, its <c>opinion</c>, its <c>look</c> and its <c>handed</c> as the landing, in the graph's order,
     /// each option read as the step of its kind reads that field, absence as its default. A landing's <c>form</c> and <c>accept</c> the node
     /// leaves out are the repository's rule's (<paramref name="landing"/>), a merge's press always yours; an option the step's kind does not take
     /// is the node's own and not read here. The first option that does not read is said with the node's id, and nothing is read in its place.
@@ -165,7 +164,7 @@ internal static class NamedStepReading
                 NodeKinds.Claimed => WorkflowKinds.Work,
                 NodeKinds.Opinion => WorkflowKinds.Opinion,
                 NodeKinds.Look => WorkflowKinds.Look,
-                // WORKFLOWCLEAN1 1c: a `land` is no step here; the process carries its bound intent (LandNodes.RuleOf), not a rule read back.
+                // A `land` is no step here; the process carries its bound intent (LandNodes.RuleOf), not a rule read back.
                 _ => null,
             };
             if (kind is null) continue;
@@ -180,7 +179,7 @@ internal static class NamedStepReading
                     : field.Name switch
                     {
                         "form" => JsonSerializer.Serialize(landing.Form),
-                        // The rule's switch is its branch's: a merge it leaves to the rule is pressed (D145 point 1).
+                        // The rule's switch is its branch's: a merge it leaves to the rule is pressed.
                         "accept" => JsonSerializer.Serialize(
                             landing.AutoAccept && (string?)fields.FirstOrDefault(each => each.Name == "form")?.Value == LandingForm.Branch ? "automatic" : "you"),
                         _ => null,
@@ -205,7 +204,7 @@ internal static class NamedStepReading
             }
 
             var step = new NamedStep(node.Id, kind, fields);
-            // D145's note of 2026-11-01: a `land` merges with no press where its graph holds no review, the workflow's
+            // A `land` merges with no press where its graph holds no review, the workflow's
             // choice, and its own options are LandNode.Problem's; a `handed` keeps the steps' refusal.
             if (node.Kind != NodeKinds.Land && MergeProblem(step) is { } merge) return (null, p + merge);
             steps.Add(step);
@@ -301,7 +300,7 @@ internal static class NamedStepReading
     }
 
     /// <summary>
-    /// The order the runtime keeps (design §2.2, §2.5, §3.3, §3.6): the work first and once; at most one opinion and one look
+    /// The order the runtime keeps: the work first and once; at most one opinion and one look
     /// before the landing, the opinion first, and a go-ahead before them; one landing; after it, the pull request straight after
     /// a landing on a branch whose plugin opens one, then checks, stages, groups and go-aheads, none straight before a stage the
     /// person starts.

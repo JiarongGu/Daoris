@@ -1,23 +1,23 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the inventory is read from, gathered (FABRIC-MILESTONE1a): the home's records as they stand, the trees and the folders moved
+/// What the inventory is read from, gathered: the home's records as they stand, the trees and the folders moved
 /// aside, and each repository's recovery refs. Read-only: no record is written, no lease taken, and a repository git cannot read is
-/// said, never taken for having none (D57).
+/// said, never taken for having none.
 /// </summary>
 public static class WorkInventories
 {
     /// <summary>The facts of this home. <paramref name="roots"/> names each repository's checkout; none is read for a repository without one.</summary>
     /// <param name="inUse">The trees a session still running or waiting holds, from the service.</param>
     /// <param name="unread">Said where a repository's recovery refs were not read, and why.</param>
-    /// <param name="only">Where given, whether a repository is read at all (INTEGRATE1n part n3, F51): another's trees, records and refs are not.</param>
+    /// <param name="only">Where given, whether a repository is read at all: another's trees, records and refs are not.</param>
     public static Task<InventoryFacts> GatherAsync(
         string home, IReadOnlyDictionary<string, string> roots, IReadOnlySet<string> inUse, ICollection<string> unread,
         CancellationToken ct = default, DateTimeOffset? now = null, Func<string, bool>? only = null, IReadOnlyList<RecordedTree>? recorded = null) =>
         GatherAsync(home, roots, inUse, (_, said) => unread.Add(said), only, ct, now, recorded);
 
     /// <summary>
-    /// One part of the inventory (FACTSPLIT1a): the units, the recoveries no unit names and what could not be read, of the
+    /// One part of the inventory: the units, the recoveries no unit names and what could not be read, of the
     /// repositories <paramref name="only"/> holds alone, from their trees, their records and their checkouts' refs. Another
     /// repository's trees are never listed, so they cost no git. Each line not read names its repository as data.
     /// </summary>
@@ -34,7 +34,7 @@ public static class WorkInventories
     }
 
     /// <summary>
-    /// The trees this machine's session records name (OVERVIEWNOISE1b, <see cref="InventoryFacts.Recorded"/>), oldest record first: a
+    /// The trees this machine's session records name (<see cref="InventoryFacts.Recorded"/>), oldest record first: a
     /// teammate's record names no tree of this machine's, and a record with none names nothing.
     /// </summary>
     public static IReadOnlyList<RecordedTree> RecordedOf(IEnumerable<SessionRecord> records) =>
@@ -54,11 +54,10 @@ public static class WorkInventories
 
         var at = now ?? DateTimeOffset.UtcNow;
         var sessionTrees = new SessionTrees(home);
-        // CLEANUP1, after review: a folder moved aside past its date that the purge keeps, read as the purge reads it, so it is said to the
+        // A folder moved aside past its date that the purge keeps, read as the purge reads it, so it is said to the
         // person. Only past its date, where the purge has decided: a folder it deletes is walked once more before the next pass takes it.
         // Re-check: one whose delete the purge could not finish, which no read repeats, as the purge kept it.
         var failed = sessionTrees.SetAsideFailed();
-        // KEEP1a: the days are the one effective policy's, as the purge reads them.
         var days = KeepPolicy.Of(home).SetAside.Days;
         var trees = (await sessionTrees.ListAsync(only, ct).ConfigureAwait(false))
             .Select(tree => tree.MovedAside is { } moved && at - moved >= days
@@ -66,14 +65,14 @@ public static class WorkInventories
                 ? tree with { PurgeKept = kept }
                 : tree)
             .ToList();
-        // FACTSPLIT1a: a part reads its own repositories' records, so it derives no unit of another's.
+        // A part reads its own repositories' records, so it derives no unit of another's.
         var branches = Ours(new SessionBranches(home).Entries(), entry => entry.Repository);
         var landings = Ours(new LandedBranches(home).Entries(), entry => entry.Repository);
         var refs = new List<RecoveryRef>();
         var standing = new List<StandingBranch>();
         List<string> named = [.. branches.Select(entry => entry.Repository).Concat(landings.Select(entry => entry.Repository))
             .Concat(trees.Select(entry => entry.Repository)).Distinct(StringComparer.OrdinalIgnoreCase)];
-        // FABRIC-UNKNOWN1b: every registered repository with a checkout here, this part's, is read too, one listing each, so a daoris/*
+        // Every registered repository with a checkout here, this part's, is read too, one listing each, so a daoris/*
         // branch no record and no tree names is seen where nothing of Daoris's is recorded. One whose checkout is not here has nothing
         // recorded to say of, so nothing is said.
         var registered = roots.Keys.Where(repository => !named.Contains(repository, StringComparer.OrdinalIgnoreCase) && (only is null || only(repository))
@@ -86,8 +85,8 @@ public static class WorkInventories
                 continue;
             }
 
-            // CLEANUP1: each with its commit, its date and whether a branch or a tag of the person's holds it, which its retention reads.
-            // FABRIC-UNKNOWN1: the same listing names the repository's daoris/* branches, so they cost no further git start.
+            // Each with its commit, its date and whether a branch or a tag of the person's holds it, which its retention reads.
+            // The same listing names the repository's daoris/* branches, so they cost no further git start.
             var (listed, err, branchesHere) = await RecoveryRetention.ReadWithBranchesAsync(
                 root, repository, RecoveryRetention.Made(landings, repository), ct, RecoveryKeeps.Recorded(home, repository)).ConfigureAwait(false);
             if (listed is null)
@@ -111,7 +110,7 @@ public static class WorkInventories
     }
 
     /// <summary>
-    /// What the clean-up would keep each unfollowed tree for (CLEANUPADVICE1): asked of git for those trees alone, by the judgement the press
+    /// What the clean-up would keep each unfollowed tree for: asked of git for those trees alone, by the judgement the press
     /// makes (<see cref="ContentHolds.HoldsAsync"/> under the repository's declared output). A tree it would take is not here.
     /// </summary>
     private static async Task<IReadOnlyDictionary<string, TreeKeep>> KeepsAsync(
@@ -145,7 +144,7 @@ public static class WorkInventories
         return keeps;
     }
 
-    /// <summary>The milestone of every unit this home names, and Daoris's own recoveries no unit names (CLEANUP1), from one read.</summary>
+    /// <summary>The milestone of every unit this home names, and Daoris's own recoveries no unit names, from one read.</summary>
     /// <param name="recorded">The trees this machine's sessions recorded (<see cref="RecordedOf"/>), each joined to its session; none, none joined.</param>
     /// <param name="closedQuests">The quests the service says are closed (<see cref="LandedStanding.ClosedAsync"/>); none, none is closed.</param>
     public static async Task<(IReadOnlyList<WorkMilestone> Units, IReadOnlyList<InventoryEntry> Recovery)> ReadAsync(

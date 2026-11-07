@@ -3,23 +3,23 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The intake's room (D65 §1b): a directory under Daoris's home, one per circle, seeded with the
+/// The intake's room: a directory under Daoris's home, one per circle, seeded with the
 /// circle's declarations — the working tree an intake session runs in, because it answers for a
 /// WORKSPACE and no repository is that.
 /// </summary>
 /// <remarks>
 /// <para><b>Daoris's own directory, so Daoris writes it</b> — the one tree the driver may seed, since
-/// nobody else owns it (D32 is about repositories). Re-rendered at every open: the declarations are
+/// nobody else owns it. Re-rendered at every open: the declarations are
 /// the registry's and change, and an intake deciding from a stale room decides wrong.</para>
 ///
-/// <para><b>Never a session tree</b> (§1b's trap): `SessionTrees` lays out
+/// <para><b>Never a session tree</b>: `SessionTrees` lays out
 /// <c>&lt;workspace&gt;/&lt;repository&gt;</c> worktrees of a checkout, and the room is neither.</para>
 ///
 /// <para><b>Never asked about by git.</b> It is no repository, and git asked about it walks UP — under
 /// a home inside a checkout (a rehearsal's scratch) it would answer for that checkout. So the intake
 /// records no base commit and no evidence of commits.</para>
 ///
-/// <para><b>A top file, not the Domain's (FLAT1b-ii).</b> Seeding the room makes its folder and writes three files, so the
+/// <para><b>A top file, not the Domain's.</b> Seeding the room makes its folder and writes three files, so the
 /// type holds I/O; what the room says is <see cref="Render"/>, still a pure function of its arguments. The declarations
 /// and the kinds it reads are the records in <c>Domain/Intake.cs</c>.</para>
 /// </remarks>
@@ -41,10 +41,9 @@ public static class IntakeRoom
 
     /// <summary>
     /// The tools the room allows without asking. The intake's job is to read the family and publish
-    /// — and over the protocol door a permission request is refused by construction (D52), so a tool
+    /// — and over the protocol door a permission request is refused by construction, so a tool
     /// left off this list is a session that stalls on its first call. Nothing here writes anywhere
-    /// but the service, and nothing runs a command: reading a ticket is `WebFetch`, the design's own
-    /// "its own web tools".
+    /// but the service, and nothing runs a command: reading a ticket is `WebFetch`.
     /// </summary>
     internal static readonly IReadOnlyList<string> Allowed =
     [
@@ -61,14 +60,14 @@ public static class IntakeRoom
     public static string PathOf(string home, string workspace) => IntakeRoomPaths.PathOf(home, workspace);
 
     /// <summary>Seed the room with the circle's declarations as they stand now, and answer where it is.</summary>
-    /// <param name="kinds">The kinds its workspace declares, per repository (WORKFLOW1i-b); null or empty where it declares none.</param>
+    /// <param name="kinds">The kinds its workspace declares, per repository; null or empty where it declares none.</param>
     public static string Prepare(
         string home, string workspace, IReadOnlyList<DeclarationView> declarations, IReadOnlyList<IntakeRepositoryKinds>? kinds = null)
     {
         var room = PathOf(home, workspace);
         Directory.CreateDirectory(Path.Combine(room, ".claude"));
 
-        // What each repository that declared nothing says about itself (D77), read from its own files
+        // What each repository that declared nothing says about itself, read from its own files
         // at every open — a README changes as a declaration does — and never written into.
         var described = new Dictionary<string, IIntakeDescription>(StringComparer.OrdinalIgnoreCase);
         foreach (var repository in declarations.Where(d => !(d.Adopted && d.Registered) && d.Root is { Length: > 0 }))
@@ -77,7 +76,7 @@ public static class IntakeRoom
         }
 
         Write(Path.Combine(room, "AGENTS.md"), Render(workspace, declarations, described, kinds));
-        // Two harnesses read AGENTS.md; Claude Code reads CLAUDE.md — the canon's own shape (D59).
+        // Two harnesses read AGENTS.md; Claude Code reads CLAUDE.md — the canon's own shape.
         Write(Path.Combine(room, "CLAUDE.md"), "@AGENTS.md\n");
         Write(Path.Combine(room, ".claude", "settings.json"), Settings());
         return room;
@@ -91,7 +90,7 @@ public static class IntakeRoom
 
     /// <summary>
     /// The room's AGENTS.md: who is in the circle, what each declares it owns and accepts, where it is —
-    /// and, for one that declared nothing, what its own files say about it (D77).
+    /// and, for one that declared nothing, what its own files say about it.
     /// </summary>
     public static string Render(
         string workspace, IReadOnlyList<DeclarationView> declarations,
@@ -131,7 +130,7 @@ public static class IntakeRoom
             if (repository.Root is { Length: > 0 } root) text.Append($"- **where:** {root}\n");
             if (repository.Lanes.Count > 0)
             {
-                // Its lanes (D115 §2.2), each by the address that asks it, so an intake can send work
+                // Its lanes, each by the address that asks it, so an intake can send work
                 // that is plainly one lane's to that lane.
                 text.Append("- **lanes** — a quest to one is work for that lane's session; to the repository alone, for the whole of it:\n");
                 foreach (var lane in repository.Lanes)
@@ -159,8 +158,8 @@ public static class IntakeRoom
             text.Append('\n');
         }
 
-        // Registered with a root is addressable (D70): a quest there is answered by a protocol-door
-        // session. It declares nothing, so what its own files say is what the intake has (D77) —
+        // Registered with a root is addressable: a quest there is answered by a protocol-door
+        // session. It declares nothing, so what its own files say is what the intake has —
         // evidence, labelled as the repository's word, outranked by any declaration.
         if (outside.Count > 0)
         {
@@ -186,8 +185,8 @@ public static class IntakeRoom
             text.Append('\n');
         }
 
-        // WORKFLOW1i-b (the workflow design §4.3): the kinds the workspace declares, per repository with the workflow each follows
-        // there and whether it lowers the person's part, so a proposal is made knowing it. The intake only proposes (WORKFLOW1i).
+        // The kinds the workspace declares, per repository with the workflow each follows
+        // there and whether it lowers the person's part, so a proposal is made knowing it. The intake only proposes.
         if (kinds is { Count: > 0 })
         {
             text.Append("## Kinds of work\n\n");
@@ -241,13 +240,13 @@ public static class IntakeRoom
     /// <summary>
     /// A circle's name as one folder: ASCII letters, digits, `-` and `_`, lower case — and, when that
     /// lost anything, a short hash of the exact name beside it, so two circles are never one room.
-    /// A workspace plan's file is named by the same rule (WSSETUP6), so two circles never share one.
+    /// A workspace plan's file is named by the same rule, so two circles never share one.
     /// </summary>
     /// <remarks>
-    /// 🔴 Every name with no ASCII letter in it used to fold to <c>default</c>, and `my circle` and
-    /// `my-circle` to one folder (REV3). The room is the intake's lock and holds its circle's
-    /// declarations, so two circles in one room blocked each other and read each other's family.
-    /// A name that is already a folder name stays exactly that, so no existing room moves.
+    /// 🔴 The hash keeps names that fold alike (a name with no ASCII letter, `my circle` and
+    /// `my-circle`) apart. The room is the intake's lock and holds its circle's
+    /// declarations, so two circles in one room would block each other and read each other's family.
+    /// A name that is already a folder name stays exactly that.
     /// </remarks>
     internal static string SafeName(string workspace) => IntakeRoomPaths.SafeName(workspace);
 }

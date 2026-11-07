@@ -1,15 +1,15 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a driven session is told of its repository's heavy gates (HEAVYRUN1b1, D180's HEAVYRUN1 notes): to run the checks that cover
+/// What a driven session is told of its repository's heavy gates: to run the checks that cover
 /// what it changes while it works, and those gates once, at its end, through <c>daoris gate run</c>, which holds the
 /// repository's one heavy-run slot, so two sessions reaching their ends together run them one after the other. Said before how to
 /// take the quest (<see cref="SessionTarget.Heavy"/>), on a first start, a resume and a carry-on alike.
 /// </summary>
 /// <remarks>
 /// <para><b>Reached by its bare name.</b> Every session's PATH starts with the install's launchers wherever they are beside the home
-/// (<see cref="Tools.ChildPath"/>, WSSETUP3), wiring step or none, and the session inherits the home the desktop runs under (D63),
-/// which the installed host adopts from its own install where it is missing (FINDDAORIS1). So nothing new is handed: where no
+/// (<see cref="Tools.ChildPath"/>), wiring step or none, and the session inherits the home the desktop runs under,
+/// which the installed host adopts from its own install where it is missing. So nothing new is handed: where no
 /// launcher is beside the home (a workspace build), nothing promises a verb the session cannot run.</para>
 ///
 /// <para>Project-agnostic, as the instruction is: the gates' names are the repository's own data, and no decision is named.</para>
@@ -29,7 +29,7 @@ public static class HeavyTold
     /// <param name="root">The tree the session works in.</param>
     /// <param name="home">The driver's home, whose launchers and driver file are read.</param>
     /// <param name="repository">
-    /// The repository the session is handed by name, which this machine's mapping is keyed by (HEAVYRUN1b2a); null names it by the
+    /// The repository the session is handed by name, which this machine's mapping is keyed by; null names it by the
     /// folder its git folder is in, as a run a person starts does.
     /// </param>
     public static string? For(string root, string? home, string? repository = null)
@@ -46,8 +46,7 @@ public static class HeavyTold
         + "turn behind another session's run of this repository rather than running beside it. Never run those gates whole another way.";
 
     /// <summary>
-    /// What a session in <paramref name="root"/> is told and handed under its run's <paramref name="checks"/> (FABRIC-PIPELINE1b, D192 point
-    /// 5; the pipeline design §3.2's first and third layers), composed from the repository's declaration. Nothing set is today's words
+    /// What a session in <paramref name="root"/> is told and handed under its run's <paramref name="checks"/>, composed from the repository's declaration. Nothing set is today's words
     /// (<see cref="For(string, string?, string?)"/>). <c>heavy-at-end</c> says the heavy gates once, at the end, as the pipeline's, where the
     /// verb is found. <c>light</c> names the light gates and the heavy gates as the verification's, said whether or not the verb is found
     /// since it asks nothing of it; where the agent takes Daoris's rules, each heavy gate's command is denied exactly and the classifier is
@@ -57,12 +56,12 @@ public static class HeavyTold
     public static HeavyHanded Hand(string root, string? home, string? repository, string? checks, bool takesRules)
     {
         var handed = HandChecks(root, home, repository, checks, takesRules);
-        // HEAVYQUEUE1: wherever the verb is reached, a long test command is told to go through it, beside whatever else the checks say.
+        // Wherever the verb is reached, a long test command is told to go through it, beside whatever else the checks say.
         return home is not null && Reaches(home) ? handed with { Words = handed.Words is null ? Focused : $"{handed.Words} {Focused}" } : handed;
     }
 
     /// <summary>
-    /// What a session is told about running a long test command of its own (HEAVYQUEUE1): through <c>run-heavy -- &lt;command&gt;</c>, which takes
+    /// What a session is told about running a long test command of its own: through <c>run-heavy -- &lt;command&gt;</c>, which takes
     /// a place in the machine's heavy-run admission, the merge queue's gates among those holding one, and says what it waits for, rather
     /// than running beside them and slowing them all. Project-agnostic: it names no repository's gate and no decision.
     /// </summary>
@@ -105,7 +104,7 @@ public static class HeavyTold
         + "whole another way.";
 
     /// <summary>
-    /// What auto mode's classifier is told under <c>light</c> (UNBLOCK4's channel): the heavy gates by name as the verification's, and that
+    /// What auto mode's classifier is told under <c>light</c>: the heavy gates by name as the verification's, and that
     /// a filtered check is none of them, so a check <c>light</c> allows is never taken for one.
     /// </summary>
     public static string HardDeny(IReadOnlyList<string> heavy) =>
@@ -113,11 +112,11 @@ public static class HeavyTold
         + "its verification after the work lands. A check filtered to a test class, a test file or a census is not one of them.";
 
     /// <summary>
-    /// 🔴 Each heavy gate's declared command as a deny rule, exactly, never as a prefix (the pipeline design §3.2's third layer): a gate's
+    /// 🔴 Each heavy gate's declared command as a deny rule, exactly, never as a prefix: a gate's
     /// command can begin a filtered check <c>light</c> allows (<c>dotnet test src/Service</c> before its <c>--filter</c>), and a rule with
     /// no wildcard matches its command as written alone. A command a light gate also runs is never denied, and one a rule cannot name
-    /// exactly (a <c>*</c>, which the harness reads as any text, or a line break) is left to the words and the classifier: HEAVYRUN1's
-    /// rejection of guessing a heavy run from a command's text stands.
+    /// exactly (a <c>*</c>, which the harness reads as any text, or a line break) is left to the words and the classifier, never guessing a heavy run
+    /// from a command's text.
     /// </summary>
     public static IReadOnlyList<string> DenyRules(IReadOnlyList<HeavyGate> heavy, IReadOnlyList<HeavyGate> light)
     {
@@ -137,7 +136,7 @@ public static class HeavyTold
 
     /// <summary>
     /// The heavy gates <c>run-heavy</c> would run there, in its order (<see cref="HeavyGates.Resolve"/>): those the repository's own file
-    /// marks, else this machine's mapping for it (HEAVYRUN1b2a); none where it has neither, or a file or a driver file <c>run-heavy</c>
+    /// marks, else this machine's mapping for it; none where it has neither, or a file or a driver file <c>run-heavy</c>
     /// would refuse, whose session runs its gates as it would.
     /// </summary>
     private static IReadOnlyList<string> Marked(string root, string home, string? repository) => Names(Gates(root, home, repository).Heavy);
@@ -171,7 +170,7 @@ public static class HeavyTold
 }
 
 /// <summary>
-/// What a session is told and handed under its run's checks (FABRIC-PIPELINE1b): its words, said before how to take the quest; the deny
+/// What a session is told and handed under its run's checks: its words, said before how to take the quest; the deny
 /// rules beside <c>no-push</c>; and the sentence auto mode's classifier is told. Rules only where its agent takes Daoris's rules.
 /// </summary>
 /// <param name="Words">What it is told, or null for nothing.</param>

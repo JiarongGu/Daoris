@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A verification run as its line's read draws it (FABRIC-PIPELINE1d; the pipeline design §4.4): what it judged, who asked it, and its verdict,
+/// A verification run as its line's read draws it: what it judged, who asked it, and its verdict,
 /// with each gate's evidence from its checks' newest results.
 /// </summary>
 /// <param name="Run">The run's id, <c>v-</c> and sixteen hex digits; its record is <c>run:&lt;run&gt;</c>.</param>
@@ -30,7 +30,7 @@ public sealed record WorkflowRunLine(string Run, string Commit, string Level, Da
 }
 
 /// <summary>
-/// A verification run's verdict, read from its checks' steps (the pipeline design §4.4's words): verified where every check reached, failed
+/// A verification run's verdict, read from its checks' steps: verified where every check reached, failed
 /// where one failed, not now where the person stopped one, not known where one is unknown, running while one runs, else waiting.
 /// </summary>
 public static class LineVerdicts

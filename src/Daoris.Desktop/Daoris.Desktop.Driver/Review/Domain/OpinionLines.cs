@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The machine log's second-opinion lines (XAGENT1f, D155 point 11; the second-agent design §8.6, D94): <c>opinion.asked</c>,
+/// The machine log's second-opinion lines: <c>opinion.asked</c>,
 /// <c>opinion.given</c>, <c>opinion.answered</c>, <c>opinion.held</c> and <c>opinion.unavailable</c>, codes, ids and counts only,
 /// never a finding, a sentence, an account or anyone's words. They ride the landing line's channel
 /// (<see cref="ServiceClient.LandingSaid"/>), which writes the event each names.
@@ -48,7 +48,7 @@ public static class OpinionLines
             ("required", gate.Required), ("door", door),
         ]);
 
-    /// <summary>No opinion could be had: the working session, the occasion and the code (§3.3, §8.4).</summary>
+    /// <summary>No opinion could be had: the working session, the occasion and the code.</summary>
     public static LandingLine Unavailable(string session, string occasion, string code) =>
         new("opinion.unavailable", [("session", session), ("occasion", occasion), ("code", code)]);
 }

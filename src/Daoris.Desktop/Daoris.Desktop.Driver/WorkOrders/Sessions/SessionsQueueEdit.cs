@@ -72,7 +72,7 @@ internal static class SessionsQueueEdit
     /// A take-back asked of the loops on this home and waited for, as a say is: the loop's answer, or null where none took it in time,
     /// when it is withdrawn so no loop acts on it after the verb went to the service itself. A loop that took it is waited for until
     /// it answers, within <see cref="SessionsWorld.Answer"/>, since the word is gone by then and asking the service again would only
-    /// say it is no longer there.
+    /// say it is not there.
     /// </summary>
     private static async Task<WordsHeld?> AskLoopTakeBackAsync(
         SessionsWorld world, string id, string word, string? text, CancellationToken ct)

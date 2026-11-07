@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The review a new ask carries from a terminal (REVIEWENV1j): the choice sent, null where none is (<c>rule</c>, or nothing said),
+/// The review a new ask carries from a terminal: the choice sent, null where none is (<c>rule</c>, or nothing said),
 /// and the person's words with it.
 /// </summary>
 public sealed record AskReviewComposed(string? Choice, string? Words);
 
-/// <summary>What <c>daoris ask review</c> was asked: the ask, the choice, and the person's words.</summary>
+/// <summary>The request of <c>daoris ask review</c>: the ask, the choice, and the person's words.</summary>
 /// <param name="Choice"><c>off</c>, <c>on</c> or an environment's name, as the service spells it.</param>
 public sealed record AskReviewAsk(string Ask, string Choice, string? Words);
 
@@ -14,8 +14,8 @@ public sealed record AskReviewAsk(string Ask, string Choice, string? Words);
 public sealed record AskReviewWorld(ServiceClient Service, Func<DriverConfig> Config);
 
 /// <summary>
-/// The ask's review choice at a terminal (REVIEWENV1j, D154 point 3; the review environment design §1.4–§1.5, D50), the twin of the
-/// ask composer's and the ask page's (REVIEWENV1g):
+/// The ask's review choice at a terminal, the twin of the
+/// ask composer's and the ask page's:
 /// <c>daoris ask … --review rule|on|&lt;environment&gt;|off [--review-words "…"]</c> with a new ask, and
 /// <c>daoris ask review &lt;id&gt; on|&lt;environment&gt;|off ["…"]</c> on one, which applies an intake's proposal too.
 /// </summary>

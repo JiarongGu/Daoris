@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a fresh home is given once (WORKFLOWCLEAN1 1a; the cleanup design §1.1): the copy of <c>merge-after-accept</c> saved, and
+/// What a fresh home is given once: the copy of <c>merge-after-accept</c> saved, and
 /// <c>defaultWorkflow</c> naming it, so a place follows a saved graph from its first start, and the supervisor's seeded rules. A home that
 /// already has a <c>driver.json</c> is never seeded; it goes through the conversion, on the person's press.
 /// </summary>
@@ -11,7 +11,7 @@ public static class HomeSeed
     /// Seed the home where <paramref name="configPath"/> is not there yet. The copy is written first and the file after, so a stop between
     /// them leaves a saved copy and no default, which the next start seeds again as a home without a file.
     /// </summary>
-    /// <returns>Whether the home was seeded.</returns>
+    /// <returns>Whether the home got seeded.</returns>
     public static bool Once(string configPath, string home)
     {
         if (File.Exists(configPath)) return false;

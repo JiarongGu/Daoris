@@ -6,7 +6,7 @@ using static Daoris.Driver.ChoiceArgs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris settings brainstorms</c> (BRAINSTORM1b, D176 point 9; FOUNDATION1 mod-iii): the work orders' own verb, the settings' port
+/// <c>daoris settings brainstorms</c>: the work orders' own verb, the settings' port
 /// (<see cref="ChoiceVerb"/>) implemented beside the policy it edits (<see cref="BrainstormRules"/>). Which of its words change the policy is
 /// the settings' grammar (<see cref="ChoiceGrammar"/>), whose minutes' flags are these.
 /// </summary>
@@ -15,7 +15,7 @@ public sealed class BrainstormsVerb : ChoiceVerb
     public override string Word => "brainstorms";
 
     /// <summary>
-    /// The brainstorm policy (BRAINSTORM1b, D176 point 9): this machine's, or with `--workspace` for the questions about a workspace's
+    /// The brainstorm policy: this machine's, or with `--workspace` for the questions about a workspace's
     /// repositories. `--mode`, `--agents` and the minutes set what they name over the rule set there; `--clear`. No route sets it.
     /// </summary>
     public override ChoicePress Plan(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
@@ -78,8 +78,8 @@ public sealed class BrainstormsVerb : ChoiceVerb
 
 
     /// <summary>
-    /// <c>brainstorms</c>' words read (BRAINSTORM1b): its workspace, whether it clears, and the set it names, each part only where it was
-    /// said, as the screen and Ask Daoris send it. A minute given as anything but digits is handed on as written, to be refused in the
+    /// <c>brainstorms</c>' words read: its workspace, whether it clears, and the set it names, each part only where it is
+    /// given, as the screen and Ask Daoris send it. A minute given as anything but digits is handed on as written, to be refused in the
     /// rule's words; a repository named is refused here.
     /// </summary>
     private static (string? Workspace, bool Clear, BrainstormSet? Set) BrainstormsAsked(IReadOnlyList<string> args)

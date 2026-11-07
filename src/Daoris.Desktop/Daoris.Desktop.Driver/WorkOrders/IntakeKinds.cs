@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The kinds an intake may propose (WORKFLOW1i-b, the workflow design §4.3): read from the workspace's declarations and the
+/// The kinds an intake may propose: read from the workspace's declarations and the
 /// workflows each repository's choices map them to, so the room says, per repository, which kind lowers the person's part
 /// there. The reading is the same table the gate uses (<see cref="Involvement"/>), never a second one; an intake only proposes,
-/// and nothing here sets a kind (WORKFLOW1i2).
+/// and nothing here sets a kind.
 /// </summary>
 public static class IntakeKinds
 {

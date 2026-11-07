@@ -3,9 +3,8 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The named workflows a home keeps (WORKFLOW1d, the workflow design §2.4–§2.6): one file per workflow,
-/// <c>&lt;home&gt;/workflows/&lt;id&gt;.json</c>, read as found and written whole. A port (STRUCT3b, D166; the code-structure
-/// design §3): <see cref="WorkflowStore"/>'s use cases are written against it, and <c>WorkflowFiles</c> is the files behind it.
+/// The named workflows a home keeps: one file per workflow,
+/// <c>&lt;home&gt;/workflows/&lt;id&gt;.json</c>, read as found and written whole. A port: <see cref="WorkflowStore"/>'s use cases are written against it, and <c>WorkflowFiles</c> is the files behind it.
 /// </summary>
 public interface IWorkflowStore
 {
@@ -20,8 +19,8 @@ public interface IWorkflowStore
 }
 
 /// <summary>
-/// The runs' bindings a home keeps (WORKFLOW1e, the workflow design §4.5, §5.1): one file per run,
-/// <c>&lt;home&gt;/workflows/runs/&lt;run&gt;.json</c>, machine-local. A port (STRUCT3b): <see cref="WorkflowRunBindings"/>' and
+/// The runs' bindings a home keeps: one file per run,
+/// <c>&lt;home&gt;/workflows/runs/&lt;run&gt;.json</c>, machine-local. A port: <see cref="WorkflowRunBindings"/>' and
 /// <see cref="WorkflowStore"/>'s use cases are written against it, and the files are behind it.
 /// </summary>
 public interface IWorkflowRunStore
@@ -33,12 +32,12 @@ public interface IWorkflowRunStore
     WorkflowRunBinding? Read(string run);
 
     /// <summary>
-    /// A run's binding kept where none is: a run already bound keeps the version it started on. False where it was bound already, a
-    /// bind racing it included: of two binds of one run at once exactly one is kept (FABRIC-CUTOVER1g).
+    /// A run's binding kept where none is: a run already bound keeps the version it started on. False where it is bound already, a
+    /// bind racing it included: of two binds of one run at once exactly one is kept.
     /// </summary>
     bool Bind(WorkflowRunBinding binding);
 
-    /// <summary>A run's binding written over its file, whole: the person's keep (WORKFLOW1f) and nothing else.</summary>
+    /// <summary>A run's binding written over its file, whole: the person's keep and nothing else.</summary>
     void Write(string run, WorkflowRunBinding binding);
 
     /// <summary>
@@ -52,9 +51,9 @@ public interface IWorkflowRunStore
 }
 
 /// <summary>
-/// What a run's read reads on this machine beside the service (WORKFLOW1c, the workflow design §5.1): the landing record and the
-/// due list under the home, the acceptances each session's conversation record keeps, and whether a tree still stands. A port
-/// (STRUCT3b): <see cref="WorkflowRunReader"/> is written against it, and the reads are behind it.
+/// What a run's read reads on this machine beside the service: the landing record and the
+/// due list under the home, the acceptances each session's conversation record keeps, and whether a tree still stands. A port:
+/// <see cref="WorkflowRunReader"/> is written against it, and the reads are behind it.
 /// </summary>
 public interface IWorkflowRunRecords
 {
@@ -62,7 +61,7 @@ public interface IWorkflowRunRecords
     IReadOnlyList<LandedBranch> Landings();
 
     /// <summary>
-    /// When each session's work was accepted into its line (D100): the newest acceptance its conversation's record keeps, by its id.
+    /// When each session's work was accepted into its line: the newest acceptance its conversation's record keeps, by its id.
     /// A teammate's record is on its machine, and a record that does not read keeps none.
     /// </summary>
     IReadOnlyDictionary<string, DateTimeOffset> Acceptances(IReadOnlyList<TracedSession> sessions);
@@ -72,42 +71,42 @@ public interface IWorkflowRunRecords
 
     /// <summary>
     /// Whether <paramref name="tree"/> is one this home opened (<see cref="SessionTrees.Holds"/>), standing or not: a chat's own tree, where
-    /// a chat whose tree it is not works in the person's checkout (CHATFLOW1a).
+    /// a chat whose tree it is not works in the person's checkout.
     /// </summary>
     bool Holds(string tree);
 
     /// <summary>
-    /// A run's node record, <c>run:&lt;run&gt;</c>, read and never written (FABRIC-CUTOVER1e): an empty one where Daoris has not judged the run
+    /// A run's node record, <c>run:&lt;run&gt;</c>, read and never written: an empty one where Daoris has not judged the run
     /// yet, null where its file does not read.
     /// </summary>
     NodeRecord? Record(string unit);
 
-    /// <summary>This machine's session branches (<see cref="SessionBranches"/>), which name a branch unit by its branch (FABRIC-CUTOVER1e).</summary>
+    /// <summary>This machine's session branches (<see cref="SessionBranches"/>), which name a branch unit by its branch.</summary>
     IReadOnlyList<GrownBranch> Branches();
 
-    /// <summary>Whether a run is bound here (<see cref="WorkflowRunBindings.Bound(string, string)"/>): a chat's tree gone reads its bound run (CHATFLOW1c).</summary>
+    /// <summary>Whether a run is bound here (<see cref="WorkflowRunBindings.Bound(string, string)"/>): a chat's tree gone reads its bound run.</summary>
     bool Bound(string run);
 
     /// <summary>
-    /// Whether a live conversation is between turns (CHATFLOW1c): its turn ended and nothing said since, as its runner wrote each turn's end
+    /// Whether a live conversation is between turns: its turn ended and nothing said since, as its runner wrote each turn's end
     /// (<see cref="SessionEvents.TurnEnded"/>, <see cref="SessionGroups.Between"/>'s record of its turns), so every door reads it alike.
     /// </summary>
     bool Between(string session);
 
     /// <summary>
-    /// Where a chat's tree stands (CHATFLOW1c, the chat-flow design §4.2): its <c>HEAD</c>, and the commits beyond the line as the review's
+    /// Where a chat's tree stands: its <c>HEAD</c>, and the commits beyond the line as the review's
     /// offer counts them (<see cref="LandOffer.Of"/>), those the line holds by content counting none; null where the tree does not stand.
     /// </summary>
     Task<ChatTreeTip?> TipAsync(string tree, CancellationToken ct);
 }
 
-/// <summary>Where a chat's tree stands (CHATFLOW1c): its <c>HEAD</c>, and the commits beyond the line, each null where git could not say.</summary>
+/// <summary>Where a chat's tree stands: its <c>HEAD</c>, and the commits beyond the line, each null where git could not say.</summary>
 public sealed record ChatTreeTip(string? Head, int? Beyond);
 
 /// <summary>
-/// The ports over a home's files, for a caller that holds only the home (STRUCT3b; D166's STRUCT3b note): the one place Workflows'
+/// The ports over a home's files, for a caller that holds only the home: the one place Workflows'
 /// use cases name the files behind them. Every module, the loop and the hosts reach Workflows by a
-/// home, as they did before the ports; a caller that holds the ports passes them to the use case itself.
+/// home; a caller that holds the ports passes them to the use case itself.
 /// </summary>
 internal static class WorkflowPorts
 {

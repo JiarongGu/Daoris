@@ -85,7 +85,7 @@ internal static class SessionsListing
         PartBegan.Resumed => $"resumed after {part.After}",
         PartBegan.CarriedOn => part.After is { } after ? $"carried on after {after}" : "carried on",
         PartBegan.HandedOver => $"handed over from {part.After}",
-        // A part moved on from one whose own conversation was lost, as the page's `work.parts.began.moved` says it.
+        // A part moved on from one whose own conversation is lost, as the page's `work.parts.began.moved` says it.
         PartBegan.Moved => $"moved on from {part.After}: its own conversation was lost",
         PartBegan.Asked => part.AskedBy is { } by ? $"asked by {by}" : "asked by a sibling",
         _ => "opened",

@@ -139,7 +139,7 @@ internal static class SessionsEnding
     }
 
     /// <summary>
-    /// A finish at a checkpoint leaves its quest as it was: where that is still open or taken, said right after it with the door that
+    /// A finish at a checkpoint leaves its quest as it stands: where that is still open or taken, said right after it with the door that
     /// closes it as the person's, since nothing here carries a finished session's quest on. A quest that cannot be read says nothing:
     /// the finish stood, and <c>quest done</c> answers for itself.
     /// </summary>
@@ -166,7 +166,7 @@ internal static class SessionsEnding
 
     /// <summary>
     /// Ask the loop that runs a session, and wait for its record to move: what happened is said, and a request nothing took in time
-    /// is withdrawn so no loop acts on it after the person was told.
+    /// is withdrawn so no loop acts on it after the person is told.
     /// </summary>
     private static async Task<int> AskAsync(
         SessionsWorld world, SessionRecord record, SessionRequest request, string past, TextWriter output, CancellationToken ct)

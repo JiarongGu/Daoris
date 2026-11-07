@@ -45,8 +45,8 @@ internal sealed class LookState(List<SessionEnded> concluded)
     }
 
     /// <summary>
-    /// The starts still opening when the snapshot was read: the plan holds these as well as the ones opening when it plans, so a start
-    /// whose record opened while the snapshot was read is held by one of the two.
+    /// The starts still opening when the snapshot is read: the plan holds these as well as the ones opening when it plans, so a start
+    /// whose record opened while the snapshot is read is held by one of the two.
     /// </summary>
     public IReadOnlyList<StartReservation> ReservedBefore
     {

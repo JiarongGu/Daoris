@@ -6,7 +6,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the run holding a repository's heavy-run slot wrote beside it (HEAVYRUN1a): its process, the tree it runs in, its gates,
+/// What the run holding a repository's heavy-run slot writes beside it: its process, the tree it runs in, its gates,
 /// since when, the driven session whose environment named one, and the job its gates' processes are held in.
 /// </summary>
 /// <param name="Pid">The holding run's process.</param>
@@ -19,30 +19,30 @@ namespace Daoris.Driver;
 public sealed record HeavyHolder(
     int Pid, long Started, string Checkout, IReadOnlyList<string> Gates, DateTimeOffset Since, string? Session, string? Job)
 {
-    /// <summary>The gate it runs now, rewritten at each gate's start (HEAVYSLOT1); null before its first and in a record older than it.</summary>
+    /// <summary>The gate it runs now, rewritten at each gate's start; null before its first and in a record older than it.</summary>
     public HeavyGateNow? Now { get; init; }
 
-    /// <summary>The gate that failed and its exit, written before what it left is ended and the slot let go (HEAVYSLOT1).</summary>
+    /// <summary>The gate that failed and its exit, written before what it left is ended and the slot let go.</summary>
     public HeavyGateFailed? Failed { get; init; }
 
-    /// <summary>The verification run holding it (FABRIC-PIPELINE1d), where the heavy executor does; an older reader passes over it.</summary>
+    /// <summary>The verification run holding it, where the heavy executor does; an older reader passes over it.</summary>
     public string? Run { get; init; }
 }
 
-/// <summary>The gate a holder runs now (HEAVYSLOT1): its name, its place in the holder's gates from 0, and when it started.</summary>
+/// <summary>The gate a holder runs now: its name, its place in the holder's gates from 0, and when it started.</summary>
 public sealed record HeavyGateNow(string Gate, int At, DateTimeOffset Since);
 
-/// <summary>The gate a holder's run failed at (HEAVYSLOT1), and the exit it failed with.</summary>
+/// <summary>The gate a holder's run failed at, and the exit it failed with.</summary>
 public sealed record HeavyGateFailed(string Gate, int Exit);
 
 /// <summary>
-/// What a run waiting for a repository's slot writes beside it while it waits (HEAVYSLOT1, the UI/UX design §3.5): its process, the
+/// What a run waiting for a repository's slot writes beside it while it waits: its process, the
 /// tree it runs in, since when it waits, and the driven session whose environment named one. Gone as it takes the slot or ends.
 /// </summary>
 public sealed record HeavyWaiter(int Pid, long Started, string Checkout, DateTimeOffset Since, string? Session);
 
 /// <summary>
-/// A repository's slot as it stands (HEAVYSLOT1): the run holding it and the runs waiting for it, each only where its process (its id
+/// A repository's slot as it stands: the run holding it and the runs waiting for it, each only where its process (its id
 /// and its start) is still there, so a record a run that died left behind holds nothing and waits for nothing.
 /// </summary>
 public sealed record HeavyLook(HeavyHolder? Holder, IReadOnlyList<HeavyWaiter> Waiters);
@@ -58,7 +58,7 @@ public sealed record HeavyWaiting(TimeSpan Poll, TimeSpan SayEvery, Func<DateTim
 }
 
 /// <summary>
-/// One heavy-run slot per repository, across its trees (HEAVYRUN1a, D180's HEAVYRUN1 note): while one run of a repository's heavy
+/// One heavy-run slot per repository, across its trees: while one run of a repository's heavy
 /// gates holds it, a second, from any checkout of the same repository, waits and says behind whom.
 /// </summary>
 /// <remarks>
@@ -67,7 +67,7 @@ public sealed record HeavyWaiting(TimeSpan Poll, TimeSpan SayEvery, Func<DateTim
 ///
 /// <para><b>Keyed by the repository, never the tree.</b> The key is the repository's common git folder, read from git's own files with
 /// no process (<see cref="TreeTips.CommonDirectory"/>), named by the folder's identity where Windows gives one (a junction, a
-/// <c>subst</c> drive, another case or a long-path prefix take the same slot), else by its spelling, as LANDRACE1's branch hold is. So
+/// <c>subst</c> drive, another case or a long-path prefix take the same slot), else by its spelling, as the branch hold's is. So
 /// the root checkout and every linked tree of it share one slot, with no registry: a root checkout is no session tree, and the tree
 /// list names none for it.</para>
 ///
@@ -79,7 +79,7 @@ public sealed record HeavyWaiting(TimeSpan Poll, TimeSpan SayEvery, Func<DateTim
 /// it, and which the holder takes away as it lets go. One left behind is a holder that died holding the slot: the next run reads it
 /// (<see cref="Before"/>) and ends the job it names, if it is still there, before its own gates start.</para>
 ///
-/// <para><b>The page reads who holds it and who waits</b> (HEAVYSLOT1, the UI/UX design §3.5): the holder rewrites its record at each
+/// <para><b>The page reads who holds it and who waits</b>: the holder rewrites its record at each
 /// gate with that gate and its start, and each waiting run keeps a record of its own under <see cref="WaitersOf"/>, gone as it takes
 /// the slot or stops. <see cref="Look"/> reads both, and only where the record's process (its id and its start) still runs: never
 /// the run's output, and never a record a dead run left as a live hold.</para>
@@ -136,7 +136,7 @@ public sealed class HeavySlot : IDisposable
     /// <summary>Where its holder says what it runs, beside the slot.</summary>
     public static string RecordOf(string home, string key) => DaorisHome.Entry(home, HomeEntry.Locks, "heavy", $"{key}.json");
 
-    /// <summary>Where the runs waiting for it each say so, one file a run (HEAVYSLOT1), beside the slot.</summary>
+    /// <summary>Where the runs waiting for it each say so, one file a run, beside the slot.</summary>
     public static string WaitersOf(string home, string key) => DaorisHome.Entry(home, HomeEntry.Locks, "heavy", $"{key}.waits");
 
     /// <summary>The slot, or null while another run holds it. Never waits.</summary>
@@ -167,7 +167,7 @@ public sealed class HeavySlot : IDisposable
     /// <paramref name="waiting"/>'s cadence, until it is this run's. A free slot is taken at once, saying nothing.
     /// </summary>
     /// <param name="waiter">
-    /// What this run writes beside the slot while it waits (HEAVYSLOT1), so the page can say who waits; taken away as it takes the
+    /// What this run writes beside the slot while it waits, so the page can say who waits; taken away as it takes the
     /// slot or stops. Null writes nothing.
     /// </param>
     /// <exception cref="OperationCanceledException">Stopped while waiting; nothing is held.</exception>
@@ -176,7 +176,7 @@ public sealed class HeavySlot : IDisposable
         (await TakeUnlessAsync(home, key, repository, said, ct, waiting, waiter, yieldTo: null).ConfigureAwait(false))!;
 
     /// <summary>
-    /// <see cref="TakeAsync"/>, giving up without waiting once the slot's holder is one <paramref name="yieldTo"/> names (FABRIC-PIPELINE1d: a
+    /// <see cref="TakeAsync"/>, giving up without waiting once the slot's holder is one <paramref name="yieldTo"/> names (a
     /// session's run never waits behind a verification): null then, nothing held and no waiter left.
     /// </summary>
     public static async Task<HeavySlot?> TakeUnlessAsync(
@@ -219,7 +219,7 @@ public sealed class HeavySlot : IDisposable
     }
 
     /// <summary>
-    /// The slot as it stands (HEAVYSLOT1): its holder and the runs waiting for it, the longest waiting first, each only where
+    /// The slot as it stands: its holder and the runs waiting for it, the longest waiting first, each only where
     /// <paramref name="alive"/> finds its process (its id and its start). Neither file alone is a hold: the handle is the lock, and a
     /// run that died leaves its record behind, so one whose process is gone is read as nothing. Reads files only, and takes nothing.
     /// </summary>
@@ -491,7 +491,7 @@ public sealed class HeavySlot : IDisposable
     private static string? Common(string directory) =>
         CheckoutOf(directory) is { } checkout ? TreeTips.CommonDirectory(checkout) : null;
 
-    /// <remarks>As LANDRACE1's hold names a folder: its identity where Windows gives one, else its spelling.</remarks>
+    /// <remarks>As the branch hold names a folder: its identity where Windows gives one, else its spelling.</remarks>
     private static string Identity(string folder) =>
         (OperatingSystem.IsWindows() ? FolderIdentity.Of(folder) : null)
         ?? Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder)).ToLowerInvariant();

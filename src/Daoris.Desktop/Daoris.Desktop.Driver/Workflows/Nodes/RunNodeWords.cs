@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
-/// <summary>What the person's word on a run's node came to at its door (FABRIC-CUTOVER1f): kept, or refused with its code.</summary>
+/// <summary>What the person's word on a run's node came to at its door: kept, or refused with its code.</summary>
 /// <param name="Run">The run, as its binding names it.</param>
 /// <param name="Node">The node's id in the run's graph.</param>
 /// <param name="Act">One of <see cref="NodeWordActs"/>, or the word as given where it is neither.</param>
-/// <param name="Refused">Why nothing was kept, or null where it was.</param>
+/// <param name="Refused">Why nothing is kept, or null where the word is kept.</param>
 public sealed record NodeWorded(string Run, string Node, string Act, string? Refused)
 {
     public bool Done => Refused is null;
@@ -12,14 +12,14 @@ public sealed record NodeWorded(string Run, string Node, string Act, string? Ref
     /// <summary>What a refusal needs to say itself: the quest the run ended at, or why its version does not read.</summary>
     public string? Detail { get; init; }
 
-    /// <summary>Where the node stood, for a move the one table does not make from there.</summary>
+    /// <summary>Where the node stands, for a move the one table does not make from there.</summary>
     public string? State { get; init; }
 }
 
 /// <summary>
-/// The person's skip and stop of a run's node (FABRIC-CUTOVER1f; D190 points 3 and 6, the cutover design §3, §5.2): the door that keeps their
+/// The person's skip and stop of a run's node: the door that keeps their
 /// word on the run's record, the runtime's application of it, and what the run's view offers. A go-ahead nobody raises would otherwise strand a
-/// run once the doors hold on its graph (CUTOVER1d), and so would a node after <c>handed</c> told for two runs at one tip (§2.4.1).
+/// run once the doors hold on its graph, and so would a node after <c>handed</c> told for two runs at one tip.
 /// </summary>
 /// <remarks>
 /// <para><b>One writer.</b> The door writes only the word, in its own field (<see cref="NodeRecord.Pending"/>), under the record's lock with the
@@ -31,7 +31,7 @@ public sealed record NodeWorded(string Run, string Node, string Act, string? Ref
 /// </remarks>
 public static class RunNodeWords
 {
-    /// <summary>No run here by that id is bound to a graph version: a steps run's steps are D157's, and have no node to say this of.</summary>
+    /// <summary>No run here by that id is bound to a graph version: a steps run's steps have no node to say this of.</summary>
     public const string NotRun = "not-run";
 
     /// <summary>The graph version the run is bound to does not read here, so the run is held whole and nothing on it is changed.</summary>
@@ -58,7 +58,7 @@ public static class RunNodeWords
     /// <summary>The presses a node takes only while it waits for them: a person's task's.</summary>
     private static readonly string[] Waited = [NodeWordActs.Done, NodeWordActs.Approve, NodeWordActs.Reject];
 
-    /// <summary>The record's mark of the person's send of <paramref name="node"/>'s attempt, which the next pass reads as the start's say-so (INTEGRATE1p).</summary>
+    /// <summary>The record's mark of the person's send of <paramref name="node"/>'s attempt, which the next pass reads as the start's say-so.</summary>
     public static string SendKey(string node, int attempt) => $"send:{node}:{attempt}";
 
     /// <summary>Whether <paramref name="node"/>'s kind offers its own <paramref name="act"/> where the node stands at <paramref name="status"/>.</summary>
@@ -69,7 +69,7 @@ public static class RunNodeWords
     private static IPressed? TakenBy(string act) =>
         NodeKit.Built.Units.OfType<IPressed>().FirstOrDefault(pressed => pressed.Takes.Contains(act, StringComparer.Ordinal));
 
-    /// <summary>The word is <c>accept</c> or <c>changes</c>, which only a <c>review</c> takes (LANDNODE1c2, DECIDE1c).</summary>
+    /// <summary>The word is <c>accept</c> or <c>changes</c>, which only a <c>review</c> takes.</summary>
     public const string NotReview = "not-review";
 
     /// <summary>The run's record holds its end: nothing of its graph moves again until its chain comes back here.</summary>
@@ -79,7 +79,7 @@ public static class RunNodeWords
     public const string Worded = "worded";
 
     /// <summary>
-    /// The stop of an <c>integrate</c> whose member the integration record says promoted (INTEGRATE1n; §17.4, F50): nothing reverses the line,
+    /// The stop of an <c>integrate</c> whose member the integration record says promoted: nothing reverses the line,
     /// so there is nothing to stop, and the node reads its record's reach.
     /// </summary>
     public const string Promoted = "promoted";
@@ -91,7 +91,7 @@ public static class RunNodeWords
     /// </summary>
     /// <param name="promoted">
     /// The nodes whose integration the record says promoted (<see cref="IntegrateNodes.PromotedAsync"/>): a stop of one is refused
-    /// (<see cref="Promoted"/>, F50). Null where the caller reads none, and nothing is refused on a guess.
+    /// (<see cref="Promoted"/>). Null where the caller reads none, and nothing is refused on a guess.
     /// </param>
     public static NodeWorded Word(
         NodeRecordFiles records, string run, string node, string act, string? words, Func<DateTimeOffset>? clock = null, IReadOnlySet<string>? promoted = null)
@@ -130,7 +130,7 @@ public static class RunNodeWords
     }
 
     /// <summary>
-    /// <see cref="Word"/> for the doors the person presses through (INTEGRATE1n part n3, F50): a stop first reads the integration record through
+    /// <see cref="Word"/> for the doors the person presses through: a stop first reads the integration record through
     /// <paramref name="door"/> for the run's nodes whose open request's member promoted, so it is refused before anything is kept. A skip, a run
     /// that is not bound and a record with no request of an <c>integrate</c> of its own read nothing of it. The pass judges the word again.
     /// </summary>
@@ -166,7 +166,7 @@ public static class RunNodeWords
                 continue;
             }
 
-            // INTEGRATE1n (F50): a stop said before the member promoted, and applied after, is refused as the door refuses it.
+            // A stop said before the member promoted, and applied after, is refused as the door refuses it.
             if (word.Act == NodeWordActs.Stop && promoted?.Contains(word.Node) == true)
             {
                 applied.Add((word, Promoted));
@@ -208,7 +208,7 @@ public static class RunNodeWords
     }
 
     /// <summary>
-    /// A word as the one table's move: a kind's own act the move its kind asks (D247), the door having refused it on any other kind; else the
+    /// A word as the one table's move: a kind's own act the move its kind asks, the door having refused it on any other kind; else the
     /// person's skip with their words and the run's scope, or their stop.
     /// </summary>
     private static NodeMove Move(NodeDeclaration node, NodeWord word, NodeScope scope, NodeStatus status) =>
@@ -223,12 +223,12 @@ public static class RunNodeWords
     /// the door takes a word on it as the table does; a run that ended or does not read offers none, which its reader decides.
     /// </summary>
     /// <param name="promoted">
-    /// Whether the integration record says this node's member promoted onto the line (INTEGRATE1n; §17.4, F50): its stop is then not offered,
+    /// Whether the integration record says this node's member promoted onto the line: its stop is then not offered,
     /// since nothing reverses the line, and the node reads its record's reach.
     /// </param>
     public static IReadOnlyList<string> Acts(NodeDeclaration node, NodeStatus status, bool promoted = false)
     {
-        // A kind's own acts lead (D247): a review's changes, a request's send, or its asking again and going on.
+        // A kind's own acts lead: a review's changes, a request's send, or its asking again and going on.
         var acts = NodeKit.Of(node.Kind) is IPressed pressed ? new List<string>(pressed.Acts(node, status)) : [];
         if (status.State is NodeStates.Ready or NodeStates.Active && NodeAuthorities.Of(node)?.PersonSkips == true) acts.Add(NodeWordActs.Skip);
         if (status.State is NodeStates.Ready or NodeStates.Active or NodeStates.Unknown or NodeStates.Invalidated && !promoted) acts.Add(NodeWordActs.Stop);

@@ -4,11 +4,11 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One pass of a brainstorm as its record keeps it (D176 point 8): its role, who ran it, how it ended and its codes, and how many
+/// One pass of a brainstorm as its record keeps it: its role, who ran it, how it ended and its codes, and how many
 /// turns it took (one, or two with its repair).
 /// </summary>
 /// <param name="Role"><c>generate</c> or <c>synthesize</c>.</param>
-/// <param name="State"><c>answered</c>, <c>failed</c> or <c>unavailable</c>; <c>running</c> while a turn runs, and since BRAINSTORM1b
+/// <param name="State"><c>answered</c>, <c>failed</c> or <c>unavailable</c>; <c>running</c> while a turn runs;
 /// <c>stopped</c> by the person or <c>interrupted</c> by a driver that stopped.</param>
 public sealed record BrainstormPassRecord(BrainstormBy By, string Role, string State, IReadOnlyList<string> Codes, int Turns)
 {
@@ -27,13 +27,13 @@ public sealed record BrainstormPassRecord(BrainstormBy By, string Role, string S
     public const string Failed = "failed";
     public const string Unavailable = "unavailable";
 
-    /// <summary>A turn of it runs: what a restart finds of a pass its driver was running when it stopped.</summary>
+    /// <summary>A turn of it runs: what a restart finds of a pass still running when its driver stopped.</summary>
     public const string Running = "running";
 
-    /// <summary>Ended by the person's stop (D176 point 6).</summary>
+    /// <summary>Ended by the person's stop.</summary>
     public const string Stopped = "stopped";
 
-    /// <summary>Ended by a restart: its driver stopped while it ran, and it never runs again by itself (D176 point 6).</summary>
+    /// <summary>Ended by a restart: its driver stopped while it ran, and it never runs again by itself.</summary>
     public const string Interrupted = "interrupted";
 }
 
@@ -44,12 +44,12 @@ public sealed record BrainstormMember(string Id, BrainstormBy By, BrainstormProp
 /// <param name="Rank">The synthesis's rank, its claim; null in an unranked document.</param>
 public sealed record BrainstormRow(int? Rank, string Title, string Idea, string? Why, IReadOnlyList<BrainstormMember> Members, IReadOnlyList<BrainstormFlag> Flags)
 {
-    /// <summary>How many makers named it: agreement shown as a count, and never a key of the rank (D176 point 4).</summary>
+    /// <summary>How many makers named it: agreement shown as a count, and never a key of the rank.</summary>
     public int Makers => Members.Select(member => member.By.Maker).Distinct(StringComparer.OrdinalIgnoreCase).Count();
 }
 
 /// <summary>
-/// The brainstorm's document (D176 points 4, 6 and 8): the ranked groups with every member's provenance, or the validated proposals
+/// The brainstorm's document: the ranked groups with every member's provenance, or the validated proposals
 /// unranked where the synthesis did not finish; what was left out; what the passes needed; and which passes ran, how.
 /// </summary>
 /// <param name="Unranked">Why the document is unranked; null where the synthesis ranked it.</param>
@@ -67,12 +67,12 @@ public sealed record BrainstormDocument(
     /// <summary>Whether every pass ran on a stub door: no model ran, and the document is no maker's diversity.</summary>
     public bool Stubs => Passes.Count > 0 && Passes.All(pass => pass.By.Stub);
 
-    /// <summary>The generators that did not answer, each with why by code (D176 point 6's partial coverage).</summary>
+    /// <summary>The generators that did not answer, each with why by code.</summary>
     public IReadOnlyList<BrainstormPassRecord> Unanswered =>
         [.. Passes.Where(pass => pass.Role == BrainstormPassRecord.Generate && pass.State != BrainstormPassRecord.Answered)];
 }
 
-/// <summary>The document's assembly with provenance, its JSON and its Markdown (D176 points 4 and 8), with no model and no I/O.</summary>
+/// <summary>The document's assembly with provenance, its JSON and its Markdown, with no model and no I/O.</summary>
 public static class BrainstormDocuments
 {
     public static void Provenance(Utf8JsonWriter writer, BrainstormPassRecord pass)
@@ -84,10 +84,10 @@ public static class BrainstormDocuments
     }
     public const string NoSynthesis = "the synthesis did not finish";
 
-    /// <summary>Why a document the person stopped is unranked (D176 point 6).</summary>
+    /// <summary>Why a document the person stopped is unranked.</summary>
     public const string StoppedByPerson = "stopped by the person: what answered is kept, and nothing ran after the stop";
 
-    /// <summary>Why a document a restart found running is unranked (D176 point 6).</summary>
+    /// <summary>Why a document a restart found running is unranked.</summary>
     public const string Interrupted = "interrupted: Daoris stopped while it ran, and nothing runs again by itself";
 
     /// <summary>
@@ -109,7 +109,7 @@ public static class BrainstormDocuments
     }
 
     /// <summary>
-    /// The unranked document (D176 point 6): the validated proposals by maker, with Daoris's flags, and the exact duplicates folded
+    /// The unranked document: the validated proposals by maker, with Daoris's flags, and the exact duplicates folded
     /// (the same idea, normalized, from two makers is one row naming both).
     /// </summary>
     public static BrainstormDocument Unranked(
@@ -152,7 +152,6 @@ public static class BrainstormDocuments
             writer.WriteStartArray("makers");
             foreach (var maker in document.Makers) writer.WriteStringValue(maker);
             writer.WriteEndArray();
-            // Added by BRAINSTORM1b: the generators that did not answer, and why by code (D176 point 6).
             writer.WriteStartArray("unanswered");
             foreach (var pass in document.Unanswered)
             {
@@ -225,7 +224,7 @@ public static class BrainstormDocuments
     }
 
     /// <summary>
-    /// The document as a person reads it at the terminal, in Daoris's fixed words around the agents' own (D176 point 8): what was
+    /// The document as a person reads it at the terminal, in Daoris's fixed words around the agents' own: what was
     /// asked, which packet, whether the rank is the synthesis's claim, and whether any maker diversity stands behind it.
     /// </summary>
     public static string Markdown(BrainstormDocument document)
@@ -254,7 +253,7 @@ public static class BrainstormDocuments
             if (pass.Ran is { More: > 0 } more) text.Append(" and ").Append(more.More).Append(" more");
             text.Append(".\n");
         }
-        // Partial coverage (BRAINSTORM1b, D176 point 6): which generators answered, and which did not and why, by code.
+        // Partial coverage: which generators answered, and which did not and why, by code.
         var answered = document.Passes.Where(pass => pass is { Role: BrainstormPassRecord.Generate, State: BrainstormPassRecord.Answered }).ToList();
         if (answered.Count > 0 && document.Unanswered.Count > 0)
         {

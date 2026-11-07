@@ -10,9 +10,9 @@ namespace Daoris.Driver;
 internal sealed class WorkflowChoosing(WorkflowTerminal run)
 {
     /// <summary>
-    /// <c>use &lt;id&gt;|current|--clear --repository &lt;name&gt;|--workspace &lt;name&gt; [--kind &lt;kind&gt;]</c> (design §4.7): which
+    /// <c>use &lt;id&gt;|current|--clear --repository &lt;name&gt;|--workspace &lt;name&gt; [--kind &lt;kind&gt;]</c>: which
     /// workflow a repository's or a workspace's work follows, or a kind's. A named workflow is one saved here whose newest version
-    /// reads (§3.9); a repository's kind is one its workspace declares, where the registry says which that is.
+    /// reads; a repository's kind is one its workspace declares, where the registry says which that is.
     /// </summary>
     internal async Task<int> UseAsync()
     {
@@ -36,8 +36,8 @@ internal sealed class WorkflowChoosing(WorkflowTerminal run)
         if ((repository is null) == (workspace is null) || operands.Count != (clear ? 0 : 1)) throw new ChoiceWords(usage);
         var chosen = clear ? null : operands[0];
 
-        // A named workflow is chosen only where it reads here (design §3.9): refused where it would be chosen, naming why. Its file's
-        // mark (FABRIC-PIPELINE1a) goes with the edit, so a verification pipeline is named by the landed route alone.
+        // A named workflow is chosen only where it reads here: refused where it would be chosen, naming why. Its file's
+        // mark goes with the edit, so a verification pipeline is named by the landed route alone.
         var pipeline = WorkflowOperations.CheckChosen(run.Home, chosen);
         var given = new WorkflowUse(chosen, repository, workspace, kind) { Pipeline = pipeline };
         if (run.Argv.Contains("--landed")) return await UseLandedAsync(given, repository, workspace, chosen).ConfigureAwait(false);
@@ -53,7 +53,7 @@ internal sealed class WorkflowChoosing(WorkflowTerminal run)
 
 
     /// <summary>
-    /// <c>use &lt;id&gt;|current|--clear … --landed</c> (FABRIC-PIPELINE1a, the pipeline design §1.3, §4.2): the landed route, a
+    /// <c>use &lt;id&gt;|current|--clear … --landed</c>: the landed route, a
     /// verification pipeline for the work that reaches the line. For a repository it shows the <c>daoris.gates.json</c> at its line's
     /// tip and accepts it by its blob, as the tab's <i>Accept the gates</i> does; run again, it accepts the tip's new blob. A
     /// workspace's route accepts its gates repository by repository. Judged before any git is read.
@@ -154,7 +154,7 @@ internal sealed class WorkflowChoosing(WorkflowTerminal run)
         }
 
         foreach (var line in accepted) run.Say(line);
-        // D157 point 10 (the pipeline design §1.3): what the change asks less of the person, said where they make it.
+        // What the change asks less of the person, said where they make it.
         var circle = repository is not null ? inWorkspace : workspace;
         if (WorkflowSelection.ResolveLanded(run.Choices, repository, circle).Workflow != WorkflowSelection.Current
             && WorkflowSelection.ResolveLanded(edited, repository, circle).Workflow == WorkflowSelection.Current)
@@ -185,7 +185,7 @@ internal sealed class WorkflowChoosing(WorkflowTerminal run)
         return 0;
     }
 
-    /// <summary>The choices with <paramref name="edit"/> made, or its refusal in the twins' words: nothing was written.</summary>
+    /// <summary>The choices with <paramref name="edit"/> made, or its refusal in the twins' words: nothing written.</summary>
     internal DriverConfig Judge(WorkflowChoiceEdit edit)
     {
         try
@@ -199,8 +199,8 @@ internal sealed class WorkflowChoosing(WorkflowTerminal run)
     }
 
     /// <summary>
-    /// <c>kind &lt;workspace&gt; &lt;kind&gt; --label "…" [--paths &lt;path,…&gt;]</c> and <c>kind &lt;workspace&gt; &lt;kind&gt; --drop</c>
-    /// (design §4.2, §4.7): a kind of task a workspace declares, with its label and the paths work of that kind keeps to; declared
+    /// <c>kind &lt;workspace&gt; &lt;kind&gt; --label "…" [--paths &lt;path,…&gt;]</c> and <c>kind &lt;workspace&gt; &lt;kind&gt; --drop</c>:
+    /// a kind of task a workspace declares, with its label and the paths work of that kind keeps to; declared
     /// again, both are replaced.
     /// </summary>
     internal int Kind()

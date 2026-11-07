@@ -6,9 +6,9 @@ namespace Daoris.Driver;
 internal sealed class WorkKeeping(NodeRecordFiles records, Func<DateTimeOffset> clock)
 {
     /// <summary>
-    /// Keeps an evaluation's moves on their units' records (WIRE1e's note: the moves and their history), where each node still stands as it
-    /// stood when evaluated (<paramref name="before"/>): a status another writer moved since is not written over. Compared and written in one
-    /// hold of the record's lock (FABRIC-PERFORM1h).
+    /// Keeps an evaluation's moves on their units' records, where each node still stands as it
+    /// stood when evaluated (<paramref name="before"/>): a status another writer moved is not written over. Compared and written in one
+    /// hold of the record's lock.
     /// </summary>
     public IReadOnlyList<WorkPerformed> Keep(IReadOnlyDictionary<string, NodeStatus> before, WireEvaluated evaluated)
     {
@@ -41,7 +41,7 @@ internal sealed class WorkKeeping(NodeRecordFiles records, Func<DateTimeOffset> 
                         history.Add(new NodeHistory(now, move.Why, move.Moved.Cleared!));
                     }
 
-                    // DECIDE1c: a back wire taken into this node is kept with its move, so it is taken once on its receipt.
+                    // A back wire taken into this node is kept with its move, so it is taken once on its receipt.
                     fired.AddRange(evaluated.Backs.Where(back => back.Node == node && !fired.Contains(back.Key, StringComparer.Ordinal)).Select(back => back.Key));
                 }
 
@@ -55,9 +55,9 @@ internal sealed class WorkKeeping(NodeRecordFiles records, Func<DateTimeOffset> 
     }
 
     /// <summary>
-    /// Starts a node that dispatches nothing (FABRIC-RUN1: an observed built-in, read from its records at the next evaluation) on the start
-    /// the evaluation proposed, its firings kept with it (WIRE1c), where the record still holds the node as it was evaluated
-    /// (<paramref name="evaluated"/>): one locked edit, so a start another writer made since is not made again.
+    /// Starts a node that dispatches nothing (an observed built-in, read from its records at the next evaluation) on the start
+    /// the evaluation proposed, its firings kept with it, where the record still holds the node as evaluated
+    /// (<paramref name="evaluated"/>): one locked edit, so a start another writer made is not made again.
     /// </summary>
     public WorkPerformed Begin(NodeDeclaration node, WireStart start, NodeStatus evaluated)
     {

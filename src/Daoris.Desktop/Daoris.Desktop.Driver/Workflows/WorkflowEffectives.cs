@@ -6,14 +6,14 @@ namespace Daoris.Driver;
 /// <param name="Level">One of <see cref="WorkflowLevels"/>.</param>
 public sealed record EffectiveSource(string Level, string? Kind, string? Label, IReadOnlyList<string> Paths);
 
-/// <summary>A shipped default a saved copy is behind (WORKFLOWCLEAN1h): its id, its English name, and the graph the copy's next version would be.</summary>
+/// <summary>A shipped default a saved copy is behind: its id, its English name, and the graph the copy's next version would be.</summary>
 public sealed record ShippedNewer(string Default, string Name, JsonNode Graph);
 
 /// <summary>One node of an effective graph and the cell a run answers for it (<see cref="WorkflowGraphRuns.Cell"/>).</summary>
 public sealed record EffectiveCell(string Node, WorkflowStep Step);
 
 /// <summary>
-/// The workflow a route follows, as the place's chart draws it (SETUPUX1b; D221): which workflow and how it was chosen, its version, its
+/// The workflow a route follows, as the place's chart draws it: which workflow and how it is chosen, its version, its
 /// graph as a version saves it, and each node's cell.
 /// </summary>
 /// <param name="Route"><c>default</c>, <c>kind:&lt;name&gt;</c> or <c>landed</c>.</param>
@@ -25,7 +25,7 @@ public sealed record EffectiveCell(string Node, WorkflowStep Step);
 /// <param name="Verifies">The landed route follows a verification pipeline.</param>
 /// <param name="Graph">The graph to draw; null where none is: no workflow chosen, or a workflow that does not read (<paramref name="Problem"/>).</param>
 /// <param name="Problem">Why a saved workflow cannot be drawn, in the driver's words.</param>
-/// <param name="Newer">The shipped default a copy was made from, where this build ships it changed since (<see cref="ShippedNewer"/>); else null.</param>
+/// <param name="Newer">The shipped default a copy came from, where this build ships it changed since (<see cref="ShippedNewer"/>); else null.</param>
 public sealed record WorkflowEffective(
     string Route, string Workflow, string? Name, int? Version, string? Digest, int? Schema, EffectiveSource Source, bool Verifies,
     JsonNode? Graph, IReadOnlyList<EffectiveCell> Cells, string? Problem, ShippedNewer? Newer = null)
@@ -38,7 +38,7 @@ public sealed record WorkflowEffective(
 }
 
 /// <summary>
-/// The graph a route actually follows (SETUPUX1b; D221, the setup design §2.3, §5 row b): <see cref="WorkflowSelection.Resolve"/> (or
+/// The graph a route actually follows: <see cref="WorkflowSelection.Resolve"/> (or
 /// <see cref="WorkflowSelection.ResolveLanded"/>) says which workflow, so the identity is the selection's; a saved workflow is its newest
 /// version that reads, as a run binds it, and where none is chosen nothing is drawn. Pure: it reads the file and the store and writes nothing.
 /// </summary>

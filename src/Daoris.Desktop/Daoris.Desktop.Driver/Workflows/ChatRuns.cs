@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What a chat run's bind came to (CHATFLOW1c): bound, already bound, or failed.</summary>
+/// <summary>What a chat run's bind came to: bound, already bound, or failed.</summary>
 /// <param name="Binding">The binding kept or already there; null where nothing was bound.</param>
 /// <param name="Failed">Why the home could not keep the binding; null otherwise.</param>
 public sealed record ChatRunBound(WorkflowRunBinding? Binding, string? Failed = null)
@@ -10,7 +10,7 @@ public sealed record ChatRunBound(WorkflowRunBinding? Binding, string? Failed = 
 }
 
 /// <summary>
-/// A chat's run (CHATFLOW1c; the chat-flow design §4.1, §4.3): a conversation's work in a tree of its own runs its repository's workflow,
+/// A chat's run: a conversation's work in a tree of its own runs its repository's workflow,
 /// keyed by the line the record stores, <c>chat-&lt;first&gt;</c>, and bound when its tree opens.
 /// </summary>
 /// <remarks>
@@ -18,7 +18,7 @@ public sealed record ChatRunBound(WorkflowRunBinding? Binding, string? Failed = 
 /// record names the same tree, else the line's earliest record there, else the record's own. A hand-over and a limit's go-on open a new
 /// record on the same tree in the same line, so they read the same run. A teammate's id holds <c>/</c> and is never a run's.</para>
 ///
-/// <para><b>A graph version binds</b> (CHATFLOW1f, §4.3, §4.5): the run's subject is its candidate, submitted at the person's press
+/// <para><b>A graph version binds</b>: the run's subject is its candidate, submitted at the person's press
 /// (<see cref="ChatCandidates"/>), and its <c>land</c> is the runtime's. A named workflow that cannot be read, or whose graph holds a
 /// <c>quest.close</c>, is bound with its <c>Problem</c>, which holds the press by it; only a home that cannot be written fails the bind.</para>
 ///
@@ -37,7 +37,7 @@ public static class ChatRuns
     public static string? RecordOf(string run) => WorkplaceRunFiles.RecordOf(run);
 
     /// <summary>
-    /// The chat run a record is one of (§4.2), as the view classifies it, or null: a chat in a tree this home opened that continues no
+    /// The chat run a record is one of, as the view classifies it, or null: a chat in a tree this home opened that continues no
     /// quest's work and serves no ask, and is not Ask Daoris, a reviewer, a partner, a helper or a teammate's. The press binds and gates
     /// by it, and a turn's end binds by it, so the view and the doors read one run.
     /// </summary>
@@ -56,7 +56,7 @@ public static class ChatRuns
     }
 
     /// <summary>
-    /// The quest whose work a record continues though its own <c>quest</c> is none (CHATFLOW1i, the chat-flow design §4.1): a chat that took one,
+    /// The quest whose work a record continues though its own <c>quest</c> is none: a chat that took one,
     /// a quest's worker gone on as a conversation, a line whose stored origin is a quest's; null for any other, and for a record not read.
     /// </summary>
     public static string? TakenOf(string session, string recordsJson)
@@ -72,7 +72,7 @@ public static class ChatRuns
         return sessions.FirstOrDefault(each => Same(each.Id, session)) is { } record ? ChatOf(record, sessions, holds) : null;
     }
 
-    /// <summary>The run a record's line in its tree is, <c>chat-&lt;first&gt;</c> (§4.1); null for a teammate's record or one with no tree.</summary>
+    /// <summary>The run a record's line in its tree is, <c>chat-&lt;first&gt;</c>; null for a teammate's record or one with no tree.</summary>
     public static string? KeyOf(TracedSession session, IReadOnlyList<TracedSession> sessions)
     {
         if (session.Teammate || session.Tree is not { Length: > 0 } tree) return null;
@@ -86,8 +86,8 @@ public static class ChatRuns
     }
 
     /// <summary>
-    /// The records of a record's line in its tree, oldest first (§4.2): the same stored line and the same tree, never a teammate's. A
-    /// record from a host before the line was stored is its line alone.
+    /// The records of a record's line in its tree, oldest first: the same stored line and the same tree, never a teammate's. A
+    /// record from a host that stored no line is its line alone.
     /// </summary>
     public static IReadOnlyList<TracedSession> LineOf(TracedSession session, IReadOnlyList<TracedSession> sessions)
     {
@@ -100,8 +100,8 @@ public static class ChatRuns
     }
 
     /// <summary>
-    /// A chat run's conversation's opening (CHATFLOW1d, the chat-flow design §7): the person's own first words to the line's first record, which
-    /// the run is keyed by and which D164's ACCEPTFOOT2 note takes as a conversation's identity; null where none was kept.
+    /// A chat run's conversation's opening: the person's own first words to the line's first record, which
+    /// the run is keyed by; null where none is kept.
     /// </summary>
     public static string? OpeningOf(SessionEvents events, string run) =>
         RecordOf(run) is { } first && events.Openings([first]).TryGetValue(first, out var opening) && opening.Length > 0 ? opening : null;
@@ -109,11 +109,11 @@ public static class ChatRuns
     /// <summary>The states a record ends in, as the run's reader reads them: any other is a live conversation some runner holds.</summary>
     private static readonly HashSet<string> Endings = new(StringComparer.Ordinal) { "completed", "declined", "failed", "stopped", "stood-down" };
 
-    /// <summary>Whether a record is a live conversation (CHATFLOW1d): not ended, so its press reserves it against another turn.</summary>
+    /// <summary>Whether a record is a live conversation: not ended, so its press reserves it against another turn.</summary>
     public static bool Live(TracedSession session) => !Endings.Contains(session.State);
 
     /// <summary>
-    /// The press's view of a chat run's record (CHATFLOW1d): the ids of its line in its tree, oldest first, whose words the person's turn count
+    /// The press's view of a chat run's record: the ids of its line in its tree, oldest first, whose words the person's turn count
     /// reads, and whether the record is live; its own id alone, and live, where the records do not hold it.
     /// </summary>
     public static (IReadOnlyList<string> Line, bool Live) PressOf(string session, string recordsJson)
@@ -125,7 +125,7 @@ public static class ChatRuns
     }
 
     /// <summary>
-    /// Why a graph version cannot run a conversation's work (the chat-flow design §4.5): a conversation closes no quest, so a graph holding a
+    /// Why a graph version cannot run a conversation's work: a conversation closes no quest, so a graph holding a
     /// <c>quest.close</c> anywhere is refused at the bind, as a binding's problem; null for any other version.
     /// </summary>
     public static string? GraphRefusal(IWorkflowStore store, WorkflowRunBinding binding)
@@ -138,9 +138,9 @@ public static class ChatRuns
     }
 
     /// <summary>
-    /// Bind a chat run where none is (§4.3): <see cref="WorkflowRunBindings.Plan(DriverConfig, string, string, string, string?, string?, WorkflowTaskChoice?, IReadOnlyList{WorkflowPlugin}, DateTimeOffset)"/>
-    /// with no ask and no task, so the rows from the repository's default down choose. A graph version binds as a steps version does
-    /// (CHATFLOW1f), except one holding a <c>quest.close</c>, bound with that as its problem; a named workflow that cannot be read is bound
+    /// Bind a chat run where none is: <see cref="WorkflowRunBindings.Plan(DriverConfig, string, string, string, string?, string?, WorkflowTaskChoice?, IReadOnlyList{WorkflowPlugin}, DateTimeOffset)"/>
+    /// with no ask and no task, so the rows from the repository's default down choose. A graph version binds as a steps version does,
+    /// except one holding a <c>quest.close</c>, bound with that as its problem; a named workflow that cannot be read is bound
     /// with its problem; a home that cannot be written fails, saying why. A run bound already is read back.
     /// </summary>
     public static ChatRunBound Bind(
@@ -162,7 +162,7 @@ public static class ChatRuns
     }
 
     /// <summary>
-    /// A press's bind-first (§4.3): a chat run not bound yet is bound before its press is gated, by its tree's owner, as the gate reads the
+    /// A press's bind-first: a chat run not bound yet is bound before its press is gated, by its tree's owner, as the gate reads the
     /// tree. A run bound already reads its binding back; a home that cannot keep the
     /// binding comes back <see cref="ChatRunBound.Failed"/>, which refuses the press (<c>bind-failed</c>).
     /// </summary>
@@ -172,13 +172,13 @@ public static class ChatRuns
         return Bind(config, home, run, repository, workspace, plugins, at);
     }
 
-    /// <summary>What the conversation is told once of a bind the home could not keep (§4.3), by its code.</summary>
+    /// <summary>What the conversation is told once of a bind the home could not keep, by its code.</summary>
     public static Noted FailedLine(string problem) => Noted.Of(
         ChatNoteCodes.ChatWorkflowFailed,
         $"Its repository's workflow could not be bound, so this conversation's work cannot be landed yet: {problem}.", ("problem", problem));
 
     /// <summary>
-    /// What the conversation's first Daoris line says of its run under a named workflow (§4.3), as the look says a start's, by its code:
+    /// What the conversation's first Daoris line says of its run under a named workflow, as the look says a start's, by its code:
     /// the workflow and its version, and the repository or the workspace that chose it, a chat having no task and no kind; or the one bound
     /// with why it cannot land the work. Null under Current, which says nothing, as a start's binding says nothing.
     /// </summary>
@@ -197,7 +197,7 @@ public static class ChatRuns
     }
 
     /// <summary>
-    /// A chat run's three files under a home (§4.3): its binding, its opinion gate's file and its look's file, each named by its key,
+    /// A chat run's three files under a home: its binding, its opinion gate's file and its look's file, each named by its key,
     /// as names relative to the home's own entries.
     /// </summary>
     public static IReadOnlyList<string> Files(string home, string run) =>
@@ -209,7 +209,7 @@ public static class ChatRuns
     /// <summary>The folder of the opinion gates' files, by chain or by chat run.</summary>
     public static string GatesFolder(string home) => WorkplaceRunFiles.GatesFolder(home);
 
-    /// <summary>The folder of a chat run's look files (§5.3), apart from a quest's, which lives on its quest.</summary>
+    /// <summary>The folder of a chat run's look files, apart from a quest's, which lives on its quest.</summary>
     public static string LooksFolder(string home) => WorkplaceRunFiles.LooksFolder(home);
 
     private static bool Same(string? left, string? right) => string.Equals(left, right, StringComparison.OrdinalIgnoreCase);

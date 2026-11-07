@@ -20,7 +20,7 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
     /// <summary>For a session awaiting reply: the quest its quest waits on.</summary>
     public string? Awaits { get; init; }
 
-    /// <summary>And the repository that quest was asked of, where the service still lists it.</summary>
+    /// <summary>And the repository that quest is addressed to, where the service still lists it.</summary>
     public string? AwaitsOf { get; init; }
 
     /// <summary>For a session to review: what its own tree holds.</summary>

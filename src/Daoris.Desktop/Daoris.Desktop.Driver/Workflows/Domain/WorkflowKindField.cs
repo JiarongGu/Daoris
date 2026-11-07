@@ -13,8 +13,8 @@ namespace Daoris.Driver;
 public sealed record WorkflowKindField(string Name, string Type, IReadOnlyList<string>? Choices, bool Required, object? Default)
 {
     /// <summary>
-    /// Whether a version's canonical text writes it only where it is set (FABRIC-PIPELINE1b2): a field a kind gains after versions were
-    /// saved, absent read as none, so every version saved before it keeps its digest and every run bound to one reads as it was.
+    /// Whether a version's canonical text writes it only where it is set: absent reads as none, so a version saved before its kind took the
+    /// field keeps its digest, and every run bound to one reads unchanged.
     /// </summary>
     public bool WhereSet { get; init; }
 }

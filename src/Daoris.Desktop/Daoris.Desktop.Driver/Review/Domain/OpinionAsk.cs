@@ -3,7 +3,7 @@ using Daoris.Contracts.Review;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the driver asks the local host when it starts a pass (XAGENT1d; XAGENT1c's <c>POST /api/opinions</c>): the occasion and
+/// What the driver asks the local host when it starts a pass (<c>POST /api/opinions</c>): the occasion and
 /// the pass, the working session, the candidate by full ids, the reviewer as the walk chose it, the families that wrote the
 /// work, what held the reviewer read-only, the rule's minutes, and the reviewer's own copy.
 /// </summary>
@@ -13,13 +13,13 @@ public sealed record OpinionAskBody(
     string Occasion, string Working, OpinionCandidateRead Candidate, string Door, string Label, IReadOnlyList<string> Families,
     string Posture, int Minutes, string Tree)
 {
-    /// <summary><c>first</c>, or a recheck's (XAGENT1e).</summary>
+    /// <summary><c>first</c>, or a recheck's.</summary>
     public string Pass { get; init; } = "first";
 
-    /// <summary>For a recheck (XAGENT1e, design §6.5), the first pass whose findings it reads again; null for a first pass.</summary>
+    /// <summary>For a recheck, the first pass whose findings it reads again; null for a first pass.</summary>
     public string? Rechecks { get; init; }
 
-    /// <summary>The reviewer's declared product and maker, as every opinion carries them (§3.4); null where none is declared.</summary>
+    /// <summary>The reviewer's declared product and maker, as every opinion carries them; null where none is declared.</summary>
     public string? Product { get; init; }
 
     public string? Maker { get; init; }
@@ -27,7 +27,7 @@ public sealed record OpinionAskBody(
     /// <summary>The account it runs as, a profile's name; null for the tool's own home.</summary>
     public string? Account { get; init; }
 
-    /// <summary>The harness version the reviewer's account walk observed (D49 §4).</summary>
+    /// <summary>The harness version the reviewer's account walk observed.</summary>
     public string? DoorVersion { get; init; }
 
     /// <summary>The ask as the door declares it.</summary>
@@ -36,9 +36,9 @@ public sealed record OpinionAskBody(
         new OpinionReviewerWire(Door, Label, Product, Maker, Account), Posture, Minutes, Tree, Rechecks, [.. Families], DoorVersion);
 }
 
-/// <summary>What the host answered a pass's ask: the opinion and its reviewer's record, or why not, in its sentence.</summary>
-/// <param name="Opinion">The second opinion's id; null where it was refused.</param>
-/// <param name="Session">The reviewer's session record; null where it was refused.</param>
+/// <summary>What the host answers a pass's ask: the opinion and its reviewer's record, or why not, in its sentence.</summary>
+/// <param name="Opinion">The second opinion's id; null where it is refused.</param>
+/// <param name="Session">The reviewer's session record; null where it is refused.</param>
 /// <param name="Message">The host's sentence: its yes, or its refusal verbatim.</param>
 public sealed record OpinionAsked(string? Opinion, string? Session, string Message)
 {

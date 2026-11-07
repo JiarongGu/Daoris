@@ -5,8 +5,8 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The kinds of step (the workflow design §3.2): a version may hold every one, and <see cref="WorkflowKindTable"/> says how much of each this
-/// build runs (WORKFLOW1d).
+/// The kinds of step: a version may hold every one, and <see cref="WorkflowKindTable"/> says how much of each this
+/// build runs.
 /// </summary>
 public static class WorkflowKinds
 {
@@ -21,7 +21,7 @@ public static class WorkflowKinds
     public const string All = "all";
 }
 
-/// <summary>The person's part in a step (design §3.1), said apart from who acts in it.</summary>
+/// <summary>The person's part in a step, said apart from who acts in it.</summary>
 public static class WorkflowParticipation
 {
     /// <summary><i>Agent alone</i>: an agent's session does it, and the person is told.</summary>
@@ -37,7 +37,7 @@ public static class WorkflowParticipation
     public const string Automatic = "automatic";
 }
 
-/// <summary>Who acts in a step (design §3.1): an agent, Daoris itself, or a plugin speaking for a service.</summary>
+/// <summary>Who acts in a step: an agent, Daoris itself, or a plugin speaking for a service.</summary>
 public static class WorkflowExecutor
 {
     public const string Agent = "agent";
@@ -53,7 +53,7 @@ public static class WorkflowPress
     public const string Merge = "merge";
 }
 
-/// <summary>How much of a kind this build runs (design §3.2, §3.9): whole, in part, or declared with nothing acting on it.</summary>
+/// <summary>How much of a kind this build runs: whole, in part, or declared with nothing acting on it.</summary>
 public static class WorkflowRuntime
 {
     public const string Built = "built";
@@ -61,7 +61,7 @@ public static class WorkflowRuntime
     public const string Declared = "declared";
 }
 
-/// <summary>The rule a step was read from, for its source.</summary>
+/// <summary>The rule a step is read from, for its source.</summary>
 public static class WorkflowRule
 {
     public const string Landing = "landing";
@@ -70,8 +70,8 @@ public static class WorkflowRule
 }
 
 /// <summary>
-/// The limits a step may carry (design §3.9), each a code and the sentence it is said in, in the shared table's order — the
-/// CLI's <c>WORKFLOW_LIMITS</c>, word for word. The opinion's says what its gate runs since XAGENT1f: the landing waits for it,
+/// The limits a step may carry, each a code and the sentence it is said in, in the shared table's order — the
+/// CLI's <c>WORKFLOW_LIMITS</c>, word for word. The opinion's says what its gate runs: the landing waits for it,
 /// while the review's drawing of it and a task's own choice are not built.
 /// </summary>
 public static class WorkflowLimits
@@ -82,18 +82,16 @@ public static class WorkflowLimits
     public const string PullRequestUnread = "pull-request-unread";
     public const string PullRequestAtCleanUp = "pull-request-at-clean-up";
 
-    /// <summary>A named workflow's go-ahead step (WORKFLOW1d): Current never draws one, and a run raising one is WORKFLOW1l's.</summary>
+    /// <summary>A named workflow's go-ahead step: Current never draws one.</summary>
     public const string GoAheadPartial = "go-ahead-partial";
 
-    /// <summary>The <c>integrate</c> step Current draws where the rule carries <c>integrate</c> (INTEGRATE1r): nothing runs an integration until row g.</summary>
+    /// <summary>The <c>integrate</c> step Current draws where the rule carries <c>integrate</c>: nothing runs an integration yet.</summary>
     public const string NotIntegratedYet = "not-integrated-yet";
 
     public static IReadOnlyList<(string Code, string Says)> Table { get; } =
     [
-        // XAGENT1f gates every landing door on it; the screens are XAGENT1g's and the task level's choice XAGENT1h's.
         (OpinionPartial, "Partial: work here lands only once another agent's reading of it is settled, or you go on without one by "
             + "`daoris session opinion`; the review does not draw it yet, and no task chooses its own reviewer yet."),
-        // REVIEWENV1d shows a posted set-up's build from its session's end; the intake's step (1f) and a run of its own (1e) are not built.
         (LookPartial, "Partial: work here lands only once you say it is reviewed or skip the review, and a set-up step's build is "
             + "shown in Daoris's browser from its session's end until then; no set-up step is composed for you yet, and nothing runs a "
             + "process of its own for one."),
@@ -104,7 +102,6 @@ public static class WorkflowLimits
         (PullRequestAtCleanUp, "Its state is asked of its plugin only when branches are cleaned up, never while someone waits on it."),
         (GoAheadPartial, "Partial: a session asks you for a go-ahead as it needs one; a step that raises one at its place and waits "
             + "on your answer is not built yet."),
-        // INTEGRATE1r: the step is drawn from the rule; the integration run (row g) arms it.
         (NotIntegratedYet, "Not integrated yet: the rule carries `integrate`, but nothing runs an integration in this build, so work stays "
             + "on its branch as it always did."),
     ];
@@ -116,7 +113,7 @@ public static class WorkflowLimits
 /// <summary>One plugin switched on and sound, as the derivation reads it: its id and the points it speaks on.</summary>
 public sealed record WorkflowPlugin(string Id, IReadOnlyList<string> Points);
 
-/// <summary>Where a step was read from: the rule (<see cref="WorkflowRule"/>), or none for the work, and the level it stood at.</summary>
+/// <summary>Where a step is read from: the rule (<see cref="WorkflowRule"/>), or none for the work, and the level it stands at.</summary>
 /// <param name="Level">One of <see cref="LandingSource"/>'s: <c>repository</c>, <c>workspace</c> or <c>default</c>.</param>
 public sealed record WorkflowSource(string? Rule, string Level);
 
@@ -124,7 +121,7 @@ public sealed record WorkflowSource(string? Rule, string Level);
 public sealed record WorkflowSetting(string Name, object? Value);
 
 /// <summary>
-/// One step of a workflow (design §3.1, §3.2): what it is, the person's part and who acts, the person's press, where it was read,
+/// One step of a workflow: what it is, the person's part and who acts, the person's press, where it is read,
 /// what it is set to, how much of it this build runs, and its limit, a code of <see cref="WorkflowLimits"/> or null.
 /// </summary>
 public sealed record WorkflowStep(
@@ -145,7 +142,7 @@ public static class WorkflowSteps
     public static IReadOnlyList<string> StartHolds(IReadOnlyList<WorkflowPlugin> plugins) =>
         [.. plugins.Where(plugin => plugin.Points.Contains(HookPoints.QuestConsider, StringComparer.Ordinal)).Select(plugin => plugin.Id)];
 
-    /// <summary>Text quoted for a digest's text, by hand: <c>\</c>, <c>"</c> and each control character escaped (WORKFLOW1d's digest too).</summary>
+    /// <summary>Text quoted for a digest's text, by hand: <c>\</c>, <c>"</c> and each control character escaped.</summary>
     internal static string Quoted(string text)
     {
         var quoted = new StringBuilder("\"");

@@ -1,17 +1,17 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The differences between a schema-1 run and its decoded graph (FABRIC-WORKFLOW2b), each by name and none hidden: where the two read a
+/// The differences between a schema-1 run and its decoded graph, each by name and none hidden: where the two read a
 /// run apart, the comparison says which of these it is, and the cutover settles each openly. Schema 1 keeps its behaviour meanwhile.
 /// </summary>
 public static class WorkflowRunDifferences
 {
     /// <summary>
-    /// D173's FABRIC-WIRE1g mismatch: schema 1 holds the look only while an agent is at the opinion, so the look goes on beside an opinion
-    /// that waits on the person or was not read (a dispute, commits since, a required one none could give), and the look's Reviewed
-    /// answers a dispute. The decoded order (every opinion reaches every look) held the look until the opinion was reached. At the opinion.
-    /// Since FABRIC-CUTOVER1b the decoder wires the look beside the opinion and the comparison reads the review gate's hold, so no run
-    /// differs by it; the name is kept for what a history holds of it (the cutover design §5.1).
+    /// Schema 1 holds the look only while an agent is at the opinion, so the look goes on beside an opinion
+    /// that waits on the person or is not read (a dispute, commits since, a required one none could give), and the look's Reviewed
+    /// answers a dispute. At the opinion.
+    /// The decoder wires the look beside the opinion and the comparison reads the review gate's hold, so no run
+    /// differs by it; the name is kept for what a history holds of it.
     /// </summary>
     public const string LookBesideOpinion = "look-beside-opinion";
 
@@ -22,15 +22,15 @@ public static class WorkflowRunDifferences
     public const string CannotStartHoldsNothing = "cannot-start-holds-nothing";
 
     /// <summary>
-    /// A step the work's own choice added (a look, the workflow design §4.6) is no node of the version's graph, whose digest it is not
+    /// A step the work's own choice added (a look) is no node of the version's graph, whose digest it is not
     /// part of: schema 1 holds the landing on it, and the graph would not. At the added step.
     /// </summary>
     public const string Added = "added";
 
     /// <summary>
-    /// A skip satisfies its <c>after</c> wire whatever stands before it (§E2, §E3): a step skipped while an earlier one is not settled lets
+    /// A skip satisfies its <c>after</c> wire whatever stands before it: a step skipped while an earlier one is not settled lets
     /// the next go, where schema 1 holds it. No skip passes a gate of the protected order (the work, the opinion, the look), which the
-    /// decoder wires into every gate after it (FABRIC-GRAPH1h); a skip past any other step may still be this. At the skipped step.
+    /// decoder wires into every gate after it; a skip past any other step may still be this. At the skipped step.
     /// </summary>
     public const string SkipPassesEarlier = "skip-passes-earlier";
 
@@ -41,20 +41,20 @@ public static class WorkflowRunDifferences
     public const string Unexplained = "unexplained";
 }
 
-/// <summary>One difference found (FABRIC-WORKFLOW2b): its name, and the step whose two readings differ, from which the rest follows.</summary>
+/// <summary>One difference found: its name, and the step whose two readings differ, from which the rest follows.</summary>
 /// <param name="Code">One of <see cref="WorkflowRunDifferences"/>.</param>
 /// <param name="Step">The step it rests on: the one schema 1 and the decoded graph read apart.</param>
 public sealed record WorkflowRunDifference(string Code, string Step);
 
 /// <summary>
-/// One schema-1 step beside its decoded node (FABRIC-WORKFLOW2b): the step whole, as <see cref="WorkflowRuns.Derive"/> said it (its state,
+/// One schema-1 step beside its decoded node: the step whole, as <see cref="WorkflowRuns.Derive"/> said it (its state,
 /// its detail and every fact its words and its door are made of), and the node of its id with the status the replay left it in, and
 /// whether the graph offers it. No node for a step the version's graph does not hold.
 /// </summary>
 /// <param name="Offered">Whether the evaluation found its wires satisfied (<see cref="WireEligibility.Eligible"/>), settled or not.</param>
 public sealed record WorkflowRunNode(WorkflowRunStep Step, NodeDeclaration? Node, NodeStatus? Status, bool Offered);
 
-/// <summary>What a bound run reads as on its decoded graph (FABRIC-WORKFLOW2b), beside the run as schema 1 reads it, kept whole.</summary>
+/// <summary>What a bound run reads as on its decoded graph, beside the run as schema 1 reads it, kept whole.</summary>
 /// <param name="Run">The run as schema 1 reads it, unchanged.</param>
 /// <param name="Version">The version it is bound to, decoded, or unreadable with its reason: nothing is read on an unreadable one.</param>
 public sealed record WorkflowRunProjection(WorkflowRun Run, DecodedVersion Version)
@@ -72,7 +72,7 @@ public sealed record WorkflowRunProjection(WorkflowRun Run, DecodedVersion Versi
     /// The graph's eligible nodes as the comparison reads them, in the graph's order: a node standing for a step, whose wires hold, and which
     /// is not settled (reached or skipped). Not raw eligibility, which keeps a completed node, nor the starts, which leave a started one out.
     /// A look beside an unsettled opinion is left out, the comparison standing at the opinion, where schema 1 holds it as the review gate does
-    /// or goes on with it as the graph does (FABRIC-CUTOVER1b).
+    /// or goes on with it as the graph does.
     /// </summary>
     public IReadOnlyList<string> Frontier { get; init; } = [];
 
@@ -84,12 +84,12 @@ public sealed record WorkflowRunProjection(WorkflowRun Run, DecodedVersion Versi
 
     public bool Readable => Version.Readable;
 
-    /// <summary>Canary 38's equivalence: the graph's eligible nodes are exactly schema 1's <see cref="WorkflowRun.At"/>, and nothing differs.</summary>
+    /// <summary>The equivalence: the graph's eligible nodes are exactly schema 1's <see cref="WorkflowRun.At"/>, and nothing differs.</summary>
     public bool Agrees => Readable && Run.Problem is null && Differences.Count == 0 && Frontier.SequenceEqual(Run.At is null ? [] : [Run.At]);
 }
 
 /// <summary>
-/// A D157 run's step states read as its decoded graph's statuses (FABRIC-WORKFLOW2b; the fabric events design §E7, canary 38), and the two
+/// A D157 run's step states read as its decoded graph's statuses, and the two
 /// readings compared. Read-only: it moves no authority, so schema 1 governs every run as it does, and the cutover settles each difference.
 /// </summary>
 /// <remarks>
@@ -102,7 +102,7 @@ public sealed record WorkflowRunProjection(WorkflowRun Run, DecodedVersion Versi
 /// blocked or ready by its wires; <i>working</i> and <i>waiting</i> are active, the look's <i>not yet</i> the person's rejection with their
 /// words; <i>not known</i> is unknown; <i>done</i> is reached by its kind's authority, its evidence naming the run's reading
 /// (<see cref="Record"/>); <i>skipped</i> is the person's on the look with their words, else its kind's record's (the opinion's gate; the
-/// look's gate where the choice turns it off; the landing record for a pull request with no branch or nothing landed: FABRIC-WIRE1h), else
+/// look's gate where the choice turns it off; the landing record for a pull request with no branch or nothing landed), else
 /// active, since no node's authority passes it over; <i>failed</i> is failed by its kind's failure authority, else active (a claim never fails);
 /// <i>stopped</i> is the person's stop, and a pull request's abandon is failed on its plugin's answer, as the node observes it.</para>
 /// </remarks>
@@ -112,8 +112,8 @@ public static class WorkflowRunNodes
     public const string Record = "workflow-run";
 
     /// <summary>
-    /// The version <paramref name="run"/> is bound to, decoded (§E7, <i>one governs a run, by its binding</i>): null where it has no binding
-    /// or follows Current, which stays live. A binding that does not read, a workflow no longer saved, and every reason
+    /// The version <paramref name="run"/> is bound to, decoded: null where it has no binding
+    /// or follows Current, which stays live. A binding that does not read, a workflow not saved, and every reason
     /// <see cref="WorkflowGraphs.ForRun"/> gives read as unreadable, never as the newest version or Current. Reads the two stores, writes neither.
     /// </summary>
     public static DecodedVersion? VersionOf(IWorkflowStore store, IWorkflowRunStore runs, string? run)
@@ -180,7 +180,7 @@ public static class WorkflowRunNodes
         var rows = run.Steps.Select(step => step.Added is null && counted.FirstOrDefault(node => node.Id == step.Step.Id) is { } node
             ? new WorkflowRunNode(step, node, statuses[node.Id], Offered(node.Id))
             : new WorkflowRunNode(step, null, null, false)).ToList();
-        // FABRIC-CUTOVER1b (the cutover design §5.1): the look is wired beside the opinion, so while the opinion is unsettled the graph offers
+        // The look is wired beside the opinion, so while the opinion is unsettled the graph offers
         // both, and the comparison stands at the opinion. The review gate holds the look's set-up while an agent still reads the opinion, which
         // schema 1 draws as the look not reached (WorkflowRuns.Derive): that hold is the gate's, not the graph's. Otherwise schema 1's look goes
         // on beside the opinion as the graph's does. Either way, no difference; a look schema 1 holds for another reason is still one.
@@ -278,8 +278,8 @@ public static class WorkflowRunNodes
 
     /// <summary>
     /// Whose a schema-1 skip is: the person's where they skipped the look; the kind's record's where its authority names one (the opinion's
-    /// gate, whatever it says; the look's gate where the choice turns it off; the landing record where no branch or nothing landed:
-    /// FABRIC-WIRE1h); or null, which no node's authority makes (a plugin's own node a run skips).
+    /// gate, whatever it says; the look's gate where the choice turns it off; the landing record where no branch or nothing landed);
+    /// or null, which no node's authority makes (a plugin's own node a run skips).
     /// </summary>
     private static string? SkipBy(NodeDeclaration node, WorkflowRunStep step) =>
         NodeAuthorities.Of(node) is not { } authority ? null
@@ -304,7 +304,7 @@ public static class WorkflowRunNodes
         bool Settled(string node) => statuses[node].State is NodeStates.Reached or NodeStates.Skipped;
         int Index(string node) => counted.FindIndex(each => each.Id == node);
 
-        // A step schema 1 settled and its node could not: the one table refused it. (FABRIC-WIRE1h: every skip a built-in's step carries now
+        // A step schema 1 settled and its node could not: the one table refused it. (Every skip a built-in's step carries
         // has its record's authority, so no step is passed over by a rule alone.)
         string? Unsettled(string node) => refused.ContainsKey(node) ? WorkflowRunDifferences.Refused : null;
 

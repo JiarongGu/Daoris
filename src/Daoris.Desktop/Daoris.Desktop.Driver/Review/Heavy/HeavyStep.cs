@@ -8,25 +8,25 @@ using Microsoft.Win32.SafeHandles;
 namespace Daoris.Driver;
 
 /// <summary>
-/// How an integration candidate's step differs from a heavy gate (INTEGRATE1f part f2): its environment is exactly <see cref="Environment"/>
+/// How an integration candidate's step differs from a heavy gate: its environment is exactly <see cref="Environment"/>
 /// (composed from the install's by <see cref="GateEnvironment"/>, with none of this process's own to leak a Daoris name into it), and its
 /// standard output and error go to the file <see cref="Log"/> names, so a runner's answer is read from its file and never from its output.
 /// </summary>
 internal sealed record StepOptions(IReadOnlyDictionary<string, string>? Environment = null, string? Log = null)
 {
     /// <summary>
-    /// Started below normal (FABRIC-PIPELINE1d, as CIPRIO1 lowers the merge tool's): the class every process the step starts inherits,
+    /// Started below normal, as the merge tool's are: the class every process the step starts inherits,
     /// never a job's limit, so a runner may still raise a clock-bound lane of its own.
     /// </summary>
     public bool BelowNormal { get; init; }
 }
 
 /// <summary>
-/// One gate of a heavy run (HEAVYRUN1a): its command line through the platform's shell, in the gate's folder, writing to this
+/// One gate of a heavy run: its command line through the platform's shell, in the gate's folder, writing to this
 /// process's own output, held in the run's job from before it runs.
 /// </summary>
 /// <remarks>
-/// <para><b>Started suspended, joined, then let go</b>, as a terminal's shell is (CONSOLE4a). <see cref="ProcessJob.Hold(Process)"/>
+/// <para><b>Started suspended, joined, then let go</b>, as a terminal's shell is. <see cref="ProcessJob.Hold(Process)"/>
 /// joins a process after it has started, and a shell that starts its command at once could start a grandchild in that moment, outside
 /// the job. Joined before its first instruction, everything the gate starts is in the job, detached or not: the job allows no
 /// breakaway. A gate that cannot join is ended unrun, and the run says so: a gate the run cannot end is not one it may start.</para>
@@ -78,7 +78,7 @@ internal sealed class HeavyStep : IDisposable
 
     /// <summary>Start <paramref name="run"/> in <paramref name="directory"/>, this process's environment with <paramref name="added"/> over it.</summary>
     /// <param name="job">The run's job, which the gate joins before it runs; null off Windows.</param>
-    /// <param name="options">Where the step is not a heavy gate but an integration candidate's (INTEGRATE1f part f2): its own environment and log.</param>
+    /// <param name="options">Where the step is not a heavy gate but an integration candidate's: its own environment and log.</param>
     /// <exception cref="DriverException">The gate would not start, or could not be held in the job, so it did not run.</exception>
     public static HeavyStep Start(ProcessJob? job, string run, string directory, IReadOnlyDictionary<string, string> added, StepOptions? options = null) =>
         OperatingSystem.IsWindows() ? StartHeld(job, run, directory, added, options) : StartElsewhere(run, directory, added, options);
@@ -96,7 +96,7 @@ internal sealed class HeavyStep : IDisposable
         }
         catch (Exception error) when (error is InvalidOperationException or Win32Exception)
         {
-            // Exited as it was asked to.
+            // Exited as asked.
         }
     }
 
@@ -260,7 +260,7 @@ internal sealed class HeavyStep : IDisposable
 
     private static HeavyStep StartElsewhere(string run, string directory, IReadOnlyDictionary<string, string> added, StepOptions? options)
     {
-        // Not the tools' environment (TOOLS5): the gate runs in the calling session's own environment, which that
+        // Not the tools' environment: the gate runs in the calling session's own environment, which that
         // session's start already handed the tools; the Windows path builds its block from the same environment.
         var info = new ProcessStartInfo("/bin/sh") { UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = directory };
         info.ArgumentList.Add("-c");

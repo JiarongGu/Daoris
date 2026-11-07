@@ -1,9 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What an entry's one Accept and an ask's do (ACCEPTALL1, D167's 2026-10-15 amendment), in the library so the page's
-/// <c>LAND_ENTRY</c> and <c>LAND_ASK</c> and the terminal's <c>trees land --entry|--ask</c> are one code (ACCEPTALL1e, D50's twin
-/// rule): the entries asked about, the parts of each that have work to land, each part's gate counted as its own press counts it,
+/// What an entry's one Accept and an ask's do, in the library so the page's
+/// <c>LAND_ENTRY</c> and <c>LAND_ASK</c> and the terminal's <c>trees land --entry|--ask</c> are one code: the entries asked about, the parts of each that have work to land, each part's gate counted as its own press counts it,
 /// and the word each part's review keeps. A part lands through its run's <c>land</c> node at the runtime's pass; a part no
 /// <c>land</c> node performs is held.
 /// </summary>
@@ -21,13 +20,13 @@ public sealed class EntryAccepts(ServiceClient service, string home, SessionTree
     }
 
     /// <summary>
-    /// The part a session's own Accept is named for (ACCEPTALL1b, D167's 2026-10-15 amendment point 2): its entry's first, the records
+    /// The part a session's own Accept is named for: its entry's first, the records
     /// sharing its key oldest first by <c>created</c> then id, as <see cref="SessionEntries.Read"/> orders an entry's parts. Null where
-    /// the session has no record here or is its entry's only part: it lands as before.
+    /// the session has no record here or is its entry's only part: it lands alone.
     /// </summary>
     public static SessionRecord? EntryLead(IReadOnlyList<SessionRecord> records, string session) => EntryLandings.LeadOf(records, session);
 
-    /// <summary>An ask's own entries (point 4): one per repository, by its name, never its intake.</summary>
+    /// <summary>An ask's own entries: one per repository, by its name, never its intake.</summary>
     public static IReadOnlyList<SessionEntry> EntriesOf(string ask, IReadOnlyList<SessionEntry> entries) =>
         [.. entries.Where(entry => entry.Origin == $"ask:{ask}" && entry.Repository != "intake")
             .OrderBy(entry => entry.Repository, StringComparer.Ordinal)];
@@ -99,7 +98,7 @@ public sealed class EntryAccepts(ServiceClient service, string home, SessionTree
     public Func<string, string, string, CancellationToken, Task<TreeLanding?>>? Performs { get; init; }
 
     /// <summary>
-    /// The parts whose run's <c>land</c> the runtime performs, accepted (WORKFLOWCLEAN1 1c; the cleanup design §2.2, §13 point 3): each head's
+    /// The parts whose run's <c>land</c> the runtime performs, accepted: each head's
     /// review word carries the operation bringing sessions together it delivers, the performer delivers the head's unit, and a member brought into
     /// it takes no word of its own. A part the landing came to is said as the landing says it; else it is accepted, to land at the pass.
     /// </summary>
@@ -146,23 +145,23 @@ public sealed class EntryAccepts(ServiceClient service, string home, SessionTree
 
     /// <summary>
     /// The entry's parts with work, each with its tree here and its gate, and the subject the entry is named for: its first part's,
-    /// the chain's first quest walked up as a chain's is (WSR5), so every part lands on the branch named for it.
+    /// the chain's first quest walked up as a chain's is, so every part lands on the branch named for it.
     /// </summary>
     private async Task<(LandingSubject Subject, IReadOnlyList<EntryLandingPart> Parts)> PartsAsync(
         SessionEntry entry, IReadOnlyList<IWorkplaceSessionRow> rows, CancellationToken cancellationToken)
     {
         var parts = new List<EntryLandingPart>();
-        // FABRIC-CLOSE1h3: the quests the names are read from, each read once; each part's own quest is the result its press is made on.
+        // The quests the names are read from, each read once; each part's own quest is the result its press is made on.
         var quests = new PressQuests(service.FindQuestAsync);
         foreach (var part in PartsOf(entry, rows))
         {
             var (tree, _) = await service.SessionGroundAsync(part.Session, cancellationToken).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(tree)) continue;
             var gate = await trees.GateAsync(tree, part.Quest, new ServiceReviewWorld(service), part.Session, cancellationToken).ConfigureAwait(false);
-            // TREEFOLLOWNAME1: its own words, which name its landing where its tree is on a branch of its own.
+            // Its own words, which name its landing where its tree is on a branch of its own.
             var own = await BranchPatterns.SubjectAsync(part.Session, part.Quest, quest => quests.FindAsync(quest, cancellationToken),
                 events.Openings([part.Session]).GetValueOrDefault(part.Session)).ConfigureAwait(false);
-            // FABRIC-UNITLINK1, FABRIC-CLOSE1h13: the quest the part served and its submission as read here, which its landing keeps.
+            // The quest the part served and its submission as read here, which its landing keeps.
             if (part.Quest is { } served && await quests.FindAsync(served, cancellationToken).ConfigureAwait(false) is { } read)
             {
                 own = own with
@@ -182,7 +181,7 @@ public sealed class EntryAccepts(ServiceClient service, string home, SessionTree
         var subject = lead is null ? new LandingSubject(entry.Key, null, null)
             : await BranchPatterns.SubjectAsync(lead.Session, lead.Quest, quest => quests.FindAsync(quest, cancellationToken),
                 events.Openings([lead.Session]).GetValueOrDefault(lead.Session)).ConfigureAwait(false);
-        // ACCEPTFOOT2: a conversation's entry is named for its first part's work, as each part's own Accept names it.
+        // A conversation's entry is named for its first part's work, as each part's own Accept names it.
         if (lead is not null && parts.Count > 0)
         {
             var leadTree = parts.FirstOrDefault(part => part.Session == lead.Session)?.Tree;

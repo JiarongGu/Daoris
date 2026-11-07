@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>How a quest joined the work (design §1).</summary>
+/// <summary>How a quest joined the work.</summary>
 public enum WorkJoin
 {
     /// <summary>Asked by the ask (<c>ask #id</c>), a chain's later step included: the service asks every step on the chain's asker's behalf.</summary>
@@ -9,7 +9,7 @@ public enum WorkJoin
     /// <summary>The quest a quest's work starts from.</summary>
     Named,
 
-    /// <summary>Published by a session of the work (SESS1): a question it asked of another repository (D79), and so on down.</summary>
+    /// <summary>Published by a session of the work: a question it asked of another repository, and so on down.</summary>
     Published,
 }
 
@@ -18,23 +18,23 @@ public enum WorkJoin
 public sealed record WorkQuest(QuestView Quest, WorkJoin Joined, string? By = null);
 
 /// <summary>A session of the work: one whose quest is in it, or the ask's intake.</summary>
-/// <param name="Tree">Its tree, where it is one this home opened (D51); null for a session that ran in the registered root, and for a teammate's.</param>
+/// <param name="Tree">Its tree, where it is one this home opened; null for a session that ran in the registered root, and for a teammate's.</param>
 /// <param name="Branch">That tree's branch, <c>daoris/</c> and the tree's folder name (<see cref="SessionTrees"/>); null where there is no tree here.</param>
 public sealed record WorkSession(SessionRecord Record, string? Tree = null, string? Branch = null)
 {
-    /// <summary>Whether it is the ask's intake (D65 §1b): it answers the ask, and serves no quest.</summary>
+    /// <summary>Whether it is the ask's intake: it answers the ask, and serves no quest.</summary>
     public bool Intake { get; init; }
 
-    /// <summary>A teammate's record (SYNC4): its process and its tree are on their machine (D47 §4), and nothing here reaches either.</summary>
+    /// <summary>A teammate's record: its process and its tree are on their machine, and nothing here reaches either.</summary>
     public bool Teammate => Record.Teammate;
 }
 
-/// <summary>One tree of the work on this machine, its branch, and the sessions that worked in it, oldest first: a carry-on goes back into its tree (D80).</summary>
+/// <summary>One tree of the work on this machine, its branch, and the sessions that worked in it, oldest first: a carry-on goes back into its tree.</summary>
 public sealed record WorkTree(string Path, string Repository, string Branch, IReadOnlyList<string> Sessions);
 
 /// <summary>
-/// The work of an ask, or of one quest (D132 §1, design §1): its quests, its sessions, its trees and branches here, and the
-/// landings that name a session of it. Every piece a pause (PAUSE1b) or an abandon (PAUSE1d) would act on, and nothing else.
+/// The work of an ask, or of one quest: its quests, its sessions, its trees and branches here, and the
+/// landings that name a session of it. Every piece a pause or an abandon would act on, and nothing else.
 /// </summary>
 public sealed record WorkPieces(
     WorkScope Scope, string Id, IReadOnlyList<WorkQuest> Quests, IReadOnlyList<WorkSession> Sessions,
@@ -43,38 +43,38 @@ public sealed record WorkPieces(
     /// <summary>The ask's intake, where it is in the work: only an ask's work has one.</summary>
     public IReadOnlyList<WorkSession> Intake => [.. Sessions.Where(session => session.Intake)];
 
-    /// <summary>Whether a quest is in the work, compared without case: what the look's paused set asks (PAUSE1b).</summary>
+    /// <summary>Whether a quest is in the work, compared without case: what the look's paused set asks.</summary>
     public bool Has(string quest) => Quests.Any(each => string.Equals(each.Quest.Id, quest.Trim().TrimStart('#'), StringComparison.OrdinalIgnoreCase));
 }
 
 /// <summary>
-/// Everything one reading of a work is made from (design §1): the service's quests, closed ones included; its session
+/// Everything one reading of a work is made from: the service's quests, closed ones included; its session
 /// records, closed ones included (<see cref="SessionRecords.Door"/>); and this machine's landings, standing and traces
 /// (<see cref="LandedBranches.Entries"/>).
 /// </summary>
 public sealed record AskWorkLook(IReadOnlyList<QuestView> Quests, IReadOnlyList<SessionRecord> Records)
 {
-    /// <summary>Every landing recorded here, standing or a trace (D102, D113).</summary>
+    /// <summary>Every landing recorded here, standing or a trace.</summary>
     public IReadOnlyList<LandedBranch> Landings { get; init; } = [];
 }
 
 /// <summary>
-/// The one reader of an ask's work, and of one quest's (PAUSE1a, D132 point 1): the pause and the abandon read this answer,
+/// The one reader of an ask's work, and of one quest's: the pause and the abandon read this answer,
 /// and the screen's <c>WORK_PLAN</c> and <c>daoris</c> print it, so they cannot disagree, as
-/// <see cref="SessionGroups.Read"/> is one reader for both (D126 §2.4).
+/// <see cref="SessionGroups.Read"/> is one reader for both.
 /// </summary>
 /// <remarks>
 /// <para><b>Pure.</b> It decides from an <see cref="AskWorkLook"/> and touches nothing; the door that asks gathers the look,
 /// and says whether a path is one of this home's trees.</para>
 ///
-/// <para><b>Read again at every look, never kept as a list</b> (design §1): a chain's step published by a close, or a
+/// <para><b>Read again at every look, never kept as a list</b>: a chain's step published by a close, or a
 /// question asked a second before a pause, joins the work as it appears, so nothing slips past a pause made a moment
 /// earlier.</para>
 ///
 /// <para><b>Questions belong to the work.</b> A question exists because a session of the work asked it: once the work stops,
 /// its answer is wanted by nobody, and left open it starts a session in another repository to answer it.</para>
 ///
-/// <para><b>A teammate's record is named and holds nothing here.</b> Its tree and its process are on its machine (D47 §4),
+/// <para><b>A teammate's record is named and holds nothing here.</b> Its tree and its process are on its machine,
 /// and a landing here names this machine's sessions only.</para>
 /// </remarks>
 public static class AskWork
@@ -94,7 +94,7 @@ public static class AskWork
             if (inWork.Add(quest.Quest.Id)) quests.Add(quest);
         }
 
-        // 1. The quests asked: by the ask, chain steps included (each names the ask as its sender, D65 §4), or the one named.
+        // 1. The quests asked: by the ask, chain steps included (each names the ask as its sender), or the one named.
         var asker = SenderOf(named);
         foreach (var quest in look.Quests)
         {
@@ -162,27 +162,26 @@ public static class AskWork
 
         // 4. Every landing that names a session of the work, standing or a trace.
         var ids = new HashSet<string>(placed.Select(session => session.Record.Id), StringComparer.OrdinalIgnoreCase);
-        // A landing a session of the work made, or moved on (LAND2c).
         var landings = look.Landings.Where(landing => ids.Contains(landing.Session) || landing.Advances.Any(advance => ids.Contains(advance.Session))).ToList();
 
         return new WorkPieces(scope, named, quests, placed, trees, landings);
     }
 
     /// <summary>
-    /// The sender every quest an ask asked names (D65 §4), chain steps included: the service's <c>AskDesk.SenderOf</c>, a copy
+    /// The sender every quest an ask asked names, chain steps included: the service's <c>AskDesk.SenderOf</c>, a copy
     /// kept on purpose since the two share no code, and held to the service's spelling by <c>AskWorkTests</c>.
     /// </summary>
     public static string SenderOf(string ask) => $"ask #{ask}";
 
     /// <summary>
     /// Whether a quest's <c>publishedBy</c> names this record's session: as the record is keyed, or, for a teammate's record
-    /// (keyed <c>origin/id</c>, SYNC4), as their machine spells it.
+    /// (keyed <c>origin/id</c>), as their machine spells it.
     /// </summary>
     private static bool Spells(SessionRecord record, string by) => Spells(record.Id, by);
 
     /// <summary>
-    /// Whether <paramref name="by"/> names the session keyed <paramref name="session"/>: as keyed, or, for a teammate's (keyed <c>origin/id</c>, SYNC4), as
-    /// their machine spells it. Where only the id is held: a run's work quests' executors (INTEGRATE1o).
+    /// Whether <paramref name="by"/> names the session keyed <paramref name="session"/>: as keyed, or, for a teammate's (keyed <c>origin/id</c>), as
+    /// their machine spells it. Where only the id is held: a run's work quests' executors.
     /// </summary>
     public static bool Spells(string session, string by) =>
         string.Equals(session, by, StringComparison.Ordinal)

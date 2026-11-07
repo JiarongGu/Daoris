@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One development route of the start node (FABRIC-PIPELINE1a, the pipeline design §1.3): the default where <paramref name="Kind"/> is
+/// One development route of the start node: the default where <paramref name="Kind"/> is
 /// null, else a kind the workspace declares by its label and paths; the pipeline it names and the level that chose it.
 /// </summary>
 /// <param name="Workflow">A workflow's id, or <c>current</c> where nothing names one.</param>
@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 public sealed record WorkflowRouteRow(string? Kind, string? Label, IReadOnlyList<string> Paths, string Workflow, string Level, string? Name);
 
 /// <summary>
-/// The start node as a Workflow tab draws it (FABRIC-PIPELINE1a, D192 point 2): the development routes in the order the choice table
+/// The start node as a Workflow tab draws it: the development routes in the order the choice table
 /// keeps them, the landed route, its pipeline's name where it reads here, and the verification pipelines saved here, which Setup's
 /// route row offers.
 /// </summary>
@@ -18,8 +18,7 @@ public sealed record WorkflowStartNode(
     IReadOnlyList<WorkflowRouteRow> Routes, WorkflowLandedSelected Landed, string? LandedName, IReadOnlyList<(string Id, string Name)> Verifications);
 
 /// <summary>
-/// The start node read (FABRIC-PIPELINE1a, the pipeline design §1.2, §1.3): not a node of any version's graph, but the choice table D157
-/// point 5 keeps, drawn first on the Workflow tab with each route wired to the pipeline it names. Read from the driver's file and the
+/// The start node read: not a node of any version's graph, but the choice table, drawn first on the Workflow tab with each route wired to the pipeline it names. Read from the driver's file and the
 /// workflows saved here alone; the gates at a line's tip are the caller's to read (<see cref="LandedGates"/>).
 /// </summary>
 public static class WorkflowStart

@@ -15,7 +15,7 @@ public static class GraphChanges
 }
 
 /// <summary>
-/// One change a proposed graph makes to its base (FLOWCHART2e): a step, a way or a field of the graph, added, removed or changed, the
+/// One change a proposed graph makes to its base: a step, a way or a field of the graph, added, removed or changed, the
 /// fields that changed, the other changes it needs taken with it, and the driver's English, which the page words.
 /// </summary>
 /// <param name="Id">
@@ -46,7 +46,7 @@ public sealed record GraphChange(string Id, string What, string Change, string S
 }
 
 /// <summary>
-/// A graph proposed against its base, said as changes (FLOWCHART2e, D223; the flowchart design §4, §8.5). Steps are matched by id. Ways are
+/// A graph proposed against its base, said as changes. Steps are matched by id. Ways are
 /// matched by structure first (kind, ends with their ports and units, outcome, <c>on</c>, what a wait waits on), then by id, so a way the
 /// proposal renumbered reads as its id changed, never as removed and added; and nothing that runs differently is folded away, since a way's
 /// id orders an <c>anyOf</c>'s witness and keys a trigger. Each change needs the steps its way is added between, the way that held an id it
@@ -273,7 +273,7 @@ public static class WorkflowGraphDiff
         ? $"{(waits.End ? $"`{waits.Unit}`'s end" : $"`{waits.Unit}`'s `{waits.Node}`")} → {End(wire.To)}"
         : $"{End(wire.From)} → {End(wire.To)}";
 
-    /// <summary>What a changed way was: its id where only that moved, else how it ran, then its group where that changed.</summary>
+    /// <summary>A changed way as the base has it: its id where only that moved, else how it ran, then its group where that changed.</summary>
     private static string WasSaid(Wire old, Wire wire, IReadOnlyList<string> fields)
     {
         var said = new List<string>();

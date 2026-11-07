@@ -4,9 +4,9 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>One source of a frozen packet (D176 point 2): what it is, where, at which revision, why it was taken, and what was kept.</summary>
+/// <summary>One source of a frozen packet: what it is, where, at which revision, why it is there, and what is kept.</summary>
 /// <param name="Id">The packet's own id for it, <c>S1</c>…, which a proposal names in its <c>sources</c>.</param>
-/// <param name="Revision">The commit of the checkout it was read at; null where it could not be read.</param>
+/// <param name="Revision">The commit of the checkout it is read at; null where it could not be read.</param>
 /// <param name="Words">The search's words that found it.</param>
 /// <param name="Tier">The tier that found it: <c>meaning</c>, <c>words</c> or <c>files</c>.</param>
 /// <param name="Kept">The characters kept.</param>
@@ -19,19 +19,19 @@ public sealed record BrainstormSource(
 /// <summary>A source found and left out of the packet, with why: <c>bound</c>, <c>machine-path</c> or <c>removed</c>.</summary>
 public sealed record BrainstormLeftOut(string Path, string Why);
 
-/// <summary>The packet's bounds, first values (D176 point 2): read again on the first real run (BRAINSTORM1c).</summary>
+/// <summary>The packet's bounds: first values, to read again on the first real run.</summary>
 public sealed record BrainstormBounds(int Sources = 24, int Each = 12_000, int All = 60_000, int Question = 4_000)
 {
     public static BrainstormBounds First { get; } = new();
 }
 
 /// <summary>
-/// The context packet (D176 point 2): assembled by Daoris with no model, frozen once as <c>packet.json</c> (<c>packet: 1</c>),
+/// The context packet: assembled by Daoris with no model, frozen once as <c>packet.json</c> (<c>packet: 1</c>),
 /// identified by the digest of its content, and handed byte for byte to every pass. It never holds a machine path, an account's
 /// name or a credential.
 /// </summary>
 /// <param name="Repository">The asker's repository by its name; null for a question with none.</param>
-/// <param name="Tier">The tier that found its sources: <c>meaning</c>, <c>words</c> or <c>files</c>; null where none was searched.</param>
+/// <param name="Tier">The tier that found its sources: <c>meaning</c>, <c>words</c> or <c>files</c>; null where none searched.</param>
 public sealed record BrainstormPacket(
     string Question, string? Repository, string? Tier, IReadOnlyList<BrainstormSource> Sources, IReadOnlyList<BrainstormLeftOut> LeftOut)
 {
@@ -39,7 +39,7 @@ public sealed record BrainstormPacket(
     public string Digest => BrainstormPackets.DigestOf(this);
 }
 
-/// <summary>The packet's assembly, its bytes and its digest (D176 point 2), with no model and no I/O.</summary>
+/// <summary>The packet's assembly, its bytes and its digest, with no model and no I/O.</summary>
 public static class BrainstormPackets
 {
     /// <summary>The schema's version, written as <c>packet</c>.</summary>
@@ -57,7 +57,7 @@ public static class BrainstormPackets
 
     /// <summary>
     /// The packet from what was found: the question first, then the sources in the search's order, each cut to the bound for one
-    /// and all, and what was found and left out listed with why. One path and range found twice is one source. A path that is not
+    /// and all, and what is found and left out listed with why. One path and range found twice is one source. A path that is not
     /// relative to the repository's root is left out, never written (no machine path in a packet).
     /// </summary>
     public static BrainstormPacket Freeze(
@@ -92,7 +92,7 @@ public static class BrainstormPackets
         return new BrainstormPacket(question, repository, repository is null ? null : tier, sources, left);
     }
 
-    /// <summary>The packet's file: its schema version, its digest, then its content, as the digest was taken of it.</summary>
+    /// <summary>The packet's file: its schema version, its digest, then its content, as the digest takes it.</summary>
     public static byte[] Bytes(BrainstormPacket packet) => Write(packet, withDigest: true);
 
     /// <summary><c>sha256:</c> and the hex of the content's bytes, everything the file holds but its version and its digest.</summary>
@@ -124,7 +124,7 @@ public static class BrainstormPackets
     }
 
     /// <summary>
-    /// A packet's <c>sources</c> and <c>leftOut</c> read back, as a meeting's packet reads its own (AGENTROOM1a, D177 point 2): one
+    /// A packet's <c>sources</c> and <c>leftOut</c> read back, as a meeting's packet reads its own: one
     /// shape of a source, whichever packet holds it. Throws as <see cref="Read"/> catches.
     /// </summary>
     internal static (List<BrainstormSource> Sources, List<BrainstormLeftOut> LeftOut) ReadSources(JsonElement root)
@@ -214,13 +214,12 @@ public static class BrainstormPackets
     internal static byte[] Lf(MemoryStream stream) =>
         Encoding.UTF8.GetBytes(Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n");
 
-    /// <summary>The writer a packet's file is written with: indented, its text as written (D176 point 2).</summary>
+    /// <summary>The writer a packet's file is written with: indented, its text as written.</summary>
     internal static Utf8JsonWriter Writer(MemoryStream stream) =>
         new(stream, new JsonWriterOptions { Indented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
 
     /// <summary>
-    /// A packet's <c>sources</c> and <c>leftOut</c>, as a brainstorm's packet writes them and a meeting's packet does too (AGENTROOM1a,
-    /// D177 point 2): one shape of a source, whichever packet holds it.
+    /// A packet's <c>sources</c> and <c>leftOut</c>, as a brainstorm's packet writes them and a meeting's packet does too: one shape of a source, whichever packet holds it.
     /// </summary>
     internal static void WriteSources(Utf8JsonWriter writer, IReadOnlyList<BrainstormSource> sources, IReadOnlyList<BrainstormLeftOut> leftOut)
     {
@@ -276,7 +275,7 @@ public static class BrainstormPackets
 }
 
 /// <summary>
-/// The wordings a packet's search is asked in (D129 §2; BRAINSTORMPACKET1): the question's longer terms, never the question as one
+/// The wordings a packet's search is asked in: the question's longer terms, never the question as one
 /// phrase, so a long question matches by its terms; with many terms, each half alone too, so the search's limit does not fill
 /// with one half's hits. A question with no long term is asked as written.
 /// </summary>

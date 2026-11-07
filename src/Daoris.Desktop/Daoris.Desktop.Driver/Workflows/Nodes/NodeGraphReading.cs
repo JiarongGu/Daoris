@@ -100,7 +100,7 @@ internal static class NodeGraphReading
         };
     }
 
-    /// <summary>DECIDE1d: a node's <c>outputsOn</c>, each output with the outcomes that carry it; absent is none.</summary>
+    /// <summary>A node's <c>outputsOn</c>, each output with the outcomes that carry it; absent is none.</summary>
     private static Dictionary<string, IReadOnlyList<string>> CarriedOn(JsonElement node, string where)
     {
         var map = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);

@@ -10,7 +10,7 @@ internal static class WireReceipts
 {
     /// <summary>
     /// Each node's one current receipt, by node id: its reach, this run's skip, a spent failure or a rejection of an attempt started in
-    /// this graph and run (FABRIC-WIRE1e: the attempt's scope, never the caller's run hashed into another run's outcome). The nodes in
+    /// this graph and run (the attempt's scope, never the caller's run hashed into another run's outcome). The nodes in
     /// <paramref name="lapsing"/> have none, since they are about to be invalidated.
     /// </summary>
     internal static Dictionary<string, WireReceipt> Receipts(
@@ -23,8 +23,8 @@ internal static class WireReceipts
             var status = statuses[node.Id];
             if (gone.Contains(node.Id)) continue;
 
-            // FABRIC-RUN1f (the cutover design §9): an id is worked out from its status's own scope, a place's from the place and one written
-            // before from the whole graph's digest and the run's old name, so a receipt kept before keeps its id and nothing resting on it lapses.
+            // An id is worked out from its status's own scope, a place's from the place and a whole-graph one from the graph's digest
+            // and the run's earlier name, so a receipt kept under either keeps its id and nothing resting on it lapses.
             var skipped = run.Own(node.Id, status.Scope?.GraphDigest);
             var (ours, bound) = Ours(node, status, run);
             WireReceipt? receipt = status.State switch
@@ -46,7 +46,7 @@ internal static class WireReceipts
     }
 
     /// <summary>
-    /// The receipt a <c>when</c> wire consumes (DECIDE1a): a digest of the decision's acceptance and its outcome (<c>out-</c>), so what rests on
+    /// The receipt a <c>when</c> wire consumes: a digest of the decision's acceptance and its outcome (<c>out-</c>), so what rests on
     /// one route lapses once that outcome is lost or another attempt chooses another, while an <c>after</c> rests on the acceptance alone.
     /// </summary>
     public static string OutcomeReceipt(string acceptance, string outcome) => Digest("out-", acceptance, outcome);
@@ -56,7 +56,7 @@ internal static class WireReceipts
         receipt.Outcome is { } outcome ? [receipt.Id, OutcomeReceipt(receipt.Id, outcome)] : [receipt.Id];
 
     /// <summary>
-    /// The nodes no route can start any more (DECIDE1a), each with the outcome receipts that closed it: not started, behind a <c>when</c> whose
+    /// The nodes no route can start any more, each with the outcome receipts that closed it: not started, behind a <c>when</c> whose
     /// decision reached another outcome, or behind a wire from such a node, by an <c>allOf</c> member, every member of an <c>anyOf</c>, or a data
     /// input; an <c>all</c> join's members never close it. Grown to a fixpoint, so it ends within the nodes.
     /// </summary>
@@ -107,7 +107,7 @@ internal static class WireReceipts
     }
 
     /// <summary>
-    /// The nodes no route can start any more given the outcomes reached on <paramref name="statuses"/> (DECIDE1c, the run's view): what an
+    /// The nodes no route can start any more given the outcomes reached on <paramref name="statuses"/>: what an
     /// evaluation reports as <see cref="WireEvaluated.NotTaken"/>, read from a record alone, since a route closes on a reach's outcome, which needs
     /// no run's scope. A node with no status is not reached yet.
     /// </summary>
