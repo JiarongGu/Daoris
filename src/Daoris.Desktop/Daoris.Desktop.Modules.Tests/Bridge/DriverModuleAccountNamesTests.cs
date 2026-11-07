@@ -100,8 +100,8 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
             new { door = "claude-code", action = "profile-rename", profile = "account-1", name = "seat" });
         var loop = Loop();
         var running = AccountsRoutes.RunningOn(
-            """[{"id":"s1a2b3c4","adapter":"claude-code-acp","profile":"account-1","state":"running"}]""",
-            adapter => loop.Harnesses.Adapters.OwnerOfAgent(adapter).Value);
+            """[{"id":"s1a2b3c4","door":"claude-code-acp","profile":"account-1","state":"running"}]""",
+            door => loop.Harnesses.Adapters.OwnerOfAgent(door).Value);
 
         var answer = JsonSerializer.SerializeToElement(AccountsRoutes.AccountsAnswer(loop.Harnesses, running, DateTimeOffset.UtcNow));
 
