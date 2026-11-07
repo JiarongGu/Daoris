@@ -62,9 +62,11 @@ public static class HomeMigration
 
         using var lease = HomeLease.TryAcquire(home, LeaseKind.Migration, out var holder, "migration")
             ?? (holder is { Kind: LeaseKind.Swap } ? null : HomeLease.Await(home, LeaseKind.Migration, "migration", leaseWait ?? HomeLease.Wait, out holder));
-        if (lease is null && holder is not { Kind: LeaseKind.Swap })
+        if (lease is null)
         {
-            return new(Name, [], [], $"{holder!.Named} held this home, so it was not converted; the next start converts it");
+            return holder is { Kind: LeaseKind.Swap }
+                ? new(Name, [], [], $"{holder.Named} held this home, so it was not converted; it is converted once the update has confirmed")
+                : new(Name, [], [], $"{holder!.Named} held this home, so it was not converted; the next start converts it");
         }
 
         // Read again under the lease: another start may have converted it while this one waited.
@@ -90,6 +92,14 @@ public static class HomeMigration
         }
 
         return new(Name, ran, run.Changed);
+    }
+
+    /// <summary>Run again once the launcher's swap has let the home go (the update confirmed), waiting up to <paramref name="within"/> for it.</summary>
+    public static async Task<HomeMigrated> RunAfterSwapAsync(string home, TimeSpan within, TimeSpan poll, CancellationToken ct = default)
+    {
+        var until = DateTimeOffset.UtcNow + within;
+        while (HomeLease.HeldBy(home) is { Kind: LeaseKind.Swap } && DateTimeOffset.UtcNow < until) await Task.Delay(poll, ct);
+        return Run(home);
     }
 
     /// <summary>What the run did, into the machine log, by count and name, never a path.</summary>

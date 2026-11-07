@@ -90,9 +90,12 @@ internal static class Program
         }
 
         // This release's migration converts the home once, before the staffing, the loop and the routes read any of it.
+        string? afterSwap = null;
         if (Daoris.Driver.DriverConfig.FindHome(Environment.GetEnvironmentVariable) is { } migrating)
         {
-            Daoris.Driver.HomeMigration.Log(Daoris.Driver.HomeMigration.Run(migrating), log);
+            var migrated = Daoris.Driver.HomeMigration.Run(migrating);
+            Daoris.Driver.HomeMigration.Log(migrated, log);
+            if (migrated.Held is not null && Daoris.Driver.HomeLease.HeldBy(migrating) is { Kind: Daoris.Driver.LeaseKind.Swap }) afterSwap = migrating;
         }
 
         // The home's driver.json reads its staffing from the store, wired before the loop
@@ -345,9 +348,16 @@ internal static class Program
             // Its look may start the launcher for a build said *now*: through the start gate, off this thread
             // The drain is set before that wait, so before the loop starts; a failed look is said as the
             // updater's own loop says one.
-            _ = updater.StartedAsync().ContinueWith(
+            var started = updater.StartedAsync();
+            _ = started.ContinueWith(
                 look => log.Warn("update.look", ("message", look.Exception!.GetBaseException().Message)),
                 CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
+            if (afterSwap is not null)
+            {
+                _ = Daoris.Driver.HomeMigration.RunAfterSwapAsync(afterSwap, TimeSpan.FromMinutes(2), TimeSpan.FromMilliseconds(500))
+                    .ContinueWith(done => Daoris.Driver.HomeMigration.Log(done.Result, log),
+                        CancellationToken.None, TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.Default);
+            }
             updater.Start();
             // The system's resume is told to the loop's change watch, which reopens its roots and judges them;
             // SystemEvents raises on its own thread, and the handler lives as long as the process does.

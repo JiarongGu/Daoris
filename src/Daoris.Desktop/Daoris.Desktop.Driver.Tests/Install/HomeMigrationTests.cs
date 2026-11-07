@@ -152,16 +152,35 @@ public sealed class HomeMigrationTests : IDisposable
     }
 
     [Fact]
-    public void A_home_the_launchers_swap_holds_is_converted_in_the_same_run()
+    public async Task A_home_the_launchers_swap_holds_is_converted_once_the_swap_lets_go()
+    {
+        Directory.CreateDirectory(_home);
+        var swap = HomeLease.Await(_home, LeaseKind.Swap, null, TimeSpan.Zero, out _);
+        Assert.NotNull(swap);
+
+        var first = HomeMigration.Run(_home, leaseWait: TimeSpan.FromSeconds(30));
+        Assert.NotNull(first.Held);
+        Assert.Empty(first.Ran);
+        Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.Migration)));
+
+        swap.Dispose();
+        var later = await HomeMigration.RunAfterSwapAsync(_home, TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(20));
+        Assert.Null(later.Held);
+        Assert.NotEmpty(later.Ran);
+        Assert.True(File.Exists(DaorisHome.Entry(_home, HomeEntry.Migration)));
+    }
+
+    [Fact]
+    public async Task A_swap_that_never_lets_go_leaves_the_home_unconverted()
     {
         Directory.CreateDirectory(_home);
         using var swap = HomeLease.Await(_home, LeaseKind.Swap, null, TimeSpan.Zero, out _);
         Assert.NotNull(swap);
-        var migrated = HomeMigration.Run(_home, leaseWait: TimeSpan.Zero);
-        Assert.Null(migrated.Held);
-        Assert.NotEmpty(migrated.Ran);
-        Assert.True(File.Exists(DaorisHome.Entry(_home, HomeEntry.Migration)));
-        Assert.True(HomeLease.HeldBy(_home) is { Kind: LeaseKind.Swap });
+
+        var later = await HomeMigration.RunAfterSwapAsync(_home, TimeSpan.FromMilliseconds(200), TimeSpan.FromMilliseconds(20));
+        Assert.NotNull(later.Held);
+        Assert.Empty(later.Ran);
+        Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.Migration)));
     }
 
     [Fact]
